@@ -23,7 +23,7 @@ from website.project.decorators import (
     must_have_permission,
     must_not_be_registration,
 )
-from website.project.model import has_anonymous_link, resolve_pointer
+from website.project.model import has_anonymous_link, get_pointer_parent
 from website.project.forms import NewNodeForm
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
@@ -834,11 +834,11 @@ def _get_user_activity(node, auth, rescale_ratio):
 
     # Normalize over all nodes
     try:
-        ua = ua_count / rescale_ratio * settings.USER_ACTIVITY_MAX_WIDTH
+        ua = ua_count / rescale_ratio * 100
     except ZeroDivisionError:
         ua = 0
     try:
-        non_ua = non_ua_count / rescale_ratio * settings.USER_ACTIVITY_MAX_WIDTH
+        non_ua = non_ua_count / rescale_ratio * 100
     except ZeroDivisionError:
         non_ua = 0
 
@@ -917,13 +917,20 @@ def get_summary(**kwargs):
 
 
 @must_be_contributor_or_public
-def get_children(**kwargs):
+def get_children(auth, **kwargs):
+    user = auth.user
     node_to_use = kwargs['node'] or kwargs['project']
-    return _render_nodes([
-        node
-        for node in node_to_use.nodes
-        if not node.is_deleted
-    ])
+    if request.args.get('permissions'):
+        perm = request.args['permissions'].lower().strip()
+        nodes = [node for node in node_to_use.nodes
+                if perm in node.get_permissions(user) and not node.is_deleted]
+    else:
+        nodes = [
+            node
+            for node in node_to_use.nodes
+            if not node.is_deleted
+        ]
+    return _render_nodes(nodes)
 
 @must_be_contributor_or_public
 def get_folder_pointers(**kwargs):
@@ -1270,7 +1277,7 @@ def abbrev_authors(node):
 
 
 def serialize_pointer(pointer, auth):
-    node = resolve_pointer(pointer)
+    node = get_pointer_parent(pointer)
     if node.can_view(auth):
         return {
             'id': node._id,
@@ -1293,5 +1300,5 @@ def get_pointed(auth, **kwargs):
     return {'pointed': [
         serialize_pointer(each, auth)
         for each in node.pointed
-        if not resolve_pointer(each).is_folder
+        if not get_pointer_parent(each).is_folder
     ]}

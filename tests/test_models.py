@@ -13,6 +13,7 @@ import urlparse
 from dateutil import parser
 
 from modularodm.exceptions import ValidationError, ValidationValueError, ValidationTypeError
+from modularodm import Q
 
 
 from framework.analytics import get_total_activity_count
@@ -24,7 +25,8 @@ from website import filters, language, settings
 from website.exceptions import NodeStateError
 from website.profile.utils import serialize_user
 from website.project.model import (
-    ApiKey, Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link
+    ApiKey, Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
+    get_pointer_parent,
 )
 from website.addons.osffiles.model import NodeFile
 from website.addons.osffiles.exceptions import FileNotModified
@@ -2918,6 +2920,13 @@ class TestPointer(OsfTestCase):
             pointer.node,
             cloned.node
         )
+
+    def test_get_pointer_parent(self):
+        parent = ProjectFactory()
+        pointed = ProjectFactory()
+        parent.add_pointer(pointed, Auth(parent.creator))
+        parent.save()
+        assert_equal(get_pointer_parent(parent.nodes[0]), parent)
 
     def test_clone(self):
         cloned = self.pointer._clone()
