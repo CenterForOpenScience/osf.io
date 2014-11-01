@@ -77,44 +77,49 @@
 
 <template id="osf-ob-uploader">
 <li class="ob-list-item list-group-item">
-    <div class="pointer">
-        <h3 class="ob-heading">Upload file(s)</h3>
-    </div><!-- end ob-unselectable -->
+    <div data-bind="click: toggle" class="ob-header pointer">
+        <h3 class="ob-heading list-group-item-heading">Upload file(s)</h3>
+        <i data-bind="css: {'icon-plus': !isOpen(), 'icon-minus': isOpen()}"
+            class="pointer ob-expand-icon icon-large pull-right">
+        </i>
+    </div><!-- end ob-header -->
 
 
-    <div class="row">
-        <div class="col-md-12">
-            <h4>1. Drop file (or click below)</h4>
+    <div data-bind="visible: isOpen()">
+        <div class="row">
+            <div class="col-md-12">
+                <h4>1. Drop file (or click below)</h4>
 
-            <!-- Dropzone -->
-            <div data-bind="click: clearMessages(), visible: enableUpload()" id="obDropzone" class="ob-dropzone ob-dropzone-box pull-left"></div>
+                <!-- Dropzone -->
+                <div data-bind="click: clearMessages(), visible: enableUpload()" id="obDropzone" class="ob-dropzone ob-dropzone-box pull-left"></div>
 
-            <!-- File queue display -->
-            <div data-bind="visible: !enableUpload()" class="ob-dropzone-selected ob-dropzone-box pull-left">
-                <img data-bind="attr: {src: iconSrc()}" class="ob-dropzone-icon" alt="File icon">
-                <div data-bind="text: filename" class="ob-dropzone-filename"></div>
-                <progress
-                    data-bind="attr: {value: progress()}, visible: showProgress()"
-                        class="ob-upload-progress" max="100"></progress>
-                <img data-bind="click: clearDropzone"
-                    class="ob-clear-uploads-button pull-right" src="/static/img/close2.png" alt="Clear uploads">
+                <!-- File queue display -->
+                <div data-bind="visible: !enableUpload()" class="ob-dropzone-selected ob-dropzone-box pull-left">
+                    <img data-bind="attr: {src: iconSrc()}" class="ob-dropzone-icon" alt="File icon">
+                    <div data-bind="text: filename" class="ob-dropzone-filename"></div>
+                    <progress
+                        data-bind="attr: {value: progress()}, visible: showProgress()"
+                            class="ob-upload-progress" max="100"></progress>
+                    <img data-bind="click: clearDropzone"
+                        class="ob-clear-uploads-button pull-right" src="/static/img/close2.png" alt="Clear uploads">
+                </div>
+
+            </div><!-- end col-md -->
+        </div><!-- end row -->
+        <div class="row">
+            <div class="col-md-12">
+                <h4> 2. Select a project</h4>
+                <osf-project-search
+                params="data: data,
+                        onSubmit: startUpload,
+                        onClear: clearMessages,
+                        onSelected: clearMessages,
+                        submitText: 'Upload'">
+                </osf-project-search>
             </div>
-
-        </div><!-- end col-md -->
-    </div><!-- end row -->
-    <div class="row">
-        <div class="col-md-12">
-            <h4> 2. Select a project</h4>
-            <osf-project-search
-            params="data: data,
-                    onSubmit: startUpload,
-                    onClear: clearMessages,
-                    onSelected: clearMessages,
-                    submitText: 'Upload'">
-            </osf-project-search>
-        </div>
-    </div><!-- end row -->
-    <div data-bind="html: message(), attr: {class: messageClass()}" ></div>
+        </div><!-- end row -->
+        <div data-bind="html: message(), attr: {class: messageClass()}" ></div>
+    </div>
 </li> <!-- end .ob-list -->
 </template>
 
