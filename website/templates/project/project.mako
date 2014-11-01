@@ -207,18 +207,30 @@ ${parent.javascript_bottom()}
             interactive: ${'true' if user["can_edit"] else 'false'},
             maxChars: 128,
             onAddTag: function(tag){
-                $.ajax({
-                    url: "${node['api_url']}" + "addtag/" + tag + "/",
+                var url = "${node['api_url']}" + "addtag/" + tag + "/";
+                var request = $.ajax({
+                    url: url,
                     type: "POST",
                     contentType: "application/json"
                 });
+                request.fail(function(xhr, textStatus, error) {
+                    Raven.captureMessage('Failed to add tag', {
+                        tag: tag, url: url, textStatus: textStatus, error: error
+                    });
+                })
             },
             onRemoveTag: function(tag){
-                $.ajax({
-                    url: "${node['api_url']}" + "removetag/" + tag + "/",
+                var url = "${node['api_url']}" + "removetag/" + tag + "/";
+                var request = $.ajax({
+                    url: url,
                     type: "POST",
                     contentType: "application/json"
                 });
+                request.fail(function(xhr, textStatus, error) {
+                    Raven.captureMessage('Failed to add tag', {
+                        tag: tag, url: url, textStatus: textStatus, error: error
+                    });
+                })
             }
         });
 
