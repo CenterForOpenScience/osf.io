@@ -227,7 +227,7 @@ ${parent.javascript_bottom()}
                     contentType: "application/json"
                 });
                 request.fail(function(xhr, textStatus, error) {
-                    Raven.captureMessage('Failed to add tag', {
+                    Raven.captureMessage('Failed to remove tag', {
                         tag: tag, url: url, textStatus: textStatus, error: error
                     });
                 })
