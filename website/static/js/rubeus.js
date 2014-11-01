@@ -421,15 +421,11 @@
         maxFilesize: function(row) {
             return row.accept? (row.accept.maxSize || 128) : 128;
         },
-        // acceptedFiles: function(row) {
-        //     return row.accept.acceptedFiles || null;
-        // },
-        uploadUrl: function(row) {
-            var cfgOption = resolveCfgOption.call(this, row, 'uploadUrl', [row]);
-            return cfgOption || row.urls.upload;
-        },
 
         uploadAdded: function(file, row, folder) {
+            // Attach upload parameters to file object for use in `uploadFiles`
+            file.method = resolveCfgOption.call(this, row, 'uploadMethod', [row]) || 'post';
+            file.url = folder.urls.upload || resolveCfgOption.call(this, row, 'uploadUrl', [row]);
             // Need to set the added row's addon for other callbacks to work
             var parent = this.getByID(row.parentID);
             row.addon = parent.addon;
@@ -437,10 +433,6 @@
             this.expandItem(folder);
             var cfgOption = resolveCfgOption.call(this, row, 'uploadAdded', [file, row]);
             return cfgOption || null;
-        },
-        uploadMethod: function(row) {
-            var cfgOption = resolveCfgOption.call(this, row, 'uploadMethod', [row]);
-            return cfgOption || 'post';
         },
         uploadSending: function(file, row, xhr, formData) {
             var cfgOption = resolveCfgOption.call(this, row, 'uploadSending', [file, row, xhr, formData]);
