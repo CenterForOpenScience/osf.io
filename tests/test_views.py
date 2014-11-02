@@ -3342,5 +3342,39 @@ class TestUnconfirmedUserViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
 
+class TestProfileNodeList(OsfTestCase):
+
+    def setUp(self):
+        OsfTestCase.setUp(self)
+        self.user = AuthUserFactory()
+
+        self.public = ProjectFactory(is_public=True)
+        self.public_component = NodeFactory(project=self.public, is_public=True)
+        self.private = ProjectFactory(is_public=False)
+        self.deleted = ProjectFactory(is_public=True, is_deleted=True)
+
+        for node in (self.public, self.public_component, self.private, self.deleted):
+            node.add_contributor(self.user, auth=Auth(node.creator))
+            node.save()
+
+    def test_get_public_projects(self):
+        url = api_url_for('get_public_projects', uid=self.user._id)
+        res = self.app.get(url)
+        node_ids = [each['id'] for each in res.json['nodes']]
+        assert_in(self.public._id, node_ids)
+        assert_not_in(self.private._id, node_ids)
+        assert_not_in(self.deleted._id, node_ids)
+        assert_not_in(self.public_component._id, node_ids)
+
+    def test_get_public_components(self):
+        url = api_url_for('get_public_components', uid=self.user._id)
+        res = self.app.get(url)
+        node_ids = [each['id'] for each in res.json['nodes']]
+        assert_in(self.public_component._id, node_ids)
+        assert_not_in(self.public._id, node_ids)
+        assert_not_in(self.private._id, node_ids)
+        assert_not_in(self.deleted._id, node_ids)
+
+
 if __name__ == '__main__':
     unittest.main()
