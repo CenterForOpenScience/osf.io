@@ -21,6 +21,7 @@ from website.project.decorators import must_be_contributor_or_public
 from website.addons.app.model import Metadata
 from website.addons.app.utils import args_to_query
 from website.addons.app.utils import elastic_to_rss
+from website.addons.app.utils import elastic_to_atom
 from website.addons.app.utils import elastic_to_resourcelist
 from website.addons.app.utils import elastic_to_changelist
 from website.addons.app.utils import generate_capabilitylist
@@ -84,6 +85,24 @@ def query_app_rss(node_addon, **kwargs):
     rss_url = node.api_url_for('query_app_rss', _xml=True, _absolute=True)
     return elastic_to_rss(name, ret['results'], q, rss_url)
 
+# GET
+@must_be_contributor_or_public
+@must_have_addon('app', 'node')
+def query_app_atom(node_addon, **kwargs):
+    q = request.args.get('q', '*')
+    size = request.args.get('size')
+    start = request.args.get('from')
+    query = args_to_query(q, size, start)
+
+    try:
+        ret = search(query, search_type=node_addon.namespace, index='metadata', types=['metadata/' + node_addon.namespace])
+    except MalformedQueryError:
+        raise HTTPError(http.BAD_REQUEST)
+    node = node_addon.owner
+    name = node_addon.system_user.username
+
+    atom_url = node.api_url_for('query_app_atom', _xml=True, _absolute=True)
+    return elastic_to_atom(name, ret['results'], q, atom_url)
 
 # GET
 @must_be_contributor_or_public

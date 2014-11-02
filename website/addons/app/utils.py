@@ -11,6 +11,7 @@ from cStringIO import StringIO
 from dateutil.parser import parse
 
 import PyRSS2Gen as pyrss
+from werkzeug.contrib.atom import AtomFeed
 
 from resync.resource import Resource
 from resync.resource_list import ResourceList
@@ -57,6 +58,51 @@ def args_to_query(query, start=0, size=250):
         'size': size,
     }
 
+def elastic_to_atom(name, data, query, url):
+    if query == '*':
+        title_query = 'All'
+    else:
+        title_query = query
+
+    if name == 'scrapi':
+        name = 'SHARE Notification Service'
+
+    feed = AtomFeed(title='{name}: RSS for query: "{title_query}"'.format(name=name, title_query=title_query),
+                    feed_url='{url}'.format(url=url),
+                    author="COS")
+
+    for doc in data:
+        feed.add(title=doc.get('title', 'No title provided'),
+            content=json.dumps(doc, indent=4, sort_keys=True),
+            content_type='json',
+            summary=doc.get('description', 'No summary'),
+            id=doc.get('id', {}).get('serviceID') or doc['_id'],
+            updated=parse(doc.get('dateUpdated')),
+            link=doc['id']['url'] if doc.get('id') else doc['links'][0]['url'],
+            author=format_contributors_for_atom(doc['contributors']),
+            categories=format_categories(doc.get('tags')),
+            published=parse(doc.get('dateCreated'))
+        )
+
+    return feed.to_string()
+
+
+def format_contributors_for_atom(contributors_list):
+    formatted_names = []
+    for entry in contributors_list:
+        formatted_names.append( {
+            'name': '{} {}'.format(entry['given'], entry['family']),
+            'email': entry.get('email', '')
+        })
+
+    return formatted_names
+
+def format_categories(tags_list):
+    cat_list = []
+    for tag in tags_list:
+        cat_list.append({"term": tag})
+
+    return cat_list
 
 def elastic_to_rss(name, data, query, url):
     count = len(data)
