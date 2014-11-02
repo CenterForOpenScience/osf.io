@@ -166,7 +166,7 @@
         self.templates = self.loadNodes(params.data);
         $('#templates').select2({
             allowClear: true,
-            placeholder: 'Select a Project to Use as a Template',
+            placeholder: 'Select a project to use as a template',
             query: self.query
         });
     }

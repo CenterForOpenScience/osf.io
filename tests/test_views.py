@@ -2669,6 +2669,16 @@ class TestComments(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.json.get('nUnread'), 0)
 
+    def test_n_unread_comments_updates_when_comment_reply(self):
+        comment = CommentFactory(node=self.project, user=self.project.creator)
+        reply = CommentFactory(node=self.project, user=self.user, target=comment)
+        self.project.reload()
+
+        url = self.project.api_url_for('list_comments')
+        res = self.app.get(url, auth=self.project.creator.auth)
+        assert_equal(res.json.get('nUnread'), 1)
+
+
     def test_n_unread_comments_updates_when_comment_is_edited(self):
         self.test_edit_comment()
         self.project.reload()

@@ -120,8 +120,8 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/s3/<fid>/info/',
-                '/project/<pid>/node/<nid>/s3/<fid>/info/',
+                '/project/<pid>/s3/<path:path>/info/',
+                '/project/<pid>/node/<nid>/s3/<path:path>/info/',
             ],
             'get',
             views.crud.file_delete_info,
