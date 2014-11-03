@@ -136,13 +136,8 @@
                 self.isOpen = ko.observable(false),
                 self.focus = ko.observable(false);
                 self.toggle = function() {
-                    if (!this.isOpen()) {
-                        self.isOpen(true);
-                        self.focus(true);
-                    } else {
-                        self.isOpen(false);
-                        self.focus(false);
-                    }
+                    self.isOpen(!self.isOpen());
+                    self.focus(self.isOpen());
                 };
                 self.nodes = response.nodes;
             }

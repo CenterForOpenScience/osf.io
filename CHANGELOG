@@ -8,10 +8,14 @@ Changelog
 - OSF Files 2.0.
 - Improvements to search.
 
-0.20.0 (unreleased)
+0.20.0 (2014-10-31)
 ===================
 
-- Onboarding interface on dashboard.
+Lots of new UI features and responsiveness improvements.
+
+- "Onboarder" interface: Go to a project, create a project, register a project, and upload files from the dashboard.
+- Responsive index page, header, footer, project navbars, login page, public activity, and user activity meters.
+- Various minor UI fixes to user settings page and view file pages.
 
 0.19.0 (2014-10-22)
 ===================
