@@ -1882,6 +1882,13 @@ class TestProject(OsfTestCase):
         assert_equal(latest_log.action, 'edit_title')
         assert_equal(latest_log.params['title_original'], 'That Was Then')
 
+    def test_title_cant_be_empty(self):
+        proj = ProjectFactory(title='That Was Then', creator=self.user)
+        proj.set_title('', auth=self.consolidate_auth)
+        proj.save()
+        # Title was changed
+        assert_equal(proj.title, 'That Was Then')
+
     def test_contributor_can_edit(self):
         contributor = UserFactory()
         contributor_auth = Auth(user=contributor)
