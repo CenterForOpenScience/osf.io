@@ -81,9 +81,9 @@ class TestNodeSerializers(OsfTestCase):
             permissions=permissions.expand_permissions(permissions.WRITE))
         node.save()
 
-        res_admin = _render_node(node, admin)
+        res_admin = _render_node(node, Auth(admin))
         assert_equal(res_admin['permissions'], 'admin')
-        res_writer = _render_node(node, writer)
+        res_writer = _render_node(node, Auth(writer))
         assert_equal(res_writer['permissions'], 'write')
 
 
