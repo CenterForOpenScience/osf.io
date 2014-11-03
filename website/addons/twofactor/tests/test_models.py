@@ -96,7 +96,8 @@ class TestUserSettingsModel(OsfTestCase):
                 'is_confirmed': False,
                 'nodes': [],
                 'otpauth_url': url.format(self.user.username),
-                'secret': self.TOTP_SECRET_B32
+                'secret': self.TOTP_SECRET_B32,
+                'has_auth': False,
             }
         )
 

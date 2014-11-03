@@ -283,8 +283,8 @@ def mailserver(port=1025):
 
 
 @task
-def flake():
-    run('flake8 .')
+def flake8():
+    run('flake8 .', echo=True)
 
 
 @task
@@ -335,7 +335,9 @@ def test():
 
 
 @task
-def test_all():
+def test_all(flake=False):
+    if flake:
+        flake8()
     test_osf()
     test_addons()
 
@@ -528,6 +530,7 @@ def hotfix(name, finish=False, push=False):
         run('git flow hotfix finish {}'.format(next_patch_version), echo=True, pty=True)
     if push:
         run('git push origin master', echo=True)
+        run('git push --tags', echo=True)
         run('git push origin develop', echo=True)
 
 

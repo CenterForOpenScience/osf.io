@@ -38,20 +38,23 @@ def median(a):
 #number_users = len(list(db['user'].find({})))
 number_users = models.User.find().count()
 
-from framework import Q
+from modularodm import Q
 
 projects = models.Node.find(
     Q('category', 'eq', 'project') &
-    Q('is_deleted', 'eq', False)
+    Q('is_deleted', 'eq', False) &
+    Q('is_folder', 'ne', True)
 )
 projects_forked = list(models.Node.find(
     Q('category', 'eq', 'project') &
     Q('is_deleted', 'eq', False) &
+    Q('is_folder', 'ne', True) &
     Q('is_fork', 'eq', True)
 ))
 projects_registered = models.Node.find(
     Q('category', 'eq', 'project') &
     Q('is_deleted', 'eq', False) &
+    Q('is_folder', 'ne', True) &
     Q('is_registration', 'eq', True)
 )
 
@@ -85,6 +88,7 @@ number_projects = len(projects)
 number_projects_public = models.Node.find(
     Q('category', 'eq', 'project') &
     Q('is_deleted', 'eq', False) &
+    Q('is_folder', 'ne', True) &
     Q('is_public', 'eq', True)
 ).count()
 number_projects_forked = len(pf)
@@ -105,29 +109,29 @@ contributors_per_user = []
 contrib = {}
 
 for project in projects:
-	#project = Node.load(p['_id'])
-	contributors_per_project.append(len(project.contributors))
-	for person in project.contributors:
-                if not person:
-                    continue
-		if person._id not in contrib:
-			contrib[person._id] = []
-		for neighbor in project.contributors:
-                        if not neighbor:
-                            continue
-			if neighbor._id not in contrib[person._id]:
-				contrib[person._id].append(neighbor._id)
-	unique, total = get_basic_counters('node:' + str(project._id))
-	if total:
-		number_views_total += total
-		number_views_unique += unique
-	for k,v in project.files_versions.iteritems():
-		for i, f in enumerate(v):
-			fi = NodeFile.load(f)
-			unique, total = get_basic_counters('download:' + str(project._id) + ':' + fi.path.replace('.', '_'))
-			if total:
-				number_downloads_total += total
-				number_downloads_unique += unique
+    #project = Node.load(p['_id'])
+    contributors_per_project.append(len(project.contributors))
+    for person in project.contributors:
+        if not person:
+            continue
+        if person._id not in contrib:
+            contrib[person._id] = []
+        for neighbor in project.contributors:
+            if not neighbor:
+                continue
+            if neighbor._id not in contrib[person._id]:
+                contrib[person._id].append(neighbor._id)
+    unique, total = get_basic_counters('node:' + str(project._id))
+    if total:
+        number_views_total += total
+        number_views_unique += unique
+    for k,v in project.files_versions.iteritems():
+        for i, f in enumerate(v):
+            fi = NodeFile.load(f)
+            unique, total = get_basic_counters('download:' + str(project._id) + ':' + fi.path.replace('.', '_'))
+            if total:
+                number_downloads_total += total
+                number_downloads_unique += unique
 
 print "number_users"              , number_users
 print "number_projects"           , number_projects

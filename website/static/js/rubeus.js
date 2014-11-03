@@ -24,7 +24,7 @@
     // Custom folder icon indicating private component
     Rubeus.Html.folderIconPrivate = '<img class="hg-icon hg-addon-icon" src="/static/img/hgrid/fatcowicons/folder_delete.png">';
     // Folder icon for pointers/links
-    Rubeus.Html.folderIconPointer = '<i class="icon-hand-right"></i>';
+    Rubeus.Html.folderIconPointer = '<i class="icon-link"></i>';
     // Class for folder name
     Rubeus.Html.folderTextClass = 'hg-folder-text';
 
@@ -404,7 +404,7 @@
             var $elem = $(evt.target);
             bootbox.confirm({
                 message: '<strong>NOTE</strong>: This action is irreversible.',
-                title: 'Delete <em>' + row.name + '</em>?',
+                title: 'Delete <em class="overflow">' + row.name + '</em>?',
                 callback: function(result) {
                     if (result) {
                         onConfirmDelete(row, self);
@@ -421,15 +421,11 @@
         maxFilesize: function(row) {
             return row.accept? (row.accept.maxSize || 128) : 128;
         },
-        // acceptedFiles: function(row) {
-        //     return row.accept.acceptedFiles || null;
-        // },
-        uploadUrl: function(row) {
-            var cfgOption = resolveCfgOption.call(this, row, 'uploadUrl', [row]);
-            return cfgOption || row.urls.upload;
-        },
 
         uploadAdded: function(file, row, folder) {
+            // Attach upload parameters to file object for use in `uploadFiles`
+            file.method = resolveCfgOption.call(this, row, 'uploadMethod', [row]) || 'post';
+            file.url = folder.urls.upload || resolveCfgOption.call(this, row, 'uploadUrl', [row]);
             // Need to set the added row's addon for other callbacks to work
             var parent = this.getByID(row.parentID);
             row.addon = parent.addon;
@@ -437,10 +433,6 @@
             this.expandItem(folder);
             var cfgOption = resolveCfgOption.call(this, row, 'uploadAdded', [file, row]);
             return cfgOption || null;
-        },
-        uploadMethod: function(row) {
-            var cfgOption = resolveCfgOption.call(this, row, 'uploadMethod', [row]);
-            return cfgOption || 'post';
         },
         uploadSending: function(file, row, xhr, formData) {
             var cfgOption = resolveCfgOption.call(this, row, 'uploadSending', [file, row, xhr, formData]);
