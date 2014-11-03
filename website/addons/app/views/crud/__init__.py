@@ -36,11 +36,20 @@ def query_app(node_addon, **kwargs):
     q = request.args.get('q', '*')
     size = request.args.get('size')
     start = request.args.get('from')
+    return_raw = request.args.get('raw') is not None
 
     query = args_to_query(q, size, start)
 
     try:
-        return search(query, search_type=node_addon.namespace, index='metadata', types=['metadata/' + node_addon.namespace])
+        ret = search(query, index='metadata', search_type=node_addon.namespace, raw=True)
+
+        if return_raw:
+            return ret
+
+        return {
+            'count': ret['hits']['total'],
+            'results': [hit['_source'] for hit in ret['hits']['hits']]
+        }
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -48,19 +57,28 @@ def query_app(node_addon, **kwargs):
 @must_be_contributor_or_public
 @must_have_addon('app', 'node')
 def query_app_json(node_addon, **kwargs):
-    return_raw = request.args.get('return_raw', False)
     if not request.json:
         raise HTTPError(http.BAD_REQUEST)
+
+    return_raw = request.args.get('raw') is not None
 
     try:
         del request.json['format']
     except KeyError:
         pass
 
-    request_data = request.json
+    query = request.json
 
     try:
-        return search(request_data, search_type=node_addon.namespace, index='metadata', types=['metadata/' + node_addon.namespace], return_raw=return_raw)
+        ret = search(query, index='metadata', search_type=node_addon.namespace, raw=True)
+
+        if return_raw:
+            return ret
+
+        return {
+            'count': ret['hits']['total'],
+            'results': [hit['_source'] for hit in ret['hits']['hits']]
+        }
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -75,7 +93,7 @@ def query_app_rss(node_addon, **kwargs):
     query = args_to_query(q, size, start)
 
     try:
-        ret = search(query, search_type=node_addon.namespace, index='metadata', types=['metadata/' + node_addon.namespace])
+        ret = search(query, search_type=node_addon.namespace, index='metadata')
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -95,9 +113,10 @@ def query_app_atom(node_addon, **kwargs):
     query = args_to_query(q, size, start)
 
     try:
-        ret = search(query, search_type=node_addon.namespace, index='metadata', types=['metadata/' + node_addon.namespace])
+        ret = search(query, search_type=node_addon.namespace, index='metadata')
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
+
     node = node_addon.owner
     name = node_addon.system_user.username
 
@@ -118,7 +137,7 @@ def query_app_resourcelist(node_addon, **kwargs):
     query = args_to_query(q, start, size)
 
     try:
-        ret = search(query, search_type=node_addon.namespace, index='metadata', types=['metadata/' + node_addon.namespace])
+        ret = search(query, search_type=node_addon.namespace, index='metadata')
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -138,7 +157,7 @@ def query_app_changelist(node_addon, **kwargs):
     query = args_to_query(q, start, size)
 
     try:
-        ret = search(query, search_type=node_addon.namespace, index='metadata', types=['metadata/' + node_addon.namespace])
+        ret = search(query, search_type=node_addon.namespace, index='metadata')
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -228,10 +247,10 @@ def get_project_metadata(node_addon, guid, **kwargs):
         }
     }
 
-    rets = search(query, search_type=node_addon.namespace, index='metadata', types=['metadata/' + node_addon.namespace])
-    ret = {}
+    rets = search(query, search_type=node_addon.namespace, index='metadata')
 
-    for blob in reversed(sorted(rets['results'], key=lambda x: x['_source'].get(sort_on))):
+    ret = {}
+    for blob in reversed(sorted(rets['results'], key=lambda x: x.get(sort_on))):
         ret.update(blob['_source'])
 
     return ret

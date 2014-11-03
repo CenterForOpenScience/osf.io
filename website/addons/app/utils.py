@@ -72,7 +72,8 @@ def elastic_to_atom(name, data, query, url):
                     author="COS")
 
     for doc in data:
-        feed.add(title=doc.get('title', 'No title provided'),
+        feed.add(
+            title=doc.get('title', 'No title provided'),
             content=json.dumps(doc, indent=4, sort_keys=True),
             content_type='json',
             summary=doc.get('description', 'No summary'),
@@ -90,7 +91,7 @@ def elastic_to_atom(name, data, query, url):
 def format_contributors_for_atom(contributors_list):
     formatted_names = []
     for entry in contributors_list:
-        formatted_names.append( {
+        formatted_names.append({
             'name': '{} {}'.format(entry['given'], entry['family']),
             'email': entry.get('email', '')
         })

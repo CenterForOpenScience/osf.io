@@ -102,7 +102,7 @@ def get_tags(query, index):
 
 
 @requires_search
-def search(query, index='website', search_type='_all', types=None, return_raw=False):
+def search(query, index='website', search_type='_all', raw=False):
     tag_query = copy.deepcopy(query)
     count_query = copy.deepcopy(query)
 
@@ -118,7 +118,8 @@ def search(query, index='website', search_type='_all', types=None, return_raw=Fa
 
     # Run the real query and get the results
     raw_results = elastic.search(query, index=index, doc_type=search_type)
-    if return_raw:
+
+    if raw:
         return raw_results
 
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
