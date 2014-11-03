@@ -84,7 +84,7 @@ def favicon():
 
 def goodbye(**kwargs):
     # Redirect to dashboard if logged in
-    if get_current_user():
+    if _get_current_user():
         return redirect(util.web_url_for('dashboard'))
     status.push_status_message(language.LOGOUT, 'info')
     return {}
