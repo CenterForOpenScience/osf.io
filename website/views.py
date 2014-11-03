@@ -53,7 +53,7 @@ def _rescale_ratio(auth, nodes):
     return 0.0
 
 
-def _render_node(node, auth):
+def _render_node(node, auth=None):
     """
 
     :param node:
@@ -76,7 +76,7 @@ def _render_node(node, auth):
     }
 
 
-def _render_nodes(nodes, auth):
+def _render_nodes(nodes, auth=None):
     """
 
     :param nodes:
