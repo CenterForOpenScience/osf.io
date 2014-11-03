@@ -16,7 +16,7 @@
         <div class="panel panel-default">
             <ul class="nav nav-stacked nav-pills">
                 % if 'admin' in user['permissions'] and not node['is_registration']:
-                  <li><a href="#configureNode">Configure ${node['node_type'].capitalize()}</a></li>
+                    <li><a href="#configureNode">Configure ${node['node_type'].capitalize()}</a></li>
                 % endif
                 % if 'admin' in user['permissions']:
                     <li><a href="#configureCommenting">Configure Commenting</a></li>
@@ -188,10 +188,10 @@
     <script type="text/javascript" src="/static/js/metadata_1.js"></script>
     <script type="text/javascript" src="/static/js/projectSettings.js"></script>
     <script type="text/javascript">
-    $(document).ready(function() {
-        $('#deleteNode').on('click', function() {
-            ProjectSettings.getConfirmationCode('${node["node_type"]}');
+        $(document).ready(function() {
+            $('#deleteNode').on('click', function() {
+                ProjectSettings.getConfirmationCode('${node["node_type"]}');
+            });
         });
-    });
     </script>
 </%def>
