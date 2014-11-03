@@ -20,7 +20,7 @@ REGISTRATION_SUCCESS = '''Registration successful. Please check {email} to confi
 # Shown if registration is turned off in website.settings
 REGISTRATION_UNAVAILABLE = 'Registration currently unavailable.'
 
-ALREADY_REGISTERED = '''The email <em>{email}</em> has already been registered.'''
+ALREADY_REGISTERED = '''The email {email} has already been registered.'''
 
 # Shown if user tries to login with an email that is not yet confirmed
 UNCONFIRMED = ('This login email has been registered but not confirmed. Please check your email (and spam folder).'

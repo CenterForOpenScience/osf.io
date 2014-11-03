@@ -51,8 +51,11 @@ class TwoFactorUserSettings(AddonUserSettingsBase):
     #############
 
     def on_add(self):
-        push_status_message('Please <a href="#TfaVerify">activate your'
-                            ' device</a> before continuing.')
+        push_status_message(
+            message='Please <a href="#TfaVerify">activate your device</a> '
+                    'before continuing.',
+            safe=True,
+        )
         super(TwoFactorUserSettings, self).on_add()
         self.totp_secret = _generate_seed()
         self.totp_drift = 0

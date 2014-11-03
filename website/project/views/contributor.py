@@ -633,8 +633,11 @@ def claim_user_form(auth, **kwargs):
             # Authenticate user and redirect to project page
             response = redirect('/settings/')
             node = Node.load(pid)
-            status.push_status_message(language.CLAIMED_CONTRIBUTOR.format(node=node),
-                'success')
+            status.push_status_message(
+                message=language.CLAIMED_CONTRIBUTOR.format(node=node),
+                kind='success',
+                safe=True,
+            )
             return authenticate(user, response)
         else:
             forms.push_errors_to_status(form.errors)

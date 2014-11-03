@@ -200,7 +200,7 @@ def project_new_node(**kwargs):
             'Your component was created successfully. You can keep working on the component page below, '
             'or return to the <u><a href="{url}">Project Page</a></u>.'
         ).format(url=project.url)
-        status.push_status_message(message, 'info')
+        status.push_status_message(message=message, kind='info', safe=True)
 
         return {
             'status': 'success',
@@ -1038,8 +1038,9 @@ def project_generate_private_link_post(auth, **kwargs):
 
     if anonymous and has_public_node:
         status.push_status_message(
-            'Anonymized view-only links <b>DO NOT</b> '
-            'anonymize contributors of public project or component.'
+            message='Anonymized view-only links <b>DO NOT</b> anonymize '
+                    'contributors of public project or component.',
+            safe=True,
         )
 
     return new_link
