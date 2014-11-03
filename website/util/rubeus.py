@@ -111,7 +111,7 @@ def build_addon_root(node_settings, name, permissions=None,
         'permissions': permissions,
         'accept': {
             'maxSize': node_settings.config.max_file_size,
-            'acceptedFiles': node_settings.config.accept_extensions
+            'acceptedFiles': node_settings.config.accept_extensions,
         },
         'urls': urls,
         'isPointer': False,

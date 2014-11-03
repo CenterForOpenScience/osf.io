@@ -29,6 +29,8 @@ from website.addons.osfstorage import settings as osf_storage_settings
 
 logger = logging.getLogger(__name__)
 
+MEGABYTE = 1024 * 1024
+
 
 @must_be_contributor
 @must_not_be_registration
@@ -44,7 +46,7 @@ def osf_storage_request_upload_url(auth, node_addon, **kwargs):
         content_type = request.json['type']
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
-    if size > (node_addon.config.max_file_size):
+    if size > (node_addon.config.max_file_size * MEGABYTE):
         raise HTTPError(
             httplib.BAD_REQUEST,
             data={

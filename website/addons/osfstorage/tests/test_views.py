@@ -363,7 +363,8 @@ class TestUploadFile(StorageTestCase):
     def test_request_upload_url_too_large(self, mock_get_url):
         mock_get_url.return_value = 'http://brian.queen.com/'
         name = 'red-special.png'
-        size = settings.ADDONS_AVAILABLE_DICT['osfstorage'].max_file_size + 1
+        max_size = settings.ADDONS_AVAILABLE_DICT['osfstorage'].max_file_size
+        size = max_size * 1024 * 1024 + 1
         content_type = 'image/png'
         res = self.request_upload_url(
             name, size, content_type, path='instruments',

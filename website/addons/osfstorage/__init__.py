@@ -39,4 +39,4 @@ INCLUDE_JS = {
 HAS_HGRID_FILES = True
 GET_HGRID_DATA = views.osf_storage_root
 
-MAX_FILE_SIZE = 128 * 1024 * 1024
+MAX_FILE_SIZE = 128
