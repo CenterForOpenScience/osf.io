@@ -31,6 +31,7 @@ from framework.auth import User
 from framework.mongo import ObjectId
 from framework.analytics import piwik
 from framework.mongo import StoredObject
+from framework.auth.core import get_user
 from framework.mongo.utils import to_mongo
 from framework.addons import AddonModelMixin
 from framework.mongo.utils import to_mongo_key
@@ -690,6 +691,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
 
     def can_view(self, auth):
+        if not auth and not self.is_public:
+            return False
+
         return self.is_public or auth.user \
             and self.has_permission(auth.user, 'read') \
             or auth.private_key in self.private_link_keys_active
