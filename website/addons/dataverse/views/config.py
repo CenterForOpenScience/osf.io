@@ -3,27 +3,29 @@
 import httplib as http
 from flask import request
 
-from framework.auth import get_current_user
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
 
-from website.addons.dataverse.client import (
-    connect, connect_from_settings,
-    get_studies, get_study, get_dataverses, get_dataverse,
-)
-from website.addons.dataverse.settings import HOST
+from website.util import api_url_for
+from website.util import web_url_for
 from website.project import decorators
-from website.util import web_url_for, api_url_for
 from website.util.sanitize import assert_clean
+from website.addons.dataverse.settings import HOST
+from website.addons.dataverse.client import connect
+from website.addons.dataverse.client import get_study
+from website.addons.dataverse.client import get_studies
+from website.addons.dataverse.client import get_dataverse
+from website.addons.dataverse.client import get_dataverses
+from website.addons.dataverse.client import connect_from_settings
 
 
+@must_be_logged_in
 @decorators.must_be_valid_project
 @decorators.must_have_addon('dataverse', 'node')
-def dataverse_config_get(node_addon, **kwargs):
+def dataverse_config_get(node_addon, auth, **kwargs):
     """API that returns the serialized node settings."""
-    user = get_current_user()
     return {
-        'result': serialize_settings(node_addon, user),
+        'result': serialize_settings(node_addon, auth.user),
     }, http.OK
 
 
@@ -158,7 +160,7 @@ def dataverse_set_user_config(auth, **kwargs):
 def set_dataverse_and_study(node_addon, auth, **kwargs):
 
     user_settings = node_addon.user_settings
-    user = get_current_user()
+    user = auth.user
 
     if user_settings and user_settings.owner != user:
         raise HTTPError(http.FORBIDDEN)
