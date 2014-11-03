@@ -27,7 +27,7 @@ from website.project.model import has_anonymous_link, get_pointer_parent
 from website.project.forms import NewNodeForm
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
-from website.views import _render_nodes
+from website.views import _render_nodes, find_dashboard, get_dashboard
 from website.profile import utils
 from website.project import new_folder
 from website.util.sanitize import strip_html
@@ -659,6 +659,11 @@ def _view_project(node, auth, primary=False):
     user = auth.user
 
     parent = node.parent_node
+    if user:
+        dashboard = Node.load(find_dashboard(user))
+        in_dashboard = dashboard.pointing_at(node._primary_key) is not None
+    else:
+        in_dashboard = False
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     anonymous = has_anonymous_link(node, auth)
     widgets, configs, js, css = _render_addon(node)
@@ -682,6 +687,7 @@ def _view_project(node, auth, primary=False):
             'absolute_url': node.absolute_url,
             'redirect_url': redirect_url,
             'display_absolute_url': node.display_absolute_url,
+            'in_dashboard': in_dashboard,
             'citations': {
                 'apa': node.citation_apa,
                 'mla': node.citation_mla,
