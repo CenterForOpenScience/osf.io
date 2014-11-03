@@ -51,7 +51,7 @@ class TestHGridUtils(StorageTestCase):
                 self.project._id,
                 file_record.path,
             ),
-            'download': '/project/{0}/osfstorage/files/{1}/download/'.format(
+            'download': '/project/{0}/osfstorage/files/{1}/?action=download'.format(
                 self.project._id,
                 file_record.path,
             ),
@@ -222,8 +222,9 @@ class TestSerializeRevision(StorageTestCase):
     def download_version(self, version, mock_get_url):
         self.app.get(
             self.project.web_url_for(
-                'osf_storage_download_file',
+                'osf_storage_view_file',
                 path=self.path,
+                action='download',
                 version=version,
             ),
             auth=self.user.auth,
@@ -248,8 +249,9 @@ class TestSerializeRevision(StorageTestCase):
                     version=1,
                 ),
                 'download': self.project.web_url_for(
-                    'osf_storage_download_file',
+                    'osf_storage_view_file',
                     path=self.path,
+                    action='download',
                     version=1,
                 ),
             },

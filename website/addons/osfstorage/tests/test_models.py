@@ -570,7 +570,9 @@ class TestStorageObject(OsfTestCase):
         version = 3
         assert_equal(
             file_obj.get_download_path(version),
-            '/{0}/download/?version={1}&mode=render'.format(file_obj._id, version),
+            '/{0}/?action=download&version={1}&mode=render'.format(
+                file_obj._id, version,
+            ),
         )
 
     def test_get_or_create_exists(self):

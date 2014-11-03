@@ -5,6 +5,7 @@ import os
 import bson
 import datetime
 
+import furl
 from dateutil.parser import parse as parse_date
 
 from modularodm import fields, Q
@@ -352,7 +353,13 @@ class StorageFile(GuidFile):
         return os.path.join('osfstorage', 'files', self.path)
 
     def get_download_path(self, version_idx):
-        return '/{0}/download/?version={1}&mode=render'.format(self._id, version_idx)
+        url = furl.furl('/{0}/'.format(self._id))
+        url.args.update({
+            'action': 'download',
+            'version': version_idx,
+            'mode': 'render',
+        })
+        return url.url
 
     @classmethod
     def get_or_create(cls, node, path):

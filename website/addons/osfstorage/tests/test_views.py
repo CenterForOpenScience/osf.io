@@ -495,9 +495,10 @@ class TestDownloadFile(StorageTestCase):
     def download_file(self, path, version=None, **kwargs):
         return self.app.get(
             self.project.web_url_for(
-                'osf_storage_download_file',
+                'osf_storage_view_file',
                 path=path,
                 version=version,
+                action='download',
             ),
             auth=self.project.creator.auth,
             **kwargs
@@ -542,8 +543,9 @@ class TestDownloadFile(StorageTestCase):
         with AssertDeltas(deltas):
             res = self.app.get(
                 self.project.web_url_for(
-                    'osf_storage_download_file',
+                    'osf_storage_view_file',
                     path=self.path,
+                    action='download',
                     mode='render',
                 ),
                 auth=self.project.creator.auth,
@@ -727,8 +729,9 @@ class TestLegacyViews(StorageTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 301)
         expected_url = self.project.web_url_for(
-            'osf_storage_download_file',
+            'osf_storage_view_file',
             path=self.path,
+            action='download',
         )
         assert_urls_equal(res.location, expected_url)
 
@@ -740,8 +743,9 @@ class TestLegacyViews(StorageTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 301)
         expected_url = self.project.web_url_for(
-            'osf_storage_download_file',
+            'osf_storage_view_file',
             path=self.path,
+            action='download',
             version=3,
         )
         assert_urls_equal(res.location, expected_url)

@@ -1,4 +1,5 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
+# encoding: utf-8
 
 
 def build_log_urls(node, path):
@@ -8,8 +9,9 @@ def build_log_urls(node, path):
             path=path,
         ),
         'download': node.web_url_for(
-            'osf_storage_download_file',
+            'osf_storage_view_file',
             path=path,
+            action='download',
         ),
     }
 

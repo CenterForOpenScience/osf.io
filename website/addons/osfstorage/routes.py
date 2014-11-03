@@ -23,16 +23,6 @@ web_routes = {
 
         Rule(
             [
-                '/project/<pid>/osfstorage/files/<path:path>/download/',
-                '/project/<pid>/node/<nid>/osfstorage/files/<path:path>/download/',
-            ],
-            'get',
-            views.osf_storage_download_file,
-            notemplate,
-        ),
-
-        Rule(
-            [
                 '/project/<pid>/osffiles/<fid>/',
                 '/project/<pid>/node/<nid>/osffiles/<fid>/',
             ],
@@ -142,8 +132,8 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/osfstorage/files/<path:path>/render/',
-                '/project/<pid>/node/<nid>/osfstorage/files/<path:path>/render/',
+                '/project/<pid>/osfstorage/files/render/<path:path>/',
+                '/project/<pid>/node/<nid>/osfstorage/files/render/<path:path>/',
             ],
             'get',
             views.osf_storage_render_file,

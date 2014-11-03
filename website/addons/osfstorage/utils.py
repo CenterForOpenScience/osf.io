@@ -69,8 +69,9 @@ def build_hgrid_urls(item, node):
             path=item.path,
         ),
         'download': node.web_url_for(
-            'osf_storage_download_file',
+            'osf_storage_view_file',
             path=item.path,
+            action='download',
         ),
         'delete': node.api_url_for(
             'osf_storage_delete_file',
@@ -141,9 +142,10 @@ def serialize_revision(node, record, version, index):
                 version=index,
             ),
             'download': node.web_url_for(
-                'osf_storage_download_file',
+                'osf_storage_view_file',
                 path=record.path,
                 version=index,
+                action='download',
             ),
         },
     }
