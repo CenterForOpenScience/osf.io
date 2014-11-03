@@ -1,7 +1,6 @@
 import logging
 
 from website import settings
-from website.search import exceptions
 
 logger = logging.getLogger(__name__)
 
@@ -21,16 +20,7 @@ def requires_search(func):
 
 @requires_search
 def search(query, index='website', search_type=None, raw=False):
-    try:
-        return search_engine.search(query, index=index, search_type=search_type, raw=raw)
-    except exceptions.IndexNotFoundError:
-        return {
-            "results": [],
-            "counts": {
-                'total': 0
-            },
-            "typeAliases": {}
-        }
+    return search_engine.search(query, index=index, search_type=search_type, raw=raw)
 
 
 @requires_search
