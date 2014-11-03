@@ -2,17 +2,20 @@
 
 from flask import request
 
-from website.project.decorators import must_be_contributor_or_public
-from website.project.decorators import must_have_addon
+from framework.auth.decorators import must_be_logged_in
+
 from website.util import rubeus
+from website.project.decorators import must_have_addon
+from website.project.decorators import must_be_contributor_or_public
 
 from ..api import Figshare
 from ..utils import article_to_hgrid, project_to_hgrid
 
 
+@must_be_logged_in
 @must_be_contributor_or_public
 @must_have_addon('figshare', 'node')
-def figshare_hgrid_data_contents(node_addon, **kwargs):
+def figshare_hgrid_data_contents(node_addon, auth, **kwargs):
 
     node = node_addon.owner
     folders_only = bool(request.args.get('foldersOnly'))
@@ -22,12 +25,13 @@ def figshare_hgrid_data_contents(node_addon, **kwargs):
     connect = Figshare.from_settings(node_addon.user_settings)
     if fs_type in ['article', 'fileset']:
         out = article_to_hgrid(
-            node, connect.article(node_addon, fs_id)['items'][0],
+            node, auth,
+            connect.article(node_addon, fs_id)['items'][0],
             expand=True, folders_only=folders_only
         )
     elif fs_type == 'project':
         out = project_to_hgrid(
-            node, connect.project(node_addon, fs_id),
+            node, auth, connect.project(node_addon, fs_id),
             folders_only=folders_only
         )
     else:
@@ -59,9 +63,8 @@ def figshare_hgrid_data(node_settings, auth, parent=None, **kwargs):
 @must_be_contributor_or_public
 @must_have_addon('figshare', 'node')
 def figshare_dummy_folder(node_settings, auth, parent=None, **kwargs):
-    node_settings = kwargs.get('node_addon')
-    auth = kwargs.get('auth')
     data = request.args.to_dict()
+    node_settings = kwargs.get('node_addon')
 
     parent = data.pop('parent', 'null')  # noqa
     return figshare_hgrid_data(node_settings, auth, None, contents=False, **data)
