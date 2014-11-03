@@ -404,7 +404,7 @@
             var $elem = $(evt.target);
             bootbox.confirm({
                 message: '<strong>NOTE</strong>: This action is irreversible.',
-                title: 'Delete <em>' + row.name + '</em>?',
+                title: 'Delete <em class="overflow">' + row.name + '</em>?',
                 callback: function(result) {
                     if (result) {
                         onConfirmDelete(row, self);
