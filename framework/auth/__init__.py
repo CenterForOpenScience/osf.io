@@ -16,7 +16,6 @@ __all__ = [
     'Auth',
     'User',
     'get_user',
-    'get_api_key',
     'check_password',
     'authenticate',
     'login',
