@@ -1,18 +1,11 @@
 ### Included where the LogsViewModel is used ###
-
-## :param bool scripted: Whether to apply the "scripted" CSS class to the logFeed to prevent FOUC
-<%page args="scripted=True"/>
 <div id="logProgressBar" class="progress progress-striped active">
     <div class="progress-bar"  role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">
         <span class="sr-only">Loading</span>
     </div>
 </div>
 
-<div
-    %if scripted:
-        class="scripted"
-    %endif
-        id="logScope">
+<div class="scripted" id="logScope">
     <p class="help-block" data-bind="if: tzname">
         All times displayed at
         <span data-bind="text: tzname"></span>

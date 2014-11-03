@@ -28,10 +28,6 @@
         global.Fangorn = factory(jQuery, global.Treebeard);
     }
 }(this, function($, Treebeard){
-    // TODO: OSF presents different icons whe private as opposed to public, set checks for the icons
-    function _fangornPermissionsCheckIcon(item){
-
-    }
 
     // Returns custom icons for OSF 
     function _fangornResolveIcon(item){
