@@ -94,12 +94,14 @@
                     if (!self.validCredentials()){
                         if (self.userIsOwner()) {
                             self.changeMessage('Could not retrieve Dropbox settings at ' +
-                            'this time. Try deauthorizing and reauthorizing Dropbox on your <a href="' +
+                            'this time. The Dropbox addon credentials may no longer be valid.' +
+                            ' Try deauthorizing and reauthorizing Dropbox on your <a href="' +
                              self.urls().settings + '">account settings page</a>.',
                             'text-warning')
                         } else {
                             self.changeMessage('Could not retrieve Dropbox settings at ' +
-                            'this time. The account credentials may no longer be valid.',
+                            'this time. The Dropbox addon credentials may no longer be valid.' +
+                            ' Contact ' + self.ownerName() + ' to verify.',
                             'text-warning')
                         }
                     }

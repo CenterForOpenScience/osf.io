@@ -35,7 +35,8 @@
                 self.validCredentials(data.validCredentials);
                 if (!self.validCredentials()) {
                     self.changeMessage('Could not retrieve Dropbox settings at ' +
-                        'this time. Try deauthorizing and reauthorizing Dropbox.',
+                        'this time. The Dropbox addon credentials may no longer be valid.' +
+                        ' Try deauthorizing and reauthorizing Dropbox.',
                         'text-warning');
                 }
             },
