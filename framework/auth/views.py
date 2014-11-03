@@ -8,7 +8,7 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationValueError
 
-from framework import auth
+import framework.auth
 from framework import forms
 from framework import status
 from framework.auth import login
@@ -27,6 +27,9 @@ from framework.auth.forms import ResetPasswordForm
 from framework.auth.forms import ForgotPasswordForm
 from framework.auth.forms import ResendConfirmationForm
 from framework.auth.decorators import must_be_logged_in
+from framework.auth.exceptions import LoginNotAllowedError
+from framework.auth.exceptions import PasswordIncorrectError
+from framework.auth.exceptions import TwoFactorValidationError
 
 import website.settings
 from website import mails
@@ -88,7 +91,7 @@ def forgot_password():
             status.push_status_message('Email {email} not found'.format(email=email))
 
     forms.push_errors_to_status(form.errors)
-    return auth_login(forgot_password_form=form)
+    return framework.auth_login(forgot_password_form=form)
 
 
 ###############################################################################
@@ -120,13 +123,13 @@ def auth_login(auth, registration_form=None, forgot_password_form=None, **kwargs
                     twofactor_code
                 )
                 return response
-            except auth.LoginNotAllowedError:
+            except LoginNotAllowedError:
                 status.push_status_message(language.UNCONFIRMED, 'warning')
                 # Don't go anywhere
                 return {'next': ''}
-            except auth.PasswordIncorrectError:
+            except PasswordIncorrectError:
                 status.push_status_message(language.LOGIN_FAILED)
-            except auth.TwoFactorValidationError:
+            except TwoFactorValidationError:
                 status.push_status_message(language.TWO_FACTOR_FAILED)
         forms.push_errors_to_status(form.errors)
 
@@ -179,7 +182,7 @@ def confirm_email_get(**kwargs):
             # Go to settings page
             status.push_status_message(language.WELCOME_MESSAGE, 'success')
             response = redirect('/settings/')
-            return auth.authenticate(user, response=response)
+            return framework.auth.authenticate(user, response=response)
     # Return data for the error template
     return {
         'code': http.BAD_REQUEST,
@@ -219,12 +222,12 @@ def register_user(**kwargs):
         )
     # TODO: Sanitize fields
     try:
-        user = auth.register_unconfirmed(
+        user = framework.auth.register_unconfirmed(
             request.json['email1'],
             request.json['password'],
             request.json['fullName'],
         )
-        auth.signals.user_registered.send(user)
+        framework.auth.signals.user_registered.send(user)
     except (ValidationValueError, DuplicateEmailError):
         raise HTTPError(
             http.BAD_REQUEST,
@@ -254,11 +257,11 @@ def auth_register_post():
     # Process form
     if form.validate():
         try:
-            user = auth.register_unconfirmed(
+            user = framework.auth.register_unconfirmed(
                 form.username.data,
                 form.password.data,
                 form.fullname.data)
-            auth.signals.user_registered.send(user)
+            framework.auth.signals.user_registered.send(user)
         except (ValidationValueError, DuplicateEmailError):
             status.push_status_message(
                 language.ALREADY_REGISTERED.format(email=form.username.data))
