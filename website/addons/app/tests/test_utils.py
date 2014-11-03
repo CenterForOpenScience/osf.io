@@ -3,6 +3,8 @@ import mock
 import unittest
 from nose.tools import *  # noqa (PEP8 asserts)
 
+from lxml import etree
+
 from website.addons.app import utils
 
 
@@ -48,5 +50,36 @@ class TestUtils(unittest.TestCase):
         assert_in('name', ret)
         assert_in('All', ret)
         assert_in('ccreeeeeeeeed', ret)
+
+    def test_rss_returns_xml(self):
+        ret = utils.elastic_to_rss('scrapi', [], '*', 'http://website.web')
+        xml = etree.fromstring(ret)
+        assert_true(isinstance(xml, etree._Element))
+
+    def test_rss_items(self):
+        ret = utils.elastic_to_rss('scrapi', [{'id': {'serviceID': '1234', 'url': 'www.url.wow'}, 'dateUpdated': '2013-02-27'}], '*', 'site')
+        xml = etree.fromstring(ret)
+        service_id = xml.xpath('//guid/node()')[0]
+        link = xml.xpath('//item/link/node()')[0]
+        pubDate = xml.xpath('//pubDate/node()')[0]
+        assert_equal(service_id, '1234')
+        assert_equal(link, 'www.url.wow')
+        assert_equal(pubDate, 'Wed, 27 Feb 2013 00:00:00 GMT')
+
+    def test_resourcelist_is_xml(self):
+        ret = utils.elastic_to_resourcelist('scrapi', [{'id': {'url': 'www.url.wow'}, 'dateUpdated': '2013-02-27'}], '*')
+        xml = etree.fromstring(ret)
+        assert_true(isinstance(xml, etree._Element))
+
+    def test_changelist_is_xml(self):
+        ret = utils.elastic_to_changelist('scrapi', [{'id': {'url': 'www.url.wow'}, 'dateUpdated': '2013-02-27'}], '*')
+        xml = etree.fromstring(ret)
+        assert_true(isinstance(xml, etree._Element))
+
+    def test_capabilitylist_is_xml(self):
+        ret = utils.generate_capabilitylist('resourcelist.io' , 'changelist.io')
+        xml = etree.fromstring(ret)
+        assert_true(isinstance(xml, etree._Element))
+
 
 # TODO Figure out a good way to test XML....

@@ -68,6 +68,12 @@ api_routes = {
             xml_renderer
         ),
         Rule(
+            '/app/<pid>/atom/',
+            'get',
+            views.crud.query_app_atom,
+            xml_renderer
+        ),
+        Rule(
             '/app/<pid>/resync/resourcelist/',
             'get',
             views.crud.query_app_resourcelist,
