@@ -405,7 +405,7 @@ class TestAppQueryViews(OsfTestCase):
     @mock.patch('website.addons.app.views.crud.search')
     @mock.patch('website.addons.app.views.crud.args_to_query')
     def test_query_get(self, mock_query, mock_search):
-        mock_search.return_value = {}
+        mock_search.return_value = {'hits':{'total':0, 'hits':[]}}
         url = self.project.api_url_for('query_app')
         ret = self.app.get(url)
 
@@ -416,7 +416,7 @@ class TestAppQueryViews(OsfTestCase):
     @mock.patch('website.addons.app.views.crud.search')
     @mock.patch('website.addons.app.views.crud.args_to_query')
     def test_query_get_start_finish(self, mock_query, mock_search):
-        mock_search.return_value = {}
+        mock_search.return_value = {'hits':{'total':0, 'hits':[]}}
         url = self.project.api_url_for('query_app')
         ret = self.app.get(url + '?size=10&from=50')
 
@@ -427,7 +427,7 @@ class TestAppQueryViews(OsfTestCase):
     @mock.patch('website.addons.app.views.crud.search')
     @mock.patch('website.addons.app.views.crud.args_to_query')
     def test_query_get_query(self, mock_query, mock_search):
-        mock_search.return_value = {}
+        mock_search.return_value = {'hits':{'total':0, 'hits':[]}}
         url = self.project.api_url_for('query_app')
         ret = self.app.get(url + '?q=horses')
 
@@ -437,7 +437,7 @@ class TestAppQueryViews(OsfTestCase):
 
     @mock.patch('website.addons.app.views.crud.search')
     def test_query_post(self, mock_search):
-        mock_search.return_value = {}
+        mock_search.return_value = {'hits':{'total':0, 'hits':[]}}
         url = self.project.api_url_for('query_app_json')
         ret = self.app.get(url)
 
@@ -446,7 +446,7 @@ class TestAppQueryViews(OsfTestCase):
 
     @mock.patch('website.addons.app.views.crud.search')
     def test_query_post_no_json(self, mock_search):
-        mock_search.return_value = {}
+        mock_search.return_value = {'hits':{'total':0, 'hits':[]}}
         url = self.project.api_url_for('query_app_json')
         ret = self.app.post(url, expect_errors=True)
 
@@ -455,7 +455,9 @@ class TestAppQueryViews(OsfTestCase):
 
     @mock.patch('website.addons.app.views.crud.search')
     def test_query_post_empty_json(self, mock_search):
-        mock_search.return_value = {}
+
+        mock_search.return_value = {'hits':{'total':0, 'hits':[]}}
+
         url = self.project.api_url_for('query_app_json')
         ret = self.app.post_json(url, {}, expect_errors=True)
 
@@ -487,14 +489,10 @@ class TestAppQueryViews(OsfTestCase):
         mock_search.return_value = {
             'results': [
                 {
-                    '_source': {
-                        'foo': 'bar'
-                    }
+                    'foo': 'bar'
                 },
                 {
-                    '_source': {
-                        'bar': 'foo'
-                    }
+                    'bar': 'foo'
                 }
             ]
         }
@@ -524,16 +522,12 @@ class TestAppQueryViews(OsfTestCase):
         mock_search.return_value = {
             'results': [
                 {
-                    '_source': {
-                        'foo': 'bar',
-                        'sort': 1
-                    }
+                    'foo': 'bar',
+                    'sort': 1
                 },
                 {
-                    '_source': {
-                        'foo': 'baz',
-                        'sort': 0
-                    }
+                    'foo': 'baz',
+                    'sort': 0
                 }
             ]
         }
@@ -550,16 +544,12 @@ class TestAppQueryViews(OsfTestCase):
         mock_search.return_value = {
             'results': [
                 {
-                    '_source': {
-                        'foo': 'bar',
-                        'sort': 1
-                    }
+                    'foo': 'bar',
+                    'sort': 1
                 },
                 {
-                    '_source': {
-                        'foo': 'baz',
-                        'sort': 0
-                    }
+                    'foo': 'baz',
+                    'sort': 0
                 }
             ]
         }
