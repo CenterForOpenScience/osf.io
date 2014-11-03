@@ -21,6 +21,7 @@ from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 
 import website.app
+from website.util import permissions
 from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas, has_anonymous_link
 from website.project.views.contributor import (
@@ -124,13 +125,10 @@ class TestProjectViews(OsfTestCase):
     def setUp(self):
         super(TestProjectViews, self).setUp()
         ensure_schemas()
-        self.user1 = UserFactory.build()
-        # Add an API key for quicker authentication
-        api_key = ApiKeyFactory()
-        self.user1.api_keys.append(api_key)
+        self.user1 = AuthUserFactory()
         self.user1.save()
-        self.consolidate_auth1 = Auth(user=self.user1, api_key=api_key)
-        self.auth = ('test', api_key._primary_key)
+        self.consolidate_auth1 = Auth(user=self.user1)
+        self.auth = self.user1.auth
         self.user2 = UserFactory()
         # A project has 2 contributors
         self.project = ProjectFactory(
@@ -138,9 +136,7 @@ class TestProjectViews(OsfTestCase):
             description='Honey-baked',
             creator=self.user1
         )
-        self.project.add_contributor(self.user1)
-        self.project.add_contributor(self.user2)
-        self.project.api_keys.append(api_key)
+        self.project.add_contributor(self.user2, auth=Auth(self.user1))
         self.project.save()
 
     def test_edit_description(self):
@@ -698,6 +694,70 @@ class TestProjectViews(OsfTestCase):
         res = self.app.get(url, auth=user.auth)
         assert_in('fork_count', res.json['node'])
         assert_equal(1, res.json['node']['fork_count'])
+
+
+class TestChildrenViews(OsfTestCase):
+
+    def setUp(self):
+        OsfTestCase.setUp(self)
+        self.user = AuthUserFactory()
+
+    def test_get_children(self):
+        project = ProjectFactory(creator=self.user)
+        child = NodeFactory(project=project, creator=self.user)
+
+        url = project.api_url_for('get_children')
+        res = self.app.get(url, auth=self.user.auth)
+
+        nodes = res.json['nodes']
+        assert_equal(len(nodes), 1)
+        assert_equal(nodes[0]['id'], child._primary_key)
+
+    def test_get_children_includes_pointers(self):
+        project = ProjectFactory(creator=self.user)
+        pointed = ProjectFactory()
+        project.add_pointer(pointed, Auth(self.user))
+        project.save()
+
+        url = project.api_url_for('get_children')
+        res = self.app.get(url, auth=self.user.auth)
+
+        nodes = res.json['nodes']
+        assert_equal(len(nodes), 1)
+        assert_equal(nodes[0]['title'], pointed.title)
+        pointer = Pointer.find_one(Q('node', 'eq', pointed))
+        assert_equal(nodes[0]['id'], pointer._primary_key)
+
+    def test_get_children_filter_for_permissions(self):
+        # self.user has admin access to this project
+        project = ProjectFactory(creator=self.user)
+
+        # self.user only has read access to this project, which project points
+        # to
+        read_only_pointed =  ProjectFactory()
+        read_only_creator = read_only_pointed.creator
+        read_only_pointed.add_contributor(self.user, auth=Auth(read_only_creator), permissions=['read'])
+        read_only_pointed.save()
+
+        # self.user only has read access to this project, which is a subproject
+        # of project
+        read_only = ProjectFactory()
+        read_only_pointed.add_contributor(self.user, auth=Auth(read_only_creator), permissions=['read'])
+        project.nodes.append(read_only)
+
+
+        # self.user adds a pointer to read_only
+        project.add_pointer(read_only_pointed, Auth(self.user))
+        project.save()
+
+        url = project.api_url_for('get_children')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['nodes']), 2)
+
+        url = project.api_url_for('get_children', permissions='write')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['nodes']), 0)
+
 
 
 class TestUserProfile(OsfTestCase):
@@ -2609,6 +2669,16 @@ class TestComments(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.json.get('nUnread'), 0)
 
+    def test_n_unread_comments_updates_when_comment_reply(self):
+        comment = CommentFactory(node=self.project, user=self.project.creator)
+        reply = CommentFactory(node=self.project, user=self.user, target=comment)
+        self.project.reload()
+
+        url = self.project.api_url_for('list_comments')
+        res = self.app.get(url, auth=self.project.creator.auth)
+        assert_equal(res.json.get('nUnread'), 1)
+
+
     def test_n_unread_comments_updates_when_comment_is_edited(self):
         self.test_edit_comment()
         self.project.reload()
@@ -2886,7 +2956,7 @@ class TestDashboardViews(OsfTestCase):
         self.dashboard = DashboardFactory(creator=self.creator)
 
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/571
-    def test_components_with__are_accessible_from_dashboard(self):
+    def test_components_with_are_accessible_from_dashboard(self):
         project = ProjectFactory(creator=self.creator, public=False)
         component = NodeFactory(creator=self.creator, project=project)
         component.add_contributor(self.contrib, auth=Auth(self.creator))
@@ -2897,7 +2967,69 @@ class TestDashboardViews(OsfTestCase):
 
         assert_equal(len(res.json), 1)
 
-    def test_registered_components_with__are_accessible_from_dashboard(self):
+    def test_get_dashboard_nodes(self):
+        project = ProjectFactory(creator=self.creator)
+        component = NodeFactory(creator=self.creator, project=project)
+
+        url = api_url_for('get_dashboard_nodes')
+
+        res = self.app.get(url, auth=self.creator.auth)
+        assert_equal(res.status_code, 200)
+
+        nodes = res.json['nodes']
+        assert_equal(len(nodes), 1)
+
+        project_serialized = nodes[0]
+        assert_equal(project_serialized['id'], project._primary_key)
+
+    def test_get_dashboard_nodes_shows_components_if_user_is_not_contrib_on_project(self):
+        # User creates a project with a component
+        project = ProjectFactory(creator=self.creator)
+        component = NodeFactory(creator=self.creator, project=project)
+        # User adds friend as a contributor to the component but not the
+        # project
+        friend = AuthUserFactory()
+        component.add_contributor(friend, auth=Auth(self.creator))
+        component.save()
+
+        # friend requests their dashboard nodes
+        url = api_url_for('get_dashboard_nodes')
+        res = self.app.get(url, auth=friend.auth)
+        nodes = res.json['nodes']
+        # Response includes component
+        assert_equal(len(nodes), 1)
+        assert_equal(nodes[0]['id'], component._primary_key)
+
+        # friend requests dashboard nodes ,filtering against components
+        url = api_url_for('get_dashboard_nodes', no_components=True)
+        res = self.app.get(url, auth=friend.auth)
+        nodes = res.json['nodes']
+        assert_equal(len(nodes), 0)
+
+    def test_get_dashboard_nodes_admin_only(self):
+        friend = AuthUserFactory()
+        project = ProjectFactory(creator=self.creator)
+        # Friend is added as a contributor with read+write (not admin)
+        # permissions
+        perms = permissions.expand_permissions(permissions.WRITE)
+        project.add_contributor(friend, auth=Auth(self.creator), permissions=perms)
+        project.save()
+
+        url = api_url_for('get_dashboard_nodes')
+        res = self.app.get(url, auth=friend.auth)
+        assert_equal(res.json['nodes'][0]['id'], project._primary_key)
+
+        # Can filter project according to permission
+        url = api_url_for('get_dashboard_nodes', permissions='admin')
+        res = self.app.get(url, auth=friend.auth)
+        assert_equal(len(res.json['nodes']), 0)
+
+    def test_get_dashboard_nodes_invalid_permission(self):
+        url = api_url_for('get_dashboard_nodes', permissions='not-valid')
+        res = self.app.get(url, auth=self.creator.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_registered_components_with_are_accessible_from_dashboard(self):
         project = ProjectFactory(creator=self.creator, public=False)
         component = NodeFactory(creator=self.creator, project=project)
         component.add_contributor(self.contrib, auth=Auth(self.creator))

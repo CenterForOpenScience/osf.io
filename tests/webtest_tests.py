@@ -66,18 +66,6 @@ class TestAnUnregisteredUser(OsfTestCase):
         # sees error message because email is already registered
         assert_in('has already been registered.', res)
 
-    def test_cant_see_new_project_form(self):
-        """Can't see new project form if not logged in.
-        """
-        res = self.app.get(web_url_for('project_new'))
-        assert_equal(res.status_code, 302)
-        res = res.follow(expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_in(
-            'You must log in to access this resource',
-            res,
-        )
-
     def test_cant_see_profile(self):
         """Can't see profile if not logged in.
         """
@@ -139,7 +127,8 @@ class TestAUser(OsfTestCase):
         res = form.submit().maybe_follow()
         # Sees dashboard with projects and watched projects
         assert_in('Projects', res)
-        assert_in('Watched Projects', res)
+        assert_in('Watchlist', res)
+
 
     def test_sees_flash_message_on_bad_login(self):
         # Goes to log in page
