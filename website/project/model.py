@@ -38,7 +38,6 @@ from framework.addons import AddonModelMixin
 
 
 from website.exceptions import NodeStateError
-from website.util.sanitize import strip_html
 from website.util.permissions import (
     expand_permissions,
     DEFAULT_CONTRIBUTOR_PERMISSIONS,
