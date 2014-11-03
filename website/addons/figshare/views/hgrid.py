@@ -68,15 +68,3 @@ def figshare_dummy_folder(node_settings, auth, parent=None, **kwargs):
 
     parent = data.pop('parent', 'null')  # noqa
     return figshare_hgrid_data(node_settings, auth, None, contents=False, **data)
-
-
-#TODO Finish me
-def figshare_hgrid_urls(node):
-    node_settings = node.get_addon('figshare')
-    connect = Figshare.from_settings(node_settings.user_settings)
-
-    rv = project_to_hgrid(node, connect.project(node_settings, node_settings.figshare_id))
-
-    rv = [n['urls']['view'] for n in rv]
-
-    return rv
