@@ -38,6 +38,7 @@ from framework.addons import AddonModelMixin
 
 
 from website.exceptions import NodeStateError
+from website.util.sanitize import strip_html
 from website.util.permissions import (
     expand_permissions,
     DEFAULT_CONTRIBUTOR_PERMISSIONS,
@@ -501,6 +502,14 @@ def validate_category(value):
     return True
 
 
+def validate_title(value):
+    """Validator for Node#title. Makes sure that the value exists.
+    """
+    if value.strip() == u'':
+        raise ValidationValueError('Title does not exist.')
+    return True
+
+
 def validate_user(value):
     if value != {}:
         user_id = value.iterkeys().next()
@@ -579,10 +588,8 @@ class Node(GuidStoredObject, AddonModelMixin):
     is_fork = fields.BooleanField(default=False)
     forked_date = fields.DateTimeField()
 
-    title = fields.StringField()
+    title = fields.StringField(validate=validate_title)
     description = fields.StringField()
-    # TODO: Add validator for this field (must be one of the keys in
-    # CATEGORY_MAP
     category = fields.StringField(validate=validate_category)
 
     # One of 'public', 'private'
