@@ -19,9 +19,8 @@ from framework.auth.forms import (RegistrationForm, SignInForm,
                                   ForgotPasswordForm, ResetPasswordForm)
 from framework.guid.model import GuidStoredObject
 from website.models import Guid, Node
-from website.util import web_url_for, rubeus
+from website.util import web_url_for, rubeus, permissions
 from website.project import model, new_dashboard
-from website import settings
 
 from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
 
@@ -37,6 +36,7 @@ def _rescale_ratio(nodes):
     """
     if not nodes:
         return 0
+    # TODO: Don't use get_current_user. It is deprecated.
     user = get_current_user()
     counts = [
         len(node.logs)
@@ -48,13 +48,17 @@ def _rescale_ratio(nodes):
     return 0.0
 
 
-def _render_node(node):
+def _render_node(node, user=None):
     """
 
     :param node:
     :return:
 
     """
+    perm = None
+    if user:
+        perm_list = node.get_permissions(user)
+        perm = permissions.reduce_permissions(perm_list)
     return {
         'title': node.title,
         'id': node._primary_key,
@@ -62,10 +66,12 @@ def _render_node(node):
         'api_url': node.api_url,
         'primary': node.primary,
         'date_modified': utils.iso8601format(node.date_modified),
+        'category': node.category,
+        'permissions': perm,  # A string, e.g. 'admin', or None
     }
 
 
-def _render_nodes(nodes):
+def _render_nodes(nodes, user=None):
     """
 
     :param nodes:
@@ -73,32 +79,12 @@ def _render_nodes(nodes):
     """
     ret = {
         'nodes': [
-            _render_node(node)
+            _render_node(node, user=user)
             for node in nodes
         ],
         'rescale_ratio': _rescale_ratio(nodes),
     }
     return ret
-
-
-def _get_user_activity(node, user, rescale_ratio):
-
-    # Counters
-    total_count = len(node.logs)
-
-    # Note: It's typically much faster to find logs of a given node
-    # attached to a given user using node.logs.find(...) than by
-    # loading the logs into Python and checking each one. However,
-    # using deep caching might be even faster down the road.
-
-    ua_count = node.logs.find(Q('user', 'eq', user)).count()
-    non_ua_count = total_count - ua_count  # base length of blue bar
-
-    # Normalize over all nodes
-    ua = ua_count / rescale_ratio * settings.USER_ACTIVITY_MAX_WIDTH
-    non_ua = non_ua_count / rescale_ratio * settings.USER_ACTIVITY_MAX_WIDTH
-
-    return ua_count, ua, non_ua
 
 
 @collect_auth
@@ -226,6 +212,8 @@ def get_dashboard_nodes(auth, **kwargs):
         NOTE: By default, components will only be shown if the current user
         is contributor on a comonent but not its parent project. This query
         parameter forces ALL components to be excluded from the request.
+    :param-query permissions: Filter upon projects for which the current user
+        has the specified permissions. Examples: 'write', 'admin'
     """
     user = auth.user
 
@@ -252,7 +240,19 @@ def get_dashboard_nodes(auth, **kwargs):
         )
     else:
         comps = []
-    return _render_nodes(list(nodes) + list(comps))
+
+    nodes = list(nodes) + list(comps)
+    if request.args.get('permissions'):
+        perm = request.args['permissions'].strip().lower()
+        if perm not in permissions.PERMISSIONS:
+            raise HTTPError(http.BAD_REQUEST, dict(
+                message_short='Invalid query parameter',
+                message_oong='{0} is not in {1}'.format(perm, permissions.PERMISSIONS)
+            ))
+        response_nodes = [node for node in nodes if node.has_permission(user, permission=perm)]
+    else:
+        response_nodes = nodes
+    return _render_nodes(response_nodes, user=user)
 
 
 @must_be_logged_in

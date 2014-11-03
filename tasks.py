@@ -528,6 +528,7 @@ def hotfix(name, finish=False, push=False):
         run('git flow hotfix finish {}'.format(next_patch_version), echo=True, pty=True)
     if push:
         run('git push origin master', echo=True)
+        run('git push --tags', echo=True)
         run('git push origin develop', echo=True)
 
 
