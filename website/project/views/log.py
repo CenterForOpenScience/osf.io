@@ -4,7 +4,6 @@ import logging
 
 from flask import request
 
-from framework.auth import Auth
 from framework.exceptions import HTTPError
 from framework.auth.decorators import collect_auth
 from framework.transactions.handlers import no_auto_transaction

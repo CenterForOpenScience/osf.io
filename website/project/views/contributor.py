@@ -539,7 +539,7 @@ def replace_unclaimed_user_with_registered(user):
 
 
 @collect_auth
-def claim_user_form(**kwargs):
+def claim_user_form(auth, **kwargs):
     """View for rendering the set password page for a claimed user.
 
     Must have ``token`` as a querystring argument.
@@ -550,7 +550,7 @@ def claim_user_form(**kwargs):
     token = request.form.get('token') or request.args.get('token')
 
     # If user is logged in, redirect to 're-enter password' page
-    if kwargs.get('auth'):
+    if auth.logged_in:
         return redirect(web_url_for('claim_user_registered',
             uid=uid, pid=pid, token=token))
 
