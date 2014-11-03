@@ -45,6 +45,15 @@
             return target;
         };
 
+        /**
+         * Dropzone has no business adding files from directories.
+         *
+         * NOTE: This is a hack to keep directories from uploading
+         */
+        Dropzone.prototype._addFilesFromDirectory = function(directory, path) {
+            directory.status = Dropzone.ERROR;
+            return this.emit("error", directory, "Cannot upload directories, applications, or packages.");
+        };
 
         /**
          * Get the url to use for the upload request.
@@ -66,7 +75,7 @@
                         size: file.size,
                     }),
                     contentType: 'application/json',
-                    dataType: 'json',
+                    dataType: 'json'
                 }).success(function(url) {
                     return self.options.url = url;
                 });
@@ -87,7 +96,11 @@
             // Defer sending the xhr until the URL has been resolved.
             // NOTE: This will only work with multipleUploads turned off
             $.when(_this.getUrl(files[0])).done(function(uploadUrl) {
-                    xhr.open(_this.options.method, _this.options.url, true);
+                    xhr.open(
+                        files[0].method || _this.options.method,
+                        files[0].url || _this.options.url,
+                        true
+                    );
                     xhr.withCredentials = !! _this.options.withCredentials;
                     response = null;
                     handleError = function() {
