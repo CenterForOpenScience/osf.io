@@ -6,6 +6,7 @@ import re
 import copy
 import math
 import logging
+import unicodedata
 
 from requests.exceptions import ConnectionError
 
@@ -212,6 +213,7 @@ def update_node(node, index='website'):
                 and x.is_active()
             ],
             'title': node.title,
+            'normalized_title': unicodedata.normalize('NFKD', node.title).encode('ascii', 'ignore'),
             'category': category,
             'public': node.is_public,
             'tags': [tag._id for tag in node.tags if tag],
@@ -268,6 +270,7 @@ def update_user(user):
     user_doc = {
         'id': user._id,
         'user': user.fullname,
+        'normalized_user': unicodedata.normalize('NFKD', user.fullname).encode('ascii', 'ignore'),
         'job': user.jobs[0]['institution'] if user.jobs else '',
         'job_title': user.jobs[0]['title'] if user.jobs else '',
         'school': user.schools[0]['institution'] if user.schools else '',
@@ -300,7 +303,7 @@ def create_index():
             'tags': {
                 'type': 'string',
                 'index': 'not_analyzed',
-            }
+            },
         }
     }
     try:
@@ -336,10 +339,11 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
 
     """
     start = (page * size)
-    items = re.split(r'\s+', query)
+    items = re.split(r'[\s-]+', query)
     query = ''
 
-    query = " AND user:".join('{}~'.format(item) for item in items) + " NOT user:".join(exclude)
+    query = "  AND ".join('{}~'.format(item) for item in items) + \
+            "".join(' NOT "{}"'.format(excluded) for excluded in exclude)
 
     results = search(build_query(query, start=start, size=size), index='website', search_type='user')
     docs = results['results']
