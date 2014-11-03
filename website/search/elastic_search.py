@@ -8,9 +8,11 @@ import math
 import logging
 import unicodedata
 
-from requests.exceptions import ConnectionError
+import six
 
 import pyelasticsearch
+
+from requests.exceptions import ConnectionError
 
 from framework import sentry
 
@@ -200,6 +202,12 @@ def update_node(node, index='website'):
     if node.is_deleted or not node.is_public:
         delete_doc(elastic_document_id, node)
     else:
+        try:
+            normalized_title = six.u(node.title)
+        except TypeError:
+            normalized_title = node.title
+        normalized_title = unicodedata.normalize('NFKD', normalized_title).encode('ascii', 'ignore')
+
         elastic_document = {
             'id': elastic_document_id,
             'contributors': [
@@ -213,7 +221,7 @@ def update_node(node, index='website'):
                 and x.is_active()
             ],
             'title': node.title,
-            'normalized_title': unicodedata.normalize('NFKD', node.title).encode('ascii', 'ignore'),
+            'normalized_title': normalized_title,
             'category': category,
             'public': node.is_public,
             'tags': [tag._id for tag in node.tags if tag],
@@ -267,10 +275,16 @@ def update_user(user):
             pass  # Can't delete what's not there
         return
 
+    try:
+        normalized_name = six.u(user.fullname)
+    except TypeError:
+        normalized_name = user.fullname
+    normalized_name = unicodedata.normalize('NFKD', normalized_name).encode('ascii', 'ignore')
+
     user_doc = {
         'id': user._id,
         'user': user.fullname,
-        'normalized_user': unicodedata.normalize('NFKD', user.fullname).encode('ascii', 'ignore'),
+        'normalized_user': normalized_name,
         'job': user.jobs[0]['institution'] if user.jobs else '',
         'job_title': user.jobs[0]['title'] if user.jobs else '',
         'school': user.schools[0]['institution'] if user.schools else '',
@@ -342,7 +356,7 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
     items = re.split(r'[\s-]+', query)
     query = ''
 
-    query = "  AND ".join('{}~'.format(item) for item in items) + \
+    query = "  AND ".join('{}*~'.format(item) for item in items) + \
             "".join(' NOT "{}"'.format(excluded) for excluded in exclude)
 
     results = search(build_query(query, start=start, size=size), index='website', search_type='user')
