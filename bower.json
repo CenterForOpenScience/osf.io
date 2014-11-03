@@ -15,9 +15,13 @@
     "jquery-mockjax": "1.5.3",
     "raven-js": "~1.1.16",
     "sinon-qunit": "~1.0.0",
-    "treebeard": "~0.3.0",
+    "treebeard": "~0.3.2",
     "typeahead.js": "~0.10.5",
     "knockout": "~3.2.0",
     "handlebars": "~2.0.0"
+  },
+  "resolutions": {
+    "jquery-ui": "~1.11.0",
+    "bootstrap": "~3.2.0"
   }
 }

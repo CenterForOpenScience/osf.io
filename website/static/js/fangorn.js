@@ -2,7 +2,7 @@
  * Created by faye on 10/15/14.
  */
 /**
- * An OSF-flavored wrapper around Treebeard.
+ *  Defining Treebeard options for OSF.
  *
  * Module to render the consolidated files view. Reads addon configurations and
  * initializes a Treebeard.
@@ -15,7 +15,7 @@
     //IDs can be mapped to different paths. This allows swapping out implementation.
     // This is great for creating mocks for unit testing.
     //Encapsulates the module definition. Gives you the tools to avoid polluting the global namespace.
-    //Clear path to defining the module value. Either use "return value;" or the CommonJS "exports" idiom,
+    //Clear path to defining the module value. Either use 'return value;' or the CommonJS 'exports' idiom,
     //  which can be useful for circular dependencies.
     if (typeof define === 'function' && define.amd) {
         //asynconously calls these js files before calling the function (factory)
@@ -33,32 +33,165 @@
 
     }
 
-    // TODO: OSF does icons differently. write custom resolve icons. 
+    // Returns custom icons for OSF 
     function _fangornResolveIcon(item){
-        // this = treebeard object;
-        // Item = item acted on
-        if (item.kind === "folder") {
+        if (item.kind === 'folder') {
             if (item.open) { 
-                return m("i.icon-folder-open-alt", " ");
+                return m('i.icon-folder-open-alt', ' ');
             }
-            return m("i.icon-folder-close-alt", " ");
+            return m('i.icon-folder-close-alt', ' ');
         }
         if (item.data.icon) {
-            return m("i.fa." + item.data.icon, " ");
+            return m('i.fa.' + item.data.icon, ' ');
         }
-        return m("i.icon-file-alt");
+
+        var ext = item.data.name.split('.').pop().toLowerCase(),
+            extensions = ['3gp', '7z', 'ace', 'ai', 'aif', 'aiff', 'amr', 'asf', 'asx', 'bat', 'bin', 'bmp', 'bup',
+        'cab', 'cbr', 'cda', 'cdl', 'cdr', 'chm', 'dat', 'divx', 'dll', 'dmg', 'doc', 'docx', 'dss', 'dvf', 'dwg',
+        'eml', 'eps', 'exe', 'fla', 'flv', 'gif', 'gz', 'hqx', 'htm', 'html', 'ifo', 'indd', 'iso', 'jar',
+        'jpeg', 'jpg', 'lnk', 'log', 'm4a', 'm4b', 'm4p', 'm4v', 'mcd', 'mdb', 'mid', 'mov', 'mp2', 'mp3', 'mp4',
+        'mpeg', 'mpg', 'msi', 'mswmm', 'ogg', 'pdf', 'png', 'pps', 'ps', 'psd', 'pst', 'ptb', 'pub', 'qbb',
+        'qbw', 'qxd', 'ram', 'rar', 'rm', 'rmvb', 'rtf', 'sea', 'ses', 'sit', 'sitx', 'ss', 'swf', 'tgz', 'thm',
+        'tif', 'tmp', 'torrent', 'ttf', 'txt', 'vcd', 'vob', 'wav', 'wma', 'wmv', 'wps', 'xls', 'xpi', 'zip',
+        'xlsx', 'py'];
+
+        if(extensions.indexOf(ext) !== -1){
+            return m('img', { src : '/static/img/hgrid/fatcowicons/file_extension_'+ext+'.png'});
+        }
+        return m('i.icon-file-alt');
+    }
+ 
+    // Returns custom toggle icons for OSF
+    function _fangornResolveToggle(item){
+        var toggleMinus = m('i.icon-minus', ' '),
+            togglePlus = m('i.icon-plus', ' ');
+        if (item.kind === 'folder') {
+            if (item.open) {
+                return toggleMinus;
+            }
+            return togglePlus;
+        }
+        return '';
     }
 
-    // TODO Action buttons; 
-    function _fangornActionColumn (){
-        var buttons = [ 
-                { title: "Download", "css" : 'btn btn-danger'},
-                { title : "View"}
-                ];
-       return buttons.map(function(btn){ 
-                    // return [ m('i', btn.title )]
+    function _fangornResolveUploadUrl (item) {  
+        return item.data.urls.upload;
+    }  
+
+    function _fangornMouseOverRow (item, event) {
+        $('.fg-hover-hide').hide(); 
+        $(event.target).closest('.tb-row').find('.fg-hover-hide').show();
+    }
+
+    function _fangornUploadProgress (){
+        console.log("File Progress", this, arguments);
+        var itemID = arguments[0].dropzoneItemCache.id; 
+        $('.tb-row[data-id="'+itemID+'"]').find('.action-col').text("Uploaded " + arguments[1] + "%");
+    }
+
+    function _uploadEvent (event, item, col){
+        event.stopPropagation();
+        this.dropzone.hiddenFileInput.click();
+        this.dropzoneItemCache = item; 
+        console.log('Upload Event triggered', this, event,  item, col);
+    }
+
+    function _downloadEvent (event, item, col) {
+        event.stopPropagation();
+        console.log('Download Event triggered', this, event, item, col);
+        window.location = item.data.urls.download;
+    }
+
+    function _removeEvent (event, item, col) {
+        event.stopPropagation();
+        console.log('Remove Event triggered', this, event, item, col);
+        var tb = this; 
+        if(item.data.permissions.edit){
+            // delete from server, if successful delete from view
+            $.ajax({ 
+              url: item.data.urls.delete,
+              type : 'DELETE'
+            })
+            .done(function(data) {
+                // delete view
+                tb.deleteNode(item.parentID, item.id);                 
+                console.log('Delete success: ', data); 
+            })
+            .fail(function(data){
+                console.log('Delete failed: ', data); 
+            }); 
+        }
+    }
+
+    // Action buttons; 
+    function _fangornActionColumn (item, col){
+        var self = this; 
+        var buttons = [];
+
+        // Upload button if this is a folder
+        if (item.kind === 'folder') {
+            buttons.push({ 
+                'name' : '',
+                'icon' : 'icon-upload-alt',
+                'css' : 'fangorn-clickable btn btn-default btn-xs',
+                'onclick' : _uploadEvent
+            });
+        }
+
+        //Download button if this is an item
+        if (item.kind === 'item') {
+            buttons.push({ 
+                'name' : '',
+                'icon' : 'icon-download-alt',
+                'css' : 'btn btn-info btn-xs',
+                'onclick' : _downloadEvent
+            },
+            { 
+                'name' : '',
+                'icon' : 'icon-remove',
+                'css' : 'm-l-lg text-danger fg-hover-hide',
+                'style' : 'display:none',
+                'onclick' : _removeEvent
+            }
+            );
+        }
+
+        // Build the template for icons
+        return buttons.map(function(btn){ 
+            return m('span', { 'data-col' : item.id }, [ m('i', 
+                { 'class' : btn.css, style : btn.style, 'onclick' : function(){ btn.onclick.call(self, event, item, col); } },
+                [ m('span', { 'class' : btn.icon}, btn.name) ])
+            ]);
         }); 
     } 
+
+    var _fangornColumns = [            // Defines columns based on data
+        {
+            title: 'Name',
+            width : '60%',
+            data : 'name',  // Data field name
+            sort : true,
+            sortType : 'text',
+            filter : true,
+            folderIcons : true
+        },
+        {
+            title : 'Actions',
+            width : '20%',
+            sort : false,
+            filter : false,
+            css : 'action-col',
+            custom : _fangornActionColumn
+        },
+        {
+            title : 'Downloads',
+            width : '20%',
+            data  : 'downloads',
+            sort : false,
+            filter : false,
+            css : ''
+        }
+    ]; 
 
     // OSF-specific Treebeard options common to all addons
     tbOptions = {
@@ -67,130 +200,54 @@
             paginate : false,       // Whether the applet starts with pagination or not.
             paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.
             uploads : true,         // Turns dropzone on/off.
-            columns : [            // Defines columns based on data
-                {
-                    title: "Name",
-                    width : "100%",
-                    data : "name",  // Data field name
-                    sort : true,
-                    sortType : "text",
-                    folderIcons : true
-                }
-            ],
+            columns : _fangornColumns,
             showFilter : true,     // Gives the option to filter by showing the filter box.
             title : false,          // Title of the grid, boolean, string OR function that returns a string.
             allowMove : false,       // Turn moving on or off.
-            onfilter : function (filterText) {   // Fires on keyup when filter text is changed.
-                // this = treebeard object;
-                // filterText = the value of the filtertext input box.
-                window.console.log("on filter: this", this, 'filterText', filterText);
-            },
-            onfilterreset : function (filterText) {   // Fires when filter text is cleared.
-                // this = treebeard object;
-                // filterText = the value of the filtertext input box.
-                window.console.log("on filter reset: this", this, 'filterText', filterText);
-            },
             createcheck : function (item, parent) {
-                // this = treebeard object;
-                // item = Item to be added.  raw item, not _item object
-                // parent = parent to be added to = _item object
-                window.console.log("createcheck", this, item, parent);
+                window.console.log('createcheck', this, item, parent);
                 return true;
-            },
-            oncreate : function (item, parent) {  // When row is deleted successfully
-                // this = treebeard object;
-                // item = Item to be added.  = _item object
-                // parent = parent to be added to = _item object
-                window.console.log("oncreate", this, item, parent);
             },
             deletecheck : function (item) {  // When user attempts to delete a row, allows for checking permissions etc.
-                // this = treebeard object;
-                // item = Item to be deleted.
-                window.console.log("deletecheck", this, item);
+                window.console.log('deletecheck', this, item);
                 return true;
-            },
-            ondelete : function () {  // When row is deleted successfully
-                // this = treebeard object;
-                // item = a shallow copy of the item deleted, not a reference to the actual item
-                window.console.log("ondelete", this);
             },
             movecheck : function (to, from) { //This method gives the users an option to do checks and define their return
-                // this = treebeard object;
-                // from = item that is being moved
-                // to = the target location
-                window.console.log("movecheck: to", to, "from", from);
+                window.console.log('movecheck: to', to, 'from', from);
                 return true;
             },
-            onmove : function (to, from) {  // After move happens
-                // this = treebeard object;
-                // to = actual tree object we are moving to
-                // from = actual tree object we are moving
-                window.console.log("onmove: to", to, "from", from);
-            },
             movefail : function (to, from) { //This method gives the users an option to do checks and define their return
-                // this = treebeard object;
-                // from = item that is being moved
-                // to = the target location
-                window.console.log("moovefail: to", to, "from", from);
+                window.console.log('moovefail: to', to, 'from', from);
                 return true;
             },
             addcheck : function (treebeard, item, file) {
-                // this = dropzone object
-                // treebeard = treebeard object
-                // item = item to be added to
-                // file = info about the file being added
-                window.console.log("Add check", this, treebeard, item, file);
-                return true;
-            },
-            onadd : function (treebeard, item, file, response) {
-                // this = dropzone object;
-                // item = item the file was added to
-                // file = file that was added
-                // response = what's returned from the server
-                window.console.log("On add", this, treebeard, item, file, response);
-            },
-            onselectrow : function (row, event) {
-                // this = treebeard object
-                // row = item selected
-                // event = mouse click event object
-                window.console.log("onselectrow", this, row, event);
-            },
-            ontogglefolder : function (item, event) {
-                // this = treebeard object
-                // item = toggled folder item
-                // event = mouse click event object
-                window.console.log("ontogglefolder", this, item, event);
-            },
-            dropzone : {                                           // All dropzone options.
-                url: "/api/v1/project/",  // When users provide single URL for all uploads
-                dragstart : function (treebeard, event) {     // An example dropzone event to override.
-                    // this = dropzone object
-                    // treebeard = treebeard object
-                    // event = event passed in
-                    window.console.log("dragstart", this, treebeard, event);
+                window.console.log('Add check', this, treebeard, item, file);
+                if (item.data.permissions.edit){
+                    return true;
                 }
+                return false;
+            },
+            onselectrow : function (item) {
+                console.log('Row: ', item);
+            },
+            onmouseoverrow : _fangornMouseOverRow,
+            dropzone : {                                           // All dropzone options.
+                url: '/api/v1/project/',  // When users provide single URL for all uploads
+                //previewTemplate : '<div class='dz-preview dz-file-preview'>     <div class='dz-details'>        <div class='dz-size' data-dz-size></div>    </div>      <div class='dz-progress'>       <span class='dz-upload' data-dz-uploadprogress></span>  </div>      <div class='dz-error-message'>      <span data-dz-errormessage></span>  </div></div>',
+                clickable : '#treeGrid',
+                addRemoveLinks: false,
+                previewTemplate: '<div></div>',
+                uploadprogress : _fangornUploadProgress
             },
             resolveIcon : _fangornResolveIcon,
-            resolveUploadUrl : function (item) {  // Allows the user to calculate the url of each individual row
-                // this = treebeard object;
-                // Item = item acted on return item.data.ursl.upload
-                window.console.log("resolveUploadUrl", this, item);
-                return item.data.urls.upload;
-            },
+            resolveToggle : _fangornResolveToggle,
+            resolveUploadUrl : _fangornResolveUploadUrl,
             resolveLazyloadUrl : false
-            // function (item) {
-            //     // this = treebeard object;
-            //     // Item = item acted on
-            //     window.console.log("resolveLazyloadUrl", this, item);
-            //     return "small.json";
-            // }
-
-
     };
 
     function Fangorn(options) {
         this.options = $.extend({}, tbOptions, options);
-        console.log("Final options", this.options);
+        console.log('Final options', this.options);
         this.grid = null; // Set by _initGrid
         this.init();
     }
@@ -217,7 +274,6 @@
         // Create the Treebeard once all addons have been configured
         _initGrid: function() {
             this.grid = Treebeard.run(this.options);
-            //console.log(this.options);
             return this;
         }
     };
