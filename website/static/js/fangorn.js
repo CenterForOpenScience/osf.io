@@ -241,6 +241,7 @@
             showFilter : true,     // Gives the option to filter by showing the filter box.
             title : false,          // Title of the grid, boolean, string OR function that returns a string.
             allowMove : false,       // Turn moving on or off.
+            hoverClass : "fangorn-hover",
             createcheck : function (item, parent) {
                 window.console.log('createcheck', this, item, parent);
                 return true;
