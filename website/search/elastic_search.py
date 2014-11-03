@@ -106,6 +106,12 @@ def search(query, index='website', search_type='_all', raw=False):
     tag_query = copy.deepcopy(query)
     count_query = copy.deepcopy(query)
 
+    # Run the real query and get the results
+    raw_results = elastic.search(query, index=index, doc_type=search_type)
+
+    if raw:
+        return raw_results
+
     for key in ['from', 'size', 'sort']:
         try:
             del tag_query[key]
@@ -116,13 +122,8 @@ def search(query, index='website', search_type='_all', raw=False):
     tags = get_tags(tag_query, index)
     counts = get_counts(count_query, index)
 
-    # Run the real query and get the results
-    raw_results = elastic.search(query, index=index, doc_type=search_type)
-
-    if raw:
-        return raw_results
-
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
+
     return_value = {
         'results': format_results(results),
         'counts': counts,
