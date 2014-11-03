@@ -26,6 +26,7 @@ from framework.auth.decorators import collect_auth
 from framework.auth.forms import ResetPasswordForm
 from framework.auth.forms import ForgotPasswordForm
 from framework.auth.forms import ResendConfirmationForm
+from framework.auth.decorators import must_be_logged_in
 
 import website.settings
 from website import mails
@@ -96,12 +97,12 @@ def forgot_password():
 
 # TODO: Rewrite async
 @collect_auth
-def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
+def auth_login(auth, registration_form=None, forgot_password_form=None, **kwargs):
     """If GET request, show login page. If POST, attempt to log user in if
     login form passsed; else send forgot password email.
 
     """
-    if kwargs.get('auth'):
+    if auth.logged_in:
         if not request.args.get('logout'):
             return redirect('/dashboard/')
         logout()
@@ -307,13 +308,14 @@ def merge_user_get(**kwargs):
 
 
 # TODO: shrink me
-def merge_user_post(**kwargs):
+@must_be_logged_in
+def merge_user_post(auth, **kwargs):
     '''View for merging an account. Takes either JSON or form data.
 
     Request data should include a "merged_username" and "merged_password" properties
     for the account to be merged in.
     '''
-    master = get_current_user()
+    master = auth.user
     if request.json:
         merged_username = request.json.get("merged_username")
         merged_password = request.json.get("merged_password")
