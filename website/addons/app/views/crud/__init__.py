@@ -12,9 +12,11 @@ from framework.guid.model import Guid
 from framework.exceptions import HTTPError
 
 from website.search.search import search
-from website.project import new_node, Node
-from website.search.exceptions import MalformedQueryError
+from website.project import Node
+from website.project import new_node
 from website.project.decorators import must_have_addon
+from website.search.exceptions import IndexNotFoundError
+from website.search.exceptions import MalformedQueryError
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_be_contributor_or_public
 
@@ -42,16 +44,22 @@ def query_app(node_addon, **kwargs):
 
     try:
         ret = search(query, index='metadata', search_type=node_addon.namespace, raw=True)
-
-        if return_raw:
-            return ret
-
-        return {
-            'count': ret['hits']['total'],
-            'results': [hit['_source'] for hit in ret['hits']['hits']]
-        }
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
+    except IndexNotFoundError:
+        # TODO Deal with correct empty raw output
+        return {
+            'count': 0,
+            'results': []
+        }
+
+    if return_raw:
+        return ret
+
+    return {
+        'count': ret['hits']['total'],
+        'results': [hit['_source'] for hit in ret['hits']['hits']]
+    }
 
 # POST
 @must_be_contributor_or_public
@@ -71,16 +79,22 @@ def query_app_json(node_addon, **kwargs):
 
     try:
         ret = search(query, index='metadata', search_type=node_addon.namespace, raw=True)
-
-        if return_raw:
-            return ret
-
-        return {
-            'count': ret['hits']['total'],
-            'results': [hit['_source'] for hit in ret['hits']['hits']]
-        }
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
+    except IndexNotFoundError:
+        # TODO Deal with correct empty raw output
+        return {
+            'count': 0,
+            'results': []
+        }
+
+    if return_raw:
+        return ret
+
+    return {
+        'count': ret['hits']['total'],
+        'results': [hit['_source'] for hit in ret['hits']['hits']]
+    }
 
 
 # GET
@@ -96,6 +110,11 @@ def query_app_rss(node_addon, **kwargs):
         ret = search(query, search_type=node_addon.namespace, index='metadata')
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
+    except IndexNotFoundError:
+        ret = {
+            'count': 0,
+            'results': []
+        }
 
     node = node_addon.owner
     name = node_addon.system_user.username
@@ -116,6 +135,11 @@ def query_app_atom(node_addon, **kwargs):
         ret = search(query, search_type=node_addon.namespace, index='metadata')
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
+    except IndexNotFoundError:
+        ret = {
+            'count': 0,
+            'results': []
+        }
 
     node = node_addon.owner
     name = node_addon.system_user.username
@@ -140,6 +164,11 @@ def query_app_resourcelist(node_addon, **kwargs):
         ret = search(query, search_type=node_addon.namespace, index='metadata')
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
+    except IndexNotFoundError:
+        ret = {
+            'count': 0,
+            'results': []
+        }
 
     return elastic_to_resourcelist(name, ret['results'], q)
 
@@ -160,6 +189,11 @@ def query_app_changelist(node_addon, **kwargs):
         ret = search(query, search_type=node_addon.namespace, index='metadata')
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
+    except IndexNotFoundError:
+        ret = {
+            'count': 0,
+            'results': []
+        }
 
     return elastic_to_changelist(name, ret['results'], q)
 
@@ -247,11 +281,14 @@ def get_project_metadata(node_addon, guid, **kwargs):
         }
     }
 
-    rets = search(query, search_type=node_addon.namespace, index='metadata')
+    try:
+        rets = search(query, search_type=node_addon.namespace, index='metadata')
+    except IndexNotFoundError:
+        return {}
 
     ret = {}
     for blob in reversed(sorted(rets['results'], key=lambda x: x.get(sort_on))):
-        ret.update(blob['_source'])
+        ret.update(blob)
 
     return ret
 
