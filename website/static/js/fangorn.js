@@ -56,6 +56,31 @@
         }
         return m('i.icon-file-alt');
     }
+    // Addon config registry
+    Fangorn.cfg = {};
+
+    function getCfg(item, key) {
+        if (item && item.data.addon && Fangorn.cfg[item.data.addon]) {
+            return Fangorn.cfg[item.data.addon][key];
+        }
+        return undefined;
+    }
+
+    // Gets a Fangorn config option if it is defined by an addon dev.
+    // Calls it with `args` if it's a function otherwise returns the value.
+    // If the config option is not defined, return null
+    function resolveCfgOption(item, option, args) {
+        var self = this;
+        var prop = getCfg(item, option);
+        if (prop) {
+            //FINDOUT WHAT THIS MEANS EXACTLY...
+            return typeof prop === 'function' ? prop.apply(self, args) : prop;
+        } else {
+            return null;
+        }
+    }
+
+
 
 
     // Returns custom toggle icons for OSF
@@ -71,8 +96,9 @@
         return '';
     }
 
-    function _fangornResolveUploadUrl (item) {  
-        return item.data.urls.upload;
+    function _fangornResolveUploadUrl (item) {
+        var cfgOption = resolveCfgOption.call(this, item, 'uploadUrl', [item]);
+        return cfgOption || item.data.urls.upload;
     }  
 
     function _fangornMouseOverRow (item, event) {

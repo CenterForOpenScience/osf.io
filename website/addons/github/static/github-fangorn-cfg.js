@@ -18,9 +18,9 @@
         if (item.kind === 'folder') {
             buttons.push({
                 'name' : '',
-                'icon' : 'icon-download-alt',
+                'icon' : 'item.data.urls.',
                 'css' : 'fangorn-clickable btn btn-default btn-xs',
-                'onclick' : _downloadEvent
+                'onclick' : function(){window.location = item.data.urls.zip;}
             });
         }
 
@@ -30,17 +30,17 @@
                 'name' : '',
                 'icon' : 'icon-download-alt',
                 'css' : 'btn btn-info btn-xs',
-                'onclick' : _downloadEvent//GO TO EXTERNAL PAGE
+                'onclick' : function(){window.location = item.data.urls.repo;}//GO TO EXTERNAL PAGE
             }
             );
         }
     }
 
-     var _fangornColumns = [            // Defines columns based on data
+     var _fangornColumns = [
         {
             title: 'Name',
             width : '60%',
-            data : 'name',  // Data field name
+            data : 'name',
             sort : true,
             sortType : 'text',
             filter : true,
@@ -67,8 +67,8 @@
     // Register configuration
     Fangorn.cfg.github = {
         // Handle changing the branch select
-        column:_fangornColumns,
-        listeners: [{
+        column:_fangornColumns
+        /*listeners: [{
             on: 'change',
             selector: '.github-branch-select',
             callback: function(evt, row, grid) {
@@ -76,6 +76,6 @@
                 //var branch = $this.val();
                 Treebeard.redraw();
             }
-        }]
+        }]*/
     };
 }));
