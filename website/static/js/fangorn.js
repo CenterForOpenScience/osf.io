@@ -56,7 +56,8 @@
         }
         return m('i.icon-file-alt');
     }
- 
+
+
     // Returns custom toggle icons for OSF
     function _fangornResolveToggle(item){
         var toggleMinus = m('i.icon-minus', ' '),
@@ -79,10 +80,39 @@
         $(event.target).closest('.tb-row').find('.fg-hover-hide').show();
     }
 
-    function _fangornUploadProgress (){
+    function _fangornUploadProgress (treebeard, file, progress, bytesSent){
         console.log("File Progress", this, arguments);
-        var itemID = arguments[0].dropzoneItemCache.id; 
-        $('.tb-row[data-id="'+itemID+'"]').find('.action-col').text("Uploaded " + arguments[1] + "%");
+        var itemID = treebeard.dropzoneItemCache.id; 
+        // Find the row of the file being uploaded
+        $( ".tb-row:contains('"+file.name+"')" ).find('.action-col').text('Uploaded ' + Math.floor(progress) + '%');
+        // $('.tb-row[data-id="'+itemID+'"]').find('.action-col').text('Uploaded ' + progress + '%');
+    }
+
+    function _fangornSending (treebeard, file, xhr, formData) {
+        console.log("Sending", arguments);
+        var parentID = treebeard.dropzoneItemCache.id; 
+        // create a blank item that will refill when upload is finished. 
+        var blankItem = {
+            name : file.name,
+            kind : 'item',
+            children : []
+        }; 
+        treebeard.createItem(blankItem, parentID); 
+    }
+
+    function _fangornComplete (treebeard, file) {
+        console.log("Complete", arguments);
+    }
+
+    function _fangornSuccess (treebeard, file, response) {
+        console.log("Success", arguments);
+        m.redraw.strategy("all");
+        var element = $( ".tb-row:contains('"+file.name+"')" );
+        var id  = element.attr('data-id');
+        var item = treebeard.find(id);
+        item.data = response;
+        m.render(element.find('.action-col').get(0), _fangornActionColumn.call(treebeard, item, _fangornColumns[1]));
+        treebeard.redraw();
     }
 
     function _uploadEvent (event, item, col){
@@ -95,7 +125,9 @@
     function _downloadEvent (event, item, col) {
         event.stopPropagation();
         console.log('Download Event triggered', this, event, item, col);
+        item.data.downloads++; 
         window.location = item.data.urls.download;
+
     }
 
     function _removeEvent (event, item, col) {
@@ -161,6 +193,14 @@
         }); 
     } 
 
+    function _fangornTitleColumn (item, col) {
+        return m('span', 
+            { onclick : function(){  
+                window.location = item.data.urls.view;
+            }}, 
+            item.data.name);
+    }
+
     var _fangornColumns = [            // Defines columns based on data
         {
             title: 'Name',
@@ -169,7 +209,8 @@
             sort : true,
             sortType : 'text',
             filter : true,
-            folderIcons : true
+            folderIcons : true, 
+            custom : _fangornTitleColumn
         },
         {
             title : 'Actions',
@@ -232,13 +273,18 @@
                 //previewTemplate : '<div class='dz-preview dz-file-preview'>     <div class='dz-details'>        <div class='dz-size' data-dz-size></div>    </div>      <div class='dz-progress'>       <span class='dz-upload' data-dz-uploadprogress></span>  </div>      <div class='dz-error-message'>      <span data-dz-errormessage></span>  </div></div>',
                 clickable : '#treeGrid',
                 addRemoveLinks: false,
-                previewTemplate: '<div></div>',
-                uploadprogress : _fangornUploadProgress
+                previewTemplate: '<div></div>'
             },
             resolveIcon : _fangornResolveIcon,
             resolveToggle : _fangornResolveToggle,
             resolveUploadUrl : _fangornResolveUploadUrl,
-            resolveLazyloadUrl : false
+            resolveLazyloadUrl : false,
+            dropzoneEvents : {
+                uploadprogress : _fangornUploadProgress,
+                sending : _fangornSending,
+                complete : _fangornComplete,
+                success : _fangornSuccess
+            }
     };
 
     function Fangorn(options) {
