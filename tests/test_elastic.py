@@ -339,10 +339,10 @@ class TestPublicNodes(SearchTestCase):
 
     def test_count_aggregation(self):
         docs = query("*")['counts']
-        assert docs['total'] == 4
-        assert docs['project'] == 1
-        assert docs['component'] == 1
-        assert docs['registration'] == 1
+        assert_equal(docs['total'], 4)
+        assert_equal(docs['project'], 1)
+        assert_equal(docs['component'], 1)
+        assert_equal(docs['registration'], 1)
 
 
 
