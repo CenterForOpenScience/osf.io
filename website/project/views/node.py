@@ -690,7 +690,6 @@ def _view_project(node, auth, primary=False):
             'redirect_url': redirect_url,
             'display_absolute_url': node.display_absolute_url,
             'in_dashboard': in_dashboard,
-            'dashboard_id': dashboard_id,
             'citations': {
                 'apa': node.citation_apa,
                 'mla': node.citation_mla,
@@ -753,6 +752,7 @@ def _view_project(node, auth, primary=False):
             'username': user.username if user else None,
             'can_comment': node.can_comment(auth),
             'show_wiki_widget': _should_show_wiki_widget(node, user),
+            'dashboard_id': dashboard_id,
         },
         'badges': _get_badge(user),
         # TODO: Namespace with nested dicts

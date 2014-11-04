@@ -90,7 +90,7 @@
         self.watchedCount = ko.observable(data.node.watched_count);
         self.userIsWatching = ko.observable(data.user.is_watching);
         self.inDashboard = ko.observable(data.node.in_dashboard);
-        self.dashboard = data.node.dashboard_id;
+        self.dashboard = data.user.dashboard_id;
         self.userCanEdit = data.user.can_edit;
         self.description = data.node.description;
         self.title = data.node.title;
