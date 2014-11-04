@@ -17,6 +17,9 @@
 
         $.extend(self, data);
         self.date = new $.osf.FormattableDate(data.date);
+        self.displayDate = self.date.local !== 'Invalid date' ?
+            self.date.local :
+            data.date;
 
     };
 

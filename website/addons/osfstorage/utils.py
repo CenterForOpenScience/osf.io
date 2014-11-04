@@ -133,7 +133,11 @@ def serialize_revision(node, record, version, index):
             'name': version.creator.fullname,
             'url': version.creator.url,
         },
-        'date': version.date_modified.isoformat(),
+        'date': (
+            version.date_modified.isoformat()
+            if version.date_modified
+            else None
+        ),
         'downloads': get_download_count(record, node, index),
         'urls': {
             'view': node.web_url_for(

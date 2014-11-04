@@ -263,3 +263,18 @@ class TestSerializeRevision(StorageTestCase):
             1,
         )
         assert_equal(expected, observed)
+
+    def test_serialize_revision_pending(self):
+        version = factories.FileVersionFactory(
+            status=model.status['PENDING'],
+            date_modified=None,
+        )
+        self.record.versions.append(version)
+        self.record.save()
+        serialized = utils.serialize_revision(
+            self.project,
+            self.record,
+            version,
+            len(self.record.versions),
+        )
+        assert_equal(serialized['date'], None)

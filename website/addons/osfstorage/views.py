@@ -170,27 +170,28 @@ def osf_storage_upload_finish_hook(path, node_addon, **kwargs):
     return finish_upload_error(file_record, payload)
 
 
+UPLOAD_PENDING_MESSAGE = (
+    'File upload is in progress. Please check back later to retrieve this file.'
+)
+
+UPLOAD_FAILED_MESSAGE = (
+    'File upload has failed. If this should not have occurred and the issue '
+    'persists, please report it to <a href="mailto:support@osf.io">support@osf.io</a>.'
+)
+
 UPLOAD_PENDING_ERROR = HTTPError(
     httplib.NOT_FOUND,
     data={
         'message_short': 'File upload in progress',
-        'message_long': (
-            'File upload is in progress. Please check back later to retrieve '
-            'this file.'
-        ),
+        'message_long': UPLOAD_PENDING_MESSAGE,
     }
 )
-
 
 UPLOAD_FAILED_ERROR = HTTPError(
     httplib.NOT_FOUND,
     data={
         'message_short': 'File upload failed',
-        'message_long': (
-            'File upload has failed. If this should not have occurred and the '
-            'issue persists, please report it to '
-            '<a href="mailto:support@osf.io">support@osf.io</a>.'
-        ),
+        'message_long': UPLOAD_FAILED_MESSAGE,
     }
 )
 
@@ -206,16 +207,6 @@ def parse_version_specifier(version_str):
     if version_idx < 1:
         raise errors.InvalidVersionError
     return version_idx
-
-
-def handle_incomplete_version(file_version):
-    """
-    :raise: `HTTPError` if version is incomplete
-    """
-    if file_version.status == model.status['PENDING']:
-        raise UPLOAD_PENDING_ERROR
-    if file_version.status == model.status['FAILED']:
-        raise UPLOAD_FAILED_ERROR
 
 
 def get_version_helper(file_record, version_str):
@@ -238,22 +229,36 @@ def get_version_helper(file_record, version_str):
         raise HTTPError(httplib.NOT_FOUND)
 
 
-def get_version(path, node_settings, version_str):
-    """
+def get_version(path, node_settings, version_str, throw=True):
+    """Resolve version from request arguments.
+
+    :param str path: Path to file
+    :param node_settings: Node settings record
+    :param str version_str: Version from query string
+    :param bool throw: Throw `HTTPError` if version is incomplete
     :return: Tuple of (<one-based version index>, <file version>, <file record>)
     """
     record = model.FileRecord.find_by_path(path, node_settings)
     if record is None:
         raise HTTPError(httplib.NOT_FOUND)
     version_idx, file_version = get_version_helper(record, version_str)
-    handle_incomplete_version(file_version)
+    if throw:
+        if file_version.status == model.status['PENDING']:
+            raise UPLOAD_PENDING_ERROR
+        if file_version.status == model.status['FAILED']:
+            raise UPLOAD_FAILED_ERROR
     return version_idx, file_version, record
 
 
 def serialize_file(idx, version, record, path, node):
     """Serialize data used to render a file.
     """
-    rendered = utils.render_file(idx, version, record)
+    if version.status == model.status['PENDING']:
+        rendered = UPLOAD_PENDING_MESSAGE
+    elif version.status == model.status['FAILED']:
+        rendered = UPLOAD_FAILED_MESSAGE
+    else:
+        rendered = utils.render_file(idx, version, record)
     return {
         'file_name': record.name,
         'file_revision': 'Version {0}'.format(idx),
@@ -274,18 +279,18 @@ def serialize_file(idx, version, record, path, node):
     }
 
 
-def download_file(path, node_addon, version_idx):
+def download_file(path, node_addon, version_query):
     mode = request.args.get('mode')
-    version_idx, version, record = get_version(path, node_addon, version_idx)
-    url = utils.get_download_url(version_idx, version, record)
+    idx, version, record = get_version(path, node_addon, version_query)
+    url = utils.get_download_url(idx, version, record)
     if mode != 'render':
-        update_analytics(node_addon.owner, path, version_idx)
+        update_analytics(node_addon.owner, path, idx)
     return redirect(url)
 
 
-def view_file(auth, path, node_addon, version_idx):
+def view_file(auth, path, node_addon, version_query):
     node = node_addon.owner
-    idx, version, record = get_version(path, node_addon, version_idx)
+    idx, version, record = get_version(path, node_addon, version_query, throw=False)
     file_obj = model.StorageFile.get_or_create(node=node, path=path)
     redirect_url = check_file_guid(file_obj)
     if redirect_url:

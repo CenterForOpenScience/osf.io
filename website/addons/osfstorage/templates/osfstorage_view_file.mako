@@ -42,7 +42,7 @@
                 <td>
                     <a data-bind="attr.href: revision.user.url">{{ revision.user.name }}</a>
                 </td>
-                <td>{{ revision.date.local }}</td>
+                <td>{{ revision.displayDate }}</td>
                 <td>{{ revision.downloads }}</td>
                 <td>
                     <a
