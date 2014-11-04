@@ -15,6 +15,7 @@ from website.project.decorators import must_have_addon
 from website.search.exceptions import TypeCollisionError
 from website.project.decorators import must_have_permission
 from website.addons.app.exceptions import InvalidSchemaError
+from website.addons.app.exceptions import SchemaViolationError
 from website.project.decorators import must_be_contributor_or_public
 
 
@@ -82,11 +83,74 @@ def create_metadata(node_addon, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     metastore = Metadata(app=node_addon, data=metadata)
-    metastore.save()
+
+    try:
+        metastore.save()
+    except SchemaViolationError as e:
+        raise HTTPError(http.BAD_REQUEST, data={'reason': e.message})
 
     return {
         'id': metastore._id
     }, http.CREATED
+
+
+# PUT
+@must_have_permission('write')
+@must_have_addon('app', 'node')
+def update_metadata(node_addon, mid, **kwargs):
+    metadata = request.json
+
+    if not metadata:
+        raise HTTPError(http.BAD_REQUEST)
+
+    metastore = Metadata.load(mid)
+
+    if not metastore:
+        raise HTTPError(http.NOT_FOUND)
+
+    if metastore.namespace != node_addon.namespace:
+        raise HTTPError(http.FORBIDDEN)
+
+    metastore.update(metadata)
+
+    try:
+        metastore.save()
+    except SchemaViolationError as e:
+        raise HTTPError(http.BAD_REQUEST, data={'reason': e.message})
+    except TypeCollisionError:
+        raise HTTPError(http.BAD_REQUEST)
+
+
+# DELETE
+@must_have_permission('admin')
+@must_have_addon('app', 'node')
+def delete_metadata(node_addon, mid, **kwargs):
+    metastore = Metadata.load(mid)
+
+    if not metastore:
+        return HTTPError(http.NOT_FOUND)
+
+    if metastore.namespace != node_addon.namespace:
+        raise HTTPError(http.FORBIDDEN)
+
+    key = request.args.get('key', None)
+
+    if key:
+        for k in key.split(','):
+            try:
+                del metastore[k]
+            except KeyError:
+                pass
+
+        metastore.save()
+
+        return {
+            'deleted': key
+        }, http.OK
+
+    Metadata.remove_one(metastore, True)
+
+    raise HTTPError(http.NO_CONTENT)
 
 
 # @must_have_permission('write')
@@ -150,60 +214,3 @@ def promote_metadata(node_addon, mid, **kwargs):
         'url': node.url,
         'apiUrl': node.api_url
     }, http.CREATED
-
-
-# PUT
-@must_have_permission('write')
-@must_have_addon('app', 'node')
-def update_metadata(node_addon, mid, **kwargs):
-    metadata = request.json
-
-    if not metadata:
-        raise HTTPError(http.BAD_REQUEST)
-
-    metastore = Metadata.load(mid)
-
-    if not metastore:
-        raise HTTPError(http.NOT_FOUND)
-
-    if metastore.namespace != node_addon.namespace:
-        raise HTTPError(http.FORBIDDEN)
-
-    metastore.update(metadata)
-
-    try:
-        metastore.save()
-    except TypeCollisionError:
-        raise HTTPError(http.BAD_REQUEST)
-
-
-# DELETE
-@must_have_permission('admin')
-@must_have_addon('app', 'node')
-def delete_metadata(node_addon, mid, **kwargs):
-    metastore = Metadata.load(mid)
-
-    if not metastore:
-        return HTTPError(http.NOT_FOUND)
-
-    if metastore.namespace != node_addon.namespace:
-        raise HTTPError(http.FORBIDDEN)
-
-    key = request.args.get('key', None)
-
-    if key:
-        for k in key.split(','):
-            try:
-                del metastore[k]
-            except KeyError:
-                pass
-
-        metastore.save()
-
-        return {
-            'deleted': key
-        }, http.OK
-
-    Metadata.remove_one(metastore, True)
-
-    raise HTTPError(http.NO_CONTENT)
