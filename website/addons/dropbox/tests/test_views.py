@@ -26,6 +26,8 @@ from website.addons.dropbox import utils
 from website.addons.dropbox.client import get_client_from_user_settings
 
 mock_client = MockDropbox()
+mock_get_client = mock.MagicMock()
+mock_get_client.account_info.return_value = {'display_name': 'Mr. Drop Box'}
 
 
 class TestAuthViews(OsfTestCase):
@@ -129,7 +131,7 @@ class TestConfigViews(DropboxAddonTestCase):
         assert_equal(urls['create'], api_url_for('dropbox_oauth_start_user'))
 
     def test_serialize_settings_helper_returns_correct_urls(self):
-        result = serialize_settings(self.node_settings, self.user, client=mock_client)
+        result = serialize_settings(self.node_settings, self.user, client=mock_get_client)
         urls = result['urls']
 
         assert_equal(urls['config'], self.project.api_url_for('dropbox_config_put'))
@@ -145,14 +147,14 @@ class TestConfigViews(DropboxAddonTestCase):
         assert_equal(urls['settings'], web_url_for('user_addons'))
 
     def test_serialize_settings_helper_returns_correct_auth_info(self):
-        result = serialize_settings(self.node_settings, self.user, client=mock_client)
+        result = serialize_settings(self.node_settings, self.user, client=mock_get_client)
         assert_equal(result['nodeHasAuth'], self.node_settings.has_auth)
         assert_true(result['userHasAuth'])
         assert_true(result['userIsOwner'])
 
     def test_serialize_settings_for_user_no_auth(self):
         no_addon_user = AuthUserFactory()
-        result = serialize_settings(self.node_settings, no_addon_user, client=mock_client)
+        result = serialize_settings(self.node_settings, no_addon_user, client=mock_get_client)
         assert_false(result['userIsOwner'])
         assert_false(result['userHasAuth'])
 
@@ -173,7 +175,7 @@ class TestConfigViews(DropboxAddonTestCase):
         assert_false(result['validCredentials'])
 
     def test_serialize_settings_helper_returns_correct_folder_info(self):
-        result = serialize_settings(self.node_settings, self.user, client=mock_client)
+        result = serialize_settings(self.node_settings, self.user, client=mock_get_client)
         folder = result['folder']
         assert_equal(folder['name'], 'Dropbox' + self.node_settings.folder)
         assert_equal(folder['path'], self.node_settings.folder)
@@ -235,8 +237,9 @@ class TestConfigViews(DropboxAddonTestCase):
         res = self.app.put(url, auth=self.user.auth)
         self.project.reload()
         self.node_settings.reload()
+        mock_get_client = get_client_from_user_settings(self.node_settings.user_settings)
         expected_result = serialize_settings(self.node_settings, self.user,
-                                             client=mock_client)
+                                             client=mock_get_client)
         result = res.json['result']
         assert_equal(result, expected_result)
 
