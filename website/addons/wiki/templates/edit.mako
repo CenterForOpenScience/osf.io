@@ -59,11 +59,15 @@
 
     var url = '${urls['api']['content']}';
     var shareServer = 'http://localhost:7007';
-    var connection = new sharejs.Connection(shareServer + '/channel');
+    var connection = new sharejs.Connection(
+        shareServer + '/channel',
+        '${user_full_name}'
+    );
 
     var socketIsOpen = true;
     var socketOnOpen = connection.socket.onopen;
     var socketOnClose = connection.socket.onclose;
+    var socketOnMessage = connection.socket.onmessage;
 
     // TODO: Replace with heartbeat
     connection.socket.onopen = function () {
@@ -75,6 +79,11 @@
             socketIsOpen = true;
         });
     };
+    connection.socket.onmessage = function(message) {
+        console.log(message);
+        socketOnMessage(message);
+    };
+    // TODO: Move both to shareServer.js session on close event
     connection.socket.onclose = function () {
         socketOnClose();
 

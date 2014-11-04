@@ -1,16 +1,27 @@
 var express = require('express'),
-    sharejs = require('share').server;
+    sharejs = require('share-6-fork').server;
 
 var server = express();
 var docs = {};
 
 var options = {
     db: {type: 'mongo'},
-    browserChannel: { cors: "http://localhost:5000" }
+    browserChannel: { cors: "http://localhost:5000" },
+    auth: function(agent, action) {
+        agent.name = agent.authentication;
+        if (action.type === 'connect') {
+//            console.log(agent);
+        }
+        action.accept();
+    }
 };
 
 // Attach the sharejs REST and Socket.io interfaces to the server
-sharejs.attach(server, options);
+session = sharejs.attach(server, options, function(session) {
+    session.on('close', function() {
+        console.log('client closed');
+    })
+});
 
 // Allow CORS
 server.all('*', function(req, res, next) {
