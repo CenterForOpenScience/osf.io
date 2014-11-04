@@ -120,7 +120,7 @@ def get_contributors_from_parent(auth, **kwargs):
 @must_be_contributor_or_public
 def get_most_in_common_contributors(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    node_contrib_ids = node.contributors._to_primary_keys()
+    node_contrib_ids = set(node.contributors._to_primary_keys())
 
     contrib_counts = Counter(contrib_id
         for node in auth.user.node__contributed
