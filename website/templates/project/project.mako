@@ -14,7 +14,7 @@
 
 <div class="row">
 
-    <div class="col-md-6">
+    <div class="col-sm-6">
 
         % if addons:
 
@@ -59,7 +59,7 @@
 
     </div>
 
-    <div class="col-md-6">
+    <div class="col-sm-6">
 
         <!-- Citations -->
         % if not node['anonymous']:
@@ -103,7 +103,6 @@
 
 <%def name="children()">
     % if node['node_type'] == 'project':
-        <div class="page-header">
             <div class="pull-right btn-group">
                 % if 'write' in user['permissions'] and not node['is_registration']:
                     <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
@@ -111,7 +110,7 @@
                 % endif
             </div>
         <h2>Components</h2>
-    </div>
+        <hr />
     % endif
 
 

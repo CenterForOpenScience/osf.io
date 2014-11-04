@@ -77,7 +77,7 @@
                     return self.options.url = url;
                 });
             } else {
-                return this.options.url;
+                return file.url || this.options.url;
             }
         };
 
@@ -95,7 +95,7 @@
             $.when(_this.getUrl(files[0])).done(function(uploadUrl) {
                     xhr.open(
                         files[0].method || _this.options.method,
-                        files[0].url || _this.options.url,
+                        uploadUrl,
                         true
                     );
                     xhr.withCredentials = !! _this.options.withCredentials;
