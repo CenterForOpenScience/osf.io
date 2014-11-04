@@ -959,6 +959,9 @@ h1.unavailable {
 .search-contributor-result td {
     padding-right: 10px;
 }
+.search-contributor-links {
+    padding-top: 10px;
+}
 
 
 /* Markdown editing */
