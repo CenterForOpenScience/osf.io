@@ -76,8 +76,16 @@
                     }),
                     contentType: 'application/json',
                     dataType: 'json'
-                }).success(function(url) {
+                }).done(function(url) {
                     return self.options.url = url;
+                }).fail(function(xhr, textStatus, error) {
+                    var msg;
+                    try {
+                        msg = xhr.responseJSON.message_long;
+                    } catch(error) {
+                        msg = textStatus;
+                    }
+                    bootbox.alert(msg);
                 });
             } else {
                 return file.url || this.options.url;

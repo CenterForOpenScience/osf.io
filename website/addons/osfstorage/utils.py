@@ -2,16 +2,20 @@
 # encoding: utf-8
 
 import os
+import httplib
+import logging
 import urlparse
 import itertools
 
 import furl
 import requests
 import markupsafe
+import simplejson
 
 from modularodm import Q
 from cloudstorm import sign
 
+from framework.exceptions import HTTPError
 from framework.analytics import get_basic_counters
 
 from website.util import rubeus
@@ -20,6 +24,8 @@ from website.project.views.file import get_cache_content
 from website.addons.osfstorage import model
 from website.addons.osfstorage import settings
 
+
+logger = logging.getLogger(__name__)
 
 url_signer = sign.Signer(
     settings.URLS_HMAC_SECRET,
@@ -160,6 +166,18 @@ def choose_upload_url():
     return next(chooser)
 
 
+SIGNED_REQUEST_ERROR = HTTPError(
+    httplib.SERVICE_UNAVAILABLE,
+    data={
+        'message_short': 'Upload service unavailable',
+        'message_long': (
+            'Upload service is not available; please retry '
+            'your upload in a moment'
+        ),
+    },
+)
+
+
 def make_signed_request(method, url, signer, payload):
     """Make a signed request to the upload service.
 
@@ -167,20 +185,28 @@ def make_signed_request(method, url, signer, payload):
     :param str url: URL to send to
     :param Signer signer: Signed URL signer
     :param dict payload: Data to send
+    :raise: `HTTPError` if request fails
     """
     signature, body = sign.build_hook_body(signer, payload)
-    resp = requests.request(
-        method,
-        url,
-        data=body,
-        headers={
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            settings.SIGNATURE_HEADER_KEY: signature,
-        },
-        **settings.SIGNED_REQUEST_KWARGS
-    )
-    return resp.json()
+    try:
+        resp = requests.request(
+            method,
+            url,
+            data=body,
+            headers={
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                settings.SIGNATURE_HEADER_KEY: signature,
+            },
+            **settings.SIGNED_REQUEST_KWARGS
+        )
+    except requests.exceptions.RequestException as error:
+        logger.exception(error)
+        raise SIGNED_REQUEST_ERROR
+    try:
+        return resp.json()
+    except (TypeError, ValueError, simplejson.JSONDecodeError):
+        raise SIGNED_REQUEST_ERROR
 
 
 def patch_url(url, **kwargs):

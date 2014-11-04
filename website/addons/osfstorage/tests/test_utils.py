@@ -2,6 +2,7 @@
 # encoding: utf-8
 
 import mock
+import unittest
 from nose.tools import *  # noqa
 
 from tests.factories import ProjectFactory
@@ -9,8 +10,12 @@ from tests.factories import ProjectFactory
 import datetime
 import urlparse
 
+import requests
 import markupsafe
+import simplejson
 from cloudstorm import sign
+
+from framework.exceptions import HTTPError
 
 from website.addons.osfstorage.tests import factories
 from website.addons.osfstorage.tests.utils import StorageTestCase
@@ -130,30 +135,62 @@ class TestHGridUtils(StorageTestCase):
             utils.get_item_kind('pizza')
 
 
-@mock.patch('website.addons.osfstorage.utils.requests.request')
-def test_make_signed_request(mock_request):
-    expected = {'status': 'delicious'}
-    mock_request.return_value.json.return_value = expected
-    payload = {'peppers': True, 'sausage': True}
-    signature, body = sign.build_hook_body(utils.url_signer, payload)
-    resp = utils.make_signed_request(
-        'POST',
-        'http://frozen.pizza.com/',
-        utils.url_signer,
-        payload,
-    )
-    mock_request.assert_called_with(
-        'POST',
-        'http://frozen.pizza.com/',
-        data=body,
-        headers={
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            settings.SIGNATURE_HEADER_KEY: signature,
-        },
-        **settings.SIGNED_REQUEST_KWARGS
-    )
-    assert_equal(resp, expected)
+class TestSignedRequest(unittest.TestCase):
+
+    @mock.patch('website.addons.osfstorage.utils.requests.request')
+    def test_make_signed_request(self, mock_request):
+        expected = {'status': 'delicious'}
+        mock_request.return_value.json.return_value = expected
+        payload = {'peppers': True, 'sausage': True}
+        signature, body = sign.build_hook_body(utils.url_signer, payload)
+        resp = utils.make_signed_request(
+            'POST',
+            'http://frozen.pizza.com/',
+            utils.url_signer,
+            payload,
+        )
+        mock_request.assert_called_with(
+            'POST',
+            'http://frozen.pizza.com/',
+            data=body,
+            headers={
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                settings.SIGNATURE_HEADER_KEY: signature,
+            },
+            **settings.SIGNED_REQUEST_KWARGS
+        )
+        assert_equal(resp, expected)
+
+    @mock.patch('website.addons.osfstorage.utils.requests.request')
+    def test_make_signed_request_connection_error(self, mock_request):
+        mock_request.side_effect = requests.exceptions.ConnectionError
+        payload = {'peppers': True, 'sausage': True}
+        signature, body = sign.build_hook_body(utils.url_signer, payload)
+        with assert_raises(HTTPError) as ctx:
+            utils.make_signed_request(
+                'POST',
+                'http://frozen.pizza.com/',
+                utils.url_signer,
+                payload,
+            )
+        assert_equal(ctx.exception.code, 503)
+
+    @mock.patch('website.addons.osfstorage.utils.requests.request')
+    def test_make_signed_request_json_decode_error(self, mock_request):
+        mock_response = mock.Mock()
+        mock_response.json.side_effect = simplejson.JSONDecodeError
+        mock_request.return_value = mock_response
+        payload = {'peppers': True, 'sausage': True}
+        signature, body = sign.build_hook_body(utils.url_signer, payload)
+        with assert_raises(HTTPError) as ctx:
+            utils.make_signed_request(
+                'POST',
+                'http://frozen.pizza.com/',
+                utils.url_signer,
+                payload,
+            )
+        assert_equal(ctx.exception.code, 503)
 
 
 class TestGetDownloadUrl(StorageTestCase):
