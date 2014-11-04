@@ -165,7 +165,7 @@
                 function(result) {
                     if (!result.contributors.length) {
                         self.notification({
-                            'message': 'No recent collaborators not already included.',
+                            'message': 'All recent collaborators already included.',
                             'level': 'info'
                         });
                     }
@@ -175,18 +175,31 @@
                     }
                     self.results(contribs);
                 }
-            );
+            ).fail(function (xhr, textStatus, error) {
+                self.notification({
+                    'message':
+                        'OSF was unable to resolve your request. If this issue persists, ' +
+                        'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.',
+                    'level': 'warning'
+                });
+                Raven.captureMessage('Could not GET recentlyAdded contributors.', {
+                    url: url,
+                    textStatus: textStatus,
+                    error: error
+                });
+            });
         };
 
         self.mostInCommon = function() {
             self.notification(false);
+            var url = nodeApiUrl + 'get_most_in_common_contributors/';
             $.getJSON(
-                nodeApiUrl + 'get_most_in_common_contributors/',
+                url,
                 {},
                 function(result) {
                     if (!result.contributors.length) {
                         self.notification({
-                            'message': 'No frequent collaborators not already included.',
+                            'message': 'All frequent collaborators already included.',
                             'level': 'info'
                         });
                     }
@@ -196,7 +209,19 @@
                     }
                     self.results(contribs);
                 }
-            );
+            ).fail(function (xhr, textStatus, error) {
+                self.notification({
+                    'message':
+                        'OSF was unable to resolve your request. If this issue persists, ' +
+                        'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.',
+                    'level': 'warning'
+                });
+                Raven.captureMessage('Could not GET mostInCommon contributors.', {
+                    url: url,
+                    textStatus: textStatus,
+                    error: error
+                });
+            });
         };
 
         self.addTips = function(elements) {

@@ -120,18 +120,15 @@ def get_contributors_from_parent(auth, **kwargs):
 @must_be_contributor_or_public
 def get_most_in_common_contributors(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    contrib_counts = Counter()
     node_contrib_ids = node.contributors._to_primary_keys()
 
-    for node in auth.user.node__contributed:
-        for contrib_id in node.contributors._to_primary_keys():
-            if contrib_id not in node_contrib_ids:
-                contrib_counts[contrib_id] += 1
+    contrib_counts = Counter(contrib_id
+        for node in auth.user.node__contributed
+        for contrib_id in node.contributors._to_primary_keys()
+        if contrib_id not in node_contrib_ids)
 
     most_common_contribs = []
-    for contrib_id, count in contrib_counts.most_common():
-        if len(most_common_contribs) >= settings.MAX_MOST_IN_COMMON_LENGTH:
-            break
+    for contrib_id, count in contrib_counts.most_common(settings.MAX_MOST_IN_COMMON_LENGTH):
         contrib = User.load(contrib_id)
         if contrib.is_active():
             most_common_contribs.append((contrib, count))

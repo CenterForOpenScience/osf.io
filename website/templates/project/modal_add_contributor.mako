@@ -34,8 +34,8 @@
                                 </div>
                                 <div>
                                     Show my
-                                    <a data-bind="click:recentlyAdded, text:'recent collaborators'"></a>,
-                                    <a data-bind="click:mostInCommon, text:'most frequent collaborators'"></a>
+                                    <a data-bind="click:recentlyAdded">recent collaborators</a>,
+                                    <a data-bind="click:mostInCommon">most frequent collaborators</a>
                                 </div>
                             </div>
                         </div>
@@ -52,7 +52,7 @@
                                 <a data-bind="click:addAll">Add all</a>
                             </div>
                             <!-- ko if: notification -->
-                            <div data-bind="text: notification().message, css: 'alert alert-' + notification().level"></div>
+                            <div data-bind="html: notification().message, css: 'alert alert-' + notification().level"></div>
                             <!-- /ko -->
 
                             <table>
