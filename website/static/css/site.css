@@ -1057,6 +1057,11 @@ h1.unavailable {
     {
         margin-right: .5em;
     }
+
+.search-result.well h5 small{
+    color: darkslategray;
+    font-size: 10pt;
+}
 /* Search Contributors */
 
 .search-contributor-result td {

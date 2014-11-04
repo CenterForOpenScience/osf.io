@@ -70,7 +70,7 @@
                         <!-- /ko -->
                         <!-- ko if: totalCount() -->
                         <div data-bind="foreach: results">
-                            <div class="well" data-bind="template: { name: category, data: $data}"></div>
+                            <div class="well search-result" data-bind="template: { name: category, data: $data}"></div>
                         </div>
                         <ul class="pager">
                             <li data-bind="css {disabled: !prevPageExists()}">
