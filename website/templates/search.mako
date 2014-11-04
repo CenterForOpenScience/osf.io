@@ -44,17 +44,17 @@
                                 <h4> Improve your search:</h4>
                                 <span class="tag-cloud" data-bind="foreach: tags">
                                     <!-- ko if: count() === $parent.tagMaxCount() && count() > $parent.tagMaxCount()/2  -->
-                                    <span class="cloud-tag tag-big" data-bind="click: $root.addTag.bind(name)">
+                                    <span class="cloud-tag tag-big pointer" data-bind="click: $root.addTag.bind(name)">
                                         {{ name() }}
                                     </span>
                                     <!-- /ko -->
                                     <!-- ko if: count() < $parent.tagMaxCount() && count() > $parent.tagMaxCount()/2 -->
-                                    <span class="cloud-tag tag-med" data-bind="click: $root.addTag.bind(name)">
+                                    <span class="cloud-tag tag-med pointer" data-bind="click: $root.addTag.bind(name)">
                                         {{ name() }}
                                     </span>
                                     <!-- /ko -->
                                     <!-- ko if: count() <= $parent.tagMaxCount()/2-->
-                                    <span class="cloud-tag tag-sm" data-bind="click: $root.addTag.bind(name)">
+                                    <span class="cloud-tag tag-sm pointer" data-bind="click: $root.addTag.bind(name)">
                                         {{ name() }}
                                     </span>
                                     <!-- /ko -->
@@ -190,7 +190,7 @@
         <!-- ko if tags.length > 0 -->
         <h5 data-bind="visible: tags.length">Tags:
             <span class="tag-cloud" data-bind="foreach: tags">
-                <span class="cloud-tag tag-sm" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
+                <span class="cloud-tag tag-sm pointer" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
                 </span>
             </span>
         </h5>
@@ -215,7 +215,7 @@
         <!-- ko if tags.length > 0 -->
         <h5 data-bind="visible: tags.length">Tags:
             <span class="tag-cloud" data-bind="foreach: tags">
-                <span class="cloud-tag tag-sm" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
+                <span class="cloud-tag tag-sm pointer" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
                 </span>
             </span>
         </h5>
@@ -236,7 +236,7 @@
         <!-- ko if tags.length > 0 -->
         <h5 data-bind="visible: tags.length">Tags:
             <span class="tag-cloud" data-bind="foreach: tags">
-                <span class="cloud-tag tag-sm" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
+                <span class="cloud-tag tag-sm pointer" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
                 </span>
             </span>
         </h5>
@@ -261,7 +261,7 @@
         <!-- ko if tags.length > 0 -->
         <h5 class="registration" data-bind="visible: tags.length">Tags:
             <span class="tag-cloud" data-bind="foreach: tags">
-                <span class="cloud-tag tag-sm" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
+                <span class="cloud-tag tag-sm pointer" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
                 </span>
             </span>
         </h5>
