@@ -27,6 +27,7 @@ css = Bundle(
     Bundle(
         'css/site.css',
         'css/rubeus.css',
+        'css/fangorn.css',
         'css/commentpane.css',
         filters="cssmin"),
     output="public/css/common.css"

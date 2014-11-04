@@ -29,13 +29,58 @@
     }
 }(this, function($, Treebeard){
 
+    // Shows an alert in the space of the row
+    function _fangornRowAlert (item, type, message, method) {
+        var alertHTML = '<div class="alert-'+type+' text-center" style="padding: 8px; margin-top: -5px;"> ' + message + '<span class="fangorn-dismiss" data-id="'+item.id+'">&times;</span></div>'; 
+        var row = $('.tb-row[data-id="'+ item.id+ '"]'); 
+        // Get row content
+
+        if(method === "overlay"){
+            var cache  = row.html(); 
+            row.animate({ opacity : 0 }, "fast")
+                .html(alertHTML)
+                .animate({ opacity : 1 }, "fast")
+                .delay(2000)
+                .animate({ opacity : 0 }, "fast")
+                .queue(function() {
+                    $(this)
+                        .html(cache)
+                        .animate({ opacity : 1 }, "fast");
+                    $(this).dequeue();
+                });
+        }
+        if(method === "replace" ) {
+            row.animate({ opacity : 0 }, "fast")
+                .replaceWith(alertHTML)
+                .animate({ opacity : 1 }, "fast");
+            item.removeSelf();
+
+        }
+
+          
+    }
+
+    function _fangornViewEvents () {
+        console.log("View events this", this);
+    }
+
     // Returns custom icons for OSF 
     function _fangornResolveIcon(item){
+        var privateFolder = m('img', { src : "/static/img/hgrid/fatcowicons/folder_delete.png" }),
+            pointerFolder = m('i.icon-hand-right', ' '),
+            openFolder  = m('i.icon-folder-open-alt', ' '),
+            closedFolder = m('i.icon-folder-close-alt', ' ');
         if (item.kind === 'folder') {
-            if (item.open) { 
-                return m('i.icon-folder-open-alt', ' ');
+            if (!item.data.permissions.view) {
+                return privateFolder; 
             }
-            return m('i.icon-folder-close-alt', ' ');
+            if (item.data.isPointer){
+                return pointerFolder; 
+            }
+            if (item.open) { 
+                return openFolder; 
+            }
+            return closedFolder; 
         }
         if (item.data.icon) {
             return m('i.fa.' + item.data.icon, ' ');
@@ -58,6 +103,7 @@
     }
 
 
+
     // Returns custom toggle icons for OSF
     function _fangornResolveToggle(item){
         var toggleMinus = m('i.icon-minus', ' '),
@@ -69,6 +115,14 @@
             return togglePlus;
         }
         return '';
+    }
+
+    function _fangornToggleCheck (item) {
+        if (item.data.permissions.view) {
+            return true;
+        }
+        _fangornRowAlert (item, "warning", "You don't have permission to view the contents of this folder.", "overlay");
+        return false;
     }
 
     function _fangornResolveUploadUrl (item) {  
@@ -104,15 +158,24 @@
         console.log("Complete", arguments);
     }
 
-    function _fangornSuccess (treebeard, file, response) {
+    function _fangornDropzoneSuccess (treebeard, file, response) {
         console.log("Success", arguments);
-        m.redraw.strategy("all");
         var element = $( ".tb-row:contains('"+file.name+"')" );
         var id  = element.attr('data-id');
         var item = treebeard.find(id);
         item.data = response;
         m.render(element.find('.action-col').get(0), _fangornActionColumn.call(treebeard, item, _fangornColumns[1]));
-        treebeard.redraw();
+        m.redraw();
+    }
+
+    function _fangornDropzoneError (treebeard, file, message, xhr) {
+        console.log("Error", arguments);
+        var element = $( ".tb-row:contains('"+file.name+"')" );
+        var id  = element.attr('data-id');
+        var item = treebeard.find(id);
+        _fangornRowAlert.call(treebeard, item, 'danger', file.name + " did't upload: " + message.message_short, "replace");
+        //treebeard.deleteNode(item.parentID, item.id);
+
     }
 
     function _uploadEvent (event, item, col){
@@ -195,8 +258,10 @@
 
     function _fangornTitleColumn (item, col) {
         return m('span', 
-            { onclick : function(){  
-                window.location = item.data.urls.view;
+            { onclick : function(){ 
+                if (item.kind === "item") {
+                    window.location = item.data.urls.view;                    
+                } 
             }}, 
             item.data.name);
     }
@@ -242,6 +307,23 @@
             title : false,          // Title of the grid, boolean, string OR function that returns a string.
             allowMove : false,       // Turn moving on or off.
             hoverClass : "fangorn-hover",
+            toggleCheck : _fangornToggleCheck,
+            sortButtonSelector : { 
+                up : 'i.icon-chevron-up',
+                down : 'i.icon-chevron-down'
+            },
+            onload : function (){
+                var tb = this; 
+                $(document).on('click', '.fangorn-dismiss', function(){
+                    // var id = $(this).attr('data-id');
+                    // $('.tb-row[data-id="'+id+'"]').remove(); 
+                    //$(this).parent().remove();
+                    tb.redraw();
+                                       
+
+
+                });
+            },
             createcheck : function (item, parent) {
                 window.console.log('createcheck', this, item, parent);
                 return true;
@@ -284,7 +366,8 @@
                 uploadprogress : _fangornUploadProgress,
                 sending : _fangornSending,
                 complete : _fangornComplete,
-                success : _fangornSuccess
+                success : _fangornDropzoneSuccess,
+                error : _fangornDropzoneError
             }
     };
 
@@ -299,26 +382,14 @@
         constructor: Fangorn,
         init: function() {
             var self = this;
-//            this._registerListeners()
-                this._initGrid();
+            this._initGrid();
         },
-//        _registerListeners: function() {
-//            for (var addon in Fangorn.cfg) {
-//                var listeners = Fangorn.cfg[addon].listeners;
-//                if (listeners) {
-//                    // Add each listener to the Treebeard options
-//                    for (var i = 0, listener; listener = listeners[i]; i++) {
-//                        this.options.listeners.push(listener);
-//                    }
-//                }
-//            }
-//            return this;
-//        },
         // Create the Treebeard once all addons have been configured
         _initGrid: function() {
             this.grid = Treebeard.run(this.options);
-            return this;
+            return this.grid;
         }
+
     };
 
     return Fangorn;

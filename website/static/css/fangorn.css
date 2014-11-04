@@ -1,0 +1,13 @@
+.fangorn-dismiss {
+	float: right;
+padding: 0 5px;
+color: #999;
+font-size: 15px;
+margin-top: -3px;
+cursor: pointer;
+}
+.fangorn-dismiss:hover { 
+background: #eee;
+border-radius: 10px;
+
+};
