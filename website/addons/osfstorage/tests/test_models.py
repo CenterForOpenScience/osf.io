@@ -355,6 +355,7 @@ class TestFileRecord(StorageTestCase):
             logged.params['urls'],
             logs.build_log_urls(self.project, self.path),
         )
+        assert_equal(logged.params['version'], len(self.record.versions))
 
     def test_resolve_pending_logs_file_update(self):
         nlogs = len(self.project.logs)
@@ -383,9 +384,9 @@ class TestFileRecord(StorageTestCase):
             logged.params['urls'],
             logs.build_log_urls(self.project, self.path),
         )
+        assert_equal(logged.params['version'], len(self.record.versions))
 
     def test_resolve_pending_duplicate_delete_version_without_log(self):
-        nlogs = len(self.project.logs)
         version = factories.FileVersionFactory()
         self.record.versions.append(version)
         self.record.save()
@@ -398,10 +399,12 @@ class TestFileRecord(StorageTestCase):
             {'size': 1024},
         )
         self.project.reload()
-        self.record.reload()
-        assert_equal(len(self.project.logs), nlogs)
-        assert_equal(nversions, model.FileVersion.find().count())
-        assert_equal(nversions_record, len(self.record.versions))
+        logged = self.project.logs[-1]
+        assert_equal(
+            logged.action,
+            'osf_storage_{0}'.format(NodeLog.FILE_UPDATED),
+        )
+        assert_equal(logged.params['version'], len(self.record.versions))
 
     def test_delete_record(self):
         nlogs = len(self.project.logs)
@@ -409,10 +412,12 @@ class TestFileRecord(StorageTestCase):
         self.project.reload()
         assert_true(self.record.is_deleted)
         assert_equal(len(self.project.logs), nlogs + 1)
+        logged = self.project.logs[-1]
         assert_equal(
-            self.project.logs[-1].action,
+            logged.action,
             'osf_storage_{0}'.format(NodeLog.FILE_REMOVED),
         )
+        assert_not_in('version', logged.params)
 
     def test_delete_deleted_record_raises_error(self):
         nlogs = len(self.project.logs)

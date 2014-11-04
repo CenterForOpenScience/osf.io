@@ -213,6 +213,15 @@ class FileRecord(BaseFileObject):
         return version
 
     def resolve_pending_version(self, signature, location, metadata, log=True):
+        """Finish pending upload. Update version record with file information
+        and unlock file path.
+
+        :param str signature: Signature used in signed URL
+        :param dict location: Location of file in backend
+        :param dict metadata: Metadata to append to record
+        :param bool log: Add log to containing `Node`
+        """
+        action = None
         latest_version = self.get_version(required=True)
         latest_version.resolve(signature, location, metadata)
         previous_version = self.get_version(-2)
@@ -220,28 +229,32 @@ class FileRecord(BaseFileObject):
             self.versions.remove(latest_version)
             self.save()
             FileVersion.remove_one(latest_version)
-            return previous_version
-        if log:
+            action = NodeLog.FILE_UPDATED
+            ret = previous_version
+        else:
             action = (
                 NodeLog.FILE_UPDATED
                 if len(self.versions) > 1
                 else NodeLog.FILE_ADDED
             )
+            ret = latest_version
+        if log:
             self.log(Auth(latest_version.creator), action)
-        return latest_version
+        return ret
 
     def cancel_pending_version(self, signature, log=True):
         latest_version = self.get_version(required=True)
         latest_version.cancel(signature)
         return latest_version
 
-    def log(self, auth, action):
+    def log(self, auth, action, version=True):
         node_logger = logs.OsfStorageNodeLogger(
             auth=auth,
             node=self.node,
             path=self.path,
         )
-        node_logger.log(action, save=True)
+        extra = {'version': len(self.versions)} if version else None
+        node_logger.log(action, extra=extra, save=True)
 
     def delete(self, auth, log=True):
         if self.is_deleted:
@@ -249,7 +262,7 @@ class FileRecord(BaseFileObject):
         self.is_deleted = True
         self.save()
         if log:
-            self.log(auth, NodeLog.FILE_REMOVED)
+            self.log(auth, NodeLog.FILE_REMOVED, version=False)
 
     def undelete(self, auth, log=True):
         if not self.is_deleted:
