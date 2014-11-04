@@ -129,7 +129,7 @@
         <span data-bind="visible: job, text: job"></span><!-- ko if: job_title || job --><br /><!-- /ko -->
         <span data-bind="visible: degree, text: degree"></span><!-- ko if: degree && school --> from <!-- /ko -->
         <span data-bind="visible: school, text: school"></span><!-- ko if: degree || school --><br /><!-- /ko -->
-        <!-- ko if social -->
+        <!-- ko if: social -->
         <ul class="list-inline">
             <li data-bind="visible: social.personal">
                 <a data-bind="attr.href: social.personal">
@@ -187,7 +187,7 @@
             </small>
         </h5>
         <!-- /ko -->
-        <!-- ko if tags.length > 0 -->
+        <!-- ko if: tags.length > 0 -->
         <h5 data-bind="visible: tags.length">Tags:
             <span class="tag-cloud" data-bind="foreach: tags">
                 <span class="cloud-tag tag-sm pointer" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
@@ -212,7 +212,7 @@
             </small>
         </h5>
         <!-- /ko -->
-        <!-- ko if tags.length > 0 -->
+        <!-- ko if: tags.length > 0 -->
         <h5 data-bind="visible: tags.length">Tags:
             <span class="tag-cloud" data-bind="foreach: tags">
                 <span class="cloud-tag tag-sm pointer" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
@@ -233,7 +233,7 @@
             </small>
         </h5>
         <!-- /ko -->
-        <!-- ko if tags.length > 0 -->
+        <!-- ko if: tags.length > 0 -->
         <h5 data-bind="visible: tags.length">Tags:
             <span class="tag-cloud" data-bind="foreach: tags">
                 <span class="cloud-tag tag-sm pointer" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
@@ -258,7 +258,7 @@
             </small>
         </h5>
         <!-- /ko -->
-        <!-- ko if tags.length > 0 -->
+        <!-- ko if: tags.length > 0 -->
         <h5 class="registration" data-bind="visible: tags.length">Tags:
             <span class="tag-cloud" data-bind="foreach: tags">
                 <span class="cloud-tag tag-sm pointer" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
