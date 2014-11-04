@@ -129,7 +129,7 @@
             bootbox.dialog({
                 title: 'Search help',
                 message: '<h4>Queries</h4>'+
-                    '<p>Search uses the <a href="http://extensions.xwiki.org/xwiki/bin/view/Extension/Search+Application+Query+Syntax#HAND">Lucene search syntax</a>. ' +
+                    '<p>Search uses the <a href="http://extensions.xwiki.org/xwiki/bin/view/Extension/Search+Application+Query+Syntax">Lucene search syntax</a>. ' +
                     'This gives you many options, but can be very simple as well. ' +
                     'Examples of valid searches include:' +
                     '<ul><li><a href="/search/?q=repro*">repro*</a></li>' +
