@@ -725,7 +725,8 @@ class TestChildrenViews(OsfTestCase):
         nodes = res.json['nodes']
         assert_equal(len(nodes), 1)
         assert_equal(nodes[0]['title'], pointed.title)
-        assert_equal(nodes[0]['id'], pointed._primary_key)
+        pointer = Pointer.find_one(Q('node', 'eq', pointed))
+        assert_equal(nodes[0]['id'], pointer._primary_key)
 
     def test_get_children_filter_for_permissions(self):
         # self.user has admin access to this project
@@ -2668,6 +2669,16 @@ class TestComments(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.json.get('nUnread'), 0)
 
+    def test_n_unread_comments_updates_when_comment_reply(self):
+        comment = CommentFactory(node=self.project, user=self.project.creator)
+        reply = CommentFactory(node=self.project, user=self.user, target=comment)
+        self.project.reload()
+
+        url = self.project.api_url_for('list_comments')
+        res = self.app.get(url, auth=self.project.creator.auth)
+        assert_equal(res.json.get('nUnread'), 1)
+
+
     def test_n_unread_comments_updates_when_comment_is_edited(self):
         self.test_edit_comment()
         self.project.reload()
@@ -3329,6 +3340,40 @@ class TestUnconfirmedUserViews(OsfTestCase):
         url = web_url_for('profile_view_id', uid=user._id)
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
+
+
+class TestProfileNodeList(OsfTestCase):
+
+    def setUp(self):
+        OsfTestCase.setUp(self)
+        self.user = AuthUserFactory()
+
+        self.public = ProjectFactory(is_public=True)
+        self.public_component = NodeFactory(project=self.public, is_public=True)
+        self.private = ProjectFactory(is_public=False)
+        self.deleted = ProjectFactory(is_public=True, is_deleted=True)
+
+        for node in (self.public, self.public_component, self.private, self.deleted):
+            node.add_contributor(self.user, auth=Auth(node.creator))
+            node.save()
+
+    def test_get_public_projects(self):
+        url = api_url_for('get_public_projects', uid=self.user._id)
+        res = self.app.get(url)
+        node_ids = [each['id'] for each in res.json['nodes']]
+        assert_in(self.public._id, node_ids)
+        assert_not_in(self.private._id, node_ids)
+        assert_not_in(self.deleted._id, node_ids)
+        assert_not_in(self.public_component._id, node_ids)
+
+    def test_get_public_components(self):
+        url = api_url_for('get_public_components', uid=self.user._id)
+        res = self.app.get(url)
+        node_ids = [each['id'] for each in res.json['nodes']]
+        assert_in(self.public_component._id, node_ids)
+        assert_not_in(self.public._id, node_ids)
+        assert_not_in(self.private._id, node_ids)
+        assert_not_in(self.deleted._id, node_ids)
 
 
 if __name__ == '__main__':

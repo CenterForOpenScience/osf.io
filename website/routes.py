@@ -53,6 +53,8 @@ def get_globals():
         'web_url_for': util.web_url_for,
         'api_url_for': util.api_url_for,
         'sanitize': sanitize,
+        'js_str': lambda x: x.replace("'", r"\'").replace('"', r'\"')
+
     }
 
 
@@ -561,8 +563,6 @@ def make_url_map(app):
         # # TODO: Add API endpoint for tags
         # Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako')),
 
-        Rule('/project/new/', 'get', project_views.node.project_new,
-            OsfWebRenderer('project/new.mako')),
         Rule('/folder/<nid>', 'get', project_views.node.folder_new,
             OsfWebRenderer('project/new_folder.mako')),
         Rule('/api/v1/folder/<nid>', 'post', project_views.node.folder_new_post, json_renderer),

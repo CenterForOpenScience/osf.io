@@ -3,11 +3,11 @@
 <%def name="title()">${node['title'] | n} Wiki</%def>
 
 <div class="row">
-    <div class="col-md-3">
+    <div class="col-sm-3">
         <%include file="wiki/templates/nav.mako" />
         <%include file="wiki/templates/toc.mako" />
     </div>
-    <div class="col-md-9">
+    <div class="col-sm-9">
         <%include file="wiki/templates/status.mako"/>
         % if wiki_content:
             <div>${wiki_content | n}</div>
