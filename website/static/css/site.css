@@ -1062,6 +1062,10 @@ h1.unavailable {
     color: darkslategray;
     font-size: 10pt;
 }
+
+.search-result.well {
+    word-wrap: break-word;
+}
 /* Search Contributors */
 
 .search-contributor-result td {
