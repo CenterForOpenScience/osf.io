@@ -5,7 +5,8 @@ from datetime import datetime
 SYSTEM_USERS_UNCRACKABLE_PASSWORD = '12'
 
 TYPE_MAP = {
-    'string': str,
+    'string': basestring,
+    'str': basestring,
     'int': int,
     'num': int,
     'number': int,
@@ -13,5 +14,6 @@ TYPE_MAP = {
     'datetime': datetime,
     'bool': bool,
     'dict': dict,
-    'object': dict
+    'object': dict,
+    'list': list
 }
