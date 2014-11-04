@@ -13,11 +13,11 @@
 
 <div class="wiki">
     <div class="row">
-        <div class="col-md-3">
-            <%include file="wiki/templates/nav.mako" />
-            <%include file="wiki/templates/toc.mako" />
+        <div class="col-sm-3">
+            <%include file="wiki/templates/nav.mako"/>
+            <%include file="wiki/templates/toc.mako"/>
         </div>
-        <div class="col-md-9">
+        <div class="col-sm-9">
             <%include file="wiki/templates/status.mako"/>
             <div class="form-group wmd-panel">
                 <p><em>Changes will be stored but not published until you click "Save Version."</em></p>

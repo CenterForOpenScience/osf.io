@@ -14,7 +14,7 @@
                 url:   '/api/v1/profile/${profile["id"]}/edit/',
                 title: 'Edit Full Name',
                 placement: 'bottom',
-                value: '${profile["fullname"]}',
+                value: '${profile["fullname"] | js_str}',
                 success: function(data) {
                     // Also change the display name in the user info table
                     $(".fullname").text(data['name']);
@@ -203,7 +203,7 @@
         };
         var social = new profile.Social('#social', socialUrls, ['edit', 'view']);
         var jobs = new profile.Jobs('#jobs', jobsUrls, ['edit', 'view']);
-        var schools = new profile.Schools('#schools', schoolsUrls, ['edit', 'view']);;
+        var schools = new profile.Schools('#schools', schoolsUrls, ['edit', 'view']);
     });
 
 </script>
