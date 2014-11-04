@@ -112,7 +112,10 @@ def find_dashboard(user):
 
 @must_be_logged_in
 def get_dashboard(auth, nid=None, **kwargs):
+    if auth is None:
+        return None
     user = auth.user
+
     if nid is None:
         node = find_dashboard(user)
         dashboard_projects = [rubeus.to_project_root(node, auth, **kwargs)]

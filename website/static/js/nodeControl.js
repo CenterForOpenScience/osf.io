@@ -89,6 +89,8 @@
         self.dateForked = new FormattableDate(data.node.forked_date);
         self.watchedCount = ko.observable(data.node.watched_count);
         self.userIsWatching = ko.observable(data.user.is_watching);
+        self.inDashboard = ko.observable(data.node.in_dashboard);
+        self.dashboard = data.node.dashboard_id;
         self.userCanEdit = data.user.can_edit;
         self.description = data.node.description;
         self.title = data.node.title;
@@ -112,7 +114,7 @@
                 ajaxOptions: {
                     type: 'POST',
                     dataType: 'json',
-                    contentType: 'application/json',
+                    contentType: 'application/json'
                 },
                 params: function(params){
                     // Send JSON data
@@ -138,12 +140,28 @@
                 emptyclass: "text-muted"
             }));
         }
+        /**
+         * Add project to the Project Organizer.
+         */
+        self.addToDashboard = function() {
+            self.inDashboard(true);
+            var jsonData = {
+                'toNodeID': self.dashboard,
+                'pointerID': self._id
+            };
+            $.osf.postJSON('/api/v1/pointer/', jsonData)
+                .fail(function(data) {
+                    self.inDashboard(false);
+                    $.osf.handleJSONError(data);
+            });
+        };
 
         /**
          * Toggle the watch status for this project.
          */
         self.toggleWatch = function() {
             // Send POST request to node's watch API url and update the watch count
+            self.watchedCount(self.watchedCount()+1);
             $.osf.postJSON(
                 self.apiUrl + 'togglewatch/',
                 {}

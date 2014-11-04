@@ -660,10 +660,12 @@ def _view_project(node, auth, primary=False):
 
     parent = node.parent_node
     if user:
-        dashboard = Node.load(find_dashboard(user))
+        dashboard = find_dashboard(user)
+        dashboard_id = dashboard._id
         in_dashboard = dashboard.pointing_at(node._primary_key) is not None
     else:
         in_dashboard = False
+        dashboard_id = ''
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     anonymous = has_anonymous_link(node, auth)
     widgets, configs, js, css = _render_addon(node)
@@ -688,6 +690,7 @@ def _view_project(node, auth, primary=False):
             'redirect_url': redirect_url,
             'display_absolute_url': node.display_absolute_url,
             'in_dashboard': in_dashboard,
+            'dashboard_id': dashboard_id,
             'citations': {
                 'apa': node.citation_apa,
                 'mla': node.citation_mla,
