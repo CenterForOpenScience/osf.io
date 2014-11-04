@@ -212,7 +212,7 @@ def generate_schema(schema):
                 if len(value) == 0:
                     ret[key] = list
                 elif len(value) == 1:
-                    ret[key] = [TYPE_MAP[value]]
+                    ret[key] = [TYPE_MAP[value[0]]]
                 else:
                     raise InvalidSchemaError('Field {} contained a list with more than one value'.format(key))
             else:
@@ -228,13 +228,14 @@ def lint(data, schema, strict=False):
         if strict and key not in schema.keys():
             raise AdditionalKeysError(key)
 
-        if isinstance(value, dict):
+        if isinstance(schema[key], dict):
             lint(value, schema[key], strict=strict)
-        elif isinstance(value, list):
-            if not isinstance(schema[key], list):
+        elif isinstance(schema[key], list):
+            if not isinstance(value, list):
                 raise SchemaViolationError('{} must be of type {}'.format(key, schema[key]))
-            if not isinstance(value, type(schema[key][0])):
-                raise SchemaViolationError('{} must be of type {}'.format(key, schema[key]))
+            for subvalue in value:
+                if not isinstance(subvalue, schema[key][0]):
+                    raise SchemaViolationError('{} must all be of type {}'.format(key, schema[key]))
         else:
-            if not isinstance(value, type(schema[key])):
+            if not isinstance(value, schema[key]):
                 raise SchemaViolationError('{} must be of type {}'.format(key, schema[key]))
