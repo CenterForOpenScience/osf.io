@@ -32,15 +32,13 @@
 
     var Tag = function(tagInfo){
         var self = this;
-        self.name = ko.observable(tagInfo.key);
-        self.count = ko.observable(tagInfo.doc_count);
+        self.name = tagInfo.key;
+        self.count = tagInfo.doc_count;
     };
 
     var ViewModel = function(params) {
         var self = this;
         self.params = params || {};
-        console.log(params);
-        console.log(self.params);
         self.queryUrl = self.params.url;
         self.appURL = self.params.appURL;
 
@@ -151,7 +149,7 @@
             var tag = name;
 
             if(typeof name.name !== 'undefined') {
-                tag = name.name();
+                tag = name.name;
             }
 
             self.currentPage(1);

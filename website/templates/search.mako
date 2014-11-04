@@ -43,19 +43,19 @@
                             <div class="col-md-12">
                                 <h4> Improve your search:</h4>
                                 <span class="tag-cloud" data-bind="foreach: tags">
-                                    <!-- ko if: count() === $parent.tagMaxCount() && count() > $parent.tagMaxCount()/2  -->
+                                    <!-- ko if: count === $parent.tagMaxCount() && count > $parent.tagMaxCount()/2  -->
                                     <span class="cloud-tag tag-big pointer" data-bind="click: $root.addTag.bind(name)">
-                                        {{ name() }}
+                                        {{ name }}
                                     </span>
                                     <!-- /ko -->
-                                    <!-- ko if: count() < $parent.tagMaxCount() && count() > $parent.tagMaxCount()/2 -->
+                                    <!-- ko if: count < $parent.tagMaxCount() && count > $parent.tagMaxCount()/2 -->
                                     <span class="cloud-tag tag-med pointer" data-bind="click: $root.addTag.bind(name)">
-                                        {{ name() }}
+                                        {{ name }}
                                     </span>
                                     <!-- /ko -->
-                                    <!-- ko if: count() <= $parent.tagMaxCount()/2-->
+                                    <!-- ko if: count <= $parent.tagMaxCount()/2-->
                                     <span class="cloud-tag tag-sm pointer" data-bind="click: $root.addTag.bind(name)">
-                                        {{ name() }}
+                                        {{ name }}
                                     </span>
                                     <!-- /ko -->
                                 </span>
