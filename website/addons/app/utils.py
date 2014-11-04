@@ -5,22 +5,27 @@ from __future__ import unicode_literals
 
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
+from datetime import timedelta
 from cStringIO import StringIO
 
 from dateutil.parser import parse
 
 import PyRSS2Gen as pyrss
+
 from werkzeug.contrib.atom import AtomFeed
 
 from resync.resource import Resource
-from resync.resource_list import ResourceList
 from resync.change_list import ChangeList
+from resync.resource_list import ResourceList
 from resync.capability_list import CapabilityList
-
 from resync.resource_list import ResourceListDupeError
 
 from website.util import rss
+from website.addons.app.settings import TYPE_MAP
+from website.addons.app.exceptions import InvalidSchemaError
+from website.addons.app.exceptions import AdditionalKeysError
+from website.addons.app.exceptions import SchemaViolationError
 
 
 logger = logging.getLogger(__name__)
@@ -191,3 +196,45 @@ def generate_capabilitylist(changelist_url, resourcelist_url):
     cl.add(Resource(resourcelist_url))
 
     return cl.as_xml()
+
+
+def generate_schema(schema):
+    if not isinstance(schema, dict):
+        raise InvalidSchemaError('Schema must be of type dict')
+
+    ret = {}
+
+    try:
+        for key, value in schema.items():
+            if isinstance(value, dict):
+                ret[key] = generate_schema(value)
+            elif isinstance(value, list):
+                if len(value) == 0:
+                    ret[key] = list
+                elif len(value) == 1:
+                    ret[key] = [TYPE_MAP[value]]
+                else:
+                    raise InvalidSchemaError('Field {} contained a list with more than one value'.format(key))
+            else:
+                ret[key] = TYPE_MAP[value]
+    except KeyError as e:
+        raise InvalidSchemaError('Invalid type {}'.format(e.message))
+
+    return ret
+
+
+def lint(data, schema, strict=False):
+    for key, value in data.items():
+        if strict and key not in schema.keys():
+            raise AdditionalKeysError(key)
+
+        if isinstance(value, dict):
+            lint(value, schema[key], strict=strict)
+        elif isinstance(value, list):
+            if not isinstance(schema[key], list):
+                raise SchemaViolationError('{} must be of type {}'.format(key, schema[key]))
+            if not isinstance(value, type(schema[key][0])):
+                raise SchemaViolationError('{} must be of type {}'.format(key, schema[key]))
+        else:
+            if not isinstance(value, type(schema[key])):
+                raise SchemaViolationError('{} must be of type {}'.format(key, schema[key]))
