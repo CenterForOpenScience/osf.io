@@ -36,11 +36,14 @@
         self.count = ko.observable(tagInfo.doc_count);
     };
 
-    var ViewModel = function(url, appURL) {
+    var ViewModel = function(params) {
         var self = this;
+        self.params = params || {};
+        console.log(params);
+        console.log(self.params);
+        self.queryUrl = self.params.url;
+        self.appURL = self.params.appURL;
 
-        self.queryUrl = url;
-        self.appURL = appURL;
         self.tag = ko.observable('');
         self.stateJustPushed = false;
         self.query = ko.observable('');
@@ -328,7 +331,7 @@
         // Initialization code
         var self = this;
 
-        self.viewModel = new ViewModel(url, appURL);
+        self.viewModel = new ViewModel({'url': url, 'appURL': appURL});
         History.Adapter.bind(window, 'statechange', self.viewModel.pageChange);
 
         var data = {
