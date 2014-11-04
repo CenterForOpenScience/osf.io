@@ -6,8 +6,10 @@ import copy
 from modularodm import fields
 
 from website.project import Node
-from website.addons.base import AddonNodeSettingsBase
+from website.addons.app.utils import lint
 from website.search.search import update_metadata
+from website.addons.app.utils import generate_schema
+from website.addons.base import AddonNodeSettingsBase
 from website.addons.app.settings import SYSTEM_USERS_UNCRACKABLE_PASSWORD
 
 from framework.auth import User
@@ -15,11 +17,9 @@ from framework.mongo import StoredObject, ObjectId
 
 
 class Metadata(StoredObject):
-    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
-
     data = fields.DictionaryField()
-
-    app = fields.ForeignField('appnodesettings', backref='owner')
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    app = fields.ForeignField('appnodesettings', backref='owner', required=True)
 
     @classmethod
     def _merge_dicts(cls, dict1, dict2):
@@ -90,6 +90,7 @@ class Metadata(StoredObject):
 
     def save(self):
         update_metadata(self)
+        self.app.lint(self.data)
         super(Metadata, self).save()
 
     def to_json(self):
@@ -102,7 +103,9 @@ class AppNodeSettings(AddonNodeSettingsBase):
 
     system_user = fields.ForeignField('user', backref='application')
 
+    strict = fields.BooleanField()
     routes = fields.DictionaryField()
+    _schema = fields.DictionaryField()
     allow_queries = fields.BooleanField(default=True)
     allow_public_read = fields.BooleanField(default=True)
 
@@ -128,6 +131,15 @@ class AppNodeSettings(AddonNodeSettingsBase):
         self.save()
 
     @property
+    def schema(self):
+        return generate_schema(self._schema)
+
+    @schema.setter
+    def schema(self, new_schema):
+        generate_schema(new_schema)
+        self._schema = new_schema
+
+    @property
     def name(self):
         # Todo possibly store this for easier querying
         return self.owner.title
@@ -139,3 +151,7 @@ class AppNodeSettings(AddonNodeSettingsBase):
     @property
     def all_data(self):
         return self.metadata__owner
+
+    def lint(self, data):
+        if self.schema:
+            lint(data, self.schema, self.strict)
