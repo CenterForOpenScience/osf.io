@@ -57,8 +57,6 @@
         self.resultsPerPage = ko.observable(10);
         self.categories = ko.observableArray([]);
         self.searchStarted = ko.observable(false);
-        self.startDate = ko.observable(Date.now());
-        self.endDate = ko.observable(Date('1970-01-01'));
 
 
         self.totalCount = ko.computed(function() {
@@ -103,16 +101,6 @@
             };
         });
 
-        self.dateFilter = ko.computed(function() {
-            return {
-                'range': {
-                    'consumeFinished': {
-                        'gte': self.startDate(),
-                        'lte': self.endDate()
-                    }
-                }
-            };
-        });
 
         self.fullQuery = ko.computed(function() {
             return {
