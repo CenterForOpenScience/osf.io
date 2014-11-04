@@ -26,9 +26,10 @@
     <div class="help-block">
         <p data-bind="html: message, attr: {class: messageClass}"></p>
     </div>
-</div>
 
-<%include file="profile/addon_permissions.mako" />
+    <%include file="profile/addon_permissions.mako" />
+
+</div>
 
 <script>
     $script(['/static/addons/dropbox/dropboxUserConfig.js'], function() {
