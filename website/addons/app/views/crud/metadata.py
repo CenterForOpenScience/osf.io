@@ -14,7 +14,39 @@ from website.addons.app.model import Metadata
 from website.project.decorators import must_have_addon
 from website.search.exceptions import TypeCollisionError
 from website.project.decorators import must_have_permission
+from website.addons.app.exceptions import InvalidSchemaError
 from website.project.decorators import must_be_contributor_or_public
+
+
+@must_be_contributor_or_public
+@must_have_addon('app', 'node')
+def get_schema(node_addon, **kwargs):
+    return node_addon._schema
+
+
+@must_have_permission('admin')
+@must_have_addon('app', 'node')
+def post_schema(node_addon, **kwargs):
+    if not request.json:
+        raise HTTPError(http.BAD_REQUEST)
+
+    try:
+        node_addon.schema = request.json.copy()
+    except InvalidSchemaError as e:
+        raise HTTPError(http.BAD_REQUEST, data={'reason': e.message})
+
+    node_addon.strict = bool(request.args.get('strict'))
+
+    node_addon.save()
+    return {}, http.CREATED
+
+
+@must_have_permission('admin')
+@must_have_addon('app', 'node')
+def delete_schema(node_addon, **kwargs):
+    node_addon.schema = {}
+    node_addon.save()
+    return {}, http.NO_CONTENT
 
 
 @must_be_contributor_or_public

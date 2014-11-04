@@ -142,15 +142,33 @@ custom_routing_routes = {
 metadata_routes = {
     'rules': [
         Rule(
-            '/app/<pid>/metadata/',
+            '/app/<pid>/metadata/schema/',
+            'get',
+            views.crud.metadata.get_schema,
+            json_renderer
+        ),
+        Rule(
+            '/app/<pid>/metadata/schema/',
             'post',
-            views.crud.metadata.create_metadata,
+            views.crud.metadata.post_schema,
+            json_renderer
+        ),
+        Rule(
+            '/app/<pid>/metadata/schema/',
+            'delete',
+            views.crud.metadata.delete_schema,
             json_renderer
         ),
         Rule(
             '/app/<pid>/metadata/',
             'get',
             views.crud.metadata.get_metadata_ids,
+            json_renderer
+        ),
+        Rule(
+            '/app/<pid>/metadata/',
+            'post',
+            views.crud.metadata.create_metadata,
             json_renderer
         ),
         Rule(
