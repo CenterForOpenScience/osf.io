@@ -6,11 +6,15 @@ from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory
 from tests.factories import ProjectFactory
 
-from framework.auth import User, Auth
+from framework.auth import Auth
+from framework.auth import User
 
 from website.project import Node
-from website.util import api_url_for, web_url_for
-from website.addons.app.model import Metadata, AppNodeSettings
+from website.util import api_url_for
+from website.util import web_url_for
+from website.addons.app.model import Metadata
+from website.addons.app.settings import TYPE_MAP
+from website.addons.app.model import AppNodeSettings
 
 
 class TestMetadataViews(OsfTestCase):
@@ -233,6 +237,101 @@ class TestMetadataViews(OsfTestCase):
         ret = self.app.put_json(url, {'isCool': 'nickelback'}, expect_errors=True)
 
         assert_equals(ret.status_code, 403)
+
+
+class TestSchemaViews(OsfTestCase):
+
+    def setUp(self):
+        super(TestSchemaViews, self).setUp()
+        self.user = AuthUserFactory()
+        self.auth = Auth(self.user)
+        self.project = ProjectFactory(creator=self.user)
+
+        self.project.add_addon('app', self.auth)
+        self.app_addon = self.project.get_addon('app')
+
+        # Log user in
+        self.app.authenticate(*self.user.auth)
+
+    def test_can_get_schema(self):
+        url = self.project.api_url_for('get_schema')
+
+        ret = self.app.get(url)
+
+        assert_equals(ret.json, {})
+        assert_equals(ret.status_code, 200)
+
+    def test_get_schema(self):
+        url = self.project.api_url_for('post_schema')
+        schema = {'foo':'string', 'bar':['int'], 'meta':'dict'}
+
+        self.app_addon._schema = schema
+        self.app_addon.save()
+
+        ret = self.app.get(url)
+
+
+        assert_equals(ret.json, schema)
+        assert_equals(ret.status_code, 200)
+
+    def test_can_post_schema(self):
+        typed = {'foo':basestring, 'bar':[int], 'meta':dict}
+        schema = {'foo':'string', 'bar':['int'], 'meta':'dict'}
+
+        url = self.project.api_url_for('post_schema')
+
+        ret = self.app.post_json(url, schema)
+
+        self.app_addon.reload()
+
+        assert_equals(ret.status_code, 201)
+        assert_equals(self.app_addon.schema, typed)
+        assert_equals(self.app_addon._schema, schema)
+
+    def test_can_post_strict_schema(self):
+        typed = {'foo':basestring, 'bar':[int], 'meta':dict}
+        schema = {'foo':'string', 'bar':['int'], 'meta':'dict'}
+
+        url = self.project.api_url_for('post_schema') + '?strict=true'
+
+        ret = self.app.post_json(url, schema)
+
+        self.app_addon.reload()
+
+        assert_equals(ret.status_code, 201)
+        assert_equals(self.app_addon.schema, typed)
+        assert_equals(self.app_addon._schema, schema)
+        assert_equals(self.app_addon.strict, True)
+
+    def test_400_on_incorrect_schema(self):
+        schema = {'foo':'strung', 'bar':['int'], 'meta':'dict'}
+
+        url = self.project.api_url_for('post_schema')
+
+        ret = self.app.post_json(url, schema, expect_errors=True)
+
+        assert_equals(ret.status_code, 400)
+
+    def test_can_get_schema_types(self):
+        url = self.project.api_url_for('get_schema_types')
+
+        ret = self.app.get(url)
+
+        assert_equals(ret.status_code, 200)
+        assert_equals(ret.json, {key: str(val) for key, val in TYPE_MAP.items()})
+
+    def test_schema_validates(self):
+        schema = {'foo':'string', 'bar':['int'], 'meta':'dict'}
+        derta = {'foo':'strang', 'bar':[1,1,2,3,5,8,13,20], 'meta':{}}
+
+        self.app_addon._schema = schema
+        self.app_addon.save()
+
+        url = self.project.api_url_for('create_metadata')
+
+        ret = self.app.post_json(url, derta)
+
+        assert_equals(ret.status_code, 201)
 
 
 class TestCustomRouteViews(OsfTestCase):
