@@ -68,7 +68,6 @@
         });
 
         self.totalPages = ko.computed(function() {
-            var countOfPages = 1;
             var resultsCount = Math.max(self.resultsPerPage(),1); // No Divide by Zero
             countOfPages = Math.ceil(self.totalResults() / resultsCount);
             return countOfPages;
@@ -180,9 +179,9 @@
                 self.categories.removeAll();
 
                 data.results.forEach(function(result){
-                    if(typeof result.url !== "undefined"){
-                        result.wikiUrl = result.url+"wiki/";
-                        result.filesUrl = result.url+"files/";
+                    if(typeof result.url !== 'undefined'){
+                        result.wikiUrl = result.url+'wiki/';
+                        result.filesUrl = result.url+'files/';
                     }
                     self.results.push(result);
                 });
