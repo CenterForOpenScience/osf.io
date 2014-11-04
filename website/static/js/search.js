@@ -9,11 +9,6 @@
     ko.punches.enableAll();
 
     //https://stackoverflow.com/questions/7731778/jquery-get-query-string-parameters
-    function qs(key) {
-        key = key.replace(/[*+?^$.\[\]{}()|\\\/]/g, '\\$&'); // escape RegEx meta chars
-        var match = location.search.match(new RegExp('[?&]'+key+'=([^&]+)(&|$)'));
-        return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
-    }
 
     var Category = function(name, count, display){
         var self = this;
@@ -320,10 +315,10 @@
         History.Adapter.bind(window, 'statechange', self.viewModel.pageChange);
 
         var data = {
-            query: qs('q'),
-            page: Number(qs('page')),
+            query: $.osf.urlParams().q,
+            page: Number($.osf.urlParams().page),
             scrollTop: 0,
-            filter: qs('filter')
+            filter: $.osf.urlParams().filter
         };
         //Ensure our state keeps its URL paramaters
         History.replaceState(data, 'OSF | Search', location.search);
