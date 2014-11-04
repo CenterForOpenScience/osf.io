@@ -142,6 +142,12 @@ custom_routing_routes = {
 metadata_routes = {
     'rules': [
         Rule(
+            '/app/<pid>/metadata/schema/types/',
+            'get',
+            views.crud.metadata.get_schema_types,
+            json_renderer
+        ),
+        Rule(
             '/app/<pid>/metadata/schema/',
             'get',
             views.crud.metadata.get_schema,
