@@ -23,6 +23,7 @@ from website.addons.dropbox.tests.utils import (
 from website.addons.dropbox.views.config import serialize_settings
 from website.addons.dropbox.views.hgrid import dropbox_addon_folder
 from website.addons.dropbox import utils
+from website.addons.dropbox.client import get_client_from_user_settings
 
 mock_client = MockDropbox()
 
@@ -64,6 +65,25 @@ class TestAuthViews(OsfTestCase):
         settings.reload()
         assert_false(settings.has_auth)
 
+    @mock.patch('website.addons.dropbox.views.auth.get_client_from_user_settings')
+    @mock.patch('website.addons.dropbox.client.DropboxClient.disable_access_token')
+    def test_dropbox_oauth_delete_user_with_invalid_credentials(self, mock_get_client, mock_disable_access_token):
+        self.user.add_addon('dropbox')
+        settings = self.user.get_addon('dropbox')
+        settings.access_token = '12345abc'
+        settings.save()
+        assert_true(settings.has_auth)
+
+        mock_response = mock.Mock()
+        mock_response.status = 401
+        mock_disable_access_token.side_effect = ErrorResponse(mock_response, "The given OAuth 2 access token doesn't exist or has expired.")
+
+        self.user.save()
+        url = api_url_for('dropbox_oauth_delete_user')
+        self.app.delete(url)
+        settings.reload()
+        assert_false(settings.has_auth)
+
 
 class TestConfigViews(DropboxAddonTestCase):
 
@@ -74,6 +94,29 @@ class TestConfigViews(DropboxAddonTestCase):
         # The JSON result
         result = res.json['result']
         assert_true(result['userHasAuth'])
+
+    @mock.patch('website.addons.dropbox.views.auth.get_client_from_user_settings')
+    def test_dropbox_user_config_get_has_valid_credentials(self, mock_get_client):
+        mock_get_client.account_info.return_value = {'display_name': 'Mr. Drop Box'}
+        url = api_url_for('dropbox_user_config_get')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        # The JSON result
+        result = res.json['result']
+        assert_true(result['validCredentials'])
+
+    @mock.patch('website.addons.dropbox.views.auth.get_client_from_user_settings')
+    def test_dropbox_user_config_get_has_invalid_credentials(self, mock_get_client):
+        mock_get_client.return_value = get_client_from_user_settings(self.node_settings.user_settings)
+        mock_response = mock.Mock()
+        mock_response.status = 401
+        mock_get_client.account_info.side_effect = ErrorResponse(mock_response, "The given OAuth 2 access token doesn't exist or has expired.")
+        url = api_url_for('dropbox_user_config_get')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        # The JSON result
+        result = res.json['result']
+        assert_false(result['validCredentials'])
 
     def test_dropbox_user_config_get_returns_correct_urls(self):
         url = api_url_for('dropbox_user_config_get')
@@ -98,6 +141,7 @@ class TestConfigViews(DropboxAddonTestCase):
         # NOTE: Querystring params are in camelCase
         assert_equal(urls['folders'],
             self.project.api_url_for('dropbox_hgrid_data_contents', foldersOnly=1, includeRoot=1))
+        assert_equal(urls['settings'], web_url_for('user_addons'))
 
     def test_serialize_settings_helper_returns_correct_auth_info(self):
         result = serialize_settings(self.node_settings, self.user, client=mock_client)
@@ -110,6 +154,22 @@ class TestConfigViews(DropboxAddonTestCase):
         result = serialize_settings(self.node_settings, no_addon_user, client=mock_client)
         assert_false(result['userIsOwner'])
         assert_false(result['userHasAuth'])
+
+    @mock.patch('website.addons.dropbox.views.auth.get_client_from_user_settings')
+    def test_serialize_settings_valid_credentials(self, mock_get_client):
+        mock_get_client.return_value = get_client_from_user_settings(self.node_settings.user_settings)
+        mock_get_client.account_info.return_value = {'display_name': 'Mr. Drop Box'}
+        result = serialize_settings(self.node_settings, self.user, client=mock_get_client)
+        assert_true(result['validCredentials'])
+
+    @mock.patch('website.addons.dropbox.views.auth.get_client_from_user_settings')
+    def test_serialize_settings_invalid_credentials(self, mock_get_client):
+        mock_get_client.return_value = get_client_from_user_settings(self.node_settings.user_settings)
+        mock_response = mock.Mock()
+        mock_response.status = 401
+        mock_get_client.account_info.side_effect = ErrorResponse(mock_response, "The given OAuth 2 access token doesn't exist or has expired.")
+        result = serialize_settings(self.node_settings, self.user)
+        assert_false(result['validCredentials'])
 
     def test_serialize_settings_helper_returns_correct_folder_info(self):
         result = serialize_settings(self.node_settings, self.user, client=mock_client)
