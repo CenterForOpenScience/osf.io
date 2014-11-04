@@ -333,6 +333,72 @@ class TestSchemaViews(OsfTestCase):
 
         assert_equals(ret.status_code, 201)
 
+    def test_schema_validates_lists(self):
+        schema = {'foo':'string', 'bar':['int'], 'meta':'dict'}
+        derta = {'foo':'strang', 'bar':[1,1,2,3,5,'THEONESTRING',13,20], 'meta':{}}
+
+        self.app_addon._schema = schema
+        self.app_addon.save()
+
+        url = self.project.api_url_for('create_metadata')
+
+        ret = self.app.post_json(url, derta, expect_errors=True)
+
+        assert_equals(ret.status_code, 400)
+
+    def test_schema_validates_nested(self):
+        schema = {'foo':'string', 'bar':['int'], 'meta':{'fu': 'int'}}
+        derta = {'foo':'strang', 'bar':[13,20], 'meta':{'fu': 'COMBOBREAKERRRRRRRRRRR'}}
+
+        self.app_addon._schema = schema
+        self.app_addon.save()
+
+        url = self.project.api_url_for('create_metadata')
+
+        ret = self.app.post_json(url, derta, expect_errors=True)
+
+        assert_equals(ret.status_code, 400)
+
+    def test_schema_validates_normal(self):
+        schema = {'foo':'string', 'bar':['int'], 'meta':'dict'}
+        derta = {'foo':1337, 'bar':[1,1,2,3,5,8,13,20], 'meta':{}}
+
+        self.app_addon._schema = schema
+        self.app_addon.save()
+
+        url = self.project.api_url_for('create_metadata')
+
+        ret = self.app.post_json(url, derta, expect_errors=True)
+
+        assert_equals(ret.status_code, 400)
+
+    def test_schema_validates_strict(self):
+        schema = {'foo':'string', 'bar':['int'], 'meta':'dict'}
+        derta = {'foo':1337, 'bar':[1,1,2,3,5,8,13,20], 'merta': {}, 'meta':{}}
+
+        self.app_addon.strict = True
+        self.app_addon._schema = schema
+        self.app_addon.save()
+
+        url = self.project.api_url_for('create_metadata')
+
+        ret = self.app.post_json(url, derta, expect_errors=True)
+
+        assert_equals(ret.status_code, 400)
+
+    def test_schema_validates_strict_missing_key(self):
+        schema = {'foo':'string', 'bar':['int'], 'meta':'dict'}
+        derta = {'foo':1337, 'bar':[1,1,2,3,5,8,13,20]}
+
+        self.app_addon.strict = True
+        self.app_addon._schema = schema
+        self.app_addon.save()
+
+        url = self.project.api_url_for('create_metadata')
+
+        ret = self.app.post_json(url, derta, expect_errors=True)
+
+        assert_equals(ret.status_code, 400)
 
 class TestCustomRouteViews(OsfTestCase):
 
