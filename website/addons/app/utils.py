@@ -23,8 +23,8 @@ from resync.resource_list import ResourceListDupeError
 
 from website.util import rss
 from website.addons.app.settings import TYPE_MAP
+from website.addons.app.exceptions import KeyMissMatchError
 from website.addons.app.exceptions import InvalidSchemaError
-from website.addons.app.exceptions import AdditionalKeysError
 from website.addons.app.exceptions import SchemaViolationError
 
 
@@ -224,9 +224,10 @@ def generate_schema(schema):
 
 
 def lint(data, schema, strict=False):
+    if strict and data.keys != schema.keys():
+        raise KeyMissMatchError()
+
     for key, value in data.items():
-        if strict and key not in schema.keys():
-            raise AdditionalKeysError(key)
 
         if isinstance(schema[key], dict):
             lint(value, schema[key], strict=strict)
