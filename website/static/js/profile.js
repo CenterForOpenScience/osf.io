@@ -301,13 +301,14 @@
                 callback: function(confirmed) {
                     if (confirmed) {
                         self.restoreOriginal();
+                        if ($.inArray('view', self.modes) !== -1) {
+                            self.mode('view');
+                        }
                     }
                 }
             });
         }
-        if ($.inArray('view', this.modes) !== -1) {
-            this.mode('view');
-        }
+
     };
 
     BaseViewModel.prototype.submit = function() {
@@ -687,7 +688,7 @@
             self.startMonth,
             self.startYear,
             self.endMonth,
-            self.endYear,
+            self.endYear
         ];
 
         var validated = ko.validatedObservable(self);
@@ -718,7 +719,7 @@
             self.startMonth,
             self.startYear,
             self.endMonth,
-            self.endYear,
+            self.endYear
         ];
 
         var validated = ko.validatedObservable(self);
