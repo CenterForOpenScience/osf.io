@@ -78,7 +78,10 @@ def dropbox_oauth_start(**kwargs):
     if user.has_addon('dropbox') and user.get_addon('dropbox').has_auth:
         flash('You have already authorized Dropbox for this account', 'warning')
         return redirect(web_url_for('user_addons'))
-    return redirect(get_auth_flow().start())
+    # Force the user to reapprove the dropbox authorization each time. Currently the
+    # URI component force_reapprove is not configurable from the dropbox python client.
+    # Issue: https://github.com/dropbox/dropbox-js/issues/160
+    return redirect(get_auth_flow().start() + '&force_reapprove=true')
 
 
 def dropbox_oauth_finish(**kwargs):
