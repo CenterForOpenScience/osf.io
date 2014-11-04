@@ -10,14 +10,14 @@
     </div>
 
     <ol class="breadcrumb">
-         <li><a data-bind="attr: {href: files_url}">{{nodeTitle}}</a></li>
+         <li class="active overflow"><a data-bind="attr: {href: files_url}">{{nodeTitle}}</a></li>
          <li>Dataverse</li>
          <li class="active overflow">{{filename}}</li>
     </ol>
 
      <p>
          <a data-bind="attr: {href: download_url}" class="btn btn-success btn-md">Download <i class="icon-download-alt"></i></a>
-        % if user['can_edit'] and 'write' in user['permissions']:
+        % if user['can_edit']:
             <button data-bind="click: deleteFile" class="btn btn-danger btn-md">Delete <i class="icon-trash"></i></button>
         % endif
      </p>
