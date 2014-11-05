@@ -25,13 +25,13 @@ def figshare_hgrid_data_contents(node_addon, auth, **kwargs):
     connect = Figshare.from_settings(node_addon.user_settings)
     if fs_type in ['article', 'fileset']:
         out = article_to_hgrid(
-            node, auth,
+            node, auth.user,
             connect.article(node_addon, fs_id)['items'][0],
             expand=True, folders_only=folders_only
         )
     elif fs_type == 'project':
         out = project_to_hgrid(
-            node, auth, connect.project(node_addon, fs_id),
+            node, auth.user, connect.project(node_addon, fs_id),
             folders_only=folders_only
         )
     else:
