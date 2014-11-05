@@ -28,6 +28,7 @@
         self.delete_url = ko.observable();
         self.files_url = ko.observable();
         self.loaded = ko.observable(false);
+        self.deleting = ko.observable(false);
 
         // Note: Dataverse registrations not yet enabled
         self.registered = ko.observable(null);
@@ -57,7 +58,7 @@
                               self.filename() + '</strong> from your Dataverse?',
                     callback: function(confirmed) {
                         if (confirmed) {
-                            $('#deletingAlert').addClass('in');
+                            self.deleting(true);
                             var request = $.ajax({
                                 type: 'DELETE',
                                 url: self.delete_url()
@@ -66,7 +67,7 @@
                                 window.location = self.files_url();
                             });
                             request.fail(function( jqXHR, textStatus ) {
-                                $('#deletingAlert').removeClass('in');
+                                self.deleting(false);
                                 bootbox.alert( 'Could not delete: ' + textStatus );
                             });
                         }

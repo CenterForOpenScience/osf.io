@@ -5,7 +5,7 @@
 <%def name="file_versions()">
 <div class="scripted" id="dataverseScope">
 
-    <div id="deletingAlert" class="alert alert-warning fade">
+    <div class="alert alert-warning" data-bind="visible: deleting">
         Deleting your file…
     </div>
 
