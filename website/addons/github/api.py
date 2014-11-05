@@ -154,6 +154,10 @@ class GitHub(object):
             if recursive:
                 return tree.recurse()
             return tree
+        except AttributeError:
+            if not tree:
+                raise EmptyRepoError
+            raise
         except GitHubError as error:
             if error.code == 409:
                 raise EmptyRepoError
