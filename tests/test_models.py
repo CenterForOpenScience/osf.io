@@ -1885,13 +1885,17 @@ class TestProject(OsfTestCase):
 
     def test_set_title_fails_if_empty_or_whitespace(self):
         proj = ProjectFactory(title='That Was Then', creator=self.user)
-        proj.set_title(' ', auth=self.consolidate_auth)
-        proj.set_title('', auth=self.consolidate_auth)
-        assert_equal(proj.title, 'That Was Then')
+        with assert_raises(ValidationValueError):
+            proj.set_title(' ', auth=self.consolidate_auth)
+        with assert_raises(ValidationValueError):
+            proj.set_title('', auth=self.consolidate_auth)
+        #assert_equal(proj.title, 'That Was Then')
 
     def test_title_cant_be_empty(self):
         with assert_raises(ValidationValueError):
             proj = ProjectFactory(title='', creator=self.user)
+        with assert_raises(ValidationValueError):
+            proj = ProjectFactory(title=' ', creator=self.user)
 
     def test_contributor_can_edit(self):
         contributor = UserFactory()
