@@ -292,7 +292,7 @@ class TestAUser(OsfTestCase):
         self.app.get('/{0}/wiki/{1}/'.format(
             project._primary_key,
             non_ascii
-        ), auth=self.auth)
+        ), auth=self.auth, expect_errors=True)
         project.update_node_wiki(non_ascii, 'new content', Auth(self.user))
         assert_in(non_ascii, project.wiki_pages_current)
 
@@ -310,8 +310,9 @@ class TestAUser(OsfTestCase):
         res = self.app.get('/{0}/wiki/{1}/'.format(
             project._primary_key,
             'not a real page yet',
-        ), auth=self.auth)
+        ), auth=self.auth, expect_errors=True)
         assert_in('This wiki page does not currently exist.', res)
+        assert_equal(res.status_code, 404)
 
     def test_sees_own_profile(self):
         res = self.app.get('/profile/', auth=self.auth)
