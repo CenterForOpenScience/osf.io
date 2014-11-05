@@ -4,7 +4,7 @@ import httplib as http
 
 from flask import request
 from modularodm import Q
-from modularodm.exceptions import ModularOdmException
+from modularodm.exceptions import ModularOdmException, ValidationValueError
 
 from framework import status
 from framework.utils import iso8601format
@@ -45,7 +45,13 @@ def edit_node(auth, **kwargs):
     edited_field = post_data.get('name')
     value = strip_html(post_data.get('value', ''))
     if edited_field == 'title':
-        node.set_title(value, auth=auth)
+        try:
+            node.set_title(value, auth=auth)
+        except ValidationValueError:
+            raise HTTPError(
+            http.BAD_REQUEST,
+            data=dict(message_long='Title must not be blank.')
+        )
     elif edited_field == 'description':
         node.set_description(value, auth=auth)
     node.save()

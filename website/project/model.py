@@ -1304,7 +1304,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         """
         if title is None or not title.strip():
-            return
+            raise(ValidationValueError)
         original_title = self.title
         self.title = title
         self.add_log(
@@ -1451,7 +1451,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             try:  # Catch the potential PermissionsError above
                 forked_node = node_contained.fork_node(auth=auth, title='')
             except PermissionsError:
-                pass  # If this excpetion is thrown omit the node from the result set
+                pass  # If this exception is thrown omit the node from the result set
             if forked_node is not None:
                 forked.nodes.append(forked_node)
 
