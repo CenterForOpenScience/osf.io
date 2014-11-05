@@ -87,7 +87,6 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
 
     @property
     def has_auth(self):
-        print "has auth"
         return bool(self.user_settings and self.user_settings.has_auth)
 
     @property
