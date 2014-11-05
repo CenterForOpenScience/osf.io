@@ -34,6 +34,8 @@ ALIASES = {
     'total': 'Total'
 }
 
+INDICES = ['website']
+
 try:
     elastic = pyelasticsearch.ElasticSearch(
         settings.ELASTIC_URI,
@@ -302,10 +304,16 @@ def update_user(user):
 
 @requires_search
 def delete_all():
+    for idx in INDICES:
+        elastic.delete_index(idx)
+
+
+@requires_search
+def delete_index(index):
     try:
-        elastic.delete_index('website')
+        elastic.delete_index(index)
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
-        logger.debug("Index website does not exist; was unable to delete")
+        logger.debug("Index {} does not exist; was unable to delete".format(index))
 
 
 @requires_search
