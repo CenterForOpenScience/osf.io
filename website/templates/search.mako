@@ -73,13 +73,13 @@
                             <div class="well search-result" data-bind="template: { name: category, data: $data}"></div>
                         </div>
                         <ul class="pager">
-                            <li data-bind="css {disabled: !prevPageExists()}">
+                            <li data-bind="css: {disabled: !prevPageExists()}">
                                 <a href="#" data-bind="click: pagePrev">Previous Page </a>
                             </li>
                             <span data-bind="visible: totalPages() > 0">
                                 <span data-bind="text: navLocation"></span>
                             </span>
-                            <li data-bind="css {disabled: !nextPageExists()}">
+                            <li data-bind="css: {disabled: !nextPageExists()}">
                                 <a href="#" data-bind="click: pageNext"> Next Page</a>
                             </li>
 
