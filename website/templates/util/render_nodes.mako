@@ -13,7 +13,7 @@
             }'></div>
     % endfor
 ## TODO: make sure these templates are only included once on a page.
-<%include file='log_templates.mako'/>
+<%include file='_log_templates.mako'/>
 </ul>
 <script>
 % if sortable and 'write' in user['permissions']:
@@ -37,4 +37,3 @@
 % endif
 
 </script>
-

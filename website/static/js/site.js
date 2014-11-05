@@ -242,8 +242,8 @@
         } else {
             this.date = date;
         }
-        this.local = moment(date).format(LOCAL_DATEFORMAT);
-        this.utc = moment.utc(date).format(UTC_DATEFORMAT);
+        this.local = moment(this.date).format(LOCAL_DATEFORMAT);
+        this.utc = moment.utc(this.date).format(UTC_DATEFORMAT);
     };
 
     // Backwards compatibility
@@ -288,7 +288,7 @@
     //    }
 
         // Build tooltips on user activity widgets
-        $('.ua-meter').tooltip();
+        $('.progress-user-activity [data-toggle="tooltip"]').tooltip();
         $('[rel=tooltip]').tooltip({
             placement:'bottom'
         });

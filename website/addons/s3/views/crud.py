@@ -173,6 +173,7 @@ def s3_upload(**kwargs):
     mime = request.json.get('type') or 'application/octet-stream'
 
     update = S3Wrapper.from_addon(s3).does_key_exist(file_name)
+    signed_url = generate_signed_url(mime, file_name, s3)
     node.add_log(
         action='s3_' +
         (NodeLog.FILE_UPDATED if update else NodeLog.FILE_ADDED),
@@ -186,8 +187,7 @@ def s3_upload(**kwargs):
         auth=kwargs['auth'],
         log_date=datetime.datetime.utcnow(),
     )
-
-    return generate_signed_url(mime, file_name, s3)
+    return signed_url
 
 
 @must_be_contributor_or_public

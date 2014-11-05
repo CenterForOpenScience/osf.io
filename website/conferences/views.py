@@ -116,11 +116,7 @@ def add_poster_by_email(conf, recipient, address, fullname, subject,
         node.set_privacy('public', auth=auth)
 
     # Add body
-    node.update_node_wiki(
-        page='home',
-        content=sanitize(message),
-        auth=auth,
-    )
+    node.update_node_wiki('home', sanitize(message), auth)
 
     # Add tags
     presentation_type = 'talk' if 'talk' in recipient else 'poster'
