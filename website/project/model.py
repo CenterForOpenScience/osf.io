@@ -504,7 +504,7 @@ def validate_category(value):
 def validate_title(value):
     """Validator for Node#title. Makes sure that the value exists.
     """
-    if value.strip() == u'':
+    if value is None or not value.strip():
         raise ValidationValueError('Title does not exist.')
     return True
 
@@ -1303,7 +1303,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param auth: All the auth information including user, API key.
 
         """
-        if not title:
+        if title is None or not title.strip():
             return
         original_title = self.title
         self.title = title
