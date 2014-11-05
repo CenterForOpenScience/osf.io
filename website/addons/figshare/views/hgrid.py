@@ -62,9 +62,8 @@ def figshare_hgrid_data(node_settings, auth, parent=None, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('figshare', 'node')
-def figshare_dummy_folder(node_settings, auth, parent=None, **kwargs):
+def figshare_dummy_folder(node_addon, auth, parent=None, **kwargs):
     data = request.args.to_dict()
-    node_settings = kwargs.get('node_addon')
 
     parent = data.pop('parent', 'null')  # noqa
-    return figshare_hgrid_data(node_settings, auth, None, contents=False, **data)
+    return figshare_hgrid_data(node_addon, auth, None, contents=False, **data)
