@@ -64,10 +64,10 @@ class TestHookVerify(OsfTestCase):
 
 class TestHookVerify(unittest.TestCase):
     @mock.patch('website.addons.github.api.GitHub.repo')
-    def tests_none_trees_raise_empty_repo(self, mack_repo):
+    def tests_none_trees_raise_empty_repo(self, mock_repo):
         mock_tree = mock.Mock()
         mock_tree.tree.return_value = None
-        mack_repo.return_value = mock_tree
+        mock_repo.return_value = mock_tree
 
         with assert_raises(EmptyRepoError):
             GitHub().tree('', '', '')
