@@ -2754,7 +2754,7 @@ class TestSearchViews(OsfTestCase):
         assert_equal(res.status_code, 200)
         result = res.json['users']
         page = res.json['page']
-        assert_equal(len(result), 2)
+        assert_equal(len(result), 5)
         assert_equal(page, 1)
 
     def test_search_pagination_smaller_pages(self):
