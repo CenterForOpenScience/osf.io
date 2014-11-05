@@ -274,7 +274,7 @@ def update_user(user):
             elastic.delete('website', 'user', user._id, refresh=True)
             logger.debug('User ' + user._id + ' successfully removed from the Elasticsearch index')
         except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
-            pass  # Can't delete what's not there
+            logger.warn('User ' + user._id + 'not in the Elasticsearch index')
         return
 
     try:
@@ -313,7 +313,7 @@ def delete_index(index):
     try:
         elastic.delete_index(index)
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
-        logger.debug("Index {} does not exist; was unable to delete".format(index))
+        logger.debug('Index {} does not exist; was unable to delete'.format(index))
 
 
 @requires_search
@@ -342,7 +342,7 @@ def delete_doc(elastic_document_id, node, index='website'):
     try:
         elastic.delete(index, category, elastic_document_id, refresh=True)
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
-        pass  # can't delete what doesn't exist
+        logger.debug('Document {} does not exist; was unable to delete'.format(elastic_document_id))
 
 
 @requires_search

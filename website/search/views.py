@@ -27,8 +27,6 @@ def handle_search_errors(func):
     def wrapped(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except exceptions.IndexNotFoundError:
-            pass
         except exceptions.MalformedQueryError:
             raise HTTPError(http.BAD_REQUEST, data={
                 'message_short': 'Bad search query',
@@ -51,8 +49,8 @@ def search_search(**kwargs):
     tick = time.time()
     results = {}
 
-    if request.method == 'POST' and request.json:
-        results = search.search(request.json, search_type=_type)
+    if request.method == 'POST':
+        results = search.search(request.get_json(), search_type=_type)
     elif request.method == 'GET':
         q = request.args.get('q', '*')
         # TODO Match javascript params?
@@ -181,7 +179,7 @@ def process_project_search_results(results, **kwargs):
 
 def search_contributor():
     nid = request.args.get('excludeNode')
-    exclude = (Node.load(nid).contributors if nid else None) or []
+    exclude = Node.load(nid).contributors if nid else []
     query = bleach.clean(request.args.get('query', ''), tags=[], strip=True)
     page = int(bleach.clean(request.args.get('page', '0'), tags=[], strip=True))
     size = int(bleach.clean(request.args.get('size', '10'), tags=[], strip=True))
