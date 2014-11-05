@@ -46,7 +46,9 @@
         <div class="tab-content" >
             <div class="tab-pane active" id="quicktasks">
                 <ul class="ob-widget-list"> <!-- start onboarding -->
-                    ## <%include file="ob_new_project.mako"/>
+                    <div id="obGoToProject">
+                        <osf-ob-goto params="data: nodes"></osf-ob-register>
+                    </div>
                     <div id="projectCreate">
                         <li id="obNewProject" class="ob-list-item list-group-item">
 
@@ -60,8 +62,9 @@
                                 </i>
                             </div><!-- end ob-header -->
                             <div data-bind="visible: isOpen()" id="obRevealNewProject">
-                                <project-create-form params="data: nodes">
-                                </project-create-form>
+                                <osf-project-create-form
+                                    params="data: nodes, hasFocus: focus">
+                                </osf-project-create-form>
                             </div>
                         </li> <!-- end ob-list-item -->
                     </div>
@@ -115,29 +118,30 @@
         var url = "${api_url_for('get_dashboard_nodes')}";
         var request = $.getJSON(url, function(response) {
             var allNodes = response.nodes;
-            ##  For uploads, only show projects for which user has write or admin permissions
+            ##  For uploads, only show nodes for which user has write or admin permissions
             var uploadSelection = ko.utils.arrayFilter(allNodes, function(node) {
-                return (node.category === 'project' &&
-                        $.inArray(node.permissions, ['write', 'admin']) !== -1);
+                return $.inArray(node.permissions, ['write', 'admin']) !== -1;
             });
             ## Filter out components and nodes for which user is not admin
             var registrationSelection = ko.utils.arrayFilter(uploadSelection, function(node) {
-                return node.permissions === 'admin';
+                return node.category === 'project' && node.permissions === 'admin';
             });
 
+            $.osf.applyBindings({nodes: allNodes}, '#obGoToProject');
             $.osf.applyBindings({nodes: registrationSelection}, '#obRegisterProject');
             $.osf.applyBindings({nodes: uploadSelection}, '#obUploader');
-            $.osf.applyBindings({
-                isOpen: ko.observable(false),
-                toggle: function() {
-                    if (!this.isOpen()) {
-                        this.isOpen(true);
-                    } else {
-                        this.isOpen(false);
-                    }
-                },
-                nodes: response.nodes
-            }, '#projectCreate');
+
+            function ProjectCreateViewModel() {
+                var self = this;
+                self.isOpen = ko.observable(false),
+                self.focus = ko.observable(false);
+                self.toggle = function() {
+                    self.isOpen(!self.isOpen());
+                    self.focus(self.isOpen());
+                };
+                self.nodes = response.nodes;
+            }
+            $.osf.applyBindings(ProjectCreateViewModel, '#projectCreate');
         });
         request.fail(function(xhr, textStatus, error) {
             Raven.captureMessage('Could not fetch dashboard nodes.', {

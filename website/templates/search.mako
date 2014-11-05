@@ -9,7 +9,7 @@
         <div class="row">
             <div class="col-md-12">
                 <form class="input-group" data-bind="submit: submit">
-                    <input type="text" class="form-control" placeholder="Search" data-bind="value: query">
+                    <input type="text" class="form-control" placeholder="Search" data-bind="value: query, hasFocus: true">
                     <span class="input-group-btn">
                         <button type=button class="btn btn-default" data-bind="click: help"><i class="icon-question"></i></button>
                         <button type=button class="btn btn-default" data-bind="click: submit"><i class="icon-search"></i></button>
@@ -23,7 +23,7 @@
                         <div class="row">
                             <div class="col-md-12">
                                 <ul class="nav nav-pills nav-stacked" data-bind="foreach: categories">
-                                    <!-- ko if: count() > 0 -->
+
                                     <!-- ko if: $parent.category().name() === name() -->
                                             <li class="active">
                                                 <a data-bind="click: $parent.filter.bind($data)">{{ display() }}<span class="badge pull-right">{{count()}}</span></a>
@@ -34,7 +34,7 @@
                                                 <a data-bind="click: $parent.filter.bind($data)">{{ display() }}<span class="badge pull-right">{{count()}}</span></a>
                                             </li>
                                         <!-- /ko -->
-                                    <!-- /ko -->
+
                                 </ul>
                             </div>
                         </div>
@@ -43,19 +43,19 @@
                             <div class="col-md-12">
                                 <h4> Improve your search:</h4>
                                 <span class="tag-cloud" data-bind="foreach: tags">
-                                    <!-- ko if: count() === $parent.tagMaxCount() && count() > $parent.tagMaxCount()/2  -->
-                                    <span class="cloud-tag tag-big" data-bind="click: $root.addTag.bind(name)">
-                                        {{ name() }}
+                                    <!-- ko if: count === $parent.tagMaxCount() && count > $parent.tagMaxCount()/2  -->
+                                    <span class="cloud-tag tag-big pointer" data-bind="click: $root.addTag.bind(name)">
+                                        {{ name }}
                                     </span>
                                     <!-- /ko -->
-                                    <!-- ko if: count() < $parent.tagMaxCount() && count() > $parent.tagMaxCount()/2 -->
-                                    <span class="cloud-tag tag-med" data-bind="click: $root.addTag.bind(name)">
-                                        {{ name() }}
+                                    <!-- ko if: count < $parent.tagMaxCount() && count > $parent.tagMaxCount()/2 -->
+                                    <span class="cloud-tag tag-med pointer" data-bind="click: $root.addTag.bind(name)">
+                                        {{ name }}
                                     </span>
                                     <!-- /ko -->
-                                    <!-- ko if: count() <= $parent.tagMaxCount()/2-->
-                                    <span class="cloud-tag tag-sm" data-bind="click: $root.addTag.bind(name)">
-                                        {{ name() }}
+                                    <!-- ko if: count <= $parent.tagMaxCount()/2-->
+                                    <span class="cloud-tag tag-sm pointer" data-bind="click: $root.addTag.bind(name)">
+                                        {{ name }}
                                     </span>
                                     <!-- /ko -->
                                 </span>
@@ -66,11 +66,11 @@
                     <!-- /ko -->
                     <div class="col-md-9">
                         <!-- ko if: searchStarted() && !totalCount() -->
-                        <div class="results hidden" data-bind="css: {hidden: totalCount() }">No results found.</div>
+                        <div class="well hidden" data-bind="css: {hidden: totalCount() }">No results found.</div>
                         <!-- /ko -->
                         <!-- ko if: totalCount() -->
                         <div data-bind="foreach: results">
-                            <div class="well" data-bind="template: { name: category, data: $data}"></div>
+                            <div class="well search-result" data-bind="template: { name: category, data: $data}"></div>
                         </div>
                         <ul class="pager">
                             <li data-bind="css {disabled: !prevPageExists()}">
@@ -129,7 +129,7 @@
         <span data-bind="visible: job, text: job"></span><!-- ko if: job_title || job --><br /><!-- /ko -->
         <span data-bind="visible: degree, text: degree"></span><!-- ko if: degree && school --> from <!-- /ko -->
         <span data-bind="visible: school, text: school"></span><!-- ko if: degree || school --><br /><!-- /ko -->
-        <!-- ko if social -->
+        <!-- ko if: social -->
         <ul class="list-inline">
             <li data-bind="visible: social.personal">
                 <a data-bind="attr.href: social.personal">
@@ -187,10 +187,10 @@
             </small>
         </h5>
         <!-- /ko -->
-        <!-- ko if tags.length > 0 -->
+        <!-- ko if: tags.length > 0 -->
         <h5 data-bind="visible: tags.length">Tags:
             <span class="tag-cloud" data-bind="foreach: tags">
-                <span class="cloud-tag tag-sm" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
+                <span class="cloud-tag tag-sm pointer" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
                 </span>
             </span>
         </h5>
@@ -212,10 +212,10 @@
             </small>
         </h5>
         <!-- /ko -->
-        <!-- ko if tags.length > 0 -->
+        <!-- ko if: tags.length > 0 -->
         <h5 data-bind="visible: tags.length">Tags:
             <span class="tag-cloud" data-bind="foreach: tags">
-                <span class="cloud-tag tag-sm" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
+                <span class="cloud-tag tag-sm pointer" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
                 </span>
             </span>
         </h5>
@@ -233,10 +233,10 @@
             </small>
         </h5>
         <!-- /ko -->
-        <!-- ko if tags.length > 0 -->
+        <!-- ko if: tags.length > 0 -->
         <h5 data-bind="visible: tags.length">Tags:
             <span class="tag-cloud" data-bind="foreach: tags">
-                <span class="cloud-tag tag-sm" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
+                <span class="cloud-tag tag-sm pointer" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
                 </span>
             </span>
         </h5>
@@ -247,25 +247,25 @@
       <!-- /ko -->
     </script>
     <script type="text/html" id="registration">
-        <h4><a data-bind="attr.href: url">{{title }}</a> <i class="icon-lock"></i></h4>
-        <h5>Description: <small>{{ description | default:"No Description" | fit:500 }}</small></h5>
+        <h4 class="registration"><a data-bind="attr.href: url">{{title }}</a> </h4>
+        <h5 class="registration">Description: <small>{{ description | default:"No Description" | fit:500 }}</small></h5>
 
         <!-- ko if: contributors.length > 0 -->
-        <h5>
+        <h5 class="registration">
             Contributors: <small data-bind="foreach: contributors">
                 <a data-bind="attr.href: $parent.contributors_url[$index()]">{{ $data }}</a>
             <!-- ko if: ($index()+1) < ($parent.contributors.length) -->&nbsp;- <!-- /ko -->
             </small>
         </h5>
         <!-- /ko -->
-        <!-- ko if tags.length > 0 -->
-        <h5 data-bind="visible: tags.length">Tags:
+        <!-- ko if: tags.length > 0 -->
+        <h5 class="registration" data-bind="visible: tags.length">Tags:
             <span class="tag-cloud" data-bind="foreach: tags">
-                <span class="cloud-tag tag-sm" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
+                <span class="cloud-tag tag-sm pointer" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
                 </span>
             </span>
         </h5>
-        <h5>Jump to:
+        <h5 class="registration">Jump to:
             <a data-bind="attr.href: wikiUrl">Wiki</a> -
             <a data-bind="attr.href: filesUrl">Files</a>
         </h5>

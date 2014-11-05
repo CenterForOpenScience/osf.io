@@ -13,7 +13,6 @@ css = Bundle(
     # Vendorized libraries
     Bundle(
         'vendor/jquery-tagit/css/jquery.tagit.css',
-        'vendor/bower_components/select2/select2.css',
         'vendor/jquery-tagsinput/css/jquery.tagsinput.css',
         'vendor/jquery-tagit/css/tagit.ui-zendesk.css',
         'vendor/jquery-fileupload/css/jquery.fileupload-ui.css',

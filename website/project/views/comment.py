@@ -184,7 +184,7 @@ def n_unread_comments(node, user):
     """Return the number of unread comments on a node for a user."""
     default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
     view_timestamp = user.comments_viewed_timestamp.get(node._id, default_timestamp)
-    return Comment.find(Q('target', 'eq', node) &
+    return Comment.find(Q('node', 'eq', node) &
                         Q('user', 'ne', user) &
                         Q('date_created', 'gt', view_timestamp) &
                         Q('date_modified', 'gt', view_timestamp)).count()

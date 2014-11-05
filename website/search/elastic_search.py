@@ -6,10 +6,13 @@ import re
 import copy
 import math
 import logging
+import unicodedata
 
-from requests.exceptions import ConnectionError
+import six
 
 import pyelasticsearch
+
+from requests.exceptions import ConnectionError
 
 from framework import sentry
 
@@ -17,6 +20,7 @@ from website import settings
 from website.filters import gravatar
 from website.models import User, Node
 from website.search import exceptions
+from website.search.util import build_query
 
 logger = logging.getLogger(__name__)
 
@@ -198,6 +202,12 @@ def update_node(node, index='website'):
     if node.is_deleted or not node.is_public:
         delete_doc(elastic_document_id, node)
     else:
+        try:
+            normalized_title = six.u(node.title)
+        except TypeError:
+            normalized_title = node.title
+        normalized_title = unicodedata.normalize('NFKD', normalized_title).encode('ascii', 'ignore')
+
         elastic_document = {
             'id': elastic_document_id,
             'contributors': [
@@ -211,6 +221,7 @@ def update_node(node, index='website'):
                 and x.is_active()
             ],
             'title': node.title,
+            'normalized_title': normalized_title,
             'category': category,
             'public': node.is_public,
             'tags': [tag._id for tag in node.tags if tag],
@@ -264,9 +275,16 @@ def update_user(user):
             pass  # Can't delete what's not there
         return
 
+    try:
+        normalized_name = six.u(user.fullname)
+    except TypeError:
+        normalized_name = user.fullname
+    normalized_name = unicodedata.normalize('NFKD', normalized_name).encode('ascii', 'ignore')
+
     user_doc = {
         'id': user._id,
         'user': user.fullname,
+        'normalized_user': normalized_name,
         'job': user.jobs[0]['institution'] if user.jobs else '',
         'job_title': user.jobs[0]['title'] if user.jobs else '',
         'school': user.schools[0]['institution'] if user.schools else '',
@@ -299,7 +317,7 @@ def create_index():
             'tags': {
                 'type': 'string',
                 'index': 'not_analyzed',
-            }
+            },
         }
     }
     try:
@@ -320,7 +338,7 @@ def delete_doc(elastic_document_id, node, index='website'):
 
 
 @requires_search
-def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
+def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
     """Search for contributors to add to a project using elastic search. Request must
     include JSON data with a "query" field.
 
@@ -335,51 +353,15 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
 
     """
     start = (page * size)
-    query.replace(" ", "_")
-    query = re.sub(r'[\-\+]', '', query)
-    query = re.split(r'\s+', query)
-    bool_filter = {
-        'must': [],
-        'should': [],
-        'must_not': [],
-    }
-    if exclude is not None:
-        for excluded in exclude:
-            bool_filter['must_not'].append({
-                'term': {
-                    'id': excluded._id
-                }
-            })
+    items = re.split(r'[\s-]+', query)
+    query = ''
 
-    if len(query) > 1:
-        for item in query:
-            bool_filter['must'].append({
-                'prefix': {
-                    'user': item.lower()
-                }
-            })
-    else:
-        bool_filter['must'].append({
-            'prefix': {
-                'user': query[0].lower()
-            }
-        })
+    query = "  AND ".join('{}*~'.format(item) for item in items) + \
+            "".join(' NOT "{}"'.format(excluded) for excluded in exclude)
 
-    query = {
-        'query': {
-            'filtered': {
-                'filter': {
-                    'bool': bool_filter
-                }
-            }
-        },
-        'from': start,
-        'size': size,
-    }
-
-    results = elastic.search(query, index='website')
-    docs = [hit['_source'] for hit in results['hits']['hits']]
-    pages = math.ceil(results[u'hits'][u'total'] / size)
+    results = search(build_query(query, start=start, size=size), index='website', search_type='user')
+    docs = results['results']
+    pages = math.ceil(results['counts']['total'] / size)
 
     users = []
     for doc in docs:
@@ -424,7 +406,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
     return \
         {
             'users': users,
-            'total': results[u'hits'][u'total'],
+            'total': results['counts']['total'],
             'pages': pages,
             'page': page,
         }
