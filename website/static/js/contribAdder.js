@@ -170,10 +170,15 @@
                         });
                     }
                     var contribs = [];
-                    for (var i=0; i< result.contributors.length; i++) {
+                    var numToDisplay = result.contributors.length;
+                    if (numToDisplay > 10) {
+                        numToDisplay = 10;
+                    }
+                    for (var i=0; i< numToDisplay; i++) {
                         contribs.push(new Contributor(result.contributors[i]));
                     }
                     self.results(contribs);
+                    self.numberOfPages(1)
                 }
             ).fail(function (xhr, textStatus, error) {
                 self.notification({
@@ -204,10 +209,15 @@
                         });
                     }
                     var contribs = [];
-                    for (var i=0; i< result.contributors.length; i++) {
+                    var numToDisplay = result.contributors.length;
+                    if (numToDisplay > 10) {
+                        numToDisplay = 10;
+                    }
+                    for (var i=0; i< numToDisplay; i++) {
                         contribs.push(new Contributor(result.contributors[i]));
                     }
                     self.results(contribs);
+                    self.numberOfPages(1);
                 }
             ).fail(function (xhr, textStatus, error) {
                 self.notification({
