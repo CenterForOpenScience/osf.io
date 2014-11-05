@@ -27,8 +27,6 @@ def handle_search_errors(func):
     def wrapped(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except exceptions.IndexNotFoundError:
-            pass
         except exceptions.MalformedQueryError:
             raise HTTPError(http.BAD_REQUEST, data={
                 'message_short': 'Bad search query',
