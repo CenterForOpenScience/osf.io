@@ -52,7 +52,8 @@
                             isEnabled: canEdit,
                             afterRender: setupEditable,
                             options: {
-                                containment: '#manageContributors'
+                                containment: '#manageContributors',
+                                cancel: '.no-sort'
                             }
                         }">
                     </tbody>
@@ -149,13 +150,13 @@
                 <span data-bind="text: contributor.shortname"></span>
             </span>
             <span data-bind="if: profileUrl">
-                <a data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
+                <a class="no-sort" data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
             </span>
         </td>
         <td>
             <!-- ko if: $parent.canEdit -->
                 <span data-bind="visible: notDeleteStaged">
-                    <a href="#" class="permission-editable" data-type="select"></a>
+                    <a href="#" class="permission-editable no-sort" data-type="select"></a>
                 </span>
                 <span data-bind="visible: deleteStaged">
                     <span data-bind="text: formatPermission"></span>
@@ -167,7 +168,7 @@
         </td>
         <td>
             <input
-                    type="checkbox"
+                    type="checkbox" class="no-sort"
                     data-bind="checked: visible, enable: $parent.canEdit"
                 />
         </td>
@@ -179,7 +180,7 @@
                     <a
                             data-bind="click: remove, clickBubble: false, tooltip: {title: removeContributor}"
                         >
-                                <i class="icon-remove text-danger"></i>
+                                <i class="icon-remove text-danger no-sort"></i>
                     </a>
                 <!-- /ko -->
                 <!-- ko if: deleteStaged -->
@@ -194,7 +195,7 @@
                             rel="tooltip"
                             title="Remove contributor"
                         >
-                        <i class="icon-remove text-danger"></i>
+                        <i class="icon-remove text-danger no-sort"></i>
                     </a>
                     <!-- /ko -->
             <!-- /ko -->
