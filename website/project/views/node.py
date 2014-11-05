@@ -49,9 +49,9 @@ def edit_node(auth, **kwargs):
             node.set_title(value, auth=auth)
         except ValidationValueError:
             raise HTTPError(
-            http.BAD_REQUEST,
-            data=dict(message_long='Title must not be blank.')
-        )
+                http.BAD_REQUEST,
+                data=dict(message_long='Title must not be blank.')
+            )
     elif edited_field == 'description':
         node.set_description(value, auth=auth)
     node.save()
