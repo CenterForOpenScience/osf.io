@@ -17,8 +17,13 @@ BASE_PATH = parent_dir(HERE)  # website/ directory
 ADDON_PATH = os.path.join(BASE_PATH, 'addons')
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = "/static"
+
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 ANALYTICS_PATH = os.path.join(BASE_PATH, 'analytics')
+
+CORE_TEMPLATES = os.path.join(BASE_PATH, 'templates/log_templates.mako')
+BUILT_TEMPLATES = os.path.join(BASE_PATH, 'templates/_log_templates.mako')
+
 DOMAIN = 'http://localhost:5000/'
 GNUPG_HOME = os.path.join(BASE_PATH, 'gpg')
 GNUPG_BINARY = 'gpg'
@@ -95,9 +100,6 @@ GRAVATAR_SIZE_DISCUSSION = 20
 
 # Conference options
 CONFERNCE_MIN_COUNT = 5
-
-# User activity style
-USER_ACTIVITY_MAX_WIDTH = 325
 
 WIKI_WHITELIST = {
     'tags': [
@@ -190,3 +192,6 @@ ALL_MY_REGISTRATIONS_NAME = 'All my registrations'
 # FOR EMERGENCIES ONLY: Setting this to True will disable forks, registrations,
 # and uploads in order to save disk space.
 DISK_SAVING_MODE = False
+
+# Add Contributors (most in common)
+MAX_MOST_IN_COMMON_LENGTH = 15
