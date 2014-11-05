@@ -9,7 +9,7 @@
         ">
 
         <h4 class="list-group-item-heading">
-            <span class="overflow" style="display:inline-block;">
+            <span class="component-overflow">
             % if not summary['primary']:
               <i class="icon icon-link" data-toggle="tooltip" title="Linked ${summary['node_type']}"></i>
             % endif
