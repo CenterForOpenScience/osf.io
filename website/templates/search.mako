@@ -24,14 +24,14 @@
                             <div class="col-md-12">
                                 <ul class="nav nav-pills nav-stacked" data-bind="foreach: categories">
 
-                                    <!-- ko if: $parent.category().name() === name() -->
+                                    <!-- ko if: $parent.category().name === name -->
                                             <li class="active">
-                                                <a data-bind="click: $parent.filter.bind($data)">{{ display() }}<span class="badge pull-right">{{count()}}</span></a>
+                                                <a data-bind="click: $parent.filter.bind($data)">{{ display }}<span class="badge pull-right">{{count}}</span></a>
                                             </li>
                                         <!-- /ko -->
-                                        <!-- ko if: $parent.category().name() !== name() -->
+                                        <!-- ko if: $parent.category().name !== name -->
                                             <li>
-                                                <a data-bind="click: $parent.filter.bind($data)">{{ display() }}<span class="badge pull-right">{{count()}}</span></a>
+                                                <a data-bind="click: $parent.filter.bind($data)">{{ display }}<span class="badge pull-right">{{count}}</span></a>
                                             </li>
                                         <!-- /ko -->
 

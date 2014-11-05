@@ -13,15 +13,15 @@
     var Category = function(name, count, display){
         var self = this;
 
-        self.name = ko.observable(name);
-        self.count = ko.observable(count);
-        self.display = ko.observable(display);
+        self.name = name;
+        self.count = count;
+        self.display = display;
 
         self.url = ko.computed(function() {
-            if (self.name() === 'total') {
+            if (self.name === 'total') {
                 return '';
             }
-            return self.name() + '/';
+            return self.name + '/';
         });
     };
 
@@ -57,7 +57,7 @@
                 return 0;
             }
 
-            return self.categories()[0].count();
+            return self.categories()[0].count;
         });
 
         self.totalPages = ko.computed(function() {
@@ -103,12 +103,12 @@
         });
 
         self.sortCategories = function(a, b) {
-            if(a.name() === 'Total') {
+            if(a.name === 'Total') {
                 return -1;
-            } else if (b.name() === 'Total') {
+            } else if (b.name === 'Total') {
                 return 1;
             }
-            return a.count() >  b.count() ? -1 : 1;
+            return a.count >  b.count ? -1 : 1;
         };
 
         self.claim = function(mid) {
@@ -191,9 +191,9 @@
 
                 // If our category is named attempt to load its total else set it to the total total
                 if (self.category().name !== undefined) {
-                    self.totalResults(data.counts[self.category().name()] || 0);
+                    self.totalResults(data.counts[self.category().name] || 0);
                 } else {
-                    self.totalResults(self.self.categories()[0].count());
+                    self.totalResults(self.self.categories()[0].count);
                 }
 
                 // Load up our tags
@@ -249,12 +249,12 @@
         self.validateSearch = function() {
             if (self.category().name !== undefined) {
                 possibleCategories = $.map(self.categories().filter(function(category) {
-                    return category.count() > 0;
+                    return category.count > 0;
                 }), function(category) {
-                    return category.name();
+                    return category.name;
                 });
 
-                if (possibleCategories.indexOf(self.category().name()) === -1) {
+                if (possibleCategories.indexOf(self.category().name) === -1) {
                     self.filter(self.categories()[0]);
                     return self.search(true);
                 }
@@ -285,8 +285,8 @@
             var url = '?q=' + self.query();
 
             if (self.category().name !== undefined && self.category().url() !== '') {
-                state.filter = self.category().name();
-                url += ('&filter=' + self.category().name());
+                state.filter = self.category().name;
+                url += ('&filter=' + self.category().name);
             }
 
             url += ('&page=' + self.currentPage());
