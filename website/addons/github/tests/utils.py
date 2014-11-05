@@ -2,6 +2,8 @@ import mock
 import github3
 from website.addons.github.api import GitHub
 from github3.repos.branch import Branch
+from github3.repos import Repository
+
 
 # TODO: allow changing the repo name
 def create_mock_github(user='octo-cat', private=False):
@@ -116,6 +118,61 @@ def create_mock_github(user='octo-cat', private=False):
         'push': True
      }
      })
+
+    github_mock.create_repo.return_value = Repository.from_json({
+              "id": 1296869,
+              "owner": {
+                "login": "octocat",
+                "id": 1,
+                "avatar_url": "https://github.com/images/error/octocat_happy.gif",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/octocat",
+                "html_url": "https://github.com/octocat",
+                "followers_url": "https://api.github.com/users/octocat/followers",
+                "following_url": "https://api.github.com/users/octocat/following{/other_user}",
+                "gists_url": "https://api.github.com/users/octocat/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/octocat/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/octocat/subscriptions",
+                "organizations_url": "https://api.github.com/users/octocat/orgs",
+                "repos_url": "https://api.github.com/users/octocat/repos",
+                "events_url": "https://api.github.com/users/octocat/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/octocat/received_events",
+                "type": "User",
+                "site_admin": False
+              },
+              "name": "Hello-World",
+              "full_name": "octocat/Hello-World",
+              "description": "This your first repo!",
+              "private": False,
+              "fork": False,
+              "url": "https://api.github.com/repos/octocat/Hello-World",
+              "html_url": "https://github.com/octocat/Hello-World",
+              "clone_url": "https://github.com/octocat/Hello-World.git",
+              "git_url": "git://github.com/octocat/Hello-World.git",
+              "ssh_url": "git@github.com:octocat/Hello-World.git",
+              "svn_url": "https://svn.github.com/octocat/Hello-World",
+              "mirror_url": "git://git.example.com/octocat/Hello-World",
+              "homepage": "https://github.com",
+              "language": None,
+              "forks_count": 9,
+              "stargazers_count": 80,
+              "watchers_count": 80,
+              "size": 108,
+              "default_branch": "master",
+              "open_issues_count": 0,
+              "has_issues": True,
+              "has_wiki": True,
+              "has_pages": False,
+              "has_downloads": True,
+              "pushed_at": "2011-01-26T19:06:43Z",
+              "created_at": "2011-01-26T19:01:12Z",
+              "updated_at": "2011-01-26T19:14:43Z",
+              "permissions": {
+                "admin": False,
+                "push": False,
+                "pull": True
+              }
+            })
 
     github_mock.branches.return_value = [
         Branch.from_json({u'commit': {u'sha': u'e22d92d5d90bb8f9695e9a5e2e2311a5c1997230',

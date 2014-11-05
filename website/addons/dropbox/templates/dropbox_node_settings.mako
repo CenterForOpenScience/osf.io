@@ -1,4 +1,3 @@
-
 <link rel="stylesheet" href="/static/addons/dropbox/dropbox.css">
 <div id="dropboxScope" class="scripted">
     <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
@@ -68,7 +67,8 @@
 
                     <div data-bind="visible: currentDisplay() === PICKER">
                         <div id="myDropboxGrid"
-                             class="filebrowser hgrid dropbox-folder-picker"></div>
+                             class="filebrowser hgrid dropbox-folder-picker">
+                        </div>
                     </div>
 
                     <!-- Share -->
@@ -145,6 +145,5 @@
         // TODO(sloria): Remove this dependency on mako variable
         var url = '${node["api_url"] + "dropbox/config/"}';
         var dropbox = new DropboxNodeConfig('#dropboxScope', url, '#myDropboxGrid');
-        console.log(dropbox);
     });
 </script>

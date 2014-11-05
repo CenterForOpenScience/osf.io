@@ -39,8 +39,7 @@ class AddonModelMixin(StoredObject):
         addon_config = settings.ADDONS_AVAILABLE_DICT.get(addon_name)
         if not addon_config or not addon_config.settings_models.get(self._name):
             return False
-        print "framework"
-        print addon_config
+
         backref_key = self._backref_key(addon_config)
         addons = [
             addon for addon in getattr(self, backref_key)

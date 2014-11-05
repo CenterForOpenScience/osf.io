@@ -1,6 +1,3 @@
-##<script type="text/javascript" src="/static/addons/github/github-node-cfg.js"></script>
-
-##<form role="form" id="addonSettings${addon_short_name.capitalize()}" data-addon="${addon_short_name}">
 
     <div id="githubScope" class="scripted">
         <h4 class="addon-title">
@@ -32,18 +29,38 @@
 
             </small>
         </h4>
-    </div>
+
+
+            <div class="github-settings"  data-bind = "if:showSettings">
+                <form id=addonSettings  data-bind = submit:submitSettings >
+                    <div class="row">
+                        <div class="col-md-6">
+                            <select class="form-control col-md-6" data-bind = "options:displayRepos, value:SelectedRepository, optionsCaption:'Select your Repository'"></select>
+                        </div>
+                        <div class="col-md-6" id="displayRepositories">
+                            <span> or </span>
+                            <button data-bind="click:createRepo" class="btn btn-link">Create Repo</button>
+                        </div>
+                    </div>
+                    <div class="row" style="padding-top: 20px" data-bind="visible:SelectedRepository">
+                        <h4 class="col-md-8">Connect "<span data-bind="text:SelectedRepository()"></span>"?</h4>
+                        <div class="pull-right col-md-4">
+                            <button class="btn btn-default" data-bind="click:cancel">Cancel</button>
+                            <input type="submit" class="btn btn-primary" value="Submit">
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+        <div class="addon-settings-message" style="padding-top: 10px;" data-bind ="text:displayMessage"></div>
+
+    </div><!-- End of githubScope-->
 
 
 
 
-<%def name="on_submit()">
-##    <script type="text/javascript">
-##        $(document).ready(function() {
-##            $('#addonSettings${addon_short_name.capitalize()}').on('submit', AddonHelper.onSubmitSettings);
-##        });
-##    </script>
-</%def>
+
+
 
 <script>
     $script.ready('zeroclipboard', function() {
@@ -53,9 +70,8 @@
     $script.ready('githubNodeConfig', function() {
 
         var url = '${node["api_url"] + "github/config/"}';
-        console.log(url);
-        console.log(githubScope);
-        var github = new GithubNodeConfig('#githubScope', url);
+        var submitUrl = '${node["api_url"] + "github/settings/"}'
+        var github = new GithubNodeConfig('#githubScope', url, submitUrl);
         console.log(github);
     });
 </script>
