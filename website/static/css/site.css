@@ -816,7 +816,21 @@ h1.node-title, h1.node-parent-title {
         font-size: 20px;
         line-height: 20px;
     }
+    .wiki-status-sm {
+        float: none;
+        text-align: center;
+        margin-top: 20px;
+    }
 }
+
+@media (min-width: 768px) {
+    .wiki-status-lg {
+        float: right;
+        margin-left: 20px;
+        display: inline-block;
+    }
+}
+
 
 .wiki-title-container {
     display: inline-block;
