@@ -247,22 +247,22 @@ def update_node(node, index='website'):
 
 def generate_social_links(social):
     social_links = {}
-    if 'github' in social and social['github']:
-        social_links['github'] = 'http://github.com/{}'.format(social['github'])
-    if 'impactStory' in social and social['impactStory']:
-        social_links['impactStory'] = 'https://impactstory.org/{}'.format(social['impactStory'])
-    if 'linkedIn' in social and social['linkedIn']:
-        social_links['linkedIn'] = 'https://www.linkedin.com/profile/view?id={}'.format(social['linkedIn'])
-    if 'orcid' in social and social['orcid']:
-        social_links['orcid'] = 'http://orcid.com/{}'.format(social['orcid']),
-    if 'personal' in social and social['personal']:
-        social_links['personal'] = social['personal']
-    if 'researcherId' in social and social['researcherId']:
-        social_links['researcherId'] = 'http://researcherid.com/rid/{}'.format(social['researcherId'])
-    if 'scholar' in social and social['scholar']:
-        social_links['scholar'] = 'http://scholar.google.com/citations?user={}'.format(social['scholar'])
-    if 'twitter' in social and social['twitter']:
-        social_links['twitter'] = 'http://twitter.com/{}'.format(social['twitter'])
+    if 'github' in social:
+        social_links['github'] = 'http://github.com/{}'.format(social['github']) if social['github'] else None
+    if 'impactStory' in social:
+        social_links['impactStory'] = 'https://impactstory.org/{}'.format(social['impactStory']) if social['impactStory'] else None
+    if 'linkedIn' in social:
+        social_links['linkedIn'] = 'https://www.linkedin.com/profile/view?id={}'.format(social['linkedIn']) if social['linkedIn'] else None
+    if 'orcid' in social:
+        social_links['orcid'] = 'http://orcid.com/{}'.format(social['orcid']) if social['orcid'] else None
+    if 'personal' in social:
+        social_links['personal'] = social['personal'] if social['personal'] else None
+    if 'researcherId' in social:
+        social_links['researcherId'] = 'http://researcherid.com/rid/{}'.format(social['researcherId']) if social['researcherId'] else None
+    if 'scholar' in social:
+        social_links['scholar'] = 'http://scholar.google.com/citations?user={}'.format(social['scholar']) if social['scholar'] else None
+    if 'twitter' in social:
+        social_links['twitter'] = 'http://twitter.com/{}'.format(social['twitter']) if social['twitter'] else None
     return social_links
 
 @requires_search
