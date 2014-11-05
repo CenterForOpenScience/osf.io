@@ -400,7 +400,7 @@ def get_cache_file(article_id, file_id):
 @decorators.must_have_addon('figshare', 'node')
 @decorators.must_have_permission('write')
 @decorators.must_not_be_registration
-def figshare_delete_file(*args, **kwargs):
+def figshare_delete_file(user, *args, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
 

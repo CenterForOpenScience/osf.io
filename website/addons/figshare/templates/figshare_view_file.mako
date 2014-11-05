@@ -25,33 +25,33 @@ $('#figsharePublishArticle').on('click', function(){
 % endif
 
     <ol class="breadcrumb">
-        <li><a href=${urls['files']}>${node['title']}</a></li>
+        <li class="active overflow"><a href=${urls['files']}>${node['title']}</a></li>
         <li>Figshare</li>
         <li class="active overflow">${file_name}</li>
     </ol>
 
     <p>
-            %if file_status == 'Public':
-                %if urls['download']:
-                <a href="${urls['download']}"
-                    class="btn btn-success btn-md">Download <i class="icon-download-alt"></i></a>
-                %endif
+            <!--download button-->
+            <a class="btn btn-success btn-md
+                % if file_status == 'Public' and urls['download']:
+                    " href="${urls['download']}"
+                % else:
+                    disabled" data-toggle="popover" data-trigger="hover" title="Cannot Download File"
+                        data-content="In order to download private Figshare files and drafts, you will need to log into Figshare."
+                % endif
+            >Download <i class="icon-download-alt"></i></a>
 
-                <button class="btn btn-danger btn-md disabled" data-toggle="popover" data-trigger="hover" title="Cannot Delete File"
-                        data-content="Files published on Figshare cannot be deleted.">
-                        Delete <i class="icon-trash"></i></button>
-            %endif
-
-            %if file_status != 'Public' and user['can_edit'] and 'write' in user['permissions']:
-
-                <button class="btn btn-success btn-md disabled" data-toggle="popover" data-trigger="hover" title="Cannot Download File"
-                        data-content="In order to download private Figshare files and drafts, you will need to log into Figshare.">
-                        Download <i class="icon-download-alt"></i></button>
-
-                <a data-bind="click: deleteFile" class="btn btn-danger btn-md">Delete <i class="icon-trash"></i>
-               </a>
-
-            %endif
+            <!--delete button-->
+            % if user['can_edit']:
+                <button class="btn btn-danger btn-md
+                    % if file_status != 'Public':
+                        " data-bind="click: deleteFile"
+                    % else:
+                        disabled" data-toggle="popover" data-trigger="hover" title="Cannot Delete File"
+                            data-content="Files published on Figshare cannot be deleted."
+                    % endif
+                >Delete <i class="icon-trash"></i></button>
+            % endif
     </p>
 
 %if file_versions:
