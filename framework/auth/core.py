@@ -612,15 +612,15 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def save(self, *args, **kwargs):
         self.username = self.username.lower().strip() if self.username else None
-        rv = super(User, self).save(*args, **kwargs)
-        if self.SEARCH_UPDATE_FIELDS.intersection(rv) and self.is_confirmed():
+        ret = super(User, self).save(*args, **kwargs)
+        if self.SEARCH_UPDATE_FIELDS.intersection(ret) and self.is_confirmed():
             self.update_search()
         if settings.PIWIK_HOST and not self.piwik_token:
             try:
                 piwik.create_user(self)
             except (piwik.PiwikException, ValueError):
                 logger.error("Piwik user creation failed: " + self._id)
-        return rv
+        return ret
 
     def update_search(self):
         from website.search import search
