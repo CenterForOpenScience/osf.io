@@ -20,15 +20,23 @@
                                             data-bind="value:query"
                                             placeholder='Search by name' autofocus/>
                                     <span class="input-group-btn">
-                                        <input type="submit" value="Search" class="btn btn-default"></input>
+                                        <input type="submit" value="Search" class="btn btn-default">
                                     </span>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <!-- ko if:parentId -->
-                                    <a data-bind="click:importFromParent, html:'Import contributors from <i>' + parentTitle + '</i>'"></a>
-                                <!-- /ko -->
-                                <a data-bind="click:recentlyAdded, text:'Get list of recently added contributors'"></a>
+                        </div>
+                        <div class="row search-contributor-links">
+                            <div class="col-md-12">
+                                <div>
+                                    <!-- ko if:parentId -->
+                                        <a data-bind="click:importFromParent, html:'Import contributors from <i>' + parentTitle + '</i>'"></a>
+                                    <!-- /ko -->
+                                </div>
+                                <div>
+                                    Show my
+                                    <a data-bind="click:recentlyAdded">recent collaborators</a>,
+                                    <a data-bind="click:mostInCommon">most frequent collaborators</a>
+                                </div>
                             </div>
                         </div>
                     </form>
@@ -44,7 +52,7 @@
                                 <a data-bind="click:addAll">Add all</a>
                             </div>
                             <!-- ko if: notification -->
-                            <div data-bind="text: notification().message, css: 'alert alert-' + notification().level"></div>
+                            <div data-bind="html: notification().message, css: 'alert alert-' + notification().level"></div>
                             <!-- /ko -->
 
                             <table>
