@@ -2744,7 +2744,7 @@ class TestSearchViews(OsfTestCase):
         result = res.json['users']
         pages = res.json['pages']
         page = res.json['page']
-        assert_equal(len(result), 10)
+        assert_equal(len(result), 5)
         assert_equal(pages, 2)
         assert_equal(page, 0)
 
