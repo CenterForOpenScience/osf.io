@@ -181,7 +181,7 @@ def process_project_search_results(results, **kwargs):
 
 def search_contributor():
     nid = request.args.get('excludeNode')
-    exclude = (Node.load(nid).contributors if nid else None) or []
+    exclude = Node.load(nid).contributors if nid else []
     query = bleach.clean(request.args.get('query', ''), tags=[], strip=True)
     page = int(bleach.clean(request.args.get('page', '0'), tags=[], strip=True))
     size = int(bleach.clean(request.args.get('size', '10'), tags=[], strip=True))
