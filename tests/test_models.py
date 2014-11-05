@@ -800,7 +800,6 @@ class TestFileActions(OsfTestCase):
             self.node.remove_file(Auth(self.node.creator), 'foo')
 
 
-
 class TestApiKey(OsfTestCase):
 
     def test_factory(self):
@@ -2842,6 +2841,7 @@ class TestNodeLog(OsfTestCase):
 
         created_log = project.logs[0]
         assert_false(created_log.can_view(unrelated, Auth(user=project.creator)))
+
 
 class TestPermissions(OsfTestCase):
 
