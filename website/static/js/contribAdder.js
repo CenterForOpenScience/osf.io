@@ -138,7 +138,7 @@
                 self.paginators.push({
                     style: (self.currentPage() == 0)? "disabled" : "",
                     handler: self.previousPage,
-                    text: "&laquo;"
+                    text: "&#8592;"
                 });
                 self.paginators.push({
                     style: "",
@@ -224,7 +224,7 @@
                 self.paginators.push({
                     style: (self.currentPage() == self.numberOfPages() - 1)? "disabled" : "",
                     handler: self.nextPage,
-                    text: "&raquo;"
+                    text: "&#8594;"
                 });
             }
         }
