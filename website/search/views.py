@@ -49,8 +49,8 @@ def search_search(**kwargs):
     tick = time.time()
     results = {}
 
-    if request.method == 'POST' and request.json:
-        results = search.search(request.json, search_type=_type)
+    if request.method == 'POST':
+        results = search.search(request.get_json(), search_type=_type)
     elif request.method == 'GET':
         q = request.args.get('q', '*')
         # TODO Match javascript params?
