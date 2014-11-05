@@ -39,6 +39,7 @@ class TestAuthViews(OsfTestCase):
         url = api_url_for('dropbox_oauth_start_user')
         res = self.app.get(url)
         assert_is_redirect(res)
+        assert_in('&force_reapprove=true', res.location)
 
     @mock.patch('website.addons.dropbox.views.auth.DropboxOAuth2Flow.finish')
     @mock.patch('website.addons.dropbox.views.auth.get_client_from_user_settings')

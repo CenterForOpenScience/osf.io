@@ -1,6 +1,14 @@
 /* Body and structure
 -------------------------------------------------- */
 
+html, body {
+}
+
+body {
+    padding-top: 70px; /* body padding for fixed top nav */
+    position: relative; /* for bootstrap affix */
+}
+
 /*News page*/
 .spacer {
     height: 20px;
@@ -58,17 +66,14 @@
 .gs-sidebar .nav .nav>.active>a i {
     display: inline-block;
 }
-
-/* affixed sidenav */
-.gs-sidenav,
-.gs-sidenav.affix {
+/* affixed sidebar */
+.gs-sidebar,
+.gs-sidebar.affix,
+.gs-sidebar.affix-top {
     position: fixed;
-    top: 80px;
+    top: 70px;
 }
-.gs-sidenav.affix-top {
-    position: static;
-}
-.gs-sidenav.affix-bottom {
+.gs-sidebar.affix-bottom {
     position: relative;
 }
 
@@ -79,11 +84,6 @@
     margin-left: auto;
     margin-right: auto;
     border: solid 1px #ddd;
-    width: 560px;
-    height: 315px;
-}
-.gs-video iframe {
-    border: 0;
 }
 
 /* phase number counters */
@@ -285,14 +285,6 @@ font-weight: bold;
 */
 
 /* Global Styles */
-
-html, body {
-  height:100%;
-}
-
-body {
-  padding-top: 70px; /* body padding for fixed top nav */
-}
 
 .img-home-portfolio,
 .img-customer,
@@ -967,6 +959,9 @@ h1.unavailable {
 .search-contributor-result td {
     padding-right: 10px;
 }
+.search-contributor-links {
+    padding-top: 10px;
+}
 
 
 /* Markdown editing */
@@ -1074,6 +1069,11 @@ h1.unavailable {
 }
 
 /* Sidenav */
+.osf-sidenav {
+    /* overflow-wrap css3 */
+    word-wrap: break-word;
+}
+
 .osf-sidenav.affix {
   position: static;
 }
@@ -1162,6 +1162,22 @@ h1.unavailable {
 }
 
 /* Logs */
+
+dl.activity-log dd {
+    margin-bottom: 4px;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+    /* wrap dl in col-sm-* grid layout */
+    dl.activity-log dt {
+        float: inherit;
+        width: inherit;
+        text-align: inherit;
+    }
+    dl.activity-log dd {
+        margin-left: 0;
+    }
+}
 
 .log-file-link {
     cursor: pointer;

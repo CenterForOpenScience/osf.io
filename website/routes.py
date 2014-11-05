@@ -563,8 +563,6 @@ def make_url_map(app):
         # # TODO: Add API endpoint for tags
         # Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako')),
 
-        Rule('/project/new/', 'get', project_views.node.project_new,
-            OsfWebRenderer('project/new.mako')),
         Rule('/folder/<nid>', 'get', project_views.node.folder_new,
             OsfWebRenderer('project/new_folder.mako')),
         Rule('/api/v1/folder/<nid>', 'post', project_views.node.folder_new_post, json_renderer),
@@ -804,6 +802,11 @@ def make_url_map(app):
             project_views.contributor.project_manage_contributors,
             json_renderer,
         ),
+
+        Rule([
+            '/project/<pid>/get_most_in_common_contributors/',
+            '/project/<pid>/node/<nid>/get_most_in_common_contributors/',
+        ], 'get', project_views.contributor.get_most_in_common_contributors, json_renderer),
 
         Rule([
             '/project/<pid>/get_recently_added_contributors/',
