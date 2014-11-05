@@ -52,7 +52,8 @@
                 <!-- Folder buttons -->
                 <div class="btn-group" data-bind="visible: userIsOwner">
                     <button data-bind="click: togglePicker,
-                                        css: {active: currentDisplay() === PICKER}"
+                                        css: {active: currentDisplay() === PICKER},
+                                        visible: validCredentials"
                             class="btn btn-sm btn-figshare"><i class="icon-edit"></i> Change</button>
                 </div>
 

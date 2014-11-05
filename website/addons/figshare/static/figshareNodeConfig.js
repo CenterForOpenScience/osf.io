@@ -27,7 +27,9 @@
         // Auth information
         self.nodeHasAuth = ko.observable(false);
         self.userHasAuth = ko.observable(false);
-	self.userIsOwner = ko.observable(false);
+	    self.userIsOwner = ko.observable(false);
+        // Whether a user's oauth credentials are still valid
+        self.validCredentials = ko.observable(true);
         // Currently linked folder, an Object of the form {name: ..., path: ...}
         self.linked = ko.observable({});
         self.ownerName = ko.observable('');
@@ -60,8 +62,9 @@
             self.ownerName(data.ownerName);
             self.nodeHasAuth(data.nodeHasAuth);
             self.userHasAuth(data.userHasAuth);
-	    self.userIsOwner(data.userIsOwner);
-	    self.linked(data.linked || {});
+	        self.userIsOwner(data.userIsOwner);
+            self.validCredentials(data.validCredentials);
+	        self.linked(data.linked || {});
             self.urls(data.urls);
         };
 
@@ -71,6 +74,20 @@
                 success: function(response) {
                     self.updateFromData(response.result);
                     self.loadedSettings(true);
+                    if (!self.validCredentials()){
+                        if (self.userIsOwner()) {
+                            self.changeMessage('Could not retrieve Figshare settings at ' +
+                            'this time. The Figshare addon credentials may no longer be valid.' +
+                            ' Try deauthorizing and reauthorizing Figshare on your <a href="' +
+                             self.urls().settings + '">account settings page</a>.',
+                            'text-warning')
+                        } else {
+                            self.changeMessage('Could not retrieve Figshare settings at ' +
+                            'this time. The Figshare addon credentials may no longer be valid.' +
+                            ' Contact ' + self.ownerName() + ' to verify.',
+                            'text-warning')
+                        }
+                 }
                 },
                 error: function(xhr, textStatus, error) {
                     self.changeMessage('Could not retrieve Figshare settings at ' +

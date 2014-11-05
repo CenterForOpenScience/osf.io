@@ -88,11 +88,16 @@ def serialize_settings(node_settings, current_user, client=None):
     user_is_owner = user_settings is not None and (
         user_settings.owner._primary_key == current_user._primary_key
     )
+    valid_credentials = True
+    options = Figshare.from_settings(current_user_settings).get_options()
+    if options == 401:
+        valid_credentials = False
 
     result = {
         'nodeHasAuth': node_settings.has_auth,
         'userHasAuth': user_has_auth,
         'userIsOwner': user_is_owner,
+        'validCredentials': valid_credentials,
         'urls': serialize_urls(node_settings)
     }
 
