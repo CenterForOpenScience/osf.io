@@ -404,7 +404,7 @@
             var $elem = $(evt.target);
             bootbox.confirm({
                 message: '<strong>NOTE</strong>: This action is irreversible.',
-                title: 'Delete <em>' + row.name + '</em>?',
+                title: 'Delete <em class="overflow">' + row.name + '</em>?',
                 callback: function(result) {
                     if (result) {
                         onConfirmDelete(row, self);
@@ -424,8 +424,8 @@
 
         uploadAdded: function(file, row, folder) {
             // Attach upload parameters to file object for use in `uploadFiles`
-            file.method = resolveCfgOption.call(this, row, 'uploadMethod', [row]) || 'post';
-            file.url = folder.urls.upload || resolveCfgOption.call(this, row, 'uploadUrl', [row]);
+            file.method = resolveCfgOption.call(this, folder, 'uploadMethod', [folder]) || 'POST';
+            file.url = folder.urls.upload || resolveCfgOption.call(this, folder, 'uploadUrl', [folder]);
             // Need to set the added row's addon for other callbacks to work
             var parent = this.getByID(row.parentID);
             row.addon = parent.addon;
