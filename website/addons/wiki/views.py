@@ -343,7 +343,7 @@ def project_wiki_page(auth, wname, **kwargs):
     wiki_name = (wname or '').strip()
     wiki_page = node.get_wiki_page(name=wiki_name)
 
-    response = 200
+    status_code = 200
     version = 'NA'
     is_current = False
     content = ''
@@ -352,8 +352,8 @@ def project_wiki_page(auth, wname, **kwargs):
         version = wiki_page.version
         is_current = wiki_page.is_current
         content = wiki_page.html(node)
-    elif not wiki_page and wiki_name != 'home':
-        response = 404
+    elif not wiki_page and wiki_name.lower() != 'home':
+        status_code = 404
 
     ret = {
         'wiki_id': wiki_page._primary_key if wiki_page else None,
@@ -374,7 +374,7 @@ def project_wiki_page(auth, wname, **kwargs):
     }
 
     ret.update(_view_project(node, auth, primary=True))
-    return ret, response
+    return ret, status_code
 
 
 @must_not_be_registration
