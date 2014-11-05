@@ -305,7 +305,7 @@ def update_user(user):
 @requires_search
 def delete_all():
     for idx in INDICES:
-        elastic.delete_index(idx)
+        delete_index(idx)
 
 
 @requires_search
