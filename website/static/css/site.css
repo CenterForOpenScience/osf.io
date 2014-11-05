@@ -442,7 +442,6 @@ h4 {
 }
 
 
-
 /* Bootstrap Navbar */
 .navbar .search-query {
     width:190px
@@ -923,37 +922,142 @@ h1.unavailable {
 }
 
 /* Search */
+.page-header
+    {
+        overflow: hidden;
+    }
+.add-query
+    {
+        width: 190px;
+        margin-left: 10px;
+        display: inline-block;
+        font-weight: normal;
+    }
 .navigate
     {
         padding:25px;
         font-size: 18px;
     }
+.remove-button
+    {
+        color: #ffffff;
+    }
+.search-types a
+    {
+        font-size: 16px;
+    }
+.tag-cloud
+    {
+
+    }
+
+.tag-cloud .cloud-tag
+{
+    font-size: 11pt;
+    display: inline-block;
+    word-wrap: break-word;
+    margin: 5px;
+    padding: 5px;
+    border-radius: 5px;
+}
+.tag-cloud .cloud-tag:hover
+{
+    background-color: #31b0d5;
+}
+.tag-cloud .tag-big
+{
+    font-size: 13pt;
+    background-color: #AABCDD;
+}
+
+.tag-cloud .tag-med
+{
+    font-size: 11pt;
+    background-color: #CCDDEE;
+}
+
+.tag-cloud .tag-sm
+{
+    font-size: 9pt;
+    background-color: #DDEEFF;
+}
+
+.tag-cloud h3
+    {
+        margin: 0;
+    }
+
+.registration a {
+    color: #666;
+}
+
+.registration small{
+    color: #000000;
+}
+
+.registration .tag-cloud .cloud-tag {
+    background-color: #AAA;
+    color: #ffffff;
+}
+
+.query-label
+    {
+        margin-right: .5em;
+    }
 .result
     {
-        padding-top: 8px;
-        padding-bottom: 8px;
+        margin-bottom: 10px;
+        overflow: hidden;
     }
 .title h4
     {
-        padding: 0px;
+        padding: 0;
         padding-bottom: 5px;
-        margin: 0px;
+        margin: 0;
     }
-.user h4
+.private-title
     {
-        padding: 0px;
-        margin: 0px;
+        font-weight: normal;
+        font-style: italic;
+    }
+.search-field
+    {
+        padding: 0;
+        padding-top: 2px;
+        padding-bottom: 2px;
+        margin: 0;
+        line-height: 16px;
+    }
+.search-field p
+    {
+        margin: 0;
     }
 .description h5
     {
-        padding: 0px;
-        margin: 0px;
+        padding: 0;
+        padding-bottom: 4px;
+        margin: 0;
         font-weight: normal;
+        line-height: 16px;
     }
-.tags
+.search-tags
     {
         padding-top: 2px;
+        line-height: 24px;
     }
+.search-tags a
+    {
+        margin-right: .5em;
+    }
+
+.search-result.well h5 small{
+    color: darkslategray;
+    font-size: 10pt;
+}
+
+.search-result.well {
+    word-wrap: break-word;
+}
 /* Search Contributors */
 
 .search-contributor-result td {
