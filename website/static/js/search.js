@@ -9,11 +9,6 @@
     ko.punches.enableAll();
 
     //https://stackoverflow.com/questions/7731778/jquery-get-query-string-parameters
-    function qs(key) {
-        key = key.replace(/[*+?^$.\[\]{}()|\\\/]/g, '\\$&'); // escape RegEx meta chars
-        var match = location.search.match(new RegExp('[?&]'+key+'=([^&]+)(&|$)'));
-        return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
-    }
 
     var Category = function(name, count, display){
         var self = this;
@@ -32,15 +27,16 @@
 
     var Tag = function(tagInfo){
         var self = this;
-        self.name = ko.observable(tagInfo.key);
-        self.count = ko.observable(tagInfo.doc_count);
+        self.name = tagInfo.key;
+        self.count = tagInfo.doc_count;
     };
 
-    var ViewModel = function(url, appURL) {
+    var ViewModel = function(params) {
         var self = this;
+        self.params = params || {};
+        self.queryUrl = self.params.url;
+        self.appURL = self.params.appURL;
 
-        self.queryUrl = url;
-        self.appURL = appURL;
         self.tag = ko.observable('');
         self.stateJustPushed = false;
         self.query = ko.observable('');
@@ -54,8 +50,6 @@
         self.resultsPerPage = ko.observable(10);
         self.categories = ko.observableArray([]);
         self.searchStarted = ko.observable(false);
-        self.startDate = ko.observable(Date.now());
-        self.endDate = ko.observable(Date('1970-01-01'));
 
 
         self.totalCount = ko.computed(function() {
@@ -67,7 +61,6 @@
         });
 
         self.totalPages = ko.computed(function() {
-            var countOfPages = 1;
             var resultsCount = Math.max(self.resultsPerPage(),1); // No Divide by Zero
             countOfPages = Math.ceil(self.totalResults() / resultsCount);
             return countOfPages;
@@ -100,16 +93,6 @@
             };
         });
 
-        self.dateFilter = ko.computed(function() {
-            return {
-                'range': {
-                    'consumeFinished': {
-                        'gte': self.startDate(),
-                        'lte': self.endDate()
-                    }
-                }
-            };
-        });
 
         self.fullQuery = ko.computed(function() {
             return {
@@ -139,7 +122,7 @@
             bootbox.dialog({
                 title: 'Search help',
                 message: '<h4>Queries</h4>'+
-                    '<p>Search uses the <a href="http://extensions.xwiki.org/xwiki/bin/view/Extension/Search+Application+Query+Syntax#HAND">Lucene search syntax</a>. ' +
+                    '<p>Search uses the <a href="http://extensions.xwiki.org/xwiki/bin/view/Extension/Search+Application+Query+Syntax">Lucene search syntax</a>. ' +
                     'This gives you many options, but can be very simple as well. ' +
                     'Examples of valid searches include:' +
                     '<ul><li><a href="/search/?q=repro*">repro*</a></li>' +
@@ -161,7 +144,7 @@
             var tag = name;
 
             if(typeof name.name !== 'undefined') {
-                tag = name.name();
+                tag = name.name;
             }
 
             self.currentPage(1);
@@ -189,9 +172,9 @@
                 self.categories.removeAll();
 
                 data.results.forEach(function(result){
-                    if(typeof result.url !== "undefined"){
-                        result.wikiUrl = result.url+"wiki/";
-                        result.filesUrl = result.url+"files/";
+                    if(typeof result.url !== 'undefined'){
+                        result.wikiUrl = result.url+'wiki/';
+                        result.filesUrl = result.url+'files/';
                     }
                     self.results.push(result);
                 });
@@ -328,14 +311,14 @@
         // Initialization code
         var self = this;
 
-        self.viewModel = new ViewModel(url, appURL);
+        self.viewModel = new ViewModel({'url': url, 'appURL': appURL});
         History.Adapter.bind(window, 'statechange', self.viewModel.pageChange);
 
         var data = {
-            query: qs('q'),
-            page: Number(qs('page')),
+            query: $.osf.urlParams().q,
+            page: Number($.osf.urlParams().page),
             scrollTop: 0,
-            filter: qs('filter')
+            filter: $.osf.urlParams().filter
         };
         //Ensure our state keeps its URL paramaters
         History.replaceState(data, 'OSF | Search', location.search);
