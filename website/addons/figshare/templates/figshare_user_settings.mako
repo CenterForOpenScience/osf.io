@@ -13,11 +13,28 @@
             % endif
         </small>
     </h4>
+    <!-- Flashed Messages -->
+    <div class="help-block">
+        <div class="figshare-error text-warning"></div>
+    </div>
 </div>
 
 <%include file="profile/addon_permissions.mako" />
 
 <script type="text/javascript">
+
+    $.ajax({
+            type: 'GET',
+            url: '/api/v1/settings/figshare/oauth/check',
+            contentType: 'application/json',
+            dataType: 'json',
+            success: function(response) {
+                if (!response) {
+                    $("div.figshare-error").html("<p>Could not retrieve Figshare settings at" +
+                            " this time. The Figshare addon credentials may no longer be valid." +
+                            " Try deauthorizing and reauthorizing Figshare. </p>");
+                }
+        }});
 
     $(document).ready(function() {
 
