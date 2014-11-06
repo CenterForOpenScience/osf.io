@@ -6,6 +6,7 @@ import os
 import json
 from urllib2 import urlopen
 from re import search
+import httplib as http
 
 from tempfile import TemporaryFile
 
@@ -13,6 +14,7 @@ import requests
 from requests_oauthlib import OAuth1Session
 
 from framework.utils import secure_filename
+from framework.exceptions import HTTPError
 from website.util.sanitize import escape_html
 
 from . import settings as figshare_settings
@@ -121,6 +123,9 @@ class Figshare(object):
     def project(self, node_settings, project_id):
         if not project_id:
             return
+        options = Figshare.from_settings(node_settings.user_settings).get_options()
+        if options == 401:
+            return False
         project = self._send(os.path.join(node_settings.api_url, 'projects', str(project_id)))
         if not project:
             return

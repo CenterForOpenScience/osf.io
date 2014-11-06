@@ -26,6 +26,7 @@ CATEGORIES = ['storage']
 INCLUDE_JS = {
     'widget': [],
     'page': [],
+    'files': ['figshareRubeusCfg.js']
 }
 
 INCLUDE_CSS = {
