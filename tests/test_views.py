@@ -2745,7 +2745,7 @@ class TestSearchViews(OsfTestCase):
         pages = res.json['pages']
         page = res.json['page']
         assert_equal(len(result), 5)
-        assert_equal(pages, 2)
+        assert_equal(pages, 3)
         assert_equal(page, 0)
 
     def test_search_pagination_default_page_1(self):
@@ -2756,6 +2756,15 @@ class TestSearchViews(OsfTestCase):
         page = res.json['page']
         assert_equal(len(result), 5)
         assert_equal(page, 1)
+
+    def test_search_pagination_default_page_2(self):
+        url = api_url_for('search_contributor')
+        res = self.app.get(url, {'query': 'fr', 'page': 2})
+        assert_equal(res.status_code, 200)
+        result = res.json['users']
+        page = res.json['page']
+        assert_equal(len(result), 2)
+        assert_equal(page, 2)
 
     def test_search_pagination_smaller_pages(self):
         url = api_url_for('search_contributor')
