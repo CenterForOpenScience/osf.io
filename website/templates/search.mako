@@ -66,11 +66,11 @@
                     <!-- /ko -->
                     <div class="col-md-9">
                         <!-- ko if: searchStarted() && !totalCount() -->
-                        <div class="well hidden" data-bind="css: {hidden: totalCount() }">No results found.</div>
+                        <div class="search-results hidden" data-bind="css: {hidden: totalCount() }">No results found.</div>
                         <!-- /ko -->
                         <!-- ko if: totalCount() -->
                         <div data-bind="foreach: results">
-                            <div class="well search-result" data-bind="template: { name: category, data: $data}"></div>
+                            <div class="search-result" data-bind="template: { name: category, data: $data}"></div>
                         </div>
                         <ul class="pager">
                             <li data-bind="css: {disabled: !prevPageExists()}">

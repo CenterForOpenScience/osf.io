@@ -1064,12 +1064,16 @@ h1.unavailable {
         margin-right: .5em;
     }
 
-.search-result.well h5 small{
-    color: darkslategray;
+div.search-result  {
+    padding-bottom: 30pt;
+}
+
+.search-results.search-result h5 small{
+    color: white;
     font-size: 10pt;
 }
 
-.search-result.well {
+.search-results.search-result {
     word-wrap: break-word;
 }
 /* Search Contributors */
