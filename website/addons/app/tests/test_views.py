@@ -13,7 +13,7 @@ from website.project import Node
 from website.util import api_url_for
 from website.util import web_url_for
 from website.addons.app.model import Metadata
-from website.addons.app.settings import TYPE_MAP
+from website.addons.app.types import TYPE_MAP
 from website.addons.app.model import AppNodeSettings
 
 
@@ -261,7 +261,7 @@ class TestSchemaViews(OsfTestCase):
         assert_equals(ret.json, {})
         assert_equals(ret.status_code, 200)
 
-    def test_get_schema(self):
+    def test_posting_schema(self):
         url = self.project.api_url_for('post_schema')
         schema = {'foo':'string', 'bar':['int'], 'meta':'dict'}
 
@@ -275,7 +275,6 @@ class TestSchemaViews(OsfTestCase):
         assert_equals(ret.status_code, 200)
 
     def test_can_post_schema(self):
-        typed = {'foo':basestring, 'bar':[int], 'meta':dict}
         schema = {'foo':'string', 'bar':['int'], 'meta':'dict'}
 
         url = self.project.api_url_for('post_schema')
@@ -285,11 +284,9 @@ class TestSchemaViews(OsfTestCase):
         self.app_addon.reload()
 
         assert_equals(ret.status_code, 201)
-        assert_equals(self.app_addon.schema, typed)
         assert_equals(self.app_addon._schema, schema)
 
     def test_can_post_strict_schema(self):
-        typed = {'foo':basestring, 'bar':[int], 'meta':dict}
         schema = {'foo':'string', 'bar':['int'], 'meta':'dict'}
 
         url = self.project.api_url_for('post_schema') + '?strict=true'
@@ -299,7 +296,6 @@ class TestSchemaViews(OsfTestCase):
         self.app_addon.reload()
 
         assert_equals(ret.status_code, 201)
-        assert_equals(self.app_addon.schema, typed)
         assert_equals(self.app_addon._schema, schema)
         assert_equals(self.app_addon.strict, True)
 
@@ -318,7 +314,7 @@ class TestSchemaViews(OsfTestCase):
         ret = self.app.get(url)
 
         assert_equals(ret.status_code, 200)
-        assert_equals(ret.json, {key: str(val) for key, val in TYPE_MAP.items()})
+        assert_equals(ret.json, {key: val.__doc__ for key, val in TYPE_MAP.items()})
 
     def test_schema_validates(self):
         schema = {'foo':'string', 'bar':['int'], 'meta':'dict'}
