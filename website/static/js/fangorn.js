@@ -133,9 +133,6 @@
     }
 
 
-
-
-
     // Returns custom toggle icons for OSF
     function _fangornResolveToggle(item){
         var toggleMinus = m('i.icon-minus', ' '),
@@ -184,6 +181,13 @@
             children : []
         }; 
         treebeard.createItem(blankItem, parentID); 
+    }
+
+    function _fangornDragOver (treebeard, event) {
+        console.log("Drag Over", this, arguments);
+        var dropzoneHoverClass = "fangorn-dz-hover"; 
+        $('.tb-row').removeClass(dropzoneHoverClass);
+        $(event.target).closest('.tb-row').addClass(dropzoneHoverClass); 
     }
 
     function _fangornComplete (treebeard, file) {
@@ -411,7 +415,8 @@
                 sending : _fangornSending,
                 complete : _fangornComplete,
                 success : _fangornDropzoneSuccess,
-                error : _fangornDropzoneError
+                error : _fangornDropzoneError,
+                dragover : _fangornDragOver
             }
     };
 
