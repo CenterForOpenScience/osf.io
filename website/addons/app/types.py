@@ -57,5 +57,6 @@ TYPE_MAP = {
     'dict': must_be_type(dict),
     'object': must_be_type(dict),
     'list': must_be_type(list),
-    'email': regex('([^@]+@.+\..+')
+    'email': regex('([^@]+@.+\..+'),
+    'doi': doi
 }
