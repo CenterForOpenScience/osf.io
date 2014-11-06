@@ -132,6 +132,9 @@
             }
         };
 
+        var MAX_PAGES_ON_PAGINATOR = 7;
+        var MAX_PAGES_ON_PAGINATOR_SIDE = 5;
+
         self.addNewPaginators = function() {
             self.paginators.removeAll();
             if (self.numberOfPages() > 1) {
@@ -141,14 +144,14 @@
                     text: '&#8592;'
                 });
                 self.paginators.push({
-                    style: '',
+                    style: (self.currentPage() === 0)? 'active' : '',
                     text: '1',
                     handler: function () {
                         self.currentPage(0);
                         self.search();
                     }
                 });
-                if (self.numberOfPages() <= 7) {
+                if (self.numberOfPages() <= MAX_PAGES_ON_PAGINATOR) {
                     for (var i = 1; i < self.numberOfPages() - 1; i++) {
                         self.paginators.push({
                             style: (self.currentPage() === i)? 'active' : '',
@@ -159,8 +162,8 @@
                             }
                         });
                     }
-                } else if (self.currentPage() < 4) { // One ellipse at the end
-                    for (var i = 1; i < 5; i++) {
+                } else if (self.currentPage() < MAX_PAGES_ON_PAGINATOR_SIDE - 1) { // One ellipse at the end
+                    for (var i = 1; i < MAX_PAGES_ON_PAGINATOR_SIDE; i++) {
                         self.paginators.push({
                             style: (self.currentPage() === i)? 'active' : '',
                             text: i + 1,
@@ -175,13 +178,13 @@
                         text: '...',
                         handler: function () {}
                     });
-                } else if (self.currentPage() > self.numberOfPages() - 5) { // one ellipses at the beginning
+                } else if (self.currentPage() > self.numberOfPages() - MAX_PAGES_ON_PAGINATOR_SIDE) { // one ellipses at the beginning
                     self.paginators.push({
                         style: 'disabled',
                         text: '...',
                         handler: function () {}
                     });
-                    for (var i = self.numberOfPages() - 5; i < self.numberOfPages() - 1; i++) {
+                    for (var i = self.numberOfPages() - MAX_PAGES_ON_PAGINATOR_SIDE; i < self.numberOfPages() - 1; i++) {
                         self.paginators.push({
                             style: (self.currentPage() === i)? 'active' : '',
                             text: i + 1,
@@ -214,7 +217,7 @@
                     });
                 }
                 self.paginators.push({
-                    style: '',
+                    style: (self.currentPage() === self.numberOfPages() - 1)? 'active' : '',
                     text: self.numberOfPages(),
                     handler: function () {
                         self.currentPage(self.numberOfPages() - 1);
@@ -222,7 +225,7 @@
                     }
                 });
                 self.paginators.push({
-                    style: (self.currentPage() === self.numberOfPages() - 1)? "disabled" : "",
+                    style: (self.currentPage() === self.numberOfPages() - 1)? 'disabled' : '',
                     handler: self.nextPage,
                     text: '&#8594;'
                 });
