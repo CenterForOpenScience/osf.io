@@ -67,8 +67,7 @@
 
                     <div data-bind="visible: currentDisplay() === PICKER">
                         <div id="myDropboxGrid"
-                             class="filebrowser hgrid dropbox-folder-picker">
-                        </div>
+                             class="filebrowser hgrid dropbox-folder-picker"></div>
                     </div>
 
                     <!-- Share -->
