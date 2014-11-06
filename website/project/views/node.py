@@ -50,7 +50,7 @@ def edit_node(auth, **kwargs):
         except ValidationValueError:
             raise HTTPError(
                 http.BAD_REQUEST,
-                data=dict(message_long='Title must not be blank.')
+                data=dict(message_long='Title cannot be blank.')
             )
     elif edited_field == 'description':
         node.set_description(value, auth=auth)

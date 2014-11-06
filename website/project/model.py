@@ -505,7 +505,7 @@ def validate_title(value):
     """Validator for Node#title. Makes sure that the value exists.
     """
     if value is None or not value.strip():
-        raise ValidationValueError('Title does not exist.')
+        raise ValidationValueError('Title cannot be blank.')
     return True
 
 
