@@ -57,9 +57,11 @@
     </div>
     <script>
         $script(['/static/js/deleteFile.js'], function() {
-            var delete_url = '${delete_url}';
-            var url = '${info_url}';
-            var deleteFile = new DeleteFile('#deleteButtonScope', url, delete_url);
+            var urls = {
+                'delete_url': '${delete_url}',
+                'files_page_url': '${files_page_url}'
+            };
+            var deleteFile = new DeleteFile('#deleteButtonScope', urls);
         });
     </script>
     <script>

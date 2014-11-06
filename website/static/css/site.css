@@ -815,7 +815,21 @@ h1.node-title, h1.node-parent-title {
         font-size: 20px;
         line-height: 20px;
     }
+    .wiki-status-sm {
+        float: none;
+        text-align: center;
+        margin-top: 20px;
+    }
 }
+
+@media (min-width: 768px) {
+    .wiki-status-lg {
+        float: right;
+        margin-left: 20px;
+        display: inline-block;
+    }
+}
+
 
 .wiki-title-container {
     display: inline-block;
@@ -916,8 +930,8 @@ h1.unavailable {
 }
 
 .anchor {
-    margin-top: -50px;
-    padding-top: 50px;
+    margin-top: -60px;
+    padding-top: 60px;
     display: block;
 }
 

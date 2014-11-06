@@ -337,6 +337,8 @@ def figshare_view_file(*args, **kwargs):
     render_url = node.api_url + \
         'figshare/render/article/{aid}/file/{fid}'.format(aid=article_id, fid=file_id)
 
+    delete_url = node.api_url + 'figshare/article/{aid}/file/{fid}/'.format(aid=article_id, fid=file_id)
+
     filename = found['name']
     cache_file = get_cache_file(
         article_id, file_id
@@ -359,21 +361,30 @@ def figshare_view_file(*args, **kwargs):
     categories = connect.categories()['items']  # TODO Cache this
     categories = ''.join(
         ["<option value='{val}'>{label}</option>".format(val=i['id'], label=i['name']) for i in categories])
+
     rv = {
+        'node': {
+            'id': node._id,
+            'title': node.title
+        },
         'file_name': filename,
-        'render_url': render_url,
         'rendered': rendered,
-        'download_url': found.get('download_url'),
         'file_status': article['items'][0]['status'],
         'file_version': article['items'][0]['version'],
         'doi': 'http://dx.doi.org/10.6084/m9.figshare.{0}'.format(article['items'][0]['article_id']),
-        'version_url': version_url,
-        'figshare_url': privacy_info_handle(figshare_url, anonymous),
         'parent_type': 'fileset' if article['items'][0]['defined_type'] == 'fileset' else 'singlefile',
         'parent_id': article['items'][0]['article_id'],
         'figshare_categories': categories,
         'figshare_title': article['items'][0]['title'],
         'figshare_desc': article['items'][0]['description'],
+        'urls': {
+            'render': render_url,
+            'download': found.get('download_url'),
+            'version': version_url,
+            'figshare': privacy_info_handle(figshare_url, anonymous),
+            'delete': delete_url,
+            'files': node.web_url_for('collect_file_trees')
+        }
     }
     rv.update(_view_project(node, auth, primary=True))
     return rv
