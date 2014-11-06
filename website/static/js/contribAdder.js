@@ -136,13 +136,13 @@
             self.paginators.removeAll();
             if (self.numberOfPages() > 1) {
                 self.paginators.push({
-                    style: (self.currentPage() == 0)? "disabled" : "",
+                    style: (self.currentPage() === 0)? 'disabled' : '',
                     handler: self.previousPage,
-                    text: "&#8592;"
+                    text: '&#8592;'
                 });
                 self.paginators.push({
-                    style: "",
-                    text: 1,
+                    style: '',
+                    text: '1',
                     handler: function () {
                         self.currentPage(0);
                         self.search();
@@ -151,7 +151,7 @@
                 if (self.numberOfPages() <= 7) {
                     for (var i = 1; i < self.numberOfPages() - 1; i++) {
                         self.paginators.push({
-                            style: (self.currentPage() == i)? "active" : "",
+                            style: (self.currentPage() === i)? 'active' : '',
                             text: i + 1,
                             handler: function () {
                                 self.currentPage(parseInt(this.text) - 1);
@@ -162,7 +162,7 @@
                 } else if (self.currentPage() < 4) { // One ellipse at the end
                     for (var i = 1; i < 5; i++) {
                         self.paginators.push({
-                            style: (self.currentPage() == i)? "active" : "",
+                            style: (self.currentPage() === i)? 'active' : '',
                             text: i + 1,
                             handler: function () {
                                 self.currentPage(parseInt(this.text) - 1);
@@ -171,19 +171,19 @@
                         });
                     }
                     self.paginators.push({
-                        style: "disabled",
-                        text: "...",
+                        style: 'disabled',
+                        text: '...',
                         handler: function () {}
                     });
                 } else if (self.currentPage() > self.numberOfPages() - 5) { // one ellipses at the beginning
                     self.paginators.push({
-                        style: "disabled",
-                        text: "...",
+                        style: 'disabled',
+                        text: '...',
                         handler: function () {}
                     });
                     for (var i = self.numberOfPages() - 5; i < self.numberOfPages() - 1; i++) {
                         self.paginators.push({
-                            style: (self.currentPage() == i)? "active" : "",
+                            style: (self.currentPage() === i)? 'active' : '',
                             text: i + 1,
                             handler: function () {
                                 self.currentPage(parseInt(this.text) - 1);
@@ -193,13 +193,13 @@
                     }
                 } else { // two ellipses
                     self.paginators.push({
-                        style: "disabled",
-                        text: "...",
+                        style: 'disabled',
+                        text: '...',
                         handler: function () {}
                     });
                     for (var i = self.currentPage() - 1; i <= self.currentPage() + 1; i++) {
                         self.paginators.push({
-                            style: (self.currentPage() == i)? "active" : "",
+                            style: (self.currentPage() === i)? 'active' : '',
                             text: i + 1,
                             handler: function () {
                                 self.currentPage(parseInt(this.text) - 1);
@@ -208,13 +208,13 @@
                         });
                     }
                     self.paginators.push({
-                        style: "disabled",
-                        text: "...",
+                        style: 'disabled',
+                        text: '...',
                         handler: function () {}
                     });
                 }
                 self.paginators.push({
-                    style: "",
+                    style: '',
                     text: self.numberOfPages(),
                     handler: function () {
                         self.currentPage(self.numberOfPages() - 1);
@@ -222,9 +222,9 @@
                     }
                 });
                 self.paginators.push({
-                    style: (self.currentPage() == self.numberOfPages() - 1)? "disabled" : "",
+                    style: (self.currentPage() === self.numberOfPages() - 1)? "disabled" : "",
                     handler: self.nextPage,
-                    text: "&#8594;"
+                    text: '&#8594;'
                 });
             }
         }
