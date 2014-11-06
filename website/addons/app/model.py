@@ -155,4 +155,5 @@ class AppNodeSettings(AddonNodeSettingsBase):
 
     def lint(self, data):
         if self.schema:
-            lint(data, self.schema, self.strict)
+            return lint(data, self.schema, self.strict)
+        return data
