@@ -157,10 +157,13 @@ def github_view_file(auth, **kwargs):
 
     # Get file URL
     download_url = '/' + guid._id + '/download/' + ref_to_params(branch, current_sha)
-    delete_url = node.api_url_for('github_delete_file', path=path) + ref_to_params(branch, current_file.sha)
     render_url = os.path.join(
         node.api_url, 'github', 'file', path, 'render'
     ) + '/' + ref_to_params(branch, current_sha)
+
+    delete_url = None
+    if current_file:
+        delete_url = node.api_url_for('github_delete_file', path=path) + ref_to_params(branch, current_file.sha)
 
     for commit in commits:
         commit['download'] = (
