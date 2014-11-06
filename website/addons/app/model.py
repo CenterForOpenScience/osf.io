@@ -89,7 +89,7 @@ class Metadata(StoredObject):
         return self._merge_dicts(self.data, val)
 
     def save(self):
-        self.app.lint(self.data)
+        self.data = self.app.lint(self.data)
 
         update_metadata(self)
         super(Metadata, self).save()
