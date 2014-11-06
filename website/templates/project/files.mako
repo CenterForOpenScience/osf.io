@@ -29,7 +29,6 @@ ${parent.javascript_bottom()}
 <script type="text/javascript" src="${script}"></script>
 % endfor
 <script>
-// Don't show dropped content if user drags outside grid
 window.ondragover = function(e) { e.preventDefault(); };
 window.ondrop = function(e) { e.preventDefault(); };
 
@@ -42,8 +41,10 @@ $script.ready(['fangorn'], function() {
     .done(function( data ) {
         console.log("data", data);
         var fangornOpts = {
-            divID: "treeGrid",
+            placement : 'project-files',
+            divID: 'treeGrid',
             filesData: data.data
+
         };
         console.log("fangorn", Fangorn);
         var filebrowser = new Fangorn(fangornOpts);

@@ -29,15 +29,66 @@
     }
 }(this, function($, Treebeard){
 
+    // Shows an alert in the space of the row
+    function _fangornRowAlert (item, type, message, method) {
+        var dismiss;
+        if(method === 'overlay'  ) {
+            dismiss = ' ';
+        } else {
+            dismiss = '<span class="fangorn-dismiss" data-id="'+item.id+'">&times;</span>'
+        }
+        var alertHTML = '<div class="alert-'+type+' text-center" style="padding: 8px; margin-top: -5px;"> ' + message + dismiss + '</div>'; 
+        var row = $('.tb-row[data-id="'+ item.id+ '"]'); 
+        // Get row content
+
+        if(method === "overlay"){
+            var cache  = row.html(); 
+            row.animate({ opacity : 0 }, "fast")
+                .html(alertHTML)
+                .animate({ opacity : 1 }, "fast")
+                .delay(2000)
+                .animate({ opacity : 0 }, "fast")
+                .queue(function() {
+                    $(this)
+                        .html(cache)
+                        .animate({ opacity : 1 }, "fast");
+                    $(this).dequeue();
+                });
+        }
+        if(method === "replace" ) {
+            row.animate({ opacity : 0 }, "fast")
+                .replaceWith(alertHTML)
+                .animate({ opacity : 1 }, "fast");
+            item.removeSelf();
+
+        }
+
+          
+    }
+
+    function _fangornViewEvents () {
+        console.log("View events this", this);
+    }
+
     // Returns custom icons for OSF 
     function _fangornResolveIcon(item){
+        var privateFolder = m('img', { src : "/static/img/hgrid/fatcowicons/folder_delete.png" }),
+            pointerFolder = m('i.icon-hand-right', ' '),
+            openFolder  = m('i.icon-folder-open-alt', ' '),
+            closedFolder = m('i.icon-folder-close-alt', ' '),
+            configOption = resolveconfigOption.call(this, item, 'folderIcon', [item]);
+
         if (item.kind === 'folder') {
-            if (item.open) {
-                var cfgOption = resolveCfgOption.call(this, item, 'folderIcon', [item]);
-                return cfgOption || m('i.icon-folder-open-alt', ' ');
+            if (!item.data.permissions.view) {
+                return privateFolder; 
             }
-            var cfgOption = resolveCfgOption.call(this, item, 'folderIcon', [item]);
-            return cfgOption || m('i.icon-folder-close-alt', ' ');
+            if (item.data.isPointer){
+                return pointerFolder; 
+            }
+            if (item.open) {
+                return configOption || openFolder;
+            }
+            return configOption || closedFolder;
         }
         if (item.data.icon) {
             return m('i.fa.' + item.data.icon, ' ');
@@ -59,11 +110,11 @@
         return m('i.icon-file-alt');
     }
     // Addon config registry
-    Fangorn.cfg = {};
+    Fangorn.config = {};
 
-    function getCfg(item, key) {
-        if (item && item.data.addon && Fangorn.cfg[item.data.addon]) {
-            return Fangorn.cfg[item.data.addon][key];
+    function getconfig(item, key) {
+        if (item && item.data.addon && Fangorn.config[item.data.addon]) {
+            return Fangorn.config[item.data.addon][key];
         }
         return undefined;
     }
@@ -71,17 +122,15 @@
     // Gets a Fangorn config option if it is defined by an addon dev.
     // Calls it with `args` if it's a function otherwise returns the value.
     // If the config option is not defined, return null
-    function resolveCfgOption(item, option, args) {
+    function resolveconfigOption(item, option, args) {
         var self = this;
-        var prop = getCfg(item, option);
+        var prop = getconfig(item, option);
         if (prop) {
             return typeof prop === 'function' ? prop.apply(self, args) : prop;
         } else {
             return null;
         }
     }
-
-
 
 
     // Returns custom toggle icons for OSF
@@ -97,9 +146,16 @@
         return '';
     }
 
+    function _fangornToggleCheck (item) {
+        if (item.data.permissions.view) {
+            return true;
+        }
+        _fangornRowAlert (item, "warning", "You don't have permission to view the contents of this folder.", "overlay");
+        return false;
+    }
     function _fangornResolveUploadUrl (item) {
-        var cfgOption = resolveCfgOption.call(this, item, 'uploadUrl', [item]);
-        return cfgOption || item.data.urls.upload;
+        var configOption = resolveconfigOption.call(this, item, 'uploadUrl', [item]);
+        return configOption || item.data.urls.upload;
     }  
 
     function _fangornMouseOverRow (item, event) {
@@ -117,30 +173,64 @@
 
     function _fangornSending (treebeard, file, xhr, formData) {
         console.log("Sending", arguments);
-        var parentID = treebeard.dropzoneItemCache.id; 
+
+        var parentID = treebeard.dropzoneItemCache.id;
+        var parent = treebeard.dropzoneItemCache;
         // create a blank item that will refill when upload is finished. 
         var blankItem = {
             name : file.name,
             kind : 'item',
+            addon : parent.addon,
             children : []
-        }; 
-        treebeard.createItem(blankItem, parentID); 
+        };
+
+        var newItem = treebeard.createItem(blankItem, parentID);
+
+        var configOption = resolveconfigOption.call(treebeard, parent, 'uploadSending', [file, xhr, formData]);
+        return configOption || null;
+    }
+
+    function _fangornAddedFile(treebeard, file){
+        //this == dropzone
+        var item = treebeard.dropzoneItemCache;
+
+        //console.log("fangornAddedFile", this, arguments, item);
+        var configOption = resolveconfigOption.call(treebeard, item, 'uploadAdd', [file, item]);
+        return configOption || null;
+    }
+
+    function _fangornDragOver (treebeard, event) {
+        console.log("Drag Over", this, arguments);
+        var dropzoneHoverClass = "fangorn-dz-hover"; 
+        $('.tb-row').removeClass(dropzoneHoverClass);
+        $(event.target).closest('.tb-row').addClass(dropzoneHoverClass); 
     }
 
     function _fangornComplete (treebeard, file) {
         console.log("Complete", arguments);
     }
 
-    function _fangornSuccess (treebeard, file, response) {
+    function _fangornDropzoneSuccess (treebeard, file, response) {
         console.log("Success", arguments);
-        m.redraw.strategy("all");
         var element = $( ".tb-row:contains('"+file.name+"')" );
         var id  = element.attr('data-id');
         var item = treebeard.find(id);
         item.data = response;
 
-        m.render(element.find('.action-col').get(0), _fangornActionColumn.call(treebeard, item, _fangornResolveRows()[1]));
-        treebeard.redraw();
+        m.render(element.find('.action-col').get(0), _fangornActionColumn.call(treebeard, item, _fangornColumns[1]));
+        m.redraw();
+
+        var configOption = resolveconfigOption.call(item, parent, 'uploadSuccess', [file, item, response]);
+        return configOption || null;
+    }
+
+    function _fangornDropzoneError (treebeard, file, message, xhr) {
+        console.log("Error", arguments);
+        var element = $( ".tb-row:contains('"+file.name+"')" );
+        var id  = element.attr('data-id');
+        var item = treebeard.find(id);
+        _fangornRowAlert.call(treebeard, item, 'danger', file.name + " did't upload: " + message.message_short, "replace");
+        //treebeard.deleteNode(item.parentID, item.id);
     }
 
     function _uploadEvent (event, item, col){
@@ -180,8 +270,13 @@
     }
 
     function _fangornResolveLazyLoad(tree, item){
-        var cfgOption = resolveCfgOption.call(this, item, 'lazyload', [item]);
-        return cfgOption || false;
+        var configOption = resolveconfigOption.call(this, item, 'lazyload', [item]);
+        return configOption || false;
+    }
+
+    function _fangornUploadMethod(item){
+        var configOption = resolveconfigOption.call(this, item, 'uploadMethod', [item]);
+        return configOption || "POST";
     }
 
     // Action buttons; 
@@ -228,22 +323,27 @@
 
     function _fangornTitleColumn (item, col) {
         return m('span', 
-            { onclick : function(){  
-                window.location = item.data.urls.view;
+            { onclick : function(){ 
+                if (item.kind === "item") {
+                    window.location = item.data.urls.view;                    
+                } 
             }}, 
             item.data.name);
     }
 
     function _fangornResolveRows(item){
         // this = treebeard;
-        var default_columns = [            // Defines columns based on data
-            {
-                data : "name",  // Data field name
-                folderIcons : true,
-                filter : true,
-                custom : _fangornTitleColumn
-            },
-            {
+        var default_columns = [];             // Defines columns based on data
+        default_columns.push({
+            data : "name",  // Data field name
+            folderIcons : true,
+            filter : true,
+            custom : _fangornTitleColumn
+        })
+
+        if(this.options.placement === 'project-files') {
+            default_columns.push(
+                {
                 sortInclude : false,
                 custom : _fangornActionColumn
             },
@@ -251,30 +351,34 @@
                 data : "downloads",
                 sortInclude : false,
                 filter : false
-            }
-        ];
-        var cfgOption = resolveCfgOption.call(this, item, 'column', [item]);
-        return cfgOption || default_columns;
+            });
+        }
+        var configOption = resolveconfigOption.call(this, item, 'resolveRows', [item]);
+        return configOption || default_columns;
     }
 
-    var _fangornColumnTitles = [
-                {
+    function _fangornColumnTitles () {
+        var columns = [];
+        columns.push({
                     title: 'Name',
                     width : '60%',
                     sort : true,
                     sortType : 'text'
-                },
-                {
+                }); 
+        if(this.options.placement === 'project-files') {
+            columns.push({
                     title : 'Actions',
                     width : '20%',
                     sort : false
-                },
-                {
+                }, {
                     title : 'Downloads',
                     width : '20%',
                     sort : false
-                }
-            ];
+                });
+        }
+        return columns; 
+        
+    } 
     // OSF-specific Treebeard options common to all addons
     tbOptions = {
             rowHeight : 35,         // user can override or get from .tb-row height
@@ -287,6 +391,18 @@
             showFilter : true,     // Gives the option to filter by showing the filter box.
             title : false,          // Title of the grid, boolean, string OR function that returns a string.
             allowMove : false,       // Turn moving on or off.
+            hoverClass : "fangorn-hover",
+            toggleCheck : _fangornToggleCheck,
+            sortButtonSelector : { 
+                up : 'i.icon-chevron-up',
+                down : 'i.icon-chevron-down'
+            },
+            onload : function (){
+                var tb = this; 
+                $(document).on('click', '.fangorn-dismiss', function(){
+                     tb.redraw();
+                 });
+            },
             createcheck : function (item, parent) {
                 window.console.log('createcheck', this, item, parent);
                 return true;
@@ -308,6 +424,7 @@
                 if (item.data.permissions.edit){
                     return true;
                 }
+                _fangornRowAlert (item, "warning", "You don't have permission to edit this folder.", "overlay");
                 return false;
             },
             onselectrow : function (item) {
@@ -319,7 +436,8 @@
                 //previewTemplate : '<div class='dz-preview dz-file-preview'>     <div class='dz-details'>        <div class='dz-size' data-dz-size></div>    </div>      <div class='dz-progress'>       <span class='dz-upload' data-dz-uploadprogress></span>  </div>      <div class='dz-error-message'>      <span data-dz-errormessage></span>  </div></div>',
                 clickable : '#treeGrid',
                 addRemoveLinks: false,
-                previewTemplate: '<div></div>'
+                previewTemplate: '<div></div>',
+                method: _fangornUploadMethod()
             },
             resolveIcon : _fangornResolveIcon,
             resolveToggle : _fangornResolveToggle,
@@ -329,7 +447,10 @@
                 uploadprogress : _fangornUploadProgress,
                 sending : _fangornSending,
                 complete : _fangornComplete,
-                success : _fangornSuccess
+                success : _fangornDropzoneSuccess,
+                error : _fangornDropzoneError,
+                dragover : _fangornDragOver,
+                addedfile : _fangornAddedFile
             }
     };
 
@@ -344,26 +465,14 @@
         constructor: Fangorn,
         init: function() {
             var self = this;
-//            this._registerListeners()
-                this._initGrid();
+            this._initGrid();
         },
-//        _registerListeners: function() {
-//            for (var addon in Fangorn.cfg) {
-//                var listeners = Fangorn.cfg[addon].listeners;
-//                if (listeners) {
-//                    // Add each listener to the Treebeard options
-//                    for (var i = 0, listener; listener = listeners[i]; i++) {
-//                        this.options.listeners.push(listener);
-//                    }
-//                }
-//            }
-//            return this;
-//        },
         // Create the Treebeard once all addons have been configured
         _initGrid: function() {
             this.grid = Treebeard.run(this.options);
-            return this;
+            return this.grid;
         }
+
     };
 
     return Fangorn;
