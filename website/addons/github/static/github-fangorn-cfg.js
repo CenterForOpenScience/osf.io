@@ -98,9 +98,6 @@
     }
 
     function changeBranch(item, branch){
-        // reload new files
-        // show new files
-        // redraw treebeard
         var tb = this;
         var url = item.data.urls.branch + '?' + $.param({branch: branch});
         console.log(url);
@@ -110,8 +107,6 @@
         }).done(function(response) {
             console.log("Brach Response", response);
             // Update the item with the new branch data
-            //$.extend(item.data, response[0]);
-            //grid.reloadFolder(item);
             $.ajax({
                 type: 'get',
                 url: response[0].urls.fetch
@@ -119,8 +114,9 @@
                 console.log("data", data);
                 tb.updateFolder(data, item);
                 tb.redraw();
+            }).fail(function(xhr, status, error){
+                console.log("Error:", xhr, status, error);
             });
-            // redraw
         });
     }
 
@@ -148,22 +144,27 @@
         }
 
     }
-     var _fangornColumns = [
-        {
-            data : 'name',
-            folderIcons : true,
-            custom : _fangornGithubTitle
+    function _fangornColumns (item) {
+        var columns = []; 
+        columns.push({
+                data : 'name',
+                folderIcons : true,
+                custom : _fangornGithubTitle
+            }); 
 
-        },
-        {
-            css : 'action-col',
-            custom : _fangornActionColumn
-        },
-        {
-            data  : 'downloads',
-            css : ''
+      if(this.options.placement === 'project-files') {
+        columns.push(
+            {
+                css : 'action-col',
+                custom : _fangornActionColumn
+            },
+            {
+                data  : 'downloads',
+                css : ''
+            });
         }
-    ];
+        return columns; 
+    } 
 
     function _fangornLazyLoad(item){
         if (item.data){
@@ -188,16 +189,7 @@
     Fangorn.cfg.github = {
         // Handle changing the branch select
         folderIcon: _fangornFolderIcons,
-        column:_fangornColumns,
+        resolveRows: _fangornColumns,
         lazyload:_fangornLazyLoad
-        /*listeners: [{
-            on: 'change',
-            selector: '.github-branch-select',
-            callback: function(evt, row, grid) {
-                //var $this = $(evt.target);
-                //var branch = $this.val();
-                Treebeard.redraw();
-            }
-        }]*/
     };
 }));

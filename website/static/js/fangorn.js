@@ -308,14 +308,17 @@
 
     function _fangornResolveRows(item){
         // this = treebeard;
-        var default_columns = [            // Defines columns based on data
-            {
-                data : "name",  // Data field name
-                folderIcons : true,
-                filter : true,
-                custom : _fangornTitleColumn
-            },
-            {
+        var default_columns = [];             // Defines columns based on data
+        default_columns.push({
+            data : "name",  // Data field name
+            folderIcons : true,
+            filter : true,
+            custom : _fangornTitleColumn
+        })
+
+        if(this.options.placement === 'project-files') {
+            default_columns.push(
+                {
                 sortInclude : false,
                 custom : _fangornActionColumn
             },
@@ -323,30 +326,34 @@
                 data : "downloads",
                 sortInclude : false,
                 filter : false
-            }
-        ];
-        var cfgOption = resolveCfgOption.call(this, item, 'column', [item]);
+            });
+        }
+        var cfgOption = resolveCfgOption.call(this, item, 'resolveRows', [item]);
         return cfgOption || default_columns;
     }
 
-    var _fangornColumnTitles = [
-                {
+    function _fangornColumnTitles () {
+        var columns = [];
+        columns.push({
                     title: 'Name',
                     width : '60%',
                     sort : true,
                     sortType : 'text'
-                },
-                {
+                }); 
+        if(this.options.placement === 'project-files') {
+            columns.push({
                     title : 'Actions',
                     width : '20%',
                     sort : false
-                },
-                {
+                }, {
                     title : 'Downloads',
                     width : '20%',
                     sort : false
-                }
-            ];
+                });
+        }
+        return columns; 
+        
+    } 
     // OSF-specific Treebeard options common to all addons
     tbOptions = {
             rowHeight : 35,         // user can override or get from .tb-row height
