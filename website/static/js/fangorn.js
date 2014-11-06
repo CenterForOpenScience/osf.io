@@ -75,7 +75,9 @@
         var privateFolder = m('img', { src : "/static/img/hgrid/fatcowicons/folder_delete.png" }),
             pointerFolder = m('i.icon-hand-right', ' '),
             openFolder  = m('i.icon-folder-open-alt', ' '),
-            closedFolder = m('i.icon-folder-close-alt', ' ');
+            closedFolder = m('i.icon-folder-close-alt', ' '),
+            cfgOption = resolveCfgOption.call(this, item, 'folderIcon', [item]);
+
         if (item.kind === 'folder') {
             if (!item.data.permissions.view) {
                 return privateFolder; 
@@ -83,10 +85,10 @@
             if (item.data.isPointer){
                 return pointerFolder; 
             }
-            if (item.open) { 
-                return openFolder; 
+            if (item.open) {
+                return cfgOption || openFolder;
             }
-            return closedFolder; 
+            return cfgOption || closedFolder;
         }
         if (item.data.icon) {
             return m('i.fa.' + item.data.icon, ' ');
@@ -107,6 +109,30 @@
         }
         return m('i.icon-file-alt');
     }
+    // Addon config registry
+    Fangorn.cfg = {};
+
+    function getCfg(item, key) {
+        if (item && item.data.addon && Fangorn.cfg[item.data.addon]) {
+            return Fangorn.cfg[item.data.addon][key];
+        }
+        return undefined;
+    }
+
+    // Gets a Fangorn config option if it is defined by an addon dev.
+    // Calls it with `args` if it's a function otherwise returns the value.
+    // If the config option is not defined, return null
+    function resolveCfgOption(item, option, args) {
+        var self = this;
+        var prop = getCfg(item, option);
+        if (prop) {
+            return typeof prop === 'function' ? prop.apply(self, args) : prop;
+        } else {
+            return null;
+        }
+    }
+
+
 
 
 
@@ -130,9 +156,9 @@
         _fangornRowAlert (item, "warning", "You don't have permission to view the contents of this folder.", "overlay");
         return false;
     }
-
-    function _fangornResolveUploadUrl (item) {  
-        return item.data.urls.upload;
+    function _fangornResolveUploadUrl (item) {
+        var cfgOption = resolveCfgOption.call(this, item, 'uploadUrl', [item]);
+        return cfgOption || item.data.urls.upload;
     }  
 
     function _fangornMouseOverRow (item, event) {
@@ -181,7 +207,6 @@
         var item = treebeard.find(id);
         _fangornRowAlert.call(treebeard, item, 'danger', file.name + " did't upload: " + message.message_short, "replace");
         //treebeard.deleteNode(item.parentID, item.id);
-
     }
 
     function _uploadEvent (event, item, col){
@@ -218,6 +243,11 @@
                 console.log('Delete failed: ', data); 
             }); 
         }
+    }
+
+    function _fangornResolveLazyLoad(tree, item){
+        var cfgOption = resolveCfgOption.call(this, item, 'lazyload', [item]);
+        return cfgOption || false;
     }
 
     // Action buttons; 
@@ -272,35 +302,47 @@
             item.data.name);
     }
 
-    var _fangornColumns = [            // Defines columns based on data
-        {
-            title: 'Name',
-            width : '60%',
-            data : 'name',  // Data field name
-            sort : true,
-            sortType : 'text',
-            filter : true,
-            folderIcons : true, 
-            custom : _fangornTitleColumn
-        },
-        {
-            title : 'Actions',
-            width : '20%',
-            sort : false,
-            filter : false,
-            css : 'action-col',
-            custom : _fangornActionColumn
-        },
-        {
-            title : 'Downloads',
-            width : '20%',
-            data  : 'downloads',
-            sort : false,
-            filter : false,
-            css : ''
-        }
-    ]; 
+    function _fangornResolveRows(item){
+        // this = treebeard;
+        var default_columns = [            // Defines columns based on data
+            {
+                data : "name",  // Data field name
+                folderIcons : true,
+                filter : true,
+                custom : _fangornTitleColumn
+            },
+            {
+                sortInclude : false,
+                custom : _fangornActionColumn
+            },
+            {
+                data : "downloads",
+                sortInclude : false,
+                filter : false
+            }
+        ];
+        var cfgOption = resolveCfgOption.call(this, item, 'column', [item]);
+        return cfgOption || default_columns;
+    }
 
+    var _fangornColumnTitles = [
+                {
+                    title: 'Name',
+                    width : '60%',
+                    sort : true,
+                    sortType : 'text'
+                },
+                {
+                    title : 'Actions',
+                    width : '20%',
+                    sort : false
+                },
+                {
+                    title : 'Downloads',
+                    width : '20%',
+                    sort : false
+                }
+            ];
     // OSF-specific Treebeard options common to all addons
     tbOptions = {
             rowHeight : 35,         // user can override or get from .tb-row height
@@ -308,7 +350,8 @@
             paginate : false,       // Whether the applet starts with pagination or not.
             paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.
             uploads : true,         // Turns dropzone on/off.
-            columns : _fangornColumns,
+            columnTitles : _fangornColumnTitles,
+            resolveRows : _fangornResolveRows,
             showFilter : true,     // Gives the option to filter by showing the filter box.
             title : false,          // Title of the grid, boolean, string OR function that returns a string.
             allowMove : false,       // Turn moving on or off.
@@ -362,7 +405,7 @@
             resolveIcon : _fangornResolveIcon,
             resolveToggle : _fangornResolveToggle,
             resolveUploadUrl : _fangornResolveUploadUrl,
-            resolveLazyloadUrl : false,
+            resolveLazyloadUrl : _fangornResolveLazyLoad,
             dropzoneEvents : {
                 uploadprogress : _fangornUploadProgress,
                 sending : _fangornSending,
@@ -374,7 +417,7 @@
 
     function Fangorn(options) {
         this.options = $.extend({}, tbOptions, options);
-        console.log('Final options', this.options);
+        console.log('Options', this.options);
         this.grid = null; // Set by _initGrid
         this.init();
     }

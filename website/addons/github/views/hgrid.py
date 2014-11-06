@@ -194,6 +194,7 @@ def github_hgrid_data(node_settings, auth, **kwargs):
         urls=urls,
         permissions=permissions,
         extra=name_append,
+        branches=[each.name for each in branches],
         buttons=buttons,
     )]
 
