@@ -141,7 +141,7 @@
                 self.paginators.push({
                     style: (self.currentPage() === 0)? 'disabled' : '',
                     handler: self.previousPage,
-                    text: '<'
+                    text: '&lt;'
                 });
                 self.paginators.push({
                     style: (self.currentPage() === 0)? 'active' : '',
@@ -227,7 +227,7 @@
                 self.paginators.push({
                     style: (self.currentPage() === self.numberOfPages() - 1)? 'disabled' : '',
                     handler: self.nextPage,
-                    text: '>'
+                    text: '&gt;'
                 });
             }
         };
