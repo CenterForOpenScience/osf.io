@@ -18,9 +18,13 @@ def _regex(rgx, key, value):
     raise SchemaViolationError('{} must follow the pattern {}'.format(key, rgx))
 
 
-regex = lambda x: partial(_regex, x)
+def regex(pattern):
+    ret = partial(_regex, pattern)
+    ret.__doc__ = '<Regex Pattern {}>'.format(pattern)
+    return ret
+
 def must_be_type(_type):
-    ret = lambda x: partial(_must_be_type, x)
+    ret = partial(_must_be_type, _type)
     ret.__doc__ = str(_type)
     return ret
 
