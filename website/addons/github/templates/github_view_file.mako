@@ -4,6 +4,12 @@
 <%def name="file_versions()">
 <div id="githubScope">
 
+    <div style="display: none" data-bind="visible: true">
+        <div class="alert alert-warning" data-bind="visible: deleting">
+            Deleting your file…
+        </div>
+    </div>
+
     <ol class="breadcrumb">
         <li class="active overflow"><a href=${files_page_url}>${node['title']}</a></li>
         <li>GitHub</li>
@@ -17,11 +23,11 @@
                  Download <i class="icon-download-alt"></i></a>
         % endif
 
-         % if user['can_edit'] and delete_url:
+        % if user['can_edit'] and delete_url:
              <!--delete button-->
              <button class="btn btn-danger btn-md" data-bind="click: deleteFile">
                  Delete <i class="icon-trash"></i></button>
-         % endif
+        % endif
      </p>
 
 

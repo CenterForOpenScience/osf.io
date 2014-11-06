@@ -3,10 +3,12 @@
 
 <%def name="file_versions()">
     <div id='s3Scope'>
-    <div id="deletingAlert" class="alert alert-warning fade">
-                    Deleting your file…
-                </div>
 
+    <div style="display: none" data-bind="visible: true">
+        <div class="alert alert-warning" data-bind="visible: deleting">
+            Deleting your file…
+        </div>
+    </div>
 
             <p>
                 <span id="downloadButtonScope">
