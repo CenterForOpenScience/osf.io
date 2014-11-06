@@ -90,6 +90,7 @@ def validate_start_hook_payload(payload):
 
 
 @must_be_valid_project
+@must_not_be_registration
 @must_have_addon('osfstorage', 'node')
 def osf_storage_upload_start_hook(node_addon, **kwargs):
     """
@@ -115,6 +116,7 @@ def handle_missing_ping(path, node):
 
 
 @must_be_valid_project
+@must_not_be_registration
 @must_have_addon('osfstorage', 'node')
 def osf_storage_upload_ping_hook(path, node_addon, **kwargs):
     record = model.FileRecord.find_by_path(path, node_addon, touch=False)
@@ -170,6 +172,7 @@ def finish_upload_error(file_record, payload):
 
 
 @must_be_valid_project
+@must_not_be_registration
 @must_have_addon('osfstorage', 'node')
 def osf_storage_upload_finish_hook(path, node_addon, **kwargs):
     """
@@ -333,6 +336,7 @@ def osf_storage_render_file(path, node_addon, **kwargs):
 
 
 @must_be_contributor
+@must_not_be_registration
 @must_have_permission('write')
 @must_have_addon('osfstorage', 'node')
 def osf_storage_delete_file(auth, path, node_addon, **kwargs):
