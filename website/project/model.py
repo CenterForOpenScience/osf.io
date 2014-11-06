@@ -431,7 +431,7 @@ class Tag(StoredObject):
 
     @property
     def url(self):
-        return '/search/?q=tags:{}'.format(self._id)
+        return '/search/?tags={}'.format(self._id)
 
 
 class Pointer(StoredObject):
@@ -1564,6 +1564,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         original.save()
 
         registered.save()
+        for node in registered.nodes:
+            node.update_search()
 
         return registered
 
