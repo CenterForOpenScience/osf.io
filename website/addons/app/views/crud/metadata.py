@@ -10,8 +10,8 @@ from framework.auth import Auth
 from framework.exceptions import HTTPError
 
 from website.project import new_node, Node
+from website.addons.app.types import TYPE_MAP
 from website.addons.app.model import Metadata
-from website.addons.app.settings import TYPE_MAP
 from website.project.decorators import must_have_addon
 from website.search.exceptions import TypeCollisionError
 from website.project.decorators import must_have_permission
@@ -24,7 +24,7 @@ from website.project.decorators import must_be_contributor_or_public
 @must_have_addon('app', 'node')
 def get_schema_types(node_addon, **kwargs):
     return {
-        key: str(value)
+        key: value.__doc__
         for key, value
         in TYPE_MAP.items()
     }

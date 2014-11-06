@@ -22,7 +22,7 @@ from resync.capability_list import CapabilityList
 from resync.resource_list import ResourceListDupeError
 
 from website.util import rss
-from website.addons.app.settings import TYPE_MAP
+from website.addons.app.types import TYPE_MAP
 from website.addons.app.exceptions import KeyMissMatchError
 from website.addons.app.exceptions import InvalidSchemaError
 from website.addons.app.exceptions import SchemaViolationError
@@ -233,10 +233,8 @@ def lint(data, schema, strict=False):
             lint(value, schema[key], strict=strict)
         elif isinstance(schema[key], list):
             if not isinstance(value, list):
-                raise SchemaViolationError('{} must be of type {}'.format(key, schema[key]))
+                raise SchemaViolationError('{} must be a list'.format(key))
             for subvalue in value:
-                if not isinstance(subvalue, schema[key][0]):
-                    raise SchemaViolationError('{} must all be of type {}'.format(key, schema[key]))
+                schema[key][0](key, subvalue)
         else:
-            if not isinstance(value, schema[key]):
-                raise SchemaViolationError('{} must be of type {}'.format(key, schema[key]))
+            schema[key](key, value)
