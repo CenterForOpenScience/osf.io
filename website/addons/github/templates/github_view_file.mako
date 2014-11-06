@@ -3,6 +3,12 @@
 
 <%def name="file_versions()">
 
+    <ol class="breadcrumb">
+        <li class="active overflow"><a href=${files_page_url}>${node['title']}</a></li>
+        <li>GitHub</li>
+        <li class="active overflow">${file_name}</li>
+    </ol>
+
     <table class="table" id="file-version-history">
 
         <thead>

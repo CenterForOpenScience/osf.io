@@ -189,7 +189,12 @@ def github_view_file(auth, **kwargs):
                 )
 
     rv = {
+        'node': {
+            'id': node._id,
+            'title': node.title
+        },
         'file_name': file_name,
+        'files_page_url': node.web_url_for('collect_file_trees'),
         'current_sha': current_sha,
         'render_url': render_url,
         'rendered': rendered,
