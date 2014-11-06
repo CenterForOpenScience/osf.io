@@ -49,9 +49,9 @@
 
     var onClick = function () {
         var iframe = document.createElement('iframe');
-        iframe.className = this.className.replace('youtube-loader', 'youtube-loader-embedded', 1);
+        iframe.className = this.className.replace('youtube-loader', 'youtube-loader-embedded');
         var src = '//www.youtube.com/embed/' + this.id + '?autoplay=1&autohide=1&border=0&wmode=opaque&enablejsapi=1&hd=1&showinfo=0';
-        var start = this.getAttribute('start')
+        var start = this.getAttribute('start');
         if (start) {
             src += '&start=' + start
         }

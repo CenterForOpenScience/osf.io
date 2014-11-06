@@ -614,19 +614,22 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
 
         url = self.project.web_url_for('dataverse_view_file', path='foo')
         res = self.app.get(url, auth=self.user.auth).follow(auth=self.user.auth)
+
         assert_true(mock_connection.called)
         assert_true(mock_get_files.called)
         assert_equal(res.status_code, 200)
 
+    @mock.patch('website.addons.dataverse.views.crud.scrape_dataverse')
     @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
     @mock.patch('website.addons.dataverse.views.crud.get_files')
     @mock.patch('website.addons.dataverse.views.crud.fail_if_private')
-    def test_dataverse_view_file_with_anonymous_link(self, mock_fail_if_private, mock_get_files, mock_connection):
+    def test_dataverse_view_file_with_anonymous_link(self, mock_fail_if_private, mock_get_files, mock_connection, mock_scrape):
         link = PrivateLinkFactory(anonymous=True)
         link.nodes.append(self.project)
         link.save()
         mock_connection.return_value = create_mock_connection()
         mock_get_files.return_value = [create_mock_draft_file('foo')]
+        mock_scrape.return_value = ('filename', 'content')
 
         url = self.project.api_url_for('dataverse_get_file_info', path='foo')
         res = self.app.get(url, {'view_only': link.key}).maybe_follow()
@@ -635,6 +638,27 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         assert_not_in(self.node_settings.dataverse, res.body)
         assert_not_in(self.node_settings.study, res.body)
 
+    @mock.patch('website.addons.dataverse.views.crud.scrape_dataverse')
+    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
+    @mock.patch('website.addons.dataverse.views.crud.get_files')
+    def test_dataverse_get_file_info_returns_filename_and_links(self, mock_get_files, mock_connection, mock_scrape):
+        mock_connection.return_value = create_mock_connection()
+        mock_get_files.return_value = [create_mock_draft_file('foo')]
+        mock_scrape.return_value = ('filename', 'content')
+        delete_url = self.project.api_url_for('dataverse_delete_file', path='foo')
+        files_url = self.project.web_url_for('collect_file_trees')
+
+        url = self.project.api_url_for('dataverse_get_file_info', path='foo')
+        res = self.app.get(url, auth=self.user.auth).maybe_follow(auth=self.user.auth)
+
+        assert_equal(res.status_code, 200)
+        assert_true(mock_connection.called)
+        assert_true(mock_get_files.called)
+        assert_in(self.project._id, res.json['data']['node']['id'])
+        assert_in(self.project.title, res.json['data']['node']['title'])
+        assert_in(mock_scrape()[0], res.json['data']['filename'])
+        assert_in(delete_url, res.json['data']['urls']['delete'])
+        assert_in(files_url, res.json['data']['urls']['files'])
 
     @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
     @mock.patch('website.addons.dataverse.views.crud.get_files')
