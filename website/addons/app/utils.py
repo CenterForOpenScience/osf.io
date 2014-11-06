@@ -227,14 +227,22 @@ def lint(data, schema, strict=False):
     if strict and data.keys != schema.keys():
         raise KeyMissMatchError()
 
+    ret = {}
+
     for key, value in data.items():
 
         if isinstance(schema[key], dict):
-            lint(value, schema[key], strict=strict)
+            ret[key] = lint(value, schema[key], strict=strict)
         elif isinstance(schema[key], list):
             if not isinstance(value, list):
                 raise SchemaViolationError('{} must be a list'.format(key))
-            for subvalue in value:
+            ret[key] = [
                 schema[key][0](key, subvalue)
+                for subvalue in value
+            ]
         else:
-            schema[key](key, value)
+            ret[key] = schema[key](key, value)
+
+    data.update(ret)
+
+    return data
