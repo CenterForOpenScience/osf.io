@@ -67,7 +67,7 @@
                     % endif
                     <td>
                         <a href="${commit['download']}" class="btn btn-primary btn-sm" download="${file_name}">
-                            Download <i class="icon-download-alt"></i>
+                            <i class="icon-download-alt"></i>
                         </a>
                     </td>
                 </tr>
