@@ -303,7 +303,7 @@ class TestSerializeRevision(StorageTestCase):
 
     def test_serialize_revision_pending(self):
         version = factories.FileVersionFactory(
-            status=model.status['PENDING'],
+            pending=True,
             date_modified=None,
         )
         self.record.versions.append(version)

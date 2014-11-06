@@ -88,8 +88,8 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/osfstorage/files/<path:path>/revisions/',
-                '/project/<pid>/node/<nid>/osfstorage/files/<path:path>/revisions/',
+                '/project/<pid>/osfstorage/revisions/<path:path>',
+                '/project/<pid>/node/<nid>/osfstorage/revisions/<path:path>',
             ],
             'get',
             views.osf_storage_get_revisions,
@@ -110,10 +110,8 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/osfstorage/files/start/',
-                '/project/<pid>/node/<nid>/osfstorage/files/start/',
-                '/project/<pid>/osfstorage/files/<path:path>/start/',
-                '/project/<pid>/node/<nid>/osfstorage/files/<path:path>/start/',
+                '/project/<pid>/osfstorage/hooks/start/<path:path>',
+                '/project/<pid>/node/<nid>/osfstorage/hooks/start/<path:path>',
             ],
             'put',
             views.osf_storage_upload_start_hook,
@@ -122,8 +120,18 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/osfstorage/files/<path:path>/finish/',
-                '/project/<pid>/node/<nid>/osfstorage/files/<path:path>/finish/',
+                '/project/<pid>/osfstorage/hooks/ping/<path:path>',
+                '/project/<pid>/node/<nid>/osfstorage/hooks/ping/<path:path>',
+            ],
+            'post',
+            views.osf_storage_upload_ping_hook,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/osfstorage/hooks/finish/<path:path>',
+                '/project/<pid>/node/<nid>/osfstorage/hooks/finish/<path:path>',
             ],
             'put',
             views.osf_storage_upload_finish_hook,
@@ -132,8 +140,8 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/osfstorage/files/render/<path:path>/',
-                '/project/<pid>/node/<nid>/osfstorage/files/render/<path:path>/',
+                '/project/<pid>/osfstorage/render/<path:path>/',
+                '/project/<pid>/node/<nid>/osfstorage/render/<path:path>/',
             ],
             'get',
             views.osf_storage_render_file,

@@ -85,8 +85,10 @@ class TestHGridViews(StorageTestCase):
 
 class HookTestCase(StorageTestCase):
 
-    def send_hook(self, view_name, payload, signature, path=None, **kwargs):
-        return self.app.put_json(
+    def send_hook(self, view_name, payload, signature, path=None,
+                  method='put_json', **kwargs):
+        method = getattr(self.app, method)
+        return method(
             self.project.api_url_for(view_name, path=path),
             payload,
             headers={
@@ -126,7 +128,7 @@ class TestStartHook(HookTestCase):
         record = model.FileRecord.find_by_path(self.path, self.node_settings)
         assert_true(record)
         assert_equal(len(record.versions), 1)
-        assert_equal(record.versions[0].status, model.status['PENDING'])
+        assert_true(record.versions[0].pending)
 
     def test_start_hook_invalid_signature(self):
         res = self.send_start_hook(
@@ -166,6 +168,79 @@ class TestStartHook(HookTestCase):
         assert_equal(len(record.versions), 1)
 
 
+class TestPingHook(HookTestCase):
+
+    def setUp(self):
+        super(TestPingHook, self).setUp()
+        self.path = 'flaky/pizza.png'
+        self.size = 1024
+        self.record = model.FileRecord.get_or_create(self.path, self.node_settings)
+        self.uploadSignature = '07235a8'
+        self.payload = {
+            'uploadSignature': self.uploadSignature,
+            'uploadPayload': {'extra': {'user': self.user._id}},
+        }
+        _, self.signature = utils.webhook_signer.sign_payload(self.payload)
+
+    def send_ping_hook(self, payload=None, signature=None, path=None, **kwargs):
+        return self.send_hook(
+            'osf_storage_upload_ping_hook',
+            payload=payload or self.payload,
+            signature=signature or self.signature,
+            path=path or self.path,
+            method='post_json',
+            **kwargs
+        )
+
+    @mock.patch('website.addons.osfstorage.model.time.time')
+    def test_ping_pending(self, mock_time):
+        mock_time.return_value = 0
+        version = self.record.create_pending_version(self.user, self.uploadSignature)
+        assert_equal(version.last_ping, 0)
+        mock_time.return_value = 10
+        res = self.send_ping_hook()
+        assert_equal(res.status_code, 200)
+        version.reload()
+        assert_equal(version.last_ping, 10)
+
+    def test_ping_no_record(self):
+        res = self.send_ping_hook(path='missing/file.txt', expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_ping_no_version(self):
+        res = self.send_ping_hook(expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    @mock.patch('website.addons.osfstorage.model.time.time')
+    def test_ping_not_pending(self, mock_time):
+        version = factories.FileVersionFactory(last_ping=0)
+        self.record.versions.append(version)
+        self.record.save()
+        mock_time.return_value = 10
+        res = self.send_ping_hook(expect_errors=True)
+        assert_equal(res.status_code, 400)
+        version.reload()
+        assert_equal(version.last_ping, 0)
+
+    @mock.patch('website.addons.osfstorage.model.time.time')
+    def test_ping_invalid_signature(self, mock_time):
+        mock_time.return_value = 0
+        version = self.record.create_pending_version(self.user, self.uploadSignature)
+        mock_time.return_value = 10
+        payload = {
+            'uploadSignature': self.uploadSignature[::-1],
+            'uploadPayload': {'extra': {'user': self.user._id}},
+        }
+        _, signature = utils.webhook_signer.sign_payload(payload)
+        res = self.send_ping_hook(
+            payload=payload, signature=signature,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 400)
+        version.reload()
+        assert_equal(version.last_ping, 0)
+
+
 class TestFinishHook(HookTestCase):
 
     def setUp(self):
@@ -202,20 +277,42 @@ class TestFinishHook(HookTestCase):
         )
         assert_equal(res.status_code, 200)
         version.reload()
-        assert_equal(version.status, model.status['COMPLETE'])
+        assert_false(version.pending)
         assert_equal(version.size, self.size)
 
-    def test_finish_hook_status_error(self):
+    def test_finish_hook_status_error_first_version(self):
         payload = self.make_payload(status='error')
         message, signature = utils.webhook_signer.sign_payload(payload)
         self.record.create_pending_version(self.user, self.uploadSignature)
-        version = self.record.versions[0]
+        version = self.record.versions[-1]
         res = self.send_finish_hook(
             payload=payload, signature=signature, path=self.path,
         )
         assert_equal(res.status_code, 200)
-        version.reload()
-        assert_equal(version.status, model.status['FAILED'])
+        model.FileRecord._clear_caches()
+        model.FileVersion._clear_caches()
+        record_reloaded = model.FileRecord.load(self.record._id)
+        version_reloaded = model.FileVersion.load(version._id)
+        assert_is(record_reloaded, None)
+        assert_is(version_reloaded, None)
+
+    def test_finish_hook_status_error_second(self):
+        payload = self.make_payload(status='error')
+        message, signature = utils.webhook_signer.sign_payload(payload)
+        self.record.versions.append(factories.FileVersionFactory())
+        self.record.create_pending_version(self.user, self.uploadSignature)
+        version = self.record.versions[-1]
+        res = self.send_finish_hook(
+            payload=payload, signature=signature, path=self.path,
+        )
+        assert_equal(res.status_code, 200)
+        model.FileRecord._clear_caches()
+        model.FileVersion._clear_caches()
+        record_reloaded = model.FileRecord.load(self.record._id)
+        version_reloaded = model.FileVersion.load(version._id)
+        assert_true(record_reloaded)
+        assert_equal(len(record_reloaded.versions), 1)
+        assert_is(version_reloaded, None)
 
     def test_finish_hook_status_unknown(self):
         payload = self.make_payload(status='pizza')
@@ -229,7 +326,7 @@ class TestFinishHook(HookTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['reason'], 'Invalid status')
         version.reload()
-        assert_equal(version.status, model.status['PENDING'])
+        assert_true(version.pending)
 
     def test_finish_hook_invalid_signature(self):
         payload = self.make_payload()
@@ -243,7 +340,7 @@ class TestFinishHook(HookTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['reason'], 'Invalid signature')
         version.reload()
-        assert_equal(version.status, model.status['PENDING'])
+        assert_true(version.pending)
 
     def test_finish_hook_record_not_found(self):
         payload = self.make_payload()
@@ -617,30 +714,6 @@ class TestDownloadFile(StorageTestCase):
         assert_in('File upload in progress', res)
         assert_false(mock_get_url.called)
 
-    @mock.patch('website.addons.osfstorage.utils.get_download_url')
-    def test_download_failed_version(self, mock_get_url):
-        mock_get_url.return_value = 'http://freddie.queen.com/'
-        self.record.create_pending_version(self.user, '9d989e8')
-        self.record.cancel_pending_version('9d989e8')
-        deltas = [
-            Delta(
-                lambda: utils.get_download_count(self.record, self.project),
-                lambda value: value
-            ),
-            Delta(
-                lambda: utils.get_download_count(self.record, self.project, 2),
-                lambda value: value
-            ),
-        ]
-        with AssertDeltas(deltas):
-            res = self.download_file(
-                path=self.path, version=2,
-                expect_errors=True,
-            )
-        assert_equal(res.status_code, 404)
-        assert_in('File upload failed', res)
-        assert_false(mock_get_url.called)
-
 
 class TestDeleteFile(StorageTestCase):
 
@@ -649,7 +722,7 @@ class TestDeleteFile(StorageTestCase):
         record = create_record_with_version(
             path,
             self.node_settings,
-            status=model.status['COMPLETE'],
+            pending=False,
         )
         assert_false(record.is_deleted)
         res = self.app.delete(
@@ -668,7 +741,7 @@ class TestDeleteFile(StorageTestCase):
         record = create_record_with_version(
             path,
             self.node_settings,
-            status=model.status['COMPLETE'],
+            pending=False,
         )
         record.delete(self.auth_obj)
         record.save()

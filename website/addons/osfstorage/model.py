@@ -3,6 +3,8 @@
 
 import os
 import bson
+import time
+import logging
 import datetime
 
 import furl
@@ -21,6 +23,8 @@ from website.addons.osfstorage import logs
 from website.addons.osfstorage import errors
 from website.addons.osfstorage import settings
 
+
+logger = logging.getLogger(__name__)
 
 oid_primary_key = fields.StringField(
     primary=True,
@@ -46,7 +50,7 @@ def copy_file_tree_stable(tree, node_settings):
 def copy_file_record_stable(record, node_settings):
     versions = [
         version for version in record.versions
-        if version.status == status['COMPLETE']
+        if not version.pending
     ]
     if versions:
         clone = record.clone()
@@ -123,33 +127,54 @@ class BaseFileObject(StoredObject):
         return value
 
     @property
+    def parent(self):
+        parents = getattr(self, '_parent', None)
+        if parents:
+            assert len(parents) == 1
+            return parents[0]
+        return None
+
+    @property
     def node(self):
         return self.node_settings.owner
 
     @classmethod
-    def find_by_path(cls, path, node_settings):
+    def find_by_path(cls, path, node_settings, touch=True):
+        """Find a record by path and root settings record.
+
+        :param str path: Path to file or directory
+        :param node_settings: Root node settings record
+        :param bool touch: Handle expired records
+        """
         try:
-            return cls.find_one(
+            obj = cls.find_one(
                 Q('path', 'eq', path) &
                 Q('node_settings', 'eq', node_settings._id)
             )
+            if touch:
+                obj.touch()
+            return obj
         except (modm_errors.NoResultsFound, modm_errors.MultipleResultsFound):
             return None
 
     @classmethod
-    def get_or_create(cls, path, node_settings):
-        obj = cls.find_by_path(path, node_settings)
+    def get_or_create(cls, path, node_settings, touch=True):
+        """Get or create a record by path and root settings record.
+
+        :param str path: Path to file or directory
+        :param node_settings: Root node settings record
+        :param bool touch: Handle expired records
+        """
+        obj = cls.find_by_path(path, node_settings, touch=touch)
         if obj:
             return obj
         obj = cls(path=path, node_settings=node_settings)
         obj.save()
+        # Ensure all intermediate paths
         if path:
             parent_path, _ = os.path.split(path)
             parent_class = get_parent_class(cls)
-            parent_obj = parent_class.get_or_create(
-                parent_path,
-                node_settings,
-            )
+            parent_obj = parent_class.get_or_create(parent_path, node_settings)
             parent_obj.children.append(obj)
             parent_obj.save()
         else:
@@ -157,6 +182,9 @@ class BaseFileObject(StoredObject):
             node_settings.file_tree = obj
             node_settings.save()
         return obj
+
+    def touch(self):
+        pass
 
     def __repr__(self):
         return '<{}(path={!r}, node_settings={!r})>'.format(
@@ -169,7 +197,7 @@ class BaseFileObject(StoredObject):
 class FileTree(BaseFileObject):
 
     _id = oid_primary_key
-    children = fields.AbstractForeignField(list=True)
+    children = fields.AbstractForeignField(list=True, backref='_parent')
 
 
 class FileRecord(BaseFileObject):
@@ -203,14 +231,32 @@ class FileRecord(BaseFileObject):
         version = FileVersion(
             creator=creator,
             signature=signature,
-            status=status['PENDING'],
-            date_created=datetime.datetime.utcnow(),
+            pending=True,
         )
         version.save()
         self.versions.append(version)
         self.is_deleted = False
         self.save()
         return version
+
+    def ping_pending_version(self, signature):
+        latest_version = self.get_version(required=True)
+        latest_version.ping(signature)
+        return latest_version
+
+    def remove_version(self, version):
+        if len(self.versions) == 1:
+            FileRecord.remove_one(self)
+        else:
+            self.versions.remove(version)
+            self.save()
+        FileVersion.remove_one(version)
+
+    def touch(self):
+        latest_version = self.get_version()
+        if latest_version and latest_version.expired:
+            self.remove_version(latest_version)
+            logger.warn('Removed pending version on {!r} due to inactivity'.format(self))
 
     def resolve_pending_version(self, signature, location, metadata, log=True):
         """Finish pending upload. Update version record with file information
@@ -244,8 +290,8 @@ class FileRecord(BaseFileObject):
 
     def cancel_pending_version(self, signature, log=True):
         latest_version = self.get_version(required=True)
-        latest_version.cancel(signature)
-        return latest_version
+        latest_version.before_update(signature)
+        self.remove_version(latest_version)
 
     def log(self, auth, action, version=True):
         node_logger = logs.OsfStorageNodeLogger(
@@ -273,16 +319,6 @@ class FileRecord(BaseFileObject):
             self.log(auth, NodeLog.FILE_RESTORED)
 
 
-status = {
-    'PENDING': 'pending',
-    'COMPLETE': 'complete',
-    'FAILED': 'failed',
-}
-def validate_status(value):
-    if value not in status.values():
-        raise modm_errors.ValidationValueError
-
-
 metadata_parsers = {
     'date_modified': parse_date,
 }
@@ -293,8 +329,8 @@ class FileVersion(StoredObject):
     _id = oid_primary_key
     creator = fields.ForeignField('user', required=True)
 
-    status = fields.StringField(validate=validate_status)
-    date_created = fields.DateTimeField(required=True)
+    pending = fields.BooleanField()
+    date_created = fields.DateTimeField(auto_now_add=True)
     signature = fields.StringField()
 
     date_resolved = fields.DateTimeField()
@@ -303,10 +339,7 @@ class FileVersion(StoredObject):
     size = fields.IntegerField()
     content_type = fields.StringField()
     date_modified = fields.DateTimeField()
-
-    @property
-    def pending(self):
-        return self.status == status['PENDING']
+    last_ping = fields.FloatField(default=lambda: time.time())
 
     @property
     def location_hash(self):
@@ -315,6 +348,10 @@ class FileVersion(StoredObject):
         return self.location['object']
 
     def before_update(self, signature):
+        """Check that version is safe to update with specified signature.
+
+        :param str signature: Signature used in signed URL
+        """
         if not self.pending:
             raise errors.VersionNotPendingError
         if self.signature != signature:
@@ -325,7 +362,7 @@ class FileVersion(StoredObject):
 
     def resolve(self, signature, location, metadata):
         self.before_update(signature)
-        self.status = status['COMPLETE']
+        self.pending = False
         self.date_resolved = datetime.datetime.utcnow()
         self.location = location
         for key, value in metadata.iteritems():
@@ -334,23 +371,36 @@ class FileVersion(StoredObject):
             setattr(self, key, parsed)
         self.save()
 
-    def cancel(self, signature):
+    def ping(self, signature):
+        """Verify upload signature and update last ping time.
+
+        :param str signature: Signature used in signed URL
+        """
         self.before_update(signature)
-        self.status = status['FAILED']
+        self.last_ping = time.time()
         self.save()
+
+    @property
+    def expired(self):
+        """A version is expired if in pending state and has not received a ping
+        from the upload service since in `PING_TIMEOUT` seconds.
+        """
+        if not self.pending:
+            return False
+        return time.time() > (self.last_ping + settings.PING_TIMEOUT)
 
 
 LOCATION_KEYS = ['service', 'container', 'object']
 @FileVersion.subscribe('before_save')
 def validate_version_location(schema, instance):
-    if instance.status == status['COMPLETE']:
+    if not instance.pending:
         if any(key not in instance.location for key in LOCATION_KEYS):
             raise modm_errors.ValidationValueError
 
 
 @FileVersion.subscribe('before_save')
 def validate_version_dates(schema, instance):
-    if instance.status == status['COMPLETE']:
+    if not instance.pending:
         if not instance.date_resolved:
             raise modm_errors.ValidationValueError
         if instance.date_created > instance.date_resolved:

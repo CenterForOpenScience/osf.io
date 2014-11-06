@@ -223,9 +223,11 @@ def ensure_domain(url):
 def build_callback_urls(node, path):
     start_url = node.api_url_for('osf_storage_upload_start_hook', path=path)
     finish_url = node.api_url_for('osf_storage_upload_finish_hook', path=path)
+    ping_url = node.api_url_for('osf_storage_upload_ping_hook', path=path)
     return {
         'startUrl': ensure_domain(start_url),
         'finishUrl': ensure_domain(finish_url),
+        'pingUrl': ensure_domain(ping_url),
     }
 
 

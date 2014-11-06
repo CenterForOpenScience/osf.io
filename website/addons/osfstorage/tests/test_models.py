@@ -24,6 +24,7 @@ from website.addons.osfstorage import logs
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import errors
+from website.addons.osfstorage import settings
 
 
 class TestNodeSettingsModel(StorageTestCase):
@@ -39,16 +40,14 @@ class TestNodeSettingsModel(StorageTestCase):
         for _ in range(num_versions):
             version = factories.FileVersionFactory()
             record.versions.append(version)
-        record.versions[-1].status = model.status['PENDING']
+        record.versions[-1].pending = True
         record.versions[-1].save()
-        record.versions[-2].status = model.status['FAILED']
-        record.versions[-2].save()
         record.save()
         fork = self.project.fork_node(self.auth_obj)
         fork_node_settings = fork.get_addon('osfstorage')
         fork_node_settings.reload()
         cloned_record = model.FileRecord.find_by_path(path, fork_node_settings)
-        assert_equal(cloned_record.versions, record.versions[:num_versions - 2])
+        assert_equal(cloned_record.versions, record.versions[:num_versions - 1])
         assert_true(fork_node_settings.file_tree)
 
     def test_after_register_copies_stable_versions(self):
@@ -58,10 +57,8 @@ class TestNodeSettingsModel(StorageTestCase):
         for _ in range(num_versions):
             version = factories.FileVersionFactory()
             record.versions.append(version)
-        record.versions[-1].status = model.status['PENDING']
+        record.versions[-1].pending = True
         record.versions[-1].save()
-        record.versions[-2].status = model.status['FAILED']
-        record.versions[-2].save()
         record.save()
         registration = self.project.register_node(
             None,
@@ -72,23 +69,15 @@ class TestNodeSettingsModel(StorageTestCase):
         registration_node_settings = registration.get_addon('osfstorage')
         registration_node_settings.reload()
         cloned_record = model.FileRecord.find_by_path(path, registration_node_settings)
-        assert_equal(cloned_record.versions, record.versions[:num_versions - 2])
+        assert_equal(cloned_record.versions, record.versions[:num_versions - 1])
         assert_true(registration_node_settings.file_tree)
 
     def test_after_fork_copies_stable_records(self):
         path = 'jazz/dreamers-ball.mp3'
         record = model.FileRecord.get_or_create(path, self.node_settings)
-        version_pending = model.FileVersion(
-            status=model.status['PENDING'],
-            date_created=datetime.datetime.utcnow(),
-        )
+        version_pending = model.FileVersion(pending=True)
         version_pending.save()
-        version_failed = model.FileVersion(
-            status=model.status['FAILED'],
-            date_created=datetime.datetime.utcnow(),
-        )
-        version_failed.save()
-        record.versions.extend([version_pending, version_failed])
+        record.versions.append(version_pending)
         record.save()
         fork = self.project.fork_node(self.auth_obj)
         fork_node_settings = fork.get_addon('osfstorage')
@@ -100,17 +89,10 @@ class TestNodeSettingsModel(StorageTestCase):
         record = model.FileRecord.get_or_create(path, self.node_settings)
         version_pending = model.FileVersion(
             creator=self.user,
-            status=model.status['PENDING'],
-            date_created=datetime.datetime.utcnow(),
+            pending=True,
         )
         version_pending.save()
-        version_failed = model.FileVersion(
-            creator=self.user,
-            status=model.status['FAILED'],
-            date_created=datetime.datetime.utcnow(),
-        )
-        version_failed.save()
-        record.versions.extend([version_pending, version_failed])
+        record.versions.append(version_pending)
         record.save()
         registration = self.project.register_node(
             None,
@@ -142,6 +124,15 @@ class TestFileTree(OsfTestCase):
 
     def test_name(self):
         assert_equal(self.tree.name, 'world')
+
+    def test_parent_root(self):
+        tree = model.FileTree.get_or_create('', self.node_settings)
+        assert_is(tree.parent, None)
+
+    def test_parent_branch(self):
+        tree = model.FileTree.get_or_create('branch', self.node_settings)
+        expected_parent = model.FileTree.get_or_create('', self.node_settings)
+        assert_equal(tree.parent, expected_parent)
 
     def test_find_by_path_found(self):
         result = model.FileTree.find_by_path(self.path, self.node_settings)
@@ -189,7 +180,7 @@ class TestFileRecord(StorageTestCase):
     def setUp(self):
         super(TestFileRecord, self).setUp()
         self.path = 'red/special.mp3'
-        self.record = model.FileRecord(
+        self.record = model.FileRecord.get_or_create(
             path=self.path,
             node_settings=self.node_settings,
         )
@@ -219,17 +210,16 @@ class TestFileRecord(StorageTestCase):
         assert_equal(result, self.record)
 
     def test_get_or_create_not_found_top_level(self):
-        assert_is(self.node_settings.file_tree, None)
+        nchildren = len(self.node_settings.file_tree.children)
         result = model.FileRecord.get_or_create(
             'stonecold.mp3',
             self.node_settings,
         )
         assert_is_not(self.node_settings.file_tree, None)
-        assert_equal(len(self.node_settings.file_tree.children), 1)
-        assert_equal(self.node_settings.file_tree.children[0], result)
+        assert_equal(len(self.node_settings.file_tree.children), nchildren + 1)
+        assert_equal(self.node_settings.file_tree.children[-1], result)
 
     def test_get_or_create_not_found_nested(self):
-        assert_is(self.node_settings.file_tree, None)
         path = 'night/at/the/opera/39.mp3'
         result = model.FileRecord.get_or_create(path, self.node_settings)
         assert_true(model.FileRecord.find_by_path(path, self.node_settings))
@@ -315,12 +305,11 @@ class TestFileRecord(StorageTestCase):
     def test_create_pending_previous_cancelled(self):
         self.record.create_pending_version(self.user, 'c22b59f')
         self.record.cancel_pending_version('c22b59f')
-        self.record.create_pending_version(self.user, '78c9a53')
 
     def test_create_pending_path_locked(self):
         version = model.FileVersion(
             creator=self.user,
-            status=model.status['PENDING'],
+            pending=True,
             date_created=datetime.datetime.utcnow(),
         )
         version.save()
@@ -406,6 +395,32 @@ class TestFileRecord(StorageTestCase):
         )
         assert_equal(logged.params['version'], len(self.record.versions))
 
+    def test_remove_version_one_version(self):
+        parent = self.record.parent
+        assert_equal(len(parent.children), 1)
+        version = factories.FileVersionFactory()
+        self.record.versions = [version]
+        self.record.save()
+        self.record.remove_version(version)
+        model.FileRecord._clear_caches()
+        model.FileVersion._clear_caches()
+        assert_is(model.FileRecord.load(self.record._id), None)
+        assert_is(model.FileVersion.load(version._id), None)
+        assert_equal(len(parent.children), 0)
+
+    def test_remove_version_two_versions(self):
+        parent = self.record.parent
+        assert_equal(len(parent.children), 1)
+        versions = [factories.FileVersionFactory() for _ in range(3)]
+        self.record.versions = versions
+        self.record.save()
+        self.record.remove_version(versions[-1])
+        model.FileRecord._clear_caches()
+        model.FileVersion._clear_caches()
+        assert_true(model.FileRecord.load(self.record._id))
+        assert_is(model.FileVersion.load(versions[-1]._id), None)
+        assert_equal(len(parent.children), 1)
+
     def test_delete_record(self):
         nlogs = len(self.project.logs)
         self.record.delete(auth=self.auth_obj)
@@ -468,7 +483,6 @@ class TestFileVersion(OsfTestCase):
         )
         retrieved = model.FileVersion.load(version._id)
         assert_true(retrieved.creator)
-        assert_true(retrieved.status)
         assert_true(retrieved.location)
         assert_true(retrieved.signature)
         assert_true(retrieved.size)
@@ -502,7 +516,7 @@ class TestFileVersion(OsfTestCase):
         mock_datetime.utcnow.return_value = self.mock_date
         version = model.FileVersion(
             creator=self.user,
-            status=model.status['PENDING'],
+            pending=True,
             date_created=datetime.datetime.utcnow(),
             signature='c22b5f9',
         )
@@ -512,30 +526,71 @@ class TestFileVersion(OsfTestCase):
             {'size': 1024},
         )
         assert_equal(version.date_resolved, self.mock_date)
-        assert_equal(version.status, model.status['COMPLETE'])
+        assert_false(version.pending)
         assert_equal(version.size, 1024)
 
-    def test_cancel(self):
+    @mock.patch('website.addons.osfstorage.model.time.time')
+    def test_ping(self, mock_time):
+        mock_time.return_value = 10
         version = model.FileVersion(
             creator=self.user,
-            status=model.status['PENDING'],
-            date_created=datetime.datetime.utcnow(),
+            pending=True,
             signature='c22b5f9',
         )
-        version.cancel('c22b5f9')
-        assert_equal(version.status, model.status['FAILED'])
+        assert_equal(version.last_ping, mock_time.return_value)
+        mock_time.return_value = 20
+        version.ping(version.signature)
+        assert_equal(version.last_ping, mock_time.return_value)
+
+    def test_ping_not_pending(self):
+        version = factories.FileVersionFactory()
+        with assert_raises(errors.VersionNotPendingError):
+            version.ping(version.signature)
+
+    def test_ping_bad_signature(self):
+        version = model.FileVersion(
+            creator=self.user,
+            pending=True,
+            signature='c22b5f9',
+        )
+        with assert_raises(errors.PendingSignatureMismatchError):
+            version.ping(version.signature[::-1])
+
+    def test_expired_not_pending(self):
+        version = factories.FileVersionFactory()
+        assert_false(version.expired)
+
+    @mock.patch('website.addons.osfstorage.model.time.time')
+    def test_expired_pending_inactive(self, mock_time):
+        version = model.FileVersion(
+            creator=self.user,
+            pending=True,
+            signature='c22b5f9',
+            last_ping=0,
+        )
+        mock_time.return_value = settings.PING_TIMEOUT + 1
+        assert_true(version.expired)
+
+    @mock.patch('website.addons.osfstorage.model.time.time')
+    def test_expired_pending_active(self, mock_time):
+        mock_time.return_value = 0
+        version = model.FileVersion(
+            creator=self.user,
+            pending=True,
+            signature='c22b5f9',
+            last_ping=0,
+        )
+        assert_false(version.expired)
 
     def test_finish_not_pending(self):
         version = factories.FileVersionFactory()
         with assert_raises(errors.VersionNotPendingError):
             version.resolve(None, {}, {})
-        with assert_raises(errors.VersionNotPendingError):
-            version.cancel(None)
 
     def test_finish_bad_signature(self):
         version = model.FileVersion(
             creator=self.user,
-            status=model.status['PENDING'],
+            pending=True,
             date_created=datetime.datetime.utcnow(),
             signature='c22b5f9',
         )
@@ -546,8 +601,6 @@ class TestFileVersion(OsfTestCase):
                 factories.generic_location,
                 {},
             )
-        with assert_raises(errors.PendingSignatureMismatchError):
-            version.cancel('78c9a53')
 
 
 class TestStorageObject(OsfTestCase):

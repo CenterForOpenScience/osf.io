@@ -8,6 +8,7 @@ from website import settings
 
 DOMAIN = settings.DOMAIN
 UPLOAD_SERVICE_URLS = ['changeme']
+PING_TIMEOUT = 5 * 60
 
 SIGNED_REQUEST_KWARGS = {}
 

@@ -109,6 +109,25 @@ def osf_storage_upload_start_hook(node_addon, **kwargs):
     return {'status': 'success'}
 
 
+def handle_missing_ping(path, node):
+    logger.error('Ping rejected: Path {0} not found at node {1}'.format(path, node))
+    raise HTTPError(httplib.BAD_REQUEST)
+
+
+@must_be_valid_project
+@must_have_addon('osfstorage', 'node')
+def osf_storage_upload_ping_hook(path, node_addon, **kwargs):
+    record = model.FileRecord.find_by_path(path, node_addon, touch=False)
+    if record is None:
+        handle_missing_ping(path, node_addon.owner)
+    payload = get_payload_from_request(utils.webhook_signer, request)
+    try:
+        record.ping_pending_version(payload.get('uploadSignature'))
+    except errors.OsfStorageError:
+        handle_missing_ping(path, node_addon.owner)
+    return {'status': 'success'}
+
+
 def handle_finish_errors(func):
     """Decorator that catches exceptions raised in model methods and raises
     appropriate `HTTPError` exceptions.
@@ -162,7 +181,7 @@ def osf_storage_upload_finish_hook(path, node_addon, **kwargs):
     if status not in ['success', 'error']:
         logger.error('Invalid status: {!r}'.format(status))
         raise make_error(httplib.BAD_REQUEST, 'Invalid status')
-    file_record = model.FileRecord.find_by_path(path, node_addon)
+    file_record = model.FileRecord.find_by_path(path, node_addon, touch=False)
     if file_record is None:
         raise HTTPError(httplib.NOT_FOUND)
     if status == 'success':
@@ -174,24 +193,11 @@ UPLOAD_PENDING_MESSAGE = (
     'File upload is in progress. Please check back later to retrieve this file.'
 )
 
-UPLOAD_FAILED_MESSAGE = (
-    'File upload has failed. If this should not have occurred and the issue '
-    'persists, please report it to <a href="mailto:support@osf.io">support@osf.io</a>.'
-)
-
 UPLOAD_PENDING_ERROR = HTTPError(
     httplib.NOT_FOUND,
     data={
         'message_short': 'File upload in progress',
         'message_long': UPLOAD_PENDING_MESSAGE,
-    }
-)
-
-UPLOAD_FAILED_ERROR = HTTPError(
-    httplib.NOT_FOUND,
-    data={
-        'message_short': 'File upload failed',
-        'message_long': UPLOAD_FAILED_MESSAGE,
     }
 )
 
@@ -243,20 +249,16 @@ def get_version(path, node_settings, version_str, throw=True):
         raise HTTPError(httplib.NOT_FOUND)
     version_idx, file_version = get_version_helper(record, version_str)
     if throw:
-        if file_version.status == model.status['PENDING']:
+        if file_version.pending:
             raise UPLOAD_PENDING_ERROR
-        if file_version.status == model.status['FAILED']:
-            raise UPLOAD_FAILED_ERROR
     return version_idx, file_version, record
 
 
 def serialize_file(idx, version, record, path, node):
     """Serialize data used to render a file.
     """
-    if version.status == model.status['PENDING']:
+    if version.pending:
         rendered = UPLOAD_PENDING_MESSAGE
-    elif version.status == model.status['FAILED']:
-        rendered = UPLOAD_FAILED_MESSAGE
     else:
         rendered = utils.render_file(idx, version, record)
     return {
