@@ -111,13 +111,6 @@
             return a.count >  b.count ? -1 : 1;
         };
 
-        self.claim = function(mid) {
-            claimURL = self.appURL + 'metadata/' + mid + '/promote/';
-            $.osf.postJSON(claimURL, {category: 'project'}).success(function(data) {
-                window.location = data.url;
-            });
-        };
-
         self.help = function() {
             bootbox.dialog({
                 title: 'Search help',
@@ -149,6 +142,7 @@
 
             self.currentPage(1);
             self.query(self.query() + ' AND tags:("' + tag + '")');
+            self.category(new Category('total', 0, 'Total'));
             self.search();
         };
 
