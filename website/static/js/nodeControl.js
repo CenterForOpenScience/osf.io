@@ -132,7 +132,7 @@
                 title: 'Edit Title',
                 validate: function(value) {
                     if($.trim(value) == '') {
-                        return 'This field is required';
+                        return 'Title cannot be blank.';
                     }
                 }
             }));
