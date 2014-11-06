@@ -31,6 +31,30 @@
         self.count = tagInfo.doc_count;
     };
 
+    var User = function(result){
+        var self = this;
+        self.category = result.category;
+        self.gravatarUrl = ko.observable('');
+        self.social = result.social;
+        self.job_title = result.job_title;
+        self.job = result.job;
+        self.degree = result.degree;
+        self.school = result.school;
+        self.url = result.url;
+        self.wikiUrl = result.url+'wiki/';
+        self.filesUrl = result.url+'files/';
+        self.user = result.user;
+
+        $.ajax('/api/v1'+ result.url).success(function(data){
+            if (typeof data.profile !== 'undefined') {
+                self.gravatarUrl(data.profile.gravatar_url);
+            }
+        });
+
+
+
+    };
+
     var ViewModel = function(params) {
         var self = this;
         self.params = params || {};
@@ -172,11 +196,16 @@
                 self.categories.removeAll();
 
                 data.results.forEach(function(result){
-                    if(typeof result.url !== 'undefined'){
-                        result.wikiUrl = result.url+'wiki/';
-                        result.filesUrl = result.url+'files/';
+                    if(result.category === 'user'){
+                        self.results.push(new User(result));
                     }
-                    self.results.push(result);
+                    else {
+                        if(typeof result.url !== 'undefined'){
+                            result.wikiUrl = result.url+'wiki/';
+                            result.filesUrl = result.url+'files/';
+                        }
+                        self.results.push(result);
+                    }
                 });
 
                 //Load our categories
