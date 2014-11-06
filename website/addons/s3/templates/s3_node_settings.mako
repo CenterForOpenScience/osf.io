@@ -60,13 +60,28 @@
         </div> <!-- End form group -->
 
     % elif node_has_auth and bucket_list is None:
-
-        <div>
-            <i class="icon-spinner icon-large icon-spin"></i>
-            <span class="text-info">
-                S3 access keys loading. Please wait a moment and refresh the page.
-            </span>
-        </div>
+        %if valid_credentials:
+            <div>
+                <i class="icon-spinner icon-large icon-spin"></i>
+                <span class="text-info">
+                    S3 access keys loading. Please wait a moment and refresh the page.
+                </span>
+            </div>
+        %elif user_is_owner:
+            <div>
+                <span class="text-warning">
+                    Could not retrieve Amazon S3 settings at this time. The S3 addon credentials may no longer be valid.
+                    Try deauthorizing and reauthorizing S3 on your account settings page.
+                </span>
+            </div>
+        % else:
+            <div>
+                <span class="text-warning">
+                    Could not retrieve Amazon S3 settings at this time. The S3 addon credentials may no longer be valid.
+                    Contact ${owner} to verify.
+                </span>
+            </div>
+        % endif
 
     % elif not node_has_auth and not user_has_auth:
 

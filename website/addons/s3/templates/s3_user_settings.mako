@@ -16,6 +16,15 @@
         </h4>
     </div>
 
+    % if has_auth and not valid_credentials:
+        <div>
+            <span class="text-warning">
+                Could not retrieve Amazon S3 settings at this time. The S3 addon credentials may no longer be valid.
+                Try deauthorizing and reauthorizing S3.
+            </span>
+        </div>
+    % endif
+
     % if not has_auth:
         <div class="form-group">
             <label for="s3Addon">Access Key</label>

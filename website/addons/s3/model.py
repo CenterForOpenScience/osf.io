@@ -10,6 +10,7 @@ Created on Jan 7, 2014
 import os
 
 from boto.exception import BotoServerError
+from boto.iam import IAMConnection
 from modularodm import fields
 
 from framework.auth.core import Auth
@@ -39,6 +40,17 @@ class AddonS3UserSettings(AddonUserSettingsBase):
     def to_json(self, user):
         rv = super(AddonS3UserSettings, self).to_json(user)
         rv['has_auth'] = self.has_auth
+        rv['valid_credentials'] = True
+
+        user_settings = user.get_addon('s3')
+        if user_settings and user_settings.has_auth:
+            try:
+                user_settings = user.get_addon('s3')
+                connection = IAMConnection(user_settings.access_key, user_settings.secret_key)
+                connection.get_user(user_settings.s3_osf_user)
+            except BotoServerError:
+                rv['valid_credentials'] = False
+
         return rv
 
     @property
@@ -133,13 +145,22 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             'owner': None,
             'bucket_list': None,
             'is_registration': self.owner.is_registration,
+            'valid_credentials': True
         })
 
-        if self.has_auth:
+        if self.user_settings:
+            valid_credentials = True
+            try:
+                connection = IAMConnection(self.user_settings.access_key, self.user_settings.secret_key)
+                connection.get_user(user_settings.s3_osf_user)
+            except BotoServerError:
+                valid_credentials = False
+
             rv['owner'] = self.user_settings.owner.fullname
             rv['owner_url'] = self.user_settings.owner.url
             rv['bucket_list'] = get_bucket_drop_down(self.user_settings)
             rv['node_has_auth'] = True
+            rv['valid_credentials'] = valid_credentials
 
         return rv
 
