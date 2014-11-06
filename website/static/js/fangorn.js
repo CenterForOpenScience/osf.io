@@ -31,7 +31,13 @@
 
     // Shows an alert in the space of the row
     function _fangornRowAlert (item, type, message, method) {
-        var alertHTML = '<div class="alert-'+type+' text-center" style="padding: 8px; margin-top: -5px;"> ' + message + '<span class="fangorn-dismiss" data-id="'+item.id+'">&times;</span></div>'; 
+        var dismiss;
+        if(method === 'overlay'  ) {
+            dismiss = ' ';
+        } else {
+            dismiss = '<span class="fangorn-dismiss" data-id="'+item.id+'">&times;</span>'
+        }
+        var alertHTML = '<div class="alert-'+type+' text-center" style="padding: 8px; margin-top: -5px;"> ' + message + dismiss + '</div>'; 
         var row = $('.tb-row[data-id="'+ item.id+ '"]'); 
         // Get row content
 
@@ -315,14 +321,8 @@
             onload : function (){
                 var tb = this; 
                 $(document).on('click', '.fangorn-dismiss', function(){
-                    // var id = $(this).attr('data-id');
-                    // $('.tb-row[data-id="'+id+'"]').remove(); 
-                    //$(this).parent().remove();
-                    tb.redraw();
-                                       
-
-
-                });
+                     tb.redraw();
+                 });
             },
             createcheck : function (item, parent) {
                 window.console.log('createcheck', this, item, parent);
@@ -345,6 +345,7 @@
                 if (item.data.permissions.edit){
                     return true;
                 }
+                _fangornRowAlert (item, "warning", "You don't have permission to edit this folder.", "overlay");
                 return false;
             },
             onselectrow : function (item) {
