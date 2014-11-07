@@ -7,7 +7,31 @@ import requests
 
 from website.addons.app.exceptions import SchemaViolationError
 
+
 DOI_HEADERS = {'Accept': 'application/json'}
+DOI_KEYS = [
+    'issue',
+    'publisher',
+    'DOI',
+    'subtitle',
+    'score',
+    'author',
+    'URL',
+    'issued',
+    'reference-count',
+    'ISSN',
+    'volume',
+    'source',
+    'prefix',
+    'member',
+    'deposited',
+    'container-title',
+    'indexed',
+    'title',
+    'type',
+    'page',
+    'subject'
+]
 
 
 def _must_be_type(_type, key, value):
@@ -35,6 +59,9 @@ def must_be_type(_type):
 def doi(key, doi):
     '''TODO Write a doc string
     '''
+    if isinstance(doi, dict):
+        if DOI_KEYS == doi.keys():
+            return doi
     try:
         ret = requests.get(doi, headers=DOI_HEADERS)
     except Exception:
