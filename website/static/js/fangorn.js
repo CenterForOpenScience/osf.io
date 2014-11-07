@@ -76,7 +76,7 @@
             pointerFolder = m('i.icon-hand-right', ' '),
             openFolder  = m('i.icon-folder-open-alt', ' '),
             closedFolder = m('i.icon-folder-close-alt', ' '),
-            cfgOption = resolveCfgOption.call(this, item, 'folderIcon', [item]);
+            configOption = item.data.addon ? resolveconfigOption.call(this, item, 'folderIcon', [item]) : undefined;                
 
         if (item.kind === 'folder') {
             if (!item.data.permissions.view) {
@@ -86,9 +86,9 @@
                 return pointerFolder; 
             }
             if (item.open) {
-                return cfgOption || openFolder;
+                return configOption || openFolder;
             }
-            return cfgOption || closedFolder;
+            return configOption || closedFolder;
         }
         if (item.data.icon) {
             return m('i.fa.' + item.data.icon, ' ');
@@ -110,11 +110,11 @@
         return m('i.icon-file-alt');
     }
     // Addon config registry
-    Fangorn.cfg = {};
+    Fangorn.config = {};
 
-    function getCfg(item, key) {
-        if (item && item.data.addon && Fangorn.cfg[item.data.addon]) {
-            return Fangorn.cfg[item.data.addon][key];
+    function getconfig(item, key) {
+        if (item && item.data.addon && Fangorn.config[item.data.addon]) {
+            return Fangorn.config[item.data.addon][key];
         }
         return undefined;
     }
@@ -122,9 +122,9 @@
     // Gets a Fangorn config option if it is defined by an addon dev.
     // Calls it with `args` if it's a function otherwise returns the value.
     // If the config option is not defined, return null
-    function resolveCfgOption(item, option, args) {
+    function resolveconfigOption(item, option, args) {
         var self = this;
-        var prop = getCfg(item, option);
+        var prop = getconfig(item, option);
         if (prop) {
             return typeof prop === 'function' ? prop.apply(self, args) : prop;
         } else {
@@ -154,8 +154,8 @@
         return false;
     }
     function _fangornResolveUploadUrl (item) {
-        var cfgOption = resolveCfgOption.call(this, item, 'uploadUrl', [item]);
-        return cfgOption || item.data.urls.upload;
+        var configOption = resolveconfigOption.call(this, item, 'uploadUrl', [item]);
+        return configOption || item.data.urls.upload;
     }  
 
     function _fangornMouseOverRow (item, event) {
@@ -250,8 +250,16 @@
     }
 
     function _fangornResolveLazyLoad(tree, item){
-        var cfgOption = resolveCfgOption.call(this, item, 'lazyload', [item]);
-        return cfgOption || false;
+        var configOption = resolveconfigOption.call(this, item, 'lazyload', [item]);
+        if(configOption){
+            return configOption;
+        }
+        return item.data.urls.fetch || false;
+    }
+
+    function _fangornLazyLoadError (tree) {
+        // this = treebeard; 
+        console.log('lazyload Error', this, arguments);
     }
 
     // Action buttons; 
@@ -328,8 +336,8 @@
                 filter : false
             });
         }
-        var cfgOption = resolveCfgOption.call(this, item, 'resolveRows', [item]);
-        return cfgOption || default_columns;
+        var configOption = item.data.addon ? resolveconfigOption.call(this, item, 'resolveRows', [item]) : undefined;
+        return configOption || default_columns;
     }
 
     function _fangornColumnTitles () {
@@ -417,6 +425,7 @@
             resolveToggle : _fangornResolveToggle,
             resolveUploadUrl : _fangornResolveUploadUrl,
             resolveLazyloadUrl : _fangornResolveLazyLoad,
+            lazyLoadError : _fangornLazyLoadError,
             dropzoneEvents : {
                 uploadprogress : _fangornUploadProgress,
                 sending : _fangornSending,

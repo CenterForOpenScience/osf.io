@@ -54,13 +54,13 @@
             {
                 'name' : '',
                 'icon' : 'icon-download-alt',
-                'css' : 'fangorn-clickable btn btn-default btn-xs',
+                'css' : 'fangorn-clickable btn btn-info btn-xs',
                 'onclick' : function(){window.location = item.data.urls.zip;}
             },
             {
                 'name' : '',
                 'icon' : 'icon-external-link',
-                'css' : 'btn btn-info btn-xs',
+                'css' : 'btn btn-primary btn-xs',
                 'onclick' : function(){window.location = item.data.urls.repo;}//GO TO EXTERNAL PAGE
             }
             );
@@ -89,31 +89,38 @@
             }
             );
         }
-        return buttons.map(function(btn){
-            return m('span', { 'data-col' : item.id }, [ m('i',
-                { 'class' : btn.css, style : btn.style, 'onclick' : function(){ btn.onclick.call(self, event, item, col); } },
-                [ m('span', { 'class' : btn.icon}, btn.name) ])
-            ]);
-        });
+        return m('.btn-group', [
+                buttons.map(function(btn){  
+                    return m('button', { 'data-col' : item.id, 'class' : btn.css, style : btn.style, 'onclick' : function(){ btn.onclick.call(self, event, item, col); } },
+                        [ m('span', { 'class' : btn.icon}, btn.name) ]);
+                })
+        ]); 
     }
 
     function changeBranch(item, branch){
         var tb = this;
         var url = item.data.urls.branch + '?' + $.param({branch: branch});
         console.log(url);
+
+
         $.ajax({
             type: 'get',
             url: url
         }).done(function(response) {
             console.log("Brach Response", response);
             // Update the item with the new branch data
+            var icon = $('.tb-row[data-id="'+item.id+'"]').find('.tb-toggle-icon');
+            var iconCache = icon.html();
+            icon.html('<i class="icon-refresh fangorn-spin">'); 
             $.ajax({
                 type: 'get',
                 url: response[0].urls.fetch
             }).done(function(data){
+                item.children = []; 
                 console.log("data", data);
                 tb.updateFolder(data, item);
                 tb.redraw();
+                icon.html(iconCache);
             }).fail(function(xhr, status, error){
                 console.log("Error:", xhr, status, error);
             });
@@ -132,7 +139,7 @@
 
         if (item.data.addonFullname){
             return m("span",[
-                m("github-name", item.data.name),
+                m("github-name", item.data.name + ' '),
                 m("span",[
                     m("select[name=branch-selector]", {onchange: function(ev) { changeBranch.call(tb, item, ev.target.value ) } }, branchArray)
                 ])
@@ -167,26 +174,22 @@
     } 
 
     function _fangornLazyLoad(item){
-        if (item.data){
-            window.console.log("Fangorn Lazy Load URL", item.data.urls.fetch);
+        if (item.data.urls.fetch){
             return item.data.urls.fetch;
         }
-        else {
-            window.console.log("Fangorn Dropdown Lazy Load URL", item.urls.fetch);
+        if(item.urls.fetch) {
             return item.urls.fetch;
         }
+        return false;
     }
 
     function _fangornFolderIcons(item){
-        console.log("IconUrl", 'http://localhost:5000'+item.data.iconUrl);
-        if(item.data.addonFullname){
             //This is a hack, should probably be changed...
             return m('img',{src:item.data.iconUrl, style:{width:"16px", height:"auto"}}, ' ');
-        }
     }
 
     // Register configuration
-    Fangorn.cfg.github = {
+    Fangorn.config.github = {
         // Handle changing the branch select
         folderIcon: _fangornFolderIcons,
         resolveRows: _fangornColumns,
