@@ -1,7 +1,4 @@
 /**
- * Created by kushagragupta on 10/27/14.
- */
-/**
  * View model that controls the Github configuration on the user settings page.
  */
 ;(function (global, factory) {

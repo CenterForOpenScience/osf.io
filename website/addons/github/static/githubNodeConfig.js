@@ -1,7 +1,7 @@
 
 /**
  * Module that controls the GitHub node settings. Includes Knockout view-model
- * for syncing data, and HGrid-folderpicker for selecting a folder.
+ * for syncing data.
  */
 
 
