@@ -100,7 +100,7 @@ def osf_storage_upload_start_hook(node_addon, **kwargs):
     path = kwargs.get('path', '')
     payload = get_payload_from_request(utils.webhook_signer, request)
     user, upload_signature = validate_start_hook_payload(payload)
-    record = model.FileRecord.get_or_create(path, node_addon)
+    record = model.OsfStorageFileRecord.get_or_create(path, node_addon)
     try:
         record.create_pending_version(user, upload_signature)
     except errors.PathLockedError:
@@ -119,7 +119,7 @@ def handle_missing_ping(path, node):
 @must_not_be_registration
 @must_have_addon('osfstorage', 'node')
 def osf_storage_upload_ping_hook(path, node_addon, **kwargs):
-    record = model.FileRecord.find_by_path(path, node_addon, touch=False)
+    record = model.OsfStorageFileRecord.find_by_path(path, node_addon, touch=False)
     if record is None:
         handle_missing_ping(path, node_addon.owner)
     payload = get_payload_from_request(utils.webhook_signer, request)
@@ -184,7 +184,7 @@ def osf_storage_upload_finish_hook(path, node_addon, **kwargs):
     if status not in ['success', 'error']:
         logger.error('Invalid status: {!r}'.format(status))
         raise make_error(httplib.BAD_REQUEST, 'Invalid status')
-    file_record = model.FileRecord.find_by_path(path, node_addon, touch=False)
+    file_record = model.OsfStorageFileRecord.find_by_path(path, node_addon, touch=False)
     if file_record is None:
         raise HTTPError(httplib.NOT_FOUND)
     if status == 'success':
@@ -247,7 +247,7 @@ def get_version(path, node_settings, version_str, throw=True):
     :param bool throw: Throw `HTTPError` if version is incomplete
     :return: Tuple of (<one-based version index>, <file version>, <file record>)
     """
-    record = model.FileRecord.find_by_path(path, node_settings)
+    record = model.OsfStorageFileRecord.find_by_path(path, node_settings)
     if record is None:
         raise HTTPError(httplib.NOT_FOUND)
     version_idx, file_version = get_version_helper(record, version_str)
@@ -296,7 +296,7 @@ def download_file(path, node_addon, version_query):
 def view_file(auth, path, node_addon, version_query):
     node = node_addon.owner
     idx, version, record = get_version(path, node_addon, version_query, throw=False)
-    file_obj = model.StorageFile.get_or_create(node=node, path=path)
+    file_obj = model.OsfStorageGuidFile.get_or_create(node=node, path=path)
     redirect_url = check_file_guid(file_obj)
     if redirect_url:
         return redirect(redirect_url)
@@ -340,7 +340,7 @@ def osf_storage_render_file(path, node_addon, **kwargs):
 @must_have_permission('write')
 @must_have_addon('osfstorage', 'node')
 def osf_storage_delete_file(auth, path, node_addon, **kwargs):
-    file_record = model.FileRecord.find_by_path(path, node_addon)
+    file_record = model.OsfStorageFileRecord.find_by_path(path, node_addon)
     if file_record is None:
         raise HTTPError(httplib.NOT_FOUND)
     try:
@@ -355,7 +355,7 @@ def osf_storage_delete_file(auth, path, node_addon, **kwargs):
 @must_have_addon('osfstorage', 'node')
 def osf_storage_hgrid_contents(auth, node_addon, **kwargs):
     path = kwargs.get('path', '')
-    file_tree = model.FileTree.find_by_path(path, node_addon)
+    file_tree = model.OsfStorageFileTree.find_by_path(path, node_addon)
     if file_tree is None:
         if path == '':
             return []
@@ -397,7 +397,7 @@ def osf_storage_get_revisions(path, node_addon, **kwargs):
         page = int(page)
     except (TypeError, ValueError):
         raise HTTPError(httplib.BAD_REQUEST)
-    record = model.FileRecord.find_by_path(path, node_addon)
+    record = model.OsfStorageFileRecord.find_by_path(path, node_addon)
     if record is None:
         raise HTTPError(httplib.NOT_FOUND)
     indices, versions, more = record.get_versions(

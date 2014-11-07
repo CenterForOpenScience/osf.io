@@ -20,7 +20,7 @@ generic_location = {
 
 
 class FileVersionFactory(ModularOdmFactory):
-    FACTORY_FOR = model.FileVersion
+    FACTORY_FOR = model.OsfStorageFileVersion
 
     creator = SubFactory(AuthUserFactory)
     date_created = LazyAttribute(lambda v: datetime.datetime.utcnow())

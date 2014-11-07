@@ -27,3 +27,6 @@ class UndeleteError(OsfStorageError):
 
 class InvalidVersionError(OsfStorageError):
     pass
+
+class MissingFieldError(OsfStorageError):
+    pass

@@ -62,16 +62,16 @@ def copy_file_record_stable(record, node_settings):
 
 
 def copy_files_stable(files, node_settings):
-    if isinstance(files, FileTree):
+    if isinstance(files, OsfStorageFileTree):
         return copy_file_tree_stable(files, node_settings)
-    if isinstance(files, FileRecord):
+    if isinstance(files, OsfStorageFileRecord):
         return copy_file_record_stable(files, node_settings)
     raise TypeError('Input must be `FileTree` or `FileRecord`')
 
 
 class OsfStorageNodeSettings(AddonNodeSettingsBase):
 
-    file_tree = fields.ForeignField('FileTree')
+    file_tree = fields.ForeignField('OsfStorageFileTree')
 
     def copy_contents_to(self, dest):
         """Copy file tree and contents to destination. Note: destination must be
@@ -97,10 +97,6 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
         )
         self.copy_contents_to(clone)
         return clone, message
-
-
-def get_parent_class(klass):
-    return FileTree
 
 
 class BaseFileObject(StoredObject):
@@ -139,6 +135,10 @@ class BaseFileObject(StoredObject):
         return self.node_settings.owner
 
     @classmethod
+    def parent_class(cls):
+        raise NotImplementedError
+
+    @classmethod
     def find_by_path(cls, path, node_settings, touch=True):
         """Find a record by path and root settings record.
 
@@ -173,7 +173,7 @@ class BaseFileObject(StoredObject):
         # Ensure all intermediate paths
         if path:
             parent_path, _ = os.path.split(path)
-            parent_class = get_parent_class(cls)
+            parent_class = cls.parent_class()
             parent_obj = parent_class.get_or_create(parent_path, node_settings)
             parent_obj.children.append(obj)
             parent_obj.save()
@@ -194,17 +194,25 @@ class BaseFileObject(StoredObject):
         )
 
 
-class FileTree(BaseFileObject):
+class OsfStorageFileTree(BaseFileObject):
 
     _id = oid_primary_key
     children = fields.AbstractForeignField(list=True, backref='_parent')
 
+    @classmethod
+    def parent_class(cls):
+        return OsfStorageFileTree
 
-class FileRecord(BaseFileObject):
+
+class OsfStorageFileRecord(BaseFileObject):
 
     _id = oid_primary_key
     is_deleted = fields.BooleanField(default=False)
-    versions = fields.ForeignField('FileVersion', list=True)
+    versions = fields.ForeignField('OsfStorageFileVersion', list=True)
+
+    @classmethod
+    def parent_class(cls):
+        return OsfStorageFileTree
 
     def get_version(self, index=-1, required=False):
         try:
@@ -228,7 +236,7 @@ class FileRecord(BaseFileObject):
             raise errors.PathLockedError
         if latest_version and latest_version.signature == signature:
             raise errors.SignatureConsumedError
-        version = FileVersion(
+        version = OsfStorageFileVersion(
             creator=creator,
             signature=signature,
             pending=True,
@@ -246,11 +254,11 @@ class FileRecord(BaseFileObject):
 
     def remove_version(self, version):
         if len(self.versions) == 1:
-            FileRecord.remove_one(self)
+            OsfStorageFileRecord.remove_one(self)
         else:
             self.versions.remove(version)
             self.save()
-        FileVersion.remove_one(version)
+        OsfStorageFileVersion.remove_one(version)
 
     def touch(self):
         latest_version = self.get_version()
@@ -274,7 +282,7 @@ class FileRecord(BaseFileObject):
         if previous_version and previous_version.is_duplicate(latest_version):
             self.versions.remove(latest_version)
             self.save()
-            FileVersion.remove_one(latest_version)
+            OsfStorageFileVersion.remove_one(latest_version)
             action = NodeLog.FILE_UPDATED
             ret = previous_version
         else:
@@ -319,27 +327,32 @@ class FileRecord(BaseFileObject):
             self.log(auth, NodeLog.FILE_RESTORED)
 
 
-metadata_parsers = {
+identity = lambda value: value
+metadata_fields = {
+    'size': identity,
+    'content_type': identity,
     'date_modified': parse_date,
 }
 
 
-class FileVersion(StoredObject):
+class OsfStorageFileVersion(StoredObject):
 
     _id = oid_primary_key
     creator = fields.ForeignField('user', required=True)
 
     pending = fields.BooleanField()
-    date_created = fields.DateTimeField(auto_now_add=True)
     signature = fields.StringField()
 
+    date_created = fields.DateTimeField(auto_now_add=True)
     date_resolved = fields.DateTimeField()
+    last_ping = fields.FloatField(default=lambda: time.time())
+
     location = fields.DictionaryField()
+    metadata = fields.DictionaryField()
 
     size = fields.IntegerField()
     content_type = fields.StringField()
     date_modified = fields.DateTimeField()
-    last_ping = fields.FloatField(default=lambda: time.time())
 
     @property
     def location_hash(self):
@@ -361,14 +374,19 @@ class FileVersion(StoredObject):
         return self.location_hash == other.location_hash
 
     def resolve(self, signature, location, metadata):
+        """
+        """
         self.before_update(signature)
         self.pending = False
         self.date_resolved = datetime.datetime.utcnow()
         self.location = location
-        for key, value in metadata.iteritems():
-            parser = metadata_parsers.get(key)
-            parsed = parser(value) if parser else value
-            setattr(self, key, parsed)
+        self.metadata = metadata
+        for key, parser in metadata_fields.iteritems():
+            try:
+                value = metadata[key]
+            except KeyError:
+                raise errors.MissingFieldError
+            setattr(self, key, parser(value))
         self.save()
 
     def ping(self, signature):
@@ -391,23 +409,26 @@ class FileVersion(StoredObject):
 
 
 LOCATION_KEYS = ['service', 'container', 'object']
-@FileVersion.subscribe('before_save')
+@OsfStorageFileVersion.subscribe('before_save')
 def validate_version_location(schema, instance):
-    if not instance.pending:
-        if any(key not in instance.location for key in LOCATION_KEYS):
+    if instance.pending:
+        return
+    for key in LOCATION_KEYS:
+        if key not in instance.location:
             raise modm_errors.ValidationValueError
 
 
-@FileVersion.subscribe('before_save')
+@OsfStorageFileVersion.subscribe('before_save')
 def validate_version_dates(schema, instance):
-    if not instance.pending:
-        if not instance.date_resolved:
-            raise modm_errors.ValidationValueError
-        if instance.date_created > instance.date_resolved:
-            raise modm_errors.ValidationValueError
+    if instance.pending:
+        return
+    if not instance.date_resolved:
+        raise modm_errors.ValidationValueError
+    if instance.date_created > instance.date_resolved:
+        raise modm_errors.ValidationValueError
 
 
-class StorageFile(GuidFile):
+class OsfStorageGuidFile(GuidFile):
 
     path = fields.StringField(required=True, index=True)
 

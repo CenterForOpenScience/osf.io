@@ -36,7 +36,7 @@ class TestNodeSettingsModel(StorageTestCase):
     def test_after_fork_copies_stable_versions(self):
         path = 'jazz/dreamers-ball.mp3'
         num_versions = 5
-        record = model.FileRecord.get_or_create(path, self.node_settings)
+        record = model.OsfStorageFileRecord.get_or_create(path, self.node_settings)
         for _ in range(num_versions):
             version = factories.FileVersionFactory()
             record.versions.append(version)
@@ -46,14 +46,14 @@ class TestNodeSettingsModel(StorageTestCase):
         fork = self.project.fork_node(self.auth_obj)
         fork_node_settings = fork.get_addon('osfstorage')
         fork_node_settings.reload()
-        cloned_record = model.FileRecord.find_by_path(path, fork_node_settings)
+        cloned_record = model.OsfStorageFileRecord.find_by_path(path, fork_node_settings)
         assert_equal(cloned_record.versions, record.versions[:num_versions - 1])
         assert_true(fork_node_settings.file_tree)
 
     def test_after_register_copies_stable_versions(self):
         path = 'jazz/dreamers-ball.mp3'
         num_versions = 5
-        record = model.FileRecord.get_or_create(path, self.node_settings)
+        record = model.OsfStorageFileRecord.get_or_create(path, self.node_settings)
         for _ in range(num_versions):
             version = factories.FileVersionFactory()
             record.versions.append(version)
@@ -68,26 +68,26 @@ class TestNodeSettingsModel(StorageTestCase):
         )
         registration_node_settings = registration.get_addon('osfstorage')
         registration_node_settings.reload()
-        cloned_record = model.FileRecord.find_by_path(path, registration_node_settings)
+        cloned_record = model.OsfStorageFileRecord.find_by_path(path, registration_node_settings)
         assert_equal(cloned_record.versions, record.versions[:num_versions - 1])
         assert_true(registration_node_settings.file_tree)
 
     def test_after_fork_copies_stable_records(self):
         path = 'jazz/dreamers-ball.mp3'
-        record = model.FileRecord.get_or_create(path, self.node_settings)
-        version_pending = model.FileVersion(pending=True)
+        record = model.OsfStorageFileRecord.get_or_create(path, self.node_settings)
+        version_pending = model.OsfStorageFileVersion(pending=True)
         version_pending.save()
         record.versions.append(version_pending)
         record.save()
         fork = self.project.fork_node(self.auth_obj)
         fork_node_settings = fork.get_addon('osfstorage')
-        cloned_record = model.FileRecord.find_by_path(path, fork_node_settings)
+        cloned_record = model.OsfStorageFileRecord.find_by_path(path, fork_node_settings)
         assert_is(cloned_record, None)
 
     def test_after_fork_copies_stable_records(self):
         path = 'jazz/dreamers-ball.mp3'
-        record = model.FileRecord.get_or_create(path, self.node_settings)
-        version_pending = model.FileVersion(
+        record = model.OsfStorageFileRecord.get_or_create(path, self.node_settings)
+        version_pending = model.OsfStorageFileVersion(
             creator=self.user,
             pending=True,
         )
@@ -101,7 +101,7 @@ class TestNodeSettingsModel(StorageTestCase):
             {},
         )
         registration_node_settings = registration.get_addon('osfstorage')
-        cloned_record = model.FileRecord.find_by_path(path, registration_node_settings)
+        cloned_record = model.OsfStorageFileRecord.find_by_path(path, registration_node_settings)
         assert_is(cloned_record, None)
 
 
@@ -112,7 +112,7 @@ class TestFileTree(OsfTestCase):
         self.path = 'news/of/the/world'
         self.node_settings = model.OsfStorageNodeSettings()
         self.node_settings.save()
-        self.tree = model.FileTree(
+        self.tree = model.OsfStorageFileTree(
             path=self.path,
             node_settings=self.node_settings,
         )
@@ -126,53 +126,53 @@ class TestFileTree(OsfTestCase):
         assert_equal(self.tree.name, 'world')
 
     def test_parent_root(self):
-        tree = model.FileTree.get_or_create('', self.node_settings)
+        tree = model.OsfStorageFileTree.get_or_create('', self.node_settings)
         assert_is(tree.parent, None)
 
     def test_parent_branch(self):
-        tree = model.FileTree.get_or_create('branch', self.node_settings)
-        expected_parent = model.FileTree.get_or_create('', self.node_settings)
+        tree = model.OsfStorageFileTree.get_or_create('branch', self.node_settings)
+        expected_parent = model.OsfStorageFileTree.get_or_create('', self.node_settings)
         assert_equal(tree.parent, expected_parent)
 
     def test_find_by_path_found(self):
-        result = model.FileTree.find_by_path(self.path, self.node_settings)
+        result = model.OsfStorageFileTree.find_by_path(self.path, self.node_settings)
         assert_equal(result, self.tree)
 
     def test_find_by_path_not_found(self):
-        result = model.FileTree.find_by_path('missing', self.node_settings)
+        result = model.OsfStorageFileTree.find_by_path('missing', self.node_settings)
         assert_is(result, None)
 
     def test_get_or_create_found(self):
-        result = model.FileTree.get_or_create(self.path, self.node_settings)
+        result = model.OsfStorageFileTree.get_or_create(self.path, self.node_settings)
         assert_equal(result, self.tree)
 
     def test_get_or_create_not_found_top_level(self):
         assert_is(self.node_settings.file_tree, None)
-        result = model.FileTree.get_or_create('', self.node_settings)
+        result = model.OsfStorageFileTree.get_or_create('', self.node_settings)
         assert_equal(self.node_settings.file_tree, result)
 
     def test_get_or_create_not_found_nested(self):
         assert_is(self.node_settings.file_tree, None)
         path = 'night/at/the/opera'
-        result = model.FileTree.get_or_create(path, self.node_settings)
-        assert_true(model.FileTree.find_by_path('', self.node_settings))
-        assert_true(model.FileTree.find_by_path('night', self.node_settings))
-        assert_true(model.FileTree.find_by_path('night/at', self.node_settings))
-        assert_true(model.FileTree.find_by_path('night/at/the', self.node_settings))
-        assert_true(model.FileTree.find_by_path('night/at/the/opera', self.node_settings))
+        result = model.OsfStorageFileTree.get_or_create(path, self.node_settings)
+        assert_true(model.OsfStorageFileTree.find_by_path('', self.node_settings))
+        assert_true(model.OsfStorageFileTree.find_by_path('night', self.node_settings))
+        assert_true(model.OsfStorageFileTree.find_by_path('night/at', self.node_settings))
+        assert_true(model.OsfStorageFileTree.find_by_path('night/at/the', self.node_settings))
+        assert_true(model.OsfStorageFileTree.find_by_path('night/at/the/opera', self.node_settings))
         assert_equal(
             self.node_settings.file_tree,
-            model.FileTree.find_by_path('', self.node_settings),
+            model.OsfStorageFileTree.find_by_path('', self.node_settings),
         )
 
     def test_get_or_create_idempotent(self):
         path = 'night/at/the/opera'
-        result = model.FileTree.get_or_create(path, self.node_settings)
-        num_trees = model.FileTree.find().count()
-        num_records = model.FileRecord.find().count()
-        result = model.FileTree.get_or_create(path, self.node_settings)
-        assert_equal(num_trees, model.FileTree.find().count())
-        assert_equal(num_records, model.FileRecord.find().count())
+        result = model.OsfStorageFileTree.get_or_create(path, self.node_settings)
+        num_trees = model.OsfStorageFileTree.find().count()
+        num_records = model.OsfStorageFileRecord.find().count()
+        result = model.OsfStorageFileTree.get_or_create(path, self.node_settings)
+        assert_equal(num_trees, model.OsfStorageFileTree.find().count())
+        assert_equal(num_records, model.OsfStorageFileRecord.find().count())
 
 
 class TestFileRecord(StorageTestCase):
@@ -180,7 +180,7 @@ class TestFileRecord(StorageTestCase):
     def setUp(self):
         super(TestFileRecord, self).setUp()
         self.path = 'red/special.mp3'
-        self.record = model.FileRecord.get_or_create(
+        self.record = model.OsfStorageFileRecord.get_or_create(
             path=self.path,
             node_settings=self.node_settings,
         )
@@ -198,20 +198,20 @@ class TestFileRecord(StorageTestCase):
         assert_equal(self.record.extension, '.mp3')
 
     def test_find_by_path_found(self):
-        result = model.FileRecord.find_by_path(self.path, self.node_settings)
+        result = model.OsfStorageFileRecord.find_by_path(self.path, self.node_settings)
         assert_equal(result, self.record)
 
     def test_find_by_path_not_found(self):
-        result = model.FileRecord.find_by_path('missing', self.node_settings)
+        result = model.OsfStorageFileRecord.find_by_path('missing', self.node_settings)
         assert_is(result, None)
 
     def test_get_or_create_found(self):
-        result = model.FileRecord.get_or_create(self.path, self.node_settings)
+        result = model.OsfStorageFileRecord.get_or_create(self.path, self.node_settings)
         assert_equal(result, self.record)
 
     def test_get_or_create_not_found_top_level(self):
         nchildren = len(self.node_settings.file_tree.children)
-        result = model.FileRecord.get_or_create(
+        result = model.OsfStorageFileRecord.get_or_create(
             'stonecold.mp3',
             self.node_settings,
         )
@@ -221,27 +221,27 @@ class TestFileRecord(StorageTestCase):
 
     def test_get_or_create_not_found_nested(self):
         path = 'night/at/the/opera/39.mp3'
-        result = model.FileRecord.get_or_create(path, self.node_settings)
-        assert_true(model.FileRecord.find_by_path(path, self.node_settings))
-        assert_true(model.FileTree.find_by_path('', self.node_settings))
-        assert_true(model.FileTree.find_by_path('night', self.node_settings))
-        assert_true(model.FileTree.find_by_path('night/at', self.node_settings))
-        assert_true(model.FileTree.find_by_path('night/at/the', self.node_settings))
-        assert_true(model.FileTree.find_by_path('night/at/the/opera', self.node_settings))
-        assert_true(model.FileRecord.find_by_path('night/at/the/opera/39.mp3', self.node_settings))
+        result = model.OsfStorageFileRecord.get_or_create(path, self.node_settings)
+        assert_true(model.OsfStorageFileRecord.find_by_path(path, self.node_settings))
+        assert_true(model.OsfStorageFileTree.find_by_path('', self.node_settings))
+        assert_true(model.OsfStorageFileTree.find_by_path('night', self.node_settings))
+        assert_true(model.OsfStorageFileTree.find_by_path('night/at', self.node_settings))
+        assert_true(model.OsfStorageFileTree.find_by_path('night/at/the', self.node_settings))
+        assert_true(model.OsfStorageFileTree.find_by_path('night/at/the/opera', self.node_settings))
+        assert_true(model.OsfStorageFileRecord.find_by_path('night/at/the/opera/39.mp3', self.node_settings))
         assert_equal(
             self.node_settings.file_tree,
-            model.FileTree.find_by_path('', self.node_settings),
+            model.OsfStorageFileTree.find_by_path('', self.node_settings),
         )
 
     def test_get_or_create_idempotent(self):
         path = 'night/at/the/opera/39.mp3'
-        result = model.FileRecord.get_or_create(path, self.node_settings)
-        num_trees = model.FileTree.find().count()
-        num_records = model.FileRecord.find().count()
-        result = model.FileRecord.get_or_create(path, self.node_settings)
-        assert_equal(num_trees, model.FileTree.find().count())
-        assert_equal(num_records, model.FileRecord.find().count())
+        result = model.OsfStorageFileRecord.get_or_create(path, self.node_settings)
+        num_trees = model.OsfStorageFileTree.find().count()
+        num_records = model.OsfStorageFileRecord.find().count()
+        result = model.OsfStorageFileRecord.get_or_create(path, self.node_settings)
+        assert_equal(num_trees, model.OsfStorageFileTree.find().count())
+        assert_equal(num_records, model.OsfStorageFileRecord.find().count())
 
     def test_get_version_defaults_found(self):
         versions = [factories.FileVersionFactory() for _ in range(3)]
@@ -286,7 +286,11 @@ class TestFileRecord(StorageTestCase):
         self.record.resolve_pending_version(
             'c22b59f',
             factories.generic_location,
-            {},
+            {
+                'size': 7,
+                'content_type': 'text/plain',
+                'date_modified': '2014-11-06 22:38',
+            },
         )
         self.record.create_pending_version(self.user, '78c9a53')
 
@@ -297,7 +301,11 @@ class TestFileRecord(StorageTestCase):
         self.record.resolve_pending_version(
             'c22b59f',
             factories.generic_location,
-            {},
+            {
+                'size': 7,
+                'content_type': 'text/plain',
+                'date_modified': datetime.datetime.utcnow().isoformat(),
+            },
         )
         assert_false(self.record.is_deleted)
         self.record.create_pending_version(self.user, '78c9a53')
@@ -307,7 +315,7 @@ class TestFileRecord(StorageTestCase):
         self.record.cancel_pending_version('c22b59f')
 
     def test_create_pending_path_locked(self):
-        version = model.FileVersion(
+        version = model.OsfStorageFileVersion(
             creator=self.user,
             pending=True,
             date_created=datetime.datetime.utcnow(),
@@ -331,7 +339,11 @@ class TestFileRecord(StorageTestCase):
         self.record.resolve_pending_version(
             'c22b59f',
             factories.generic_location,
-            {'size': 1024},
+            {
+                'size': 7,
+                'content_type': 'text/plain',
+                'date_modified': '2014-11-06 22:38',
+            },
         )
         assert_equal(len(self.project.logs), nlogs + 1)
         logged = self.project.logs[-1]
@@ -359,7 +371,11 @@ class TestFileRecord(StorageTestCase):
                 'container': 'container',
                 'object': '7035161',
             },
-            {'size': 1024},
+            {
+                'size': 7,
+                'content_type': 'text/plain',
+                'date_modified': '2014-11-06 22:38',
+            },
         )
         self.project.reload()
         assert_equal(len(self.project.logs), nlogs + 1)
@@ -379,13 +395,17 @@ class TestFileRecord(StorageTestCase):
         version = factories.FileVersionFactory()
         self.record.versions.append(version)
         self.record.save()
-        nversions = model.FileVersion.find().count()
+        nversions = model.OsfStorageFileVersion.find().count()
         nversions_record = len(self.record.versions)
         self.record.create_pending_version(self.user, 'c22b59f')
         self.record.resolve_pending_version(
             'c22b59f',
             factories.generic_location,
-            {'size': 1024},
+            {
+                'size': 7,
+                'content_type': 'text/plain',
+                'date_modified': '2014-11-06 22:38',
+            },
         )
         self.project.reload()
         logged = self.project.logs[-1]
@@ -402,10 +422,10 @@ class TestFileRecord(StorageTestCase):
         self.record.versions = [version]
         self.record.save()
         self.record.remove_version(version)
-        model.FileRecord._clear_caches()
-        model.FileVersion._clear_caches()
-        assert_is(model.FileRecord.load(self.record._id), None)
-        assert_is(model.FileVersion.load(version._id), None)
+        model.OsfStorageFileRecord._clear_caches()
+        model.OsfStorageFileVersion._clear_caches()
+        assert_is(model.OsfStorageFileRecord.load(self.record._id), None)
+        assert_is(model.OsfStorageFileVersion.load(version._id), None)
         assert_equal(len(parent.children), 0)
 
     def test_remove_version_two_versions(self):
@@ -415,10 +435,10 @@ class TestFileRecord(StorageTestCase):
         self.record.versions = versions
         self.record.save()
         self.record.remove_version(versions[-1])
-        model.FileRecord._clear_caches()
-        model.FileVersion._clear_caches()
-        assert_true(model.FileRecord.load(self.record._id))
-        assert_is(model.FileVersion.load(versions[-1]._id), None)
+        model.OsfStorageFileRecord._clear_caches()
+        model.OsfStorageFileVersion._clear_caches()
+        assert_true(model.OsfStorageFileRecord.load(self.record._id))
+        assert_is(model.OsfStorageFileVersion.load(versions[-1]._id), None)
         assert_equal(len(parent.children), 1)
 
     def test_delete_record(self):
@@ -481,7 +501,7 @@ class TestFileVersion(OsfTestCase):
             content_type='application/json',
             date_modified=datetime.datetime.now(),
         )
-        retrieved = model.FileVersion.load(version._id)
+        retrieved = model.OsfStorageFileVersion.load(version._id)
         assert_true(retrieved.creator)
         assert_true(retrieved.location)
         assert_true(retrieved.signature)
@@ -510,11 +530,11 @@ class TestFileVersion(OsfTestCase):
         version.date_resolved = version.date_created + relativedelta(seconds=1)
         version.save()
 
-
     @mock.patch('website.addons.osfstorage.model.datetime.datetime')
     def test_resolve(self, mock_datetime):
+        mock_datetime.now.return_value = self.mock_date
         mock_datetime.utcnow.return_value = self.mock_date
-        version = model.FileVersion(
+        version = model.OsfStorageFileVersion(
             creator=self.user,
             pending=True,
             date_created=datetime.datetime.utcnow(),
@@ -523,16 +543,32 @@ class TestFileVersion(OsfTestCase):
         version.resolve(
             'c22b5f9',
             factories.generic_location,
-            {'size': 1024},
+            {
+                'size': 1024,
+                'content_type': 'text/plain',
+                'date_modified': self.mock_date.isoformat(),
+                'md5': '3f92d3',
+            },
         )
         assert_equal(version.date_resolved, self.mock_date)
         assert_false(version.pending)
         assert_equal(version.size, 1024)
+        assert_equal(version.content_type, 'text/plain')
+        assert_equal(version.date_modified, self.mock_date)
+        assert_equal(
+            version.metadata,
+            {
+                'size': 1024,
+                'content_type': 'text/plain',
+                'date_modified': self.mock_date.isoformat(),
+                'md5': '3f92d3',
+            },
+        )
 
     @mock.patch('website.addons.osfstorage.model.time.time')
     def test_ping(self, mock_time):
         mock_time.return_value = 10
-        version = model.FileVersion(
+        version = model.OsfStorageFileVersion(
             creator=self.user,
             pending=True,
             signature='c22b5f9',
@@ -548,7 +584,7 @@ class TestFileVersion(OsfTestCase):
             version.ping(version.signature)
 
     def test_ping_bad_signature(self):
-        version = model.FileVersion(
+        version = model.OsfStorageFileVersion(
             creator=self.user,
             pending=True,
             signature='c22b5f9',
@@ -562,7 +598,7 @@ class TestFileVersion(OsfTestCase):
 
     @mock.patch('website.addons.osfstorage.model.time.time')
     def test_expired_pending_inactive(self, mock_time):
-        version = model.FileVersion(
+        version = model.OsfStorageFileVersion(
             creator=self.user,
             pending=True,
             signature='c22b5f9',
@@ -574,7 +610,7 @@ class TestFileVersion(OsfTestCase):
     @mock.patch('website.addons.osfstorage.model.time.time')
     def test_expired_pending_active(self, mock_time):
         mock_time.return_value = 0
-        version = model.FileVersion(
+        version = model.OsfStorageFileVersion(
             creator=self.user,
             pending=True,
             signature='c22b5f9',
@@ -588,7 +624,7 @@ class TestFileVersion(OsfTestCase):
             version.resolve(None, {}, {})
 
     def test_finish_bad_signature(self):
-        version = model.FileVersion(
+        version = model.OsfStorageFileVersion(
             creator=self.user,
             pending=True,
             date_created=datetime.datetime.utcnow(),
@@ -611,19 +647,19 @@ class TestStorageObject(OsfTestCase):
         self.path = 'kind/of/magic.mp3'
 
     def test_fields(self):
-        file_obj = model.StorageFile(node=self.project, path=self.path)
+        file_obj = model.OsfStorageGuidFile(node=self.project, path=self.path)
         file_obj.save()
         assert_true(file_obj._id)
         assert_equal(file_obj.node, self.project)
         assert_equal(file_obj.path, self.path)
 
     def test_field_validation(self):
-        file_obj = model.StorageFile(node=self.project)
+        file_obj = model.OsfStorageGuidFile(node=self.project)
         with assert_raises(modm_errors.ValidationError):
             file_obj.save()
 
     def test_get_download_path(self):
-        file_obj = model.StorageFile(node=self.project, path=self.path)
+        file_obj = model.OsfStorageGuidFile(node=self.project, path=self.path)
         file_obj.save()
         version = 3
         assert_equal(
@@ -634,17 +670,17 @@ class TestStorageObject(OsfTestCase):
         )
 
     def test_get_or_create_exists(self):
-        existing = model.StorageFile(node=self.project, path=self.path)
+        existing = model.OsfStorageGuidFile(node=self.project, path=self.path)
         existing.save()
-        n_objs = model.StorageFile.find().count()
-        result = model.StorageFile.get_or_create(self.project, self.path)
+        n_objs = model.OsfStorageGuidFile.find().count()
+        result = model.OsfStorageGuidFile.get_or_create(self.project, self.path)
         assert_equal(result, existing)
-        assert_equal(n_objs, model.StorageFile.find().count())
+        assert_equal(n_objs, model.OsfStorageGuidFile.find().count())
 
     def test_get_or_create_does_not_exist(self):
-        n_objs = model.StorageFile.find().count()
-        result = model.StorageFile.get_or_create(self.project, self.path)
+        n_objs = model.OsfStorageGuidFile.find().count()
+        result = model.OsfStorageGuidFile.get_or_create(self.project, self.path)
         assert_equal(result.node, self.project)
         assert_equal(result.path, self.path)
-        assert_equal(n_objs + 1, model.StorageFile.find().count())
+        assert_equal(n_objs + 1, model.OsfStorageGuidFile.find().count())
 

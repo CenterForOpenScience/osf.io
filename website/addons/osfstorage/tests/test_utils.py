@@ -28,7 +28,7 @@ from website.addons.osfstorage import settings
 class TestHGridUtils(StorageTestCase):
 
     def test_build_urls_folder(self):
-        file_tree = model.FileTree(
+        file_tree = model.OsfStorageFileTree(
             path='god/save/the/queen',
             node_settings=self.project.get_addon('osfstorage'),
         )
@@ -47,7 +47,7 @@ class TestHGridUtils(StorageTestCase):
 
 
     def test_build_urls_file(self):
-        file_record = model.FileRecord(
+        file_record = model.OsfStorageFileRecord(
             path='kind/of/magic.mp3',
             node_settings=self.project.get_addon('osfstorage'),
         )
@@ -69,7 +69,7 @@ class TestHGridUtils(StorageTestCase):
         assert_equal(urls, expected)
 
     def test_serialize_metadata_folder(self):
-        file_tree = model.FileTree(
+        file_tree = model.OsfStorageFileTree(
             path='god/save/the/queen',
             node_settings=self.project.get_addon('osfstorage'),
         )
@@ -91,7 +91,7 @@ class TestHGridUtils(StorageTestCase):
         assert_equal(serialized['permissions'], permissions)
 
     def test_serialize_metadata_file(self):
-        file_record = model.FileRecord(
+        file_record = model.OsfStorageFileRecord(
             path='kind/of/<strong>magic.mp3',
             node_settings=self.project.get_addon('osfstorage'),
         )
@@ -120,13 +120,13 @@ class TestHGridUtils(StorageTestCase):
 
     def test_get_item_kind_folder(self):
         assert_equal(
-            utils.get_item_kind(model.FileTree()),
+            utils.get_item_kind(model.OsfStorageFileTree()),
             'folder',
         )
 
     def test_get_item_kind_file(self):
         assert_equal(
-            utils.get_item_kind(model.FileRecord()),
+            utils.get_item_kind(model.OsfStorageFileRecord()),
             'item',
         )
 
@@ -198,7 +198,7 @@ class TestGetDownloadUrl(StorageTestCase):
     def setUp(self):
         super(TestGetDownloadUrl, self).setUp()
         self.path = 'frozen/pizza/reviews.gif'
-        self.record = model.FileRecord.get_or_create(self.path, self.node_settings)
+        self.record = model.OsfStorageFileRecord.get_or_create(self.path, self.node_settings)
         for _ in range(3):
             version = factories.FileVersionFactory()
             self.record.versions.append(version)
@@ -244,7 +244,7 @@ class TestSerializeRevision(StorageTestCase):
     def setUp(self):
         super(TestSerializeRevision, self).setUp()
         self.path = 'kind/of/magic.mp3'
-        self.record = model.FileRecord.get_or_create(self.path, self.node_settings)
+        self.record = model.OsfStorageFileRecord.get_or_create(self.path, self.node_settings)
         self.versions = [
              factories.FileVersionFactory(
                 creator=self.user,

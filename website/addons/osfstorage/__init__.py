@@ -5,10 +5,10 @@ from . import routes, views, model
 
 MODELS = [
     model.OsfStorageNodeSettings,
-    model.FileTree,
-    model.FileRecord,
-    model.FileVersion,
-    model.StorageFile,
+    model.OsfStorageFileTree,
+    model.OsfStorageFileRecord,
+    model.OsfStorageFileVersion,
+    model.OsfStorageGuidFile,
 ]
 NODE_SETTINGS_MODEL = model.OsfStorageNodeSettings
 

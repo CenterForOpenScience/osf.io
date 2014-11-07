@@ -50,15 +50,15 @@ def get_permissions(auth, node):
 
 
 def get_item_kind(item):
-    if isinstance(item, model.FileTree):
+    if isinstance(item, model.OsfStorageFileTree):
         return rubeus.FOLDER
-    if isinstance(item, model.FileRecord):
+    if isinstance(item, model.OsfStorageFileRecord):
         return rubeus.FILE
     raise TypeError('Value must be instance of `FileTree` or `FileRecord`')
 
 
 def build_hgrid_urls(item, node):
-    if isinstance(item, model.FileTree):
+    if isinstance(item, model.OsfStorageFileTree):
         return {
             'upload': node.api_url_for(
                 'osf_storage_request_upload_url',
@@ -92,7 +92,7 @@ def get_download_count(item, node, version_idx=None):
     :param Node node: Root node to which the item is attached
     :param int version_idx: Optional one-based version index
     """
-    if isinstance(item, model.FileTree):
+    if isinstance(item, model.OsfStorageFileTree):
         return None
     parts = ['download', node._id, item.path]
     if version_idx is not None:
@@ -313,7 +313,7 @@ def render_file(version_idx, file_version, file_record):
     :param FileVersion file_version: File version to render
     :param FileRecord file_record: Base file object
     """
-    file_obj = model.StorageFile.find_one(
+    file_obj = model.OsfStorageGuidFile.find_one(
         Q('node', 'eq', file_record.node) &
         Q('path', 'eq', file_record.path)
     )

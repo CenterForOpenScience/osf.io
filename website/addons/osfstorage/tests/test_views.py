@@ -4,6 +4,8 @@
 import mock
 from nose.tools import *  # noqa
 
+import datetime
+
 from website.addons.osfstorage.tests.utils import (
     StorageTestCase, Delta, AssertDeltas
 )
@@ -24,7 +26,7 @@ from website.addons.osfstorage import settings as osf_storage_settings
 
 def create_record_with_version(path, node_settings, **kwargs):
     version = factories.FileVersionFactory(**kwargs)
-    record = model.FileRecord.get_or_create(path, node_settings)
+    record = model.OsfStorageFileRecord.get_or_create(path, node_settings)
     record.versions.append(version)
     record.save()
     return record
@@ -34,12 +36,12 @@ class TestHGridViews(StorageTestCase):
 
     def test_hgrid_contents(self):
         path = 'kind/of/magic.mp3'
-        model.FileRecord.get_or_create(
+        model.OsfStorageFileRecord.get_or_create(
             path=path,
             node_settings=self.node_settings,
         )
         version = factories.FileVersionFactory()
-        record = model.FileRecord.find_by_path(path, self.node_settings)
+        record = model.OsfStorageFileRecord.find_by_path(path, self.node_settings)
         record.versions.append(version)
         record.save()
         res = self.app.get(
@@ -125,7 +127,7 @@ class TestStartHook(HookTestCase):
         assert_equal(res.json['status'], 'success')
         self.node_settings.reload()
         assert_true(self.node_settings.file_tree)
-        record = model.FileRecord.find_by_path(self.path, self.node_settings)
+        record = model.OsfStorageFileRecord.find_by_path(self.path, self.node_settings)
         assert_true(record)
         assert_equal(len(record.versions), 1)
         assert_true(record.versions[0].pending)
@@ -139,7 +141,7 @@ class TestStartHook(HookTestCase):
         assert_equal(res.json['code'], 400)
 
     def test_start_hook_path_locked(self):
-        record = model.FileRecord.get_or_create(self.path, self.node_settings)
+        record = model.OsfStorageFileRecord.get_or_create(self.path, self.node_settings)
         record.create_pending_version(self.user, '4217713')
         res = self.send_start_hook(
             payload=self.payload, signature=self.signature, path=self.path,
@@ -151,12 +153,16 @@ class TestStartHook(HookTestCase):
         assert_equal(len(record.versions), 1)
 
     def test_start_hook_signature_consumed(self):
-        record = model.FileRecord.get_or_create(self.path, self.node_settings)
+        record = model.OsfStorageFileRecord.get_or_create(self.path, self.node_settings)
         record.create_pending_version(self.user, self.uploadSignature)
         record.resolve_pending_version(
             self.uploadSignature,
             factories.generic_location,
-            {'size': 1024},
+            {
+                'size': 1024,
+                'content_type': 'text/plain',
+                'date_modified': datetime.datetime.utcnow().isoformat(),
+            },
         )
         res = self.send_start_hook(
             payload=self.payload, signature=self.signature, path=self.path,
@@ -174,7 +180,7 @@ class TestPingHook(HookTestCase):
         super(TestPingHook, self).setUp()
         self.path = 'flaky/pizza.png'
         self.size = 1024
-        self.record = model.FileRecord.get_or_create(self.path, self.node_settings)
+        self.record = model.OsfStorageFileRecord.get_or_create(self.path, self.node_settings)
         self.uploadSignature = '07235a8'
         self.payload = {
             'uploadSignature': self.uploadSignature,
@@ -247,7 +253,7 @@ class TestFinishHook(HookTestCase):
         super(TestFinishHook, self).setUp()
         self.path = 'crunchy/pizza.png'
         self.size = 1024
-        self.record = model.FileRecord.get_or_create(self.path, self.node_settings)
+        self.record = model.OsfStorageFileRecord.get_or_create(self.path, self.node_settings)
         self.uploadSignature = '07235a8'
 
     def send_finish_hook(self, payload, signature, path=None, **kwargs):
@@ -262,7 +268,11 @@ class TestFinishHook(HookTestCase):
             'status': 'success',
             'uploadSignature': self.uploadSignature,
             'location': factories.generic_location,
-            'metadata': {'size': self.size},
+            'metadata': {
+                'size': self.size,
+                'content_type': 'text/plain',
+                'date_modified': '2014-11-06 22:59',
+            },
         }
         payload.update(kwargs)
         return payload
@@ -289,10 +299,10 @@ class TestFinishHook(HookTestCase):
             payload=payload, signature=signature, path=self.path,
         )
         assert_equal(res.status_code, 200)
-        model.FileRecord._clear_caches()
-        model.FileVersion._clear_caches()
-        record_reloaded = model.FileRecord.load(self.record._id)
-        version_reloaded = model.FileVersion.load(version._id)
+        model.OsfStorageFileRecord._clear_caches()
+        model.OsfStorageFileVersion._clear_caches()
+        record_reloaded = model.OsfStorageFileRecord.load(self.record._id)
+        version_reloaded = model.OsfStorageFileVersion.load(version._id)
         assert_is(record_reloaded, None)
         assert_is(version_reloaded, None)
 
@@ -306,10 +316,10 @@ class TestFinishHook(HookTestCase):
             payload=payload, signature=signature, path=self.path,
         )
         assert_equal(res.status_code, 200)
-        model.FileRecord._clear_caches()
-        model.FileVersion._clear_caches()
-        record_reloaded = model.FileRecord.load(self.record._id)
-        version_reloaded = model.FileVersion.load(version._id)
+        model.OsfStorageFileRecord._clear_caches()
+        model.OsfStorageFileVersion._clear_caches()
+        record_reloaded = model.OsfStorageFileRecord.load(self.record._id)
+        version_reloaded = model.OsfStorageFileVersion.load(version._id)
         assert_true(record_reloaded)
         assert_equal(len(record_reloaded.versions), 1)
         assert_is(version_reloaded, None)
@@ -484,7 +494,7 @@ class TestViewFile(StorageTestCase):
     def setUp(self):
         super(TestViewFile, self).setUp()
         self.path = 'kind/of/magic.mp3'
-        self.record = model.FileRecord.get_or_create(self.path, self.node_settings)
+        self.record = model.OsfStorageFileRecord.get_or_create(self.path, self.node_settings)
         self.version = factories.FileVersionFactory()
         self.record.versions.append(self.version)
         self.record.save()
@@ -496,25 +506,25 @@ class TestViewFile(StorageTestCase):
         )
 
     def test_view_file_creates_guid_if_none_exists(self):
-        n_objs = model.StorageFile.find().count()
+        n_objs = model.OsfStorageGuidFile.find().count()
         res = self.view_file(self.path)
-        assert_equal(n_objs + 1, model.StorageFile.find().count())
+        assert_equal(n_objs + 1, model.OsfStorageGuidFile.find().count())
         assert_equal(res.status_code, 302)
-        file_obj = model.StorageFile.find_one(node=self.project, path=self.path)
+        file_obj = model.OsfStorageGuidFile.find_one(node=self.project, path=self.path)
         redirect_parsed = urlparse.urlparse(res.location)
         assert_equal(redirect_parsed.path.strip('/'), file_obj._id)
 
     def test_view_file_does_not_create_guid_if_exists(self):
         _ = self.view_file(self.path)
-        n_objs = model.StorageFile.find().count()
+        n_objs = model.OsfStorageGuidFile.find().count()
         res = self.view_file(self.path)
-        assert_equal(n_objs, model.StorageFile.find().count())
+        assert_equal(n_objs, model.OsfStorageGuidFile.find().count())
 
     @mock.patch('website.addons.osfstorage.utils.render_file')
     def test_view_file_escapes_html_in_name(self, mock_render):
         mock_render.return_value = 'mock'
         path = 'kind/of/<strong>magic.mp3'
-        record = model.FileRecord.get_or_create(path, self.node_settings)
+        record = model.OsfStorageFileRecord.get_or_create(path, self.node_settings)
         version = factories.FileVersionFactory()
         record.versions.append(version)
         record.save()
@@ -527,7 +537,7 @@ class TestGetRevisions(StorageTestCase):
     def setUp(self):
         super(TestGetRevisions, self).setUp()
         self.path = 'tie/your/mother/down.mp3'
-        self.record = model.FileRecord.get_or_create(self.path, self.node_settings)
+        self.record = model.OsfStorageFileRecord.get_or_create(self.path, self.node_settings)
         self.record.versions = [factories.FileVersionFactory() for _ in range(15)]
         self.record.save()
 
@@ -584,7 +594,7 @@ class TestDownloadFile(StorageTestCase):
     def setUp(self):
         super(TestDownloadFile, self).setUp()
         self.path = 'tie/your/mother/down.mp3'
-        self.record = model.FileRecord.get_or_create(self.path, self.node_settings)
+        self.record = model.OsfStorageFileRecord.get_or_create(self.path, self.node_settings)
         self.version = factories.FileVersionFactory()
         self.record.versions.append(self.version)
         self.record.save()

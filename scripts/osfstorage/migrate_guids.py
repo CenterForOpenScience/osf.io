@@ -13,7 +13,7 @@ from website.models import Guid
 from website.app import init_app
 
 from website.addons.osffiles.model import OsfGuidFile
-from website.addons.osfstorage.model import StorageFile
+from website.addons.osfstorage.model import OsfStorageGuidFile
 
 from scripts.osfstorage.utils import ensure_osf_files
 
@@ -23,12 +23,12 @@ def get_or_create_storage_file(node, path, **kwargs):
     to permit setting additional fields on the created object.
     """
     try:
-        return StorageFile.find_one(
+        return OsfStorageGuidFile.find_one(
             Q('node', 'eq', node) &
             Q('path', 'eq', path)
         )
     except modm_errors.ModularOdmException as error:
-        obj = StorageFile(node=node, path=path, **kwargs)
+        obj = OsfStorageGuidFile(node=node, path=path, **kwargs)
         obj.save()
     return obj
 
@@ -84,7 +84,7 @@ class TestMigrateGuids(OsfTestCase):
 
     def clear_guids(self):
         OsfGuidFile.remove()
-        StorageFile.remove()
+        OsfStorageGuidFile.remove()
 
     def setUp(self):
         super(TestMigrateGuids, self).setUp()
@@ -110,17 +110,17 @@ class TestMigrateGuids(OsfTestCase):
         for obj in self.legacy_objs:
             guid_obj = Guid.load(obj._id)
             assert_equal(guid_obj.referent, obj)
-        nobjs = StorageFile.find().count()
+        nobjs = OsfStorageGuidFile.find().count()
         main(dry_run=False)
         Guid._clear_caches()
         for obj in self.legacy_objs:
             guid_obj = Guid.load(obj._id)
             assert_not_equal(guid_obj.referent, obj)
-            assert_true(isinstance(guid_obj.referent, StorageFile))
+            assert_true(isinstance(guid_obj.referent, OsfStorageGuidFile))
             assert_equal(guid_obj.referent.node, self.project)
             assert_equal(guid_obj.referent.path, obj.name)
             assert_equal(guid_obj.referent._id, obj._id)
-        assert_equal(StorageFile.find().count(), nobjs + 3)
+        assert_equal(OsfStorageGuidFile.find().count(), nobjs + 3)
         # Test idempotence
         main(dry_run=False)
-        assert_equal(StorageFile.find().count(), nobjs + 3)
+        assert_equal(OsfStorageGuidFile.find().count(), nobjs + 3)

@@ -35,14 +35,14 @@ container = client.create_container(scripts_settings.STORAGE_CONTAINER_NAME)
 
 def migrate_version(idx, node_file, node_settings):
     node = node_settings.owner
-    record = model.FileRecord.get_or_create(node_file.path, node_settings)
+    record = model.OsfStorageFileRecord.get_or_create(node_file.path, node_settings)
     if len(record.versions) > idx:
         return
     content, _ = node.read_file_object(node_file)
     file_pointer = StringIO(content)
     hash_str = scripts_settings.UPLOAD_PRIMARY_HASH(content).hexdigest()
     obj = container.upload_file(file_pointer, hash_str)
-    version = model.FileVersion(
+    version = model.OsfStorageFileVersion(
         creator=node_file.uploader,
         date_modified=node_file.date_modified,
     )
@@ -137,7 +137,7 @@ class TestMigrateFiles(OsfTestCase):
         main(dry_run=False)
         node_settings = self.project.get_addon('osfstorage')
         assert_true(node_settings)
-        record = model.FileRecord.find_by_path('pizza.md', node_settings)
+        record = model.OsfStorageFileRecord.find_by_path('pizza.md', node_settings)
         self.check_record(record)
         # Test idempotence of migration
         main(dry_run=False)
@@ -147,8 +147,8 @@ class TestMigrateFiles(OsfTestCase):
         fork = self.project.fork_node(auth=self.auth_obj)
         main(dry_run=False)
         node_settings = self.project.get_addon('osfstorage')
-        record = model.FileRecord.find_by_path('pizza.md', node_settings)
+        record = model.OsfStorageFileRecord.find_by_path('pizza.md', node_settings)
         self.check_record(record)
         fork_node_settings = fork.get_addon('osfstorage')
-        fork_record = model.FileRecord.find_by_path('pizza.md', fork_node_settings)
+        fork_record = model.OsfStorageFileRecord.find_by_path('pizza.md', fork_node_settings)
         self.check_record(fork_record)
