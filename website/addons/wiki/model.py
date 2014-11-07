@@ -113,7 +113,7 @@ class NodeWikiPage(GuidStoredObject):
     def raw_text(self, node):
         """ The raw text of the page, suitable for using in a test search"""
 
-        return sanitize(self.html(node), tags=[], strip=True)
+        return self.html(node)
 
     def save(self, *args, **kwargs):
         rv = super(NodeWikiPage, self).save(*args, **kwargs)

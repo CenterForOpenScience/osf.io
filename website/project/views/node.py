@@ -32,7 +32,7 @@ from website import settings
 from website.views import _render_nodes, find_dashboard
 from website.profile import utils
 from website.project import new_folder
-from website.util.sanitize import strip_html
+from website.util.sanitize import strip_html #REVIEW
 
 
 logger = logging.getLogger(__name__)
@@ -45,7 +45,7 @@ def edit_node(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     post_data = request.json
     edited_field = post_data.get('name')
-    value = strip_html(post_data.get('value', ''))
+    value = post_data.get('value', '')
     if edited_field == 'title':
         try:
             node.set_title(value, auth=auth)
@@ -74,9 +74,9 @@ def project_new(**kwargs):
 def project_new_post(auth, **kwargs):
     user = auth.user
 
-    title = strip_html(request.json.get('title'))
+    title = request.json.get('title', '')
     template = request.json.get('template')
-    description = strip_html(request.json.get('description'))
+    description = request.json.get('description')
     title = title.strip()
 
     if not title or len(title) > 200:

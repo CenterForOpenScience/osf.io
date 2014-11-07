@@ -43,9 +43,9 @@ def new_node(category, title, user, description=None, project=None):
 
     """
     category = category.strip().lower()
-    title = sanitize(title.strip())
+    title = title.strip()
     if description:
-        description = sanitize(description.strip())
+        description = description.strip()
 
     node = Node(
         title=title,
@@ -95,7 +95,7 @@ def new_folder(title, user):
     :return Node: Created node
 
     """
-    title = sanitize(title.strip())
+    title = title.strip()
 
     node = Node(
         title=title,
@@ -120,7 +120,7 @@ def new_private_link(name, user, nodes, anonymous):
     """
     key = str(uuid.uuid4()).replace("-", "")
     if name:
-        name = sanitize(name.strip())
+        name = name.strip()
     else:
         name = "Shared project link"
 

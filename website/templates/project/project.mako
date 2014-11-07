@@ -11,7 +11,6 @@
 % if user['can_comment'] or node['has_comments']:
     <%include file="include/comment_template.mako"/>
 % endif
-
 <div class="row">
 
     <div class="col-sm-6">

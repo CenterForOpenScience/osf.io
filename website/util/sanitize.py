@@ -3,7 +3,9 @@ import bleach
 
 #Thank you Lyndsy
 def strip_html(unclean):
-    """Sanitize a string, removing (as opposed to escaping) HTML tags
+    """Sanitize a string, removing (as opposed to escaping) HTML tags.
+    Note that this will also encode strings with HTML entities
+        - e.g.: "This & That" will return "This &amp; That"
 
     :param unclean: A string to be stripped of HTML tags
 
