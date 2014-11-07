@@ -146,7 +146,7 @@
             ]);
         } else {
             return m("span",[
-                m("github-name", item.data.name)
+                m("github-name",{onclick: function(){window.location = item.data.urls.view}}, item.data.name)
             ]);
         }
 

@@ -173,14 +173,37 @@
 
     function _fangornSending (treebeard, file, xhr, formData) {
         console.log("Sending", arguments);
-        var parentID = treebeard.dropzoneItemCache.id; 
+
+        var parentID = treebeard.dropzoneItemCache.id;
+        var parent = treebeard.dropzoneItemCache;
         // create a blank item that will refill when upload is finished. 
         var blankItem = {
             name : file.name,
             kind : 'item',
+            addon : parent.addon,
             children : []
-        }; 
-        treebeard.createItem(blankItem, parentID); 
+        };
+
+        var newItem = treebeard.createItem(blankItem, parentID);
+
+        var configOption = resolveconfigOption.call(treebeard, parent, 'uploadSending', [file, xhr, formData]);
+        return configOption || null;
+    }
+
+    function _fangornAddedFile(treebeard, file){
+        //this == dropzone
+        var item = treebeard.dropzoneItemCache;
+
+        //console.log("fangornAddedFile", this, arguments, item);
+        var configOption = resolveconfigOption.call(treebeard, item, 'uploadAdd', [file, item]);
+        return configOption || null;
+    }
+
+    function _fangornDragOver (treebeard, event) {
+        console.log("Drag Over", this, arguments);
+        var dropzoneHoverClass = "fangorn-dz-hover"; 
+        $('.tb-row').removeClass(dropzoneHoverClass);
+        $(event.target).closest('.tb-row').addClass(dropzoneHoverClass); 
     }
 
     function _fangornDragOver (treebeard, event) {
@@ -202,6 +225,9 @@
         item.data = response;
         m.render(element.find('.action-col').get(0), _fangornActionColumn.call(treebeard, item, _fangornColumns[1]));
         m.redraw();
+
+        var configOption = resolveconfigOption.call(item, parent, 'uploadSuccess', [file, item, response]);
+        return configOption || null;
     }
 
     function _fangornDropzoneError (treebeard, file, message, xhr) {
@@ -262,6 +288,11 @@
         console.log('lazyload Error', this, arguments);
     }
 
+    function _fangornUploadMethod(item){
+        var configOption = resolveconfigOption.call(this, item, 'uploadMethod', [item]);
+        return configOption || 'POST';
+    }
+
     // Action buttons; 
     function _fangornActionColumn (item, col){
         var self = this; 
@@ -307,7 +338,7 @@
     function _fangornTitleColumn (item, col) {
         return m('span', 
             { onclick : function(){ 
-                if (item.kind === "item") {
+                if (item.kind === 'item') {
                     window.location = item.data.urls.view;                    
                 } 
             }}, 
@@ -318,11 +349,11 @@
         // this = treebeard;
         var default_columns = [];             // Defines columns based on data
         default_columns.push({
-            data : "name",  // Data field name
+            data : 'name',  // Data field name
             folderIcons : true,
             filter : true,
             custom : _fangornTitleColumn
-        })
+        });
 
         if(this.options.placement === 'project-files') {
             default_columns.push(
@@ -331,7 +362,7 @@
                 custom : _fangornActionColumn
             },
             {
-                data : "downloads",
+                data : 'downloads',
                 sortInclude : false,
                 filter : false
             });
@@ -374,7 +405,7 @@
             showFilter : true,     // Gives the option to filter by showing the filter box.
             title : false,          // Title of the grid, boolean, string OR function that returns a string.
             allowMove : false,       // Turn moving on or off.
-            hoverClass : "fangorn-hover",
+            hoverClass : 'fangorn-hover',
             toggleCheck : _fangornToggleCheck,
             sortButtonSelector : { 
                 up : 'i.icon-chevron-up',
@@ -419,7 +450,8 @@
                 //previewTemplate : '<div class='dz-preview dz-file-preview'>     <div class='dz-details'>        <div class='dz-size' data-dz-size></div>    </div>      <div class='dz-progress'>       <span class='dz-upload' data-dz-uploadprogress></span>  </div>      <div class='dz-error-message'>      <span data-dz-errormessage></span>  </div></div>',
                 clickable : '#treeGrid',
                 addRemoveLinks: false,
-                previewTemplate: '<div></div>'
+                previewTemplate: '<div></div>',
+                method: _fangornUploadMethod()
             },
             resolveIcon : _fangornResolveIcon,
             resolveToggle : _fangornResolveToggle,
@@ -432,7 +464,8 @@
                 complete : _fangornComplete,
                 success : _fangornDropzoneSuccess,
                 error : _fangornDropzoneError,
-                dragover : _fangornDragOver
+                dragover : _fangornDragOver,
+                addedfile : _fangornAddedFile
             }
     };
 

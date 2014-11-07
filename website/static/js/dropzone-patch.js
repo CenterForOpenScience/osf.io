@@ -62,7 +62,7 @@
                         type: file.type || 'application/octet-stream'
                     }),
                     contentType: 'application/json',
-                    dataType: 'json',
+                    dataType: 'json'
                 }).success(function(url) {
                   //self.options.signedUrlFrom = null;
                     return self.options.url = url;

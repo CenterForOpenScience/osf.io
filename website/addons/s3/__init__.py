@@ -25,7 +25,7 @@ CATEGORIES = ['storage']
 INCLUDE_JS = {
     'widget': [],
     'page': [],
-    'files': ['s3-rubeus-cfg.js']
+    'files': ['s3-fangorn-cfg.js']
 }
 
 INCLUDE_CSS = {
