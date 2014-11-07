@@ -184,7 +184,7 @@
         };
 
         self.search = function(noPush, validate) {
-            self.tagMaxCount(1);
+
             var jsonData = {'query': self.fullQuery(), 'from': self.currentIndex(), 'size': self.resultsPerPage()};
             var url = self.queryUrl + self.category().url();
 
@@ -192,6 +192,7 @@
 
                 //Clear out our variables
                 self.tags([]);
+                self.tagMaxCount(1);
                 self.results.removeAll();
                 self.categories.removeAll();
 
