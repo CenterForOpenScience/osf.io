@@ -1,9 +1,11 @@
+from __future__ import unicode_literals
+
 import re
-from datetime import date
-from datetime import datetime
 from functools import partial
 
 import requests
+
+from dateutil import parser
 
 from website.addons.app.exceptions import SchemaViolationError
 
@@ -72,14 +74,22 @@ def doi(key, doi):
     return ret.json()
 
 
+def must_be_date(key, value):
+    '''<type 'datetime.datetime'>'''
+    try:
+        return parser.parse(value).isoformat()
+    except TypeError:
+        raise SchemaViolationError('{} is not a valid datetime'.format(key))
+
+
 TYPE_MAP = {
     'string': must_be_type(basestring),
     'str': must_be_type(basestring),
     'int': must_be_type(int),
     'num': must_be_type(int),
     'number': must_be_type(int),
-    'date': date,
-    'datetime': datetime,
+    'date': must_be_date,
+    'datetime': must_be_date,
     'bool': must_be_type(bool),
     'dict': must_be_type(dict),
     'object': must_be_type(dict),
