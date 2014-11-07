@@ -1304,7 +1304,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         """
         if title is None or not title.strip():
-            raise(ValidationValueError)
+            raise ValidationValueError('Title cannot be blank.')
         original_title = self.title
         self.title = title
         self.add_log(
