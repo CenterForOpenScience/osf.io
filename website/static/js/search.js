@@ -172,7 +172,10 @@
             }
 
             self.currentPage(1);
-            self.query(self.query() + ' AND tags:("' + tag + '")');
+            if (self.query() !== ''){
+                 self.query(self.query() + ' AND ');
+            }
+            self.query(self.query() + 'tags:("' + tag + '")');
             self.search();
         };
 
