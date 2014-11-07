@@ -1065,9 +1065,14 @@ h1.unavailable {
     }
 
 div.search-result  {
-    padding-bottom: 30pt;
-    word-break: break-all;
+    margin-bottom: 10pt;
+    padding: 10px;
+    border: 1px solid #d3d3d3;
+    border-radius: 10px;
+    overflow-x: hidden;
 }
+
+
 
 .search-results.search-result h5 small{
     color: white;
@@ -1075,7 +1080,8 @@ div.search-result  {
 }
 
 .search-results.search-result {
-    word-wrap: break-word;
+    overflow-x: hidden;
+
 }
 /* Search Contributors */
 
