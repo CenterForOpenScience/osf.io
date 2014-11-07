@@ -797,7 +797,6 @@ class TestFileActions(OsfTestCase):
             self.node.remove_file(Auth(self.node.creator), 'foo')
 
 
-
 class TestApiKey(OsfTestCase):
 
     def test_factory(self):
@@ -1870,7 +1869,7 @@ class TestProject(OsfTestCase):
                 users, auth=self.consolidate_auth, save=True,
             )
 
-    def test_set_title(self):
+    def test_set_title_works_with_valid_title(self):
         proj = ProjectFactory(title='That Was Then', creator=self.user)
         proj.set_title('This is now', auth=self.consolidate_auth)
         proj.save()
@@ -1880,6 +1879,20 @@ class TestProject(OsfTestCase):
         latest_log = proj.logs[-1]
         assert_equal(latest_log.action, 'edit_title')
         assert_equal(latest_log.params['title_original'], 'That Was Then')
+
+    def test_set_title_fails_if_empty_or_whitespace(self):
+        proj = ProjectFactory(title='That Was Then', creator=self.user)
+        with assert_raises(ValidationValueError):
+            proj.set_title(' ', auth=self.consolidate_auth)
+        with assert_raises(ValidationValueError):
+            proj.set_title('', auth=self.consolidate_auth)
+        #assert_equal(proj.title, 'That Was Then')
+
+    def test_title_cant_be_empty(self):
+        with assert_raises(ValidationValueError):
+            proj = ProjectFactory(title='', creator=self.user)
+        with assert_raises(ValidationValueError):
+            proj = ProjectFactory(title=' ', creator=self.user)
 
     def test_contributor_can_edit(self):
         contributor = UserFactory()
@@ -2832,6 +2845,7 @@ class TestNodeLog(OsfTestCase):
 
         created_log = project.logs[0]
         assert_false(created_log.can_view(unrelated, Auth(user=project.creator)))
+
 
 class TestPermissions(OsfTestCase):
 
