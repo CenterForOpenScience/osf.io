@@ -2288,12 +2288,12 @@ class TestComments(OsfTestCase):
         self.project.reload()
 
         res_comment = res.json['comment']
-        date_created = dt.datetime.strptime(str(res_comment.pop('dateCreated')), '%Y-%m-%dT%H:%M:%S.%f')
-        date_modified = dt.datetime.strptime(str(res_comment.pop('dateModified')), '%Y-%m-%dT%H:%M:%S.%f')
+        date_created = parse_date(str(res_comment.pop('dateCreated')))
+        date_modified = parse_date(str(res_comment.pop('dateModified')))
 
         serialized_comment = serialize_comment(self.project.commented[0], self.consolidated_auth)
-        date_created2 = dt.datetime.strptime(serialized_comment.pop('dateCreated'), '%Y-%m-%dT%H:%M:%S.%f')
-        date_modified2 = dt.datetime.strptime(serialized_comment.pop('dateModified'), '%Y-%m-%dT%H:%M:%S.%f')
+        date_created2 = parse_date(serialized_comment.pop('dateCreated'))
+        date_modified2 = parse_date(serialized_comment.pop('dateModified'))
 
         assert_datetime_equal(date_created, date_created2)
         assert_datetime_equal(date_modified, date_modified2)
@@ -2310,8 +2310,6 @@ class TestComments(OsfTestCase):
 
         self.project.reload()
 
-        # Note: Use `parse_date` rather than `strptime` to avoid very rare
-        # missing floating point values
         res_comment = res.json['comment']
         date_created = parse_date(res_comment.pop('dateCreated'))
         date_modified = parse_date(res_comment.pop('dateModified'))
@@ -2336,12 +2334,12 @@ class TestComments(OsfTestCase):
         self.project.reload()
 
         res_comment = res.json['comment']
-        date_created = dt.datetime.strptime(str(res_comment.pop('dateCreated')), '%Y-%m-%dT%H:%M:%S.%f')
-        date_modified = dt.datetime.strptime(str(res_comment.pop('dateModified')), '%Y-%m-%dT%H:%M:%S.%f')
+        date_created = parse_date(str(res_comment.pop('dateCreated')))
+        date_modified = parse_date(str(res_comment.pop('dateModified')))
 
         serialized_comment = serialize_comment(self.project.commented[0], self.consolidated_auth)
-        date_created2 = dt.datetime.strptime(serialized_comment.pop('dateCreated'), '%Y-%m-%dT%H:%M:%S.%f')
-        date_modified2 = dt.datetime.strptime(serialized_comment.pop('dateModified'), '%Y-%m-%dT%H:%M:%S.%f')
+        date_created2 = parse_date(serialized_comment.pop('dateCreated'))
+        date_modified2 = parse_date(serialized_comment.pop('dateModified'))
 
         assert_datetime_equal(date_created, date_created2)
         assert_datetime_equal(date_modified, date_modified2)
