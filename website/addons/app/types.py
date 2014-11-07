@@ -53,14 +53,26 @@ def regex(pattern):
     ret.__doc__ = '<Regex Pattern {}>'.format(pattern)
     return ret
 
+
 def must_be_type(_type):
     ret = partial(_must_be_type, _type)
     ret.__doc__ = str(_type)
     return ret
 
+
+def orcid(key, orcid):
+    '''TODO Write a doc string'''
+    try:
+        ret = requests.get('https://pub.orcid.org/{}'.format(orcid), headers=DOI_HEADERS)
+    except Exception:
+        raise SchemaViolationError('{} is not a valid ORCID'.format(key))
+
+    if ret.status_code != 200:
+        raise SchemaViolationError('{} is not a valid ORCID'.format(key))
+    return ret.json()
+
 def doi(key, doi):
-    '''TODO Write a doc string
-    '''
+    '''TODO Write a doc string'''
     if isinstance(doi, dict):
         if DOI_KEYS == doi.keys():
             return doi
@@ -95,5 +107,6 @@ TYPE_MAP = {
     'object': must_be_type(dict),
     'list': must_be_type(list),
     'email': regex('([^@]+@.+\..+'),
-    'doi': doi
+    'doi': doi,
+    'ORCID': orcid
 }
