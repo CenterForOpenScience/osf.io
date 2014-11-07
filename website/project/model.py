@@ -501,6 +501,14 @@ def validate_category(value):
     return True
 
 
+def validate_title(value):
+    """Validator for Node#title. Makes sure that the value exists.
+    """
+    if value is None or not value.strip():
+        raise ValidationValueError('Title cannot be blank.')
+    return True
+
+
 def validate_user(value):
     if value != {}:
         user_id = value.iterkeys().next()
@@ -579,10 +587,8 @@ class Node(GuidStoredObject, AddonModelMixin):
     is_fork = fields.BooleanField(default=False)
     forked_date = fields.DateTimeField()
 
-    title = fields.StringField()
+    title = fields.StringField(validate=validate_title)
     description = fields.StringField()
-    # TODO: Add validator for this field (must be one of the keys in
-    # CATEGORY_MAP
     category = fields.StringField(validate=validate_category)
 
     # One of 'public', 'private'
@@ -1297,8 +1303,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param auth: All the auth information including user, API key.
 
         """
-        if not title:
-            return
+        if title is None or not title.strip():
+            raise ValidationValueError('Title cannot be blank.')
         original_title = self.title
         self.title = title
         self.add_log(
@@ -1445,7 +1451,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             try:  # Catch the potential PermissionsError above
                 forked_node = node_contained.fork_node(auth=auth, title='')
             except PermissionsError:
-                pass  # If this excpetion is thrown omit the node from the result set
+                pass  # If this exception is thrown omit the node from the result set
             if forked_node is not None:
                 forked.nodes.append(forked_node)
 
