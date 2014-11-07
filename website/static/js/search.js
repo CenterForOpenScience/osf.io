@@ -62,7 +62,7 @@
         self.appURL = self.params.appURL;
 
         self.tag = ko.observable('');
-        self.stateJustPushed = false;
+        self.stateJustPushed = true;
         self.query = ko.observable('');
         self.category = ko.observable({});
         self.tags = ko.observableArray([]);
