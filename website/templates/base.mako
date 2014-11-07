@@ -197,7 +197,6 @@
     <script src="/static/vendor/knockout-mapping/knockout.mapping.js"></script>
     <script src="/static/vendor/knockout-punches/knockout.punches.min.js"></script>
     <script src="/static/vendor/knockout-validation/knockout.validation.min.js"></script>
-    <script src="/static/vendor/bower_components/bootstrap.growl/bootstrap-growl.js"></script>
 ##    <script src="/static/js/koHelpers.js"></script>
 
     % for url in js_all:
