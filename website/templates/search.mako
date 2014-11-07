@@ -66,11 +66,11 @@
                     <!-- /ko -->
                     <div class="col-md-9">
                         <!-- ko if: searchStarted() && !totalCount() -->
-                        <div class="well hidden" data-bind="css: {hidden: totalCount() }">No results found.</div>
+                        <div class="search-results hidden" data-bind="css: {hidden: totalCount() }">No results found.</div>
                         <!-- /ko -->
                         <!-- ko if: totalCount() -->
                         <div data-bind="foreach: results">
-                            <div class="well search-result" data-bind="template: { name: category, data: $data}"></div>
+                            <div class="search-result" data-bind="template: { name: category, data: $data}"></div>
                         </div>
                         <ul class="pager">
                             <li data-bind="css: {disabled: !prevPageExists()}">
@@ -124,56 +124,65 @@
         <!-- /ko -->
     </script>
     <script type="text/html" id="user">
-        <h4><a data-bind="attr.href: url"><span>{{ user }}</span></a></h4>
-        <span data-bind="visible: job_title, text: job_title"></span><!-- ko if: job_title && job --> at <!-- /ko -->
-        <span data-bind="visible: job, text: job"></span><!-- ko if: job_title || job --><br /><!-- /ko -->
-        <span data-bind="visible: degree, text: degree"></span><!-- ko if: degree && school --> from <!-- /ko -->
-        <span data-bind="visible: school, text: school"></span><!-- ko if: degree || school --><br /><!-- /ko -->
-        <!-- ko if: social -->
-        <ul class="list-inline">
-            <li data-bind="visible: social.personal">
-                <a data-bind="attr.href: social.personal">
-                    <i class="fa fa-globe" data-toggle="tooltip" title="Personal Website"></i>
-                </a>
-            </li>
+        <div class="container">
+            <div class="col-md-1">
+                <img data-bind="visible: gravatarUrl(), attr.src: gravatarUrl()">
+            </div>
+            <div class="col-md-11">
+                <h4><a data-bind="attr.href: url"><span>{{ user }}</span></a></h4>
+                <span data-bind="visible: job_title, text: job_title"></span><!-- ko if: job_title && job --> at <!-- /ko -->
+                <span data-bind="visible: job, text: job"></span><!-- ko if: job_title || job --><br /><!-- /ko -->
+                <span data-bind="visible: degree, text: degree"></span><!-- ko if: degree && school --> from <!-- /ko -->
+                <span data-bind="visible: school, text: school"></span><!-- ko if: degree || school --><br /><!-- /ko -->
+                <!-- ko if: social -->
+                <br />
+                <ul class="list-inline">
+                    <li data-bind="visible: social.personal">
+                        <a data-bind="attr.href: social.personal">
+                            <i class="fa fa-globe" data-toggle="tooltip" title="Personal Website"></i>
+                        </a>
+                    </li>
 
-            <li data-bind="visible: social.twitter">
-                <a data-bind="attr.href: social.twitter">
-                    <i class="fa fa-twitter" data-toggle="tooltip" title="Twitter"></i>
-                </a>
-            </li>
-            <li data-bind="visible: social.github">
-                <a data-bind="attr.href: social.github">
-                    <i class="fa fa-github-alt" data-toggle="tooltip" title="Github"></i>
-                </a>
-            </li>
-            <li data-bind="visible: social.linkedIn">
-                <a data-bind="attr.href: social.linkedIn">
-                    <i class="fa fa-linkedin" data-toggle="tooltip" title="LinkedIn"></i>
-                </a>
-            </li>
-            <li data-bind="visible: social.scholar">
-                <a data-bind="attr.href: social.scholar">
-                    <img height=14 src="/static/img/googlescholar.png"data-toggle="tooltip" title="Google Scholar">
-                </a>
-            </li>
-            <li data-bind="visible: social.impactStory">
-                <a data-bind="attr.href: social.impactStory">
-                    <i class="fa fa-info-circle" data-toggle="tooltip" title="ImpactStory"></i>
-                </a>
-            </li>
-            <li data-bind="visible: social.orcid">
-                <a data-bind="attr.href: social.orcid">
-                    <i class="fa" data-toggle="tooltip" title="ORCiD">iD</i>
-                </a>
-            </li>
-            <li data-bind="visible: social.researcherId">
-                <a data-bind="attr.href: social.researcherId">
-                    <i class="fa" data-toggle="tooltip" title="ResearcherID">R</i>
-                </a>
-            </li>
-        </ul>
-        <!-- /ko -->
+                    <li data-bind="visible: social.twitter">
+                        <a data-bind="attr.href: social.twitter">
+                            <i class="fa fa-twitter" data-toggle="tooltip" title="Twitter"></i>
+                        </a>
+                    </li>
+                    <li data-bind="visible: social.github">
+                        <a data-bind="attr.href: social.github">
+                            <i class="fa fa-github-alt" data-toggle="tooltip" title="Github"></i>
+                        </a>
+                    </li>
+                    <li data-bind="visible: social.linkedIn">
+                        <a data-bind="attr.href: social.linkedIn">
+                            <i class="fa fa-linkedin" data-toggle="tooltip" title="LinkedIn"></i>
+                        </a>
+                    </li>
+                    <li data-bind="visible: social.scholar">
+                        <a data-bind="attr.href: social.scholar">
+                            <img height=14 src="/static/img/googlescholar.png"data-toggle="tooltip" title="Google Scholar">
+                        </a>
+                    </li>
+                    <li data-bind="visible: social.impactStory">
+                        <a data-bind="attr.href: social.impactStory">
+                            <i class="fa fa-info-circle" data-toggle="tooltip" title="ImpactStory"></i>
+                        </a>
+                    </li>
+                    <li data-bind="visible: social.orcid">
+                        <a data-bind="attr.href: social.orcid">
+                            <i class="fa" data-toggle="tooltip" title="ORCiD">iD</i>
+                        </a>
+                    </li>
+                    <li data-bind="visible: social.researcherId">
+                        <a data-bind="attr.href: social.researcherId">
+                            <i class="fa" data-toggle="tooltip" title="ResearcherID">R</i>
+                        </a>
+                    </li>
+                </ul>
+                <!-- /ko -->
+            </div>
+        </div>
+
     </script>
     <script type="text/html" id="project">
         <h4><a data-bind="attr.href: url">{{title }}</a></h4>
@@ -201,7 +210,7 @@
         <!-- /ko -->
     </script>
     <script type="text/html" id="app">
-        <h4><a data-bind="attr.href: url">{{title }}</a></h4>
+        <h4><a data-bind="attr.href: url">{{ title }}</a></h4>
         <h5>Description: <small>{{ description | default:"No Description" | fit:500 }}</small></h5>
 
         <!-- ko if: contributors.length > 0 -->

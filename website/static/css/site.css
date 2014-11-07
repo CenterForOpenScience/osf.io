@@ -962,14 +962,14 @@ h1.unavailable {
     }
 .tag-cloud
     {
-
+    word-break: break-all;
     }
 
 .tag-cloud .cloud-tag
 {
     font-size: 11pt;
     display: inline-block;
-    word-wrap: break-word;
+    word-break: break-all;
     margin: 5px;
     padding: 5px;
     border-radius: 5px;
@@ -1064,12 +1064,17 @@ h1.unavailable {
         margin-right: .5em;
     }
 
-.search-result.well h5 small{
-    color: darkslategray;
+div.search-result  {
+    padding-bottom: 30pt;
+    word-break: break-all;
+}
+
+.search-results.search-result h5 small{
+    color: white;
     font-size: 10pt;
 }
 
-.search-result.well {
+.search-results.search-result {
     word-wrap: break-word;
 }
 /* Search Contributors */
