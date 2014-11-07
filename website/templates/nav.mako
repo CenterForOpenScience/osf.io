@@ -35,9 +35,9 @@
                 </li><!-- end dropdown -->
             </ul><!-- end nav navbar-nav -->
             <!-- Search bar -->
-            <form id="searchBar" class="navbar-form navbar-left" action="${web_url_for('search_search')}" method="get" role="search">
+            <form id="searchBar" class="navbar-form navbar-left" action="/search/" method="get" role="search">
                 <div class="form-group">
-                    <input type="text" class="form-control search-query" placeholder="Search" name="q">
+                    <input type="text" class="form-control search-query" placeholder="Search the OSF" name="q">
                 </div>
             </form>
             <ul class="nav navbar-nav navbar-right">
@@ -46,7 +46,7 @@
                     <a class="hidden-lg hidden-xs" href="/profile/">
                         <span rel="tooltip" title="${user_name}" class="icon-user"></span>
                     </a>
-                    <a class="visible-lg visible-xs"href="/profile/">
+                    <a class="visible-lg visible-xs" href="/profile/">
                         <span rel="tooltip" title="${user_name}">${display_name}</span>
                     </a>
                 </li>

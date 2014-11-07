@@ -13,6 +13,7 @@ import urlparse
 from dateutil import parser
 
 from modularodm.exceptions import ValidationError, ValidationValueError, ValidationTypeError
+from modularodm import Q
 
 
 from framework.analytics import get_total_activity_count
@@ -24,7 +25,8 @@ from website import filters, language, settings
 from website.exceptions import NodeStateError
 from website.profile.utils import serialize_user
 from website.project.model import (
-    ApiKey, Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link
+    ApiKey, Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
+    get_pointer_parent,
 )
 from website.addons.osffiles.model import NodeFile
 from website.addons.osffiles.exceptions import FileNotModified
@@ -97,16 +99,13 @@ class TestUserValidation(OsfTestCase):
         self.user.jobs = [{
             'institution': 'School of Lover Boys',
             'department': 'Fancy Patter',
-            'position': 'Lover Boy',
+            'title': 'Lover Boy',
             'startMonth': 1,
             'startYear': 1970,
             'endMonth': 1,
             'endYear': 1980,
         }]
-        try:
-            self.user.save()
-        except:
-            assert 0
+        self.user.save()
 
     def test_validate_jobs_institution_empty(self):
         self.user.jobs = [{'institution': ''}]
@@ -189,7 +188,7 @@ class TestUser(OsfTestCase):
     def test_search_not_updated_for_unreg_users(self, update_search):
         u = User.create_unregistered(fullname=fake.name(), email=fake.email())
         u.save()
-        assert update_search.called
+        assert not update_search.called
 
     @mock.patch('framework.auth.core.User.update_search')
     def test_search_updated_for_registered_users(self, update_search):
@@ -883,6 +882,12 @@ class TestUpdateNodeWiki(OsfTestCase):
         # There are two update logs
         assert_equal([log.action for log in self.project.logs].count('wiki_updated'), 2)
 
+    def test_update_log_specifics(self):
+        page = self.project.get_wiki_page('home')
+        log = self.project.logs[-1]
+        assert_equal('wiki_updated', log.action)
+        assert_equal(page._primary_key, log.params['page_id'])
+
     def test_wiki_versions(self):
         # Number of versions is correct
         assert_equal(len(self.versions['home']), 1)
@@ -1011,6 +1016,21 @@ class TestRenameNodeWiki(OsfTestCase):
         with assert_raises(PageConflictError):
             self.project.rename_node_wiki(new_name, existing_name, self.consolidate_auth)
 
+    def test_rename_log(self):
+        # Rename wiki
+        self.project.update_node_wiki('wiki', 'content', self.consolidate_auth)
+        self.project.rename_node_wiki('wiki', 'renamed wiki', self.consolidate_auth)
+        # Rename is logged
+        assert_equal(self.project.logs[-1].action, 'wiki_renamed')
+
+    def test_rename_log_specifics(self):
+        self.project.update_node_wiki('wiki', 'content', self.consolidate_auth)
+        self.project.rename_node_wiki('wiki', 'renamed wiki', self.consolidate_auth)
+        page = self.project.get_wiki_page('renamed wiki')
+        log = self.project.logs[-1]
+        assert_equal('wiki_renamed', log.action)
+        assert_equal(page._primary_key, log.params['page_id'])
+
 
 class TestDeleteNodeWiki(OsfTestCase):
 
@@ -1030,6 +1050,13 @@ class TestDeleteNodeWiki(OsfTestCase):
         self.project.delete_node_wiki('home', self.consolidate_auth)
         # Deletion is logged
         assert_equal(self.project.logs[-1].action, 'wiki_deleted')
+
+    def test_delete_log_specifics(self):
+        page = self.project.get_wiki_page('home')
+        self.project.delete_node_wiki('home', self.consolidate_auth)
+        log = self.project.logs[-1]
+        assert_equal('wiki_deleted', log.action)
+        assert_equal(page._primary_key, log.params['page_id'])
 
     def test_wiki_versions(self):
         # Number of versions is correct
@@ -2890,6 +2917,13 @@ class TestPointer(OsfTestCase):
             pointer.node,
             cloned.node
         )
+
+    def test_get_pointer_parent(self):
+        parent = ProjectFactory()
+        pointed = ProjectFactory()
+        parent.add_pointer(pointed, Auth(parent.creator))
+        parent.save()
+        assert_equal(get_pointer_parent(parent.nodes[0]), parent)
 
     def test_clone(self):
         cloned = self.pointer._clone()

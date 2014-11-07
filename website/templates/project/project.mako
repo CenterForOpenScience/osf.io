@@ -14,7 +14,7 @@
 
 <div class="row">
 
-    <div class="col-md-6">
+    <div class="col-sm-6">
 
         % if addons:
 
@@ -46,12 +46,20 @@
 
         <div class="addon-widget-container">
             <h3 class="addon-widget-header"><a href="${node['url']}files/">Files</a></h3>
+            <div id="filetreeProgressBar" class="progress progress-striped active">
+                <div class="progress-bar"  role="progressbar" aria-valuenow="100"
+                    aria-valuemin="0" aria-valuemax="100" style="width: 100%">
+                    <span class="sr-only">Loading</span>
+                </div>
+            </div>
+
+            <input role="search" class="form-control" placeholder="Search files..." type="text" id="fileSearch" autofocus>
             <div id="myGrid" class="filebrowser hgrid"></div>
         </div>
 
     </div>
 
-    <div class="col-md-6">
+    <div class="col-sm-6">
 
         <!-- Citations -->
         % if not node['anonymous']:
@@ -95,15 +103,14 @@
 
 <%def name="children()">
     % if node['node_type'] == 'project':
-        <div class="page-header">
             <div class="pull-right btn-group">
                 % if 'write' in user['permissions'] and not node['is_registration']:
                     <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
                     <a class="btn btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
                 % endif
             </div>
-        <h2>Components ARE HERE</h2>
-    </div>
+        <h2>Components</h2>
+        <hr />
     % endif
 
 
@@ -158,7 +165,7 @@ ${parent.javascript_bottom()}
 
 
     var $comments = $('#comments');
-    var userName = '${user_full_name}';
+    var userName = '${user_full_name | js_str}';
     var canComment = ${'true' if user['can_comment'] else 'false'};
     var hasChildren = ${'true' if node['has_children'] else 'false'};
 
@@ -199,20 +206,35 @@ ${parent.javascript_bottom()}
             interactive: ${'true' if user["can_edit"] else 'false'},
             maxChars: 128,
             onAddTag: function(tag){
-                $.ajax({
-                    url: "${node['api_url']}" + "addtag/" + tag + "/",
+                var url = "${node['api_url']}" + "addtag/" + tag + "/";
+                var request = $.ajax({
+                    url: url,
                     type: "POST",
                     contentType: "application/json"
                 });
+                request.fail(function(xhr, textStatus, error) {
+                    Raven.captureMessage('Failed to add tag', {
+                        tag: tag, url: url, textStatus: textStatus, error: error
+                    });
+                })
             },
             onRemoveTag: function(tag){
-                $.ajax({
-                    url: "${node['api_url']}" + "removetag/" + tag + "/",
+                var url = "${node['api_url']}" + "removetag/" + tag + "/";
+                var request = $.ajax({
+                    url: url,
                     type: "POST",
                     contentType: "application/json"
                 });
+                request.fail(function(xhr, textStatus, error) {
+                    Raven.captureMessage('Failed to remove tag', {
+                        tag: tag, url: url, textStatus: textStatus, error: error
+                    });
+                })
             }
         });
+
+        // Limit the maximum length that you can type when adding a tag
+        $('#node-tags_tag').attr("maxlength", "128");
 
         // Remove delete UI if not contributor
         % if 'write' not in user['permissions'] or node['is_registration']:
@@ -227,24 +249,17 @@ ${parent.javascript_bottom()}
         %endif
 
     });
-    $script.ready(['fangorn'], function() {
-
-
-        $.ajax({
-          url:  nodeApiUrl + 'files/grid/'
-        })
-        .done(function( data ) {
-            console.log("data", data);
-            var fangornOpts = {
-                'placement' : "project-home",
-                divID: "myGrid",
-                filesData: data.data,
-                uploads : false
-            };
-            console.log("fangorn", Fangorn);
-            var filebrowser = new Fangorn(fangornOpts);
+    $script.ready(['rubeus'], function() {
+        // Initialize filebrowser
+        var filebrowser = new Rubeus('#myGrid', {
+                data: nodeApiUrl + 'files/grid/',
+                columns: [Rubeus.Col.Name],
+                uploads: false,
+                width: "100%",
+                height: 600,
+                progBar: '#filetreeProgressBar',
+                searchInput: '#fileSearch'
         });
-
     })
 </script>
 

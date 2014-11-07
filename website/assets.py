@@ -60,6 +60,7 @@ js_bottom = Bundle(
     "vendor/jquery-tagcloud/jquery.tagcloud.js",
     "vendor/jquery-tagit/js/tag-it.js",
     "vendor/jquery-blockui/jquery.blockui.js",
+    "vendor/bower_components/bootstrap.growl/bootstrap-growl.min.js",
     # 'vendor/dropzone/dropzone.js',
     # 'vendor/hgrid/hgrid.js',
     'vendor/autosize/jquery.autosize.min.js',
