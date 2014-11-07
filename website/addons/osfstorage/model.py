@@ -184,7 +184,10 @@ class BaseFileObject(StoredObject):
         return obj
 
     def touch(self):
-        pass
+        """Check whether the current object is valid. By default, always return
+        `True`.
+        """
+        return True
 
     def __repr__(self):
         return '<{}(path={!r}, node_settings={!r})>'.format(
@@ -255,16 +258,26 @@ class OsfStorageFileRecord(BaseFileObject):
     def remove_version(self, version):
         if len(self.versions) == 1:
             OsfStorageFileRecord.remove_one(self)
+            retained_self = False
         else:
             self.versions.remove(version)
             self.save()
+            retained_self = True
         OsfStorageFileVersion.remove_one(version)
+        return retained_self
 
     def touch(self):
+        """Check for expired pending versions. Note: the current `FileRecord`
+        will be removed if this method reduces the number of versions to zero.
+
+        :return: Current record is valid
+        """
         latest_version = self.get_version()
         if latest_version and latest_version.expired:
-            self.remove_version(latest_version)
+            retained_self = self.remove_version(latest_version)
             logger.warn('Removed pending version on {!r} due to inactivity'.format(self))
+            return retained_self
+        return True
 
     def resolve_pending_version(self, signature, location, metadata, log=True):
         """Finish pending upload. Update version record with file information

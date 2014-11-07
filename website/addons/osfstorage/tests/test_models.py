@@ -125,6 +125,9 @@ class TestFileTree(OsfTestCase):
     def test_name(self):
         assert_equal(self.tree.name, 'world')
 
+    def test_touch(self):
+        assert_is(self.tree.touch(), True)
+
     def test_parent_root(self):
         tree = model.OsfStorageFileTree.get_or_create('', self.node_settings)
         assert_is(tree.parent, None)
@@ -421,7 +424,8 @@ class TestFileRecord(StorageTestCase):
         version = factories.FileVersionFactory()
         self.record.versions = [version]
         self.record.save()
-        self.record.remove_version(version)
+        retained_self = self.record.remove_version(version)
+        assert_false(retained_self)
         model.OsfStorageFileRecord._clear_caches()
         model.OsfStorageFileVersion._clear_caches()
         assert_is(model.OsfStorageFileRecord.load(self.record._id), None)
@@ -434,12 +438,52 @@ class TestFileRecord(StorageTestCase):
         versions = [factories.FileVersionFactory() for _ in range(3)]
         self.record.versions = versions
         self.record.save()
-        self.record.remove_version(versions[-1])
+        retained_self = self.record.remove_version(versions[-1])
+        assert_is(retained_self, True)
         model.OsfStorageFileRecord._clear_caches()
         model.OsfStorageFileVersion._clear_caches()
         assert_true(model.OsfStorageFileRecord.load(self.record._id))
         assert_is(model.OsfStorageFileVersion.load(versions[-1]._id), None)
         assert_equal(len(parent.children), 1)
+
+    @mock.patch('website.addons.osfstorage.model.time.time')
+    def test_touch_pending_one_version_not_expired(self, mock_time):
+        mock_time.return_value = 10
+        version = self.record.create_pending_version(self.user, 'c22b59f')
+        valid = self.record.touch()
+        assert_is(valid, True)
+
+    @mock.patch('website.addons.osfstorage.model.time.time')
+    def test_touch_pending_one_version_expired(self, mock_time):
+        mock_time.return_value = 0
+        version = self.record.create_pending_version(self.user, 'c22b59f')
+        mock_time.return_value = settings.PING_TIMEOUT + 1
+        valid = self.record.touch()
+        assert_is(valid, False)
+
+    @mock.patch('website.addons.osfstorage.model.time.time')
+    def test_touch_pending_many_versions_not_expired(self, mock_time):
+        mock_time.return_value = 10
+        self.record.versions = [factories.FileVersionFactory() for _ in range(5)]
+        self.record.save()
+        version = self.record.create_pending_version(self.user, 'c22b59f')
+        valid = self.record.touch()
+        assert_is(valid, True)
+
+    @mock.patch('website.addons.osfstorage.model.time.time')
+    def test_touch_pending_many_versions_expired(self, mock_time):
+        mock_time.return_value = 0
+        self.record.versions = [factories.FileVersionFactory() for _ in range(5)]
+        self.record.save()
+        version = self.record.create_pending_version(self.user, 'c22b59f')
+        mock_time.return_value = settings.PING_TIMEOUT + 1
+        valid = self.record.touch()
+        assert_is(valid, True)
+
+    def test_touch_not_pending(self):
+        self.record.versions.append(factories.FileVersionFactory())
+        valid = self.record.touch()
+        assert_is(valid, True)
 
     def test_delete_record(self):
         nlogs = len(self.project.logs)

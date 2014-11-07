@@ -364,8 +364,8 @@ def osf_storage_hgrid_contents(auth, node_addon, **kwargs):
     permissions = utils.get_permissions(auth, node)
     return [
         utils.serialize_metadata_hgrid(item, node, permissions)
-        for item in file_tree.children
-        if not item.is_deleted
+        for item in list(file_tree.children)
+        if item.touch() and not item.is_deleted
     ]
 
 

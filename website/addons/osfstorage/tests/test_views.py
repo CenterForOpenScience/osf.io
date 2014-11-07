@@ -21,7 +21,7 @@ from website import settings
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import views
-from website.addons.osfstorage import settings as osf_storage_settings
+from website.addons.osfstorage import settings as storage_settings
 
 
 def create_record_with_version(path, node_settings, **kwargs):
@@ -64,6 +64,56 @@ class TestHGridViews(StorageTestCase):
             )
         )
 
+    @mock.patch('website.addons.osfstorage.model.time.time')
+    def test_hgrid_contents_pending_one_version_not_expired(self, mock_time):
+        mock_time.return_value = 0
+        record = model.OsfStorageFileRecord.get_or_create('rhapsody', self.node_settings)
+        record.create_pending_version(self.user, '16a383')
+        res = self.app.get(
+            self.project.api_url_for('osf_storage_hgrid_contents'),
+            auth=self.project.creator.auth,
+        )
+        assert_equal(len(res.json), 1)
+
+    @mock.patch('website.addons.osfstorage.model.time.time')
+    def test_hgrid_contents_pending_one_version_expired(self, mock_time):
+        mock_time.return_value = 0
+        record = model.OsfStorageFileRecord.get_or_create('rhapsody', self.node_settings)
+        record.create_pending_version(self.user, '16a383')
+        mock_time.return_value = storage_settings.PING_TIMEOUT + 1
+        res = self.app.get(
+            self.project.api_url_for('osf_storage_hgrid_contents'),
+            auth=self.project.creator.auth,
+        )
+        assert_equal(len(res.json), 0)
+
+    @mock.patch('website.addons.osfstorage.model.time.time')
+    def test_hgrid_contents_pending_many_versions_not_expired(self, mock_time):
+        mock_time.return_value = 0
+        record = model.OsfStorageFileRecord.get_or_create('rhapsody', self.node_settings)
+        record.versions = [factories.FileVersionFactory() for _ in range(5)]
+        record.save()
+        record.create_pending_version(self.user, '16a383')
+        res = self.app.get(
+            self.project.api_url_for('osf_storage_hgrid_contents'),
+            auth=self.project.creator.auth,
+        )
+        assert_equal(len(res.json), 1)
+
+    @mock.patch('website.addons.osfstorage.model.time.time')
+    def test_hgrid_contents_pending_many_versions_expired(self, mock_time):
+        mock_time.return_value = 0
+        record = model.OsfStorageFileRecord.get_or_create('rhapsody', self.node_settings)
+        record.versions = [factories.FileVersionFactory() for _ in range(5)]
+        record.save()
+        record.create_pending_version(self.user, '16a383')
+        mock_time.return_value = storage_settings.PING_TIMEOUT + 1
+        res = self.app.get(
+            self.project.api_url_for('osf_storage_hgrid_contents'),
+            auth=self.project.creator.auth,
+        )
+        assert_equal(len(res.json), 1)
+
     def test_hgrid_contents_tree_not_found_root_path(self):
         res = self.app.get(
             self.project.api_url_for(
@@ -94,7 +144,7 @@ class HookTestCase(StorageTestCase):
             self.project.api_url_for(view_name, path=path),
             payload,
             headers={
-                osf_storage_settings.SIGNATURE_HEADER_KEY: signature,
+                storage_settings.SIGNATURE_HEADER_KEY: signature,
             },
             **kwargs
         )
