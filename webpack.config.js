@@ -29,6 +29,7 @@ module.exports = {
   plugins: [
     // Bundle common code between modules
     new webpack.optimize.CommonsChunkPlugin('common.js'),
+    // Bower support
     new webpack.ResolverPlugin(
         new webpack.ResolverPlugin.DirectoryDescriptionFilePlugin("bower.json", ["main"])
     )
