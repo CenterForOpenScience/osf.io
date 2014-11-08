@@ -61,7 +61,6 @@ js_bottom = Bundle(
     # Site-specific JS
     Bundle(
         'js/project.js',
-        'js/app.js',
         'js/addons.js',
         # 'js/dropzone-patch.js',
         # 'js/rubeus.js'
