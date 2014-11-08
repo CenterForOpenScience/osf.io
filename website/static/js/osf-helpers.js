@@ -1,4 +1,71 @@
+'use strict';
 var $ = require('jquery');
+var Raven = require('raven-js');
+
+/**
+* Posts JSON data.
+*
+* NOTE: The `success` and `error` callbacks are deprecated. Prefer the Promise
+* interface (using the `done` and `fail` methods of a jqXHR).
+*
+* Example:
+*     var osf = require('./osf-helpers');
+*     var request = osf.postJSON('/foo', {'email': 'bar@baz.com'});
+*     request.done(function(response) {
+*         // ...
+*     })
+*     request.fail(function(xhr, textStatus, err) {
+*         // ...
+*     }
+*
+* @param  {String} url  The url to post to
+* @param  {Object} data JSON data to send to the endpoint
+* @return {jQuery xhr}
+*/
+var postJSON = function(url, data, success, error) {
+    var ajaxOpts = {
+        url: url, type: 'post',
+        data: JSON.stringify(data),
+        contentType: 'application/json', dataType: 'json'
+    };
+    // For backwards compatibility. Prefer the Promise interface to these callbacks.
+    if (typeof success === 'function') {
+        ajaxOpts.success = success;
+    }
+    if (typeof error === 'function') {
+        ajaxOpts.error = error;
+    }
+    return $.ajax(ajaxOpts);
+};
+
+/**
+  * Puts JSON data.
+  *
+  * NOTE: The `success` and `error` callbacks are deprecated. Prefer the Promise
+  * interface (using the `done` and `fail` methods of a jqXHR).
+  *
+  * Example:
+  *     osf.putJSON('/foo', {'email': 'bar@baz.com'})
+  *
+  * @param  {String} url  The url to put to
+  * @param  {Object} data JSON data to send to the endpoint
+  * @return {jQuery xhr}
+  */
+var putJSON = function(url, data, success, error) {
+    var ajaxOpts = {
+        url: url, type: 'put',
+        data: JSON.stringify(data),
+        contentType: 'application/json', dataType: 'json'
+    };
+    // For backwards compatibility. Prefer the Promise interface to these callbacks.
+    if (typeof success === 'function') {
+        ajaxOpts.success = success;
+    }
+    if (typeof error === 'function') {
+        ajaxOpts.error = error;
+    }
+    return $.ajax(ajaxOpts);
+};
 
 var errorDefaultShort = 'Unable to resolve';
 var errorDefaultLong = 'OSF was unable to resolve your request. If this issue persists, ' +
@@ -16,7 +83,7 @@ var handleJSONError = function(response) {
     Raven.captureMessage('Unexpected error occurred in JSON request');
 };
 
-var handleEditableError = function(response, newValue) {
+var handleEditableError = function(response) {
     Raven.captureMessage('Unexpected error occurred in an editable input');
     return 'Unexpected error: ' + response.statusText;
 };
@@ -100,69 +167,17 @@ var trackPiwik = function(host, siteId, cvars, useCookies) {
     } catch(err) { return false; }
     return true;
 };
-module.exports = {
-  /**
-    * Posts JSON data.
-    *
-    * NOTE: The `success` and `error` callbacks are deprecated. Prefer the Promise
-    * interface (using the `done` and `fail` methods of a jqXHR).
-    *
-    * Example:
-    *     var osf = require('./osf-helpers');
-    *     var request = osf.postJSON('/foo', {'email': 'bar@baz.com'});
-    *     request.done(function(response) {
-    *         // ...
-    *     })
-    *     request.fail(function(xhr, textStatus, err) {
-    *         // ...
-    *     }
-    *
-    * @param  {String} url  The url to post to
-    * @param  {Object} data JSON data to send to the endpoint
-    * @return {jQuery xhr}
-    */
-    postJSON: function(url, data, success, error) {
-        var ajaxOpts = {
-            url: url, type: 'post',
-            data: JSON.stringify(data),
-            contentType: 'application/json', dataType: 'json'
-        };
-        // For backwards compatibility. Prefer the Promise interface to these callbacks.
-        if (typeof success === 'function') {
-            ajaxOpts.success = success;
-        }
-        if (typeof error === 'function') {
-            ajaxOpts.error = error;
-        }
-        return $.ajax(ajaxOpts);
-    },
 
-    /**
-     * Puts JSON data.
-     *
-     * NOTE: The `success` and `error` callbacks are deprecated. Prefer the Promise
-     * interface (using the `done` and `fail` methods of a jqXHR).
-     *
-     * Example:
-     *     osf.putJSON('/foo', {'email': 'bar@baz.com'})
-     *
-     * @param  {String} url  The url to put to
-     * @param  {Object} data JSON data to send to the endpoint
-     * @return {jQuery xhr}
-     */
-    putJSON: function(url, data, success, error) {
-        var ajaxOpts = {
-            url: url, type: 'put',
-            data: JSON.stringify(data),
-            contentType: 'application/json', dataType: 'json'
-        };
-        // For backwards compatibility. Prefer the Promise interface to these callbacks.
-        if (typeof success === 'function') {
-            ajaxOpts.success = success;
-        }
-        if (typeof error === 'function') {
-            ajaxOpts.error = error;
-        }
-        return $.ajax(ajaxOpts);
-    }
+module.exports = {
+    postJSON: postJSON,
+    putJSON: putJSON,
+    handleJSONError: handleJSONError,
+    handleEditableError: handleEditableError,
+    block: block,
+    unblock: unblock,
+    joinPrompts: joinPrompts,
+    mapByProperty: mapByProperty,
+    isEmail: isEmail,
+    urlParams: urlParams,
+    trackPiwik: trackPiwik
 };
