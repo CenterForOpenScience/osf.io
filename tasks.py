@@ -17,6 +17,8 @@ from website import settings
 
 logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+
 def get_bin_path():
     """Get parent path of current python binary.
     """
@@ -640,3 +642,30 @@ def bundle_certs(domain, cert_path):
         domain=domain,
     )
     run(cmd)
+
+@task
+def clean_assets():
+    """Remove built JS files."""
+    build_path = os.path.join(HERE,
+                              'website',
+                              'static',
+                              'public',
+                              'js',
+                              '*')
+    run('rm -rf {0}'.format(build_path), echo=True)
+
+
+@task(aliases=['pack'])
+def webpack(clean=True, watch=False, production=False):
+    """Build static assets with webpack."""
+    if clean:
+        clean_assets()
+    args = ['webpack']
+    if settings.DEBUG_MODE and not production:
+        args += ['-d', '--colors']
+    else:
+        args += ['-p']
+    if watch:
+        args += ['--watch']
+    command = ' '.join(args)
+    run(command, echo=True)

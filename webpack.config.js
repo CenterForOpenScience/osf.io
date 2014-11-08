@@ -6,9 +6,6 @@ module.exports = {
     profile: './website/static/js/app/profile.js',
     project: './website/static/js/app/project.js'
   },
-  debug: true,
-  // We watch with gulp, so tell webpack not to watch
-  watch: false,
   output: {
     path: './website/static/public/js/',
     // publicPath: '/static/', // used to generate urls to e.g. images
@@ -28,8 +25,8 @@ module.exports = {
       { test: /\.png/, loader: 'url-loader?limit=10000&minetype=image/png' }
     ]
   },
-  // Let gulp handle plugins based on environment (e.g. prod vs dev)
   plugins: [
+    // Bundle common code between modules
     new webpack.optimize.CommonsChunkPlugin('common.js')
   ]
 };
