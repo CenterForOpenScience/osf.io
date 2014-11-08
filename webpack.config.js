@@ -6,6 +6,7 @@ module.exports = {
     profile: './website/static/js/app/profile.js',
     project: './website/static/js/app/project.js'
   },
+  debug: true,
   output: {
     path: './website/static/public/js/',
     // publicPath: '/static/', // used to generate urls to e.g. images
@@ -27,6 +28,14 @@ module.exports = {
   },
   plugins: [
     // Bundle common code between modules
-    new webpack.optimize.CommonsChunkPlugin('common.js')
-  ]
+    new webpack.optimize.CommonsChunkPlugin('common.js'),
+    new webpack.ResolverPlugin(
+        new webpack.ResolverPlugin.DirectoryDescriptionFilePlugin("bower.json", ["main"])
+    )
+  ],
+  externals: {
+      // require("jquery") is external and available
+      //  on the global var jQuery
+      // 'jquery': "jQuery"
+  }
 };
