@@ -1,0 +1,15 @@
+{
+  "name": "OSF",
+  "version": "0.0.0",
+  "description": "",
+  "author": "Center for Open Science",
+  "devDependencies": {
+    "del": "^0.1.3",
+    "gulp": "^3.8.9",
+    "gulp-notify": "^2.0.0",
+    "gulp-uglify": "^1.0.1",
+    "gulp-util": "^3.0.1",
+    "gulp-webpack": "^1.0.0",
+    "webpack": "^1.4.13"
+  }
+}
