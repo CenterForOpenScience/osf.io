@@ -1,6 +1,12 @@
+var path = require('path');
 var webpack = require('webpack');
-
+var root = path.join(__dirname, 'website', 'static');
+/** Return the absolute path given a path relative to ./website/static */
+var fromRoot = function(dir) {
+    return path.join(root, dir);
+};
 module.exports = {
+    // Split code chunks by page
     entry: {
         dashboard: './website/static/js/pages/dashboard-page.js',
         profile: './website/static/js/pages/profile-page.js'
@@ -12,16 +18,19 @@ module.exports = {
         filename: '[name].js'
     },
     resolve: {
+        root: root,
         // Look for required files in bower and node
         modulesDirectories: ['./website/static/vendor/bower_components', 'node_modules'],
         alias: {
             // Alias libraries that aren't managed by bower or npm
-            'knockout-punches': '../vendor/knockout-punches/knockout.punches.min.js',
-            'knockout-sortable': '../vendor/knockout-sortable/knockout-sortable.js',
-            'knockout-validation': '../vendor/knockout-validation/knockout.validation.min.js',
-            'bootbox': '../vendor/bootbox/bootbox.min.js',
+            'knockout-punches': fromRoot('/vendor/knockout-punches/knockout.punches.min.js'),
+            'knockout-sortable': fromRoot('/vendor/knockout-sortable/knockout-sortable.js'),
+            'knockout-validation': fromRoot('/vendor/knockout-validation/knockout.validation.min.js'),
+            'bootbox': fromRoot('/vendor/bootbox/bootbox.min.js'),
             // Needed for knockout-sortable
-            'jquery.ui.sortable': '../bower_components/jquery-ui/ui/jquery.ui.sortable.js'
+            'jquery.ui.sortable': fromRoot('/vendor/bower_components/jquery-ui/ui/jquery.ui.sortable.js'),
+            // Dropzone monkeypatching needed for signed URL uploads
+            'dropzone-patch': fromRoot('js/dropzone-patch.js')
         }
     },
     module: {
