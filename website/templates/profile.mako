@@ -26,7 +26,6 @@
     % endif
     $script(['/static/addons/badges/bake-badges.js'], 'bakery');
     $script(['/static/addons/badges/badge-popover.js'], 'display');
-    $script(['/static/js/logFeed.js']);
 </script>
 % if user['is_profile']:
     <%include file="profile/modal_change_avatar.mako"/>
@@ -188,24 +187,21 @@
 <%include file="include/profile/jobs.mako" />
 <%include file="include/profile/schools.mako" />
 
+<script src="/static/public/js/profile.js"></script>
+## TODO: Remove dependence on Mako
 <script type="text/javascript">
-
-    $script(['/static/js/profile.js']);
-    $script.ready('profile', function() {
-        var socialUrls = {
-            crud: '${ api_url_for('serialize_social', uid=profile['id']) }'
-        };
-        var jobsUrls = {
-            crud: '${ api_url_for('serialize_jobs', uid=profile['id']) }'
-        };
-        var schoolsUrls = {
-            crud: '${ api_url_for('serialize_schools', uid=profile['id']) }'
-        };
-        var social = new profile.Social('#social', socialUrls, ['edit', 'view']);
-        var jobs = new profile.Jobs('#jobs', jobsUrls, ['edit', 'view']);
-        var schools = new profile.Schools('#schools', schoolsUrls, ['edit', 'view']);
-    });
-
+    var socialUrls = {
+        crud: '${ api_url_for('serialize_social', uid=profile['id']) }'
+    };
+    var jobsUrls = {
+        crud: '${ api_url_for('serialize_jobs', uid=profile['id']) }'
+    };
+    var schoolsUrls = {
+        crud: '${ api_url_for('serialize_schools', uid=profile['id']) }'
+    };
+    var social = new profile.Social('#social', socialUrls, ['edit', 'view']);
+    var jobs = new profile.Jobs('#jobs', jobsUrls, ['edit', 'view']);
+    var schools = new profile.Schools('#schools', schoolsUrls, ['edit', 'view']);
 </script>
 
 </%def>

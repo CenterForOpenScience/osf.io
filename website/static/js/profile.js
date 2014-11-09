@@ -5,6 +5,7 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
+require('knockout-validation');
 
 var koHelpers = require('./koHelpers.js');
 var osfHelpers = require('./osf-helpers.js');
@@ -753,19 +754,16 @@ SchoolsViewModel.prototype = Object.create(ListViewModel.prototype);
 var Names = function(selector, urls, modes) {
     this.viewModel = new NameViewModel(urls, modes);
     osfHelpers.applyBindings(this.viewModel, selector);
-    window.nameModel = this.viewModel;
 };
 
 var Social = function(selector, urls, modes) {
     this.viewModel = new SocialViewModel(urls, modes);
     osfHelpers.applyBindings(this.viewModel, selector);
-    window.social = this.viewModel;
 };
 
 var Jobs = function(selector, urls, modes) {
     this.viewModel = new JobsViewModel(urls, modes);
     osfHelpers.applyBindings(this.viewModel, selector);
-    window.jobsModel = this.viewModel;
 };
 
 var Schools = function(selector, urls, modes) {
@@ -773,7 +771,7 @@ var Schools = function(selector, urls, modes) {
     osfHelpers.applyBindings(this.viewModel, selector);
 };
 
-return {
+module.exports = {
     Names: Names,
     Social: Social,
     Jobs: Jobs,

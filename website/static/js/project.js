@@ -216,11 +216,8 @@ NodeActions.openCloseNode = function(nodeId) {
     NodeActions._openCloseNode(nodeId);
 };
 
+// TODO: remove this
 $(document).ready(function() {
-    // TODO: remove this
-
-    ko.punches.enableAll();
-
     var permissionInfoHtml = '<dl>' +
         '<dt>Read</dt><dd>View project content and comment</dd>' +
         '<dt>Read + Write</dt><dd>Read privileges plus add and configure components; add and edit content</dd>' +

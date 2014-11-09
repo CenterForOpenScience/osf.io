@@ -2,7 +2,8 @@ var webpack = require('webpack');
 
 module.exports = {
     entry: {
-        dashboard: './website/static/js/pages/dashboard.js'
+        dashboard: './website/static/js/pages/dashboard.js',
+        profile: './website/static/js/pages/profile.js'
     },
     debug: true,
     output: {
@@ -17,6 +18,7 @@ module.exports = {
             // Alias libraries that aren't managed by bower or npm
             'knockout-punches': '../vendor/knockout-punches/knockout.punches.min.js',
             'knockout-sortable': '../vendor/knockout-sortable/knockout-sortable.js',
+            'knockout-validation': '../vendor/knockout-validation/knockout.validation.min.js',
             'bootbox': '../vendor/bootbox/bootbox.min.js'
         }
     },
