@@ -44,7 +44,7 @@ js = Bundle(
     # 'js/site.js',
     # 'js/koHelpers.js',
     # 'js/language.js',
-    output="public/js/common.js"
+    output="public/js/webassets-common.js"
 )
 
 js_bottom = Bundle(

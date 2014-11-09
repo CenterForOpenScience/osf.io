@@ -19,7 +19,9 @@ module.exports = {
             'knockout-punches': '../vendor/knockout-punches/knockout.punches.min.js',
             'knockout-sortable': '../vendor/knockout-sortable/knockout-sortable.js',
             'knockout-validation': '../vendor/knockout-validation/knockout.validation.min.js',
-            'bootbox': '../vendor/bootbox/bootbox.min.js'
+            'bootbox': '../vendor/bootbox/bootbox.min.js',
+            // Needed for knockout-sortable
+            'jquery.ui.sortable': '../bower_components/jquery-ui/ui/jquery.ui.sortable.js'
         }
     },
     module: {

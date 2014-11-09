@@ -186,7 +186,6 @@
 <%include file="include/profile/social.mako" />
 <%include file="include/profile/jobs.mako" />
 <%include file="include/profile/schools.mako" />
-
 <script src="/static/public/js/profile.js"></script>
 ## TODO: Remove dependence on Mako
 <script type="text/javascript">
