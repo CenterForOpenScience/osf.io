@@ -4,7 +4,8 @@ module.exports = {
   // This is the main file that should include all other JS files
   entry: {
     profile: './website/static/js/app/profile.js',
-    project: './website/static/js/app/project.js'
+    project: './website/static/js/app/project.js',
+    dashboard: './website/static/js/app/dashboard.js'
   },
   debug: true,
   output: {
@@ -32,11 +33,16 @@ module.exports = {
     // Bower support
     new webpack.ResolverPlugin(
         new webpack.ResolverPlugin.DirectoryDescriptionFilePlugin("bower.json", ["main"])
-    )
+    ),
+    new webpack.ProvidePlugin({
+        $: 'jquery',
+        jQuery: 'jquery'
+    })
   ],
   externals: {
       // require("jquery") is external and available
       //  on the global var jQuery
-      // 'jquery': "jQuery"
+      'jquery': 'jQuery',
+      'jquery-ui': 'jQuery.ui'
   }
 };

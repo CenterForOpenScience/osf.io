@@ -109,46 +109,11 @@
 
 <%def name="javascript_bottom()">
 
+<script src="/static/public/js/dashboard.js"></script>
+
 <script>
-    $script(['/static/js/onboarder.js']);  // exports onboarder
     $script(['/static/js/projectCreator.js']);  // exports projectCreator
 
-    $script.ready(['projectCreator', 'onboarder'], function() {
-        // Send a single request to get the data to populate the typeaheads
-        var url = "${api_url_for('get_dashboard_nodes')}";
-        var request = $.getJSON(url, function(response) {
-            var allNodes = response.nodes;
-            ##  For uploads, only show nodes for which user has write or admin permissions
-            var uploadSelection = ko.utils.arrayFilter(allNodes, function(node) {
-                return $.inArray(node.permissions, ['write', 'admin']) !== -1;
-            });
-            ## Filter out components and nodes for which user is not admin
-            var registrationSelection = ko.utils.arrayFilter(uploadSelection, function(node) {
-                return node.category === 'project' && node.permissions === 'admin';
-            });
-
-            $.osf.applyBindings({nodes: allNodes}, '#obGoToProject');
-            $.osf.applyBindings({nodes: registrationSelection}, '#obRegisterProject');
-            $.osf.applyBindings({nodes: uploadSelection}, '#obUploader');
-
-            function ProjectCreateViewModel() {
-                var self = this;
-                self.isOpen = ko.observable(false),
-                self.focus = ko.observable(false);
-                self.toggle = function() {
-                    self.isOpen(!self.isOpen());
-                    self.focus(self.isOpen());
-                };
-                self.nodes = response.nodes;
-            }
-            $.osf.applyBindings(ProjectCreateViewModel, '#projectCreate');
-        });
-        request.fail(function(xhr, textStatus, error) {
-            Raven.captureMessage('Could not fetch dashboard nodes.', {
-                url: url, textStatus: textStatus, error: error
-            });
-        });
-    });
 
      // initialize the logfeed
     $script(['/static/js/logFeed.js']);
