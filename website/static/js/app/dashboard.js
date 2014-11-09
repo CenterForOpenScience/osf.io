@@ -4,6 +4,7 @@ var $ = require('jquery');
 
 var osfHelpers = require('../osf-helpers.js');
 var ProjectOrganizer = require('../projectorganizer.js');
+var LogFeed = require('../logFeed.js');
 // Knockout components for the onboarder
 require('../onboarder.js');
 
@@ -48,3 +49,5 @@ new ProjectOrganizer('#project-grid');
 $(document).ready(function() {
     $('#projectOrganizerScope').tooltip({selector: '[data-toggle=tooltip]'});
 });
+// Initialize logfeed
+new LogFeed('#logScope', '/api/v1/watched/logs/');

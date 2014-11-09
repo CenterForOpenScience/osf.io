@@ -3,7 +3,10 @@
 var Handlebars = require('handlebars');
 var $ = require('jquery');
 var HGrid = require('hgrid');
-require('typeahead');
+require('typeahead.js');
+
+require('../vendor/jquery-drag-drop/jquery.event.drag-2.2.js');
+require('../vendor/jquery-drag-drop/jquery.event.drop-2.2.js');
 require('../vendor/bower_components/hgrid/plugins/hgrid-draggable/hgrid-draggable.js');
 
 //
@@ -227,8 +230,8 @@ function dropLogic(event, items, folder) {
                     deleteMultiplePointersFromFolder(null, itemsNotToMove, itemParent);
                     setItemToExpand(folder, function () {
                         if (itemsToMove.length > 0) {
-                            var url = postInfo[copyMode]['url'];
-                            var postData = JSON.stringify(postInfo[copyMode]['json']);
+                            var url = postInfo[copyMode].url;
+                            var postData = JSON.stringify(postInfo[copyMode].json);
                             var outerFolderID = whichIsContainer(draggable.grid, itemParentID, folder.id);
 
                             var postAction = $.ajax({
