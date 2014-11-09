@@ -17,7 +17,8 @@ module.exports = {
         modulesDirectories: ['./website/static/vendor/bower_components', 'node_modules'],
         alias: {
             'knockout-punches': '../vendor/knockout-punches/knockout.punches.min.js',
-            'knockout-sortable': '../vendor/knockout-sortable/knockout-sortable.js'
+            'knockout-sortable': '../vendor/knockout-sortable/knockout-sortable.js',
+            'bootbox': '../vendor/bootbox/bootbox.min.js'
         }
     },
     module: {
