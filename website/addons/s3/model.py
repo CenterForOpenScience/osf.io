@@ -16,7 +16,7 @@ from modularodm import fields
 from framework.auth.core import Auth
 
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
-from website.addons.s3.api import S3Wrapper
+from website.addons.s3.api import S3Wrapper, has_access
 from website.addons.s3.utils import get_bucket_drop_down, serialize_bucket, remove_osf_user
 
 
@@ -44,11 +44,7 @@ class AddonS3UserSettings(AddonUserSettingsBase):
 
         user_settings = user.get_addon('s3')
         if user_settings and user_settings.has_auth:
-            try:
-                user_settings = user.get_addon('s3')
-                connection = IAMConnection(user_settings.access_key, user_settings.secret_key)
-                connection.get_user(user_settings.s3_osf_user)
-            except BotoServerError:
+            if not has_access(user_settings.access_key, user_settings.secret_key):
                 rv['valid_credentials'] = False
 
         return rv
@@ -149,18 +145,11 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         })
 
         if self.user_settings:
-            valid_credentials = True
-            try:
-                connection = IAMConnection(self.user_settings.access_key, self.user_settings.secret_key)
-                connection.get_user(user_settings.s3_osf_user)
-            except BotoServerError:
-                valid_credentials = False
-
             rv['owner'] = self.user_settings.owner.fullname
             rv['owner_url'] = self.user_settings.owner.url
             rv['bucket_list'] = get_bucket_drop_down(self.user_settings)
             rv['node_has_auth'] = True
-            rv['valid_credentials'] = valid_credentials
+            rv['valid_credentials'] = has_access(user_settings.access_key, user_settings.secret_key)
 
         return rv
 
