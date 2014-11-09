@@ -149,6 +149,8 @@ ${parent.javascript_bottom()}
     <script type="text/javascript" src="${script}"></script>
 % endfor
 
+<script src="/static/public/js/project-dashboard.js"></script>
+
 <script type="text/javascript">
     $script(['/static/js/logFeed.js'], 'logFeed');
 
@@ -249,18 +251,6 @@ ${parent.javascript_bottom()}
         %endif
 
     });
-    $script.ready(['rubeus'], function() {
-        // Initialize filebrowser
-        var filebrowser = new Rubeus('#myGrid', {
-                data: nodeApiUrl + 'files/grid/',
-                columns: [Rubeus.Col.Name],
-                uploads: false,
-                width: "100%",
-                height: 600,
-                progBar: '#filetreeProgressBar',
-                searchInput: '#fileSearch'
-        });
-    })
 </script>
 
 </%def>

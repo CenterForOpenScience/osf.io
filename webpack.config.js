@@ -9,7 +9,8 @@ module.exports = {
     // Split code chunks by page
     entry: {
         dashboard: './website/static/js/pages/dashboard-page.js',
-        profile: './website/static/js/pages/profile-page.js'
+        profile: './website/static/js/pages/profile-page.js',
+        'project-dashboard': './website/static/js/pages/project-dashboard-page.js'
     },
     debug: true,
     output: {
@@ -29,6 +30,8 @@ module.exports = {
             'bootbox': fromRoot('/vendor/bootbox/bootbox.min.js'),
             // Needed for knockout-sortable
             'jquery.ui.sortable': fromRoot('/vendor/bower_components/jquery-ui/ui/jquery.ui.sortable.js'),
+            // Dropzone doesn't have a proper 'main' entry in its bower.json
+            'dropzone': fromRoot('vendor/bower_components/dropzone/downloads/dropzone.js'),
             // Dropzone monkeypatching needed for signed URL uploads
             'dropzone-patch': fromRoot('js/dropzone-patch.js'),
             'rubeus': fromRoot('js/rubeus.js'),
