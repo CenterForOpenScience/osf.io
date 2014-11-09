@@ -193,11 +193,7 @@
     <script>window.jQuery || document.write('<script src="/static/vendor/bower_components/jQuery/dist/jquery.min.js">\x3C/script>')</script>
     <script src="//code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
     <script>window.jQuery.ui || document.write('<script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js">\x3C/script>')</script>
-    <script src="/static/vendor/bower_components/knockout/dist/knockout.js"></script>
-    <script src="/static/vendor/knockout-mapping/knockout.mapping.js"></script>
-    <script src="/static/vendor/knockout-punches/knockout.punches.min.js"></script>
-    <script src="/static/vendor/knockout-validation/knockout.validation.min.js"></script>
-##    <script src="/static/js/koHelpers.js"></script>
+    <script src="/static/public/js/common.js"></script>
 
     % for url in js_all:
     <script src="${url}"></script>
@@ -207,16 +203,16 @@
         // Enable knockout punches
         ko.punches.enableAll();
         // Dependencies that can be loaded with scriptjs
-        $script(['/static/vendor/bower_components/zeroclipboard/ZeroClipboard.min.js'],
-            'zeroclipboard');
-        $script(['/static/vendor/bower_components/dropzone/downloads/dropzone.js'], 'dropzone');
-        $script(['/static/vendor/bower_components/hgrid/dist/hgrid.js'], 'hgrid');
-        $script(['/static/vendor/bower_components/typeahead.js/dist/typeahead.bundle.min.js'],'typeahead');
-        $script(['/static/vendor/bower_components/select2/select2.js'], 'select2');
-        $script(['/static/vendor/bower_components/handlebars/handlebars.min.js'],'handlebars');
-        $script(['/static/js/dropzone-patch.js']); // exports 'dropzone-patch'
-        $script(['/static/js/rubeus.js']); // exports 'rubeus'
-        $script(['/static/js/folderPicker.js']);  // exports 'folderPicker'
+        ## $script(['/static/vendor/bower_components/zeroclipboard/ZeroClipboard.min.js'],
+        ##     'zeroclipboard');
+        ## $script(['/static/vendor/bower_components/dropzone/downloads/dropzone.js'], 'dropzone');
+        ## $script(['/static/vendor/bower_components/hgrid/dist/hgrid.js'], 'hgrid');
+        ## $script(['/static/vendor/bower_components/typeahead.js/dist/typeahead.bundle.min.js'],'typeahead');
+        ## $script(['/static/vendor/bower_components/select2/select2.js'], 'select2');
+        ## $script(['/static/vendor/bower_components/handlebars/handlebars.min.js'],'handlebars');
+        ## $script(['/static/js/dropzone-patch.js']); // exports 'dropzone-patch'
+        ## $script(['/static/js/rubeus.js']); // exports 'rubeus'
+        ## $script(['/static/js/folderPicker.js']);  // exports 'folderPicker'
     </script>
 
 </%def>

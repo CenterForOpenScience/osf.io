@@ -1,10 +1,11 @@
-// Knockout components for the onboarder
-require('../onboarder.js');
 var Raven = require('raven-js');
-
 var ko = require('knockout');
 var $ = require('jquery');
+
 var osfHelpers = require('../osf-helpers.js');
+var ProjectOrganizer = require('../projectorganizer.js');
+// Knockout components for the onboarder
+require('../onboarder.js');
 
 var url = '/api/v1/dashboard/get_nodes/';
 var request = $.getJSON(url, function(response) {
@@ -38,4 +39,12 @@ request.fail(function(xhr, textStatus, error) {
     Raven.captureMessage('Could not fetch dashboard nodes.', {
         url: url, textStatus: textStatus, error: error
     });
+});
+
+
+// Initialize ProjectOrganizer
+new ProjectOrganizer('#project-grid');
+
+$(document).ready(function() {
+    $('#projectOrganizerScope').tooltip({selector: '[data-toggle=tooltip]'});
 });
