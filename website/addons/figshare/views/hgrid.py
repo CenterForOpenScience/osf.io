@@ -53,10 +53,11 @@ def figshare_hgrid_data(node_settings, auth, parent=None, **kwargs):
     #TODO Test me
     #Throw error if neither
     node_settings.figshare_title = (item.get('title') or item['items'][0]['title']) if item else node_settings.linked_content.get('title')
+
     node_settings.save()
     return [
         rubeus.build_addon_root(
-            node_settings, u'{0}:{1}'.format(node_settings.figshare_title or 'Unnamed', node_settings.figshare_id), permissions=auth,
+            node_settings, u'{0}:{1}'.format(node_settings.figshare_title, node_settings.figshare_id), permissions=auth,
             nodeUrl=node.url, nodeApiUrl=node.api_url,
         )
     ]
