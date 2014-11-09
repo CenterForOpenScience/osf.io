@@ -30,7 +30,9 @@ module.exports = {
             // Needed for knockout-sortable
             'jquery.ui.sortable': fromRoot('/vendor/bower_components/jquery-ui/ui/jquery.ui.sortable.js'),
             // Dropzone monkeypatching needed for signed URL uploads
-            'dropzone-patch': fromRoot('js/dropzone-patch.js')
+            'dropzone-patch': fromRoot('js/dropzone-patch.js'),
+            'rubeus': fromRoot('js/rubeus.js'),
+            'folderpicker': fromRoot('js/folderPicker.js')
         }
     },
     module: {
