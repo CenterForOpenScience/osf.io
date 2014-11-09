@@ -40,10 +40,10 @@ js = Bundle(
         "vendor/bootbox/bootbox.min.js",
         "vendor/script.min.js",
     ),
-    'vendor/knockout-sortable/knockout-sortable.js',
-    'js/site.js',
-    'js/koHelpers.js',
-    'js/language.js',
+    # 'vendor/knockout-sortable/knockout-sortable.js',
+    # 'js/site.js',
+    # 'js/koHelpers.js',
+    # 'js/language.js',
     output="public/js/common.js"
 )
 
@@ -60,10 +60,7 @@ js_bottom = Bundle(
     'vendor/autosize/jquery.autosize.min.js',
     # Site-specific JS
     Bundle(
-        'js/project.js',
         'js/addons.js',
-        # 'js/dropzone-patch.js',
-        # 'js/rubeus.js'
     ),
     filters='jsmin',
     output='public/js/site.js'

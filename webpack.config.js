@@ -16,6 +16,7 @@ module.exports = {
         // Look for required files in bower and node
         modulesDirectories: ['./website/static/vendor/bower_components', 'node_modules'],
         alias: {
+            // Alias libraries that aren't managed by bower or npm
             'knockout-punches': '../vendor/knockout-punches/knockout.punches.min.js',
             'knockout-sortable': '../vendor/knockout-sortable/knockout-sortable.js',
             'bootbox': '../vendor/bootbox/bootbox.min.js'

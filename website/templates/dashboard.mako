@@ -111,28 +111,4 @@
 
 <script src="/static/public/js/dashboard.js"></script>
 
-<script>
-    $script(['/static/js/projectCreator.js']);  // exports projectCreator
-
-
-     // initialize the logfeed
-    $script(['/static/js/logFeed.js']);
-    $script.ready('logFeed', function() {
-        // NOTE: the div#logScope comes from log_list.mako
-        var logFeed = new LogFeed("#logScope", "/api/v1/watched/logs/");
-    });
-</script>
-
-##       Project Organizer
-    <script src="/static/vendor/jquery-drag-drop/jquery.event.drag-2.2.js"></script>
-    <script src="/static/vendor/jquery-drag-drop/jquery.event.drop-2.2.js"></script>
-    <script>
-        $script.ready(['hgrid'], function() {
-            $script(['/static/vendor/bower_components/hgrid/plugins/hgrid-draggable/hgrid-draggable.js'],'hgrid-draggable');
-        });
-        $script(['/static/js/projectorganizer.js']);
-        $script.ready(['projectorganizer'], function() {
-            var projectbrowser = new ProjectOrganizer('#project-grid');
-        });
-    </script>
 </%def>

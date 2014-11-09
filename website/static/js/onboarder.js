@@ -9,6 +9,7 @@ var Dropzone = require('../vendor/bower_components/dropzone/downloads/dropzone.j
 var Raven = require('raven-js');
 var ko = require('knockout');
 var $ = require('jquery');
+var osfHelpers = require('./osf-helpers.js');
 require('typeahead.js');
 
 function noop() {}
@@ -83,7 +84,7 @@ function initTypeahead(element, nodes, viewModel, params){
 
 // Defines the format of items in the typeahead data source
 function serializeNode(node) {
-    var dateModified = new $.osf.FormattableDate(node.date_modified);
+    var dateModified = new osfHelpers.FormattableDate(node.date_modified);
     return {
         name: node.title,
         id: node.id,

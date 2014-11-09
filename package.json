@@ -4,6 +4,7 @@
   "description": "",
   "author": "Center for Open Science",
   "devDependencies": {
+    "exports-loader": "^0.6.2",
     "webpack": "^1.4.13"
   }
 }

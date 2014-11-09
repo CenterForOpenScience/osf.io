@@ -1,6 +1,11 @@
+/**
+ * Initialization code for the dashboard pages. Starts up the Project Organizer
+ * and binds the onboarder Knockout components.
+ * */
 var Raven = require('raven-js');
 var ko = require('knockout');
 var $ = require('jquery');
+
 
 var osfHelpers = require('../osf-helpers.js');
 var ProjectOrganizer = require('../projectorganizer.js');

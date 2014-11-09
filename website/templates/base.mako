@@ -201,7 +201,6 @@
 
     <script>
         // Enable knockout punches
-        ko.punches.enableAll();
         // Dependencies that can be loaded with scriptjs
         ## $script(['/static/vendor/bower_components/zeroclipboard/ZeroClipboard.min.js'],
         ##     'zeroclipboard');
