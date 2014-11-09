@@ -2,9 +2,7 @@ var webpack = require('webpack');
 
 module.exports = {
     entry: {
-        profile: './website/static/js/app/profile.js',
-        project: './website/static/js/app/project.js',
-        dashboard: './website/static/js/app/dashboard.js'
+        dashboard: './website/static/js/pages/dashboard.js'
     },
     debug: true,
     output: {
