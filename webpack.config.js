@@ -41,6 +41,10 @@ module.exports = {
             $: 'jquery',
             jQuery: 'jquery',
             ko: 'knockout'
+        }),
+        // Slight hack to make sure that CommonJS is always used
+        new webpack.DefinePlugin({
+            'define.amd': false
         })
     ],
     externals: {
