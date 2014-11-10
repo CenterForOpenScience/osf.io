@@ -49,7 +49,7 @@ js = Bundle(
 
 js_bottom = Bundle(
     # Vendorized libraries loaded at the bottom of the page
-    "vendor/bootstrap3-editable/js/bootstrap-editable.min.js",
+    # "vendor/bootstrap3-editable/js/bootstrap-editable.min.js",
     "vendor/jquery-tagsinput/js/jquery.tagsinput.min.js",
     "vendor/jquery-tagcloud/jquery.tagcloud.js",
     "vendor/jquery-tagit/js/tag-it.js",

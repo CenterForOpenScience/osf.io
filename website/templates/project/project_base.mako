@@ -29,7 +29,6 @@ ${next.body()}
     <% import json %>
 
     // Import modules
-    $script(['/static/js/nodeControl.js'], 'nodeControl');
     $script(['/static/js/pointers.js'], 'pointers');
 
 
@@ -62,18 +61,6 @@ ${next.body()}
 
     $script.ready('pointers', function() {
         var pointerDisplay = new Pointers.PointerDisplay('#showLinks');
-    });
-
-    $(function() {
-        // Get project data from the server and initiate KO modules
-        $.getJSON(nodeApiUrl, function(data) {
-            // Initialize nodeControl and logFeed on success
-            $script.ready('nodeControl', function() {
-                var nodeControl = new NodeControl('#projectScope', data);
-            });
-            $('body').trigger('nodeLoad', data);
-        });
-
     });
 
     // Make unregistered contributors claimable

@@ -1,8 +1,10 @@
 /** Initialization code for the project dashboard. */
+
+var $ = require('jquery');
 var Rubeus = require('rubeus');
 
 var LogFeed = require('../logFeed.js');
-
+var NodeControl = require('../nodeControl.js');
 
 var nodeApiUrl = window.contextVars.node.urls.api;
 
@@ -15,6 +17,15 @@ new Rubeus('#myGrid', {
     height: 600,
     progBar: '#filetreeProgressBar',
     searchInput: '#fileSearch'
+});
+
+$(function() {
+    // Get project data from the server and initiate KO modules
+    $.getJSON(nodeApiUrl, function(data) {
+        // Initialize nodeControl and logFeed on success
+        new NodeControl('#projectScope', data);
+        $('body').trigger('nodeLoad', data);
+    });
 });
 
 // Listen for the nodeLoad event (prevents multiple requests for data)

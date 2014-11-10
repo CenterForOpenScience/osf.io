@@ -22,14 +22,15 @@ module.exports = {
         root: root,
         // Look for required files in bower and node
         modulesDirectories: ['./website/static/vendor/bower_components', 'node_modules'],
+        // Need to alias libraries that aren't managed by bower or npm
         alias: {
-            // Alias libraries that aren't managed by bower or npm
-            'knockout-punches': fromRoot('/vendor/knockout-punches/knockout.punches.min.js'),
-            'knockout-sortable': fromRoot('/vendor/knockout-sortable/knockout-sortable.js'),
-            'knockout-validation': fromRoot('/vendor/knockout-validation/knockout.validation.min.js'),
-            'bootbox': fromRoot('/vendor/bootbox/bootbox.min.js'),
+            'knockout-punches': fromRoot('vendor/knockout-punches/knockout.punches.min.js'),
+            'knockout-sortable': fromRoot('vendor/knockout-sortable/knockout-sortable.js'),
+            'knockout-validation': fromRoot('vendor/knockout-validation/knockout.validation.min.js'),
+            'bootbox': fromRoot('vendor/bootbox/bootbox.min.js'),
+            'bootstrap-editable': fromRoot('vendor/bootstrap3-editable/js/bootstrap-editable.js'),
             // Needed for knockout-sortable
-            'jquery.ui.sortable': fromRoot('/vendor/bower_components/jquery-ui/ui/jquery.ui.sortable.js'),
+            'jquery.ui.sortable': fromRoot('vendor/bower_components/jquery-ui/ui/jquery.ui.sortable.js'),
             // Dropzone doesn't have a proper 'main' entry in its bower.json
             'dropzone': fromRoot('vendor/bower_components/dropzone/downloads/dropzone.js'),
             // Dropzone monkeypatching needed for signed URL uploads
