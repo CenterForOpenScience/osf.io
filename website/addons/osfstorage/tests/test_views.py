@@ -782,7 +782,7 @@ class TestDeleteFile(StorageTestCase):
         record = create_record_with_version(
             path,
             self.node_settings,
-            pending=False,
+            status=model.status['COMPLETE'],
         )
         assert_false(record.is_deleted)
         res = self.app.delete(
@@ -801,7 +801,7 @@ class TestDeleteFile(StorageTestCase):
         record = create_record_with_version(
             path,
             self.node_settings,
-            pending=False,
+            status=model.status['COMPLETE'],
         )
         record.delete(self.auth_obj)
         record.save()

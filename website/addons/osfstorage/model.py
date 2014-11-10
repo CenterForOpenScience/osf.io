@@ -62,7 +62,7 @@ def copy_file_record_stable(record, node_settings):
     """
     versions = [
         version for version in record.versions
-        if not version.pending
+        if version.status != status['PENDING']
     ]
     if versions:
         clone = record.clone()
@@ -254,7 +254,7 @@ class OsfStorageFileRecord(BaseFileObject):
         version = OsfStorageFileVersion(
             creator=creator,
             signature=signature,
-            pending=True,
+            status=status['PENDING'],
         )
         version.save()
         self.versions.append(version)
@@ -360,12 +360,21 @@ metadata_fields = {
 }
 
 
+status = {
+    'PENDING': 'pending',
+    'COMPLETE': 'complete',
+}
+def validate_status(value):
+    if value not in status.values():
+        raise modm_errors.ValidationValueError
+
+
 class OsfStorageFileVersion(StoredObject):
 
     _id = oid_primary_key
     creator = fields.ForeignField('user', required=True)
 
-    pending = fields.BooleanField()
+    status = fields.StringField(required=True, validate=validate_status)
     signature = fields.StringField()
 
     date_created = fields.DateTimeField(auto_now_add=True)
@@ -396,6 +405,10 @@ class OsfStorageFileVersion(StoredObject):
     date_modified = fields.DateTimeField()
 
     @property
+    def pending(self):
+        return self.status == status['PENDING']
+
+    @property
     def location_hash(self):
         return self.location['object'] if self.location else None
 
@@ -404,7 +417,7 @@ class OsfStorageFileVersion(StoredObject):
 
         :param str signature: Signature used in signed URL
         """
-        if not self.pending:
+        if self.status != status['PENDING']:
             raise errors.VersionNotPendingError
         if self.signature != signature:
             raise errors.PendingSignatureMismatchError
@@ -419,7 +432,7 @@ class OsfStorageFileVersion(StoredObject):
         """
         """
         self.before_update(signature)
-        self.pending = False
+        self.status = status['COMPLETE']
         self.date_resolved = datetime.datetime.utcnow()
         self.location = location
         self.metadata = metadata
@@ -445,7 +458,7 @@ class OsfStorageFileVersion(StoredObject):
         """A version is expired if in pending state and has not received a ping
         from the upload service since in `PING_TIMEOUT` seconds.
         """
-        if not self.pending:
+        if self.status != status['PENDING']:
             return False
         return time.time() > (self.last_ping + settings.PING_TIMEOUT)
 

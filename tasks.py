@@ -636,7 +636,7 @@ def bundle_certs(domain, cert_path):
         for cert_file in cert_files
     )
     cmd = 'cat {certs} > {domain}.bundle.crt'.format(
-        certs=' '.join(certs),
+        certs=certs,
         domain=domain,
     )
     run(cmd)

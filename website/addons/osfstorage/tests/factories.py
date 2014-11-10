@@ -27,7 +27,7 @@ class FileVersionFactory(ModularOdmFactory):
     date_resolved = LazyAttribute(lambda v: v.date_created + relativedelta(seconds=10))
     date_modified = LazyAttribute(lambda v: v.date_created + relativedelta(seconds=5))
     date_modified = datetime.datetime.utcnow()
-    pending = False
+    status = model.status['COMPLETE']
     location = generic_location
 
     @post_generation

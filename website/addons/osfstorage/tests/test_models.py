@@ -40,7 +40,7 @@ class TestNodeSettingsModel(StorageTestCase):
         for _ in range(num_versions):
             version = factories.FileVersionFactory()
             record.versions.append(version)
-        record.versions[-1].pending = True
+        record.versions[-1].status = model.status['PENDING']
         record.versions[-1].save()
         record.save()
         fork = self.project.fork_node(self.auth_obj)
@@ -57,7 +57,7 @@ class TestNodeSettingsModel(StorageTestCase):
         for _ in range(num_versions):
             version = factories.FileVersionFactory()
             record.versions.append(version)
-        record.versions[-1].pending = True
+        record.versions[-1].status = model.status['PENDING']
         record.versions[-1].save()
         record.save()
         registration = self.project.register_node(
@@ -75,7 +75,7 @@ class TestNodeSettingsModel(StorageTestCase):
     def test_after_fork_copies_stable_records(self):
         path = 'jazz/dreamers-ball.mp3'
         record = model.OsfStorageFileRecord.get_or_create(path, self.node_settings)
-        version_pending = model.OsfStorageFileVersion(pending=True)
+        version_pending = model.OsfStorageFileVersion(status=model.status['PENDING'])
         version_pending.save()
         record.versions.append(version_pending)
         record.save()
@@ -89,7 +89,7 @@ class TestNodeSettingsModel(StorageTestCase):
         record = model.OsfStorageFileRecord.get_or_create(path, self.node_settings)
         version_pending = model.OsfStorageFileVersion(
             creator=self.user,
-            pending=True,
+            status=model.status['PENDING'],
         )
         version_pending.save()
         record.versions.append(version_pending)
@@ -320,7 +320,7 @@ class TestFileRecord(StorageTestCase):
     def test_create_pending_path_locked(self):
         version = model.OsfStorageFileVersion(
             creator=self.user,
-            pending=True,
+            status=model.status['PENDING'],
             date_created=datetime.datetime.utcnow(),
         )
         version.save()
@@ -554,8 +554,8 @@ class TestFileVersion(OsfTestCase):
         assert_true(retrieved.date_modified)
 
     def test_is_duplicate_no_location(self):
-        version1 = factories.FileVersionFactory(pending=True, location={})
-        version2 = factories.FileVersionFactory(pending=True, location={})
+        version1 = factories.FileVersionFactory(status=model.status['PENDING'], location={})
+        version2 = factories.FileVersionFactory(status=model.status['PENDING'], location={})
         assert_false(version1.is_duplicate(version2))
         assert_false(version2.is_duplicate(version1))
 
@@ -610,7 +610,7 @@ class TestFileVersion(OsfTestCase):
         mock_datetime.utcnow.return_value = self.mock_date
         version = model.OsfStorageFileVersion(
             creator=self.user,
-            pending=True,
+            status=model.status['PENDING'],
             date_created=datetime.datetime.utcnow(),
             signature='c22b5f9',
         )
@@ -625,7 +625,7 @@ class TestFileVersion(OsfTestCase):
             },
         )
         assert_equal(version.date_resolved, self.mock_date)
-        assert_false(version.pending)
+        assert_equal(version.status, model.status['COMPLETE'])
         assert_equal(version.size, 1024)
         assert_equal(version.content_type, 'text/plain')
         assert_equal(version.date_modified, self.mock_date)
@@ -644,7 +644,7 @@ class TestFileVersion(OsfTestCase):
         mock_time.return_value = 10
         version = model.OsfStorageFileVersion(
             creator=self.user,
-            pending=True,
+            status=model.status['PENDING'],
             signature='c22b5f9',
         )
         assert_equal(version.last_ping, mock_time.return_value)
@@ -660,7 +660,7 @@ class TestFileVersion(OsfTestCase):
     def test_ping_bad_signature(self):
         version = model.OsfStorageFileVersion(
             creator=self.user,
-            pending=True,
+            status=model.status['PENDING'],
             signature='c22b5f9',
         )
         with assert_raises(errors.PendingSignatureMismatchError):
@@ -674,7 +674,7 @@ class TestFileVersion(OsfTestCase):
     def test_expired_pending_inactive(self, mock_time):
         version = model.OsfStorageFileVersion(
             creator=self.user,
-            pending=True,
+            status=model.status['PENDING'],
             signature='c22b5f9',
             last_ping=0,
         )
@@ -686,7 +686,7 @@ class TestFileVersion(OsfTestCase):
         mock_time.return_value = 0
         version = model.OsfStorageFileVersion(
             creator=self.user,
-            pending=True,
+            status=model.status['PENDING'],
             signature='c22b5f9',
             last_ping=0,
         )
@@ -700,7 +700,7 @@ class TestFileVersion(OsfTestCase):
     def test_finish_bad_signature(self):
         version = model.OsfStorageFileVersion(
             creator=self.user,
-            pending=True,
+            status=model.status['PENDING'],
             date_created=datetime.datetime.utcnow(),
             signature='c22b5f9',
         )
