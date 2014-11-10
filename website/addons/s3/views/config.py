@@ -155,7 +155,6 @@ def s3_remove_node_settings(auth, node_addon, **kwargs):
 def s3_user_settings_config(user_addon, **kwargs):
     if user_addon.has_auth:
         return {'validCredentials': has_access(user_addon.access_key, user_addon.secret_key)}
-
     return {'validCredentials': True}
 
 @must_be_logged_in
