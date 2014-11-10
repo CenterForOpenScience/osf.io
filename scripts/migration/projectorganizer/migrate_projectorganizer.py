@@ -9,6 +9,8 @@ from framework.mongo import database
 def main():
 
     database['node'].update({"is_folder": {'$exists': False}}, {'$set': {'is_folder': False}}, multi=True)
+    database['node'].update({"is_dashboard": {'$exists': False}}, {'$set': {'is_dashboard': False}}, multi=True)
+    database['node'].update({"expanded": {'$exists': False}}, {'$set': {'expanded': False}}, multi=True)
 
     print('-----\nDone.')
 
