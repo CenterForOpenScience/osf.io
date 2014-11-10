@@ -39,13 +39,6 @@ class AddonS3UserSettings(AddonUserSettingsBase):
     def to_json(self, user):
         rv = super(AddonS3UserSettings, self).to_json(user)
         rv['has_auth'] = self.has_auth
-        rv['valid_credentials'] = True
-
-        user_settings = user.get_addon('s3')
-        if user_settings and user_settings.has_auth:
-            if not has_access(user_settings.access_key, user_settings.secret_key):
-                rv['valid_credentials'] = False
-
         return rv
 
     @property
