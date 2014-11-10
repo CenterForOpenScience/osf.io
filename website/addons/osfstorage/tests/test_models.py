@@ -553,6 +553,36 @@ class TestFileVersion(OsfTestCase):
         assert_true(retrieved.content_type)
         assert_true(retrieved.date_modified)
 
+    def test_is_duplicate_no_location(self):
+        version1 = factories.FileVersionFactory(pending=True, location={})
+        version2 = factories.FileVersionFactory(pending=True, location={})
+        assert_false(version1.is_duplicate(version2))
+        assert_false(version2.is_duplicate(version1))
+
+    def test_is_duplicate_has_location_is_duplicate(self):
+        version1 = factories.FileVersionFactory()
+        version2 = factories.FileVersionFactory()
+        assert_true(version1.is_duplicate(version2))
+        assert_true(version2.is_duplicate(version1))
+
+    def test_is_duplicate_has_location_is_not_duplicate(self):
+        version1 = factories.FileVersionFactory(
+            location={
+                'service': 'cloud',
+                'container': 'osf',
+                'object': 'd077f2',
+            },
+        )
+        version2 = factories.FileVersionFactory(
+            location={
+                'service': 'cloud',
+                'container': 'osf',
+                'object': '06d80e',
+            },
+        )
+        assert_false(version1.is_duplicate(version2))
+        assert_false(version2.is_duplicate(version1))
+
     def test_validate_location(self):
         version = factories.FileVersionFactory.build(location={})
         with assert_raises(modm_errors.ValidationValueError):

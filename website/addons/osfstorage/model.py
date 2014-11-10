@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # encoding: utf-8
 
 import os
@@ -33,6 +32,11 @@ oid_primary_key = fields.StringField(
 
 
 def copy_file_tree_stable(tree, node_settings):
+    """Copy file tree, recursively creating stable copies of its children.
+
+    :param OsfStorageFileTree tree: Tree to copy
+    :param node_settings: Root node settings record
+    """
     children = filter(
         lambda item: item is not None,
         map(
@@ -48,6 +52,14 @@ def copy_file_tree_stable(tree, node_settings):
 
 
 def copy_file_record_stable(record, node_settings):
+    """Copy stable versions of an `OsfStorageFileRecord`. Versions are copied
+    by primary key and will not be duplicated in the database.
+
+    :param OsfStorageFileRecord record: Record to copy
+    :param node_settings: Root node settings record
+    :return: Cloned `OsfStorageFileRecord` if any stable versions were found,
+        else ``None``
+    """
     versions = [
         version for version in record.versions
         if not version.pending
@@ -66,7 +78,7 @@ def copy_files_stable(files, node_settings):
         return copy_file_tree_stable(files, node_settings)
     if isinstance(files, OsfStorageFileRecord):
         return copy_file_record_stable(files, node_settings)
-    raise TypeError('Input must be `FileTree` or `FileRecord`')
+    raise TypeError('Input must be `OsfStorageFileTree` or `OsfStorageFileRecord`')
 
 
 class OsfStorageNodeSettings(AddonNodeSettingsBase):
@@ -360,7 +372,23 @@ class OsfStorageFileVersion(StoredObject):
     date_resolved = fields.DateTimeField()
     last_ping = fields.FloatField(default=lambda: time.time())
 
+    # Dictionary specifying all information needed to locate file on backend
+    # {
+    #     'service': 'cloudfiles',  # required
+    #     'container': 'osf',       # required
+    #     'object': '20c53b',       # required
+    #     'worker_url': '127.0.0.1',
+    #     'worker_host': 'upload-service-1',
+    # }
     location = fields.DictionaryField()
+
+    # Dictionary containing raw metadata from upload service response
+    # {
+    #     'size': 1024,                            # required
+    #     'content_type': 'text/plain',            # required
+    #     'date_modified': '2014-11-07T20:24:15',  # required
+    #     'md5': 'd077f2',
+    # }
     metadata = fields.DictionaryField()
 
     size = fields.IntegerField()
@@ -369,9 +397,7 @@ class OsfStorageFileVersion(StoredObject):
 
     @property
     def location_hash(self):
-        if self.location is None:
-            return None
-        return self.location['object']
+        return self.location['object'] if self.location else None
 
     def before_update(self, signature):
         """Check that version is safe to update with specified signature.
@@ -384,7 +410,10 @@ class OsfStorageFileVersion(StoredObject):
             raise errors.PendingSignatureMismatchError
 
     def is_duplicate(self, other):
-        return self.location_hash == other.location_hash
+        return (
+            bool(self.location_hash) and
+            self.location_hash == other.location_hash
+        )
 
     def resolve(self, signature, location, metadata):
         """
