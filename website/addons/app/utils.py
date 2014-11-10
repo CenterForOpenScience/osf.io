@@ -92,6 +92,11 @@ def elastic_to_atom(name, data, query, url):
 
     return feed.to_string()
 
+# NEED TO ADD
+# more IDS
+# source
+# timestamps for normalization
+
 
 def format_contributors_for_atom(contributors_list):
     formatted_names = []
