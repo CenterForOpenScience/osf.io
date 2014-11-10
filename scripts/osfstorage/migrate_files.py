@@ -5,6 +5,7 @@ must be *exactly* the same as in the production upload service, else files
 could be uploaded to the wrong place.
 """
 
+import hashlib
 import logging
 from cStringIO import StringIO
 
@@ -26,6 +27,7 @@ from scripts.osfstorage import settings as scripts_settings
 
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 client = scripts_settings.STORAGE_CLIENT_CLASS(
     **scripts_settings.STORAGE_CLIENT_OPTIONS
@@ -33,25 +35,45 @@ client = scripts_settings.STORAGE_CLIENT_CLASS(
 container = client.create_container(scripts_settings.STORAGE_CONTAINER_NAME)
 
 
+class SizeMismatchError(Exception):
+    pass
+
+class HashMismatchError(Exception):
+    pass
+
+
 def migrate_version(idx, node_file, node_settings):
+    logger.info('Migrating version {0} from NodeFile {1} on node {2}'.format(
+        idx,
+        node_file._id,
+        node_settings.owner._id,
+    ))
     node = node_settings.owner
     record = model.OsfStorageFileRecord.get_or_create(node_file.path, node_settings)
     if len(record.versions) > idx:
         return
     content, _ = node.read_file_object(node_file)
+    md5 = hashlib.md5(content).hexdigest()
     file_pointer = StringIO(content)
     hash_str = scripts_settings.UPLOAD_PRIMARY_HASH(content).hexdigest()
-    obj = container.upload_file(file_pointer, hash_str)
-    version = model.OsfStorageFileVersion(
-        creator=node_file.uploader,
-        date_modified=node_file.date_modified,
+    obj = container.get_or_upload_file(file_pointer, hash_str)
+    if obj.size != len(content):
+        raise SizeMismatchError
+    if obj.md5 != md5:
+        raise HashMismatchError
+    metadata = {
+        'size': obj.size,
+        'content_type': obj.content_type,
+        'date_modified': obj.date_modified.isoformat(),
+        'md5': md5,
+    }
+    record.create_pending_version(node_file.uploader, hash_str)
+    record.resolve_pending_version(
+        hash_str,
+        obj.location,
+        metadata,
+        log=False,
     )
-    version.status = model.status['COMPLETE']
-    version.location = obj.location
-    version.size = obj.size
-    version.save()
-    record.versions.append(version)
-    record.save()
 
 
 def migrate_node(node):
@@ -127,7 +149,7 @@ class TestMigrateFiles(OsfTestCase):
         assert_true(record)
         assert_equal(len(record.versions), 5)
         for idx, version in enumerate(record.versions):
-            assert_equal(version.status, model.status['COMPLETE'])
+            assert_false(version.pending)
             expected = 'i want {0} pizzas'.format(idx)
             download_url = utils.get_download_url(idx + 1, version, record)
             resp = requests.get(download_url)

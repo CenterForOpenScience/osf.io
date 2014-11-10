@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
-"""For each `OsfGuidFile` record, create a corresponding `StorageFile` record
-with the same `_id`, `node`, and `path` fields; find the associated `Guid`
+"""For each `OsfGuidFile` record, create a corresponding `OsfStorageGuidFile`
+record with the same `_id`, `node`, and `path` fields; find the associated `Guid`
 record, and set its `referent` to the newly created record.
 """
 
@@ -18,9 +18,14 @@ from website.addons.osfstorage.model import OsfStorageGuidFile
 from scripts.osfstorage.utils import ensure_osf_files
 
 
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
+
 def get_or_create_storage_file(node, path, **kwargs):
-    """Get or create `StorageFile` record. Used instead of `StorageFile#get_or_create`
-    to permit setting additional fields on the created object.
+    """Get or create `OsfStorageGuidFile` record. Used instead of
+    `OsfStorageGuidFile#get_or_create` to permit setting additional fields on
+    the created object.
     """
     try:
         return OsfStorageGuidFile.find_one(
@@ -34,10 +39,11 @@ def get_or_create_storage_file(node, path, **kwargs):
 
 
 def migrate_legacy_obj(legacy_guid_file):
-    """Create `StorageFile` object corresponding to provided `OsfGuidFile`
+    """Create `OsfStorageGuidFile` object corresponding to provided `OsfGuidFile`
     object, then set the `referent` of the `Guid` object to the newly created
     record.
     """
+    logger.info('Migrating legacy Guid {0}'.format(legacy_guid_file._id))
     storage_obj = get_or_create_storage_file(
         legacy_guid_file.node,
         legacy_guid_file.name,

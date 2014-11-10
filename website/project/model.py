@@ -1424,6 +1424,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         if not (self.is_public or self.has_permission(user, 'read')):
             raise PermissionsError('{0!r} does not have permission to fork node {1!r}'.format(user, self._id))
 
+        folder_old = os.path.join(settings.UPLOADS_PATH, self._primary_key)
+
         when = datetime.datetime.utcnow()
 
         original = self.load(self._primary_key)
@@ -1485,6 +1487,10 @@ class Node(GuidStoredObject, AddonModelMixin):
             if message:
                 status.push_status_message(message)
 
+        if os.path.exists(folder_old):
+            folder_new = os.path.join(settings.UPLOADS_PATH, forked._primary_key)
+            Repo(folder_old).clone(folder_new)
+
         return forked
 
     def register_node(self, schema, auth, template, data):
@@ -1503,6 +1509,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         if self.is_folder:
             raise NodeStateError("Folders may not be registered")
 
+        folder_old = os.path.join(settings.UPLOADS_PATH, self._primary_key)
         template = urllib.unquote_plus(template)
         template = to_mongo(template)
 
@@ -1540,6 +1547,10 @@ class Node(GuidStoredObject, AddonModelMixin):
             _, message = addon.after_register(original, registered, auth.user)
             if message:
                 status.push_status_message(message)
+
+        if os.path.exists(folder_old):
+            folder_new = os.path.join(settings.UPLOADS_PATH, registered._primary_key)
+            Repo(folder_old).clone(folder_new)
 
         registered.nodes = []
 
