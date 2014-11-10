@@ -21,6 +21,7 @@ from website.addons.osffiles.model import NodeFile
 
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
+from website.addons.osfstorage import errors
 
 from scripts.osfstorage.utils import ensure_osf_files
 from scripts.osfstorage import settings as scripts_settings
@@ -67,7 +68,12 @@ def migrate_version(idx, node_file, node_settings):
         'date_modified': obj.date_modified.isoformat(),
         'md5': md5,
     }
-    record.create_pending_version(node_file.uploader, hash_str)
+    try:
+        record.create_pending_version(node_file.uploader, hash_str)
+    except errors.OsfStorageError:
+        latest_version = record.get_version(required=True)
+        record.remove_version(latest_version)
+        record.create_pending_version(node_file.uploader, hash_str)
     record.resolve_pending_version(
         hash_str,
         obj.location,
@@ -164,6 +170,16 @@ class TestMigrateFiles(OsfTestCase):
         # Test idempotence of migration
         main(dry_run=False)
         assert_equal(len(record.versions), 5)
+
+    def test_migrate_incomplete(self):
+        node_settings = self.project.get_or_add_addon('osfstorage', auth=None, log=False)
+        record = model.OsfStorageFileRecord.get_or_create('pizza.md', node_settings)
+        node_file = NodeFile.load(self.project.files_versions['pizza_md'][0])
+        content, _ = self.project.read_file_object(node_file)
+        file_pointer = StringIO(content)
+        hash_str = scripts_settings.UPLOAD_PRIMARY_HASH(content).hexdigest()
+        record.create_pending_version(node_file.uploader, hash_str)
+        main(dry_run=False)
 
     def test_migrate_fork(self):
         fork = self.project.fork_node(auth=self.auth_obj)
