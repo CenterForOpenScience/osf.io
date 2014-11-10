@@ -68,11 +68,33 @@ class TestCallbacks(OsfTestCase):
             self.node_settings.to_json(user2)['user_has_auth']
         )
 
-    def test_user_settings(self):
+    @mock.patch('website.addons.s3.model.has_access')
+    def test_node_settings_valid_credentials(self, mock_access):
+        mock_access.return_value = True
+        s3 = AddonS3NodeSettings(owner=self.project)
+        assert_true(s3.to_json(self.project.creator)['valid_credentials'])
+
+    @mock.patch('website.addons.s3.model.has_access')
+    def test_node_settings_invalid_credentials(self, mock_access):
+        mock_access.return_value = False
+        s3 = AddonS3NodeSettings(owner=self.project)
+        s3.user_settings = self.user_settings
+        assert_false(s3.to_json(self.project.creator)['valid_credentials'])
+
+    @mock.patch('website.addons.s3.model.has_access')
+    def test_user_settings(self, mock_access):
+        mock_access.return_value = True
         s3 = AddonS3UserSettings(owner=self.project)
         s3.access_key = "Sherlock"
         s3.secret_key = "lives"
         assert_equals(s3.to_json(self.project.creator)['has_auth'], 1)
+        assert_true(s3.to_json(self.project.creator)['valid_credentials'])
+
+    @mock.patch('website.addons.s3.model.has_access')
+    def test_user_settings_invalid_credentials(self, mock_access):
+        mock_access.return_value = False
+        s3 = AddonS3UserSettings(owner=self.project)
+        assert_false(s3.to_json(self.project.creator)['valid_credentials'])
 
     def test_after_fork_authenticator(self):
         fork = ProjectFactory()
