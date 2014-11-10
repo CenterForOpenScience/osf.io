@@ -4,6 +4,8 @@ var $ = require('jquery');
 var Raven = require('raven-js');
 var moment = require('moment');
 
+require('bootstrap-editable');
+
 /**
 * Posts JSON data.
 *

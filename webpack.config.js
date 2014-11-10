@@ -8,10 +8,11 @@ var fromRoot = function(dir) {
 module.exports = {
     // Split code chunks by page
     entry: {
-        dashboard: './website/static/js/pages/dashboard-page.js',
-        profile: './website/static/js/pages/profile-page.js',
+        'dashboard': './website/static/js/pages/dashboard-page.js',
+        'profile': './website/static/js/pages/profile-page.js',
         'project-dashboard': './website/static/js/pages/project-dashboard-page.js',
-        'project-base': './website/static/js/pages/project-base-page.js'
+        'project-base': './website/static/js/pages/project-base-page.js',
+        'wiki-edit-page': './website/static/js/pages/wiki-edit-page.js'
     },
     debug: true,
     output: {
@@ -36,10 +37,11 @@ module.exports = {
             // Dropzone doesn't have a proper 'main' entry in its bower.json
             'dropzone': fromRoot('vendor/bower_components/dropzone/downloads/dropzone.js'),
             // Also alias some internal libraries for easy access
-            // Dropzone monkeypatching needed for signed URL uploads
             'dropzone-patch': fromRoot('js/dropzone-patch.js'),
             'rubeus': fromRoot('js/rubeus.js'),
-            'folderpicker': fromRoot('js/folderPicker.js')
+            'folderpicker': fromRoot('js/folderPicker.js'),
+            'osf-helpers': fromRoot('js/osf-helpers.js'),
+            'addons': path.join(__dirname, 'website', 'addons')
         }
     },
     plugins: [
