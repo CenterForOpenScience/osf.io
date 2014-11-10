@@ -1,4 +1,6 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
+# encoding: utf-8
+
 import os
 from types import NoneType
 from xmlrpclib import DateTime
@@ -238,10 +240,6 @@ class TestRubeus(OsfTestCase):
         assert_true(ret['isPointer'])
 
 
-
-
-
-
 # TODO: Make this more reusable across test modules
 mock_addon = mock.Mock()
 serialized = {
@@ -273,26 +271,24 @@ class TestSerializingNodeWithAddon(OsfTestCase):
         assert_equal(ret, [serialized])
 
     def test_sort_by_name(self):
-        files = \
-            [
-                {'name': 'F.png'},
-                {'name': 'd.png'},
-                {'name': 'B.png'},
-                {'name': 'a.png'},
-                {'name': 'c.png'},
-                {'name': 'e.png'},
-                {'name': 'g.png'},
-            ]
-        sorted_files = \
-            [
-                {'name': 'a.png'},
-                {'name': 'B.png'},
-                {'name': 'c.png'},
-                {'name': 'd.png'},
-                {'name': 'e.png'},
-                {'name': 'F.png'},
-                {'name': 'g.png'},
-            ]
+        files = [
+            {'name': 'F.png'},
+            {'name': 'd.png'},
+            {'name': 'B.png'},
+            {'name': 'a.png'},
+            {'name': 'c.png'},
+            {'name': 'e.png'},
+            {'name': 'g.png'},
+        ]
+        sorted_files = [
+            {'name': 'a.png'},
+            {'name': 'B.png'},
+            {'name': 'c.png'},
+            {'name': 'd.png'},
+            {'name': 'e.png'},
+            {'name': 'F.png'},
+            {'name': 'g.png'},
+        ]
         ret = sort_by_name(files)
         for index, value in enumerate(ret):
             assert_equal(value['name'], sorted_files[index]['name'])
@@ -313,7 +309,7 @@ class TestSerializingNodeWithAddon(OsfTestCase):
         assert_equal(ret['name'], 'Project: {0}'.format(self.project.title))
         assert_equal(ret['permissions'], {
             'view': True,
-            'edit': True
+            'edit': False,
         })
         assert_equal(
             ret['urls'],

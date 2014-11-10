@@ -98,7 +98,7 @@
                 web: node.url,
                 api: node.api_url,
                 register: node.url + 'register/',
-                upload: node.api_url + 'osffiles/',
+                upload: node.api_url + 'osfstorage/files/',
                 files: node.url + 'files/',
                 children: node.api_url + 'get_children/?permissions=write'
             }
@@ -493,6 +493,7 @@
             //in mib
             maxFilesize: 128,
 
+            method: 'PUT',
             uploadprogress: function(file, progress) { // progress bar update
                 self.progress(progress);
             },
@@ -534,7 +535,7 @@
                 });
 
                 // add file logic and dropzone to file display swap
-                this.on('addedfile', function() {
+                this.on('addedfile', function(file) {
                     if(dropzone.files.length>1){
                         self.iconSrc('/static/img/upload_icons/multiple_blank.png');
                         self.filename(dropzone.files.length + ' files');
@@ -544,6 +545,10 @@
                         self.filename(fileName);
                     }
                     self.enableUpload(false);
+                    // Attach route to fetch signed URL
+                    file.signedUrlFrom = function() {
+                        return self.target().urls.upload;
+                    };
                 });
             }
         };

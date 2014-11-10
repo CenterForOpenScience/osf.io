@@ -1,4 +1,6 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
+# encoding: utf-8
+
 """Contains helper functions for generating correctly
 formatted hgrid list/folders.
 """
@@ -9,8 +11,10 @@ import hurry
 from modularodm import Q
 
 from framework.auth.decorators import Auth
-from website.settings import ALL_MY_PROJECTS_ID, ALL_MY_REGISTRATIONS_ID, \
-    ALL_MY_PROJECTS_NAME, ALL_MY_REGISTRATIONS_NAME
+from website.settings import (
+    ALL_MY_PROJECTS_ID, ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_NAME,
+    ALL_MY_REGISTRATIONS_NAME
+)
 
 
 FOLDER = 'folder'
@@ -107,7 +111,7 @@ def build_addon_root(node_settings, name, permissions=None,
         'permissions': permissions,
         'accept': {
             'maxSize': node_settings.config.max_file_size,
-            'acceptedFiles': node_settings.config.accept_extensions
+            'acceptedFiles': node_settings.config.accept_extensions,
         },
         'urls': urls,
         'isPointer': False,
@@ -264,12 +268,11 @@ class NodeProjectCollector(object):
         contributors = []
         for contributor in node.contributors:
             if contributor._id in node.visible_contributor_ids:
-                contributor_name = \
-                    [
-                        contributor.family_name,
-                        contributor.given_name,
-                        contributor.fullname,
-                    ]
+                contributor_name = [
+                    contributor.family_name,
+                    contributor.given_name,
+                    contributor.fullname,
+                ]
                 contributors.append({
                     'name': next(name for name in contributor_name if name),
                     'url': contributor.url,
@@ -419,7 +422,6 @@ class NodeFileCollector(object):
         """
         visited = visited or []
         visited.append(node.resolve()._id)
-        can_edit = node.can_edit(auth=self.auth) and not node.is_registration
         can_view = node.can_view(auth=self.auth)
         if can_view:
             children = self._collect_addons(node) + self._collect_components(node, visited)
@@ -431,7 +433,7 @@ class NodeFileCollector(object):
             else u'Private Component',
             'kind': FOLDER,
             'permissions': {
-                'edit': can_edit,
+                'edit': False,
                 'view': can_view,
             },
             'urls': {
