@@ -735,19 +735,6 @@ class TestShortUrls(OsfTestCase):
         with open(cache_file_path, 'w') as fp:
             fp.write('test content')
 
-    def test_file_url(self):
-        node_file = self.component.add_file(
-            self.consolidate_auth, 'test.txt',
-            'test content', 4, 'text/plain'
-        )
-        self._mock_rendered_file(self.component, node_file)
-        # Warm up to account for file rendering
-        _ = self._url_to_body(node_file.url(self.component))
-        assert_equal(
-            self._url_to_body(node_file.deep_url(self.component)),
-            self._url_to_body(node_file.url(self.component)),
-        )
-
     def test_wiki_url(self):
         assert_equal(
             self._url_to_body(self.wiki.deep_url),

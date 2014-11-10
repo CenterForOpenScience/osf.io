@@ -54,20 +54,21 @@ node_modules
 
 # OSF-specific
 ##############
+
+# Local settings files
+local.py
+
 website/cache/*
 website/settings/uploads/*
 website/uploads/*
 website/mfrcache/*
 website/gpg/*
-# Local settings
-*/settings/local.py
 
 # Built log templates
 website/templates/_log_templates.mako
 
 # Add-ons
 #########
-website/addons/*/settings/local.py
 .cache/
 osf.sublime-workspace
 osf.sublime-project
