@@ -44,23 +44,14 @@
     function _fangornUploadSuccess(file, item){
         var self = this;
         var parent = item.parent();
+        item.data.name = file.name; 
         item.data.urls = {
-            'delete': parent.nodeApiUrl + 's3/' + file.destination + '/',
-            'download': parent.nodeUrl + 's3/' + file.destination + '/download/',
-            'view': parent.nodeUrl + 's3/' + file.destination + '/'
+            'delete': parent.data.nodeApiUrl + 's3/' + file.destination + '/',
+            'download': parent.data.nodeUrl + 's3/' + file.destination + '/download/',
+            'view': parent.data.nodeUrl + 's3/' + file.destination + '/'
         };
         item.data.permissions = parent.permissions;
-        /*this.updateItem(row);
-        var updated = Rubeus.Utils.itemUpdated(row, parent);
-        if (updated) {
-            self.changeStatus(row, Rubeus.Status.UPDATED);
-            self.delayRemoveRow(row);
-        } else {
-            self.changeStatus(row, Rubeus.Status.UPLOAD_SUCCESS, null, 2000,
-                function(row) {
-                    self.showButtons(row);
-                });
-        }*/
+        return item; 
     }
 
     Fangorn.config.s3 = {

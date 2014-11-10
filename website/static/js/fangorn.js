@@ -29,46 +29,20 @@
     }
 }(this, function($, Treebeard){
 
-    // Shows an alert in the space of the row
-    function _fangornRowAlert (item, type, message, method) {
-        var dismiss;
-        if(method === 'overlay'  ) {
-            dismiss = ' ';
-        } else {
-            dismiss = '<span class="fangorn-dismiss" data-id="'+item.id+'">&times;</span>'
-        }
-        var alertHTML = '<div class="alert-'+type+' text-center" style="padding: 8px; margin-top: -5px;"> ' + message + dismiss + '</div>'; 
-        var row = $('.tb-row[data-id="'+ item.id+ '"]'); 
-        // Get row content
 
-        if(method === "overlay"){
-            var cache  = row.html(); 
-            row.animate({ opacity : 0 }, "fast")
-                .html(alertHTML)
-                .animate({ opacity : 1 }, "fast")
-                .delay(2000)
-                .animate({ opacity : 0 }, "fast")
-                .queue(function() {
-                    $(this)
-                        .html(cache)
-                        .animate({ opacity : 1 }, "fast");
-                    $(this).dequeue();
-                });
-        }
-        if(method === "replace" ) {
-            row.animate({ opacity : 0 }, "fast")
-                .replaceWith(alertHTML)
-                .animate({ opacity : 1 }, "fast");
-            item.removeSelf();
 
-        }
-
-          
-    }
 
     function _fangornViewEvents () {
         console.log("View events this", this);
     }
+
+    // function _renderOriginalCell (item, columnIndex) {
+    //     // this == treebeard
+    //     var column = _fangornResolveRows.call(this, item)[columnIndex];
+    //     var original = column.custom.call(this, item, column);
+    //     var node = $('.tb-row[data-id="'+ item.id+ '"]').find('.tb-col-'+columnIndex); 
+    //         m.render(node.get(0), original);
+    // }
 
     // Returns custom icons for OSF 
     function _fangornResolveIcon(item){
@@ -150,7 +124,8 @@
         if (item.data.permissions.view) {
             return true;
         }
-        _fangornRowAlert (item, "warning", "You don't have permission to view the contents of this folder.", "overlay");
+        var msg = new Fangorn.status(this, item, 'warning', 'Not allowed: Private folder', 1);
+        msg.init(3000); 
         return false;
     }
     function _fangornResolveUploadUrl (item) {
@@ -165,10 +140,10 @@
 
     function _fangornUploadProgress (treebeard, file, progress, bytesSent){
         console.log("File Progress", this, arguments);
-        var itemID = treebeard.dropzoneItemCache.id; 
-        // Find the row of the file being uploaded
-        $( ".tb-row:contains('"+file.name+"')" ).find('.action-col').text('Uploaded ' + Math.floor(progress) + '%');
-        // $('.tb-row[data-id="'+itemID+'"]').find('.action-col').text('Uploaded ' + progress + '%');
+        var elementID = $( ".tb-row:contains('"+file.name+"')" ).attr('data-id');
+        var item = treebeard.find(elementID); 
+        var msgText = 'Uploaded ' + Math.floor(progress) + '%'; 
+        item.notify.update(msgText, 'success', 1, undefined);
     }
 
     function _fangornSending (treebeard, file, xhr, formData) {
@@ -200,14 +175,6 @@
     }
 
     function _fangornDragOver (treebeard, event) {
-        console.log("Drag Over", this, arguments);
-        var dropzoneHoverClass = "fangorn-dz-hover"; 
-        $('.tb-row').removeClass(dropzoneHoverClass);
-        $(event.target).closest('.tb-row').addClass(dropzoneHoverClass); 
-    }
-
-    function _fangornDragOver (treebeard, event) {
-        console.log("Drag Over", this, arguments);
         var dropzoneHoverClass = "fangorn-dz-hover"; 
         $('.tb-row').removeClass(dropzoneHoverClass);
         $(event.target).closest('.tb-row').addClass(dropzoneHoverClass); 
@@ -222,12 +189,16 @@
         var element = $( ".tb-row:contains('"+file.name+"')" );
         var id  = element.attr('data-id');
         var item = treebeard.find(id);
-        item.data = response;
-        m.render(element.find('.action-col').get(0), _fangornActionColumn.call(treebeard, item, _fangornColumns[1]));
-        m.redraw();
+        if(response){
+            item.data = response;
+            treebeard.redraw();
+            _renderOriginalCell.call(treebeard, revisedItem, 1);                     
+        } else {
+            var revisedItem = resolveconfigOption.call(treebeard, item.parent(), 'uploadSuccess', [file, item, response]);
+            _renderOriginalCell.call(treebeard, revisedItem, 1);                     
+         
+        }
 
-        var configOption = resolveconfigOption.call(item, parent, 'uploadSuccess', [file, item, response]);
-        return configOption || null;
     }
 
     function _fangornDropzoneError (treebeard, file, message, xhr) {
@@ -235,8 +206,12 @@
         var element = $( ".tb-row:contains('"+file.name+"')" );
         var id  = element.attr('data-id');
         var item = treebeard.find(id);
-        _fangornRowAlert.call(treebeard, item, 'danger', file.name + " did't upload: " + message.message_short, "replace");
-        //treebeard.deleteNode(item.parentID, item.id);
+        item.notify.type = 'danger';
+        var msgText = message.message_short ? message.message_short : message; 
+        item.notify.message = msgText; 
+        item.notify.col = 1; 
+        item.notify.show(); 
+        console.log(item.notify);
     }
 
     function _uploadEvent (event, item, col){
@@ -299,7 +274,7 @@
         var buttons = [];
 
         // Upload button if this is a folder
-        if (item.kind === 'folder') {
+        if (item.kind === 'folder' && item.data.permissions.edit) {
             buttons.push({ 
                 'name' : '',
                 'icon' : 'icon-upload-alt',
@@ -360,12 +335,22 @@
                 {
                 sortInclude : false,
                 custom : _fangornActionColumn
-            },
-            {
-                data : 'downloads',
-                sortInclude : false,
-                filter : false
-            });
+            }); 
+            if(!item.data.addon){
+               default_columns.push({
+                    data : 'downloads',
+                    sortInclude : false,
+                    filter : false
+                }); 
+            } else {
+               default_columns.push({
+                    data : 'downloads',
+                    sortInclude : false,
+                    filter : false,
+                    custom : function(){ return m(''); }
+                }); 
+            }
+            
         }
         var configOption = item.data.addon ? resolveconfigOption.call(this, item, 'resolveRows', [item]) : undefined;
         return configOption || default_columns;
@@ -375,18 +360,18 @@
         var columns = [];
         columns.push({
                     title: 'Name',
-                    width : '60%',
+                    width : '50%',
                     sort : true,
                     sortType : 'text'
                 }); 
         if(this.options.placement === 'project-files') {
             columns.push({
                     title : 'Actions',
-                    width : '20%',
+                    width : '25%',
                     sort : false
                 }, {
                     title : 'Downloads',
-                    width : '20%',
+                    width : '25%',
                     sort : false
                 });
         }
@@ -406,7 +391,7 @@
             title : false,          // Title of the grid, boolean, string OR function that returns a string.
             allowMove : false,       // Turn moving on or off.
             hoverClass : 'fangorn-hover',
-            toggleCheck : _fangornToggleCheck,
+            togglecheck : _fangornToggleCheck,
             sortButtonSelector : { 
                 up : 'i.icon-chevron-up',
                 down : 'i.icon-chevron-down'
@@ -438,7 +423,8 @@
                 if (item.data.permissions.edit){
                     return true;
                 }
-                _fangornRowAlert (item, "warning", "You don't have permission to edit this folder.", "overlay");
+                var msgText = 'You don\'t have permission to upload here'; 
+                item.notify.update(msgText, 'warning', 1, 3000);
                 return false;
             },
             onselectrow : function (item) {
@@ -450,14 +436,14 @@
                 //previewTemplate : '<div class='dz-preview dz-file-preview'>     <div class='dz-details'>        <div class='dz-size' data-dz-size></div>    </div>      <div class='dz-progress'>       <span class='dz-upload' data-dz-uploadprogress></span>  </div>      <div class='dz-error-message'>      <span data-dz-errormessage></span>  </div></div>',
                 clickable : '#treeGrid',
                 addRemoveLinks: false,
-                previewTemplate: '<div></div>',
-                method: _fangornUploadMethod()
+                previewTemplate: '<div></div>'
             },
             resolveIcon : _fangornResolveIcon,
             resolveToggle : _fangornResolveToggle,
             resolveUploadUrl : _fangornResolveUploadUrl,
             resolveLazyloadUrl : _fangornResolveLazyLoad,
             lazyLoadError : _fangornLazyLoadError,
+            resolveUploadMethod :_fangornUploadMethod,
             dropzoneEvents : {
                 uploadprogress : _fangornUploadProgress,
                 sending : _fangornSending,
@@ -469,6 +455,7 @@
             }
     };
 
+
     function Fangorn(options) {
         this.options = $.extend({}, tbOptions, options);
         console.log('Options', this.options);
@@ -479,7 +466,6 @@
     Fangorn.prototype = {
         constructor: Fangorn,
         init: function() {
-            var self = this;
             this._initGrid();
         },
         // Create the Treebeard once all addons have been configured

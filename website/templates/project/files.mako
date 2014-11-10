@@ -13,7 +13,9 @@
 </div><!--end row -->
 ## TODO: This progressbar is used else where; separate into a template include - it's not used here anymore
 
-<div id="treeGrid" class="filebrowser"></div>
+<div id="treeGrid" class="filebrowser">
+<div class="fangorn-loading"> <i class="icon-spinner fangorn-spin"></i> <p class="m-t-sm"> Loading files... </p> </div>
+</div>
 
 
 <%def name="stylesheets()">

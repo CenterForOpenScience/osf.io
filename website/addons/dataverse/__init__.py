@@ -25,7 +25,7 @@ CATEGORIES = ['storage']
 INCLUDE_JS = {
     'widget': [],
     'page': [],
-    'files': ['dataverseRubeusCfg.js'],
+    'files': ['dataverseFangornCfg.js'],
 }
 
 INCLUDE_CSS = {

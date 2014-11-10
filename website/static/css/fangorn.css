@@ -1,19 +1,4 @@
-.fangorn-dismiss {
-	float: right;
-	padding: 0 5px;
-	color: #999;
-	font-size: 15px;
-	margin-top: -3px;
-	cursor: pointer;
-}
-.fangorn-dismiss:hover { 
-	background: #eee;
-	border-radius: 10px;
-};
 
-.fangorn-dz-hover {
-	background: #BEF8FF;
-}
 .fangorn-spin {
 	-webkit-animation: spin 2s infinite linear;
 	animation: spin 2s infinite linear;
@@ -30,4 +15,16 @@
 @keyframes spin {
     from {transform:rotate(0deg);}
     to {transform:rotate(360deg);}
+}
+
+.fangorn-loading {
+	text-align: center;
+	font-size: 16px;
+	font-weight: 200;
+	background: #EAEAEA;
+	padding: 20px;
+	border-radius: 4px;
+}
+.fangorn-dz-hover {
+	background: #BEF8FF;
 }
