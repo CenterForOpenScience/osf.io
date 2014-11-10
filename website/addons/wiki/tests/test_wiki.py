@@ -21,7 +21,7 @@ from website.addons.wiki.model import NodeWikiPage, render_content
 from website.addons.wiki.utils import (
     docs_uuid, generate_share_uuid, share_db, ops_uuid
 )
-from website.addons.wiki.tests.config import EXAMPLE_DOCS, EXAMPLE_OPS, EXAMPLE_OPS_SHORT
+from website.addons.wiki.tests.config import EXAMPLE_DOCS_6, EXAMPLE_OPS_6, EXAMPLE_OPS_SHORT_6
 from framework.auth import Auth
 from framework.mongo.utils import to_mongo_key
 
@@ -759,10 +759,10 @@ class TestWikiShareJSMongo(OsfTestCase):
 
         # Insert mongo data for current project/wiki
         self.db = share_db()
-        docs = deepcopy(EXAMPLE_DOCS)
+        docs = deepcopy(EXAMPLE_DOCS_6)
         docs['_id'] = self.docs_uuid
         self.db.docs.insert(docs)
-        self.db[self.ops_uuid].insert(EXAMPLE_OPS)
+        self.db[self.ops_uuid].insert(EXAMPLE_OPS_6)
 
     def test_migrate_uuid(self):
         self.wiki_page.migrate_uuid(self.project)
@@ -773,11 +773,11 @@ class TestWikiShareJSMongo(OsfTestCase):
         new_docs_uuid = docs_uuid(self.project, new_share_uuid)
         new_ops_uuid = ops_uuid(self.project, new_share_uuid)
         assert_equal(
-            EXAMPLE_DOCS['data'],
+            EXAMPLE_DOCS_6['data'],
             self.db['docs'].find_one({'_id': new_docs_uuid}).get('data')
         )
         assert_equal(
-            EXAMPLE_OPS,
+            EXAMPLE_OPS_6,
             [item for item in self.db[new_ops_uuid].find()]
         )
 
@@ -790,7 +790,7 @@ class TestWikiShareJSMongo(OsfTestCase):
 
         self.project.update_node_wiki(wname, 'Hello world', Auth(self.user))
         wiki_page = self.project.get_wiki_page(wname)
-        self.db[original_ops_uuid].insert(EXAMPLE_OPS_SHORT)
+        self.db[original_ops_uuid].insert(EXAMPLE_OPS_SHORT_6)
 
         wiki_page.migrate_uuid(self.project)
         new_share_uuid = self.project.wiki_sharejs_uuids.get(wkey)
@@ -799,7 +799,7 @@ class TestWikiShareJSMongo(OsfTestCase):
 
         assert_is_none(self.db[original_ops_uuid].find_one())
         assert_equal(
-            EXAMPLE_OPS_SHORT,
+            EXAMPLE_OPS_SHORT_6,
             [item for item in self.db[new_ops_uuid].find()]
         )
 
