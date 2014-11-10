@@ -5,6 +5,7 @@ var $ = require('jquery');
 var HGrid = require('hgrid');
 var bootbox = require('bootbox');
 var Bloodhound = require('exports?Bloodhound!typeahead.js');
+var moment = require('moment');
 
 require('../vendor/jquery-drag-drop/jquery.event.drag-2.2.js');
 require('../vendor/jquery-drag-drop/jquery.event.drop-2.2.js');
