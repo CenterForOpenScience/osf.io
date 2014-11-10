@@ -59,14 +59,13 @@ def osf_storage_request_upload_url(auth, node_addon, **kwargs):
     return utils.get_upload_url(node, user, size, content_type, file_path)
 
 
-def make_error(code, reason):
-    return HTTPError(
-        code,
-        data={
-            'status': 'error',
-            'reason': reason,
-        }
-    )
+def make_error(code, message_short=None, message_long=None):
+    data = {}
+    if message_short:
+        data['message_short'] = message_short
+    if message_long:
+        data['message_long'] = message_long
+    return HTTPError(code, data=data)
 
 
 def get_payload_from_request(signer, request):

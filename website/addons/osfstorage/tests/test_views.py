@@ -384,7 +384,7 @@ class TestFinishHook(HookTestCase):
             expect_errors=True,
         )
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['reason'], 'Invalid status')
+        assert_equal(res.json['message_short'], 'Invalid status')
         version.reload()
         assert_true(version.pending)
 
@@ -398,7 +398,7 @@ class TestFinishHook(HookTestCase):
             expect_errors=True,
         )
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['reason'], 'Invalid signature')
+        assert_equal(res.json['message_short'], 'Invalid signature')
         version.reload()
         assert_true(version.pending)
 
@@ -422,7 +422,7 @@ class TestFinishHook(HookTestCase):
             expect_errors=True,
         )
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['reason'], 'No pending upload')
+        assert_equal(res.json['message_short'], 'No pending upload')
 
     def test_finish_hook_status_error_no_upload_pending(self):
         payload = self.make_payload(status='error')
@@ -435,7 +435,7 @@ class TestFinishHook(HookTestCase):
             expect_errors=True,
         )
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['reason'], 'No pending upload')
+        assert_equal(res.json['message_short'], 'No pending upload')
 
     def test_finish_hook_status_success_already_complete(self):
         payload = self.make_payload(uploadSignature=self.uploadSignature[::-1])
@@ -447,7 +447,7 @@ class TestFinishHook(HookTestCase):
             expect_errors=True,
         )
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['reason'], 'Invalid upload signature')
+        assert_equal(res.json['message_short'], 'Invalid upload signature')
 
     def test_finish_hook_status_error_already_complete(self):
         payload = self.make_payload(
@@ -462,7 +462,7 @@ class TestFinishHook(HookTestCase):
             expect_errors=True,
         )
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['reason'], 'Invalid upload signature')
+        assert_equal(res.json['message_short'], 'Invalid upload signature')
 
 
 class TestUploadFile(StorageTestCase):
