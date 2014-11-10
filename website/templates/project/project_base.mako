@@ -24,14 +24,10 @@ ${next.body()}
 </%def>
 
 <%def name="javascript_bottom()">
+
 <script>
 
     <% import json %>
-
-    // Import modules
-    $script(['/static/js/pointers.js'], 'pointers');
-
-
     ## TODO: Move this logic into badges add-on
     % if 'badges' in addons_enabled and badges and badges['can_award']:
     $script(['/static/addons/badges/badge-awarder.js'], function() {
@@ -39,7 +35,6 @@ ${next.body()}
     });
     % endif
 
-    // TODO: Put these in the contextVars object below
     var nodeId = '${node['id']}';
     var userApiUrl = '${user_api_url}';
     var nodeApiUrl = '${node['api_url']}';
@@ -59,10 +54,6 @@ ${next.body()}
         }
     };
 
-    $script.ready('pointers', function() {
-        var pointerDisplay = new Pointers.PointerDisplay('#showLinks');
-    });
-
     // Make unregistered contributors claimable
     % if not user.get('is_contributor'):
     $script(['/static/js/accountClaimer.js'], function() {
@@ -71,6 +62,9 @@ ${next.body()}
     % endif
 
 </script>
+## NOTE: window.contextVars must be set before loading this script
+<script src="/static/public/js/project-base.js"> </script>
+
 % if node.get('is_public') and node.get('piwik_site_id'):
 <script type="text/javascript">
 

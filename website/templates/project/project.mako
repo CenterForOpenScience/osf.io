@@ -149,43 +149,17 @@ ${parent.javascript_bottom()}
     <script type="text/javascript" src="${script}"></script>
 % endfor
 
-<script src="/static/public/js/project-dashboard.js"></script>
-
 <script type="text/javascript">
-    ##  NOTE: pointers.js is loaded in project_base.mako
-    $script.ready('pointers', function() {
-       var pointerManager = new Pointers.PointerManager('#addPointer', contextVars.node.title);
-    });
-
-
-    var $comments = $('#comments');
+    // Hack to allow mako variables to be accessed to JS modules
     var userName = '${user_full_name | js_str}';
     var canComment = ${'true' if user['can_comment'] else 'false'};
     var hasChildren = ${'true' if node['has_children'] else 'false'};
-
-    if ($comments.length) {
-
-        $script(['/static/js/commentpane.js', '/static/js/comment.js'], 'comments');
-
-        $script.ready('comments', function () {
-            var timestampUrl = nodeApiUrl + 'comments/timestamps/';
-            var onOpen = function() {
-                var request = $.osf.putJSON(timestampUrl);
-                request.fail(function(xhr, textStatus, errorThrown) {
-                    Raven.captureMessage('Could not update comment timestamp', {
-                        url: timestampUrl,
-                        textStatus: textStatus,
-                        errorThrown: errorThrown
-                    });
-                });
-            }
-            var commentPane = new CommentPane('#commentPane', {onOpen: onOpen});
-            Comment.init('#commentPane', userName, canComment, hasChildren);
-        });
-    }
-
+    window.contextVars.currentUser.name = userName;
+    window.contextVars.currentUser.canComment = canComment;
+    window.contextVars.node.hasChildren = hasChildren;
 </script>
 
+<script src="/static/public/js/project-dashboard.js"></script>
 ## Todo: Move to project.js
 <script>
 

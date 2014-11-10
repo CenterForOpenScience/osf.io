@@ -10,7 +10,8 @@ module.exports = {
     entry: {
         dashboard: './website/static/js/pages/dashboard-page.js',
         profile: './website/static/js/pages/profile-page.js',
-        'project-dashboard': './website/static/js/pages/project-dashboard-page.js'
+        'project-dashboard': './website/static/js/pages/project-dashboard-page.js',
+        'project-base': './website/static/js/pages/project-base-page.js'
     },
     debug: true,
     output: {
@@ -27,6 +28,7 @@ module.exports = {
             'knockout-punches': fromRoot('vendor/knockout-punches/knockout.punches.js'),
             'knockout-sortable': fromRoot('vendor/knockout-sortable/knockout-sortable.js'),
             'knockout-validation': fromRoot('vendor/knockout-validation/knockout.validation.min.js'),
+            'knockout-mapping': fromRoot('vendor/knockout-mapping/knockout.mapping.js'),
             'bootbox': fromRoot('vendor/bootbox/bootbox.min.js'),
             'bootstrap-editable': fromRoot('vendor/bootstrap3-editable/js/bootstrap-editable.js'),
             // Needed for knockout-sortable

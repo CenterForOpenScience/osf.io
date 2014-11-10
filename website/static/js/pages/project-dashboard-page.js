@@ -5,8 +5,9 @@ var Rubeus = require('rubeus');
 
 var LogFeed = require('../logFeed.js');
 var NodeControl = require('../nodeControl.js');
+var pointers = require('../pointers.js');
 
-var nodeApiUrl = window.contextVars.node.urls.api;
+var Comment = require('../comment.js');
 
 // Initialize the filebrowser
 new Rubeus('#myGrid', {
@@ -19,7 +20,11 @@ new Rubeus('#myGrid', {
     searchInput: '#fileSearch'
 });
 
+// Initialize controller for "Add Links" modal
+new pointers.PointerManager('#addPointer', window.contextVars.node.title);
+
 $(function() {
+    var nodeApiUrl = window.contextVars.node.urls.api;
     // Get project data from the server and initiate KO modules
     $.getJSON(nodeApiUrl, function(data) {
         // Initialize nodeControl and logFeed on success
@@ -32,3 +37,13 @@ $(function() {
 $('body').on('nodeLoad', function() {
     new LogFeed('#logScope', nodeApiUrl + 'log/');
 });
+
+
+// Initialize comment pane w/ it's viewmodel
+var $comments = $('#comments');
+if ($comments.length) {
+    var userName = window.contextVars.currentUser.name;
+    var canComment = window.contextVars.currentUser.canComment;
+    var hasChildren = window.contextVars.node.hasChildren;
+    Comment.init('#commentPane', userName, canComment, hasChildren);
+}
