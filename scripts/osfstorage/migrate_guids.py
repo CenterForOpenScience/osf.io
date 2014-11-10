@@ -5,6 +5,8 @@ record with the same `_id`, `node`, and `path` fields; find the associated `Guid
 record, and set its `referent` to the newly created record.
 """
 
+import logging
+
 from modularodm import Q
 from modularodm import exceptions as modm_errors
 
