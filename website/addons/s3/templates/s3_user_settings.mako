@@ -36,7 +36,6 @@
     <!-- Form feedback -->
     <div class="addon-settings-message" style="display: none; padding-top: 10px;"></div>
 
-<%include file="profile/addon_permissions.mako" />
 </form>
 
 <%def name="on_submit()">
@@ -114,3 +113,5 @@
 
     </script>
 </%def>
+
+<%include file="profile/addon_permissions.mako" />
