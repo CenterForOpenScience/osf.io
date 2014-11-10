@@ -650,7 +650,7 @@
                     $('#findNode' + theItem.node_id).show();
                 });
 
-                $('.project-details').show();
+                $('.project-details').toggle();
             } else {
                 $('.project-details').hide();
             }

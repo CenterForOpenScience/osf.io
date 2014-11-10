@@ -171,13 +171,18 @@
                 self.savedStudyTitle(self.selectedStudyTitle());
                 self.studyWasFound(true);
                 self.changeMessage('Settings updated.', 'text-success', 5000);
-            }).fail(function(xhr) {
+            }).fail(function(xhr, textStatus, error) {
                 self.submitting(false);
                 var errorMessage = (xhr.status === 410) ? language.studyDeaccessioned :
                     (xhr.status = 406) ? language.forbiddenCharacters : language.setStudyError;
                 self.changeMessage(errorMessage, 'text-danger');
+                Raven.captureMessage('Could not authenticate with Dataverse', {
+                    url: self.urls().set,
+                    textStatus: textStatus,
+                    error: error
+                });
             });
-        }
+        };
 
         /**
          * Looks for study in list of studies when first loaded.

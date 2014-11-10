@@ -3,6 +3,7 @@
 import time
 import httplib as http
 
+from collections import Counter
 from flask import request
 from modularodm.exceptions import ValidationValueError
 
@@ -16,7 +17,7 @@ from framework.auth.signals import user_registered
 from framework.auth.forms import SetEmailAndPasswordForm, PasswordForm
 from framework.sessions import session
 
-from website import mails, language
+from website import mails, language, settings
 from website.project.model import unreg_contributor_added, has_anonymous_link
 from website.models import Node
 from website.profile import utils
@@ -116,13 +117,36 @@ def get_contributors_from_parent(auth, **kwargs):
     return {'contributors': contribs}
 
 
-@must_have_permission(ADMIN)
-def get_recently_added_contributors(auth, **kwargs):
-
+@must_be_contributor_or_public
+def get_most_in_common_contributors(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
+    node_contrib_ids = set(node.contributors._to_primary_keys())
+    try:
+        n_contribs = int(request.args.get('max', None))
+    except (TypeError, ValueError):
+        n_contribs = settings.MAX_MOST_IN_COMMON_LENGTH
 
-    if not node.can_view(auth):
-        raise HTTPError(http.FORBIDDEN)
+    contrib_counts = Counter(contrib_id
+        for node in auth.user.node__contributed
+        for contrib_id in node.contributors._to_primary_keys()
+        if contrib_id not in node_contrib_ids)
+
+    most_common_contribs = []
+    for contrib_id, count in contrib_counts.most_common(n_contribs):
+        contrib = User.load(contrib_id)
+        if contrib.is_active():
+            most_common_contribs.append((contrib, count))
+
+    contribs = [
+        utils.add_contributor_json(most_contrib, get_current_user())
+        for most_contrib, count in sorted(most_common_contribs, key=lambda t: (-t[1], t[0].fullname))
+    ]
+    return {'contributors': contribs}
+
+
+@must_be_contributor_or_public
+def get_recently_added_contributors(auth, **kwargs):
+    node = kwargs['node'] or kwargs['project']
 
     contribs = [
         utils.add_contributor_json(contrib, get_current_user())
@@ -130,7 +154,6 @@ def get_recently_added_contributors(auth, **kwargs):
         if contrib.is_active()
         if contrib._id not in node.contributors
     ]
-
     return {'contributors': contribs}
 
 
