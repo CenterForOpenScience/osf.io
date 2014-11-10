@@ -141,7 +141,6 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             'owner': None,
             'bucket_list': None,
             'is_registration': self.owner.is_registration,
-            'valid_credentials': True
         })
 
         if self.has_auth:
@@ -149,7 +148,6 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             rv['owner_url'] = self.user_settings.owner.url
             rv['bucket_list'] = get_bucket_drop_down(self.user_settings)
             rv['node_has_auth'] = True
-            rv['valid_credentials'] = has_access(self.user_settings.access_key, self.user_settings.secret_key)
 
         return rv
 

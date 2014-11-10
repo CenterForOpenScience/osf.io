@@ -16,15 +16,6 @@
         </h4>
     </div>
 
-    % if has_auth and not valid_credentials:
-        <div>
-            <span class="text-warning">
-                Could not retrieve Amazon S3 settings at this time. The S3 addon credentials may no longer be valid.
-                Try deauthorizing and reauthorizing S3.
-            </span>
-        </div>
-    % endif
-
     % if not has_auth:
         <div class="form-group">
             <label for="s3Addon">Access Key</label>
@@ -100,6 +91,24 @@
         }
 
         $(document).ready(function() {
+            var url = $.getJSON('/api/v1/settings/s3/', function(res) {
+                var nodes = ${nodes};
+                var validCredentials = res.validCredentials;
+
+                if (!validCredentials) {
+                    var message = 'Could not retrieve Amazon S3 settings at this time.' +
+                                  'The addon credentials may no longer be valid.' +
+                                  'Try deauthorizing and reauthorizing S3.';
+                    var textClass = 'text-warning';
+                } else if (nodes) {
+                    message = 'Add-on successfully authorized. To link this add-on to an OSF project,' +
+                            ' go to the settings page of the project, enable Amazon Simple Storage Service,' +
+                            ' and choose content to connect.';
+                    textClass = 'text-success';
+                }
+                $('.addon-settings-message').text(message).removeAttr('style').addClass(textClass);
+            });
+
             $('#addonSettings${addon_short_name.capitalize()}').on('submit', AddonHelper.onSubmitSettings);
         });
 
