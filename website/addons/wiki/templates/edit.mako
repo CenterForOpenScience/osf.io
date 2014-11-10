@@ -45,118 +45,77 @@
     </div><!-- end row -->
 </div><!-- end wiki -->
 
-<script src="/static/vendor/bower_components/ace-builds/src/ace.js"></script>
+<script src="/static/vendor/bower_components/ace-builds/src-noconflict/ace.js"></script>
 <script src="/static/vendor/pagedown-ace/Markdown.Converter.js"></script>
 <script src="/static/vendor/pagedown-ace/Markdown.Sanitizer.js"></script>
 <script src="/static/vendor/pagedown-ace/Markdown.Editor.js"></script>
 
 <!-- Necessary for ShareJS communication -->
 <script src="http://localhost:7007/channel/bcsocket.js"></script>
-<script src="http://localhost:7007/share/share.js"></script>
-<script src="http://localhost:7007/share/ace.js"></script>
+<script src="http://localhost:7007/text.js"></script>
+<script src="http://localhost:7007/share.uncompressed.js"></script>
+<script src="/static/addons/wiki/ace.js"></script>
 
 <script>
 
     var url = '${urls['api']['content']}';
-    var shareServer = 'http://localhost:7007';
-    var connection = new sharejs.Connection(
-        shareServer + '/channel',
-        '${user_full_name}'
-    );
 
-    var socketIsOpen = true;
-    var socketOnOpen = connection.socket.onopen;
-    var socketOnClose = connection.socket.onclose;
-    var socketOnMessage = connection.socket.onmessage;
-
-    // TODO: Replace with heartbeat
-    connection.socket.onopen = function () {
-        socketOnOpen();
-
-        $.post(
-            shareServer + '/add/${share_uuid}/${user_full_name}'
-        ).done(function() {
-            socketIsOpen = true;
-        });
-    };
-    connection.socket.onmessage = function(message) {
-        console.log(message);
-        socketOnMessage(message);
-    };
-    // TODO: Move both to shareServer.js session on close event
-    connection.socket.onclose = function () {
-        socketOnClose();
-
-        if (socketIsOpen) {
-            $.post(
-                shareServer + '/remove/${share_uuid}/${user_full_name}'
-            ).done(function() {
-                socketIsOpen = false;
-            });
-        }
-    };
-    $(window).bind('beforeunload', function() {
-        if (socketIsOpen) {
-            $.post(
-                shareServer + '/remove/${share_uuid}/${user_full_name}'
-            ).done(function () {
-                socketIsOpen = false;
-            });
-        }
-    });
-
-    var setDoc = function(docName) {
-
-        connection.open(docName, "text", function(error, newDoc) {
-
-            if (doc != null) {
-                doc.close();
-                doc.detach_ace();
-            }
-
-            doc = newDoc;
-
-            if (error) {
-                console.error(error);
-                return;
-            }
-
-            // Initializes editor
-            doc.attach_ace(editor);
-            editor.setReadOnly(false);
-
-            // If no share data is loaded, fetch most recent wiki from osf
-            if (doc.created) {
-                $.ajax({
-                    type: 'GET',
-                    url: url,
-                    dataType: 'json',
-                    success: function (response) {
-                        editor.setValue(response.wiki_content);
-                    },
-                    error: function (xhr, textStatus, error) {
-                        console.error(textStatus);
-                        console.error(error);
-                        bootbox.alert('Could not get wiki content.');
-                    }
-                });
-            }
-        });
-    };
-
-    var doc = null;
-    var langTools = ace.require("ace/ext/language_tools");
+    // Initialize Ace and configure settings
     var editor = ace.edit("editor");
     editor.getSession().setMode("ace/mode/markdown");
-    editor.setReadOnly(true); // Read only until initialized
-
-    setDoc('${share_uuid}');
-
-    // Settings
     editor.getSession().setUseSoftTabs(true);   // Replace tabs with spaces
     editor.getSession().setUseWrapMode(true);   // Wraps text
     editor.renderer.setShowGutter(false);       // Hides line number
     editor.setShowPrintMargin(false);           // Hides print margin
+    editor.setReadOnly(true); // Read only until initialized
+
+    var socket = new BCSocket('http://localhost:7007/channel', {reconnect: true});
+    var sjs = new sharejs.Connection(socket);
+    var doc = sjs.get('docs', '${share_uuid}');
+
+    // This will be called on both connect and reconnect
+    doc.on('subscribe', function() {
+
+        // Send user metadata
+        socket.send({
+            registration: true,
+            uuid: '${share_uuid}',
+            name: 'Robert Liebowitz'
+            // TODO: Should emails be used as user IDs?
+        });
+
+    });
+
+    // This will be called when we have a live copy of the server's data.
+    doc.whenReady(function() {
+
+        // Create a text document if one does not exist
+        if (!doc.type) {
+            doc.create('text');
+            $.ajax({
+                type: 'GET',
+                url: url,
+                dataType: 'json',
+                success: function (response) {
+                    editor.setValue(response.wiki_content);
+                    editor.setReadOnly(false);
+                    doc.attachAce(editor);
+                },
+                error: function (xhr, textStatus, error) {
+                    console.error(textStatus);
+                    console.error(error);
+                    bootbox.alert('Could not get wiki content.');
+                }
+            });
+        } else {
+            editor.setReadOnly(false);
+            doc.attachAce(editor);
+        }
+
+    });
+
+    // Subscribe to changes
+    doc.subscribe();
 
     $script('/static/addons/wiki/WikiEditor.js', function() {
         WikiEditor('.wiki', url)
