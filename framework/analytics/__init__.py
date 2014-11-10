@@ -1,12 +1,17 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
+# encoding: utf-8
+
 import functools
 from datetime import datetime
 
 from framework.mongo import database
 from framework.sessions import session
 
+from flask import request
+
 
 collection = database['pagecounters']
+
 
 def increment_user_activity_counters(user_id, action, date, db=None):
     db = db or database  # default to local proxy
@@ -40,63 +45,93 @@ def get_total_activity_count(user_id, db=None):
     return 0
 
 
-def update_counters(rex, db=None):
+def clean_page(page):
+    return page.replace(
+        '.', '_'
+    ).replace(
+        '$', '_'
+    )
+
+
+def build_page(rex, kwargs):
+    """Build page key from format pattern and request data.
+
+    :param str: Format string (e.g. `'{node}:{file}'`)
+    :param dict kwargs: Data used to render format string
     """
-    Create a decorator that updates analytics in `pagecounters` when the decorated
-    function is called.
+    target_node = kwargs.get('node') or kwargs.get('project')
+    target_id = target_node._id
+    data = {
+        'target_id': target_id,
+    }
+    data.update(kwargs)
+    data.update(request.args.to_dict())
+    try:
+        return rex.format(**data)
+    except KeyError:
+        return None
 
-    :param rex: Pattern for building page key from keyword arguments of decorated function
 
+def update_counter(page, db=None):
+    """Update counters for page.
+
+    :param str page: Colon-delimited page key in analytics collection
+    :param db: MongoDB database or `None`
     """
     db = db or database
+    collection = db['pagecounters']
 
+    date = datetime.utcnow()
+    date = date.strftime('%Y/%m/%d')
+
+    page = clean_page(page)
+
+    d = {'$inc': {}}
+
+    visited_by_date = session.data.get('visited_by_date')
+    if not visited_by_date:
+        visited_by_date = {'date': date, 'pages': []}
+
+    if date == visited_by_date['date']:
+        if page not in visited_by_date['pages']:
+            d['$inc']['date.%s.unique' % date] = 1
+            visited_by_date['pages'].append(page)
+            session.data['visited_by_date'] = visited_by_date
+    else:
+        visited_by_date['date'] = date
+        visited_by_date['pages'] = []
+        d['$inc']['date.%s.unique' % date] = 1
+        visited_by_date['pages'].append(page)
+        session.data['visited_by_date'] = visited_by_date
+
+    d['$inc']['date.%s.total' % date] = 1
+
+    visited = session.data.get('visited')  # '/project/x/, project/y/'
+    if not visited:
+        visited = []
+    if page not in visited:
+        d['$inc']['unique'] = 1
+        visited.append(page)
+        session.data['visited'] = visited
+    d['$inc']['total'] = 1
+    collection.update({'_id': page}, d, True, False)
+
+
+def update_counters(rex, db=None):
+    """Create a decorator that updates analytics in `pagecounters` when the
+    decorated function is called. Note: call inner function before incrementing
+    counters so that counters are not changed if inner function fails.
+
+    :param rex: Pattern for building page key from keyword arguments of
+        decorated function
+    """
     def wrapper(func):
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
-            date = datetime.utcnow()
-            date = date.strftime('%Y/%m/%d')
-            target_node = kwargs.get('node') or kwargs.get('project')
-            target_id = target_node._id
-            data = {
-                'target_id': target_id,
-            }
-            data.update(kwargs)
-            try:
-                page = rex.format(**data).replace('.', '_')
-            except KeyError:
-                return func(*args, **kwargs)
-
-            d = {'$inc': {}}
-
-            visited_by_date = session.data.get('visited_by_date')
-            if not visited_by_date:
-                visited_by_date = {'date': date, 'pages': []}
-
-            if date == visited_by_date['date']:
-                if page not in visited_by_date['pages']:
-                    d['$inc']['date.%s.unique' % date] = 1
-                    visited_by_date['pages'].append(page)
-                    session.data['visited_by_date'] = visited_by_date
-            else:
-                visited_by_date['date'] = date
-                visited_by_date['pages'] = []
-                d['$inc']['date.%s.unique' % date] = 1
-                visited_by_date['pages'].append(page)
-                session.data['visited_by_date'] = visited_by_date
-
-            d['$inc']['date.%s.total' % date] = 1
-
-            visited = session.data.get('visited')  # '/project/x/, project/y/'
-            if not visited:
-                visited = []
-            if page not in visited:
-                d['$inc']['unique'] = 1
-                visited.append(page)
-                session.data['visited'] = visited
-            d['$inc']['total'] = 1
-            collection = database['pagecounters']
-            collection.update({'_id': page}, d, True, False)
-            return func(*args, **kwargs)
+            ret = func(*args, **kwargs)
+            page = build_page(rex, kwargs)
+            update_counter(page, db or database)
+            return ret
         return wrapped
     return wrapper
 
@@ -108,7 +143,8 @@ def get_basic_counters(page, db=None):
     total = 0
     collection = database['pagecounters']
     result = collection.find_one(
-        {'_id': page}, {'total': 1, 'unique': 1}
+        {'_id': clean_page(page)},
+        {'total': 1, 'unique': 1}
     )
     if result:
         if 'unique' in result:

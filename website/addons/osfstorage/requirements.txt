@@ -1,0 +1,2 @@
+MarkupSafe==0.23
+git+https://github.com/CenterForOpenScience/osf-upload-service
