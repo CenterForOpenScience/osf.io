@@ -8,6 +8,8 @@ var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 require('bootstrap-editable');
+require('knockout-punches');
+ko.punches.enableAll();
 
 var osfHelpers = require('./osf-helpers.js');
 var NodeActions = require('./project.js');

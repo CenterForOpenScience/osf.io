@@ -3,6 +3,7 @@
         // AMD anonymous module
         define(["knockout", "jquery", "jquery.ui.sortable"], factory);
     } else if (typeof module === "object") {
+        // NOTE: Added by @sloria
         // CommonJS module
         var ko = require("knockout");
         var jQuery = require("jquery");

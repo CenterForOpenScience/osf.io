@@ -20,11 +20,11 @@ module.exports = {
     },
     resolve: {
         root: root,
-        // Look for required files in bower and node
+        // Look for required files in bower and npm directories
         modulesDirectories: ['./website/static/vendor/bower_components', 'node_modules'],
         // Need to alias libraries that aren't managed by bower or npm
         alias: {
-            'knockout-punches': fromRoot('vendor/knockout-punches/knockout.punches.min.js'),
+            'knockout-punches': fromRoot('vendor/knockout-punches/knockout.punches.js'),
             'knockout-sortable': fromRoot('vendor/knockout-sortable/knockout-sortable.js'),
             'knockout-validation': fromRoot('vendor/knockout-validation/knockout.validation.min.js'),
             'bootbox': fromRoot('vendor/bootbox/bootbox.min.js'),
@@ -33,19 +33,12 @@ module.exports = {
             'jquery.ui.sortable': fromRoot('vendor/bower_components/jquery-ui/ui/jquery.ui.sortable.js'),
             // Dropzone doesn't have a proper 'main' entry in its bower.json
             'dropzone': fromRoot('vendor/bower_components/dropzone/downloads/dropzone.js'),
+            // Also alias some internal libraries for easy access
             // Dropzone monkeypatching needed for signed URL uploads
             'dropzone-patch': fromRoot('js/dropzone-patch.js'),
             'rubeus': fromRoot('js/rubeus.js'),
             'folderpicker': fromRoot('js/folderPicker.js')
         }
-    },
-    module: {
-        loaders: [
-            { test: /\.css/, loader: 'style-loader!css-loader' },
-            { test: /\.gif/, loader: 'url-loader?limit=10000&minetype=image/gif' },
-            { test: /\.jpg/, loader: 'url-loader?limit=10000&minetype=image/jpg' },
-            { test: /\.png/, loader: 'url-loader?limit=10000&minetype=image/png' }
-        ]
     },
     plugins: [
         // Bundle common code between modules
@@ -66,7 +59,7 @@ module.exports = {
     ],
     externals: {
         // require("jquery") is external and available
-        //  on the global var jQuery
+        //  on the global var jQuery, which is loaded with CDN
         'jquery': 'jQuery',
         'jquery-ui': 'jQuery.ui'
     }
