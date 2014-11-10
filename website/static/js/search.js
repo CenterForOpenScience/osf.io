@@ -31,6 +31,30 @@
         self.count = tagInfo.doc_count;
     };
 
+    var User = function(result){
+        var self = this;
+        self.category = result.category;
+        self.gravatarUrl = ko.observable('');
+        self.social = result.social;
+        self.job_title = result.job_title;
+        self.job = result.job;
+        self.degree = result.degree;
+        self.school = result.school;
+        self.url = result.url;
+        self.wikiUrl = result.url+'wiki/';
+        self.filesUrl = result.url+'files/';
+        self.user = result.user;
+
+        $.ajax('/api/v1'+ result.url).success(function(data){
+            if (typeof data.profile !== 'undefined') {
+                self.gravatarUrl(data.profile.gravatar_url);
+            }
+        });
+
+
+
+    };
+
     var ViewModel = function(params) {
         var self = this;
         self.params = params || {};
@@ -111,13 +135,6 @@
             return a.count >  b.count ? -1 : 1;
         };
 
-        self.claim = function(mid) {
-            claimURL = self.appURL + 'metadata/' + mid + '/promote/';
-            $.osf.postJSON(claimURL, {category: 'project'}).success(function(data) {
-                window.location = data.url;
-            });
-        };
-
         self.help = function() {
             bootbox.dialog({
                 title: 'Search help',
@@ -148,7 +165,11 @@
             }
 
             self.currentPage(1);
-            self.query(self.query() + ' AND tags:("' + tag + '")');
+            if (self.query() !== ''){
+                 self.query(self.query() + ' AND ');
+            }
+            self.query(self.query() + 'tags:("' + tag + '")');
+            self.category(new Category('total', 0, 'Total'));
             self.search();
         };
 
@@ -160,7 +181,7 @@
         };
 
         self.search = function(noPush, validate) {
-            self.tagMaxCount(1);
+
             var jsonData = {'query': self.fullQuery(), 'from': self.currentIndex(), 'size': self.resultsPerPage()};
             var url = self.queryUrl + self.category().url();
 
@@ -168,15 +189,21 @@
 
                 //Clear out our variables
                 self.tags([]);
+                self.tagMaxCount(1);
                 self.results.removeAll();
                 self.categories.removeAll();
 
                 data.results.forEach(function(result){
-                    if(typeof result.url !== 'undefined'){
-                        result.wikiUrl = result.url+'wiki/';
-                        result.filesUrl = result.url+'files/';
+                    if(result.category === 'user'){
+                        self.results.push(new User(result));
                     }
-                    self.results.push(result);
+                    else {
+                        if(typeof result.url !== 'undefined'){
+                            result.wikiUrl = result.url+'wiki/';
+                            result.filesUrl = result.url+'files/';
+                        }
+                        self.results.push(result);
+                    }
                 });
 
                 //Load our categories
