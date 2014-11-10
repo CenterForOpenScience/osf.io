@@ -9,7 +9,6 @@
     'use strict';
 
     ko.punches.enableAll();
-    ko.punches.attributeInterpolationMarkup.enable();
 
     var Revision = function(data) {
 
@@ -56,7 +55,7 @@
         var self = this;
         $.ajax({
             type: 'DELETE',
-            url: self.urls.delete,
+            url: self.urls.delete
         }).done(function() {
             window.location = self.urls.files;
         }).fail(function() {

@@ -38,7 +38,7 @@
             row.urls = {
                 'view': buildUrl(parent, file, 'web'),
                 'download': buildUrl(parent, file, 'web', '/download/'),
-                'delete': buildUrl(parent, file, 'api'),
+                'delete': buildUrl(parent, file, 'api')
             };
             row.permissions = parent.permissions;
             self.updateItem(row);
