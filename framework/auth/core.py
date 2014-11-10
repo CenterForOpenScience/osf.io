@@ -322,6 +322,14 @@ class User(GuidStoredObject, AddonModelMixin):
         return user
 
     @classmethod
+    def from_api_key(cls, key):
+        from website.project.model import ApiKey
+        key = ApiKey.load(key)
+
+        if key:
+            return key.user
+
+    @classmethod
     def create(cls, username, password, fullname):
         user = cls(
             username=username,
