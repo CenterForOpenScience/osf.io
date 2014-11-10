@@ -49,11 +49,14 @@ ${next.body()}
         currentUser: {
             ## TODO: Abstract me
             username: ${json.dumps(user['username']) | n},
-            id: '${user_id}'
+            id: '${user_id}',
+            urls: {api: userApiUrl}
         },
         node: {
             ## TODO: Abstract me
-            title: ${json.dumps(node['title']) | n}
+            id: nodeId,
+            title: ${json.dumps(node['title']) | n},
+            urls: {api: nodeApiUrl}
         }
     };
 

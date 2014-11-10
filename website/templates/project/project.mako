@@ -152,14 +152,6 @@ ${parent.javascript_bottom()}
 <script src="/static/public/js/project-dashboard.js"></script>
 
 <script type="text/javascript">
-    $script(['/static/js/logFeed.js'], 'logFeed');
-
-    $('body').on('nodeLoad', function(event, data) {
-       $script.ready('logFeed', function() {
-           var logFeed = new LogFeed('#logScope', nodeApiUrl + 'log/');
-       });
-    });
-
     ##  NOTE: pointers.js is loaded in project_base.mako
     $script.ready('pointers', function() {
        var pointerManager = new Pointers.PointerManager('#addPointer', contextVars.node.title);

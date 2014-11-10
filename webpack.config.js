@@ -56,8 +56,7 @@ module.exports = {
         // Make jQuery available in all modules without having to do require('jquery')
         new webpack.ProvidePlugin({
             $: 'jquery',
-            jQuery: 'jquery',
-            ko: 'knockout'
+            jQuery: 'jquery'
         }),
         // Slight hack to make sure that CommonJS is always used
         new webpack.DefinePlugin({
