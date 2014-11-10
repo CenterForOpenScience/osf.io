@@ -17,7 +17,7 @@ OWNERS = ['user', 'node']
 ADDED_DEFAULT = []
 ADDED_MANDATORY = []
 
-VIEWS = ['widget']
+VIEWS = []
 CONFIGS = ['user', 'node']
 
 CATEGORIES = ['storage']
@@ -29,7 +29,7 @@ INCLUDE_JS = {
 }
 
 INCLUDE_CSS = {
-    'widget': ['dataverse.css'],
+    'widget': [],
     'page': [],
 }
 
