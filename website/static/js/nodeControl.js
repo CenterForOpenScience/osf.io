@@ -14,10 +14,6 @@ ko.punches.enableAll();
 var osfHelpers = require('./osf-helpers.js');
 var NodeActions = require('./project.js');
 
-var window = window;
-var document = document;
-
-
 // Modal language
 var MESSAGES = {
     makePublicWarning: 'Once a project is made public, there is no way to guarantee that ' +
