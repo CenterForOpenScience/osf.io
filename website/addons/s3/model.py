@@ -10,7 +10,6 @@ Created on Jan 7, 2014
 import os
 
 from boto.exception import BotoServerError
-from boto.iam import IAMConnection
 from modularodm import fields
 
 from framework.auth.core import Auth
