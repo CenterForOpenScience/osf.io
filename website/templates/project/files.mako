@@ -36,21 +36,5 @@ ${parent.javascript_bottom()}
 <script type="text/javascript" src="${script}"></script>
 % endfor
 <script src="/static/public/js/addon-files-bundle.js"></script>
-<script>
-// Don't show dropped content if user drags outside grid
-window.ondragover = function(e) { e.preventDefault(); };
-window.ondrop = function(e) { e.preventDefault(); };
-
-$script.ready(['rubeus'], function() {
-    var rubeusOpts = {
-        data: nodeApiUrl + 'files/grid/',
-        searchInput: '#fileSearch'
-    };
-    % if disk_saving_mode:
-    rubeusOpts.uploads = false;
-    % endif
-    var filebrowser = new Rubeus('#myGrid', rubeusOpts);
-});
-
-</script>
+<script src="/static/public/js/files-page.js"></script>
 </%def>

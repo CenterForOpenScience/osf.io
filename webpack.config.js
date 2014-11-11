@@ -31,11 +31,13 @@ var getAddonModules = function(name) {
 module.exports = {
     // Split code chunks by page
     entry: {
-        'dashboard': './website/static/js/pages/dashboard-page.js',
-        'profile': './website/static/js/pages/profile-page.js',
-        'project-dashboard': './website/static/js/pages/project-dashboard-page.js',
-        'project-base': './website/static/js/pages/project-base-page.js',
-        'wiki-edit-page': './website/static/js/pages/wiki-edit-page.js',
+        'dashboard': fromRoot('js/pages/dashboard-page.js'),
+        'profile': fromRoot('js/pages/profile-page.js'),
+        'project-dashboard': fromRoot('js/pages/project-dashboard-page.js'),
+        'project-base': fromRoot('js/pages/project-base-page.js'),
+        'wiki-edit-page': fromRoot('js/pages/wiki-edit-page.js'),
+        // TODO: Optimize common chunks between these modules
+        'files-page': fromRoot('js/pages/files-page.js'),
         'addon-index-bundle': getAddonModules('index.js'),
         'addon-files-bundle': getAddonModules('files.js')
     },
