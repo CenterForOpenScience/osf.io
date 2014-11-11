@@ -18,10 +18,8 @@ from framework.forms.utils import sanitize
 from website import settings
 from website.addons.wiki.views import _serialize_wiki_toc, _get_wiki_web_urls, _get_wiki_api_urls
 from website.addons.wiki.model import NodeWikiPage, render_content
-from website.addons.wiki.utils import (
-    to_mongo_uuid, generate_share_uuid, share_db, ops_uuid
-)
-from website.addons.wiki.tests.config import EXAMPLE_DOCS, EXAMPLE_OPS, EXAMPLE_OPS_SHORT_6
+from website.addons.wiki.utils import to_mongo_uuid, generate_share_uuid, share_db
+from website.addons.wiki.tests.config import EXAMPLE_DOCS, EXAMPLE_OPS
 from framework.auth import Auth
 from framework.mongo.utils import to_mongo_key
 
@@ -606,10 +604,10 @@ class TestWikiCompare(OsfTestCase):
         assert_true(comparison_v2_to_v2 in res.body)
 
 
-class TestWikiShareJS(OsfTestCase):
+class TestWikiUuid(OsfTestCase):
 
     def setUp(self):
-        super(TestWikiShareJS, self).setUp()
+        super(TestWikiUuid, self).setUp()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(is_public=True, creator=self.user)
         self.wname = 'foo.bar'
@@ -743,6 +741,12 @@ class TestWikiShareJS(OsfTestCase):
 
 class TestWikiShareJSMongo(OsfTestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        super(TestWikiShareJSMongo, cls).setUpClass()
+        cls._original_sharejs_db_name = settings.SHAREJS_DB_NAME
+        settings.SHAREJS_DB_NAME = 'sharejs_test'
+
     def setUp(self):
         super(TestWikiShareJSMongo, self).setUp()
         self.user = AuthUserFactory()
@@ -820,6 +824,11 @@ class TestWikiShareJSMongo(OsfTestCase):
         super(TestWikiShareJSMongo, self).tearDown()
         self.db.drop_collection('docs')
         self.db.drop_collection('docs_ops')
+
+    @classmethod
+    def tearDownClass(cls):
+        share_db().connection.drop_database(settings.SHAREJS_DB_NAME)
+        settings.SHARE_DATABASE_NAME = cls._original_sharejs_db_name
 
 
 class TestWikiUtils(OsfTestCase):

@@ -27,7 +27,5 @@ def to_mongo_uuid(node, share_uuid):
 
 def share_db():
     """Generate db client for sharejs db"""
-    # TODO: Use local proxy! Tests currently delete all docs on sharejstest
     client = MongoClient(settings.DB_HOST, settings.DB_PORT)
-    return client.sharejstest
-
+    return client[settings.SHAREJS_DB_NAME]
