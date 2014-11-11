@@ -193,12 +193,13 @@
     <script>window.jQuery || document.write('<script src="/static/vendor/bower_components/jQuery/dist/jquery.min.js">\x3C/script>')</script>
     <script src="//code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
     <script>window.jQuery.ui || document.write('<script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js">\x3C/script>')</script>
-    <script src="/static/public/js/common.js"></script>
-    <script src="/static/public/js/addon-index-bundle.js"> </script>
 
     % for url in js_all:
     <script src="${url}"></script>
     % endfor
+
+    <script src="/static/public/js/common.js"></script>
+    <script src="/static/public/js/addon-index-bundle.js"> </script>
 
     <script>
         // Enable knockout punches

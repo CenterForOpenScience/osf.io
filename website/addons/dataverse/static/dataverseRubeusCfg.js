@@ -7,7 +7,6 @@ var HGrid = require('hgrid');
 var Rubeus = require('rubeus');
 var bootbox = require('bootbox');
 var osfHelpers = require('osf-helpers');
-console.log(bootbox);
 
 // Private members
 function refreshDataverseTree(grid, item, state) {

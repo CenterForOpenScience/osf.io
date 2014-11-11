@@ -58,7 +58,6 @@ module.exports = {
             'knockout-sortable': fromRoot('vendor/knockout-sortable/knockout-sortable.js'),
             'knockout-validation': fromRoot('vendor/knockout-validation/knockout.validation.min.js'),
             'knockout-mapping': fromRoot('vendor/knockout-mapping/knockout.mapping.js'),
-            'bootbox': fromRoot('vendor/bootbox/bootbox.min.js'),
             'bootstrap-editable': fromRoot('vendor/bootstrap3-editable/js/bootstrap-editable.js'),
             // Needed for knockout-sortable
             'jquery.ui.sortable': fromRoot('vendor/bower_components/jquery-ui/ui/jquery.ui.sortable.js'),
