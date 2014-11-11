@@ -37,7 +37,6 @@ js = Bundle(
         # For unknown reasons, moment must be first
         # "vendor/bower_components/moment/min/moment-with-langs.min.js",
         "vendor/bower_components/bootstrap/dist/js/bootstrap.min.js",
-        "vendor/bootbox/bootbox.min.js",
         "vendor/script.min.js",
     ),
     # 'vendor/knockout-sortable/knockout-sortable.js',
