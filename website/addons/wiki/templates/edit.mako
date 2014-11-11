@@ -79,9 +79,10 @@
         // Send user metadata
         socket.send({
             registration: true,
-            uuid: '${share_uuid}',
-            name: '${user_full_name}'
-            // TODO: Should emails be used as user IDs?
+            docId: '${share_uuid}',
+            userId: '${user_id}',
+            userName: '${user_full_name}',
+            userUrl: '${user_url}'
         });
 
     });

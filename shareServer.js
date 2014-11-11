@@ -58,15 +58,24 @@ server.use(browserChannel(bcOptions, function(client) {
     client.on('message', function(data) {
         // Handle our custom messages separately
         if (data.registration) {
-            var uuid = data.uuid;
-            var name = data.name;
+            var docId = data.docId;
+            var userId = data.userId;
 
-            if (!docs[uuid])
-                docs[uuid] = {};
-            docs[uuid][name] = docs[uuid][name] ? docs[uuid][name] + 1 : 1;
+            if (!docs[docId])
+                docs[docId] = {};
+
+            if (!docs[docId][userId]) {
+                docs[docId][userId] = {
+                    name: data.userName,
+                    url: data.userUrl,
+                    count: 1
+                }
+            } else {
+                docs[docId][userId].count++;
+            }
             numClients += 1;
             client.userMeta = data; // Attach metadata to the client object
-            console.log('new user:', name, '| Total:', numClients);
+            console.log('new user:', data.userName, '| Total:', numClients);
         } else {
             stream.push(data);
         }
@@ -74,20 +83,21 @@ server.use(browserChannel(bcOptions, function(client) {
 
     // Called several seconds after the socket is closed
     client.on('close', function(reason) {
-        var uuid = client.userMeta.uuid;
-        var name = client.userMeta.name;
+        var docId = client.userMeta.docId;
+        var userId = client.userMeta.userId;
 
-        if (docs[uuid]) {
-            docs[uuid][name] = docs[uuid][name] ? docs[uuid][name] - 1 : 0;
-            if (docs[uuid][name] === 0) {
-                delete docs[uuid][name];
-                if (!Object.keys(docs[uuid]).length) {
-                    delete docs[uuid];
+        if (docs[docId] && docs[docId][userId]) {
+            docs[docId][userId].count--;
+            if (docs[docId][userId].count === 0) {
+                delete docs[docId][userId];
+                if (!Object.keys(docs[docId]).length) {
+                    delete docs[docId];
                 }
             }
         }
+
         numClients -= 1;
-        console.log('rem user:', name, '| Total:', numClients);
+        console.log('rem user:', client.userMeta.userName, '| Total:', numClients);
 
         stream.push(null);
         stream.emit('close');
