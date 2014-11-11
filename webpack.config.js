@@ -1,22 +1,32 @@
 var path = require('path');
 var fs = require('fs');
 var webpack = require('webpack');
+
+var addons = require('./addons.json');
 var root = path.join(__dirname, 'website', 'static');
 /** Return the absolute path given a path relative to ./website/static */
 var fromRoot = function(dir) {
     return path.join(root, dir);
 };
 
-
-// Bundle up the index.js files in each of the addons' static folders
-var addons = require('./addons.json');
-var addonModules = [];
-addons.addons.forEach(function(addonName) {
-    var addonPath = path.join(__dirname, 'website', 'addons', addonName, 'static', 'index.js');
-    if (fs.existsSync(addonPath)) {
-        addonModules = addonModules.concat([addonPath]);
-    }
-});
+/**
+ * Return the paths to all addons' modules withe the name `name`.
+ *
+ * Example:
+ *      getAddonModules('index.js')
+ *      //=> ['website/addons/dropbox/static/index.js',
+ *      //    'website/addons/s3/static/index.js',...]
+ * */
+var getAddonModules = function(name) {
+    var addonModules = [];
+    addons.addons.forEach(function(addonName) {
+        var addonPath = path.join(__dirname, 'website', 'addons', addonName, 'static', name);
+        if (fs.existsSync(addonPath)) {
+            addonModules = addonModules.concat([addonPath]);
+        }
+    });
+    return addonModules;
+};
 
 module.exports = {
     // Split code chunks by page
@@ -26,7 +36,8 @@ module.exports = {
         'project-dashboard': './website/static/js/pages/project-dashboard-page.js',
         'project-base': './website/static/js/pages/project-base-page.js',
         'wiki-edit-page': './website/static/js/pages/wiki-edit-page.js',
-        'addon-bundle': addonModules
+        'addon-index-bundle': getAddonModules('index.js'),
+        'addon-files-bundle': getAddonModules('files.js')
     },
     debug: true,
     output: {
