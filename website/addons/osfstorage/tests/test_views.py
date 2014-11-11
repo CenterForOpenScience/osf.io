@@ -261,7 +261,7 @@ class TestPingHook(HookTestCase):
 
     def test_ping_no_record(self):
         res = self.send_ping_hook(path='missing/file.txt', expect_errors=True)
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, 404)
 
     def test_ping_no_version(self):
         res = self.send_ping_hook(expect_errors=True)
@@ -295,6 +295,51 @@ class TestPingHook(HookTestCase):
         assert_equal(res.status_code, 400)
         version.reload()
         assert_equal(version.last_ping, 0)
+
+
+class TestSetCachedHook(HookTestCase):
+
+    def setUp(self):
+        super(TestSetCachedHook, self).setUp()
+        self.path = 'crispy/pizza.png'
+        self.size = 1024
+        self.record = model.OsfStorageFileRecord.get_or_create(self.path, self.node_settings)
+        self.uploadSignature = '07235a8'
+        self.payload = {
+            'uploadSignature': self.uploadSignature,
+        }
+        _, self.signature = utils.webhook_signer.sign_payload(self.payload)
+
+    def send_set_cached_hook(self, payload=None, signature=None, path=None, **kwargs):
+        return self.send_hook(
+            'osf_storage_upload_cached_hook',
+            payload=payload or self.payload,
+            signature=signature or self.signature,
+            path=path or self.path,
+            method='post_json',
+            **kwargs
+        )
+
+    def test_set_cached_uploading(self):
+        version = self.record.create_pending_version(self.user, self.uploadSignature)
+        res = self.send_set_cached_hook()
+        version.reload()
+        assert_equal(version.status, model.status_map['CACHED'])
+
+    def test_set_cached_not_uploading_raises_error(self):
+        version = factories.FileVersionFactory(status=model.status_map['CACHED'])
+        self.record.versions.append(version)
+        self.record.save()
+        res = self.send_set_cached_hook(expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_set_cached_no_versions_raises_error(self):
+        res = self.send_set_cached_hook(expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_set_cached_no_record_raises_error(self):
+        res = self.send_set_cached_hook(path='the/invisible/man.mp3', expect_errors=True)
+        assert_equal(res.status_code, 404)
 
 
 class TestFinishHook(HookTestCase):
@@ -782,7 +827,7 @@ class TestDeleteFile(StorageTestCase):
         record = create_record_with_version(
             path,
             self.node_settings,
-            status=model.status['COMPLETE'],
+            status=model.status_map['COMPLETE'],
         )
         assert_false(record.is_deleted)
         res = self.app.delete(
@@ -801,7 +846,7 @@ class TestDeleteFile(StorageTestCase):
         record = create_record_with_version(
             path,
             self.node_settings,
-            status=model.status['COMPLETE'],
+            status=model.status_map['COMPLETE'],
         )
         record.delete(self.auth_obj)
         record.save()
