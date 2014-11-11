@@ -41,7 +41,9 @@ module.exports = {
         'addon-index-bundle': getAddonModules('index.js'),
         'addon-files-bundle': getAddonModules('files.js'),
         'addon-node-cfg-bundle': getAddonModules('node-cfg.js'),
-        'addon-user-cfg-bundle': getAddonModules('user-cfg.js')
+        'addon-user-cfg-bundle': getAddonModules('user-cfg.js').concat([
+            fromRoot('js/pages/user-addon-cfg-page.js')
+        ])
     },
     debug: true,
     output: {
