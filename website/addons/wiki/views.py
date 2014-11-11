@@ -13,7 +13,7 @@ from framework.auth.utils import privacy_info_handle
 from framework.flask import redirect
 
 from website.addons.wiki.utils import (
-    docs_uuid,
+    to_mongo_uuid,
     generate_share_uuid
 )
 from website.project.views.node import _view_project
@@ -288,7 +288,7 @@ def project_wiki_edit(auth, wname, **kwargs):
         'wiki_content': content,
         'version': version,
         'versions': _get_wiki_versions(node, wiki_name),
-        'share_uuid': docs_uuid(node, share_uuid),
+        'share_uuid': to_mongo_uuid(node, share_uuid),
         'is_current': is_current,
         'is_edit': True,
         'pages_current': _get_wiki_pages_current(node),

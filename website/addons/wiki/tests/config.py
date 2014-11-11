@@ -7,7 +7,7 @@ EXAMPLE_DOCS = [    # Collection stored as "docs"
             "mtime": 1415654366808,
             "ctime": 1415654358668
         },
-        "_id"  "26aabd89-541b-5c02-9e6a-ad332ba43118"
+        "_id":  "26aabd89-541b-5c02-9e6a-ad332ba43118"
     },
     {
         "_data": "XXX",

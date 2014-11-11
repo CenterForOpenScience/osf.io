@@ -19,9 +19,9 @@ from website import settings
 from website.addons.wiki.views import _serialize_wiki_toc, _get_wiki_web_urls, _get_wiki_api_urls
 from website.addons.wiki.model import NodeWikiPage, render_content
 from website.addons.wiki.utils import (
-    docs_uuid, generate_share_uuid, share_db, ops_uuid
+    to_mongo_uuid, generate_share_uuid, share_db, ops_uuid
 )
-from website.addons.wiki.tests.config import EXAMPLE_DOCS_6, EXAMPLE_OPS_6, EXAMPLE_OPS_SHORT_6
+from website.addons.wiki.tests.config import EXAMPLE_DOCS, EXAMPLE_OPS, EXAMPLE_OPS_SHORT_6
 from framework.auth import Auth
 from framework.mongo.utils import to_mongo_key
 
@@ -624,7 +624,7 @@ class TestWikiShareJS(OsfTestCase):
         self.project.reload()
         assert_true(self.project.wiki_sharejs_uuids.get(self.wkey))
         assert_not_in(self.project.wiki_sharejs_uuids.get(self.wkey), res.body)
-        assert_in(docs_uuid(self.project, self.project.wiki_sharejs_uuids.get(self.wkey)), res.body)
+        assert_in(to_mongo_uuid(self.project, self.project.wiki_sharejs_uuids.get(self.wkey)), res.body)
 
     def test_uuids_differ_between_pages(self):
         wname1 = 'foo.bar'
@@ -640,8 +640,8 @@ class TestWikiShareJS(OsfTestCase):
         assert_equal(res2.status_code, 200)
 
         self.project.reload()
-        uuid1 = docs_uuid(self.project, self.project.wiki_sharejs_uuids.get(wkey1))
-        uuid2 = docs_uuid(self.project, self.project.wiki_sharejs_uuids.get(wkey2))
+        uuid1 = to_mongo_uuid(self.project, self.project.wiki_sharejs_uuids.get(wkey1))
+        uuid2 = to_mongo_uuid(self.project, self.project.wiki_sharejs_uuids.get(wkey2))
 
         assert_not_equal(uuid1, uuid2)
         assert_in(uuid1, res1)
@@ -668,8 +668,8 @@ class TestWikiShareJS(OsfTestCase):
             fork.wiki_sharejs_uuids.get(self.wkey)
         )
 
-        project_uuid = docs_uuid(self.project, self.project.wiki_sharejs_uuids.get(self.wkey))
-        fork_uuid = docs_uuid(fork, fork.wiki_sharejs_uuids.get(self.wkey))
+        project_uuid = to_mongo_uuid(self.project, self.project.wiki_sharejs_uuids.get(self.wkey))
+        fork_uuid = to_mongo_uuid(fork, fork.wiki_sharejs_uuids.get(self.wkey))
 
         assert_not_equal(project_uuid, fork_uuid)
         assert_in(project_uuid, project_res)
@@ -702,7 +702,7 @@ class TestWikiShareJS(OsfTestCase):
         assert_equal(res.status_code, 200)
         self.project.reload()
         assert_equal(original_uuid, self.project.wiki_sharejs_uuids.get(self.wkey))
-        assert_in(docs_uuid(self.project, original_uuid), res.body)
+        assert_in(to_mongo_uuid(self.project, original_uuid), res.body)
 
     def test_uuid_persists_after_rename(self):
         new_wname = 'bar.baz'
@@ -738,7 +738,7 @@ class TestWikiShareJS(OsfTestCase):
         assert_equal(res.status_code, 200)
         self.project.reload()
         assert_not_equal(original_uuid, self.project.wiki_sharejs_uuids.get(self.wkey))
-        assert_not_in(docs_uuid(self.project, original_uuid), res.body)
+        assert_not_in(to_mongo_uuid(self.project, original_uuid), res.body)
 
 
 class TestWikiShareJSMongo(OsfTestCase):
@@ -750,8 +750,7 @@ class TestWikiShareJSMongo(OsfTestCase):
         self.wname = 'foo.bar'
         self.wkey = to_mongo_key(self.wname)
         self.share_uuid = generate_share_uuid(self.project, self.wname)
-        self.docs_uuid = docs_uuid(self.project, self.share_uuid)
-        self.ops_uuid = ops_uuid(self.project, self.share_uuid)
+        self.mongo_uuid = to_mongo_uuid(self.project, self.share_uuid)
 
         # Create wiki page
         self.project.update_node_wiki(self.wname, 'Hello world', Auth(self.user))
@@ -759,69 +758,46 @@ class TestWikiShareJSMongo(OsfTestCase):
 
         # Insert mongo data for current project/wiki
         self.db = share_db()
-        docs = deepcopy(EXAMPLE_DOCS_6)
-        docs['_id'] = self.docs_uuid
-        self.db.docs.insert(docs)
-        self.db[self.ops_uuid].insert(EXAMPLE_OPS_6)
+        example_uuid = EXAMPLE_DOCS[0]['_id']
+        self.example_docs = deepcopy(EXAMPLE_DOCS)
+        self.example_docs[0]['_id'] = self.mongo_uuid
+        self.db.docs.insert(self.example_docs)
+        self.example_ops = deepcopy(EXAMPLE_OPS)
+        for item in self.example_ops:
+            item['_id'] = item['_id'].replace(example_uuid, self.mongo_uuid)
+            item['name'] = item['name'].replace(example_uuid, self.mongo_uuid)
+        self.db.docs_ops.insert(self.example_ops)
 
     def test_migrate_uuid(self):
         self.wiki_page.migrate_uuid(self.project)
-        assert_is_none(self.db['docs'].find_one({'_id': self.docs_uuid}))
-        assert_is_none(self.db[self.ops_uuid].find_one())
+        assert_is_none(self.db.docs.find_one({'_id': self.mongo_uuid}))
+        assert_is_none(self.db.docs_ops.find_one({'name': self.mongo_uuid}))
 
         new_share_uuid = self.project.wiki_sharejs_uuids.get(self.wkey)
-        new_docs_uuid = docs_uuid(self.project, new_share_uuid)
-        new_ops_uuid = ops_uuid(self.project, new_share_uuid)
+        new_mongo_uuid = to_mongo_uuid(self.project, new_share_uuid)
         assert_equal(
-            EXAMPLE_DOCS_6['data'],
-            self.db['docs'].find_one({'_id': new_docs_uuid}).get('data')
+            EXAMPLE_DOCS[0]['_data'],
+            self.db.docs.find_one({'_id': new_mongo_uuid})['_data']
         )
         assert_equal(
-            EXAMPLE_OPS_6,
-            [item for item in self.db[new_ops_uuid].find()]
+            len([item for item in self.example_ops if item['name'] == self.mongo_uuid]),
+            len([item for item in self.db.docs_ops.find({'name': new_mongo_uuid})])
         )
-
-    def test_migrate_uuid_no_docs(self):
-        # Case where 20 or fewer edits have been made
-        wname = 'bar.baz'
-        wkey = to_mongo_key(wname)
-        share_uuid = generate_share_uuid(self.project, wname)
-        original_ops_uuid = ops_uuid(self.project, share_uuid)
-
-        self.project.update_node_wiki(wname, 'Hello world', Auth(self.user))
-        wiki_page = self.project.get_wiki_page(wname)
-        self.db[original_ops_uuid].insert(EXAMPLE_OPS_SHORT_6)
-
-        wiki_page.migrate_uuid(self.project)
-        new_share_uuid = self.project.wiki_sharejs_uuids.get(wkey)
-        # There is no item in docs because there were less than 20 ops
-        new_ops_uuid = ops_uuid(self.project, new_share_uuid)
-
-        assert_is_none(self.db[original_ops_uuid].find_one())
-        assert_equal(
-            EXAMPLE_OPS_SHORT_6,
-            [item for item in self.db[new_ops_uuid].find()]
-        )
-
-        # tear down
-        self.db.drop_collection(new_ops_uuid)
-        assert_is_none(self.db[new_ops_uuid].find_one())
 
     def test_migrate_uuid_no_mongo(self):
         # Case where no edits have been made to the wiki
         wname = 'bar.baz'
         wkey = to_mongo_key(wname)
         share_uuid = generate_share_uuid(self.project, wname)
+        mongo_uuid = to_mongo_uuid(self.project, share_uuid)
 
         self.project.update_node_wiki(wname, 'Hello world', Auth(self.user))
         wiki_page = self.project.get_wiki_page(wname)
         wiki_page.migrate_uuid(self.project)
 
         assert_not_equal(share_uuid, self.project.wiki_sharejs_uuids.get(wkey))
-        assert_is_none(self.db[ops_uuid(self.project, share_uuid)].find_one())
-        assert_is_none(self.db['docs'].find_one(
-            {'_id': docs_uuid(self.project, share_uuid)})
-        )
+        assert_is_none(self.db.docs.find_one({'_id': mongo_uuid}))
+        assert_is_none(self.db.docs_ops.find_one({'name': mongo_uuid}))
 
     def test_migrate_uuid_updates_node(self):
         assert_equal(self.share_uuid, self.project.wiki_sharejs_uuids[self.wkey])
@@ -831,8 +807,8 @@ class TestWikiShareJSMongo(OsfTestCase):
 
     def test_delete_share_doc(self):
         self.wiki_page.delete_share_doc(self.project, self.wname)
-        assert_is_none(self.db['docs'].find_one({'_id': self.docs_uuid}))
-        assert_is_none(self.db[self.ops_uuid].find_one())
+        assert_is_none(self.db.docs.find_one({'_id': self.mongo_uuid}))
+        assert_is_none(self.db.docs_ops.find_one({'name': self.mongo_uuid}))
 
     def test_delete_share_doc_updates_node(self):
         assert_equal(self.share_uuid, self.project.wiki_sharejs_uuids[self.wkey])
@@ -842,10 +818,8 @@ class TestWikiShareJSMongo(OsfTestCase):
 
     def tearDown(self):
         super(TestWikiShareJSMongo, self).tearDown()
-        self.db['docs'].remove({'_id': self.docs_uuid})
-        self.db.drop_collection(self.ops_uuid)
-        assert_is_none(self.db['docs'].find_one({'_id': self.docs_uuid}))
-        assert_is_none(self.db[self.ops_uuid].find_one())
+        self.db.drop_collection('docs')
+        self.db.drop_collection('docs_ops')
 
 
 class TestWikiUtils(OsfTestCase):
@@ -854,24 +828,24 @@ class TestWikiUtils(OsfTestCase):
         super(TestWikiUtils, self).setUp()
         self.project = ProjectFactory()
 
-    def test_docs_uuid(self):
+    def test_to_mongo_uuid(self):
         share_uuid = str(uuid.uuid1())
 
         # Provides consistent results
-        assert_equal(docs_uuid(self.project, share_uuid), docs_uuid(self.project, share_uuid))
+        assert_equal(to_mongo_uuid(self.project, share_uuid), to_mongo_uuid(self.project, share_uuid))
 
         # Provides obfuscation
-        assert_not_in(share_uuid, docs_uuid(self.project, share_uuid))
-        assert_not_in(docs_uuid(self.project, share_uuid), share_uuid)
+        assert_not_in(share_uuid, to_mongo_uuid(self.project, share_uuid))
+        assert_not_in(to_mongo_uuid(self.project, share_uuid), share_uuid)
 
         # Differs based on share uuid provided
-        assert_not_equal(docs_uuid(self.project, share_uuid), self.project, str(uuid.uuid1()))
+        assert_not_equal(to_mongo_uuid(self.project, share_uuid), self.project, str(uuid.uuid1()))
 
         # Differs across projects and forks
         project = ProjectFactory()
         fork = self.project.fork_node(Auth(self.project.creator))
-        assert_not_equal(docs_uuid(self.project, share_uuid), docs_uuid(project, share_uuid))
-        assert_not_equal(docs_uuid(self.project, share_uuid), docs_uuid(fork, share_uuid))
+        assert_not_equal(to_mongo_uuid(self.project, share_uuid), to_mongo_uuid(project, share_uuid))
+        assert_not_equal(to_mongo_uuid(self.project, share_uuid), to_mongo_uuid(fork, share_uuid))
 
     def test_generate_share_uuid(self):
         wname = 'foo.bar'

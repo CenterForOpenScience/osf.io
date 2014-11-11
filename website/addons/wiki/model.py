@@ -5,7 +5,6 @@
 import datetime
 import functools
 import logging
-import uuid
 
 from bleach import linkify
 from bleach.callbacks import nofollow
@@ -18,8 +17,7 @@ from framework.guid.model import GuidStoredObject
 from framework.mongo.utils import to_mongo_key
 from website import settings
 from website.addons.base import AddonNodeSettingsBase
-from website.addons.wiki.utils import (docs_uuid, ops_uuid, share_db,
-                                       generate_share_uuid)
+from website.addons.wiki.utils import to_mongo_uuid, share_db, generate_share_uuid
 
 from .exceptions import (
     NameEmptyError,
@@ -124,9 +122,11 @@ class NodeWikiPage(GuidStoredObject):
         """Deletes share document and removes namespace from model."""
 
         db = share_db()
+        mongo_uuid = to_mongo_uuid(node, self.share_uuid)
 
-        db[ops_uuid(node, self.share_uuid)].drop()
-        db['docs'].remove({'_id': docs_uuid(node, self.share_uuid)})
+        # db[ops_uuid(node, self.share_uuid)].drop()
+        db['docs'].remove({'_id': mongo_uuid})
+        db['docs_ops'].remove({'name': mongo_uuid})
 
         self.share_uuid = None
 
@@ -145,18 +145,23 @@ class NodeWikiPage(GuidStoredObject):
 
         db = share_db()
 
-        old_uuid = self.share_uuid
+        old_mongo_uuid = to_mongo_uuid(node, self.share_uuid)
         self.share_uuid = generate_share_uuid(node, self.page_name)
+        new_mongo_uuid = to_mongo_uuid(node, self.share_uuid)
 
-        ops_collection = db[ops_uuid(node, old_uuid)]
-        if ops_collection.find_one():  # Collection exists
-            ops_collection.rename(ops_uuid(node, self.share_uuid))
+        doc_item = db['docs'].find_one({'_id': old_mongo_uuid})
+        if doc_item:
+            doc_item['_id'] = new_mongo_uuid
+            db['docs'].insert(doc_item)
+            db['docs'].remove({'_id': old_mongo_uuid})
 
-            new_doc = db['docs'].find_one({'_id': docs_uuid(node, old_uuid)})
-            if new_doc:
-                new_doc['_id'] = docs_uuid(node, self.share_uuid)
-                db['docs'].insert(new_doc)
-                db['docs'].remove({'_id': docs_uuid(node, old_uuid)})
+        ops_items = [item for item in db['docs_ops'].find({'name': old_mongo_uuid})]
+        if ops_items:
+            for item in ops_items:
+                item['_id'] = item['_id'].replace(old_mongo_uuid, new_mongo_uuid)
+                item['name'] = new_mongo_uuid
+            db['docs_ops'].insert(ops_items)
+            db['docs_ops'].remove({'name': old_mongo_uuid})
 
         if save:
             self.save()
