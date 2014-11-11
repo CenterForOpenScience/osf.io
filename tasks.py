@@ -662,7 +662,7 @@ def webpack(clean=True, watch=False, production=False):
         clean_assets()
     args = ['webpack']
     if settings.DEBUG_MODE and not production:
-        args += ['-d', '--colors']
+        args += ['--colors']
     else:
         args += ['-p']
     if watch:

@@ -5,6 +5,7 @@ These settings can be overridden in local.py.
 """
 
 import os
+import json
 
 os_env = os.environ
 
@@ -17,6 +18,7 @@ BASE_PATH = parent_dir(HERE)  # website/ directory
 ADDON_PATH = os.path.join(BASE_PATH, 'addons')
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = "/static"
+ROOT = os.path.join(BASE_PATH, '..')
 
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 ANALYTICS_PATH = os.path.join(BASE_PATH, 'analytics')
@@ -142,18 +144,9 @@ CELERY_IMPORTS = (
 
 # Add-ons
 
-ADDONS_REQUESTED = [
-    # 'badges',
-    'dataverse',
-    'dropbox',
-    'figshare',
-    'forward',
-    'github',
-    'osffiles',
-    's3',
-    'twofactor',
-    'wiki',
-]
+# Load addons from addons.json
+with open(os.path.join(ROOT, 'addons.json')) as fp:
+    ADDONS_REQUESTED = json.load(fp)['addons']
 
 ADDON_CATEGORIES = [
     'documentation',
