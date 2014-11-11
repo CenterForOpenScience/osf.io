@@ -1,5 +1,6 @@
 var $ = require('jquery');
 var bootbox = require('bootbox');
+var osfHelpers = require('osf-helpers');
 
 // Set up submission for addon selection form
 var checkedOnLoad = $("#selectAddonsForm input:checked");
@@ -16,7 +17,7 @@ $('#selectAddonsForm').on('submit', function() {
     var unchecked = checkedOnLoad.filter($("#selectAddonsForm input:not(:checked)"));
 
     var submit = function() {
-        var request = $.osf.postJSON('/api/v1/settings/addons/', formData);
+        var request = osfHelpers.postJSON('/api/v1/settings/addons/', formData);
         request.done(function() {
             window.location.reload();
         });
