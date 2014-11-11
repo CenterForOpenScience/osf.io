@@ -12,6 +12,7 @@ var Raven = require('raven-js');
 
 var FolderPicker = require('folderpicker');
 var ZeroClipboard = require('zeroclipboard');
+ZeroClipboard.config('/static/vendor/bower_components/zeroclipboard/dist/ZeroClipboard.swf');
 var osfHelpers = require('osf-helpers');
 
 ko.punches.attributeInterpolationMarkup.enable();
@@ -130,7 +131,7 @@ var ViewModel = function(url, selector, folderPicker) {
         var $copyBtn = $('#copyBtn');
         var client = new ZeroClipboard($copyBtn);
         client.on('ready', function() {
-            window.alert('ready!');
+            // window.alert('ready!');
         });
     };
 

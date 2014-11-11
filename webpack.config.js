@@ -59,6 +59,7 @@ module.exports = {
             'knockout-validation': fromRoot('vendor/knockout-validation/knockout.validation.min.js'),
             'knockout-mapping': fromRoot('vendor/knockout-mapping/knockout.mapping.js'),
             'bootstrap-editable': fromRoot('vendor/bootstrap3-editable/js/bootstrap-editable.js'),
+            'zeroclipboard': fromRoot('vendor/bower_components/zeroclipboard/dist/ZeroClipboard.js'),
             // Needed for knockout-sortable
             'jquery.ui.sortable': fromRoot('vendor/bower_components/jquery-ui/ui/jquery.ui.sortable.js'),
             // Dropzone doesn't have a proper 'main' entry in its bower.json

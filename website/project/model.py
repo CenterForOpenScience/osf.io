@@ -52,6 +52,8 @@ html_parser = HTMLParser()
 logger = logging.getLogger(__name__)
 
 
+
+
 def utc_datetime_to_timestamp(dt):
     return float(
         str(calendar.timegm(dt.utcnow().utctimetuple())) + '.' + str(dt.microsecond)
