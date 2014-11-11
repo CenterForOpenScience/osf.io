@@ -91,7 +91,7 @@
         }
         return m('.btn-group', [
                 buttons.map(function(btn){  
-                    return m('button', { 'data-col' : item.id, 'class' : btn.css, style : btn.style, 'onclick' : function(){ btn.onclick.call(self, event, item, col); } },
+                    return m('i', { 'data-col' : item.id, 'class' : btn.css, style : btn.style, 'onclick' : function(){ btn.onclick.call(self, event, item, col); } },
                         [ m('span', { 'class' : btn.icon}, btn.name) ]);
                 })
         ]); 
@@ -133,7 +133,8 @@
         var branchArray = [];
         if (item.data.branches){
             for (var i = 0; i < item.data.branches.length; i++){
-                branchArray.push(m("option", {value:item.data.branches[i]}, item.data.branches[i]));
+                var selected = item.data.branches[i] === 'master' ? 'selected' : ''; 
+                branchArray.push(m("option", {selected : selected, value:item.data.branches[i]}, item.data.branches[i]));
             }
         }
 
@@ -141,7 +142,7 @@
             return m("span",[
                 m("github-name", item.data.name + ' '),
                 m("span",[
-                    m("select[name=branch-selector]", {onchange: function(ev) { changeBranch.call(tb, item, ev.target.value ) } }, branchArray)
+                    m("select[name=branch-selector]", { onchange: function(ev) { changeBranch.call(tb, item, ev.target.value ) } }, branchArray)
                 ])
             ]);
         } else {
@@ -156,6 +157,7 @@
         columns.push({
                 data : 'name',
                 folderIcons : true,
+                filter: true,
                 custom : _fangornGithubTitle
             }); 
 
@@ -163,10 +165,12 @@
         columns.push(
             {
                 css : 'action-col',
+                filter : false,
                 custom : _fangornActionColumn
             },
             {
                 data  : 'downloads',
+                filter : false,
                 css : ''
             });
         }

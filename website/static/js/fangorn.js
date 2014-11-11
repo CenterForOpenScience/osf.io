@@ -124,8 +124,7 @@
         if (item.data.permissions.view) {
             return true;
         }
-        var msg = new Fangorn.status(this, item, 'warning', 'Not allowed: Private folder', 1);
-        msg.init(3000); 
+        item.notify.update('Not allowed: Private folder', 'warning', 1, undefined);
         return false;
     }
     function _fangornResolveUploadUrl (item) {
@@ -155,7 +154,7 @@
         var blankItem = {
             name : file.name,
             kind : 'item',
-            addon : parent.addon,
+            addon : parent.data.addon,
             children : []
         };
 
@@ -190,15 +189,14 @@
         var id  = element.attr('data-id');
         var item = treebeard.find(id);
         if(response){
-            item.data = response;
-            treebeard.redraw();
-            _renderOriginalCell.call(treebeard, revisedItem, 1);                     
+            if(response.actionTaken === 'file_added' || response.addon === 'dropbox'){ // Base OSF response 
+                item.data = response;
+                item.notify = false;
+                treebeard.redraw();            
+            }
         } else {
-            var revisedItem = resolveconfigOption.call(treebeard, item.parent(), 'uploadSuccess', [file, item, response]);
-            _renderOriginalCell.call(treebeard, revisedItem, 1);                     
-         
+            var revisedItem = resolveconfigOption.call(treebeard, item.parent(), 'uploadSuccess', [file, item, response]);         
         }
-
     }
 
     function _fangornDropzoneError (treebeard, file, message, xhr) {
@@ -210,8 +208,7 @@
         var msgText = message.message_short ? message.message_short : message; 
         item.notify.message = msgText; 
         item.notify.col = 1; 
-        item.notify.show(); 
-        console.log(item.notify);
+        item.notify.selfDestruct(treebeard, item); 
     }
 
     function _uploadEvent (event, item, col){
@@ -224,9 +221,10 @@
     function _downloadEvent (event, item, col) {
         event.stopPropagation();
         console.log('Download Event triggered', this, event, item, col);
-        item.data.downloads++; 
+        if(!item.data.addon){
+            item.data.downloads++;    
+        }
         window.location = item.data.urls.download;
-
     }
 
     function _removeEvent (event, item, col) {
@@ -256,6 +254,18 @@
             return configOption;
         }
         return item.data.urls.fetch || false;
+    }
+
+    function _fangornFileExists (item, file) {
+        var i,
+            child;
+        for(i = 0; i < item.children.length; i++){
+            child = item.children[i];
+            if(child.kind === 'item' && child.data.name === file.name) {
+                return true;
+            }
+        }
+        return false; 
     }
 
     function _fangornLazyLoadError (tree) {
@@ -330,27 +340,24 @@
             custom : _fangornTitleColumn
         });
 
-        if(this.options.placement === 'project-files') {
-            default_columns.push(
-                {
+        default_columns.push(
+            {
+            sortInclude : false,
+            custom : _fangornActionColumn
+        }); 
+        if(!item.data.addon){
+           default_columns.push({
+                data : 'downloads',
                 sortInclude : false,
-                custom : _fangornActionColumn
+                filter : false
             }); 
-            if(!item.data.addon){
-               default_columns.push({
-                    data : 'downloads',
-                    sortInclude : false,
-                    filter : false
-                }); 
-            } else {
-               default_columns.push({
-                    data : 'downloads',
-                    sortInclude : false,
-                    filter : false,
-                    custom : function(){ return m(''); }
-                }); 
-            }
-            
+        } else {
+           default_columns.push({
+                data : 'downloads',
+                sortInclude : false,
+                filter : false,
+                custom : function(){ return m(''); }
+            });             
         }
         var configOption = item.data.addon ? resolveconfigOption.call(this, item, 'resolveRows', [item]) : undefined;
         return configOption || default_columns;
@@ -359,22 +366,21 @@
     function _fangornColumnTitles () {
         var columns = [];
         columns.push({
-                    title: 'Name',
-                    width : '50%',
-                    sort : true,
-                    sortType : 'text'
-                }); 
-        if(this.options.placement === 'project-files') {
-            columns.push({
-                    title : 'Actions',
-                    width : '25%',
-                    sort : false
-                }, {
-                    title : 'Downloads',
-                    width : '25%',
-                    sort : false
-                });
-        }
+                title: 'Name',
+                width : '50%',
+                sort : true,
+                sortType : 'text'
+            },
+            {
+                title : 'Actions',
+                width : '25%',
+                sort : false
+            }, 
+            {
+                title : 'Downloads',
+                width : '25%',
+                sort : false
+            });
         return columns; 
         
     } 
@@ -388,6 +394,7 @@
             columnTitles : _fangornColumnTitles,
             resolveRows : _fangornResolveRows,
             showFilter : true,     // Gives the option to filter by showing the filter box.
+            filterStyle : { 'float' : 'right', 'width' : '50%'},
             title : false,          // Title of the grid, boolean, string OR function that returns a string.
             allowMove : false,       // Turn moving on or off.
             hoverClass : 'fangorn-hover',
@@ -421,10 +428,16 @@
             addcheck : function (treebeard, item, file) {
                 window.console.log('Add check', this, treebeard, item, file);
                 if (item.data.permissions.edit){
-                    return true;
+                    if(!_fangornFileExists.call(treebeard, item, file)){
+                        return true;    
+                    } else {
+                        var msgText = 'File already exists.'; 
+                        item.notify.update(msgText, 'warning', 1, 3000);
+                    }
+                } else {
+                    var msgText = 'You don\'t have permission to upload here'; 
+                    item.notify.update(msgText, 'warning', 1, 3000);                    
                 }
-                var msgText = 'You don\'t have permission to upload here'; 
-                item.notify.update(msgText, 'warning', 1, 3000);
                 return false;
             },
             onselectrow : function (item) {

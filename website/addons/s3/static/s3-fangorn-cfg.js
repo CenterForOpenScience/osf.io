@@ -41,7 +41,7 @@
         xhr.setRequestHeader('x-amz-acl', 'private');
     }
 
-    function _fangornUploadSuccess(file, item){
+    function _fangornUploadSuccess(file, item, response){
         var self = this;
         var parent = item.parent();
         item.data.name = file.name; 
@@ -50,7 +50,7 @@
             'download': parent.data.nodeUrl + 's3/' + file.destination + '/download/',
             'view': parent.data.nodeUrl + 's3/' + file.destination + '/'
         };
-        item.data.permissions = parent.permissions;
+        item.data.permissions = parent.data.permissions; 
         return item; 
     }
 

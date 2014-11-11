@@ -46,15 +46,7 @@
 
         <div class="addon-widget-container">
             <h3 class="addon-widget-header"><a href="${node['url']}files/">Files</a></h3>
-            <div id="filetreeProgressBar" class="progress progress-striped active">
-                <div class="progress-bar"  role="progressbar" aria-valuenow="100"
-                    aria-valuemin="0" aria-valuemax="100" style="width: 100%">
-                    <span class="sr-only">Loading</span>
-                </div>
-            </div>
-
-            <input role="search" class="form-control" placeholder="Search files..." type="text" id="fileSearch" autofocus>
-            <div id="myGrid" class="filebrowser hgrid"></div>
+            <div id="treeGrid" class=""></div>
         </div>
 
     </div>
@@ -249,18 +241,55 @@ ${parent.javascript_bottom()}
         %endif
 
     });
-    $script.ready(['rubeus'], function() {
-        // Initialize filebrowser
-        var filebrowser = new Rubeus('#myGrid', {
-                data: nodeApiUrl + 'files/grid/',
-                columns: [Rubeus.Col.Name],
-                uploads: false,
-                width: "100%",
-                height: 600,
-                progBar: '#filetreeProgressBar',
-                searchInput: '#fileSearch'
+
+
+    function _fangornTitleColumn (item, col) {
+        return m('span', 
+            { onclick : function(){ 
+                if (item.kind === 'item') {
+                    window.location = item.data.urls.view;                    
+                } 
+            }}, 
+            item.data.name);
+    }
+
+    $script.ready(['fangorn'], function() {
+    
+        $.ajax({
+          url:  nodeApiUrl + 'files/grid/'
+        })
+        .done(function( data ) {
+            console.log("data", data);
+            var fangornOpts = {
+                divID: 'treeGrid',
+                filesData: data.data,
+                uploads : false,
+                showFilter : true,
+                filterStyle : { 'float' : 'left', width : '100%'},
+                columnTitles : function(){ 
+                    return [
+                        {
+                        title: 'Name',
+                        width : '100%',
+                        sort : false,
+                        sortType : 'text'
+                        }
+                    ]; 
+                    },
+                resolveRows : function(){ 
+                    return  [{
+                        data : 'name',  
+                        folderIcons : true,
+                        filter : true,
+                        custom : _fangornTitleColumn
+                    }];
+                    },
+            };
+            console.log("fangorn", Fangorn);
+            var filebrowser = new Fangorn(fangornOpts);
         });
-    })
+    });
+
 </script>
 
 </%def>
