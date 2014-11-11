@@ -40,7 +40,8 @@ module.exports = {
         'files-page': fromRoot('js/pages/files-page.js'),
         'addon-index-bundle': getAddonModules('index.js'),
         'addon-files-bundle': getAddonModules('files.js'),
-        'addon-node-cfg-bundle': getAddonModules('node-cfg.js')
+        'addon-node-cfg-bundle': getAddonModules('node-cfg.js'),
+        'addon-user-cfg-bundle': getAddonModules('user-cfg.js')
     },
     debug: true,
     output: {
