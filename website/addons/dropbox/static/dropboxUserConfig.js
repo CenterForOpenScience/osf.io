@@ -9,7 +9,7 @@ var $ = require('jquery');
 var Raven = require('raven-js');
 var bootbox = require('bootbox');
 
-var language = require('osf-language');
+var language = require('osf-language').Addons.dropbox;
 var osfHelpers = require('osf-helpers');
 
 function ViewModel(url) {
