@@ -80,7 +80,7 @@
         socket.send({
             registration: true,
             uuid: '${share_uuid}',
-            name: 'Robert Liebowitz'
+            name: '${user_full_name}'
             // TODO: Should emails be used as user IDs?
         });
 

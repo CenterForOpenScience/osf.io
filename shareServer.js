@@ -81,8 +81,9 @@ server.use(browserChannel(bcOptions, function(client) {
             docs[uuid][name] = docs[uuid][name] ? docs[uuid][name] - 1 : 0;
             if (docs[uuid][name] === 0) {
                 delete docs[uuid][name];
-                if (!Object.keys(docs[uuid]).length){}
+                if (!Object.keys(docs[uuid]).length) {
                     delete docs[uuid];
+                }
             }
         }
         numClients -= 1;
