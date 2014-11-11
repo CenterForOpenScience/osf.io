@@ -62,7 +62,7 @@
         self.appURL = self.params.appURL;
 
         self.tag = ko.observable('');
-        self.stateJustPushed = false;
+        self.stateJustPushed = true;
         self.query = ko.observable('');
         self.category = ko.observable({});
         self.tags = ko.observableArray([]);
@@ -165,11 +165,15 @@
             }
 
             self.currentPage(1);
-            if (self.query() !== ''){
-                 self.query(self.query() + ' AND ');
+            var tagString = 'tags:("' + tag + '")';
+
+            if (self.query().indexOf(tagString) === -1) {
+                if (self.query() !== '') {
+                    self.query(self.query() + ' AND ');
+                }
+                self.query(self.query() + tagString);
+                self.category(new Category('total', 0, 'Total'));
             }
-            self.query(self.query() + 'tags:("' + tag + '")');
-            self.category(new Category('total', 0, 'Total'));
             self.search();
         };
 
@@ -281,12 +285,12 @@
                     return category.name;
                 });
 
-                if (possibleCategories.indexOf(self.category().name) === -1) {
+                if (possibleCategories.indexOf(self.category().name) === -1 && possibleCategories.length !== 0) {
                     self.filter(self.categories()[0]);
                     return self.search(true);
                 }
             }
-            if (self.currentPage() > self.totalPages()) {
+            if (self.currentPage() > self.totalPages() && self.currentPage() !== 1) {
                 self.currentPage(self.totalPages());
                 return self.search(true);
             }

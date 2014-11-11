@@ -638,7 +638,7 @@ def bundle_certs(domain, cert_path):
         for cert_file in cert_files
     )
     cmd = 'cat {certs} > {domain}.bundle.crt'.format(
-        certs=' '.join(certs),
+        certs=certs,
         domain=domain,
     )
     run(cmd)
@@ -669,3 +669,13 @@ def webpack(clean=True, watch=False, production=False):
         args += ['--watch']
     command = ' '.join(args)
     run(command, echo=True)
+
+@task
+def generate_self_signed(domain):
+    """Generate self-signed SSL key and certificate.
+    """
+    cmd = (
+        'openssl req -x509 -nodes -days 365 -newkey rsa:2048'
+        ' -keyout {0}.key -out {0}.crt'
+    ).format(domain)
+    run(cmd)

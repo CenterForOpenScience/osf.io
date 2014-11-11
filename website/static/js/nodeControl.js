@@ -76,7 +76,6 @@ function setPermissions(permissions) {
     } else {
         confirmModal(message);
     }
-
 }
 
 /**
