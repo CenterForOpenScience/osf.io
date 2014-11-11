@@ -39,7 +39,8 @@ module.exports = {
         // TODO: Optimize common chunks between these modules
         'files-page': fromRoot('js/pages/files-page.js'),
         'addon-index-bundle': getAddonModules('index.js'),
-        'addon-files-bundle': getAddonModules('files.js')
+        'addon-files-bundle': getAddonModules('files.js'),
+        'addon-node-cfg-bundle': getAddonModules('node-cfg.js')
     },
     debug: true,
     output: {
@@ -68,6 +69,7 @@ module.exports = {
             'rubeus': fromRoot('js/rubeus.js'),
             'folderpicker': fromRoot('js/folderPicker.js'),
             'osf-helpers': fromRoot('js/osf-helpers.js'),
+            'osf-language': fromRoot('js/osf-language.js'),
             'addons': path.join(__dirname, 'website', 'addons')
         }
     },

@@ -185,8 +185,9 @@
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
-    <script type="text/javascript" src="/static/js/metadata_1.js"></script>
+    ## <script type="text/javascript" src="/static/js/metadata_1.js"></script>
     <script type="text/javascript" src="/static/js/projectSettings.js"></script>
+    <script src="/static/public/js/addon-node-cfg-bundle.js"></script>
     <script type="text/javascript">
         $(document).ready(function() {
             $('#deleteNode').on('click', function() {
