@@ -97,9 +97,9 @@
                 url: url,
                 dataType: 'json',
                 success: function (response) {
+                    doc.attachAce(editor);
                     editor.setValue(response.wiki_content);
                     editor.setReadOnly(false);
-                    doc.attachAce(editor);
                 },
                 error: function (xhr, textStatus, error) {
                     console.error(textStatus);
@@ -108,8 +108,8 @@
                 }
             });
         } else {
-            editor.setReadOnly(false);
             doc.attachAce(editor);
+            editor.setReadOnly(false);
         }
 
     });
