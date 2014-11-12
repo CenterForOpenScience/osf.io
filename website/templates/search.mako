@@ -57,7 +57,6 @@
                                     <span class="cloud-tag tag-sm pointer" data-bind="click: $root.addTag.bind(name)">
                                         {{ name }}
                                     </span>
-                                    <br />
                                     <!-- /ko -->
                                 </span>
                             </div>
