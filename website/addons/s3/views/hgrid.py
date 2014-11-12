@@ -12,7 +12,6 @@ from framework.exceptions import HTTPError
 from website.util import rubeus
 from website.addons.s3.api import S3Wrapper
 from website.addons.s3.utils import build_urls
-from website.addons.s3.utils import wrapped_key_to_json
 from website.project.decorators import must_be_contributor_or_public, must_have_addon
 
 
@@ -54,6 +53,9 @@ def s3_hgrid_data_contents(auth, node_addon, **kwargs):
             if path:
                 return key.name.replace(path, '')
             return key.name
+
+        if path:
+            return key.name.replace(path, '')[:-1]
         return key.name[:-1]
 
     return [
