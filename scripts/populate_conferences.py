@@ -86,6 +86,7 @@ MEETING_DATA = {
         'admins': [
             'gkroll@berkeley.edu',
             'andrew@cos.io',
+            'awais@berkeley.edu',
         ],
         'public_projects': True,
     },
