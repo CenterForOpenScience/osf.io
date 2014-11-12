@@ -7,13 +7,14 @@ from flask import request
 from modularodm.exceptions import ValidationError
 
 from framework.auth import Auth
+from framework.auth import User
 from framework.flask import app
 from framework.guid.model import Guid
 from framework.exceptions import HTTPError
 
-from website.search.search import search
 from website.project import Node
 from website.project import new_node
+from website.search.search import search
 from website.project.decorators import must_have_addon
 from website.search.exceptions import IndexNotFoundError
 from website.search.exceptions import MalformedQueryError
@@ -24,11 +25,29 @@ from website.addons.app.model import Metadata
 from website.addons.app.utils import args_to_query
 from website.addons.app.utils import elastic_to_rss
 from website.addons.app.utils import elastic_to_atom
-from website.addons.app.utils import elastic_to_resourcelist
 from website.addons.app.utils import elastic_to_changelist
+from website.addons.app.utils import elastic_to_resourcelist
 from website.addons.app.utils import generate_capabilitylist
 
 from . import metadata, customroutes  # noqa
+
+
+# GET
+@must_have_permission('admin')
+@must_have_addon('app', 'node')
+def get_access(node_addon, **kwargs):
+    key = request.get_json().get('key')
+
+    if not key:
+        raise HTTPError(http.BAD_REQUEST)
+
+    node = node_addon.owner
+    user = User.from_api_key(key)
+    permissions = node.permissions.get(user._id)
+
+    return {
+        'permissions': permissions or []
+    }
 
 
 # GET

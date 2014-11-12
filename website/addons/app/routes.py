@@ -26,6 +26,12 @@ web_routes = {
 api_routes = {
     'rules': [
         Rule(
+            '/app/<pid>/auth/',
+            'post',
+            views.crud.get_access,
+            json_renderer
+        ),
+        Rule(
             '/app/<pid>/projects/',
             'post',
             views.crud.create_application_project,

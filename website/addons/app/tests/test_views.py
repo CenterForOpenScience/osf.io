@@ -396,6 +396,18 @@ class TestSchemaViews(OsfTestCase):
 
         assert_equals(ret.status_code, 400)
 
+    def test_schema_date_transform(self):
+        schema = {'foo': 'date'}
+        derta = {'foo': '10/10/10'}
+
+        self.app_addon._schema = schema
+        self.app_addon.save()
+
+        mertaderta = Metadata(app=self.app_addon, data=derta)
+        mertaderta.save()
+
+        assert_equals(mertaderta['foo'], '2010-10-10T00:00:00')
+
 class TestCustomRouteViews(OsfTestCase):
 
     def setUp(self):
