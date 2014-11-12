@@ -17,6 +17,8 @@
     "sinon-qunit": "~1.0.0",
     "typeahead.js": "~0.10.5",
     "knockout": "~3.2.0",
-    "handlebars": "~2.0.0"
+    "handlebars": "~2.0.0",
+    "history.js": "~1.8.0",
+    "bootstrap.growl": "~2.0.1"
   }
 }

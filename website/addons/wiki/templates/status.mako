@@ -1,9 +1,9 @@
 <%page expression_filter="h"/>
 
 % if user['can_edit']:
-<nav class="navbar navbar-default" style="display: inline-block; float: right; margin-left: 20px;">
+<nav class="navbar navbar-default wiki-status-sm wiki-status-lg">
     <div class="navbar-collapse">
-        <ul class="nav navbar-nav">
+        <ul class="superlist nav navbar-nav">
             <li><a href="#" data-toggle="modal" data-target="#newWiki">New</a></li>
                 <%include file="add_wiki_page.mako"/>
             <li><a href="${urls['web']['edit']}">Edit</a></li>
@@ -21,7 +21,7 @@
         <i class="icon-home"></i>
     % endif
     <span id="pageName"
-        % if wiki_name == 'home':
+        % if wiki_name == 'home' and not node['is_registration']:
             data-toggle="tooltip"
             title="Note: Home page cannot be renamed."
         % endif
@@ -33,7 +33,7 @@
     $pageName.tooltip();
 
     // Activate editable title unless on home page or in edit mode only for users that can edit
-    %if 'write' in user['permissions'] and not is_edit and wiki_id and wiki_name != 'home':
+    %if 'write' in user['permissions'] and not is_edit and wiki_id and wiki_name != 'home' and not node['is_registration']:
     $(document).ready(function() {
         $.fn.editable.defaults.mode = 'inline';
         $pageName.editable({
