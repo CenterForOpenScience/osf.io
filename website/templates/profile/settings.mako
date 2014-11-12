@@ -1,7 +1,7 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Settings</%def>
 <%def name="content()">
-<h2 class="page-header">Account Settings</h2>
+<h2 class="page-header">Profile Information</h2>
 
 ## TODO: Review and un-comment
 ##<div class="row">
@@ -21,6 +21,7 @@
         <div class="panel panel-default">
             <ul class="nav nav-stacked nav-pills">
                 <li><a href="#">Profile Information</a></li>
+                <li><a href="${ web_url_for('user_account') }">Account Settings</a></li>
                 <li><a href="${ web_url_for('user_addons') }">Configure Add-ons</a></li>
             </ul>
         </div><!-- end sidebar -->

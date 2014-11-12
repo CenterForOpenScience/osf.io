@@ -13,11 +13,13 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.exceptions import HTTPError
 from framework.auth import get_current_user
 from framework.auth import utils as auth_utils
+from framework.status import push_status_message
 
 from website.models import ApiKey, User
 from website.views import _render_nodes
 from website import settings
 from website.profile import utils as profile_utils
+from website.util import web_url_for
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
 
@@ -134,6 +136,42 @@ def user_profile(auth, **kwargs):
         'user_id': user._id,
         'user_api_url': user.api_url,
     }
+
+
+@must_be_logged_in
+def user_account(auth, **kwargs):
+    user = auth.user
+    return {
+        'user_id': user._id,
+    }
+
+
+@must_be_logged_in
+def user_account_password(auth, **kwargs):
+    user = auth.user
+    old_password = request.form.get('old_password', None)
+    new_password = request.form.get('new_password', None)
+    confirm_password = request.form.get('confirm_password', None)
+    messages = []
+
+    if not user.check_password(old_password):
+        messages.append('Old password is invalid')
+    if not old_password or not new_password or not confirm_password:
+        messages.append('Passwords cannot be blank')
+    if new_password != confirm_password:
+        messages.append('Password does not match the confirmation')
+    elif len(new_password) < 3:
+        messages.append('Password must be at least three characters')
+
+    if messages:
+        push_status_message(', '.join(messages) + '.', kind='error')
+    else:
+        user.set_password(new_password)
+        user.save()
+        push_status_message('Password updated successfully.', kind='info')
+
+    return redirect(web_url_for('user_account'))
+
 
 @must_be_logged_in
 def user_addons(auth, **kwargs):
