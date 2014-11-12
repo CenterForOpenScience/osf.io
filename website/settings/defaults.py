@@ -55,6 +55,9 @@ MAIL_SERVER = 'smtp.sendgrid.net'
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = ''  # Set this in local.py
 
+# Mailchimp
+MAILCHIMP_API_KEY = 'CHANGEME'
+
 # TODO: Override in local.py
 MAILGUN_API_KEY = None
 

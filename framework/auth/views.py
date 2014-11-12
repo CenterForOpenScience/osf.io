@@ -12,7 +12,7 @@ from framework import forms
 from framework import auth
 from framework.flask import redirect  # VOL-aware redirect
 from framework.exceptions import HTTPError
-from framework.auth import login, logout, DuplicateEmailError, get_user, get_current_user
+from framework.auth import login, logout, DuplicateEmailError, get_user, get_current_user, utils
 from framework.auth.forms import (RegistrationForm, SignInForm,
     ForgotPasswordForm, ResetPasswordForm, MergeAccountForm, ResendConfirmationForm)
 
@@ -158,12 +158,18 @@ def confirm_email_get(**kwargs):
     user = User.load(kwargs['uid'])
     token = kwargs['token']
     if user:
-        if user.confirm_email(token):  # Confirm and register the usre
+        if user.confirm_email(token):  # Confirm and register the user
             user.date_last_login = datetime.datetime.utcnow()
             user.save()
+
             # Go to settings page
             status.push_status_message(language.WELCOME_MESSAGE, 'success')
             response = redirect('/settings/')
+
+            # Subscribe user to general OSF mailing list
+            if not website.settings.DEV_MODE:
+                utils.subscribe('Open Science Framework General', user.username)
+
             return auth.authenticate(user, response=response)
     # Return data for the error template
     return {
