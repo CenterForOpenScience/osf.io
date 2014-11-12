@@ -130,7 +130,7 @@
                 <div class="col-md-1">
                     <img data-bind="visible: gravatarUrl(), attr.src: gravatarUrl()">
                 </div>
-                <div class="col-md-11">
+                <div class="col-md-7">
                     <h4><a data-bind="attr.href: url"><span>{{ user }}</span></a></h4>
                     <p>
                         <span data-bind="visible: job_title, text: job_title"></span><!-- ko if: job_title && job --> at <!-- /ko -->
