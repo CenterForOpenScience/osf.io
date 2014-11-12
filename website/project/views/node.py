@@ -32,7 +32,7 @@ from website import settings
 from website.views import _render_nodes, find_dashboard
 from website.profile import utils
 from website.project import new_folder
-from website.util.sanitize import strip_html #REVIEW
+from website.util.sanitize import strip_html  # REVIEW
 
 
 logger = logging.getLogger(__name__)
