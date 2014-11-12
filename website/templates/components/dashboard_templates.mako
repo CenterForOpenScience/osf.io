@@ -13,7 +13,7 @@
                             onSelected: onSelectedProject
                         },
                         value: projectInput,
-                        attr: {disabled: hasSelectedProject(),
+                        attr: {readonly: hasSelectedProject(),
                             placeholder: projectPlaceholder}"
                 class="typeahead ob-typeahead-input form-control"
                 name="project"
