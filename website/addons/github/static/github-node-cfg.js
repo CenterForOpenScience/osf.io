@@ -72,9 +72,12 @@ var GithubConfigHelper = (function() {
         });
 
         $('#githubRemoveToken').on('click', function() {
-            bootbox.confirm('Are you sure you want to remove this GitHub authorization?', function(confirm) {
-                if (confirm) {
-                    $.ajax({
+            bootbox.confirm({
+                title: 'Deauthorize GitHub?',
+                message: 'Are you sure you want to remove this GitHub authorization?',
+                callback: function(confirm) {
+                    if(confirm) {
+                        $.ajax({
                         type: 'DELETE',
                         url: nodeApiUrl + 'github/oauth/'
                     }).done(function() {
@@ -82,6 +85,7 @@ var GithubConfigHelper = (function() {
                     }).fail(
                         $.osf.handleJSONError
                     );
+                    }
                 }
             });
         });

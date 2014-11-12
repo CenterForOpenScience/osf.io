@@ -2,6 +2,35 @@
 Changelog
 *********
 
+0.21.0 (unreleased)
+===================
+
+- OSF Files 2.0.
+- Improvements to search.
+
+0.20.0 (2014-10-31)
+===================
+
+Lots of new UI features and responsiveness improvements.
+
+- "Onboarder" interface: Go to a project, create a project, register a project, and upload files from the dashboard.
+- Responsive index page, header, footer, project navbars, login page, public activity, and user activity meters.
+- Various minor UI fixes to user settings page and view file pages.
+
+0.19.0 (2014-10-22)
+===================
+
+- Wiki names have mixed-case page names.
+- Allow mixed casing in wiki page names.
+- Wiki rename events are logged.
+- Improved load time of Getting Started page, as well as some minor UI fixes.
+- Improvements and bugfixes to user settings pages.
+- Various UI fixes to the wiki.
+- Fix importing Dataverse authentication to a project.
+- Fix project "Link" counts and lists.
+- Modal dialogs are more visually consistent.
+- Language fixes on FAQ page.
+
 0.18.0 (2014-10-14)
 ===================
 
