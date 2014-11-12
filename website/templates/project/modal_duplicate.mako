@@ -1,65 +1,62 @@
 % if not disk_saving_mode:
+
 <div class="modal fade" id="duplicateModal">
+##<pre data-bind="text: ko.toJSON($data, null, 2)"></pre>
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-body">
                 <div class="row">
                     <div class="col-md-4">
                         <h4>Links
-                            % if node['points'] > 0:
-                                <a class="btn btn-primary pull-right"
-                                   href="#showLinks"
-                                   data-toggle="modal"
-                                   data-dismiss="modal"
-                                >
-                                    ${ node['points'] }
-                                </a>
-                            % else:
-                                 <span class="well well-inline pull-right">
-                                    ${ node['points'] }
-                                </span>
-                            % endif
+                            <button data-bind="
+                                enable: showLinksAllowed(),
+                                click: showLinks, 
+                                attr: {class: showLinksAllowed() ? 'btn btn-primary' : 'well well-inline'},
+                                css: 'pull-right',
+                                text: node.points"></button>
                         </h4>
                         ${ language.LINK_DESCRIPTION }
                     </div>
                     <div class="col-md-4">
                         <h4>Templated From
-                            <span class="well well-inline pull-right">
-                                ${ node['templated_count'] }
-                            </span>
+                            <button data-bind="
+                                enable: showTemplatesAllowed(), 
+                                click: showTemplates, 
+                                attr: {class: showTemplatesAllowed() ? 'btn btn-primary' : 'well well-inline'},
+                                css: 'pull-right',
+                                text: node.templated_count"></button>
                         </h4>
                         ${ language.TEMPLATE_DESCRIPTION }
                     </div>
                     <div class="col-md-4">
                         <h4>Forks
-                            <a class="btn btn-primary pull-right"
-                               href="${ node['url'] }forks/"
-                            >
-                                ${ node['fork_count'] }
-                            </a>
+                            <button data-bind=" 
+                            enable: showForksAllowed(),
+                            click: showForks, 
+                            attr: {class: showForksAllowed() ? 'btn btn-primary' : 'well well-inline'},
+                            css: 'pull-right',
+                            text: node.fork_count"></button>
                         </h4>
                         ${ language.FORK_DESCRIPTION }
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-4">
-##                        <a class="btn btn-primary form-control disabled">${ language.LINK_ACTION }</a>
+##                      <button data-bind=" enable: { false } >${ language.LINK_ACTION }</button>
                     </div>
                     <div class="col-md-4">
-                        <a class="btn btn-primary form-control${'' if user_name and (user['is_contributor'] or node['is_public']) else ' disabled'}"
-                           data-dismiss="modal"
-                           onclick="NodeActions.useAsTemplate();"
-                        >
-                            ${ language.TEMPLATE_ACTION }
-                        </a>
+                        <button data-bind=" 
+                            enable:  primaryButtonsAllowed(),
+                            attr: {class: primaryButtonsAllowed() ? 'btn btn-primary form-control' : 'disabled'}, 
+                            click: useAsTemplate" 
+                            data-dismiss="modal">${ language.TEMPLATE_ACTION }</button>
                     </div>
                     <div class="col-md-4">
-                        <a class="btn btn-primary form-control${ '' if user_name and (user['is_contributor'] or node['is_public']) else ' disabled'}"
-                           data-dismiss="modal"
-                           onclick="NodeActions.forkNode();"
-                        >
-                            ${ language.FORK_ACTION }
-                        </a>
+                        <button data-bind="
+                            enable:  primaryButtonsAllowed(),
+                            attr: {class: primaryButtonsAllowed() ? 'btn btn-primary form-control' : 'disabled'},
+                            click: forkNode"
+                            data-dismiss="modal">${ language.FORK_ACTION }</button>
                     </div>
                 </div>
             </div>
