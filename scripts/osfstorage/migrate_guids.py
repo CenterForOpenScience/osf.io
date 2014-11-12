@@ -17,10 +17,12 @@ from website.app import init_app
 from website.addons.osffiles.model import OsfGuidFile
 from website.addons.osfstorage.model import OsfStorageGuidFile
 
+from scripts import utils
 from scripts.osfstorage.utils import ensure_osf_files
 
 
 logger = logging.getLogger(__name__)
+utils.add_file_logger(logger, __file__)
 logging.basicConfig(level=logging.INFO)
 
 

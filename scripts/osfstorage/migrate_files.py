@@ -5,6 +5,7 @@ must be *exactly* the same as in the production upload service, else files
 could be uploaded to the wrong place.
 """
 
+import os
 import hashlib
 import logging
 from cStringIO import StringIO
@@ -23,11 +24,13 @@ from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import errors
 
+from scripts import utils
 from scripts.osfstorage.utils import ensure_osf_files
 from scripts.osfstorage import settings as scripts_settings
 
 
 logger = logging.getLogger(__name__)
+utils.add_file_logger(logger, __file__)
 logging.basicConfig(level=logging.INFO)
 
 client = scripts_settings.STORAGE_CLIENT_CLASS(
