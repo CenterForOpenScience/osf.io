@@ -3,7 +3,6 @@ import httplib as http
 from modularodm.exceptions import ValidationError
 
 from framework.auth.decorators import collect_auth
-from website.util.sanitize import clean_tag
 from website.project.model import Tag
 from website.project.decorators import (
     must_be_valid_project, must_have_permission, must_not_be_registration
@@ -34,7 +33,7 @@ def project_tag(tag, auth, **kwargs):
 @must_not_be_registration
 def project_addtag(auth, **kwargs):
 
-    tag = clean_tag(kwargs['tag'])
+    tag = kwargs['tag']
     node = kwargs['node'] or kwargs['project']
 
     if tag:
@@ -42,7 +41,8 @@ def project_addtag(auth, **kwargs):
             node.add_tag(tag=tag, auth=auth)
             return {'status': 'success'}, http.CREATED
         except ValidationError:
-            return {'status': 'error'}, http.BAD_REQUEST
+            pass
+    return {'status': 'error'}, http.BAD_REQUEST
 
 
 @must_be_valid_project  # injects project
@@ -50,9 +50,10 @@ def project_addtag(auth, **kwargs):
 @must_not_be_registration
 def project_removetag(auth, **kwargs):
 
-    tag = clean_tag(kwargs['tag'])
+    tag = kwargs['tag']
     node = kwargs['node'] or kwargs['project']
 
     if tag:
         node.remove_tag(tag=tag, auth=auth)
         return {'status': 'success'}
+    return {'status', 'error'}, http.BAD_REQUEST

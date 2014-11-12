@@ -15,18 +15,6 @@ def strip_html(unclean):
     return bleach.clean(unclean, strip=True, tags=[], attributes=[], styles=[])
 
 
-def clean_tag(data):
-    """Format as a valid Tag
-
-    :param data: A string to be cleaned
-
-    :return: cleaned string
-    :rtype: str
-    """
-    #TODO: make this a method of Tag?
-    return escape_html(data).replace('"', '&quot;').replace("'", '')
-
-
 def escape_html(data):
     """Escape HTML characters in data.
 
