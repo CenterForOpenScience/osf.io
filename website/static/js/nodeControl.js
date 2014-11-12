@@ -55,8 +55,6 @@
         var urlKey = permissions === PUBLIC ? 'makePublic' : 'makePrivate';
         var message = MESSAGES[msgKey];
 
-        console.log('COMPONENT IS: ' + node_type);
-
         var confirmModal = function (message) {
             bootbox.confirm({
                 title: 'Warning',
