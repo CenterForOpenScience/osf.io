@@ -263,7 +263,13 @@ $(document).ready(function() {
     });
 
     $('body').on('click', '.tagsinput .tag > span', function(e) {
-        window.location = '/search/?q=(tags:' + $(e.target).text().toString().trim()+ ')';
+        window.location = '/search/?q=tags%3A(%22' +
+                           // Order is important!
+                           encodeURIComponent(                              // Encode special characters to include in a URL
+                               $.osf.escapeSearchTerm(                      // Escape special characters for Lucene
+                                   $(e.target).text().toString().trim()     // Trim leading and trailing spaces
+                           )) +
+                           '%22)';
     });
 
     $('.citation-toggle').on('click', function() {

@@ -156,6 +156,28 @@ var ViewModel = function(params) {
         self.search();
     };
 
+    self.help = function() {
+        bootbox.dialog({
+            title: 'Search help',
+            message: '<h4>Queries</h4>'+
+                '<p>Search uses the <a href="http://extensions.xwiki.org/xwiki/bin/view/Extension/Search+Application+Query+Syntax">Lucene search syntax</a>. ' +
+                'This gives you many options, but can be very simple as well. ' +
+                'Examples of valid searches include:</p>' +
+                '<ul><li><code><a href="/search/?q=repro*">repro*</a></code></li>' +
+                '<li><code><a href="/search/?q=brian+AND+title%3Amany">brian AND title:many</a></code></li>' +
+                '<li><code><a href="/search/?q=tags%3A%28psychology%29">tags:(psychology)</a></code></li></ul>' +
+                '<h4>Special Characters</h4>' +
+                '<p>When manually inputting a query, the following characters must be escaped:' +
+                '<p>' +
+                $.map(
+                    '+-&|!(){}[]^"~*?:\\'.split(""),
+                    function(x) { return '<code>' + x + '</code>' }
+                ).join(" ") +
+                '</p>' +
+                '<p>For example: "This & That" must be entered as <code><a href="/search/?q=This+%26+That">This \\& That</a></code></p>'
+        });
+    };
+    
     self.addTag = function(name) {
         // To handle passing from template vs. in main html
         var tag = name;
