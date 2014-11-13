@@ -48,6 +48,9 @@ DEV_MODE = False
 DEBUG_MODE = False
 
 
+# TODO: Remove after migration to OSF Storage
+COPY_GIT_REPOS = False
+
 # External services
 USE_CDN_FOR_CLIENT_LIBS = True
 

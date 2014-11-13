@@ -14,6 +14,8 @@ import requests
 
 from modularodm import Q
 
+from framework.transactions.context import TokuTransaction
+
 from website import settings
 from website.app import init_app
 from website.models import Node
@@ -24,13 +26,13 @@ from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import errors
 
-from scripts import utils
+from scripts import utils as script_utils
 from scripts.osfstorage.utils import ensure_osf_files
 from scripts.osfstorage import settings as scripts_settings
 
 
 logger = logging.getLogger(__name__)
-utils.add_file_logger(logger, __file__)
+script_utils.add_file_logger(logger, __file__)
 logging.basicConfig(level=logging.INFO)
 
 client = scripts_settings.STORAGE_CLIENT_CLASS(
@@ -110,7 +112,8 @@ def main(dry_run=True):
         return
     for node in nodes:
         try:
-            migrate_node(node)
+            with TokuTransaction():
+                migrate_node(node)
         except Exception as error:
             logger.error('Could not migrate node {0}'.format(node._id))
             logger.exception(error)
