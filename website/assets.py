@@ -12,9 +12,7 @@ env = Environment(settings.STATIC_FOLDER, settings.STATIC_URL_PATH)
 css = Bundle(
     # Vendorized libraries
     Bundle(
-        'vendor/jquery-tagit/css/jquery.tagit.css',
         'vendor/jquery-tagsinput/css/jquery.tagsinput.css',
-        'vendor/jquery-tagit/css/tagit.ui-zendesk.css',
         'vendor/jquery-fileupload/css/jquery.fileupload-ui.css',
         'vendor/pygments.css',
         'vendor/bootstrap3-editable/css/bootstrap-editable.css',
@@ -51,8 +49,6 @@ js_bottom = Bundle(
     # Vendorized libraries loaded at the bottom of the page
     "vendor/bootstrap3-editable/js/bootstrap-editable.min.js",
     "vendor/jquery-tagsinput/js/jquery.tagsinput.min.js",
-    "vendor/jquery-tagcloud/jquery.tagcloud.js",
-    "vendor/jquery-tagit/js/tag-it.js",
     "vendor/jquery-blockui/jquery.blockui.js",
     "vendor/bower_components/bootstrap.growl/bootstrap-growl.min.js",
     # 'vendor/dropzone/dropzone.js',
@@ -61,7 +57,6 @@ js_bottom = Bundle(
     # Site-specific JS
     Bundle(
         'js/project.js',
-        'js/app.js',
         'js/addons.js',
         # 'js/dropzone-patch.js',
         # 'js/rubeus.js'
