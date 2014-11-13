@@ -59,3 +59,6 @@ var AddonHelper = (function() {
     }
 
 })();
+
+
+module.exports = AddonHelper;

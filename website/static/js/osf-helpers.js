@@ -1,6 +1,7 @@
 'use strict';
 var ko = require('knockout');
 var $ = require('jquery');
+require('jquery-blockui');
 var Raven = require('raven-js');
 var moment = require('moment');
 

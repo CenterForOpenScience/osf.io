@@ -68,7 +68,10 @@ module.exports = {
             'knockout-validation': staticPath('vendor/knockout-validation/knockout.validation.min.js'),
             'knockout-mapping': staticPath('vendor/knockout-mapping/knockout.mapping.js'),
             'bootstrap-editable': staticPath('vendor/bower_components/x-editable/dist/bootstrap3-editable/js/bootstrap-editable.js'),
+            'jquery-blockui': staticPath('vendor/jquery-blockui/jquery.blockui.js'),
             'zeroclipboard': staticPath('vendor/bower_components/zeroclipboard/dist/ZeroClipboard.js'),
+            'bootstrap': staticPath('vendor/bower_components/bootstrap/dist/js/bootstrap.min.js'),
+            'jquery-tagsinput': staticPath('vendor/bower_components/jquery.tagsinput/jquery.tagsinput.js'),
             // Needed for knockout-sortable
             'jquery.ui.sortable': staticPath('vendor/bower_components/jquery-ui/ui/jquery.ui.sortable.js'),
             // Dropzone doesn't have a proper 'main' entry in its bower.json

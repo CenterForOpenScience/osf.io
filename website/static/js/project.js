@@ -2,6 +2,8 @@
 // Project JS      //
 /////////////////////
 var $ = require('jquery');
+require('jquery-tagsinput');
+var bootbox = require('bootbox');
 
 var LogFeed = require('./logFeed.js');
 var osfHelpers = require('./osf-helpers.js');
