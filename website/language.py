@@ -114,21 +114,21 @@ comprehensive for what you wish to register.
 
 LINK_ACTION = 'Link to this Project'
 LINK_DESCRIPTION = """
-<p>Linking to this project will reference it in another project, without
-creating a copy. The link will always point to the most up-to-date version.</p>
+Linking to this project will reference it in another project, without
+creating a copy. The link will always point to the most up-to-date version.
 """
 
 TEMPLATE_ACTION = 'Copy Project Structure'
 TEMPLATE_DESCRIPTION = """
-<p>This option will create a new project, using this project as a template.
-The new project will be structured in the same way, but contain no data.</p>
+This option will create a new project, using this project as a template.
+The new project will be structured in the same way, but contain no data.
 """
 
 FORK_ACTION = 'Fork this Project'
 FORK_DESCRIPTION = """
-<p>Fork this project if you plan to build upon it in your own work.
+Fork this project if you plan to build upon it in your own work.
 The new project will be an exact duplicate of this project's current state,
-with you as the only contributor.</p>
+with you as the only contributor.
 """
 
 TEMPLATE_DROPDOWN_HELP = """Start typing to search. Selecting project as

@@ -20,7 +20,7 @@
                                 </span>
                             % endif
                         </h4>
-                        ${ language.LINK_DESCRIPTION }
+                        <p>${ language.LINK_DESCRIPTION }</p>
                     </div>
                     <div class="col-md-4">
                         <h4>Templated From
@@ -28,7 +28,7 @@
                                 ${ node['templated_count'] }
                             </span>
                         </h4>
-                        ${ language.TEMPLATE_DESCRIPTION }
+                        <p>${ language.TEMPLATE_DESCRIPTION }</p>
                     </div>
                     <div class="col-md-4">
                         <h4>Forks
@@ -38,7 +38,7 @@
                                 ${ node['fork_count'] }
                             </a>
                         </h4>
-                        ${ language.FORK_DESCRIPTION }
+                        <p>${ language.FORK_DESCRIPTION }</p>
                     </div>
                 </div>
                 <div class="row">
