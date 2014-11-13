@@ -128,7 +128,6 @@ def dropbox_oauth_delete_user(user_addon, auth, **kwargs):
     except ErrorResponse as error:
         if error.status == 401:
             pass
-        
     user_addon.clear()
     user_addon.save()
 
@@ -161,6 +160,7 @@ def dropbox_user_config_get(user_addon, auth, **kwargs):
             'userHasAuth': user_addon.has_auth,
             'validCredentials': valid_credentials,
             'dropboxName': info['display_name'] if info else None,
+            'nNodesAuthorized': len(user_addon.nodes_authorized),
             'urls': urls
         },
     }, http.OK

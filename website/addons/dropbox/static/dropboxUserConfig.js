@@ -23,6 +23,7 @@
         self.urls = ko.observable({});
         // Whether the initial data has been loaded.
         self.loaded = ko.observable(false);
+        self.nNodesAuthorized = 0;
         // Update above observables with data from server
         $.ajax({
             url: url, type: 'GET', dataType: 'json',
@@ -33,11 +34,16 @@
                 self.urls(data.urls);
                 self.loaded(true);
                 self.validCredentials(data.validCredentials);
+                self.nNodesAuthorized = data.nNodesAuthorized;
                 if (!self.validCredentials()) {
                     self.changeMessage('Could not retrieve Dropbox settings at ' +
                         'this time. The Dropbox addon credentials may no longer be valid.' +
                         ' Try deauthorizing and reauthorizing Dropbox.',
                         'text-warning');
+                } else if (self.userHasAuth() && self.nNodesAuthorized === 0) {
+                    self.changeMessage('Add-on successfully authorized. To link this add-on to an OSF project, ' +
+                        'go to the settings page of the project, enable Dropbox, and choose content to connect.',
+                        'text-success');
                 }
             },
             error: function(xhr, textStatus, error){
