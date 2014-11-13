@@ -28,23 +28,35 @@ var getAddonModules = function(name) {
     return addonModules;
 };
 
+var entry = {
+    'dashboard': staticPath('js/pages/dashboard-page.js'),
+    'profile': staticPath('js/pages/profile-page.js'),
+    'project-dashboard': staticPath('js/pages/project-dashboard-page.js'),
+    'project-base': staticPath('js/pages/project-base-page.js'),
+    'wiki-edit-page': staticPath('js/pages/wiki-edit-page.js'),
+    // TODO: Optimize common chunks between these modules
+    'files-page': staticPath('js/pages/files-page.js'),
+};
+
+// Collect adddons endpoints. If an addon's static folder has
+// any of the following files, it will be added as an entry point
+// and output to website/static/public/js/<addon-name>/files.js
+var addonModules = ['files.js', 'node-cfg.js', 'user-cfg.js'];
+addons.addons.forEach(function(addonName) {
+    var baseDir = addonName + '/';
+    addonModules.forEach(function(module) {
+        var modulePath = path.join(__dirname, 'website', 'addons', 
+                                  addonName, 'static', module);
+        if (fs.existsSync(modulePath)) {
+            var entryPoint = baseDir + module.split('.')[0];
+            entry[entryPoint] =  modulePath;
+        }
+    });
+});
+
 module.exports = {
     // Split code chunks by page
-    entry: {
-        'dashboard': staticPath('js/pages/dashboard-page.js'),
-        'profile': staticPath('js/pages/profile-page.js'),
-        'project-dashboard': staticPath('js/pages/project-dashboard-page.js'),
-        'project-base': staticPath('js/pages/project-base-page.js'),
-        'wiki-edit-page': staticPath('js/pages/wiki-edit-page.js'),
-        // TODO: Optimize common chunks between these modules
-        'files-page': staticPath('js/pages/files-page.js'),
-        'addon-index-bundle': getAddonModules('index.js'),
-        'addon-files-bundle': getAddonModules('files.js'),
-        'addon-node-cfg-bundle': getAddonModules('node-cfg.js'),
-        'addon-user-cfg-bundle': getAddonModules('user-cfg.js').concat([
-            staticPath('js/pages/user-addon-cfg-page.js')
-        ])
-    },
+    entry: entry,
     debug: true,
     output: {
         path: './website/static/public/js/',
