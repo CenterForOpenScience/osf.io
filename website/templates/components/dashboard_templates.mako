@@ -35,7 +35,7 @@
                             clearOn: cleared
                         },
                     value: componentInput,
-                    attr: {disabled: hasSelectedComponent(),
+                    attr: {readonly: hasSelectedComponent(),
                             placeholder: componentPlaceholder}"
                 class="typeahead ob-typeahead-input form-control"
                 name="component"
