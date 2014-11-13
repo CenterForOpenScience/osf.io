@@ -107,40 +107,38 @@
         }
 
         function dataverseRelease (event, item, col) {
-            var msg = new Fangorn.status(self, item, 'danger', 'Testing message', 1);
-            msg.init(); 
-            // var self = this; // treebeard
-            // var url = item.data.urls.release;
-            // bootbox.confirm({
-            //     title: 'Release this study?',
-            //     message: 'By releasing this study, all content will be ' +
-            //         'made available through the Harvard Dataverse using their ' +
-            //         'internal privacy settings, regardless of your OSF project ' +
-            //         'settings. Are you sure you want to release this study?',
-            //     callback: function(result) {
-            //         if(result) {
-            //             //self.changeStatus(row, Rubeus.Status.RELEASING_STUDY);
-            //             $.osf.putJSON(
-            //                 url,
-            //                 {}
-            //             ).done(function(data) {
-            //                 bootbox.alert('Your study has been released. Please ' +
-            //                 'allow up to 24 hours for the released version to ' +
-            //                 'appear on your OSF project\'s file page.');
-            //                 //self.updateItem(row);
-            //                 console.log("Returned Done:", data);
-            //             }).fail( function(args) {
-            //                 console.log("Returned error:", args);
-            //                 var message = args.responseJSON.code === 400 ?
-            //                     'Error: Something went wrong when attempting to ' +
-            //                     'release your study.' :
-            //                     'Error: This version has already been released.'
-            //                 bootbox.alert(message);
-            //                 //self.updateItem(row);
-            //             });
-            //         }
-            //     }
-            // });
+            var self = this; // treebeard
+            var url = item.data.urls.release;
+            bootbox.confirm({
+                title: 'Release this study?',
+                message: 'By releasing this study, all content will be ' +
+                    'made available through the Harvard Dataverse using their ' +
+                    'internal privacy settings, regardless of your OSF project ' +
+                    'settings. Are you sure you want to release this study?',
+                callback: function(result) {
+                    if(result) {
+                        item.notify.update('Releasing Study', 'info', 1, 3000);
+                        $.osf.putJSON(
+                            url,
+                            {}
+                        ).done(function(data) {
+                            bootbox.alert('Your study has been released. Please ' +
+                            'allow up to 24 hours for the released version to ' +
+                            'appear on your OSF project\'s file page.');
+                            //self.updateItem(row);
+                            console.log("Returned Done:", data);
+                        }).fail( function(args) {
+                            console.log("Returned error:", args);
+                            var message = args.responseJSON.code === 400 ?
+                                'Error: Something went wrong when attempting to ' +
+                                'release your study.' :
+                                'Error: This version has already been released.'
+                            bootbox.alert(message);
+                            //self.updateItem(row);
+                        });
+                    }
+                }
+            });
         }
 
         function _removeEvent (event, item, col) {
@@ -174,7 +172,7 @@
                 'onclick' : _uploadEvent
             },
             {
-                'name' : 'Release Study',
+                'name' : ' Release Study',
                 'icon' : 'icon-globe',
                 'css' : 'btn btn-primary btn-xs',
                 'onclick' : dataverseRelease
@@ -207,8 +205,8 @@
         }
         return m('.btn-group', [
                 buttons.map(function(btn){  
-                    return m('button', { 'data-col' : item.id, 'class' : btn.css, style : btn.style, 'onclick' : function(){ btn.onclick.call(self, event, item, col); } },
-                        [ m('span', { 'class' : btn.icon}, ' ' + btn.name) ]);
+                    return m('i', { 'data-col' : item.id, 'class' : btn.css, style : btn.style, 'onclick' : function(){ btn.onclick.call(self, event, item, col); } },
+                        [ m('span', { 'class' : btn.icon}, btn.name) ]);
                 })
         ]); 
     }
@@ -220,17 +218,24 @@
         columns.push({
                 data : 'name',
                 folderIcons : true,
-                custom : function (){ return item.data.name + ' ' + item.data.extra; }
+                filter : true,
+                custom : function (){ 
+                    return m("span",[
+                        m("github-name",{onclick: function(){window.location = item.data.urls.view}}, item.data.name)
+                    ]);
+                 }
             }); 
 
       if(this.options.placement === 'project-files') {
         columns.push(
             {
                 css : 'action-col',
+                filter: false,
                 custom : _fangornActionColumn
             },
             {
                 data  : 'downloads',
+                filter : false,
                 css : ''
             });
         }
@@ -240,7 +245,7 @@
 
     function _fangornFolderIcons(item){
             //This is a hack, should probably be changed...
-            return m('img',{src:item.data.iconUrl, style:{width:"16px", height:"auto"}}, ' ');
+            return m('img',{src:item.data.iconUrl, style:{width:'16px', height:'auto'}}, ' ');
     }
 
 

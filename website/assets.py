@@ -21,7 +21,7 @@ css = Bundle(
         'vendor/bower_components/bootstrap/dist/css/bootstrap-theme.css',
         'vendor/bower_components/hgrid/dist/hgrid.css',
         'vendor/bower_components/treebeard/dist/treebeard.css',
-
+        'css/animate.css',
         filters='cssmin'),
     # Site-specific CSS
     Bundle(

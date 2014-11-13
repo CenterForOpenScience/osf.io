@@ -28,3 +28,9 @@
 .fangorn-dz-hover {
 	background: #BEF8FF;
 }
+
+.alert-deleting {
+	background: #F5F5F5;
+color: #F00;
+text-align: center;
+}

@@ -46,7 +46,10 @@
 
         <div class="addon-widget-container">
             <h3 class="addon-widget-header"><a href="${node['url']}files/">Files</a></h3>
-            <div id="treeGrid" class=""></div>
+            <div id="treeGrid" class="">
+                <div class="fangorn-loading"> <i class="icon-spinner fangorn-spin"></i> <p class="m-t-sm"> Loading files... </p> </div>
+
+            </div>
         </div>
 
     </div>

@@ -42,6 +42,15 @@
             }
         }
 
+    function _downloadEvent (event, item, col) {
+        event.stopPropagation();
+        console.log('Download Event triggered', this, event, item, col);
+        if(!item.data.addon){
+            item.data.downloads++;    
+        }
+        window.location = item.data.urls.download;
+    }
+
         // Download Zip File
         if (item.kind === 'folder' && item.data.addonFullname) {
             buttons.push(
@@ -78,7 +87,7 @@
                 'name' : '',
                 'icon' : 'icon-download-alt',
                 'css' : 'btn btn-info btn-xs',
-                'onclick' : function(){window.location = item.data.urls.download}
+                'onclick' : _downloadEvent
             },
             {
                 'name' : '',
@@ -152,6 +161,7 @@
         }
 
     }
+
     function _fangornColumns (item) {
         var columns = []; 
         columns.push({
@@ -188,15 +198,19 @@
     }
 
     function _fangornFolderIcons(item){
-            //This is a hack, should probably be changed...
+        if(item.data.iconUrl){
             return m('img',{src:item.data.iconUrl, style:{width:"16px", height:"auto"}}, ' ');
+        }
+        return undefined;            
     }
+
+
 
     // Register configuration
     Fangorn.config.github = {
         // Handle changing the branch select
         folderIcon: _fangornFolderIcons,
         resolveRows: _fangornColumns,
-        lazyload:_fangornLazyLoad
+        lazyload: _fangornLazyLoad
     };
 }));
