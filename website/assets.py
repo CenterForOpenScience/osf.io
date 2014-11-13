@@ -13,7 +13,6 @@ css = Bundle(
     # Vendorized libraries
     Bundle(
         'vendor/jquery-tagsinput/css/jquery.tagsinput.css',
-        'vendor/jquery-fileupload/css/jquery.fileupload-ui.css',
         'vendor/pygments.css',
         'vendor/bootstrap3-editable/css/bootstrap-editable.css',
         'vendor/bower_components/bootstrap/dist/css/bootstrap-theme.css',
