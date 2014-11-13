@@ -30,7 +30,11 @@
             message: self.message
         },{
             type: 'danger',
-            delay: 0
+            delay: 0,
+            animate: {
+                enter: 'animated slideInDown',
+                exit: 'animated slideOutRight'
+	        }
         });
     };
 
