@@ -67,7 +67,7 @@ module.exports = {
             'knockout-sortable': staticPath('vendor/knockout-sortable/knockout-sortable.js'),
             'knockout-validation': staticPath('vendor/knockout-validation/knockout.validation.min.js'),
             'knockout-mapping': staticPath('vendor/knockout-mapping/knockout.mapping.js'),
-            'bootstrap-editable': staticPath('vendor/bootstrap3-editable/js/bootstrap-editable.js'),
+            'bootstrap-editable': staticPath('vendor/bower_components/x-editable/dist/bootstrap3-editable/js/bootstrap-editable.js'),
             'zeroclipboard': staticPath('vendor/bower_components/zeroclipboard/dist/ZeroClipboard.js'),
             // Needed for knockout-sortable
             'jquery.ui.sortable': staticPath('vendor/bower_components/jquery-ui/ui/jquery.ui.sortable.js'),
