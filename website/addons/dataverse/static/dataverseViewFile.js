@@ -68,7 +68,7 @@
                             });
                             request.fail(function( jqXHR, textStatus ) {
                                 self.deleting(false);
-                                bootbox.alert( 'Could not delete: ' + textStatus );
+                                new GrowlBox( 'Could not delete', textStatus );
                             });
                         }
                     }
