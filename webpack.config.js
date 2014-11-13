@@ -23,13 +23,12 @@ var entry = {
         'bootstrap',
         'bootbox',
         'hgrid',
-        staticPath('vendor/knockout-punches/knockout.punches.js'),
-        staticPath('vendor/bower_components/dropzone/downloads/dropzone.js'),
-        staticPath('vendor/knockout-punches/knockout.punches.js'),
-        staticPath('vendor/knockout-sortable/knockout-sortable.js'),
-        staticPath('js/dropzone-patch.js'),
-        staticPath('js/osf-helpers.js'),
-        staticPath('js/rubeus.js')
+        'osf-helpers',
+        'knockout-punches',
+        'dropzone',
+        'knockout-sortable',
+        'dropzone-patch',
+        'rubeus'
     ]
 };
 
