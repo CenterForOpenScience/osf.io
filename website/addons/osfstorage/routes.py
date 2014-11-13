@@ -130,6 +130,16 @@ api_routes = {
 
         Rule(
             [
+                '/project/<pid>/osfstorage/hooks/cached/<path:path>',
+                '/project/<pid>/node/<nid>/osfstorage/hooks/cached/<path:path>',
+            ],
+            'post',
+            views.osf_storage_upload_cached_hook,
+            json_renderer,
+        ),
+
+        Rule(
+            [
                 '/project/<pid>/osfstorage/hooks/finish/<path:path>',
                 '/project/<pid>/node/<nid>/osfstorage/hooks/finish/<path:path>',
             ],

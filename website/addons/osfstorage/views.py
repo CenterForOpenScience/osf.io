@@ -109,23 +109,33 @@ def osf_storage_upload_start_hook(node_addon, **kwargs):
     return {'status': 'success'}
 
 
-def handle_missing_ping(path, node):
-    logger.error('Ping rejected: Path {0} not found at node {1}'.format(path, node))
-    raise HTTPError(httplib.BAD_REQUEST)
-
-
 @must_be_valid_project
 @must_not_be_registration
 @must_have_addon('osfstorage', 'node')
 def osf_storage_upload_ping_hook(path, node_addon, **kwargs):
     record = model.OsfStorageFileRecord.find_by_path(path, node_addon, touch=False)
     if record is None:
-        handle_missing_ping(path, node_addon.owner)
+        raise HTTPError(httplib.NOT_FOUND)
     payload = get_payload_from_request(utils.webhook_signer, request)
     try:
         record.ping_pending_version(payload.get('uploadSignature'))
     except errors.OsfStorageError:
-        handle_missing_ping(path, node_addon.owner)
+        raise HTTPError(httplib.BAD_REQUEST)
+    return {'status': 'success'}
+
+
+@must_be_valid_project
+@must_not_be_registration
+@must_have_addon('osfstorage', 'node')
+def osf_storage_upload_cached_hook(path, node_addon, **kwargs):
+    record = model.OsfStorageFileRecord.find_by_path(path, node_addon, touch=False)
+    if record is None:
+        raise HTTPError(httplib.NOT_FOUND)
+    payload = get_payload_from_request(utils.webhook_signer, request)
+    try:
+        record.set_pending_version_cached(payload.get('uploadSignature'))
+    except errors.OsfStorageError:
+        raise HTTPError(httplib.BAD_REQUEST)
     return {'status': 'success'}
 
 
@@ -137,9 +147,9 @@ def handle_finish_errors(func):
     def wrapped(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except errors.VersionNotPendingError:
+        except errors.VersionStatusError:
             raise make_error(httplib.BAD_REQUEST, 'No pending upload')
-        except errors.PendingSignatureMismatchError:
+        except errors.SignatureMismatchError:
             raise make_error(httplib.BAD_REQUEST, 'Invalid upload signature')
     return wrapped
 
