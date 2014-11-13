@@ -53,7 +53,7 @@
                                 'Something went wrong when attempting to ' +
                                 'release your study.' :
                                 'This version has already been released.';
-                            bootbox.alert('Error', message);
+                            new GrowlBox('Error', message);
                             self.updateItem(row);
                         });
                     }
