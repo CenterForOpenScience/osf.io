@@ -1078,6 +1078,10 @@ div.search-result  {
     font-size: 10pt;
 }
 
+.search-result img{
+    margin-top: 10px;
+}
+
 .search-results.search-result {
     overflow-x: hidden;
 
