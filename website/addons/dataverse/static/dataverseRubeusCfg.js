@@ -44,16 +44,16 @@
                             url,
                             {}
                         ).done(function() {
-                            bootbox.alert('Your study has been released. Please ' +
+                            new GrowlBox('Your study has been released.', 'Please ' +
                             'allow up to 24 hours for the released version to ' +
                             'appear on your OSF project\'s file page.');
                             self.updateItem(row);
                         }).fail( function(args) {
                             var message = args.responseJSON.code === 400 ?
-                                'Error: Something went wrong when attempting to ' +
+                                'Something went wrong when attempting to ' +
                                 'release your study.' :
-                                'Error: This version has already been released.'
-                            bootbox.alert(message);
+                                'This version has already been released.';
+                            bootbox.alert('Error', message);
                             self.updateItem(row);
                         });
                     }
