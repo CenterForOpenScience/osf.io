@@ -5,6 +5,12 @@ class AuthError(FrameworkError):
     pass
 
 
+class ChangePasswordError(AuthError):
+    """Raised if a change password is called with invalid data.
+    """
+    pass
+
+
 class DuplicateEmailError(AuthError):
     """Raised if a user tries to register an email that is already in the
     database.

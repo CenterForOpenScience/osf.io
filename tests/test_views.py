@@ -987,6 +987,101 @@ class TestUserProfile(OsfTestCase):
         assert_equal(res.status_code, 200)
 
 
+class TestUserAccount(OsfTestCase):
+
+    def setUp(self):
+        super(TestUserAccount, self).setUp()
+        self.user = AuthUserFactory()
+        self.user.set_password('password')
+        self.user.save()
+
+    @mock.patch('website.profile.views.push_status_message')
+    def test_password_change_valid(self, mock_push_status_message):
+        old_password = 'password'
+        new_password = 'Pa$$w0rd'
+        confirm_password = new_password
+        url = web_url_for('user_account_password')
+        post_data = {
+            'old_password': old_password,
+            'new_password': new_password,
+            'confirm_password': confirm_password,
+        }
+        res = self.app.post(url, post_data, auth=self.user.auth)
+        assert_true(302, res.status_code)
+        res = res.follow(auth=self.user.auth)
+        assert_true(200, res.status_code)
+        self.user.reload()
+        assert_true(self.user.check_password(new_password))
+        assert_true(mock_push_status_message.called)
+        assert_in('Password updated successfully', mock_push_status_message.mock_calls[0][1][0])
+
+    @mock.patch('website.profile.views.push_status_message')
+    def test_password_change_invalid(self, mock_push_status_message, old_password='', new_password='',
+                                     confirm_password='', error_message='Old password is invalid'):
+        url = web_url_for('user_account_password')
+        post_data = {
+            'old_password': old_password,
+            'new_password': new_password,
+            'confirm_password': confirm_password,
+        }
+        res = self.app.post(url, post_data, auth=self.user.auth)
+        assert_true(302, res.status_code)
+        res = res.follow(auth=self.user.auth)
+        assert_true(200, res.status_code)
+        self.user.reload()
+        assert_false(self.user.check_password(new_password))
+        assert_true(mock_push_status_message.called)
+        assert_in(error_message, mock_push_status_message.mock_calls[0][1][0])
+
+    def test_password_change_invalid_old_password(self):
+        self.test_password_change_invalid(
+            old_password='invalid old password',
+            new_password='new password',
+            confirm_password='new password',
+            error_message='Old password is invalid',
+        )
+
+    def test_password_change_invalid_confirm_password(self):
+        self.test_password_change_invalid(
+            old_password='password',
+            new_password='new password',
+            confirm_password='invalid confirm password',
+            error_message='Password does not match the confirmation',
+        )
+
+    def test_password_change_invalid_new_password_length(self):
+        self.test_password_change_invalid(
+            old_password='password',
+            new_password='12345',
+            confirm_password='12345',
+            error_message='Password should be at least 6 characters',
+        )
+
+    def test_password_change_invalid_confirm_password(self):
+        self.test_password_change_invalid(
+            old_password='password',
+            new_password='new password',
+            confirm_password='invalid confirm password',
+            error_message='Password does not match the confirmation',
+        )
+
+    def test_password_change_invalid_blank_password(self, old_password='', new_password='', confirm_password=''):
+        self.test_password_change_invalid(
+            old_password=old_password,
+            new_password=new_password,
+            confirm_password=confirm_password,
+            error_message='Passwords cannot be blank',
+        )
+
+    def test_password_change_invalid_blank_new_password(self):
+        for password in ('', '      '):
+            self.test_password_change_invalid_blank_password('password', password, 'new password')
+
+    def test_password_change_invalid_blank_confirm_password(self):
+        for password in ('', '      '):
+            self.test_password_change_invalid_blank_password('password', 'new password', password)
+
+
 class TestAddingContributorViews(OsfTestCase):
 
     def setUp(self):
