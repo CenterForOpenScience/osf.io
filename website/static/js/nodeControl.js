@@ -43,13 +43,13 @@
     var PROJECT = 'project';
     var COMPONENT = 'component';
 
-    function setPermissions(permissions, node_type) {
+    function setPermissions(permissions, nodeType) {
 
         var msgKey;
 
-        if(permissions === PUBLIC && node_type === PROJECT) { msgKey = 'makeProjectPublicWarning'; }
-        else if(permissions === PUBLIC && node_type === COMPONENT) { msgKey = 'makeComponentPublicWarning'; }
-        else if(permissions === PRIVATE && node_type === PROJECT) { msgKey = 'makeProjectPrivateWarning'; }
+        if(permissions === PUBLIC && nodeType === PROJECT) { msgKey = 'makeProjectPublicWarning'; }
+        else if(permissions === PUBLIC && nodeType === COMPONENT) { msgKey = 'makeComponentPublicWarning'; }
+        else if(permissions === PRIVATE && nodeType === PROJECT) { msgKey = 'makeProjectPrivateWarning'; }
         else { msgKey = 'makeComponentPrivateWarning'; }
 
         var urlKey = permissions === PUBLIC ? 'makePublic' : 'makePrivate';
@@ -113,7 +113,7 @@
         self.category = data.node.category;
         self.isRegistration = data.node.is_registration;
         self.user = data.user;
-        self.node_type = data.node.node_type;
+        self.nodeType = data.node.node_type;
         // The button text to display (e.g. "Watch" if not watching)
         self.watchButtonDisplay = ko.computed(function() {
             return self.watchedCount().toString();
@@ -185,11 +185,11 @@
         };
 
         self.makePublic = function() {
-            return setPermissions(PUBLIC, self.node_type);
+            return setPermissions(PUBLIC, self.nodeType);
         };
 
         self.makePrivate = function() {
-            return setPermissions(PRIVATE, self.node_type);
+            return setPermissions(PRIVATE, self.nodeType);
         };
     };
 
