@@ -25,7 +25,7 @@
                 <!-- Choose which to add -->
                 <div class="row">
 
-                    <div class="col-md-6"col-md->
+                    <div class="col-md-6">
                         <div>
                             <span class="modal-subheader">Results</span>
                             <a data-bind="click:addAll">Add all</a>
@@ -42,7 +42,7 @@
                                                 title="Add link"
                                             >+</a>
                                     </td>
-                                    <td data-bind="text:title"></td>
+                                    <td data-bind="text:title" class="overflow"></td>
                                     <td data-bind="text:$root.authorText($data)"></td>
                                 </tr>
                             </tbody>
