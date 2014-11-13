@@ -68,7 +68,7 @@ $script.ready('hgrid', function() {
                             location.reload();
                         },
                         error: function(xhr, status, error) {
-                            bootbox.alert('Could not revoke badge');
+                            new GrowlBox('Could not revoke badge','');
                         }
                     });
                 }
