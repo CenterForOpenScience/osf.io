@@ -9,25 +9,6 @@ var staticPath = function(dir) {
     return path.join(root, dir);
 };
 
-/**
- * Return the paths to all addons' modules withe the name `name`.
- *
- * Example:
- *      getAddonModules('index.js')
- *      //=> ['website/addons/dropbox/static/index.js',
- *      //    'website/addons/s3/static/index.js',...]
- * */
-var getAddonModules = function(name) {
-    var addonModules = [];
-    addons.addons.forEach(function(addonName) {
-        var addonPath = path.join(__dirname, 'website', 'addons', addonName, 'static', name);
-        if (fs.existsSync(addonPath)) {
-            addonModules = addonModules.concat([addonPath]);
-        }
-    });
-    return addonModules;
-};
-
 var entry = {
     'dashboard': staticPath('js/pages/dashboard-page.js'),
     'profile': staticPath('js/pages/profile-page.js'),
