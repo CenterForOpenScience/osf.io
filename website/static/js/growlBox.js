@@ -18,9 +18,7 @@
     // The constructor
     function GrowlBox (title, message) {
         var self = this;
-        if (typeof title === 'undefined'){
-            title = '';
-        }
+
         self.title = title;
         self.message = message;
         self.init(self);
