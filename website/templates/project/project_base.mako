@@ -44,36 +44,21 @@ ${next.body()}
             ## TODO: Abstract me
             username: ${json.dumps(user['username']) | n},
             id: '${user_id}',
-            urls: {api: userApiUrl}
+            urls: {api: userApiUrl},
+            isContributor: ${json.dumps(user.get('is_contributor', False))}
         },
         node: {
             ## TODO: Abstract me
             id: nodeId,
             title: ${json.dumps(node['title']) | n},
-            urls: {api: nodeApiUrl}
+            urls: {api: nodeApiUrl},
+            isPublic: ${json.dumps(node.get('is_public', False))},
+            piwikSiteID: ${json.dumps(node.get('piwik_site_id', None))},
+            piwikHost: ${json.dumps(piwik_host)}
         }
     };
-
-    // Make unregistered contributors claimable
-    % if not user.get('is_contributor'):
-    $script(['/static/js/accountClaimer.js'], function() {
-        var accountClaimer = new OSFAccountClaimer('.contributor-unregistered');
-    });
-    % endif
 
 </script>
 ## NOTE: window.contextVars must be set before loading this script
 <script src="/static/public/js/project-base.js"> </script>
-
-% if node.get('is_public') and node.get('piwik_site_id'):
-<script type="text/javascript">
-
-    $(function() {
-        // Note: Don't use cookies for global site ID; cookies will accumulate
-        // indefinitely and overflow uwsgi header buffer.
-        $.osf.trackPiwik('${ piwik_host }', ${ node['piwik_site_id'] });
-    });
-</script>
-% endif
-
 </%def>

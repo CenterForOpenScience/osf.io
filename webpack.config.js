@@ -15,7 +15,6 @@ var entry = {
     'project-dashboard': staticPath('js/pages/project-dashboard-page.js'),
     'project-base': staticPath('js/pages/project-base-page.js'),
     'wiki-edit-page': staticPath('js/pages/wiki-edit-page.js'),
-    // TODO: Optimize common chunks between these modules
     'files-page': staticPath('js/pages/files-page.js'),
     // Commons chunk
     'vendor': [
