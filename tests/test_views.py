@@ -788,12 +788,6 @@ class TestUserProfile(OsfTestCase):
         super(TestUserProfile, self).setUp()
         self.user = AuthUserFactory()
 
-    def test_sanitization_of_edit_profile(self):
-        url = api_url_for('edit_profile', uid=self.user._id)
-        post_data = {'name': 'fullname',  'value': 'new<b> name</b>'}
-        request = self.app.post(url, post_data, auth=self.user.auth)
-        assert_equal('new name', request.json['name'])
-
     def test_fmt_date_or_none(self):
         with assert_raises(HTTPError) as cm:
             #enter a date before 1900

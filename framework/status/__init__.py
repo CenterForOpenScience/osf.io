@@ -25,8 +25,7 @@ def push_status_message(message, kind='warning', dismissible=True, safe=False):
         Status(message=message,
                css_class=css_class,
                dismissible=dismissible,
-               safe=safe,
-        )
+               safe=safe)
     )
     session.data['status'] = statuses
 

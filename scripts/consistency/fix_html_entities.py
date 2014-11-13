@@ -15,6 +15,8 @@ This script must be run from the OSF root directory for the imports to work.
 
     $ python -m scripts.consistency.fix_html_entities dry
     $ python -m scripts.consistency.fix_html_entities
+
+# In testing, this script took 1m27s to complete a dry run, iterating 81k logs
 """
 import re
 import sys
@@ -46,11 +48,26 @@ def main():
     for field in ('title', 'description'):
         print("Nodes ({})\n=====".format(field))
         nodes = find_encoded_objects(Node, field)
-        for node in nodes:
-            print("{}".format(node._id))
+        padding = len("{}".format(nodes.count()))
+        for idx, node in enumerate(nodes):
+            print("{idx:{width}}: {node}".format(idx=idx,
+                                                 width=padding,
+                                                 node=node._id))
             if not dry_run:
                 fix_encoded_object(node, field)
                 node.save()
+
+    # Must run script against all NodeLogs, as .params is dynamic
+    logs = NodeLog.find()
+    print("Tags: iterating all {} logs".format(logs.count()))
+    for log in logs:
+        old_params = log.params.copy()
+        log.params = unescape(log.params)
+
+        if log.params != old_params:
+            if not dry_run:
+                log.save()
+            print(log._id)
 
 
 def find_encoded_objects(model, field):
@@ -65,7 +82,7 @@ def fix_encoded_object(obj, field):
 def unescape(val):
     if isinstance(val, dict):
         return {
-            k: v if v is None else parser.unescape(v)
+            k: parser.unescape(v) if isinstance(v, basestring) else v
             for k, v in val.iteritems()
         }
     return parser.unescape(val)
@@ -132,8 +149,6 @@ class TestMigrateEncodedLogs(OsfTestCase):
         assert_equal(corrected_params, log.params)
 
 
-
-
 class TestMigrateEncodedNodes(OsfTestCase):
 
     _escaped = {
@@ -164,7 +179,6 @@ class TestMigrateEncodedNodes(OsfTestCase):
     def test_fix_escaped_node_title(self):
         node = fix_encoded_object(self.escaped_project, 'title')
         assert_equal(node.title, self._raw['title'])
-
 
 if __name__ == '__main__':
     main()
