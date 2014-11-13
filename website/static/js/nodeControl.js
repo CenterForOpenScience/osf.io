@@ -129,7 +129,12 @@
             $.fn.editable.defaults.mode = 'inline';
             $('#nodeTitleEditable').editable($.extend({}, editableOptions, {
                 name:  'title',
-                title: 'Edit Title'
+                title: 'Edit Title',
+                validate: function(value) {
+                    if($.trim(value) == '') {
+                        return 'Title cannot be blank.';
+                    }
+                }
             }));
             $('#nodeDescriptionEditable').editable($.extend({}, editableOptions, {
                 name:  'description',

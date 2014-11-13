@@ -339,8 +339,9 @@ class NodeLog(StoredObject):
     EDITED_DESCRIPTION = 'edit_description'
 
     FILE_ADDED = 'file_added'
-    FILE_REMOVED = 'file_removed'
     FILE_UPDATED = 'file_updated'
+    FILE_REMOVED = 'file_removed'
+    FILE_RESTORED = 'file_restored'
 
     ADDON_ADDED = 'addon_added'
     ADDON_REMOVED = 'addon_removed'
@@ -2074,15 +2075,18 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.save()  # TODO: here, or outside the conditional? @mambocab
         return ret
 
-    def delete_addon(self, addon_name, auth):
+    def delete_addon(self, addon_name, auth, _force=False):
         """Delete an add-on from the node.
 
         :param str addon_name: Name of add-on
         :param Auth auth: Consolidated authorization object
+        :param bool _force: For migration testing ONLY. Do not set to True
+            in the application, or else projects will be allowed to delete
+            mandatory add-ons!
         :return bool: Add-on was deleted
 
         """
-        rv = super(Node, self).delete_addon(addon_name, auth)
+        rv = super(Node, self).delete_addon(addon_name, auth, _force)
         if rv:
             config = settings.ADDONS_AVAILABLE_DICT[addon_name]
             self.add_log(

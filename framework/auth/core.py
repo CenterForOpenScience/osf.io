@@ -457,7 +457,7 @@ class User(GuidStoredObject, AddonModelMixin):
     def add_email_verification(self, email):
         """Add an email verification token for a given email."""
         token = generate_confirm_token()
-        self.email_verifications[token] = {'email': email}
+        self.email_verifications[token] = {'email': email.lower()}
         return token
 
     def get_confirmation_token(self, email):
@@ -499,7 +499,7 @@ class User(GuidStoredObject, AddonModelMixin):
             email = self.email_verifications[token]['email']
             self.emails.append(email)
             # Complete registration if primary email
-            if email == self.username:
+            if email.lower() == self.username.lower():
                 self.register(self.username)
                 self.date_confirmed = dt.datetime.utcnow()
             # Revoke token

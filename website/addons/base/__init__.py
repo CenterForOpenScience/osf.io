@@ -158,7 +158,7 @@ class GuidFile(GuidStoredObject):
     redirect_mode = 'proxy'
 
     _id = fields.StringField(primary=True)
-    node = fields.ForeignField('node', index=True)
+    node = fields.ForeignField('node', required=True, index=True)
 
     _meta = {
         'abstract': True,

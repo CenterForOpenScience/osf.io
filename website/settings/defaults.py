@@ -14,10 +14,12 @@ def parent_dir(path):
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 BASE_PATH = parent_dir(HERE)  # website/ directory
+APP_PATH = parent_dir(BASE_PATH)
 ADDON_PATH = os.path.join(BASE_PATH, 'addons')
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = "/static"
 
+LOG_PATH = os.path.join(APP_PATH, 'logs')
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 ANALYTICS_PATH = os.path.join(BASE_PATH, 'analytics')
 
@@ -152,7 +154,8 @@ ADDONS_REQUESTED = [
     'figshare',
     'forward',
     'github',
-    'osffiles',
+    # 'osffiles',
+    'osfstorage',
     's3',
     'twofactor',
     'wiki',

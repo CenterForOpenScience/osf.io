@@ -304,6 +304,22 @@ class TestUser(OsfTestCase):
         assert_true(u.is_registered)
         assert_true(u.is_claimed)
 
+    def test_confirm_email_comparison_is_case_insensitive(self):
+        u = UserFactory.build(
+            username='letsgettacos@lgt.com',
+            is_registered=False,
+            date_confirmed=None
+        )
+        u.add_email_verification('LetsGetTacos@LGT.com')
+        u.save()
+        assert_false(u.is_confirmed())  # sanity check
+
+        token = u.get_confirmation_token('LetsGetTacos@LGT.com')
+
+        confirmed = u.confirm_email(token)
+        assert_true(confirmed)
+        assert_true(u.is_confirmed())
+
     def test_verify_confirmation_token(self):
         u = UserFactory.build()
         u.add_email_verification('foo@bar.com')
@@ -663,138 +679,6 @@ class TestNodeFile(OsfTestCase):
             self.node_file.download_url(self.node),
             self.node.url + 'osffiles/{0}/version/1/download/'.format(self.node_file.filename)
         )
-
-
-class TestAddFile(OsfTestCase):
-
-    def setUp(self):
-        super(TestAddFile, self).setUp()
-        # Create a project
-        self.user = UserFactory()
-        self.consolidate_auth = Auth(user=self.user)
-        self.user2 = UserFactory()
-        self.consolidate_auth2 = Auth(user=self.user2)
-        self.project = ProjectFactory(creator=self.user)
-        # Add a file
-        self.file_name = 'foo.py'
-        self.file_key = self.file_name.replace('.', '_')
-        self.node_file = self.project.add_file(
-            self.consolidate_auth, self.file_name, 'Content', 128, 'Type'
-        )
-        self.project.save()
-
-    def test_added(self):
-        assert_equal(len(self.project.files_versions), 1)
-
-    def test_component_add_file(self):
-        # Add exact copy of parent project's file to component
-        component = NodeFactory(project=self.project, creator=self.user)
-        component_file = component.add_file(
-            self.consolidate_auth, self.file_name, 'Content', 128, 'Type'
-        )
-        # File is correctly assigned to component
-        assert_equal(component_file.node, component)
-        # File does not overwrite parent project's version
-        assert_equal(len(self.project.files_versions), 1)
-
-    def test_uploader_is_user(self):
-        assert_equal(self.node_file.uploader, self.user)
-
-    def test_revise_content(self):
-        user2 = UserFactory()
-        consolidate_auth2 = Auth(user=user2)
-        updated_file = self.project.add_file(
-            consolidate_auth2,
-            self.file_name,
-            'Content 2',
-            129,
-            'Type 2',
-        )
-        # There are two versions of the file
-        assert_equal(len(self.project.files_versions[self.file_key]), 2)
-        assert_equal(self.node_file.filename, updated_file.filename)
-        # Each version has the correct user, size, and type
-        assert_equal(self.node_file.uploader, self.user)
-        assert_equal(updated_file.uploader, user2)
-        assert_equal(self.node_file.size, 128)
-        assert_equal(updated_file.size, 129)
-        assert_equal(self.node_file.content_type, 'Type')
-        assert_equal(updated_file.content_type, 'Type 2')
-
-
-    @raises(FileNotModified)
-    def test_not_modified(self):
-
-        # Modify user, size, and type, but not content
-        self.project.add_file(self.consolidate_auth2, self.file_name, 'Content', 256,
-                              'Type 2')
-
-
-class TestFileActions(OsfTestCase):
-
-    def setUp(self):
-        OsfTestCase.setUp(self)
-        self.node = ProjectFactory()
-
-    def test_get_file_obj_no_version(self):
-        self.node.add_file(Auth(self.node.creator), 'foo', 'somecontent', 128, 'rst')
-        self.node.add_file(Auth(self.node.creator), 'foo', 'newcontent', 128, 'md')
-        # Don't pass version number, so get back latest version
-        file_obj = self.node.get_file_object('foo')
-
-        contents, content_type = self.node.read_file_object(file_obj)
-        assert_equal(contents, 'newcontent')
-
-    def test_get_file_obj_first_version(self):
-        self.node.add_file(Auth(self.node.creator), 'foo', 'somecontent', 128, 'rst')
-        self.node.add_file(Auth(self.node.creator), 'foo', 'newcontent', 128, 'md')
-        file_obj = self.node.get_file_object('foo', 0)
-        contents, content_type = self.node.read_file_object(file_obj)
-        assert_equal(contents, 'somecontent')
-
-    def test_get_file(self):
-        self.node.add_file(Auth(self.node.creator), 'foo', 'somecontent', 128, 'rst')
-        self.node.save()
-        valid = self.node.get_file('foo', version=0)
-        assert_true(valid)  # sanity check
-
-        with assert_raises(VersionNotFoundError):
-            self.node.get_file('foo', version=1)
-
-        with assert_raises(InvalidVersionError):
-            self.node.get_file('foo', version='dumb')
-
-        with assert_raises(InvalidVersionError):
-            self.node.get_file('foo', version=-1)
-
-    def test_get_file_with_no_git_dir(self):
-        self.node.add_file(Auth(self.node.creator), 'foo', 'somecontent', 128, 'rst')
-        self.node.save()
-        git_path = os.path.join(settings.UPLOADS_PATH, self.node._id, '.git')
-        shutil.rmtree(git_path)
-        with assert_raises(AssertionError):
-            self.node.get_file('foo', version=0)
-
-    def test_delete_file(self):
-        self.node.add_file(Auth(self.node.creator), 'foo', 'somecontent', 128, 'rst')
-        self.node.save()
-
-        file_path = os.path.join(settings.UPLOADS_PATH, self.node._id, 'foo')
-
-        assert_true(os.path.exists(file_path))
-        self.node.remove_file(Auth(self.node.creator), 'foo')
-        assert_false(os.path.exists(file_path))
-
-    def test_delete_file_that_is_already_deleted(self):
-        self.node.add_file(Auth(self.node.creator), 'foo', 'somecontent', 128, 'rst')
-        self.node.save()
-
-        git_dir = os.path.join(settings.UPLOADS_PATH, self.node._id)
-
-        subprocess.check_output(['git', 'rm', 'foo'], cwd=git_dir)
-
-        with assert_raises(FileNotFoundError):
-            self.node.remove_file(Auth(self.node.creator), 'foo')
 
 
 class TestApiKey(OsfTestCase):
@@ -2238,24 +2122,6 @@ class TestTemplateNode(OsfTestCase):
                     new_node.title,
                 )
 
-    def test_template_files_not_copied(self):
-        self.project.add_file(
-            self.consolidate_auth, 'test.txt', 'test content', 4, 'text/plain'
-        )
-        new = self.project.use_as_template(
-            auth=self.consolidate_auth
-        )
-        assert_equal(
-            len(self.project.files_current),
-            1
-        )
-        assert_equal(
-            len(self.project.files_versions),
-            1
-        )
-        assert_equal(new.files_current, {})
-        assert_equal(new.files_versions, {})
-
     @requires_piwik
     def test_template_piwik_site_id_not_copied(self):
         new = self.project.use_as_template(
@@ -2375,21 +2241,6 @@ class TestForkNode(OsfTestCase):
         assert_true((fork_date - fork.date_created) < datetime.timedelta(seconds=30))
         assert_not_equal(fork.forked_date, original.date_created)
 
-        # Test that files were copied correctly
-        for fname in original.files_versions:
-            assert_true(fname in original.files_versions)
-            assert_true(fname in fork.files_versions)
-            assert_equal(
-                len(original.files_versions[fname]),
-                len(fork.files_versions[fname]),
-             )
-            for vidx in range(len(original.files_versions[fname])):
-                file_original = NodeFile.load(original.files_versions[fname][vidx])
-                file_fork = NodeFile.load(original.files_versions[fname][vidx])
-                data_original = original.get_file(file_original.path, vidx)
-                data_fork = fork.get_file(file_fork.path, vidx)
-                assert_equal(data_original, data_fork)
-
         # Test that pointers were copied correctly
         assert_equal(
             [pointer.node for pointer in original.nodes_pointer],
@@ -2416,22 +2267,10 @@ class TestForkNode(OsfTestCase):
     @mock.patch('framework.status.push_status_message')
     def test_fork_recursion(self, mock_push_status_message):
         """Omnibus test for forking.
-
         """
         # Make some children
         self.component = NodeFactory(creator=self.user, project=self.project)
         self.subproject = ProjectFactory(creator=self.user, project=self.project)
-
-        # Add files to test copying
-        self.project.add_file(
-            self.consolidate_auth, 'test.txt', 'test content', 4, 'text/plain'
-        )
-        self.component.add_file(
-            self.consolidate_auth, 'test2.txt', 'test content2', 4, 'text/plain'
-        )
-        self.subproject.add_file(
-            self.consolidate_auth, 'test3.txt', 'test content3', 4, 'text/plain'
-        )
 
         # Add pointers to test copying
         pointee = ProjectFactory()
@@ -2497,8 +2336,6 @@ class TestForkNode(OsfTestCase):
         fork = None
         # New user forks the project
         fork = self.project.fork_node(user2_auth)
-        #except Exception:
-        #    pass
 
         # fork correct children
         assert_equal(len(fork.nodes), 2)
@@ -2544,10 +2381,12 @@ class TestForkNode(OsfTestCase):
         assert_false(fork.is_registration)
 
         # Compare fork to original
-        self._cmp_fork_original(self.user,
-                                datetime.datetime.utcnow(),
-                                fork,
-                                self.registration)
+        self._cmp_fork_original(
+            self.user,
+            datetime.datetime.utcnow(),
+            fork,
+            self.registration,
+        )
 
 
 class TestRegisterNode(OsfTestCase):

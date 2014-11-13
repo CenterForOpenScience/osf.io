@@ -111,9 +111,9 @@
                             <!-- Link to add non-registered contributor -->
                             <div class='help-block'>
                                 <div data-bind='if: foundResults'>
-                                    <a class='btn btn-default' href='#' data-bind='click: previousPage, visible: currentPage() > 0'>Previous</a>
-                                    <a class='btn btn-default' href='#' data-bind='click: nextPage, visible: currentPage() < numberOfPages() - 1'>Next</a>
-
+                                    <ul class="pagination pagination-sm" data-bind="foreach: paginators">
+                                        <li data-bind="css: style"><a href="#" data-bind="click: handler, html: text"></a></li>
+                                    </ul>
                                     <p><strong>
                                         <a href="#"data-bind="click:gotoInvite">Add <em>{{query}}</em> as an unregistered contributor</a>.
                                     </strong></p>

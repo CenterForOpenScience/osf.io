@@ -2,6 +2,8 @@
 include =
     website/*
     framework/*
+omit =
+    *tests/*
 [report]
 exclude_lines =
     raise NotImplementedError
