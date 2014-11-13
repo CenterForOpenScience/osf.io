@@ -2,12 +2,10 @@
 <%def name="title()">${file_name}</%def>
 
 <%def name="file_versions()">
-<div id="githubScope">
+<div class="scripted" id="githubScope">
 
-    <div style="display: none" data-bind="visible: true">
-        <div class="alert alert-warning" data-bind="visible: deleting">
-            Deleting your file…
-        </div>
+    <div class="alert alert-warning" data-bind="visible: deleting">
+        Deleting your file…
     </div>
 
     <ol class="breadcrumb">
