@@ -88,13 +88,10 @@
 
     $.osf.handleJSONError = function(response) {
         var title = response.responseJSON.message_short || errorDefaultShort;
-        $.growl({
-            title: '<strong>' + title + '<strong><br />',
-            message: response.responseJSON.message_long || errorDefaultLong
-        },{
-            type: 'danger',
-            delay: 0
-        });
+        var message = response.responseJSON.message_long || errorDefaultLong;
+
+        new GrowlBox(title, message);
+
         Raven.captureMessage('Unexpected error occurred in JSON request');
     };
 

@@ -57,6 +57,7 @@ js_bottom = Bundle(
     Bundle(
         'js/project.js',
         'js/addons.js',
+        'js/growlBox.js'
         # 'js/dropzone-patch.js',
         # 'js/rubeus.js'
     ),
