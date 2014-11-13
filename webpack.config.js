@@ -36,6 +36,20 @@ var entry = {
     'wiki-edit-page': staticPath('js/pages/wiki-edit-page.js'),
     // TODO: Optimize common chunks between these modules
     'files-page': staticPath('js/pages/files-page.js'),
+    // Commons chunk
+    'vendor': [
+        'knockout',
+        'bootstrap',
+        'bootbox',
+        'hgrid',
+        staticPath('vendor/knockout-punches/knockout.punches.js'),
+        staticPath('vendor/bower_components/dropzone/downloads/dropzone.js'),
+        staticPath('vendor/knockout-punches/knockout.punches.js'),
+        staticPath('vendor/knockout-sortable/knockout-sortable.js'),
+        staticPath('js/dropzone-patch.js'),
+        staticPath('js/osf-helpers.js'),
+        staticPath('js/rubeus.js')
+    ]
 };
 
 // Collect adddons endpoints. If an addon's static folder has
@@ -90,7 +104,7 @@ module.exports = {
     },
     plugins: [
         // Bundle common code between modules
-        new webpack.optimize.CommonsChunkPlugin('common.js'),
+        new webpack.optimize.CommonsChunkPlugin('vendor', 'vendor.bundle.js'),
         // Bower support
         new webpack.ResolverPlugin(
             new webpack.ResolverPlugin.DirectoryDescriptionFilePlugin('bower.json', ['main'])

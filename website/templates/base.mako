@@ -198,8 +198,7 @@
     <script src="${url}"></script>
     % endfor
 
-    <script src="/static/public/js/common.js"></script>
-    <script src="/static/public/js/addon-index-bundle.js"> </script>
+    <script src="/static/public/js/vendor.bundle.js"></script>
 
     <script>
         // Enable knockout punches
