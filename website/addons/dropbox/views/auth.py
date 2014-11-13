@@ -125,12 +125,12 @@ def dropbox_oauth_delete_user(user_addon, auth, **kwargs):
     try:
         client = get_client_from_user_settings(user_addon)
         client.disable_access_token()
-        user_addon.clear()
-        user_addon.save()
     except ErrorResponse as error:
         if error.status == 401:
-            user_addon.clear()
-            user_addon.save()
+            pass
+        
+    user_addon.clear()
+    user_addon.save()
 
     return None
 
