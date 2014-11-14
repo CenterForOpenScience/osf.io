@@ -64,7 +64,10 @@ var request = $.ajax({
     dataType: 'json'
 });
 request.done(function(response) {
-    contribs = response.contributors;
+    var currentUserName = window.contextVars.currentUser.fullname;
+    contribs = response.contributors.filter(function(contrib) { 
+        return contrib.shortname !== currentUserName;
+    });
     moreContribs = response.more;
 });
 request.fail(function(xhr, textStatus, err) {

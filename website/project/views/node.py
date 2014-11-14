@@ -747,6 +747,7 @@ def _view_project(node, auth, primary=False):
             'piwik_token': user.piwik_token if user else '',
             'id': user._id if user else None,
             'username': user.username if user else None,
+            'fullname': user.fullname if user else '',
             'can_comment': node.can_comment(auth),
         },
         'badges': _get_badge(user),
