@@ -8,7 +8,7 @@ var bootbox = require('bootbox');
 var LogFeed = require('./logFeed.js');
 var osfHelpers = require('./osf-helpers.js');
 
-window.NodeActions = {}; // Namespace for NodeActions
+var NodeActions = {}; // Namespace for NodeActions
 
 // TODO: move me to the NodeControl or separate module
 NodeActions.beforeForkNode = function(url, done) {
@@ -274,4 +274,5 @@ $(document).ready(function() {
 
 });
 
+window.NodeActions = NodeActions;
 module.exports = NodeActions;
