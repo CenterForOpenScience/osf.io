@@ -4,7 +4,6 @@ var $ = require('jquery');
 var Rubeus = require('rubeus');
 
 var LogFeed = require('../logFeed.js');
-var NodeControl = require('../nodeControl.js');
 var pointers = require('../pointers.js');
 
 var Comment = require('../comment.js');
@@ -22,16 +21,6 @@ new Rubeus('#myGrid', {
 
 // Initialize controller for "Add Links" modal
 new pointers.PointerManager('#addPointer', window.contextVars.node.title);
-
-$(function() {
-    var nodeApiUrl = window.contextVars.node.urls.api;
-    // Get project data from the server and initiate KO modules
-    $.getJSON(nodeApiUrl, function(data) {
-        // Initialize nodeControl and logFeed on success
-        new NodeControl('#projectScope', data);
-        $('body').trigger('nodeLoad', data);
-    });
-});
 
 // Listen for the nodeLoad event (prevents multiple requests for data)
 $('body').on('nodeLoad', function() {

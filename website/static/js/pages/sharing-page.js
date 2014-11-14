@@ -17,7 +17,7 @@ $('body').on('nodeLoad', function(event, data) {
             data.parent_node.title
         );
     }
-    });
+});
 
 new ContribManager('#manageContributors', ctx.contributors, ctx.user, ctx.isRegistration);
 
