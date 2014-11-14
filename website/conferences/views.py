@@ -67,7 +67,7 @@ def add_poster_by_email(conf, recipient, address, fullname, subject,
         send_mail(
             address,
             CONFERENCE_FAILED,
-            fullname=fullname
+            fullname=fullname,
         )
         return
 
@@ -138,20 +138,26 @@ def add_poster_by_email(conf, recipient, address, fullname, subject,
         if tag not in node.system_tags:
             node.system_tags.append(tag)
 
+    # Save changes
+    node.save()
+
     from website.addons.osfstorage import utils as storage_utils
 
     # Add files
-    files = []
     for attachment in attachments:
         name, content, content_type, size = prepare_file(attachment)
         upload_url = storage_utils.get_upload_url(node, user, size, content_type, name)
         requests.put(
             upload_url,
-            headers={'Content-Type': 'application/json'},
+            data=content,
+            headers={'Content-Type': content_type},
         )
 
-    # Save changes
-    node.save()
+    download_url = node.web_url_for(
+        'osf_storage_view_file',
+        path=attachments[0].filename,
+        action='download',
+    )
 
     # Add mail record
     mail_record = MailRecord(
@@ -173,7 +179,7 @@ def add_poster_by_email(conf, recipient, address, fullname, subject,
         set_password_url=set_password_url,
         profile_url=user.absolute_url,
         node_url=urlparse.urljoin(settings.DOMAIN, node.url),
-        file_url=urlparse.urljoin(settings.DOMAIN, files[0].download_url(node)),
+        file_url=urlparse.urljoin(settings.DOMAIN, download_url),
         presentation_type=presentation_type,
         is_spam=is_spam,
     )
