@@ -337,13 +337,13 @@ var NameViewModel = function(urls, modes) {
     BaseViewModel.call(self, urls, modes);
     TrackedMixin.call(self);
 
-    self.full = koHelpers.ko.sanitizedObservable().extend({
+    self.full = koHelpers.sanitizedObservable().extend({
         required: true
     });
-    self.given = koHelpers.ko.sanitizedObservable();
-    self.middle = koHelpers.ko.sanitizedObservable();
-    self.family = koHelpers.ko.sanitizedObservable();
-    self.suffix = koHelpers.ko.sanitizedObservable();
+    self.given = koHelpers.sanitizedObservable();
+    self.middle = koHelpers.sanitizedObservable();
+    self.family = koHelpers.sanitizedObservable();
+    self.suffix = koHelpers.sanitizedObservable();
 
     self.trackedProperties = [
         self.full,
