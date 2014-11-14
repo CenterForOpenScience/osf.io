@@ -21,46 +21,26 @@
         <div id="selectAddons" class="panel panel-default">
             <div class="panel-heading"><h3 class="panel-title">Select Add-ons</h3></div>
             <div class="panel-body">
-
-                <form id="selectAddonsForm">
-
-                    % for category in addon_categories:
-
-                        <%
-                            addons = [
-                                addon
-                                for addon in addons_available
-                                if category in addon.categories
-                            ]
-                        %>
-                        % if addons:
-                            <h3>${category.capitalize()}</h3>
-                            % for addon in addons:
+                <form id="selectAddonsForm" style="display: none" data-bind="submit: submitAddons">
+                    <div data-bind="foreach: {data: addonCategoryData, as: 'category'}">
+                        <h3 data-bind="text: category.Name"></h3>
+                            <div data-bind="foreach: {data: category.Addons, as: 'addons'}">
                                 <div>
-                                    <label>
-                                        <input
-                                            type="checkbox"
-                                            name="${addon.short_name}"
-                                            ${'checked' if (addon.short_name in addons_enabled) else ''}
-                                        />
-                                        ${addon.full_name}
-                                    </label>
+                                    <input type="checkbox" data-bind="
+                                    attr: {value: addons.ShortName}, 
+                                    checked: $root.addonsEnabled"/>
+                                    <label data-bind="text: addons.FullName"></label>
                                 </div>
-                            % endfor
-                        % endif
-
-                    % endfor
-
-                    <br />
-
-                    <button id="settings-submit" class="btn btn-success">
-                        Submit
-                    </button>
-
+                            </div>
+                    </div>
+                    <br/>
+                        <button type="submit" class="btn btn-success">
+                            Submit
+                        </button>
                 </form>
-
             </div>
         </div>
+
         % if addon_enabled_settings:
             <div id="configureAddons" class="panel panel-default">
                 <div class="panel-heading"><h3 class="panel-title">Configure Add-ons</h3></div>
@@ -81,66 +61,14 @@
             </div>
             % endif
     </div>
-
 </div>
 
-<script type="text/javascript">
-
-
-    // TODO: Move all this to its own module
-    function formToObj(form) {
-        var rv = {};
-        $.each($(form).serializeArray(), function(_, value) {
-            rv[value.name] = value.value;
-        });
-        return rv;
-    }
-
-    // Set up submission for addon selection form
-    var checkedOnLoad = $("#selectAddonsForm input:checked");
-
-    $('#selectAddonsForm').on('submit', function() {
-
-        var formData = {};
-        $('#selectAddonsForm').find('input').each(function(idx, elm) {
-            var $elm = $(elm);
-            formData[$elm.attr('name')] = $elm.is(':checked');
-        });
-
-        var unchecked = checkedOnLoad.filter($("#selectAddonsForm input:not(:checked)"));
-
-        var submit = function() {
-            var request = $.osf.postJSON('/api/v1/settings/addons/', formData);
-            request.done(function() {
-                window.location.reload();
-            });
-            request.fail(function() {
-                var msg = 'Sorry, we had trouble saving your settings. If this persists please contact <a href="mailto: support@osf.io">support@osf.io</a>';
-                bootbox.alert({title: 'Request failed', message: msg});
-            });
-        }
-
-        if(unchecked.length > 0) {
-            var uncheckedText = $.map(unchecked, function(el){
-                return ['<li>', $(el).closest('label').text().trim(), '</li>'].join('');
-            }).join('');
-            uncheckedText = ['<ul>', uncheckedText, '</ul>'].join('');
-            bootbox.confirm({
-                title: 'Are you sure you want to remove the add-ons you have deselected? ',
-                message: uncheckedText,
-                callback: function(result) {
-                    if (result) {
-                        submit();
-                    } else{
-                        unchecked.each(function(i, el){ $(el).prop('checked', true); });
-                    }
-                }
-            });
-        }
-    else {
-        submit();
-    }
-    return false;
-    });
+</%def>
+<%def name="javascript_bottom()">
+<script>
+$script(["/static/js/addonSelector.js"]);
+$script.ready("addonSelector", function(){
+    new AddonSelector("#selectAddonsForm");
+})
 </script>
 </%def>

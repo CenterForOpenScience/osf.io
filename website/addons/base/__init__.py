@@ -146,6 +146,7 @@ class AddonConfig(object):
             'icon': self.icon_url,
             'has_page': 'page' in self.views,
             'has_widget': 'widget' in self.views,
+            'categories': self.categories,
         }
 
     @property

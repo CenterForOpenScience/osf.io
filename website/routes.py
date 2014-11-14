@@ -507,6 +507,13 @@ def make_url_map(app):
             json_renderer
         ),
 
+        Rule(
+            '/settings/addons/',
+            'get',
+            profile_views.user_addons,
+            json_renderer
+        ),
+
     ], prefix='/api/v1',)
 
     ### Search ###
