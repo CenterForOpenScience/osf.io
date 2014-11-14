@@ -70,6 +70,11 @@
         return [icon, '<span ' + tooltipMarkup + ' >&nbsp;', item.name, '</span>'].join('');
     };
 
+    Rubeus.Sort = {
+        defaultColumn: 'name',
+        defaultAsc: true
+    };
+
     /**
      * Generate the markup necessary for adding a tooltip to an element.
      */
@@ -378,6 +383,15 @@
             updateTooltips();
             this.changeStatus(row, statusType.FETCH_SUCCESS);
             this.showButtons(row);
+            // Sort loaded data according to current order
+            var sortColumns = this.grid.getSortColumns();
+            if (sortColumns.length) {
+                var sortColumn = sortColumns[0];
+                row._node.sort(sortColumn.columnId, sortColumn.sortAsc);
+            } else {
+                row.sort(Rubeus.Sort.defaultColumn, Rubeus.Sort.defaultAsc);
+            }
+            this.tree.updateDataView(true);
         },
         fetchError: function(error, row) {
             this.changeStatus(row, statusType.FETCH_ERROR);
@@ -502,6 +516,8 @@
             self.getData().forEach(function(item) {
                 self.expandItem(item);
             });
+            // Set default sort order
+            self.grid.setSortColumn(Rubeus.Sort.defaultColumn, Rubeus.Sort.defaultAsc);
             updateTooltips();
             $(this.options.progBar).hide();
         },
