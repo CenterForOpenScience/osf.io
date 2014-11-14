@@ -489,7 +489,7 @@
                 window.location.reload();
             }).fail(function() {
                 $.osf.unblock();
-                bootbox.alert('Add contributor failed.');
+                new GrowlBox('Error','Add contributor failed.');
             });
         };
 
