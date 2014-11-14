@@ -21,7 +21,7 @@
          * Show a growl-style notification for messages. Defaults to an error type.
          * @param {String} title Shows in bold at the top of the box. Required or it looks foolish.
          * @param {String} message Shows a line below the title. This could be '' if there's nothing to say.
-         * @param {String} type One of 'success', 'info', 'warning', or 'danger'.
+         * @param {String} type One of 'success', 'info', 'warning', or 'danger'. Defaults to danger.
          */
         var self = this;
         if(typeof type === 'undefined'){
