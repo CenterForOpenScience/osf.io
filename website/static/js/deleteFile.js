@@ -35,7 +35,7 @@
                         });
                         request.fail(function( jqXHR, textStatus ) {
                             $('#deletingAlert').removeClass('in');
-                            bootbox.alert( 'Could not delete: ' + textStatus );
+                            new GrowlBox('Error:', 'Could not delete: ' + textStatus );
                         });
                     }
                 }
