@@ -9,6 +9,7 @@ require('knockout-punches');
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
+ko.punches.enableAll();
 
 var FolderPicker = require('folderpicker');
 var ZeroClipboard = require('zeroclipboard');

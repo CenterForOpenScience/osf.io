@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import operator
+import os
 import logging
 import httplib as http
 from dateutil.parser import parse as parse_date
@@ -164,8 +165,34 @@ def user_addons(auth, **kwargs):
     out['addons_available'].sort(key=operator.attrgetter("full_name"), reverse=False)
     out['addons_enabled'] = addons_enabled
     out['addon_enabled_settings'] = addon_enabled_settings
+    out['addon_js'] = collect_user_config_js(user.get_addons())
     return out
 
+
+def collect_user_config_js(addons):
+    """Collect webpack bundles for each of the addons' user-cfg.js modules. Return
+    the URLs for each of the JS modules to be included on the user addons config page.
+
+    :param list addons: List of user's addon config records.
+    """
+    js_modules = []
+    for addon in addons:
+
+        file_path = os.path.join('static',
+                                 'public',
+                                 'js',
+                                 addon.config.short_name,
+                                 'user-cfg.js')
+        js_file = os.path.join(
+            settings.BASE_PATH,
+            file_path,
+        )
+        if os.path.exists(js_file):
+            js_path = os.path.join(
+                '/', file_path
+            )
+            js_modules.append(js_path)
+    return js_modules
 
 @must_be_logged_in
 def profile_addons(**kwargs):

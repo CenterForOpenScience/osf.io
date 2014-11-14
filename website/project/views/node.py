@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 import httplib as http
+import os
 
 from flask import request
 from modularodm import Q
@@ -319,11 +320,38 @@ def node_setting(**kwargs):
     rv['addon_enabled_settings'] = addon_enabled_settings
     rv['addon_capabilities'] = settings.ADDON_CAPABILITIES
 
+    rv['addon_js'] = collect_node_config_js(node.get_addons())
+
     rv['comments'] = {
         'level': node.comment_level,
     }
 
     return rv
+
+def collect_node_config_js(addons):
+    """Collect webpack bundles for each of the addons' node-cfg.js modules. Return
+    the URLs for each of the JS modules to be included on the node addons config page.
+
+    :param list addons: List of node's addon config records.
+    """
+    js_modules = []
+    for addon in addons:
+
+        file_path = os.path.join('static',
+                                 'public',
+                                 'js',
+                                 addon.config.short_name,
+                                 'node-cfg.js')
+        js_file = os.path.join(
+            settings.BASE_PATH,
+            file_path,
+        )
+        if os.path.exists(js_file):
+            js_path = os.path.join(
+                '/', file_path
+            )
+            js_modules.append(js_path)
+    return js_modules
 
 
 @must_have_permission('write')

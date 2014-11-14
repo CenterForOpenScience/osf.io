@@ -188,6 +188,10 @@
     ## <script type="text/javascript" src="/static/js/metadata_1.js"></script>
     <script type="text/javascript" src="/static/js/projectSettings.js"></script>
     <script src="/static/public/js/addon-node-cfg-bundle.js"></script>
+    % for js_asset in addon_js:
+      <script src="${js_asset}"></script>
+    % endfor
+
     <script type="text/javascript">
         $(document).ready(function() {
             $('#deleteNode').on('click', function() {

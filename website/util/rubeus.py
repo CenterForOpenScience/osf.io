@@ -11,6 +11,7 @@ import hurry
 from modularodm import Q
 
 from framework.auth.decorators import Auth
+from website import settings
 from website.settings import (
     ALL_MY_PROJECTS_ID, ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_NAME,
     ALL_MY_REGISTRATIONS_NAME
@@ -480,7 +481,20 @@ def collect_addon_js(node, visited=None):
     visited.append(node._id)
     js = set()
     for addon in node.get_addons():
+        # JS modules configured in each addon's __init__ file
         js = js.union(addon.config.include_js.get('files', []))
+        # Webpack bundle
+        file_path = os.path.join('static',
+                                 'public',
+                                 'js',
+                                 addon.config.short_name,
+                                 'files.js')
+        js_file = os.path.join(
+            settings.BASE_PATH, file_path
+        )
+        if os.path.exists(js_file):
+            js_path = os.path.join('/', file_path)
+            js.add(js_path)
     for each in node.nodes:
         if each._id not in visited:
             visited.append(each._id)
