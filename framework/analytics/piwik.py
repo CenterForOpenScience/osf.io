@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import json
 import uuid
 from hashlib import md5
@@ -39,7 +41,7 @@ def create_user(user):
 
     user.save()
 
-def update_node(node, updated_fields=None):
+def _update_node_object(node, updated_fields=None):
     """ Given a node, provisions a Piwik site if necessary and sets
     contributors to "view".
 

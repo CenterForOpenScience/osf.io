@@ -4,10 +4,22 @@
 from celery import Celery
 from celery.utils.log import get_task_logger
 
+from raven import Client
+from raven.contrib.celery import register_signal
+
+from website import settings
+
+
 celery = Celery()
 
 # TODO: Hardcoded settings module. Should be set using framework's config handler
 celery.config_from_object('website.settings')
+
+
+if settings.SENTRY_DSN:
+    client = Client(settings.SENTRY_DSN)
+    register_signal(client)
+
 
 @celery.task
 def error_handler(task_id, task_name):

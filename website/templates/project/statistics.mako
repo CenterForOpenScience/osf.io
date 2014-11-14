@@ -14,14 +14,16 @@
             site_id=node['piwik_site_id'],
         )
 %>
-% if not node.get('piwik_site_id'):
-        <img src="/static/img/no_analytics.png">
-% else:
-    % if not node.get('is_public'):
-        <div class='alert alert-warning'>
-            <strong>Note:</strong> Usage statistics are collected only for public resources.
-        </div>
-    % endif
-    <iframe style="overflow-y:scroll;border:none;" width="100%" height='600' src="${ piwik_url }"></iframe>
-% endif
 
+% if node['is_public']:
+    % if node['piwik_site_id']:
+        <iframe style="overflow-y:scroll;border:none;" width="100%" height='600' src="${ piwik_url }"></iframe>
+    % else:
+        <div>Setting up your analytics dashboard. Please check back in a few minutes.</div>
+    % endif
+% else:
+    <div class='alert alert-warning'>
+        <strong>Note:</strong> Usage statistics are collected only for public resources.
+    </div>
+    <img src="/static/img/no_analytics.png">
+% endif

@@ -139,7 +139,8 @@ CELERY_RESULT_BACKEND = 'amqp://'
 CELERY_IMPORTS = (
     'framework.email.tasks',
     'framework.tasks',
-    'framework.render.tasks'
+    'framework.render.tasks',
+    'framework.analytics.tasks',
 )
 
 # Add-ons
