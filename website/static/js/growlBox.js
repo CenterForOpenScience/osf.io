@@ -16,9 +16,18 @@
     // This is the public API
 
     // The constructor
-    function GrowlBox (title, message) {
+    function GrowlBox (title, message, type) {
+        /**
+         * Show a growl-style notification for messages. Defaults to an error type.
+         * @param {String} title Shows in bold at the top of the box. Required or it looks foolish.
+         * @param {String} message Shows a line below the title. This could be '' if there's nothing to say.
+         * @param {String} type One of 'success', 'info', 'warning', or 'danger'.
+         */
         var self = this;
-
+        if(typeof type === 'undefined'){
+            type = 'danger';
+        }
+        self.type = type;
         self.title = title;
         self.message = message;
         self.init(self);
@@ -29,7 +38,7 @@
             title: '<strong>' + self.title + '<strong><br />',
             message: self.message
         },{
-            type: 'danger',
+            type: self.type,
             delay: 0,
             animate: {
                 enter: 'animated slideInDown',
