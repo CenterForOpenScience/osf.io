@@ -15,6 +15,7 @@ from modularodm import exceptions as modm_errors
 
 from framework.auth import Auth
 from framework.mongo import StoredObject
+from framework.analytics import get_basic_counters
 
 from website.models import NodeLog
 from website.addons.base import AddonNodeSettingsBase, GuidFile
@@ -202,6 +203,9 @@ class BaseFileObject(StoredObject):
         """
         return True
 
+    def get_download_count(self, version=None):
+        pass
+
     def __repr__(self):
         return '<{}(path={!r}, node_settings={!r})>'.format(
             self.__class__.__name__,
@@ -356,6 +360,17 @@ class OsfStorageFileRecord(BaseFileObject):
         self.save()
         if log:
             self.log(auth, NodeLog.FILE_RESTORED)
+
+    def get_download_count(self, version=None):
+        """
+        :param int version: Optional one-based version index
+        """
+        parts = ['download', self.node._id, self.path]
+        if version is not None:
+            parts.append(version)
+        page = ':'.join([format(part) for part in parts])
+        _, count = get_basic_counters(page)
+        return count or 0
 
 
 identity = lambda value: value
