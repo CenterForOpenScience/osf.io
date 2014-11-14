@@ -6,7 +6,6 @@ import os
 import json
 from urllib2 import urlopen
 from re import search
-import httplib as http
 
 from tempfile import TemporaryFile
 
@@ -14,7 +13,6 @@ import requests
 from requests_oauthlib import OAuth1Session
 
 from framework.utils import secure_filename
-from framework.exceptions import HTTPError
 from website.util.sanitize import escape_html
 
 from . import settings as figshare_settings
