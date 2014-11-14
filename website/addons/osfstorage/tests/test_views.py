@@ -316,7 +316,7 @@ class TestSetCachedHook(HookTestCase):
             payload=payload or self.payload,
             signature=signature or self.signature,
             path=path or self.path,
-            method='post_json',
+            method='put_json',
             **kwargs
         )
 
