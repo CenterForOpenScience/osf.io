@@ -46,7 +46,7 @@ function randomScientist() {
     'Somerville',
     'Tesla',
     'Tyson',
-    'Turing',
+    'Turing'
     ];
 
     return scientists[Math.floor(Math.random() * scientists.length)];
@@ -79,10 +79,8 @@ ProjectSettings.getConfirmationCode = function(nodeType) {
                 request.done(successHandler);
                 request.fail($.osf.handleJSONError);
             } else if (result != null) {
-                bootbox.alert({
-                    title: 'Incorrect confirmation',
-                    message: 'The confirmation string you provided was incorrect. Please try again.'
-                });
+                new GrowlBox('Incorrect confirmation',
+                    'The confirmation string you provided was incorrect. Please try again.');
             }
         }
     );
@@ -105,7 +103,7 @@ $(document).ready(function() {
             $commentMsg.text('Successfully updated settings.');
             window.location.reload();
         }).fail(function() {
-            bootbox.alert('Could not set commenting configuration. Please try again.');
+            new GrowlBox('Could not set commenting configuration.', 'Please try again.');
         });
 
         return false;
