@@ -128,6 +128,8 @@ def dropbox_oauth_delete_user(user_addon, auth, **kwargs):
     except ErrorResponse as error:
         if error.status == 401:
             pass
+        else:
+            raise HTTPError(http.BAD_REQUEST)
     user_addon.clear()
     user_addon.save()
 
@@ -154,6 +156,8 @@ def dropbox_user_config_get(user_addon, auth, **kwargs):
         except ErrorResponse as error:
             if error.status == 401:
                 valid_credentials = False
+            else:
+                HTTPError(http.BAD_REQUEST)
 
     return {
         'result': {
