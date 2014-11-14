@@ -997,14 +997,15 @@ class TestConfirmingEmail(OsfTestCase):
         res = self.app.get(self.confirmation_url, expect_errors=True)
         assert_in('Link Expired', res)
 
+    @unittest.skip("Can't test this, since the error dialog is now created dynamically")
     def test_sees_flash_message_if_email_unconfirmed(self):
         # set a password for user
         self.user.set_password('bicycle')
         self.user.save()
         # Goes to log in page
         res = self.app.get('/account/').maybe_follow()
-        # Fills the form with incorrect password
-        form  = res.forms['signinForm']
+        # Fills the form with correct password
+        form = res.forms['signinForm']
         form['username'] = self.user.username
         form['password'] = 'bicycle'
         res = form.submit().maybe_follow()

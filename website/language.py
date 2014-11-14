@@ -19,22 +19,16 @@ in getting started, please visit the <a href="/getting-started/">Getting Started
 page.
 '''
 
-REGISTRATION_SUCCESS = '''
-Registration successful. Please check {email} to confirm your email address.
-'''
+REGISTRATION_SUCCESS = '''Registration successful. Please check {email} to confirm your email address.'''
 
 # Shown if registration is turned off in website.settings
 REGISTRATION_UNAVAILABLE = 'Registration currently unavailable.'
 
-ALREADY_REGISTERED = '''
-The email <em>{email}</em> has already been registered.
-'''
+ALREADY_REGISTERED = '''The email <em>{email}</em> has already been registered.'''
 
 # Shown if user tries to login with an email that is not yet confirmed
-UNCONFIRMED = '''
-This login email has been registered but not confirmed. Please check your email (and spam
-folder). <a href="/resend/">Click here</a> to resend your confirmation email.
-'''
+UNCONFIRMED = ('This login email has been registered but not confirmed. Please check your email (and spam folder).'
+               ' <a href="/resend/">Click here</a> to resend your confirmation email.')
 
 # Shown on incorrect password attempt
 LOGIN_FAILED = '''
