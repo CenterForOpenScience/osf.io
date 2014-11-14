@@ -25,75 +25,6 @@
         });
     }
 
-    // Define HGrid Button Actions
-    HGrid.Actions['releaseStudy'] = {
-        on: 'click',
-        callback: function (evt, row) {
-            var self = this;
-            var url = row.urls.release;
-            bootbox.confirm({
-                title: 'Release this study?',
-                message: 'By releasing this study, all content will be ' +
-                    'made available through the Harvard Dataverse using their ' +
-                    'internal privacy settings, regardless of your OSF project ' +
-                    'settings. Are you sure you want to release this study?',
-                callback: function(result) {
-                    if(result) {
-                        self.changeStatus(row, Rubeus.Status.RELEASING_STUDY);
-                        $.osf.putJSON(
-                            url,
-                            {}
-                        ).done(function() {
-                            bootbox.alert('Your study has been released. Please ' +
-                            'allow up to 24 hours for the released version to ' +
-                            'appear on your OSF project\'s file page.');
-                            self.updateItem(row);
-                        }).fail( function(args) {
-                            var message = args.responseJSON.code === 400 ?
-                                'Error: Something went wrong when attempting to ' +
-                                'release your study.' :
-                                'Error: This version has already been released.'
-                            bootbox.alert(message);
-                            self.updateItem(row);
-                        });
-                    }
-                }
-            });
-        }
-    };
-
-    // Register configuration
-    Rubeus.cfg.dataverse = {
-        // Handle events
-        listeners: [
-            {
-                on: 'change',
-                selector: '.dataverse-state-select',
-                callback: function(evt, row, grid) {
-                    var $this = $(evt.target);
-                    var state = $this.val();
-                    refreshDataverseTree(grid, row, state);
-                }
-            }
-        ],
-        // Update file information for updated files
-        uploadSuccess: function(file, row, data) {
-            if (data.actionTaken === 'file_updated') {
-                var gridData = this.getData();
-                for (var i=0; i < gridData.length; i++) {
-                    var item = gridData[i];
-                    if (item.file_id && data.old_id &&
-                        item.file_id === data.old_id) {
-                        $.extend(item, data);
-                        this.updateItem(item);
-                    }
-                }
-            }
-        },
-        UPLOAD_ERROR: '<span class="text-danger">The Dataverse could ' +
-                        'not accept your file at this time. </span>'
-    };
-
     // Define Fangorn Button Actions
     function _fangornActionColumn (item, col){
         var self = this;
@@ -109,36 +40,48 @@
         function dataverseRelease (event, item, col) {
             var self = this; // treebeard
             var url = item.data.urls.release;
-            bootbox.confirm({
-                title: 'Release this study?',
-                message: 'By releasing this study, all content will be ' +
-                    'made available through the Harvard Dataverse using their ' +
-                    'internal privacy settings, regardless of your OSF project ' +
-                    'settings. Are you sure you want to release this study?',
-                callback: function(result) {
-                    if(result) {
-                        item.notify.update('Releasing Study', 'info', 1, 3000);
-                        $.osf.putJSON(
-                            url,
-                            {}
-                        ).done(function(data) {
-                            bootbox.alert('Your study has been released. Please ' +
-                            'allow up to 24 hours for the released version to ' +
-                            'appear on your OSF project\'s file page.');
-                            //self.updateItem(row);
-                            console.log("Returned Done:", data);
-                        }).fail( function(args) {
-                            console.log("Returned error:", args);
-                            var message = args.responseJSON.code === 400 ?
-                                'Error: Something went wrong when attempting to ' +
-                                'release your study.' :
-                                'Error: This version has already been released.'
-                            bootbox.alert(message);
-                            //self.updateItem(row);
-                        });
-                    }
-                }
-            });
+            var modalContent = [ 
+                m('h3', 'Release this study?'), 
+                m('p.m-md', 'By releasing this study, all content will be made available through the Harvard Dataverse using their internal privacy settings, regardless of your OSF project settings.'), 
+                m('p.font-thick.m-md', 'Are you sure you want to release this study?')
+            ];
+            var modalActions = [
+                m('button.btn.btn-default.m-sm', { 'onclick' : function (){ self.modal.dismiss(); }},'Cancel'),
+                m('button.btn.btn-primary.m-sm', { 'onclick' : function() { releaseStudy(); } }, 'Release Study')
+            ];
+
+            this.modal.update(modalContent, modalActions); 
+
+            function releaseStudy () {
+                self.modal.dismiss();
+                item.notify.update('Releasing Study', 'info', 1, 3000);
+                $.osf.putJSON(
+                    url,
+                    {}
+                ).done(function(data) {
+                    var modalContent = [ 
+                        m('p.m-md', 'Your study has been released. Please allow up to 24 hours for the released version to appear on your OSF project\'s file page.')
+                    ];
+                    var modalActions = [
+                        m('button.btn.btn-primary.m-sm', { 'onclick' : function() { self.modal.dismiss(); } }, 'Okay')
+                    ];
+                    self.modal.update(modalContent, modalActions); 
+                }).fail( function(args) {
+                    console.log("Returned error:", args);
+                    var message = args.responseJSON.code === 400 ?
+                        'Error: Something went wrong when attempting to release your study.' :
+                        'Error: This version has already been released.';
+
+                    var modalContent = [ 
+                        m('p.m-md', message)
+                    ];
+                    var modalActions = [
+                        m('button.btn.btn-primary.m-sm', { 'onclick' : function() { self.modal.dismiss(); } }, 'Okay')
+                    ];
+                    self.modal.update(modalContent, modalActions); 
+                    //self.updateItem(row);
+                });
+            } 
         }
 
         function _removeEvent (event, item, col) {
@@ -242,12 +185,12 @@
         return columns; 
     } 
 
-
     function _fangornFolderIcons(item){
-            //This is a hack, should probably be changed...
-            return m('img',{src:item.data.iconUrl, style:{width:'16px', height:'auto'}}, ' ');
+        if(item.data.iconUrl){
+            return m('img',{src:item.data.iconUrl, style:{width:"16px", height:"auto"}}, ' ');
+        }
+        return undefined;  
     }
-
 
     function _fangornLazyLoad(item){
         if (item.data.urls.fetch){
@@ -259,14 +202,10 @@
         return false;
     }
 
-
-
     Fangorn.config.dataverse = {
         // Handle changing the branch select
         folderIcon: _fangornFolderIcons,
         resolveRows: _fangornColumns,
         lazyload:_fangornLazyLoad
     };
-
-
 }));

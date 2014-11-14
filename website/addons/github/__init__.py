@@ -35,9 +35,9 @@ CATEGORIES = ['storage']
 # }
 
 INCLUDE_JS = {
-    'widget': ['jquery.githubRepoWidget.js', 'github-fangorn-cfg.js'],
+    'widget': ['jquery.githubRepoWidget.js', 'github-fangorn-config.js'],
     'page': ['hgrid-github.js'],
-    'files': ['github-fangorn-cfg.js']
+    'files': ['github-fangorn-config.js']
 }
 
 INCLUDE_CSS = {

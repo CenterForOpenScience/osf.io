@@ -196,9 +196,9 @@
 
     function _fangornDropzoneError (treebeard, file, message, xhr) {
         console.log("Error", arguments);
-        var element = $( ".tb-row:contains('"+file.name+"')" );
-        var id  = element.attr('data-id');
-        var item = treebeard.find(id);
+        // var element = $( ".tb-row:contains('"+file.name+"')" );
+        // var id  = element.attr('data-id');
+        var item = treebeard.dropzoneItemCache.children[0];
         item.notify.type = 'danger';
         var msgText = message.message_short ? message.message_short : message; 
         item.notify.message = msgText; 
@@ -267,11 +267,17 @@
 
     function _fangornLazyLoadError (item) {
         // this = treebeard; 
+        var self= this; 
         console.log('lazyload Error', this, arguments);
-        var configOption = resolveconfigOption.call(this, item, 'lazyLoadError', [item]);
-        if(!configOption) {
-            tree.notify.update('Files couldn\'t load, please try again later.', 'deleting', undefined, 3000); 
+        function myFunc (){
+            console.log("My func", this, arguments); 
         }
+        var modalContent = [ m('h3', ' Ma title'), m('p', { 'onclick' : function(){ myFunc.call(self, item); }}, 'Ma text')]; 
+        this.modal.update(modalContent);
+        // var configOption = resolveconfigOption.call(this, item, 'lazyLoadError', [item]);
+        // if(!configOption) {
+        //     tree.notify.update('Files couldn\'t load, please try again later.', 'deleting', undefined, 3000); 
+        // }
     }
 
     function _fangornUploadMethod(item){
@@ -458,7 +464,6 @@
             onmouseoverrow : _fangornMouseOverRow,
             dropzone : {                                           // All dropzone options.
                 url: '/api/v1/project/',  // When users provide single URL for all uploads
-                //previewTemplate : '<div class='dz-preview dz-file-preview'>     <div class='dz-details'>        <div class='dz-size' data-dz-size></div>    </div>      <div class='dz-progress'>       <span class='dz-upload' data-dz-uploadprogress></span>  </div>      <div class='dz-error-message'>      <span data-dz-errormessage></span>  </div></div>',
                 clickable : '#treeGrid',
                 addRemoveLinks: false,
                 previewTemplate: '<div></div>',

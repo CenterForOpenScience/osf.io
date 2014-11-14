@@ -85,7 +85,7 @@
         } else if (item.kind === "item"){
             buttons.push({
                 'name' : '',
-                'icon' : 'icon-download-alt',
+                'icon' : 'icon-download-alt', 
                 'css' : 'btn btn-info btn-xs',
                 'onclick' : _downloadEvent
             },
@@ -98,12 +98,12 @@
             }
             );
         }
-        return m('.btn-group', [
-                buttons.map(function(btn){  
-                    return m('i', { 'data-col' : item.id, 'class' : btn.css, style : btn.style, 'onclick' : function(){ btn.onclick.call(self, event, item, col); } },
-                        [ m('span', { 'class' : btn.icon}, btn.name) ]);
-                })
-        ]); 
+        return buttons.map(function(btn){ 
+            return m('span', { 'data-col' : item.id }, [ m('i', 
+                { 'class' : btn.css, style : btn.style, 'onclick' : function(){ btn.onclick.call(self, event, item, col); } },
+                [ m('span', { 'class' : btn.icon}, btn.name) ])
+            ]);
+        }); 
     }
 
     function changeBranch(item, branch){

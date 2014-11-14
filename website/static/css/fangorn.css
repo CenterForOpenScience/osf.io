@@ -34,3 +34,7 @@
 color: #F00;
 text-align: center;
 }
+
+.tb-td .btn {
+	margin-right: 5px;
+}
