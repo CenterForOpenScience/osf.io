@@ -17,6 +17,7 @@ var entry = {
     'wiki-edit-page': staticPath('js/pages/wiki-edit-page.js'),
     'files-page': staticPath('js/pages/files-page.js'),
     'profile-settings-page': staticPath('js/pages/profile-settings-page.js'),
+    'register_1-page': staticPath('js/pages/register_1-page.js'),
     // Commons chunk
     'vendor': [
         'knockout',
