@@ -97,7 +97,7 @@ def serialize_settings(node_settings, current_user, client=None):
 
     if user_settings:
         try:
-            client = client if client is not None else get_client_from_user_settings(user_settings)
+            client = client or get_client_from_user_settings(user_settings)
             client.account_info()
         except ErrorResponse as error:
             if error.status == 401:
