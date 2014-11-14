@@ -381,7 +381,7 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
 
     results = search(build_query(query, start=start, size=size), index='website', search_type='user')
     docs = results['results']
-    pages = math.ceil(results['counts']['user'] / size)
+    pages = math.ceil(results['counts'].get('user', 0) / size)
 
     users = []
     for doc in docs:
