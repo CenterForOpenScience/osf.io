@@ -316,7 +316,7 @@ class TestSetCachedHook(HookTestCase):
             payload=payload or self.payload,
             signature=signature or self.signature,
             path=path or self.path,
-            method='post_json',
+            method='put_json',
             **kwargs
         )
 
@@ -711,11 +711,11 @@ class TestDownloadFile(StorageTestCase):
         mock_get_url.return_value = 'http://freddie.queen.com/'
         deltas = [
             Delta(
-                lambda: utils.get_download_count(self.record, self.project),
+                lambda: self.record.get_download_count(),
                 lambda value: value + 1
             ),
             Delta(
-                lambda: utils.get_download_count(self.record, self.project, len(self.record.versions)),
+                lambda: self.record.get_download_count(len(self.record.versions)),
                 lambda value: value + 1
             ),
         ]
@@ -734,11 +734,11 @@ class TestDownloadFile(StorageTestCase):
         mock_get_url.return_value = 'http://freddie.queen.com/'
         deltas = [
             Delta(
-                lambda: utils.get_download_count(self.record, self.project),
+                lambda: self.record.get_download_count(),
                 lambda value: value
             ),
             Delta(
-                lambda: utils.get_download_count(self.record, self.project, len(self.record.versions)),
+                lambda: self.record.get_download_count(len(self.record.versions)),
                 lambda value: value
             ),
         ]
@@ -761,11 +761,11 @@ class TestDownloadFile(StorageTestCase):
         self.record.save()
         deltas = [
             Delta(
-                lambda: utils.get_download_count(self.record, self.project),
+                lambda: self.record.get_download_count(),
                 lambda value: value + 1
             ),
             Delta(
-                lambda: utils.get_download_count(self.record, self.project, 3),
+                lambda: self.record.get_download_count(3),
                 lambda value: value + 1
             ),
         ]
@@ -780,11 +780,11 @@ class TestDownloadFile(StorageTestCase):
         mock_get_url.return_value = 'http://freddie.queen.com/'
         deltas = [
             Delta(
-                lambda: utils.get_download_count(self.record, self.project),
+                lambda: self.record.get_download_count(),
                 lambda value: value
             ),
             Delta(
-                lambda: utils.get_download_count(self.record, self.project, 3),
+                lambda: self.record.get_download_count(3),
                 lambda value: value
             ),
         ]
@@ -802,11 +802,11 @@ class TestDownloadFile(StorageTestCase):
         self.record.create_pending_version(self.user, '9d989e8')
         deltas = [
             Delta(
-                lambda: utils.get_download_count(self.record, self.project),
+                lambda: self.record.get_download_count(),
                 lambda value: value
             ),
             Delta(
-                lambda: utils.get_download_count(self.record, self.project, 2),
+                lambda: self.record.get_download_count(2),
                 lambda value: value
             ),
         ]
