@@ -154,7 +154,6 @@ ADDONS_REQUESTED = [
     'figshare',
     'forward',
     'github',
-    # 'osffiles',
     'osfstorage',
     's3',
     'twofactor',

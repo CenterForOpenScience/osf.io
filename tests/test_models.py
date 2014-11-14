@@ -28,7 +28,6 @@ from website.project.model import (
     ApiKey, Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
     get_pointer_parent,
 )
-from website.addons.osffiles.model import NodeFile
 from website.addons.osffiles.exceptions import FileNotModified
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.util import web_url_for, api_url_for
@@ -650,35 +649,6 @@ class TestGUID(OsfTestCase):
                 record_guid.referent,
                 record
             )
-
-
-class TestNodeFile(OsfTestCase):
-
-    def setUp(self):
-        super(TestNodeFile, self).setUp()
-        # Create a project with a NodeFile
-        self.node = ProjectFactory()
-        self.node_file = NodeFile(node=self.node, path='foo.py', filename='foo.py', size=128)
-        self.node.files_versions[self.node_file.clean_filename] = [self.node_file._primary_key]
-        self.node.save()
-
-    def test_url(self):
-        assert_equal(
-            self.node_file.api_url(self.node),
-            '{0}osffiles/{1}/'.format(self.node.api_url, self.node_file.filename),
-        )
-
-    def test_clean(self):
-        assert_equal(self.node_file.clean_filename, 'foo_py')
-
-    def test_latest_version_number(self):
-        assert_equal(self.node_file.latest_version_number(self.node), 1)
-
-    def test_download_url(self):
-        assert_equal(
-            self.node_file.download_url(self.node),
-            self.node.url + 'osffiles/{0}/version/1/download/'.format(self.node_file.filename)
-        )
 
 
 class TestApiKey(OsfTestCase):

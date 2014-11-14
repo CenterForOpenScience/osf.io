@@ -314,8 +314,8 @@ class TestSerializingNodeWithAddon(OsfTestCase):
         assert_equal(
             ret['urls'],
             {
-                'upload': os.path.join(self.project.api_url, 'osffiles') + '/',
-                'fetch': None
+                'upload': None,
+                'fetch': None,
             },
             'project root data has no upload or fetch urls'
         )

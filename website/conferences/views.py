@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 
 import os
 import re
@@ -392,21 +393,6 @@ def conference_results(meeting):
         'label': meeting,
         'meeting': conf.to_storage(),
     }
-
-
-# TODO: Test me @jmcarp
-def get_download_count(nodes):
-    from website.addons.osffiles.model import NodeFile
-    count = 0
-    for node in nodes:
-        if not node.files_current:
-            continue
-        file_id = node.files_current.values()[0]
-        file_obj = NodeFile.load(file_id)
-        if not file_obj:
-            continue
-        count += file_obj.download_count(node)
-    return count
 
 
 # TODO: Test me @jmcarp

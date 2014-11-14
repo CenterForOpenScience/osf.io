@@ -6,7 +6,6 @@ Pygments==1.6
 WTForms==1.0.4
 beautifulsoup4==4.3.2
 celery==3.1.13
-dulwich==0.9.4
 httplib2==0.9
 hurry.filesize==0.9
 itsdangerous==0.24
