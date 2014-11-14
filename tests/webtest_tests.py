@@ -997,8 +997,7 @@ class TestConfirmingEmail(OsfTestCase):
         res = self.app.get(self.confirmation_url, expect_errors=True)
         assert_in('Link Expired', res)
 
-    @unittest.skip("Can't test this, since the error dialog is now created dynamically")
-    def test_sees_flash_message_if_email_unconfirmed(self):
+    def test_flash_message_does_not_break_page_if_email_unconfirmed(self):
         # set a password for user
         self.user.set_password('bicycle')
         self.user.save()
@@ -1010,10 +1009,6 @@ class TestConfirmingEmail(OsfTestCase):
         form['password'] = 'bicycle'
         res = form.submit().maybe_follow()
         assert_in(language.UNCONFIRMED, res, 'shows flash message')
-        # clicks on resend link in flash message
-        res = res.click('Click here')
-        assert_equal(res.request.path, '/resend/', 'at resend page')
-
 
     @mock.patch('framework.auth.views.send_confirm_email')
     def test_resend_form(self, send_confirm_email):
