@@ -10,6 +10,8 @@ import logging
 from modularodm import Q
 from modularodm import exceptions as modm_errors
 
+from framework.transactions.context import TokuTransaction
+
 from website import settings
 from website.models import Guid
 from website.app import init_app
@@ -17,12 +19,12 @@ from website.app import init_app
 from website.addons.osffiles.model import OsfGuidFile
 from website.addons.osfstorage.model import OsfStorageGuidFile
 
-from scripts import utils
+from scripts import utils as script_utils
 from scripts.osfstorage.utils import ensure_osf_files
 
 
 logger = logging.getLogger(__name__)
-utils.add_file_logger(logger, __file__)
+script_utils.add_file_logger(logger, __file__)
 logging.basicConfig(level=logging.INFO)
 
 
@@ -66,11 +68,12 @@ def find_legacy_objs():
 
 def main(dry_run=True):
     legacy_objs = find_legacy_objs()
-    print('Migrating {0} `OsfGuidFile` objects'.format(legacy_objs.count()))
+    logger.info('Migrating {0} `OsfGuidFile` objects'.format(legacy_objs.count()))
     if dry_run:
         return
     for legacy_obj in legacy_objs:
-        migrate_legacy_obj(legacy_obj)
+        with TokuTransaction():
+            migrate_legacy_obj(legacy_obj)
 
 
 if __name__ == '__main__':

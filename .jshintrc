@@ -14,5 +14,5 @@
     "unused": true,
     "node": true,
     "evil": true,
-    "predef": ["window"]
+    "predef": ["window", "document"]
 }
