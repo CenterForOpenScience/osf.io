@@ -1650,3 +1650,15 @@ div.pydocx-center{
 .tag {
     white-space: pre;
 }
+
+.bootbox-node-deletion-modal {
+    font-weight: normal;
+    font-size: medium;
+    line-height: normal;
+    padding-top: 10px;
+}
+
+.bootbox-node-deletion-modal ol {
+    padding-left: 40px;
+    list-style-type: disc;
+}

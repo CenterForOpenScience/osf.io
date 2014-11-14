@@ -80,6 +80,17 @@ def get_node_contributors_abbrev(auth, **kwargs):
 @must_be_valid_project
 def get_contributors(auth, **kwargs):
 
+    # Can set limit to only receive a specified number of contributors in a call to this route
+    if request.args.get('limit'):
+        try:
+            limit = int(request.args['limit'])
+        except ValueError:
+            raise HTTPError(http.BAD_REQUEST, data=dict(
+                message_long='Invalid value for "limit": {}'.format(request.args['limit'])
+            ))
+    else:
+        limit = None
+
     node = kwargs['node'] or kwargs['project']
 
     anonymous = has_anonymous_link(node, auth)
@@ -87,12 +98,22 @@ def get_contributors(auth, **kwargs):
     if anonymous or not node.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
 
+    # Limit is either an int or None:
+    # if int, contribs list is sliced to specified length
+    # if None, contribs list is not sliced
     contribs = utils.serialize_contributors(
-        node.visible_contributors,
+        node.visible_contributors[0:limit],
         node=node,
     )
 
-    return {'contributors': contribs}
+    # Will either return just contributor list or contributor list + 'more' element
+    if limit:
+        return {
+            'contributors': contribs,
+            'more': max(0, len(node.visible_contributors) - limit)
+        }
+    else:
+        return {'contributors': contribs}
 
 
 @must_be_logged_in
