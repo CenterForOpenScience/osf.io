@@ -94,23 +94,26 @@ class TestAuthUtils(OsfTestCase):
         with assert_raises(auth.PasswordIncorrectError):
             auth.login(user.username, 'wrongpassword')
 
-    @mock.patch('framework.auth.utils.mailchimp.Lists.list')
-    def test_get_list_id_from_name(self, mock_list):
+    @mock.patch('framework.auth.utils.get_mailchimp_api')
+    def test_get_list_id_from_name(self, mock_get_mailchimp_api):
         list_name = 'foo'
-        mock_list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
+        mock_client = mock.MagicMock()
+        mock_get_mailchimp_api.return_value = mock_client
+        mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
         list_id = auth.utils.get_list_id_from_name(list_name)
-        mock_list.assert_called_with(filters={'list_name': list_name})
+        mock_client.lists.list.assert_called_with(filters={'list_name': list_name})
         assert_equal(list_id, 1)
 
-    @mock.patch('framework.auth.utils.mailchimp.Lists.list')
-    @mock.patch('framework.auth.utils.mailchimp.Lists.subscribe')
-    def test_subscribe_called_with_correct_arguments(self, mock_subscribe, mock_list):
+    @mock.patch('framework.auth.utils.get_mailchimp_api')
+    def test_subscribe_called_with_correct_arguments(self, mock_get_mailchimp_api):
         list_name = 'foo'
         username = 'foo@example.com'
-        mock_list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
+        mock_client = mock.MagicMock()
+        mock_get_mailchimp_api.return_value = mock_client
+        mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
         list_id = auth.utils.get_list_id_from_name(list_name)
         auth.utils.subscribe(list_id, username)
-        mock_subscribe.assert_called_with(id=list_id, email={'email': username}, double_optin=False)
+        mock_client.lists.subscribe.assert_called_with(id=list_id, email={'email': username}, double_optin=False)
 
 
 class TestAuthObject(OsfTestCase):
