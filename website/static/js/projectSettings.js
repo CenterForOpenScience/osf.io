@@ -52,6 +52,28 @@ function randomScientist() {
     return scientists[Math.floor(Math.random() * scientists.length)];
 }
 
+
+// Request the first 5 contributors, for display in the deletion modal
+var contribs = [];
+var moreContribs = 0;
+
+var contribURL = nodeApiUrl + 'get_contributors/?limit=5';
+var request = $.ajax({
+    url: contribURL,
+    type: 'get',
+    dataType: 'json'
+});
+request.done(function(response) {
+    contribs = response.contributors;
+    moreContribs = response.more;
+});
+request.fail(function(xhr, textStatus, err) {
+    Raven.captureMessage('Error requesting contributors', {
+        url: contribURL, textStatus: textStatus, err: err,
+    });
+});
+
+
 /**
     * Pulls a random name from the scientist list to use as confirmation string
 *  Ignores case and whitespace
@@ -63,50 +85,50 @@ ProjectSettings.getConfirmationCode = function(nodeType) {
         window.location.href = response.url;
     }
 
-    var request = $.ajax({
-        url: nodeApiUrl + 'get_contributors/?limit=5',
-        type: "get",
-        dataType: "json"});
-    request.done(
+    var promptMsg = 'Are you sure you want to delete this ' + nodeType + '?' +
+        '<div class="bootbox-node-deletion-modal"><p>It will no longer be available to other contributors on the project.';
+
+    // It's possible that the XHR request for contributors has not finished before getting to this
+    // point; only construct the HTML for the list of contributors if the contribs list is populated
+    var contribsMsg = '';
+    if (contribs.length) {
+        // Build contributor unordered list
+        var contriblist = '';
+        $.each(contribs, function(i, b){
+            contriblist += '<li>' + b.fullname + '</li>';
+        });
+        contribsMsg = 'including:</p>' +
+            '<ol>' + contriblist +'</ol>' +
+            '<p style="font-weight: normal; font-size: medium; line-height: normal;">' +
+            ((moreContribs > 0) ? 'and <strong>' + moreContribs + '</strong> others.</p>' : '');
+    }
+
+    var promptMsgEnd = '<p style="font-weight: normal; font-size: medium; line-height: normal;">' +
+        'If you want to continue, type <strong>' + key + '</strong> and click OK.</p></div>';
+
+    var fullMsg = [promptMsg, contribsMsg, promptMsgEnd].join('');
+    bootbox.prompt(
+        fullMsg,
         function(result) {
-            contributorsHTML = result.contributors;
-            more = result.more;
-
-            contriblist = '';
-            $.each(contributorsHTML, function(i, b){
-                contriblist += "<li>" + b.fullname + "</li>"
-            });
-
-            bootbox.prompt(
-                'Are you sure you want to delete this ' + nodeType + '?' +
-                '<div class="bootbox-node-deletion-modal"><p>It will no longer be available to other contributors on the project including:</p>' +
-                '<ol>' + contriblist +'</ol>' +
-                '<p style="font-weight: normal; font-size: medium; line-height: normal;">' +
-                ((more > 0) ? 'and <strong>' + more + '</strong> others.</p>' : '') +
-                '<p style="font-weight: normal; font-size: medium; line-height: normal;">' +
-                'If you want to continue, type <strong>' + key + '</strong> and click OK.</p></div>',
-                function(result) {
-                    if (result != null) {
-                        result = result.toLowerCase();
-                    }
-                    if ($.trim(result) === key.toLowerCase()) {
-                        var request = $.ajax({
-                            type: 'DELETE',
-                            dataType: 'json',
-                            url: nodeApiUrl
-                        });
-                        request.done(successHandler);
-                        request.fail($.osf.handleJSONError);
-                    } else if (result != null) {
-                        bootbox.alert({
-                            title: 'Incorrect confirmation',
-                            message: 'The confirmation string you provided was incorrect. Please try again.'
-                        });
-                    }
-                }
-            );
+            if (result != null) {
+                result = result.toLowerCase();
+            }
+            if ($.trim(result) === key.toLowerCase()) {
+                var request = $.ajax({
+                    type: 'DELETE',
+                    dataType: 'json',
+                    url: nodeApiUrl
+                });
+                request.done(successHandler);
+                request.fail($.osf.handleJSONError);
+            } else if (result != null) {
+                bootbox.alert({
+                    title: 'Incorrect confirmation',
+                    message: 'The confirmation string you provided was incorrect. Please try again.'
+                });
+            }
         }
-    )
+    );
 };
 
 $(document).ready(function() {
