@@ -1,3 +1,4 @@
+// TODO: Deprecate me
 var AddonHelper = (function() {
 
     /**
@@ -53,12 +54,16 @@ var AddonHelper = (function() {
     }
 
     // Expose public methods
-    return {
+    exports = {
         formToObj: formToObj,
         onSubmitSettings: onSubmitSettings,
-    }
+    };
 
+    if (typeof module === 'object') {
+        module.exports = exports; 
+    } 
+    return exports;
 })();
 
 
-module.exports = AddonHelper;
+

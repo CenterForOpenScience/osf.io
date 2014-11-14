@@ -1,3 +1,4 @@
+<script src="/static/js/addons.js"></script>
 <form role="form" id="addonSettings${addon_short_name.capitalize()}" data-addon="${addon_short_name}">
 
     <span data-owner="user"></span>
