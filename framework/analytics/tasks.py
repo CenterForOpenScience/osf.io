@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from modularodm import storage
-
 from framework.tasks import celery
 from . import piwik
 
@@ -10,10 +8,7 @@ from . import piwik
 def _update_node(self, node_id, updated_fields=None):
     # Avoid circular imports
     from framework.transactions.context import TokuTransaction
-    from framework.mongo import set_up_storage
     from website import models
-    # Attach schemas to database collections
-    set_up_storage(models.MODELS, storage.MongoStorage)
     node = models.Node.load(node_id)
     # We may reach this task before the transaction that triggered it has been
     # committed, such that the target node does not yet exist in the database.
