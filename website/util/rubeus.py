@@ -4,7 +4,6 @@
 """Contains helper functions for generating correctly
 formatted hgrid list/folders.
 """
-import os
 import datetime
 
 import hurry
