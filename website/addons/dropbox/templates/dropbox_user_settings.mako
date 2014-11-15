@@ -23,6 +23,5 @@
     <div class="help-block">
         <p data-bind="html: message, attr: {class: messageClass}"></p>
     </div>
-</div>
 
 <%include file="profile/addon_permissions.mako" />

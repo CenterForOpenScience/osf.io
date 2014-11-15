@@ -45,7 +45,8 @@ ${next.body()}
             username: ${json.dumps(user['username']) | n},
             id: '${user_id}',
             urls: {api: userApiUrl},
-            isContributor: ${json.dumps(user.get('is_contributor', False))}
+            isContributor: ${json.dumps(user.get('is_contributor', False))},
+            fullname: ${json.dumps(user['fullname']) | n}
         },
         node: {
             ## TODO: Abstract me

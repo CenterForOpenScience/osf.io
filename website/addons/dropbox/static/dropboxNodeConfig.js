@@ -9,17 +9,16 @@ require('knockout-punches');
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
-ko.punches.enableAll();
 
 var FolderPicker = require('folderpicker');
 var ZeroClipboard = require('zeroclipboard');
 ZeroClipboard.config('/static/vendor/bower_components/zeroclipboard/dist/ZeroClipboard.swf');
-var osfHelpers = require('osf-helpers');
+var $osf = require('osf-helpers');
 
-ko.punches.attributeInterpolationMarkup.enable();
+ko.punches.enableAll();
 /**
-    * Knockout view model for the Dropbox node settings widget.
-    */
+* Knockout view model for the Dropbox node settings widget.
+*/
 var ViewModel = function(url, selector, folderPicker) {
     var self = this;
     self.selector = selector;
@@ -29,6 +28,8 @@ var ViewModel = function(url, selector, folderPicker) {
     self.userIsOwner = ko.observable(false);
     // whether current user has an auth token
     self.userHasAuth = ko.observable(false);
+    // whether the auth token is valid
+    self.validCredentials = ko.observable(true);
     // Currently linked folder, an Object of the form {name: ..., path: ...}
     self.folder = ko.observable({name: null, path: null});
     self.ownerName = ko.observable('');
@@ -74,6 +75,7 @@ var ViewModel = function(url, selector, folderPicker) {
         self.nodeHasAuth(data.nodeHasAuth);
         self.userIsOwner(data.userIsOwner);
         self.userHasAuth(data.userHasAuth);
+        self.validCredentials(data.validCredentials);
         // Make sure folder has name and path properties defined
         self.folder(data.folder || {name: null, path: null});
         self.urls(data.urls);
@@ -85,6 +87,20 @@ var ViewModel = function(url, selector, folderPicker) {
             success: function(response) {
                 self.updateFromData(response.result);
                 self.loadedSettings(true);
+                if (!self.validCredentials()){
+                    if (self.userIsOwner()) {
+                        self.changeMessage('Could not retrieve Dropbox settings at ' +
+                        'this time. The Dropbox addon credentials may no longer be valid.' +
+                        ' Try deauthorizing and reauthorizing Dropbox on your <a href="' +
+                            self.urls().settings + '">account settings page</a>.',
+                        'text-warning');
+                    } else {
+                        self.changeMessage('Could not retrieve Dropbox settings at ' +
+                        'this time. The Dropbox addon credentials may no longer be valid.' +
+                        ' Contact ' + self.ownerName() + ' to verify.',
+                        'text-warning');
+                    }
+                }
             },
             error: function(xhr, textStatus, error) {
                 self.changeMessage('Could not retrieve Dropbox settings at ' +
@@ -130,10 +146,7 @@ var ViewModel = function(url, selector, folderPicker) {
             });
         }
         var $copyBtn = $('#copyBtn');
-        var client = new ZeroClipboard($copyBtn);
-        client.on('ready', function() {
-            // window.alert('ready!');
-        });
+        new ZeroClipboard($copyBtn);
     };
 
 
@@ -196,7 +209,7 @@ var ViewModel = function(url, selector, folderPicker) {
         * Send a PUT request to change the linked Dropbox folder.
         */
     self.submitSettings = function() {
-        osfHelpers.putJSON(self.urls().config, ko.toJS(self))
+        $osf.putJSON(self.urls().config, ko.toJS(self))
             .done(onSubmitSuccess)
             .fail(onSubmitError);
     };
@@ -282,7 +295,7 @@ var ViewModel = function(url, selector, folderPicker) {
             message: 'Are you sure you want to authorize this project with your Dropbox access token?',
             callback: function(confirmed) {
                 if (confirmed) {
-                    return osfHelpers.putJSON(self.urls().importAuth, {})
+                    return $osf.putJSON(self.urls().importAuth, {})
                         .done(onImportSuccess)
                         .fail(onImportError);
                 }
@@ -367,7 +380,7 @@ function DropboxNodeConfig(selector, url, folderPicker) {
     self.url = url;
     self.folderPicker = folderPicker;
     self.viewModel = new ViewModel(url, selector, folderPicker);
-    osfHelpers.applyBindings(self.viewModel, selector);
+    $osf.applyBindings(self.viewModel, selector);
 }
 
 module.exports = DropboxNodeConfig;

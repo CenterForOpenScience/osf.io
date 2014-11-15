@@ -49,10 +49,12 @@
 
                 <!-- Folder buttons -->
                 <div class="btn-group" data-bind="visible: userIsOwner()">
-                    <button data-bind="click: togglePicker,
+                    <button data-bind="visible: validCredentials,
+                                        click: togglePicker,
                                         css: {active: currentDisplay() === PICKER}"
                             class="btn btn-sm btn-dropbox"><i class="icon-edit"></i> Change</button>
                     <button data-bind="attr.disabled: disableShare,
+                                        visible: validCredentials,
                                         click: toggleShare,
                                         css: {active: currentDisplay() === SHARE}"
                         class="btn btn-sm btn-dropbox"><i class="icon-share-alt"></i> Share on Dropbox
