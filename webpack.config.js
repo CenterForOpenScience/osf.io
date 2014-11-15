@@ -11,7 +11,7 @@ var staticPath = function(dir) {
 
 var entry = {
     'home-page': staticPath('js/pages/home-page.js'),
-    'dashboard': staticPath('js/pages/dashboard-page.js'),
+    'dashboard-page': staticPath('js/pages/dashboard-page.js'),
     'profile': staticPath('js/pages/profile-page.js'),
     'project-dashboard': staticPath('js/pages/project-dashboard-page.js'),
     'project-base': staticPath('js/pages/project-base-page.js'),
@@ -28,6 +28,7 @@ var entry = {
         'knockout-validation',
         'bootstrap',
         'bootbox',
+        'select2',
         'hgrid',
         'osf-helpers',
         'knockout-punches',

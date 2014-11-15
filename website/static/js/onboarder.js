@@ -9,8 +9,11 @@ var Dropzone = require('../vendor/bower_components/dropzone/downloads/dropzone.j
 var Raven = require('raven-js');
 var ko = require('knockout');
 var $ = require('jquery');
-var osfHelpers = require('./osf-helpers.js');
 require('typeahead.js');
+
+
+require('./projectCreator.js');
+var osfHelpers = require('./osf-helpers.js');
 
 function noop() {}
 var MAX_RESULTS = 14;

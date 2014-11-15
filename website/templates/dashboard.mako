@@ -109,6 +109,6 @@
 
 <%def name="javascript_bottom()">
 
-<script src="/static/public/js/dashboard.js"></script>
+<script src="/static/public/js/dashboard-page.js"></script>
 
 </%def>
