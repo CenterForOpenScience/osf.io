@@ -20,6 +20,7 @@ var entry = {
     'profile-settings-page': staticPath('js/pages/profile-settings-page.js'),
     'register_1-page': staticPath('js/pages/register_1-page.js'),
     'sharing-page': staticPath('js/pages/sharing-page.js'),
+    'conference-page': staticPath('js/pages/conference-page.js'),
     // Commons chunk
     'vendor': [
         'knockout',
