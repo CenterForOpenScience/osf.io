@@ -22,6 +22,7 @@ var entry = {
     'sharing-page': staticPath('js/pages/sharing-page.js'),
     'conference-page': staticPath('js/pages/conference-page.js'),
     'view-file-page': staticPath('js/pages/view-file-page.js'),
+    'new-folder-page': staticPath('js/pages/new-folder-page.js'),
     // Commons chunk
     'vendor': [
         'knockout',
