@@ -24,6 +24,7 @@ var entry = {
     'view-file-page': staticPath('js/pages/view-file-page.js'),
     'new-folder-page': staticPath('js/pages/new-folder-page.js'),
     'project-settings-page': staticPath('js/pages/project-settings-page.js'),
+    'search-page': staticPath('js/pages/search-page.js'),
     // Commons chunk
     'vendor': [
         'knockout',
@@ -81,6 +82,7 @@ module.exports = {
             'zeroclipboard': staticPath('vendor/bower_components/zeroclipboard/dist/ZeroClipboard.js'),
             'bootstrap': staticPath('vendor/bower_components/bootstrap/dist/js/bootstrap.min.js'),
             'jquery-tagsinput': staticPath('vendor/bower_components/jquery.tagsinput/jquery.tagsinput.js'),
+            'history': staticPath('vendor/bower_components/history.js/scripts/bundled/html4+html5/jquery.history.js'),
             // Needed for knockout-sortable
             'jquery.ui.sortable': staticPath('vendor/bower_components/jquery-ui/ui/jquery.ui.sortable.js'),
             // Dropzone doesn't have a proper 'main' entry in its bower.json
