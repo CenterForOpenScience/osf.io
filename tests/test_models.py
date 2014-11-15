@@ -28,14 +28,8 @@ from website.project.model import (
     ApiKey, Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
     get_pointer_parent,
 )
-from website.addons.osffiles.exceptions import FileNotModified
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.util import web_url_for, api_url_for
-from website.addons.osffiles.exceptions import (
-    InvalidVersionError,
-    VersionNotFoundError,
-    FileNotFoundError,
-)
 from website.addons.wiki.exceptions import (
     NameEmptyError,
     NameInvalidError,
