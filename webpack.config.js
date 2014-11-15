@@ -10,6 +10,7 @@ var staticPath = function(dir) {
 };
 
 var entry = {
+    'home-page': staticPath('js/pages/home-page.js'),
     'dashboard': staticPath('js/pages/dashboard-page.js'),
     'profile': staticPath('js/pages/profile-page.js'),
     'project-dashboard': staticPath('js/pages/project-dashboard-page.js'),
@@ -22,6 +23,7 @@ var entry = {
     // Commons chunk
     'vendor': [
         'knockout',
+        'knockout-validation',
         'bootstrap',
         'bootbox',
         'hgrid',
@@ -41,7 +43,7 @@ var addonModules = ['files.js', 'node-cfg.js', 'user-cfg.js'];
 addons.addons.forEach(function(addonName) {
     var baseDir = addonName + '/';
     addonModules.forEach(function(module) {
-        var modulePath = path.join(__dirname, 'website', 'addons', 
+        var modulePath = path.join(__dirname, 'website', 'addons',
                                   addonName, 'static', module);
         if (fs.existsSync(modulePath)) {
             var entryPoint = baseDir + module.split('.')[0];
@@ -67,7 +69,7 @@ module.exports = {
         alias: {
             'knockout-punches': staticPath('vendor/knockout-punches/knockout.punches.js'),
             'knockout-sortable': staticPath('vendor/knockout-sortable/knockout-sortable.js'),
-            'knockout-validation': staticPath('vendor/knockout-validation/knockout.validation.min.js'),
+            'knockout-validation': staticPath('vendor/knockout-validation/knockout.validation.js'),
             'knockout-mapping': staticPath('vendor/knockout-mapping/knockout.mapping.js'),
             'bootstrap-editable': staticPath('vendor/bower_components/x-editable/dist/bootstrap3-editable/js/bootstrap-editable.js'),
             'jquery-blockui': staticPath('vendor/jquery-blockui/jquery.blockui.js'),
