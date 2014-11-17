@@ -7,6 +7,7 @@ from dateutil.parser import parse as parse_date
 
 from flask import request
 from modularodm.exceptions import ValidationError
+from modularodm import Q
 
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.flask import redirect  # VOL-aware redirect
@@ -166,6 +167,13 @@ def user_addons(auth, **kwargs):
     out['addon_enabled_settings'] = addon_enabled_settings
     return out
 
+@must_be_logged_in
+def user_notifications(auth, **kwargs):
+    # Get subscribe data from user to check selected lists in form
+    out = {}
+    mailing_lists = auth.user.mailing_lists
+    out['mailing_lists'] = mailing_lists
+    return out
 
 @must_be_logged_in
 def profile_addons(**kwargs):
@@ -180,6 +188,40 @@ def user_choose_addons(**kwargs):
     auth = kwargs['auth']
     json_data = escape_html(request.get_json())
     auth.user.config_addons(json_data, auth)
+
+@must_be_logged_in
+def user_choose_mailing_lists(auth, **kwargs):
+    user = auth.user
+    json_data = escape_html(request.get_json())
+
+    if json_data:
+        for list_name in json_data:
+            user.mailing_lists[list_name] = json_data[list_name]
+            update_subscription(user, list_name, json_data[list_name])
+
+    user.save()
+
+
+def update_subscription(user, list_name, subscription):
+    if subscription:
+        auth_utils.subscribe(list_name, user.username)
+    else:
+        auth_utils.unsubscribe(list_name, user.username)
+
+
+# def sync_data_from_mailchimp(**kwargs):
+#     r = request
+#     action = r.values['type']
+#     username = r.values['data[email]']
+#
+#     user = User.find(Q('username', 'eq', username))[0]
+#
+#     if action == 'subscribe':
+#         user.subscribed = True
+#     else:
+#         user.subscribed = False
+#
+#     user.save()
 
 
 @must_be_logged_in

@@ -52,3 +52,9 @@ def subscribe(list_name, username):
     m = get_mailchimp_api()
     list_id = get_list_id_from_name(list_name=list_name)
     m.lists.subscribe(id=list_id, email={'email': username}, double_optin=False)
+
+@celery.task
+def unsubscribe(list_name, username):
+    m = get_mailchimp_api()
+    list_id = get_list_id_from_name(list_name=list_name)
+    m.lists.unsubscribe(id=list_id, email={'email': username})

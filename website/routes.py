@@ -416,6 +416,13 @@ def make_url_map(app):
             OsfWebRenderer('profile/addons.mako'),
         ),
 
+        Rule(
+            '/settings/notifications/',
+            'get',
+            profile_views.user_notifications,
+            OsfWebRenderer('profile/notifications.mako'),
+        ),
+
     ])
 
     # API
@@ -544,6 +551,7 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule('/', 'get', website_views.index, OsfWebRenderer('index.mako')),
+        # Rule('/', 'post', profile_views.sync_data_from_mailchimp, json_renderer),
         Rule('/goodbye/', 'get', goodbye, OsfWebRenderer('index.mako')),
 
         Rule([
@@ -1017,6 +1025,13 @@ def make_url_map(app):
             '/settings/addons/',
             'post',
             profile_views.user_choose_addons,
+            json_renderer,
+        ),
+
+        Rule(
+            '/settings/notifications/',
+            'post',
+            profile_views.user_choose_mailing_lists,
             json_renderer,
         ),
 
