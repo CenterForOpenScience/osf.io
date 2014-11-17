@@ -551,7 +551,6 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule('/', 'get', website_views.index, OsfWebRenderer('index.mako')),
-        # Rule('/', 'post', profile_views.sync_data_from_mailchimp, json_renderer),
         Rule('/goodbye/', 'get', goodbye, OsfWebRenderer('index.mako')),
 
         Rule([
@@ -670,6 +669,9 @@ def make_url_map(app):
             conference_views.meeting_hook,
             json_renderer,
         ),
+        Rule('/mailchimp/hooks/', 'get', profile_views.mailchimp_get_endpoint, json_renderer),
+
+        Rule('/mailchimp/hooks/', 'post', profile_views.sync_data_from_mailchimp, json_renderer),
 
         # Create project, used by projectCreator.js
         Rule('/project/new/', 'post', project_views.node.project_new_post, json_renderer),

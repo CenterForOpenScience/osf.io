@@ -209,20 +209,30 @@ def update_subscription(user, list_name, subscription):
         auth_utils.unsubscribe(list_name, user.username)
 
 
-# def sync_data_from_mailchimp(**kwargs):
-#     r = request
-#     action = r.values['type']
-#     username = r.values['data[email]']
-#
-#     user = User.find(Q('username', 'eq', username))[0]
-#
-#     if action == 'subscribe':
-#         user.subscribed = True
-#     else:
-#         user.subscribed = False
-#
-#     user.save()
+def mailchimp_get_endpoint(**kwargs):
+    return http.OK
 
+
+def sync_data_from_mailchimp(**kwargs):
+
+    key = request.args.get('key')
+
+    if key == settings.MAILCHIMP_WEBHOOK_SECRET_KEY:
+        r = request
+        action = r.values['type']
+        list_name = auth_utils.get_list_name_from_id(list_id=r.values['data[list_id]'])
+        username = r.values['data[email]']
+        user = User.find(Q('username', 'eq', username))[0]
+
+        if action == 'subscribe':
+            user.mailing_lists[list_name] = True
+        else:
+            user.mailing_lists[list_name] = False
+
+        user.save()
+
+    else:
+        raise http.UNAUTHORIZED
 
 @must_be_logged_in
 def get_keys(**kwargs):

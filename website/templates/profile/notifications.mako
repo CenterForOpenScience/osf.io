@@ -43,7 +43,7 @@
                     <div id="message"></div>
             </div>
             </div>
-        </div>
+    </div>
 </div>
 
 <script>

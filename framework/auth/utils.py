@@ -49,6 +49,12 @@ def get_list_id_from_name(list_name):
     mailing_list = m.lists.list(filters={'list_name': list_name})
     return mailing_list['data'][0]['id']
 
+
+def get_list_name_from_id(list_id):
+    m = get_mailchimp_api()
+    mailing_list = m.lists.list(filters={'list_id': list_id})
+    return mailing_list['data'][0]['name']
+
 @celery.task
 def subscribe(list_name, username):
     m = get_mailchimp_api()
