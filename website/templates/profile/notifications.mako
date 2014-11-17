@@ -62,8 +62,9 @@
                 $('#message').addClass('text-success').text('Settings updated').fadeIn().fadeOut(2000);
             });
             request.fail(function () {
-                var msg = 'Sorry, we had trouble saving your settings. If this persists please contact <a href="mailto: support@osf.io">support@osf.io</a>';
-                bootbox.alert({title: 'Request failed', message: msg});
+                var message = 'Could not update settings.';
+                $('#message').addClass('text-danger').text(message).fadeIn().fadeOut(2000);
+
             });
         };
 

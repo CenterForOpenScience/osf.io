@@ -2,6 +2,8 @@ from nameparser.parser import HumanName
 import mailchimp
 from website import settings
 from framework.tasks import celery
+from framework.exceptions import HTTPError
+import httplib as http
 
 
 def impute_names(name):
@@ -51,10 +53,16 @@ def get_list_id_from_name(list_name):
 def subscribe(list_name, username):
     m = get_mailchimp_api()
     list_id = get_list_id_from_name(list_name=list_name)
-    m.lists.subscribe(id=list_id, email={'email': username}, double_optin=False)
+    try:
+        m.lists.subscribe(id=list_id, email={'email': username}, double_optin=False)
+    except mailchimp.ListAlreadySubscribedError:
+        pass
 
 @celery.task
 def unsubscribe(list_name, username):
     m = get_mailchimp_api()
     list_id = get_list_id_from_name(list_name=list_name)
-    m.lists.unsubscribe(id=list_id, email={'email': username})
+    try:
+        m.lists.unsubscribe(id=list_id, email={'email': username})
+    except mailchimp.ListNotSubscribedError:
+        pass
