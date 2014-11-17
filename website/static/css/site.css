@@ -861,6 +861,7 @@ h1.node-title, h1.node-parent-title {
 
 .editable-error-block  {
     font-size: 16px;
+    font-weight: 500;
     max-width: 100%;
 }
 

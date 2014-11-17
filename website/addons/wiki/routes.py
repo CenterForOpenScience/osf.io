@@ -94,11 +94,11 @@ api_routes = {
             '/project/<pid>/node/<nid>/wiki/<wname>/content/',
         ], 'get', views.wiki_page_content, json_renderer),
 
-        # Validate | GET
+        # Validate | POST
         Rule([
-            '/project/<pid>/wiki/<wname>/validate/',
-            '/project/<pid>/node/<nid>/wiki/<wname>/validate/',
-        ], 'get', views.project_wiki_validate_name, json_renderer),
+            '/project/<pid>/wiki/validate/',
+            '/project/<pid>/node/<nid>/wiki/validate/',
+        ], 'post', views.project_wiki_validate_name, json_renderer),
 
         # Edit | POST
         Rule([

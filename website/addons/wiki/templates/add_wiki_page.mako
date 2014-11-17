@@ -10,9 +10,13 @@
                     <h3 class="modal-title">Add New Wiki Page</h3>
                 </div><!-- end modal-header -->
                 <div class="modal-body">
-                    <div id="alert" style="padding-bottom:10px;color:blue;"></div>
                     <div class='form-group'>
                         <input id="data" placeholder="New Wiki Name" type="text" class='form-control'>
+                    </div>
+                    <div class="has-error">
+                        <div class="editable-error-block help-block">
+                            <div id="alert"></div>
+                        </div>
                     </div>
                 </div><!-- end modal-body -->
                 <div class="modal-footer">
@@ -39,44 +43,35 @@
                 .attr('disabled', 'disabled')
                 .text('Creating New Wiki page');
 
-            if ($.trim($data.val()) === '') {
-                $alert.text('The new wiki page name cannot be empty');
+            var wikiName = $data.val();
+            var request = $.ajax({
+                type: 'POST',
+                cache: false,
+                url: '${urls['api']['validate_name']}',
+                dataType: 'json',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    value: wikiName
+                })
+            });
+            request.done(function (response) {
+                window.location.href = '${urls['web']['base']}' + encodeURIComponent(wikiName) + '/edit/';
+            });
+            request.fail(function (response, textStatus, error) {
+                if (response.responseJSON.message_long) {
+                    $alert.text(response.responseJSON.message_long);
+                } else {
+                    $alert.text('Could not validate wiki page. Please try again.');
+                    Raven.captureMessage('Error occurred while validating page', {
+                        url: '${urls['api']['validate_name']}',
+                        textStatus: textStatus,
+                        error: error
+                    });
+                }
                 $submitForm
                     .removeAttr('disabled', 'disabled')
                     .text('OK');
-            } else if ($data.val().length > 100) {
-                $alert.text('The new wiki page name cannot be more than 100 characters.');
-                $submitForm
-                    .removeAttr('disabled', 'disabled')
-                    .text('OK');
-            } else {
-                // TODO: helper to eliminate slashes in the url.
-                var wikiName = $data.val().split('/').join(' ');
-                var request = $.ajax({
-                    type: 'GET',
-                    cache: false,
-                    url: '${urls['api']['base']}' + encodeURIComponent(wikiName) + '/validate/',
-                    dataType: 'json'
-                });
-                request.done(function (response) {
-                    window.location.href = '${urls['web']['base']}' + encodeURIComponent(wikiName) + '/edit/';
-                });
-                request.fail(function (response, textStatus, error) {
-                    if (response.status === 409) {
-                        $alert.text('A wiki page with that name already exists.');
-                    } else {
-                        $alert.text('Could not validate wiki page. Please try again.');
-                        Raven.captureMessage('Error occurred while validating page', {
-                            url: '${urls['api']['base']}' + encodeURIComponent(wikiName) + '/validate/',
-                            textStatus: textStatus,
-                            error: error
-                        });
-                    }
-                    $submitForm
-                        .removeAttr('disabled', 'disabled')
-                        .text('OK');
-                });
-            }
+            });
         });
 
         $newWikiForm.find('#close').on('click', function () {
