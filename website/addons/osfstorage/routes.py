@@ -133,7 +133,7 @@ api_routes = {
                 '/project/<pid>/osfstorage/hooks/cached/<path:path>',
                 '/project/<pid>/node/<nid>/osfstorage/hooks/cached/<path:path>',
             ],
-            'post',
+            'put',
             views.osf_storage_upload_cached_hook,
             json_renderer,
         ),

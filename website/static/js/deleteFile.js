@@ -11,7 +11,6 @@
 }(this, function(ko, $) {
     'use strict';
     ko.punches.enableAll();
-    ko.punches.attributeInterpolationMarkup.enable();
 
     function DeleteFileViewModel(urls) {
         var self = this;

@@ -46,6 +46,14 @@ def osf_storage_request_upload_url(auth, node_addon, **kwargs):
         content_type = request.json['type']
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
+    if not size:
+        raise HTTPError(
+            httplib.BAD_REQUEST,
+            data={
+                'message_short': 'File is empty.',
+                'message_long': 'The file you trying to upload is empty.'
+            },
+        )
     if size > (node_addon.config.max_file_size * MEGABYTE):
         raise HTTPError(
             httplib.BAD_REQUEST,
@@ -103,7 +111,12 @@ def osf_storage_upload_start_hook(node_addon, **kwargs):
     try:
         record.create_pending_version(user, upload_signature)
     except errors.PathLockedError:
-        raise make_error(httplib.CONFLICT, 'File path is locked')
+        raise make_error(
+            httplib.CONFLICT,
+            'File path is locked',
+            'Another upload to this file path is pending; please try again in '
+            'a moment.',
+        )
     except errors.SignatureConsumedError:
         raise make_error(httplib.BAD_REQUEST, 'Signature consumed')
     return {'status': 'success'}
@@ -332,8 +345,8 @@ def update_analytics(node, path, version_idx):
     :param str path: Path to file
     :param int version_idx: One-based version index
     """
-    update_counter('download:{0}:{1}'.format(node._id, path))
-    update_counter('download:{0}:{1}:{2}'.format(node._id, path, version_idx))
+    update_counter(u'download:{0}:{1}'.format(node._id, path))
+    update_counter(u'download:{0}:{1}:{2}'.format(node._id, path, version_idx))
 
 
 @must_be_contributor_or_public

@@ -10,7 +10,7 @@
     }
 }(this, function(ko, $) {
     'use strict';
-    ko.punches.attributeInterpolationMarkup.enable();
+    ko.punches.enableAll();
 
     function DownloadFileViewModel(url, downloadURL) {
         var self = this;

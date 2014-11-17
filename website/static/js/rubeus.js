@@ -20,6 +20,10 @@
     // HGrid configuration //
     /////////////////////////
 
+    var escapeWhitespace = function(value) {
+        return value.replace(/\s/g, '&nbsp;');
+    };
+
     Rubeus.Html = $.extend({}, HGrid.Html);
     // Custom folder icon indicating private component
     Rubeus.Html.folderIconPrivate = '<img class="hg-icon hg-addon-icon" src="/static/img/hgrid/fatcowicons/folder_delete.png">';
@@ -52,7 +56,7 @@
         }
         opening = '<span class="' + Rubeus.Html.folderTextClass + ' ' + cssClass + '">';
         var closing = '</span>';
-        html = [opening, icon, '&nbsp;', item.name, closing].join('');
+        html = [opening, icon, '&nbsp;', escapeWhitespace(item.name), closing].join('');
         if(item.extra) {
             html += '<span class="hg-extras">' + item.extra + '</span>';
         }
@@ -67,7 +71,7 @@
     Rubeus.Col.Name.itemView = function(item) {
         var tooltipMarkup = genTooltipMarkup('View file');
         icon = Rubeus.getIcon(item);
-        return [icon, '<span ' + tooltipMarkup + ' >&nbsp;', item.name, '</span>'].join('');
+        return [icon, '<span ' + tooltipMarkup + ' >&nbsp;', escapeWhitespace(item.name), '</span>'].join('');
     };
 
     Rubeus.Sort = {
@@ -374,6 +378,8 @@
             cache: false  // Prevent caching in IE
         },
         preprocessFilename: function(filename) {
+            // // Render repeated whitespace characters appropriately
+            // filename = filename.replace(/\s/g, '&nbsp;');
             return $('<div>').text(filename).html();
         },
         fetchUrl: function(row) {
