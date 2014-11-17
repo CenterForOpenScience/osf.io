@@ -160,8 +160,7 @@ def remove_osf_user(user_settings):
 
 
 def build_urls(node, file_name, url=None, etag=None, vid=None):
-    if file_name[-1] == '/':
-        file_name = file_name[:-1]
+    file_name = file_name.rstrip('/')
 
     rv = {
         'upload': node.api_url_for('s3_upload'),
