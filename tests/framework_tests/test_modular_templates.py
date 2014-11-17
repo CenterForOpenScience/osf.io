@@ -17,7 +17,7 @@ from framework.routing import (
     render_mako_string,
 )
 
-from tests.base import OsfTestCase
+from tests.base import AppTestCase, OsfTestCase
 
 # Need to use OsfWebRenderer to get global variables
 from website.routes import OsfWebRenderer
@@ -26,7 +26,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATES_PATH = os.path.join(HERE, 'templates')
 
 
-class RendererTestCase(OsfTestCase):
+class RendererTestCase(AppTestCase):
     def setUp(self):
         super(RendererTestCase, self).setUp()
         self.r = Renderer()
@@ -117,6 +117,8 @@ class WebRendererTestCase(OsfTestCase):
         Note that this behavior is inconsistent with that of raising an
         ``HTTPError`` in a view function, which serves the same purpose.
         """
+        self.app.app.preprocess_request()
+
         resp = self.r(
             ({},  # data
             302,  # status code
@@ -137,6 +139,8 @@ class WebRendererTestCase(OsfTestCase):
         which the 0th element must be the rendered template, including the dict
         as part of the context.
         """
+        self.app.app.preprocess_request()
+
         input_dict = {'foo': 'bar'}
 
         resp = self.r(input_dict)

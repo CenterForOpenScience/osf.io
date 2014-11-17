@@ -1,7 +1,14 @@
 # -*- coding: utf-8 -*-
 
+import logging
+
 from flask import g
 from celery import group
+
+from website import settings
+
+
+logger = logging.getLogger(__name__)
 
 
 def celery_before_request():
@@ -9,8 +16,15 @@ def celery_before_request():
 
 
 def celery_teardown_request(error=None):
-    if error is None and g._celery_tasks:
-        group(*g._celery_tasks)()
+    if error is not None:
+        return
+    try:
+        tasks = g._celery_tasks
+        if tasks:
+            group(*tasks)()
+    except AttributeError:
+        if not settings.DEBUG_MODE:
+            logger.error('Task queue not initialized')
 
 
 def enqueue_task(signature):
