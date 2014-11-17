@@ -104,6 +104,11 @@ def github_view_file(auth, **kwargs):
 
     connection = GitHub.from_settings(node_settings.user_settings)
 
+    # Get current file for delete url
+    current_file = connection.contents(
+        user=node_settings.user, repo=node_settings.repo, path=path,
+        ref=sha or branch)
+
     anonymous = has_anonymous_link(node, auth)
     try:
         # If GUID has already been created, we won't redirect, and can check
@@ -112,6 +117,7 @@ def github_view_file(auth, **kwargs):
             Q('node', 'eq', node) &
             Q('path', 'eq', path)
         )
+
     except ModularOdmException:
         # If GUID doesn't exist, check whether file exists before creating
         commits = connection.history(
@@ -155,6 +161,10 @@ def github_view_file(auth, **kwargs):
         node.api_url, 'github', 'file', path, 'render'
     ) + '/' + ref_to_params(branch, current_sha)
 
+    delete_url = None
+    if current_file:
+        delete_url = node.api_url_for('github_delete_file', path=path) + ref_to_params(branch, current_file.sha)
+
     for commit in commits:
         commit['download'] = (
             '/' + guid._id + '/download/' + ref_to_params(sha=commit['sha'])
@@ -189,11 +199,17 @@ def github_view_file(auth, **kwargs):
                 )
 
     rv = {
+        'node': {
+            'id': node._id,
+            'title': node.title
+        },
         'file_name': file_name,
+        'files_page_url': node.web_url_for('collect_file_trees'),
         'current_sha': current_sha,
         'render_url': render_url,
         'rendered': rendered,
         'download_url': download_url,
+        'delete_url': delete_url,
         'commits': commits,
     }
     rv.update(_view_project(node, auth, primary=True))
