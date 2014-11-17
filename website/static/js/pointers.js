@@ -16,6 +16,7 @@
         var self = this;
 
         self.nodeTitle = nodeTitle;
+        self.submitEnabled = ko.observable(true);
 
         self.query = ko.observable();
         self.results = ko.observableArray();
@@ -88,14 +89,17 @@
         };
 
         self.submit = function() {
+            self.submitEnabled(false);
             var nodeIds = $.osf.mapByProperty(self.selection(), 'id');
             $.osf.postJSON(
                 nodeApiUrl + 'pointer/',
                 {nodeIds: nodeIds}
             ).done(function() {
                 window.location.reload();
-            }).fail(
-                $.osf.handleJSONError
+            }).fail( function(data) {
+                    self.submitEnabled(true);
+                    $.osf.handleJSONError(data);
+                }
             );
         };
 
