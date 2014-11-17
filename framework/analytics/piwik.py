@@ -166,7 +166,7 @@ def _provision_node(node):
 
     try:
         node.piwik_site_id = json.loads(response.content)['value']
-        node.save()
+        node.save(update_piwik=False)
     except ValueError:
         raise PiwikException('Piwik site creation failed for ' + node._id)
 

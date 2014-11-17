@@ -116,6 +116,7 @@ class AppTestCase(unittest.TestCase):
         self.app = TestApp(test_app)
         self.context = test_app.test_request_context()
         self.context.push()
+        test_app.preprocess_request()
 
     def tearDown(self):
         super(AppTestCase, self).tearDown()

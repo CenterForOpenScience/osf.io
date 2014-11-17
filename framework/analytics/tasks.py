@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 
 from framework.tasks import celery
+from framework.tasks.handlers import enqueue_task
+
+from website import settings
+
 from . import piwik
 
 
@@ -10,10 +14,6 @@ def _update_node(self, node_id, updated_fields=None):
     from framework.transactions.context import TokuTransaction
     from website import models
     node = models.Node.load(node_id)
-    # We may reach this task before the transaction that triggered it has been
-    # committed, such that the target node does not yet exist in the database.
-    if node is None:
-        raise self.retry()
     try:
         with TokuTransaction():
             piwik._update_node_object(node, updated_fields)
@@ -22,4 +22,8 @@ def _update_node(self, node_id, updated_fields=None):
 
 
 def update_node(node_id, updated_fields):
-    _update_node.delay(node_id, updated_fields)
+    if settings.USE_CELERY:
+        signature = _update_node.s(node_id, updated_fields)
+        enqueue_task(signature)
+    else:
+        _update_node(node_id, updated_fields)

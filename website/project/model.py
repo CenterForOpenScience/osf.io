@@ -889,6 +889,8 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     def save(self, *args, **kwargs):
 
+        update_piwik = kwargs.pop('update_piwik', True)
+
         self.adjust_permissions()
 
         first_save = not self._is_loaded
@@ -959,7 +961,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.update_search()
 
         # This method checks what has changed.
-        if settings.PIWIK_HOST:
+        if settings.PIWIK_HOST and update_piwik:
             piwik_tasks.update_node(self._id, saved_fields)
 
         # Return expected value for StoredObject::save

@@ -11,6 +11,7 @@ from framework.mongo import set_up_storage
 from framework.addons.utils import render_addon_capabilities
 from framework.sentry import sentry
 from framework.mongo import handlers as mongo_handlers
+from framework.tasks import handlers as task_handlers
 from framework.transactions import handlers as transaction_handlers
 
 import website.models
@@ -39,6 +40,7 @@ def attach_handlers(app, settings):
     """Add callback handlers to ``app`` in the correct order."""
     # Add callback handlers to application
     add_handlers(app, mongo_handlers.handlers)
+    add_handlers(app, task_handlers.handlers)
     if settings.USE_TOKU_MX:
         add_handlers(app, transaction_handlers.handlers)
 
