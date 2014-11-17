@@ -51,6 +51,11 @@
 
         self.initText = ko.observable();
         self.wikiText = ko.observable();
+        self.activeUsers = ko.observableArray([]);
+
+        self.displayCollaborators = ko.computed(function() {
+           return self.activeUsers().length > 1;
+        });
 
         // TODO: Bug with multiple windows messing up changed value
         self.changed = ko.computed(function() {
@@ -118,8 +123,8 @@
     }
 
     function WikiEditor(selector, url) {
-        var viewModel = new ViewModel(url);
-        $.osf.applyBindings(viewModel, selector);
+        this.viewModel = new ViewModel(url);
+        $.osf.applyBindings(this.viewModel, selector);
         var converter1 = Markdown.getSanitizingConverter();
         var editor1 = new Markdown.Editor(converter1);
         editor1.run(editor);

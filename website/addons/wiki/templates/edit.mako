@@ -20,8 +20,25 @@
         <div class="col-sm-9">
             <%include file="wiki/templates/status.mako"/>
             <div class="form-group wmd-panel">
-                <p><em>Changes will be stored but not published until you click "Save Version."</em></p>
-                <div id="wmd-button-bar"></div>
+                <div class="row">
+                    <div class="col-sm-8">
+                         <p>
+                             <em>Changes will be stored but not published until
+                             you click "Save Version."</em>
+                         </p>
+                        <div id="wmd-button-bar"></div>
+                    </div>
+                    <div class="col-sm-4">
+                        <span data-bind="visible: displayCollaborators()" style="display: none">
+                            Also Editing This Wiki:
+                        </span>
+                        <ul class="list-inline" data-bind="foreach: activeUsers">
+                            <!-- ko ifnot: id === '${user_id}' -->
+                                <li><a data-bind="text: name, attr: { href: url }" ></a></li>
+                            <!-- /ko -->
+                        </ul>
+                    </div>
+                </div>
                 <div id="editor" class="wmd-input"
                      data-bind="ace: wikiText">Loading. . .</div>
             </div>
@@ -58,83 +75,18 @@
 <script>
 
     var url = '${urls['api']['content']}';
-
-    // Initialize Ace and configure settings
-    var editor = ace.edit("editor");
-    editor.getSession().setMode("ace/mode/markdown");
-    editor.getSession().setUseSoftTabs(true);   // Replace tabs with spaces
-    editor.getSession().setUseWrapMode(true);   // Wraps text
-    editor.renderer.setShowGutter(false);       // Hides line number
-    editor.setShowPrintMargin(false);           // Hides print margin
-    editor.setReadOnly(true); // Read only until initialized
-
-    var socket = new WebSocket('ws://localhost:7007');
-
-    var sjs = new sharejs.Connection(socket);
-    var doc = sjs.get('docs', '${share_uuid}');
-
-    // Handle our custom messages separately
-    var som = socket.onmessage;
-    socket.onmessage = function(message) {
-        var data = JSON.parse(message.data);
-        if (data.type === 'meta') {
-            var userList = "";
-            for (var key in data.users) {
-                userList += "|" + data.users[key].name;
-            }
-            console.log('got message', userList);
-        } else {
-            som(message);
-        }
+    var registration = {
+        registration: true,
+        docId: '${share_uuid}',
+        userId: '${user_id}',
+        userName: '${user_full_name}',
+        userUrl: '${user_url}'
     };
 
-    // This will be called on both connect and reconnect
-    doc.on('subscribe', function() {
 
-        // Send user metadata
-        socket.send(JSON.stringify({
-            registration: true,
-            docId: '${share_uuid}',
-            userId: '${user_id}',
-            userName: '${user_full_name}',
-            userUrl: '${user_url}'
-        }));
-
-    });
-
-    // This will be called when we have a live copy of the server's data.
-    doc.whenReady(function() {
-
-        // Create a text document if one does not exist
-        if (!doc.type) {
-            doc.create('text');
-            $.ajax({
-                type: 'GET',
-                url: url,
-                dataType: 'json',
-                success: function (response) {
-                    doc.attachAce(editor);
-                    editor.setValue(response.wiki_content);
-                    editor.setReadOnly(false);
-                },
-                error: function (xhr, textStatus, error) {
-                    console.error(textStatus);
-                    console.error(error);
-                    bootbox.alert('Could not get wiki content.');
-                }
-            });
-        } else {
-            doc.attachAce(editor);
-            editor.setReadOnly(false);
-        }
-
-    });
-
-    // Subscribe to changes
-    doc.subscribe();
-
-    $script('/static/addons/wiki/WikiEditor.js', function() {
-        WikiEditor('.wiki', url)
+    $script(['/static/addons/wiki/WikiEditor.js', '/static/addons/wiki/ShareJSDoc.js'], function() {
+        var wikiEditor = new WikiEditor('.wiki', url);
+        var shareJSDoc = new ShareJSDoc(wikiEditor.viewModel, url, registration);
     });
 
 </script>
