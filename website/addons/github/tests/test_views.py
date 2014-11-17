@@ -281,10 +281,15 @@ class TestGithubViews(OsfTestCase):
         with assert_raises(HTTPError):
             utils.get_refs(self.node_settings, branch='nothere')
 
-    # TODO: Write me
+
     # Tests for _check_permissions
     def test_permissions_no_auth(self):
-        pass
+        # project is set to private right now
+        print('Project is : {0}'.format(self.project.is_public))
+        # assert_false(self.registration.is_public)
+        # self.project.set_privacy('public')
+        # registration = RegistrationFactory(project=self.project)
+        # assert_true(registration.is_public)
 
     def test_permissions_no_access(self):
         pass
@@ -294,6 +299,7 @@ class TestGithubViews(OsfTestCase):
 
     def test_permissions(self):
         pass
+
 
     # TODO: Write me
     def test_dummy_folder(self):
