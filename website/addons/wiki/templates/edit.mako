@@ -51,7 +51,6 @@
 <script src="/static/vendor/pagedown-ace/Markdown.Editor.js"></script>
 
 <!-- Necessary for ShareJS communication -->
-<script src="http://localhost:7007/channel/bcsocket.js"></script>
 <script src="http://localhost:7007/text.js"></script>
 <script src="http://localhost:7007/share.uncompressed.js"></script>
 <script src="/static/addons/wiki/ace.js"></script>
@@ -69,21 +68,37 @@
     editor.setShowPrintMargin(false);           // Hides print margin
     editor.setReadOnly(true); // Read only until initialized
 
-    var socket = new BCSocket('http://localhost:7007/channel', {reconnect: true});
+    var socket = new WebSocket('ws://localhost:7007');
+
     var sjs = new sharejs.Connection(socket);
     var doc = sjs.get('docs', '${share_uuid}');
+
+    // Handle our custom messages separately
+    var som = socket.onmessage;
+    socket.onmessage = function(message) {
+        var data = JSON.parse(message.data);
+        if (data.type === 'meta') {
+            var userList = "";
+            for (var key in data.users) {
+                userList += "|" + data.users[key].name;
+            }
+            console.log('got message', userList);
+        } else {
+            som(message);
+        }
+    };
 
     // This will be called on both connect and reconnect
     doc.on('subscribe', function() {
 
         // Send user metadata
-        socket.send({
+        socket.send(JSON.stringify({
             registration: true,
             docId: '${share_uuid}',
             userId: '${user_id}',
             userName: '${user_full_name}',
             userUrl: '${user_url}'
-        });
+        }));
 
     });
 
