@@ -14,7 +14,6 @@
 }(this, function(ko, $) {
     'use strict';
     ko.punches.enableAll();
-    ko.punches.attributeInterpolationMarkup.enable();
 
     function ViewModel(url) {
         var self = this;
