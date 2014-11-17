@@ -204,7 +204,10 @@ class BaseFileObject(StoredObject):
         return True
 
     def get_download_count(self, version=None):
-        pass
+        """Return download count or `None` if this is not a file object (e.g. a
+        folder).
+        """
+        return None
 
     def __repr__(self):
         return '<{}(path={!r}, node_settings={!r})>'.format(
