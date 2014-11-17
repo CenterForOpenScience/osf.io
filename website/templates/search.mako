@@ -61,6 +61,7 @@
                                 </span>
                             </div>
                         </div>
+                        <br />
                         <!-- /ko -->
                     </div>
                     <!-- /ko -->
@@ -124,18 +125,20 @@
         <!-- /ko -->
     </script>
     <script type="text/html" id="user">
-        <div class="container">
-            <div class="col-md-1">
+
+        <div class="row">
+            <div class="col-md-2">
                 <img data-bind="visible: gravatarUrl(), attr.src: gravatarUrl()">
             </div>
-            <div class="col-md-11">
+            <div class="col-md-10">
                 <h4><a data-bind="attr.href: url"><span>{{ user }}</span></a></h4>
-                <span data-bind="visible: job_title, text: job_title"></span><!-- ko if: job_title && job --> at <!-- /ko -->
-                <span data-bind="visible: job, text: job"></span><!-- ko if: job_title || job --><br /><!-- /ko -->
-                <span data-bind="visible: degree, text: degree"></span><!-- ko if: degree && school --> from <!-- /ko -->
-                <span data-bind="visible: school, text: school"></span><!-- ko if: degree || school --><br /><!-- /ko -->
+                <p>
+                    <span data-bind="visible: job_title, text: job_title"></span><!-- ko if: job_title && job --> at <!-- /ko -->
+                    <span data-bind="visible: job, text: job"></span><!-- ko if: job_title || job --><br /><!-- /ko -->
+                    <span data-bind="visible: degree, text: degree"></span><!-- ko if: degree && school --> from <!-- /ko -->
+                    <span data-bind="visible: school, text: school"></span><!-- ko if: degree || school --><br /><!-- /ko -->
+                </p>
                 <!-- ko if: social -->
-                <br />
                 <ul class="list-inline">
                     <li data-bind="visible: social.personal">
                         <a data-bind="attr.href: social.personal">
@@ -185,99 +188,105 @@
 
     </script>
     <script type="text/html" id="project">
-        <h4><a data-bind="attr.href: url">{{title }}</a></h4>
-        <h5>Description: <small>{{ description | default:"No Description" | fit:500 }}</small></h5>
+        <h4><a data-bind="attr.href: url">{{ title }}</a></h4>
+        <p data-bind="visible: description"><strong>Description:</strong> {{ description | fit:500 }}</p>
 
         <!-- ko if: contributors.length > 0 -->
-        <h5>
-            Contributors: <small data-bind="foreach: contributors">
+        <p>
+            <strong>Contributors:</strong> <span data-bind="foreach: contributors">
                 <a data-bind="attr.href: $parent.contributors_url[$index()]">{{ $data }}</a>
             <!-- ko if: ($index()+1) < ($parent.contributors.length) -->&nbsp;- <!-- /ko -->
-            </small>
-        </h5>
+            </span>
+        </p>
         <!-- /ko -->
         <!-- ko if: tags.length > 0 -->
-        <h5 data-bind="visible: tags.length">Tags:
+        <p data-bind="visible: tags.length"><strong>Tags:</strong>
             <span class="tag-cloud" data-bind="foreach: tags">
                 <span class="cloud-tag tag-sm pointer" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
                 </span>
             </span>
-        </h5>
-        <h5>Jump to:
+        </p>
+        <p><strong>Jump to:</strong>
             <a data-bind="attr.href: wikiUrl">Wiki</a> -
             <a data-bind="attr.href: filesUrl">Files</a>
-        </h5>
+        </p>
         <!-- /ko -->
     </script>
     <script type="text/html" id="app">
         <h4><a data-bind="attr.href: url">{{ title }}</a></h4>
-        <h5>Description: <small>{{ description | default:"No Description" | fit:500 }}</small></h5>
+        <p data-bind="visible: description"><strong>Description:</strong> {{ description | fit:500 }}</p>
 
         <!-- ko if: contributors.length > 0 -->
-        <h5>
-            Contributors: <small data-bind="foreach: contributors">
+        <p>
+            <strong>Contributors:</strong> <span data-bind="foreach: contributors">
                 <a data-bind="attr.href: $parent.contributors_url[$index()]">{{ $data }}</a>
             <!-- ko if: ($index()+1) < ($parent.contributors.length) -->&nbsp;- <!-- /ko -->
-            </small>
-        </h5>
+            </span>
+        </p>
         <!-- /ko -->
         <!-- ko if: tags.length > 0 -->
-        <h5 data-bind="visible: tags.length">Tags:
+        <p data-bind="visible: tags.length"><strong>Tags:</strong>
             <span class="tag-cloud" data-bind="foreach: tags">
                 <span class="cloud-tag tag-sm pointer" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
                 </span>
             </span>
-        </h5>
+        </p>
         <!-- /ko -->
     </script>
     <script type="text/html" id="component">
-        <h4><a data-bind="attr.href: parent_url">{{ parent_title}}</a> / <a data-bind="attr.href: url">{{title }}</a></h4>
-        <h5>Description: <small>{{ description | default:"No Description" | fit:500 }}</small></h5>
+        <!-- ko if: parent_url -->
+            <h4><a data-bind="attr.href: parent_url">{{ parent_title}}</a> / <a data-bind="attr.href: url">{{title }}</a></h4>
+        <!-- /ko -->
+        <!-- ko if: !parent_url -->
+            <h4>{{ parent_title}} / <a data-bind="attr.href: url">{{title }}</a></h4>
+        <!-- /ko -->
+
+        <p data-bind="visible: description"><strong>Description:</strong> {{ description | fit:500 }}</p>
 
         <!-- ko if: contributors.length > 0 -->
-        <h5>
-            Contributors: <small data-bind="foreach: contributors">
+        <p>
+            <strong>Contributors:</strong> <span data-bind="foreach: contributors">
                 <a data-bind="attr.href: $parent.contributors_url[$index()]">{{ $data }}</a>
             <!-- ko if: ($index()+1) < ($parent.contributors.length) -->&nbsp;- <!-- /ko -->
-            </small>
-        </h5>
+            </span>
+        </p>
         <!-- /ko -->
         <!-- ko if: tags.length > 0 -->
-        <h5 data-bind="visible: tags.length">Tags:
+        <p data-bind="visible: tags.length"><strong>Tags:</strong>
             <span class="tag-cloud" data-bind="foreach: tags">
                 <span class="cloud-tag tag-sm pointer" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
                 </span>
             </span>
-        </h5>
-          <h5>Jump to:
+        </p>
+        <p><strong>Jump to:</strong>
             <a data-bind="attr.href: wikiUrl">Wiki</a> -
             <a data-bind="attr.href: filesUrl">Files</a>
-        </h5>
-      <!-- /ko -->
+        </p>
+        <!-- /ko -->
     </script>
     <script type="text/html" id="registration">
-        <h4 class="registration"><a data-bind="attr.href: url">{{title }}</a> </h4>
-        <h5 class="registration">Description: <small>{{ description | default:"No Description" | fit:500 }}</small></h5>
+        <h4><a data-bind="attr.href: url">{{ title }}</a>  (Registration)</h4>
+        <p data-bind="visible: description"><strong>Description:</strong> {{ description | fit:500 }}</p>
 
         <!-- ko if: contributors.length > 0 -->
-        <h5 class="registration">
-            Contributors: <small data-bind="foreach: contributors">
+        <p>
+            <strong>Contributors:</strong> <span data-bind="foreach: contributors">
                 <a data-bind="attr.href: $parent.contributors_url[$index()]">{{ $data }}</a>
             <!-- ko if: ($index()+1) < ($parent.contributors.length) -->&nbsp;- <!-- /ko -->
-            </small>
-        </h5>
+            </span>
+        </p>
         <!-- /ko -->
         <!-- ko if: tags.length > 0 -->
-        <h5 class="registration" data-bind="visible: tags.length">Tags:
+        <p data-bind="visible: tags.length"><strong>Tags:</strong>
             <span class="tag-cloud" data-bind="foreach: tags">
                 <span class="cloud-tag tag-sm pointer" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
                 </span>
             </span>
-        </h5>
-        <h5 class="registration">Jump to:
+        </p>
+        <p><strong>Jump to:</strong>
             <a data-bind="attr.href: wikiUrl">Wiki</a> -
             <a data-bind="attr.href: filesUrl">Files</a>
-        </h5>
+        </p>
         <!-- /ko -->
     </script>
 </%def>
