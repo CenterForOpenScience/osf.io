@@ -44,9 +44,10 @@
                             url,
                             {}
                         ).done(function() {
-                            new GrowlBox('Your study has been released.', 'Please ' +
-                            'allow up to 24 hours for the released version to ' +
-                            'appear on your OSF project\'s file page.');
+                            new GrowlBox('Your study has been released.',
+                                    'Please allow up to 24 hours for the released version to ' +
+                                    'appear on your OSF project\'s file page.',
+                                'success');
                             self.updateItem(row);
                         }).fail( function(args) {
                             var message = args.responseJSON.code === 400 ?
