@@ -800,6 +800,52 @@ class TestUpdateNodeWiki(OsfTestCase):
             self.project.update_node_wiki(invalid_name, 'more valid content', self.consolidate_auth)
 
 
+class TestValidateNodeWikiName(OsfTestCase):
+
+    def setUp(self):
+        super(TestValidateNodeWikiName, self).setUp()
+        # Create project with component
+        self.user = UserFactory()
+        self.consolidate_auth = Auth(user=self.user)
+        self.project = ProjectFactory()
+        self.node = NodeFactory(creator=self.user, project=self.project)
+        self.project.update_node_wiki('home', 'Hello world', self.consolidate_auth)
+        self.versions = self.project.wiki_pages_versions
+
+    def test_validate_wiki_name_valid(self):
+        for invalid_name in [None, '', '   ']:
+            with assert_raises(NameEmptyError):
+                self.project.validate_node_wiki_name(invalid_name)
+
+
+    def test_validate_wiki_name_invalid_none_or_blank(self):
+        for invalid_name in [None, '', '   ']:
+            with assert_raises(NameEmptyError):
+                self.project.validate_node_wiki_name(invalid_name)
+
+    def test_validate_wiki_name_invalid_special_characters(self):
+        # forward slashes are not allowed
+        invalid_name = 'invalid/name'
+        with assert_raises(NameInvalidError):
+            self.project.validate_node_wiki_name(invalid_name)
+
+    def test_validate_wiki_name_maximum_length(self):
+        invalid_name = 'a' * 101
+        with assert_raises(NameMaximumLengthError):
+            self.project.validate_node_wiki_name(invalid_name)
+
+    def test_validate_wiki_name_invalid_home_conflict(self):
+        for invalid_name in ['home', 'HOME']:
+            with assert_raises(PageConflictError):
+                self.project.validate_node_wiki_name(invalid_name)
+
+    def test_validate_wiki_name_invalid_conflict(self):
+        name = 'New Page'
+        self.project.update_node_wiki(name, 'new content', self.consolidate_auth)
+        with assert_raises(PageConflictError):
+            self.project.validate_node_wiki_name(name)
+
+
 class TestRenameNodeWiki(OsfTestCase):
 
     def setUp(self):
