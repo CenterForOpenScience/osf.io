@@ -307,6 +307,10 @@
                     }
                 }
             });
+        } else {
+            if ($.inArray('view', self.modes) !== -1) {
+                self.mode('view');
+            }
         }
 
     };

@@ -1494,7 +1494,8 @@ class Node(GuidStoredObject, AddonModelMixin):
             if message:
                 status.push_status_message(message)
 
-        if os.path.exists(folder_old):
+        # TODO: Remove after migration to OSF Storage
+        if settings.COPY_GIT_REPOS and os.path.exists(folder_old):
             folder_new = os.path.join(settings.UPLOADS_PATH, forked._primary_key)
             Repo(folder_old).clone(folder_new)
 
@@ -1555,7 +1556,8 @@ class Node(GuidStoredObject, AddonModelMixin):
             if message:
                 status.push_status_message(message)
 
-        if os.path.exists(folder_old):
+        # TODO: Remove after migration to OSF Storage
+        if settings.COPY_GIT_REPOS and os.path.exists(folder_old):
             folder_new = os.path.join(settings.UPLOADS_PATH, registered._primary_key)
             Repo(folder_old).clone(folder_new)
 

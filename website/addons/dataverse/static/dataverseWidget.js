@@ -11,7 +11,7 @@
 }(this, function(ko, $, window) {
 
     'use strict';
-    ko.punches.attributeInterpolationMarkup.enable();
+    ko.punches.enableAll();
     var language = $.osf.Language.Addons.dataverse;
 
     function ViewModel(url) {
