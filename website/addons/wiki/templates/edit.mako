@@ -74,19 +74,20 @@
 
 <script>
 
-    var url = '${urls['api']['content']}';
-    var registration = {
-        registration: true,
-        docId: '${share_uuid}',
-        userId: '${user_id}',
-        userName: '${user_full_name}',
-        userUrl: '${user_url}'
-    };
-
-
     $script(['/static/addons/wiki/WikiEditor.js', '/static/addons/wiki/ShareJSDoc.js'], function() {
+        var url = '${urls['api']['content']}';
+
+        // Grab user metadata to pass to shareJS
+        var metadata = {
+            registration: true,
+            docId: '${share_uuid}',
+            userId: '${user_id}',
+            userName: '${user_full_name}',
+            userUrl: '${user_url}'
+        };
+
         var wikiEditor = new WikiEditor('.wiki', url);
-        var shareJSDoc = new ShareJSDoc(wikiEditor.viewModel, url, registration);
+        var shareJSDoc = new ShareJSDoc(wikiEditor.viewModel, url, metadata);
     });
 
 </script>

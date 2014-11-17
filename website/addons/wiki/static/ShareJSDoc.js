@@ -1,6 +1,6 @@
 var activeUsers = [];
 
-var ShareJSDoc = function(viewModel, url, registration) {
+var ShareJSDoc = function(viewModel, url, metadata) {
 
     // Initialize Ace and configure settings
     var editor = ace.edit("editor");
@@ -13,24 +13,24 @@ var ShareJSDoc = function(viewModel, url, registration) {
 
     var socket = new WebSocket('ws://localhost:7007');
     var sjs = new sharejs.Connection(socket);
-    var doc = sjs.get('docs', registration.docId);
+    var doc = sjs.get('docs', metadata.docId);
 
     // Handle our custom messages separately
-    var som = socket.onmessage;
+    var onmessage = socket.onmessage;
     socket.onmessage = function (message) {
         var data = JSON.parse(message.data);
+        // Meta type is not built into sharejs; we pass it manually
         if (data.type === 'meta') {
+            // Convert users object into knockout array
             activeUsers = [];
             for (var user in data.users) {
                 var userMeta = data.users[user];
                 userMeta.id = user;
                 activeUsers.push(userMeta);
             }
-            //            activeUsers = data.users;
             viewModel.activeUsers(activeUsers);
-            console.log('Active users', activeUsers);
         } else {
-            som(message);
+            onmessage(message);
         }
     };
 
@@ -38,7 +38,7 @@ var ShareJSDoc = function(viewModel, url, registration) {
     doc.on('subscribe', function () {
 
         // Send user metadata
-        socket.send(JSON.stringify(registration));
+        socket.send(JSON.stringify(metadata));
 
     });
 
@@ -72,8 +72,5 @@ var ShareJSDoc = function(viewModel, url, registration) {
 
     // Subscribe to changes
     doc.subscribe();
-
-    window.editor = editor;
-    window.doc = doc;
 
 };
