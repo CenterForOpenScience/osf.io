@@ -118,6 +118,7 @@
         item.notify.update('Not allowed: Private folder', 'warning', 1, undefined);
         return false;
     }
+    
     function _fangornResolveUploadUrl (item) {
         var configOption = resolveconfigOption.call(this, item, 'uploadUrl', [item]);
         return configOption || item.data.urls.upload;
@@ -183,14 +184,14 @@
         // S3 : Nothing
         // GITHUB : Object; addon : 'github'
         //Dataverse : Object, actionTaken : file_uploaded
-        if(response){
+        var revisedItem = resolveconfigOption.call(treebeard, item.parent(), 'uploadSuccess', [file, item, response]);         
+
+        if(!revisedItem && response){
             if(response.actionTaken === 'file_added' || response.addon === 'dropbox' || response.addon === 'github' || response.addon === 'dataverse'){ // Base OSF response 
                 item.data = response;
                 item.notify = false;
                 treebeard.redraw();            
             }
-        } else {
-            var revisedItem = resolveconfigOption.call(treebeard, item.parent(), 'uploadSuccess', [file, item, response]);         
         }
     }
 
@@ -272,12 +273,10 @@
         function myFunc (){
             console.log("My func", this, arguments); 
         }
-        var modalContent = [ m('h3', ' Ma title'), m('p', { 'onclick' : function(){ myFunc.call(self, item); }}, 'Ma text')]; 
-        this.modal.update(modalContent);
-        // var configOption = resolveconfigOption.call(this, item, 'lazyLoadError', [item]);
-        // if(!configOption) {
-        //     tree.notify.update('Files couldn\'t load, please try again later.', 'deleting', undefined, 3000); 
-        // }
+        var configOption = resolveconfigOption.call(this, item, 'lazyLoadError', [item]);
+        if(!configOption) {
+            tree.notify.update('Files couldn\'t load, please try again later.', 'deleting', undefined, 3000); 
+        }
     }
 
     function _fangornUploadMethod(item){
@@ -389,8 +388,7 @@
                 width : '25%',
                 sort : false
             });
-        return columns; 
-        
+        return columns;  
     } 
     // OSF-specific Treebeard options common to all addons
     tbOptions = {
