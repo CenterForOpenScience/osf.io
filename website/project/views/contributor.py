@@ -148,9 +148,18 @@ def get_most_in_common_contributors(auth, **kwargs):
 def get_recently_added_contributors(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
 
+    try:
+        max_results = int(request.args.get('max'))
+    except (TypeError, ValueError):
+        raise HTTPError(http.BAD_REQUEST)
+    if max_results:
+        recently_added = auth.user.recently_added[:max_results]
+    else:
+        recently_added = auth.user.recently_added
+
     contribs = [
         utils.add_contributor_json(contrib, get_current_user())
-        for contrib in auth.user.recently_added
+        for contrib in recently_added
         if contrib.is_active()
         if contrib._id not in node.contributors
     ]
