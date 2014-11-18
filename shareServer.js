@@ -84,7 +84,8 @@ wss.on('connection', function(client) {
                 docs[docId][userId] = {
                     name: data.userName,
                     url: data.userUrl,
-                    count: 1
+                    count: 1,
+                    gravatar: data.userGravatar
                 }
             } else {
                 docs[docId][userId].count++;

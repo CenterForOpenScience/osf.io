@@ -46,6 +46,18 @@
         }
     };
 
+    ko.bindingHandlers.tooltip = {
+        init: function(element, valueAccessor) {
+            var value = ko.unwrap(valueAccessor());
+            var options = {
+                title: value,
+                placement: 'bottom'
+            };
+
+            $(element).tooltip(options);
+        }
+    };
+
     function ViewModel(url) {
         var self = this;
 

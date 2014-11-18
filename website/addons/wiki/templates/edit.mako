@@ -29,12 +29,12 @@
                         <div id="wmd-button-bar"></div>
                     </div>
                     <div class="col-sm-4">
-                        <span data-bind="visible: displayCollaborators()" style="display: none">
-                            Also Editing This Wiki:
-                        </span>
-                        <ul class="list-inline" data-bind="foreach: activeUsers">
+                        <ul class="list-inline" data-bind="foreach: activeUsers" style="float: right">
                             <!-- ko ifnot: id === '${user_id}' -->
-                                <li><a data-bind="text: name, attr: { href: url }" ></a></li>
+                                <li><a data-bind="attr: { href: url }" >
+                                    <img data-bind="attr: {src: gravatar}, tooltip: name"
+                                         style="border: 1px solid black;">
+                                </a></li>
                             <!-- /ko -->
                         </ul>
                     </div>
@@ -72,10 +72,19 @@
 <script src="http://localhost:7007/share.uncompressed.js"></script>
 <script src="/static/addons/wiki/ace.js"></script>
 
+<!-- MD5 Hashing to generate gravatar -->
+<script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/md5.js"></script>
+
 <script>
 
     $script(['/static/addons/wiki/WikiEditor.js', '/static/addons/wiki/ShareJSDoc.js'], function() {
         var url = '${urls['api']['content']}';
+
+        // Generate gravatar URL
+        var baseGravatarUrl = 'http://secure.gravatar.com/avatar/';
+        var hash = CryptoJS.MD5('${user_name}'.toLowerCase().trim());
+        var params = '?d=identicon&size=32';
+        var gravatarUrl = baseGravatarUrl + hash + params;
 
         // Grab user metadata to pass to shareJS
         var metadata = {
@@ -83,7 +92,8 @@
             docId: '${share_uuid}',
             userId: '${user_id}',
             userName: '${user_full_name}',
-            userUrl: '${user_url}'
+            userUrl: '${user_url}',
+            userGravatar: gravatarUrl
         };
 
         var wikiEditor = new WikiEditor('.wiki', url);
