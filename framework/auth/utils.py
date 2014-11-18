@@ -2,8 +2,6 @@ from nameparser.parser import HumanName
 import mailchimp
 from website import settings
 from framework.tasks import celery
-from framework.exceptions import HTTPError
-import httplib as http
 
 
 def impute_names(name):

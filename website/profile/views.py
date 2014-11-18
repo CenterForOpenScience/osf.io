@@ -232,7 +232,7 @@ def sync_data_from_mailchimp(**kwargs):
         user.save()
 
     else:
-        raise http.UNAUTHORIZED
+        raise HTTPError(http.UNAUTHORIZED)
 
 @must_be_logged_in
 def get_keys(**kwargs):
