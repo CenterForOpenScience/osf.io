@@ -10,6 +10,8 @@
 }(this, function($, ko) {
 
     NODE_OFFSET = 25;
+    // Max number of recent/common contributors to show
+    var MAX_RECENT = 5;
 
     /**
      * The add contributor VM, scoped to the add contributor modal dialog.
@@ -159,8 +161,9 @@
 
         self.recentlyAdded = function() {
             self.notification(false);
+            var url = nodeApiUrl + 'get_recently_added_contributors/?max=' + MAX_RECENT.toString();
             $.getJSON(
-                nodeApiUrl + 'get_recently_added_contributors/',
+                url,
                 {},
                 function(result) {
                     if (!result.contributors.length) {
@@ -171,14 +174,11 @@
                     }
                     var contribs = [];
                     var numToDisplay = result.contributors.length;
-                    if (numToDisplay > 10) {
-                        numToDisplay = 10;
-                    }
                     for (var i=0; i< numToDisplay; i++) {
                         contribs.push(new Contributor(result.contributors[i]));
                     }
                     self.results(contribs);
-                    self.numberOfPages(1)
+                    self.numberOfPages(1);
                 }
             ).fail(function (xhr, textStatus, error) {
                 self.notification({
@@ -197,7 +197,7 @@
 
         self.mostInCommon = function() {
             self.notification(false);
-            var url = nodeApiUrl + 'get_most_in_common_contributors/';
+            var url = nodeApiUrl + 'get_most_in_common_contributors/?max=' + MAX_RECENT.toString();
             $.getJSON(
                 url,
                 {},
@@ -210,9 +210,6 @@
                     }
                     var contribs = [];
                     var numToDisplay = result.contributors.length;
-                    if (numToDisplay > 10) {
-                        numToDisplay = 10;
-                    }
                     for (var i=0; i< numToDisplay; i++) {
                         contribs.push(new Contributor(result.contributors[i]));
                     }

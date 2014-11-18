@@ -2,6 +2,7 @@
 
 import time
 import httplib as http
+import itertools
 
 from collections import Counter
 from flask import request
