@@ -25,6 +25,7 @@ var wss = new WebSocketServer({ server: server});
 
 // Local variables
 var docs = {};
+var locked = {};
 
 // Allow CORS
 app.all('*', function(req, res, next) {
@@ -62,6 +63,14 @@ wss.on('connection', function(client) {
     stream.remoteAddress = client.upgradeReq.connection.remoteAddress;
 
     client.on('message', function(data) {
+
+        if (client.userMeta && locked[client.userMeta.docId]) {
+            console.log(client.userMeta.docId, 'is locked! No edits.');
+            // TODO: Is this the best way to let the user know they can't edit?
+            client.close();
+            return;
+        }
+
         // Handle our custom messages separately
         data = JSON.parse(data);
         if (data.registration) {
@@ -126,6 +135,22 @@ wss.on('connection', function(client) {
 // Get list of docs/users as JSON
 app.get('/users', function getUsers(req, res, next) {
     res.send(docs);
+});
+
+// TODO: Lock urls are only get requests for debug purposes. Change to post
+
+// Lock a document
+app.get('/lock/:id', function lockDoc(req, res, next) {
+    locked[req.params.id] = true;
+    console.log(req.params.id + " was locked.")
+    res.send(req.params.id + " was locked.");
+});
+
+// Lock a document
+app.get('/unlock/:id', function lockDoc(req, res, next) {
+    delete locked[req.params.id];
+    console.log(req.params.id + " was unlocked.")
+    res.send(req.params.id + " was unlocked.");
 });
 
 server.listen(port, function() {

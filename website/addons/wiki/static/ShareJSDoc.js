@@ -15,6 +15,11 @@ var ShareJSDoc = function(viewModel, url, metadata) {
     var sjs = new sharejs.Connection(socket);
     var doc = sjs.get('docs', metadata.docId);
 
+    sjs.on('disconnected', function() {
+        // TODO: Inform user of disconnect
+        console.log('disconnected');
+    });
+
     // Handle our custom messages separately
     var onmessage = socket.onmessage;
     socket.onmessage = function (message) {
@@ -72,5 +77,11 @@ var ShareJSDoc = function(viewModel, url, metadata) {
 
     // Subscribe to changes
     doc.subscribe();
+
+    // TODO: Debug variables. Remove before going to production!
+    window.sjs = sjs;
+    window.doc = doc;
+    window.editor = editor;
+    window.socket = socket;
 
 };
