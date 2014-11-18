@@ -615,6 +615,7 @@ class User(GuidStoredObject, AddonModelMixin):
         ret = super(User, self).save(*args, **kwargs)
         if self.SEARCH_UPDATE_FIELDS.intersection(ret) and self.is_confirmed():
             self.update_search()
+            self.update_search_nodes()
         if settings.PIWIK_HOST and not self.piwik_token:
             try:
                 piwik.create_user(self)
