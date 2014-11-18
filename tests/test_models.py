@@ -813,10 +813,9 @@ class TestValidateNodeWikiName(OsfTestCase):
         self.versions = self.project.wiki_pages_versions
 
     def test_validate_wiki_name_valid(self):
-        for invalid_name in [None, '', '   ']:
-            with assert_raises(NameEmptyError):
-                self.project.validate_node_wiki_name(invalid_name)
-
+        for valid_name in ['a', 'a b', 'A B 1', '∆øˆ¨ø', 'Mixed Case', '$p3c1a7\Charact3r$']:
+            # no exception indicates success
+            self.project.validate_node_wiki_name(valid_name)
 
     def test_validate_wiki_name_invalid_none_or_blank(self):
         for invalid_name in [None, '', '   ']:
