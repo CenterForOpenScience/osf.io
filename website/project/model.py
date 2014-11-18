@@ -2544,7 +2544,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
         self.save()
 
-
     def validate_node_wiki_name(self, name):
         """Validate the node wiki name.
 
@@ -2567,7 +2566,6 @@ class Node(GuidStoredObject, AddonModelMixin):
                 )
             )
         validate_page_name(name)
-
 
     # TODO: Move to wiki add-on
     def rename_node_wiki(self, name, new_name, auth):
