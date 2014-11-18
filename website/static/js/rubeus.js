@@ -453,7 +453,7 @@
             return cfgOption || null;
         },
         uploadError: function(file, message, item, folder) {
-            var messageText = resolveCfgOption.call(this, item, 'UPLOAD_ERROR');
+            var messageText = resolveCfgOption.call(this, folder, 'uploadError', [file, message, item, folder]);
             if (!messageText) {
                 if (typeof(message) === 'string') {
                     messageText = message;
