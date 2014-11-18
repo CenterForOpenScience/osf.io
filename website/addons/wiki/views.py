@@ -417,7 +417,6 @@ def project_wiki_rename(auth, wname, **kwargs):
 def project_wiki_validate_name(**kwargs):
     node = kwargs['node'] or kwargs['project']
     wiki_name = request.get_json().get('value', '').strip()
-    wiki_key = to_mongo_key(wiki_name)
 
     try:
         node.validate_node_wiki_name(wiki_name)
