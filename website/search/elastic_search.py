@@ -107,12 +107,12 @@ def get_tags(query, index):
 
 
 @requires_search
-def search(query, index='website', search_type='_all'):
+def search(query, index='website', doc_type='_all'):
     """Search for a query
 
     :param query: The substring of the username/project name/tag to search for
     :param index:
-    :param search_type:
+    :param doc_type:
 
     :return: List of dictionaries, each containing the results, counts, tags and typeAliases
         results: All results returned by the query, that are within the index and search type
@@ -337,7 +337,7 @@ def create_index():
     }
     es.indices.create('website', ignore=[400])
     for type_ in ['project', 'component', 'registration', 'user']:
-        es.indices.put_mapping(index='website', doc_type=type_, body=mapping)
+        es.indices.put_mapping(index='website', doc_type=type_, body=mapping, ignore=[400,404])
 
 
 @requires_search
