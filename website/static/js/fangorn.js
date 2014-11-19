@@ -30,19 +30,9 @@
 }(this, function($, Treebeard){
 
 
-
-
     function _fangornViewEvents () {
         console.log("View events this", this);
     }
-
-    // function _renderOriginalCell (item, columnIndex) {
-    //     // this == treebeard
-    //     var column = _fangornResolveRows.call(this, item)[columnIndex];
-    //     var original = column.custom.call(this, item, column);
-    //     var node = $('.tb-row[data-id="'+ item.id+ '"]').find('.tb-col-'+columnIndex); 
-    //         m.render(node.get(0), original);
-    // }
 
     // Returns custom icons for OSF 
     function _fangornResolveIcon(item){
@@ -120,6 +110,7 @@
         return '';
     }
 
+
     function _fangornToggleCheck (item) {
         if (item.data.permissions.view) {
             return true;
@@ -127,6 +118,7 @@
         item.notify.update('Not allowed: Private folder', 'warning', 1, undefined);
         return false;
     }
+    
     function _fangornResolveUploadUrl (item) {
         var configOption = resolveconfigOption.call(this, item, 'uploadUrl', [item]);
         return configOption || item.data.urls.upload;
@@ -139,8 +131,7 @@
 
     function _fangornUploadProgress (treebeard, file, progress, bytesSent){
         console.log("File Progress", this, arguments);
-        var elementID = $( ".tb-row:contains('"+file.name+"')" ).attr('data-id');
-        var item = treebeard.find(elementID); 
+        var item = treebeard.dropzoneItemCache.children[0];
         var msgText = 'Uploaded ' + Math.floor(progress) + '%'; 
         item.notify.update(msgText, 'success', 1, undefined);
     }
@@ -185,25 +176,30 @@
 
     function _fangornDropzoneSuccess (treebeard, file, response) {
         console.log("Success", arguments);
-        var element = $( ".tb-row:contains('"+file.name+"')" );
-        var id  = element.attr('data-id');
-        var item = treebeard.find(id);
-        if(response){
-            if(response.actionTaken === 'file_added' || response.addon === 'dropbox'){ // Base OSF response 
+        var item = treebeard.dropzoneItemCache.children[0];
+        console.log("RESPONSE: ", response);
+        // RESPONSES
+        // OSF : Object with actionTake : "file_added"
+        // DROPBOX : Object; addon : 'dropbox'
+        // S3 : Nothing
+        // GITHUB : Object; addon : 'github'
+        //Dataverse : Object, actionTaken : file_uploaded
+        var revisedItem = resolveconfigOption.call(treebeard, item.parent(), 'uploadSuccess', [file, item, response]);         
+
+        if(!revisedItem && response){
+            if(response.actionTaken === 'file_added' || response.addon === 'dropbox' || response.addon === 'github' || response.addon === 'dataverse'){ // Base OSF response 
                 item.data = response;
                 item.notify = false;
                 treebeard.redraw();            
             }
-        } else {
-            var revisedItem = resolveconfigOption.call(treebeard, item.parent(), 'uploadSuccess', [file, item, response]);         
         }
     }
 
     function _fangornDropzoneError (treebeard, file, message, xhr) {
         console.log("Error", arguments);
-        var element = $( ".tb-row:contains('"+file.name+"')" );
-        var id  = element.attr('data-id');
-        var item = treebeard.find(id);
+        // var element = $( ".tb-row:contains('"+file.name+"')" );
+        // var id  = element.attr('data-id');
+        var item = treebeard.dropzoneItemCache.children[0];
         item.notify.type = 'danger';
         var msgText = message.message_short ? message.message_short : message; 
         item.notify.message = msgText; 
@@ -230,7 +226,8 @@
     function _removeEvent (event, item, col) {
         event.stopPropagation();
         console.log('Remove Event triggered', this, event, item, col);
-        var tb = this; 
+        var tb = this;
+        item.notify.update('Deleting...', 'deleting', undefined, 3000); 
         if(item.data.permissions.edit){
             // delete from server, if successful delete from view
             $.ajax({ 
@@ -244,6 +241,7 @@
             })
             .fail(function(data){
                 console.log('Delete failed: ', data); 
+                item.notify.update('Delete failed.', 'danger', undefined, 3000); 
             }); 
         }
     }
@@ -268,9 +266,17 @@
         return false; 
     }
 
-    function _fangornLazyLoadError (tree) {
+    function _fangornLazyLoadError (item) {
         // this = treebeard; 
+        var self= this; 
         console.log('lazyload Error', this, arguments);
+        function myFunc (){
+            console.log("My func", this, arguments); 
+        }
+        var configOption = resolveconfigOption.call(this, item, 'lazyLoadError', [item]);
+        if(!configOption) {
+            tree.notify.update('Files couldn\'t load, please try again later.', 'deleting', undefined, 3000); 
+        }
     }
 
     function _fangornUploadMethod(item){
@@ -332,6 +338,7 @@
 
     function _fangornResolveRows(item){
         // this = treebeard;
+        item.css = '';
         var default_columns = [];             // Defines columns based on data
         default_columns.push({
             data : 'name',  // Data field name
@@ -381,8 +388,7 @@
                 width : '25%',
                 sort : false
             });
-        return columns; 
-        
+        return columns;  
     } 
     // OSF-specific Treebeard options common to all addons
     tbOptions = {
@@ -429,6 +435,16 @@
                 window.console.log('Add check', this, treebeard, item, file);
                 if (item.data.permissions.edit){
                     if(!_fangornFileExists.call(treebeard, item, file)){
+                        if(item.data.accept && item.data.accept.maxSize){
+                            var size = Math.round(file.size/10000)/100;
+                            var maxSize = item.data.accept.maxSize;  
+                            if(maxSize > size){
+                                return true;
+                            }
+                            var msgText = 'File is too large (' + size + ' MB). Max file size is ' + item.data.accept.maxSize + ' MB.' ; 
+                            item.notify.update(msgText, 'warning', undefined, 3000);
+                            return false;
+                        }
                         return true;    
                     } else {
                         var msgText = 'File already exists.'; 
@@ -436,7 +452,7 @@
                     }
                 } else {
                     var msgText = 'You don\'t have permission to upload here'; 
-                    item.notify.update(msgText, 'warning', 1, 3000);                    
+                    item.notify.update(msgText, 'warning', 1, 3000, 'animated flipInX');                    
                 }
                 return false;
             },
@@ -446,10 +462,11 @@
             onmouseoverrow : _fangornMouseOverRow,
             dropzone : {                                           // All dropzone options.
                 url: '/api/v1/project/',  // When users provide single URL for all uploads
-                //previewTemplate : '<div class='dz-preview dz-file-preview'>     <div class='dz-details'>        <div class='dz-size' data-dz-size></div>    </div>      <div class='dz-progress'>       <span class='dz-upload' data-dz-uploadprogress></span>  </div>      <div class='dz-error-message'>      <span data-dz-errormessage></span>  </div></div>',
                 clickable : '#treeGrid',
                 addRemoveLinks: false,
-                previewTemplate: '<div></div>'
+                previewTemplate: '<div></div>',
+                parallelUploads: 1
+                
             },
             resolveIcon : _fangornResolveIcon,
             resolveToggle : _fangornResolveToggle,

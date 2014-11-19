@@ -210,13 +210,13 @@
         $script(['/static/vendor/bower_components/zeroclipboard/ZeroClipboard.min.js'],
             'zeroclipboard');
         $script(['/static/vendor/bower_components/dropzone/downloads/dropzone.js'], 'dropzone');
-        $script(['/static/vendor/bower_components/hgrid/dist/hgrid.js'], 'hgrid');
+        $script(['/static/vendor/bower_components/treebeard/dist/treebeard.js'], 'treebeard');
         $script(['/static/vendor/bower_components/typeahead.js/dist/typeahead.bundle.min.js'],'typeahead');
         $script(['/static/vendor/bower_components/select2/select2.js'], 'select2');
         $script(['/static/vendor/bower_components/handlebars/handlebars.min.js'],'handlebars');
         $script(['/static/js/dropzone-patch.js']); // exports 'dropzone-patch'
-        $script(['/static/js/rubeus.js']); // exports 'rubeus'
-        $script(['/static/js/folderPicker.js']);  // exports 'folderPicker'
+        $script(['/static/js/fangorn.js']); // exports 'rubeus'
+        $script(['/static/js/folderPicker.tb.js']);  // exports 'folderPicker'
     </script>
 
 </%def>
