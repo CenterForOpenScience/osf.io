@@ -45,14 +45,13 @@
 
             var wikiName = $data.val();
             var request = $.ajax({
-                type: 'POST',
+                type: 'GET',
                 cache: false,
                 url: '${urls['api']['validate_name']}',
                 dataType: 'json',
-                contentType: 'application/json',
-                data: JSON.stringify({
-                    value: wikiName
-                })
+                data: {
+                    name: wikiName
+                }
             });
             request.done(function (response) {
                 window.location.href = '${urls['web']['base']}' + encodeURIComponent(wikiName) + '/edit/';
