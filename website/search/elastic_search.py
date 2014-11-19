@@ -337,7 +337,7 @@ def create_index():
     }
     es.indices.create('website', ignore=[400])
     for type_ in ['project', 'component', 'registration', 'user']:
-        es.indices.put_mapping(index='website', doc_type=type_, body=mapping, ignore=[400,404])
+        es.indices.put_mapping(index='website', doc_type=type_, body=mapping, ignore=[400, 404])
 
 
 @requires_search
