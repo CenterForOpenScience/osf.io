@@ -20,7 +20,7 @@ from framework.auth import Auth
 from website.util import web_url_for, api_url_for
 from website.addons.github.tests.utils import create_mock_github
 from website.addons.github import views, api, utils
-from website.addons.github.model import GithubGuidFile, AddonGitHubUserSettings, AddonGitHubOauthSettings
+from website.addons.github.model import GithubGuidFile
 from website.addons.github.utils import MESSAGES, check_permissions
 from website.addons.github.exceptions import TooBigError
 
@@ -828,7 +828,6 @@ class TestGithubSettings(OsfTestCase):
 
         self.project.reload()
         self.node_settings.reload()
-
         assert_equal(self.node_settings.user, None)
         assert_equal(self.node_settings.repo, None)
         assert_equal(self.node_settings.user_settings, None)
@@ -890,6 +889,7 @@ class TestAuthViews(OsfTestCase):
         assert_equal(self.user_settings.oauth_token_type, "testing token type")
         assert_equal(self.user_settings.github_user_name, "testing user")
         assert_equal(self.user_settings.oauth_settings.github_user_id, "testing user id")
+
 
     @mock.patch('website.addons.github.api.GitHub.user')
     @mock.patch('website.addons.github.views.auth.oauth_get_token')
