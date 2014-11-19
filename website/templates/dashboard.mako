@@ -14,7 +14,7 @@
             <div class="pull-right"><a class="btn btn-default" href="/folder/${dashboard_id}" id = "${dashboard_id}">New Folder</a></div>
             <h3>Projects</h3>
         </div><!-- end .page-header -->
-        <link rel="stylesheet" href="/static/css/projectorganizer.css">
+        <link rel="stylesheet" href="/static/css/projectorganizer.tb.css">
 
         <div class="project-organizer" id="projectOrganizerScope">
             <%include file="projectGridTemplates.html"/>
@@ -159,8 +159,8 @@
 </script>
 
 ##       Project Organizer
-    <script src="/static/vendor/jquery-drag-drop/jquery.event.drag-2.2.js"></script>
-    <script src="/static/vendor/jquery-drag-drop/jquery.event.drop-2.2.js"></script>
+
+    <script src="/static/vendor/bower_components/jquery-ui/jquery-ui.min.js"></script>
     <script>
         // $script.ready(['hgrid'], function() {
         //    $script(['/static/vendor/bower_components/hgrid/plugins/hgrid-draggable/hgrid-draggable.js'],'hgrid-draggable');
@@ -186,7 +186,8 @@
                     var options = {
                         placement : 'dashboard',
                         divID: 'project-grid',
-                        filesData: result.data
+                        filesData: result.data,
+                        multiselect : true
                     };
                     console.log("project Organizer", ProjectOrganizer);
                     var filebrowser = new ProjectOrganizer(options);                    

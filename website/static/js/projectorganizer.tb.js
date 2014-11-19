@@ -100,7 +100,19 @@
         });
     }
 
+    function setItemToExpand(item, callback) {
+        var expandUrl = item.apiURL + 'expand/';
+        var postAction = $.osf.postJSON(expandUrl,{});
+        postAction.done(function() {
+            item.expand = false;
+            if (typeof callback !== 'undefined') {
+                callback();
+            }
+        }).fail($.osf.handleJSONError);
+    }
+
     function _showProjectDetails (event, item, col) {
+        var treebeard = this; 
         projectOrganizer.myProjects.initialize();
         projectOrganizer.publicProjects.initialize();
         // injecting error into search results from https://github.com/twitter/typeahead.js/issues/747
@@ -241,6 +253,7 @@
                         toNodeID: theItem.node_id
                     });
                 setItemToExpand(theItem, function() {
+                    var tb = treebeard; 
                     var postAction = $.ajax({
                         type: 'POST',
                         url: url,
@@ -249,7 +262,7 @@
                         dataType: 'json'
                     });
                     postAction.done(function () {
-                        reloadFolder(projectOrganizer.grid, theItem, theParentNode);
+                        tb.updateFolder(null, item);
                     });
                 });
                 return false;
@@ -264,7 +277,7 @@
                     dataType: 'json'
                 });
                 deleteAction.done(function () {
-                    reloadFolder(projectOrganizer.grid, theParentNode);
+                        treebeard.updateFolder(null, theParentNode);
                 });
             });
             $('#delete-folder-' + theItem.node_id).click(function () {
@@ -282,7 +295,8 @@
                                 dataType: 'json'
                             });
                             deleteAction.done(function () {
-                                reloadFolder(projectOrganizer.grid, theParentNode);
+                                treebeard.updateFolder(null, item.parent());
+                                $('.project-details').hide();
                             });
                         }
                     }
@@ -312,7 +326,8 @@
                 setItemToExpand(theItem, function() {
                     var putAction = $.osf.putJSON(url, postData);
                     putAction.done(function () {
-                        reloadFolder(projectOrganizer.grid, theItem, theParentNode);
+                        treebeard.updateFolder(null, item);
+                        $('.project-details').hide();
                     }).fail($.osf.handleJSONError);
 
                 });
@@ -342,7 +357,8 @@
                 };
                 var postAction = $.osf.postJSON(url, postData);
                 postAction.done(function () {
-                        reloadFolder(projectOrganizer.grid, theParentNode);
+                        treebeard.updateFolder(null, theParentNode);
+                        $('.project-details').hide();
                     }).fail($.osf.handleJSONError);
                 return false;
             });
@@ -367,8 +383,6 @@
             $('.project-details').hide();
         }
     }
-
-
 
     function _poActionColumn (item, col) {
         var self = this; 
@@ -427,11 +441,17 @@
 
     function _poResolveRows(item){
         // this = treebeard;
+        var css = '',
+            draggable = item.data.permissions.movable || item.data.permissions.copyable;
+        if(draggable) {
+            css = 'po-draggable'; 
+        } 
         item.css = '';
         var default_columns = [{
             data : 'name',  // Data field name
             folderIcons : true,
             filter : true,
+            css : css,
             custom : _poTitleColumn
         },{
             sortInclude : false,
@@ -447,7 +467,6 @@
         
         return default_columns;
     }
-
 
     function _poColumnTitles () {
         var columns = [];
@@ -483,10 +502,10 @@
         return false;
     }
 
-    function _poMouseOverRow (item, event) {
-        $('.fg-hover-hide').hide(); 
-        $(event.target).closest('.tb-row').find('.fg-hover-hide').show();
-    }
+    // function _poMouseOverRow (item, event) {
+    //     $('.fg-hover-hide').hide(); 
+    //         $(event.target).closest('.tb-row').find('.fg-hover-hide').show();
+    // }
 
     function _poResolveIcon(item){
         var folder = m('img', { src : '/static/img/hgrid/folder.png' }),
@@ -539,7 +558,7 @@
     }
 
     function _poLoadOpenChildren () {
-        var tb = this; 
+        var tb = this;
         this.treeData.children.map(function(item){
             item.data.expand = true; 
             if (item.data.expand) {
@@ -548,108 +567,280 @@
                 }).done(function(result){
                     console.log(result);
                     result.data.map(function(rItem){
-                        item.children.push(tb.buildTree(rItem, item));                        
+                        item.add(tb.buildTree(rItem, item));                        
                     });
                     tb.redraw();
+                    tb.moveOn();
+
                 });
             }
         }); 
 
     }
 
+    function _poMultiselect (event, tree) {
+            var selectedRows = filterRowsNotInParent.call(this, this.multiselected);
+            console.log("SelectedRows", selectedRows);
+            var multipleItems = false;
+
+            if(selectedRows.length > 1) {
+                var someItemsAreFolders = false;
+                var pointerIds = [];
+                selectedRows.forEach(function(item){
+                    var thisItem = item.data;
+                    someItemsAreFolders = someItemsAreFolders ||
+                                          thisItem.isFolder ||
+                                          thisItem.isSmartFolder ||
+                                          thisItem.parentIsSmartFolder ||
+                                          !thisItem.permissions.movable;
+                    pointerIds.push(thisItem.node_id);
+                });
+                if(!someItemsAreFolders) {
+                    var multiItemDetailTemplateSource = $('#project-detail-multi-item-template').html();
+                    var detailTemplate = Handlebars.compile(multiItemDetailTemplateSource);
+                    var detailTemplateContext = {
+                        multipleItems: true,
+                        itemsCount: selectedRows.length
+                    };
+                    var theParentNode = selectedRows[0].parent().data;
+                    var displayHTML = detailTemplate(detailTemplateContext);
+                    $('.project-details').html(displayHTML);
+                    $('.project-details').show();
+                    $('#remove-links-multiple').click(function(){
+                        deleteMultiplePointersFromFolder(self.grid, pointerIds, theParentNode);
+                    });
+                    $('#close-multi-select').click(function () {
+                        $('.project-details').hide();
+                        return false;
+                    });
+
+                } else {
+                    $('.project-details').hide();
+                }
+            } else {
+                    $('.project-details').hide();
+                }
+        } // end onSelectedRowsChanged
+
+    function deleteMultiplePointersFromFolder(theHgrid, pointerIds, folderToDeleteFrom) {
+        if(pointerIds.length > 0) {
+            var folderNodeId = folderToDeleteFrom.node_id;
+            var url = '/api/v1/folder/' + folderNodeId + '/pointers/';
+            var postData = JSON.stringify({pointerIds: pointerIds});
+            var reloadHgrid = function () {
+                if (theHgrid !== null) {
+                    reloadFolder(theHgrid, folderToDeleteFrom);
+                }
+            };
+            var deleteAction = $.ajax({
+                type: 'DELETE',
+                url: url,
+                data: postData,
+                contentType: 'application/json',
+                dataType: 'json'
+            });
+            deleteAction.done(reloadHgrid);
+            deleteAction.fail(function (jqxhr, textStatus, errorThrown){
+                bootbox.alert('Error: ' + textStatus + '. ' + errorThrown);
+            });
+        }
+    }
+
+    function filterRowsNotInParent(rows) {
+            // GET ORIGINAL ITEM
+            // filter checking if : every item has the same parent as original item:  if not discard; 
+            // return the new list and update selection view 
+
+            var i, newRows = [];
+            var originalRow = this.find(this.selected);
+            if(typeof originalRow !== "undefined") {
+                var originalParent = originalRow.parentID;
+                for (i = 0; i < rows.length; i++) {
+                    var currentItem = rows[i];
+                    if(currentItem.parentID === originalParent && currentItem.id !== -1){
+                        newRows.push(rows[i]);
+                    }
+                }
+            }
+            this.multiselected = newRows;
+            this.highlightMultiselect.call(this); 
+            return newRows;
+        }
+
+
+
+    // DRAG AND DROP METHODS
+    function _poDrag (event, ui) {
+        var itemID = $(event.target).attr('data-id');
+        var item = this.find(itemID);
+        $(ui.helper).css({ 'height' : '25px', 'width' : '400px', 'background' : 'white', 'padding' : '0px 10px', 'box-shadow' : '0 0 4px #ccc'});
+        items = this.multiselected.length > 0 ? this.multiselected : [item]; 
+        console.log("draglogic", event, ui, items); 
+        dragLogic(event, items, ui);
+    }
+
+    function _poDrop (event, ui) {
+        console.log(this, "Drop");
+    }
+
+    function dragLogic(event, items, ui){
+        var canCopy = true;
+        var canMove = true;
+        items.forEach(function (item) {
+            canCopy = canCopy && item.data.permissions.copyable;
+            canMove = canMove && item.data.permissions.movable;
+        });
+
+        // Check through possible move and copy options, and set the copyMode appropriately.
+        if (!(canMove && canCopy )) { //&& canAcceptDrop(items, folder))) {
+            copyMode = 'forbidden';
+        }
+        else if (canMove && canCopy) {
+            if (altKey) {
+                copyMode = 'copy';
+            } else {
+                copyMode = 'move';
+            }
+        }
+        if (!canMove && canCopy) {
+            copyMode = 'copy';
+        }
+        if (!canCopy && canMove) {
+            copyMode = 'move';
+        }
+        console.log('copyMode', copyMode);
+        // Set the cursor to match the appropriate copy mode
+        switch (copyMode) {
+            case 'forbidden':
+                $(ui.helper).css('cursor', 'not-allowed');
+                break;
+            case 'copy':
+                $(ui.helper).css('cursor', 'copy');
+                break;
+            case 'move':
+                $(ui.helper).css('cursor', 'move');
+                break;
+            default:
+                $(ui.helper).css('cursor', 'default');
+        }
+    }
+
+    function canAcceptDrop(items, folder){
+        // folder is the drop target.
+        // items is an array of things to go into the drop target.
+
+        if (folder.isSmartFolder || !folder.isFolder){
+            return false;
+        }
+
+
+        // if the folder is contained by the item, return false
+
+        var representativeItem = items[0];
+        if (draggable.grid.folderContains(representativeItem.id, folder.id)){
+            return false;
+        }
+
+        // If trying to drop on the folder it came from originally, return false
+        var itemParentNodeId = getItemParentNodeId(draggable.grid, representativeItem);
+        if (itemParentNodeId === folder.node_id){
+            return false;
+        }
+
+        var hasComponents = false;
+        var hasFolders = false;
+        var copyable = true;
+        var movable = true;
+        var canDrop = true;
+
+        items.forEach(function(item){
+            hasComponents = hasComponents || item.isComponent;
+            hasFolders = hasFolders || item.isFolder;
+            copyable = copyable && item.permissions.copyable;
+            movable = movable && item.permissions.movable;
+        });
+
+
+        if(hasComponents){
+            canDrop = canDrop && folder.permissions.acceptsComponents;
+        }
+        if(hasFolders){
+            canDrop = canDrop && folder.permissions.acceptsFolders;
+        }
+        if(copyMode === 'move'){
+            canDrop = canDrop && folder.permissions.acceptsMoves && movable;
+        }
+        if(copyMode === 'copy'){
+            canDrop = canDrop && folder.permissions.acceptsCopies && copyable;
+        }
+        return canDrop;
+    }
+
     // OSF-specific Treebeard options common to all addons
-    tbOptions = {
-            rowHeight : 35,         // user can override or get from .tb-row height
-            showTotal : 15,         // Actually this is calculated with div height, not needed. NEEDS CHECKING
-            paginate : false,       // Whether the applet starts with pagination or not.
-            paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.
-            uploads : false,         // Turns dropzone on/off.
-            columnTitles : _poColumnTitles,
-            resolveRows : _poResolveRows,
-            showFilter : false,     // Gives the option to filter by showing the filter box.
-            title : false,          // Title of the grid, boolean, string OR function that returns a string.
-            allowMove : false,       // Turn moving on or off.
-            hoverClass : 'fangorn-hover',
-            togglecheck : _poToggleCheck,
-            sortButtonSelector : { 
-                up : 'i.icon-chevron-up',
-                down : 'i.icon-chevron-down'
-            },
-            onload : function (){
-                var tb = this;
-                // reload the data with expand options 
-                _poLoadOpenChildren.call(tb);
+        tbOptions = {
+                rowHeight : 35,         // user can override or get from .tb-row height
+                showTotal : 15,         // Actually this is calculated with div height, not needed. NEEDS CHECKING
+                paginate : false,       // Whether the applet starts with pagination or not.
+                paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.
+                uploads : false,         // Turns dropzone on/off.
+                columnTitles : _poColumnTitles,
+                resolveRows : _poResolveRows,
+                showFilter : false,     // Gives the option to filter by showing the filter box.
+                title : false,          // Title of the grid, boolean, string OR function that returns a string.
+                allowMove : true,       // Turn moving on or off.
+                moveClass : 'po-draggable',
+                hoverClass : 'fangorn-hover',
+                hoverClassMultiselect : 'po-hover-multiselect',
+                togglecheck : _poToggleCheck,
+                sortButtonSelector : { 
+                    up : 'i.icon-chevron-up',
+                    down : 'i.icon-chevron-down'
+                },
+                dragOptions : {},
+                dropOptions : {},
+                dragEvents : {
+                    start : function () {
+                        $('.project-details').hide();
+                    },
+                    drag : _poDrag
+                },
+                dropEvents : {
+                    out  : function () { console.log(this, "Out");},
+                    over : function (event, ui) { console.log(this, event, ui, "Over");},
+                    drop : _poDrop
+                },
+                onload : function (){
+                    var tb = this;
+                    // reload the data with expand options 
+                    _poLoadOpenChildren.call(tb);
+                },
+                createcheck : function (item, parent) {
+                    window.console.log('createcheck', this, item, parent);
+                    return true;
+                },
+                deletecheck : function (item) {  // When user attempts to delete a row, allows for checking permissions etc.
+                    window.console.log('deletecheck', this, item);
+                    return true;
+                },
+                onselectrow : function (item) {
+                    console.log('Row: ', item);
+                },
+                // onmouseoverrow : _poMouseOverRow,
+                onmultiselect : _poMultiselect,
+                dropzone : {                                           // All dropzone options.
+                    url: '/api/v1/project/',  // When users provide single URL for all uploads
+                    clickable : '#treeGrid',
+                    addRemoveLinks: false,
+                    previewTemplate: '<div></div>',
+                    parallelUploads: 1
+                    
+                },
+                resolveIcon : _poResolveIcon,
+                resolveToggle : _poResolveToggle,
+                resolveLazyloadUrl : _poResolveLazyLoad,
+                // lazyLoadError : _fangornLazyLoadError,
+                // resolveUploadMethod :_fangornUploadMethod,
 
-
-            },
-            createcheck : function (item, parent) {
-                window.console.log('createcheck', this, item, parent);
-                return true;
-            },
-            deletecheck : function (item) {  // When user attempts to delete a row, allows for checking permissions etc.
-                window.console.log('deletecheck', this, item);
-                return true;
-            },
-            movecheck : function (to, from) { //This method gives the users an option to do checks and define their return
-                window.console.log('movecheck: to', to, 'from', from);
-                return true;
-            },
-            movefail : function (to, from) { //This method gives the users an option to do checks and define their return
-                window.console.log('moovefail: to', to, 'from', from);
-                return true;
-            },
-            // addcheck : function (treebeard, item, file) {
-            //     window.console.log('Add check', this, treebeard, item, file);
-            //     if (item.data.permissions.edit){
-            //         if(!_fangornFileExists.call(treebeard, item, file)){
-            //             if(item.data.accept && item.data.accept.maxSize){
-            //                 var size = Math.round(file.size/10000)/100;
-            //                 var maxSize = item.data.accept.maxSize;  
-            //                 if(maxSize > size){
-            //                     return true;
-            //                 }
-            //                 var msgText = 'File is too large (' + size + ' MB). Max file size is ' + item.data.accept.maxSize + ' MB.' ; 
-            //                 item.notify.update(msgText, 'warning', undefined, 3000);
-            //                 return false;
-            //             }
-            //             return true;    
-            //         } else {
-            //             var msgText = 'File already exists.'; 
-            //             item.notify.update(msgText, 'warning', 1, 3000);
-            //         }
-            //     } else {
-            //         var msgText = 'You don\'t have permission to upload here'; 
-            //         item.notify.update(msgText, 'warning', 1, 3000, 'animated flipInX');                    
-            //     }
-            //     return false;
-            // },
-            onselectrow : function (item) {
-                console.log('Row: ', item);
-            },
-            onmouseoverrow : _poMouseOverRow,
-            dropzone : {                                           // All dropzone options.
-                url: '/api/v1/project/',  // When users provide single URL for all uploads
-                clickable : '#treeGrid',
-                addRemoveLinks: false,
-                previewTemplate: '<div></div>',
-                parallelUploads: 1
-                
-            },
-            resolveIcon : _poResolveIcon,
-            resolveToggle : _poResolveToggle,
-            // resolveUploadUrl : _fangornResolveUploadUrl,
-            resolveLazyloadUrl : _poResolveLazyLoad,
-            // lazyLoadError : _fangornLazyLoadError,
-            // resolveUploadMethod :_fangornUploadMethod,
-            // dropzoneEvents : {
-            //     uploadprogress : _fangornUploadProgress,
-            //     sending : _fangornSending,
-            //     complete : _fangornComplete,
-            //     success : _fangornDropzoneSuccess,
-            //     error : _fangornDropzoneError,
-            //     dragover : _fangornDragOver,
-            //     addedfile : _fangornAddedFile
-            // }
     };
 
 
