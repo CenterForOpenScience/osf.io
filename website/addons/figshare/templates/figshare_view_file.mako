@@ -2,7 +2,7 @@
 <%def name="title()">${file_name}</%def>
 
 <%def name="file_versions()">
-<div id="figshareScope">
+<div class="scripted" id="figshareScope">
 <h3>Status: <span class="label label-${'success' if file_status == 'Public' else 'warning'}"> ${file_status}</span></h3>
 % if file_status != 'Public' and parent_type == 'singlefile':
 <!--<a id="figsharePublishArticle" class="btn btn-danger">Publish</a><h3>
@@ -23,6 +23,10 @@ $('#figsharePublishArticle').on('click', function(){
 </script>
 -->
 % endif
+
+    <div class="alert alert-warning" data-bind="visible: deleting">
+        Deleting your file…
+    </div>
 
     <ol class="breadcrumb">
         <li class="active overflow"><a href=${urls['files']}>${node['title']}</a></li>
