@@ -318,8 +318,8 @@
                     filesData: self.urls().folders, // URL for fetching folders
                     // Lazy-load each folder's contents
                     // Each row stores its url for fetching the folders it contains
-                    fetchUrl: function(row) {
-                        return row.urls.folders;
+                    resolveLazyloadUrl : function(tree, item){
+                        return item.data.urls.folders;
                     },
                     ajaxOptions: {
                        error: function(xhr, textStatus, error) {
@@ -331,15 +331,9 @@
                                 error: error
                             });
                         }
-                    },
-                    init: function() {
-                        // Hide loading indicator
-                        self.loading(false);
-                        // Set flag to prevent repeated requests
-                        self.loadedFolders(true);
                     }
                 });
-            };
+            }
         };
 
         /**

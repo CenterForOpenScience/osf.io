@@ -96,7 +96,7 @@
         var default_columns = [];             // Defines columns based on data
         default_columns.push({
             data : 'name',  // Data field name
-            folderIcons : false,
+            folderIcons : true,
             filter : false,
             custom : _treebeardTitleColumn
         });
