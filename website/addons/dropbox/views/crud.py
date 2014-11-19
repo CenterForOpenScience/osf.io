@@ -75,8 +75,7 @@ def dropbox_upload(node_addon, auth, **kwargs):
             if error.status == 401:
                 raise HTTPError(http.UNAUTHORIZED, data=dict(message_short='Invalid Access Token',
                                                              message_long='Your Dropbox token is no longer valid. '
-                                                                          + 'Deauthorize and reauthorize the Dropbox '
-                                                                          + 'addon on your account settings page.'))
+                                                                          + 'Check your project settings page for details.'))
             else:
                 raise HTTPError(http.BAD_REQUEST)
 
