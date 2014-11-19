@@ -256,15 +256,18 @@ ${parent.javascript_bottom()}
         Rubeus.Col.DashboardName.itemView = function(item) {
             return Rubeus.Col.Name.itemView(item) + '&nbsp;<span data-status></span>';
         };
-        var filebrowser = new Rubeus('#myGrid', {
-                data: nodeApiUrl + 'files/grid/',
-                columns: [Rubeus.Col.DashboardName],
-                uploads: true,
-                width: "100%",
-                height: 600,
-                progBar: '#filetreeProgressBar',
-                searchInput: '#fileSearch'
-        });
+        var rubeusOpts = {
+            data: nodeApiUrl + 'files/grid/',
+            columns: [Rubeus.Col.DashboardName],
+            width: "100%",
+            height: 600,
+            progBar: '#filetreeProgressBar',
+            searchInput: '#fileSearch'
+        };
+        % if disk_saving_mode:
+          rubeusOpts.uploads = false;
+        % endif
+        var filebrowser = new Rubeus('#myGrid', rubeusOpts);
     })
 </script>
 
