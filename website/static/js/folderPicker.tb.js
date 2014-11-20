@@ -92,12 +92,9 @@
 
         return m("input",{
             type:"radio",
-            name:this.selector + INPUT_NAME,
+            name: "#" + this.options.divID + INPUT_NAME,
             value:item.id,
-            checked:function(){
-                console.log("Proof of Concept: RADIO BUTTON CLICKED");
-                return item._fpChecked ? ' checked ': ' ';
-            }
+            checked: item._fpChecked ? ' checked ': ' '
         }, " ")
     }
 
@@ -179,9 +176,9 @@
         $(selector).on('change', 'input[name="' + self.selector + INPUT_NAME + '"]', function(evt) {
             console.log("RADIO BUTTON CHANGED");
             var id = $(this).val();
-            var row = self.grid.getByID(id);
+            var row = self.grid.find(id);
             // Store checked state of rows so that it doesn't uncheck when HGrid is redrawn
-            var oldRow = self.grid.getByID(self.checkedRowId);
+            var oldRow = self.grid.find(self.checkedRowId);
             if (oldRow) {
                 oldRow._fpChecked = false;
             }
