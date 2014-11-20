@@ -90,7 +90,6 @@
             FolderPicker.Col.Name,
             {name: 'Select', folderView: folderSelectView, width: 10}
         ];
-        self.options.
         // Start up the grid
         self.grid = new HGrid(selector, self.options);
         // Set up listener for folder selection

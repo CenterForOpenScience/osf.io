@@ -296,10 +296,11 @@
         /** Callback for chooseFolder action.
         *   Just changes the ViewModel's self.selected observable to the selected
         *   folder.
+         *   CHANGE THIS TO TREEBEARD INSTEAD OF HGRID, FIND OUT WHAT ROW.PATH IS
         */
-        function onPickFolder(evt, row) {
+        function onPickFolder(evt, item) {
             evt.preventDefault();
-            self.selected({name: 'Dropbox' + row.path, path: row.path});
+            self.selected({name: 'Dropbox' + item.data.path, path: item.data.path});
             return false; // Prevent event propagation
         }
 
@@ -311,7 +312,7 @@
             // Only load folders if they haven't already been requested
             if (!self.loadedFolders()) {
                 // Show loading indicator
-                self.loading(true);
+                //self.loading(true);
                 $(self.folderPicker).folderpicker({
                     onPickFolder: onPickFolder,
                     // Fetch Dropbox folders with AJAX
@@ -331,6 +332,12 @@
                                 error: error
                             });
                         }
+                    },
+                    init: function() {
+                        // Hide loading indicator
+                        self.loading(false);
+                        // Set flag to prevent repeated requests
+                        self.loadedFolders(true);
                     }
                 });
             }

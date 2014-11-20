@@ -52,10 +52,37 @@
             custom : _treebeardSelectView
     });
 
+    function _treebeardResolveToggle(item){
+        if (item.data.path!="/") {
+            item.open=false;
+            var toggleMinus = m('i.icon-minus', ' '),
+                togglePlus = m('i.icon-plus', ' ');
+            if (item.kind === 'folder') {
+                if (item.open) {
+                    return toggleMinus;
+                }
+                return togglePlus;
+            }
+        }
+        return '';
+    }
+
+    // Returns custom icons for OSF
+    function _treebeardResolveIcon(item){
+        var openFolder  = m('i.icon-folder-open-alt', ' '),
+            closedFolder = m('i.icon-folder-close-alt', ' ');
+
+        if (item.open) {
+            return openFolder;
+        }
+
+        return closedFolder;
+    }
+
     var INPUT_NAME = '-folder-select';
     //THIS NEEDS TO BE FIXED SO THAT ON CLICK IT OPENS THE FOLDER.
     function _treebeardTitleColumn (item, col) {
-        return m('span',item.data.name);
+        return m('span', item.data.name);
     }
 
     /**
@@ -67,9 +94,9 @@
             type:"radio",
             name:this.selector + INPUT_NAME,
             value:item.id,
-            'onclick':function(){
+            checked:function(){
                 console.log("Proof of Concept: RADIO BUTTON CLICKED");
-                //return item._fpChecked ? ' checked ': ' ';
+                return item._fpChecked ? ' checked ': ' ';
             }
         }, " ")
     }
@@ -119,6 +146,8 @@
     var defaults = {
         columnTitles : _treebeardColumnTitle,
         resolveRows : _treebeardResolveRows,
+        resolveIcon : _treebeardResolveIcon,
+        resolveToggle : _treebeardResolveToggle,
         // Disable uploads
         uploads: false
         // Add listener that expands a folder upon clicking its name
@@ -132,7 +161,7 @@
         var self = this;
         self.selector = selector;
         self.checkedRowId = null;
-        // Custom HGrid action to select a folder that uses the passed in
+        // Custom Treebeard action to select a folder that uses the passed in
         // "onChooseFolder" callback
         if (!opts.onPickFolder) {
             throw 'FolderPicker must have the "onPickFolder" option defined';
@@ -148,6 +177,7 @@
         self.grid = Treebeard.run(self.options);
         // Set up listener for folder selection
         $(selector).on('change', 'input[name="' + self.selector + INPUT_NAME + '"]', function(evt) {
+            console.log("RADIO BUTTON CHANGED");
             var id = $(this).val();
             var row = self.grid.getByID(id);
             // Store checked state of rows so that it doesn't uncheck when HGrid is redrawn
