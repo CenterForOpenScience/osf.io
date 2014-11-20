@@ -98,12 +98,3 @@
     </div>
 </div><!-- end #figshareScope -->
 
-
-<script>
-    $script(['/static/addons/figshare/figshareNodeConfig.js']);
-    $script.ready('figshareNodeConfig', function() {
-        // TODO(sloria): Remove this dependency on mako variable
-        var url = '${node["api_url"] + "figshare/config/"}';
-        var figshare = new FigshareNodeConfig('#figshareScope', url, '#figshareGrid');
-    });
-</script>
