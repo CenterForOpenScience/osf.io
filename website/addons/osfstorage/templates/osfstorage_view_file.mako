@@ -62,21 +62,16 @@
 
 </div>
 
-<script>
-    $script(['/static/addons/osfstorage/storageRevisions.js'], function() {
-        var revisionTable = new RevisionTable(
-            '#revisionScope',
-            '${node['title']}',
-            '${file_path}',
-            ${int(user['can_edit'])},
-            {
-                files: '${files_url}',
-                download: '${download_url}',
-                delete: '${delete_url}',
-                revisions: '${revisions_url}'
-            }
-        );
-    });
+<script src="/static/public/js/osfstorage/file-detail.js">
+    window.contextVars = window.contextVars;
+    window.contextVars.filePath = ${file_path};
+    window.contextVars.currentUser = window.contextVars.currentUser || {};
+    window.contextVars.currentUser.canEdit = ${int(user['can_edit'])};
+    window.contextVars.node = window.contextVars || {};
+    window.contextVars.node.urls = window.contextVars.node.urls || {};
+    window.contextVars.node.urls.files = ${files_url};
+    window.contextVars.node.urls.download = ${download_url};
+    window.contextVars.node.urls.delete = ${delete_url};
+    window.contextVars.node.urls.revisions = ${revisions_url};
 </script>
-
 </%def>

@@ -1,1 +1,1 @@
-require('/.storageRubeusConfig.js');
+require('./storageRubeusConfig.js');
