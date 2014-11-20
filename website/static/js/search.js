@@ -8,6 +8,9 @@
     // Enable knockout punches
     ko.punches.enableAll();
 
+    // Disable IE Caching of JSON
+    $.ajaxSetup({ cache: false });
+
     //https://stackoverflow.com/questions/7731778/jquery-get-query-string-parameters
 
     var Category = function(name, count, display){
@@ -165,11 +168,15 @@
             }
 
             self.currentPage(1);
-            if (self.query() !== ''){
-                 self.query(self.query() + ' AND ');
+            var tagString = 'tags:("' + tag + '")';
+
+            if (self.query().indexOf(tagString) === -1) {
+                if (self.query() !== '') {
+                    self.query(self.query() + ' AND ');
+                }
+                self.query(self.query() + tagString);
+                self.category(new Category('total', 0, 'Total'));
             }
-            self.query(self.query() + 'tags:("' + tag + '")');
-            self.category(new Category('total', 0, 'Total'));
             self.search();
         };
 
