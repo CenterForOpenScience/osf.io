@@ -1,8 +1,8 @@
 /**
- * Components and binding handlers for the dashboard "onboarding" interface.
- * Includes a custom component for OSF project typeahead search, as well
- * the viewmodels for each of the individual onboarding widgets.
- */
+* Components and binding handlers for the dashboard "onboarding" interface.
+* Includes a custom component for OSF project typeahead search, as well
+* the viewmodels for each of the individual onboarding widgets.
+*/
 'use strict';
 var Handlebars = require('handlebars');
 var Dropzone = require('../vendor/bower_components/dropzone/downloads/dropzone.js');
@@ -96,7 +96,7 @@ function serializeNode(node) {
             web: node.url,
             api: node.api_url,
             register: node.url + 'register/',
-            upload: node.api_url + 'osffiles/files/',
+            upload: node.api_url + 'osfstorage/files/',
             files: node.url + 'files/',
             children: node.api_url + 'get_children/?permissions=write'
         }
@@ -104,20 +104,20 @@ function serializeNode(node) {
 }
 
 /**
-  * Binding handler for attaching an OSF typeahead search input.
-  * Takes an optional parameter onSelected, which is called when a project
-  * is selected.
-  *
-  * Params:
-  *  data: An Array of data or a URL where to fetch nodes. Defaults to the dashboard node endpoint.
-  *  onSelected: Callback for when a node is selected.
-  *  onFetched: Callback for when nodes are fetched from server.
-  *
-  * Example:
-  *
-  *  <div data-bind="projectSearch: {url: '/api/v1/dashboard/get_nodes/',
-  *                                     onSelected: onSelected}></div>
-  */
+    * Binding handler for attaching an OSF typeahead search input.
+    * Takes an optional parameter onSelected, which is called when a project
+    * is selected.
+    *
+    * Params:
+    *  data: An Array of data or a URL where to fetch nodes. Defaults to the dashboard node endpoint.
+    *  onSelected: Callback for when a node is selected.
+    *  onFetched: Callback for when nodes are fetched from server.
+    *
+    * Example:
+    *
+    *  <div data-bind="projectSearch: {url: '/api/v1/dashboard/get_nodes/',
+    *                                     onSelected: onSelected}></div>
+    */
 ko.bindingHandlers.projectSearch = {
     update: function(element, valueAccessor, allBindings, viewModel) {
         var params = valueAccessor() || {};
@@ -147,17 +147,17 @@ ko.bindingHandlers.projectSearch = {
 };
 
 /**
-  * ViewModel for the OSF project typeahead search widget.
-  *
-  * Template: osf-project-search element in components/dashboard_templates.mako
-  *
-  * Params:
-  *  onSubmit: Function to call on submit. Receives the selected item.
-  *  onSelected: Function to call when a typeahead selection is made.
-  *  onFetchedComponents: Function to call when components for the selected project
-  *      are fetched.
-  *  onClear: Function to call when the clear button is clicked.
-  */
+    * ViewModel for the OSF project typeahead search widget.
+    *
+    * Template: osf-project-search element in components/dashboard_templates.mako
+    *
+    * Params:
+    *  onSubmit: Function to call on submit. Receives the selected item.
+    *  onSelected: Function to call when a typeahead selection is made.
+    *  onFetchedComponents: Function to call when components for the selected project
+    *      are fetched.
+    *  onClear: Function to call when the clear button is clicked.
+    */
 function ProjectSearchViewModel(params) {
     var self = this;
     self.params = params || {};
@@ -262,10 +262,10 @@ ko.components.register('osf-project-search', {
 ///// Register /////
 
 /**
-  * ViewModel for the onboarding project registration component.
-  *
-  * Template: osf-ob-register element in components/dashboard_templates.mako
-  */
+    * ViewModel for the onboarding project registration component.
+    *
+    * Template: osf-ob-register element in components/dashboard_templates.mako
+    */
 function OBRegisterViewModel(params) {
     var self = this;
     self.params = params || {};
@@ -395,8 +395,8 @@ function truncateFilename(string){
 }
 
 /**
-  * ViewModel for the onboarding uploader
-  */
+    * ViewModel for the onboarding uploader
+    */
 function OBUploaderViewModel(params) {
     var self = this;
     self.params = params || {};
@@ -514,6 +514,10 @@ function OBUploaderViewModel(params) {
                 // Use OSF-provided error message if possible
                 // Otherwise, use dropzone's message
                 var msg = message.message_long || message;
+                if (msg === 'Server responded with 0 code.' || msg.indexOf('409') !== -1) {
+                    msg = 'Unable to upload file. Another upload with the ' +
+                        'same name may be pending; please try again in a moment.';
+                }
                 self.changeMessage(msg, 'text-danger');
             });
             this.on('drop',function(){ // clear errors on drop or click

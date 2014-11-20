@@ -11,7 +11,7 @@
 
     'use strict';
 
-    ko.punches.attributeInterpolationMarkup.enable();
+    ko.punches.enableAll();
 
     var MESSAGE_TIMEOUT = 5000;
     var MIN_FORWARD_TIME = 5;
@@ -47,7 +47,7 @@
                 false
             )
         );
-	    self.label = $.osf.ko.sanitizedObservable();
+        self.label = $.osf.ko.sanitizedObservable();
         self.redirectBool = ko.observable(DEFAULT_FORWARD_BOOL);
         self.redirectSecs = ko.observable(DEFAULT_FORWARD_TIME).extend({
             required: true,

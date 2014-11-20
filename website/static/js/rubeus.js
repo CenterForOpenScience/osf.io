@@ -14,6 +14,10 @@ var HGrid = require('hgrid');
 // HGrid configuration //
 /////////////////////////
 
+var escapeWhitespace = function(value) {
+    return value.replace(/\s/g, '&nbsp;');
+};
+
 Rubeus.Html = $.extend({}, HGrid.Html);
 // Custom folder icon indicating private component
 Rubeus.Html.folderIconPrivate = '<img class="hg-icon hg-addon-icon" src="/static/img/hgrid/fatcowicons/folder_delete.png">';
@@ -46,7 +50,7 @@ Rubeus.Col.Name.folderView = function(item) {
     }
     opening = '<span class="' + Rubeus.Html.folderTextClass + ' ' + cssClass + '">';
     var closing = '</span>';
-    html = [opening, icon, '&nbsp;', item.name, closing].join('');
+    html = [opening, icon, '&nbsp;', escapeWhitespace(item.name), closing].join('');
     if(item.extra) {
         html += '<span class="hg-extras">' + item.extra + '</span>';
     }
@@ -61,13 +65,14 @@ Rubeus.Col.Name.showExpander = function(row) {
 Rubeus.Col.Name.itemView = function(item) {
     var tooltipMarkup = genTooltipMarkup('View file');
     icon = Rubeus.getIcon(item);
-    return [icon, '<span ' + tooltipMarkup + ' >&nbsp;', item.name, '</span>'].join('');
+    return [icon, '<span ' + tooltipMarkup + ' >&nbsp;', escapeWhitespace(item.name), '</span>'].join('');
 };
 
 Rubeus.Sort = {
     defaultColumn: 'name',
     defaultAsc: true
 };
+
 /**
     * Generate the markup necessary for adding a tooltip to an element.
     */
@@ -367,6 +372,8 @@ baseOptions = {
         cache: false  // Prevent caching in IE
     },
     preprocessFilename: function(filename) {
+        // // Render repeated whitespace characters appropriately
+        // filename = filename.replace(/\s/g, '&nbsp;');
         return $('<div>').text(filename).html();
     },
     fetchUrl: function(row) {
@@ -446,7 +453,7 @@ baseOptions = {
         return cfgOption || null;
     },
     uploadError: function(file, message, item, folder) {
-        var messageText = resolveCfgOption.call(this, item, 'UPLOAD_ERROR');
+        var messageText = resolveCfgOption.call(this, folder, 'uploadError', [file, message, item, folder]);
         if (!messageText) {
             if (typeof(message) === 'string') {
                 messageText = message;
@@ -511,6 +518,7 @@ baseOptions = {
         });
         // Set default sort order
         self.grid.setSortColumn(Rubeus.Sort.defaultColumn, Rubeus.Sort.defaultAsc);
+        self.getData()[0]._node.sort(Rubeus.Sort.defaultColumn, Rubeus.Sort.defaultAsc);
         updateTooltips();
         $(this.options.progBar).hide();
     },

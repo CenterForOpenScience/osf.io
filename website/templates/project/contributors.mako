@@ -52,8 +52,7 @@
                             isEnabled: canEdit,
                             afterRender: setupEditable,
                             options: {
-                                containment: '#manageContributors',
-                                cancel: '.no-sort'
+                              containment: '#manageContributors'
                             }
                         }">
                     </tbody>

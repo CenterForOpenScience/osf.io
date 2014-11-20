@@ -10,9 +10,7 @@ require('knockout-punches');
 ko.punches.enableAll();
 require('knockout-sortable');
 
-
-var koHelpers = require('./koHelpers.js');
-var osfHelpers = require('./osf-helpers.js');
+var $osf = require('osf-helpers');
 
 var socialRules = {
     orcid: /orcid\.org\/([-\d]+)/i,
@@ -309,13 +307,17 @@ BaseViewModel.prototype.cancel = function(data, event) {
                 }
             }
         });
+    } else {
+        if ($.inArray('view', self.modes) !== -1) {
+            self.mode('view');
+        }
     }
 
 };
 
 BaseViewModel.prototype.submit = function() {
     if (this.hasValidProperty() && this.isValid()) {
-        osfHelpers.putJSON(
+        $osf.putJSON(
             this.urls.crud,
             this.serialize()
         ).done(
@@ -337,13 +339,13 @@ var NameViewModel = function(urls, modes) {
     BaseViewModel.call(self, urls, modes);
     TrackedMixin.call(self);
 
-    self.full = koHelpers.sanitizedObservable().extend({
+    self.full = $osf.ko.sanitizedObservable().extend({
         required: true
     });
-    self.given = koHelpers.sanitizedObservable();
-    self.middle = koHelpers.sanitizedObservable();
-    self.family = koHelpers.sanitizedObservable();
-    self.suffix = koHelpers.sanitizedObservable();
+    self.given = $osf.ko.sanitizedObservable();
+    self.middle = $osf.ko.sanitizedObservable();
+    self.family = $osf.ko.sanitizedObservable();
+    self.suffix = $osf.ko.sanitizedObservable();
 
     self.trackedProperties = [
         self.full,
@@ -757,22 +759,25 @@ SchoolsViewModel.prototype = Object.create(ListViewModel.prototype);
 
 var Names = function(selector, urls, modes) {
     this.viewModel = new NameViewModel(urls, modes);
-    osfHelpers.applyBindings(this.viewModel, selector);
+    $osf.applyBindings(this.viewModel, selector);
+    window.nameModel = this.viewModel;
 };
 
 var Social = function(selector, urls, modes) {
     this.viewModel = new SocialViewModel(urls, modes);
-    osfHelpers.applyBindings(this.viewModel, selector);
+    $osf.applyBindings(this.viewModel, selector);
+    window.social = this.viewModel;
 };
 
 var Jobs = function(selector, urls, modes) {
     this.viewModel = new JobsViewModel(urls, modes);
-    osfHelpers.applyBindings(this.viewModel, selector);
+    $osf.applyBindings(this.viewModel, selector);
+    window.jobsModel = this.viewModel;
 };
 
 var Schools = function(selector, urls, modes) {
     this.viewModel = new SchoolsViewModel(urls, modes);
-    osfHelpers.applyBindings(this.viewModel, selector);
+    $osf.applyBindings(this.viewModel, selector);
 };
 
 module.exports = {

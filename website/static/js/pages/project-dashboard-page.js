@@ -8,16 +8,23 @@ var pointers = require('../pointers.js');
 
 var Comment = require('../comment.js');
 
-// Initialize the filebrowser
-new Rubeus('#myGrid', {
+
+// Since we don't have an Buttons/Status column, we append status messages to the
+// name column
+Rubeus.Col.DashboardName = $.extend({}, Rubeus.Col.Name);
+Rubeus.Col.DashboardName.itemView = function(item) {
+    return Rubeus.Col.Name.itemView(item) + '&nbsp;<span data-status></span>';
+};
+var rubeusOpts = {
     data: nodeApiUrl + 'files/grid/',
-    columns: [Rubeus.Col.Name],
-    uploads: false,
-    width: '100%',
+    columns: [Rubeus.Col.DashboardName],
+    width: "100%",
+    uploads: true,
     height: 600,
     progBar: '#filetreeProgressBar',
     searchInput: '#fileSearch'
-});
+};
+new Rubeus('#myGrid', rubeusOpts);
 
 // Initialize controller for "Add Links" modal
 new pointers.PointerManager('#addPointer', window.contextVars.node.title);

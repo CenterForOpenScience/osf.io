@@ -17,8 +17,8 @@ var $osf = require('osf-helpers');
 
 ko.punches.enableAll();
 /**
-* Knockout view model for the Dropbox node settings widget.
-*/
+    * Knockout view model for the Dropbox node settings widget.
+    */
 var ViewModel = function(url, selector, folderPicker) {
     var self = this;
     self.selector = selector;
@@ -381,6 +381,7 @@ function DropboxNodeConfig(selector, url, folderPicker) {
     self.folderPicker = folderPicker;
     self.viewModel = new ViewModel(url, selector, folderPicker);
     $osf.applyBindings(self.viewModel, selector);
+    window.bobob = self.viewModel;
 }
 
 module.exports = DropboxNodeConfig;
