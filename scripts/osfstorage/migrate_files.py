@@ -8,6 +8,7 @@ could be uploaded to the wrong place.
 import os
 import hashlib
 import logging
+import subprocess
 from cStringIO import StringIO
 
 import requests
@@ -48,17 +49,64 @@ class HashMismatchError(Exception):
     pass
 
 
-def migrate_version(idx, node_file, node_settings):
+def check_node(node):
+    """Check whether git repo for node is intact.
+    """
+    if not node.files_current:
+        return True
+    try:
+        with open(os.devnull, 'w') as fnull:
+            subprocess.check_call(
+                ['git', 'log'],
+                cwd=os.path.join(settings.UPLOADS_PATH, node._id),
+                stdout=fnull,
+                stderr=fnull,
+            )
+        return True
+    except subprocess.CalledProcessError:
+        return False
+    except OSError:
+        return False
+
+
+def get_source_node(node):
+    """Recursively search for source node (`registered_from` or `forked_from`),
+    excluding corrupt nodes.
+    """
+    source = node.registered_from or node.forked_from
+    if source is None:
+        return None
+    if check_node(source):
+        return source
+    return get_source_node(source)
+
+
+def migrate_version(idx, node_file, node_settings, node=None, dry_run=True):
+    """Migrate a legacy file version to OSF Storage. If `node` is provided, use
+    instead of the `Node` attached to `node_settings`; used when the git repo
+    for the current node is missing or corrupt.
+
+    :param int idx: Version index (zero-based)
+    :param NodeFile node_file: Legacy file record
+    :param OsfStorageNodeSettings node_settings: Node settings
+    :param Node node: Optional source node
+    """
+    node = node or node_settings.owner
     logger.info('Migrating version {0} from NodeFile {1} on node {2}'.format(
         idx,
         node_file._id,
-        node_settings.owner._id,
+        node._id,
     ))
-    node = node_settings.owner
-    record = model.OsfStorageFileRecord.get_or_create(node_file.path, node_settings)
-    if len(record.versions) > idx:
+    if not dry_run:
+        record = model.OsfStorageFileRecord.get_or_create(node_file.path, node_settings)
+        if len(record.versions) > idx:
+            return
+    content = scripts_settings.SPECIAL_CASES.get((node._id, node_file._id))
+    if content is None:
+        content, _ = node.read_file_object(node_file)
+    logger.info('Loaded content with length {0}: {1}...'.format(len(content), content[:10]))
+    if dry_run:
         return
-    content, _ = node.read_file_object(node_file)
     md5 = hashlib.md5(content).hexdigest()
     file_pointer = StringIO(content)
     hash_str = scripts_settings.UPLOAD_PRIMARY_HASH(content).hexdigest()
@@ -74,29 +122,40 @@ def migrate_version(idx, node_file, node_settings):
         'md5': md5,
     }
     try:
-        record.create_pending_version(node_file.uploader, hash_str)
+        record.create_pending_version(node_file.uploader, '{}-{}'.format(hash_str, idx))
     except errors.OsfStorageError:
         latest_version = record.get_version(required=True)
         record.remove_version(latest_version)
-        record.create_pending_version(node_file.uploader, hash_str)
+        record = OsfStorageFileRecord.get_or_create(node_file.path, node_settings)
+        record.create_pending_version(node_file.uploader, '{}-{}'.format(hash_str, idx))
     record.resolve_pending_version(
-        hash_str,
+        '{}-{}'.format(hash_str, idx),
         obj.location,
         metadata,
         log=False,
     )
 
 
-def migrate_node(node):
+def migrate_node(node, dry_run=True):
+    """Migrate legacy files for a node. If the git repo for the node is corrupt,
+    attempt to use its source node (registration or fork) instead.
+    """
     logger.info('Migrating node {0}'.format(node._id))
     node_settings = node.get_or_add_addon('osfstorage', auth=None, log=False)
+    repo_intact = check_node(node)
+    source_node = None
+    if not repo_intact:
+        logger.warn('Original node {0} is corrupt; attempting to recover'.format(node._id))
+        source_node = get_source_node(node)
+        if source_node is None:
+            logger.error('Could not identify source node for recovery on node {0}'.format(node._id))
     for path, versions in node.files_versions.iteritems():
         for idx, version in enumerate(versions):
             try:
                 node_file = NodeFile.load(version)
-                migrate_version(idx, node_file, node_settings)
+                migrate_version(idx, node_file, node_settings, node=source_node, dry_run=dry_run)
             except Exception as error:
-                logger.error('Could not migrate object {0}'.format(version))
+                logger.error('Could not migrate object {0} on node {1}'.format(version, node._id))
                 logger.exception(error)
                 break
 
@@ -108,12 +167,10 @@ def get_nodes():
 def main(dry_run=True):
     nodes = get_nodes()
     logger.info('Migrating files on {0} `Node` records'.format(len(nodes)))
-    if dry_run:
-        return
     for node in nodes:
         try:
             with TokuTransaction():
-                migrate_node(node)
+                migrate_node(node, dry_run=dry_run)
         except Exception as error:
             logger.error('Could not migrate node {0}'.format(node._id))
             logger.exception(error)
@@ -134,6 +191,8 @@ from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory
+
+import shutil
 
 from framework.auth import Auth
 
@@ -189,6 +248,30 @@ class TestMigrateFiles(OsfTestCase):
 
     def test_migrate_fork(self):
         fork = self.project.fork_node(auth=self.auth_obj)
+        main(dry_run=False)
+        node_settings = self.project.get_addon('osfstorage')
+        record = model.OsfStorageFileRecord.find_by_path('pizza.md', node_settings)
+        self.check_record(record)
+        fork_node_settings = fork.get_addon('osfstorage')
+        fork_record = model.OsfStorageFileRecord.find_by_path('pizza.md', fork_node_settings)
+        self.check_record(fork_record)
+
+    def test_migrate_corrupt_fork_repo_deleted(self):
+        fork = self.project.fork_node(auth=self.auth_obj)
+        fork_repo = os.path.join(settings.UPLOADS_PATH, fork._id)
+        shutil.rmtree(fork_repo)
+        main(dry_run=False)
+        node_settings = self.project.get_addon('osfstorage')
+        record = model.OsfStorageFileRecord.find_by_path('pizza.md', node_settings)
+        self.check_record(record)
+        fork_node_settings = fork.get_addon('osfstorage')
+        fork_record = model.OsfStorageFileRecord.find_by_path('pizza.md', fork_node_settings)
+        self.check_record(fork_record)
+
+    def test_migrate_corrupt_fork_git_dir_deleted(self):
+        fork = self.project.fork_node(auth=self.auth_obj)
+        fork_git_dir = os.path.join(settings.UPLOADS_PATH, fork._id, '.git')
+        shutil.rmtree(fork_git_dir)
         main(dry_run=False)
         node_settings = self.project.get_addon('osfstorage')
         record = model.OsfStorageFileRecord.find_by_path('pizza.md', node_settings)

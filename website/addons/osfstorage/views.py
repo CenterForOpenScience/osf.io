@@ -272,6 +272,8 @@ def get_version(path, node_settings, version_str, throw=True):
     record = model.OsfStorageFileRecord.find_by_path(path, node_settings)
     if record is None:
         raise HTTPError(httplib.NOT_FOUND)
+    if record.is_deleted:
+        raise HTTPError(httplib.GONE)
     version_idx, file_version = get_version_helper(record, version_str)
     if throw:
         if file_version.pending:

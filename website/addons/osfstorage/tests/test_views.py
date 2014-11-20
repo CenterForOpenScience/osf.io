@@ -592,10 +592,11 @@ class TestViewFile(StorageTestCase):
         self.record.versions.append(self.version)
         self.record.save()
 
-    def view_file(self, path):
+    def view_file(self, path, **kwargs):
         return self.app.get(
             self.project.web_url_for('osf_storage_view_file', path=path),
             auth=self.project.creator.auth,
+            **kwargs
         )
 
     def test_view_file_creates_guid_if_none_exists(self):
@@ -612,6 +613,11 @@ class TestViewFile(StorageTestCase):
         n_objs = model.OsfStorageGuidFile.find().count()
         res = self.view_file(self.path)
         assert_equal(n_objs, model.OsfStorageGuidFile.find().count())
+
+    def test_view_file_deleted_throws_error(self):
+        self.record.delete(self.auth_obj, log=False)
+        res = self.view_file(self.path, expect_errors=True)
+        assert_equal(res.status_code, 410)
 
     @mock.patch('website.addons.osfstorage.utils.render_file')
     def test_view_file_escapes_html_in_name(self, mock_render):
@@ -817,6 +823,11 @@ class TestDownloadFile(StorageTestCase):
         assert_in('File upload in progress', res)
         assert_false(mock_get_url.called)
 
+    @mock.patch('website.addons.osfstorage.utils.get_download_url')
+    def test_download_deleted_version(self, mock_get_url):
+        self.record.delete(self.auth_obj, log=False)
+        res = self.download_file(self.path, expect_errors=True)
+        assert_equal(res.status_code, 410)
 
 class TestDeleteFile(StorageTestCase):
 

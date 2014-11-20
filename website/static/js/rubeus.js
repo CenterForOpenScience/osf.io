@@ -459,7 +459,7 @@
             return cfgOption || null;
         },
         uploadError: function(file, message, item, folder) {
-            var messageText = resolveCfgOption.call(this, item, 'UPLOAD_ERROR');
+            var messageText = resolveCfgOption.call(this, folder, 'uploadError', [file, message, item, folder]);
             if (!messageText) {
                 if (typeof(message) === 'string') {
                     messageText = message;
@@ -524,6 +524,7 @@
             });
             // Set default sort order
             self.grid.setSortColumn(Rubeus.Sort.defaultColumn, Rubeus.Sort.defaultAsc);
+            self.getData()[0]._node.sort(Rubeus.Sort.defaultColumn, Rubeus.Sort.defaultAsc);
             updateTooltips();
             $(this.options.progBar).hide();
         },
