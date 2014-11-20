@@ -19,7 +19,6 @@ css = Bundle(
         'vendor/pygments.css',
         'vendor/bootstrap3-editable/css/bootstrap-editable.css',
         'vendor/bower_components/bootstrap/dist/css/bootstrap-theme.css',
-        'vendor/bower_components/hgrid/dist/hgrid.css',
         'vendor/bower_components/treebeard/dist/treebeard.css',
 
         filters='cssmin'),

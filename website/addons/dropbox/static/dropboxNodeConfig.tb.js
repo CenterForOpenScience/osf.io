@@ -301,11 +301,13 @@
         function onPickFolder(evt, item) {
             evt.preventDefault();
             self.selected({name: 'Dropbox' + item.data.path, path: item.data.path});
+            var filePath = $("[data-bind='attr.href: urls().files']").text().trim();
+            var filePathTokenized = filePath.split("/");
             return false; // Prevent event propagation
         }
 
         /**
-         * Activates the HGrid folder picker.
+         * Activates the Treebeard folder picker.
          */
         self.activatePicker = function() {
             self.currentDisplay(self.PICKER);

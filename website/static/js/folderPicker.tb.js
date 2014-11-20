@@ -39,8 +39,8 @@
             sort : false
     });
 
-    FolderPicker.resolveRows = [];
-    FolderPicker.resolveRows.push({
+    FolderPicker.resolveRows = [
+        {
             data : 'name',  // Data field name
             folderIcons : true,
             filter : false,
@@ -50,11 +50,17 @@
             sortInclude : false,
             filter : false,
             custom : _treebeardSelectView
-    });
+        }];
+
+    function _treebeardToggleCheck (item) {
+        if (item.data.path == "/") {
+            return false;
+        }
+        return true;
+    }
 
     function _treebeardResolveToggle(item){
         if (item.data.path!="/") {
-            item.open=false;
             var toggleMinus = m('i.icon-minus', ' '),
                 togglePlus = m('i.icon-plus', ' ');
             if (item.kind === 'folder') {
@@ -64,6 +70,7 @@
                 return togglePlus;
             }
         }
+        item.open = true;
         return '';
     }
 
@@ -93,8 +100,7 @@
         return m("input",{
             type:"radio",
             name: "#" + this.options.divID + INPUT_NAME,
-            value:item.id,
-            checked: item._fpChecked ? ' checked ': ' '
+            value:item.id
         }, " ")
     }
 
@@ -134,6 +140,7 @@
         return default_columns;
     }
 
+
     // Upon clicking the name of folder, toggle its collapsed state
     //function onClickName(evt, row, grid) {
     //    grid.toggleCollapse(row);
@@ -144,14 +151,11 @@
         columnTitles : _treebeardColumnTitle,
         resolveRows : _treebeardResolveRows,
         resolveIcon : _treebeardResolveIcon,
+        togglecheck : _treebeardToggleCheck,
         resolveToggle : _treebeardResolveToggle,
         // Disable uploads
-        uploads: false
-        // Add listener that expands a folder upon clicking its name
-        /*listeners: [
-            {selector: '.' + HGrid.Html.nameClass, on: 'click',
-            callback: onClickName}
-        ],*/
+        uploads: false,
+        showFilter : false
     };
 
     function FolderPicker(selector, opts) {
@@ -164,26 +168,17 @@
             throw 'FolderPicker must have the "onPickFolder" option defined';
         }
         self.options = $.extend({}, defaults, opts);
-        self.options.filterOn = false;
         self.options.divID = selector.substring(1);
-
-        //self.options.columnTitles = _treebeardTitleColumn();
-        //self.options.resolveRows = _treebeardSelectView();
 
         // Start up the grid
         self.grid = Treebeard.run(self.options);
         // Set up listener for folder selection
+
         $(selector).on('change', 'input[name="' + self.selector + INPUT_NAME + '"]', function(evt) {
-            console.log("RADIO BUTTON CHANGED");
             var id = $(this).val();
             var row = self.grid.find(id);
-            // Store checked state of rows so that it doesn't uncheck when HGrid is redrawn
-            var oldRow = self.grid.find(self.checkedRowId);
-            if (oldRow) {
-                oldRow._fpChecked = false;
-            }
-            self.checkedRowId = row.id;
-            row._fpChecked = true;
+
+            //// Store checked state of rows so that it doesn't uncheck when HGrid is redrawn
             self.options.onPickFolder.call(self, evt, row);
         });
     }
