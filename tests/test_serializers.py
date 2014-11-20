@@ -37,16 +37,16 @@ class TestNodeSerializers(OsfTestCase):
         )
 
         # serialized result should have id and primary
-        assert_equal(result['id'], node._primary_key)
-        assert_true(result['primary'], True)
-        assert_equal(result['is_registration'], node.is_registration)
-        assert_equal(result['is_fork'], node.is_fork)
+        assert_equal(result['node']['id'], node._primary_key)
+        assert_true(result['node']['primary'], True)
+        assert_equal(result['node']['is_registration'], node.is_registration)
+        assert_equal(result['node']['is_fork'], node.is_fork)
 
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/668
     def test_get_summary_for_registration_uses_correct_date_format(self):
         reg = RegistrationFactory()
         res = _get_summary(reg, auth=Auth(reg.creator), rescale_ratio=None)
-        assert_equal(res['registered_date'],
+        assert_equal(res['node']['registered_date'],
                 reg.registered_date.strftime('%Y-%m-%d %H:%M UTC'))
 
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/858
@@ -58,7 +58,7 @@ class TestNodeSerializers(OsfTestCase):
         res = _get_summary(reg, auth=Auth(user), rescale_ratio=None)
 
         # serialized result should have is_registration
-        assert_true(res['is_registration'])
+        assert_true(res['node']['is_registration'])
 
     def test_render_node(self):
         node = ProjectFactory()
@@ -102,7 +102,7 @@ class TestNodeSerializers(OsfTestCase):
             link_id=None
         )
         # serialized result should have is_fork
-        assert_true(res['is_fork'])
+        assert_true(res['node']['is_fork'])
 
     def test_get_summary_private_fork_private_project_should_include_is_fork(self):
         # contributor on a private project
@@ -121,8 +121,8 @@ class TestNodeSerializers(OsfTestCase):
             link_id=None
         )
         # serialized result should have is_fork
-        assert_false(res['can_view'])
-        assert_true(res['is_fork'])
+        assert_false(res['node']['can_view'])
+        assert_true(res['node']['is_fork'])
 
     def test_serialize_node_search_returns_only_visible_contributors(self):
         node = NodeFactory()

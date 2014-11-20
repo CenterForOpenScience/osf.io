@@ -756,18 +756,12 @@ def _view_project(node, auth, primary=False, link_id=None):
             'show_wiki_widget': _should_show_wiki_widget(node, user),
         },
         'badges': _get_badge(user),
+        # TODO: Namespace with nested dicts
         'addons_enabled': node.get_addon_names(),
         'addons': configs,
         'addon_widgets': widgets,
         'addon_widget_js': js,
         'addon_widget_css': css,
-        ##'addons:': {
-        ##    'enabled': node.get_addon_names(),
-        ##    'configs': configs,
-        ##    'widgets': widgets,
-        ##    'widget_js': js,
-        ##    'widget_css': css,
-        ##}
     }
     return data
 
@@ -869,16 +863,12 @@ def get_recent_logs(**kwargs):
 
 def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
     if node.can_view(auth):
-        data = _view_project(node, auth, primary, link_id)
-        summary = data['node']
+        summary = _view_project(node, auth, primary, link_id)
         summary.update({
             'can_view': True,
-            'registered_date': node.registered_date.strftime('%Y-%m-%d %H:%M UTC')
-            if node.is_registration
-            else None,
-            'parent_node': data['parent_node'],
-            'user': data['user']
         })
+        summary['node']['registered_date'] = node.registered_date.strftime('%Y-%m-%d %H:%M UTC') \
+            if node.is_registration else None
         if rescale_ratio:
             ua_count, ua, non_ua = _get_user_activity(node, auth, rescale_ratio)
             summary.update({

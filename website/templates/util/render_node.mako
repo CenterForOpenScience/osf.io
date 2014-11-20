@@ -1,20 +1,22 @@
 % if summary['can_view']:
-
+    <%
+        current_node = summary['node']
+        %>
     <li
-            node_id="${summary['link_id']}"
-            node_reference="${summary['link_id']}:${'node' if summary['primary'] else 'pointer'}"
+            node_id="${current_node['link_id']}"
+            node_reference="${current_node['link_id']}:${'node' if current_node['primary'] else 'pointer'}"
             class="
                 project list-group-item list-group-item-node cite-container
-                ${'pointer' if not summary['primary'] else ''}
+                ${'pointer' if not current_node['primary'] else ''}
         ">
 
         <h4 class="list-group-item-heading">
             <span class="overflow" style="display:inline-block;">
-            % if not summary['primary']:
-              <i class="icon icon-link" data-toggle="tooltip" title="Linked ${summary['node_type']}"></i>
+            % if not current_node['primary']:
+              <i class="icon icon-link" data-toggle="tooltip" title="Linked ${current_node['node_type']}"></i>
             % endif
 
-            % if not summary['is_public']:
+            % if not current_node['is_public']:
                 <span class="icon icon-lock" data-toggle="tooltip" title="This project is private"></span>
             % endif
 
@@ -25,30 +27,30 @@
                     <i>-- private project --</i> /
                 % endif
             % endif
-            <a href="${summary['url']}">${summary['title']}</a>
+            <a href="${current_node['url']}">${current_node['title']}</a>
 
-            % if summary['is_registration']:
-                | Registered: ${summary['registered_date']}
+            % if current_node['is_registration']:
+                | Registered: ${current_node['registered_date']}
             % endif
             </span>
 
             <div class="pull-right">
-                % if not summary['primary'] and 'admin' in user['permissions']:
-                    <i class="icon-remove remove-pointer" data-id="${summary['id']}" data-toggle="tooltip" title="Remove link"></i>
-                    <i class="icon-code-fork" onclick="NodeActions.forkPointer('${summary['id']}', '${summary['primary_id']}');" data-toggle="tooltip" title="Fork this ${summary['node_type']} into ${node['node_type']} ${node['title']}"></i>
+                % if not current_node['primary'] and 'admin' in user['permissions']:
+                    <i class="icon-remove remove-pointer" data-id="${current_node['link_id']}" data-toggle="tooltip" title="Remove link"></i>
+                    <i class="icon-code-fork" onclick="NodeActions.forkPointer('${current_node['link_id']}', '${current_node['primary_id']}');" data-toggle="tooltip" title="Fork this ${current_node['node_type']} into ${node['node_type']} ${node['title']}"></i>
                 % endif
-                <i id="icon-${summary['id']}" class="pointer icon-plus" onclick="NodeActions.openCloseNode('${summary['id']}');" data-toggle="tooltip" title="More"></i>
+                <i id="icon-${current_node['link_id']}" class="pointer icon-plus" onclick="NodeActions.openCloseNode('${current_node['link_id']}');" data-toggle="tooltip" title="More"></i>
             </div>
         </h4>
         <div class="list-group-item-text"></div>
 
-        % if not summary['anonymous']:
+        % if not current_node['anonymous']:
         <!-- Show abbreviated contributors list -->
         <div mod-meta='{
                 "tpl": "util/render_users_abbrev.mako",
-                "uri": "${summary['api_url']}contributors_abbrev/",
+                "uri": "${current_node['api_url']}contributors_abbrev/",
                 "kwargs": {
-                    "node_url": "${summary['url']}"
+                    "node_url": "${current_node['url']}"
                 },
                 "replace": true
             }'></div>
@@ -57,7 +59,7 @@
         % endif
         <!--Stacked bar to visualize user activity level against total activity level of a project -->
         <!--Length of the stacked bar is normalized over all projects -->
-        % if not summary['anonymous']:
+        % if not current_node['anonymous']:
             <div class="progress progress-user-activity">
                 % if summary['ua']:
                     <div class="progress-bar progress-bar-success ${'last' if not summary['non_ua'] else ''}" style="width: ${summary['ua']}%"  data-toggle="tooltip" title="${user_full_name} made ${summary['ua_count']} contributions"></div>
@@ -68,10 +70,10 @@
             </div>
             <span class="text-muted">${summary['nlogs']} contributions</span>
         % endif
-        <div class="body hide" id="body-${summary['id']}" style="overflow:hidden;">
+        <div class="body hide" id="body-${current_node['link_id']}" style="overflow:hidden;">
             <hr />
             Recent Activity
-            <div id="logs-${summary['id']}" class="log-container" data-uri="${summary['api_url']}log/">
+            <div id="logs-${current_node['link_id']}" class="log-container" data-uri="${current_node['api_url']}log/">
                 <dl class="dl-horizontal activity-log" data-bind="foreach: {data: logs, as: 'log'}">
                     <dt><span class="date log-date" data-bind="text: log.date.local, tooltip: {title: log.date.utc}"></span></dt>
                     <dd class="log-content">
@@ -92,12 +94,12 @@
 
 % else:
     <li
-        node_reference="${summary['id']}:${'node' if summary['primary'] else 'pointer'}"
+        node_reference="${current_node['link_id']}:${'node' if current_node['primary'] else 'pointer'}"
         class="project list-group-item list-group-item-node unavailable">
         <h4 class="list-group-item-heading">
-            %if summary['is_registration']:
+            %if current_node['is_registration']:
                 Private Registration
-            %elif summary['is_fork']:
+            %elif current_node['is_fork']:
                 Private Fork
             %else:
                 Private Component
