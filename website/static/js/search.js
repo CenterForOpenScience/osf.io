@@ -48,7 +48,7 @@
         self.filesUrl = result.url+'files/';
         self.user = result.user;
 
-        $.ajax('/api/v1'+ result.url).success(function(data){
+        $.ajax('/api/v1'+ result.url + '/').success(function(data){
             if (typeof data.profile !== 'undefined') {
                 self.gravatarUrl(data.profile.gravatar_url);
             }
