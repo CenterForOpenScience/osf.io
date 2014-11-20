@@ -140,6 +140,7 @@ def s3_view(**kwargs):
         'current': key.version_id,
         'info_url': urls['info'],
         'delete_url': urls['delete'],
+        'files_page_url': node.web_url_for('collect_file_trees')
     }
     rv.update(_view_project(node, auth, primary=True))
     return rv

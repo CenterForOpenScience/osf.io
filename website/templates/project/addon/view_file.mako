@@ -18,7 +18,12 @@
 
     <section>
         <div class="page-header overflow">
-            <h1>${file_name}</h1>
+            <h2>
+                ${file_name | h}
+                % if file_revision:
+                    <small>&nbsp;${file_revision | h}</small>
+                % endif
+            </h2>
         </div>
     </section>
 

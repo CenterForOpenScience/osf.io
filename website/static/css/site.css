@@ -1,6 +1,14 @@
 /* Body and structure
 -------------------------------------------------- */
 
+html, body {
+}
+
+body {
+    padding-top: 70px; /* body padding for fixed top nav */
+    position: relative; /* for bootstrap affix */
+}
+
 /*News page*/
 .spacer {
     height: 20px;
@@ -58,17 +66,14 @@
 .gs-sidebar .nav .nav>.active>a i {
     display: inline-block;
 }
-
-/* affixed sidenav */
-.gs-sidenav,
-.gs-sidenav.affix {
+/* affixed sidebar */
+.gs-sidebar,
+.gs-sidebar.affix,
+.gs-sidebar.affix-top {
     position: fixed;
-    top: 80px;
+    top: 70px;
 }
-.gs-sidenav.affix-top {
-    position: static;
-}
-.gs-sidenav.affix-bottom {
+.gs-sidebar.affix-bottom {
     position: relative;
 }
 
@@ -79,11 +84,6 @@
     margin-left: auto;
     margin-right: auto;
     border: solid 1px #ddd;
-    width: 560px;
-    height: 315px;
-}
-.gs-video iframe {
-    border: 0;
 }
 
 /* phase number counters */
@@ -286,14 +286,6 @@ font-weight: bold;
 
 /* Global Styles */
 
-html, body {
-  height:100%;
-}
-
-body {
-  padding-top: 70px; /* body padding for fixed top nav */
-}
-
 .img-home-portfolio,
 .img-customer,
 .portfolio-item {
@@ -448,7 +440,6 @@ h4 {
 .social {
     padding-right: 60px;
 }
-
 
 
 /* Bootstrap Navbar */
@@ -824,7 +815,21 @@ h1.node-title, h1.node-parent-title {
         font-size: 20px;
         line-height: 20px;
     }
+    .wiki-status-sm {
+        float: none;
+        text-align: center;
+        margin-top: 20px;
+    }
 }
+
+@media (min-width: 768px) {
+    .wiki-status-lg {
+        float: right;
+        margin-left: 20px;
+        display: inline-block;
+    }
+}
+
 
 .wiki-title-container {
     display: inline-block;
@@ -925,47 +930,169 @@ h1.unavailable {
 }
 
 .anchor {
-    margin-top: -50px;
-    padding-top: 50px;
+    margin-top: -60px;
+    padding-top: 60px;
     display: block;
 }
 
 /* Search */
+.page-header
+    {
+        overflow: hidden;
+    }
+.add-query
+    {
+        width: 190px;
+        margin-left: 10px;
+        display: inline-block;
+        font-weight: normal;
+    }
 .navigate
     {
         padding:25px;
         font-size: 18px;
     }
+.remove-button
+    {
+        color: #ffffff;
+    }
+.search-types a
+    {
+        font-size: 16px;
+    }
+.tag-cloud
+    {
+    word-break: break-all;
+    }
+
+.tag-cloud .cloud-tag
+{
+    font-size: 11pt;
+    display: inline-block;
+    word-break: break-all;
+    margin: 5px;
+    padding: 5px;
+    border-radius: 5px;
+}
+.tag-cloud .cloud-tag:hover
+{
+    background-color: #31b0d5;
+}
+.tag-cloud .tag-big
+{
+    font-size: 13pt;
+    background-color: #AABCDD;
+}
+
+.tag-cloud .tag-med
+{
+    font-size: 11pt;
+    background-color: #CCDDEE;
+}
+
+.tag-cloud .tag-sm
+{
+    font-size: 9pt;
+    background-color: #DDEEFF;
+}
+
+.tag-cloud h3
+    {
+        margin: 0;
+    }
+
+.registration a {
+    color: #666;
+}
+
+.registration small{
+    color: #000000;
+}
+
+.registration .tag-cloud .cloud-tag {
+    background-color: #AAA;
+    color: #ffffff;
+}
+
+.query-label
+    {
+        margin-right: .5em;
+    }
 .result
     {
-        padding-top: 8px;
-        padding-bottom: 8px;
+        margin-bottom: 10px;
+        overflow: hidden;
     }
 .title h4
     {
-        padding: 0px;
+        padding: 0;
         padding-bottom: 5px;
-        margin: 0px;
+        margin: 0;
     }
-.user h4
+.private-title
     {
-        padding: 0px;
-        margin: 0px;
+        font-weight: normal;
+        font-style: italic;
+    }
+.search-field
+    {
+        padding: 0;
+        padding-top: 2px;
+        padding-bottom: 2px;
+        margin: 0;
+        line-height: 16px;
+    }
+.search-field p
+    {
+        margin: 0;
     }
 .description h5
     {
-        padding: 0px;
-        margin: 0px;
+        padding: 0;
+        padding-bottom: 4px;
+        margin: 0;
         font-weight: normal;
+        line-height: 16px;
     }
-.tags
+.search-tags
     {
         padding-top: 2px;
+        line-height: 24px;
     }
+.search-tags a
+    {
+        margin-right: .5em;
+    }
+
+div.search-result  {
+    margin-bottom: 10pt;
+    padding: 10px;
+    border-bottom: 1px solid #d3d3d3;
+    overflow-x: hidden;
+}
+
+
+
+.search-results.search-result h5 small{
+    color: white;
+    font-size: 10pt;
+}
+
+.search-result img{
+    margin-top: 10px;
+}
+
+.search-results.search-result {
+    overflow-x: hidden;
+
+}
 /* Search Contributors */
 
 .search-contributor-result td {
     padding-right: 10px;
+}
+.search-contributor-links {
+    padding-top: 10px;
 }
 
 
@@ -1074,6 +1201,11 @@ h1.unavailable {
 }
 
 /* Sidenav */
+.osf-sidenav {
+    /* overflow-wrap css3 */
+    word-wrap: break-word;
+}
+
 .osf-sidenav.affix {
   position: static;
 }
@@ -1343,6 +1475,12 @@ li.contributor-list-item a.name {
     font-style: italic;
 }
 
+/* Handle paginator on add contributor modal */
+#addContributors .pagination-sm li a, #addContributors .pagination-sm li span {
+    padding: 5px 8px;
+    font-size: 10px;
+}
+
 /* Handle popovers inside modals */
 .popover {
     z-index: 999999;
@@ -1517,4 +1655,16 @@ div.pydocx-center{
 .search-term-label,
 .tag {
     white-space: pre;
+}
+
+.bootbox-node-deletion-modal {
+    font-weight: normal;
+    font-size: medium;
+    line-height: normal;
+    padding-top: 10px;
+}
+
+.bootbox-node-deletion-modal ol {
+    padding-left: 40px;
+    list-style-type: disc;
 }

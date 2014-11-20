@@ -183,6 +183,9 @@ class User(GuidStoredObject, AddonModelMixin):
     SEARCH_UPDATE_FIELDS = {
         'fullname',
         'merged_by',
+        'jobs',
+        'schools',
+        'social',
     }
 
     _id = fields.StringField(primary=True)
@@ -244,7 +247,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     # Employment history
     # Format: {
-    #     'position': <position or job title>,
+    #     'title': <position or job title>,
     #     'institution': <institution or organization>,
     #     'department': <department>,
     #     'location': <location>,
@@ -609,15 +612,15 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def save(self, *args, **kwargs):
         self.username = self.username.lower().strip() if self.username else None
-        rv = super(User, self).save(*args, **kwargs)
-        if self.SEARCH_UPDATE_FIELDS.intersection(rv):
+        ret = super(User, self).save(*args, **kwargs)
+        if self.SEARCH_UPDATE_FIELDS.intersection(ret) and self.is_confirmed():
             self.update_search()
         if settings.PIWIK_HOST and not self.piwik_token:
             try:
                 piwik.create_user(self)
             except (piwik.PiwikException, ValueError):
                 logger.error("Piwik user creation failed: " + self._id)
-        return rv
+        return ret
 
     def update_search(self):
         from website.search import search

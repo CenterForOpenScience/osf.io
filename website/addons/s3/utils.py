@@ -168,7 +168,7 @@ def build_urls(node, file_name, url=None, etag=None, vid=None):
         'render': u'{node_api}s3/{file_name}/render/{etag}'.format(node_api=node.api_url,
             file_name=file_name, etag='' if not etag else '?etag={0}'.format(etag)),
         'fetch': u'{node_api}s3/hgrid/{file_name}'.format(node_api=node.api_url, file_name=file_name),
-        'info': node.api_url_for('file_delete_info', fid=file_name),
+        'info': node.api_url_for('file_delete_info', path=file_name),
     }
     if not url:
         return rv

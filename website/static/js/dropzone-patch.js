@@ -58,23 +58,34 @@
         /**
          * Get the url to use for the upload request.
          *
-         * NOTE: This is a hack to get S3 uploads to work.
+         * NOTE: This is a hack to get uploads via signed URLs to work.
          */
         Dropzone.prototype.getUrl = function(file) {
             var self = this;
             if (file.signedUrlFrom) {
+                var url = typeof file.signedUrlFrom === 'function' ?
+                    file.signedUrlFrom() :
+                    file.signedUrlFrom;
                 return $.ajax({
                     type: 'POST',
-                    url: file.signedUrlFrom,
+                    url: url,
                     data: JSON.stringify({
                         name: file.destination || file.name,
-                        type: file.type || 'application/octet-stream'
+                        type: file.type,
+                        size: file.size,
                     }),
                     contentType: 'application/json',
                     dataType: 'json'
-                }).success(function(url) {
-                  //self.options.signedUrlFrom = null;
+                }).done(function(url) {
                     return self.options.url = url;
+                }).fail(function(xhr, textStatus, error) {
+                    var msg;
+                    try {
+                        msg = xhr.responseJSON.message_long;
+                    } catch(error) {
+                        msg = textStatus;
+                    }
+                    bootbox.alert(msg);
                 });
             } else {
                 return file.url || this.options.url;

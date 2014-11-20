@@ -338,7 +338,7 @@ class TestS3ViewsCRUD(OsfTestCase):
         res = self.app.get(
             self.project.api_url_for(
                 'file_delete_info',
-                fid='faux.sho',
+                path='faux.sho',
             ),
             auth=self.user.auth,
         )

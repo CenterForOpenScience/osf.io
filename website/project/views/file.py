@@ -7,7 +7,6 @@ import codecs
 from flask import request
 
 from framework.render.tasks import build_rendered_html
-from framework.utils import secure_filename
 
 from website.util import rubeus
 from website.project.decorators import must_be_contributor_or_public
@@ -68,7 +67,7 @@ def get_cache_content(node_settings, cache_file, start_render=False,
 
 def prepare_file(file):
 
-    name = secure_filename(file.filename) or settings.MISSING_FILE_NAME
+    name = file.filename or settings.MISSING_FILE_NAME
     content = file.read()
     content_type = file.content_type
     file.seek(0, os.SEEK_END)
