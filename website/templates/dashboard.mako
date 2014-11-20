@@ -133,8 +133,10 @@
             });
 
             $.osf.applyBindings({nodes: allNodes}, '#obGoToProject');
-            $.osf.applyBindings({nodes: registrationSelection}, '#obRegisterProject');
-            $.osf.applyBindings({nodes: uploadSelection}, '#obUploader');
+            % if not disk_saving_mode:
+              $.osf.applyBindings({nodes: registrationSelection}, '#obRegisterProject');
+              $.osf.applyBindings({nodes: uploadSelection}, '#obUploader');
+            % endif
 
             function ProjectCreateViewModel() {
                 var self = this;
