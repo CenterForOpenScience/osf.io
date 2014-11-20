@@ -24,12 +24,8 @@
 
         $.extend(self, params);
         self.date = new FormattableDate(params.date);
-        self.wikiUrl = ko.computed(function() {
-            return self.nodeUrl + 'wiki/' + encodeURIComponent(self.params.page);
-        });
-        self.wikiIdUrl = ko.computed(function() {
-            return self.nodeUrl + 'wiki/id/' + encodeURIComponent(self.params.page_id);
-        });
+        self.wikiUrl = self.nodeUrl + 'wiki/' + encodeURIComponent(self.params.page);
+        self.wikiIdUrl = self.nodeUrl + 'wiki/id/' + encodeURIComponent(self.params.page_id);
 
         /**
          * Given an item in self.contributors, return its anchor element representation.
@@ -42,7 +38,11 @@
          * Return whether a knockout template exists for the log.
          */
         self.hasTemplate = ko.computed(function() {
-            return $('script#' + self.action).length > 0;
+            var templates = $('script#' + self.action);
+            if (!templates.length) {
+                Raven.captureMessage('Could not render log "' + self.action + '"');
+            }
+            return templates.length > 0;
         });
 
         /**
