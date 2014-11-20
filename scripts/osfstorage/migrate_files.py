@@ -74,6 +74,8 @@ def get_source_node(node):
     excluding corrupt nodes.
     """
     source = node.registered_from or node.forked_from
+    if source is None:
+        return None
     if check_node(source):
         return source
     return get_source_node(source)
@@ -95,11 +97,15 @@ def migrate_version(idx, node_file, node_settings, node=None, dry_run=True):
         node_file._id,
         node._id,
     ))
-    content, _ = node.read_file_object(node_file)
+    if not dry_run:
+        record = model.OsfStorageFileRecord.get_or_create(node_file.path, node_settings)
+        if len(record.versions) > idx:
+            return
+    content = scripts_settings.SPECIAL_CASES.get((node._id, node_file._id))
+    if content is None:
+        content, _ = node.read_file_object(node_file)
+    logger.info('Loaded content with length {0}: {1}...'.format(len(content), content[:10]))
     if dry_run:
-        return
-    record = model.OsfStorageFileRecord.get_or_create(node_file.path, node_settings)
-    if len(record.versions) > idx:
         return
     md5 = hashlib.md5(content).hexdigest()
     file_pointer = StringIO(content)
@@ -116,13 +122,14 @@ def migrate_version(idx, node_file, node_settings, node=None, dry_run=True):
         'md5': md5,
     }
     try:
-        record.create_pending_version(node_file.uploader, hash_str)
+        record.create_pending_version(node_file.uploader, '{}-{}'.format(hash_str, idx))
     except errors.OsfStorageError:
         latest_version = record.get_version(required=True)
         record.remove_version(latest_version)
-        record.create_pending_version(node_file.uploader, hash_str)
+        record = OsfStorageFileRecord.get_or_create(node_file.path, node_settings)
+        record.create_pending_version(node_file.uploader, '{}-{}'.format(hash_str, idx))
     record.resolve_pending_version(
-        hash_str,
+        '{}-{}'.format(hash_str, idx),
         obj.location,
         metadata,
         log=False,
@@ -142,7 +149,6 @@ def migrate_node(node, dry_run=True):
         source_node = get_source_node(node)
         if source_node is None:
             logger.error('Could not identify source node for recovery on node {0}'.format(node._id))
-            return
     for path, versions in node.files_versions.iteritems():
         for idx, version in enumerate(versions):
             try:
