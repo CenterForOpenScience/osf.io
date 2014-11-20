@@ -71,6 +71,7 @@
 <script src="http://localhost:7007/text.js"></script>
 <script src="http://localhost:7007/share.uncompressed.js"></script>
 <script src="/static/addons/wiki/ace.js"></script>
+<script src="/static/addons/wiki/ReconnectingWebSocket.js"></script>
 
 <!-- MD5 Hashing to generate gravatar -->
 <script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/md5.js"></script>

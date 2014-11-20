@@ -11,7 +11,7 @@ var ShareJSDoc = function(viewModel, url, metadata) {
     editor.setShowPrintMargin(false);           // Hides print margin
     editor.setReadOnly(true); // Read only until initialized
 
-    var socket = new WebSocket('ws://localhost:7007');
+    var socket = new ReconnectingWebSocket('ws://localhost:7007');
     var sjs = new sharejs.Connection(socket);
     var doc = sjs.get('docs', metadata.docId);
 
