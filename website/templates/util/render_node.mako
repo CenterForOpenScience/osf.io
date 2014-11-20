@@ -1,8 +1,8 @@
 % if summary['can_view']:
 
     <li
-            node_id="${summary['id']}"
-            node_reference="${summary['id']}:${'node' if summary['primary'] else 'pointer'}"
+            node_id="${summary['link_id']}"
+            node_reference="${summary['link_id']}:${'node' if summary['primary'] else 'pointer'}"
             class="
                 project list-group-item list-group-item-node cite-container
                 ${'pointer' if not summary['primary'] else ''}
@@ -16,6 +16,14 @@
 
             % if not summary['is_public']:
                 <span class="icon icon-lock" data-toggle="tooltip" title="This project is private"></span>
+            % endif
+
+            % if sortable == 'profile-page' and summary['parent_node']['title']:
+                % if summary['parent_node']['is_public']:
+                    <a href="${summary['parent_node']['url']}">${summary['parent_node']['title']}</a> /
+                % else:
+                    <i>-- private project --</i> /
+                % endif
             % endif
             <a href="${summary['url']}">${summary['title']}</a>
 

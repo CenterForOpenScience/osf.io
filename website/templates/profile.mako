@@ -178,13 +178,13 @@
                 "tpl" : "util/render_nodes.mako",
                 "uri" : "/api/v1/profile/${profile["id"]}/public_components/",
                 "replace" : true,
-                "kwargs" : {"sortable" : true}
-            }'></div>
+                "kwargs" : {"sortable" : "profile-page"}
+            }'></div> <!-- TODO: Change a way to indicated that the components are on the profile page -->
     </div>
 </div><!-- end row -->
 
 <%include file="_log_templates.mako"/>
-<%include file="include/profile/social.mako" />
+<%include file="include/profile/social.mako" />test_get_summary_for_registration_uses_correct_date_format
 <%include file="include/profile/jobs.mako" />
 <%include file="include/profile/schools.mako" />
 
