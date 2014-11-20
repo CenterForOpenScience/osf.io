@@ -877,7 +877,7 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
                 'non_ua': non_ua,
             })
     else:
-        summary = {'can_view': False }
+        summary = {'can_view': False}
     return summary
 
 
