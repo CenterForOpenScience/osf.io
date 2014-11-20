@@ -874,6 +874,27 @@ def make_url_map(app):
         Rule('/project/<pid>/reorder_components/', 'post',
                 project_views.node.project_reorder_components, json_renderer),
 
+        # Citations
+        Rule(
+            [
+                '/project/<pid>/citation/human/<style>/',
+                '/project/<pid>/node/<nid>/citation/human/<style>/'
+            ],
+            'get',
+            project_views.node.human_format_citation,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/citation/machine/<machine_style>/',
+                '/project/<pid>/node/<nid>/citation/machine/<machine_style>/'
+            ],
+            'get',
+            project_views.node.machine_format_citation,
+            json_renderer,
+        ),
+
         # Edit node
         Rule([
             '/project/<pid>/edit/',

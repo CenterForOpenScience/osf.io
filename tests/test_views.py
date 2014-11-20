@@ -44,6 +44,11 @@ from tests.factories import (
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
     RegistrationFactory, CommentFactory, PrivateLinkFactory, UnconfirmedUserFactory, DashboardFactory, FolderFactory,
     ProjectWithAddonFactory
+
+from website.project.views.node import human_format_citation
+from website.project.views.node import machine_format_citation
+
+from website.project.views.CitationParser import to_citation, to_machine_readable, formatter
 )
 from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
 
@@ -118,6 +123,180 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
 
     def test_check_user_access_if_user_is_None(self):
         assert_false(check_can_access(self.project, None))
+
+class TestCitationViews(DbTestCase):
+
+    def setUp(self):
+        ensure_schemas()
+        self.app = TestApp(app)
+        self.user1 = UserFactory.build()
+        # Add an API key for quicker authentication
+        api_key = ApiKeyFactory()
+        self.user1.api_keys.append(api_key)
+        self.user1.save()
+        self.consolidate_auth1 = Auth(user=self.user1, api_key=api_key)
+        self.auth = ('test', api_key._primary_key)
+        self.user2 = UserFactory()
+        # A project has 2 contributors
+        self.project = ProjectFactory(
+            title="Ham",
+            description='Honey-baked',
+            creator=self.user1
+        )
+        self.project.category = 'project'
+
+        self.project.add_contributor(self.user1)
+        self.project.add_contributor(self.user2)
+        self.project.api_keys.append(api_key)
+        self.project.save()
+
+    def test_human_APA(self):
+        url = "/api/v1/project/{0}/citation/human/apa.csl/".format(self.project._id)
+        url_data = self.app.get(url)
+        print url_data
+
+        output = to_citation(
+            self.project.to_csl(),
+            'apa.csl',
+            formatter.plain
+        )
+        assert_equal(output, url_data.json['output'])
+
+    def test_human_chicagoAD(self):
+        url = "/api/v1/project/{0}/citation/human/chicago-author-date.csl/".format(self.project._id)
+        url_data = self.app.get(url)
+        print url_data
+
+        output = to_citation(
+            self.project.to_csl(),
+            'chicago-author-date.csl',
+            formatter.plain
+        )
+        assert_equal(output, url_data.json['output'])
+
+    def test_human_chicagoNB(self):
+        url = "/api/v1/project/{0}/citation/human/chicago-note-bibliography.csl/".format(self.project._id)
+        url_data = self.app.get(url)
+        print url_data
+
+        output = to_citation(
+            self.project.to_csl(),
+            'chicago-note-bibliography.csl',
+            formatter.plain
+        )
+        assert_equal(output, url_data.json['output'])
+
+    def test_human_harvard(self):
+        url = "/api/v1/project/{0}/citation/human/harvard1.csl/".format(self.project._id)
+        url_data = self.app.get(url)
+        print url_data
+
+        output = to_citation(
+            self.project.to_csl(),
+            'harvard1.csl',
+            formatter.plain
+        )
+        assert_equal(output, url_data.json['output'])
+
+    def test_human_MLA(self):
+        url = "/api/v1/project/{0}/citation/human/modern-language-association-with-url.csl/".format(self.project._id)
+        url_data = self.app.get(url)
+        print url_data
+
+        output = to_citation(
+            self.project.to_csl(),
+            'modern-language-association-with-url.csl',
+            formatter.plain
+        )
+        assert_equal(output, url_data.json['output'])
+
+
+    def test_human_turabian(self):
+        url = "/api/v1/project/{0}/citation/human/turabian-fullnote-bibliography.csl/".format(self.project._id)
+        url_data = self.app.get(url)
+        print url_data
+
+        output = to_citation(
+            self.project.to_csl(),
+            'turabian-fullnote-bibliography.csl',
+            formatter.plain
+        )
+        assert_equal(output, url_data.json['output'])
+
+
+    def test_human_vancouver(self):
+        url = "/api/v1/project/{0}/citation/human/vancouver-author-date.csl/".format(self.project._id)
+        url_data = self.app.get(url)
+        print url_data
+
+        output = to_citation(
+            self.project.to_csl(),
+            'vancouver-author-date.csl',
+            formatter.plain
+        )
+        assert_equal(output, url_data.json['output'])
+
+
+    def test_machine_bibtex(self):
+        url = "/api/v1/project/{0}/citation/machine/xml2bib/".format(self.project._id)
+        res = self.app.get(url)
+
+        #import pdb; pdb.set_trace()
+        output = to_machine_readable(
+        'xml2bib',
+        self.project.to_csl()
+        )
+        assert_true(output == res.body)
+        assert_in('attachment; filename=Ham.bibtex',res.headers['Content-Disposition'])
+        assert_in('application/x-bibtex', res.headers['Content-Type'])
+
+    def test_machine_endnote(self):
+        url = "/api/v1/project/{0}/citation/machine/xml2end/".format(self.project._id)
+        res = self.app.get(url)
+
+        output = to_machine_readable(
+        'xml2end',
+        self.project.to_csl()
+        )
+        assert_true(output == res.body)
+        assert_equals('attachment; filename=Ham.enw',res.headers['Content-Disposition'])
+        assert_equals('application/x-endnote-refer', res.headers['Content-Type'])
+
+    def test_machine_ris(self):
+        url = "/api/v1/project/{0}/citation/machine/xml2ris/".format(self.project._id)
+        res = self.app.get(url)
+
+        output = to_machine_readable(
+        'xml2ris',
+        self.project.to_csl()
+        )
+        assert_true(output == res.body)
+        assert_equals('attachment; filename=Ham.ris',res.headers['Content-Disposition'])
+        assert_equals('application/x-Research-Info-Systems', res.headers['Content-Type'])
+
+    def test_machine_wordbib(self):
+        url = "/api/v1/project/{0}/citation/machine/xml2wordbib/".format(self.project._id)
+        res = self.app.get(url)
+
+        output = to_machine_readable(
+        'xml2wordbib',
+        self.project.to_csl()
+        )
+        assert_true(output == res.body)
+        assert_equals('attachment; filename=Ham.xml',res.headers['Content-Disposition'])
+        assert_equals('application/x-xml', res.headers['Content-Type'])
+
+    def test_machine_isi(self):
+        url = "/api/v1/project/{0}/citation/machine/xml2isi/".format(self.project._id)
+        res = self.app.get(url)
+
+        output = to_machine_readable(
+        'xml2isi',
+        self.project.to_csl()
+        )
+        assert_true(output == res.body)
+        assert_equals('attachment; filename=Ham.isi',res.headers['Content-Disposition'])
+        assert_equals('', res.headers['Content-Type'])
 
 
 class TestProjectViews(OsfTestCase):

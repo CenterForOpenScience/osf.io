@@ -29,6 +29,7 @@ css = Bundle(
 
 
 js = Bundle(
+
     # Vendorized libraries that are already minified
     Bundle(
         # For unknown reasons, moment must be first
@@ -57,6 +58,7 @@ js_bottom = Bundle(
     Bundle(
         'js/project.js',
         'js/addons.js',
+        'js/citations.js',
         # 'js/dropzone-patch.js',
         # 'js/rubeus.js'
     ),

@@ -276,6 +276,10 @@
         });
 
     });
+//    $('.citation-toggle').on('click', function(evt) {
+//        $(this).closest('.citations').find('.citation-list').slideToggle();
+//        return false;
+//    });
 
 }));
 

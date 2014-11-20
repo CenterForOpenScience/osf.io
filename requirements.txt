@@ -23,6 +23,7 @@ furl==0.3.95
 pyelasticsearch==0.6.1
 # Development version of modular-odm
 git+https://github.com/CenterForOpenScience/modular-odm.git@develop
+git+https://github.com/brechtm/citeproc-py.git@master
 
 # Assets
 webassets==0.10.1

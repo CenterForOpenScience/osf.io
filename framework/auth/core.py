@@ -454,6 +454,12 @@ class User(GuidStoredObject, AddonModelMixin):
             return False
         return check_password_hash(self.password, raw_password)
 
+    def authors_to_csl(self):
+        return {
+            'family': self.family_name,
+            'given': self.given_name,
+        }
+
     def add_email_verification(self, email):
         """Add an email verification token for a given email."""
         token = generate_confirm_token()
