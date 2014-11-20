@@ -4,7 +4,7 @@ import urllib
 import datetime
 import httplib as http
 
-from boto.exception import S3ResponseError, BotoClientError
+from boto.exception import S3ResponseError, BotoClientError, S3CreateError
 
 from flask import request
 from modularodm import Q
@@ -205,6 +205,8 @@ def create_new_bucket(**kwargs):
     except BotoClientError as e:
         return {'message': e.message}, http.NOT_ACCEPTABLE
     except S3ResponseError as e:
+        return {'message': e.message}, http.NOT_ACCEPTABLE
+    except S3CreateError as e:
         return {'message': e.message}, http.NOT_ACCEPTABLE
 
 

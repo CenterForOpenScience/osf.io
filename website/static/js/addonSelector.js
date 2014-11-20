@@ -39,7 +39,6 @@
                     self.addonCategoryData.push({'Name': capitalize(category), 'Addons': addonList});
                 }
             });
-
             $('form#selectAddonsForm').show();
         }); 
         
