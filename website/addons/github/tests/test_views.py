@@ -288,9 +288,9 @@ class TestGithubViews(OsfTestCase):
         # project is set to private right now
         connection = github_mock
         non_authenticated_user = UserFactory()
-        non_authenticated_user.consolidated_auth = Auth(user=non_authenticated_user)
+        non_authenticated_auth = Auth(user=non_authenticated_user)
         branch = 'master'
-        assert_false(check_permissions(self.node_settings, non_authenticated_user.consolidated_auth, connection, branch))
+        assert_false(check_permissions(self.node_settings, non_authenticated_auth, connection, branch))
 
     # make a repository that doesn't allow push access for this user;
     # make sure check_permissions returns false
