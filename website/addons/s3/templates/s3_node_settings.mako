@@ -140,9 +140,8 @@
     % else:
 
         <script type="text/javascript">
-            $(document).ready(function() {
-                $('#addonSettings${addon_short_name.capitalize()}').on('submit', AddonHelper.onSubmitSettings);
-            });
+            window.contextVars = window.contextVars;
+            window.contextVars.addonSettingsSelector = 'addonSettings${addon_short_name.capitalize()}'
         </script>
 
     % endif
