@@ -341,7 +341,7 @@ def node_contributors(**kwargs):
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
 
-    rv = _view_project(node, auth)
+    rv = _view_project(node, auth, primary=True)
     rv['contributors'] = utils.serialize_contributors(node.contributors, node)
     return rv
 
