@@ -34,6 +34,10 @@ var ShareJSDoc = function(viewModel, url, metadata) {
                 activeUsers.push(userMeta);
             }
             viewModel.activeUsers(activeUsers);
+        } else if (data.type === 'lock') {
+            editor.setReadOnly(true);
+        } else if (data.type === 'unlock') {
+                editor.setReadOnly(false);
         } else {
             onmessage(message);
         }

@@ -38,11 +38,11 @@ app.all('*', function(req, res, next) {
 app.use(express.static(sharejs.scriptsDir));
 
 // TODO: Can we access the relevant list without iterating over every client?
-wss.updateClients = function(docId) {
+wss.broadcast = function(docId, message) {
     for (var i in this.clients) {
         var c = this.clients[i];
         if (c.userMeta && c.userMeta.docId === docId) {
-            c.send(JSON.stringify({type: 'meta', users: docs[docId]}));
+            c.send(message);
         }
     }
 };
@@ -67,7 +67,7 @@ wss.on('connection', function(client) {
         if (client.userMeta && locked[client.userMeta.docId]) {
             console.log(client.userMeta.docId, 'is locked! No edits.');
             // TODO: Is this the best way to let the user know they can't edit?
-            client.close();
+            wss.broadcast(client.userMeta.docId, JSON.stringify({type: 'lock'}));
             return;
         }
 
@@ -77,23 +77,32 @@ wss.on('connection', function(client) {
             var docId = data.docId;
             var userId = data.userId;
 
+            // Create a metadata entry for this document
             if (!docs[docId])
                 docs[docId] = {};
 
+            // Add user to metadata
             if (!docs[docId][userId]) {
                 docs[docId][userId] = {
                     name: data.userName,
                     url: data.userUrl,
                     count: 1,
                     gravatar: data.userGravatar
-                }
+                };
             } else {
                 docs[docId][userId].count++;
             }
-            client.userMeta = data; // Attach metadata to the client object
+
+            // Attach metadata to the client object
+            client.userMeta = data;
 
             console.log('new user:', data.userName, '| Total:', wss.clients.length);
-            wss.updateClients(docId);
+            wss.broadcast(docId, JSON.stringify({type: 'meta', users: docs[docId]}));
+
+            // Lock client if doc is locked
+            if (locked[docId]) {
+                client.send(JSON.stringify({type: 'lock'}));
+            }
         } else {
             stream.push(data);
         }
@@ -114,7 +123,7 @@ wss.on('connection', function(client) {
         }
 
         console.log('rem user:', client.userMeta.userName, '| Total:', wss.clients.length);
-        wss.updateClients(docId);
+        wss.broadcast(docId, JSON.stringify({type: 'meta', users: docs[docId]}));
 
         stream.push(null);
         stream.emit('close');
@@ -143,6 +152,7 @@ app.get('/users', function getUsers(req, res, next) {
 // Lock a document
 app.get('/lock/:id', function lockDoc(req, res, next) {
     locked[req.params.id] = true;
+    wss.broadcast(req.params.id, JSON.stringify({type: 'lock'}));
     console.log(req.params.id + " was locked.")
     res.send(req.params.id + " was locked.");
 });
@@ -150,6 +160,7 @@ app.get('/lock/:id', function lockDoc(req, res, next) {
 // Lock a document
 app.get('/unlock/:id', function lockDoc(req, res, next) {
     delete locked[req.params.id];
+    wss.broadcast(req.params.id, JSON.stringify({type: 'unlock'}));
     console.log(req.params.id + " was unlocked.")
     res.send(req.params.id + " was unlocked.");
 });
