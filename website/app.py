@@ -110,11 +110,12 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
 
     if set_backends:
         ensure_schemas()
-    apply_middlewares(app)
+    apply_middlewares(app, settings)
     return app
 
-def apply_middlewares(flask_app):
+def apply_middlewares(flask_app, settings):
     # Use ProxyFix to respect X-Forwarded-Proto header
     # https://stackoverflow.com/questions/23347387/x-forwarded-proto-and-flask
-    flask_app.wsgi_app = ProxyFix(flask_app.wsgi_app)
+    if settings.LOAD_BALANCER:
+        flask_app.wsgi_app = ProxyFix(flask_app.wsgi_app)
     return flask_app
