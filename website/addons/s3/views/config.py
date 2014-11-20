@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import httplib as http
-import pdb
 
 from flask import request
 from boto.exception import BotoServerError
@@ -35,19 +34,18 @@ def s3_node_config_get(auth, node_addon, **kwargs):
 
 def s3_serialize_settings(auth, node_addon, **kwargs):
     """API that returns a dictionary representation of a
-    S3NodeSettings record. 
+    S3NodeSettings record.
     """
-    #pdb.set_trace()
 
     if not node_addon.user_settings:
         return {
-        'owner_url': node_addon.owner.url,
-        'owner_name': None,
-        'user_has_auth': bool(auth.user.get_addon('s3').secret_key),
-        'is_registration': node_addon.owner.is_registration,
-        'node_has_auth': False,
-        'user_is_owner': False,
-        'bucket_list': None
+            'owner_url': node_addon.owner.url,
+            'owner_name': None,
+            'user_has_auth': bool(auth.user.get_addon('s3').secret_key),
+            'is_registration': node_addon.owner.is_registration,
+            'node_has_auth': False,
+            'user_is_owner': False,
+            'bucket_list': None
         }
 
     bucketList = [each.name for each in get_bucket_list(node_addon.user_settings)]
@@ -185,16 +183,12 @@ def s3_user_settings(user_addon, auth, **kwargs):
     """View for getting a JSON representation of the logged-in user's
     S3 user settings.
     """
-    urls = {
-        'create': api_url_for('s3_authorize_user'),
-        'delete': api_url_for('s3_remove_user_settings')
-    }
+
     info = user_addon.s3_info
     return {
         'result': {
             'userHasAuth': user_addon.has_auth,
             's3Name': info['display_name'] if info else None,
-            'urls': urls,
         },
     }, http.OK
 
@@ -204,9 +198,6 @@ def s3_user_settings(user_addon, auth, **kwargs):
 def s3_remove_node_settings(auth, node_addon, **kwargs):
     node_addon.deauthorize(auth=auth, save=True)
     return {}
-
-
-
 
 @must_be_logged_in
 @must_have_addon('s3', 'user')
