@@ -743,7 +743,6 @@ def _view_project(node, auth, primary=False, link_id=None):
         },
         'user': {
             'is_contributor': node.is_contributor(user),
-            'can_view': node.can_view(auth),
             'can_edit': (node.can_edit(auth)
                          and not node.is_registration),
             'permissions': node.get_permissions(user) if user else [],

@@ -1,5 +1,4 @@
 <ul class="list-group ${'sortable' if sortable and 'write' in user['permissions'] else ''}">
-
     % for each in nodes:
         <div mod-meta='{
                 "tpl": "util/render_node.mako",
