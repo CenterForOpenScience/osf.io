@@ -524,6 +524,7 @@
             });
             // Set default sort order
             self.grid.setSortColumn(Rubeus.Sort.defaultColumn, Rubeus.Sort.defaultAsc);
+            self.getData()[0]._node.sort(Rubeus.Sort.defaultColumn, Rubeus.Sort.defaultAsc);
             updateTooltips();
             $(this.options.progBar).hide();
         },
