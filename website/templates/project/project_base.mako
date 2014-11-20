@@ -49,6 +49,7 @@ ${next.body()}
         currentUser: {
             ## TODO: Abstract me
             username: ${json.dumps(user['username']) | n},
+            fullname: ${json.dumps(user['fullname']) | n},
             id: '${user_id}'
         },
         node: {
