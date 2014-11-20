@@ -141,7 +141,7 @@
 
         <script type="text/javascript">
             window.contextVars = window.contextVars;
-            window.contextVars.addonSettingsSelector = 'addonSettings${addon_short_name.capitalize()}'
+            window.contextVars.addonSettingsSelector = 'addonSettings${addon_short_name.capitalize()}';
         </script>
 
     % endif
