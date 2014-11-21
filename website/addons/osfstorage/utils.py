@@ -302,18 +302,17 @@ def render_file(version_idx, file_version, file_record):
         Q('node', 'eq', file_record.node) &
         Q('path', 'eq', file_record.path)
     )
-    cache_filename = get_cache_filename(file_version)
+    cache_file_name = get_cache_filename(file_version)
     node_settings = file_obj.node.get_addon('osfstorage')
-    rendered = get_cache_content(node_settings, cache_filename)
+    rendered = get_cache_content(node_settings, cache_file_name)
     if rendered is None:
         download_url = get_download_url(version_idx, file_version, file_record)
         file_response = requests.get(download_url)
         rendered = get_cache_content(
-            node_settings=node_settings,
-            cache_file=cache_filename,
+            node_settings,
+            cache_file_name,
             start_render=True,
-            file_path=file_record.path,
             file_content=file_response.content,
-            download_path=file_obj.get_download_path(version_idx),
+            download_url=file_obj.get_download_path(version_idx),
         )
     return rendered

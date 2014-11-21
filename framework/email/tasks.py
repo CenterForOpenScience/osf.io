@@ -2,13 +2,13 @@ import smtplib
 import logging
 from email.mime.text import MIMEText
 
-from framework.tasks import celery
+from framework.tasks import app
 from website import settings
 
 logger = logging.getLogger(__name__)
 
 
-@celery.task
+@app.task
 def send_email(from_addr, to_addr, subject, message, mimetype='html', ttls=True, login=True):
     """Send email to specified destination.
     Email is sent from the email specified in FROM_EMAIL settings in the

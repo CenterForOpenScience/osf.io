@@ -177,10 +177,10 @@ def github_view_file(auth, **kwargs):
             commit['email'] = ''
 
     # Get or create rendered file
-    cache_file = get_cache_file(
+    cache_file_name = get_cache_file(
         path, current_sha,
     )
-    rendered = get_cache_content(node_settings, cache_file)
+    rendered = get_cache_content(node_settings, cache_file_name)
     if rendered is None:
         try:
             _, data, size = connection.file(
@@ -194,8 +194,11 @@ def github_view_file(auth, **kwargs):
                 rendered = 'File too large to render; download file to view it.'
             else:
                 rendered = get_cache_content(
-                    node_settings, cache_file, start_render=True,
-                    file_path=file_name, file_content=data, download_path=download_url,
+                    node_settings,
+                    cache_file_name,
+                    start_render=True,
+                    file_content=data,
+                    download_url=download_url,
                 )
 
     rv = {
