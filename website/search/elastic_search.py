@@ -289,7 +289,14 @@ def update_user(user):
             logger.warn('User ' + user._id + 'not in the Elasticsearch index')
         return
 
-    names = dict(zip(['fullname', 'given_name', 'family_name', 'middle_names', 'suffix'], [user.fullname, user.given_name, user.family_name, user.middle_names, user.suffix]))
+    names = dict(
+        fullname=user.fullname,
+        given_name=user.given_name,
+        family_name=user.family_name,
+        middle_names=user.middle_names,
+        suffix=user.suffix
+    )
+
     normalized_names = {}
     for key in names.keys():
         if names[key] is not None:
