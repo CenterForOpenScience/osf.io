@@ -10,6 +10,8 @@ from nose.tools import *  # noqa (PEP8 asserts)
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
 
+import datetime
+
 from github3.git import Commit
 from github3.repos.branch import Branch
 from github3.repos.contents import Contents
@@ -104,10 +106,8 @@ class TestCRUD(OsfTestCase):
             path='my_file',
             branch='master'
         )
-        print('url: {0}'.format(url))
         res = self.app.get(
-            url,
-            auth=self.user.auth,
+            url
         )
         assert_equal(res.status_code, 302)
 
