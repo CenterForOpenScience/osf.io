@@ -509,6 +509,31 @@ class TestCRUDViews(DropboxAddonTestCase):
         expected_path = os.path.join(node_settings.folder, 'rootfile.rst')
         assert_equal(first_argument, expected_path)
 
+    @mock.patch('website.addons.dropbox.client.DropboxClient.put_file')
+    def test_upload_file_with_invalid_credentials_throws_error(self, mock_put_file):
+        mock_response = mock.Mock()
+        mock_response.status = 401
+        mock_put_file.side_effect = ErrorResponse(mock_response, "The given OAuth 2 access token doesn't exist or has expired.")
+
+        payload = {'file': Upload('foobar.rst', b'baz', 'text/x-rst')}
+        url = api_url_for('dropbox_upload',
+                pid=self.project._primary_key,
+                path='')
+        res = self.app.post(url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, httplib.UNAUTHORIZED)
+
+    @mock.patch('website.addons.dropbox.client.DropboxClient.put_file')
+    def test_upload_file_non_401_errors_thrown_as_400(self, mock_put_file):
+        mock_response = mock.Mock()
+        mock_response.status = 404
+        mock_put_file.side_effect = ErrorResponse(mock_response, "Bad Request.")
+        payload = {'file': Upload('fizzbuzz.rst', b'baz', 'text/x-rst')}
+        url = api_url_for('dropbox_upload',
+                pid=self.project._primary_key,
+                path='')
+        res = self.app.post(url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, httplib.BAD_REQUEST)
+
     @mock.patch('website.addons.dropbox.client.DropboxClient.file_delete')
     def test_delete_file(self, mock_file_delete):
         path = 'foo'

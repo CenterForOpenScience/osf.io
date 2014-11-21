@@ -340,10 +340,10 @@ def figshare_view_file(*args, **kwargs):
     delete_url = node.api_url + 'figshare/article/{aid}/file/{fid}/'.format(aid=article_id, fid=file_id)
 
     filename = found['name']
-    cache_file = get_cache_file(
+    cache_file_name = get_cache_file(
         article_id, file_id
     )
-    rendered = get_cache_content(node_settings, cache_file)
+    rendered = get_cache_content(node_settings, cache_file_name)
     if private:
         rendered = messages.FIGSHARE_VIEW_FILE_PRIVATE.format(url='http://figshare.com/')
     elif rendered is None:
@@ -355,8 +355,12 @@ def figshare_view_file(*args, **kwargs):
                 url=found.get('download_url'))
         else:
             rendered = get_cache_content(
-                node_settings, cache_file, start_render=True,
-                file_path=filename, file_content=filedata, download_path=download_url)
+                node_settings,
+                cache_file_name,
+                start_render=True,
+                file_content=filedata,
+                download_url=download_url,
+            )
 
     categories = connect.categories()['items']  # TODO Cache this
     categories = ''.join(

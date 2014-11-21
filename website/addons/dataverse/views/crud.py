@@ -167,8 +167,8 @@ def dataverse_view_file(node_addon, auth, **kwargs):
         return redirect(redirect_url)
 
     # Get or create rendered file
-    cache_file = '{0}.html'.format(file_id)
-    rendered = get_cache_content(node_addon, cache_file)
+    cache_file_name = '{0}.html'.format(file_id)
+    rendered = get_cache_content(node_addon, cache_file_name)
 
     if rendered is None:
         filename, content = scrape_dataverse(file_id)
@@ -176,8 +176,10 @@ def dataverse_view_file(node_addon, auth, **kwargs):
             'dataverse_download_file_proxy', path=file_id
         )
         rendered = get_cache_content(
-            node_addon, cache_file, start_render=True,
-            file_path=filename, file_content=content,
+            node_addon,
+            cache_file_name,
+            start_render=True,
+            file_content=content,
             download_path=download_url,
         )
     else:

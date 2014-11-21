@@ -417,7 +417,8 @@
             return row.urls.download;
         },
         deleteUrl: function(row) {
-            return row.urls.delete;
+            // Must use square bracket notation since 'delete' is a reserved word
+            return row.urls['delete'];
         },
         onClickDelete: function(evt, row) {
             var self = this;

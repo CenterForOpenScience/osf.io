@@ -141,9 +141,9 @@ def render_dropbox_file(file_obj, client=None, rev=None):
     :return: The HTML for the rendered file.
     """
     # Filename for the cached MFR HTML file
-    cache_name = file_obj.get_cache_filename(client=client, rev=rev)
+    cache_file_name = file_obj.get_cache_filename(client=client, rev=rev)
     node_settings = file_obj.node.get_addon('dropbox')
-    rendered = get_cache_content(node_settings, cache_name)
+    rendered = get_cache_content(node_settings, cache_file_name)
     if rendered is None:  # not in MFR cache
         dropbox_client = client or get_node_addon_client(node_settings)
         try:
@@ -159,11 +159,10 @@ def render_dropbox_file(file_obj, client=None, rev=None):
             return ''.join(['<p class="text-danger">', message, '</p>'])
         rendered = get_cache_content(
             node_settings=node_settings,
-            cache_file=cache_name,
+            cache_file_name=cache_file_name,
             start_render=True,
-            file_path=get_file_name(file_obj.path),
             file_content=file_response.read(),
-            download_path=file_obj.download_url(guid=True, rev=rev)
+            download_path=file_obj.download_url(guid=True, rev=rev),
         )
     return rendered
 
