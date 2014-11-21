@@ -51,7 +51,6 @@
                     .text('OK');
 
             } else if ($data.val().indexOf('/') != -1) {
-                console.log('SLASHES');
                 $alert.text('The new wiki page name cannot contain forward slashes.');
                 $submitForm
                     .removeAttr('disabled', 'disabled')
@@ -65,7 +64,6 @@
                     url: '${urls['api']['base']}' + encodeURIComponent(wikiName) + '/validate/',
                     dataType: 'json'
                 });
-
                 request.done(function (response) {
                     window.location.href = '${urls['web']['base']}' + encodeURIComponent(wikiName) + '/edit/';
                 });
