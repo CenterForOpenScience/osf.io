@@ -289,16 +289,23 @@ def update_user(user):
             logger.warn('User ' + user._id + 'not in the Elasticsearch index')
         return
 
-    try:
-        normalized_name = six.u(user.fullname)
-    except TypeError:
-        normalized_name = user.fullname
-    normalized_name = unicodedata.normalize('NFKD', normalized_name).encode('ascii', 'ignore')
+    names = dict(zip(['fullname', 'given_name', 'family_name', 'middle_names', 'suffix'], [user.fullname, user.given_name, user.family_name, user.middle_names, user.suffix]))
+    logger.error(names)
+    normalized_names = {}
+    for key in names.keys():
+        if names[key] is not None:
+            try:
+                val = six.u(names[key])
+            except TypeError:
+                val = names[key]
+            normalized_names[key] = unicodedata.normalize('NFKD', val).encode('ascii', 'ignore')
 
     user_doc = {
         'id': user._id,
         'user': user.fullname,
-        'normalized_user': normalized_name,
+        'normalized_user': normalized_names['fullname'],
+        'normalized_names': normalized_names,
+        'names': names,
         'job': user.jobs[0]['institution'] if user.jobs else '',
         'job_title': user.jobs[0]['title'] if user.jobs else '',
         'school': user.schools[0]['institution'] if user.schools else '',
