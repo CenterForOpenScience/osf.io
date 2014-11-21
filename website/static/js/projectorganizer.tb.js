@@ -11,6 +11,9 @@
     }
 }(this, function ($, Treebeard, ko) {
 
+    // copyMode can be 'copy', 'move', 'forbidden', or null.
+    var copyMode = null;
+
     var projectOrganizer = {}; 
 
     projectOrganizer.publicProjects = new Bloodhound({
@@ -55,7 +58,9 @@
 
 
     function _poTitleColumn (item) {
-        return m('span', item.data.name);
+        //  smart folders should be italicized.
+        var css = item.data.isSmartFolder ? 'project-smart-folder smart-folder' : '';
+        return m('span', { 'class' : css }, item.data.name);
     }
 
     function _gotoEvent (event, item, col) {
@@ -100,16 +105,16 @@
         });
     }
 
-    function setItemToExpand(item, callback) {
-        var expandUrl = item.apiURL + 'expand/';
-        var postAction = $.osf.postJSON(expandUrl,{});
-        postAction.done(function() {
-            item.expand = false;
-            if (typeof callback !== 'undefined') {
-                callback();
-            }
-        }).fail($.osf.handleJSONError);
-    }
+    // function setItemToExpand(item, callback) {
+    //     var expandUrl = item.apiURL + 'expand/';
+    //     var postAction = $.osf.postJSON(expandUrl,{});
+    //     postAction.done(function() {
+    //         item.expand = false;
+    //         if (typeof callback !== 'undefined') {
+    //             callback();
+    //         }
+    //     }).fail($.osf.handleJSONError);
+    // }
 
     function _showProjectDetails (event, item, col) {
         var treebeard = this; 
@@ -508,36 +513,48 @@
     // }
 
     function _poResolveIcon(item){
-        var folder = m('img', { src : '/static/img/hgrid/folder.png' }),
-            smartFolder = m('img', {src : '/static/img/hgrid/smart-folder.png'}),
-            project = m('img', {src : '/static/img/hgrid/project.png'}),
-            registration = m('img', {src : '/static/img/hgrid/reg-project.png'}),
-            component = m('img', {src : '/static/img/hgrid/component.png'}),
-            registeredComponent = m('img', {src : '/static/img/hgrid/reg-component.png'}),
-            link = m('img', {src : '/static/img/hgrid/pointer.png'});
+
+        var icons = {
+            folder : 'project-organizer-icon-folder',
+            smartFolder : 'project-organizer-icon-smart-folder',
+            project : 'project-organizer-icon-project',
+            registration :  'project-organizer-icon-reg-project',
+            component :  'project-organizer-icon-component',
+            registeredComponent :  'project-organizer-icon-reg-component',
+            link :  'project-organizer-icon-pointer'
+        };
+        var viewLink = item.data.urls.fetch;
+
+        function returnView (type) { 
+            var template = m('span', { 'class' : icons[type]});
+            if (viewLink) {
+                return m('a', { href : viewLink}, template); 
+            } 
+            return template;
+        }
 
         if (item.data.isFolder) {
-            return folder;
+            return returnView('folder');
         }
         if(item.data.isSmartFolder) {
-            return smartFolder;
+            return returnView('smartFolder');
         } 
         if(item.data.isProject) {
-            return project;
+            return returnView('project');
         }
         if(item.data.isRegistration) {
-            return registration;
+            return returnView('registration');
         }
         if(item.data.isComponent) {
-            return component;
+            return returnView('component');
         }
         if(item.data.isRegistration && item.data.isComponent) {
-            return registeredComponent;
+            return returnView('registeredComponent');
         }
         if (item.data.isPointer) {
-            return link;
+            return returnView('link');
         }
-        return folder; 
+        return returnView('folder'); 
     }
 
     function _poResolveToggle(item){
@@ -579,59 +596,57 @@
     }
 
     function _poMultiselect (event, tree) {
-            var selectedRows = filterRowsNotInParent.call(this, this.multiselected);
-            console.log("SelectedRows", selectedRows);
-            var multipleItems = false;
+        var tb = this;
+        var selectedRows = filterRowsNotInParent.call(this, this.multiselected);
+        console.log("SelectedRows", selectedRows);
+        var multipleItems = false;
 
-            if(selectedRows.length > 1) {
-                var someItemsAreFolders = false;
-                var pointerIds = [];
-                selectedRows.forEach(function(item){
-                    var thisItem = item.data;
-                    someItemsAreFolders = someItemsAreFolders ||
-                                          thisItem.isFolder ||
-                                          thisItem.isSmartFolder ||
-                                          thisItem.parentIsSmartFolder ||
-                                          !thisItem.permissions.movable;
-                    pointerIds.push(thisItem.node_id);
+        if(selectedRows.length > 1) {
+            var someItemsAreFolders = false;
+            var pointerIds = [];
+            selectedRows.forEach(function(item){
+                var thisItem = item.data;
+                someItemsAreFolders = someItemsAreFolders ||
+                                      thisItem.isFolder ||
+                                      thisItem.isSmartFolder ||
+                                      thisItem.parentIsSmartFolder ||
+                                      !thisItem.permissions.movable;
+                pointerIds.push(thisItem.node_id);
+            });
+            if(!someItemsAreFolders) {
+                var multiItemDetailTemplateSource = $('#project-detail-multi-item-template').html();
+                var detailTemplate = Handlebars.compile(multiItemDetailTemplateSource);
+                var detailTemplateContext = {
+                    multipleItems: true,
+                    itemsCount: selectedRows.length
+                };
+                var theParentNode = selectedRows[0].parent();
+                var displayHTML = detailTemplate(detailTemplateContext);
+                $('.project-details').html(displayHTML);
+                $('.project-details').show();
+                $('#remove-links-multiple').click(function(){
+                    deleteMultiplePointersFromFolder.call(tb, self.grid, pointerIds, theParentNode);
+                    $('.project-details').hide();       
                 });
-                if(!someItemsAreFolders) {
-                    var multiItemDetailTemplateSource = $('#project-detail-multi-item-template').html();
-                    var detailTemplate = Handlebars.compile(multiItemDetailTemplateSource);
-                    var detailTemplateContext = {
-                        multipleItems: true,
-                        itemsCount: selectedRows.length
-                    };
-                    var theParentNode = selectedRows[0].parent().data;
-                    var displayHTML = detailTemplate(detailTemplateContext);
-                    $('.project-details').html(displayHTML);
-                    $('.project-details').show();
-                    $('#remove-links-multiple').click(function(){
-                        deleteMultiplePointersFromFolder(self.grid, pointerIds, theParentNode);
-                    });
-                    $('#close-multi-select').click(function () {
-                        $('.project-details').hide();
-                        return false;
-                    });
+                $('#close-multi-select').click(function () {
+                    $('.project-details').hide();
+                    return false;
+                });
 
-                } else {
-                    $('.project-details').hide();
-                }
             } else {
-                    $('.project-details').hide();
-                }
-        } // end onSelectedRowsChanged
+                $('.project-details').hide();
+            }
+        } else {
+            $('.project-details').hide();
+        }   
+    } // end onSelectedRowsChanged
 
     function deleteMultiplePointersFromFolder(theHgrid, pointerIds, folderToDeleteFrom) {
+        var tb = this; 
         if(pointerIds.length > 0) {
-            var folderNodeId = folderToDeleteFrom.node_id;
+            var folderNodeId = folderToDeleteFrom.data.node_id;
             var url = '/api/v1/folder/' + folderNodeId + '/pointers/';
             var postData = JSON.stringify({pointerIds: pointerIds});
-            var reloadHgrid = function () {
-                if (theHgrid !== null) {
-                    reloadFolder(theHgrid, folderToDeleteFrom);
-                }
-            };
             var deleteAction = $.ajax({
                 type: 'DELETE',
                 url: url,
@@ -639,7 +654,9 @@
                 contentType: 'application/json',
                 dataType: 'json'
             });
-            deleteAction.done(reloadHgrid);
+            deleteAction.done(function(){                         
+                tb.updateFolder(null, folderToDeleteFrom);
+                });
             deleteAction.fail(function (jqxhr, textStatus, errorThrown){
                 bootbox.alert('Error: ' + textStatus + '. ' + errorThrown);
             });
@@ -673,6 +690,7 @@
     function _poDrag (event, ui) {
         var itemID = $(event.target).attr('data-id');
         var item = this.find(itemID);
+        this.selected = item.id;
         $(ui.helper).css({ 'height' : '25px', 'width' : '400px', 'background' : 'white', 'padding' : '0px 10px', 'box-shadow' : '0 0 4px #ccc'});
         items = this.multiselected.length > 0 ? this.multiselected : [item]; 
         console.log("draglogic", event, ui, items); 
@@ -680,8 +698,40 @@
     }
 
     function _poDrop (event, ui) {
-        console.log(this, "Drop");
+        var items = this.multiselected.length === 0 ? [this.find(this.selected)] : this.multiselected, 
+            folder = this.find($(event.target).attr('data-id'));
+
+        console.log("Drop", this, items, folder, event, ui);
+       dropLogic.call(this, event, items, folder);
+
     }
+
+    function _poOver (event, ui) {
+        var items = this.multiselected.length === 0 ? [this.find(this.selected)] : this.multiselected, 
+            folder = this.find($(event.target).attr('data-id')),
+            acceptDrop = canAcceptDrop (items, folder); 
+        $('.tb-row').removeClass('tb-h-success tb-h-error');
+        if(acceptDrop) {
+            $('.tb-row[data-id="' + folder.id + '"').addClass('tb-h-success');
+        }       
+        else {
+            $('.tb-row[data-id="' + folder.id + '"').addClass('tb-h-error');
+        }
+    }
+
+
+    var altKey = false;
+    $(document).keydown(function (e) {
+        if (e.altKey) {
+            altKey = true;
+        }
+    });
+    $(document).keyup(function (e) {
+        if (!e.altKey) {
+            altKey = false;
+        }
+    });
+
 
     function dragLogic(event, items, ui){
         var canCopy = true;
@@ -692,7 +742,7 @@
         });
 
         // Check through possible move and copy options, and set the copyMode appropriately.
-        if (!(canMove && canCopy )) { //&& canAcceptDrop(items, folder))) {
+        if (!(canMove && canCopy )) { 
             copyMode = 'forbidden';
         }
         else if (canMove && canCopy) {
@@ -708,7 +758,7 @@
         if (!canCopy && canMove) {
             copyMode = 'move';
         }
-        console.log('copyMode', copyMode);
+        // console.log('copyMode', copyMode);
         // Set the cursor to match the appropriate copy mode
         switch (copyMode) {
             case 'forbidden':
@@ -728,22 +778,17 @@
     function canAcceptDrop(items, folder){
         // folder is the drop target.
         // items is an array of things to go into the drop target.
-
-        if (folder.isSmartFolder || !folder.isFolder){
+        if (folder.data.isSmartFolder || !folder.data.isFolder){
             return false;
         }
-
-
         // if the folder is contained by the item, return false
-
         var representativeItem = items[0];
-        if (draggable.grid.folderContains(representativeItem.id, folder.id)){
+        if (representativeItem.isAncestor(folder)){
             return false;
         }
-
         // If trying to drop on the folder it came from originally, return false
-        var itemParentNodeId = getItemParentNodeId(draggable.grid, representativeItem);
-        if (itemParentNodeId === folder.node_id){
+        var itemParentNodeId = representativeItem.parent().data.node_id;
+        if (itemParentNodeId === folder.data.node_id){
             return false;
         }
 
@@ -754,27 +799,152 @@
         var canDrop = true;
 
         items.forEach(function(item){
-            hasComponents = hasComponents || item.isComponent;
-            hasFolders = hasFolders || item.isFolder;
-            copyable = copyable && item.permissions.copyable;
-            movable = movable && item.permissions.movable;
+            hasComponents = hasComponents || item.data.isComponent;
+            hasFolders = hasFolders || item.data.isFolder;
+            copyable = copyable && item.data.permissions.copyable;
+            movable = movable && item.data.permissions.movable;
         });
 
 
         if(hasComponents){
-            canDrop = canDrop && folder.permissions.acceptsComponents;
+            canDrop = canDrop && folder.data.permissions.acceptsComponents;
         }
         if(hasFolders){
-            canDrop = canDrop && folder.permissions.acceptsFolders;
+            canDrop = canDrop && folder.data.permissions.acceptsFolders;
         }
         if(copyMode === 'move'){
-            canDrop = canDrop && folder.permissions.acceptsMoves && movable;
+            canDrop = canDrop && folder.data.permissions.acceptsMoves && movable;
         }
         if(copyMode === 'copy'){
-            canDrop = canDrop && folder.permissions.acceptsCopies && copyable;
+            canDrop = canDrop && folder.data.permissions.acceptsCopies && copyable;
         }
         return canDrop;
     }
+
+    function dropLogic(event, items, folder) {
+        var tb = this; 
+        if (typeof folder !== 'undefined' && folder !== null) {
+            var theFolderNodeID = folder.data.node_id;
+            var getChildrenURL = folder.data.apiURL + 'get_folder_pointers/';
+            var folderChildren;
+            var sampleItem = items[0];
+            var itemParentID = sampleItem.parentID;
+            var itemParent = sampleItem.parent();
+            var itemParentNodeID = itemParent.data.node_id;
+            if (itemParentNodeID !== theFolderNodeID) { // This shouldn't happen, but if it does, it's bad
+                var getAction = $.getJSON(getChildrenURL, function (data) {
+                    folderChildren = data;
+                    var itemsToMove = [];
+                    var itemsNotToMove = [];
+
+                    items.forEach(function (item) {
+                        if ($.inArray(item.data.node_id, folderChildren) === -1) { // pointer not in folder to be moved to
+                            itemsToMove.push(item.data.node_id);
+                        } else if (copyMode === 'move') { // Pointer is already in the folder and it's a move
+                                    // We  need to make sure not to delete the folder if the item is moved to the same folder.
+                                    // When we add the ability to reorganize within a folder, this will have to change.
+                            itemsNotToMove.push(item.data.node_id);
+                        }
+                    });
+                    var postInfo = {
+                        'copy': {
+                            'url': '/api/v1/project/' + theFolderNodeID + '/pointer/',
+                            'json': {
+                                nodeIds: itemsToMove
+                            }
+                        },
+                        'move': {
+                            'url': '/api/v1/pointers/move/',
+                            'json': {
+                                pointerIds: itemsToMove,
+                                toNodeId: theFolderNodeID,
+                                fromNodeId: itemParentNodeID
+                            }
+                        }
+                    };
+                    if (copyMode === 'copy' || copyMode === 'move') {
+                        deleteMultiplePointersFromFolder.call(tb, null, itemsNotToMove, itemParent);
+                        if (itemsToMove.length > 0) {
+                                var url = postInfo[copyMode]['url'];
+                                var postData = JSON.stringify(postInfo[copyMode]['json']);
+                                //var outerFolder = whichIsContainer.call(tb, itemParent, folder);
+                                //var outerFolderID = outerFolder.id;
+                                var postAction = $.ajax({
+                                    type: 'POST',
+                                    url: url,
+                                    data: postData,
+                                    contentType: 'application/json',
+                                    dataType: 'json'
+                                });
+                                postAction.always(function (result) {
+                                    // console.log('Result',result); 
+ 
+
+                                        // if (copyMode === 'move') {
+                                        //     if (typeof outerFolderID === 'undefined' || outerFolderID === null) {
+                                        //         itemParent = draggable.grid.grid.getData().getItemById(itemParentID);
+                                        //         setReloadNextFolder(itemParentID, folder.id);
+                                        //         draggable.grid.reloadFolder(itemParent);
+
+                                        //     } else {
+                                        //         var outerFolder = draggable.grid.grid.getData().getItemById(outerFolderID);
+                                        //         reloadFolder(draggable.grid, outerFolder);
+                                        //     }
+
+                                        // } else {
+                                        //     reloadFolder(draggable.grid, folder);
+
+                                        // }
+                                        // copyMode = null;
+
+                                });
+                                postAction.fail(function (jqxhr, textStatus, errorThrown){
+                                    bootbox.alert('Error: ' + textStatus + '. ' + errorThrown);
+                                });
+                            } else { // From:  if(itemsToMove.length > 0)
+//                                folder.childrenCount = folder.children.length;
+                                draggable.grid.refreshData();
+                                reloadFolder(draggable.grid, itemParent);
+                            }
+
+
+                    }
+
+
+                });
+                getAction.fail(function (jqxhr, textStatus, errorThrown){
+                    bootbox.alert('Error: ' + textStatus + '. ' + errorThrown);
+                });
+            } else {
+                Raven.captureMessage('Project dashboard: Parent node (' + itemParentNodeID + ') == Folder Node (' + theFolderNodeID + ')');
+            }
+        } else {
+            if (typeof folder === 'undefined') {
+                Raven.captureMessage('onDrop folder is undefined.');
+            }/* else {
+                Raven.captureMessage('onDrop folder is null.');
+            }*/
+        }
+        $('.project-organizer-dand').css('cursor', 'default');
+
+    }
+
+    function whichIsContainer(itemOne, itemTwo){
+        var tb = this;
+        var isOneAncestor = itemOne.isAncestor(itemTwo);
+        var isTwoAncestor = itemTwo.isAncestor(itemOne);
+        if (isOneAncestor && isTwoAncestor) {
+            return null; 
+        }
+        if (isOneAncestor) {
+            return itemOne;
+        }
+        if (isTwoAncestor) {
+            return itemTwo;
+        }
+        return null; 
+    }
+
 
     // OSF-specific Treebeard options common to all addons
         tbOptions = {
@@ -807,7 +977,8 @@
                 dropEvents : {
                     out  : function () { console.log(this, "Out");},
                     over : function (event, ui) { console.log(this, event, ui, "Over");},
-                    drop : _poDrop
+                    drop : _poDrop,
+                    over : _poOver
                 },
                 onload : function (){
                     var tb = this;

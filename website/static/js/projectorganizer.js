@@ -189,7 +189,6 @@
             default:
                 $('.project-organizer-dand').css('cursor', 'default');
         }
-
     }
 
     function dropLogic(event, items, folder) {
@@ -211,8 +210,8 @@
                         if ($.inArray(item.node_id, folderChildren) === -1) { // pointer not in folder to be moved to
                             itemsToMove.push(item.node_id);
                         } else if (copyMode === 'move') { // Pointer is already in the folder and it's a move
-    //                              We  need to make sure not to delete the folder if the item is moved to the same folder.
-    //                              When we add the ability to reorganize within a folder, this will have to change.
+                                    //                              We  need to make sure not to delete the folder if the item is moved to the same folder.
+                                    //                              When we add the ability to reorganize within a folder, this will have to change.
                             itemsNotToMove.push(item.node_id);
                         }
                     });
@@ -237,6 +236,7 @@
                     if (copyMode === 'copy' || copyMode === 'move') {
                         // Remove all the duplicated pointers
                         deleteMultiplePointersFromFolder(null, itemsNotToMove, itemParent);
+                        
                         setItemToExpand(folder, function () {
                             if (itemsToMove.length > 0) {
                                 var url = postInfo[copyMode]['url'];
@@ -909,7 +909,6 @@
             } else {
                     $('.project-details').hide();
                 }
-
 
         }); // end onSelectedRowsChanged
 

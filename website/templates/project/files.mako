@@ -25,7 +25,7 @@ $(document).ready(function(){
 
 
 <%def name="stylesheets()">
-${parent.stylesheets()}
+${parent.stylesheets()} 
 % for stylesheet in tree_css:
 <link rel='stylesheet' href='${stylesheet}' type='text/css' />
 % endfor
