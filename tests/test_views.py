@@ -2232,7 +2232,7 @@ class TestFileViews(OsfTestCase):
     def test_files_get(self):
         url = '/api/v1/{0}/files/'.format(self.project._primary_key)
         res = self.app.get(url, auth=self.user.auth).follow(auth=self.user.auth)
-        expected = _view_project(self.project, auth=Auth(user=self.user))['node']
+        expected = _view_project(self.project, auth=Auth(user=self.user), primary=True)['node']
         actual = res.json['node']
 
         assert_equal(res.status_code, http.OK)
