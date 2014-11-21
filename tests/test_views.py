@@ -2238,7 +2238,7 @@ class TestFileViews(OsfTestCase):
         assert_equal(res.status_code, http.OK)
         for key in actual:
             if key in expected:
-                assert_equal(actual[key], expected[key])
+                assert_equal(actual[key], expected[key], "Values for {key} are not equal".format(key=key))
         assert_in('tree_js', res.json)
         assert_in('tree_css', res.json)
 
