@@ -182,6 +182,10 @@ class User(GuidStoredObject, AddonModelMixin):
     # Node fields that trigger an update to the search engine on save
     SEARCH_UPDATE_FIELDS = {
         'fullname',
+        'given_name',
+        'middle_names',
+        'family_name',
+        'suffix',
         'merged_by',
         'jobs',
         'schools',
