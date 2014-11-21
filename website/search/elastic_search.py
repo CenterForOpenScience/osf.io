@@ -290,7 +290,6 @@ def update_user(user):
         return
 
     names = dict(zip(['fullname', 'given_name', 'family_name', 'middle_names', 'suffix'], [user.fullname, user.given_name, user.family_name, user.middle_names, user.suffix]))
-    logger.error(names)
     normalized_names = {}
     for key in names.keys():
         if names[key] is not None:
