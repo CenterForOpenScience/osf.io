@@ -6,7 +6,7 @@ import codecs
 
 from flask import request
 
-from framework.render.tasks import build_rendered_html
+from framework.render.tasks import ensure_path, build_rendered_html
 
 from website.util import rubeus
 from website.project.decorators import must_be_contributor_or_public
@@ -22,7 +22,7 @@ def collect_file_trees(**kwargs):
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
 
-    serialized = _view_project(node, auth)
+    serialized = _view_project(node, auth, primary=True)
     # Add addon static assets
     serialized.update(rubeus.collect_addon_assets(node))
     return serialized
@@ -37,30 +37,43 @@ def grid_data(**kwargs):
     return {'data': rubeus.to_hgrid(node, auth, **data)}
 
 # File rendering
-def get_cache_path(node_settings):
+def get_cache_path(node_settings, cache_type):
+    if cache_type == 'temp':
+        base_path = settings.MFR_TEMP_PATH
+    elif cache_type == 'rendered':
+        base_path = settings.MFR_CACHE_PATH
+    else:
+        raise ValueError('Argument "cache_type" must be "temp" or "rendered"')
     return os.path.join(
-        settings.MFR_CACHE_PATH,
+        base_path,
         node_settings.config.short_name,
         node_settings.owner._id,
     )
 
 
-def get_cache_content(node_settings, cache_file, start_render=False,
-                      file_path=None, file_content=None, download_path=None):
+def get_cache_content(node_settings, cache_file_name, start_render=False,
+                      file_content=None, download_url=None):
     """
-
     """
-    # Get rendered content if present
-    cache_path = get_cache_path(node_settings)
-    cache_file_path = os.path.join(cache_path, cache_file)
+    cache_dir = get_cache_path(node_settings, cache_type='rendered')
+    cache_file_path = os.path.join(cache_dir, cache_file_name)
     try:
         return codecs.open(cache_file_path, 'r', 'utf-8').read()
     except IOError:
         # Start rendering job if requested
         if start_render:
+            if file_content is None:
+                raise ValueError('Must provide "file_content"')
+            temp_file_dir = get_cache_path(node_settings, cache_type='temp')
+            temp_file_path = os.path.join(temp_file_dir, cache_file_name)
+            ensure_path(temp_file_dir)
+            with open(temp_file_path, 'wb') as fp:
+                fp.write(file_content)
             build_rendered_html(
-                file_path, file_content, cache_path, cache_file_path,
-                download_path
+                temp_file_path,
+                cache_dir,
+                cache_file_name,
+                download_url,
             )
         return None
 
