@@ -140,7 +140,7 @@
     $script.ready('zeroclipboard', function() {
         ZeroClipboard.config({moviePath: '/static/vendor/bower_components/zeroclipboard/ZeroClipboard.swf'})
     });
-    $script(['/static/addons/dropbox/dropboxNodeConfig.js']);
+    $script(['/static/addons/dropbox/dropboxNodeConfig.tb.js']);
     $script.ready('dropboxNodeConfig', function() {
         // TODO(sloria): Remove this dependency on mako variable
         var url = '${node["api_url"] + "dropbox/config/"}';
