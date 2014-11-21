@@ -312,6 +312,7 @@ def render_file(version_idx, file_version, file_record):
             node_settings,
             cache_file_name,
             start_render=True,
+            remote_path=file_obj.path,
             file_content=file_response.content,
             download_url=file_obj.get_download_path(version_idx),
         )
