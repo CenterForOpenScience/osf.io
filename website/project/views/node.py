@@ -861,23 +861,20 @@ def get_recent_logs(**kwargs):
 
 
 def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
-    if node.can_view(auth):
-        summary = _view_project(node, auth, primary, link_id)
+    summary = _view_project(node, auth, primary, link_id)
+    summary.update({
+        'can_view': node.can_view(auth),
+    })
+    summary['node']['registered_date'] = node.registered_date.strftime('%Y-%m-%d %H:%M UTC') \
+        if node.is_registration else None
+    if node.can_view(auth) and rescale_ratio:
+        ua_count, ua, non_ua = _get_user_activity(node, auth, rescale_ratio)
         summary.update({
-            'can_view': True,
+            'nlogs': len(node.logs),
+            'ua_count': ua_count,
+            'ua': ua,
+            'non_ua': non_ua,
         })
-        summary['node']['registered_date'] = node.registered_date.strftime('%Y-%m-%d %H:%M UTC') \
-            if node.is_registration else None
-        if rescale_ratio:
-            ua_count, ua, non_ua = _get_user_activity(node, auth, rescale_ratio)
-            summary.update({
-                'nlogs': len(node.logs),
-                'ua_count': ua_count,
-                'ua': ua,
-                'non_ua': non_ua,
-            })
-    else:
-        summary = {'can_view': False}
     return summary
 
 

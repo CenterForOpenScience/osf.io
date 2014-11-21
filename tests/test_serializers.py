@@ -121,7 +121,7 @@ class TestNodeSerializers(OsfTestCase):
             link_id=None
         )
         # serialized result should have is_fork
-        assert_false(res['node']['can_view'])
+        assert_false(res['can_view'])
         assert_true(res['node']['is_fork'])
 
     def test_serialize_node_search_returns_only_visible_contributors(self):
