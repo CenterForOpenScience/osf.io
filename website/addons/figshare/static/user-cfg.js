@@ -1,19 +1,7 @@
 $(document).ready(function() {
 
         $('#figshareAddKey').on('click', function() {
-            if (window.contextVars.node.authorized_user) {
-                $.ajax({
-                    type: 'POST',
-                    url: '/api/v1/profile/settings/oauth/',
-                    contentType: 'application/json',
-                    dataType: 'json',
-                    success: function (response) {
-                        window.location.reload();
-                    }
-                });
-            } else {
                 window.location.href = '/api/v1/settings/figshare/oauth/';
-            }
         });
 
         $('#figshareDelKey').on('click', function() {

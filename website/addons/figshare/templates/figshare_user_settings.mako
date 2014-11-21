@@ -17,10 +17,3 @@
 
 <%include file="profile/addon_permissions.mako" />
 
-<script type="text/javascript">
-
-    window.contextVars = window.contextVars || {};
-    window.contextVars.node = window.contextVars.node || {};
-    window.contextVars.node.authorized_user = ${authorized_user};
-
-</script>
