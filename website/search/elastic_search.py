@@ -298,12 +298,12 @@ def update_user(user):
     )
 
     normalized_names = {}
-    for key in names.keys():
-        if names[key] is not None:
+    for key, val in names.items():
+        if val is not None:
             try:
-                val = six.u(names[key])
+                val = six.u(val)
             except TypeError:
-                val = names[key]
+                pass  # This is fine, will only happen in 2.x if val is already unicode
             normalized_names[key] = unicodedata.normalize('NFKD', val).encode('ascii', 'ignore')
 
     user_doc = {
