@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from framework.tasks import celery
+from framework.tasks import app
 from framework.tasks.handlers import enqueue_task
 
 from website import settings
@@ -8,7 +8,7 @@ from website import settings
 from . import piwik
 
 
-@celery.task(bind=True, max_retries=5, default_retry_delay=60)
+@app.task(bind=True, max_retries=5, default_retry_delay=60)
 def _update_node(self, node_id, updated_fields=None):
     # Avoid circular imports
     from framework.transactions.context import TokuTransaction

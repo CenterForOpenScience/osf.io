@@ -16,7 +16,6 @@ from modularodm import Q
 from cloudstorm import sign
 
 from framework.exceptions import HTTPError
-from framework.analytics import get_basic_counters
 
 from website.util import rubeus
 from website.project.views.file import get_cache_content
@@ -86,22 +85,6 @@ def build_hgrid_urls(item, node):
     }
 
 
-def get_download_count(item, node, version_idx=None):
-    """
-    :param item: `FileTree` or `FileRecord` to look up
-    :param Node node: Root node to which the item is attached
-    :param int version_idx: Optional one-based version index
-    """
-    if isinstance(item, model.OsfStorageFileTree):
-        return None
-    parts = ['download', node._id, item.path]
-    if version_idx is not None:
-        parts.append(version_idx)
-    page = ':'.join([format(part) for part in parts])
-    _, count = get_basic_counters(page)
-    return count or 0
-
-
 def serialize_metadata_hgrid(item, node, permissions):
     """Build HGrid JSON for folder or file. Note: include node URLs for client-
     side URL creation for uploaded files.
@@ -121,7 +104,7 @@ def serialize_metadata_hgrid(item, node, permissions):
         'permissions': permissions,
         'nodeUrl': node.url,
         'nodeApiUrl': node.api_url,
-        'downloads': get_download_count(item, node),
+        'downloads': item.get_download_count(),
     }
 
 
@@ -144,7 +127,7 @@ def serialize_revision(node, record, version, index):
             if version.date_modified
             else None
         ),
-        'downloads': get_download_count(record, node, index),
+        'downloads': record.get_download_count(version=index),
         'urls': {
             'view': node.web_url_for(
                 'osf_storage_view_file',
@@ -319,18 +302,17 @@ def render_file(version_idx, file_version, file_record):
         Q('node', 'eq', file_record.node) &
         Q('path', 'eq', file_record.path)
     )
-    cache_filename = get_cache_filename(file_version)
+    cache_file_name = get_cache_filename(file_version)
     node_settings = file_obj.node.get_addon('osfstorage')
-    rendered = get_cache_content(node_settings, cache_filename)
+    rendered = get_cache_content(node_settings, cache_file_name)
     if rendered is None:
         download_url = get_download_url(version_idx, file_version, file_record)
         file_response = requests.get(download_url)
         rendered = get_cache_content(
-            node_settings=node_settings,
-            cache_file=cache_filename,
+            node_settings,
+            cache_file_name,
             start_render=True,
-            file_path=file_record.path,
             file_content=file_response.content,
-            download_path=file_obj.get_download_path(version_idx),
+            download_url=file_obj.get_download_path(version_idx),
         )
     return rendered
