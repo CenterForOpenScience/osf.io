@@ -52,8 +52,14 @@ def get_cache_path(node_settings, cache_type):
 
 
 def get_cache_content(node_settings, cache_file_name, start_render=False,
-                      file_content=None, download_url=None):
+                      remote_path=None, file_content=None, download_url=None):
     """
+    :param node_settings: Node settings record
+    :param str cache_file_name: Name of cached rendered file
+    :param bool start_render: Start rendering job if cached file not present
+    :param str remote_path: Path or name of file on remote service
+    :param str file_content: File contents
+    :param str download_url: External download URL
     """
     cache_dir = get_cache_path(node_settings, cache_type='rendered')
     cache_file_path = os.path.join(cache_dir, cache_file_name)
@@ -64,8 +70,14 @@ def get_cache_content(node_settings, cache_file_name, start_render=False,
         if start_render:
             if file_content is None:
                 raise ValueError('Must provide "file_content"')
+            if remote_path is None:
+                raise ValueError('Must provide "remote_path"')
             temp_file_dir = get_cache_path(node_settings, cache_type='temp')
-            temp_file_path = os.path.join(temp_file_dir, cache_file_name)
+            _, temp_file_ext = os.path.splitext(remote_path)
+            temp_file_path = os.path.join(
+                temp_file_dir,
+                '{0}{1}'.format(cache_file_name, temp_file_ext),
+            )
             ensure_path(temp_file_dir)
             with open(temp_file_path, 'wb') as fp:
                 fp.write(file_content)

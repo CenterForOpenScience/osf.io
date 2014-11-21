@@ -197,6 +197,7 @@ def github_view_file(auth, **kwargs):
                     node_settings,
                     cache_file_name,
                     start_render=True,
+                    remote_path=guid.path,
                     file_content=data,
                     download_url=download_url,
                 )
