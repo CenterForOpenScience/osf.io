@@ -64,7 +64,8 @@
     }
 
     function _gotoEvent (event, item, col) {
-        event.stopPropagation();
+        // var evt = event || window.event;
+        // evt.stopPropagation();
         window.location = item.data.urls.fetch;
     }
 
@@ -576,11 +577,6 @@
 
     function expandStateLoad  (item) {
         var tb = this;
-        // if( item.data.expand) {
-        //     this.updateFolder (null, item); 
-        // }
-        console.log("--");
-
         if(item.children.length > 0 && item.depth > 0){
             for ( var i = 0; i < item.children.length; i++){
                 if (item.children[i].data.expand) {
@@ -746,7 +742,7 @@
         });
 
         // Check through possible move and copy options, and set the copyMode appropriately.
-        if (!(canMove && canCopy )) { 
+        if (!(canMove && canCopy  && canAcceptDrop)) { 
             copyMode = 'forbidden';
         }
         else if (canMove && canCopy) {
@@ -871,8 +867,8 @@
                         if (itemsToMove.length > 0) {
                                 var url = postInfo[copyMode]['url'];
                                 var postData = JSON.stringify(postInfo[copyMode]['json']);
-                                //var outerFolder = whichIsContainer.call(tb, itemParent, folder);
-                                //var outerFolderID = outerFolder.id;
+                                var outerFolder = whichIsContainer.call(tb, itemParent, folder);
+                                var outerFolderID = outerFolder.id;
                                 var postAction = $.ajax({
                                     type: 'POST',
                                     url: url,
@@ -881,40 +877,23 @@
                                     dataType: 'json'
                                 });
                                 postAction.always(function (result) {
-                                    // console.log('Result',result); 
- 
-
-                                        // if (copyMode === 'move') {
-                                        //     if (typeof outerFolderID === 'undefined' || outerFolderID === null) {
-                                        //         itemParent = draggable.grid.grid.getData().getItemById(itemParentID);
-                                        //         setReloadNextFolder(itemParentID, folder.id);
-                                        //         draggable.grid.reloadFolder(itemParent);
-
-                                        //     } else {
-                                        //         var outerFolder = draggable.grid.grid.getData().getItemById(outerFolderID);
-                                        //         reloadFolder(draggable.grid, outerFolder);
-                                        //     }
-
-                                        // } else {
-                                        //     reloadFolder(draggable.grid, folder);
-
-                                        // }
-                                        // copyMode = null;
-
+                                    if (copyMode === 'move') {
+                                        if (typeof outerFolderID === 'undefined' || outerFolderID === null) {
+                                            tb.updateFolder(null, itemParent);
+                                        } else {
+                                            tb.updateFolder(null, outerFolder);
+                                        }
+                                    } else {
+                                        tb.updateFolder(null, folder);
+                                    }
                                 });
                                 postAction.fail(function (jqxhr, textStatus, errorThrown){
                                     bootbox.alert('Error: ' + textStatus + '. ' + errorThrown);
                                 });
                             } else { // From:  if(itemsToMove.length > 0)
-//                                folder.childrenCount = folder.children.length;
-                                draggable.grid.refreshData();
-                                reloadFolder(draggable.grid, itemParent);
+                                tb.updateFolder(null, itemParent);
                             }
-
-
                     }
-
-
                 });
                 getAction.fail(function (jqxhr, textStatus, errorThrown){
                     bootbox.alert('Error: ' + textStatus + '. ' + errorThrown);

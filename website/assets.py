@@ -62,6 +62,9 @@ js_bottom = Bundle(
     "vendor/bower_components/bootstrap.growl/bootstrap-growl.min.js",
     # 'vendor/dropzone/dropzone.js',
     # 'vendor/hgrid/hgrid.js',
+            'vendor/bower_components/treebeard/shims/html5shiv.js',
+        # 'vendor/bower_components/treebeard/shims/ie9.js',
+        'vendor/bower_components/treebeard/shims/json_shim.js',
     'vendor/autosize/jquery.autosize.min.js',
     # Site-specific JS
     Bundle(

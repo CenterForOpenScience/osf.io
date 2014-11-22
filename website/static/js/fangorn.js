@@ -1,7 +1,4 @@
 /**
- * Created by faye on 10/15/14.
- */
-/**
  *  Defining Treebeard options for OSF.
  *
  * Module to render the consolidated files view. Reads addon configurations and
@@ -29,14 +26,9 @@
     }
 }(this, function($, Treebeard){
 
-
-    function _fangornViewEvents () {
-        console.log("View events this", this);
-    }
-
     // Returns custom icons for OSF 
     function _fangornResolveIcon(item){
-        var privateFolder = m('img', { src : "/static/img/hgrid/fatcowicons/folder_delete.png" }),
+        var privateFolder = m('img', { src : '/static/img/hgrid/fatcowicons/folder_delete.png' }),
             pointerFolder = m('i.icon-hand-right', ' '),
             openFolder  = m('i.icon-folder-open-alt', ' '),
             closedFolder = m('i.icon-folder-close-alt', ' '),
@@ -96,7 +88,6 @@
         }
     }
 
-
     // Returns custom toggle icons for OSF
     function _fangornResolveToggle(item){
         var toggleMinus = m('i.icon-minus', ' '),
@@ -109,7 +100,6 @@
         }
         return '';
     }
-
 
     function _fangornToggleCheck (item) {
         if (item.data.permissions.view) {
@@ -129,16 +119,14 @@
         $(event.target).closest('.tb-row').find('.fg-hover-hide').show();
     }
 
-    function _fangornUploadProgress (treebeard, file, progress, bytesSent){
-        console.log("File Progress", this, arguments);
+    function _fangornUploadProgress (treebeard, file, progress){
+        window.console.log('File Progress', this, arguments);
         var item = treebeard.dropzoneItemCache.children[0];
         var msgText = 'Uploaded ' + Math.floor(progress) + '%'; 
         item.notify.update(msgText, 'success', 1, undefined);
     }
 
     function _fangornSending (treebeard, file, xhr, formData) {
-        console.log("Sending", arguments);
-
         var parentID = treebeard.dropzoneItemCache.id;
         var parent = treebeard.dropzoneItemCache;
         // create a blank item that will refill when upload is finished. 
@@ -148,9 +136,7 @@
             addon : parent.data.addon,
             children : []
         };
-
         var newItem = treebeard.createItem(blankItem, parentID);
-
         var configOption = resolveconfigOption.call(treebeard, parent, 'uploadSending', [file, xhr, formData]);
         return configOption || null;
     }
@@ -158,8 +144,6 @@
     function _fangornAddedFile(treebeard, file){
         //this == dropzone
         var item = treebeard.dropzoneItemCache;
-
-        //console.log("fangornAddedFile", this, arguments, item);
         var configOption = resolveconfigOption.call(treebeard, item, 'uploadAdd', [file, item]);
         return configOption || null;
     }
@@ -171,13 +155,13 @@
     }
 
     function _fangornComplete (treebeard, file) {
-        console.log("Complete", arguments);
+        window.console.log("Complete", arguments);
     }
 
     function _fangornDropzoneSuccess (treebeard, file, response) {
-        console.log("Success", arguments);
+        window.console.log("Success", arguments);
         var item = treebeard.dropzoneItemCache.children[0];
-        console.log("RESPONSE: ", response);
+        window.console.log("RESPONSE: ", response);
         // RESPONSES
         // OSF : Object with actionTake : "file_added"
         // DROPBOX : Object; addon : 'dropbox'
@@ -185,7 +169,6 @@
         // GITHUB : Object; addon : 'github'
         //Dataverse : Object, actionTaken : file_uploaded
         var revisedItem = resolveconfigOption.call(treebeard, item.parent(), 'uploadSuccess', [file, item, response]);         
-
         if(!revisedItem && response){
             if(response.actionTaken === 'file_added' || response.addon === 'dropbox' || response.addon === 'github' || response.addon === 'dataverse'){ // Base OSF response 
                 item.data = response;
@@ -195,10 +178,8 @@
         }
     }
 
-    function _fangornDropzoneError (treebeard, file, message, xhr) {
-        console.log("Error", arguments);
-        // var element = $( ".tb-row:contains('"+file.name+"')" );
-        // var id  = element.attr('data-id');
+    function _fangornDropzoneError (treebeard, file, message) {
+        window.console.log('Error', arguments);
         var item = treebeard.dropzoneItemCache.children[0];
         item.notify.type = 'danger';
         var msgText = message.message_short ? message.message_short : message; 
@@ -208,15 +189,26 @@
     }
 
     function _uploadEvent (event, item, col){
-        event.stopPropagation();
+        window.console.log(item);
+        try {
+            event.stopPropagation();
+        }
+        catch (e) {
+            window.event.cancelBubble = true;
+        } 
         this.dropzone.hiddenFileInput.click();
         this.dropzoneItemCache = item; 
-        console.log('Upload Event triggered', this, event,  item, col);
+        window.console.log('Upload Event triggered', this, event,  item, col);
     }
 
     function _downloadEvent (event, item, col) {
-        event.stopPropagation();
-        console.log('Download Event triggered', this, event, item, col);
+        try {
+            event.stopPropagation();
+        }
+        catch (e) {
+            window.event.cancelBubble = true;
+        }        
+        window.console.log('Download Event triggered', this, event, item, col);
         if(!item.data.addon){
             item.data.downloads++;    
         }
@@ -224,8 +216,13 @@
     }
 
     function _removeEvent (event, item, col) {
-        event.stopPropagation();
-        console.log('Remove Event triggered', this, event, item, col);
+        try {
+            event.stopPropagation();
+        }
+        catch (e) {
+            window.event.cancelBubble = true;
+        } 
+        window.console.log('Remove Event triggered', this, event, item, col);
         var tb = this;
         item.notify.update('Deleting...', 'deleting', undefined, 3000); 
         if(item.data.permissions.edit){
@@ -237,10 +234,10 @@
             .done(function(data) {
                 // delete view
                 tb.deleteNode(item.parentID, item.id);                 
-                console.log('Delete success: ', data); 
+                window.console.log('Delete success: ', data); 
             })
             .fail(function(data){
-                console.log('Delete failed: ', data); 
+                window.console.log('Delete failed: ', data); 
                 item.notify.update('Delete failed.', 'danger', undefined, 3000); 
             }); 
         }
@@ -269,10 +266,6 @@
     function _fangornLazyLoadError (item) {
         // this = treebeard; 
         var self= this; 
-        console.log('lazyload Error', this, arguments);
-        function myFunc (){
-            console.log("My func", this, arguments); 
-        }
         var configOption = resolveconfigOption.call(this, item, 'lazyLoadError', [item]);
         if(!configOption) {
             tree.notify.update('Files couldn\'t load, please try again later.', 'deleting', undefined, 3000); 
@@ -389,7 +382,14 @@
                 sort : false
             });
         return columns;  
-    } 
+    }
+
+    function _loadTopLevelChildren () {
+        for (var i = 0; i < this.treeData.children.length; i++) {
+            this.updateFolder(null, this.treeData.children[i]);
+        }
+    }
+
     // OSF-specific Treebeard options common to all addons
     tbOptions = {
             rowHeight : 35,         // user can override or get from .tb-row height
@@ -410,7 +410,8 @@
                 down : 'i.icon-chevron-down'
             },
             onload : function (){
-                var tb = this; 
+                var tb = this;
+                _loadTopLevelChildren.call(tb);  
                 $(document).on('click', '.fangorn-dismiss', function(){
                      tb.redraw();
                  });
@@ -457,7 +458,7 @@
                 return false;
             },
             onselectrow : function (item) {
-                console.log('Row: ', item);
+                window.console.log('Row: ', item);
             },
             onmouseoverrow : _fangornMouseOverRow,
             dropzone : {                                           // All dropzone options.
@@ -488,7 +489,7 @@
 
     function Fangorn(options) {
         this.options = $.extend({}, tbOptions, options);
-        console.log('Options', this.options);
+        window.console.log('Options', this.options);
         this.grid = null; // Set by _initGrid
         this.init();
     }
