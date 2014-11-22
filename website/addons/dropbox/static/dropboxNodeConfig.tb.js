@@ -209,7 +209,7 @@
          */
         self.cancelSelection = function() {
             self.selected(null);
-            $(selector + ' input[type="radio"]').prop('checked', false);
+            //$(selector + ' input[type="radio"]').prop('checked', false);
         };
 
         /** Change the flashed message. */
@@ -317,12 +317,18 @@
                 //self.loading(true);
                 $(self.folderPicker).folderpicker({
                     onPickFolder: onPickFolder,
+                    initialFolderName : self.folderName(),
+
                     // Fetch Dropbox folders with AJAX
                     filesData: self.urls().folders, // URL for fetching folders
                     // Lazy-load each folder's contents
                     // Each row stores its url for fetching the folders it contains
                     resolveLazyloadUrl : function(tree, item){
                         return item.data.urls.folders;
+                    },
+                    oddEvenClass : {
+                        odd : 'dropbox-folderpicker-odd',
+                        even : 'dropbox-folderpicker-even'
                     },
                     ajaxOptions: {
                        error: function(xhr, textStatus, error) {

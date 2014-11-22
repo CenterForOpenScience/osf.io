@@ -574,25 +574,29 @@
         return '/api/v1/dashboard/' + item.data.node_id;
     }
 
+    function expandStateLoad  (item) {
+        var tb = this;
+        // if( item.data.expand) {
+        //     this.updateFolder (null, item); 
+        // }
+        console.log("--");
+
+        if(item.children.length > 0 && item.depth > 0){
+            for ( var i = 0; i < item.children.length; i++){
+                if (item.children[i].data.expand) {
+                    tb.updateFolder (null, item.children[i]);
+                }
+            }    
+        }
+        
+    }
+
+
     function _poLoadOpenChildren () {
         var tb = this;
         this.treeData.children.map(function(item){
-            item.data.expand = true; 
-            if (item.data.expand) {
-                $.ajax({
-                    url : '/api/v1/dashboard/' + item.data.node_id
-                }).done(function(result){
-                    console.log(result);
-                    result.data.map(function(rItem){
-                        item.add(tb.buildTree(rItem, item));                        
-                    });
-                    tb.redraw();
-                    tb.moveOn();
-
-                });
-            }
+            tb.updateFolder(null, item);
         }); 
-
     }
 
     function _poMultiselect (event, tree) {
@@ -1009,6 +1013,7 @@
                 resolveIcon : _poResolveIcon,
                 resolveToggle : _poResolveToggle,
                 resolveLazyloadUrl : _poResolveLazyLoad,
+                lazyLoadOnLoad : expandStateLoad,
                 // lazyLoadError : _fangornLazyLoadError,
                 // resolveUploadMethod :_fangornUploadMethod,
 

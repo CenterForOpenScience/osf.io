@@ -26,31 +26,31 @@
 }(this, function($, Treebeard){
     'use strict';
 
-    // Extend the default Treebeard name column
-    FolderPicker.columnTitles = [];
-    FolderPicker.columnTitles.push({
-            title: 'Folders',
-            width : '75%',
-            sort : false
-        },
-        {
-            title : 'Select',
-            width : '25%',
-            sort : false
-    });
+    // // Extend the default Treebeard name column
+    // FolderPicker.columnTitles = [];
+    // FolderPicker.columnTitles.push({
+    //         title: 'Folders',
+    //         width : '75%',
+    //         sort : false
+    //     },
+    //     {
+    //         title : 'Select',
+    //         width : '25%',
+    //         sort : false
+    // });
 
-    FolderPicker.resolveRows = [
-        {
-            data : 'name',  // Data field name
-            folderIcons : true,
-            filter : false,
-            custom : _treebeardTitleColumn
-        },
-        {
-            sortInclude : false,
-            filter : false,
-            custom : _treebeardSelectView
-        }];
+    // FolderPicker.resolveRows = [
+    //     {
+    //         data : 'name',  // Data field name
+    //         folderIcons : true,
+    //         filter : false,
+    //         custom : _treebeardTitleColumn
+    //     },
+    //     {
+    //         sortInclude : false,
+    //         filter : false,
+    //         custom : _treebeardSelectView
+    //     }];
 
     function _treebeardToggleCheck (item) {
         if (item.data.path == "/") {
@@ -96,12 +96,20 @@
      * Returns the folder select button for a single row.
      */
     function _treebeardSelectView(item) {
+        if (item.data.path === this.options.folderPath) {
+            return m("input",{
+            type:"radio",
+            checked : 'checked',
+            name: "#" + this.options.divID + INPUT_NAME,
+            value:item.id
+            }, " ");
+        }
 
         return m("input",{
             type:"radio",
             name: "#" + this.options.divID + INPUT_NAME,
             value:item.id
-        }, " ")
+        }, " ");
     }
 
     function _treebeardColumnTitle(){
@@ -134,12 +142,47 @@
         default_columns.push(
             {
             sortInclude : false,
+            css : 'p-l-xs',
             custom : _treebeardSelectView
         });
 
         return default_columns;
     }
 
+    function _treebeardOnload () {
+        var tb = this;
+        var folderName = tb.options.initialFolderName;
+        if (folderName === "None") {
+            tb.options.folderPath = null;
+        } else {
+            tb.options.folderPath = folderName.replace('Dropbox', ''); 
+            var folderArray = folderName.trim().split('/');
+            if (folderArray[folderArray.length-1] === "") {
+                folderArray.pop();
+            }
+            folderArray.shift();
+            tb.options.dropboxArray = folderArray; 
+            console.log(folderArray);
+        }
+
+        for (var i = 0; i < tb.treeData.children.length; i++) {
+            if (tb.treeData.children[i].data.name === folderArray[0]) {
+                tb.updateFolder(null,tb.treeData.children[i]); 
+            }
+        }
+        tb.options.dropboxIndex = 1; 
+    }
+
+    function _treebeardLazyLoadOnLoad  (item) {
+        var tb = this; 
+        for (var i = 0; i < item.children.length; i++) {
+            if (item.children[i].data.name === tb.options.dropboxArray[tb.options.dropboxIndex]) {
+                tb.updateFolder(null,item.children[i]);
+                tb.options.dropboxIndex++; 
+                return; 
+            }
+        }
+    }
 
     // Upon clicking the name of folder, toggle its collapsed state
     //function onClickName(evt, row, grid) {
@@ -153,6 +196,8 @@
         resolveIcon : _treebeardResolveIcon,
         togglecheck : _treebeardToggleCheck,
         resolveToggle : _treebeardResolveToggle,
+        onload : _treebeardOnload,
+        lazyLoadOnLoad : _treebeardLazyLoadOnLoad,
         // Disable uploads
         uploads: false,
         showFilter : false
@@ -167,8 +212,10 @@
         if (!opts.onPickFolder) {
             throw 'FolderPicker must have the "onPickFolder" option defined';
         }
+        console.log("Opts", opts);
         self.options = $.extend({}, defaults, opts);
         self.options.divID = selector.substring(1);
+        self.options.initialFolderName = opts.initialFolderName;
 
         // Start up the grid
         self.grid = Treebeard.run(self.options);
