@@ -120,7 +120,7 @@
             // Update the item with the new branch data
             var icon = $('.tb-row[data-id="'+item.id+'"]').find('.tb-toggle-icon');
             var iconCache = icon.html();
-            icon.html('<i class="icon-refresh fangorn-spin">'); 
+            icon.html('<i class="icon-refresh icon-spin">'); 
             $.ajax({
                 type: 'get',
                 url: response[0].urls.fetch

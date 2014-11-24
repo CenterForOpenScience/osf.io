@@ -587,11 +587,12 @@
         
     }
 
-
     function _poLoadOpenChildren () {
         var tb = this;
         this.treeData.children.map(function(item){
-            tb.updateFolder(null, item);
+            if(item.data.expand) {
+                tb.updateFolder(null, item);                
+            }
         }); 
     }
 
@@ -712,10 +713,10 @@
             acceptDrop = canAcceptDrop (items, folder); 
         $('.tb-row').removeClass('tb-h-success tb-h-error');
         if(acceptDrop) {
-            $('.tb-row[data-id="' + folder.id + '"').addClass('tb-h-success');
+            $('.tb-row[data-id="' + folder.id + '"]').addClass('tb-h-success');
         }       
         else {
-            $('.tb-row[data-id="' + folder.id + '"').addClass('tb-h-error');
+            $('.tb-row[data-id="' + folder.id + '"]').addClass('tb-h-error');
         }
     }
 
