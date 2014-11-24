@@ -106,16 +106,27 @@
         });
     }
 
-    // function setItemToExpand(item, callback) {
-    //     var expandUrl = item.apiURL + 'expand/';
-    //     var postAction = $.osf.postJSON(expandUrl,{});
-    //     postAction.done(function() {
-    //         item.expand = false;
-    //         if (typeof callback !== 'undefined') {
-    //             callback();
-    //         }
-    //     }).fail($.osf.handleJSONError);
-    // }
+    function saveExpandState (item, callback) {
+        if(item.expand) {
+            // turn to false
+            var collapseUrl = item.apiURL + 'collapse/';
+                    var postAction = $.osf.postJSON(collapseUrl, {});
+                    postAction.done(function() {
+                        if (typeof callback !== 'undefined') {
+                            callback();
+                        }
+                    }).fail($.osf.handleJSONError);
+        } else {
+            // turn to true
+            var expandUrl = item.apiURL + 'expand/';
+            var postAction = $.osf.postJSON(expandUrl,{});
+            postAction.done(function() {
+                if (typeof callback !== 'undefined') {
+                    callback();
+                }
+            }).fail($.osf.handleJSONError);
+        }
+    }
 
     function _showProjectDetails (event, item, col) {
         var treebeard = this; 
@@ -258,7 +269,8 @@
                         pointerID: linkID,
                         toNodeID: theItem.node_id
                     });
-                setItemToExpand(theItem, function() {
+                theItem.expand = false;
+                saveExpandState(theItem, function() {
                     var tb = treebeard; 
                     var postAction = $.ajax({
                         type: 'POST',
@@ -329,7 +341,8 @@
                     node_id: theItem.node_id,
                     title: $.trim($('#add-folder-input' + theItem.node_id).val())
                 };
-                setItemToExpand(theItem, function() {
+                theItem.expand = false;
+                saveExpandState(theItem, function() {
                     var putAction = $.osf.putJSON(url, postData);
                     putAction.done(function () {
                         treebeard.updateFolder(null, item);
@@ -979,6 +992,13 @@
                 },
                 onselectrow : function (item) {
                     console.log('Row: ', item);
+                },
+                ontogglefolder : function (item, event) {
+                    var tb = this;
+                    console.log("Event", event);
+                    if(event) {
+                        saveExpandState(item.data);                        
+                    }
                 },
                 // onmouseoverrow : _poMouseOverRow,
                 onmultiselect : _poMultiselect,
