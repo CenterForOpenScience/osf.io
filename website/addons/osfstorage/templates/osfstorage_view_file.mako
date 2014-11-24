@@ -5,7 +5,7 @@
 <div class="scripted" id="revisionScope">
 
     <ol class="breadcrumb">
-        <li><a data-bind="attr.href: urls.files">{{ node }}</a></li>
+        <li><a href="{{ urls.files }}">{{ node }}</a></li>
         <li class="active overflow">{{ path }}</li>
     </ol>
 
