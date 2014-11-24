@@ -6,7 +6,7 @@
     "bootstrap": "~3.3.0",
     "requirejs": "~2.1.11",
     "dropzone": "~3.10.2",
-    "hgrid": ">=0.2.6",
+    "hgrid": ">=0.2.9",
     "moment": "~2.7.0",
     "qunit": "~1.14.0",
     "sinon": "~1.10.2",
