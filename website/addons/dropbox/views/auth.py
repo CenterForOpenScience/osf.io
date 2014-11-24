@@ -22,6 +22,7 @@ from website.project.decorators import must_have_addon
 
 from website.addons.dropbox import settings
 from website.addons.dropbox.client import get_client_from_user_settings
+from dropbox.rest import ErrorResponse
 
 
 logger = logging.getLogger(__name__)
@@ -124,10 +125,17 @@ def dropbox_oauth_finish(auth, **kwargs):
 @must_have_addon('dropbox', 'user')
 def dropbox_oauth_delete_user(user_addon, auth, **kwargs):
     """View for deauthorizing Dropbox."""
-    client = get_client_from_user_settings(user_addon)
+    try:
+        client = get_client_from_user_settings(user_addon)
+        client.disable_access_token()
+    except ErrorResponse as error:
+        if error.status == 401:
+            pass
+        else:
+            raise HTTPError(http.BAD_REQUEST)
     user_addon.clear()
     user_addon.save()
-    client.disable_access_token()
+
     return None
 
 
@@ -142,10 +150,24 @@ def dropbox_user_config_get(user_addon, auth, **kwargs):
         'delete': api_url_for('dropbox_oauth_delete_user')
     }
     info = user_addon.dropbox_info
+    valid_credentials = True
+
+    if user_addon.has_auth:
+        try:
+            client = get_client_from_user_settings(user_addon)
+            client.account_info()
+        except ErrorResponse as error:
+            if error.status == 401:
+                valid_credentials = False
+            else:
+                HTTPError(http.BAD_REQUEST)
+
     return {
         'result': {
             'userHasAuth': user_addon.has_auth,
+            'validCredentials': valid_credentials,
             'dropboxName': info['display_name'] if info else None,
-            'urls': urls,
+            'nNodesAuthorized': len(user_addon.nodes_authorized),
+            'urls': urls
         },
     }, http.OK

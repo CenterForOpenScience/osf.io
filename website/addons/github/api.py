@@ -90,7 +90,7 @@ class GitHub(object):
         return self.gh3.create_repo(repo, **kwargs)
 
     def branches(self, user, repo, branch=None):
-        """List a repo's branches or get a single branch.
+        """List a repo's branches or get a single branch (in a list).
 
         :param str user: GitHub user name
         :param str repo: GitHub repo name
@@ -99,6 +99,8 @@ class GitHub(object):
             http://developer.github.com/v3/repos/#list-branches
 
         """
+        if branch:
+            return [self.repo(user, repo).branch(branch)]
         return self.repo(user, repo).iter_branches() or []
 
     def commits(self, user, repo, path=None, sha=None):
@@ -154,6 +156,10 @@ class GitHub(object):
             if recursive:
                 return tree.recurse()
             return tree
+        except AttributeError:
+            if not tree:
+                raise EmptyRepoError
+            raise
         except GitHubError as error:
             if error.code == 409:
                 raise EmptyRepoError

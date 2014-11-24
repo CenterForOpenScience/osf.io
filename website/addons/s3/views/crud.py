@@ -113,20 +113,22 @@ def s3_view(**kwargs):
     if redirect_url:
         return redirect(redirect_url)
 
-    cache_name = get_cache_file_name(path, key.etag)
+    cache_file_name = get_cache_file_name(path, key.etag)
     urls = build_urls(node, path, etag=key.etag)
 
     if key.s3Key.size > MAX_RENDER_SIZE:
         render = 'File too large to render; download file to view it'
     else:
         # Check to see if the file has already been rendered.
-        render = get_cache_content(node_settings, cache_name)
+        render = get_cache_content(node_settings, cache_file_name)
         if render is None:
             file_contents = key.s3Key.get_contents_as_string()
             render = get_cache_content(
-                node_settings, cache_name, start_render=True,
-                file_content=file_contents, download_path=urls['download'],
-                file_path=path,
+                node_settings,
+                cache_file_name,
+                start_render=True,
+                file_content=file_contents,
+                download_url=urls['download'],
             )
 
     versions = create_version_list(wrapper, urllib.unquote(path), node)
@@ -140,6 +142,7 @@ def s3_view(**kwargs):
         'current': key.version_id,
         'info_url': urls['info'],
         'delete_url': urls['delete'],
+        'files_page_url': node.web_url_for('collect_file_trees')
     }
     rv.update(_view_project(node, auth, primary=True))
     return rv

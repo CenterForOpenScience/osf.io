@@ -521,7 +521,7 @@ def make_url_map(app):
 
     process_rules(app, [
 
-        Rule('/search/', 'get', search_views.search_search, OsfWebRenderer('search.mako')),
+        Rule('/search/', 'get', {}, OsfWebRenderer('search.mako')),
 
         Rule('/api/v1/user/search/', 'get', search_views.search_contributor, json_renderer),
 
@@ -538,7 +538,7 @@ def make_url_map(app):
 
     process_rules(app, [
 
-        Rule('/search/', 'get', search_views.search_search, json_renderer),
+        Rule(['/search/', '/search/<type>/'], ['get', 'post'], search_views.search_search, json_renderer),
         Rule('/search/projects/', 'get', search_views.search_projects_by_title, json_renderer),
 
     ], prefix='/api/v1')

@@ -77,7 +77,7 @@
         <div class="col-sm-4 hpFeature">
             <img id="archive" src="/static/img/filedrawer.gif"><br>
             <div class="hpSubHeadTwo">ARCHIVING</div>
-            <p>and management of research and collaborations</p>
+            <p>and managing collaborations</p>
             <div class="hpFeatureInfo">Spend more time doing your research and less time keeping track of it. No more lost data from crashed drives, disappearing collaborators, or failing memories.</div>
         </div>
         <div class="col-sm-4 hpFeature">

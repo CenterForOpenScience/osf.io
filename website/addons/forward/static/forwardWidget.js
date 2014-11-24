@@ -11,7 +11,7 @@
 
     'use strict';
 
-    ko.punches.attributeInterpolationMarkup.enable();
+    ko.punches.enableAll();
 
     /**
      * Knockout view model for the Forward node settings widget.
