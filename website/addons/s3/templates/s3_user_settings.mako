@@ -1,4 +1,3 @@
-<script src="/static/js/addons.js"></script>
 <form role="form" id="addonSettings${addon_short_name.capitalize()}" data-addon="${addon_short_name}">
 
     <span data-owner="user"></span>
@@ -41,8 +40,7 @@
 
 <%def name="on_submit()">
     <script type="text/javascript">
-        window.contextVars = window.contextVars;
-        window.contextVars.addonSettingsSelector = 'addonSettings${addon_short_name.capitalize()}';
+        window.contextVars = $.extend({}, window.contextVars, {'addonSettingsSelector': 'addonSettings${addon_short_name.capitalize()}'});
     </script>
 </%def>
 
