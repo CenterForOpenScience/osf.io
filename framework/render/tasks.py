@@ -1,12 +1,14 @@
-import logging
+# -*- coding: utf-8 -*-
+
 import os
+import logging
 import errno
 import codecs
-from framework.tasks import celery
+
+from framework.tasks import app
 from website import settings
 from mfr.renderer import FileRenderer
 import mfr
-import tempfile
 from mfr.renderer.exceptions import MFRError
 from website.language import ERROR_PREFIX, STATA_VERSION_ERROR, BLANK_OR_CORRUPT_TABLE_ERROR
 
@@ -45,29 +47,17 @@ def render_mfr_error(err):
            </div>
         """.format(**locals())
 
-@celery.task(time_limit=settings.MFR_TIMEOUT)
-def _build_rendered_html(file_name, file_content, cache_dir, cache_file_name,
-                         download_path):
+
+@app.task(ignore_result=True, timeout=settings.MFR_TIMEOUT)
+def _build_rendered_html(file_path, cache_dir, cache_file_name, download_url):
     """
 
-    :param str file_name:
-    :param str file_content:
-    :param str cache_dir:
-    :param str cache_file_name:
-    :param str download_path:
-
+    :param str file_path: Full path to raw file on disk
+    :param str cache_dir: Folder to store cached file in
+    :param str cache_file_name: Name of cached file
+    :param str download_url: External download URL
     """
-
-    # Open file pointer if no content provided
-    if file_content is None:
-        file_pointer = codecs.open(file_name)
-    # Else create temporary file with content
-    else:
-        file_pointer = tempfile.NamedTemporaryFile(
-            suffix=os.path.splitext(file_name)[1],
-        )
-        file_pointer.write(file_content)
-        file_pointer.seek(0)
+    file_pointer = codecs.open(file_path)
 
     # Build path to cached content
     # Note: Ensures that cache directories have the same owner as the files
@@ -77,9 +67,9 @@ def _build_rendered_html(file_name, file_content, cache_dir, cache_file_name,
 
     # Render file
     try:
-        rendered = mfr.render(file_pointer, url=download_path)
+        rendered = mfr.render(file_pointer, url=download_url)
     except MFRError as err:
-        rendered = render_mfr_error(err).format(download_path=download_path)
+        rendered = render_mfr_error(err).format(download_path=download_url)
 
     # Close read pointer
     file_pointer.close()
@@ -88,9 +78,23 @@ def _build_rendered_html(file_name, file_content, cache_dir, cache_file_name,
     with codecs.open(cache_file_path, 'w', 'utf-8') as write_file_pointer:
         write_file_pointer.write(rendered)
 
-    return True
+    os.remove(file_path)
 
-# Expose render function
-build_rendered_html = _build_rendered_html
-if settings.USE_CELERY:
-    build_rendered_html = build_rendered_html.delay
+
+def build_rendered_html(file_path, cache_dir, cache_file_name, download_url):
+    """Public wrapper for the rendering task. Override the default Celery ID
+    generation, passing the unique cached path as the `task_id`, to permit
+    checking whether the requested file is already being rendered.
+    """
+    args = (file_path, cache_dir, cache_file_name, download_url)
+    if settings.USE_CELERY:
+        # Call task asynchronously
+        task_id = '{0}/{1}'.format(cache_dir, cache_file_name)
+        # Enqueue task if it hasn't already been sent to Rabbit ("PENDING"
+        # means not published to message queue)
+        result = app.AsyncResult(task_id)
+        if result.status == 'PENDING':
+            _build_rendered_html.apply_async(args, task_id=task_id)
+    else:
+        # Call task synchronously
+        _build_rendered_html(*args)

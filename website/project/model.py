@@ -29,8 +29,9 @@ from framework.mongo.utils import to_mongo, to_mongo_key
 from framework.auth import get_user, User, Auth
 from framework.auth.utils import privacy_info_handle
 from framework.analytics import (
-    get_basic_counters, increment_user_activity_counters, piwik
+    get_basic_counters, increment_user_activity_counters
 )
+from framework.analytics import tasks as piwik_tasks
 from framework.exceptions import PermissionsError
 from framework.mongo import StoredObject
 from framework.guid.model import GuidStoredObject
@@ -888,6 +889,8 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     def save(self, *args, **kwargs):
 
+        update_piwik = kwargs.pop('update_piwik', True)
+
         self.adjust_permissions()
 
         first_save = not self._is_loaded
@@ -958,8 +961,8 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.update_search()
 
         # This method checks what has changed.
-        if settings.PIWIK_HOST:
-            piwik.update_node(self, saved_fields)
+        if settings.PIWIK_HOST and update_piwik:
+            piwik_tasks.update_node(self._id, saved_fields)
 
         # Return expected value for StoredObject::save
         return saved_fields
@@ -1493,7 +1496,8 @@ class Node(GuidStoredObject, AddonModelMixin):
             if message:
                 status.push_status_message(message)
 
-        if os.path.exists(folder_old):
+        # TODO: Remove after migration to OSF Storage
+        if settings.COPY_GIT_REPOS and os.path.exists(folder_old):
             folder_new = os.path.join(settings.UPLOADS_PATH, forked._primary_key)
             Repo(folder_old).clone(folder_new)
 
@@ -1554,7 +1558,8 @@ class Node(GuidStoredObject, AddonModelMixin):
             if message:
                 status.push_status_message(message)
 
-        if os.path.exists(folder_old):
+        # TODO: Remove after migration to OSF Storage
+        if settings.COPY_GIT_REPOS and os.path.exists(folder_old):
             folder_new = os.path.join(settings.UPLOADS_PATH, registered._primary_key)
             Repo(folder_old).clone(folder_new)
 

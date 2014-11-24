@@ -71,7 +71,7 @@
                     url: url,
                     data: JSON.stringify({
                         name: file.destination || file.name,
-                        type: file.type || 'application/octet-stream',
+                        type: file.type,
                         size: file.size,
                     }),
                     contentType: 'application/json',

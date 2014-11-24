@@ -19,6 +19,8 @@ ADDON_PATH = os.path.join(BASE_PATH, 'addons')
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = "/static"
 
+LOAD_BALANCER = False
+
 LOG_PATH = os.path.join(APP_PATH, 'logs')
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 ANALYTICS_PATH = os.path.join(BASE_PATH, 'analytics')
@@ -48,6 +50,9 @@ DEV_MODE = False
 DEBUG_MODE = False
 
 
+# TODO: Remove after migration to OSF Storage
+COPY_GIT_REPOS = False
+
 # External services
 USE_CDN_FOR_CLIENT_LIBS = True
 
@@ -63,6 +68,7 @@ MAILGUN_API_KEY = None
 # TODO: Override in local.py in production
 UPLOADS_PATH = os.path.join(BASE_PATH, 'uploads')
 MFR_CACHE_PATH = os.path.join(BASE_PATH, 'mfrcache')
+MFR_TEMP_PATH = os.path.join(BASE_PATH, 'mfrtemp')
 
 # Use Celery for file rendering
 USE_CELERY = True
@@ -137,9 +143,11 @@ CELERY_RESULT_BACKEND = 'amqp://'
 
 # Modules to import when celery launches
 CELERY_IMPORTS = (
-    'framework.email.tasks',
     'framework.tasks',
-    'framework.render.tasks'
+    'framework.tasks.signals',
+    'framework.email.tasks',
+    'framework.render.tasks',
+    'framework.analytics.tasks',
 )
 
 # Add-ons

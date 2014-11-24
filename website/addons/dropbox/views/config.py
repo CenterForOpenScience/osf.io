@@ -15,6 +15,8 @@ from website.project.decorators import (
 from website.util import web_url_for
 
 from website.addons.dropbox import utils
+from website.addons.dropbox.client import get_client_from_user_settings
+from dropbox.rest import ErrorResponse
 
 
 @must_be_valid_project
@@ -64,6 +66,7 @@ def serialize_urls(node_settings):
         share_url = utils.get_share_folder_uri(node_settings.folder)
     else:
         share_url = None
+
     urls = {
         'config': node.api_url_for('dropbox_config_put'),
         'deauthorize': node.api_url_for('dropbox_deauthorize'),
@@ -74,7 +77,8 @@ def serialize_urls(node_settings):
         'folders': node.api_url_for('dropbox_hgrid_data_contents',
             foldersOnly=1, includeRoot=1),
         'share': share_url,
-        'emails': node.api_url_for('dropbox_get_share_emails')
+        'emails': node.api_url_for('dropbox_get_share_emails'),
+        'settings': web_url_for('user_addons')
     }
     return urls
 
@@ -89,12 +93,26 @@ def serialize_settings(node_settings, current_user, client=None):
         user_settings.owner._primary_key == current_user._primary_key
     )
     current_user_settings = current_user.get_addon('dropbox')
+    valid_credentials = True
+
+    if user_settings:
+        try:
+            client = client or get_client_from_user_settings(user_settings)
+            client.account_info()
+        except ErrorResponse as error:
+            if error.status == 401:
+                valid_credentials = False
+            else:
+                raise HTTPError(http.BAD_REQUEST)
+
     result = {
         'nodeHasAuth': node_settings.has_auth,
         'userIsOwner': user_is_owner,
         'userHasAuth': current_user_settings is not None and current_user_settings.has_auth,
+        'validCredentials': valid_credentials,
         'urls': serialize_urls(node_settings),
     }
+
     if node_settings.has_auth:
         # Add owner's profile URL
         result['urls']['owner'] = web_url_for('profile_view_id',

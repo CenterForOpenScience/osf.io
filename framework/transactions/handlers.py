@@ -33,7 +33,6 @@ def view_has_annotation(attr):
 
 def transaction_before_request():
     """Setup transaction before handling the request.
-
     """
     if view_has_annotation(NO_AUTO_TRANSACTION_ATTR):
         return None

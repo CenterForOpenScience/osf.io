@@ -1078,6 +1078,10 @@ div.search-result  {
     font-size: 10pt;
 }
 
+.search-result img{
+    margin-top: 10px;
+}
+
 .search-results.search-result {
     overflow-x: hidden;
 
@@ -1471,6 +1475,12 @@ li.contributor-list-item a.name {
     font-style: italic;
 }
 
+/* Handle paginator on add contributor modal */
+#addContributors .pagination-sm li a, #addContributors .pagination-sm li span {
+    padding: 5px 8px;
+    font-size: 10px;
+}
+
 /* Handle popovers inside modals */
 .popover {
     z-index: 999999;
@@ -1645,4 +1655,16 @@ div.pydocx-center{
 .search-term-label,
 .tag {
     white-space: pre;
+}
+
+.bootbox-node-deletion-modal {
+    font-weight: normal;
+    font-size: medium;
+    line-height: normal;
+    padding-top: 10px;
+}
+
+.bootbox-node-deletion-modal ol {
+    padding-left: 40px;
+    list-style-type: disc;
 }
