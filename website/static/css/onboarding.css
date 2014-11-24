@@ -24,7 +24,6 @@ ul.ob-widget-list li.ob-list-item {
 }
 
 .typeAheadDisabled{
-	disabled="disabled";
     height: 110%;
     font-size: 18px;
     border: 2px solid #ccc;
@@ -32,7 +31,6 @@ ul.ob-widget-list li.ob-list-item {
     -moz-border-radius: 8px;
     border-radius: 8px;
     outline: none;
-
 }
 
 ul.ob-widget-list {
