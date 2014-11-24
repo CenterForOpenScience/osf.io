@@ -1,42 +1,34 @@
 # -*- coding: utf-8 -*-
 import time
-import httplib as http
 import itertools
-
+import httplib as http
 from collections import Counter
+
 from flask import request
 from modularodm.exceptions import ValidationValueError
 
 from framework import forms
 from framework import status
-from framework.auth import User
-from framework.auth import get_user
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
 from framework.auth import authenticate
+from framework.auth import User, get_user
 from framework.exceptions import HTTPError
-from framework.auth.forms import PasswordForm
 from framework.auth.signals import user_registered
-from framework.auth.decorators import collect_auth
-from framework.auth.decorators import must_be_logged_in
-from framework.auth.forms import SetEmailAndPasswordForm
+from framework.auth.decorators import collect_auth, must_be_logged_in
+from framework.auth.forms import PasswordForm, SetEmailAndPasswordForm
 
 from website import mails
 from website import language
 from website import settings
 from website.models import Node
 from website.profile import utils
-from website.util import web_url_for
-from website.util import is_json_request
-from website.util.permissions import ADMIN
 from website.project.model import has_anonymous_link
-from website.util.permissions import expand_permissions
+from website.util import web_url_for, is_json_request
 from website.project.model import unreg_contributor_added
-from website import project.decorators
-from website.project.decorators import must_have_permission
-from website.project.decorators import must_be_valid_project
-from website.project.decorators import must_not_be_registration
-from website.project.decorators import must_be_contributor_or_public
+from website.util.permissions import expand_permissions, ADMIN
+from website.project.decorators import (must_have_permission, must_be_valid_project,
+        must_not_be_registration, must_be_contributor_or_public, must_be_contributor)
 
 
 @collect_auth
