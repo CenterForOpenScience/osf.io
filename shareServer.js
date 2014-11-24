@@ -109,21 +109,22 @@ wss.on('connection', function(client) {
     });
 
     client.on('close', function(reason) {
-        var docId = client.userMeta.docId;
-        var userId = client.userMeta.userId;
+        if (client.userMeta) {
+            var docId = client.userMeta.docId;
+            var userId = client.userMeta.userId;
 
-        if (docs[docId] && docs[docId][userId]) {
-            docs[docId][userId].count--;
-            if (docs[docId][userId].count === 0) {
-                delete docs[docId][userId];
-                if (!Object.keys(docs[docId]).length) {
-                    delete docs[docId];
+            if (docs[docId] && docs[docId][userId]) {
+                docs[docId][userId].count--;
+                if (docs[docId][userId].count === 0) {
+                    if (!Object.keys(docs[docId]).length) {
+                        delete docs[docId];
+                    }
                 }
             }
-        }
 
-        console.log('rem user:', client.userMeta.userName, '| Total:', wss.clients.length);
-        wss.broadcast(docId, JSON.stringify({type: 'meta', users: docs[docId]}));
+            console.log('rem user:', client.userMeta.userName, '| Total:', wss.clients.length);
+            wss.broadcast(docId, JSON.stringify({type: 'meta', users: docs[docId]}));
+        }
 
         stream.push(null);
         stream.emit('close');
@@ -153,7 +154,7 @@ app.get('/users', function getUsers(req, res, next) {
 app.get('/lock/:id', function lockDoc(req, res, next) {
     locked[req.params.id] = true;
     wss.broadcast(req.params.id, JSON.stringify({type: 'lock'}));
-    console.log(req.params.id + " was locked.")
+    console.log(req.params.id + " was locked.");
     res.send(req.params.id + " was locked.");
 });
 
@@ -161,7 +162,7 @@ app.get('/lock/:id', function lockDoc(req, res, next) {
 app.get('/unlock/:id', function lockDoc(req, res, next) {
     delete locked[req.params.id];
     wss.broadcast(req.params.id, JSON.stringify({type: 'unlock'}));
-    console.log(req.params.id + " was unlocked.")
+    console.log(req.params.id + " was unlocked.");
     res.send(req.params.id + " was unlocked.");
 });
 
