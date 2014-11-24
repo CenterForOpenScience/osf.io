@@ -43,6 +43,7 @@
                     "form_class": "form-stacked",
                     "submit_string": "Sign In",
                     "submit_btn_class": "btn-primary",
+                    "submit_btn_class": "btn-special",
                     "next_url": "${next}"
                 },
                 "replace": true

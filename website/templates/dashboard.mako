@@ -22,7 +22,7 @@
         <div class="project-organizer" id="projectOrganizerScope">
             <%include file="projectGridTemplates.html"/>
 
-            <div class="hgrid" id="project-grid"></div>
+            <div id="project-grid"></div>
             <span class='organizer-legend'><img alt="Folder" src="/static/img/hgrid/folder.png">Folder</span>
             <span class='organizer-legend'><img alt="Smart Folder" src="/static/img/hgrid/smart-folder.png">Smart Folder</span>
             <span class='organizer-legend'><img alt="Project" src="/static/img/hgrid/project.png">Project</span>
@@ -166,15 +166,35 @@
 </script>
 
 ##       Project Organizer
-    <script src="/static/vendor/jquery-drag-drop/jquery.event.drag-2.2.js"></script>
-    <script src="/static/vendor/jquery-drag-drop/jquery.event.drop-2.2.js"></script>
+
+    <script src="/static/vendor/bower_components/jquery-ui/jquery-ui.min.js"></script>
     <script>
-        $script.ready(['hgrid'], function() {
-            $script(['/static/vendor/bower_components/hgrid/plugins/hgrid-draggable/hgrid-draggable.js'],'hgrid-draggable');
-        });
+
         $script(['/static/js/projectorganizer.js']);
         $script.ready(['projectorganizer'], function() {
-            var projectbrowser = new ProjectOrganizer('#project-grid');
+
+            $.ajax({
+              url:  '/api/v1/dashboard/'
+            })
+            .done(function( data ) {
+
+                $.ajax({
+                    url : '/api/v1/dashboard/' + data.data[0].node_id
+                })
+                .done ( function (result){
+                    console.log("data", result);
+                    var options = {
+                        placement : 'dashboard',
+                        divID: 'project-grid',
+                        filesData: result.data,
+                        multiselect : true
+                    };
+                    console.log("project Organizer", ProjectOrganizer);
+                    var filebrowser = new ProjectOrganizer(options);                    
+                })  
+            });
+
         });
+
     </script>
 </%def>

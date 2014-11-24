@@ -443,6 +443,7 @@ class NodeFileCollector(object):
             'children': children,
             'isPointer': not node.primary,
             'isSmartFolder': False,
+            'nodeID': node.resolve()._id,
         }
 
     def _collect_addons(self, node):

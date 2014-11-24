@@ -63,6 +63,7 @@ ${next.body()}
     });
 
     $(function() {
+
         // Get project data from the server and initiate KO modules
         $.getJSON(nodeApiUrl, function(data) {
             // Initialize nodeControl and logFeed on success

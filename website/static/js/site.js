@@ -246,8 +246,8 @@
         } else {
             this.date = date;
         }
-        this.local = moment(this.date).format(LOCAL_DATEFORMAT);
-        this.utc = moment.utc(this.date).format(UTC_DATEFORMAT);
+        this.local = moment(date).format(LOCAL_DATEFORMAT);
+        this.utc = moment.utc(date).format(UTC_DATEFORMAT);
     };
 
     // Backwards compatibility

@@ -24,14 +24,20 @@ CONFIGS = ['user', 'node']
 
 CATEGORIES = ['storage']
 
+# INCLUDE_JS = {
+#     'widget': ['jquery.githubRepoWidget.js', 'github-rubeus-cfg.js'],
+#     'page': [
+#         'hgrid-github.js',
+#     ],
+#     'files': [
+#         'github-rubeus-cfg.js',
+#     ]
+# }
+
 INCLUDE_JS = {
-    'widget': ['jquery.githubRepoWidget.js', 'github-rubeus-cfg.js'],
-    'page': [
-        'hgrid-github.js',
-    ],
-    'files': [
-        'github-rubeus-cfg.js',
-    ]
+    'widget': ['jquery.githubRepoWidget.js', 'github-fangorn-config.js'],
+    'page': ['hgrid-github.js'],
+    'files': ['github-fangorn-config.js']
 }
 
 INCLUDE_CSS = {

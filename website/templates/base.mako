@@ -95,20 +95,18 @@
             })();
             </script>
 
-            <script>
+            <script type="text/javascript">
 
-            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+              var _gaq = _gaq || [];
+              _gaq.push(['_setAccount', 'UA-26813616-1']);
+              _gaq.push(['_trackPageview']);
 
-            ga('create', 'UA-26813616-1', 'auto', {'allowLinker': true});
-            ga('require', 'linker');
-            ga('linker:autoLink', ['centerforopenscience.org'] );
-            ga('send', 'pageview');
-
+              (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+              })();
             </script>
-
         %endif
 
         % if piwik_host:
@@ -217,12 +215,12 @@
         $script(['/static/vendor/bower_components/zeroclipboard/ZeroClipboard.min.js'],
             'zeroclipboard');
         $script(['/static/vendor/bower_components/dropzone/downloads/dropzone.js'], 'dropzone');
-        $script(['/static/vendor/bower_components/hgrid/dist/hgrid.js'], 'hgrid');
+        $script(['/static/vendor/bower_components/treebeard/dist/treebeard.js'], 'treebeard');
         $script(['/static/vendor/bower_components/typeahead.js/dist/typeahead.bundle.min.js'],'typeahead');
         $script(['/static/vendor/bower_components/select2/select2.js'], 'select2');
         $script(['/static/vendor/bower_components/handlebars/handlebars.min.js'],'handlebars');
         $script(['/static/js/dropzone-patch.js']); // exports 'dropzone-patch'
-        $script(['/static/js/rubeus.js']); // exports 'rubeus'
+        $script(['/static/js/fangorn.js']); // exports 'rubeus'
         $script(['/static/js/folderPicker.js']);  // exports 'folderPicker'
     </script>
 

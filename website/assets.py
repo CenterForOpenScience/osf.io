@@ -16,12 +16,14 @@ css = Bundle(
         'vendor/pygments.css',
         'vendor/bower_components/x-editable/dist/bootstrap3-editable/css/bootstrap-editable.css',
         'vendor/bower_components/bootstrap/dist/css/bootstrap-theme.css',
-        'vendor/bower_components/hgrid/dist/hgrid.css',
+        'vendor/bower_components/treebeard/dist/treebeard.css',
+        'css/animate.css',
         filters='cssmin'),
     # Site-specific CSS
     Bundle(
         'css/site.css',
         'css/rubeus.css',
+        'css/fangorn.css',
         'css/commentpane.css',
         filters="cssmin"),
     output="public/css/common.css"
@@ -36,6 +38,9 @@ js = Bundle(
         "vendor/bower_components/bootstrap/dist/js/bootstrap.min.js",
         "vendor/bootbox/bootbox.min.js",
         "vendor/script.min.js",
+        'vendor/bower_components/mithril/mithril.js',
+        'vendor/bower_components/treebeard/dist/treebeard.js'
+
     ),
     'vendor/knockout-sortable/knockout-sortable.js',
     'js/site.js',
@@ -52,11 +57,13 @@ js_bottom = Bundle(
     "vendor/bower_components/bootstrap.growl/bootstrap-growl.min.js",
     # 'vendor/dropzone/dropzone.js',
     # 'vendor/hgrid/hgrid.js',
+
     'vendor/bower_components/jquery-autosize/jquery.autosize.min.js',
     # Site-specific JS
     Bundle(
         'js/project.js',
         'js/addons.js',
+        'js/fangorn.js'
         # 'js/dropzone-patch.js',
         # 'js/rubeus.js'
     ),
