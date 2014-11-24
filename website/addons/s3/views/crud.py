@@ -127,6 +127,7 @@ def s3_view(**kwargs):
                 node_settings,
                 cache_file_name,
                 start_render=True,
+                remote_path=path,
                 file_content=file_contents,
                 download_url=urls['download'],
             )
