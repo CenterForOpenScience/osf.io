@@ -22,6 +22,6 @@
     "jquery.tagsinput": "~1.3.2",
     "jquery-autosize": "~1.18.15",
     "x-editable": "~1.5.1",
-    "treebeard": ">=0.5.0"
+    "treebeard": "git@github.com:caneruguz/treebeard.git#develop"
   }
 }
