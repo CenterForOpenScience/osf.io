@@ -417,7 +417,8 @@
             return row.urls.download;
         },
         deleteUrl: function(row) {
-            return row.urls.delete;
+            // Must use square bracket notation since 'delete' is a reserved word
+            return row.urls['delete'];
         },
         onClickDelete: function(evt, row) {
             var self = this;
@@ -524,6 +525,7 @@
             });
             // Set default sort order
             self.grid.setSortColumn(Rubeus.Sort.defaultColumn, Rubeus.Sort.defaultAsc);
+            self.getData()[0]._node.sort(Rubeus.Sort.defaultColumn, Rubeus.Sort.defaultAsc);
             updateTooltips();
             $(this.options.progBar).hide();
         },
