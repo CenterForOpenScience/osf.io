@@ -6,17 +6,12 @@ from flask import request
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
 
-from website.util import api_url_for
-from website.util import web_url_for
 from website.project import decorators
 from website.util.sanitize import assert_clean
+from website.util import api_url_for, web_url_for
+
+from website.addons.dataverse import client
 from website.addons.dataverse.settings import HOST
-from website.addons.dataverse.client import connect
-from website.addons.dataverse.client import get_study
-from website.addons.dataverse.client import get_studies
-from website.addons.dataverse.client import get_dataverse
-from website.addons.dataverse.client import get_dataverses
-from website.addons.dataverse.client import connect_from_settings
 
 
 @must_be_logged_in
@@ -70,8 +65,8 @@ def serialize_settings(node_settings, current_user):
             'dataverseUsername': user_settings.dataverse_username,
         })
         # Add owner's dataverse settings
-        connection = connect_from_settings(user_settings)
-        dataverses = get_dataverses(connection)
+        connection = client.connect_from_settings(user_settings)
+        dataverses = client.get_dataverses(connection)
         result.update({
             'connected': connection is not None,
             'dataverses': [
@@ -111,9 +106,9 @@ def dataverse_get_studies(node_addon, **kwargs):
     alias = request.json.get('alias')
     user_settings = node_addon.user_settings
 
-    connection = connect_from_settings(user_settings)
-    dataverse = get_dataverse(connection, alias)
-    studies, bad_studies = get_studies(dataverse)
+    connection = client.connect_from_settings(user_settings)
+    dataverse = client.get_dataverse(connection, alias)
+    studies, bad_studies = client.get_studies(dataverse)
     rv = {
         'studies': [{'title': study.title, 'hdl': study.doi} for study in studies],
         'badStudies': [{'hdl': bad_study.doi, 'url': 'http://dx.doi.org/' + bad_study.doi} for bad_study in bad_studies],
@@ -136,7 +131,7 @@ def dataverse_set_user_config(auth, **kwargs):
     # Log in with DATAVERSE
     username = request.json.get('dataverse_username')
     password = request.json.get('dataverse_password')
-    connection = connect(username, password)
+    connection = client.connect(username, password)
 
     # Check for valid connection
     if connection is None:
@@ -177,9 +172,9 @@ def set_dataverse_and_study(node_addon, auth, **kwargs):
     if hdl is None:
         return HTTPError(http.BAD_REQUEST)
 
-    connection = connect_from_settings(user_settings)
-    dataverse = get_dataverse(connection, alias)
-    study = get_study(dataverse, hdl)
+    connection = client.connect_from_settings(user_settings)
+    dataverse = client.get_dataverse(connection, alias)
+    study = client.get_study(dataverse, hdl)
 
     node_addon.dataverse_alias = dataverse.alias
     node_addon.dataverse = dataverse.title
