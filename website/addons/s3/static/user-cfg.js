@@ -1,3 +1,7 @@
+var AddonHelper = require('addon-helpers');
+var $ = require('jquery');
+var bootbox = require('bootbox');
+
 $('#s3RemoveAccess').on('click', function() {
             bootbox.confirm({
                 title: 'Remove access key?',
