@@ -9,27 +9,15 @@ from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationValueError
 
 import framework.auth
-from framework import forms
-from framework import status
-from framework.auth import login
-from framework import exceptions
-from framework.auth import logout
-from framework.auth import get_user
+from framework import forms, status
 from framework.flask import redirect  # VOL-aware redirect
+from framework.auth import exceptions
 from framework.exceptions import HTTPError
-from framework.auth.forms import SignInForm
-from framework.auth import DuplicateEmailError
 from framework.sessions import set_previous_url
-from framework.auth.forms import MergeAccountForm
-from framework.auth.forms import RegistrationForm
-from framework.auth.decorators import collect_auth
-from framework.auth.forms import ResetPasswordForm
-from framework.auth.forms import ForgotPasswordForm
-from framework.auth.forms import ResendConfirmationForm
-from framework.auth.decorators import must_be_logged_in
-from framework.auth.exceptions import LoginNotAllowedError
-from framework.auth.exceptions import PasswordIncorrectError
-from framework.auth.exceptions import TwoFactorValidationError
+from framework.auth import (login, logout, get_user, DuplicateEmailError)
+from framework.auth.decorators import collect_auth, must_be_logged_in
+from framework.auth.forms import (SignInForm, MergeAccountForm, RegistrationForm,
+        ResetPasswordForm, ForgotPasswordForm, ResendConfirmationForm)
 
 import website.settings
 from website import mails
@@ -49,7 +37,7 @@ def reset_password(**kwargs):
         error_data = {'message_short': 'Invalid url.',
             'message_long': 'The verification key in the URL is invalid or '
             'has expired.'}
-        raise exceptions.HTTPError(400, data=error_data)
+        raise HTTPError(400, data=error_data)
 
     if request.method == 'POST' and form.validate():
         user_obj.verification_key = None
@@ -123,13 +111,13 @@ def auth_login(auth, registration_form=None, forgot_password_form=None, **kwargs
                     twofactor_code
                 )
                 return response
-            except LoginNotAllowedError:
+            except exceptions.LoginNotAllowedError:
                 status.push_status_message(language.UNCONFIRMED, 'warning')
                 # Don't go anywhere
                 return {'next': ''}
-            except PasswordIncorrectError:
+            except exceptions.PasswordIncorrectError:
                 status.push_status_message(language.LOGIN_FAILED)
-            except TwoFactorValidationError:
+            except exceptions.TwoFactorValidationError:
                 status.push_status_message(language.TWO_FACTOR_FAILED)
         forms.push_errors_to_status(form.errors)
 
