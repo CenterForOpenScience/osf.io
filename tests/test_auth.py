@@ -32,7 +32,6 @@ from website.project.decorators import (
 class TestAuthUtils(OsfTestCase):
 
     def test_register(self):
-        super(TestAuthUtils, self).setUp()
         auth.register('rosie@franklin.com', 'gattaca', fullname="Rosie Franklin")
         user = User.find_one(Q('username', 'eq', 'rosie@franklin.com'))
         # The password should be set
@@ -103,7 +102,6 @@ class TestAuthObject(OsfTestCase):
         assert_in(str(auth.user), rep)
 
     def test_factory(self):
-        super(TestAuthObject, self).setUp()
         auth_obj = AuthFactory()
         assert_true(isinstance(auth_obj.user, auth.User))
         assert_true(auth_obj.api_key)
