@@ -39,7 +39,7 @@ ${next.body()}
     var userApiUrl = '${user_api_url}';
     var nodeApiUrl = '${node['api_url']}';
     // Mako variables accessible globally
-    window.contextVars = {
+    window.contextVars = $.extend(true, {}, window.contextVars, {
         currentUser: {
             ## TODO: Abstract me
             username: ${json.dumps(user['username']) | n},
@@ -57,7 +57,7 @@ ${next.body()}
             piwikSiteID: ${json.dumps(node.get('piwik_site_id', None))},
             piwikHost: ${json.dumps(piwik_host)}
         }
-    };
+    });
 
 </script>
 ## NOTE: window.contextVars must be set before loading this script

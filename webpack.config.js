@@ -93,7 +93,8 @@ module.exports = {
             'folderpicker': staticPath('js/folderPicker.js'),
             'osf-helpers': staticPath('js/osf-helpers.js'),
             'osf-language': staticPath('js/osf-language.js'),
-            'addons': path.join(__dirname, 'website', 'addons')
+            'addons': path.join(__dirname, 'website', 'addons'),
+            'addon-helpers': staticPath('js/addons.js')
         }
     },
     plugins: [
