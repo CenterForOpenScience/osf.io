@@ -38,17 +38,27 @@ from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
 from website.addons.github.model import AddonGitHubOauthSettings
 
-from tests.base import OsfTestCase, fake, capture_signals, assert_is_redirect, assert_datetime_equal
+from tests.base import (
+    OsfTestCase,
+    fake,
+    capture_signals,
+    assert_is_redirect,
+    assert_datetime_equal,
+)
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
     RegistrationFactory, CommentFactory, PrivateLinkFactory, UnconfirmedUserFactory, DashboardFactory, FolderFactory,
-    ProjectWithAddonFactory
+    ProjectWithAddonFactory,
+)
 
 from website.project.views.node import human_format_citation
 from website.project.views.node import machine_format_citation
 
-from website.project.views.CitationParser import to_citation, to_machine_readable, formatter
+from website.project.views.CitationParser import (
+    to_citation,
+    to_machine_readable,
+    formatter,
 )
 from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
 
@@ -124,11 +134,10 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
     def test_check_user_access_if_user_is_None(self):
         assert_false(check_can_access(self.project, None))
 
-class TestCitationViews(DbTestCase):
+class TestCitationViews(OsfTestCase):
 
     def setUp(self):
-        ensure_schemas()
-        self.app = TestApp(app)
+        super(TestCitationViews, self).setUp()
         self.user1 = UserFactory.build()
         # Add an API key for quicker authentication
         api_key = ApiKeyFactory()

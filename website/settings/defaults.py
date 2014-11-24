@@ -19,6 +19,8 @@ ADDON_PATH = os.path.join(BASE_PATH, 'addons')
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = "/static"
 
+CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'project', 'citation', 'styles')
+
 LOAD_BALANCER = False
 
 LOG_PATH = os.path.join(APP_PATH, 'logs')
