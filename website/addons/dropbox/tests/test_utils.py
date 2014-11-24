@@ -14,11 +14,8 @@ from tests.factories import ProjectFactory
 
 from website.addons.dropbox.tests.factories import DropboxFileFactory
 from website.addons.dropbox.tests.utils import DropboxAddonTestCase, mock_responses
-from website.app import init_app
 from website.addons.dropbox import utils
 from website.addons.dropbox.views.config import serialize_folder
-
-app = init_app(set_backends=False, routes=True)
 
 
 class TestNodeLogger(DropboxAddonTestCase):
@@ -108,29 +105,29 @@ def test_serialize_folder():
     assert_equal(result['name'], 'Dropbox' + metadata['path'])
 
 
-def test_make_file_response():
-    mockfile = io.BytesIO(b'bohemianrhapsody')
-    metadata = {
-        u'bytes': 123,
-        u'icon': u'file',
-        u'is_dir': False,
-        u'modified': u'Sat, 22 Mar 2014 05:40:29 +0000',
-        u'path': u'foo/song.mp3',
-        u'rev': u'3fed51f002c12fc',
-        u'revision': 67032351,
-        u'root': u'dropbox',
-        u'size': u'0 bytes',
-        u'thumb_exists': False,
-        u'mime_type': u'audio/mpeg',
-    }
-    with app.test_request_context():
+class TestFileResponse(OsfTestCase):
+    def test_make_file_response(self):
+        mockfile = io.BytesIO(b'bohemianrhapsody')
+        metadata = {
+            u'bytes': 123,
+            u'icon': u'file',
+            u'is_dir': False,
+            u'modified': u'Sat, 22 Mar 2014 05:40:29 +0000',
+            u'path': u'foo/song.mp3',
+            u'rev': u'3fed51f002c12fc',
+            u'revision': 67032351,
+            u'root': u'dropbox',
+            u'size': u'0 bytes',
+            u'thumb_exists': False,
+            u'mime_type': u'audio/mpeg',
+        }
         resp = utils.make_file_response(mockfile, metadata)
-    # It's a response
-    assert_true(isinstance(resp, Response))
-    # Headers are correct
-    disposition = 'attachment; filename=song-{0}.mp3'.format(metadata['rev'])
-    assert_equal(resp.headers['Content-Disposition'], disposition)
-    assert_equal(resp.headers['Content-Type'], metadata['mime_type'])
+        # It's a response
+        assert_true(isinstance(resp, Response))
+        # Headers are correct
+        disposition = 'attachment; filename=song-{0}.mp3'.format(metadata['rev'])
+        assert_equal(resp.headers['Content-Disposition'], disposition)
+        assert_equal(resp.headers['Content-Type'], metadata['mime_type'])
 
 
 class TestMetadataSerialization(OsfTestCase):
