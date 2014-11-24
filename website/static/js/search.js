@@ -8,6 +8,9 @@
     // Enable knockout punches
     ko.punches.enableAll();
 
+    // Disable IE Caching of JSON
+    $.ajaxSetup({ cache: false });
+
     //https://stackoverflow.com/questions/7731778/jquery-get-query-string-parameters
 
     var Category = function(name, count, display){
@@ -62,7 +65,7 @@
         self.appURL = self.params.appURL;
 
         self.tag = ko.observable('');
-        self.stateJustPushed = false;
+        self.stateJustPushed = true;
         self.query = ko.observable('');
         self.category = ko.observable({});
         self.tags = ko.observableArray([]);
@@ -135,13 +138,6 @@
             return a.count >  b.count ? -1 : 1;
         };
 
-        self.claim = function(mid) {
-            claimURL = self.appURL + 'metadata/' + mid + '/promote/';
-            $.osf.postJSON(claimURL, {category: 'project'}).success(function(data) {
-                window.location = data.url;
-            });
-        };
-
         self.help = function() {
             bootbox.dialog({
                 title: 'Search help',
@@ -172,7 +168,15 @@
             }
 
             self.currentPage(1);
-            self.query(self.query() + ' AND tags:("' + tag + '")');
+            var tagString = 'tags:("' + tag + '")';
+
+            if (self.query().indexOf(tagString) === -1) {
+                if (self.query() !== '') {
+                    self.query(self.query() + ' AND ');
+                }
+                self.query(self.query() + tagString);
+                self.category(new Category('total', 0, 'Total'));
+            }
             self.search();
         };
 
@@ -184,7 +188,7 @@
         };
 
         self.search = function(noPush, validate) {
-            self.tagMaxCount(1);
+
             var jsonData = {'query': self.fullQuery(), 'from': self.currentIndex(), 'size': self.resultsPerPage()};
             var url = self.queryUrl + self.category().url();
 
@@ -192,6 +196,7 @@
 
                 //Clear out our variables
                 self.tags([]);
+                self.tagMaxCount(1);
                 self.results.removeAll();
                 self.categories.removeAll();
 
@@ -283,12 +288,12 @@
                     return category.name;
                 });
 
-                if (possibleCategories.indexOf(self.category().name) === -1) {
+                if (possibleCategories.indexOf(self.category().name) === -1 && possibleCategories.length !== 0) {
                     self.filter(self.categories()[0]);
                     return self.search(true);
                 }
             }
-            if (self.currentPage() > self.totalPages()) {
+            if (self.currentPage() > self.totalPages() && self.currentPage() !== 1) {
                 self.currentPage(self.totalPages());
                 return self.search(true);
             }

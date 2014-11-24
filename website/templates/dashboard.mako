@@ -7,6 +7,9 @@
 </%def>
 
 <%def name="content()">
+% if disk_saving_mode:
+    <div class="alert alert-info"><strong>NOTICE: </strong>Forks, registrations, and uploads will be temporarily disabled while the OSF undergoes a hardware upgrade. These features will return shortly. Thank you for your patience.</div>
+% endif
 <div class="row">
     <div class="col-md-7">
         <div class="project-details"></div>
@@ -47,7 +50,7 @@
             <div class="tab-pane active" id="quicktasks">
                 <ul class="ob-widget-list"> <!-- start onboarding -->
                     <div id="obGoToProject">
-                        <osf-ob-goto params="data: nodes"></osf-ob-register>
+                        <osf-ob-goto params="data: nodes"></osf-ob-goto>
                     </div>
                     <div id="projectCreate">
                         <li id="obNewProject" class="ob-list-item list-group-item">
@@ -68,12 +71,14 @@
                             </div>
                         </li> <!-- end ob-list-item -->
                     </div>
+                    % if not disk_saving_mode:
                     <div id="obRegisterProject">
                         <osf-ob-register params="data: nodes"></osf-ob-register>
                     </div>
                     <div id="obUploader">
                         <osf-ob-uploader params="data: nodes"></osf-ob-uploader>
                     </div>
+                    % endif
                 </ul> <!-- end onboarding -->
             </div><!-- end .tab-pane -->
             <div class="tab-pane" id="watchlist">
@@ -128,8 +133,10 @@
             });
 
             $.osf.applyBindings({nodes: allNodes}, '#obGoToProject');
-            $.osf.applyBindings({nodes: registrationSelection}, '#obRegisterProject');
-            $.osf.applyBindings({nodes: uploadSelection}, '#obUploader');
+            % if not disk_saving_mode:
+              $.osf.applyBindings({nodes: registrationSelection}, '#obRegisterProject');
+              $.osf.applyBindings({nodes: uploadSelection}, '#obUploader');
+            % endif
 
             function ProjectCreateViewModel() {
                 var self = this;

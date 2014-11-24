@@ -2,11 +2,14 @@
 Changelog
 *********
 
-0.21.0 (unreleased)
+0.21.0 (2014-11-19)
 ===================
 
-- OSF Files 2.0.
-- Improvements to search.
+- OSF storage addon now uses the new OSF Upload Service backed by Rackspace
+Cloudfiles.
+- UI and backend improvements to search.
+- UI fixes to addons' file detail pages.
+- Enable drag-and-drop uploads from Project Overview page.
 
 0.20.0 (2014-10-31)
 ===================

@@ -2,6 +2,7 @@
 
 import time
 import httplib as http
+import itertools
 
 from collections import Counter
 from flask import request
@@ -80,6 +81,17 @@ def get_node_contributors_abbrev(auth, **kwargs):
 @must_be_valid_project
 def get_contributors(auth, **kwargs):
 
+    # Can set limit to only receive a specified number of contributors in a call to this route
+    if request.args.get('limit'):
+        try:
+            limit = int(request.args['limit'])
+        except ValueError:
+            raise HTTPError(http.BAD_REQUEST, data=dict(
+                message_long='Invalid value for "limit": {}'.format(request.args['limit'])
+            ))
+    else:
+        limit = None
+
     node = kwargs['node'] or kwargs['project']
 
     anonymous = has_anonymous_link(node, auth)
@@ -87,12 +99,22 @@ def get_contributors(auth, **kwargs):
     if anonymous or not node.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
 
+    # Limit is either an int or None:
+    # if int, contribs list is sliced to specified length
+    # if None, contribs list is not sliced
     contribs = utils.serialize_contributors(
-        node.visible_contributors,
+        node.visible_contributors[0:limit],
         node=node,
     )
 
-    return {'contributors': contribs}
+    # Will either return just contributor list or contributor list + 'more' element
+    if limit:
+        return {
+            'contributors': contribs,
+            'more': max(0, len(node.visible_contributors) - limit)
+        }
+    else:
+        return {'contributors': contribs}
 
 
 @must_be_logged_in
@@ -131,15 +153,18 @@ def get_most_in_common_contributors(auth, **kwargs):
         for contrib_id in node.contributors._to_primary_keys()
         if contrib_id not in node_contrib_ids)
 
-    most_common_contribs = []
-    for contrib_id, count in contrib_counts.most_common(n_contribs):
-        contrib = User.load(contrib_id)
-        if contrib.is_active():
-            most_common_contribs.append((contrib, count))
+    active_contribs = itertools.ifilter(
+        lambda c: User.load(c[0]).is_active(),
+        contrib_counts.most_common()
+    )
+
+    limited = itertools.islice(active_contribs, n_contribs)
+
+    contrib_objs = [(User.load(_id), count) for _id, count in limited]
 
     contribs = [
         utils.add_contributor_json(most_contrib, get_current_user())
-        for most_contrib, count in sorted(most_common_contribs, key=lambda t: (-t[1], t[0].fullname))
+        for most_contrib, count in sorted(contrib_objs, key=lambda t: (-t[1], t[0].fullname))
     ]
     return {'contributors': contribs}
 
@@ -148,11 +173,27 @@ def get_most_in_common_contributors(auth, **kwargs):
 def get_recently_added_contributors(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
 
+    max_results = request.args.get('max')
+    if max_results:
+        try:
+            max_results = int(max_results)
+        except (TypeError, ValueError):
+            raise HTTPError(http.BAD_REQUEST)
+    if not max_results:
+        max_results = len(auth.user.recently_added)
+
+    # only include active contributors
+    active_contribs = itertools.ifilter(
+        lambda c: c.is_active() and c._id not in node.contributors,
+        auth.user.recently_added
+    )
+
+    # Limit to max_results
+    limited_contribs = itertools.islice(active_contribs, max_results)
+
     contribs = [
         utils.add_contributor_json(contrib, get_current_user())
-        for contrib in auth.user.recently_added
-        if contrib.is_active()
-        if contrib._id not in node.contributors
+        for contrib in limited_contribs
     ]
     return {'contributors': contribs}
 

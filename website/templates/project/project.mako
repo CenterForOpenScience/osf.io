@@ -245,7 +245,6 @@ ${parent.javascript_bottom()}
 
     });
 
-
     function _fangornTitleColumn (item, col) {
         return m('span', 
             { onclick : function(){ 
@@ -292,7 +291,6 @@ ${parent.javascript_bottom()}
             var filebrowser = new Fangorn(fangornOpts);
         });
     });
-
 </script>
 
 </%def>
