@@ -1,33 +1,8 @@
+.po-hover-multiselect { 
+    background : lightgoldenrodyellow;
+}
+
 /* @override http://localhost:5000/static/css/projectorganizer.css */
-
-/* Project organizer HGrid  */
-.cell-selection {
-    border-right-color: silver;
-    border-right-style: solid;
-    background: #f5f5f5;
-    color: gray;
-    text-align: right;
-    font-size: 10px;
-}
-
-.slick-row.active{
-    /*background-color: #fefab4;*/
-}
-.slick-row .l1 {
-    overflow: visible;
-}
-
-.project-organizer-dand {
-	display: block;
-	background: blue;
-	opacity: 0.15;
-	filter: alpha(opacity=15);
-	cursor: move;
-}
-
-.hg-cell.selected {
-    background-color: lightyellow;
-}
 
 span.project-smart-folder.smart-folder{
     font-style: italic;
@@ -372,7 +347,7 @@ h3.category {
     -webkit-box-shadow: 0 5px 10px rgba(0, 0, 0, .2);
     -moz-box-shadow: 0 5px 10px rgba(0, 0, 0, .2);
     box-shadow: 0 5px 10px rgba(0, 0, 0, .2);
-	margin-top: 6px;
+    margin-top: 6px;
 }
 
 .tt-suggestion {

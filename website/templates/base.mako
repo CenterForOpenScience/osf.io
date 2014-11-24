@@ -221,7 +221,7 @@
         $script(['/static/vendor/bower_components/handlebars/handlebars.min.js'],'handlebars');
         $script(['/static/js/dropzone-patch.js']); // exports 'dropzone-patch'
         $script(['/static/js/fangorn.js']); // exports 'rubeus'
-        $script(['/static/js/folderPicker.tb.js']);  // exports 'folderPicker'
+        $script(['/static/js/folderPicker.js']);  // exports 'folderPicker'
     </script>
 
 </%def>

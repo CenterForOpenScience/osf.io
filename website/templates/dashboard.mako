@@ -17,7 +17,7 @@
             <div class="pull-right"><a class="btn btn-default" href="/folder/${dashboard_id}" id = "${dashboard_id}">New Folder</a></div>
             <h3>Projects</h3>
         </div><!-- end .page-header -->
-        <link rel="stylesheet" href="/static/css/projectorganizer.tb.css">
+        <link rel="stylesheet" href="/static/css/projectorganizer.css">
 
         <div class="project-organizer" id="projectOrganizerScope">
             <%include file="projectGridTemplates.html"/>
@@ -169,15 +169,8 @@
 
     <script src="/static/vendor/bower_components/jquery-ui/jquery-ui.min.js"></script>
     <script>
-        // $script.ready(['hgrid'], function() {
-        //    $script(['/static/vendor/bower_components/hgrid/plugins/hgrid-draggable/hgrid-draggable.js'],'hgrid-draggable');
-        // });
-        // $script(['/static/js/projectorganizer.tb.js']);
-        // $script.ready(['projectorganizer'], function() {
-        //     var projectbrowser = new ProjectOrganizer('#project-grid');
-        // });
 
-        $script(['/static/js/projectorganizer.tb.js']);
+        $script(['/static/js/projectorganizer.js']);
         $script.ready(['projectorganizer'], function() {
 
             $.ajax({
