@@ -11,7 +11,7 @@
         <h4 class="list-group-item-heading">
             <span class="overflow" style="display:inline-block;">
             % if not summary['primary']:
-              <i class="icon-hand-right" data-toggle="tooltip" title="Linked ${summary['node_type']}"></i>
+              <i class="icon icon-link" data-toggle="tooltip" title="Linked ${summary['node_type']}"></i>
             % endif
 
             % if not summary['is_public']:

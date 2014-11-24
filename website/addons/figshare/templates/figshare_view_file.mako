@@ -2,6 +2,7 @@
 <%def name="title()">${file_name}</%def>
 
 <%def name="file_versions()">
+<div class="scripted" id="figshareScope">
 <h3>Status: <span class="label label-${'success' if file_status == 'Public' else 'warning'}"> ${file_status}</span></h3>
 % if file_status != 'Public' and parent_type == 'singlefile':
 <!--<a id="figsharePublishArticle" class="btn btn-danger">Publish</a><h3>
@@ -22,21 +23,68 @@ $('#figsharePublishArticle').on('click', function(){
 </script>
 -->
 % endif
-%if download_url:
-    <p><a href="${download_url}" class="btn btn-primary btn-sm">
-    Download <i class="icon-download-alt"></i>
-    </a></p>
-%endif
+
+    <div class="alert alert-warning" data-bind="visible: deleting">
+        Deleting your file…
+    </div>
+
+    <ol class="breadcrumb">
+        <li class="active overflow"><a href=${urls['files']}>${node['title']}</a></li>
+        <li>Figshare</li>
+        <li class="active overflow">${file_name}</li>
+    </ol>
+
+    <p>
+            <!--download button-->
+            <a class="btn btn-success btn-md
+                % if file_status == 'Public' and urls['download']:
+                    " href="${urls['download']}"
+                % else:
+                    disabled" data-toggle="popover" data-trigger="hover" title="Cannot Download File"
+                        data-content="In order to download private Figshare files and drafts, you will need to log into Figshare."
+                % endif
+            >Download <i class="icon-download-alt"></i></a>
+
+            <!--delete button-->
+            % if user['can_edit']:
+                <button class="btn btn-danger btn-md
+                    % if file_status != 'Public':
+                        " data-bind="click: deleteFile"
+                    % else:
+                        disabled" data-toggle="popover" data-trigger="hover" title="Cannot Delete File"
+                            data-content="Files published on Figshare cannot be deleted."
+                    % endif
+                >Delete <i class="icon-trash"></i></button>
+            % endif
+    </p>
+
 %if file_versions:
     <p>Versions: ${file_version}
-    <a href="${version_url}">Version History</a></p>
+    <a href="${urls['version']}">Version History</a></p>
 %endif
 %if figshare_url and not node['anonymous']:
-    <p><a href="${figshare_url}">View on FigShare</a></p>
+    <p><a href="${urls['figshare']}">View on FigShare</a></p>
 %endif
 
 %if file_status == 'Public':
     <p>FigShare DOI: <a href="${doi}">${doi}</a></p>
 %endif
+</div>
+
+    <script>
+        $script(['/static/js/deleteFile.js'], function() {
+            var urls = {
+                'delete_url': '${urls['delete']}',
+                'files_page_url': '${urls['files']}'
+            };
+            var deleteFile = new DeleteFile('#figshareScope', urls);
+        });
+
+         $(function () {
+            $("[data-toggle='popover']").popover(({html:true}));
+            $("[data-toggle='popover'].disabled").css("pointer-events", "auto")
+         });
+    </script>
+
 </%def>
 

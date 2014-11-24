@@ -20,15 +20,23 @@
                                             data-bind="value:query"
                                             placeholder='Search by name' autofocus/>
                                     <span class="input-group-btn">
-                                        <input type="submit" value="Search" class="btn btn-default"></input>
+                                        <input type="submit" value="Search" class="btn btn-default">
                                     </span>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <!-- ko if:parentId -->
-                                    <a data-bind="click:importFromParent, html:'Import contributors from <i>' + parentTitle + '</i>'"></a>
-                                <!-- /ko -->
-                                <a data-bind="click:recentlyAdded, text:'Get list of recently added contributors'"></a>
+                        </div>
+                        <div class="row search-contributor-links">
+                            <div class="col-md-12">
+                                <div>
+                                    <!-- ko if:parentId -->
+                                        <a data-bind="click:importFromParent, html:'Import contributors from <i>' + parentTitle + '</i>'"></a>
+                                    <!-- /ko -->
+                                </div>
+                                <div>
+                                    Show my
+                                    <a data-bind="click:recentlyAdded">recent collaborators</a>,
+                                    <a data-bind="click:mostInCommon">most frequent collaborators</a>
+                                </div>
                             </div>
                         </div>
                     </form>
@@ -44,7 +52,7 @@
                                 <a data-bind="click:addAll">Add all</a>
                             </div>
                             <!-- ko if: notification -->
-                            <div data-bind="text: notification().message, css: 'alert alert-' + notification().level"></div>
+                            <div data-bind="html: notification().message, css: 'alert alert-' + notification().level"></div>
                             <!-- /ko -->
 
                             <table>
@@ -103,9 +111,9 @@
                             <!-- Link to add non-registered contributor -->
                             <div class='help-block'>
                                 <div data-bind='if: foundResults'>
-                                    <a class='btn btn-default' href='#' data-bind='click: previousPage, visible: currentPage() > 0'>Previous</a>
-                                    <a class='btn btn-default' href='#' data-bind='click: nextPage, visible: currentPage() < numberOfPages() - 1'>Next</a>
-
+                                    <ul class="pagination pagination-sm" data-bind="foreach: paginators">
+                                        <li data-bind="css: style"><a href="#" data-bind="click: handler, html: text"></a></li>
+                                    </ul>
                                     <p><strong>
                                         <a href="#"data-bind="click:gotoInvite">Add <em>{{query}}</em> as an unregistered contributor</a>.
                                     </strong></p>

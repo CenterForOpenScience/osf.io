@@ -2288,12 +2288,12 @@ class TestComments(OsfTestCase):
         self.project.reload()
 
         res_comment = res.json['comment']
-        date_created = dt.datetime.strptime(str(res_comment.pop('dateCreated')), '%Y-%m-%dT%H:%M:%S.%f')
-        date_modified = dt.datetime.strptime(str(res_comment.pop('dateModified')), '%Y-%m-%dT%H:%M:%S.%f')
+        date_created = parse_date(str(res_comment.pop('dateCreated')))
+        date_modified = parse_date(str(res_comment.pop('dateModified')))
 
         serialized_comment = serialize_comment(self.project.commented[0], self.consolidated_auth)
-        date_created2 = dt.datetime.strptime(serialized_comment.pop('dateCreated'), '%Y-%m-%dT%H:%M:%S.%f')
-        date_modified2 = dt.datetime.strptime(serialized_comment.pop('dateModified'), '%Y-%m-%dT%H:%M:%S.%f')
+        date_created2 = parse_date(serialized_comment.pop('dateCreated'))
+        date_modified2 = parse_date(serialized_comment.pop('dateModified'))
 
         assert_datetime_equal(date_created, date_created2)
         assert_datetime_equal(date_modified, date_modified2)
@@ -2310,8 +2310,6 @@ class TestComments(OsfTestCase):
 
         self.project.reload()
 
-        # Note: Use `parse_date` rather than `strptime` to avoid very rare
-        # missing floating point values
         res_comment = res.json['comment']
         date_created = parse_date(res_comment.pop('dateCreated'))
         date_modified = parse_date(res_comment.pop('dateModified'))
@@ -2336,12 +2334,12 @@ class TestComments(OsfTestCase):
         self.project.reload()
 
         res_comment = res.json['comment']
-        date_created = dt.datetime.strptime(str(res_comment.pop('dateCreated')), '%Y-%m-%dT%H:%M:%S.%f')
-        date_modified = dt.datetime.strptime(str(res_comment.pop('dateModified')), '%Y-%m-%dT%H:%M:%S.%f')
+        date_created = parse_date(str(res_comment.pop('dateCreated')))
+        date_modified = parse_date(str(res_comment.pop('dateModified')))
 
         serialized_comment = serialize_comment(self.project.commented[0], self.consolidated_auth)
-        date_created2 = dt.datetime.strptime(serialized_comment.pop('dateCreated'), '%Y-%m-%dT%H:%M:%S.%f')
-        date_modified2 = dt.datetime.strptime(serialized_comment.pop('dateModified'), '%Y-%m-%dT%H:%M:%S.%f')
+        date_created2 = parse_date(serialized_comment.pop('dateCreated'))
+        date_modified2 = parse_date(serialized_comment.pop('dateModified'))
 
         assert_datetime_equal(date_created, date_created2)
         assert_datetime_equal(date_modified, date_modified2)
@@ -2744,8 +2742,8 @@ class TestSearchViews(OsfTestCase):
         result = res.json['users']
         pages = res.json['pages']
         page = res.json['page']
-        assert_equal(len(result), 10)
-        assert_equal(pages, 2)
+        assert_equal(len(result), 5)
+        assert_equal(pages, 3)
         assert_equal(page, 0)
 
     def test_search_pagination_default_page_1(self):
@@ -2754,8 +2752,17 @@ class TestSearchViews(OsfTestCase):
         assert_equal(res.status_code, 200)
         result = res.json['users']
         page = res.json['page']
-        assert_equal(len(result), 2)
+        assert_equal(len(result), 5)
         assert_equal(page, 1)
+
+    def test_search_pagination_default_page_2(self):
+        url = api_url_for('search_contributor')
+        res = self.app.get(url, {'query': 'fr', 'page': 2})
+        assert_equal(res.status_code, 200)
+        result = res.json['users']
+        page = res.json['page']
+        assert_equal(len(result), 2)
+        assert_equal(page, 2)
 
     def test_search_pagination_smaller_pages(self):
         url = api_url_for('search_contributor')
@@ -2780,7 +2787,7 @@ class TestSearchViews(OsfTestCase):
         assert_equal(pages, 3)
 
     def test_search_projects(self):
-        url = web_url_for('search_search')
+        url = '/search/'
         res = self.app.get(url, {'q': self.project.title})
         assert_equal(res.status_code, 200)
 
@@ -3340,6 +3347,40 @@ class TestUnconfirmedUserViews(OsfTestCase):
         url = web_url_for('profile_view_id', uid=user._id)
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
+
+
+class TestProfileNodeList(OsfTestCase):
+
+    def setUp(self):
+        OsfTestCase.setUp(self)
+        self.user = AuthUserFactory()
+
+        self.public = ProjectFactory(is_public=True)
+        self.public_component = NodeFactory(project=self.public, is_public=True)
+        self.private = ProjectFactory(is_public=False)
+        self.deleted = ProjectFactory(is_public=True, is_deleted=True)
+
+        for node in (self.public, self.public_component, self.private, self.deleted):
+            node.add_contributor(self.user, auth=Auth(node.creator))
+            node.save()
+
+    def test_get_public_projects(self):
+        url = api_url_for('get_public_projects', uid=self.user._id)
+        res = self.app.get(url)
+        node_ids = [each['id'] for each in res.json['nodes']]
+        assert_in(self.public._id, node_ids)
+        assert_not_in(self.private._id, node_ids)
+        assert_not_in(self.deleted._id, node_ids)
+        assert_not_in(self.public_component._id, node_ids)
+
+    def test_get_public_components(self):
+        url = api_url_for('get_public_components', uid=self.user._id)
+        res = self.app.get(url)
+        node_ids = [each['id'] for each in res.json['nodes']]
+        assert_in(self.public_component._id, node_ids)
+        assert_not_in(self.public._id, node_ids)
+        assert_not_in(self.private._id, node_ids)
+        assert_not_in(self.deleted._id, node_ids)
 
 
 if __name__ == '__main__':

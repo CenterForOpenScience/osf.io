@@ -1,14 +1,14 @@
 # OSF
 
 
-- `master` Build Status: [![Build Status](https://magnum.travis-ci.com/CenterForOpenScience/osf.svg?token=QSc1BQcS2TSL63LmWF7Y&branch=master)](https://magnum.travis-ci.com/CenterForOpenScience/osf)
-- `develop` Build Status: [![Build Status](https://magnum.travis-ci.com/CenterForOpenScience/osf.svg?token=QSc1BQcS2TSL63LmWF7Y&branch=develop)](https://magnum.travis-ci.com/CenterForOpenScience/osf)
-- Public Repo: https://github.com/CenterForOpenScience/openscienceframework.org/
-- Issues: https://github.com/CenterForOpenScience/openscienceframework.org/issues?state=open
-- Huboard: https://huboard.com/CenterForOpenScience/openscienceframework.org#/
+- `master` Build Status: [![Build Status](https://travis-ci.org/CenterForOpenScience/osf.io.svg?branch=master)](https://travis-ci.org/CenterForOpenScience/osf.io)
+- `develop` Build Status: [![Build Status](https://travis-ci.org/CenterForOpenScience/osf.io.svg?branch=master)](https://travis-ci.org/CenterForOpenScience/osf.io)
+- Public Repo: https://github.com/CenterForOpenScience/osf.io/
+- Issues: https://github.com/CenterForOpenScience/osf.io/issues?state=open
+- Huboard: https://huboard.com/CenterForOpenScience/osf.io#/
 - Docs: http://cosdev.rtfd.org/
 
-## Help
+> ## Help
 
 Solutions to many common issues may be found at the [OSF Developer Docs](http://cosdev.rtfd.org/).
 

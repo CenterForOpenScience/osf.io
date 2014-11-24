@@ -19,7 +19,7 @@
     }
 }(this, function(ko, $, FolderPicker, ZeroClipboard) {
     'use strict';
-    ko.punches.attributeInterpolationMarkup.enable();
+    ko.punches.enableAll();
     /**
      * Knockout view model for the Dropbox node settings widget.
      */
@@ -32,6 +32,8 @@
         self.userIsOwner = ko.observable(false);
         // whether current user has an auth token
         self.userHasAuth = ko.observable(false);
+        // whether the auth token is valid
+        self.validCredentials = ko.observable(true);
         // Currently linked folder, an Object of the form {name: ..., path: ...}
         self.folder = ko.observable({name: null, path: null});
         self.ownerName = ko.observable('');
@@ -77,6 +79,7 @@
             self.nodeHasAuth(data.nodeHasAuth);
             self.userIsOwner(data.userIsOwner);
             self.userHasAuth(data.userHasAuth);
+            self.validCredentials(data.validCredentials);
             // Make sure folder has name and path properties defined
             self.folder(data.folder || {name: null, path: null});
             self.urls(data.urls);
@@ -88,6 +91,20 @@
                 success: function(response) {
                     self.updateFromData(response.result);
                     self.loadedSettings(true);
+                    if (!self.validCredentials()){
+                        if (self.userIsOwner()) {
+                            self.changeMessage('Could not retrieve Dropbox settings at ' +
+                            'this time. The Dropbox addon credentials may no longer be valid.' +
+                            ' Try deauthorizing and reauthorizing Dropbox on your <a href="' +
+                             self.urls().settings + '">account settings page</a>.',
+                            'text-warning')
+                        } else {
+                            self.changeMessage('Could not retrieve Dropbox settings at ' +
+                            'this time. The Dropbox addon credentials may no longer be valid.' +
+                            ' Contact ' + self.ownerName() + ' to verify.',
+                            'text-warning')
+                        }
+                    }
                 },
                 error: function(xhr, textStatus, error) {
                     self.changeMessage('Could not retrieve Dropbox settings at ' +

@@ -283,8 +283,8 @@ def mailserver(port=1025):
 
 
 @task
-def flake():
-    run('flake8 .')
+def flake8():
+    run('flake8 .', echo=True)
 
 
 @task
@@ -335,7 +335,9 @@ def test():
 
 
 @task
-def test_all():
+def test_all(flake=False):
+    if flake:
+        flake8()
     test_osf()
     test_addons()
 
@@ -634,7 +636,18 @@ def bundle_certs(domain, cert_path):
         for cert_file in cert_files
     )
     cmd = 'cat {certs} > {domain}.bundle.crt'.format(
-        certs=' '.join(certs),
+        certs=certs,
         domain=domain,
     )
+    run(cmd)
+
+
+@task
+def generate_self_signed(domain):
+    """Generate self-signed SSL key and certificate.
+    """
+    cmd = (
+        'openssl req -x509 -nodes -days 365 -newkey rsa:2048'
+        ' -keyout {0}.key -out {0}.crt'
+    ).format(domain)
     run(cmd)

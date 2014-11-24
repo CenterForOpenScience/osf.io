@@ -203,7 +203,7 @@
         };
         var social = new profile.Social('#social', socialUrls, ['edit', 'view']);
         var jobs = new profile.Jobs('#jobs', jobsUrls, ['edit', 'view']);
-        var schools = new profile.Schools('#schools', schoolsUrls, ['edit', 'view']);;
+        var schools = new profile.Schools('#schools', schoolsUrls, ['edit', 'view']);
     });
 
 </script>
