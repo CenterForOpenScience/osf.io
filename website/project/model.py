@@ -2525,8 +2525,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             node=self,
             content=content
         )
-        if key in self.wiki_sharejs_uuids:
-            new_page.share_uuid = self.wiki_sharejs_uuids[key]
 
         new_page.save()
 

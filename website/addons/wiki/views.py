@@ -13,8 +13,8 @@ from framework.auth.utils import privacy_info_handle
 from framework.flask import redirect
 
 from website.addons.wiki.utils import (
-    to_mongo_uuid,
-    generate_share_uuid
+    get_mongo_uuid,
+    generate_sharejs_uuid
 )
 from website.project.views.node import _view_project
 from website.project import show_diff
@@ -261,24 +261,14 @@ def project_wiki_edit(auth, wname, **kwargs):
         is_current = wiki_page.is_current
         content = wiki_page.content
         wiki_page_api_url = node.api_url_for('project_wiki_page', wname=wiki_name)
-
-        if wiki_page.share_uuid is None:
-            # TODO: Can this case occur?
-            if wiki_key in node.wiki_sharejs_uuids:
-                wiki_page.share_uuid = node.wiki_sharejs_uuids[wiki_key]
-            else:
-                wiki_page.share_uuid = generate_share_uuid(node, wiki_name)
-            wiki_page.save()
-        share_uuid = wiki_page.share_uuid
     else:
         version = 'NA'
         is_current = False
         content = ''
         wiki_page_api_url = None
-        if wiki_key in node.wiki_sharejs_uuids:
-            share_uuid = node.wiki_sharejs_uuids[wiki_key]
-        else:
-            share_uuid = generate_share_uuid(node, wiki_name)
+
+    if wiki_key not in node.wiki_sharejs_uuids:
+        generate_sharejs_uuid(node, wiki_name)
 
     # TODO: Remove duplication with project_wiki_page
     toc = _serialize_wiki_toc(node, auth=auth)
@@ -288,7 +278,7 @@ def project_wiki_edit(auth, wname, **kwargs):
         'wiki_content': content,
         'version': version,
         'versions': _get_wiki_versions(node, wiki_name),
-        'share_uuid': to_mongo_uuid(node, share_uuid),
+        'share_uuid': get_mongo_uuid(node, wiki_name),
         'is_current': is_current,
         'is_edit': True,
         'pages_current': _get_wiki_pages_current(node),

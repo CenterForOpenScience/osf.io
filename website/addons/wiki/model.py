@@ -18,7 +18,7 @@ from framework.guid.model import GuidStoredObject
 from framework.mongo.utils import to_mongo_key
 from website import settings
 from website.addons.base import AddonNodeSettingsBase
-from website.addons.wiki.utils import to_mongo_uuid, share_db, generate_share_uuid
+from website.addons.wiki.utils import get_mongo_uuid, share_db, generate_sharejs_uuid
 
 from .exceptions import (
     NameEmptyError,
@@ -33,13 +33,10 @@ logger = logging.getLogger(__name__)
 class AddonWikiNodeSettings(AddonNodeSettingsBase):
 
     def after_remove_contributor(self, node, removed):
-
         # Migrate every page on the node
         for wiki_name in node.wiki_pages_current:
             wiki_page = node.get_wiki_page(wiki_name)
             wiki_page.migrate_uuid(node)
-
-        # TODO: Does this affect forks?
 
     def to_json(self, user):
         return {}
@@ -96,7 +93,6 @@ class NodeWikiPage(GuidStoredObject):
     date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     is_current = fields.BooleanField()
     content = fields.StringField(default='')
-    share_uuid = fields.StringField()
 
     user = fields.ForeignField('user')
     node = fields.ForeignField('node')
@@ -130,13 +126,10 @@ class NodeWikiPage(GuidStoredObject):
         """Deletes share document and removes namespace from model."""
 
         db = share_db()
-        mongo_uuid = to_mongo_uuid(node, self.share_uuid)
+        mongo_uuid = get_mongo_uuid(node, self.page_name)
 
-        # db[ops_uuid(node, self.share_uuid)].drop()
         db['docs'].remove({'_id': mongo_uuid})
         db['docs_ops'].remove({'name': mongo_uuid})
-
-        self.share_uuid = None
 
         wiki_key = to_mongo_key(self.page_name)
         del node.wiki_sharejs_uuids[wiki_key]
@@ -149,7 +142,7 @@ class NodeWikiPage(GuidStoredObject):
         """Migrates uuid to new namespace."""
 
         db = share_db()
-        old_mongo_uuid = to_mongo_uuid(node, self.share_uuid)
+        old_mongo_uuid = get_mongo_uuid(node, self.page_name)
 
         lock_url = 'http://{host}:{port}/{action}/{id}'.format(
             host=settings.SHAREJS_HOST,
@@ -159,8 +152,8 @@ class NodeWikiPage(GuidStoredObject):
         )
         requests.post(lock_url)
 
-        self.share_uuid = generate_share_uuid(node, self.page_name)
-        new_mongo_uuid = to_mongo_uuid(node, self.share_uuid)
+        generate_sharejs_uuid(node, self.page_name)
+        new_mongo_uuid = get_mongo_uuid(node, self.page_name)
 
         doc_item = db['docs'].find_one({'_id': old_mongo_uuid})
         if doc_item:
