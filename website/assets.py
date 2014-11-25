@@ -39,8 +39,8 @@ js = Bundle(
         "vendor/script.min.js",
     ),
     'vendor/knockout-sortable/knockout-sortable.js',
-    'js/growlBox.js',
     'js/site.js',
+    'js/growlBox.js',
     'js/koHelpers.js',
     'js/language.js',
     output="public/js/common.js"

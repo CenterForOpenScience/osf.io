@@ -10,13 +10,12 @@
                 <script type="application/javascript">
 
                     $script('/static/js/growlBox.js', function() {
-
-
                         var title = capitaliseFirstLetter('${css_class | trim}')+':';
                         var message = '${message | trim}';
                         var type = '${css_class | trim}';
                         new GrowlBox(title, message, type);
                     });
+
                 </script>
         % else:
             <div class='alert alert-block alert-${css_class} fade in'>
