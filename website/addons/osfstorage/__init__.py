@@ -33,7 +33,7 @@ CATEGORIES = ['storage']
 INCLUDE_JS = {
     'widget': [],
     'page': [],
-    'files': ['storageRubeusConfig.js'],
+    'files': ['storageFangornConfig.js'],
 }
 
 HAS_HGRID_FILES = True
