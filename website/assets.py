@@ -39,6 +39,7 @@ js = Bundle(
         "vendor/script.min.js",
     ),
     'vendor/knockout-sortable/knockout-sortable.js',
+    'js/growlBox.js',
     'js/site.js',
     'js/koHelpers.js',
     'js/language.js',
@@ -57,8 +58,7 @@ js_bottom = Bundle(
     # Site-specific JS
     Bundle(
         'js/project.js',
-        'js/addons.js',
-        'js/growlBox.js'
+        'js/addons.js'
         # 'js/dropzone-patch.js',
         # 'js/rubeus.js'
     ),
