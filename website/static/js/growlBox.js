@@ -24,10 +24,7 @@
          * @param {String} type One of 'success', 'info', 'warning', or 'danger'. Defaults to danger.
          */
         var self = this;
-        if(typeof type === 'undefined'){
-            type = 'danger';
-        }
-        self.type = type;
+        self.type = type || 'danger';
         self.title = title;
         self.message = message;
         self.init(self);
