@@ -22,16 +22,37 @@ class S3Provider(core.BaseProvider):
     def upload(self, obj, path):
         key = self.bucket.new_key(path)
         url = key.generate_url(100, 'PUT')
-        resp = yield from aiohttp.request('PUT', url, data=obj.content, headers=self._headers(**{'Content-Length': obj.size}))
+        resp = yield from aiohttp.request(
+            'PUT', url, data=obj.content,
+            headers={'Content-Length': obj.size})
+
         return core.ResponseWrapper(resp)
 
-    # @coroutine
+    @coroutine
     def delete(self, path):
-        # TODO: implement delete
-        pass
+        key = self.bucket.new_key(path)
+        url = key.generate_url(100, 'DELETE')
+        resp = yield from aiohttp.request('DELETE', url)
 
-    def _headers(self, **kwargs):
-        return {
-            key: value for key, value in kwargs.items()
-            if value is not None
-        }
+    @coroutine
+    def list(self, **kwargs):
+        url = self.bucket.generate_url(100, 'GET')
+        resp = yield from aiohttp.request('GET', url, params=kwargs)
+
+        return (yield from self._response_to_dict_list(resp))
+
+    @coroutine
+    def _response_to_dict_list(self, resp):
+        # TODO: Fix meand clean me
+        content = yield from resp.read_and_close()
+        parsed = objectify.fromstring(content)
+        return parsed
+        return [
+            {
+                'md5': fo.ETag,
+                'last_mod': fo.LastModified,
+                'full_path': fo.Key,
+                'size': fo.Size
+            }
+            for fo in parsed.Content
+        ] + [{'prefix': p.Prefix} for p in parsed.get('CommonPrefixes', ())]
