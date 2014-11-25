@@ -3,6 +3,7 @@
 import importlib
 
 from modularodm import storage
+from werkzeug.contrib.fixers import ProxyFix
 
 import framework
 from framework.flask import app, add_handlers
@@ -11,6 +12,7 @@ from framework.mongo import set_up_storage
 from framework.addons.utils import render_addon_capabilities
 from framework.sentry import sentry
 from framework.mongo import handlers as mongo_handlers
+from framework.tasks import handlers as task_handlers
 from framework.transactions import handlers as transaction_handlers
 
 import website.models
@@ -39,6 +41,7 @@ def attach_handlers(app, settings):
     """Add callback handlers to ``app`` in the correct order."""
     # Add callback handlers to application
     add_handlers(app, mongo_handlers.handlers)
+    add_handlers(app, task_handlers.handlers)
     if settings.USE_TOKU_MX:
         add_handlers(app, transaction_handlers.handlers)
 
@@ -109,4 +112,12 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
 
     if set_backends:
         ensure_schemas()
+    apply_middlewares(app, settings)
     return app
+
+def apply_middlewares(flask_app, settings):
+    # Use ProxyFix to respect X-Forwarded-Proto header
+    # https://stackoverflow.com/questions/23347387/x-forwarded-proto-and-flask
+    if settings.LOAD_BALANCER:
+        flask_app.wsgi_app = ProxyFix(flask_app.wsgi_app)
+    return flask_app

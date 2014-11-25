@@ -60,8 +60,8 @@ class AddonModelMixin(StoredObject):
         :param str addon_name: Name of add-on
         :param Auth auth: Consolidated authorization object
         :param bool override: For shell use only, Allows adding of system addons
-        :param bool __force: For migration testing ONLY. Do not set to True
-            in the application, or else project's will be allowed to have
+        :param bool _force: For migration testing ONLY. Do not set to True
+            in the application, or else projects will be allowed to have
             duplicate addons!
         :return bool: Add-on was added
 
@@ -91,17 +91,31 @@ class AddonModelMixin(StoredObject):
 
         return True
 
-    def delete_addon(self, addon_name, auth=None):
+    def get_or_add_addon(self, addon_name, **kwargs):
+        """Get addon from owner; if it doesn't exist, create one.
+
+        :param str addon_name: Name of addon
+        :return: Addon settings record
+        """
+        addon = self.get_addon(addon_name)
+        if addon:
+            return addon
+        self.add_addon(addon_name, **kwargs)
+        return self.get_addon(addon_name)
+
+    def delete_addon(self, addon_name, auth=None, _force=False):
         """Delete an add-on from the node.
 
         :param str addon_name: Name of add-on
         :param Auth auth: Consolidated authorization object
+        :param bool _force: For migration testing ONLY. Do not set to True
+            in the application, or else projects will be allowed to delete
+            mandatory add-ons!
         :return bool: Add-on was deleted
-
         """
         addon = self.get_addon(addon_name)
         if addon:
-            if self._name in addon.config.added_mandatory:
+            if self._name in addon.config.added_mandatory and not _force:
                 raise ValueError('Cannot delete mandatory add-on.')
             addon.delete(save=True)
             return True

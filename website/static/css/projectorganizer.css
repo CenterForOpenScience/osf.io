@@ -13,6 +13,9 @@
 .project-organizer .slick-row.active{
     /*background-color: #fefab4;*/
 }
+.slick-row .l1 {
+    overflow: visible;
+}
 
 .project-organizer-dand {
 	display: block;
@@ -85,6 +88,19 @@ span.project-organizer-icon-pointer {
     height: 16px;
     vertical-align: middle;
     background-image: url('/static/img/hgrid/pointer.png');
+}
+
+span.project-organizer-icon-reg-pointer {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    background-image: url('/static/img/hgrid/reg-pointer.png');
+}
+
+
+span.project-organizer-icon-reg-pointer:hover {
+    background-image: url('/static/img/hgrid/pointer-hover.png');
 }
 
 span.project-organizer-icon-pointer:hover {

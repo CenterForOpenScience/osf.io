@@ -341,7 +341,7 @@ def node_contributors(**kwargs):
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
 
-    rv = _view_project(node, auth)
+    rv = _view_project(node, auth, primary=True)
     rv['contributors'] = utils.serialize_contributors(node.contributors, node)
     return rv
 
@@ -675,7 +675,7 @@ def _view_project(node, auth, primary=False):
         for addon in node.get_addons():
             messages = addon.before_page_load(node, user) or []
             for message in messages:
-                status.push_status_message(message)
+                status.push_status_message(message, dismissible=False)
     data = {
         'node': {
             'id': node._primary_key,
@@ -748,6 +748,7 @@ def _view_project(node, auth, primary=False):
             'piwik_token': user.piwik_token if user else '',
             'id': user._id if user else None,
             'username': user.username if user else None,
+            'fullname': user.fullname if user else '',
             'can_comment': node.can_comment(auth),
             'show_wiki_widget': _should_show_wiki_widget(node, user),
         },

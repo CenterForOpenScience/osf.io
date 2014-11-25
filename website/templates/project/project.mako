@@ -14,7 +14,7 @@
 
 <div class="row">
 
-    <div class="col-md-6">
+    <div class="col-sm-6">
 
         % if addons:
 
@@ -59,7 +59,7 @@
 
     </div>
 
-    <div class="col-md-6">
+    <div class="col-sm-6">
 
         <!-- Citations -->
         % if not node['anonymous']:
@@ -103,7 +103,6 @@
 
 <%def name="children()">
     % if node['node_type'] == 'project':
-        <div class="page-header">
             <div class="pull-right btn-group">
                 % if 'write' in user['permissions'] and not node['is_registration']:
                     <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
@@ -111,7 +110,7 @@
                 % endif
             </div>
         <h2>Components</h2>
-    </div>
+        <hr />
     % endif
 
 
@@ -207,20 +206,35 @@ ${parent.javascript_bottom()}
             interactive: ${'true' if user["can_edit"] else 'false'},
             maxChars: 128,
             onAddTag: function(tag){
-                $.ajax({
-                    url: "${node['api_url']}" + "addtag/" + tag + "/",
+                var url = "${node['api_url']}" + "addtag/" + tag + "/";
+                var request = $.ajax({
+                    url: url,
                     type: "POST",
                     contentType: "application/json"
                 });
+                request.fail(function(xhr, textStatus, error) {
+                    Raven.captureMessage('Failed to add tag', {
+                        tag: tag, url: url, textStatus: textStatus, error: error
+                    });
+                })
             },
             onRemoveTag: function(tag){
-                $.ajax({
-                    url: "${node['api_url']}" + "removetag/" + tag + "/",
+                var url = "${node['api_url']}" + "removetag/" + tag + "/";
+                var request = $.ajax({
+                    url: url,
                     type: "POST",
                     contentType: "application/json"
                 });
+                request.fail(function(xhr, textStatus, error) {
+                    Raven.captureMessage('Failed to remove tag', {
+                        tag: tag, url: url, textStatus: textStatus, error: error
+                    });
+                })
             }
         });
+
+        // Limit the maximum length that you can type when adding a tag
+        $('#node-tags_tag').attr("maxlength", "128");
 
         // Remove delete UI if not contributor
         % if 'write' not in user['permissions'] or node['is_registration']:
@@ -236,16 +250,24 @@ ${parent.javascript_bottom()}
 
     });
     $script.ready(['rubeus'], function() {
-        // Initialize filebrowser
-        var filebrowser = new Rubeus('#myGrid', {
-                data: nodeApiUrl + 'files/grid/',
-                columns: [Rubeus.Col.Name],
-                uploads: false,
-                width: "100%",
-                height: 600,
-                progBar: '#filetreeProgressBar',
-                searchInput: '#fileSearch'
-        });
+        // Since we don't have an Buttons/Status column, we append status messages to the
+        // name column
+        Rubeus.Col.DashboardName = $.extend({}, Rubeus.Col.Name);
+        Rubeus.Col.DashboardName.itemView = function(item) {
+            return Rubeus.Col.Name.itemView(item) + '&nbsp;<span data-status></span>';
+        };
+        var rubeusOpts = {
+            data: nodeApiUrl + 'files/grid/',
+            columns: [Rubeus.Col.DashboardName],
+            width: "100%",
+            height: 600,
+            progBar: '#filetreeProgressBar',
+            searchInput: '#fileSearch'
+        };
+        % if disk_saving_mode:
+          rubeusOpts.uploads = false;
+        % endif
+        var filebrowser = new Rubeus('#myGrid', rubeusOpts);
     })
 </script>
 
