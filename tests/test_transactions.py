@@ -5,8 +5,8 @@ import logging
 import mock
 import webtest_plus
 import unittest
-from nose.tools import *
-from tests.base import DbTestCase, OsfTestCase
+from nose.tools import *  # noqa
+from tests.base import DbTestCase
 
 from flask import make_response
 from pymongo.errors import CollectionInvalid, OperationFailure
@@ -34,7 +34,7 @@ for each in SILENT_LOGGERS:
     logger.setLevel(logging.CRITICAL)
 
 
-class TestTransactionContext(OsfTestCase):
+class TestTransactionContext(DbTestCase):
 
     @classmethod
     def setUpClass(cls):

@@ -21,7 +21,7 @@ enabled = (not settings.DEBUG_MODE) and settings.SENTRY_DSN
 def get_session_data():
     try:
         return get_session().data
-    except RuntimeError:
+    except (RuntimeError, AttributeError):
         return {}
 
 
