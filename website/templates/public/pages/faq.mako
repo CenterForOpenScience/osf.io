@@ -59,13 +59,12 @@
     improved further. We will offer encryption soon, and we will partner with
     data storage services that offer strong security features.</p>
 
-<h3>How does OSF store and back up files that I upload to the site?</h3><p>The
-    OSF purchases server space from <a href="https://www.linode.com/">Linode</a>,
-    a web hosting and cloud computing provider based in New Jersey. Linode
-    offers strong security standards and deals with cyberattacks in a prompt and
-    professional manner. OSF maintains several backup schemes, including
-    off-site backups and automated backups performed by our host every day,
-    week, and fortnight.
+<h3>How does OSF store and back up files that I upload to the site?</h3>
+    <p>The OSF stores files with <a href="http://www.rackspace.com/">Rackspace</a>
+    via an open source sponsorship, and has backups on 
+    <a href="http://aws.amazon.com/glacier/">Amazon's Glacier platform</a>. 
+    OSF maintains several backup schemes, including off-site backups and 
+    automated backups performed by our host every day, week, and fortnight.</p>
 
 <h3>What is coming to the OSF?</h3>
 
