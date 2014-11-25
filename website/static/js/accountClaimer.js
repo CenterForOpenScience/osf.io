@@ -23,7 +23,7 @@ this.OSFAccountClaimer = (function($, global, bootbox) {
     }
 
     function alertFinished(email) {
-        new GrowlBox('Email will arrive shortly', ['Please check <em>', email, '</em>'].join(''), 'success');
+        $.osf.growl('Email will arrive shortly', ['Please check <em>', email, '</em>'].join(''), 'success');
     }
 
     function onClickIfLoggedIn() {

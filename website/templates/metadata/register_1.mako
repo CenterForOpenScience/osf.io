@@ -45,7 +45,7 @@
      */
     function registration_failed() {
         $.osf.unblock();
-        new GrowlBox('Error:','Registration failed');
+        $.osf.growl('Error:','Registration failed');
     }
 
     function registerNode(data) {

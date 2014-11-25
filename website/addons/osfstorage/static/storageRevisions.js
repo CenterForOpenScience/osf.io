@@ -59,7 +59,7 @@
         }).done(function() {
             window.location = self.urls.files;
         }).fail(function() {
-            new GrowlBox('Error', 'Could not delete file.');
+            $.osf.growl('Error', 'Could not delete file.');
         });
     };
 

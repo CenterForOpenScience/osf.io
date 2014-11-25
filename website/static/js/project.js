@@ -43,9 +43,9 @@
             }).fail(function(response) {
                 $.osf.unblock();
                 if (response.status === 403) {
-                    new GrowlBox('Sorry:', 'you do not have permission to fork this project');
+                    $.osf.growl('Sorry:', 'you do not have permission to fork this project');
                 } else {
-                    new GrowlBox('Error:', 'Forking failed');
+                    $.osf.growl('Error:', 'Forking failed');
                     Raven.captureMessage('Error occurred during forking');
                 }
             });
@@ -69,7 +69,7 @@
                         window.location.reload();
                     }).fail(function() {
                         $.osf.unblock();
-                        new GrowlBox('Error','Could not fork link.');
+                        $.osf.growl('Error','Could not fork link.');
                     });
                 }
             }

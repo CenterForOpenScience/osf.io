@@ -265,7 +265,7 @@
             // Warn on add contributors if pending changes
             $('[href="#addContributors"]').on('click', function() {
                 if (self.changed()) {
-                    new GrowlBox('Error:',
+                    $.osf.growl('Error:',
                         'Your contributor list has unsaved changes. Please ' +
                         'save or cancel your changes before adding ' +
                         'contributors.'

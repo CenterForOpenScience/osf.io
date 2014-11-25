@@ -11,7 +11,7 @@
                     var title = capitaliseFirstLetter('${css_class | trim}')+':';
                     var message = '${message | trim}';
                     var type = '${css_class | trim}';
-                    new GrowlBox(title, message, type);
+                    $.osf.growl(title, message, type);
                 </script>
         % else:
             <div class='alert alert-block alert-${css_class} fade in'>

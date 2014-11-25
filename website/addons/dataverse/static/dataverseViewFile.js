@@ -67,7 +67,7 @@
                             });
                             request.fail(function( jqXHR, textStatus ) {
                                 self.deleting(false);
-                                new GrowlBox( 'Could not delete', textStatus );
+                                $.osf.growl( 'Could not delete', textStatus );
                             });
                         }
                     }

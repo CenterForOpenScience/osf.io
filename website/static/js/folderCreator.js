@@ -34,7 +34,7 @@
         };
 
         self.createFailure = function () {
-            new GrowlBox('Could not create a new folder.', 'Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
+            $.osf.growl('Could not create a new folder.', 'Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
         };
 
         self.serialize = function () {

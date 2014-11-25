@@ -116,7 +116,7 @@
             });
             request.fail(function() {
                 var msg = 'Sorry, we had trouble saving your settings. If this persists please contact <a href="mailto: support@osf.io">support@osf.io</a>';
-                new GrowlBox('Request failed', msg);
+                $.osf.growl('Request failed', msg);
             });
         }
 

@@ -68,7 +68,7 @@ $script.ready('hgrid', function() {
                             location.reload();
                         },
                         error: function(xhr, status, error) {
-                            new GrowlBox('Could not revoke badge','');
+                            $.osf.growl('Could not revoke badge','');
                         }
                     });
                 }

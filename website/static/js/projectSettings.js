@@ -125,7 +125,7 @@ ProjectSettings.getConfirmationCode = function(nodeType) {
                 request.done(successHandler);
                 request.fail($.osf.handleJSONError);
             } else if (result != null) {
-                new GrowlBox('Incorrect confirmation',
+                $.osf.growl('Incorrect confirmation',
                     'The confirmation string you provided was incorrect. Please try again.');
             }
         }
@@ -149,7 +149,7 @@ $(document).ready(function() {
             $commentMsg.text('Successfully updated settings.');
             window.location.reload();
         }).fail(function() {
-            new GrowlBox('Could not set commenting configuration.', 'Please try again.');
+            $.osf.growl('Could not set commenting configuration.', 'Please try again.');
         });
 
         return false;

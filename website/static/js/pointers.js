@@ -131,7 +131,7 @@
                     self.links(response.pointed);
                 }).fail(function() {
                     $elm.modal('hide');
-                    new GrowlBox('Error:','Could not get links');
+                    $.osf.growl('Error:','Could not get links');
                 });
             }
         });

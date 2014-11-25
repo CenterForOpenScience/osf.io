@@ -496,7 +496,7 @@
                 window.location.reload();
             }).fail(function() {
                 $.osf.unblock();
-                new GrowlBox('Error','Add contributor failed.');
+                $.osf.growl('Error','Add contributor failed.');
             });
         };
 

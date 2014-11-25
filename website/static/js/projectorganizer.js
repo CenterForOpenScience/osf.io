@@ -60,7 +60,7 @@
             });
             deleteAction.done(reloadHgrid);
             deleteAction.fail(function (jqxhr, textStatus, errorThrown){
-                new GrowlBox('Error:', textStatus + '. ' + errorThrown);
+                $.osf.growl('Error:', textStatus + '. ' + errorThrown);
             });
         }
     }
@@ -258,7 +258,7 @@
 
                                 });
                                 postAction.fail(function (jqxhr, textStatus, errorThrown){
-                                    new GrowlBox('Error:', textStatus + '. ' + errorThrown);
+                                    $.osf.growl('Error:', textStatus + '. ' + errorThrown);
                                 });
                             } else { // From:  if(itemsToMove.length > 0)
 //                                folder.childrenCount = folder.children.length;
@@ -269,7 +269,7 @@
                     } // From: if (copyMode === 'copy' || copyMode === 'move')
                 });
                 getAction.fail(function (jqxhr, textStatus, errorThrown){
-                    new GrowlBox('Error:', textStatus + '. ' + errorThrown);
+                    $.osf.growl('Error:', textStatus + '. ' + errorThrown);
                 });
             } else {
                 Raven.captureMessage('Project dashboard: Parent node (' + itemParentNodeID + ') == Folder Node (' + theFolderNodeID + ')');
@@ -991,7 +991,7 @@
             },
             fetchError: function(error) {
                 if($('.modal-dialog').length === 0) {
-                    new GrowlBox('Error:', error);
+                    $.osf.growl('Error:', error);
                 }
             },
             getExpandState: function(folder) {

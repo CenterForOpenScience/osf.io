@@ -85,7 +85,7 @@
                     } catch(error) {
                         msg = textStatus;
                     }
-                    new GrowlBox('Error:', msg);
+                    $.osf.growl('Error:', msg);
                 });
             } else {
                 return file.url || this.options.url;

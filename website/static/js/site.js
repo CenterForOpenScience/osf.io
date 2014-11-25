@@ -102,7 +102,7 @@
         var title = response.responseJSON.message_short || errorDefaultShort;
         var message = response.responseJSON.message_long || errorDefaultLong;
 
-        new GrowlBox(title, message);
+        $.osf.growl(title, message);
 
         Raven.captureMessage('Unexpected error occurred in JSON request');
     };

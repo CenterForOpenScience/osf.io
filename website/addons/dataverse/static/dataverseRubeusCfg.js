@@ -44,7 +44,7 @@
                             url,
                             {}
                         ).done(function() {
-                            new GrowlBox('Your study has been released.',
+                            $.osf.growl('Your study has been released.',
                                     'Please allow up to 24 hours for the released version to ' +
                                     'appear on your OSF project\'s file page.',
                                 'success');
@@ -54,7 +54,7 @@
                                 'Something went wrong when attempting to ' +
                                 'release your study.' :
                                 'This version has already been released.';
-                            new GrowlBox('Error', message);
+                            $.osf.growl('Error', message);
                             self.updateItem(row);
                         });
                     }

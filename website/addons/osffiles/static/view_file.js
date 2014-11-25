@@ -72,7 +72,7 @@
                         });
                         request.fail(function( jqXHR, textStatus ) {
                             $('#deletingAlert').removeClass('in');
-                            new GrowlBox( 'Could not delete', textStatus );
+                            $.osf.growl( 'Could not delete', textStatus );
                         });
                     }
                 }

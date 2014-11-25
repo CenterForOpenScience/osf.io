@@ -129,7 +129,7 @@
         }
 
         function onFetchError() {
-            new GrowlBox('Could not retrieve view-only links.', 'Please refresh the page or ' +
+            $.osf.growl('Could not retrieve view-only links.', 'Please refresh the page or ' +
                     'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
                     'problem persists.');
         }
@@ -166,7 +166,7 @@
                     }).done(function() {
                         self.privateLinks.remove(data);
                     }).fail(function() {
-                        new GrowlBox('Error:','Failed to delete the private link.');
+                        $.osf.growl('Error:','Failed to delete the private link.');
                     });
                     }
                 }
