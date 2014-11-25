@@ -433,7 +433,7 @@ class NodeFileCollector(object):
             else u'Private Component',
             'kind': FOLDER,
             'permissions': {
-                'edit': False,
+                'edit': self.can_edit,
                 'view': can_view,
             },
             'urls': {
