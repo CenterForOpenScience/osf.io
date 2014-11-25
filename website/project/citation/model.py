@@ -23,3 +23,11 @@ class CitationStyle(StoredObject):
 
     short_title = fields.StringField()
     summary = fields.StringField()
+
+    def to_json(self):
+        return {
+            'id': self._id,
+            'title': self.title,
+            'short_title': self.short_title,
+            'summary': self.summary,
+        }

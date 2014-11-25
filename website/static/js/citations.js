@@ -1,35 +1,75 @@
-/////////////////////
-// Project JS      //
-/////////////////////
+$script.ready(['rubeus'], function() {
+//styles = new Bloodhound({
+//    datumTokenizer: Bloodhound.tokenizers.obj.whitespace('title'),
+//    queryTokenizer: Bloodhound.tokenizers.whitespace,
+//    remote: '/api/v1/citation_styles?q=%QUERY'
+//});
+//styles.initialize();
 
-$(document).ready(function() {
+    var r = function(query) {
+        query.callback({results: [
+            {
+                _id: "academy-of-management-review",
+                summary: null,
+                short_title: "AMR",
+                title: "Academy of Management Review"
+            }
+        ]})
+    }
 
+    var formatResult = function(state) {
+        var html = "<div class='citation-result-title'>" + state.title + "</div>";
+        //if (state.short_title_!== null) {
+        //    html += "<div class='citation-result-slug'>" + state.short_title + "</div>";
+        //};
+        //if (state.summary !== null) {
+        //    html += "<div class='citation-result-summary'>" + state.summary + "</div>";
+        //};
+        return html;
+    };
 
-    $("#humanStyles").change(function(){
+    var formatSelection = function(state) {
+        console.log("Formatting Selection");
+        return state.title;
+    };
 
-        if($(this).val()==="OSFURL")
-        {
-            $(".rendered-citation").text(absoluteUrl);
-        }
+    var input = $('#citation-style-input');
 
-        else{
-            $.ajax({
-                type: "GET",
-                url: nodeApiUrl + 'citation/human/' +$(this).val(),
-                success: function(response){
-                    $(".rendered-citation").text(response.output);
-                    return false;
+    input.select2({
+        formatResult: formatResult,
+        formatSelection: formatSelection,
+        placeholder: "Enter",
+        minimumInputLength: 1,
+        ajax: {
+            url: '/api/v1/citation_styles/',
+            quietMillis: 200,
+            data: function(term, page) {
+                return {
+                    'q': term
                 }
-            })
-            return false;
+            },
+            results: function(data, page) {
+                return {results: data.styles}
+            },
+            cache: true,
         }
-    })
+    }).on('select2-selecting', function(e) {
+        $.get(
+            nodeApiUrl + 'citation/' + e.val,
+            {},
+            function(data) {
+                bootbox.dialog({
+                    title: "Citation",
+                    message: "<pre>" + data.citation + "</pre>",
+                    buttons: {
+                        OK: {
+                            label: "OK",
+                            className: "btn-primary",
+                        }
+                    }
+                });
+            }
+        );
+    });
 
-//        var $citationFormMachineSelect = $("#machineStyles");
-
-    $("#machineStyles").change(function(){
-        window.location.href =nodeApiUrl + 'citation/machine/' + $(this).val() ;
-        return false;
-    })
 })
-

@@ -68,16 +68,10 @@
                 <span class="citation-label">Citation:</span>
                 <span>${node['display_absolute_url']}</span>
                 <a href="#" class="citation-toggle" style="padding-left: 10px;">more</a>
-                <dl class="citation-list">
-                    <dt>APA</dt>
-                        <dd class="citation-text">${node['citations']['apa']}</dd>
-                    <dt>MLA</dt>
-                        <dd class="citation-text">${node['citations']['mla']}</dd>
-                    <dt>Chicago</dt>
-                        <dd class="citation-text">${node['citations']['chicago']}</dd>
-                </dl>
+                <input id="citation-style-input" type="hidden" style="width:80%" />
             </div><!-- end .citations -->
             <!-- End section prior to Azeem's changes -->
+                <hr>
         <div class="citations">
 
                         <span class="citation-label">Citation:</span>
