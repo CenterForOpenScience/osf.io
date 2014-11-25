@@ -51,4 +51,5 @@ USE_CDN_FOR_CLIENT_LIBS = False
 # PIWIK_ADMIN_TOKEN = '6e9b2daf6c9dacd2eddbba5083b058fa'
 # PIWIK_SITE_ID = 1
 
-SENTRY_DSN = "<INSERT DSN HERE>"
+# CHANGE ME if to use Sentry
+SENTRY_DSN = None

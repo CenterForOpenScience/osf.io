@@ -160,20 +160,21 @@ def remove_osf_user(user_settings):
 
 
 def build_urls(node, file_name, url=None, etag=None, vid=None):
+    file_name = file_name.rstrip('/')
+
     rv = {
-        'upload': u'{node_api}s3/'.format(node_api=node.api_url),
-        'download': u'{node_url}s3/{file_name}/download/{vid}'.format(node_url=node.url, file_name=file_name, vid='' if not vid else '?vid={0}'.format(vid)),
-        'view': u'{node_url}s3/{file_name}/'.format(node_url=node.url, file_name=file_name),
-        'delete': u'{node_api}s3/{file_name}/'.format(node_api=node.api_url, file_name=file_name),
-        'render': u'{node_api}s3/{file_name}/render/{etag}'.format(node_api=node.api_url,
-            file_name=file_name, etag='' if not etag else '?etag={0}'.format(etag)),
-        'fetch': u'{node_api}s3/hgrid/{file_name}'.format(node_api=node.api_url, file_name=file_name),
+        'upload': node.api_url_for('s3_upload'),
+        'view': node.web_url_for('s3_view', path=file_name),
+        'delete': node.api_url_for('s3_delete', path=file_name),
         'info': node.api_url_for('file_delete_info', path=file_name),
+        'fetch': node.api_url_for('s3_hgrid_data_contents', path=file_name),
+        'download': u'{}{}'.format(node.api_url_for('s3_download', path=file_name), '' if not vid else '?vid={0}'.format(vid)),
+        'render': u'{}{}'.format(node.api_url_for('ping_render', path=file_name), '' if not etag else '?etag={0}'.format(etag)),
     }
-    if not url:
-        return rv
-    else:
+
+    if url:
         return rv[url]
+    return rv
 
 
 def get_cache_file_name(key_name, etag):
