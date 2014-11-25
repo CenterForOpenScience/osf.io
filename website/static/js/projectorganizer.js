@@ -107,6 +107,10 @@
     }
 
     function saveExpandState (item, callback) {
+        if(!item.apiURL) { 
+            return; 
+        }
+
         if(item.expand) {
             // turn to false
             var collapseUrl = item.apiURL + 'collapse/';
@@ -283,6 +287,7 @@
                         tb.updateFolder(null, item);
                     });
                 });
+                $('.project-details').hide();
                 return false;
             });
 
@@ -882,7 +887,6 @@
                                 var url = postInfo[copyMode]['url'];
                                 var postData = JSON.stringify(postInfo[copyMode]['json']);
                                 var outerFolder = whichIsContainer.call(tb, itemParent, folder);
-                                var outerFolderID = outerFolder.id;
                                 var postAction = $.ajax({
                                     type: 'POST',
                                     url: url,
@@ -892,7 +896,7 @@
                                 });
                                 postAction.always(function (result) {
                                     if (copyMode === 'move') {
-                                        if (typeof outerFolderID === 'undefined' || outerFolderID === null) {
+                                        if (!outerFolder) {
                                             tb.updateFolder(null, itemParent);
                                         } else {
                                             tb.updateFolder(null, outerFolder);
@@ -998,6 +1002,9 @@
                     console.log("Event", event);
                     if(event) {
                         saveExpandState(item.data);                        
+                    }
+                    if (!item.open) {
+                        item.load = false;
                     }
                 },
                 // onmouseoverrow : _poMouseOverRow,

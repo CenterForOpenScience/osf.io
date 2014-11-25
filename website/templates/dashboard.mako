@@ -167,9 +167,7 @@
 
 ##       Project Organizer
 
-    <script src="/static/vendor/bower_components/jquery-ui/jquery-ui.min.js"></script>
     <script>
-
         $script(['/static/js/projectorganizer.js']);
         $script.ready(['projectorganizer'], function() {
 
