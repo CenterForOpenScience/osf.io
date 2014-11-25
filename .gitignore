@@ -4,3 +4,5 @@
 .git
 .idea
 **/*.ipynb*
+**/**.pyc
+**/__pycache__
