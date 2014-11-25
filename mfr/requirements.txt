@@ -2,7 +2,9 @@
 
 ipython==2.1.0
 pandas==0.14.1
-xlrd==0.9.3
+#xlrd==0.9.3
+# Development version of xlrd
+git+https://github.com/icereval/xlrd.git
 numpy==1.8.1
 PyDocX==0.3.14
 PyPDF2==1.22

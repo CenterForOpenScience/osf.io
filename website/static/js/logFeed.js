@@ -26,6 +26,7 @@ var Log = function(params) {
     });
 
     /**
+<<<<<<< HEAD
       * Given an item in self.contributors, return its anchor element representation.
       */
     self._asContribLink = function(person) {
@@ -38,6 +39,7 @@ var Log = function(params) {
     self.hasTemplate = ko.computed(function() {
         return $('script#' + self.action).length > 0;
     });
+
 
     /**
       * Return the html for a comma-delimited list of contributor links, formatted

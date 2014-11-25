@@ -70,6 +70,7 @@ MAILGUN_API_KEY = None
 # TODO: Override in local.py in production
 UPLOADS_PATH = os.path.join(BASE_PATH, 'uploads')
 MFR_CACHE_PATH = os.path.join(BASE_PATH, 'mfrcache')
+MFR_TEMP_PATH = os.path.join(BASE_PATH, 'mfrtemp')
 
 # Use Celery for file rendering
 USE_CELERY = True
@@ -144,9 +145,11 @@ CELERY_RESULT_BACKEND = 'amqp://'
 
 # Modules to import when celery launches
 CELERY_IMPORTS = (
-    'framework.email.tasks',
     'framework.tasks',
-    'framework.render.tasks'
+    'framework.tasks.signals',
+    'framework.email.tasks',
+    'framework.render.tasks',
+    'framework.analytics.tasks',
 )
 
 # Add-ons
