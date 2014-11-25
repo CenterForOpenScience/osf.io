@@ -11,6 +11,7 @@ from bleach.callbacks import nofollow
 import markdown
 from markdown.extensions import codehilite, fenced_code, wikilinks
 from modularodm import fields
+import requests
 
 from framework.forms.utils import sanitize
 from framework.guid.model import GuidStoredObject
@@ -30,6 +31,15 @@ logger = logging.getLogger(__name__)
 
 
 class AddonWikiNodeSettings(AddonNodeSettingsBase):
+
+    def after_remove_contributor(self, node, removed):
+
+        # Migrate every page on the node
+        for wiki_name in node.wiki_pages_current:
+            wiki_page = node.get_wiki_page(wiki_name)
+            wiki_page.migrate_uuid(node)
+
+        # TODO: Does this affect forks?
 
     def to_json(self, user):
         return {}
@@ -116,8 +126,6 @@ class NodeWikiPage(GuidStoredObject):
 
         return sanitize(self.html(node), tags=[], strip=True)
 
-    # TODO: Improve handling of page names in migration and deletion
-
     def delete_share_doc(self, node, save=True):
         """Deletes share document and removes namespace from model."""
 
@@ -137,15 +145,20 @@ class NodeWikiPage(GuidStoredObject):
         if save:
             self.save()
 
-    """ TODO: Migrate when page is open, followed by edits to the old doc,
-        leads to a sharejs document with no pointer. This is both a security
-        risk and a memory leak."""
     def migrate_uuid(self, node, save=True):
         """Migrates uuid to new namespace."""
 
         db = share_db()
-
         old_mongo_uuid = to_mongo_uuid(node, self.share_uuid)
+
+        lock_url = 'http://{host}:{port}/{action}/{id}'.format(
+            host=settings.SHAREJS_HOST,
+            port=settings.SHAREJS_PORT,
+            action='lock',
+            id=old_mongo_uuid
+        )
+        requests.post(lock_url)
+
         self.share_uuid = generate_share_uuid(node, self.page_name)
         new_mongo_uuid = to_mongo_uuid(node, self.share_uuid)
 
@@ -162,6 +175,14 @@ class NodeWikiPage(GuidStoredObject):
                 item['name'] = new_mongo_uuid
             db['docs_ops'].insert(ops_items)
             db['docs_ops'].remove({'name': old_mongo_uuid})
+
+        unlock_url = 'http://{host}:{port}/{action}/{id}'.format(
+            host=settings.SHAREJS_HOST,
+            port=settings.SHAREJS_PORT,
+            action='unlock',
+            id=old_mongo_uuid
+        )
+        requests.post(unlock_url)
 
         if save:
             self.save()

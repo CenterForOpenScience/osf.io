@@ -88,6 +88,8 @@ DB_USER = None
 DB_PASS = None
 
 SHAREJS_DB_NAME = 'sharejs'
+SHAREJS_HOST = 'localhost'
+SHAREJS_PORT = 7007
 
 # Cache settings
 SESSION_HISTORY_LENGTH = 5

@@ -2,7 +2,7 @@
 var port = 7007;
 var dbHost = 'localhost';
 var dbPort = 27017;
-var dbName = 'sharejstest';
+var dbName = 'sharejs';
 
 // Library imports
 var sharejs = require('share');
@@ -148,10 +148,8 @@ app.get('/users', function getUsers(req, res, next) {
     res.send(docs);
 });
 
-// TODO: Lock urls are only get requests for debug purposes. Change to post
-
 // Lock a document
-app.get('/lock/:id', function lockDoc(req, res, next) {
+app.post('/lock/:id', function lockDoc(req, res, next) {
     locked[req.params.id] = true;
     wss.broadcast(req.params.id, JSON.stringify({type: 'lock'}));
     console.log(req.params.id + " was locked.");
@@ -159,7 +157,7 @@ app.get('/lock/:id', function lockDoc(req, res, next) {
 });
 
 // Lock a document
-app.get('/unlock/:id', function lockDoc(req, res, next) {
+app.post('/unlock/:id', function lockDoc(req, res, next) {
     delete locked[req.params.id];
     wss.broadcast(req.params.id, JSON.stringify({type: 'unlock'}));
     console.log(req.params.id + " was unlocked.");
