@@ -161,6 +161,7 @@ def render_dropbox_file(file_obj, client=None, rev=None):
             node_settings=node_settings,
             cache_file_name=cache_file_name,
             start_render=True,
+            remote_path=file_obj.path,
             file_content=file_response.read(),
             download_path=file_obj.download_url(guid=True, rev=rev),
         )
