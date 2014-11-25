@@ -151,7 +151,15 @@
     function _fangornDragOver (treebeard, event) {
         var dropzoneHoverClass = "fangorn-dz-hover"; 
         $('.tb-row').removeClass(dropzoneHoverClass);
-        $(event.target).closest('.tb-row').addClass(dropzoneHoverClass); 
+
+        var closestTarget = $(event.target).closest('.tb-row');
+
+        if(closestTarget.context.dataset.id != undefined) {
+            if (treebeard.find(closestTarget.context.dataset.id).data.urls) {
+                if (treebeard.find(closestTarget.context.dataset.id).data.urls.upload != null) {
+                    $(event.target).closest('.tb-row').addClass(dropzoneHoverClass);
+                }            }
+        }
     }
 
     function _fangornComplete (treebeard, file) {
@@ -170,12 +178,12 @@
         //Dataverse : Object, actionTaken : file_uploaded
         var revisedItem = resolveconfigOption.call(treebeard, item.parent(), 'uploadSuccess', [file, item, response]);         
         if(!revisedItem && response){
-            if(response.actionTaken === 'file_added' || response.addon === 'dropbox' || response.addon === 'github' || response.addon === 'dataverse'){ // Base OSF response 
+            if(response.actionTaken === 'file_added' || response.addon === 'dropbox' || response.addon === 'github' || response.addon === 'dataverse'){ // Base OSF response
                 item.data = response;
-                item.notify = false;
-                treebeard.redraw();            
             }
         }
+        //item.notify = false;
+        treebeard.redraw();
     }
 
     function _fangornDropzoneError (treebeard, file, message) {
