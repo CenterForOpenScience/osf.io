@@ -613,16 +613,23 @@ class TestWikiUuid(OsfTestCase):
         self.wname = 'foo.bar'
         self.wkey = to_mongo_key(self.wname)
 
-    def test_uuid_generated(self):
+    def test_uuid_generated_once(self):
         assert_is_none(self.project.wiki_sharejs_uuids.get(self.wkey))
         url = self.project.web_url_for('project_wiki_edit', wname=self.wname)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
         self.project.reload()
-        assert_true(self.project.wiki_sharejs_uuids.get(self.wkey))
-        assert_not_in(self.project.wiki_sharejs_uuids.get(self.wkey), res.body)
+        sharejs_uuid = self.project.wiki_sharejs_uuids.get(self.wkey)
+        assert_true(sharejs_uuid)
+        assert_not_in(sharejs_uuid, res.body)
         assert_in(get_mongo_uuid(self.project, self.wname), res.body)
+
+        # Revisit page; uuid has not changed
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        self.project.reload()
+        assert_equal(sharejs_uuid, self.project.wiki_sharejs_uuids.get(self.wkey))
 
     def test_uuids_differ_between_pages(self):
         wname1 = 'foo.bar'
@@ -672,6 +679,18 @@ class TestWikiUuid(OsfTestCase):
         assert_in(fork_uuid, fork_res)
         assert_not_in(project_uuid, fork_res)
         assert_not_in(fork_uuid, project_res)
+
+    def test_migration_does_not_affect_forks(self):
+        original_uuid = generate_sharejs_uuid(self.project, self.wname)
+        self.project.update_node_wiki(self.wname, 'Hello world', Auth(self.user))
+        fork = self.project.fork_node(Auth(self.user))
+        assert_equal(original_uuid, fork.wiki_sharejs_uuids.get(self.wkey))
+
+        wiki_page = self.project.get_wiki_page(self.wkey)
+        wiki_page.migrate_uuid(self.project)
+
+        assert_not_equal(original_uuid, self.project.wiki_sharejs_uuids.get(self.wkey))
+        assert_equal(original_uuid, fork.wiki_sharejs_uuids.get(self.wkey))
 
     def test_uuid_persists_after_delete(self):
         assert_is_none(self.project.wiki_sharejs_uuids.get(self.wkey))
