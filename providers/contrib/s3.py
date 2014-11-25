@@ -22,16 +22,10 @@ class S3Provider(core.BaseProvider):
     def upload(self, obj, path):
         key = self.bucket.new_key(path)
         url = key.generate_url(100, 'PUT')
-        resp = yield from aiohttp.request('PUT', url, data=obj.content, headers=self._headers(**{'Content-Length': obj.size}))
+        resp = yield from aiohttp.request('PUT', url, data=obj.content, headers={'Content-Length': obj.size})
         return core.ResponseWrapper(resp)
 
     # @coroutine
     def delete(self, path):
         # TODO: implement delete
         pass
-
-    def _headers(self, **kwargs):
-        return {
-            key: value for key, value in kwargs.items()
-            if value is not None
-        }

@@ -7,8 +7,6 @@ from providers import core
 
 class DropboxProvider(core.BaseProvider):
 
-    CHUNK_SIZE = 1024
-
     def __init__(self, token, root):
         self.token = token
         self.root = root
