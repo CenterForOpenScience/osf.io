@@ -1,13 +1,13 @@
 import re
+import sha
+import hmac
 import time
 import base64
 import urllib
 import hashlib
-import hmac
-import sha
 
-from urllib import quote
 from bson import ObjectId
+
 from dateutil.parser import parse
 
 from boto.iam import IAMConnection
