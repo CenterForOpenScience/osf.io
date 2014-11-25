@@ -88,7 +88,7 @@
             ).done(function() {
                 window.location.reload();
             }).fail(function() {
-                new GrowlBox('Error:','Failed to create a view-only Link.');
+                new GrowlBox('Error:','Failed to create a view-only link.');
                 self.disableSubmit(false);
                 self.submitText('Submit');
             });
