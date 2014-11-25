@@ -1,8 +1,11 @@
+from asyncio import coroutine
+
 import aiohttp
 
-from asyncio import coroutine
 from boto.s3.connection import S3Connection
+
 from providers import core
+from exceptions import FileNotFoundError
 
 
 class S3Provider(core.BaseProvider):
@@ -16,6 +19,9 @@ class S3Provider(core.BaseProvider):
         key = self.bucket.new_key(path)
         url = key.generate_url(100)
         resp = yield from aiohttp.request('GET', url)
+        if resp.status != 200:
+            raise FileNotFoundError(path)
+
         return core.ResponseWrapper(resp)
 
     @coroutine
