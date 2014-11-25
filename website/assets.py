@@ -23,7 +23,7 @@ css = Bundle(
         'css/site.css',
         'css/rubeus.css',
         'css/commentpane.css',
-        'css/animate-tasteful.min.css',
+        'vendor/animate/animate-tasteful.min.css',
         filters="cssmin"),
     output="public/css/common.css"
 )
