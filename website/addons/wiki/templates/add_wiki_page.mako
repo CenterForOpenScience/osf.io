@@ -10,10 +10,10 @@
                     <h3 class="modal-title">Add New Wiki Page</h3>
                 </div><!-- end modal-header -->
                 <div class="modal-body">
-                    <div id="alert" style="padding-bottom:10px;color:blue;"></div>
                     <div class='form-group'>
                         <input id="data" placeholder="New Wiki Name" type="text" class='form-control'>
                     </div>
+                    <p id="alert" class="text-danger"> </p>
                 </div><!-- end modal-body -->
                 <div class="modal-footer">
                     <a id="close" href="#" class="btn btn-default" data-dismiss="modal">Close</a>
