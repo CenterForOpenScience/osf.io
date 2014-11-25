@@ -83,24 +83,6 @@
             self.fetchData()
         };
 
-        self.updateChanged = function(editUrl) {
-            $.ajax({
-                type: 'POST',
-                url: editUrl,
-                data: {
-                    content: self.wikiText()
-                },
-                success: function() {
-                    self.initText(self.wikiText());
-                },
-                error: function(xhr, textStatus, error) {
-                    console.error(xhr);
-                    console.error(textStatus);
-                    console.error(error);
-                }
-            });
-        };
-
         // Fetch initial wiki text
         self.fetchData = function() {
             $.ajax({
