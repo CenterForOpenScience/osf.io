@@ -2,6 +2,14 @@
 Changelog
 *********
 
+0.21.15 (unreleased)
+====================
+
+Hotfix release
+
+- Add an endpoint for receiving the webhook payload from the OSF upload
+service when files are backed up to a Amazon Glacier archive.
+
 0.21.12 (unreleased)
 ====================
 
