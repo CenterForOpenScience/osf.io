@@ -122,13 +122,18 @@ def osf_storage_upload_start_hook(node_addon, **kwargs):
     return {'status': 'success'}
 
 
+def get_record_or_404(path, node_addon, touch=True):
+    record = model.OsfStorageFileRecord.find_by_path(path, node_addon, touch=touch)
+    if record is not None:
+        return record
+    raise HTTPError(httplib.NOT_FOUND)
+
+
 @must_be_valid_project
 @must_not_be_registration
 @must_have_addon('osfstorage', 'node')
 def osf_storage_upload_ping_hook(path, node_addon, **kwargs):
-    record = model.OsfStorageFileRecord.find_by_path(path, node_addon, touch=False)
-    if record is None:
-        raise HTTPError(httplib.NOT_FOUND)
+    record = get_record_or_404(path, node_addon, touch=False)
     payload = get_payload_from_request(utils.webhook_signer, request)
     try:
         record.ping_pending_version(payload.get('uploadSignature'))
@@ -141,12 +146,27 @@ def osf_storage_upload_ping_hook(path, node_addon, **kwargs):
 @must_not_be_registration
 @must_have_addon('osfstorage', 'node')
 def osf_storage_upload_cached_hook(path, node_addon, **kwargs):
-    record = model.OsfStorageFileRecord.find_by_path(path, node_addon, touch=False)
-    if record is None:
-        raise HTTPError(httplib.NOT_FOUND)
+    record = get_record_or_404(path, node_addon, touch=False)
     payload = get_payload_from_request(utils.webhook_signer, request)
     try:
         record.set_pending_version_cached(payload.get('uploadSignature'))
+    except errors.OsfStorageError:
+        raise HTTPError(httplib.BAD_REQUEST)
+    return {'status': 'success'}
+
+
+@must_be_valid_project
+@must_not_be_registration
+@must_have_addon('osfstorage', 'node')
+def osf_storage_upload_archived_hook(path, node_addon, **kwargs):
+    record = get_record_or_404(path, node_addon, touch=False)
+    payload = get_payload_from_request(utils.webhook_signer, request)
+    signature = payload.get('uploadSignature')
+    metadata = payload.get('metadata')
+    if not signature or not metadata:
+        raise HTTPError(httplib.BAD_REQUEST)
+    try:
+        record.update_version_metadata(signature, metadata)
     except errors.OsfStorageError:
         raise HTTPError(httplib.BAD_REQUEST)
     return {'status': 'success'}
