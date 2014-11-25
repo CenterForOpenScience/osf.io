@@ -17,6 +17,18 @@
     $.osf = {};
 
     /**
+     * Convenience function to create a GrowlBox
+     * Show a growl-style notification for messages. Defaults to an error type.
+     * @param {String} title Shows in bold at the top of the box. Required or it looks foolish.
+     * @param {String} message Shows a line below the title. This could be '' if there's nothing to say.
+     * @param {String} type One of 'success', 'info', 'warning', or 'danger'. Defaults to danger.
+     *
+     */
+    $.osf.growl = function(title, message, type) {
+        new GrowlBox(title, message, type);
+    };
+
+    /**
      * Posts JSON data.
      *
      * NOTE: The `success` and `error` callbacks are deprecated. Prefer the Promise
