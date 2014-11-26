@@ -437,7 +437,7 @@ class NodeFileCollector(object):
                 'view': can_view,
             },
             'urls': {
-                'upload': os.path.join(node.api_url, 'osffiles') + '/',
+                'upload': None,
                 'fetch': None,
             },
             'children': children,

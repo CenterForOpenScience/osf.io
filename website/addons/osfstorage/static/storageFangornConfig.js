@@ -1,10 +1,10 @@
 ;(function (global, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['js/rubeus'], factory);
+        define(['js/fangorn'], factory);
     } else if (typeof $script === 'function') {
-        $script.ready('rubeus', function() { factory(Rubeus); });
-    } else { factory(Rubeus); }
-}(this, function(Rubeus) {
+        $script.ready('fangorn', function() { factory(Fangorn); });
+    } else { factory(Fangorn); }
+}(this, function(Fangorn) {
 
     /**
      * Build URL for a freshly uploaded file.
@@ -15,32 +15,33 @@
         return base + 'osfstorage/files/' + file.name + suffix;
     };
 
-    Rubeus.cfg.osfstorage = {
+    Fangorn.config.osfstorage = {
 
         uploadMethod: 'PUT',
         uploadUrl: null,
         uploadAdd: function(file, item) {
             // var self = this;
-            var parent = item.parent().data; 
-            file.signedUrlFrom = parent.urls.upload;
+            //console.log("HELLO");
+            //var parent = item.parent().data;
+            file.signedUrlFrom = item.data.urls.upload;
         },
 
-        uploadSending: function(file, formData, xhr) {
+        uploadSending: function(file, xhr, formData) {
             xhr.setRequestHeader(
                 'Content-Type',
                 file.type || 'application/octet-stream'
             );
         },
 
-        uploadSuccess: function(file, row) {
+        uploadSuccess: function(file, item) {
             var self = this;
-            var parent = row.parent().data; // self.getByID(row.parentID);
-            row.data.urls = {
+            var parent = item.parent().data; // self.getByID(row.parentID);
+            item.data.urls = {
                 'view': buildUrl(parent, file, 'web'),
                 'download': buildUrl(parent, file, 'web', '/download/'),
                 'delete': buildUrl(parent, file, 'api')
             };
-            row.data.permissions = parent.permissions;
+            item.data.permissions = parent.permissions;
             //self.updateItem(row);
             // var updated = Rubeus.Utils.itemUpdated(row, parent);
             // if (updated) {
@@ -53,6 +54,7 @@
             //         }
             //     );
             // }
+            return item;
         },
 
         /**
