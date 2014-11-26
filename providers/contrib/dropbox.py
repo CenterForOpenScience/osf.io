@@ -1,13 +1,16 @@
+# encoding: utf-8
+
 import aiohttp
 import os.path
 
 from asyncio import coroutine
+
 from providers import core
 
 
 class DropboxProvider(core.BaseProvider):
 
-    def __init__(self, token, root):
+    def __init__(self, token, root, **kwargs):
         self.token = token
         self.root = root
 

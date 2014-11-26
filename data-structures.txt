@@ -1,0 +1,73 @@
+
+
+# start io loop
+
+#
+
+# /osfstorage/download
+downloadRequest = {
+    'provider': {
+        'name': 'dropbox',
+        'root': '/util',
+        'token': '...',
+    },
+    'options': {
+        'path': 'test_file.txt',
+    },
+}
+
+# /osfstorage/upload
+uploadRequest = {
+}
+
+
+# /osfstorage/move
+moveRequest = {
+    'src': {
+        'provider': {
+            'name': 'dropbox',
+            'root': '/util',
+            'token': '...',
+        },
+        'options': {
+            'path': 'test_file.txt',
+        },
+    },
+    'dest': {
+        'provider': {
+            'name': 's3',
+            'root': 'imatestbucket',
+            'access_key': '...',
+            'secret_key': '...',
+        },
+        'options': {
+            'path': 'test_file.txt',
+        }
+    },
+}
+
+# /osfstorage/copy
+copyRequest = {
+    'src': {
+        'provider': {
+            'name': 'dropbox',
+            'root': '/util',
+            'token': '...',
+        },
+        'options': {
+            'path': 'test_file.txt',
+        },
+    },
+    'dest': {
+        'provider': {
+            'name': 's3',
+            'root': 'imatestbucket',
+            'access_key': '...',
+            'secret_key': '...',
+        },
+        'options': {
+            'path': 'test_file.txt',
+        }
+    },
+}
+

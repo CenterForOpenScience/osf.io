@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 import abc
 
 from asyncio import coroutine
@@ -19,10 +21,10 @@ class BaseProvider(metaclass=abc.ABCMeta):
     def can_intra_move(self, other):
         return False
 
-    def intra_copy(self, **kwargs):
+    def intra_copy(self, dest_provider, source_options, dest_options):
         raise NotImplementedError
 
-    def intra_move(self, **kwargs):
+    def intra_move(self, dest_provider, source_options, dest_options):
         raise NotImplementedError
 
     @coroutine
@@ -50,9 +52,24 @@ class BaseProvider(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def upload(self, content, **kwargs):
+    def upload(self, obj, **kwargs):
         pass
 
     @abc.abstractmethod
     def delete(self, **kwargs):
         pass
+
+
+class StorageProvider(object):
+
+    @staticmethod
+    def get(info):
+        name = info['name']
+        if name == 'dropbox':
+            from providers.contrib.dropbox import DropboxProvider
+            return DropboxProvider(**info)
+        elif name == 's3':
+            from providers.contrib.s3 import S3Provider
+            return S3Provider(**info)
+        else:
+            raise NotImplementedError

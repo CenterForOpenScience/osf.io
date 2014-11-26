@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 import aiohttp
 
 from asyncio import coroutine
@@ -7,7 +9,7 @@ from providers import core
 
 class S3Provider(core.BaseProvider):
 
-    def __init__(self, access_key, secret_key, bucket):
+    def __init__(self, access_key, secret_key, bucket, **kwargs):
         self.connection = S3Connection(access_key, secret_key)
         self.bucket = self.connection.get_bucket(bucket, validate=False)
 
