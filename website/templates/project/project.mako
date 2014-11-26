@@ -63,11 +63,13 @@
 
         <!-- Citations -->
         % if not node['anonymous']:
-            <div class="citations">
+            <div class="citations" id="citationScope">
                 <span class="citation-label">Citation:</span>
                 <span>${node['display_absolute_url']}</span>
-                <a href="#" class="citation-toggle" style="padding-left: 10px;">more</a>
-                <dl class="citation-list">
+                <a href="#" class="citation-toggle" style="padding-left: 10px;" data-bind= "
+                click : toggleState,
+                text: expanded() ? 'less' : 'more'"></a>
+                <dl class="citation-list" data-bind="slideVisible: expanded">
                     <dt>APA</dt>
                         <dd class="citation-text">${node['citations']['apa']}</dd>
                     <dt>MLA</dt>
@@ -151,10 +153,14 @@ ${parent.javascript_bottom()}
 
 <script type="text/javascript">
     $script(['/static/js/logFeed.js'], 'logFeed');
+    $script(['/static/js/citationWidget.js']);
 
     $('body').on('nodeLoad', function(event, data) {
        $script.ready('logFeed', function() {
            var logFeed = new LogFeed('#logScope', nodeApiUrl + 'log/');
+       });
+       $script.ready('citationWidget', function() {
+           new CitationWidget('#citationScope', data);
        });
     });
 
@@ -231,6 +237,11 @@ ${parent.javascript_bottom()}
                     });
                 })
             }
+        });
+
+        //Tag Clicklistener
+        $('.tagsinput').on('click', '.tag > span', function(e) {
+            window.location = '/search/?q=(tags:' + $(e.target).text().toString().trim()+ ')';
         });
 
         // Limit the maximum length that you can type when adding a tag

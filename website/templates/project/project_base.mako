@@ -69,6 +69,7 @@ ${next.body()}
             $script.ready('nodeControl', function() {
                 var nodeControl = new NodeControl('#projectScope', data);
             });
+            new DuplicateModalModule('#duplicateModal', data);
             $('body').trigger('nodeLoad', data);
         });
 

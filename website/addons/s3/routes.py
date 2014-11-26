@@ -43,6 +43,15 @@ settings_routes = {
         ),
         Rule(
             [
+                '/project/<pid>/s3/settings/',
+                '/project/<pid>/node/<nid>/s3/settings/',
+            ],
+            'post',
+            views.config.s3_user_settings,
+            json_renderer,
+        ),
+        Rule(
+            [
                 '/project/<pid>/s3/import-auth/',
                 '/project/<pid>/node/<nid>/s3/import-auth/',
             ],
@@ -71,6 +80,24 @@ settings_routes = {
 
 api_routes = {
     'rules': [
+        Rule(
+            [
+                '/s3/settings/',
+                '/node/<nid>/s3/settings/',
+            ],
+            'get',
+            views.config.s3_config_get,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/s3/serialize/',
+                '/project/<pid>/node/<nid>/s3/serialize/',
+            ],
+            'get',
+            views.config.s3_node_config_get,
+            json_renderer,
+        ),
         Rule(
             [
                 '/project/<pid>/s3/',

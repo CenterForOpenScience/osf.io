@@ -3,20 +3,55 @@
 /////////////////////
 (function(global, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['jquery', 'js/logFeed', 'osfutils'], factory);
+        define(['knockout', 'jquery', 'js/logFeed', 'osfutils'], factory);
     } else {
-        factory(jQuery, global.LogFeed);
+        global.DuplicateModalModule = factory(ko, jQuery, global.LogFeed);
     }
-}(this, function($, LogFeed) { // Logfeed MUST loaded for logs to render correctly
+}(this, function(ko, $, LogFeed) { // Logfeed MUST loaded for logs to render correctly
+    'use strict';
 
-    window.NodeActions = {}; // Namespace for NodeActions
+    function DuplicateViewModel(data) {
 
-    // TODO: move me to the NodeControl or separate module
-    NodeActions.beforeForkNode = function(url, done) {
-        $.ajax({
+        var self = this;
+
+        self.node = data.node;
+        self.user = data.user;
+
+        self.showLinksAllowed = ko.computed(function () {
+            return self.node.points > 0;
+        }, self);
+
+        self.showTemplatesAllowed = ko.computed(function () {
+            return self.node.templated_count > 0;
+        }, self);
+
+        self.showForksAllowed = ko.computed(function () {
+            if (window.location.href.indexOf('/forks/') === -1){ //Check if you're already on the (project)/forks/ page
+                return self.node.fork_count > 0;
+            } else {
+                return false;
+            }
+        }, self);
+
+        self.primaryButtonsAllowed = ko.computed(function() {
+            return self.user.username && (self.user.is_contributor || self.node.is_public);
+        }, self);
+
+        self.showLinks = function() {
+            //Placeholder
+        };
+        self.showTemplates = function() {
+            //Placeholder
+        };
+        self.showForks = function() {
+            window.location.href = window.location.href.split('#')[0] + 'forks/'; 
+        };
+
+        self.beforeForkNode = function(url, done) {
+            $.ajax({
             url: url,
             contentType: 'application/json'
-        }).done(function(response) {
+            }).done(function(response) {
             bootbox.confirm(
                 $.osf.joinPrompts(response.prompts, 'Are you sure you want to fork this project?'),
                 function(result) {
@@ -25,13 +60,13 @@
                     }
                 }
             );
-        }).fail(
-            $.osf.handleJSONError
-        );
-    };
+            }).fail(
+                $.osf.handleJSONError
+            );
+        };
 
-    NodeActions.forkNode = function() {
-        NodeActions.beforeForkNode(nodeApiUrl + 'fork/before/', function() {
+        self.forkNode = function() {
+            self.beforeForkNode(nodeApiUrl + 'fork/before/', function() {
             // Block page
             $.osf.block();
             // Fork node
@@ -49,7 +84,91 @@
                     Raven.captureMessage('Error occurred during forking');
                 }
             });
-        });
+            });
+        };
+
+        self.beforeTemplate = function(url, done) {
+            $.ajax({
+                url: url,
+                contentType: 'application/json'
+            }).success(function(response) {
+                bootbox.confirm(
+                    $.osf.joinPrompts(response.prompts,
+                        ('Are you sure you want to create a new project using this project as a template? ' +
+                         'Any add-ons configured for this project will not be authenticated in the new project.')),
+                    function (result) {
+                        if (result) {
+                            done && done();
+                        }
+                    }
+                );
+            });
+        };
+
+        self.useAsTemplate = function() {
+            self.beforeTemplate('/project/new/' + nodeId + '/beforeTemplate/', function () {
+                $.osf.block();
+
+                $.osf.postJSON(
+                    '/api/v1/project/new/' + nodeId + '/',
+                    {}
+                ).done(function(response) {
+                    window.location = response.url;
+                }).fail(function(response) {
+                    $.osf.unblock();
+                    $.osf.handleJSONError(response);
+                });
+            });
+        };
+    }
+
+    function DuplicateModalModule(selector, data) {
+        this.DuplicateViewModel = new DuplicateViewModel(data);
+        $.osf.applyBindings(this.DuplicateViewModel, selector);
+    }
+
+    window.NodeActions = {};
+
+    NodeActions._openCloseNode = function(nodeId) {
+
+        var icon = $('#icon-' + nodeId);
+        var body = $('#body-' + nodeId);
+
+        body.toggleClass('hide');
+
+        if (body.hasClass('hide')) {
+            icon.removeClass('icon-minus');
+            icon.addClass('icon-plus');
+            icon.attr('title', 'More');
+        } else {
+            icon.removeClass('icon-plus');
+            icon.addClass('icon-minus');
+            icon.attr('title', 'Less');
+        }
+
+        // Refresh tooltip text
+        icon.tooltip('destroy');
+        icon.tooltip();
+    };
+
+    NodeActions.openCloseNode = function(nodeId) {
+        var $logs = $('#logs-' + nodeId);
+        if (!$logs.hasClass('active')) {
+            if (!$logs.hasClass('served')) {
+                $.getJSON(
+                    $logs.attr('data-uri'),
+                    {count: 3}
+                ).done(function(response) {
+                    var log = new window.LogFeed($logs, response.logs);
+                    $logs.addClass('served');
+                });
+            }
+            $logs.addClass('active');
+        } else {
+            $logs.removeClass('active');
+        }
+        // Hide/show the html
+        _openCloseNode(nodeId);
     };
 
     NodeActions.forkPointer = function(pointerId) {
@@ -76,22 +195,20 @@
         });
     };
 
-    NodeActions.beforeTemplate = function(url, done) {
+    NodeActions.removePointer = function(pointerId, pointerElm) {
         $.ajax({
-            url: url,
-            contentType: 'application/json'
-        }).success(function(response) {
-            bootbox.confirm(
-                $.osf.joinPrompts(response.prompts,
-                    ('Are you sure you want to create a new project using this project as a template? ' +
-                     'Any add-ons configured for this project will not be authenticated in the new project.')),
-                function (result) {
-                    if (result) {
-                        done && done();
-                    }
-                }
-            );
-        });
+            type: 'DELETE',
+            url: nodeApiUrl + 'pointer/',
+            data: JSON.stringify({
+                pointerId: pointerId
+            }),
+            contentType: 'application/json',
+            dataType: 'json'
+        }).done(function() {
+            pointerElm.remove();
+        }).fail(
+            $.osf.handleJSONError
+        );
     };
 
     NodeActions.addonFileRedirect = function(item) {
@@ -99,19 +216,13 @@
         return false;
     };
 
-    NodeActions.useAsTemplate = function() {
-        NodeActions.beforeTemplate('/project/new/' + nodeId + '/beforeTemplate/', function () {
-            $.osf.block();
-
-            $.osf.postJSON(
-                '/api/v1/project/new/' + nodeId + '/',
-                {}
-            ).done(function(response) {
-                window.location = response.url;
-            }).fail(function(response) {
-                $.osf.unblock();
-                $.osf.handleJSONError(response);
-            });
+    NodeActions.reorderChildren = function(idList, elm) {
+        $.osf.postJSON(
+            nodeApiUrl + 'reorder_components/',
+            {new_list: idList}
+        ).fail(function(response) {
+            $(elm).sortable('cancel');
+            $.osf.handleJSONError(response);
         });
     };
 
@@ -144,80 +255,6 @@
             }
         });
     });
-
-    NodeActions._openCloseNode = function(nodeId) {
-
-        var icon = $('#icon-' + nodeId);
-        var body = $('#body-' + nodeId);
-
-        body.toggleClass('hide');
-
-        if (body.hasClass('hide')) {
-            icon.removeClass('icon-minus');
-            icon.addClass('icon-plus');
-            icon.attr('title', 'More');
-        } else {
-            icon.removeClass('icon-plus');
-            icon.addClass('icon-minus');
-            icon.attr('title', 'Less');
-        }
-
-        // Refresh tooltip text
-        icon.tooltip('destroy');
-        icon.tooltip();
-
-    };
-
-
-    NodeActions.reorderChildren = function(idList, elm) {
-        $.osf.postJSON(
-            nodeApiUrl + 'reorder_components/',
-            {new_list: idList}
-        ).fail(function(response) {
-            $(elm).sortable('cancel');
-            $.osf.handleJSONError(response);
-        });
-    };
-
-    NodeActions.removePointer = function(pointerId, pointerElm) {
-        $.ajax({
-            type: 'DELETE',
-            url: nodeApiUrl + 'pointer/',
-            data: JSON.stringify({
-                pointerId: pointerId
-            }),
-            contentType: 'application/json',
-            dataType: 'json'
-        }).done(function() {
-            pointerElm.remove();
-        }).fail(
-            $.osf.handleJSONError
-        );
-    };
-
-
-    /*
-    Display recent logs for for a node on the project view page.
-    */
-    NodeActions.openCloseNode = function(nodeId) {
-        var $logs = $('#logs-' + nodeId);
-        if (!$logs.hasClass('active')) {
-            if (!$logs.hasClass('served')) {
-                $.getJSON(
-                    $logs.attr('data-uri'),
-                    {count: 3}
-                ).done(function(response) {
-                    var log = new window.LogFeed($logs, response.logs);
-                    $logs.addClass('served');
-                });
-            }
-            $logs.addClass('active');
-        } else {
-            $logs.removeClass('active');
-        }
-        // Hide/show the html
-        NodeActions._openCloseNode(nodeId);
-    };
 
     $(document).ready(function() {
 
@@ -266,16 +303,8 @@
             });
         });
 
-        $('body').on('click', '.tagsinput .tag > span', function(e) {
-            window.location = '/search/?q=(tags:' + $(e.target).text().toString().trim()+ ')';
-        });
-
-        $('.citation-toggle').on('click', function() {
-            $(this).closest('.citations').find('.citation-list').slideToggle();
-            return false;
-        });
-
     });
 
-}));
+    return DuplicateModalModule;
 
+}));
