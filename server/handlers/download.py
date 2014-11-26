@@ -1,5 +1,6 @@
 # encoding: utf-8
 
+from base64 import b64decode
 from tornado import web
 from tornado.escape import json_decode
 
@@ -12,7 +13,7 @@ class DownloadHandler(web.RequestHandler):
 
     @coroutine
     def get(self):
-        payload = json_decode(self.get_argument('message'))
+        payload = json_decode(b64decode(self.get_argument('message')).decode('utf-8'))
         provider_info = payload['provider']
         options = payload['options']
         provider = utils.make_provider(provider_info)
