@@ -18,6 +18,10 @@ class DownloadHandler(web.RequestHandler):
         provider = utils.make_provider(provider_info)
         resp = yield from provider.download(**options)
 
+        file_name = options['path'].split('/')[-1]
+        self.set_header('Content-Type', 'application/octet-stream')
+        self.set_header('Content-Disposition', 'attachment; filename=' + file_name)
+
         while True:
             chunk = yield from resp.content.read(settings.CHUNK_SIZE)
             if not chunk:
