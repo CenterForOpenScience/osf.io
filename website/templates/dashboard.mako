@@ -175,21 +175,17 @@
               url:  '/api/v1/dashboard/'
             })
             .done(function( data ) {
-
-                $.ajax({
-                    url : '/api/v1/dashboard/' + data.data[0].node_id
-                })
-                .done ( function (result){
-                    console.log("data", result);
-                    var options = {
+                console.log("first data", data);
+                var options = {
                         placement : 'dashboard',
                         divID: 'project-grid',
-                        filesData: result.data,
+                        filesData: data.data,
                         multiselect : true
                     };
                     console.log("project Organizer", ProjectOrganizer);
-                    var filebrowser = new ProjectOrganizer(options);                    
-                })  
+                    var filebrowser = new ProjectOrganizer(options);   
+
+ 
             });
 
         });

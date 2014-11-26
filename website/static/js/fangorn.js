@@ -92,7 +92,7 @@
     function _fangornResolveToggle(item){
         var toggleMinus = m('i.icon-minus', ' '),
             togglePlus = m('i.icon-plus', ' ');
-        if (item.kind === 'folder') {
+        if (item.kind === 'folder' && item.children.length > 0) {
             if (item.open) {
                 return toggleMinus;
             }

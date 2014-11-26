@@ -435,7 +435,7 @@
         // Build the template for icons
         return buttons.map(function(btn){ 
             return m('span', { 'data-col' : item.id }, [ m('i', 
-                { 'class' : btn.css, style : btn.style, 'onclick' : function(){ btn.onclick.call(self, event, item, col); } },
+                { 'class' : btn.css, style : btn.style, 'onclick' : function(event){ btn.onclick.call(self, event, item, col); } },
                 [ m('span', { 'class' : btn.icon}, btn.name) ])
             ]);
         }); 
@@ -445,7 +445,12 @@
         if(!item.data.contributors){
             return '';
         }
+        var total = 0;
         return item.data.contributors.map(function(person){
+            total = total + 1; 
+            if(total > 2) {
+                return m('span',' + ' + total-2);
+            }
             return m('span',person.name);
         });
     }
@@ -466,7 +471,10 @@
     function _poResolveRows(item){
         // this = treebeard;
         var css = '',
+            draggable = false;
+        if(item.data.permissions) {
             draggable = item.data.permissions.movable || item.data.permissions.copyable;
+        }
         if(draggable) {
             css = 'po-draggable'; 
         } 
@@ -496,13 +504,13 @@
         var columns = [];
         columns.push({
                 title: 'Name',
-                width : '40%',
+                width : '45%',
                 sort : true,
                 sortType : 'text'
             },
             {
                 title : 'Actions',
-                width : '15%',
+                width : '10%',
                 sort : false
             }, 
             {
@@ -719,23 +727,23 @@
     function _poDrop (event, ui) {
         var items = this.multiselected.length === 0 ? [this.find(this.selected)] : this.multiselected, 
             folder = this.find($(event.target).attr('data-id'));
+        if (canAcceptDrop(items, folder)) {
+           dropLogic.call(this, event, items, folder);
 
-        console.log("Drop", this, items, folder, event, ui);
-       dropLogic.call(this, event, items, folder);
-
+        }
     }
 
     function _poOver (event, ui) {
         var items = this.multiselected.length === 0 ? [this.find(this.selected)] : this.multiselected, 
-            folder = this.find($(event.target).attr('data-id')),
-            acceptDrop = canAcceptDrop (items, folder); 
-        $('.tb-row').removeClass('tb-h-success tb-h-error');
-        if(acceptDrop) {
-            $('.tb-row[data-id="' + folder.id + '"]').addClass('tb-h-success');
-        }       
-        else {
-            $('.tb-row[data-id="' + folder.id + '"]').addClass('tb-h-error');
-        }
+            folder = this.find($(event.target).attr('data-id'));
+        //     acceptDrop = canAcceptDrop (items, folder); 
+        // $('.tb-row').removeClass('tb-h-success tb-h-error');
+        // if(acceptDrop) {
+        //     $('.tb-row[data-id="' + folder.id + '"]').addClass('tb-h-success');
+        // }       
+        // else {
+        //     $('.tb-row[data-id="' + folder.id + '"]').addClass('tb-h-error');
+        // }
     }
 
 
@@ -761,7 +769,7 @@
         });
 
         // Check through possible move and copy options, and set the copyMode appropriately.
-        if (!(canMove && canCopy  && canAcceptDrop)) { 
+        if (!(canMove && canCopy)) { 
             copyMode = 'forbidden';
         }
         else if (canMove && canCopy) {
@@ -802,7 +810,7 @@
         }
         // if the folder is contained by the item, return false
         var representativeItem = items[0];
-        if (representativeItem.isAncestor(folder)){
+        if (representativeItem.isAncestor(folder) || representativeItem.id === folder.id){
             return false;
         }
         // If trying to drop on the folder it came from originally, return false
