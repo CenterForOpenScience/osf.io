@@ -25,12 +25,10 @@ def make_hook_secret():
 HOOK_SIGNATURE_KEY = 'X-Hub-Signature'
 def verify_hook_signature(node_settings, data, headers):
     """Verify hook signature.
-
     :param AddonGithubNodeSettings node_settings:
     :param dict data: JSON response body
     :param dict headers: Request headers
     :raises: HookError if signature is missing or invalid
-
     """
     if node_settings.hook_secret is None:
         raise HookError('No secret key')
@@ -55,13 +53,11 @@ def get_path(kwargs, required=True):
 def get_refs(addon, branch=None, sha=None, connection=None):
     """Get the appropriate branch name and sha given the addon settings object,
     and optionally the branch and sha from the request arguments.
-
     :param str branch: Branch name. If None, return the default branch from the
         repo settings.
     :param str sha: The SHA.
     :param GitHub connection: GitHub API object. If None, one will be created
         from the addon's user settings.
-
     """
     connection = connection or GitHub.from_settings(addon.user_settings)
 
@@ -135,18 +131,3 @@ def check_permissions(node_settings, auth, connection, branch, sha=None, repo=No
     )
 
     return can_edit
-#
-# def clean_path(path):
-#      """Ensure a path is formatted correctly for url_for."""
-#      if path is None:
-#          return ''
-#      return path.strip('/')
-#
-#  def get_share_folder_uri(path):
-#      """Return the URI for sharing a folder through the dropbox interface.
-#      This is not exposed through Dropbox's REST API, so need to build the URI
-#      "manually".
-#      """
-#      cleaned = clean_path(path)
-#      return ('https://dropbox.com/home/{cleaned}'
-#              '?shareoptions=1&share_subfolder=0&share=1').format(cleaned=cleaned)

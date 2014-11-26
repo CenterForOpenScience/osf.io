@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 
 import os
 import re
@@ -9,6 +10,7 @@ import logging
 import urlparse
 import httplib as http
 
+import requests
 from flask import request
 from nameparser import HumanName
 from modularodm import Q
@@ -65,7 +67,7 @@ def add_poster_by_email(conf, recipient, address, fullname, subject,
         send_mail(
             address,
             CONFERENCE_FAILED,
-            fullname=fullname
+            fullname=fullname,
         )
         return
 
@@ -136,21 +138,26 @@ def add_poster_by_email(conf, recipient, address, fullname, subject,
         if tag not in node.system_tags:
             node.system_tags.append(tag)
 
-    # Add files
-    files = []
-    for attachment in attachments:
-        name, content, content_type, size = prepare_file(attachment)
-        file_object = node.add_file(
-            auth=auth,
-            file_name=name,
-            content=content,
-            size=size,
-            content_type=content_type,
-        )
-        files.append(file_object)
-
     # Save changes
     node.save()
+
+    from website.addons.osfstorage import utils as storage_utils
+
+    # Add files
+    for attachment in attachments:
+        name, content, content_type, size = prepare_file(attachment)
+        upload_url = storage_utils.get_upload_url(node, user, size, content_type, name)
+        requests.put(
+            upload_url,
+            data=content,
+            headers={'Content-Type': content_type},
+        )
+
+    download_url = node.web_url_for(
+        'osf_storage_view_file',
+        path=attachments[0].filename,
+        action='download',
+    )
 
     # Add mail record
     mail_record = MailRecord(
@@ -172,7 +179,7 @@ def add_poster_by_email(conf, recipient, address, fullname, subject,
         set_password_url=set_password_url,
         profile_url=user.absolute_url,
         node_url=urlparse.urljoin(settings.DOMAIN, node.url),
-        file_url=urlparse.urljoin(settings.DOMAIN, files[0].download_url(node)),
+        file_url=urlparse.urljoin(settings.DOMAIN, download_url),
         presentation_type=presentation_type,
         is_spam=is_spam,
     )
@@ -330,15 +337,15 @@ def meeting_hook():
 
 
 def _render_conference_node(node, idx):
-
-    # Hack: Avoid circular import
-    from website.addons.osffiles.model import NodeFile
-
-    if node.files_current:
-        file_id = node.files_current.values()[0]
-        file_obj = NodeFile.load(file_id)
-        download_url = file_obj.download_url(node)
-        download_count = file_obj.download_count(node)
+    storage_settings = node.get_addon('osfstorage')
+    if storage_settings.file_tree and storage_settings.file_tree.children:
+        record = storage_settings.file_tree.children[0]
+        download_count = record.get_download_count()
+        download_url = node.web_url_for(
+            'osf_storage_view_file',
+            path=record.path,
+            action='download',
+        )
     else:
         download_url = ''
         download_count = 0
@@ -392,21 +399,6 @@ def conference_results(meeting):
         'label': meeting,
         'meeting': conf.to_storage(),
     }
-
-
-# TODO: Test me @jmcarp
-def get_download_count(nodes):
-    from website.addons.osffiles.model import NodeFile
-    count = 0
-    for node in nodes:
-        if not node.files_current:
-            continue
-        file_id = node.files_current.values()[0]
-        file_obj = NodeFile.load(file_id)
-        if not file_obj:
-            continue
-        count += file_obj.download_count(node)
-    return count
 
 
 # TODO: Test me @jmcarp
