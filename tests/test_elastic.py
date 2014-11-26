@@ -131,8 +131,9 @@ class TestUserUpdate(SearchTestCase):
         user.family_name = names[3]
         user.suffix = names[4]
         user.save()
-        docs = [len(query_user(name)['results']) for name in names]
-        assert sum(docs) == len(docs)  # 1 result each
+        docs = [query_user(name)['results'] for name in names]
+        assert sum(map(len, docs)) == len(docs)  # 1 result each
+        assert False not in [user._id == doc[0]['id'] for doc in docs]
 
 
 @requires_search
