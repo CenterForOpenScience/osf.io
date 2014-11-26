@@ -27,6 +27,7 @@
      */
     var ViewModel = function(url, submitUrl, selector) {
         var self = this;
+        var repoInFiles;
         self.selector = selector;
         // Auth information
         self.nodeHasAuth = ko.observable(false);
@@ -39,16 +40,18 @@
         self.repos = ko.observableArray([]);
         // Display Repositories in Select menu
         self.displayRepos = ko.observableArray([]);
+        self.currentRepoUser = ko.observable();
+        self.currentRepoName = ko.observable();
+        self.repoFullName = ko.observable();
         self.urls = ko.observable({});
-        self.SelectedRepository = ko.observable(true);
+        self.SelectedRepository = ko.observable();
         self.createRepo = ko.observable();
         self.displayMessage = ko.observable();
+        self.displayMessageClass = ko.observable();
         self.githubUser = ko.observable();
         self.githubRepo = ko.observable();
         self.githubRepoUser=ko.observable();
               // Flashed messages
-        self.message = ko.observable('');
-        self.messageClass = ko.observable('text-info');
 
         self.loading = ko.observable(false);
         // Whether the initial data has been fetched form the server. Used for
@@ -67,6 +70,9 @@
             self.userHasAuth(data.userHasAuth);
             self.repos(data.repos);
             self.urls(data.urls);
+            self.currentRepoUser(data.repoUser);
+            self.currentRepoName(data.repoName);
+            self.repoFullName(data.repoUser + ' / ' + data.repoName)
         };
 
         self.fetchFromServer = function() {
@@ -74,9 +80,6 @@
                 url: url, type: 'GET', dataType: 'json',
                 success: function(response) {
                     self.updateFromData(response.result);
-//                    for (var i = 0; i < self.repos().length; i++) {
-//                    self.displayRepos.push(self.repos()[i].user + ' / ' + self.repos()[i].repo);
-//                    }
                     loadRepos();
                     self.loadedSettings(true);
                 },
@@ -103,15 +106,19 @@
                 self.urls().repos,
                 {},
                 function (repos) {
+                    if (repos.length == 0)
+                    {
+                        self.changeMessage("You don't have any repository yet !",'text-danger');
+                    }
+                    else
                     for (var i = 0; i < repos.length; i++) {
                         self.displayRepos.push(repos[i].user + ' / ' + repos[i].repo);
                     }
-
+                self.SelectedRepository(self.repoFullName());
                 });
         }
 
         self.fetchFromServer();
-
 
           /**
          * Whether or not to show the Import Access Token Button
@@ -140,14 +147,14 @@
 
         /** Change the flashed message. */
         self.changeMessage = function(text, css, timeout) {
-            self.message(text);
+            self.displayMessage(text);
             var cssClass = css || 'text-info';
-            self.messageClass(cssClass);
+            self.displayMessageClass(cssClass);
             if (timeout) {
-                // Reset message after timeout period
+                // Reset displayMessage after timeout period
                 setTimeout(function() {
-                    self.message('');
-                    self.messageClass('text-info');
+                    self.displayMessage('');
+                    self.displayMessageClass('text-info');
                 }, timeout);
             }
         };
@@ -179,7 +186,7 @@
         self.deauthorize = function() {
             bootbox.confirm({
                 title: 'Deauthorize Github?',
-                message: 'Are you sure you want to remove this Github authorization?',
+               message: 'Are you sure you want to remove this Github authorization?',
                 callback: function(confirmed) {
                     if (confirmed) {
                         return sendDeauth();
@@ -197,8 +204,8 @@
         }
 
         function onImportError() {
-            self.message('Error occurred while importing access token.');
-            self.messageClass('text-danger');
+            self.displayMessage('Error occurred while importing access token.');
+            self.displayMessageClass('text-danger');
         }
 
         /**
@@ -263,21 +270,26 @@
         }
 
         self.submitSettings = function(val){
-
-            updateUserRepo(self.SelectedRepository())
-            $.osf.postJSON(
-            self.urls().config,
-            {
-               'github_user' : self.githubUser(),
-               'github_repo': self.githubRepo()
+            if(self.repoFullName()==self.SelectedRepository()) {
+                self.changeMessage('Repository already connected', 'text-danger');
             }
-        ).done(function() {
-            self.displayMessage('Settings-updated', 'text-success');
-        }).fail(function() {
-           self.changeMessage('Could not change settings. Please try again later.', 'text-danger');
-        });
-
-        return false;
+            else {
+                updateUserRepo(self.SelectedRepository())
+                $.osf.postJSON(
+                    self.urls().config,
+                    {
+                        'github_user': self.githubUser(),
+                        'github_repo': self.githubRepo()
+                    }
+                ).done(function () {
+                        self.changeMessage('Settings-updated', 'addon-settings-message text-success', 3000);
+                    }).fail(function () {
+                        self.changeMessage('Could not change settings. Please try again later.', 'text-danger');
+                    }
+                );
+            self.repoFullName(self.SelectedRepository());
+            return false;
+            }
 
         }
 

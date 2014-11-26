@@ -217,7 +217,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     def complete(self):
         return (
             self.user and self.repo and
-            self.user_settings and self.user_settings.has_auth
+            self.has_auth
         )
 
     @property
@@ -233,7 +233,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             'user_has_auth': user_settings and user_settings.has_auth,
             'is_registration': self.owner.is_registration,
         })
-        if self.user_settings and self.user_settings.has_auth:
+        if self.has_auth:
             owner = self.user_settings.owner
             if user_settings and user_settings.owner == owner:
                 connection = GitHub.from_settings(user_settings)
@@ -480,7 +480,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         :return str: Alert message
 
         """
-        if self.user_settings and self.user_settings.has_auth:
+        if self.has_auth:
             return (
                 u'Registering {cat} "{title}" will copy the authentication for its '
                 'GitHub add-on to the registered {cat}.'

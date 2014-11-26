@@ -34,32 +34,30 @@
             <div class="github-settings"  data-bind = "if:showSettings">
                 <form id=addonSettings  data-bind = submit:submitSettings >
                     <div class="row">
-                        <div class="col-md-6">
-                            <select class="form-control col-md-6" data-bind = "options:displayRepos, value:SelectedRepository, optionsCaption:'Select your Repository'"></select>
-                        </div>
                         <div class="col-md-6" id="displayRepositories">
+                            <select class="form-control col-md-6"
+                                    data-bind=" options:displayRepos,
+                                                optionsCaption:'Select your repository',
+                                               value:SelectedRepository"></select>
+                        </div>
+                        <div class="col-md-6">
                             <span> or </span>
                             <button data-bind="click:createRepo" class="btn btn-link">Create Repo</button>
                         </div>
                     </div>
-                    <div class="row" style="padding-top: 20px" data-bind="visible:SelectedRepository">
+                    <div class="row" style="padding-top: 20px" data-bind="visible:SelectedRepository() && SelectedRepository()!=repoFullName()  ">
                         <h4 class="col-md-8">Connect "<span data-bind="text:SelectedRepository()"></span>"?</h4>
-                        <div class="pull-right col-md-4">
-                            <button class="btn btn-default" data-bind="click:cancel">Cancel</button>
-                            <input type="submit" class="btn btn-primary" value="Submit">
+                        <div class="col-md-4">
+                            <button class="btn btn-default pull-right" data-bind="click:cancel">Cancel</button>
+                            <input type="submit" class="btn btn-primary pull-right" value="Submit">
                         </div>
                     </div>
                 </form>
             </div>
 
-        <div class="addon-settings-message" style="padding-top: 10px;" data-bind ="text:displayMessage"></div>
+        <div class="addon-settings-message"  style="padding-top: 10px;" data-bind ="html:displayMessage, attr.class:displayMessageClass"></div>
 
     </div><!-- End of githubScope-->
-
-
-
-
-
 
 
 <script>
@@ -72,6 +70,5 @@
         var url = '${node["api_url"] + "github/config/"}';
         var submitUrl = '${node["api_url"] + "github/settings/"}'
         var github = new GithubNodeConfig('#githubScope', url, submitUrl);
-        console.log(github);
     });
 </script>

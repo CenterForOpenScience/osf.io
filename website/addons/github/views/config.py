@@ -142,6 +142,8 @@ def serialize_settings(node_settings, current_user, client=None):
         result['urls']['owner'] = web_url_for('profile_view_id',
             uid=user_settings.owner.fullname)
         result['ownerName'] = user_settings.owner.fullname
+        result['repoUser'] = node_settings.user or '';
+        result['repoName'] = node_settings.repo or '';
     return result
 
 def serialize_urls(node_settings):
