@@ -1958,7 +1958,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     def to_csl(self): #formats node information into CSL format for citation parsing
         return {
-            "id": "ITEM-1",
+            "id": self._id,
             "title": self.title,
              "author": [
                  contributor.authors_to_csl() #method in auth/model.py which parses the names of authors
@@ -1968,7 +1968,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             "issued": {
                 "date-parts": [[self.logs[-1].date.year if self.logs else '?']]
             },
-            "type": "Article",
+            "type": "article",
             "URL": self.display_absolute_url,
         }
     def author_list(self, and_delim='&'):

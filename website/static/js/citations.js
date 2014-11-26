@@ -34,11 +34,13 @@ $script.ready(['rubeus'], function() {
     };
 
     var input = $('#citation-style-input');
+    var citationElement = $('#citation-text');
 
     input.select2({
+        allowClear: true,
         formatResult: formatResult,
         formatSelection: formatSelection,
-        placeholder: "Enter",
+        placeholder: 'Citation Style (e.g. "APA")',
         minimumInputLength: 1,
         ajax: {
             url: '/api/v1/citation_styles/',
@@ -58,18 +60,11 @@ $script.ready(['rubeus'], function() {
             nodeApiUrl + 'citation/' + e.val,
             {},
             function(data) {
-                bootbox.dialog({
-                    title: "Citation",
-                    message: "<pre>" + data.citation + "</pre>",
-                    buttons: {
-                        OK: {
-                            label: "OK",
-                            className: "btn-primary",
-                        }
-                    }
-                });
+                citationElement.text(data.citation).slideDown();
             }
         );
+    }).on('select2-removed', function (e) {
+        citationElement.slideUp().text();
     });
 
 })

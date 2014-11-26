@@ -65,48 +65,30 @@
         <!-- Citations -->
         % if not node['anonymous']:
             <div class="citations">
-                <span class="citation-label">Citation:</span>
-                <span>${node['display_absolute_url']}</span>
-                <a href="#" class="citation-toggle" style="padding-left: 10px;">more</a>
-                <input id="citation-style-input" type="hidden" style="width:80%" />
+                <div>
+                    <span class="citation-label">Citation:</span>
+                    ${node['display_absolute_url']}
+                    <a id="citation-more">more</a>
+                </div>
+                <div id="citation-style-panel">
+                    <input id="citation-style-input" type="hidden" />
+                </div>
+                <pre id="citation-text"></pre>
             </div><!-- end .citations -->
             <!-- End section prior to Azeem's changes -->
-                <hr>
-        <div class="citations">
-
-                        <span class="citation-label">Citation:</span>
-                        <div class="citation-list">
-##                <span><b>Citation:</b>
-                <form id="citationForm" action="#">
-                    <select id="humanStyles">
-                        <option value="OSFURL">Permanent OSF URL</option>
-                        <option value="apa.csl">APA</option>
-                        <option value="chicago-author-date.csl">Chicago: Author-Date</option>
-                        <option value="chicago-note-bibliography.csl">Chicago: Note-Bibliography</option>
-                        <option value="harvard1.csl">Harvard</option>
-                        <option value="modern-language-association-with-url.csl">MLA</option>
-                        <option value="turabian-fullnote-bibliography.csl">Turabian</option>
-                        <option value="vancouver-author-date.csl">Vancouver</option>
-                    </select>
-
-                    <select id="machineStyles">
-                        <option value="" disabled selected stye ='display:none;'>Download</option>
-                        <option value="xml2bib">BibTeX</option>
-                        <option value="xml2end">EndNote</option>
-                        <option value="xml2isi">ISI</option>
-                        <option value="xml2ris">RIS</option>
-                        <option value="xml2wordbib">Word 2007 Bibliograpy</option>
-                    </select>
-                </form>
-                    </span>
-##            <br />
-            <dl class="rendered-citation" style="padding-top: 10px;">
-                ${node['display_absolute_url']}
-            </dl>
-            <p></p>
-
-        </div>
-        </div>
+                <style>
+                    #citation-style-panel{
+                        display: none;
+                        margin-top:12px;
+                    }
+                    #citation-text {
+                        display: none;
+                        margin-top:20px;
+                    }
+                    #citation-style-panel .select2-container {
+                        width:100%;
+                    }
+                </style>
 
 
         <hr />

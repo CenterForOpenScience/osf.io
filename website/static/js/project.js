@@ -270,8 +270,14 @@
             window.location = '/search/?q=(tags:' + $(e.target).text().toString().trim()+ ')';
         });
 
-        $('.citation-toggle').on('click', function() {
-            $(this).closest('.citations').find('.citation-list').slideToggle();
+        $('#citation-more').on('click', function() {
+            panel = $('#citation-style-panel');
+            panel.slideToggle(200, function() {
+                if (panel.is(":visible")) {
+                    $('#citation-style-input').select2("open");
+                }
+            });
+
             return false;
         })
 
