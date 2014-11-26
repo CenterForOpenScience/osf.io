@@ -1,10 +1,12 @@
+# encoding: utf-8
+
 import aiohttp
 
 from asyncio import coroutine
 from boto.s3.connection import S3Connection
 
 from providers import core
-from exceptions import FileNotFoundError
+from providers.exceptions import FileNotFoundError
 
 
 class S3Provider(core.BaseProvider):
@@ -43,24 +45,24 @@ class S3Provider(core.BaseProvider):
 
         return resp
 
-    @coroutine
-    def list(self, **kwargs):
-        url = self.bucket.generate_url(100, 'GET')
-        resp = yield from aiohttp.request('GET', url, params=kwargs)
-
-        return (yield from self._response_to_dict_list(resp))
-
-    @coroutine
-    def _response_to_dict_list(self, resp):
-        # TODO: Fix meand clean me
-        content = yield from resp.read_and_close()
-        parsed = objectify.fromstring(content)
-        return parsed
-        return [{
-                'md5': fo.ETag,
-                'last_mod': fo.LastModified,
-                'full_path': fo.Key,
-                'size': fo.Size
-            }
-            for fo in parsed.Content
-        ] + [{'prefix': p.Prefix} for p in parsed.get('CommonPrefixes', ())]
+    # @coroutine
+    # def list(self, **kwargs):
+    #     url = self.bucket.generate_url(100, 'GET')
+    #     resp = yield from aiohttp.request('GET', url, params=kwargs)
+    #
+    #     return (yield from self._response_to_dict_list(resp))
+    #
+    # @coroutine
+    # def _response_to_dict_list(self, resp):
+    #     # TODO: Fix meand clean me
+    #     content = yield from resp.read_and_close()
+    #     # parsed = objectify.fromstring(content)
+    #     # return parsed
+    #     return [{
+    #             'md5': fo.ETag,
+    #             'last_mod': fo.LastModified,
+    #             'full_path': fo.Key,
+    #             'size': fo.Size
+    #         }
+    #         for fo in parsed.Content
+    #     ] + [{'prefix': p.Prefix} for p in parsed.get('CommonPrefixes', ())]
