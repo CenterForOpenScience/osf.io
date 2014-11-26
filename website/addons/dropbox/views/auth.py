@@ -8,16 +8,17 @@ from flask import request
 from werkzeug.wrappers import BaseResponse
 from dropbox.client import DropboxOAuth2Flow
 
-from framework.auth import get_current_user
 from framework.flask import redirect  # VOL-aware redirect
-from framework.exceptions import HTTPError
 from framework.sessions import session
-from framework.status import push_status_message as flash
+from framework.exceptions import HTTPError
+from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
+from framework.status import push_status_message as flash
 
+from website.util import api_url_for
+from website.util import web_url_for
 from website.project.model import Node
 from website.project.decorators import must_have_addon
-from website.util import api_url_for, web_url_for
 
 from website.addons.dropbox import settings
 from website.addons.dropbox.client import get_client_from_user_settings
@@ -65,8 +66,8 @@ def finish_auth():
 
 
 @must_be_logged_in
-def dropbox_oauth_start(**kwargs):
-    user = get_current_user()
+def dropbox_oauth_start(auth, **kwargs):
+    user = auth.user
     # Store the node ID on the session in order to get the correct redirect URL
     # upon finishing the flow
     nid = kwargs.get('nid') or kwargs.get('pid')
@@ -84,13 +85,15 @@ def dropbox_oauth_start(**kwargs):
     return redirect(get_auth_flow().start() + '&force_reapprove=true')
 
 
-def dropbox_oauth_finish(**kwargs):
+@collect_auth
+def dropbox_oauth_finish(auth, **kwargs):
     """View called when the Oauth flow is completed. Adds a new DropboxUserSettings
     record to the user and saves the user's access token and account info.
     """
-    user = get_current_user()
-    if not user:
+    if not auth.logged_in:
         raise HTTPError(http.FORBIDDEN)
+    user = auth.user
+
     node = Node.load(session.data.get('dropbox_auth_nid'))
     result = finish_auth()
     # If result is a redirect response, follow the redirect

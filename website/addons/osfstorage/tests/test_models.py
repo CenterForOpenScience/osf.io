@@ -560,6 +560,28 @@ class TestOsfStorageFileRecord(StorageTestCase):
         assert_false(self.record.is_deleted)
         assert_equal(len(self.project.logs), nlogs)
 
+    def test_update_metadata_found(self):
+        self.record.versions = [
+            factories.FileVersionFactory(signature='31a64'),
+            factories.FileVersionFactory(signature='7aa12'),
+        ]
+        self.record.save()
+        self.record.update_version_metadata('31a64', {'archive': 'glacier'})
+        assert_in('archive', self.record.versions[0].metadata)
+        assert_equal(self.record.versions[0].metadata['archive'], 'glacier')
+        assert_not_in('archive', self.record.versions[1].metadata)
+
+    def test_update_metadata_not_found(self):
+        self.record.versions = [
+            factories.FileVersionFactory(signature='31a64'),
+            factories.FileVersionFactory(signature='7aa12'),
+        ]
+        self.record.save()
+        with assert_raises(errors.VersionNotFoundError):
+            self.record.update_version_metadata('1143b3', {'archive': 'glacier'})
+        assert_not_in('archive', self.record.versions[0].metadata)
+        assert_not_in('archive', self.record.versions[1].metadata)
+
 
 class TestOsfStorageFileVersion(OsfTestCase):
 
@@ -785,6 +807,18 @@ class TestOsfStorageFileVersion(OsfTestCase):
                 factories.generic_location,
                 {},
             )
+
+    def test_update_metadata(self):
+        version = factories.FileVersionFactory()
+        version.update_metadata(version.signature, {'archive': 'glacier'})
+        assert_in('archive', version.metadata)
+        assert_equal(version.metadata['archive'], 'glacier')
+
+    def test_update_metadata_bad_signature(self):
+        version = factories.FileVersionFactory()
+        with assert_raises(errors.SignatureMismatchError):
+            version.update_metadata(version.signature[::-1], {'archive': 'glacier'})
+        assert_not_in('archive', version.metadata)
 
 
 class TestStorageObject(OsfTestCase):
