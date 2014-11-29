@@ -19,7 +19,7 @@ class UploadHandler(web.RequestHandler):
     @coroutine
     def prepare(self):
         self.payload = json_decode(b64decode(self.get_argument('message')).decode('utf-8'))
-        self.signature = self.get_argument('signature')
+        # self.signature = self.get_argument('signature')
         self.provider = utils.make_provider(self.payload['provider'])
         self.obj = RequestWrapper(self.request)
         self.uploader = asyncio.async(self.provider.upload(self.obj, self.payload['options']['path']))
