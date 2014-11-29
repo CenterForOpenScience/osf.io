@@ -6,12 +6,14 @@ import tornado.platform.asyncio
 import tornado.web
 
 from server.handlers import download
+from server.handlers import upload
 
 
 def make_app(debug):
     app = tornado.web.Application(
         [
-            (r'/files/download', download.DownloadHandler),
+            (r'/file/download', download.DownloadHandler),
+            (r'/file/upload', upload.UploadHandler),
         ],
         debug=debug,
     )

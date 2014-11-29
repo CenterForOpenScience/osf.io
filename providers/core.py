@@ -3,6 +3,7 @@
 import abc
 
 from asyncio import coroutine
+from asyncio import StreamReader
 
 
 class ResponseWrapper(object):
@@ -11,6 +12,15 @@ class ResponseWrapper(object):
         self.response = response
         self.content = response.content
         self.size = response.headers.get('Content-Length')
+
+
+class RequestWrapper(object):
+
+    def __init__(self, request):
+
+        self.response = request
+        self.content = StreamReader()
+        self.size = request.headers.get('Content-Length')
 
 
 class BaseProvider(metaclass=abc.ABCMeta):
