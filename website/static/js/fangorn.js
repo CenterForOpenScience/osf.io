@@ -18,9 +18,11 @@
         //asynconously calls these js files before calling the function (factory)
         define(['jquery', 'js/treebeard', 'bootstrap'], factory);
     } else if (typeof $script === 'function' ){
-        //A less robust way of calling js files, once it is done call fangorn
+        $script.ready(['dropzone', 'dropzone-patch', 'treebeard'], function() {
+            //A less robust way of calling js files, once it is done call fangorn
             global.Fangorn = factory(jQuery, global.Treebeard);
             $script.done('fangorn');
+        });
     }else {
         global.Fangorn = factory(jQuery, global.Treebeard);
     }
@@ -95,7 +97,7 @@
     function _fangornResolveToggle(item){
         var toggleMinus = m('i.icon-minus', ' '),
             togglePlus = m('i.icon-plus', ' ');
-        if (item.kind === 'folder' && (item.children.length > 0 || item.data.addon) ) {
+        if (item.kind === 'folder' && (item.children.length > 0 || item.data.addon ) ) {
             if (item.open) {
                 return toggleMinus;
             }
@@ -137,7 +139,8 @@
             name : file.name,
             kind : 'item',
             addon : parent.data.addon,
-            children : []
+            children : [],
+            data : { permissions : parent.data.permissions }
         };
         var newItem = treebeard.createItem(blankItem, parentID);
         var configOption = resolveconfigOption.call(treebeard, parent, 'uploadSending', [file, xhr, formData]);
@@ -294,7 +297,7 @@
         var buttons = [];
 
         // Upload button if this is a folder
-        if (item.data.addon && item.data.permissions.edit) {
+        if (item.kind === 'folder' && item.data.addon && item.data.permissions.edit) {
             buttons.push({ 
                 'name' : '',
                 'icon' : 'icon-upload-alt',
