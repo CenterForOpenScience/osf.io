@@ -294,7 +294,7 @@
         var buttons = [];
 
         // Upload button if this is a folder
-        if (item.kind === 'folder' && item.data.permissions.edit) {
+        if (item.data.addon && item.data.permissions.edit) {
             buttons.push({ 
                 'name' : '',
                 'icon' : 'icon-upload-alt',
@@ -445,27 +445,30 @@
             },
             addcheck : function (treebeard, item, file) {
                 window.console.log('Add check', this, treebeard, item, file);
-                if (item.data.permissions.edit){
-                    if(!_fangornFileExists.call(treebeard, item, file)){
-                        if(item.data.accept && item.data.accept.maxSize){
-                            var size = Math.round(file.size/10000)/100;
-                            var maxSize = item.data.accept.maxSize;  
-                            if(maxSize > size){
-                                return true;
+                if(item.data.addon) {
+                    if (item.data.permissions.edit){
+                        if(!_fangornFileExists.call(treebeard, item, file)){
+                            if(item.data.accept && item.data.accept.maxSize){
+                                var size = Math.round(file.size/10000)/100;
+                                var maxSize = item.data.accept.maxSize;  
+                                if(maxSize > size){
+                                    return true;
+                                }
+                                var msgText = 'File is too large (' + size + ' MB). Max file size is ' + item.data.accept.maxSize + ' MB.' ; 
+                                item.notify.update(msgText, 'warning', undefined, 3000);
+                                return false;
                             }
-                            var msgText = 'File is too large (' + size + ' MB). Max file size is ' + item.data.accept.maxSize + ' MB.' ; 
-                            item.notify.update(msgText, 'warning', undefined, 3000);
-                            return false;
+                            return true;    
+                        } else {
+                            var msgText = 'File already exists.'; 
+                            item.notify.update(msgText, 'warning', 1, 3000);
                         }
-                        return true;    
                     } else {
-                        var msgText = 'File already exists.'; 
-                        item.notify.update(msgText, 'warning', 1, 3000);
+                        var msgText = 'You don\'t have permission to upload here'; 
+                        item.notify.update(msgText, 'warning', 1, 3000, 'animated flipInX');                    
                     }
-                } else {
-                    var msgText = 'You don\'t have permission to upload here'; 
-                    item.notify.update(msgText, 'warning', 1, 3000, 'animated flipInX');                    
                 }
+                
                 return false;
             },
             onselectrow : function (item) {
