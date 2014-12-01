@@ -204,8 +204,6 @@
         return undefined;            
     }
 
-
-
     // Register configuration
     Fangorn.config.github = {
         // Handle changing the branch select

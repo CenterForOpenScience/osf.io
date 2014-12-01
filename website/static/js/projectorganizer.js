@@ -964,7 +964,7 @@
 
     // OSF-specific Treebeard options common to all addons
         tbOptions = {
-                rowHeight : 35,         // user can override or get from .tb-row height
+                rowHeight : 30,         // user can override or get from .tb-row height
                 showTotal : 15,         // Actually this is calculated with div height, not needed. NEEDS CHECKING
                 paginate : false,       // Whether the applet starts with pagination or not.
                 paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.
@@ -1019,23 +1019,11 @@
                         item.load = false;
                     }
                 },
-                // onmouseoverrow : _poMouseOverRow,
                 onmultiselect : _poMultiselect,
-                dropzone : {                                           // All dropzone options.
-                    url: '/api/v1/project/',  // When users provide single URL for all uploads
-                    clickable : '#treeGrid',
-                    addRemoveLinks: false,
-                    previewTemplate: '<div></div>',
-                    parallelUploads: 1
-                    
-                },
                 resolveIcon : _poResolveIcon,
                 resolveToggle : _poResolveToggle,
                 resolveLazyloadUrl : _poResolveLazyLoad,
                 lazyLoadOnLoad : expandStateLoad,
-                // lazyLoadError : _fangornLazyLoadError,
-                // resolveUploadMethod :_fangornUploadMethod,
-
     };
 
 
@@ -1053,7 +1041,7 @@
         },
         // Create the Treebeard once all addons have been configured
         _initGrid: function() {
-            this.grid = Treebeard.run(this.options);
+            this.grid = Treebeard(this.options);
             return this.grid;
         }
 

@@ -16,7 +16,6 @@
     };
 
     Fangorn.config.osfstorage = {
-
         uploadMethod: 'PUT',
         uploadUrl: null,
         uploadAdd: function(file, item) {
@@ -58,5 +57,4 @@
         }
 
     };
-
 }));

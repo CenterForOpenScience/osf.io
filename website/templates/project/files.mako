@@ -40,6 +40,7 @@ ${parent.javascript_bottom()}
 window.ondragover = function(e) { e.preventDefault(); };
 window.ondrop = function(e) { e.preventDefault(); };
 
+$script(['/static/js/fangorn.js']);
 
 $script.ready(['fangorn'], function() {
 

@@ -196,7 +196,7 @@
         self.options.initialFolderName = opts.initialFolderName;
 
         // Start up the grid
-        self.grid = Treebeard.run(self.options);
+        self.grid = Treebeard(self.options);
         // Set up listener for folder selection
 
         $(selector).on('change', 'input[name="' + self.selector + INPUT_NAME + '"]', function(evt) {
