@@ -164,7 +164,7 @@ def confirm_email_get(**kwargs):
     user = User.load(kwargs['uid'])
     token = kwargs['token']
     if user:
-        if user.confirm_email(token):  # Confirm and register the usre
+        if user.confirm_email(token):  # Confirm and register the user
             user.date_last_login = datetime.datetime.utcnow()
             user.save()
             # Go to settings page
