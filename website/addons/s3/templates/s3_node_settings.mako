@@ -113,10 +113,10 @@
             }).done(function() {
                 msgElm.text('S3 access keys loading...')
                         .removeClass('text-danger').addClass('text-info')
-                        .fadeOut(200).fadeIn();
+                        .fadeIn(1000);
                 setTimeout(function(){
                     window.location.reload();
-                }, 3000);
+                }, 5000);
             }).fail(function(xhr) {
                 var message = 'Error: ';
                 var response = JSON.parse(xhr.responseText);
