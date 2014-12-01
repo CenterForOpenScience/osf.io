@@ -327,6 +327,9 @@ class TestUser(OsfTestCase):
         assert_false(u.verify_confirmation_token('badtoken'))
         valid_token = u.get_confirmation_token('foo@bar.com')
         assert_true(u.verify_confirmation_token(valid_token))
+        manual_expiration=datetime.datetime.utcnow()-datetime.timedelta(0,10)
+        u.set_email_token_expiration(valid_token, manual_expiration=manual_expiration)
+        assert_false(u.verify_confirmation_token(valid_token))
 
     def test_factory(self):
         # Clear users
@@ -2857,7 +2860,7 @@ class TestUnregisteredUser(OsfTestCase):
         assert_true(u.username)
         assert_true(u.fullname)
         assert_true(u.password)
-        assert_equal(len(u.email_verifications.keys()), 1)
+        assert_equal(len(u.email_verifications.keys()), 2)
 
     def test_add_unclaimed_record(self):
         email, data = self.add_unclaimed_record()
