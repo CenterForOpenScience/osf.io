@@ -7,7 +7,12 @@
             % if not node['anonymous']:
                 by ${version['user_fullname']}
             % endif
-            on ${version['date']}
+            on <span id="version-${version['version']}"></span>
+
+            <script type="application/javascript">
+                var versionDate = new $.osf.FormattableDate("${version['date']}");
+                $("#version-${version['version']}").text(versionDate.local);
+            </script>
         </a>
 	</p>
 % endfor

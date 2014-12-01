@@ -74,7 +74,7 @@ def _get_wiki_versions(node, name, anonymous=False):
         {
             'version': version.version,
             'user_fullname': privacy_info_handle(version.user.fullname, anonymous, name=True),
-            'date': version.date.replace(microsecond=0),
+            'date': version.date.replace(microsecond=0).isoformat(),
             'compare_web_url': node.web_url_for('project_wiki_compare', wname=name, wver=version.version, _guid=True),
         }
         for version in reversed(versions)
