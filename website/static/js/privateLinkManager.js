@@ -1,6 +1,5 @@
 var $ = require('jquery');
 var ko = require('knockout');
-var bootbox = require('bootbox');
 var $osf = require('osf-helpers');
 
 var NODE_OFFSET = 25;
@@ -32,11 +31,11 @@ var PrivateLinkViewModel = function(url) {
         self.nodes(response['children']);
     }
 
-    function onFetchError() {
-        bootbox.alert('Could not retrieve projects. Please refresh the page or ' +
-                'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
-                'problem persists.');
-    }
+        function onFetchError() {
+            $osf.growl('Could not retrieve projects.', 'Please refresh the page or ' +
+                    'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
+                    'problem persists.');
+        }
 
     function fetch() {
         $.ajax({
@@ -83,7 +82,7 @@ var PrivateLinkViewModel = function(url) {
         ).done(function() {
             window.location.reload();
         }).fail(function() {
-            bootbox.alert('Failed to create a view-only Link.');
+            $osf.growl('Error:','Failed to create a view-only link.');
             self.disableSubmit(false);
             self.submitText('Submit');
         });

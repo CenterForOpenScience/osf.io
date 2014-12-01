@@ -461,10 +461,8 @@ class TestSmartFolderViews(OsfTestCase):
         self.user = self.dash.creator
         self.auth = AuthFactory(user=self.user)
 
-    @mock.patch('website.project.decorators.get_api_key')
     @mock.patch('website.project.decorators.Auth.from_kwargs')
-    def test_adding_project_to_dashboard_increases_json_size_by_one(self, mock_from_kwargs, mock_get_api_key):
-        mock_get_api_key.return_value = 'api_keys_lol'
+    def test_adding_project_to_dashboard_increases_json_size_by_one(self, mock_from_kwargs):
         mock_from_kwargs.return_value = Auth(user=self.user)
 
         with app.test_request_context():
@@ -481,10 +479,8 @@ class TestSmartFolderViews(OsfTestCase):
         assert_equal(len(res.json[u'data']), init_len + 1)
 
 
-    @mock.patch('website.project.decorators.get_api_key')
     @mock.patch('website.project.decorators.Auth.from_kwargs')
-    def test_adding_registration_to_dashboard_increases_json_size_by_one(self, mock_from_kwargs, mock_get_api_key):
-        mock_get_api_key.return_value = 'api_keys_lol'
+    def test_adding_registration_to_dashboard_increases_json_size_by_one(self, mock_from_kwargs):
         mock_from_kwargs.return_value = Auth(user=self.user)
 
         with app.test_request_context():

@@ -134,7 +134,7 @@ var LinksViewModel = function($elm) {
                 self.links(response.pointed);
             }).fail(function() {
                 $elm.modal('hide');
-                bootbox.alert('Could not get links');
+                osfHelpers.growl('Error:','Could not get links');
             });
         }
     });

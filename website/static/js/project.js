@@ -42,9 +42,9 @@ NodeActions.forkNode = function() {
         }).fail(function(response) {
             osfHelpers.unblock();
             if (response.status === 403) {
-                bootbox.alert('Sorry, you do not have permission to fork this project');
+                osfHelpers.growl('Sorry:', 'you do not have permission to fork this project');
             } else {
-                bootbox.alert('Forking failed');
+                osfHelpers.growl('Error:', 'Forking failed');
                 Raven.captureMessage('Error occurred during forking');
             }
         });
@@ -68,7 +68,7 @@ NodeActions.forkPointer = function(pointerId) {
                     window.location.reload();
                 }).fail(function() {
                     osfHelpers.unblock();
-                    bootbox.alert('Could not fork link.');
+                    osfHelpers.growl('Error','Could not fork link.');
                 });
             }
         }

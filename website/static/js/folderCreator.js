@@ -14,8 +14,7 @@ function FolderCreatorViewModel(url) {
     });
 
     self.formErrorText = ko.observable('');
-
-
+    
     self.createFolder = function () {
         $osf.postJSON(
             self.url,
@@ -32,7 +31,7 @@ function FolderCreatorViewModel(url) {
     };
 
     self.createFailure = function () {
-        bootbox.alert('Could not create a new folder. Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
+        $osf.growl('Could not create a new folder.', 'Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
     };
 
     self.serialize = function () {
@@ -47,8 +46,8 @@ function FolderCreatorViewModel(url) {
         } else {
             self.createFolder();
         }
-
     };
+ 
 }
 
 function FolderCreator(selector, url) {

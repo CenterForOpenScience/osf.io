@@ -202,7 +202,7 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
                 });
                 for (var i = self.currentPage() - 1; i <= self.currentPage() + 1; i++) {
                     self.paginators.push({
-                        style: (self.currentPage() === i)? 'active' : '',
+                        style: (self.currentPage() === i) ? 'active' : '',
                         text: i + 1,
                         handler: function () {
                             self.currentPage(parseInt(this.text) - 1);
@@ -479,24 +479,24 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
         return names.join(', ');
     });
 
-    self.submit = function() {
-        $osf.block();
-        $('.modal').modal('hide');
-        $osf.postJSON(
-            nodeApiUrl + 'contributors/',
-            {
-                users: self.selection().map(function(user) {
-                    return ko.toJS(user);
-                }),
-                node_ids: self.nodesToChange()
-            }
-        ).done(function() {
-            window.location.reload();
-        }).fail(function() {
-            $osf.unblock();
-            bootbox.alert('Add contributor failed.');
-        });
-    };
+        self.submit = function() {
+            $osf.block();
+            $('.modal').modal('hide');
+            $osf.postJSON(
+                nodeApiUrl + 'contributors/',
+                {
+                    users: self.selection().map(function(user) {
+                        return ko.toJS(user);
+                    }),
+                    node_ids: self.nodesToChange()
+                }
+            ).done(function() {
+                window.location.reload();
+            }).fail(function() {
+                $osf.unblock();
+                $osf.growl('Error','Add contributor failed.');
+            });
+        };
 
     self.clear = function() {
         self.page('whom');

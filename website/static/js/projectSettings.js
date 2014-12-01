@@ -1,6 +1,7 @@
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
+var $osf = require('osf-helpers');
 
 var ProjectSettings = {};
 
@@ -47,7 +48,7 @@ function randomScientist() {
     'Somerville',
     'Tesla',
     'Tyson',
-    'Turing',
+    'Turing'
     ];
 
     return scientists[Math.floor(Math.random() * scientists.length)];
@@ -124,12 +125,10 @@ ProjectSettings.getConfirmationCode = function(nodeType) {
                     url: nodeApiUrl
                 });
                 request.done(successHandler);
-                request.fail($.osf.handleJSONError);
+                request.fail($osf.handleJSONError);
             } else if (result != null) {
-                bootbox.alert({
-                    title: 'Incorrect confirmation',
-                    message: 'The confirmation string you provided was incorrect. Please try again.'
-                });
+                $osf.growl('Incorrect confirmation',
+                    'The confirmation string you provided was incorrect. Please try again.');
             }
         }
     );

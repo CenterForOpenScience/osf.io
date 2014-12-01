@@ -26,10 +26,7 @@ function getClaimUrl() {
 }
 
 function alertFinished(email) {
-    bootbox.alert({
-        title: 'Email will arrive shortly',
-        message: ['Please check <em>', email, '</em>'].join('')
-    });
+    $osf.growl('Email will arrive shortly', ['Please check <em>', email, '</em>'].join(''), 'success');
 }
 
 function onClickIfLoggedIn() {

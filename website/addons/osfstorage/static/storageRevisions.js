@@ -49,17 +49,17 @@ RevisionsViewModel.prototype.fetch = function() {
     });
 };
 
-RevisionsViewModel.prototype.delete = function() {
-    var self = this;
-    $.ajax({
-        type: 'DELETE',
-        url: self.urls.delete
-    }).done(function() {
-        window.location = self.urls.files;
-    }).fail(function() {
-        bootbox.alert('Could not delete file.');
-    });
-};
+    RevisionsViewModel.prototype.delete = function() {
+        var self = this;
+        $.ajax({
+            type: 'DELETE',
+            url: self.urls.delete
+        }).done(function() {
+            window.location = self.urls.files;
+        }).fail(function() {
+            $osf.growl('Error', 'Could not delete file.');
+        });
+    };
 
 RevisionsViewModel.prototype.askDelete = function() {
     var self = this;

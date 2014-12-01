@@ -125,13 +125,10 @@ function ViewModel(url) {
     }
 
     function onFetchError() {
-        bootbox.alert({
-            title: 'Error',
-            message: 'Could not retrieve view-only links. Please refresh the page or ' +
-                'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
-                'problem persists.'
-        });
-    }
+            $osf.growl('Could not retrieve view-only links.', 'Please refresh the page or ' +
+                    'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
+                    'problem persists.');
+        }
 
     function fetch() {
         $.ajax({
@@ -161,11 +158,11 @@ function ViewModel(url) {
                     url: nodeApiUrl + 'private_link/',
                     contentType: 'application/json',
                     dataType: 'json',
-                    data: JSON.stringify(dataToSend),
+                    data: JSON.stringify(dataToSend)
                 }).done(function() {
                     self.privateLinks.remove(data);
                 }).fail(function() {
-                    bootbox.alert('Failed to delete the private link.');
+                    $osf.growl('Error:','Failed to delete the private link.');
                 });
                 }
             }

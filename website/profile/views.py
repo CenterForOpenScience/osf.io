@@ -3,24 +3,26 @@
 import operator
 import os
 import logging
+import operator
 import httplib as http
+
 from dateutil.parser import parse as parse_date
 
 from flask import request
 from modularodm.exceptions import ValidationError
 
-from framework.auth.decorators import collect_auth, must_be_logged_in
-from framework.flask import redirect  # VOL-aware redirect
 from framework.exceptions import HTTPError
-from framework.auth import get_current_user
 from framework.auth import utils as auth_utils
+from framework.auth.decorators import collect_auth
+from framework.auth.decorators import must_be_logged_in
 
-from website.models import ApiKey, User
-from website.views import _render_nodes
 from website import settings
-from website.profile import utils as profile_utils
+from website.models import User
+from website.models import ApiKey
+from website.views import _render_nodes
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
+from website.profile import utils as profile_utils
 
 logger = logging.getLogger(__name__)
 
@@ -57,15 +59,9 @@ def date_or_none(date):
         return None
 
 
-def _profile_view(uid=None):
+def _profile_view(profile, is_profile):
     # TODO: Fix circular import
     from website.addons.badges.util import get_sorted_user_badges
-
-    user = get_current_user()
-    profile = User.load(uid) if uid else user
-
-    if not (uid or user):
-        return redirect('/login/?next={0}'.format(request.path))
 
     if 'badges' in settings.ADDONS_REQUESTED:
         badge_assertions = get_sorted_user_badges(profile),
@@ -83,7 +79,7 @@ def _profile_view(uid=None):
             'assertions': badge_assertions,
             'badges': badges,
             'user': {
-                'is_profile': user == profile,
+                'is_profile': is_profile,
                 'can_edit': None,  # necessary for rendering nodes
                 'permissions': [],  # necessary for rendering nodes
             },
@@ -99,12 +95,16 @@ def _get_user_created_badges(user):
     return []
 
 
-def profile_view():
-    return _profile_view()
+@must_be_logged_in
+def profile_view(auth):
+    return _profile_view(auth.user, True)
 
 
-def profile_view_id(uid):
-    return _profile_view(uid)
+@collect_auth
+def profile_view_id(uid, auth):
+    user = User.load(uid)
+    is_profile = auth and auth.user == user
+    return _profile_view(user, is_profile)
 
 
 @must_be_logged_in

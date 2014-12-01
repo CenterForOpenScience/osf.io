@@ -5,6 +5,8 @@
 /*jshint ignore:start */
 
 var Dropzone = require('dropzone');
+var $osf = require('osf-helpers');
+var $ = require('jquery');
 
 __hasProp = {}.hasOwnProperty,
 __extends = function(child, parent) {
@@ -46,10 +48,10 @@ Dropzone.prototype._addFilesFromDirectory = function(directory, path) {
 };
 
 /**
-    * Get the url to use for the upload request.
-    *
-    * NOTE: This is a hack to get uploads via signed URLs to work.
-    */
+ * Get the url to use for the upload request.
+ *
+ * NOTE: This is a hack to get uploads via signed URLs to work.
+ */
 Dropzone.prototype.getUrl = function(file) {
     var self = this;
     if (file.signedUrlFrom) {
@@ -75,7 +77,7 @@ Dropzone.prototype.getUrl = function(file) {
             } catch(error) {
                 msg = textStatus;
             }
-            bootbox.alert(msg);
+            $osf.growl('Error:', msg);
         });
     } else {
         return file.url || this.options.url;

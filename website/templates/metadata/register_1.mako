@@ -1,3 +1,4 @@
+<script type="text/javascript" src="/static/js/metadata_1.js"></script>
 
 <div class="col-md-6 col-md-offset-3" id="registration_template">
 

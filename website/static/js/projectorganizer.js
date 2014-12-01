@@ -6,6 +6,7 @@ var HGrid = require('hgrid');
 var bootbox = require('bootbox');
 var Bloodhound = require('exports?Bloodhound!typeahead.js');
 var moment = require('moment');
+var Raven = require('raven-js');
 
 require('../vendor/jquery-drag-drop/jquery.event.drag-2.2.js');
 require('../vendor/jquery-drag-drop/jquery.event.drop-2.2.js');
@@ -67,7 +68,8 @@ function deleteMultiplePointersFromFolder(theHgrid, pointerIds, folderToDeleteFr
         });
         deleteAction.done(reloadHgrid);
         deleteAction.fail(function (jqxhr, textStatus, errorThrown){
-            bootbox.alert('Error: ' + textStatus + '. ' + errorThrown);
+            osfHelpers.growl('Error:', textStatus + '. ' + errorThrown);
+
         });
     }
 }
@@ -265,22 +267,22 @@ function dropLogic(event, items, folder) {
 
                             });
                             postAction.fail(function (jqxhr, textStatus, errorThrown){
-                                bootbox.alert('Error: ' + textStatus + '. ' + errorThrown);
+                                osfHelpers.growl('Error:', textStatus + '. ' + errorThrown);
                             });
                         } else { // From:  if(itemsToMove.length > 0)
 //                                folder.childrenCount = folder.children.length;
-                            draggable.grid.refreshData();
-                            reloadFolder(draggable.grid, itemParent);
-                        }
-                    });
-                } // From: if (copyMode === 'copy' || copyMode === 'move')
-            });
-            getAction.fail(function (jqxhr, textStatus, errorThrown){
-                bootbox.alert('Error: ' + textStatus + '. ' + errorThrown);
-            });
-        } else {
-            Raven.captureMessage('Project dashboard: Parent node (' + itemParentNodeID + ') == Folder Node (' + theFolderNodeID + ')');
-        }
+                                draggable.grid.refreshData();
+                                reloadFolder(draggable.grid, itemParent);
+                            }
+                        });
+                    } // From: if (copyMode === 'copy' || copyMode === 'move')
+                });
+                getAction.fail(function (jqxhr, textStatus, errorThrown){
+                    osfHelpers.growl('Error:', textStatus + '. ' + errorThrown);
+                });
+            } else {
+                Raven.captureMessage('Project dashboard: Parent node (' + itemParentNodeID + ') == Folder Node (' + theFolderNodeID + ')');
+            }
     } else {
         if (typeof folder === 'undefined') {
             Raven.captureMessage('onDrop folder is undefined.');
@@ -863,7 +865,6 @@ var hgridInit = function () {
 
     self.grid.grid.onSelectedRowsChanged.subscribe(function (e, args) {
         var selectedRows = self.grid.grid.getSelectedRows();
-        var multipleItems = false;
         if(selectedRows.length > 1) {
             var someItemsAreFolders = false;
             var pointerIds = [];
@@ -886,7 +887,6 @@ var hgridInit = function () {
                 };
                 var sampleItem = self.grid.grid.getDataItem(selectedRows[0]);
                 var theParentNode = self.grid.grid.getData().getItemById(sampleItem.parentID);
-                var theParentNodeID = theParentNode.node_id;
                 var displayHTML = detailTemplate(detailTemplateContext);
                 $('.project-details').html(displayHTML);
                 $('.project-details').show();
@@ -1000,7 +1000,7 @@ function ProjectOrganizer(selector, options) {
         },
         fetchError: function(error) {
             if($('.modal-dialog').length === 0) {
-                bootbox.alert('Error: ' + error);
+                osfHelpers.growl('Error:', error);
             }
         },
         getExpandState: function(folder) {
