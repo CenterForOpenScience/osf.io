@@ -70,13 +70,15 @@
      * Returns the folder select button for a single row.
      */
     function _treebeardSelectView(item) {
-        if (item.data.path === this.options.folderPath) {
-            return m("input",{
-            type:"radio",
-            checked : 'checked',
-            name: "#" + this.options.divID + INPUT_NAME,
-            value:item.id
-            }, " ");
+        if(item.data.path != undefined){
+            if (item.data.path === this.options.folderPath) {
+                return m("input",{
+                type:"radio",
+                checked : 'checked',
+                name: "#" + this.options.divID + INPUT_NAME,
+                value:item.id
+                }, " ");
+            }
         }
 
         return m("input",{
@@ -126,25 +128,27 @@
     function _treebeardOnload () {
         var tb = this;
         var folderName = tb.options.initialFolderName;
-        if (folderName === "None") {
-            tb.options.folderPath = null;
-        } else {
-            tb.options.folderPath = folderName.replace('Dropbox', ''); 
-            var folderArray = folderName.trim().split('/');
-            if (folderArray[folderArray.length-1] === "") {
-                folderArray.pop();
+        if (folderName != undefined) {
+            if (folderName === "None") {
+                tb.options.folderPath = null;
+            } else {
+                tb.options.folderPath = folderName.replace('Dropbox', '');
+                var folderArray = folderName.trim().split('/');
+                if (folderArray[folderArray.length - 1] === "") {
+                    folderArray.pop();
+                }
+                folderArray.shift();
+                tb.options.dropboxArray = folderArray;
+                console.log(folderArray);
             }
-            folderArray.shift();
-            tb.options.dropboxArray = folderArray; 
-            console.log(folderArray);
-        }
 
-        for (var i = 0; i < tb.treeData.children.length; i++) {
-            if (tb.treeData.children[i].data.name === folderArray[0]) {
-                tb.updateFolder(null,tb.treeData.children[i]); 
+            for (var i = 0; i < tb.treeData.children.length; i++) {
+                if (tb.treeData.children[i].data.name === folderArray[0]) {
+                    tb.updateFolder(null, tb.treeData.children[i]);
+                }
             }
+            tb.options.dropboxIndex = 1;
         }
-        tb.options.dropboxIndex = 1; 
     }
 
     function _treebeardLazyLoadOnLoad  (item) {

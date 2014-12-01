@@ -35,6 +35,9 @@
             configOption = item.data.addon ? resolveconfigOption.call(this, item, 'folderIcon', [item]) : undefined;                
 
         if (item.kind === 'folder') {
+            if (item.data.iconUrl){
+                return m('img', { src : item.data.iconUrl, style:{width:"16px", height:"auto"} });
+            }
             if (!item.data.permissions.view) {
                 return privateFolder; 
             }
