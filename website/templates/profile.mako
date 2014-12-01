@@ -178,8 +178,8 @@
                 "tpl" : "util/render_nodes.mako",
                 "uri" : "/api/v1/profile/${profile["id"]}/public_components/",
                 "replace" : true,
-                "kwargs" : {"sortable" : true}
-            }'></div>
+                "kwargs" : {"sortable" : "profile-page"}
+            }'></div> <!-- TODO: Change a way to indicated that the components are on the profile page -->
     </div>
 </div><!-- end row -->
 

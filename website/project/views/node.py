@@ -658,7 +658,7 @@ def _should_show_wiki_widget(node, user):
         return True
 
 
-def _view_project(node, auth, primary=False):
+def _view_project(node, auth, primary=False, link_id=None):
     """Build a JSON object containing everything needed to render
     project.view.mako.
     """
@@ -679,6 +679,8 @@ def _view_project(node, auth, primary=False):
     data = {
         'node': {
             'id': node._primary_key,
+            'link_id': link_id if link_id else node._id,
+            'primary': primary,
             'title': node.title,
             'category': node.category_display,
             'node_type': node.project_or_component,
@@ -759,7 +761,6 @@ def _view_project(node, auth, primary=False):
         'addon_widgets': widgets,
         'addon_widget_js': js,
         'addon_widget_css': css,
-
     }
     return data
 
@@ -860,52 +861,21 @@ def get_recent_logs(**kwargs):
 
 
 def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
-    # TODO(sloria): Refactor this or remove (lots of duplication with _view_project)
-    summary = {
-        'id': link_id if link_id else node._id,
-        'primary': primary,
-        'is_registration': node.is_registration,
-        'is_fork': node.is_fork,
-    }
-
-    if node.can_view(auth):
+    summary = _view_project(node, auth, primary, link_id)
+    summary.update({
+        'can_view': node.can_view(auth),
+    })
+    summary['node']['registered_date'] = node.registered_date.strftime('%Y-%m-%d %H:%M UTC') \
+        if node.is_registration else None
+    if node.can_view(auth) and rescale_ratio:
+        ua_count, ua, non_ua = _get_user_activity(node, auth, rescale_ratio)
         summary.update({
-            'can_view': True,
-            'can_edit': node.can_edit(auth),
-            'primary_id': node._id,
-            'url': node.url,
-            'primary': primary,
-            'api_url': node.api_url,
-            'title': node.title,
-            'category': node.category,
-            'node_type': node.project_or_component,
-            'is_registration': node.is_registration,
-            'anonymous': has_anonymous_link(node, auth),
-            'registered_date': node.registered_date.strftime('%Y-%m-%d %H:%M UTC')
-            if node.is_registration
-            else None,
-            'nlogs': None,
-            'ua_count': None,
-            'ua': None,
-            'non_ua': None,
-            'addons_enabled': node.get_addon_names(),
-            'is_public': node.is_public
+            'nlogs': len(node.logs),
+            'ua_count': ua_count,
+            'ua': ua,
+            'non_ua': non_ua,
         })
-        if rescale_ratio:
-            ua_count, ua, non_ua = _get_user_activity(node, auth, rescale_ratio)
-            summary.update({
-                'nlogs': len(node.logs),
-                'ua_count': ua_count,
-                'ua': ua,
-                'non_ua': non_ua,
-            })
-    else:
-        summary['can_view'] = False
-
-    # TODO: Make output format consistent with _view_project
-    return {
-        'summary': summary,
-    }
+    return summary
 
 
 @collect_auth
@@ -918,9 +888,10 @@ def get_summary(**kwargs):
     primary = kwargs.get('primary')
     link_id = kwargs.get('link_id')
 
-    return _get_summary(
+    summary = _get_summary(
         node, auth, rescale_ratio, primary=primary, link_id=link_id
     )
+    return {'summary': summary}
 
 
 @must_be_contributor_or_public

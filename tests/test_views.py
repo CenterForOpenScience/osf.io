@@ -2232,10 +2232,13 @@ class TestFileViews(OsfTestCase):
     def test_files_get(self):
         url = '/api/v1/{0}/files/'.format(self.project._primary_key)
         res = self.app.get(url, auth=self.user.auth).follow(auth=self.user.auth)
-        expected = _view_project(self.project, auth=Auth(user=self.user))
+        expected = _view_project(self.project, auth=Auth(user=self.user), primary=True)['node']
+        actual = res.json['node']
 
         assert_equal(res.status_code, http.OK)
-        assert_equal(res.json['node'], expected['node'])
+        for key in actual:
+            if key in expected:
+                assert_equal(actual[key], expected[key], "Values for {key} are not equal".format(key=key))
         assert_in('tree_js', res.json)
         assert_in('tree_css', res.json)
 
