@@ -181,7 +181,7 @@ def dataverse_view_file(node_addon, auth, **kwargs):
             start_render=True,
             remote_path=file_obj.path,
             file_content=content,
-            download_path=download_url,
+            download_url=download_url,
         )
     else:
         filename, _ = scrape_dataverse(file_id, name_only=True)

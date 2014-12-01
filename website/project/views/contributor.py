@@ -556,7 +556,7 @@ def claim_user_registered(auth, **kwargs):
                 node.replace_contributor(old=unreg_user, new=current_user)
                 node.save()
                 status.push_status_message(
-                    'Success. You are now a contributor to this project.',
+                    'You are now a contributor to this project.',
                     'success')
                 return redirect(node.url)
             else:

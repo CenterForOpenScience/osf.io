@@ -34,8 +34,8 @@
                             window.location = self.files_page_url();
                         });
                         request.fail(function( jqXHR, textStatus ) {
-                            self.deleting(false);
-                            bootbox.alert( 'Could not delete: ' + textStatus );
+                            $('#deletingAlert').removeClass('in');
+                            $.osf.growl('Error:', 'Could not delete: ' + textStatus );
                         });
                     }
                 }
