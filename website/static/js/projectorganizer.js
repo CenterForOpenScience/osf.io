@@ -445,13 +445,14 @@
         if(!item.data.contributors){
             return '';
         }
-        var total = 0;
-        return item.data.contributors.map(function(person){
-            total = total + 1; 
-            if(total > 2) {
-                return m('span',' + ' + total-2);
+        return item.data.contributors.map(function(person, index, arr){
+            if (index > 2) {
+                return;
             }
-            return m('span',person.name);
+            if(index === 2) {
+                return m('span',' + ' + (arr.length-2));
+            }
+            return m('span',person.name + ', ');
         });
     }
 
