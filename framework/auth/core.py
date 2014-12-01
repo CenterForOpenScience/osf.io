@@ -206,7 +206,6 @@ class User(GuidStoredObject, AddonModelMixin):
     # Format: {
     #   <token> : {'email': <email address>}
     # }
-    # TODO: add timestamp to allow for timed expiration?
     email_verifications = fields.DictionaryField()
     aka = fields.StringField(list=True)
     date_registered = fields.DateTimeField(auto_now_add=dt.datetime.utcnow)
@@ -431,10 +430,18 @@ class User(GuidStoredObject, AddonModelMixin):
             return False
         return check_password_hash(self.password, raw_password)
 
+    def set_email_token_expiration(self, token, manual_expiration=None):
+        '''manual_expiration should be in the same format as utcnow()'''
+        expiration = manual_expiration or dt.datetime.utcnow() + dt.timedelta(1)
+        self.email_verifications[token]['expiration'] = expiration
+        return expiration
+
     def add_email_verification(self, email):
         """Add an email verification token for a given email."""
         token = generate_confirm_token()
+
         self.email_verifications[token] = {'email': email.lower()}
+        expiration = self.set_email_token_expiration(token)
         return token
 
     def get_confirmation_token(self, email):
@@ -459,7 +466,8 @@ class User(GuidStoredObject, AddonModelMixin):
     def verify_confirmation_token(self, token):
         """Return whether or not a confirmation token is valid for this user.
         """
-        return token in self.email_verifications.keys()
+        if token in self.email_verifications.keys():
+            return self.email_verifications.get(token)['expiration'] > dt.datetime.utcnow()
 
     def verify_claim_token(self, token, project_id):
         """Return whether or not a claim token is valid for this user for
