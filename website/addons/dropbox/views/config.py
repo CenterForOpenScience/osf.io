@@ -4,8 +4,8 @@ import httplib as http
 
 from flask import request
 
-from framework.auth import get_current_user
 from framework.exceptions import HTTPError
+from framework.auth.decorators import collect_auth
 
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
@@ -19,13 +19,13 @@ from website.addons.dropbox.client import get_client_from_user_settings
 from dropbox.rest import ErrorResponse
 
 
+@collect_auth
 @must_be_valid_project
 @must_have_addon('dropbox', 'node')
-def dropbox_config_get(node_addon, **kwargs):
+def dropbox_config_get(node_addon, auth, **kwargs):
     """API that returns the serialized node settings."""
-    user = get_current_user()
     return {
-        'result': serialize_settings(node_addon, user),
+        'result': serialize_settings(node_addon, auth.user),
     }, http.OK
 
 
