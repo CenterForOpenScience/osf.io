@@ -714,28 +714,31 @@
 
 
     // DRAG AND DROP METHODS
-    function _poDrag (event, ui) {
+    function _poDragStart (event, ui) {
         var itemID = $(event.target).attr('data-id');
         var item = this.find(itemID);
+        $('.project-details').hide();
         this.selected = item.id;
         $(ui.helper).css({ 'height' : '25px', 'width' : '400px', 'background' : 'white', 'padding' : '0px 10px', 'box-shadow' : '0 0 4px #ccc'});
         items = this.multiselected.length > 0 ? this.multiselected : [item]; 
-        console.log("draglogic", event, ui, items); 
-        dragLogic(event, items, ui);
+        // console.log("draglogic", event);
+
+        // dragLogic(event, items, ui);
     }
 
     function _poDrop (event, ui) {
         var items = this.multiselected.length === 0 ? [this.find(this.selected)] : this.multiselected, 
             folder = this.find($(event.target).attr('data-id'));
-        if (canAcceptDrop(items, folder)) {
-           dropLogic.call(this, event, items, folder);
-
-        }
+       dropLogic.call(this, event, items, folder);
     }
 
     function _poOver (event, ui) {
         var items = this.multiselected.length === 0 ? [this.find(this.selected)] : this.multiselected, 
             folder = this.find($(event.target).attr('data-id'));
+            console.log("draglogic", event, ui);
+
+            dragLogic.call(this, event, items, ui);
+
         //     acceptDrop = canAcceptDrop (items, folder); 
         // $('.tb-row').removeClass('tb-h-success tb-h-error');
         // if(acceptDrop) {
@@ -761,15 +764,18 @@
 
 
     function dragLogic(event, items, ui){
+        console.log("helper", ui.helper, "folder", event.target); 
         var canCopy = true;
         var canMove = true;
+        var folder = this.find($(event.target).attr('data-id'));
         items.forEach(function (item) {
             canCopy = canCopy && item.data.permissions.copyable;
             canMove = canMove && item.data.permissions.movable;
         });
 
+
         // Check through possible move and copy options, and set the copyMode appropriately.
-        if (!(canMove && canCopy)) { 
+        if (!(canMove && canCopy && canAcceptDrop(items, folder))) { 
             copyMode = 'forbidden';
         }
         else if (canMove && canCopy) {
@@ -978,10 +984,7 @@
                 dragOptions : {},
                 dropOptions : {},
                 dragEvents : {
-                    start : function () {
-                        $('.project-details').hide();
-                    },
-                    drag : _poDrag
+                    start : _poDragStart
                 },
                 dropEvents : {
                     out  : function () { console.log(this, "Out");},

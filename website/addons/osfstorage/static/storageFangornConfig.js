@@ -20,9 +20,6 @@
         uploadMethod: 'PUT',
         uploadUrl: null,
         uploadAdd: function(file, item) {
-            // var self = this;
-            //console.log("HELLO");
-            //var parent = item.parent().data;
             file.signedUrlFrom = item.data.urls.upload;
         },
 
@@ -42,18 +39,6 @@
                 'delete': buildUrl(parent, file, 'api')
             };
             item.data.permissions = parent.permissions;
-            //self.updateItem(row);
-            // var updated = Rubeus.Utils.itemUpdated(row, parent);
-            // if (updated) {
-            //     self.changeStatus(row, Rubeus.Status.UPDATED);
-            //     self.delayRemoveRow(row);
-            // } else {
-            //     self.changeStatus(row, Rubeus.Status.UPLOAD_SUCCESS, null, 2000,
-            //         function(row) {
-            //             self.showButtons(row);
-            //         }
-            //     );
-            // }
             return item;
         },
 
