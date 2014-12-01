@@ -7,6 +7,7 @@ from flask import request
 
 from framework.flask import redirect  # VOL-aware redirect
 from framework.auth.decorators import must_be_logged_in
+from framework.auth.core import _get_current_user
 from framework.exceptions import HTTPError
 
 from website import models
@@ -32,7 +33,7 @@ def get_profile_view(user_settings):
 @must_have_addon('github', 'user')
 @must_have_addon('github', 'node')
 def github_import_user_auth(user_addon, node_addon, **kwargs):
-    user = get_current_user()
+    user = _get_current_user()
     node_addon.authorize(user_addon, save=True)
     return {
         'result': serialize_settings(node_addon, user),
@@ -41,15 +42,10 @@ def github_import_user_auth(user_addon, node_addon, **kwargs):
 
 
 @must_be_logged_in
-<<<<<<< HEAD
-def github_oauth_start(**kwargs):
-    user = get_current_user()
-=======
 def github_oauth_start(auth, **kwargs):
 
     user = auth.user
 
->>>>>>> ce48dc2dc7ef27912e5f374de1b5557c0ae4427c
     nid = kwargs.get('nid') or kwargs.get('pid')
     node = models.Node.load(nid) if nid else None
 

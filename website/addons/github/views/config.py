@@ -5,7 +5,7 @@ import httplib as http
 from flask import request
 
 from framework.auth.decorators import must_be_logged_in
-from framework.auth import get_current_user
+from framework.auth.core import _get_current_user
 from framework.exceptions import HTTPError
 
 from website.project.decorators import must_have_permission, must_be_valid_project
@@ -114,7 +114,7 @@ def github_set_privacy(**kwargs):
 @must_have_addon('github', 'node')
 def github_config_get(node_addon, **kwargs):
     """API that returns the serialized node settings."""
-    user = get_current_user()
+    user = _get_current_user()
     return {
         'result': serialize_settings(node_addon, user),
     }, http.OK
@@ -142,8 +142,8 @@ def serialize_settings(node_settings, current_user, client=None):
         result['urls']['owner'] = web_url_for('profile_view_id',
             uid=user_settings.owner.fullname)
         result['ownerName'] = user_settings.owner.fullname
-        result['repoUser'] = node_settings.user or '';
-        result['repoName'] = node_settings.repo or '';
+        result['repoUser'] = node_settings.user or ''
+        result['repoName'] = node_settings.repo or ''
     return result
 
 def serialize_urls(node_settings):
