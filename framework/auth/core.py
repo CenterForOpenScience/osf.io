@@ -204,7 +204,8 @@ class User(GuidStoredObject, AddonModelMixin):
     emails = fields.StringField(list=True)
     # Email verification tokens
     # Format: {
-    #   <token> : {'email': <email address>}
+    #   <token> : {'email': <email address>,
+    #              'expiration': <datetime>}
     # }
     email_verifications = fields.DictionaryField()
     aka = fields.StringField(list=True)
