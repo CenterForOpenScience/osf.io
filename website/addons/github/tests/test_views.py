@@ -22,7 +22,7 @@ from framework.auth import Auth
 from website.util import web_url_for, api_url_for
 from website.addons.github.tests.utils import create_mock_github
 from website.addons.github import views, api, utils
-from website.addons.github.model import GithubGuidFile
+from website.addons.github.model import GithubGuidFile, AddonGitHubOauthSettings
 from website.addons.github.utils import MESSAGES, check_permissions
 from website.addons.github.exceptions import TooBigError
 from website.addons.github.views.config import serialize_settings
