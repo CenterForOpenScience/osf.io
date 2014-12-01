@@ -95,7 +95,7 @@
     function _fangornResolveToggle(item){
         var toggleMinus = m('i.icon-minus', ' '),
             togglePlus = m('i.icon-plus', ' ');
-        if (item.kind === 'folder' && item.children.length > 0) {
+        if (item.kind === 'folder' && (item.children.length > 0 || item.data.addon) ) {
             if (item.open) {
                 return toggleMinus;
             }
@@ -499,7 +499,6 @@
                 addedfile : _fangornAddedFile
             }
     };
-
 
     function Fangorn(options) {
         this.options = $.extend({}, tbOptions, options);
