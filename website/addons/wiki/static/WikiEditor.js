@@ -94,10 +94,7 @@
                     self.wikiText(response.wiki_content);
                 },
                 error: function (xhr, textStatus, error) {
-                    bootbox.alert({
-                        title: 'Error',
-                        message: 'The wiki content could not be loaded.'
-                    });             
+                    $.osf.growl('Error','The wiki content could not be loaded.');
                     Raven.captureMessage('Could not GET wiki contents.', {
                         url: url,
                         textStatus: textStatus,

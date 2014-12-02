@@ -208,11 +208,13 @@ def build_callback_urls(node, path):
     finish_url = node.api_url_for('osf_storage_upload_finish_hook', path=path)
     cached_url = node.api_url_for('osf_storage_upload_cached_hook', path=path)
     ping_url = node.api_url_for('osf_storage_upload_ping_hook', path=path)
+    archive_url = node.api_url_for('osf_storage_upload_archived_hook', path=path)
     return {
         'startUrl': ensure_domain(start_url),
         'finishUrl': ensure_domain(finish_url),
         'cachedUrl': ensure_domain(cached_url),
         'pingUrl': ensure_domain(ping_url),
+        'archiveUrl': ensure_domain(archive_url),
     }
 
 

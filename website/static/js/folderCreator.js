@@ -1,5 +1,4 @@
-;
-(function(global, factory) {
+;(function(global, factory) {
     if (typeof define === 'function' && define.amd) {
         define(['knockout', 'jquery', 'osfutils'], factory);
     } else {
@@ -34,8 +33,8 @@
             window.location = data.projectUrl;
         };
 
-        self.createFailure = function (data) {
-            bootbox.alert('Could not create a new folder. Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
+        self.createFailure = function () {
+            $.osf.growl('Could not create a new folder.', 'Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
         };
 
         self.serialize = function () {
@@ -45,13 +44,13 @@
         };
 
         self.verifyTitle = function () {
-            if (self.title() === ""){
-                self.formErrorText('We need a title for your folder.')
+            if (self.title() === ''){
+                self.formErrorText('We need a title for your folder.');
             } else {
                 self.createFolder();
             }
 
-        }
+        };
     }
 
     function FolderCreator(selector, url) {

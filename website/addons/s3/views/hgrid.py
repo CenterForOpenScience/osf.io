@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
-
+import os
 import httplib as http
 from urllib import unquote
 
 from flask import request
 
+from boto.s3.key import Key
+
 from framework.exceptions import HTTPError
 
 from website.util import rubeus
 from website.addons.s3.api import S3Wrapper
-from website.addons.s3.utils import wrapped_key_to_json
+from website.addons.s3.utils import build_urls
 from website.project.decorators import must_be_contributor_or_public, must_have_addon
 
 
@@ -30,37 +32,48 @@ def s3_hgrid_data(node_settings, auth, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
-def s3_hgrid_data_contents(**kwargs):
+def s3_hgrid_data_contents(auth, node_addon, **kwargs):
+    node = node_addon.owner
 
-    node_settings = kwargs['node_addon']
-    node = node_settings.owner
-    s3_node_settings = node.get_addon('s3')
-    auth = kwargs['auth']
-    path = unquote(kwargs.get('path', None)) + '/' if kwargs.get('path', None) else None
+    path = kwargs.get('path')
 
-    can_edit = node.can_edit(auth) and not node.is_registration
+    if path:
+        path = unquote(path) + '/'
+
     can_view = node.can_view(auth)
+    can_edit = node.can_edit(auth) and not node.is_registration
 
-    s3wrapper = S3Wrapper.from_addon(s3_node_settings)
+    s3wrapper = S3Wrapper.from_addon(node_addon)
 
     if s3wrapper is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    files = []
+    def clean_name(key):
+        if isinstance(key, Key):
+            if path:
+                return key.name.replace(path, '')
+            return key.name
 
-    key_list = s3wrapper.get_wrapped_keys_in_dir(path)
-    key_list.extend(s3wrapper.get_wrapped_directories_in_dir(path))
+        if path:
+            return key.name.replace(path, '')[:-1]
+        return key.name[:-1]
 
-    for key in key_list:
-        temp_file = wrapped_key_to_json(key, node)
-        temp_file['addon'] = 's3'
-        temp_file['permissions'] = {
-            'edit': can_edit,
-            'view': can_view
+    return [
+        {
+            'name': clean_name(key),
+            'addon': 's3',
+            'permissions': {
+                'edit': can_edit,
+                'view': can_view
+            },
+            rubeus.KIND: rubeus.FILE if isinstance(key, Key) else rubeus.FOLDER,
+            'ext': os.path.splitext(key.name)[1],
+            'urls': build_urls(node, key.name.encode('utf-8'))
         }
-        files.append(temp_file)
-
-    return files
+        for key
+        in s3wrapper.bucket.list(prefix=path, delimiter='/')
+        if key.name != path
+    ]
 
 
 @must_be_contributor_or_public

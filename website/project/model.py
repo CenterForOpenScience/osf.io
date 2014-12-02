@@ -1,51 +1,53 @@
 # -*- coding: utf-8 -*-
-from HTMLParser import HTMLParser
-from collections import OrderedDict
-import calendar
-import datetime
-import hashlib
-import logging
 import os
 import re
+import uuid
+import urllib
+import logging
+import hashlib
+import calendar
+import datetime
+import urlparse
 import subprocess
 import unicodedata
-import urllib
-import urlparse
-import uuid
+from HTMLParser import HTMLParser
+from collections import OrderedDict
 
 import pytz
+import blinker
 from flask import request
 from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
-import blinker
 
-from modularodm import fields, Q
+from modularodm import Q
+from modularodm import fields
 from modularodm.validators import MaxLengthValidator
-from modularodm.exceptions import ValidationValueError, ValidationTypeError
+from modularodm.exceptions import ValidationTypeError
+from modularodm.exceptions import ValidationValueError
 
 from framework import status
 from framework.mongo import ObjectId
-from framework.mongo.utils import to_mongo, to_mongo_key
+from framework.mongo import StoredObject
+from framework.addons import AddonModelMixin
 from framework.auth import get_user, User, Auth
+from framework.exceptions import PermissionsError
+from framework.guid.model import GuidStoredObject
 from framework.auth.utils import privacy_info_handle
+from framework.analytics import tasks as piwik_tasks
+from framework.mongo.utils import to_mongo, to_mongo_key
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters
 )
-from framework.analytics import tasks as piwik_tasks
-from framework.exceptions import PermissionsError
-from framework.mongo import StoredObject
-from framework.guid.model import GuidStoredObject
-from framework.addons import AddonModelMixin
 
+from website import language
+from website import settings
+from website.util import web_url_for
+from website.util import api_url_for
 from website.exceptions import NodeStateError
-from website.util.permissions import (
-    expand_permissions,
-    DEFAULT_CONTRIBUTOR_PERMISSIONS,
-    CREATOR_PERMISSIONS
-)
+from website.util.permissions import expand_permissions
+from website.util.permissions import CREATOR_PERMISSIONS
 from website.project.metadata.schemas import OSF_META_SCHEMAS
-from website import language, settings
-from website.util import web_url_for, api_url_for
+from website.util.permissions import DEFAULT_CONTRIBUTOR_PERMISSIONS
 
 html_parser = HTMLParser()
 
@@ -695,6 +697,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
 
     def can_view(self, auth):
+        if not auth and not self.is_public:
+            return False
+
         return self.is_public or auth.user \
             and self.has_permission(auth.user, 'read') \
             or auth.private_key in self.private_link_keys_active

@@ -59,7 +59,7 @@
         }).done(function() {
             window.location = self.urls.files;
         }).fail(function() {
-            bootbox.alert('Could not delete file.');
+            $.osf.growl('Error', 'Could not delete file.');
         });
     };
 

@@ -74,7 +74,7 @@
                             });
                             request.fail(function( jqXHR, textStatus ) {
                                 $('#deletingAlert').removeClass('in');
-                                bootbox.alert( 'Could not delete: ' + textStatus );
+                                $.osf.growl( 'Could not delete', textStatus );
                             });
                         }
                     }
