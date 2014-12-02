@@ -442,7 +442,7 @@ class User(GuidStoredObject, AddonModelMixin):
         token = generate_confirm_token()
 
         self.email_verifications[token] = {'email': email.lower()}
-        expiration = self.set_email_token_expiration(token)
+        self.set_email_token_expiration(token)
         return token
 
     def get_confirmation_token(self, email):
