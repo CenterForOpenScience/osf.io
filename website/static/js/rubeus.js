@@ -470,8 +470,8 @@
             }
             // FIXME: can't use change status, because the folder item is updated
             // on complete, which replaces the html row element
-            // for now, use bootbox
-            bootbox.alert(messageText);
+            // for now, use GrowlBox
+            $.osf.growl('Upload Error:', messageText);
         },
         uploadSuccess: function(file, row, data) {
             // If file hasn't changed, remove the duplicate item
