@@ -722,9 +722,6 @@
         this.selected = item.id;
         $(ui.helper).css({ 'height' : '25px', 'width' : '400px', 'background' : 'white', 'padding' : '0px 10px', 'box-shadow' : '0 0 4px #ccc'});
         items = this.multiselected.length > 0 ? this.multiselected : [item]; 
-        // console.log("draglogic", event);
-
-        // dragLogic(event, items, ui);
     }
 
     function _poDrop (event, ui) {
@@ -736,8 +733,6 @@
     function _poOver (event, ui) {
         var items = this.multiselected.length === 0 ? [this.find(this.selected)] : this.multiselected, 
             folder = this.find($(event.target).attr('data-id'));
-            console.log("draglogic", event, ui);
-
             dragLogic.call(this, event, items, ui);
 
         //     acceptDrop = canAcceptDrop (items, folder); 
@@ -765,7 +760,6 @@
 
 
     function dragLogic(event, items, ui){
-        console.log("helper", ui.helper, "folder", event.target); 
         var canCopy = true;
         var canMove = true;
         var folder = this.find($(event.target).attr('data-id'));
@@ -988,8 +982,8 @@
                     start : _poDragStart
                 },
                 dropEvents : {
-                    out  : function () { console.log(this, "Out");},
-                    over : function (event, ui) { console.log(this, event, ui, "Over");},
+                    out  : function () { },
+                    over : function (event, ui) { },
                     drop : _poDrop,
                     over : _poOver
                 },

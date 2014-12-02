@@ -255,6 +255,9 @@ ${parent.javascript_bottom()}
             item.data.name);
     }
 
+    $script(['/static/js/fangorn.js']);
+
+
     $script.ready(['fangorn'], function() {
     
         $.ajax({
