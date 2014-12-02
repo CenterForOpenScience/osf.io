@@ -21,21 +21,7 @@ var ShareJSDoc = function(viewModel, url, metadata) {
         // Create a text document if one does not exist
         if (!doc.type) {
             doc.create('text');
-            $.ajax({
-                type: 'GET',
-                url: url,
-                dataType: 'json',
-                success: function (response) {
-                    doc.attachAce(editor);
-                    editor.setValue(response.wiki_content);
-                    editor.setReadOnly(false);
-                },
-                error: function (xhr, textStatus, error) {
-                    console.error(textStatus);
-                    console.error(error);
-                    bootbox.alert('Could not get wiki content.');
-                }
-            });
+            viewModel.fetchData(true);
         } else {
             doc.attachAce(editor);
             editor.setReadOnly(false);
@@ -53,6 +39,15 @@ var ShareJSDoc = function(viewModel, url, metadata) {
         console.log('disconnected');
     });
 
+    // Inform client of new published version
+    $('#wiki-form').submit(function() {
+        socket.send(JSON.stringify({
+            publish: true,
+            docId: metadata.docId,
+            content: viewModel.currentText()
+        }));
+    });
+
     // Handle our custom messages separately
     var onmessage = socket.onmessage;
     socket.onmessage = function (message) {
@@ -67,6 +62,9 @@ var ShareJSDoc = function(viewModel, url, metadata) {
                 activeUsers.push(userMeta);
             }
             viewModel.activeUsers(activeUsers);
+        } else if (data.type === 'updatePublished') {
+            console.log('content', data.content);
+            viewModel.publishedText(data.content);
         } else if (data.type === 'lock') {
             editor.setReadOnly(true);
             $('#refresh-modal').modal({

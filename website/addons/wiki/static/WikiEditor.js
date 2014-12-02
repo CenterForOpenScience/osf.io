@@ -61,37 +61,35 @@
     function ViewModel(url) {
         var self = this;
 
-        self.initText = ko.observable();
-        self.wikiText = ko.observable();
+        self.publishedText = ko.observable();
+        self.currentText = ko.observable();
         self.activeUsers = ko.observableArray([]);
 
         self.displayCollaborators = ko.computed(function() {
            return self.activeUsers().length > 1;
         });
 
-        // TODO: Bug with multiple windows messing up changed value
         self.changed = ko.computed(function() {
-            /* Always assume a changed state so we can edit. Once
-               there is a better way to push save information from one
-               browser window to another, it should be used to disable buttons.
-             */
-            return true;
-            // return self.initText() !== self.wikiText();
+            // Handle inconsistencies in newline notation
+            var published = typeof self.publishedText() === 'string' ?
+                self.publishedText().replace(/(\r\n|\n|\r)/gm, '\n') : '';
+            var current = typeof self.currentText() === 'string' ?
+                self.currentText().replace(/(\r\n|\n|\r)/gm, '\n') : '';
+
+            return published !== current;
         });
 
-        self.revertChanges = function() {
-            self.fetchData()
-        };
-
         // Fetch initial wiki text
-        self.fetchData = function() {
+        self.fetchData = function(update) {
             $.ajax({
                 type: 'GET',
                 url: url,
                 dataType: 'json',
                 success: function (response) {
-                    self.initText(response.wiki_content);
-                    self.wikiText(response.wiki_content);
+                    self.publishedText(response.wiki_content);
+                    if (update) {
+                        self.currentText(self.publishedText());
+                    }
                 },
                 error: function (xhr, textStatus, error) {
                     $.osf.growl('Error','The wiki content could not be loaded.');
@@ -104,7 +102,13 @@
             });
         };
 
-        // TODO: Uncomment once "changed" property is correct
+        self.revertChanges = function() {
+            self.fetchData(true);
+        };
+
+        self.fetchData();
+
+        // TODO: Do we want this?
 //        $(window).on('beforeunload', function() {
 //            if (self.changed()) {
 //                return 'If you leave this page, your changes will be ' +

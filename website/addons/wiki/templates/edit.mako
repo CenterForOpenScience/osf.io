@@ -19,7 +19,7 @@
         </div>
         <div class="col-sm-9">
             <%include file="wiki/templates/status.mako"/>
-            <form action="${urls['web']['edit']}" method="POST">
+            <form id="wiki-form" action="${urls['web']['edit']}" method="POST">
                 <div class="form-group wmd-panel">
                     <div class="row">
                         <div class="col-sm-8">
@@ -41,8 +41,8 @@
                         </div>
                     </div>
                     <div id="editor" class="wmd-input"
-                         data-bind="ace: wikiText">Loading. . .</div>
-                    <textarea name="content" style="visibility: hidden" data-bind="value: wikiText"></textarea>
+                         data-bind="ace: currentText">Loading. . .</div>
+                    <textarea name="content" style="visibility: hidden" data-bind="value: currentText"></textarea>
                 </div>
                 <div class="pull-right">
                     <!-- clicking "Cancel" overrides unsaved changes check -->
@@ -71,6 +71,7 @@
                            data-toggle="tooltip"
                            data-placement="top"
                            title="Publishing this wiki version will allow anyone with read access to view it."
+                           data-bind="enable: changed"
                            onclick=$(window).off('beforeunload')>
                 </div>
                 <p class="help-block">Preview</p>
@@ -112,7 +113,7 @@
 
     // Toggle tooltips
     $(function () {
-        $('[data-toggle="tooltip"]').tooltip()
+        $('[data-toggle="tooltip"]').tooltip();
     });
 
     $script(['/static/addons/wiki/WikiEditor.js', '/static/addons/wiki/ShareJSDoc.js'], function() {

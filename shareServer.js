@@ -103,6 +103,11 @@ wss.on('connection', function(client) {
             if (locked[docId]) {
                 client.send(JSON.stringify({type: 'lock'}));
             }
+        } else if (data.publish) {
+            wss.broadcast(data.docId, JSON.stringify({
+                type: 'updatePublished',
+                content: data.content
+            }));
         } else {
             stream.push(data);
         }
