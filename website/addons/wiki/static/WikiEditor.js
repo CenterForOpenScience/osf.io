@@ -18,18 +18,6 @@
             editor = ace.edit(element.id);
             var value = ko.unwrap(valueAccessor());
 
-            // Initialize editor value if not yet initialized.
-            if (editor.getReadOnly() === true) {
-                editor.setValue(value);
-                editor.setReadOnly(false);
-            }
-            // Initialize view model if editor was initialized
-            else {
-                valueAccessor()(editor.getValue());
-            }
-
-            // TODO: Load data from server if no data from server
-
             // Updates the view model based on changes to the editor
             editor.getSession().on('change', function () {
                 valueAccessor()(editor.getValue());
@@ -61,8 +49,8 @@
     function ViewModel(url) {
         var self = this;
 
-        self.publishedText = ko.observable();
-        self.currentText = ko.observable();
+        self.publishedText = ko.observable('');
+        self.currentText = ko.observable('');
         self.activeUsers = ko.observableArray([]);
 
         self.displayCollaborators = ko.computed(function() {
@@ -80,16 +68,14 @@
         });
 
         // Fetch initial wiki text
-        self.fetchData = function(update) {
+        self.fetchData = function(callback) {
             $.ajax({
                 type: 'GET',
                 url: url,
                 dataType: 'json',
                 success: function (response) {
                     self.publishedText(response.wiki_content);
-                    if (update) {
-                        self.currentText(self.publishedText());
-                    }
+                    if (callback) callback(response);
                 },
                 error: function (xhr, textStatus, error) {
                     $.osf.growl('Error','The wiki content could not be loaded.');
@@ -103,7 +89,9 @@
         };
 
         self.revertChanges = function() {
-            self.fetchData(true);
+            self.fetchData(function() {
+                self.currentText(self.publishedText());
+            });
         };
 
         self.fetchData();

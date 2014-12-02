@@ -21,7 +21,11 @@ var ShareJSDoc = function(viewModel, url, metadata) {
         // Create a text document if one does not exist
         if (!doc.type) {
             doc.create('text');
-            viewModel.fetchData(true);
+            viewModel.fetchData(function(response) {
+                editor.setValue(response.wiki_content);
+                doc.attachAce(editor);
+                editor.setReadOnly(false);
+            });
         } else {
             doc.attachAce(editor);
             editor.setReadOnly(false);
