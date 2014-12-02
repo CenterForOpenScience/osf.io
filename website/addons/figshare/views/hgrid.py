@@ -31,7 +31,7 @@ def figshare_hgrid_data_contents(node_addon, auth, **kwargs):
         )
     elif fs_type == 'project':
         out = project_to_hgrid(
-            node, auth.user, connect.project(node_addon, fs_id),
+            node=node, user=auth.user, project=connect.project(node_addon, fs_id),
             folders_only=folders_only
         )
     else:

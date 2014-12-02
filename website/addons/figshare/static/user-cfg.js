@@ -1,3 +1,5 @@
+var bootbox = require('bootbox');
+
 $(document).ready(function() {
 
         $('#figshareAddKey').on('click', function() {
