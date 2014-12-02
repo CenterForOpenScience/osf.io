@@ -17,7 +17,6 @@ class ResponseWrapper(object):
 class RequestWrapper(object):
 
     def __init__(self, request):
-
         self.response = request
         self.content = StreamReader()
         self.size = request.headers.get('Content-Length')
