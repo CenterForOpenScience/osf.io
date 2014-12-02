@@ -224,6 +224,58 @@ class TestStartHook(HookTestCase):
         assert_equal(len(record.versions), 1)
 
 
+class TestArchivedHook(HookTestCase):
+
+    def setUp(self):
+        super(TestArchivedHook, self).setUp()
+        self.path = 'greasy/pízza.png'
+        self.size = 1024
+        self.record = model.OsfStorageFileRecord.get_or_create(self.path, self.node_settings)
+        self.uploadSignature = '07235a8'
+        self.payload = {
+            'uploadSignature': self.uploadSignature,
+            'metadata': {'archive': 'glacier'},
+        }
+        _, self.signature = utils.webhook_signer.sign_payload(self.payload)
+
+    def send_archived_hook(self, payload=None, signature=None, path=None, **kwargs):
+        return self.send_hook(
+            'osf_storage_upload_archived_hook',
+            payload=payload or self.payload,
+            signature=signature or self.signature,
+            path=path or self.path,
+            method='put_json',
+            **kwargs
+        )
+
+    def test_archived(self):
+        version = factories.FileVersionFactory(signature=self.uploadSignature)
+        self.record.versions = [version]
+        self.record.save()
+        self.send_archived_hook()
+        version.reload()
+        assert_in('archive', version.metadata)
+        assert_equal(version.metadata['archive'], 'glacier')
+
+    def test_archived_record_not_found(self):
+        version = factories.FileVersionFactory(signature=self.uploadSignature)
+        self.record.versions = [version]
+        self.record.save()
+        res = self.send_archived_hook(path=self.path + 'not', expect_errors=True)
+        assert_equal(res.status_code, 404)
+        version.reload()
+        assert_not_in('archive', version.metadata)
+
+    def test_archived_version_not_found(self):
+        version = factories.FileVersionFactory(signature=self.uploadSignature[::-1])
+        self.record.versions = [version]
+        self.record.save()
+        res = self.send_archived_hook(expect_errors=True)
+        assert_equal(res.status_code, 400)
+        version.reload()
+        assert_not_in('archive', version.metadata)
+
+
 class TestPingHook(HookTestCase):
 
     def setUp(self):
@@ -828,6 +880,7 @@ class TestDownloadFile(StorageTestCase):
         self.record.delete(self.auth_obj, log=False)
         res = self.download_file(self.path, expect_errors=True)
         assert_equal(res.status_code, 410)
+
 
 class TestDeleteFile(StorageTestCase):
 

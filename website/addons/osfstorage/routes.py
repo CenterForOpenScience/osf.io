@@ -141,6 +141,16 @@ api_routes = {
 
         Rule(
             [
+                '/project/<pid>/osfstorage/hooks/archived/<path:path>',
+                '/project/<pid>/node/<nid>/osfstorage/hooks/archived/<path:path>',
+            ],
+            'put',
+            views.osf_storage_upload_archived_hook,
+            json_renderer,
+        ),
+
+        Rule(
+            [
                 '/project/<pid>/osfstorage/hooks/finish/<path:path>',
                 '/project/<pid>/node/<nid>/osfstorage/hooks/finish/<path:path>',
             ],
