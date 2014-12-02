@@ -4,7 +4,7 @@
         define(['jquery', 'knockout', 'osfutils'], factory);
     } else {
         global.PrivateLinkManager  = factory(jQuery, ko);
-        $script.done("privateLinkManager");
+        $script.done('privateLinkManager');
     }
 }(this, function($, ko) {
 
@@ -38,7 +38,7 @@
         }
 
         function onFetchError() {
-            bootbox.alert('Could not retrieve projects. Please refresh the page or ' +
+            $.osf.growl('Could not retrieve projects.', 'Please refresh the page or ' +
                     'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
                     'problem persists.');
         }
@@ -88,7 +88,7 @@
             ).done(function() {
                 window.location.reload();
             }).fail(function() {
-                bootbox.alert('Failed to create a view-only Link.');
+                $.osf.growl('Error:','Failed to create a view-only link.');
                 self.disableSubmit(false);
                 self.submitText('Submit');
             });

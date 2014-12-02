@@ -280,6 +280,13 @@ class OsfStorageFileRecord(BaseFileObject):
         latest_version.set_cached(signature)
         return latest_version
 
+    def update_version_metadata(self, signature, metadata):
+        for version in self.versions[::-1]:
+            if version.signature == signature:
+                version.update_metadata(signature, metadata)
+                return
+        raise errors.VersionNotFoundError
+
     def remove_version(self, version):
         if len(self.versions) == 1:
             OsfStorageFileRecord.remove_one(self)
@@ -398,7 +405,7 @@ def check_status(*statuses):
     def wrapper(func):
         @functools.wraps(func)
         def wrapped(self, signature, *args, **kwargs):
-            if self.status not in statuses:
+            if statuses and self.status not in statuses:
                 raise errors.VersionStatusError(
                     'Version status must be one of {0}; received {1}'.format(
                         ', '.join(statuses),
@@ -500,6 +507,11 @@ class OsfStorageFileVersion(StoredObject):
             except KeyError:
                 raise errors.MissingFieldError
             setattr(self, key, parser(value))
+        self.save()
+
+    @check_status()
+    def update_metadata(self, signature, metadata):
+        self.metadata.update(metadata)
         self.save()
 
     @check_status(status_map['UPLOADING'])

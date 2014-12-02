@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import json
 import uuid
 from hashlib import md5
@@ -39,7 +41,7 @@ def create_user(user):
 
     user.save()
 
-def update_node(node, updated_fields=None):
+def _update_node_object(node, updated_fields=None):
     """ Given a node, provisions a Piwik site if necessary and sets
     contributors to "view".
 
@@ -164,7 +166,7 @@ def _provision_node(node):
 
     try:
         node.piwik_site_id = json.loads(response.content)['value']
-        node.save()
+        node.save(update_piwik=False)
     except ValueError:
         raise PiwikException('Piwik site creation failed for ' + node._id)
 
