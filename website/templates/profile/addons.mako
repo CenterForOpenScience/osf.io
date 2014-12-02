@@ -5,7 +5,7 @@
 
 <div class="row">
 
-    <div class="col-md-3">
+    <div class="col-sm-3">
 
         <div class="panel panel-default">
             <ul class="nav nav-stacked nav-pills">
@@ -16,7 +16,7 @@
 
     </div>
 
-    <div class="col-md-6">
+    <div class="col-sm-9 col-md-7">
 
         <div id="selectAddons" class="panel panel-default">
             <div class="panel-heading"><h3 class="panel-title">Select Add-ons</h3></div>
@@ -61,7 +61,7 @@
 
             </div>
         </div>
-        % if addon_enabled_settings:
+            % if addon_enabled_settings:
             <div id="configureAddons" class="panel panel-default">
                 <div class="panel-heading"><h3 class="panel-title">Configure Add-ons</h3></div>
                 <div class="panel-body">
@@ -97,7 +97,7 @@
     }
 
     // Set up submission for addon selection form
-    var checkedOnLoad = $("#selectAddonsForm input:checked");
+    var checkedOnLoad = $('#selectAddonsForm input:checked');
 
     $('#selectAddonsForm').on('submit', function() {
 
@@ -107,7 +107,7 @@
             formData[$elm.attr('name')] = $elm.is(':checked');
         });
 
-        var unchecked = checkedOnLoad.filter($("#selectAddonsForm input:not(:checked)"));
+        var unchecked = checkedOnLoad.filter($('#selectAddonsForm input:not(:checked)'));
 
         var submit = function() {
             var request = $.osf.postJSON('/api/v1/settings/addons/', formData);
@@ -118,9 +118,9 @@
                 var msg = 'Sorry, we had trouble saving your settings. If this persists please contact <a href="mailto: support@osf.io">support@osf.io</a>';
                 $.osf.growl('Request failed', msg);
             });
-        }
+        };
 
-        if(unchecked.length > 0) {
+        if (unchecked.length > 0) {
             var uncheckedText = $.map(unchecked, function(el){
                 return ['<li>', $(el).closest('label').text().trim(), '</li>'].join('');
             }).join('');
@@ -136,11 +136,11 @@
                     }
                 }
             });
+        } else {
+            submit();
         }
-    else {
-        submit();
-    }
-    return false;
+
+        return false;
     });
 </script>
 </%def>
