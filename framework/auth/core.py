@@ -70,7 +70,7 @@ def validate_personal_site(value):
 
 
 def validate_social(value):
-    validate_personal_site(value.get('personal_site'))
+    validate_personal_site(value.get('personal'))
 
 def _get_current_user():
     uid = session._get_current_object() and session.data.get('auth_user_id')
@@ -163,6 +163,17 @@ class User(GuidStoredObject, AddonModelMixin):
         'jobs',
         'schools',
         'social',
+    }
+
+    SOCIAL_FIELDS = {
+        'orcid': 'http://orcid.com/{}',
+        'github': 'http://github.com/{}',
+        'scholar': 'http://scholar.google.com/citation?user={}',
+        'twitter': 'http://twitter.com/{}',
+        'personal': '{}',
+        'linkedIn': 'https://www.linkedin.com/profile/view?id={}',
+        'impactStory': 'https://impactstory.org/{}',
+        'researcherId': 'http://researcherid.com/rid/{}',
     }
 
     _id = fields.StringField(primary=True)
@@ -504,6 +515,14 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def is_confirmed(self):
         return bool(self.date_confirmed)
+
+    @property
+    def social_links(self):
+        return {
+            key: self.SOCIAL_FIELDS[key].format(val)
+            for key, val in self.social.items()
+            if val
+        }
 
     @property
     def biblio_name(self):

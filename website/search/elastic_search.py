@@ -259,25 +259,6 @@ def update_node(node, index='website'):
         except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
             elastic.index(index, category, doc=elastic_document, id=elastic_document_id, overwrite_existing=True, refresh=True)
 
-def generate_social_links(social):
-    social_links = {}
-    if 'github' in social:
-        social_links['github'] = 'http://github.com/{}'.format(social['github']) if social['github'] else None
-    if 'impactStory' in social:
-        social_links['impactStory'] = 'https://impactstory.org/{}'.format(social['impactStory']) if social['impactStory'] else None
-    if 'linkedIn' in social:
-        social_links['linkedIn'] = 'https://www.linkedin.com/profile/view?id={}'.format(social['linkedIn']) if social['linkedIn'] else None
-    if 'orcid' in social:
-        social_links['orcid'] = 'http://orcid.com/{}'.format(social['orcid']) if social['orcid'] else None
-    if 'personal' in social:
-        social_links['personal'] = social['personal'] if social['personal'] else None
-    if 'researcherId' in social:
-        social_links['researcherId'] = 'http://researcherid.com/rid/{}'.format(social['researcherId']) if social['researcherId'] else None
-    if 'scholar' in social:
-        social_links['scholar'] = 'http://scholar.google.com/citations?user={}'.format(social['scholar']) if social['scholar'] else None
-    if 'twitter' in social:
-        social_links['twitter'] = 'http://twitter.com/{}'.format(social['twitter']) if social['twitter'] else None
-    return social_links
 
 @requires_search
 def update_user(user):
@@ -304,7 +285,7 @@ def update_user(user):
         'school': user.schools[0]['institution'] if user.schools else '',
         'category': 'user',
         'degree': user.schools[0]['degree'] if user.schools else '',
-        'social': generate_social_links(user.social),
+        'social': user.social_links,
         'boost': 2,  # TODO(fabianvf): Probably should make this a constant or something
     }
 
