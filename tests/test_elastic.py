@@ -258,13 +258,13 @@ class TestPublicNodes(SearchTestCase):
             'home': 'Hammer to fall',
             'swag': '#YOLO'
         }
-        for key in wiki_content.keys():
-            docs = query(wiki_content[key])['results']
+        for key, value in wiki_content.items():
+            docs = query(value)['results']
             assert_equal(len(docs), 0)
             self.project.update_node_wiki(
-                key, wiki_content[key], self.consolidate_auth,
+                key, value, self.consolidate_auth,
             )
-            docs = query(wiki_content[key])['results']
+            docs = query(value)['results']
             assert_equal(len(docs), 1)
 
     def test_clear_wiki(self):
