@@ -62,7 +62,7 @@
 
 </div>
 
-<script src="/static/public/js/osfstorage/file-detail.js">
+<script type="text/javascript">
     window.contextVars = window.contextVars;
     window.contextVars.filePath = ${file_path};
     window.contextVars.currentUser = window.contextVars.currentUser || {};
@@ -74,4 +74,5 @@
     window.contextVars.node.urls.delete = ${delete_url};
     window.contextVars.node.urls.revisions = ${revisions_url};
 </script>
+<script src="/static/public/js/osfstorage/file-detail.js"></script>
 </%def>
