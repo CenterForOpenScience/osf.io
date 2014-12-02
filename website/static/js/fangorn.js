@@ -223,7 +223,7 @@
             window.event.cancelBubble = true;
         }        
         window.console.log('Download Event triggered', this, event, item, col);
-        if(!item.data.addon){
+        if(item.data.addon === 'osfstorage'){
             item.data.downloads++;    
         }
         window.location = item.data.urls.download;
@@ -359,7 +359,7 @@
             sortInclude : false,
             custom : _fangornActionColumn
         }); 
-        if(!item.data.addon){
+        if(item.data.addon === 'osfstorage'){
            default_columns.push({
                 data : 'downloads',
                 sortInclude : false,
