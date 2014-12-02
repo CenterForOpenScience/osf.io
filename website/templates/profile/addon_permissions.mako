@@ -53,7 +53,7 @@
                         },
 
                         error: function() {
-                            bootbox.alert('An error occurred, the project has not been deauthorized. ' +
+                            $.osf.growl('An error occurred, the project has not been deauthorized. ',
                                 'If the issue persists, please report it to <a href="mailto:support@osf.io">support@osf.io</a>.');
                         }
                     });
@@ -74,9 +74,4 @@
         });
 
     </script>
-% elif has_auth and not nodes:
-    <p class="text-success addon-message">
-    Add-on successfully authorized. To link this add-on to an OSF project, go to the
-    settings page of the project, enable Dropbox, and choose content to connect.
-    </p>
 % endif

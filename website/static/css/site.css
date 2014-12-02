@@ -1078,6 +1078,10 @@ div.search-result  {
     font-size: 10pt;
 }
 
+.search-result img{
+    margin-top: 10px;
+}
+
 .search-results.search-result {
     overflow-x: hidden;
 
@@ -1328,6 +1332,12 @@ dl.activity-log dd {
     max-width: 100%;
 }
 
+.component-overflow {
+    word-wrap: break-word;
+    max-width: 90%;
+    display: inline-block;
+}
+
 /* Need to use this class with a fixed width */
 .overflow-block {
     display: block;
@@ -1469,6 +1479,12 @@ li.contributor-list-item a.name {
 
 .contributor-anonymous {
     font-style: italic;
+}
+
+/* Handle paginator on add contributor modal */
+#addContributors .pagination-sm li a, #addContributors .pagination-sm li span {
+    padding: 5px 8px;
+    font-size: 10px;
 }
 
 /* Handle popovers inside modals */
@@ -1645,4 +1661,16 @@ div.pydocx-center{
 .search-term-label,
 .tag {
     white-space: pre;
+}
+
+.bootbox-node-deletion-modal {
+    font-weight: normal;
+    font-size: medium;
+    line-height: normal;
+    padding-top: 10px;
+}
+
+.bootbox-node-deletion-modal ol {
+    padding-left: 40px;
+    list-style-type: disc;
 }

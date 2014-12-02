@@ -30,7 +30,7 @@
                 {
                     query: self.query(),
                     nodeId: nodeId,
-                    includePublic: includePublic,
+                    includePublic: includePublic
                 }
             ).done(function(result) {
                 if (!result.nodes.length) {
@@ -126,12 +126,12 @@
                 $.ajax({
                     type: 'GET',
                     url: nodeApiUrl + 'pointer/',
-                    dataType: 'json',
+                    dataType: 'json'
                 }).done(function(response) {
                     self.links(response.pointed);
                 }).fail(function() {
                     $elm.modal('hide');
-                    bootbox.alert('Could not get links');
+                    $.osf.growl('Error:','Could not get links');
                 });
             }
         });

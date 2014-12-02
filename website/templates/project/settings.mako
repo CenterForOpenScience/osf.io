@@ -38,7 +38,7 @@
             <div class="panel panel-default">
 
                 <div class="panel-heading">
-                    <h3 id="configureNode" class="anchor panel-title">Configure ${node['node_type'].capitalize()}</h3>
+                    <h3 id="configureNode" class="panel-title">Configure ${node['node_type'].capitalize()}</h3>
                 </div>
                 <div class="panel-body">
                     <div class="help-block">

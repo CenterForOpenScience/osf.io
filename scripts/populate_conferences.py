@@ -86,6 +86,7 @@ MEETING_DATA = {
         'admins': [
             'gkroll@berkeley.edu',
             'andrew@cos.io',
+            'awais@berkeley.edu',
         ],
         'public_projects': True,
     },
@@ -109,13 +110,18 @@ def populate_conferences():
                 admin_objs.append(user)
             except ModularOdmException:
                 raise RuntimeError('Username {0!r} is not registered.'.format(email))
+        conf = Conference(
+            endpoint=meeting, admins=admin_objs, **attrs
+        )
         try:
-            conf = Conference(
-                endpoint=meeting, admins=admin_objs, **attrs
-            )
             conf.save()
         except ModularOdmException:
-            print('{0} Conference already exists. Skipping...'.format(meeting))
+            print('{0} Conference already exists. Updating existing record...'.format(meeting))
+            conf = Conference.find_one(Q('endpoint', 'eq', meeting))
+            for key, value in attrs.items():
+                setattr(conf, key, value)
+            conf.admins = admin_objs
+            conf.save()
 
 
 if __name__ == '__main__':

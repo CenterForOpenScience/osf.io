@@ -22,24 +22,24 @@ $script.ready('hgrid', function() {
             text: 'Awarded on',
             itemView: '{{ date }}',
             sortable: true,
-            sortkey: 'date', // property of item object on which to sort on
+            sortkey: 'date' // property of item object on which to sort on
         };
         var badgeColumn = {
             text: 'Badge',
             itemView: '<a href="/{{ badge_id }}/">{{ badge }}</a>',
             sortable: true,
-            sortkey: 'badge', // property of item object on which to sort on
+            sortkey: 'badge' // property of item object on which to sort on
         };
         var projectColumn = {
             text: 'Project',
             itemView: '<a href="/{{ project_id }}/">{{ project }}</a>',
             sortable: true,
-            sortkey: 'project', // property of item object on which to sort on
+            sortkey: 'project' // property of item object on which to sort on
         };
         var revokeColumn = {
             text: 'revoke',
             itemView: '<button class="btn btn-xs btn-danger revoke-badge" aid="{{ assertion_id }}" url="{{ node_api_url }}"><i class="icon-minus"></i></button>',
-            sortable: false,
+            sortable: false
         };
         var grid = new HGrid('#assertionGrid', {
             columns: [
@@ -68,7 +68,7 @@ $script.ready('hgrid', function() {
                             location.reload();
                         },
                         error: function(xhr, status, error) {
-                            bootbox.alert('Could not revoke badge');
+                            $.osf.growl('Could not revoke badge','');
                         }
                     });
                 }

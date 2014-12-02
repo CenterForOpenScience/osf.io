@@ -35,7 +35,7 @@ def create_record_with_version(path, node_settings, **kwargs):
 class TestHGridViews(StorageTestCase):
 
     def test_hgrid_contents(self):
-        path = 'kind/of/magic.mp3'
+        path = u'kind/of/magíc.mp3'
         model.OsfStorageFileRecord.get_or_create(
             path=path,
             node_settings=self.node_settings,
@@ -154,7 +154,7 @@ class TestStartHook(HookTestCase):
 
     def setUp(self):
         super(TestStartHook, self).setUp()
-        self.path = 'soggy/pizza.png'
+        self.path = u'söggy/pizza.png'
         self.uploadSignature = '07235a8'
         self.payload = {
             'uploadSignature': self.uploadSignature,
@@ -224,11 +224,63 @@ class TestStartHook(HookTestCase):
         assert_equal(len(record.versions), 1)
 
 
+class TestArchivedHook(HookTestCase):
+
+    def setUp(self):
+        super(TestArchivedHook, self).setUp()
+        self.path = 'greasy/pízza.png'
+        self.size = 1024
+        self.record = model.OsfStorageFileRecord.get_or_create(self.path, self.node_settings)
+        self.uploadSignature = '07235a8'
+        self.payload = {
+            'uploadSignature': self.uploadSignature,
+            'metadata': {'archive': 'glacier'},
+        }
+        _, self.signature = utils.webhook_signer.sign_payload(self.payload)
+
+    def send_archived_hook(self, payload=None, signature=None, path=None, **kwargs):
+        return self.send_hook(
+            'osf_storage_upload_archived_hook',
+            payload=payload or self.payload,
+            signature=signature or self.signature,
+            path=path or self.path,
+            method='put_json',
+            **kwargs
+        )
+
+    def test_archived(self):
+        version = factories.FileVersionFactory(signature=self.uploadSignature)
+        self.record.versions = [version]
+        self.record.save()
+        self.send_archived_hook()
+        version.reload()
+        assert_in('archive', version.metadata)
+        assert_equal(version.metadata['archive'], 'glacier')
+
+    def test_archived_record_not_found(self):
+        version = factories.FileVersionFactory(signature=self.uploadSignature)
+        self.record.versions = [version]
+        self.record.save()
+        res = self.send_archived_hook(path=self.path + 'not', expect_errors=True)
+        assert_equal(res.status_code, 404)
+        version.reload()
+        assert_not_in('archive', version.metadata)
+
+    def test_archived_version_not_found(self):
+        version = factories.FileVersionFactory(signature=self.uploadSignature[::-1])
+        self.record.versions = [version]
+        self.record.save()
+        res = self.send_archived_hook(expect_errors=True)
+        assert_equal(res.status_code, 400)
+        version.reload()
+        assert_not_in('archive', version.metadata)
+
+
 class TestPingHook(HookTestCase):
 
     def setUp(self):
         super(TestPingHook, self).setUp()
-        self.path = 'flaky/pizza.png'
+        self.path = 'flaky/pízza.png'
         self.size = 1024
         self.record = model.OsfStorageFileRecord.get_or_create(self.path, self.node_settings)
         self.uploadSignature = '07235a8'
@@ -261,7 +313,7 @@ class TestPingHook(HookTestCase):
 
     def test_ping_no_record(self):
         res = self.send_ping_hook(path='missing/file.txt', expect_errors=True)
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, 404)
 
     def test_ping_no_version(self):
         res = self.send_ping_hook(expect_errors=True)
@@ -297,11 +349,56 @@ class TestPingHook(HookTestCase):
         assert_equal(version.last_ping, 0)
 
 
+class TestSetCachedHook(HookTestCase):
+
+    def setUp(self):
+        super(TestSetCachedHook, self).setUp()
+        self.path = u'crispy/pízza.png'
+        self.size = 1024
+        self.record = model.OsfStorageFileRecord.get_or_create(self.path, self.node_settings)
+        self.uploadSignature = '07235a8'
+        self.payload = {
+            'uploadSignature': self.uploadSignature,
+        }
+        _, self.signature = utils.webhook_signer.sign_payload(self.payload)
+
+    def send_set_cached_hook(self, payload=None, signature=None, path=None, **kwargs):
+        return self.send_hook(
+            'osf_storage_upload_cached_hook',
+            payload=payload or self.payload,
+            signature=signature or self.signature,
+            path=path or self.path,
+            method='put_json',
+            **kwargs
+        )
+
+    def test_set_cached_uploading(self):
+        version = self.record.create_pending_version(self.user, self.uploadSignature)
+        res = self.send_set_cached_hook()
+        version.reload()
+        assert_equal(version.status, model.status_map['CACHED'])
+
+    def test_set_cached_not_uploading_raises_error(self):
+        version = factories.FileVersionFactory(status=model.status_map['CACHED'])
+        self.record.versions.append(version)
+        self.record.save()
+        res = self.send_set_cached_hook(expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_set_cached_no_versions_raises_error(self):
+        res = self.send_set_cached_hook(expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_set_cached_no_record_raises_error(self):
+        res = self.send_set_cached_hook(path='the/invisible/man.mp3', expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+
 class TestFinishHook(HookTestCase):
 
     def setUp(self):
         super(TestFinishHook, self).setUp()
-        self.path = 'crunchy/pizza.png'
+        self.path = u'crünchy/pizza.png'
         self.size = 1024
         self.record = model.OsfStorageFileRecord.get_or_create(self.path, self.node_settings)
         self.uploadSignature = '07235a8'
@@ -467,6 +564,12 @@ class TestFinishHook(HookTestCase):
 
 class TestUploadFile(StorageTestCase):
 
+    def setUp(self):
+        super(TestUploadFile, self).setUp()
+        self.name = u'red-specíal.png'
+        self.size = 1024
+        self.content_type = 'image/png'
+
     def request_upload_url(self, name, size, content_type, path=None, **kwargs):
         return self.app.post_json(
             self.project.api_url_for(
@@ -485,16 +588,13 @@ class TestUploadFile(StorageTestCase):
     @mock.patch('website.addons.osfstorage.utils.get_upload_url')
     def test_request_upload_url_without_path(self, mock_get_url):
         mock_get_url.return_value = 'http://brian.queen.com/'
-        name = 'red-special.png'
-        size = 1024
-        content_type = 'image/png'
-        res = self.request_upload_url(name, size, content_type)
+        res = self.request_upload_url(self.name, self.size, self.content_type)
         mock_get_url.assert_called_with(
             self.project,
             self.user,
-            size,
-            content_type,
-            name,
+            self.size,
+            self.content_type,
+            self.name,
         )
         assert_equal(res.status_code, 200)
         # Response wraps URL in quotation marks
@@ -503,28 +603,23 @@ class TestUploadFile(StorageTestCase):
     @mock.patch('website.addons.osfstorage.utils.get_upload_url')
     def test_request_upload_url_with_path(self, mock_get_url):
         mock_get_url.return_value = 'http://brian.queen.com/'
-        name = 'red-special.png'
-        size = 1024
-        content_type = 'image/png'
-        res = self.request_upload_url(name, size, content_type, path='instruments')
+        res = self.request_upload_url(self.name, self.size, self.content_type, path='instruments')
         self.project.reload()
         mock_get_url.assert_called_with(
             self.project,
             self.user,
-            size,
-            content_type,
-            'instruments/' + name,
+            self.size,
+            self.content_type,
+            'instruments/' + self.name,
         )
 
     @mock.patch('website.addons.osfstorage.utils.get_upload_url')
     def test_request_upload_url_too_large(self, mock_get_url):
         mock_get_url.return_value = 'http://brian.queen.com/'
-        name = 'red-special.png'
         max_size = settings.ADDONS_AVAILABLE_DICT['osfstorage'].max_file_size
         size = max_size * 1024 * 1024 + 1
-        content_type = 'image/png'
         res = self.request_upload_url(
-            name, size, content_type, path='instruments',
+            self.name, size, self.content_type, path='instruments',
             expect_errors=True,
         )
         assert_equal(res.status_code, 400)
@@ -549,10 +644,11 @@ class TestViewFile(StorageTestCase):
         self.record.versions.append(self.version)
         self.record.save()
 
-    def view_file(self, path):
+    def view_file(self, path, **kwargs):
         return self.app.get(
             self.project.web_url_for('osf_storage_view_file', path=path),
             auth=self.project.creator.auth,
+            **kwargs
         )
 
     def test_view_file_creates_guid_if_none_exists(self):
@@ -569,6 +665,11 @@ class TestViewFile(StorageTestCase):
         n_objs = model.OsfStorageGuidFile.find().count()
         res = self.view_file(self.path)
         assert_equal(n_objs, model.OsfStorageGuidFile.find().count())
+
+    def test_view_file_deleted_throws_error(self):
+        self.record.delete(self.auth_obj, log=False)
+        res = self.view_file(self.path, expect_errors=True)
+        assert_equal(res.status_code, 410)
 
     @mock.patch('website.addons.osfstorage.utils.render_file')
     def test_view_file_escapes_html_in_name(self, mock_render):
@@ -643,7 +744,7 @@ class TestDownloadFile(StorageTestCase):
 
     def setUp(self):
         super(TestDownloadFile, self).setUp()
-        self.path = 'tie/your/mother/down.mp3'
+        self.path = u'tie/your/mother/döwn.mp3'
         self.record = model.OsfStorageFileRecord.get_or_create(self.path, self.node_settings)
         self.version = factories.FileVersionFactory()
         self.record.versions.append(self.version)
@@ -666,11 +767,11 @@ class TestDownloadFile(StorageTestCase):
         mock_get_url.return_value = 'http://freddie.queen.com/'
         deltas = [
             Delta(
-                lambda: utils.get_download_count(self.record, self.project),
+                lambda: self.record.get_download_count(),
                 lambda value: value + 1
             ),
             Delta(
-                lambda: utils.get_download_count(self.record, self.project, len(self.record.versions)),
+                lambda: self.record.get_download_count(len(self.record.versions)),
                 lambda value: value + 1
             ),
         ]
@@ -689,11 +790,11 @@ class TestDownloadFile(StorageTestCase):
         mock_get_url.return_value = 'http://freddie.queen.com/'
         deltas = [
             Delta(
-                lambda: utils.get_download_count(self.record, self.project),
+                lambda: self.record.get_download_count(),
                 lambda value: value
             ),
             Delta(
-                lambda: utils.get_download_count(self.record, self.project, len(self.record.versions)),
+                lambda: self.record.get_download_count(len(self.record.versions)),
                 lambda value: value
             ),
         ]
@@ -716,11 +817,11 @@ class TestDownloadFile(StorageTestCase):
         self.record.save()
         deltas = [
             Delta(
-                lambda: utils.get_download_count(self.record, self.project),
+                lambda: self.record.get_download_count(),
                 lambda value: value + 1
             ),
             Delta(
-                lambda: utils.get_download_count(self.record, self.project, 3),
+                lambda: self.record.get_download_count(3),
                 lambda value: value + 1
             ),
         ]
@@ -735,11 +836,11 @@ class TestDownloadFile(StorageTestCase):
         mock_get_url.return_value = 'http://freddie.queen.com/'
         deltas = [
             Delta(
-                lambda: utils.get_download_count(self.record, self.project),
+                lambda: self.record.get_download_count(),
                 lambda value: value
             ),
             Delta(
-                lambda: utils.get_download_count(self.record, self.project, 3),
+                lambda: self.record.get_download_count(3),
                 lambda value: value
             ),
         ]
@@ -757,11 +858,11 @@ class TestDownloadFile(StorageTestCase):
         self.record.create_pending_version(self.user, '9d989e8')
         deltas = [
             Delta(
-                lambda: utils.get_download_count(self.record, self.project),
+                lambda: self.record.get_download_count(),
                 lambda value: value
             ),
             Delta(
-                lambda: utils.get_download_count(self.record, self.project, 2),
+                lambda: self.record.get_download_count(2),
                 lambda value: value
             ),
         ]
@@ -774,6 +875,12 @@ class TestDownloadFile(StorageTestCase):
         assert_in('File upload in progress', res)
         assert_false(mock_get_url.called)
 
+    @mock.patch('website.addons.osfstorage.utils.get_download_url')
+    def test_download_deleted_version(self, mock_get_url):
+        self.record.delete(self.auth_obj, log=False)
+        res = self.download_file(self.path, expect_errors=True)
+        assert_equal(res.status_code, 410)
+
 
 class TestDeleteFile(StorageTestCase):
 
@@ -782,7 +889,7 @@ class TestDeleteFile(StorageTestCase):
         record = create_record_with_version(
             path,
             self.node_settings,
-            status=model.status['COMPLETE'],
+            status=model.status_map['COMPLETE'],
         )
         assert_false(record.is_deleted)
         res = self.app.delete(
@@ -801,7 +908,7 @@ class TestDeleteFile(StorageTestCase):
         record = create_record_with_version(
             path,
             self.node_settings,
-            status=model.status['COMPLETE'],
+            status=model.status_map['COMPLETE'],
         )
         record.delete(self.auth_obj)
         record.save()

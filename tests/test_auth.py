@@ -32,7 +32,6 @@ from website.project.decorators import (
 class TestAuthUtils(OsfTestCase):
 
     def test_register(self):
-        super(TestAuthUtils, self).setUp()
         auth.register('rosie@franklin.com', 'gattaca', fullname="Rosie Franklin")
         user = User.find_one(Q('username', 'eq', 'rosie@franklin.com'))
         # The password should be set
@@ -145,7 +144,6 @@ class TestAuthObject(OsfTestCase):
         assert_in(str(auth.user), rep)
 
     def test_factory(self):
-        super(TestAuthObject, self).setUp()
         auth_obj = AuthFactory()
         assert_true(isinstance(auth_obj.user, auth.User))
         assert_true(auth_obj.api_key)
@@ -186,10 +184,8 @@ class TestPrivateLink(OsfTestCase):
         self.link.nodes.append(self.project)
         self.link.save()
 
-    @mock.patch('website.project.decorators.get_api_key')
     @mock.patch('website.project.decorators.Auth.from_kwargs')
-    def test_has_private_link_key(self, mock_from_kwargs, mock_get_api_key):
-        mock_get_api_key.return_value = 'foobar123'
+    def test_has_private_link_key(self, mock_from_kwargs):
         mock_from_kwargs.return_value = Auth(user=None)
         res = self.app.get('/project/{0}'.format(self.project._primary_key),
             {'view_only': self.link.key})
@@ -197,10 +193,8 @@ class TestPrivateLink(OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.body, 'success')
 
-    @mock.patch('website.project.decorators.get_api_key')
     @mock.patch('website.project.decorators.Auth.from_kwargs')
-    def test_does_not_have_key(self, mock_from_kwargs, mock_get_api_key):
-        mock_get_api_key.return_value = 'foobar123'
+    def test_does_not_have_key(self, mock_from_kwargs):
         mock_from_kwargs.return_value = Auth(user=None)
         res = self.app.get('/project/{0}'.format(self.project._primary_key),
             {'key': None})
@@ -341,21 +335,23 @@ class TestMustHaveAddonDecorator(AuthAppTestCase):
     @mock.patch('website.project.decorators._kwargs_to_nodes')
     def test_must_have_addon_node_false(self, mock_kwargs_to_nodes):
         mock_kwargs_to_nodes.return_value = (self.project, None)
+        self.project.delete_addon('github', auth=None)
         decorated = must_have_addon('github', 'node')(needs_addon_view)
         with assert_raises(HTTPError):
             decorated()
 
-    @mock.patch('website.project.decorators.get_current_user')
+    @mock.patch('framework.auth.decorators.Auth.from_kwargs')
     def test_must_have_addon_user_true(self, mock_current_user):
-        mock_current_user.return_value = self.project.creator
+        mock_current_user.return_value = Auth(self.project.creator)
         self.project.creator.add_addon('github')
         decorated = must_have_addon('github', 'user')(needs_addon_view)
         res = decorated()
         assert_equal(res, 'openaddon')
 
-    @mock.patch('website.project.decorators.get_current_user')
+    @mock.patch('framework.auth.decorators.Auth.from_kwargs')
     def test_must_have_addon_user_false(self, mock_current_user):
-        mock_current_user.return_value = self.project.creator
+        mock_current_user.return_value = Auth(self.project.creator)
+        self.project.creator.delete_addon('github')
         decorated = must_have_addon('github', 'user')(needs_addon_view)
         with assert_raises(HTTPError):
             decorated()
@@ -369,11 +365,11 @@ class TestMustBeAddonAuthorizerDecorator(AuthAppTestCase):
         self.decorated = must_be_addon_authorizer('github')(needs_addon_view)
 
     @mock.patch('website.project.decorators._kwargs_to_nodes')
-    @mock.patch('website.project.decorators.get_current_user')
+    @mock.patch('framework.auth.decorators.Auth.from_kwargs')
     def test_must_be_authorizer_true(self, mock_get_current_user, mock_kwargs_to_nodes):
 
         # Mock
-        mock_get_current_user.return_value = self.project.creator
+        mock_get_current_user.return_value = Auth(self.project.creator)
         mock_kwargs_to_nodes.return_value = (self.project, None)
 
         # Setup
