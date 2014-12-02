@@ -2860,7 +2860,7 @@ class TestUnregisteredUser(OsfTestCase):
         assert_true(u.username)
         assert_true(u.fullname)
         assert_true(u.password)
-        assert_equal(len(u.email_verifications.keys()), 2)
+        assert_equal(len(u.email_verifications.keys()), 1)
 
     def test_add_unclaimed_record(self):
         email, data = self.add_unclaimed_record()
