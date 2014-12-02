@@ -1,13 +1,13 @@
 import re
+import sha
+import hmac
 import time
 import base64
 import urllib
 import hashlib
-import hmac
-import sha
 
-from urllib import quote
 from bson import ObjectId
+
 from dateutil.parser import parse
 
 from boto.iam import IAMConnection
@@ -51,31 +51,6 @@ def adjust_cors(s3wrapper, clobber=False):
 
     # Save changes
     s3wrapper.set_cors_rules(rules)
-
-
-def wrapped_key_to_json(wrapped_key, node):
-    urls = build_urls(node, quote(wrapped_key.s3Key.key.encode('utf-8')))
-    rv = {
-        rubeus.KIND: _key_type_to_rubeus(wrapped_key.type),
-        'name': wrapped_key.name,
-        'size': (wrapped_key.size, wrapped_key.size) if wrapped_key.size is not None else '--',
-        'ext': wrapped_key.extension if wrapped_key.extension is not None else '--',
-        'lastMod': wrapped_key.lastMod.strftime("%Y/%m/%d %I:%M %p") if wrapped_key.lastMod is not None else '--',
-        'urls': {
-            # TODO: Don't use ternary operators here
-            'download': urls['download'] if wrapped_key.type == 'file' else None,
-            'delete': urls['delete'] if wrapped_key.type == 'file' else None,
-            'view': urls['view'] if wrapped_key.type == 'file' else None,
-            'fetch': node.api_url + 's3/hgrid/' + wrapped_key.s3Key.key if wrapped_key.type == 'folder' else None,
-            'upload': urls['upload'],
-        }
-    }
-    if wrapped_key.type == 'folder':
-        rv.update({
-            'nodeUrl': node.url,
-            'nodeApiUrl': node.api_url,
-        })
-    return rv
 
 
 def get_bucket_drop_down(user_settings):
