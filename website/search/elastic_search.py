@@ -10,8 +10,11 @@ import unicodedata
 
 import six
 
-from elasticsearch import Elasticsearch
-from elasticsearch import RequestError, NotFoundError
+from elasticsearch import (
+    Elasticsearch,
+    RequestError,
+    NotFoundError
+)
 
 from requests.exceptions import ConnectionError
 
@@ -143,9 +146,6 @@ def search(query, index='website', doc_type='_all'):
         'tags': tags,
         'typeAliases': ALIASES
     }
-    logger.error(counts)
-    logger.error(tags)
-    logger.error(results)
     return return_value
 
 
