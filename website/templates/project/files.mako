@@ -35,6 +35,5 @@ ${parent.javascript_bottom()}
 % for script in tree_js:
 <script type="text/javascript" src="${script}"></script>
 % endfor
-<script src="/static/public/js/addon-files-bundle.js"></script>
 <script src="/static/public/js/files-page.js"></script>
 </%def>

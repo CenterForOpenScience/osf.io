@@ -75,14 +75,15 @@
     </table>
 </div>
 
-    <script>
-        $script(['/static/js/deleteFile.js'], function() {
-            var urls = {
-                'delete_url': '${delete_url}',
-                'files_page_url': '${files_page_url}'
-            };
-
-            var deleteFile = new DeleteFile('#githubScope', urls);
-            });
-    </script>
+<script type="text/javascript">
+    window.contextVars = $.extend(true, {}, window.contextVars, {
+        node: {
+            urls: {
+                delete_url: '${delete_url}',
+                files_page_url: '${files_page_url}'
+                }
+        }
+    });
+</script>
+<script src="/static/public/js/github/file-detail.js"></script>
 </%def>
