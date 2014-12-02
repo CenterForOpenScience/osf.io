@@ -1,7 +1,4 @@
 aiohttp
 boto
-ipython
 invoke
-jinja2
-pyzmq
 tornado
