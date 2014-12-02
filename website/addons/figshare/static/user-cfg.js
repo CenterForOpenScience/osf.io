@@ -1,3 +1,4 @@
+var $ = require('jquery');
 var bootbox = require('bootbox');
 
 $(document).ready(function() {

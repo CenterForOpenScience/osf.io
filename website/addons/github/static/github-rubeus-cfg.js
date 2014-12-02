@@ -3,6 +3,7 @@
  */
 
 var Rubeus = require('rubeus');
+var $ = require('jquery');
 
 // Private members
 
