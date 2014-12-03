@@ -31,7 +31,7 @@ from website.project.views.contributor import (
 from website.profile.utils import add_contributor_json, serialize_unregistered
 from website.profile.views import fmt_date_or_none
 from website.util import api_url_for, web_url_for
-from website import mails
+from website import mails, settings
 from website.util import rubeus
 from website.project.views.node import _view_project, abbrev_authors, _should_show_wiki_widget
 from website.project.views.comment import serialize_comment
@@ -2266,7 +2266,7 @@ class TestConfigureMailingListViews(OsfTestCase):
                 'data[list_id]': list_id,
                 'data[email]': user.username
         }
-        url = api_url_for('sync_data_from_mailchimp') + '?key=abcde'
+        url = api_url_for('sync_data_from_mailchimp') + '?key=' + settings.MAILCHIMP_WEBHOOK_SECRET_KEY
         res = self.app.post(url,
                             data,
                             content_type="application/x-www-form-urlencoded",
