@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import operator
 import os
 import logging
 import operator
