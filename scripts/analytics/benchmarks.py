@@ -12,7 +12,7 @@ from website import settings
 from website.models import User, PrivateLink
 from website.addons.dropbox.model import DropboxUserSettings
 
-from scripts.analytics import profile
+from scripts.analytics import profile, tabulate_emails
 
 
 def get_active_users():
@@ -120,6 +120,8 @@ def main():
 
     with open(os.path.join(settings.ANALYTICS_PATH, 'main.txt'), 'w') as fp:
         fp.write(table)
+
+    tabulate_emails.main()
 
 
 if __name__ == '__main__':
