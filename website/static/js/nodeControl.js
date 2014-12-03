@@ -174,6 +174,9 @@
                 'pointerID': self._id
             };
             $.osf.postJSON('/api/v1/pointer/', jsonData)
+                .done(function() {
+                    $.osf.growl('Project added', 'This project has been added to your Project Organizer', 'success');
+                })
                 .fail(function(data) {
                     self.inDashboard(false);
                     $.osf.handleJSONError(data);
