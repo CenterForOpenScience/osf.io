@@ -183,9 +183,6 @@
                 'pointerID': self._id
             };
             $.osf.postJSON('/api/v1/pointer/', jsonData)
-                .done(function() {
-                    self.inDashboard(true);
-                })
                 .fail(function(data) {
                     self.inDashboard(false);
                     $.osf.handleJSONError(data);
@@ -198,9 +195,6 @@
             self.inDashboard(false);
             var deleteUrl = '/api/v1/folder/' + self.dashboard + '/pointer/' + self._id;
             $.ajax({url: deleteUrl, type: 'DELETE'})
-                .done(function() {
-                    self.inDashboard(false);
-                })
                 .fail(function() {
                     self.inDashboard(true);
                     $.osf.growl('Error', 'The project could not be removed', 'danger');
@@ -212,7 +206,11 @@
          */
         self.toggleWatch = function() {
             // Send POST request to node's watch API url and update the watch count
-            self.watchedCount(self.watchedCount()+1);
+            if(self.userIsWatching()) {
+                self.watchedCount(self.watchedCount() - 1);
+            } else {
+                self.watchedCount(self.watchedCount() + 1);
+            }
             $.osf.postJSON(
                 self.apiUrl + 'togglewatch/',
                 {}
