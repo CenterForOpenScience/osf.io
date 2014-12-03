@@ -4,19 +4,19 @@
 import logging
 import datetime
 
-from modularodm import storage, Q
+from modularodm import Q
 
-from framework.mongo import database
 from framework.transactions.context import TokuTransaction
 
+from website import settings
 from website.models import Node
+from website.app import init_app
 from website.addons.osffiles.model import NodeFile
 from website.addons.osfstorage.model import OsfStorageFileRecord
 
 from scripts import utils as script_utils
+from scripts.osfstorage.utils import ensure_osf_files
 
-
-NodeFile.set_storage(storage.MongoStorage(database, 'nodefile'))
 
 logger = logging.getLogger(__name__)
 script_utils.add_file_logger(logger, __file__)
@@ -31,12 +31,14 @@ def migrate_version(idx, node_file, record):
 
 def migrate_node(node, dry_run=True):
     node_settings = node.get_addon('osfstorage')
-    for _, versions in node.files_versions.iteritems():
+    for path, versions in node.files_versions.iteritems():
         for idx, version in enumerate(versions):
+            logger.info('Migrating file {0}, version {1} on node {2}'.format(path, idx, node._id))
+            if dry_run:
+                continue
             try:
                 node_file = NodeFile.load(version)
                 record = OsfStorageFileRecord.find_by_path(node_file.path, node_settings)
-                assert len(record.versions) == len(versions)
                 migrate_version(idx, node_file, record)
             except Exception as error:
                 logger.error('Could not migrate object {0} on node {1}'.format(version, node._id))
@@ -59,6 +61,17 @@ def main(dry_run=True):
             logger.error('Could not migrate node {0}'.format(node._id))
             logger.exception(error)
 
+
+if __name__ == '__main__':
+    import sys
+    dry_run = 'dry' in sys.argv
+    ensure_osf_files(settings)
+    init_app(set_backends=True, routes=False)
+    main(dry_run=dry_run)
+
+
+# Hack: Must configure add-ons before importing `OsfTestCase`
+ensure_osf_files(settings)
 
 from nose.tools import *  # noqa
 
