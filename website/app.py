@@ -21,10 +21,10 @@ from website.addons.base import init_addon
 from website.project.model import ensure_schemas
 
 
-def init_addons(settings, routes=True):
+def init_addons(settings, routes=True, build_logs=False):
     ADDONS_AVAILABLE = []
     for addon_name in settings.ADDONS_REQUESTED:
-        addon = init_addon(app, addon_name, routes)
+        addon = init_addon(app, addon_name, routes, build_logs=build_logs)
         if addon:
             ADDONS_AVAILABLE.append(addon)
     settings.ADDONS_AVAILABLE = ADDONS_AVAILABLE
@@ -67,7 +67,8 @@ def init_log_file(build_fp, settings):
     return None
 
 
-def init_app(settings_module='website.settings', set_backends=True, routes=True):
+def init_app(settings_module='website.settings', set_backends=True,
+             routes=True, build_logs=False):
     """Initializes the OSF. A sort of pseudo-app factory that allows you to
     bind settings, set up routing, and set storage backends, but only acts on
     a single app instance (rather than creating multiple instances).
@@ -80,11 +81,12 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
     # The settings module
     settings = importlib.import_module(settings_module)
 
-    with open(settings.BUILT_TEMPLATES, 'w') as build_fp:
-        init_log_file(build_fp, settings)
+    if build_logs:
+        with open(settings.BUILT_TEMPLATES, 'w') as build_fp:
+            init_log_file(build_fp, settings)
 
     try:
-        init_addons(settings, routes)
+        init_addons(settings, routes, build_logs=build_logs)
     except AssertionError as error:  # Addon Route map has already been created
         logger.error(error)
 

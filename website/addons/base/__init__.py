@@ -439,7 +439,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
 
 
 # TODO: No more magicks
-def init_addon(app, addon_name, routes=True):
+def init_addon(app, addon_name, routes=True, build_logs=False):
     """Load addon module and create configuration object.
 
     :param app: Flask app object
@@ -458,12 +458,13 @@ def init_addon(app, addon_name, routes=True):
     data = vars(addon_module)
 
     # Append add-on log templates to main log templates
-    log_templates = os.path.join(
-        addon_path, 'templates', 'log_templates.mako'
-    )
-    if os.path.exists(log_templates):
-        with open(settings.BUILT_TEMPLATES, 'a') as fp:
-            fp.write(open(log_templates, 'r').read())
+    if build_logs:
+        log_templates = os.path.join(
+            addon_path, 'templates', 'log_templates.mako'
+        )
+        if os.path.exists(log_templates):
+            with open(settings.BUILT_TEMPLATES, 'a') as fp:
+                fp.write(open(log_templates, 'r').read())
 
     # Add routes
     if routes:
