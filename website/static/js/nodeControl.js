@@ -115,6 +115,7 @@
         self.category = data.node.category;
         self.isRegistration = data.node.is_registration;
         self.user = data.user;
+        self.nodeIsPublic = data.node.nodeType === PUBLIC;
         self.nodeType = data.node.node_type;
         // The button text to display (e.g. "Watch" if not watching)
         self.watchButtonDisplay = ko.computed(function() {
@@ -122,6 +123,14 @@
         });
         self.watchButtonAction = ko.computed(function() {
             return self.userIsWatching() ? 'Unwatch' : 'Watch';
+        });
+
+
+        self.canBeOrganized = ko.computed(function(){
+            if (self.user.username && (self.nodeIsPublic || self.user.is_contributor)) {
+                return true;
+            }
+            return false;
         });
 
         // Editable Title and Description
@@ -175,11 +184,28 @@
             };
             $.osf.postJSON('/api/v1/pointer/', jsonData)
                 .done(function() {
+                    self.inDashboard(true);
                     $.osf.growl('Project added', 'This project has been added to your Project Organizer', 'success');
                 })
                 .fail(function(data) {
                     self.inDashboard(false);
                     $.osf.handleJSONError(data);
+            });
+        };
+        /**
+         * Remove project from the Project Organizer.
+         */
+        self.removeFromDashboard = function() {
+            self.inDashboard(false);
+            var deleteUrl = '/api/v1/folder/' + self.dashboard + '/pointer/' + self._id;
+            $.ajax({url: deleteUrl, type: 'DELETE'})
+                .done(function() {
+                    self.inDashboard(false);
+                    $.osf.growl('Project removed', 'This project has been removed from your Project Organizer', 'success');
+                })
+                .fail(function() {
+                    self.inDashboard(true);
+                    $.osf.growl('Error', 'The project could not be removed', 'danger');
             });
         };
 
