@@ -1,14 +1,14 @@
-<%inherit file="project/project_base.mako"/>
 <%page expression_filter="h"/>
-<%def name="title()">${node['title']} Wiki (Edit)</%def>
+<%inherit file="project/project_base.mako"/>
+<%def name="title()">${node['title'] | n} Wiki (Edit)</%def>
 
 <div class="wiki">
     <div class="row">
-        <div class="col-md-3">
+        <div class="col-sm-3">
             <%include file="wiki/templates/nav.mako"/>
             <%include file="wiki/templates/toc.mako"/>
         </div>
-         <div class="col-md-9">
+         <div class="col-sm-9">
                  <%include file="wiki/templates/status.mako"/>
             <form action="${urls['web']['edit']}" method="POST">
                 <div class="form-group wmd-panel">

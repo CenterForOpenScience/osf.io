@@ -49,6 +49,7 @@ ${next.body()}
         currentUser: {
             ## TODO: Abstract me
             username: ${json.dumps(user['username']) | n},
+            fullname: ${json.dumps(user['fullname']) | n},
             id: '${user_id}'
         },
         node: {
@@ -62,7 +63,6 @@ ${next.body()}
     });
 
     $(function() {
-
         // Get project data from the server and initiate KO modules
         $.getJSON(nodeApiUrl, function(data) {
             // Initialize nodeControl and logFeed on success

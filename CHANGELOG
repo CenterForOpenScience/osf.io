@@ -2,12 +2,57 @@
 Changelog
 *********
 
-0.18.x (unreleased)
+0.21.17 (2014-12-02)
+====================
+
+Hotfix release
+
+- Add an endpoint for receiving the webhook payload from the OSF upload
+service when files are backed up to a Amazon Glacier archive.
+- Fix a bug in accessing nested files in S3 addon.
+
+0.21.13 (2014-11-24)
+====================
+
+Hotfix release
+
+- Display warning about private Github repos on a public project on files and
+statistics pages.
+- Refactor celery task for rendering files so that file contents are not
+passed to message broker.
+- Use celery to asynchronously provision Piwik sites.
+
+0.21.0 (2014-11-19)
 ===================
 
+- OSF storage addon now uses the new OSF Upload Service backed by Rackspace
+Cloudfiles.
+- UI and backend improvements to search.
+- UI fixes to addons' file detail pages.
+- Enable drag-and-drop uploads from Project Overview page.
+
+0.20.0 (2014-10-31)
+===================
+
+Lots of new UI features and responsiveness improvements.
+
+- "Onboarder" interface: Go to a project, create a project, register a project, and upload files from the dashboard.
+- Responsive index page, header, footer, project navbars, login page, public activity, and user activity meters.
+- Various minor UI fixes to user settings page and view file pages.
+
+0.19.0 (2014-10-22)
+===================
+
+- Wiki names have mixed-case page names.
 - Allow mixed casing in wiki page names.
-- Minor UI and language fixes.
-- Improved load speed on Getting Started page.
+- Wiki rename events are logged.
+- Improved load time of Getting Started page, as well as some minor UI fixes.
+- Improvements and bugfixes to user settings pages.
+- Various UI fixes to the wiki.
+- Fix importing Dataverse authentication to a project.
+- Fix project "Link" counts and lists.
+- Modal dialogs are more visually consistent.
+- Language fixes on FAQ page.
 
 0.18.0 (2014-10-14)
 ===================

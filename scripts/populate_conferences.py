@@ -1,17 +1,23 @@
 #!/usr/bin/env python
 # encoding: utf-8
+
+import os
 import sys
 
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
 from framework.auth.core import User
-from website.conferences.model import Conference
+
+from website import settings
 from website.app import init_app
+from website.conferences.model import Conference
+
 
 def main():
     init_app(set_backends=True, routes=False)
     populate_conferences()
+
 
 MEETING_DATA = {
     'spsp2014': {
@@ -67,6 +73,23 @@ MEETING_DATA = {
         ],
         'public_projects': True,
     },
+    'bitss2014': {
+        'name': 'BITSS Research Transparency Forum 2014',
+        'info_url': None,
+        'logo_url': os.path.join(
+            settings.STATIC_URL_PATH,
+            'img',
+            'conferences',
+            'bitss.jpg',
+        ),
+        'active': True,
+        'admins': [
+            'gkroll@berkeley.edu',
+            'andrew@cos.io',
+            'awais@berkeley.edu',
+        ],
+        'public_projects': True,
+    },
     # TODO: Uncomment on 2015/02/01
     # 'spsp2015': {
     #     'name': 'SPSP 2015',
@@ -75,6 +98,7 @@ MEETING_DATA = {
     #     'active': False,
     # },
 }
+
 
 def populate_conferences():
     for meeting, attrs in MEETING_DATA.iteritems():
@@ -86,13 +110,18 @@ def populate_conferences():
                 admin_objs.append(user)
             except ModularOdmException:
                 raise RuntimeError('Username {0!r} is not registered.'.format(email))
+        conf = Conference(
+            endpoint=meeting, admins=admin_objs, **attrs
+        )
         try:
-            conf = Conference(
-                endpoint=meeting, admins=admin_objs, **attrs
-            )
             conf.save()
         except ModularOdmException:
-            print('{0} Conference already exists. Skipping...'.format(meeting))
+            print('{0} Conference already exists. Updating existing record...'.format(meeting))
+            conf = Conference.find_one(Q('endpoint', 'eq', meeting))
+            for key, value in attrs.items():
+                setattr(conf, key, value)
+            conf.admins = admin_objs
+            conf.save()
 
 
 if __name__ == '__main__':

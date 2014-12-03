@@ -1,0 +1,136 @@
+/* class css */
+
+ul.ob-widget-list li.ob-list-item {
+	margin-bottom: 10px;
+	border-style: dashed;
+}
+
+.ob-heading {
+	display:inline;
+	margin: 5px;
+}
+
+.ob-header {
+    margin-bottom: 15px;
+}
+
+.ob-search{
+	position:relative;
+}
+
+.ob-expand-icon{
+	margin-top:6px;
+	height: 14px;
+}
+
+.typeAheadDisabled{
+    height: 110%;
+    font-size: 18px;
+    border: 2px solid #ccc;
+    -webkit-border-radius: 8px;
+    -moz-border-radius: 8px;
+    border-radius: 8px;
+    outline: none;
+}
+
+ul.ob-widget-list {
+    padding: 0px;
+}
+
+.ob-reveal {
+	display: none;
+}
+
+.ob-suggestion-date {
+    margin-left: 15px;
+}
+
+.ob-reveal-btn {
+	height: 100%;
+	width: 100%;
+}
+
+.ob-dropzone-box {
+	border-radius:8px;
+	position:relative;
+	float:left;
+	height: 150px;
+	width: 100%;
+	font-size: 12px;
+	text-align: center;
+	border: solid 2px #ccc;
+}
+
+.ob-clear-button{
+	position: absolute;
+	z-index: 1;
+	top: -5px;
+	right: -12px;
+}
+
+.ob-input {
+    position: relative;
+}
+
+.ob-clear-uploads-button{
+	position: relative;
+	z-index: 1;
+	top: -140px;
+	right: -12px;
+}
+
+.ob-unselectable{
+	-webkit-user-select: none; /* Chrome/Safari */
+	-moz-user-select: none; /* Firefox */
+	-ms-user-select: none; /* IE10+ */
+
+	/* Rules below not implemented in browsers yet */
+	-o-user-select: none;
+	user-select: none;
+}
+
+.ob-clear-button:hover{
+	cursor: pointer;
+}
+
+
+.projectSearchAddFile{
+	width:100%;
+}
+
+/*this exists to force sizing properly as typeahead tries desperately to overwrite it...*/
+.twitter-typeahead{
+	display: block !important;
+}
+
+.ob-tab-head {padding-bottom:9px;margin:20px 0 30px;}
+
+
+div.ob-dropzone-filename{
+	margin-top:10px;
+	font-family: "Lucida Console", Monaco, monospace;
+}
+
+.ob-dropzone{
+	background-image: url("/static/img/upload.png");
+	background-repeat:no-repeat;
+	background-size: 60px 60px;
+
+	background-position:center;
+}
+
+div.ob-dropzone-selected{
+	border: solid 2px #3C763D;
+	background-color:  #f5f5f5;
+}
+
+img.ob-dropzone-icon{
+	height:90px;
+	margin-top:10px;
+	margin-left:auto;
+	margin-right:auto;
+}
+
+.ob-upload-progress {
+	text-align: center;
+}

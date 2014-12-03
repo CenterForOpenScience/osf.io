@@ -12,12 +12,16 @@ from tests.factories import (
     AuthUserFactory, NodeWikiFactory,
 )
 
+from framework.forms.utils import sanitize
+from website import settings
 from website.addons.wiki.views import _serialize_wiki_toc, _get_wiki_web_urls, _get_wiki_api_urls
-from website.addons.wiki.model import NodeWikiPage
+from website.addons.wiki.model import NodeWikiPage, render_content
 from framework.auth import Auth
 from framework.mongo.utils import to_mongo_key
 
-SPECIAL_CHARACTERS = u'`~!@#$%^*()-=_+ []{}\|/?.df,;:''"'
+# forward slashes are not allowed, typically they would be replaced with spaces
+SPECIAL_CHARACTERS_ALL = u'`~!@#$%^*()-=_+ []{}\|/?.df,;:''"'
+SPECIAL_CHARACTERS_ALLOWED = u'`~!@#$%^*()-=_+ []{}\|?.df,;:''"'
 
 
 class TestNodeWikiPageModel(OsfTestCase):
@@ -161,8 +165,8 @@ class TestWikiViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
     def test_project_wiki_edit_post_with_special_characters(self):
-        new_wname = 'title: ' + SPECIAL_CHARACTERS
-        new_wiki_content = 'content: ' + SPECIAL_CHARACTERS
+        new_wname = 'title: ' + SPECIAL_CHARACTERS_ALLOWED
+        new_wiki_content = 'content: ' + SPECIAL_CHARACTERS_ALL
         url = self.project.web_url_for('project_wiki_edit_post', wname=new_wname)
         res = self.app.post(url, {'content': new_wiki_content}, auth=self.user.auth).follow()
         assert_equal(res.status_code, 200)
@@ -257,12 +261,41 @@ class TestWikiViews(OsfTestCase):
     def test_project_wiki_home_api_route(self):
         url = self.project.api_url_for('project_wiki_home')
         res = self.app.get(url, auth=self.user.auth)
-        assert_equals(res.status_code, 200)
+        assert_equals(res.status_code, 302)
+        # TODO: should this route exist? it redirects you to the web_url_for, not api_url_for.
+        # page_url = self.project.api_url_for('project_wiki_page', wname='home')
+        # assert_in(page_url, res.location)
 
     def test_project_wiki_home_web_route(self):
+        page_url = self.project.web_url_for('project_wiki_page', wname='home', _guid=True)
         url = self.project.web_url_for('project_wiki_home')
         res = self.app.get(url, auth=self.user.auth)
-        assert_in('home', res)
+        assert_equals(res.status_code, 302)
+        assert_in(page_url, res.location)
+
+    def test_wiki_id_url_get_returns_302_and_resolves(self):
+        name = 'page by id'
+        self.project.update_node_wiki(name, 'some content', Auth(self.project.creator))
+        page = self.project.get_wiki_page(name)
+        page_url = self.project.web_url_for('project_wiki_page', wname=page.page_name, _guid=True)
+        url = self.project.web_url_for('project_wiki_id_page', wid=page._primary_key, _guid=True)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 302)
+        assert_in(page_url, res.location)
+        res = res.follow()
+        assert_equal(res.status_code, 200)
+        assert_in(page_url, res.request.url)
+
+    def test_wiki_id_url_get_returns_404(self):
+        url = self.project.web_url_for('project_wiki_id_page', wid='12345', _guid=True)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_home_is_capitalized_in_web_view(self):
+        url = self.project.web_url_for('project_wiki_home', wid='home', _guid=True)
+        res = self.app.get(url, auth=self.user.auth).follow(auth=self.user.auth)
+        page_name_elem = res.html.find('span', {'id': 'pageName'})
+        assert_in('Home', page_name_elem.text)
 
 
 class TestViewHelpers(OsfTestCase):
@@ -316,20 +349,23 @@ class TestWikiDelete(OsfTestCase):
         self.project.reload()
         assert_not_in('elephants', self.project.wiki_pages_current)
 
-    def test_project_wiki_delete_w_special_characters(self):
-        self.project.update_node_wiki(SPECIAL_CHARACTERS, 'Hello Special Characters', self.consolidate_auth)
-        self.special_characters_wiki = self.project.get_wiki_page(SPECIAL_CHARACTERS)
-        assert_in(to_mongo_key(SPECIAL_CHARACTERS), self.project.wiki_pages_current)
+    def test_project_wiki_delete_w_valid_special_characters(self):
+        # TODO: Need to understand why calling update_node_wiki with failure causes transaction rollback issue later
+        # with assert_raises(NameInvalidError):
+        #     self.project.update_node_wiki(SPECIAL_CHARACTERS_ALL, 'Hello Special Characters', self.consolidate_auth)
+        self.project.update_node_wiki(SPECIAL_CHARACTERS_ALLOWED, 'Hello Special Characters', self.consolidate_auth)
+        self.special_characters_wiki = self.project.get_wiki_page(SPECIAL_CHARACTERS_ALLOWED)
+        assert_in(to_mongo_key(SPECIAL_CHARACTERS_ALLOWED), self.project.wiki_pages_current)
         url = self.project.api_url_for(
             'project_wiki_delete',
-            wname=SPECIAL_CHARACTERS
+            wname=SPECIAL_CHARACTERS_ALLOWED
         )
         self.app.delete(
             url,
             auth=self.auth
         )
         self.project.reload()
-        assert_not_in(to_mongo_key(SPECIAL_CHARACTERS), self.project.wiki_pages_current)
+        assert_not_in(to_mongo_key(SPECIAL_CHARACTERS_ALLOWED), self.project.wiki_pages_current)
 
 
 class TestWikiRename(OsfTestCase):
@@ -353,7 +389,7 @@ class TestWikiRename(OsfTestCase):
         self.wiki = self.project.get_wiki_page('home')
         self.url = self.project.api_url_for(
             'project_wiki_rename',
-            wname=to_mongo_key(self.page_name),
+            wname=self.page_name,
         )
 
     def test_rename_wiki_page_valid(self, new_name=u'away'):
@@ -373,22 +409,34 @@ class TestWikiRename(OsfTestCase):
         assert_equal(new_wiki.content, self.page.content)
         assert_equal(new_wiki.version, self.page.version)
 
-    def test_rename_wiki_page_duplicate(self):
-        self.project.update_node_wiki('away', 'Hello world', self.consolidate_auth)
-        new_name = 'away'
-
+    def test_rename_wiki_page_invalid(self, new_name=u'invalid/name'):
         res = self.app.put_json(
             self.url,
             {'value': new_name},
             auth=self.auth,
-            expect_errors=True
+            expect_errors=True,
+        )
+        assert_equal(http.BAD_REQUEST, res.status_code)
+        assert_equal(res.json['message_short'], 'Invalid name')
+        assert_equal(res.json['message_long'], 'Page name cannot contain forward slashes.')
+        self.project.reload()
+        old_wiki = self.project.get_wiki_page(self.page_name)
+        assert_true(old_wiki)
+
+    def test_rename_wiki_page_duplicate(self):
+        self.project.update_node_wiki('away', 'Hello world', self.consolidate_auth)
+        new_name = 'away'
+        res = self.app.put_json(
+            self.url,
+            {'value': new_name},
+            auth=self.auth,
+            expect_errors=True,
         )
         assert_equal(res.status_code, 409)
 
-    def test_rename_wiki_invalid_name(self):
-        # url is invalid
-        url = self.project.api_url_for('project_wiki_rename', wname=to_mongo_key('invalid_page_name'))
-        res = self.app.put_json(url, {'value': 'newname'},
+    def test_rename_wiki_name_not_found(self):
+        url = self.project.api_url_for('project_wiki_rename', wname='not_found_page_name')
+        res = self.app.put_json(url, {'value': 'new name'},
             auth=self.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
@@ -407,9 +455,10 @@ class TestWikiRename(OsfTestCase):
         assert_equal(res.status_code, 400)
 
     def test_rename_wiki_page_duplicate_different_casing(self):
-        self.project.update_node_wiki('away', 'Hello world', self.consolidate_auth)
+        # attempt to rename 'page2' from setup to different case of 'away'.
+        old_name = 'away'
         new_name = 'AwAy'
-
+        self.project.update_node_wiki(old_name, 'Hello world', self.consolidate_auth)
         res = self.app.put_json(
             self.url,
             {'value': new_name},
@@ -419,10 +468,10 @@ class TestWikiRename(OsfTestCase):
         assert_equal(res.status_code, 409)
 
     def test_rename_wiki_page_same_name_different_casing(self):
-        self.project.update_node_wiki('away', 'Hello world', self.consolidate_auth)
+        old_name = 'away'
         new_name = 'AWAY'
-        page = self.project.get_wiki_page('away')
-        url = self.project.api_url_for('project_wiki_rename', wname=to_mongo_key('away'))
+        self.project.update_node_wiki(old_name, 'Hello world', self.consolidate_auth)
+        url = self.project.api_url_for('project_wiki_rename', wname=old_name)
         res = self.app.put_json(
             url,
             {'value': new_name},
@@ -442,7 +491,6 @@ class TestWikiRename(OsfTestCase):
 
         # Creates a new page
         self.project.update_node_wiki('page3' ,'moarcontent', self.consolidate_auth)
-        page3 = self.project.get_wiki_page('page3')
         self.project.save()
 
         # Renames the wiki to the deleted page
@@ -450,15 +498,23 @@ class TestWikiRename(OsfTestCase):
         res = self.app.put_json(url, {'value': self.page_name}, auth=self.auth)
         assert_equal(res.status_code, 200)
 
-    def test_rename_wiki_page_with_html_title(self):
+    def test_rename_wiki_page_with_valid_html(self):
         # script is not an issue since data is sanitized via bleach or mako before display.
-        self.test_rename_wiki_page_valid(new_name=u'<html>hello</html')
+        self.test_rename_wiki_page_valid(new_name=u'<html>hello<html>')
+
+    def test_rename_wiki_page_with_invalid_html(self):
+        # script is not an issue since data is sanitized via bleach or mako before display.
+        # with that said routes still do not accept forward slashes
+        self.test_rename_wiki_page_invalid(new_name=u'<html>hello</html>')
 
     def test_rename_wiki_page_with_non_ascii_title(self):
         self.test_rename_wiki_page_valid(new_name=u'øˆ∆´ƒøßå√ß')
 
-    def test_rename_wiki_page_with_special_character_title(self):
-        self.test_rename_wiki_page_valid(new_name=SPECIAL_CHARACTERS)
+    def test_rename_wiki_page_with_valid_special_character_title(self):
+        self.test_rename_wiki_page_valid(new_name=SPECIAL_CHARACTERS_ALLOWED)
+
+    def test_rename_wiki_page_with_invalid_special_character_title(self):
+        self.test_rename_wiki_page_invalid(new_name=SPECIAL_CHARACTERS_ALL)
 
 
 class TestWikiLinks(OsfTestCase):
@@ -475,6 +531,14 @@ class TestWikiLinks(OsfTestCase):
             project.web_url_for('project_wiki_page', wname='wiki2'),
             wiki.html(project),
         )
+
+    # Regression test for https://sentry.osf.io/osf/production/group/310/
+    def test_bad_links(self):
+        content = u'<span></span><iframe src="http://httpbin.org/"></iframe>'
+        node = ProjectFactory()
+        wiki = NodeWikiFactory(content=content, node=node)
+        expected = render_content(content, node)
+        assert_equal(expected, wiki.html(node))
 
 
 class TestWikiCompare(OsfTestCase):

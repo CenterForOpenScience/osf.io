@@ -10,10 +10,10 @@
                     <h3 class="modal-title">Add New Wiki Page</h3>
                 </div><!-- end modal-header -->
                 <div class="modal-body">
-                    <div id="alert" style="padding-bottom:10px;color:blue;"></div>
                     <div class='form-group'>
                         <input id="data" placeholder="New Wiki Name" type="text" class='form-control'>
                     </div>
+                    <p id="alert" class="text-danger"> </p>
                 </div><!-- end modal-body -->
                 <div class="modal-footer">
                     <a id="close" href="#" class="btn btn-default" data-dismiss="modal">Close</a>
@@ -49,15 +49,23 @@
                 $submitForm
                     .removeAttr('disabled', 'disabled')
                     .text('OK');
+
+            } else if ($data.val().indexOf('/') != -1) {
+                $alert.text('The new wiki page name cannot contain forward slashes.');
+                $submitForm
+                    .removeAttr('disabled', 'disabled')
+                    .text('OK');
             } else {
+                // TODO: helper to eliminate slashes in the url.
+                var wikiName = $data.val();
                 var request = $.ajax({
                     type: 'GET',
                     cache: false,
-                    url: '${urls['api']['base']}' + encodeURIComponent($data.val()) + '/validate/',
+                    url: '${urls['api']['base']}' + encodeURIComponent(wikiName) + '/validate/',
                     dataType: 'json'
                 });
                 request.done(function (response) {
-                    window.location.href = '${urls['web']['base']}' + encodeURIComponent($data.val()) + '/edit/';
+                    window.location.href = '${urls['web']['base']}' + encodeURIComponent(wikiName) + '/edit/';
                 });
                 request.fail(function (response, textStatus, error) {
                     if (response.status === 409) {
@@ -65,7 +73,7 @@
                     } else {
                         $alert.text('Could not validate wiki page. Please try again.');
                         Raven.captureMessage('Error occurred while validating page', {
-                            url: '${urls['api']['base']}' + encodeURIComponent($data.val()) + '/validate/',
+                            url: '${urls['api']['base']}' + encodeURIComponent(wikiName) + '/validate/',
                             textStatus: textStatus,
                             error: error
                         });

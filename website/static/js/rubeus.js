@@ -20,11 +20,15 @@
     // HGrid configuration //
     /////////////////////////
 
+    var escapeWhitespace = function(value) {
+        return value.replace(/\s/g, '&nbsp;');
+    };
+
     Rubeus.Html = $.extend({}, HGrid.Html);
     // Custom folder icon indicating private component
     Rubeus.Html.folderIconPrivate = '<img class="hg-icon hg-addon-icon" src="/static/img/hgrid/fatcowicons/folder_delete.png">';
     // Folder icon for pointers/links
-    Rubeus.Html.folderIconPointer = '<i class="icon-hand-right"></i>';
+    Rubeus.Html.folderIconPointer = '<i class="icon-link"></i>';
     // Class for folder name
     Rubeus.Html.folderTextClass = 'hg-folder-text';
 
@@ -52,7 +56,7 @@
         }
         opening = '<span class="' + Rubeus.Html.folderTextClass + ' ' + cssClass + '">';
         var closing = '</span>';
-        html = [opening, icon, '&nbsp;', item.name, closing].join('');
+        html = [opening, icon, '&nbsp;', escapeWhitespace(item.name), closing].join('');
         if(item.extra) {
             html += '<span class="hg-extras">' + item.extra + '</span>';
         }
@@ -67,7 +71,12 @@
     Rubeus.Col.Name.itemView = function(item) {
         var tooltipMarkup = genTooltipMarkup('View file');
         icon = Rubeus.getIcon(item);
-        return [icon, '<span ' + tooltipMarkup + ' >&nbsp;', item.name, '</span>'].join('');
+        return [icon, '<span ' + tooltipMarkup + ' >&nbsp;', escapeWhitespace(item.name), '</span>'].join('');
+    };
+
+    Rubeus.Sort = {
+        defaultColumn: 'name',
+        defaultAsc: true
     };
 
     /**
@@ -160,6 +169,31 @@
         return '';
     };
 
+    Rubeus.Utils = {};
+
+    /**
+     * Check whether newly uploaded item was added or updated. This is
+     * a hack that's necessary for services with indirect uploads (S3,
+     * OSF Storage) that don't tell us whether the file was added or
+     * updated.
+     */
+    Rubeus.Utils.itemUpdated = function(item, parent) {
+        var siblings = parent._node.children;
+        var matchCount = 0;
+        for (var i=0; i<siblings.length; i++) {
+            if (item.name === siblings[i].data.name) {
+                matchCount += 1;
+                // If `item` is being updated, it will appear twice in the grid:
+                // once for the original version, and a second time for the
+                // temporary item added on drop.
+                if (matchCount >= 2) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
+
     /**
      * Get the status message from the addon if defined, otherwise use the default message.
      */
@@ -198,6 +232,19 @@
         var $buttons = $rowElem.find('.rubeus-buttons');
         $buttons.hide();
         return this;
+    };
+
+    HGrid.prototype.delayRemoveRow = function(row) {
+        var self = this;
+        setTimeout(function() {
+            try {
+                $(self.getRowElement(row)).fadeOut(500, function() {
+                    self.removeItem(row.id);
+                });
+            } catch (error) {
+                self.removeItem(row.id);
+            }
+        }, 2000);
     };
 
     /**
@@ -331,6 +378,8 @@
             cache: false  // Prevent caching in IE
         },
         preprocessFilename: function(filename) {
+            // // Render repeated whitespace characters appropriately
+            // filename = filename.replace(/\s/g, '&nbsp;');
             return $('<div>').text(filename).html();
         },
         fetchUrl: function(row) {
@@ -340,6 +389,15 @@
             updateTooltips();
             this.changeStatus(row, statusType.FETCH_SUCCESS);
             this.showButtons(row);
+            // Sort loaded data according to current order
+            var sortColumns = this.grid.getSortColumns();
+            if (sortColumns.length) {
+                var sortColumn = sortColumns[0];
+                row._node.sort(sortColumn.columnId, sortColumn.sortAsc);
+            } else {
+                row.sort(Rubeus.Sort.defaultColumn, Rubeus.Sort.defaultAsc);
+            }
+            this.tree.updateDataView(true);
         },
         fetchError: function(error, row) {
             this.changeStatus(row, statusType.FETCH_ERROR);
@@ -359,14 +417,15 @@
             return row.urls.download;
         },
         deleteUrl: function(row) {
-            return row.urls.delete;
+            // Must use square bracket notation since 'delete' is a reserved word
+            return row.urls['delete'];
         },
         onClickDelete: function(evt, row) {
             var self = this;
             var $elem = $(evt.target);
             bootbox.confirm({
                 message: '<strong>NOTE</strong>: This action is irreversible.',
-                title: 'Delete <em>' + row.name + '</em>?',
+                title: 'Delete <em class="overflow">' + row.name + '</em>?',
                 callback: function(result) {
                     if (result) {
                         onConfirmDelete(row, self);
@@ -383,15 +442,11 @@
         maxFilesize: function(row) {
             return row.accept? (row.accept.maxSize || 128) : 128;
         },
-        // acceptedFiles: function(row) {
-        //     return row.accept.acceptedFiles || null;
-        // },
-        uploadUrl: function(row) {
-            var cfgOption = resolveCfgOption.call(this, row, 'uploadUrl', [row]);
-            return cfgOption || row.urls.upload;
-        },
 
         uploadAdded: function(file, row, folder) {
+            // Attach upload parameters to file object for use in `uploadFiles`
+            file.method = resolveCfgOption.call(this, folder, 'uploadMethod', [folder]) || 'POST';
+            file.url = folder.urls.upload || resolveCfgOption.call(this, folder, 'uploadUrl', [folder]);
             // Need to set the added row's addon for other callbacks to work
             var parent = this.getByID(row.parentID);
             row.addon = parent.addon;
@@ -400,16 +455,12 @@
             var cfgOption = resolveCfgOption.call(this, row, 'uploadAdded', [file, row]);
             return cfgOption || null;
         },
-        uploadMethod: function(row) {
-            var cfgOption = resolveCfgOption.call(this, row, 'uploadMethod', [row]);
-            return cfgOption || 'post';
-        },
         uploadSending: function(file, row, xhr, formData) {
             var cfgOption = resolveCfgOption.call(this, row, 'uploadSending', [file, row, xhr, formData]);
             return cfgOption || null;
         },
         uploadError: function(file, message, item, folder) {
-            var messageText = resolveCfgOption.call(this, item, 'UPLOAD_ERROR');
+            var messageText = resolveCfgOption.call(this, folder, 'uploadError', [file, message, item, folder]);
             if (!messageText) {
                 if (typeof(message) === 'string') {
                     messageText = message;
@@ -419,8 +470,8 @@
             }
             // FIXME: can't use change status, because the folder item is updated
             // on complete, which replaces the html row element
-            // for now, use bootbox
-            bootbox.alert(messageText);
+            // for now, use GrowlBox
+            $.osf.growl('Upload Error:', messageText);
         },
         uploadSuccess: function(file, row, data) {
             // If file hasn't changed, remove the duplicate item
@@ -429,26 +480,10 @@
             var self = this;
             if (data.actionTaken === null) {
                 self.changeStatus(row, statusType.NO_CHANGES);
-                setTimeout(function() {
-                    try {
-                        $(self.getRowElement(row)).fadeOut(500, function() {
-                          self.removeItem(row.id);
-                        });
-                    } catch (error) {
-                        self.removeItem(row.id);
-                    }
-                }, 2000);
+                self.delayRemoveRow(row);
             } else if (data.actionTaken === 'file_updated') {
                 self.changeStatus(row, statusType.UPDATED);
-                setTimeout(function() {
-                    try {
-                        $(self.getRowElement(row)).fadeOut(500, function() {
-                            self.removeItem(row.id);
-                        });
-                    } catch (error) {
-                        self.removeItem(row.id);
-                    }
-                }, 2000);
+                self.delayRemoveRow(row);
             } else{
                 // Update the row with the returned server data
                 // This is necessary for the download and delete button to work.
@@ -488,6 +523,9 @@
             self.getData().forEach(function(item) {
                 self.expandItem(item);
             });
+            // Set default sort order
+            self.grid.setSortColumn(Rubeus.Sort.defaultColumn, Rubeus.Sort.defaultAsc);
+            self.getData()[0]._node.sort(Rubeus.Sort.defaultColumn, Rubeus.Sort.defaultAsc);
             updateTooltips();
             $(this.options.progBar).hide();
         },

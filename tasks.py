@@ -8,12 +8,14 @@ import sys
 import code
 import platform
 import subprocess
+import logging
 
 from invoke import task, run
 from invoke.exceptions import Failure
 
 from website import settings
 
+logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
 def get_bin_path():
     """Get parent path of current python binary.
@@ -35,8 +37,11 @@ except Failure:
 
 
 @task
-def server():
-    run(bin_prefix('python main.py'))
+def server(host=None, port=5000, debug=True):
+    """Run the app server."""
+    from website.app import init_app
+    app = init_app(set_backends=True, routes=True)
+    app.run(host=host, port=port, debug=debug)
 
 
 SHELL_BANNER = """
@@ -250,7 +255,7 @@ def rabbitmq():
     run("rabbitmq-server", pty=True)
 
 
-@task
+@task(aliases=['elastic'])
 def elasticsearch():
     """Start a local elasticsearch server
 
@@ -278,8 +283,8 @@ def mailserver(port=1025):
 
 
 @task
-def flake():
-    run('flake8 .')
+def flake8():
+    run('flake8 .', echo=True)
 
 
 @task
@@ -323,14 +328,19 @@ def test_addons():
 
 
 @task
-def test():
+def test(all=False):
     """Alias of `invoke test_osf`.
     """
-    test_osf()
+    if all:
+        test_all()
+    else:
+        test_osf()
 
 
 @task
-def test_all():
+def test_all(flake=False):
+    if flake:
+        flake8()
     test_osf()
     test_addons()
 
@@ -428,9 +438,22 @@ def copy_settings(addons=False):
 
 @task
 def packages():
+    brew_commands = [
+        'update',
+        'upgrade',
+        'install libxml2',
+        'install libxslt',
+        'install elasticsearch',
+        'install gpg',
+        'install node',
+        'tap tokutek/tokumx',
+        'install tokumx-bin',
+    ]
     if platform.system() == 'Darwin':
-        print('Running brew bundle')
-        run('brew bundle')
+        print('Running brew commands')
+        for item in brew_commands:
+            command = 'brew {cmd}'.format(cmd=item)
+            run(command)
     elif platform.system() == 'Linux':
         # TODO: Write a script similar to brew bundle for Ubuntu
         # e.g., run('sudo apt-get install [list of packages]')
@@ -510,6 +533,7 @@ def hotfix(name, finish=False, push=False):
         run('git flow hotfix finish {}'.format(next_patch_version), echo=True, pty=True)
     if push:
         run('git push origin master', echo=True)
+        run('git push --tags', echo=True)
         run('git push origin develop', echo=True)
 
 
@@ -615,7 +639,18 @@ def bundle_certs(domain, cert_path):
         for cert_file in cert_files
     )
     cmd = 'cat {certs} > {domain}.bundle.crt'.format(
-        certs=' '.join(certs),
+        certs=certs,
         domain=domain,
     )
+    run(cmd)
+
+
+@task
+def generate_self_signed(domain):
+    """Generate self-signed SSL key and certificate.
+    """
+    cmd = (
+        'openssl req -x509 -nodes -days 365 -newkey rsa:2048'
+        ' -keyout {0}.key -out {0}.crt'
+    ).format(domain)
     run(cmd)

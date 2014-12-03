@@ -10,12 +10,12 @@
         <span class="help-block">
             Your full name, above, is the name that will be displayed in your profile.
             To control the way your name will appear in citations, you can use the
-            "Guess names" button to automatically infer your first name, last
+            "Auto-fill" button to automatically infer your first name, last
             name, etc., or edit the fields directly below.
         </span>
 
         <div style="margin-bottom: 10px;">
-            <a class="btn btn-default" data-bind="enabled: hasFirst(), click: impute">Guess names</a>
+            <a class="btn btn-default" data-bind="enabled: hasFirst(), click: impute">Auto-fill</a>
         </div>
 
         <div class="form-group">

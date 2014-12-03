@@ -207,10 +207,6 @@
         // Must be set after isValid is defined in inherited view models
         self.hasValidProperty = ko.observable(false);
 
-        self.dirty = ko.computed(function() {
-            return self.mode() === 'edit' && ko.toJSON(self.tracked) !== ko.toJSON(self.original());
-        });
-
         // Warn on URL change if dirty
         $(window).on('beforeunload', function() {
             if (self.dirty()) {
@@ -221,7 +217,7 @@
         // Warn on tab change if dirty
         $('body').on('show.bs.tab', function() {
             if (self.dirty()) {
-                bootbox.alert('There are unsaved changes to your settings. ' +
+                $.osf.growl('There are unsaved changes to your settings.',
                     'Please save or discard your changes before switching ' +
                     'tabs.');
                 return false;
@@ -275,7 +271,7 @@
 
     BaseViewModel.prototype.setOriginal = function() {};
 
-    BaseViewModel.prototype.dirty = function() { return false };
+    BaseViewModel.prototype.dirty = function() { return false; };
 
     BaseViewModel.prototype.fetch = function() {
         var self = this;
@@ -295,14 +291,28 @@
     };
 
     BaseViewModel.prototype.cancel = function(data, event) {
+        var self = this;
         event && event.preventDefault();
 
         if (this.dirty()) {
-            this.restoreOriginal();
+            bootbox.confirm({
+                title: 'Discard changes?',
+                message: 'Are you sure you want to discard your unsaved changes?',
+                callback: function(confirmed) {
+                    if (confirmed) {
+                        self.restoreOriginal();
+                        if ($.inArray('view', self.modes) !== -1) {
+                            self.mode('view');
+                        }
+                    }
+                }
+            });
+        } else {
+            if ($.inArray('view', self.modes) !== -1) {
+                self.mode('view');
+            }
         }
-        if ($.inArray('view', this.modes) !== -1) {
-            this.mode('view');
-        }
+
     };
 
     BaseViewModel.prototype.submit = function() {
@@ -313,7 +323,7 @@
             ).done(
                 this.handleSuccess.bind(this)
             ).done(
-                this.setOriginal
+                this.setOriginal.bind(this)
             ).fail(
                 this.handleError.bind(this)
             );
@@ -682,7 +692,7 @@
             self.startMonth,
             self.startYear,
             self.endMonth,
-            self.endYear,
+            self.endYear
         ];
 
         var validated = ko.validatedObservable(self);
@@ -713,7 +723,7 @@
             self.startMonth,
             self.startYear,
             self.endMonth,
-            self.endYear,
+            self.endYear
         ];
 
         var validated = ko.validatedObservable(self);

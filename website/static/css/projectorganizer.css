@@ -1,7 +1,7 @@
 /* @override http://localhost:5000/static/css/projectorganizer.css */
 
 /* Project organizer HGrid  */
-.cell-selection {
+.project-organizer .cell-selection {
     border-right-color: silver;
     border-right-style: solid;
     background: #f5f5f5;
@@ -10,8 +10,11 @@
     font-size: 10px;
 }
 
-.slick-row.active{
+.project-organizer .slick-row.active{
     /*background-color: #fefab4;*/
+}
+.slick-row .l1 {
+    overflow: visible;
 }
 
 .project-organizer-dand {
@@ -87,6 +90,19 @@ span.project-organizer-icon-pointer {
     background-image: url('/static/img/hgrid/pointer.png');
 }
 
+span.project-organizer-icon-reg-pointer {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    background-image: url('/static/img/hgrid/reg-pointer.png');
+}
+
+
+span.project-organizer-icon-reg-pointer:hover {
+    background-image: url('/static/img/hgrid/pointer-hover.png');
+}
+
 span.project-organizer-icon-pointer:hover {
     display: inline-block;
     width: 16px;
@@ -141,7 +157,7 @@ button.project-organizer-icon-visit {
     background-repeat: no-repeat;
 }
 
-button.hg-btn {
+.project-organizer button.hg-btn {
     background-color: transparent;
     border: 0px;
 }
@@ -157,7 +173,7 @@ span.project-folder {
     text-decoration: none;
 }
 
-.hg-item-name:hover {
+.project-organizer .hg-item-name:hover {
     text-decoration: none !important;
     cursor: default;
 }
@@ -285,7 +301,7 @@ div.organize-project-controls {
 
 /* Typeahead autocomplete box */
 
-input.typeahead{
+.project-organizer input.typeahead{
     width: 100%;
     margin-bottom: 5px;
 }
@@ -298,8 +314,8 @@ input.typeahead{
 /* Typeahead scaffolding */
 /* ----------- */
 
-.tt-dropdown-menu,
-.gist {
+.project-organizer .tt-dropdown-menu,
+.project-organizer .gist {
     text-align: left;
     overflow-x: hidden;
 }
@@ -307,8 +323,8 @@ input.typeahead{
 /* Typeahead base styles */
 /* ----------- */
 
-.typeahead,
-.tt-query {
+.project-organizer .typeahead,
+.project-organizer .tt-query {
     width: 100%;
     height: 30px;
     font-size: 18px;
@@ -319,32 +335,32 @@ input.typeahead{
     outline: none;
 }
 
-.typeahead {
+.project-organizer .typeahead {
     background-color: #fff;
 }
 
-.typeahead:focus {
+.project-organizer .typeahead:focus {
     -webkit-box-shadow: rgba(102, 175, 232, 0.576471) 0px 0px 7.668470859527588px 0px;
     -moz-box-shadow: rgba(102, 175, 232, 0.576471) 0px 0px 7.668470859527588px 0px;
     box-shadow: rgba(102, 175, 232, 0.576471) 0px 0px 7.668470859527588px 0px;
 }
 
-.tt-query {
+.project-organizer .tt-query {
     -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
     -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
     box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
 }
 /* rgb of glow 106 176 232
 */
-.tt-hint {
+.project-organizer .tt-hint {
     color: #999;
 }
-h3.category {
+.project-organizer h3.category {
     font-size: 18px;
     margin-top: 5px;
     margin-left: 5px;
 }
-.tt-dropdown-menu {
+.project-organizer .tt-dropdown-menu {
     width: 422px;
     padding: 8px 0;
     background-color: #fff;
@@ -359,22 +375,21 @@ h3.category {
 	margin-top: 6px;
 }
 
-.tt-suggestion {
+.project-organizer .tt-suggestion {
     padding: 3px 5px;
     font-size: 12px;
     line-height: 14px;
 }
 
-.tt-suggestion.tt-cursor {
+.project-organizer .tt-suggestion.tt-cursor {
     color: #fff;
     background-color: #0097cf;
-
 }
 
-.tt-suggestion p {
+.project-organizer .tt-suggestion p {
     margin: 0;
 }
 
-.gist {
+.project-organizer .gist {
     font-size: 14px;
 }

@@ -6,30 +6,35 @@ import httplib as http
 from flask import request
 from modularodm import Q
 
+from framework import utils
+from framework import sentry
 from framework.auth.core import User
 from framework.flask import redirect  # VOL-aware redirect
-from framework import utils
-from framework.forms import utils as form_utils
-from framework import sentry
-from framework.exceptions import HTTPError
 from framework.routing import proxy_url
-from framework.auth import Auth, get_current_user
-from framework.auth.decorators import collect_auth, must_be_logged_in
-from framework.auth.forms import (RegistrationForm, SignInForm,
-                                  ForgotPasswordForm, ResetPasswordForm)
-from framework.sessions import get_session, set_session
+from framework.exceptions import HTTPError
+from framework.auth.forms import SignInForm
+from framework.forms import utils as form_utils
 from framework.guid.model import GuidStoredObject
-from website.models import Guid, Node
-from website.util import web_url_for, rubeus
-from website.project import model, new_dashboard
-from website import settings
+from framework.auth.forms import RegistrationForm
+from framework.auth.forms import ResetPasswordForm
+from framework.auth.forms import ForgotPasswordForm
+from framework.auth.decorators import collect_auth
+from framework.auth.decorators import must_be_logged_in
 
-from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
+from website.models import Guid
+from website.models import Node
+from website.util import rubeus
+from website.project import model
+from website.util import web_url_for
+from website.util import permissions
+from website.project import new_dashboard
+from website.settings import ALL_MY_PROJECTS_ID
+from website.settings import ALL_MY_REGISTRATIONS_ID
 
 logger = logging.getLogger(__name__)
 
 
-def _rescale_ratio(nodes):
+def _rescale_ratio(auth, nodes):
     """Get scaling denominator for log lists across a sequence of nodes.
 
     :param nodes: Nodes
@@ -38,34 +43,40 @@ def _rescale_ratio(nodes):
     """
     if not nodes:
         return 0
-    user = get_current_user()
     counts = [
         len(node.logs)
         for node in nodes
-        if node.can_view(Auth(user=user))
+        if node.can_view(auth)
     ]
     if counts:
         return float(max(counts))
     return 0.0
 
 
-def _render_node(node):
+def _render_node(node, auth=None):
     """
 
     :param node:
     :return:
 
     """
+    perm = None
+    if auth and auth.user:
+        perm_list = node.get_permissions(auth.user)
+        perm = permissions.reduce_permissions(perm_list)
     return {
         'title': node.title,
         'id': node._primary_key,
         'url': node.url,
         'api_url': node.api_url,
         'primary': node.primary,
+        'date_modified': utils.iso8601format(node.date_modified),
+        'category': node.category,
+        'permissions': perm,  # A string, e.g. 'admin', or None
     }
 
 
-def _render_nodes(nodes):
+def _render_nodes(nodes, auth=None):
     """
 
     :param nodes:
@@ -73,32 +84,12 @@ def _render_nodes(nodes):
     """
     ret = {
         'nodes': [
-            _render_node(node)
+            _render_node(node, auth)
             for node in nodes
         ],
-        'rescale_ratio': _rescale_ratio(nodes),
+        'rescale_ratio': _rescale_ratio(auth, nodes),
     }
     return ret
-
-
-def _get_user_activity(node, user, rescale_ratio):
-
-    # Counters
-    total_count = len(node.logs)
-
-    # Note: It's typically much faster to find logs of a given node
-    # attached to a given user using node.logs.find(...) than by
-    # loading the logs into Python and checking each one. However,
-    # using deep caching might be even faster down the road.
-
-    ua_count = node.logs.find(Q('user', 'eq', user)).count()
-    non_ua_count = total_count - ua_count  # base length of blue bar
-
-    # Normalize over all nodes
-    ua = ua_count / rescale_ratio * settings.USER_ACTIVITY_MAX_WIDTH
-    non_ua = non_ua_count / rescale_ratio * settings.USER_ACTIVITY_MAX_WIDTH
-
-    return ua_count, ua, non_ua
 
 
 @collect_auth
@@ -220,6 +211,15 @@ def get_all_registrations_smart_folder(auth, **kwargs):
 
 @must_be_logged_in
 def get_dashboard_nodes(auth, **kwargs):
+    """Get summary information about the current user's dashboard nodes.
+
+    :param-query no_components: Exclude components from response.
+        NOTE: By default, components will only be shown if the current user
+        is contributor on a comonent but not its parent project. This query
+        parameter forces ALL components to be excluded from the request.
+    :param-query permissions: Filter upon projects for which the current user
+        has the specified permissions. Examples: 'write', 'admin'
+    """
     user = auth.user
 
     contributed = user.node__contributed  # nodes user contributed to
@@ -231,18 +231,33 @@ def get_dashboard_nodes(auth, **kwargs):
         Q('is_folder', 'eq', False)
     )
 
-    comps = contributed.find(
-        # components only
-        Q('category', 'ne', 'project') &
-        # parent is not in the nodes list
-        Q('__backrefs.parent.node.nodes', 'nin', nodes.get_keys()) &
-        # exclude deleted nodes
-        Q('is_deleted', 'eq', False) &
-        # exclude registrations
-        Q('is_registration', 'eq', False)
-    )
+    # TODO: Store truthy values in a named constant available site-wide
+    if request.args.get('no_components') not in [True, 'true', 'True', '1', 1]:
+        comps = contributed.find(
+            # components only
+            Q('category', 'ne', 'project') &
+            # parent is not in the nodes list
+            Q('__backrefs.parent.node.nodes', 'nin', nodes.get_keys()) &
+            # exclude deleted nodes
+            Q('is_deleted', 'eq', False) &
+            # exclude registrations
+            Q('is_registration', 'eq', False)
+        )
+    else:
+        comps = []
 
-    return _render_nodes(list(nodes) + list(comps))
+    nodes = list(nodes) + list(comps)
+    if request.args.get('permissions'):
+        perm = request.args['permissions'].strip().lower()
+        if perm not in permissions.PERMISSIONS:
+            raise HTTPError(http.BAD_REQUEST, dict(
+                message_short='Invalid query parameter',
+                message_oong='{0} is not in {1}'.format(perm, permissions.PERMISSIONS)
+            ))
+        response_nodes = [node for node in nodes if node.has_permission(user, permission=perm)]
+    else:
+        response_nodes = nodes
+    return _render_nodes(response_nodes, auth)
 
 
 @must_be_logged_in
@@ -250,16 +265,8 @@ def dashboard(auth):
     user = auth.user
     dashboard_folder = find_dashboard(user)
     dashboard_id = dashboard_folder._id
-    session = get_session()
-    if 'seen_dashboard' in session.data:
-        seen_dashboard = session.data['seen_dashboard']
-    else:
-        seen_dashboard = False
-    session.data['seen_dashboard'] = True
-    set_session(session)
     return {'addons_enabled': user.get_addon_names(),
             'dashboard_id': dashboard_id,
-            'seen_dashboard': seen_dashboard,
             }
 
 

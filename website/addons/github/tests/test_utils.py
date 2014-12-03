@@ -1,14 +1,19 @@
-from nose.tools import *
-from tests.base import OsfTestCase
-
 import json
 import hmac
 import hashlib
+import unittest
 
-from website.addons.base.exceptions import HookError
+import mock
 
-from website.addons.github.model import AddonGitHubNodeSettings
+from nose.tools import *
+
+from tests.base import OsfTestCase
+
 from website.addons.github import utils
+from website.addons.github.api import GitHub
+from website.addons.base.exceptions import HookError
+from website.addons.github.exceptions import EmptyRepoError
+from website.addons.github.model import AddonGitHubNodeSettings
 
 
 def make_signature(secret, data):
@@ -55,3 +60,14 @@ class TestHookVerify(OsfTestCase):
                 HOOK_PAYLOAD,
                 {'X-Hub-Signature': 'invalid'}
             )
+
+
+class TestHookVerify(unittest.TestCase):
+    @mock.patch('website.addons.github.api.GitHub.repo')
+    def tests_none_trees_raise_empty_repo(self, mock_repo):
+        mock_tree = mock.Mock()
+        mock_tree.tree.return_value = None
+        mock_repo.return_value = mock_tree
+
+        with assert_raises(EmptyRepoError):
+            GitHub().tree('', '', '')

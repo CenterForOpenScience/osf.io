@@ -20,8 +20,8 @@ from framework.auth import Auth
 from website.util import web_url_for, api_url_for
 from website.addons.github.tests.utils import create_mock_github
 from website.addons.github import views, api, utils
-from website.addons.github.model import GithubGuidFile, AddonGitHubUserSettings, AddonGitHubOauthSettings
-from website.addons.github.utils import MESSAGES
+from website.addons.github.model import GithubGuidFile
+from website.addons.github.utils import MESSAGES, check_permissions
 from website.addons.github.exceptions import TooBigError
 
 github_mock = create_mock_github(user='fred', private=False)
@@ -281,19 +281,57 @@ class TestGithubViews(OsfTestCase):
         with assert_raises(HTTPError):
             utils.get_refs(self.node_settings, branch='nothere')
 
-    # TODO: Write me
+
     # Tests for _check_permissions
+    # make a user with no authorization; make sure check_permissions returns false
     def test_permissions_no_auth(self):
-        pass
+        # project is set to private right now
+        connection = github_mock
+        non_authenticated_user = UserFactory()
+        non_authenticated_auth = Auth(user=non_authenticated_user)
+        branch = 'master'
+        assert_false(check_permissions(self.node_settings, non_authenticated_auth, connection, branch))
 
-    def test_permissions_no_access(self):
-        pass
+    # make a repository that doesn't allow push access for this user;
+    # make sure check_permissions returns false
+    @mock.patch('website.addons.github.model.AddonGitHubUserSettings.has_auth')
+    @mock.patch('website.addons.github.api.GitHub.repo')
+    def test_permissions_no_access(self, mock_repo, mock_has_auth):
+        mock_has_auth.return_value = True
+        connection = github_mock
+        branch = 'master'
+        mock_repository = mock.NonCallableMock()
+        mock_repository.user = 'fred'
+        mock_repository.repo = 'mock-repo'
+        mock_repository.to_json.return_value = {'user': 'fred',
+                                                'repo': 'mock-repo',
+                                                'permissions': {
+                                                    'push': False, # this is key
+                                                    },
+                                               }
+        mock_repo.return_value = mock_repository
+        assert_false(check_permissions(self.node_settings, self.consolidated_auth, connection, branch, repo=mock_repository))
 
-    def test_permissions_not_head(self):
-        pass
 
-    def test_permissions(self):
-        pass
+    # make a branch with a different commit than the commit being passed into check_permissions
+    @mock.patch('website.addons.github.model.AddonGitHubUserSettings.has_auth')
+    def test_permissions_not_head(self, mock_has_auth):
+        mock_has_auth.return_value = True
+        connection = github_mock
+        mock_branch = mock.NonCallableMock()
+        mock_branch.commit.sha = '67890'
+        sha = '12345'
+        assert_false(check_permissions(self.node_settings, self.consolidated_auth, connection, mock_branch, sha=sha))
+
+
+    # make sure permissions are not granted for editing a registration
+    @mock.patch('website.addons.github.model.AddonGitHubUserSettings.has_auth')
+    def test_permissions(self, mock_has_auth):
+        mock_has_auth.return_value = True
+        connection = github_mock
+        self.node_settings.owner.is_registration = True
+        assert_false(check_permissions(self.node_settings, self.consolidated_auth, connection, 'master'))
+
 
     # TODO: Write me
     def test_dummy_folder(self):
@@ -790,7 +828,6 @@ class TestGithubSettings(OsfTestCase):
 
         self.project.reload()
         self.node_settings.reload()
-
         assert_equal(self.node_settings.user, None)
         assert_equal(self.node_settings.repo, None)
         assert_equal(self.node_settings.user_settings, None)
@@ -852,6 +889,7 @@ class TestAuthViews(OsfTestCase):
         assert_equal(self.user_settings.oauth_token_type, "testing token type")
         assert_equal(self.user_settings.github_user_name, "testing user")
         assert_equal(self.user_settings.oauth_settings.github_user_id, "testing user id")
+
 
     @mock.patch('website.addons.github.api.GitHub.user')
     @mock.patch('website.addons.github.views.auth.oauth_get_token')

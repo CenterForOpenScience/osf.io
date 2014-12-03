@@ -1,15 +1,27 @@
 ### Included where the LogsViewModel is used ###
+
+## :param bool scripted: Whether to apply the "scripted" CSS class to the logFeed to prevent FOUC
+<%page args="scripted=True"/>
 <div id="logProgressBar" class="progress progress-striped active">
     <div class="progress-bar"  role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">
         <span class="sr-only">Loading</span>
     </div>
 </div>
 
-<div class="scripted" id="logScope">
+<div
+    %if scripted:
+        class="scripted"
+    %endif
+        id="logScope">
     <p class="help-block" data-bind="if: tzname">
         All times displayed at
         <span data-bind="text: tzname"></span>
         <a href="http://en.wikipedia.org/wiki/Coordinated_Universal_Time" target="_blank">UTC</a> offset.
+    </p>
+
+    <p data-bind="if: !logs().length" class="help-block">
+        No logs to show. Click the watch icon (<i class="icon-eye-open"></i>) icon on a
+        project's page to get activity updates here.
     </p>
 
     <dl class="dl-horizontal activity-log" data-bind="foreach: {data: logs, as: 'log'}">
@@ -40,6 +52,6 @@
 
         </dd>
     </dl><!-- end foreach logs -->
-    <a class="moreLogs" data-bind="click: moreLogs, visible: enableMoreLogs">more</a>
+    <a class="btn btn-link pull-right"data-bind="click: moreLogs, visible: enableMoreLogs">More...</a>
 </div><!-- end #logScope -->
-<%include file="log_templates.mako"/>
+<%include file="_log_templates.mako"/>

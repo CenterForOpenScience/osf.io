@@ -14,11 +14,20 @@ def parent_dir(path):
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 BASE_PATH = parent_dir(HERE)  # website/ directory
+APP_PATH = parent_dir(BASE_PATH)
 ADDON_PATH = os.path.join(BASE_PATH, 'addons')
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = "/static"
+
+LOAD_BALANCER = False
+
+LOG_PATH = os.path.join(APP_PATH, 'logs')
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 ANALYTICS_PATH = os.path.join(BASE_PATH, 'analytics')
+
+CORE_TEMPLATES = os.path.join(BASE_PATH, 'templates/log_templates.mako')
+BUILT_TEMPLATES = os.path.join(BASE_PATH, 'templates/_log_templates.mako')
+
 DOMAIN = 'http://localhost:5000/'
 GNUPG_HOME = os.path.join(BASE_PATH, 'gpg')
 GNUPG_BINARY = 'gpg'
@@ -41,6 +50,9 @@ DEV_MODE = False
 DEBUG_MODE = False
 
 
+# TODO: Remove after migration to OSF Storage
+COPY_GIT_REPOS = False
+
 # External services
 USE_CDN_FOR_CLIENT_LIBS = True
 
@@ -56,6 +68,7 @@ MAILGUN_API_KEY = None
 # TODO: Override in local.py in production
 UPLOADS_PATH = os.path.join(BASE_PATH, 'uploads')
 MFR_CACHE_PATH = os.path.join(BASE_PATH, 'mfrcache')
+MFR_TEMP_PATH = os.path.join(BASE_PATH, 'mfrtemp')
 
 # Use Celery for file rendering
 USE_CELERY = True
@@ -96,9 +109,6 @@ GRAVATAR_SIZE_DISCUSSION = 20
 # Conference options
 CONFERNCE_MIN_COUNT = 5
 
-# User activity style
-USER_ACTIVITY_MAX_WIDTH = 325
-
 WIKI_WHITELIST = {
     'tags': [
         'a', 'abbr', 'acronym', 'b', 'bdo', 'big', 'blockquote', 'br',
@@ -133,9 +143,11 @@ CELERY_RESULT_BACKEND = 'amqp://'
 
 # Modules to import when celery launches
 CELERY_IMPORTS = (
-    'framework.email.tasks',
     'framework.tasks',
-    'framework.render.tasks'
+    'framework.tasks.signals',
+    'framework.email.tasks',
+    'framework.render.tasks',
+    'framework.analytics.tasks',
 )
 
 # Add-ons
@@ -147,7 +159,8 @@ ADDONS_REQUESTED = [
     'figshare',
     'forward',
     'github',
-    'osffiles',
+    # 'osffiles',
+    'osfstorage',
     's3',
     'twofactor',
     'wiki',
@@ -190,3 +203,6 @@ ALL_MY_REGISTRATIONS_NAME = 'All my registrations'
 # FOR EMERGENCIES ONLY: Setting this to True will disable forks, registrations,
 # and uploads in order to save disk space.
 DISK_SAVING_MODE = False
+
+# Add Contributors (most in common)
+MAX_MOST_IN_COMMON_LENGTH = 15

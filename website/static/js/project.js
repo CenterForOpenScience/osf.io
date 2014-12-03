@@ -43,9 +43,9 @@
             }).fail(function(response) {
                 $.osf.unblock();
                 if (response.status === 403) {
-                    bootbox.alert('Sorry, you do not have permission to fork this project');
+                    $.osf.growl('Sorry:', 'you do not have permission to fork this project');
                 } else {
-                    bootbox.alert('Forking failed');
+                    $.osf.growl('Error:', 'Forking failed');
                     Raven.captureMessage('Error occurred during forking');
                 }
             });
@@ -69,7 +69,7 @@
                         window.location.reload();
                     }).fail(function() {
                         $.osf.unblock();
-                        bootbox.alert('Could not fork link.');
+                        $.osf.growl('Error','Could not fork link.');
                     });
                 }
             }
@@ -267,10 +267,10 @@
         });
 
         $('body').on('click', '.tagsinput .tag > span', function(e) {
-            window.location = '/search/?q=' + $(e.target).text().toString().trim();
+            window.location = '/search/?q=(tags:' + $(e.target).text().toString().trim()+ ')';
         });
 
-        $('.citation-toggle').on('click', function(evt) {
+        $('.citation-toggle').on('click', function() {
             $(this).closest('.citations').find('.citation-list').slideToggle();
             return false;
         });

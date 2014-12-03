@@ -26,11 +26,11 @@ class TestCallbacks(OsfTestCase):
         self.project = ProjectFactory.build()
         self.consolidated_auth = Auth(self.project.creator)
         self.non_authenticator = UserFactory()
+        self.project.save()
         self.project.add_contributor(
             contributor=self.non_authenticator,
             auth=self.consolidated_auth,
         )
-        self.project.save()
 
         self.project.add_addon('github', auth=self.consolidated_auth)
         self.project.creator.add_addon('github')

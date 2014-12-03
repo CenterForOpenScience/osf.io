@@ -12,7 +12,7 @@ from website import settings
 from website.models import User, PrivateLink
 from website.addons.dropbox.model import DropboxUserSettings
 
-from scripts.analytics import profile
+from scripts.analytics import profile, tabulate_emails
 
 
 def get_active_users():
@@ -48,7 +48,12 @@ def get_private_links():
 def count_user_nodes(users=None):
     users = users or get_active_users()
     return [
-        len(user.node__contributed)
+        len(
+            user.node__contributed.find(
+                Q('is_deleted', 'eq', False) &
+                Q('is_folder', 'ne', True)
+            )
+        )
         for user in users
     ]
 
@@ -115,6 +120,8 @@ def main():
 
     with open(os.path.join(settings.ANALYTICS_PATH, 'main.txt'), 'w') as fp:
         fp.write(table)
+
+    tabulate_emails.main()
 
 
 if __name__ == '__main__':

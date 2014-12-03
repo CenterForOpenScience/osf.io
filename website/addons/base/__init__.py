@@ -158,7 +158,7 @@ class GuidFile(GuidStoredObject):
     redirect_mode = 'proxy'
 
     _id = fields.StringField(primary=True)
-    node = fields.ForeignField('node', index=True)
+    node = fields.ForeignField('node', required=True, index=True)
 
     _meta = {
         'abstract': True,
@@ -235,6 +235,11 @@ class AddonUserSettingsBase(AddonSettingsBase):
     def public_id(self):
         return None
 
+    @property
+    def has_auth(self):
+        """Whether the user has added credentials for this addon."""
+        return False
+
     def get_backref_key(self, schema, backref_name):
         return schema._name + '__' + backref_name
 
@@ -258,6 +263,7 @@ class AddonUserSettingsBase(AddonSettingsBase):
 
     def to_json(self, user):
         ret = super(AddonUserSettingsBase, self).to_json(user)
+        ret['has_auth'] = self.has_auth
         ret.update({
             'nodes': [
                 {
@@ -432,9 +438,6 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         pass
 
 
-# TODO: Move this
-LOG_TEMPLATES = 'website/templates/log_templates.mako'
-
 # TODO: No more magicks
 def init_addon(app, addon_name, routes=True):
     """Load addon module and create configuration object.
@@ -459,7 +462,7 @@ def init_addon(app, addon_name, routes=True):
         addon_path, 'templates', 'log_templates.mako'
     )
     if os.path.exists(log_templates):
-        with open(LOG_TEMPLATES, 'a') as fp:
+        with open(settings.BUILT_TEMPLATES, 'a') as fp:
             fp.write(open(log_templates, 'r').read())
 
     # Add routes

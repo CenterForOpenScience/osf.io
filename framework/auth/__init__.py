@@ -7,7 +7,7 @@ from framework.auth.exceptions import (
 )
 
 from .core import User, Auth
-from .core import get_user, get_current_user, get_api_key, get_current_node
+from .core import get_user
 
 from website import settings
 
@@ -16,9 +16,6 @@ __all__ = [
     'Auth',
     'User',
     'get_user',
-    'get_api_key',
-    'get_current_node',
-    'get_current_user',
     'check_password',
     'authenticate',
     'login',

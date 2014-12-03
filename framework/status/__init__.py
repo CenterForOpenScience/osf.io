@@ -4,7 +4,7 @@ from collections import namedtuple
 
 from framework.sessions import session
 
-Status = namedtuple('Status', ['message', 'css_class'])
+Status = namedtuple('Status', ['message', 'css_class', 'dismissible'])
 
 #: Status_type => bootstrap css class
 TYPE_MAP = {
@@ -16,12 +16,12 @@ TYPE_MAP = {
     'danger': 'danger',
 }
 
-def push_status_message(message, kind='warning'):
+def push_status_message(message, kind='warning', dismissible=True):
     statuses = session.data.get('status')
     if not statuses:
         statuses = []
     css_class = TYPE_MAP.get(kind, 'warning')
-    statuses.append(Status(message=message, css_class=css_class))
+    statuses.append(Status(message=message, css_class=css_class, dismissible=dismissible))
     session.data['status'] = statuses
 
 def pop_status_messages(level=0):
