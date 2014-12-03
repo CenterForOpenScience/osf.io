@@ -1,7 +1,7 @@
 from nameparser.parser import HumanName
 import mailchimp
 from website import settings
-from framework.tasks import celery
+from framework.tasks import app
 
 
 def impute_names(name):
@@ -53,7 +53,7 @@ def get_list_name_from_id(list_id):
     mailing_list = m.lists.list(filters={'list_id': list_id})
     return mailing_list['data'][0]['name']
 
-@celery.task
+@app.task
 def subscribe(list_name, username):
     m = get_mailchimp_api()
     list_id = get_list_id_from_name(list_name=list_name)
@@ -62,7 +62,7 @@ def subscribe(list_name, username):
     except mailchimp.ListAlreadySubscribedError:
         pass
 
-@celery.task
+@app.task
 def unsubscribe(list_name, username):
     m = get_mailchimp_api()
     list_id = get_list_id_from_name(list_name=list_name)
