@@ -591,6 +591,10 @@
          * Emulates the interface of TrackedMixin.dirty
          * */
         self.dirty = function() {
+            // if the length of the list has changed
+            if (self.originalItems.length !== self.contents().length) {
+                return true;
+            }
             for (var i=0; i<self.contents().length; i++) {
                 if (
                     // object has changed
