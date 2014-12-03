@@ -59,7 +59,7 @@
                     <div class="btn-group">
                         <a
                         % if user_name and (node['is_public'] or user['is_contributor']) and not node['in_dashboard']:
-                            data-bind="click: addToDashboard, tooltip: {title: 'Add to Project Organizer in My Dashboard',
+                            data-bind="click: addToDashboard, tooltip: {title: 'Add to Dashboard Folder',
                             placement: 'bottom'}, css: {disabled: inDashboard}" class="btn btn-default"
                         % else:
                             class="btn btn-default disabled"
