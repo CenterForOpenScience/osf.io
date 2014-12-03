@@ -267,17 +267,18 @@ class TestPublicNodes(SearchTestCase):
         searching for wiki text.
 
         """
-        wiki_content = 'Hammer to fall'
-
-        docs = query(wiki_content)['results']
-        assert_equal(len(docs), 0)
-
-        self.project.update_node_wiki(
-            'home', wiki_content, self.consolidate_auth,
-        )
-
-        docs = query(wiki_content)['results']
-        assert_equal(len(docs), 1)
+        wiki_content = {
+            'home': 'Hammer to fall',
+            'swag': '#YOLO'
+        }
+        for key, value in wiki_content.items():
+            docs = query(value)['results']
+            assert_equal(len(docs), 0)
+            self.project.update_node_wiki(
+                key, value, self.consolidate_auth,
+            )
+            docs = query(value)['results']
+            assert_equal(len(docs), 1)
 
     def test_clear_wiki(self):
         """Add wiki text to page, then delete, then verify that project is not

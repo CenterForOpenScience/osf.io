@@ -19,8 +19,8 @@ def requires_search(func):
 
 
 @requires_search
-def search(query, index='website', search_type=None):
-    return search_engine.search(query, index=index, search_type=search_type)
+def search(query, index='website', doc_type=None):
+    return search_engine.search(query, index=index, doc_type=doc_type)
 
 @requires_search
 def update_node(node, index='website'):
