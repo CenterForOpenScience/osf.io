@@ -3,18 +3,21 @@
 from flask import request
 import httplib as http
 
-from website.project.decorators import must_be_contributor_or_public
-from website.project.decorators import must_have_addon
+from framework.auth.decorators import must_be_logged_in
+
 from website.util import rubeus
+from website.project.decorators import must_have_addon
+from website.project.decorators import must_be_contributor_or_public
 from framework.exceptions import HTTPError
 
 from ..api import Figshare
 from ..utils import article_to_hgrid, project_to_hgrid
 
 
+@must_be_logged_in
 @must_be_contributor_or_public
 @must_have_addon('figshare', 'node')
-def figshare_hgrid_data_contents(node_addon, **kwargs):
+def figshare_hgrid_data_contents(node_addon, auth, **kwargs):
 
     node = node_addon.owner
     folders_only = bool(request.args.get('foldersOnly'))
@@ -24,7 +27,8 @@ def figshare_hgrid_data_contents(node_addon, **kwargs):
     connect = Figshare.from_settings(node_addon.user_settings)
     if fs_type in ['article', 'fileset']:
         out = article_to_hgrid(
-            node, connect.article(node_addon, fs_id)['items'][0],
+            node, auth.user,
+            connect.article(node_addon, fs_id)['items'][0],
             expand=True, folders_only=folders_only
         )
     elif fs_type == 'project':
@@ -32,6 +36,7 @@ def figshare_hgrid_data_contents(node_addon, **kwargs):
         out = project_to_hgrid(
             node=node,
             project=p,
+            user=auth.user,
             folders_only=folders_only
         )
         if p is False:
@@ -65,22 +70,8 @@ def figshare_hgrid_data(node_settings, auth, parent=None, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('figshare', 'node')
-def figshare_dummy_folder(node_settings, auth, parent=None, **kwargs):
-    node_settings = kwargs.get('node_addon')
-    auth = kwargs.get('auth')
+def figshare_dummy_folder(node_addon, auth, parent=None, **kwargs):
     data = request.args.to_dict()
 
     parent = data.pop('parent', 'null')  # noqa
-    return figshare_hgrid_data(node_settings, auth, None, contents=False, **data)
-
-
-#TODO Finish me
-def figshare_hgrid_urls(node):
-    node_settings = node.get_addon('figshare')
-    connect = Figshare.from_settings(node_settings.user_settings)
-
-    rv = project_to_hgrid(node, connect.project(node_settings, node_settings.figshare_id))
-
-    rv = [n['urls']['view'] for n in rv]
-
-    return rv
+    return figshare_hgrid_data(node_addon, auth, None, contents=False, **data)

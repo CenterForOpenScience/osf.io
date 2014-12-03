@@ -516,6 +516,10 @@
                     // Use OSF-provided error message if possible
                     // Otherwise, use dropzone's message
                     var msg = message.message_long || message;
+                    if (msg === 'Server responded with 0 code.' || msg.indexOf('409') !== -1) {
+                        msg = 'Unable to upload file. Another upload with the ' +
+                            'same name may be pending; please try again in a moment.';
+                    }
                     self.changeMessage(msg, 'text-danger');
                 });
                 this.on('drop',function(){ // clear errors on drop or click

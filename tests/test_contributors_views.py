@@ -16,7 +16,7 @@ class TestContributorViews(OsfTestCase):
         self.auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
 
-    def test_get_contributors(self):
+    def test_get_contributors_no_limit(self):
         self.project.add_contributor(
             AuthUserFactory(),
             auth=self.auth,
@@ -33,6 +33,48 @@ class TestContributorViews(OsfTestCase):
         # Should be two visible contributors on the project
         assert_equal(
             len(res.json['contributors']),
+            2,
+        )
+
+    def test_get_contributors_with_limit(self):
+        # Add five contributors
+        self.project.add_contributor(
+            AuthUserFactory(),
+            auth=self.auth,
+            visible=True,
+        )
+        self.project.add_contributor(
+            AuthUserFactory(),
+            auth=self.auth,
+            visible=True,
+        )
+        self.project.add_contributor(
+            AuthUserFactory(),
+            auth=self.auth,
+            visible=True,
+        )
+        self.project.add_contributor(
+            AuthUserFactory(),
+            auth=self.auth,
+            visible=True,
+        )
+        self.project.add_contributor(
+            AuthUserFactory(),
+            auth=self.auth,
+            visible=False,
+        )
+        self.project.save()
+        # Set limit to three contributors
+        url = self.project.api_url_for('get_contributors', limit=3)
+        res = self.app.get(url, auth=self.user.auth)
+        # Should be three visible contributors on the project
+        assert_equal(
+            len(res.json['contributors']),
+            3,
+        )
+        # There should be two 'more' contributors not shown
+        assert_equal(
+            (res.json['more']),
             2,
         )
 
@@ -104,3 +146,14 @@ class TestContributorViews(OsfTestCase):
         project.reload()
         recent = [c for c in self.user.recently_added if c.is_active()]
         assert_equal(len(res.json['contributors']), len(recent))
+
+
+    def test_get_recently_added_contributors_with_limit(self):
+        project = ProjectFactory(creator=self.user)
+        for _ in range(5):
+            project.add_contributor(AuthUserFactory(), auth=self.auth)
+        project.save()
+        url = self.project.api_url_for('get_recently_added_contributors', max=4)
+        res = self.app.get(url, auth=self.user.auth)
+        project.reload()
+        assert_equal(len(res.json['contributors']), 4)

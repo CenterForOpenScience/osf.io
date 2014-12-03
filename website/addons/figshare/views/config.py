@@ -5,7 +5,7 @@ import httplib as http
 from flask import request
 
 from framework.exceptions import HTTPError
-from framework.auth import get_current_user
+from framework.auth.decorators import must_be_logged_in
 
 from website.util import web_url_for
 from website.project.decorators import (
@@ -19,13 +19,13 @@ from ..utils import options_to_hgrid
 
 
 ###### AJAX Config
+@must_be_logged_in
 @must_be_valid_project
 @must_have_addon('figshare', 'node')
-def figshare_config_get(node_addon, **kwargs):
+def figshare_config_get(node_addon, auth, **kwargs):
     """API that returns the serialized node settings."""
-    user = get_current_user()
     return {
-        'result': serialize_settings(node_addon, user),
+        'result': serialize_settings(node_addon, auth.user),
     }, http.OK
 
 

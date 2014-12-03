@@ -12,12 +12,9 @@ env = Environment(settings.STATIC_FOLDER, settings.STATIC_URL_PATH)
 css = Bundle(
     # Vendorized libraries
     Bundle(
-        'vendor/jquery-tagit/css/jquery.tagit.css',
-        'vendor/jquery-tagsinput/css/jquery.tagsinput.css',
-        'vendor/jquery-tagit/css/tagit.ui-zendesk.css',
-        'vendor/jquery-fileupload/css/jquery.fileupload-ui.css',
+        'vendor/bower_components/jquery.tagsinput/jquery.tagsinput.css',
         'vendor/pygments.css',
-        'vendor/bootstrap3-editable/css/bootstrap-editable.css',
+        'vendor/bower_components/x-editable/dist/bootstrap3-editable/css/bootstrap-editable.css',
         'vendor/bower_components/bootstrap/dist/css/bootstrap-theme.css',
         'vendor/bower_components/hgrid/dist/hgrid.css',
         filters='cssmin'),
@@ -26,6 +23,7 @@ css = Bundle(
         'css/site.css',
         'css/rubeus.css',
         'css/commentpane.css',
+        'vendor/animate/animate-tasteful.min.css',
         filters="cssmin"),
     output="public/css/common.css"
 )
@@ -42,6 +40,8 @@ js = Bundle(
     ),
     'vendor/knockout-sortable/knockout-sortable.js',
     'js/site.js',
+    "vendor/bower_components/bootstrap.growl/bootstrap-growl.min.js",
+    'js/growlBox.js',
     'js/koHelpers.js',
     'js/language.js',
     output="public/js/common.js"
@@ -49,20 +49,16 @@ js = Bundle(
 
 js_bottom = Bundle(
     # Vendorized libraries loaded at the bottom of the page
-    "vendor/bootstrap3-editable/js/bootstrap-editable.min.js",
-    "vendor/jquery-tagsinput/js/jquery.tagsinput.min.js",
-    "vendor/jquery-tagcloud/jquery.tagcloud.js",
-    "vendor/jquery-tagit/js/tag-it.js",
+    "vendor/bower_components/x-editable/dist/bootstrap3-editable/js/bootstrap-editable.min.js",
+    "vendor/bower_components/jquery.tagsinput/jquery.tagsinput.min.js",
     "vendor/jquery-blockui/jquery.blockui.js",
-    "vendor/bower_components/bootstrap.growl/bootstrap-growl.min.js",
     # 'vendor/dropzone/dropzone.js',
     # 'vendor/hgrid/hgrid.js',
-    'vendor/autosize/jquery.autosize.min.js',
+    'vendor/bower_components/jquery-autosize/jquery.autosize.min.js',
     # Site-specific JS
     Bundle(
         'js/project.js',
-        'js/app.js',
-        'js/addons.js',
+        'js/addons.js'
         # 'js/dropzone-patch.js',
         # 'js/rubeus.js'
     ),

@@ -106,6 +106,18 @@ def get_tags(query, index):
 
 @requires_search
 def search(query, index='website', search_type='_all'):
+    """Search for a query
+
+    :param query: The substring of the username/project name/tag to search for
+    :param index:
+    :param search_type:
+
+    :return: List of dictionaries, each containing the results, counts, tags and typeAliases
+        results: All results returned by the query, that are within the index and search type
+        counts: A dictionary in which keys are types and values are counts for that type, e.g, count['total'] is the sum of the other counts
+        tags: A list of tags that are returned by the search query
+        typeAliases: the doc_types that exist in the search database
+    """
     tag_query = copy.deepcopy(query)
     count_query = copy.deepcopy(query)
 
@@ -277,16 +289,29 @@ def update_user(user):
             logger.warn('User ' + user._id + 'not in the Elasticsearch index')
         return
 
-    try:
-        normalized_name = six.u(user.fullname)
-    except TypeError:
-        normalized_name = user.fullname
-    normalized_name = unicodedata.normalize('NFKD', normalized_name).encode('ascii', 'ignore')
+    names = dict(
+        fullname=user.fullname,
+        given_name=user.given_name,
+        family_name=user.family_name,
+        middle_names=user.middle_names,
+        suffix=user.suffix
+    )
+
+    normalized_names = {}
+    for key, val in names.items():
+        if val is not None:
+            try:
+                val = six.u(val)
+            except TypeError:
+                pass  # This is fine, will only happen in 2.x if val is already unicode
+            normalized_names[key] = unicodedata.normalize('NFKD', val).encode('ascii', 'ignore')
 
     user_doc = {
         'id': user._id,
         'user': user.fullname,
-        'normalized_user': normalized_name,
+        'normalized_user': normalized_names['fullname'],
+        'normalized_names': normalized_names,
+        'names': names,
         'job': user.jobs[0]['institution'] if user.jobs else '',
         'job_title': user.jobs[0]['title'] if user.jobs else '',
         'school': user.schools[0]['institution'] if user.schools else '',
@@ -369,7 +394,7 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
 
     results = search(build_query(query, start=start, size=size), index='website', search_type='user')
     docs = results['results']
-    pages = math.ceil(results['counts']['total'] / size)
+    pages = math.ceil(results['counts'].get('user', 0) / size)
 
     users = []
     for doc in docs:

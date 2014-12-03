@@ -18,7 +18,7 @@
     }
 }(this, function(ko, $, FolderPicker, ZeroClipboard) {
     'use strict';
-    ko.punches.attributeInterpolationMarkup.enable();
+    ko.punches.enableAll();
     /**
      * Knockout view model for the Figshare node settings widget.
      */

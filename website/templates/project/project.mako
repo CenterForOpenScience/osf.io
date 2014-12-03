@@ -250,16 +250,24 @@ ${parent.javascript_bottom()}
 
     });
     $script.ready(['rubeus'], function() {
-        // Initialize filebrowser
-        var filebrowser = new Rubeus('#myGrid', {
-                data: nodeApiUrl + 'files/grid/',
-                columns: [Rubeus.Col.Name],
-                uploads: false,
-                width: "100%",
-                height: 600,
-                progBar: '#filetreeProgressBar',
-                searchInput: '#fileSearch'
-        });
+        // Since we don't have an Buttons/Status column, we append status messages to the
+        // name column
+        Rubeus.Col.DashboardName = $.extend({}, Rubeus.Col.Name);
+        Rubeus.Col.DashboardName.itemView = function(item) {
+            return Rubeus.Col.Name.itemView(item) + '&nbsp;<span data-status></span>';
+        };
+        var rubeusOpts = {
+            data: nodeApiUrl + 'files/grid/',
+            columns: [Rubeus.Col.DashboardName],
+            width: "100%",
+            height: 600,
+            progBar: '#filetreeProgressBar',
+            searchInput: '#fileSearch'
+        };
+        % if disk_saving_mode:
+          rubeusOpts.uploads = false;
+        % endif
+        var filebrowser = new Rubeus('#myGrid', rubeusOpts);
     })
 </script>
 

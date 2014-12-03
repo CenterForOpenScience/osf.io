@@ -12,29 +12,19 @@
 
 # Status message shown at settings page on first login
 # (upon clicking primary email confirmation link)
-WELCOME_MESSAGE = '''
-Welcome to the OSF!
-Please update the following settings. If you need assistance
-in getting started, please visit the <a href="/getting-started/">Getting Started</a>
-page.
-'''
+WELCOME_MESSAGE = ('Welcome to the OSF! Please update the following settings. If you need assistance '
+                   'in getting started, please visit the <a href="/getting-started/">Getting Started</a> page.')
 
-REGISTRATION_SUCCESS = '''
-Registration successful. Please check {email} to confirm your email address.
-'''
+REGISTRATION_SUCCESS = '''Registration successful. Please check {email} to confirm your email address.'''
 
 # Shown if registration is turned off in website.settings
 REGISTRATION_UNAVAILABLE = 'Registration currently unavailable.'
 
-ALREADY_REGISTERED = '''
-The email <em>{email}</em> has already been registered.
-'''
+ALREADY_REGISTERED = '''The email <em>{email}</em> has already been registered.'''
 
 # Shown if user tries to login with an email that is not yet confirmed
-UNCONFIRMED = '''
-This login email has been registered but not confirmed. Please check your email (and spam
-folder). <a href="/resend/">Click here</a> to resend your confirmation email.
-'''
+UNCONFIRMED = ('This login email has been registered but not confirmed. Please check your email (and spam folder).'
+               ' <a href="/resend/">Click here</a> to resend your confirmation email.')
 
 # Shown on incorrect password attempt
 LOGIN_FAILED = '''
@@ -62,10 +52,9 @@ EMAIL_NOT_FOUND = '''
 
 # Shown after an unregistered user claims an account and is redirected to the
 # settings page
-CLAIMED_CONTRIBUTOR = '''
-<strong>Welcome to the OSF!</strong> Edit your display name below and then check your
-<a href="/dashboard/">dashboard</a> to see projects to which you have been added as a contributor by someone else.
-'''
+CLAIMED_CONTRIBUTOR = ('<strong>Welcome to the OSF!</strong> Edit your display name below and then check your '
+                       '<a href="/dashboard/">dashboard</a> to see projects to which you have been added as a '
+                       'contributor by someone else.')
 
 # Error Pages
 # ###########

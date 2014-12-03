@@ -231,7 +231,7 @@ class TestUtils(OsfTestCase):
     @mock.patch('website.addons.figshare.api.Figshare.project')
     def test_project_to_hgrid(self, *args, **kwargs):
         project = figshare_mock.project.return_value
-        hgrid = utils.project_to_hgrid(self.project, project, True)
+        hgrid = utils.project_to_hgrid(self.project, project, self.user, True)
 
         assert_equals(len(hgrid), len(project['articles']))
         folders_in_project = len(

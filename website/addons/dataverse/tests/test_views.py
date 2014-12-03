@@ -101,7 +101,7 @@ class TestDataverseViewsAuth(DataverseAddonTestCase):
 
 class TestDataverseViewsConfig(DataverseAddonTestCase):
 
-    @mock.patch('website.addons.dataverse.views.config.connect_from_settings')
+    @mock.patch('website.addons.dataverse.views.config.client.connect_from_settings')
     def test_serialize_settings_helper_returns_correct_auth_info(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
@@ -110,7 +110,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         assert_true(result['userHasAuth'])
         assert_true(result['userIsOwner'])
 
-    @mock.patch('website.addons.dataverse.views.config.connect_from_settings')
+    @mock.patch('website.addons.dataverse.views.config.client.connect_from_settings')
     def test_serialize_settings_helper_non_owner(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
@@ -132,7 +132,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         assert_true(result['userHasAuth'])
         assert_false(result['userIsOwner'])
 
-    @mock.patch('website.addons.dataverse.views.config.connect_from_settings')
+    @mock.patch('website.addons.dataverse.views.config.client.connect_from_settings')
     def test_serialize_settings_helper_returns_correct_urls(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
@@ -147,7 +147,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         assert_equal(urls['dataversePrefix'], 'http://{0}/dvn/dv/'.format(HOST))
         assert_equal(urls['owner'], web_url_for('profile_view_id', uid=self.user._primary_key))
 
-    @mock.patch('website.addons.dataverse.views.config.connect_from_settings')
+    @mock.patch('website.addons.dataverse.views.config.client.connect_from_settings')
     def test_serialize_settings_helper_returns_dv_info(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
@@ -159,7 +159,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         assert_equal(result['savedStudy']['title'], self.node_settings.study)
         assert_equal(result['savedStudy']['hdl'], self.node_settings.study_hdl)
 
-    @mock.patch('website.addons.dataverse.views.config.connect_from_settings')
+    @mock.patch('website.addons.dataverse.views.config.client.connect_from_settings')
     def test_serialize_settings_helper_no_connection(self, mock_connection):
         mock_connection.return_value = None
 
@@ -171,7 +171,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         assert_equal(result['savedStudy']['title'], self.node_settings.study)
         assert_equal(result['savedStudy']['hdl'], self.node_settings.study_hdl)
 
-    @mock.patch('website.addons.dataverse.views.config.connect_from_settings')
+    @mock.patch('website.addons.dataverse.views.config.client.connect_from_settings')
     def test_dataverse_get_studies(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
@@ -184,7 +184,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         assert_equal(first['title'], 'Example (DVN/00001)')
         assert_equal(first['hdl'], 'doi:12.3456/DVN/00001')
 
-    @mock.patch('website.addons.dataverse.views.config.connect')
+    @mock.patch('website.addons.dataverse.views.config.client.connect')
     def test_set_user_config(self, mock_connection):
 
         mock_connection.return_value = create_mock_connection()
@@ -206,7 +206,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         assert_equal(user_settings.dataverse_username, 'snowman')
         assert_equal(user_settings.dataverse_password, 'frosty')
 
-    @mock.patch('website.addons.dataverse.views.config.connect')
+    @mock.patch('website.addons.dataverse.views.config.client.connect')
     def test_set_user_config_fail(self, mock_connection):
 
         mock_connection.return_value = create_mock_connection('wrong', 'info')
@@ -240,7 +240,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         assert_equal(user_settings.dataverse_username, None)
         assert_equal(user_settings.dataverse_password, None)
 
-    @mock.patch('website.addons.dataverse.views.config.connect_from_settings')
+    @mock.patch('website.addons.dataverse.views.config.client.connect_from_settings')
     def test_set_dataverse_and_study(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
@@ -269,7 +269,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         assert_is_none(log_params['project'])
         assert_equal(log_params['study'], 'Example (DVN/00003)')
 
-    @mock.patch('website.addons.dataverse.views.config.connect_from_settings')
+    @mock.patch('website.addons.dataverse.views.config.client.connect_from_settings')
     def test_set_dataverse_no_study(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
         num_old_logs = len(self.project.logs)
@@ -738,7 +738,7 @@ class TestDataverseRestrictions(DataverseAddonTestCase):
         self.project.save()
 
 
-    @mock.patch('website.addons.dataverse.views.config.connect_from_settings')
+    @mock.patch('website.addons.dataverse.views.config.client.connect_from_settings')
     def test_restricted_set_study_not_owner(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
