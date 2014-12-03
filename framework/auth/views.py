@@ -1,25 +1,30 @@
 # -*- coding: utf-8 -*-
 import datetime
 import httplib as http
+
 from flask import request
 
 from modularodm import Q
-from modularodm.exceptions import NoResultsFound, ValidationValueError
+from modularodm.exceptions import NoResultsFound
+from modularodm.exceptions import ValidationValueError
 
-from framework.sessions import set_previous_url
-from framework import status, exceptions
-from framework import forms
-from framework import auth
+import framework.auth
+from framework import forms, status
 from framework.flask import redirect  # VOL-aware redirect
+from framework.auth import exceptions
 from framework.exceptions import HTTPError
-from framework.auth import login, logout, DuplicateEmailError, get_user, get_current_user
-from framework.auth.forms import (RegistrationForm, SignInForm,
-    ForgotPasswordForm, ResetPasswordForm, MergeAccountForm, ResendConfirmationForm)
+from framework.sessions import set_previous_url
+from framework.auth import (login, logout, get_user, DuplicateEmailError)
+from framework.auth.decorators import collect_auth, must_be_logged_in
+from framework.auth.forms import (SignInForm, MergeAccountForm, RegistrationForm,
+        ResetPasswordForm, ForgotPasswordForm, ResendConfirmationForm)
 
 import website.settings
+from website import mails
+from website import language
+from website import security
 from website.models import User
 from website.util import web_url_for
-from website import security, mails, language
 
 
 def reset_password(**kwargs):
@@ -32,7 +37,7 @@ def reset_password(**kwargs):
         error_data = {'message_short': 'Invalid url.',
             'message_long': 'The verification key in the URL is invalid or '
             'has expired.'}
-        raise exceptions.HTTPError(400, data=error_data)
+        raise HTTPError(400, data=error_data)
 
     if request.method == 'POST' and form.validate():
         user_obj.verification_key = None
@@ -74,7 +79,7 @@ def forgot_password():
             status.push_status_message('Email {email} not found'.format(email=email))
 
     forms.push_errors_to_status(form.errors)
-    return auth_login(forgot_password_form=form)
+    return framework.auth_login(forgot_password_form=form)
 
 
 ###############################################################################
@@ -82,12 +87,13 @@ def forgot_password():
 ###############################################################################
 
 # TODO: Rewrite async
-def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
+@collect_auth
+def auth_login(auth, registration_form=None, forgot_password_form=None, **kwargs):
     """If GET request, show login page. If POST, attempt to log user in if
     login form passsed; else send forgot password email.
 
     """
-    if get_current_user():
+    if auth.logged_in:
         if not request.args.get('logout'):
             return redirect('/dashboard/')
         logout()
@@ -105,13 +111,13 @@ def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
                     twofactor_code
                 )
                 return response
-            except auth.LoginNotAllowedError:
+            except exceptions.LoginNotAllowedError:
                 status.push_status_message(language.UNCONFIRMED, 'warning')
                 # Don't go anywhere
                 return {'next': ''}
-            except auth.PasswordIncorrectError:
+            except exceptions.PasswordIncorrectError:
                 status.push_status_message(language.LOGIN_FAILED)
-            except auth.TwoFactorValidationError:
+            except exceptions.TwoFactorValidationError:
                 status.push_status_message(language.TWO_FACTOR_FAILED)
         forms.push_errors_to_status(form.errors)
 
@@ -164,7 +170,7 @@ def confirm_email_get(**kwargs):
             # Go to settings page
             status.push_status_message(language.WELCOME_MESSAGE, 'success')
             response = redirect('/settings/')
-            return auth.authenticate(user, response=response)
+            return framework.auth.authenticate(user, response=response)
     # Return data for the error template
     return {
         'code': http.BAD_REQUEST,
@@ -204,12 +210,12 @@ def register_user(**kwargs):
         )
     # TODO: Sanitize fields
     try:
-        user = auth.register_unconfirmed(
+        user = framework.auth.register_unconfirmed(
             request.json['email1'],
             request.json['password'],
             request.json['fullName'],
         )
-        auth.signals.user_registered.send(user)
+        framework.auth.signals.user_registered.send(user)
     except (ValidationValueError, DuplicateEmailError):
         raise HTTPError(
             http.BAD_REQUEST,
@@ -239,11 +245,11 @@ def auth_register_post():
     # Process form
     if form.validate():
         try:
-            user = auth.register_unconfirmed(
+            user = framework.auth.register_unconfirmed(
                 form.username.data,
                 form.password.data,
                 form.fullname.data)
-            auth.signals.user_registered.send(user)
+            framework.auth.signals.user_registered.send(user)
         except (ValidationValueError, DuplicateEmailError):
             status.push_status_message(
                 language.ALREADY_REGISTERED.format(email=form.username.data))
@@ -293,13 +299,14 @@ def merge_user_get(**kwargs):
 
 
 # TODO: shrink me
-def merge_user_post(**kwargs):
+@must_be_logged_in
+def merge_user_post(auth, **kwargs):
     '''View for merging an account. Takes either JSON or form data.
 
     Request data should include a "merged_username" and "merged_password" properties
     for the account to be merged in.
     '''
-    master = get_current_user()
+    master = auth.user
     if request.json:
         merged_username = request.json.get("merged_username")
         merged_password = request.json.get("merged_password")

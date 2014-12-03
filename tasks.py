@@ -328,10 +328,13 @@ def test_addons():
 
 
 @task
-def test():
+def test(all=False):
     """Alias of `invoke test_osf`.
     """
-    test_osf()
+    if all:
+        test_all()
+    else:
+        test_osf()
 
 
 @task

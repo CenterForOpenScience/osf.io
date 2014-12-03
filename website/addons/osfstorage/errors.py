@@ -13,10 +13,10 @@ class SignatureConsumedError(OsfStorageError):
 class VersionNotFoundError(OsfStorageError):
     pass
 
-class PendingSignatureMismatchError(OsfStorageError):
+class SignatureMismatchError(OsfStorageError):
     pass
 
-class VersionNotPendingError(OsfStorageError):
+class VersionStatusError(OsfStorageError):
     pass
 
 class DeleteError(OsfStorageError):

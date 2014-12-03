@@ -8,19 +8,21 @@ from flask import request
 from werkzeug.wrappers import BaseResponse
 from dropbox.client import DropboxOAuth2Flow
 
-from framework.auth import get_current_user
 from framework.flask import redirect  # VOL-aware redirect
-from framework.exceptions import HTTPError
 from framework.sessions import session
-from framework.status import push_status_message as flash
+from framework.exceptions import HTTPError
+from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
+from framework.status import push_status_message as flash
 
+from website.util import api_url_for
+from website.util import web_url_for
 from website.project.model import Node
 from website.project.decorators import must_have_addon
-from website.util import api_url_for, web_url_for
 
 from website.addons.dropbox import settings
 from website.addons.dropbox.client import get_client_from_user_settings
+from dropbox.rest import ErrorResponse
 
 
 logger = logging.getLogger(__name__)
@@ -64,8 +66,8 @@ def finish_auth():
 
 
 @must_be_logged_in
-def dropbox_oauth_start(**kwargs):
-    user = get_current_user()
+def dropbox_oauth_start(auth, **kwargs):
+    user = auth.user
     # Store the node ID on the session in order to get the correct redirect URL
     # upon finishing the flow
     nid = kwargs.get('nid') or kwargs.get('pid')
@@ -83,13 +85,15 @@ def dropbox_oauth_start(**kwargs):
     return redirect(get_auth_flow().start() + '&force_reapprove=true')
 
 
-def dropbox_oauth_finish(**kwargs):
+@collect_auth
+def dropbox_oauth_finish(auth, **kwargs):
     """View called when the Oauth flow is completed. Adds a new DropboxUserSettings
     record to the user and saves the user's access token and account info.
     """
-    user = get_current_user()
-    if not user:
+    if not auth.logged_in:
         raise HTTPError(http.FORBIDDEN)
+    user = auth.user
+
     node = Node.load(session.data.get('dropbox_auth_nid'))
     result = finish_auth()
     # If result is a redirect response, follow the redirect
@@ -121,10 +125,17 @@ def dropbox_oauth_finish(**kwargs):
 @must_have_addon('dropbox', 'user')
 def dropbox_oauth_delete_user(user_addon, auth, **kwargs):
     """View for deauthorizing Dropbox."""
-    client = get_client_from_user_settings(user_addon)
+    try:
+        client = get_client_from_user_settings(user_addon)
+        client.disable_access_token()
+    except ErrorResponse as error:
+        if error.status == 401:
+            pass
+        else:
+            raise HTTPError(http.BAD_REQUEST)
     user_addon.clear()
     user_addon.save()
-    client.disable_access_token()
+
     return None
 
 
@@ -139,10 +150,24 @@ def dropbox_user_config_get(user_addon, auth, **kwargs):
         'delete': api_url_for('dropbox_oauth_delete_user')
     }
     info = user_addon.dropbox_info
+    valid_credentials = True
+
+    if user_addon.has_auth:
+        try:
+            client = get_client_from_user_settings(user_addon)
+            client.account_info()
+        except ErrorResponse as error:
+            if error.status == 401:
+                valid_credentials = False
+            else:
+                HTTPError(http.BAD_REQUEST)
+
     return {
         'result': {
             'userHasAuth': user_addon.has_auth,
+            'validCredentials': valid_credentials,
             'dropboxName': info['display_name'] if info else None,
-            'urls': urls,
+            'nNodesAuthorized': len(user_addon.nodes_authorized),
+            'urls': urls
         },
     }, http.OK

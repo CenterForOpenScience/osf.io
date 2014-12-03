@@ -4,6 +4,7 @@ import os
 import httplib as http
 
 from flask import request
+from dropbox.rest import ErrorResponse
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
@@ -68,7 +69,16 @@ def dropbox_upload(node_addon, auth, **kwargs):
         # Check that user has access to the folder being uploaded to
         if not is_authorizer(auth, node_addon):
             abort_if_not_subdir(path, node_addon.folder)
-        metadata = client.put_file(filepath, file_obj)
+        try:
+            metadata = client.put_file(filepath, file_obj)
+        except ErrorResponse as error:
+            if error.status == 401:
+                raise HTTPError(http.UNAUTHORIZED, data=dict(message_short='Invalid Access Token',
+                                                             message_long='Your Dropbox token is no longer valid. '
+                                                                          + 'Check your project settings page for details.'))
+            else:
+                raise HTTPError(http.BAD_REQUEST)
+
         permissions = {
             'edit': node.can_edit(auth),
             'view': node.can_view(auth)

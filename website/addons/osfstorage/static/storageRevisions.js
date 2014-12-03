@@ -59,7 +59,7 @@
         }).done(function() {
             window.location = self.urls.files;
         }).fail(function() {
-            bootbox.alert('Could not delete file.');
+            $.osf.growl('Error', 'Could not delete file.');
         });
     };
 
@@ -67,8 +67,10 @@
         var self = this;
         bootbox.confirm({
             title: 'Delete file?',
-            message: 'Are you sure you want to delete <strong>' +
-                self.path + '</strong>?',
+            message: '<p class="overflow">' +
+                    'Are you sure you want to delete <strong>' +
+                    self.path + '</strong>?' +
+                '</p>',
             callback: function(confirm) {
                 if (confirm) {
                     self.delete();

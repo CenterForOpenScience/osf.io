@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # encoding: utf-8
 
 import mock
@@ -40,14 +39,16 @@ class TestNodeSettingsModel(StorageTestCase):
         for _ in range(num_versions):
             version = factories.FileVersionFactory()
             record.versions.append(version)
-        record.versions[-1].status = model.status['PENDING']
+        record.versions[-1].status = model.status_map['UPLOADING']
         record.versions[-1].save()
+        record.versions[-2].status = model.status_map['CACHED']
+        record.versions[-2].save()
         record.save()
         fork = self.project.fork_node(self.auth_obj)
         fork_node_settings = fork.get_addon('osfstorage')
         fork_node_settings.reload()
         cloned_record = model.OsfStorageFileRecord.find_by_path(path, fork_node_settings)
-        assert_equal(cloned_record.versions, record.versions[:num_versions - 1])
+        assert_equal(cloned_record.versions, record.versions[:num_versions - 2])
         assert_true(fork_node_settings.file_tree)
 
     def test_after_register_copies_stable_versions(self):
@@ -57,8 +58,10 @@ class TestNodeSettingsModel(StorageTestCase):
         for _ in range(num_versions):
             version = factories.FileVersionFactory()
             record.versions.append(version)
-        record.versions[-1].status = model.status['PENDING']
+        record.versions[-1].status = model.status_map['UPLOADING']
         record.versions[-1].save()
+        record.versions[-2].status = model.status_map['CACHED']
+        record.versions[-2].save()
         record.save()
         registration = self.project.register_node(
             None,
@@ -69,14 +72,13 @@ class TestNodeSettingsModel(StorageTestCase):
         registration_node_settings = registration.get_addon('osfstorage')
         registration_node_settings.reload()
         cloned_record = model.OsfStorageFileRecord.find_by_path(path, registration_node_settings)
-        assert_equal(cloned_record.versions, record.versions[:num_versions - 1])
+        assert_equal(cloned_record.versions, record.versions[:num_versions - 2])
         assert_true(registration_node_settings.file_tree)
 
     def test_after_fork_copies_stable_records(self):
         path = 'jazz/dreamers-ball.mp3'
         record = model.OsfStorageFileRecord.get_or_create(path, self.node_settings)
-        version_pending = model.OsfStorageFileVersion(status=model.status['PENDING'])
-        version_pending.save()
+        version_pending = factories.FileVersionFactory(status=model.status_map['UPLOADING'])
         record.versions.append(version_pending)
         record.save()
         fork = self.project.fork_node(self.auth_obj)
@@ -84,12 +86,12 @@ class TestNodeSettingsModel(StorageTestCase):
         cloned_record = model.OsfStorageFileRecord.find_by_path(path, fork_node_settings)
         assert_is(cloned_record, None)
 
-    def test_after_fork_copies_stable_records(self):
+    def test_after_register_copies_stable_records(self):
         path = 'jazz/dreamers-ball.mp3'
         record = model.OsfStorageFileRecord.get_or_create(path, self.node_settings)
         version_pending = model.OsfStorageFileVersion(
             creator=self.user,
-            status=model.status['PENDING'],
+            status=model.status_map['UPLOADING'],
         )
         version_pending.save()
         record.versions.append(version_pending)
@@ -105,10 +107,10 @@ class TestNodeSettingsModel(StorageTestCase):
         assert_is(cloned_record, None)
 
 
-class TestFileTree(OsfTestCase):
+class TestOsfStorageFileTree(OsfTestCase):
 
     def setUp(self):
-        super(TestFileTree, self).setUp()
+        super(TestOsfStorageFileTree, self).setUp()
         self.path = 'news/of/the/world'
         self.node_settings = model.OsfStorageNodeSettings()
         self.node_settings.save()
@@ -178,10 +180,10 @@ class TestFileTree(OsfTestCase):
         assert_equal(num_records, model.OsfStorageFileRecord.find().count())
 
 
-class TestFileRecord(StorageTestCase):
+class TestOsfStorageFileRecord(StorageTestCase):
 
     def setUp(self):
-        super(TestFileRecord, self).setUp()
+        super(TestOsfStorageFileRecord, self).setUp()
         self.path = 'red/special.mp3'
         self.record = model.OsfStorageFileRecord.get_or_create(
             path=self.path,
@@ -320,7 +322,7 @@ class TestFileRecord(StorageTestCase):
     def test_create_pending_path_locked(self):
         version = model.OsfStorageFileVersion(
             creator=self.user,
-            status=model.status['PENDING'],
+            status=model.status_map['UPLOADING'],
             date_created=datetime.datetime.utcnow(),
         )
         version.save()
@@ -335,6 +337,34 @@ class TestFileRecord(StorageTestCase):
         self.record.versions.append(version)
         with assert_raises(errors.SignatureConsumedError):
             self.record.create_pending_version(self.user, 'c22b5f9')
+
+    def test_set_pending_cached(self):
+        version = factories.FileVersionFactory(status=model.status_map['UPLOADING'])
+        self.record.versions.append(version)
+        self.record.save()
+        self.record.set_pending_version_cached(version.signature)
+        assert_equal(version.status, model.status_map['CACHED'])
+
+    def test_set_pending_cached_no_versions(self):
+        with assert_raises(errors.VersionNotFoundError):
+            self.record.set_pending_version_cached('06d80e')
+
+    def test_cancel_uploading(self):
+        version = factories.FileVersionFactory(status=model.status_map['UPLOADING'])
+        version.cancel(version.signature)
+
+    def test_cancel_not_uploading_raises_error(self):
+        version = factories.FileVersionFactory(status=model.status_map['CACHED'])
+        with assert_raises(errors.VersionStatusError):
+            version.cancel(version.signature)
+        version = factories.FileVersionFactory(status=model.status_map['COMPLETE'])
+        with assert_raises(errors.VersionStatusError):
+            version.cancel(version.signature)
+
+    def test_cancel_bad_signature(self):
+        version = factories.FileVersionFactory(status=model.status_map['UPLOADING'])
+        with assert_raises(errors.SignatureMismatchError):
+            version.cancel(version.signature[::-1])
 
     def test_resolve_pending_logs_file_creation(self):
         nlogs = len(self.project.logs)
@@ -530,11 +560,33 @@ class TestFileRecord(StorageTestCase):
         assert_false(self.record.is_deleted)
         assert_equal(len(self.project.logs), nlogs)
 
+    def test_update_metadata_found(self):
+        self.record.versions = [
+            factories.FileVersionFactory(signature='31a64'),
+            factories.FileVersionFactory(signature='7aa12'),
+        ]
+        self.record.save()
+        self.record.update_version_metadata('31a64', {'archive': 'glacier'})
+        assert_in('archive', self.record.versions[0].metadata)
+        assert_equal(self.record.versions[0].metadata['archive'], 'glacier')
+        assert_not_in('archive', self.record.versions[1].metadata)
 
-class TestFileVersion(OsfTestCase):
+    def test_update_metadata_not_found(self):
+        self.record.versions = [
+            factories.FileVersionFactory(signature='31a64'),
+            factories.FileVersionFactory(signature='7aa12'),
+        ]
+        self.record.save()
+        with assert_raises(errors.VersionNotFoundError):
+            self.record.update_version_metadata('1143b3', {'archive': 'glacier'})
+        assert_not_in('archive', self.record.versions[0].metadata)
+        assert_not_in('archive', self.record.versions[1].metadata)
+
+
+class TestOsfStorageFileVersion(OsfTestCase):
 
     def setUp(self):
-        super(TestFileVersion, self).setUp()
+        super(TestOsfStorageFileVersion, self).setUp()
         self.user = factories.AuthUserFactory()
         self.mock_date = datetime.datetime(1991, 10, 31)
 
@@ -546,6 +598,7 @@ class TestFileVersion(OsfTestCase):
             date_modified=datetime.datetime.now(),
         )
         retrieved = model.OsfStorageFileVersion.load(version._id)
+        assert_true(retrieved.status)
         assert_true(retrieved.creator)
         assert_true(retrieved.location)
         assert_true(retrieved.signature)
@@ -554,8 +607,14 @@ class TestFileVersion(OsfTestCase):
         assert_true(retrieved.date_modified)
 
     def test_is_duplicate_no_location(self):
-        version1 = factories.FileVersionFactory(status=model.status['PENDING'], location={})
-        version2 = factories.FileVersionFactory(status=model.status['PENDING'], location={})
+        version1 = factories.FileVersionFactory(
+            status=model.status_map['UPLOADING'],
+            location={},
+        )
+        version2 = factories.FileVersionFactory(
+            status=model.status_map['UPLOADING'],
+            location={},
+        )
         assert_false(version1.is_duplicate(version2))
         assert_false(version2.is_duplicate(version1))
 
@@ -605,46 +664,78 @@ class TestFileVersion(OsfTestCase):
         version.save()
 
     @mock.patch('website.addons.osfstorage.model.datetime.datetime')
-    def test_resolve(self, mock_datetime):
+    def test_resolve_uploading(self, mock_datetime):
         mock_datetime.now.return_value = self.mock_date
         mock_datetime.utcnow.return_value = self.mock_date
         version = model.OsfStorageFileVersion(
             creator=self.user,
-            status=model.status['PENDING'],
+            status=model.status_map['UPLOADING'],
             date_created=datetime.datetime.utcnow(),
             signature='c22b5f9',
         )
-        version.resolve(
-            'c22b5f9',
-            factories.generic_location,
-            {
-                'size': 1024,
-                'content_type': 'text/plain',
-                'date_modified': self.mock_date.isoformat(),
-                'md5': '3f92d3',
-            },
-        )
+        metadata = {
+            'size': 1024,
+            'content_type': 'text/plain',
+            'date_modified': self.mock_date.isoformat(),
+            'md5': '3f92d3',
+        }
+        version.resolve('c22b5f9', factories.generic_location, metadata)
         assert_equal(version.date_resolved, self.mock_date)
-        assert_equal(version.status, model.status['COMPLETE'])
+        assert_equal(version.status, model.status_map['COMPLETE'])
         assert_equal(version.size, 1024)
         assert_equal(version.content_type, 'text/plain')
         assert_equal(version.date_modified, self.mock_date)
-        assert_equal(
-            version.metadata,
-            {
-                'size': 1024,
-                'content_type': 'text/plain',
-                'date_modified': self.mock_date.isoformat(),
-                'md5': '3f92d3',
-            },
+        assert_equal(version.metadata, metadata)
+
+    @mock.patch('website.addons.osfstorage.model.datetime.datetime')
+    def test_resolve_cached(self, mock_datetime):
+        mock_datetime.now.return_value = self.mock_date
+        mock_datetime.utcnow.return_value = self.mock_date
+        version = model.OsfStorageFileVersion(
+            creator=self.user,
+            status=model.status_map['CACHED'],
+            date_created=datetime.datetime.utcnow(),
+            signature='c22b5f9',
         )
+        metadata = {
+            'size': 1024,
+            'content_type': 'text/plain',
+            'date_modified': self.mock_date.isoformat(),
+            'md5': '3f92d3',
+        }
+        version.resolve('c22b5f9', factories.generic_location, metadata)
+        assert_equal(version.date_resolved, self.mock_date)
+        assert_equal(version.status, model.status_map['COMPLETE'])
+        assert_equal(version.size, 1024)
+        assert_equal(version.content_type, 'text/plain')
+        assert_equal(version.date_modified, self.mock_date)
+        assert_equal(version.metadata, metadata)
+
+    @mock.patch('website.addons.osfstorage.model.datetime.datetime')
+    def test_resolve_complete_raises_error(self, mock_datetime):
+        mock_datetime.now.return_value = self.mock_date
+        mock_datetime.utcnow.return_value = self.mock_date
+        version = model.OsfStorageFileVersion(
+            creator=self.user,
+            status=model.status_map['COMPLETE'],
+            date_created=datetime.datetime.utcnow(),
+            signature='c22b5f9',
+        )
+        metadata = {
+            'size': 1024,
+            'content_type': 'text/plain',
+            'date_modified': self.mock_date.isoformat(),
+            'md5': '3f92d3',
+        }
+        with assert_raises(errors.VersionStatusError):
+            version.resolve('c22b5f9', factories.generic_location, metadata)
 
     @mock.patch('website.addons.osfstorage.model.time.time')
-    def test_ping(self, mock_time):
+    def test_ping_uploading(self, mock_time):
         mock_time.return_value = 10
         version = model.OsfStorageFileVersion(
             creator=self.user,
-            status=model.status['PENDING'],
+            status=model.status_map['UPLOADING'],
             signature='c22b5f9',
         )
         assert_equal(version.last_ping, mock_time.return_value)
@@ -652,29 +743,34 @@ class TestFileVersion(OsfTestCase):
         version.ping(version.signature)
         assert_equal(version.last_ping, mock_time.return_value)
 
-    def test_ping_not_pending(self):
-        version = factories.FileVersionFactory()
-        with assert_raises(errors.VersionNotPendingError):
+    def test_ping_not_uploading_raises_error(self):
+        version = factories.FileVersionFactory(status=model.status_map['CACHED'])
+        with assert_raises(errors.VersionStatusError):
+            version.ping(version.signature)
+        version = factories.FileVersionFactory(status=model.status_map['COMPLETE'])
+        with assert_raises(errors.VersionStatusError):
             version.ping(version.signature)
 
     def test_ping_bad_signature(self):
         version = model.OsfStorageFileVersion(
             creator=self.user,
-            status=model.status['PENDING'],
+            status=model.status_map['UPLOADING'],
             signature='c22b5f9',
         )
-        with assert_raises(errors.PendingSignatureMismatchError):
+        with assert_raises(errors.SignatureMismatchError):
             version.ping(version.signature[::-1])
 
     def test_expired_not_pending(self):
-        version = factories.FileVersionFactory()
+        version = factories.FileVersionFactory(status=model.status_map['CACHED'])
+        assert_false(version.expired)
+        version = factories.FileVersionFactory(status=model.status_map['COMPLETE'])
         assert_false(version.expired)
 
     @mock.patch('website.addons.osfstorage.model.time.time')
     def test_expired_pending_inactive(self, mock_time):
         version = model.OsfStorageFileVersion(
             creator=self.user,
-            status=model.status['PENDING'],
+            status=model.status_map['UPLOADING'],
             signature='c22b5f9',
             last_ping=0,
         )
@@ -686,7 +782,7 @@ class TestFileVersion(OsfTestCase):
         mock_time.return_value = 0
         version = model.OsfStorageFileVersion(
             creator=self.user,
-            status=model.status['PENDING'],
+            status=model.status_map['UPLOADING'],
             signature='c22b5f9',
             last_ping=0,
         )
@@ -694,23 +790,35 @@ class TestFileVersion(OsfTestCase):
 
     def test_finish_not_pending(self):
         version = factories.FileVersionFactory()
-        with assert_raises(errors.VersionNotPendingError):
+        with assert_raises(errors.VersionStatusError):
             version.resolve(None, {}, {})
 
     def test_finish_bad_signature(self):
         version = model.OsfStorageFileVersion(
             creator=self.user,
-            status=model.status['PENDING'],
+            status=model.status_map['UPLOADING'],
             date_created=datetime.datetime.utcnow(),
             signature='c22b5f9',
         )
         version.save()
-        with assert_raises(errors.PendingSignatureMismatchError):
+        with assert_raises(errors.SignatureMismatchError):
             version.resolve(
                 '78c9a53',
                 factories.generic_location,
                 {},
             )
+
+    def test_update_metadata(self):
+        version = factories.FileVersionFactory()
+        version.update_metadata(version.signature, {'archive': 'glacier'})
+        assert_in('archive', version.metadata)
+        assert_equal(version.metadata['archive'], 'glacier')
+
+    def test_update_metadata_bad_signature(self):
+        version = factories.FileVersionFactory()
+        with assert_raises(errors.SignatureMismatchError):
+            version.update_metadata(version.signature[::-1], {'archive': 'glacier'})
+        assert_not_in('archive', version.metadata)
 
 
 class TestStorageObject(OsfTestCase):
@@ -757,4 +865,3 @@ class TestStorageObject(OsfTestCase):
         assert_equal(result.node, self.project)
         assert_equal(result.path, self.path)
         assert_equal(n_objs + 1, model.OsfStorageGuidFile.find().count())
-

@@ -46,6 +46,14 @@ def osf_storage_request_upload_url(auth, node_addon, **kwargs):
         content_type = request.json['type']
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
+    if not size:
+        raise HTTPError(
+            httplib.BAD_REQUEST,
+            data={
+                'message_short': 'File is empty.',
+                'message_long': 'The file you trying to upload is empty.'
+            },
+        )
     if size > (node_addon.config.max_file_size * MEGABYTE):
         raise HTTPError(
             httplib.BAD_REQUEST,
@@ -103,29 +111,64 @@ def osf_storage_upload_start_hook(node_addon, **kwargs):
     try:
         record.create_pending_version(user, upload_signature)
     except errors.PathLockedError:
-        raise make_error(httplib.CONFLICT, 'File path is locked')
+        raise make_error(
+            httplib.CONFLICT,
+            'File path is locked',
+            'Another upload to this file path is pending; please try again in '
+            'a moment.',
+        )
     except errors.SignatureConsumedError:
         raise make_error(httplib.BAD_REQUEST, 'Signature consumed')
     return {'status': 'success'}
 
 
-def handle_missing_ping(path, node):
-    logger.error('Ping rejected: Path {0} not found at node {1}'.format(path, node))
-    raise HTTPError(httplib.BAD_REQUEST)
+def get_record_or_404(path, node_addon, touch=True):
+    record = model.OsfStorageFileRecord.find_by_path(path, node_addon, touch=touch)
+    if record is not None:
+        return record
+    raise HTTPError(httplib.NOT_FOUND)
 
 
 @must_be_valid_project
 @must_not_be_registration
 @must_have_addon('osfstorage', 'node')
 def osf_storage_upload_ping_hook(path, node_addon, **kwargs):
-    record = model.OsfStorageFileRecord.find_by_path(path, node_addon, touch=False)
-    if record is None:
-        handle_missing_ping(path, node_addon.owner)
+    record = get_record_or_404(path, node_addon, touch=False)
     payload = get_payload_from_request(utils.webhook_signer, request)
     try:
         record.ping_pending_version(payload.get('uploadSignature'))
     except errors.OsfStorageError:
-        handle_missing_ping(path, node_addon.owner)
+        raise HTTPError(httplib.BAD_REQUEST)
+    return {'status': 'success'}
+
+
+@must_be_valid_project
+@must_not_be_registration
+@must_have_addon('osfstorage', 'node')
+def osf_storage_upload_cached_hook(path, node_addon, **kwargs):
+    record = get_record_or_404(path, node_addon, touch=False)
+    payload = get_payload_from_request(utils.webhook_signer, request)
+    try:
+        record.set_pending_version_cached(payload.get('uploadSignature'))
+    except errors.OsfStorageError:
+        raise HTTPError(httplib.BAD_REQUEST)
+    return {'status': 'success'}
+
+
+@must_be_valid_project
+@must_not_be_registration
+@must_have_addon('osfstorage', 'node')
+def osf_storage_upload_archived_hook(path, node_addon, **kwargs):
+    record = get_record_or_404(path, node_addon, touch=False)
+    payload = get_payload_from_request(utils.webhook_signer, request)
+    signature = payload.get('uploadSignature')
+    metadata = payload.get('metadata')
+    if not signature or not metadata:
+        raise HTTPError(httplib.BAD_REQUEST)
+    try:
+        record.update_version_metadata(signature, metadata)
+    except errors.OsfStorageError:
+        raise HTTPError(httplib.BAD_REQUEST)
     return {'status': 'success'}
 
 
@@ -137,9 +180,9 @@ def handle_finish_errors(func):
     def wrapped(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except errors.VersionNotPendingError:
+        except errors.VersionStatusError:
             raise make_error(httplib.BAD_REQUEST, 'No pending upload')
-        except errors.PendingSignatureMismatchError:
+        except errors.SignatureMismatchError:
             raise make_error(httplib.BAD_REQUEST, 'Invalid upload signature')
     return wrapped
 
@@ -249,6 +292,8 @@ def get_version(path, node_settings, version_str, throw=True):
     record = model.OsfStorageFileRecord.find_by_path(path, node_settings)
     if record is None:
         raise HTTPError(httplib.NOT_FOUND)
+    if record.is_deleted:
+        raise HTTPError(httplib.GONE)
     version_idx, file_version = get_version_helper(record, version_str)
     if throw:
         if file_version.pending:
@@ -322,8 +367,8 @@ def update_analytics(node, path, version_idx):
     :param str path: Path to file
     :param int version_idx: One-based version index
     """
-    update_counter('download:{0}:{1}'.format(node._id, path))
-    update_counter('download:{0}:{1}:{2}'.format(node._id, path, version_idx))
+    update_counter(u'download:{0}:{1}'.format(node._id, path))
+    update_counter(u'download:{0}:{1}:{2}'.format(node._id, path, version_idx))
 
 
 @must_be_contributor_or_public

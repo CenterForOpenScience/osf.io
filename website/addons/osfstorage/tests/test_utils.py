@@ -301,9 +301,9 @@ class TestSerializeRevision(StorageTestCase):
         )
         assert_equal(expected, observed)
 
-    def test_serialize_revision_pending(self):
+    def test_serialize_revision_uploading(self):
         version = factories.FileVersionFactory(
-            status=model.status['PENDING'],
+            status=model.status_map['UPLOADING'],
             date_modified=None,
         )
         self.record.versions.append(version)
