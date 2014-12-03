@@ -154,6 +154,7 @@ def folder_new_post(auth, nid, **kwargs):
 def rename_folder(**kwargs):
     pass
 
+
 @collect_auth
 def add_folder(**kwargs):
     auth = kwargs['auth']
@@ -373,13 +374,15 @@ def view_project(**kwargs):
     rv['addon_capabilities'] = settings.ADDON_CAPABILITIES
     return rv
 
-#### Expand/Collapse
+
+# Expand/Collapse
 @must_be_valid_project
 @must_be_contributor_or_public
 def expand(auth, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     node_to_use.expand(user=auth.user)
     return {}, 200, None
+
 
 @must_be_valid_project
 @must_be_contributor_or_public
@@ -388,8 +391,8 @@ def collapse(auth, **kwargs):
     node_to_use.collapse(user=auth.user)
     return {}, 200, None
 
-# Reorder components
 
+# Reorder components
 @must_be_valid_project
 @must_not_be_registration
 @must_have_permission('write')
@@ -590,7 +593,7 @@ def component_remove(**kwargs):
         'url': redirect_url,
     }
 
-#@must_be_valid_project  # injects project
+
 @must_have_permission('admin')
 @must_not_be_registration
 def delete_folder(auth, **kwargs):
@@ -938,8 +941,7 @@ def get_children(auth, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     if request.args.get('permissions'):
         perm = request.args['permissions'].lower().strip()
-        nodes = [node for node in node_to_use.nodes
-                if perm in node.get_permissions(user) and not node.is_deleted]
+        nodes = [node for node in node_to_use.nodes if perm in node.get_permissions(user) and not node.is_deleted]
     else:
         nodes = [
             node
@@ -947,6 +949,7 @@ def get_children(auth, **kwargs):
             if not node.is_deleted
         ]
     return _render_nodes(nodes)
+
 
 @must_be_contributor_or_public
 def get_folder_pointers(**kwargs):
@@ -958,6 +961,7 @@ def get_folder_pointers(**kwargs):
         for node in node_to_use.nodes
         if node is not None and not node.is_deleted and not node.primary
     ]
+
 
 @must_be_contributor_or_public
 def get_forks(**kwargs):
@@ -1093,6 +1097,7 @@ def _add_pointers(node, pointers, auth):
     if added:
         node.save()
 
+
 @collect_auth
 def move_pointers(auth):
     """Move pointer from one node to another node.
@@ -1133,6 +1138,7 @@ def move_pointers(auth):
 
     return {}, 200, None
 
+
 @collect_auth
 def add_pointer(auth):
     """Add a single pointer to a node using only JSON parameters
@@ -1151,6 +1157,7 @@ def add_pointer(auth):
         _add_pointers(to_node, [pointer], auth)
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
+
 
 @must_have_permission('write')
 @must_not_be_registration
@@ -1204,6 +1211,7 @@ def remove_pointer(**kwargs):
 
     node.save()
 
+
 @must_be_valid_project  # injects project
 @must_have_permission('write')
 @must_not_be_registration
@@ -1231,6 +1239,7 @@ def remove_pointer_from_folder(pointer_id, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     node.save()
+
 
 @must_be_valid_project  # injects project
 @must_have_permission('write')
