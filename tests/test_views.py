@@ -758,6 +758,25 @@ class TestChildrenViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['nodes']), 0)
 
+    def test_get_children_rescale_ratio(self):
+        project = ProjectFactory(creator=self.user)
+        child = NodeFactory(project=project, creator=self.user)
+
+        url = project.api_url_for('get_children')
+        res = self.app.get(url, auth=self.user.auth)
+
+        rescale_ratio = res.json['rescale_ratio']
+        assert_not_equal(rescale_ratio, 0.0)
+
+    def test_get_children_render_nodes_receives_auth(self):
+        project = ProjectFactory(creator=self.user)
+        child = NodeFactory(project=project, creator=self.user)
+
+        url = project.api_url_for('get_children')
+        res = self.app.get(url, auth=self.user.auth)
+
+        perm = res.json['nodes'][0]['permissions']
+        assert_not_equal(perm, None)
 
 
 class TestUserProfile(OsfTestCase):
