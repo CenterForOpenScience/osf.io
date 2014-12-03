@@ -185,7 +185,6 @@
             $.osf.postJSON('/api/v1/pointer/', jsonData)
                 .done(function() {
                     self.inDashboard(true);
-                    $.osf.growl('Project added', 'This project has been added to your Project Organizer', 'success');
                 })
                 .fail(function(data) {
                     self.inDashboard(false);
@@ -201,7 +200,6 @@
             $.ajax({url: deleteUrl, type: 'DELETE'})
                 .done(function() {
                     self.inDashboard(false);
-                    $.osf.growl('Project removed', 'This project has been removed from your Project Organizer', 'success');
                 })
                 .fail(function() {
                     self.inDashboard(true);
