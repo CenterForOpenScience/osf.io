@@ -87,7 +87,7 @@
                         }
                     confirmModal(alerts + message);
                 }
-            )
+            );
         } else {
             confirmModal(message);
         }
@@ -139,7 +139,7 @@
                     // Send JSON data
                     return JSON.stringify(params);
                 },
-                success: function(data){
+                success: function(){
                     document.location.reload(true);
                 },
                 error: $.osf.handleEditableError,
@@ -152,7 +152,7 @@
                 name:  'title',
                 title: 'Edit Title',
                 validate: function(value) {
-                    if($.trim(value) == '') {
+                    if($.trim(value) === '') {
                         return 'Title cannot be blank.';
                     }
                 }
@@ -160,8 +160,8 @@
             $('#nodeDescriptionEditable').editable($.extend({}, editableOptions, {
                 name:  'description',
                 title: 'Edit Description',
-                emptytext: "No description",
-                emptyclass: "text-muted"
+                emptytext: 'No description',
+                emptyclass: 'text-muted'
             }));
         }
         /**
