@@ -129,12 +129,12 @@ def serialize_urls(node_settings):
     return urls
 
 
-def check_oauth_credentials(user_settings=None, **kwargs):
+def check_oauth_credentials(current_user, current_user_settings=None, **kwargs):
     valid_credentials = True
-    user_settings = user_settings or get_current_user().get_addon('figshare')
+    current_user_settings = current_user_settings or current_user.get_addon('figshare')
 
-    if user_settings is not None and user_settings.has_auth:
-        options = Figshare.from_settings(user_settings).get_options()
+    if current_user_settings is not None and current_user_settings.has_auth:
+        options = Figshare.from_settings(current_user_settings).get_options()
         if options == 401:
             valid_credentials = False
 
