@@ -3107,5 +3107,37 @@ class TestComments(OsfTestCase):
             self.comment.save()
 
 
+class TestPrivateLink(OsfTestCase):
+
+    def test_node_scale(self):
+        link = PrivateLinkFactory()
+        project = ProjectFactory()
+        comp = NodeFactory(project=project)
+        link.nodes.append(project)
+        link.save()
+        assert_equal(link.node_scale(project), -40)
+        assert_equal(link.node_scale(comp), -20)
+
+    # Regression test for https://sentry.osf.io/osf/production/group/1119/
+    def test_to_json_nodes_with_deleted_parent(self):
+        link = PrivateLinkFactory()
+        project = ProjectFactory(is_deleted=True)
+        node = NodeFactory(project=project)
+        link.nodes.extend([project, node])
+        link.save()
+        result = link.to_json()
+        # result doesn't include deleted parent
+        assert_equal(len(result['nodes']), 1)
+
+    # Regression test for https://sentry.osf.io/osf/production/group/1119/
+    def test_node_scale_with_deleted_parent(self):
+        link = PrivateLinkFactory()
+        project = ProjectFactory(is_deleted=True)
+        node = NodeFactory(project=project)
+        link.nodes.extend([project, node])
+        link.save()
+        assert_equal(link.node_scale(node), -40)
+
+
 if __name__ == '__main__':
     unittest.main()
