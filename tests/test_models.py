@@ -402,6 +402,7 @@ class TestUser(OsfTestCase):
         self.user.save()
         with assert_raises(ChangePasswordError) as error:
             self.user.change_password(old_password, new_password, confirm_password)
+            self.user.save()
         assert_in(error_message, error.exception.message)
         assert_false(self.user.check_password(new_password))
 

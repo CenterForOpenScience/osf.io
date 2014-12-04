@@ -8,7 +8,9 @@ class AuthError(FrameworkError):
 class ChangePasswordError(AuthError):
     """Raised if a change password is called with invalid data.
     """
-    pass
+    def __init__(self, message):
+        self.messages = message if isinstance(message, (list, tuple)) else [message]
+        super(ChangePasswordError, self).__init__(message)
 
 
 class DuplicateEmailError(AuthError):

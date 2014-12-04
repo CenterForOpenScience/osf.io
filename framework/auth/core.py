@@ -452,9 +452,8 @@ class User(GuidStoredObject, AddonModelMixin):
             issues.append('Password should be at least 6 characters')
 
         if issues:
-            raise ChangePasswordError(', '.join(issues) + '.')
+            raise ChangePasswordError(issues)
         self.set_password(raw_new_password)
-        self.save()
 
     def add_email_verification(self, email):
         """Add an email verification token for a given email."""
