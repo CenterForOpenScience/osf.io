@@ -12,7 +12,8 @@ var ShareJSDoc = function(viewModel, url, metadata) {
     editor.setReadOnly(true); // Read only until initialized
 
     // Configure connection
-    var socket = new ReconnectingWebSocket('ws://localhost:7007');
+    var wsUrl = 'ws://' + metadata.sharejsHost + ':' + metadata.sharejsPort;
+    var socket = new ReconnectingWebSocket(wsUrl);
     var sjs = new sharejs.Connection(socket);
     var doc = sjs.get('docs', metadata.docId);
 

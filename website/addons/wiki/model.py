@@ -18,7 +18,7 @@ from framework.guid.model import GuidStoredObject
 from framework.mongo.utils import to_mongo_key
 from website import settings
 from website.addons.base import AddonNodeSettingsBase
-from website.addons.wiki.utils import get_mongo_uuid, share_db, generate_sharejs_uuid
+from website.addons.wiki.utils import get_sharejs_uuid, share_db, generate_private_uuid
 
 from .exceptions import (
     NameEmptyError,
@@ -126,13 +126,13 @@ class NodeWikiPage(GuidStoredObject):
         """Deletes share document and removes namespace from model."""
 
         db = share_db()
-        mongo_uuid = get_mongo_uuid(node, self.page_name)
+        sharejs_uuid = get_sharejs_uuid(node, self.page_name)
 
-        db['docs'].remove({'_id': mongo_uuid})
-        db['docs_ops'].remove({'name': mongo_uuid})
+        db['docs'].remove({'_id': sharejs_uuid})
+        db['docs_ops'].remove({'name': sharejs_uuid})
 
         wiki_key = to_mongo_key(self.page_name)
-        del node.wiki_sharejs_uuids[wiki_key]
+        del node.wiki_private_uuids[wiki_key]
         node.save()
 
         if save:
@@ -142,38 +142,38 @@ class NodeWikiPage(GuidStoredObject):
         """Migrates uuid to new namespace."""
 
         db = share_db()
-        old_mongo_uuid = get_mongo_uuid(node, self.page_name)
+        old_sharejs_uuid = get_sharejs_uuid(node, self.page_name)
 
         lock_url = 'http://{host}:{port}/{action}/{id}'.format(
             host=settings.SHAREJS_HOST,
             port=settings.SHAREJS_PORT,
             action='lock',
-            id=old_mongo_uuid
+            id=old_sharejs_uuid
         )
         requests.post(lock_url)
 
-        generate_sharejs_uuid(node, self.page_name)
-        new_mongo_uuid = get_mongo_uuid(node, self.page_name)
+        generate_private_uuid(node, self.page_name)
+        new_sharejs_uuid = get_sharejs_uuid(node, self.page_name)
 
-        doc_item = db['docs'].find_one({'_id': old_mongo_uuid})
+        doc_item = db['docs'].find_one({'_id': old_sharejs_uuid})
         if doc_item:
-            doc_item['_id'] = new_mongo_uuid
+            doc_item['_id'] = new_sharejs_uuid
             db['docs'].insert(doc_item)
-            db['docs'].remove({'_id': old_mongo_uuid})
+            db['docs'].remove({'_id': old_sharejs_uuid})
 
-        ops_items = [item for item in db['docs_ops'].find({'name': old_mongo_uuid})]
+        ops_items = [item for item in db['docs_ops'].find({'name': old_sharejs_uuid})]
         if ops_items:
             for item in ops_items:
-                item['_id'] = item['_id'].replace(old_mongo_uuid, new_mongo_uuid)
-                item['name'] = new_mongo_uuid
+                item['_id'] = item['_id'].replace(old_sharejs_uuid, new_sharejs_uuid)
+                item['name'] = new_sharejs_uuid
             db['docs_ops'].insert(ops_items)
-            db['docs_ops'].remove({'name': old_mongo_uuid})
+            db['docs_ops'].remove({'name': old_sharejs_uuid})
 
         unlock_url = 'http://{host}:{port}/{action}/{id}'.format(
             host=settings.SHAREJS_HOST,
             port=settings.SHAREJS_PORT,
             action='unlock',
-            id=old_mongo_uuid
+            id=old_sharejs_uuid
         )
         requests.post(unlock_url)
 

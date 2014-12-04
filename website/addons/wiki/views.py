@@ -12,9 +12,10 @@ from framework.exceptions import HTTPError
 from framework.auth.utils import privacy_info_handle
 from framework.flask import redirect
 
+from website import settings
 from website.addons.wiki.utils import (
-    get_mongo_uuid,
-    generate_sharejs_uuid
+    get_sharejs_uuid,
+    generate_private_uuid
 )
 from website.project.views.node import _view_project
 from website.project import show_diff
@@ -267,8 +268,8 @@ def project_wiki_edit(auth, wname, **kwargs):
         content = ''
         wiki_page_api_url = None
 
-    if wiki_key not in node.wiki_sharejs_uuids:
-        generate_sharejs_uuid(node, wiki_name)
+    if wiki_key not in node.wiki_private_uuids:
+        generate_private_uuid(node, wiki_name)
 
     # TODO: Remove duplication with project_wiki_page
     toc = _serialize_wiki_toc(node, auth=auth)
@@ -278,7 +279,9 @@ def project_wiki_edit(auth, wname, **kwargs):
         'wiki_content': content,
         'version': version,
         'versions': _get_wiki_versions(node, wiki_name),
-        'share_uuid': get_mongo_uuid(node, wiki_name),
+        'sharejs_uuid': get_sharejs_uuid(node, wiki_name),
+        'sharejs_host': settings.SHAREJS_HOST,
+        'sharejs_port': settings.SHAREJS_PORT,
         'is_current': is_current,
         'is_edit': True,
         'pages_current': _get_wiki_pages_current(node),

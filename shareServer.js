@@ -1,4 +1,5 @@
 // Configuration options
+// TODO: Can these be grabbed from python settings?
 var port = 7007;
 var dbHost = 'localhost';
 var dbPort = 27017;
@@ -24,7 +25,7 @@ var server = http.createServer(app);
 var wss = new WebSocketServer({ server: server});
 
 // Local variables
-var docs = {};
+var docs = {};  // TODO: Should this be stored in mongo?
 var locked = {};
 
 // Allow CORS
@@ -37,6 +38,7 @@ app.all('*', function(req, res, next) {
 // Serve static sharejs files
 app.use(express.static(sharejs.scriptsDir));
 
+// Broadcasts message to all clients connected to that doc
 // TODO: Can we access the relevant list without iterating over every client?
 wss.broadcast = function(docId, message) {
     for (var i in this.clients) {
@@ -65,8 +67,6 @@ wss.on('connection', function(client) {
     client.on('message', function(data) {
 
         if (client.userMeta && locked[client.userMeta.docId]) {
-            console.log(client.userMeta.docId, 'is locked! No edits.');
-            // TODO: Is this the best way to let the user know they can't edit?
             wss.broadcast(client.userMeta.docId, JSON.stringify({type: 'lock'}));
             return;
         }
@@ -95,8 +95,6 @@ wss.on('connection', function(client) {
 
             // Attach metadata to the client object
             client.userMeta = data;
-
-            console.log('new user:', data.userName, '| Total:', wss.clients.length);
             wss.broadcast(docId, JSON.stringify({type: 'meta', users: docs[docId]}));
 
             // Lock client if doc is locked
@@ -127,7 +125,6 @@ wss.on('connection', function(client) {
                 }
             }
 
-            console.log('rem user:', client.userMeta.userName, '| Total:', wss.clients.length);
             wss.broadcast(docId, JSON.stringify({type: 'meta', users: docs[docId]}));
         }
 
@@ -157,7 +154,6 @@ app.get('/users', function getUsers(req, res, next) {
 app.post('/lock/:id', function lockDoc(req, res, next) {
     locked[req.params.id] = true;
     wss.broadcast(req.params.id, JSON.stringify({type: 'lock'}));
-    console.log(req.params.id + " was locked.");
     res.send(req.params.id + " was locked.");
 });
 
@@ -165,7 +161,6 @@ app.post('/lock/:id', function lockDoc(req, res, next) {
 app.post('/unlock/:id', function lockDoc(req, res, next) {
     delete locked[req.params.id];
     wss.broadcast(req.params.id, JSON.stringify({type: 'unlock'}));
-    console.log(req.params.id + " was unlocked.");
     res.send(req.params.id + " was unlocked.");
 });
 

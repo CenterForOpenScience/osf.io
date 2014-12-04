@@ -16,7 +16,6 @@
     ko.bindingHandlers.ace = {
         init: function(element, valueAccessor) {
             editor = ace.edit(element.id);
-            var value = ko.unwrap(valueAccessor());
 
             // Updates the view model based on changes to the editor
             editor.getSession().on('change', function () {
@@ -28,7 +27,7 @@
             var value = ko.unwrap(valueAccessor()); // Value from view model
 
             // Updates the editor based on changes to the view model
-            if (value !== undefined && content !== value) {
+            if (!editor.getReadOnly() && value !== undefined && content !== value) {
                 editor.setValue(value);
             }
         }

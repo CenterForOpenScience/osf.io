@@ -42,6 +42,7 @@
                     </div>
                     <div id="editor" class="wmd-input"
                          data-bind="ace: currentText">Loading. . .</div>
+                    <!-- Invisible textarea for form submission -->
                     <textarea name="content" style="visibility: hidden" data-bind="value: currentText"></textarea>
                 </div>
                 <div class="pull-right">
@@ -101,8 +102,8 @@
 
 <!-- Necessary for ShareJS communication -->
 <!-- TODO: Get host/port from mako -->
-<script src="http://localhost:7007/text.js"></script>
-<script src="http://localhost:7007/share.uncompressed.js"></script>
+<script src="http://${sharejs_host}:${sharejs_port}/text.js"></script>
+<script src="http://${sharejs_host}:${sharejs_port}/share.js"></script>
 <script src="/static/addons/wiki/ace.js"></script>
 <script src="/static/addons/wiki/ReconnectingWebSocket.js"></script>
 
@@ -128,11 +129,13 @@
         // Grab user metadata to pass to shareJS
         var metadata = {
             registration: true,
-            docId: '${share_uuid}',
+            docId: '${sharejs_uuid}',
             userId: '${user_id}',
             userName: '${user_full_name}',
             userUrl: '${user_url}',
-            userGravatar: gravatarUrl
+            userGravatar: gravatarUrl,
+            sharejsHost: '${sharejs_host}',
+            sharejsPort: '${sharejs_port}'
         };
 
         var wikiEditor = new WikiEditor('.wiki', url);
