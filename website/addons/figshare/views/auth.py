@@ -5,23 +5,22 @@ import httplib as http
 
 from flask import request
 
-from framework.auth import get_current_user
 from framework.flask import redirect  # VOL-aware redirect
-from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
+from framework.auth.decorators import collect_auth
+from framework.auth.decorators import must_be_logged_in
 
 from website import models
-from website.project.decorators import must_have_permission
-from website.project.decorators import must_have_addon
 from website.util import web_url_for
+from website.project.decorators import must_have_addon
+from website.project.decorators import must_have_permission
 
 from ..auth import oauth_start_url, oauth_get_token
 
 
 @must_be_logged_in
-def figshare_oauth_start(**kwargs):
-
-    user = get_current_user()
+def figshare_oauth_start(auth, **kwargs):
+    user = auth.user
 
     nid = kwargs.get('nid') or kwargs.get('pid')
     node = models.Node.load(nid) if nid else None
@@ -74,9 +73,10 @@ def figshare_oauth_delete_node(auth, node_addon, **kwargs):
     return {}
 
 
-def figshare_oauth_callback(**kwargs):
+@collect_auth
+def figshare_oauth_callback(auth, **kwargs):
 
-    user = get_current_user()
+    user = auth.user
 
     nid = kwargs.get('nid') or kwargs.get('pid')
     node = models.Node.load(nid) if nid else None

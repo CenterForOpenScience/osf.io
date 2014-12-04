@@ -16,6 +16,7 @@
         var self = this;
 
         self.nodeTitle = nodeTitle;
+        self.submitEnabled = ko.observable(true);
 
         self.query = ko.observable();
         self.results = ko.observableArray();
@@ -30,7 +31,7 @@
                 {
                     query: self.query(),
                     nodeId: nodeId,
-                    includePublic: includePublic,
+                    includePublic: includePublic
                 }
             ).done(function(result) {
                 if (!result.nodes.length) {
@@ -88,14 +89,17 @@
         };
 
         self.submit = function() {
+            self.submitEnabled(false);
             var nodeIds = $.osf.mapByProperty(self.selection(), 'id');
             $.osf.postJSON(
                 nodeApiUrl + 'pointer/',
                 {nodeIds: nodeIds}
             ).done(function() {
                 window.location.reload();
-            }).fail(
-                $.osf.handleJSONError
+            }).fail( function(data) {
+                    self.submitEnabled(true);
+                    $.osf.handleJSONError(data);
+                }
             );
         };
 
@@ -126,12 +130,12 @@
                 $.ajax({
                     type: 'GET',
                     url: nodeApiUrl + 'pointer/',
-                    dataType: 'json',
+                    dataType: 'json'
                 }).done(function(response) {
                     self.links(response.pointed);
                 }).fail(function() {
                     $elm.modal('hide');
-                    bootbox.alert('Could not get links');
+                    $.osf.growl('Error:','Could not get links');
                 });
             }
         });
