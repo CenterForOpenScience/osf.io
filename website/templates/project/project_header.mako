@@ -139,7 +139,12 @@
                 % if parent_node['id']:
                     <br />Category: <span class="node-category">${node['category']}</span>
                 % elif node['description'] or 'write' in user['permissions']:
-                    <br /><span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
+                    <br /><span id="description">Description:</span>
+                    % if node['is_registration']:
+                        <span class="node-description overflow${'' if node['description'] else ' text-muted'}" data-type="textarea">${node['description'] or "No description"}</span>
+                    % else:
+                        <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
+                    % endif
                 % endif
             </div>
         </div>
