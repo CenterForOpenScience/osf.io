@@ -35,12 +35,14 @@
 
     </div>
 
-    <script>
-        $script(['/static/addons/dataverse/dataverseWidget.js']);
-        $script.ready('dataverseWidget', function() {
-            var url = '${node['api_url'] + 'dataverse/widget/contents/'}';
-            var dataverse = new DataverseWidget('#dataverseScope', url);
+    <script type="text/javascript">
+        window.contextVars = $.extend(true, {}, window.contextVars, {
+            node: {
+                urls: {
+                    api: '${node['api_url']}'
+                }
+            }
         });
     </script>
-
+    <script src="/static/public/js/dataverse/widget-cfg.js"></script>
 % endif
