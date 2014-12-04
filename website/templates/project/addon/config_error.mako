@@ -10,12 +10,18 @@
 <script>
     $(document).ready(function() {
         $(".widget-disable").click(function() {
-            $.ajax({
+            var req = $.ajax({
                 method: 'POST',
                 url: '${node['api_url']}${short_name | js_str}/settings/disable/',
-            }).done(function() {
-                location.reload();
             });
+
+            req.done(function() {
+                location.reload();
+            })
+
+            req.fail(function() {
+                bootbox.alert('Unable to disable ${full_name | js_str}');
+            })
         });
     });
 </script>
