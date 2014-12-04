@@ -7,6 +7,7 @@
     <title>OSF | ${self.title()}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="${self.description()}">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
     % if sentry_dsn_js:
     <script src="/static/vendor/bower_components/raven-js/dist/raven.min.js"></script>
@@ -94,18 +95,20 @@
             })();
             </script>
 
-            <script type="text/javascript">
+            <script>
 
-              var _gaq = _gaq || [];
-              _gaq.push(['_setAccount', 'UA-26813616-1']);
-              _gaq.push(['_trackPageview']);
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
-              (function() {
-                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-              })();
+            ga('create', 'UA-26813616-1', 'auto', {'allowLinker': true});
+            ga('require', 'linker');
+            ga('linker:autoLink', ['centerforopenscience.org'] );
+            ga('send', 'pageview');
+
             </script>
+
         %endif
 
         % if piwik_host:
@@ -173,25 +176,31 @@
 
 <%def name="includes_top()">
 
-    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>
-      <script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+      <script src="//cdnjs.cloudflare.com/ajax/libs/es5-shim/4.0.3/es5-shim.min.js"></script>
+      <script src="//cdnjs.cloudflare.com/ajax/libs/es5-shim/4.0.3/es5-sham.min.js"></script>
     <![endif]-->
 
     <!-- Le styles -->
     ## Don't bundle Bootstrap or else Glyphicons won't work
     <link rel="stylesheet" href="/static/vendor/bower_components/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="/static/vendor/font-awesome/css/font-awesome.min.css">
+    ## select2 stylesheet also needs to be here so that it finds the correct images
+    <link rel="stylesheet" href="/static/vendor/bower_components/select2/select2.css">
 
     % for url in css_all:
     <link rel="stylesheet" href="${url}">
     % endfor
 
-    <script src="//ajax.aspnetcdn.com/ajax/jquery/jquery-2.1.0.min.js"></script>
+    <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
     <script>window.jQuery || document.write('<script src="/static/vendor/bower_components/jQuery/dist/jquery.min.js">\x3C/script>')</script>
     <script src="//code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
     <script>window.jQuery.ui || document.write('<script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js">\x3C/script>')</script>
-    <script>window.ko || document.write('<script src="/static/vendor/knockout/knockout-3.0.0.min.js">\x3C/script>')</script>
+    <script src="/static/vendor/bower_components/knockout/dist/knockout.js"></script>
     <script src="/static/vendor/knockout-mapping/knockout.mapping.js"></script>
     <script src="/static/vendor/knockout-punches/knockout.punches.min.js"></script>
     <script src="/static/vendor/knockout-validation/knockout.validation.min.js"></script>
@@ -204,15 +213,17 @@
     <script>
         // Enable knockout punches
         ko.punches.enableAll();
-        // Filebrowser dependencies
+        // Dependencies that can be loaded with scriptjs
         $script(['/static/vendor/bower_components/zeroclipboard/ZeroClipboard.min.js'],
             'zeroclipboard');
-        $script(['/static/vendor/dropzone/dropzone.js'], 'dropzone');
+        $script(['/static/vendor/bower_components/dropzone/downloads/dropzone.js'], 'dropzone');
         $script(['/static/vendor/bower_components/hgrid/dist/hgrid.js'], 'hgrid');
+        $script(['/static/vendor/bower_components/typeahead.js/dist/typeahead.bundle.min.js'],'typeahead');
+        $script(['/static/vendor/bower_components/select2/select2.js'], 'select2');
+        $script(['/static/vendor/bower_components/handlebars/handlebars.min.js'],'handlebars');
         $script(['/static/js/dropzone-patch.js']); // exports 'dropzone-patch'
         $script(['/static/js/rubeus.js']); // exports 'rubeus'
         $script(['/static/js/folderPicker.js']);  // exports 'folderPicker'
-        $script(['/static/js/typeahead.bundle.js'],'typeahead');
     </script>
 
 </%def>

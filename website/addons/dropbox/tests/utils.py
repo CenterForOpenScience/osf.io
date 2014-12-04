@@ -149,6 +149,8 @@ class MockDropbox(object):
             each['path'] = path
         return ret
 
+    def account_info(self):
+        return {'display_name': 'Mr. Drop Box'}
 
 @contextmanager
 def patch_client(target, mock_client=None):

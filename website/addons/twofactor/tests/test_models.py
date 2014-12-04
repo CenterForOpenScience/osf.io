@@ -95,7 +95,8 @@ class TestUserSettingsModel(OsfTestCase):
                 'nodes': [],
                 'otpauth_url': 'otpauth://totp/OSF:foo@bar.com'
                                '?secret=' + self.TOTP_SECRET_B32,
-                'secret': self.TOTP_SECRET_B32
+                'secret': self.TOTP_SECRET_B32,
+                'has_auth': False,
             }
         )
 

@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# encoding: utf-8
+
 import logging
 
 from raven.contrib.flask import Sentry
@@ -15,13 +18,20 @@ sentry = Sentry(dsn=settings.SENTRY_DSN)
 enabled = (not settings.DEBUG_MODE) and settings.SENTRY_DSN
 
 
+def get_session_data():
+    try:
+        return get_session().data
+    except (RuntimeError, AttributeError):
+        return {}
+
+
 def log_exception():
     if not enabled:
         logger.warning('Sentry called to log exception, but is not active')
         return None
 
     return sentry.captureException(extra={
-        'session': get_session().data,
+        'session': get_session_data(),
     })
 
 
@@ -33,5 +43,5 @@ def log_message(message):
         return None
 
     return sentry.captureMessage(message, extra={
-        'session': get_session().data,
+        'session': get_session_data(),
     })

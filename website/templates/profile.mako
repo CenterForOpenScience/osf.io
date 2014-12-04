@@ -5,6 +5,7 @@
 
 <script>
     % if user["is_profile"]:
+        $.fn.editable.defaults.mode = 'inline';
         $(function() {
             $('#profile-fullname > span').editable({
                 type:  'text',
@@ -13,7 +14,7 @@
                 url:   '/api/v1/profile/${profile["id"]}/edit/',
                 title: 'Edit Full Name',
                 placement: 'bottom',
-                value: '${profile["fullname"]}',
+                value: '${profile["fullname"] | js_str}',
                 success: function(data) {
                     // Also change the display name in the user info table
                     $(".fullname").text(data['name']);
@@ -182,7 +183,7 @@
     </div>
 </div><!-- end row -->
 
-<%include file="log_templates.mako"/>
+<%include file="_log_templates.mako"/>
 <%include file="include/profile/social.mako" />
 <%include file="include/profile/jobs.mako" />
 <%include file="include/profile/schools.mako" />
@@ -202,7 +203,7 @@
         };
         var social = new profile.Social('#social', socialUrls, ['edit', 'view']);
         var jobs = new profile.Jobs('#jobs', jobsUrls, ['edit', 'view']);
-        var schools = new profile.Schools('#schools', schoolsUrls, ['edit', 'view']);;
+        var schools = new profile.Schools('#schools', schoolsUrls, ['edit', 'view']);
     });
 
 </script>

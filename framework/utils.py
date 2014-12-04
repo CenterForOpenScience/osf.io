@@ -1,19 +1,12 @@
 from __future__ import absolute_import
-from calendar import timegm
 import re
 
 from werkzeug.utils import secure_filename as werkzeug_secure_filename
 
-from email.utils import formatdate
 
-
-def rfcformat(dt, localtime=False):
-    '''Return the RFC822-formatted represenation of a datetime object.
-
-    :param bool localtime: If ``True``, return the date relative to the local
-        timezone instead of UTC, properly taking daylight savings time into account.
-    '''
-    return formatdate(timegm(dt.utctimetuple()), localtime=localtime)
+def iso8601format(dt):
+    """Given a datetime object, return an associated ISO-8601 string"""
+    return dt.strftime('%Y-%m-%dT%H:%M:%SZ')
 
 
 def secure_filename(filename):

@@ -350,11 +350,6 @@
         }
     });
 
-    $(document).ready(function() {
-        document.oncontextmenu = function () {
-            return false;
-        };
-    });
     function addFormKeyBindings(nodeID){
         $('#ptd-'+nodeID).keyup(function (e){
             /*if(e.which == 13){ //return
@@ -561,19 +556,23 @@
                     });
                 });
                 $('#delete-folder-' + theItem.node_id).click(function () {
-                    var confirmationText = 'Are you sure you want to delete this folder? This will also delete any folders inside this one. You will not delete any projects in this folder.';
-                    bootbox.confirm(confirmationText, function (result) {
-                        if (result !== null && result) {
-                            var url = '/api/v1/folder/'+ theItem.node_id;
-                            var deleteAction = $.ajax({
-                                type: 'DELETE',
-                                url: url,
-                                contentType: 'application/json',
-                                dataType: 'json'
-                            });
-                            deleteAction.done(function () {
-                                reloadFolder(projectOrganizer.grid, theParentNode);
-                            });
+                    bootbox.confirm({
+                        title: 'Delete this folder?',
+                        message: 'Are you sure you want to delete this folder? This will also delete any folders ' +
+                            'inside this one. You will not delete any projects in this folder.',
+                        callback: function(result) {
+                            if (result !== null && result) {
+                                var url = '/api/v1/folder/'+ theItem.node_id;
+                                var deleteAction = $.ajax({
+                                    type: 'DELETE',
+                                    url: url,
+                                    contentType: 'application/json',
+                                    dataType: 'json'
+                                });
+                                deleteAction.done(function () {
+                                    reloadFolder(projectOrganizer.grid, theParentNode);
+                                });
+                            }
                         }
                     });
                 });
@@ -651,7 +650,7 @@
                     $('#findNode' + theItem.node_id).show();
                 });
 
-                $('.project-details').show();
+                $('.project-details').toggle();
             } else {
                 $('.project-details').hide();
             }
@@ -668,16 +667,18 @@
         if (!row.isSmartFolder) {
             var buttonDefs = [
                 {
-                    text: '<i class="project-organizer-info-icon" title="" data-placement="right" data-toggle="tooltip" data-original-title="Info"></i>',
+                    text: '<i class="project-organizer-info-icon" title=""></i>',
                     action: 'showProjectDetails',
-                    cssClass: 'project-organizer-icon-info'
+                    cssClass: 'project-organizer-icon-info',
+                    attributes:'data-placement="right" data-toggle="tooltip" data-original-title="Info"'
                 }
             ];
             if (url !== null) {
                 buttonDefs.push({
-                    text: '<i class="project-organizer-visit-icon" title="" data-placement="right" data-toggle="tooltip" data-original-title="Go to page"></i>',
+                    text: '<i class="project-organizer-visit-icon" title="" ></i>',
                     action: 'visitPage',
-                    cssClass: 'project-organizer-icon-visit'
+                    cssClass: 'project-organizer-icon-visit',
+                    attributes:'data-placement="right" data-toggle="tooltip" data-original-title="Go to page"'
                 });
             }
             return HGrid.Fmt.buttons(buttonDefs);
@@ -911,6 +912,13 @@
 
 
         }); // end onSelectedRowsChanged
+
+        // Disable right clicking within the grid
+        // Fixes https://github.com/CenterForOpenScience/openscienceframework.org/issues/945
+        self.grid.element[0].oncontextmenu = function() {
+            return false;
+        };
+
     };
 
 
@@ -1055,3 +1063,6 @@
 
     return ProjectOrganizer;
 }));
+$(document).ready(function() {
+    $("#projectOrganizerScope").tooltip({selector: '[data-toggle=tooltip]'});
+});

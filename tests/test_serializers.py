@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from nose.tools import *  # noqa (PEP8 asserts)
-import httplib as http
 
 from tests.factories import (
     ProjectFactory,
@@ -9,16 +8,17 @@ from tests.factories import (
     RegistrationFactory,
     NodeFactory,
     NodeLogFactory,
-    AuthUserFactory,
     FolderFactory,
 )
 from tests.base import OsfTestCase
 
 from framework.auth import Auth
 from framework import utils as framework_utils
-from website.project.views.node import _get_summary, _view_project
+from website.project.views.node import _get_summary, _view_project, _serialize_node_search
+from website.views import _render_node
 from website.profile import utils
 from website.views import serialize_log
+from website.util import permissions
 
 
 class TestNodeSerializers(OsfTestCase):
@@ -60,6 +60,34 @@ class TestNodeSerializers(OsfTestCase):
         # serialized result should have is_registration
         assert_true(res['summary']['is_registration'])
 
+    def test_render_node(self):
+        node = ProjectFactory()
+        res = _render_node(node)
+        assert_equal(res['title'], node.title)
+        assert_equal(res['id'], node._primary_key)
+        assert_equal(res['url'], node.url)
+        assert_equal(res['api_url'], node.api_url)
+        assert_equal(res['primary'], node.primary)
+        assert_equal(res['date_modified'], framework_utils.iso8601format(node.date_modified))
+        assert_equal(res['category'], 'project')
+
+    def test_render_node_returns_permissions(self):
+        node = ProjectFactory()
+        admin = UserFactory()
+        node.add_contributor(admin, auth=Auth(node.creator),
+            permissions=permissions.expand_permissions(permissions.ADMIN))
+        writer = UserFactory()
+        node.add_contributor(writer, auth=Auth(node.creator),
+            permissions=permissions.expand_permissions(permissions.WRITE))
+        node.save()
+
+        res_admin = _render_node(node, admin)
+        assert_equal(res_admin['permissions'], 'admin')
+        res_writer = _render_node(node, writer)
+        assert_equal(res_writer['permissions'], 'write')
+
+
+
     def test_get_summary_private_fork_should_include_is_fork(self):
         user = UserFactory()
         # non-contributor cannot see private fork of public project
@@ -96,6 +124,16 @@ class TestNodeSerializers(OsfTestCase):
         assert_false(res['summary']['can_view'])
         assert_true(res['summary']['is_fork'])
 
+    def test_serialize_node_search_returns_only_visible_contributors(self):
+        node = NodeFactory()
+        non_visible_contributor = UserFactory()
+        node.add_contributor(non_visible_contributor, visible=False)
+        serialized_node = _serialize_node_search(node)
+
+        assert_equal(serialized_node['firstAuthor'], node.visible_contributors[0].family_name)
+        assert_equal(len(node.visible_contributors), 1)
+        assert_false(serialized_node['etal'])
+
 
 class TestViewProject(OsfTestCase):
 
@@ -128,7 +166,7 @@ class TestNodeLogSerializers(OsfTestCase):
         assert_equal(d['node']['category'], 'Hypothesis')
 
         assert_equal(d['node']['url'], log.node.url)
-        assert_equal(d['date'], framework_utils.rfcformat(log.date))
+        assert_equal(d['date'], framework_utils.iso8601format(log.date))
         assert_in('contributors', d)
         assert_equal(d['user']['fullname'], log.user.fullname)
         assert_equal(d['user']['url'], log.user.url)
@@ -162,7 +200,7 @@ class TestAddContributorJson(OsfTestCase):
         self.jobs = [{
             'institution': 'School of Lover Boys',
             'department': 'Fancy Patter',
-            'position': 'Lover Boy',
+            'title': 'Lover Boy',
             'start': None,
             'end': None,
         }]
@@ -239,4 +277,3 @@ class TestAddContributorJson(OsfTestCase):
         assert_equal(user_info['active'], True)
         assert_in('secure.gravatar.com', user_info['gravatar_url'])
         assert_equal(user_info['profile_url'], self.profile)
-

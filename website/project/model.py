@@ -29,8 +29,9 @@ from framework.mongo.utils import to_mongo, to_mongo_key
 from framework.auth import get_user, User, Auth
 from framework.auth.utils import privacy_info_handle
 from framework.analytics import (
-    get_basic_counters, increment_user_activity_counters, piwik
+    get_basic_counters, increment_user_activity_counters
 )
+from framework.analytics import tasks as piwik_tasks
 from framework.exceptions import PermissionsError
 from framework.mongo import StoredObject
 from framework.guid.model import GuidStoredObject
@@ -322,6 +323,7 @@ class NodeLog(StoredObject):
 
     WIKI_UPDATED = 'wiki_updated'
     WIKI_DELETED = 'wiki_deleted'
+    WIKI_RENAMED = 'wiki_renamed'
 
     CONTRIB_ADDED = 'contributor_added'
     CONTRIB_REMOVED = 'contributor_removed'
@@ -339,8 +341,9 @@ class NodeLog(StoredObject):
     EDITED_DESCRIPTION = 'edit_description'
 
     FILE_ADDED = 'file_added'
-    FILE_REMOVED = 'file_removed'
     FILE_UPDATED = 'file_updated'
+    FILE_REMOVED = 'file_removed'
+    FILE_RESTORED = 'file_restored'
 
     ADDON_ADDED = 'addon_added'
     ADDON_REMOVED = 'addon_removed'
@@ -429,7 +432,7 @@ class Tag(StoredObject):
 
     @property
     def url(self):
-        return '/search/?q=tags:{}'.format(self._id)
+        return '/search/?tags={}'.format(self._id)
 
 
 class Pointer(StoredObject):
@@ -481,8 +484,8 @@ class Pointer(StoredObject):
             )
         )
 
-def resolve_pointer(pointer):
-    """Given a `Pointer` object, return the node that it resolves to.
+def get_pointer_parent(pointer):
+    """Given a `Pointer` object, return its parent node.
     """
     # The `parent_node` property of the `Pointer` schema refers to the parents
     # of the pointed-at `Node`, not the parents of the `Pointer`; use the
@@ -497,6 +500,14 @@ def validate_category(value):
     """
     if value not in Node.CATEGORY_MAP.keys():
         raise ValidationValueError('Invalid value for category.')
+    return True
+
+
+def validate_title(value):
+    """Validator for Node#title. Makes sure that the value exists.
+    """
+    if value is None or not value.strip():
+        raise ValidationValueError('Title cannot be blank.')
     return True
 
 
@@ -578,10 +589,8 @@ class Node(GuidStoredObject, AddonModelMixin):
     is_fork = fields.BooleanField(default=False)
     forked_date = fields.DateTimeField()
 
-    title = fields.StringField()
+    title = fields.StringField(validate=validate_title)
     description = fields.StringField()
-    # TODO: Add validator for this field (must be one of the keys in
-    # CATEGORY_MAP
     category = fields.StringField(validate=validate_category)
 
     # One of 'public', 'private'
@@ -880,6 +889,8 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     def save(self, *args, **kwargs):
 
+        update_piwik = kwargs.pop('update_piwik', True)
+
         self.adjust_permissions()
 
         first_save = not self._is_loaded
@@ -950,8 +961,8 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.update_search()
 
         # This method checks what has changed.
-        if settings.PIWIK_HOST:
-            piwik.update_node(self, saved_fields)
+        if settings.PIWIK_HOST and update_piwik:
+            piwik_tasks.update_node(self._id, saved_fields)
 
         # Return expected value for StoredObject::save
         return saved_fields
@@ -1200,7 +1211,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     def get_points(self, folders=False, deleted=False, resolve=True):
         ret = []
         for each in self.pointed:
-            pointer_node = resolve_pointer(each)
+            pointer_node = get_pointer_parent(each)
             if not folders and pointer_node.is_folder:
                 continue
             if not deleted and pointer_node.is_deleted:
@@ -1296,8 +1307,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param auth: All the auth information including user, API key.
 
         """
-        if not title:
-            return
+        if title is None or not title.strip():
+            raise ValidationValueError('Title cannot be blank.')
         original_title = self.title
         self.title = title
         self.add_log(
@@ -1444,7 +1455,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             try:  # Catch the potential PermissionsError above
                 forked_node = node_contained.fork_node(auth=auth, title='')
             except PermissionsError:
-                pass  # If this excpetion is thrown omit the node from the result set
+                pass  # If this exception is thrown omit the node from the result set
             if forked_node is not None:
                 forked.nodes.append(forked_node)
 
@@ -1485,7 +1496,8 @@ class Node(GuidStoredObject, AddonModelMixin):
             if message:
                 status.push_status_message(message)
 
-        if os.path.exists(folder_old):
+        # TODO: Remove after migration to OSF Storage
+        if settings.COPY_GIT_REPOS and os.path.exists(folder_old):
             folder_new = os.path.join(settings.UPLOADS_PATH, forked._primary_key)
             Repo(folder_old).clone(folder_new)
 
@@ -1500,6 +1512,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         :data: Form data
 
         """
+        # TODO: Throw error instead of returning?
         if not self.can_edit(auth):
             return
 
@@ -1545,7 +1558,8 @@ class Node(GuidStoredObject, AddonModelMixin):
             if message:
                 status.push_status_message(message)
 
-        if os.path.exists(folder_old):
+        # TODO: Remove after migration to OSF Storage
+        if settings.COPY_GIT_REPOS and os.path.exists(folder_old):
             folder_new = os.path.join(settings.UPLOADS_PATH, registered._primary_key)
             Repo(folder_old).clone(folder_new)
 
@@ -1572,6 +1586,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         original.save()
 
         registered.save()
+        for node in registered.nodes:
+            node.update_search()
 
         return registered
 
@@ -1642,7 +1658,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         try:
             file_versions = self.files_versions[path.replace('.', '_')]
             # Default to latest version
-            version = version or len(file_versions) - 1
+            version = version if version is not None else len(file_versions) - 1
         except (AttributeError, KeyError):
             raise ValueError('Invalid path: {}'.format(path))
         if version < 0:
@@ -2063,15 +2079,18 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.save()  # TODO: here, or outside the conditional? @mambocab
         return ret
 
-    def delete_addon(self, addon_name, auth):
+    def delete_addon(self, addon_name, auth, _force=False):
         """Delete an add-on from the node.
 
         :param str addon_name: Name of add-on
         :param Auth auth: Consolidated authorization object
+        :param bool _force: For migration testing ONLY. Do not set to True
+            in the application, or else projects will be allowed to delete
+            mandatory add-ons!
         :return bool: Add-on was deleted
 
         """
-        rv = super(Node, self).delete_addon(addon_name, auth)
+        rv = super(Node, self).delete_addon(addon_name, auth, _force)
         if rv:
             config = settings.ADDONS_AVAILABLE_DICT[addon_name]
             self.add_log(
@@ -2457,99 +2476,156 @@ class Node(GuidStoredObject, AddonModelMixin):
         return True
 
     # TODO: Move to wiki add-on
-    def get_wiki_page(self, page, version=None):
+    def get_wiki_page(self, name=None, version=None, id=None):
         from website.addons.wiki.model import NodeWikiPage
 
-        page = to_mongo_key(page)
-
-        if version:
+        if name:
+            name = (name or '').strip()
+            key = to_mongo_key(name)
             try:
-                version = int(version)
-            except:
+                if version:
+                    id = self.wiki_pages_versions[key][version - 1]
+                else:
+                    id = self.wiki_pages_current[key]
+            except (KeyError, IndexError):
                 return None
-
-            if page not in self.wiki_pages_versions:
-                return None
-
-            if version > len(self.wiki_pages_versions[page]):
-                return None
-            else:
-                return NodeWikiPage.load(self.wiki_pages_versions[page][version - 1])
-
-        if page in self.wiki_pages_current:
-            pw = NodeWikiPage.load(self.wiki_pages_current[page])
-        else:
-            pw = None
-
-        return pw
+        return NodeWikiPage.load(id)
 
     # TODO: Move to wiki add-on
-    def update_node_wiki(self, page, content, auth):
+    def update_node_wiki(self, name, content, auth):
         """Update the node's wiki page with new content.
 
         :param page: A string, the page's name, e.g. ``"home"``.
         :param content: A string, the posted content.
-        :param auth: All the auth informtion including user, API key.
+        :param auth: All the auth information including user, API key.
 
         """
         from website.addons.wiki.model import NodeWikiPage
 
-        temp_page = page
+        name = (name or '').strip()
+        key = to_mongo_key(name)
 
-        page = to_mongo_key(page)
-
-        if page not in self.wiki_pages_current:
-            if page in self.wiki_pages_versions:
-                version = len(self.wiki_pages_versions[page]) + 1
+        if key not in self.wiki_pages_current:
+            if key in self.wiki_pages_versions:
+                version = len(self.wiki_pages_versions[key]) + 1
             else:
                 version = 1
         else:
-            current = NodeWikiPage.load(self.wiki_pages_current[page])
+            current = NodeWikiPage.load(self.wiki_pages_current[key])
             current.is_current = False
             version = current.version + 1
             current.save()
 
-        new_wiki = NodeWikiPage(
-            page_name=temp_page,
+        new_page = NodeWikiPage(
+            page_name=name,
             version=version,
             user=auth.user,
             is_current=True,
             node=self,
             content=content
         )
-        new_wiki.save()
+        new_page.save()
 
-        if page not in self.wiki_pages_versions:
-            self.wiki_pages_versions[page] = []
-        self.wiki_pages_versions[page].append(new_wiki._primary_key)
-        self.wiki_pages_current[page] = new_wiki._primary_key
+        # check if the wiki page already exists in versions (existed once and is now deleted)
+        if key not in self.wiki_pages_versions:
+            self.wiki_pages_versions[key] = []
+        self.wiki_pages_versions[key].append(new_page._primary_key)
+        self.wiki_pages_current[key] = new_page._primary_key
 
         self.add_log(
             action=NodeLog.WIKI_UPDATED,
             params={
                 'project': self.parent_id,
                 'node': self._primary_key,
-                'page': new_wiki.page_name,
-                'version': new_wiki.version,
+                'page': new_page.page_name,
+                'page_id': new_page._primary_key,
+                'version': new_page.version,
             },
             auth=auth,
-            log_date=new_wiki.date
+            log_date=new_page.date,
+            save=False,
+        )
+        self.save()
+
+    # TODO: Move to wiki add-on
+    def rename_node_wiki(self, name, new_name, auth):
+        """Rename the node's wiki page with new name.
+
+        :param name: A string, the page's name, e.g. ``"My Page"``.
+        :param new_name: A string, the new page's name, e.g. ``"My Renamed Page"``.
+        :param auth: All the auth information including user, API key.
+
+        """
+        # TODO: Fix circular imports
+        from website.addons.wiki.exceptions import (
+            PageCannotRenameError,
+            PageConflictError,
+            PageNotFoundError,
         )
 
-    def delete_node_wiki(self, node, page, auth):
-        page_name_key = to_mongo_key(page.page_name)
+        name = (name or '').strip()
+        key = to_mongo_key(name)
+        new_name = (new_name or '').strip()
+        new_key = to_mongo_key(new_name)
+        page = self.get_wiki_page(name)
 
-        del node.wiki_pages_current[page_name_key]
+        if key == 'home':
+            raise PageCannotRenameError('Cannot rename wiki home page')
+        if not page:
+            raise PageNotFoundError('Wiki page not found')
+        if (new_key in self.wiki_pages_current and key != new_key) or new_key == 'home':
+            raise PageConflictError(
+                'Page already exists with name {0}'.format(
+                    new_name,
+                )
+            )
+
+        # rename the page first in case we hit a validation exception.
+        old_name = page.page_name
+        page.rename(new_name)
+
+        # TODO: merge historical records like update (prevents log breaks)
+        # transfer the old page versions/current keys to the new name.
+        if key != new_key:
+            self.wiki_pages_versions[new_key] = self.wiki_pages_versions[key]
+            del self.wiki_pages_versions[key]
+            self.wiki_pages_current[new_key] = self.wiki_pages_current[key]
+            del self.wiki_pages_current[key]
+
+        self.add_log(
+            action=NodeLog.WIKI_RENAMED,
+            params={
+                'project': self.parent_id,
+                'node': self._primary_key,
+                'page': page.page_name,
+                'page_id': page._primary_key,
+                'old_page': old_name,
+                'version': page.version,
+            },
+            auth=auth,
+            save=False,
+        )
+        self.save()
+
+    def delete_node_wiki(self, name, auth):
+        name = (name or '').strip()
+        key = to_mongo_key(name)
+        page = self.get_wiki_page(key)
+
+        del self.wiki_pages_current[key]
+
         self.add_log(
             action=NodeLog.WIKI_DELETED,
             params={
                 'project': self.parent_id,
                 'node': self._primary_key,
                 'page': page.page_name,
+                'page_id': page._primary_key,
             },
             auth=auth,
-            log_date=datetime.datetime.utcnow(),
+            save=False,
         )
+        self.save()
 
     def get_stats(self, detailed=False):
         if detailed:

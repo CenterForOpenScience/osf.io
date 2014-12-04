@@ -32,10 +32,11 @@
         });
 
         $('#bitbucketDelKey').on('click', function() {
-            bootbox.confirm(
-                'Are you sure you want to delete your Bitbucket access key?',
-                function(result) {
-                    if (result) {
+            bootbox.confirm({
+                title: 'Remove access key?',
+                message: 'Are you sure you want to remove your Bitbucket access key?',
+                callback: function(result) {
+                    if(result) {
                         $.ajax({
                             url: '/api/v1/settings/bitbucket/oauth/delete/',
                             type: 'POST',
@@ -47,7 +48,7 @@
                         });
                     }
                 }
-            )
+            });
         });
     });
 

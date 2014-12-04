@@ -7,7 +7,7 @@
         <h4 style="margin-left: 10px;" class="node-category"> ${node['category'].title()} Wiki Pages</h4>
             <li>
                 ## NOTE: Do NOT use web_url_for here because we want to use the GUID urls for these links
-                <a href="${urls['web']['home']}">${'home'}</a>
+                <a href="${urls['web']['home']}">Home</a>
             </li>
             % for page in pages_current:
                 %if page['name'] != 'home':
@@ -30,16 +30,16 @@
                             <i class="icon-hand-right"></i>
                         % endif
 
-                        ${child['title']}
+                        ${child['title'] | n}
                             % if child['category']:
                                 (${child['category']})
                             % endif
                     </a>
 
-                    <ul style="list-style-type: none;">
+                    <ul class="wiki-component">
                         % for child_page in child['pages_current']:
                             % if child_page['name'] != 'home':
-                                <li class="">
+                                <li>
                                     <a href="${child_page['url']}">${child_page['name']}</a>
                                 </li>
                             % endif

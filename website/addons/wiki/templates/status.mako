@@ -1,13 +1,13 @@
 <%page expression_filter="h"/>
 
 % if user['can_edit']:
-<nav class="navbar navbar-default" style="display: inline-block; float: right; margin-left: 20px;">
+<nav class="navbar navbar-default wiki-status-sm wiki-status-lg">
     <div class="navbar-collapse">
-        <ul class="nav navbar-nav">
+        <ul class="superlist nav navbar-nav">
             <li><a href="#" data-toggle="modal" data-target="#newWiki">New</a></li>
                 <%include file="add_wiki_page.mako"/>
             <li><a href="${urls['web']['edit']}">Edit</a></li>
-            % if wiki_id:
+            % if wiki_id and wiki_name != 'home':
             <li><a href="#" data-toggle="modal" data-target="#deleteWiki">Delete</a></li>
                 <%include file="delete_wiki_page.mako"/>
             % endif
@@ -21,11 +21,11 @@
         <i class="icon-home"></i>
     % endif
     <span id="pageName"
-        % if wiki_name == 'home':
+        % if wiki_name == 'home' and not node['is_registration']:
             data-toggle="tooltip"
             title="Note: Home page cannot be renamed."
         % endif
-    >${wiki_name}</span>
+        >${wiki_name if wiki_name != 'home' else 'Home'}</span>
 </h3>
 
 <script type="text/javascript">
@@ -33,8 +33,9 @@
     $pageName.tooltip();
 
     // Activate editable title unless on home page or in edit mode only for users that can edit
-    %if 'write' in user['permissions'] and not is_edit and wiki_id and pageName != 'home':
+    %if 'write' in user['permissions'] and not is_edit and wiki_id and wiki_name != 'home' and not node['is_registration']:
     $(document).ready(function() {
+        $.fn.editable.defaults.mode = 'inline';
         $pageName.editable({
             type: 'text',
             send: 'always',
@@ -52,17 +53,23 @@
                 }
             },
             params: function(params) {
-               params.pk = '${wiki_id}';
-               return JSON.stringify(params);
+                return JSON.stringify(params);
             },
-            success: function(response, value){
-                window.location.href = '${urls['web']['base']}' + encodeURIComponent(value);
+            success: function(response, value) {
+                window.location.href = '${urls['web']['base']}' + encodeURIComponent(value) + '/';
             },
             error: function(response) {
-                if (response.status === 422){
-                    return 'This is an invalid wiki page name.';
-                } else if (response.status === 409) {
-                    return 'A wiki page with this name already exists.';
+                var msg = response.responseJSON.message_long;
+                if (msg) {
+                    return msg;
+                } else {
+                    // Log unexpected error with Raven
+                    Raven.captureMessage('Error in renaming wiki', {
+                        url: '${urls['api']['rename']}',
+                        responseText: response.responseText,
+                        statusText: response.statusText
+                    });
+                    return 'An unexpected error occurred. Please try again.';
                 }
             }
         });

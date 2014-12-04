@@ -22,6 +22,7 @@ from tests.factories import (
 from framework.auth import User, Auth
 from framework.auth.decorators import must_be_logged_in
 
+from website.util import web_url_for
 from website.project.decorators import (
     must_have_permission, must_be_contributor,
     must_have_addon, must_be_addon_authorizer,
@@ -31,7 +32,6 @@ from website.project.decorators import (
 class TestAuthUtils(OsfTestCase):
 
     def test_register(self):
-        super(TestAuthUtils, self).setUp()
         auth.register('rosie@franklin.com', 'gattaca', fullname="Rosie Franklin")
         user = User.find_one(Q('username', 'eq', 'rosie@franklin.com'))
         # The password should be set
@@ -102,7 +102,6 @@ class TestAuthObject(OsfTestCase):
         assert_in(str(auth.user), rep)
 
     def test_factory(self):
-        super(TestAuthObject, self).setUp()
         auth_obj = AuthFactory()
         assert_true(isinstance(auth_obj.user, auth.User))
         assert_true(auth_obj.api_key)
@@ -366,6 +365,13 @@ class TestMustBeAddonAuthorizerDecorator(AuthAppTestCase):
     def test_must_be_authorizer_no_node_settings(self):
         with assert_raises(HTTPError):
             self.decorated()
+
+class TestBasicAuth(OsfTestCase):
+
+    def test_basic_auth_returns_403(self):
+        url = web_url_for('dashboard')
+        ret = self.app.get(url, auth=('test', 'test'), expect_errors=True)
+        assert_equal(ret.status_code, 403)
 
 
 if __name__ == '__main__':

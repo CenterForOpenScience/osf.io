@@ -159,6 +159,37 @@
         return self;
     };
 
+    /** A mixin to set, keep and revert the state of a model's fields
+     *
+     *  A trackedProperties list attribute must defined, containing all fields
+     *  to be tracked for changes. Generally, this will be any field that is
+     *  filled from an external source, and will exclude calculated fields.
+     * */
+    var TrackedMixin = function() {
+        var self = this;
+        self.originalValues = ko.observable();
+    };
+
+    /** Determine is the model has changed from its original state */
+    TrackedMixin.prototype.dirty = function() {
+        var self = this;
+        return ko.toJSON(self.trackedProperties) !== ko.toJSON(self.originalValues());
+    };
+
+    /** Store values in tracked fields for future use */
+    TrackedMixin.prototype.setOriginal = function () {
+        var self = this;
+        self.originalValues(ko.toJS(self.trackedProperties));
+    };
+
+    /** Restore fields to their values as of when setOriginal was called */
+    TrackedMixin.prototype.restoreOriginal = function () {
+        var self = this;
+        for (var i=0; i<self.trackedProperties.length; i++) {
+            self.trackedProperties[i](self.originalValues()[i]);
+        }
+    };
+
 
     var BaseViewModel = function(urls, modes) {
 
@@ -172,14 +203,6 @@
 
         self.original = ko.observable();
         self.tracked = [];  // Define for each view model that inherits
-
-        self.setOriginal = function() {
-            self.original(ko.toJS(self.tracked));
-        };
-
-        self.dirty = ko.computed(function() {
-            return self.mode() === 'edit' && ko.toJSON(self.tracked) !== ko.toJSON(self.original());
-        });
 
         // Must be set after isValid is defined in inherited view models
         self.hasValidProperty = ko.observable(false);
@@ -246,12 +269,17 @@
         );
     };
 
+    BaseViewModel.prototype.setOriginal = function() {};
+
+    BaseViewModel.prototype.dirty = function() { return false; };
+
     BaseViewModel.prototype.fetch = function() {
+        var self = this;
         $.ajax({
             type: 'GET',
             url: this.urls.crud,
             dataType: 'json',
-            success: [this.unserialize.bind(this), this.setOriginal],
+            success: [this.unserialize.bind(this), self.setOriginal.bind(self)],
             error: this.handleError.bind(this, 'Could not fetch data')
         });
     };
@@ -263,8 +291,28 @@
     };
 
     BaseViewModel.prototype.cancel = function(data, event) {
+        var self = this;
         event && event.preventDefault();
-        this.mode('view');
+
+        if (this.dirty()) {
+            bootbox.confirm({
+                title: 'Discard changes?',
+                message: 'Are you sure you want to discard your unsaved changes?',
+                callback: function(confirmed) {
+                    if (confirmed) {
+                        self.restoreOriginal();
+                        if ($.inArray('view', self.modes) !== -1) {
+                            self.mode('view');
+                        }
+                    }
+                }
+            });
+        } else {
+            if ($.inArray('view', self.modes) !== -1) {
+                self.mode('view');
+            }
+        }
+
     };
 
     BaseViewModel.prototype.submit = function() {
@@ -275,7 +323,7 @@
             ).done(
                 this.handleSuccess.bind(this)
             ).done(
-                this.setOriginal
+                this.setOriginal.bind(this)
             ).fail(
                 this.handleError.bind(this)
             );
@@ -289,6 +337,7 @@
 
         var self = this;
         BaseViewModel.call(self, urls, modes);
+        TrackedMixin.call(self);
 
         self.full = $.osf.ko.sanitizedObservable().extend({
             required: true
@@ -298,7 +347,7 @@
         self.family = $.osf.ko.sanitizedObservable();
         self.suffix = $.osf.ko.sanitizedObservable();
 
-        self.tracked = [
+        self.trackedProperties = [
             self.full,
             self.given,
             self.middle,
@@ -386,7 +435,9 @@
 
     };
     NameViewModel.prototype = Object.create(BaseViewModel.prototype);
-    $.extend(NameViewModel.prototype, SerializeMixin.prototype);
+    $.extend(NameViewModel.prototype,
+             SerializeMixin.prototype,
+             TrackedMixin.prototype);
 
     /*
      * Custom observable for use with external services.
@@ -420,6 +471,7 @@
 
         var self = this;
         BaseViewModel.call(self, urls, modes);
+        TrackedMixin.call(self);
 
         self.addons = ko.observableArray();
 
@@ -461,7 +513,7 @@
             self, 'github', 'https://github.com/'
         );
 
-        self.tracked = [
+        self.trackedProperties = [
             self.personal,
             self.orcid,
             self.researcherId,
@@ -505,7 +557,7 @@
 
     };
     SocialViewModel.prototype = Object.create(BaseViewModel.prototype);
-    $.extend(SocialViewModel.prototype, SerializeMixin.prototype);
+    $.extend(SocialViewModel.prototype, SerializeMixin.prototype, TrackedMixin.prototype);
 
     var ListViewModel = function(ContentModel, urls, modes) {
 
@@ -534,6 +586,52 @@
         });
         self.hasValidProperty(true);
 
+        /** Determine if any of the models in the list are dirty
+         *
+         * Emulates the interface of TrackedMixin.dirty
+         * */
+        self.dirty = function() {
+            for (var i=0; i<self.contents().length; i++) {
+                if (
+                    // object has changed
+                    self.contents()[i].dirty() ||
+                    // it's a different object
+                    self.contents()[i].originalValues() !== self.originalItems[i]
+                 ) { return true; }
+            }
+            return false;
+        };
+
+        /** Restore all items in the list to their original state
+         *
+         * Emulates the interface of TrackedMixin.restoreOriginal
+         * */
+        self.restoreOriginal = function() {
+            self.contents([]);
+
+            // We can't trust the original objects, as they're mutable
+            for (var i=0; i<self.originalItems.length; i++) {
+
+                // Reconstruct the item
+                var item = new self.ContentModel(self);
+                item.originalValues(self.originalItems[i]);
+                item.restoreOriginal();
+
+                self.contents.push(item);
+            }
+        };
+
+        /** Store the state of all items in the list
+         *
+         * Emulates the interface of TrackedMixin.setOriginal
+         * */
+        self.setOriginal = function() {
+            self.originalItems = [];
+            for (var i=0; i<self.contents().length; i++) {
+                self.contents()[i].setOriginal();
+                self.originalItems.push(self.contents()[i].originalValues());
+            }
+        };
     };
     ListViewModel.prototype = Object.create(BaseViewModel.prototype);
 
@@ -557,6 +655,8 @@
         if (self.contents().length === 0) {
             self.addContent();
         }
+
+        self.setOriginal();
     };
 
     ListViewModel.prototype.serialize = function() {
@@ -577,6 +677,7 @@
 
         var self = this;
         DateMixin.call(self);
+        TrackedMixin.call(self);
 
         self.institution = ko.observable('').extend({
             required: true
@@ -584,32 +685,54 @@
         self.department = ko.observable('');
         self.title = ko.observable('');
 
+        self.trackedProperties = [
+            self.institution,
+            self.department,
+            self.title,
+            self.startMonth,
+            self.startYear,
+            self.endMonth,
+            self.endYear
+        ];
+
         var validated = ko.validatedObservable(self);
         self.isValid = ko.computed(function() {
             return validated.isValid();
         });
 
     };
-    $.extend(JobViewModel.prototype, DateMixin.prototype);
+    $.extend(JobViewModel.prototype, DateMixin.prototype, TrackedMixin.prototype);
 
 
     var SchoolViewModel = function() {
 
         var self = this;
         DateMixin.call(self);
+        TrackedMixin.call(self);
 
         self.institution = ko.observable('').extend({
             required: true
         });
         self.department = ko.observable('');
         self.degree = ko.observable('');
+
+        self.trackedProperties = [
+            self.institution,
+            self.department,
+            self.degree,
+            self.startMonth,
+            self.startYear,
+            self.endMonth,
+            self.endYear
+        ];
+
         var validated = ko.validatedObservable(self);
         self.isValid = ko.computed(function() {
             return validated.isValid();
         });
 
     };
-    $.extend(SchoolViewModel.prototype, DateMixin.prototype);
+    $.extend(SchoolViewModel.prototype, DateMixin.prototype, TrackedMixin.prototype);
 
     var JobsViewModel = function(urls, modes) {
 

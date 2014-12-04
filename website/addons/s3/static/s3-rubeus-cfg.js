@@ -28,17 +28,26 @@
             xhr.setRequestHeader('x-amz-acl', 'private');
         },
 
-        uploadSuccess: function(file, item, data) {
-            // Update the added item's urls and permissions
-            var parent = this.getByID(item.parentID);
-            item.urls = {
+        uploadSuccess: function(file, row) {
+            var self = this;
+            var parent = this.getByID(row.parentID);
+            row.urls = {
                 'delete': parent.nodeApiUrl + 's3/' + file.destination + '/',
                 'download': parent.nodeUrl + 's3/' + file.destination + '/download/',
                 'view': parent.nodeUrl + 's3/' + file.destination + '/'
             };
-            item.permissions = parent.permissions;
-            this.updateItem(item);
-            this.changeStatus(item, Rubeus.Status.UPLOAD_SUCCESS, 2000);
+            row.permissions = parent.permissions;
+            this.updateItem(row);
+            var updated = Rubeus.Utils.itemUpdated(row, parent);
+            if (updated) {
+                self.changeStatus(row, Rubeus.Status.UPDATED);
+                self.delayRemoveRow(row);
+            } else {
+                self.changeStatus(row, Rubeus.Status.UPLOAD_SUCCESS, null, 2000,
+                    function(row) {
+                        self.showButtons(row);
+                    });
+            }
         }
     };
 

@@ -87,13 +87,19 @@
         'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.';
 
     $.osf.handleJSONError = function(response) {
-        bootbox.alert({
-            title: response.responseJSON.message_short || errorDefaultShort,
+        var title = response.responseJSON.message_short || errorDefaultShort;
+        $.growl({
+            title: '<strong>' + title + '<strong><br />',
             message: response.responseJSON.message_long || errorDefaultLong
+        },{
+            type: 'danger',
+            delay: 0
         });
+        Raven.captureMessage('Unexpected error occurred in JSON request');
     };
 
     $.osf.handleEditableError = function(response, newValue) {
+        Raven.captureMessage('Unexpected error occurred in an editable input');
         return 'Unexpected error: ' + response.statusText;
     };
 
@@ -151,7 +157,7 @@
      */
     $.osf.urlParams = function(str) {
         return (str || document.location.search).replace(/(^\?)/,'').split('&')
-            .map(function(n){return n = n.split('='),this[n[0]] = n[1],this;}.bind({}))[0];
+            .map(function(n){return n = n.split('='),this[n[0]] = decodeURIComponent(n[1]).replace(/\+/g, ' '),this;}.bind({}))[0];
     };
 
     ///////////
@@ -240,8 +246,8 @@
         } else {
             this.date = date;
         }
-        this.local = moment(date).format(LOCAL_DATEFORMAT);
-        this.utc = moment.utc(date).format(UTC_DATEFORMAT);
+        this.local = moment(this.date).format(LOCAL_DATEFORMAT);
+        this.utc = moment.utc(this.date).format(UTC_DATEFORMAT);
     };
 
     // Backwards compatibility
@@ -286,7 +292,7 @@
     //    }
 
         // Build tooltips on user activity widgets
-        $('.ua-meter').tooltip();
+        $('.progress-user-activity [data-toggle="tooltip"]').tooltip();
         $('[rel=tooltip]').tooltip({
             placement:'bottom'
         });

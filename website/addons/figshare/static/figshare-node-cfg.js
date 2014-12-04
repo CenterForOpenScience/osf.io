@@ -17,13 +17,14 @@
         });
 
         $('#figshareDelKey').on('click', function() {
-            bootbox.confirm(
-                'Are you sure you want to delete your Figshare access key? This will ' +
+            bootbox.confirm({
+                title: 'Remove access key?',
+                message: 'Are you sure you want to remove your Figshare access key? This will ' +
                 'revoke the ability to modify and upload files to Figshare. If ' +
                 'the associated repo is private, this will also disable viewing ' +
                 'and downloading files from Figshare.',
-                function(result) {
-                    if (result) {
+                callback: function(result) {
+                    if(result) {
                         $.ajax({
                             url: nodeApiUrl + 'figshare/oauth/',
                             type: 'DELETE',
@@ -35,7 +36,7 @@
                         });
                     }
                 }
-            );
+            });
         });
 
         $('#figshareSelectProject').on('change', function() {

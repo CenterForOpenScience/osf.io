@@ -129,15 +129,18 @@
         }
 
         function onFetchError() {
-          bootbox.alert('Could not retrieve view-only links. Please refresh the page or ' +
+            bootbox.alert({
+                title: 'Error',
+                message: 'Could not retrieve view-only links. Please refresh the page or ' +
                     'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
-                    'problem persists.');
+                    'problem persists.'
+            });
         }
 
         function fetch() {
             $.ajax({
-                url: url, 
-                type: 'GET', 
+                url: url,
+                type: 'GET',
                 dataType: 'json',
             }).done(
                 onFetchSuccess
@@ -152,9 +155,12 @@
             var dataToSend = {
                 'private_link_id': data.id
             };
-            bootbox.confirm('Are you sure to remove this view only link?', function(result) {
-                if (result) {
-                    $.ajax({
+            bootbox.confirm({
+                title: 'Remove view only link?',
+                message: 'Are you sure to remove this view only link?',
+                callback: function(result) {
+                    if(result) {
+                        $.ajax({
                         type: 'delete',
                         url: nodeApiUrl + 'private_link/',
                         contentType: 'application/json',
@@ -165,8 +171,9 @@
                     }).fail(function() {
                         bootbox.alert('Failed to delete the private link.')
                     });
+                    }
                 }
-             });
+            });
         };
 
         self.afterRenderLink = function(elm, data) {
