@@ -10,6 +10,7 @@ var $ = require('jquery');
 require('dropzone-patch');
 var HGrid = require('hgrid');
 var $osf = require('osf-helpers');
+var bootbox = require('bootbox');
 
 /////////////////////////
 // HGrid configuration //
