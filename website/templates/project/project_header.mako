@@ -56,6 +56,26 @@
                         <button class="btn btn-default disabled">Public</button>
                     % endif
                     </div>
+                    <!-- ko if: canBeOrganized -->
+                    <div class="btn-group" style="display: none" data-bind="visible: true">
+
+                        <!-- ko ifnot: inDashboard -->
+                           <a data-bind="click: addToDashboard, tooltip: {title: 'Add to Dashboard Folder',
+                            placement: 'bottom'}" class="btn btn-default">
+                               <i class="icon-folder-open"></i>
+                               <i class="icon-plus"></i>
+                           </a>
+                        <!-- /ko -->
+                        <!-- ko if: inDashboard -->
+                           <a data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from Dashboard Folder',
+                            placement: 'bottom'}" class="btn btn-default">
+                               <i class="icon-folder-open"></i>
+                               <i class="icon-minus"></i>
+                           </a>
+                        <!-- /ko -->
+
+                    </div>
+                    <!-- /ko -->
                     <div class="btn-group">
                         <a
                         % if user_name and (node['is_public'] or user['is_contributor']) and not node['is_registration']:
