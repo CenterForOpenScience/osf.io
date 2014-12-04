@@ -1674,3 +1674,8 @@ div.pydocx-center{
     padding-left: 40px;
     list-style-type: disc;
 }
+
+.tooltip-inner {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
