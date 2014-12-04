@@ -94,7 +94,8 @@ module.exports = {
             'osf-helpers': staticPath('js/osf-helpers.js'),
             'osf-language': staticPath('js/osf-language.js'),
             'addons': path.join(__dirname, 'website', 'addons'),
-            'addon-helpers': staticPath('js/addons.js')
+            'addon-helpers': staticPath('js/addons.js'),
+            'ko-helpers': staticPath('js/koHelpers.js')
         }
     },
     plugins: [

@@ -2,6 +2,7 @@
 
 var ko = require('knockout');
 require('knockout-punches');
+var koHelpers = require('ko-helpers');
 var $ = require('jquery');
 var $osf = require('osf-helpers');
 var Raven = require('raven-js');
@@ -36,13 +37,13 @@ var ViewModel = function(url, nodeId) {
     });
     ko.validation.addAnonymousRule(
         self.url,
-        $osf.ko.makeRegexValidator(
+        koHelpers.makeRegexValidator(
             new RegExp(nodeId, 'i'),
             'Components cannot link to themselves',
             false
         )
     );
-    self.label = $osf.ko.sanitizedObservable();
+    self.label = koHelpers.sanitizedObservable();
     self.redirectBool = ko.observable(DEFAULT_FORWARD_BOOL);
     self.redirectSecs = ko.observable(DEFAULT_FORWARD_TIME).extend({
         required: true,
