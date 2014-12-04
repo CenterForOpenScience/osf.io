@@ -214,7 +214,7 @@ var FormattableDate = function(date) {
     this.utc = moment.utc(this.date).format(UTC_DATEFORMAT);
 };
 
-module.exports = {
+module.exports = window.$.osf = {
     postJSON: postJSON,
     putJSON: putJSON,
     handleJSONError: handleJSONError,
