@@ -105,6 +105,7 @@
         self.dateCreated = new FormattableDate(data.node.date_created);
         self.dateModified = new FormattableDate(data.node.date_modified);
         self.dateForked = new FormattableDate(data.node.forked_date);
+        self.dateRegistered = new FormattableDate(data.node.registered_date);
         self.watchedCount = ko.observable(data.node.watched_count);
         self.userIsWatching = ko.observable(data.user.is_watching);
         self.inDashboard = ko.observable(data.node.in_dashboard);
