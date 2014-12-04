@@ -39,11 +39,6 @@ var ShareJSDoc = function(viewModel, url, metadata) {
         socket.send(JSON.stringify(metadata));
     }
 
-    sjs.on('disconnected', function() {
-        // TODO: Inform user of disconnect
-        console.log('disconnected');
-    });
-
     // Inform client of new published version
     $('#wiki-form').submit(function() {
         socket.send(JSON.stringify({
@@ -92,11 +87,5 @@ var ShareJSDoc = function(viewModel, url, metadata) {
 
     // Subscribe to changes
     doc.subscribe();
-
-    // TODO: Debug variables. Remove before going to production!
-    window.sjs = sjs;
-    window.doc = doc;
-    window.editor = editor;
-    window.socket = socket;
 
 };

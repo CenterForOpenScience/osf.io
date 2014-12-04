@@ -101,7 +101,6 @@
 <script src="/static/vendor/pagedown-ace/Markdown.Editor.js"></script>
 
 <!-- Necessary for ShareJS communication -->
-<!-- TODO: Get host/port from mako -->
 <script src="http://${sharejs_host}:${sharejs_port}/text.js"></script>
 <script src="http://${sharejs_host}:${sharejs_port}/share.js"></script>
 <script src="/static/addons/wiki/ace.js"></script>
