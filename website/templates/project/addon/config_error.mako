@@ -10,10 +10,7 @@
 <script>
     $(document).ready(function() {
         $(".widget-disable").click(function() {
-            var req = $.ajax({
-                method: 'POST',
-                url: '${node['api_url']}${short_name | js_str}/settings/disable/',
-            });
+        var req = $.osf.postJSON('${node['api_url']}${short_name | js_str}/settings/disable/', {});
 
             req.done(function() {
                 location.reload();
