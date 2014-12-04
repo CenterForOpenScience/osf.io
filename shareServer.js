@@ -121,6 +121,8 @@ wss.on('connection', function(client) {
                 if (docs[docId][userId].count === 0) {
                     if (!Object.keys(docs[docId]).length) {
                         delete docs[docId];
+                    } else {
+                        delete docs[docId][userId];
                     }
                 }
             }
