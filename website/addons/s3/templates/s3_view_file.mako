@@ -12,12 +12,12 @@
                 % if download_url:
                     <!--download button-->
                     <a class="btn btn-success btn-md" href="${download_url}">
-                        Download <i class="icon-download-alt"></i></a>
+                        Download <i class="fa fa-download"></i></a>
                 % endif
                 % if user['can_edit'] and 'write' in user['permissions']:
                     <!--delete button-->
                     <a href="#" data-bind="visible: api_url, click: deleteFile" class="btn btn-danger btn-md" >
-                        Delete <i class="icon-trash"></i>
+                        Delete <i class="fa fa-trash-o"></i>
                     </a>
             </p>
         % endif
@@ -44,7 +44,7 @@
                         </td>
                         <td>
                             <a href="${version['download']}" class ="btn btn-primary btn-sm" download="${file_name}">
-                                 <i class="icon-download-alt"></i>
+                                 <i class="fa fa-download"></i>
                             </a>
                         </td>
                     </tr>

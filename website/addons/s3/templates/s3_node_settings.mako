@@ -62,7 +62,7 @@
     % elif node_has_auth and bucket_list is None:
 
         <div>
-            <i class="icon-spinner icon-large icon-spin"></i>
+            <i class="fa fa-spinner fa-lg fa-spin"></i>
             <span class="text-info">
                 S3 access keys loading. Please wait a moment and refresh the page.
             </span>

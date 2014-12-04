@@ -572,7 +572,7 @@
         /* Observables */
         self.isOpen = ko.observable(true);
         self.hasFocus = ko.observable(true);
-        self.submitText = '<i class="icon-double-angle-right"></i> Go';
+        self.submitText = '<i class="fa fa-angle-double-right"></i> Go';
         /* Functions */
         self.toggle = function() {
             if (!self.isOpen()) {

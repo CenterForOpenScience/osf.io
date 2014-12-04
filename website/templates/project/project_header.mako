@@ -85,7 +85,7 @@
                             class="btn btn-default disabled"
                         % endif
                             href="#">
-                            <i class="icon-eye-open"></i>
+                            <i class="fa fa-eye"></i>
                             <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
                         </a>
                         <a rel="tooltip" title="Duplicate"
@@ -97,7 +97,7 @@
                     % if 'badges' in addons_enabled and badges and badges['can_award']:
                         <div class="btn-group">
                             <button class="btn btn-success" id="awardBadge" style="border-bottom-right-radius: 4px;border-top-right-radius: 4px;">
-                                <i class="icon-plus"></i> Award
+                                <i class="fa fa-plus"></i> Award
                             </button>
                         </div>
                     % endif

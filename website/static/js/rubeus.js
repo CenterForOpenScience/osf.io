@@ -28,7 +28,7 @@
     // Custom folder icon indicating private component
     Rubeus.Html.folderIconPrivate = '<img class="hg-icon hg-addon-icon" src="/static/img/hgrid/fatcowicons/folder_delete.png">';
     // Folder icon for pointers/links
-    Rubeus.Html.folderIconPointer = '<i class="icon-link"></i>';
+    Rubeus.Html.folderIconPointer = '<i class="fa fa-link"></i>';
     // Class for folder name
     Rubeus.Html.folderTextClass = 'hg-folder-text';
 
@@ -103,7 +103,7 @@
         if(item.permissions.download !== false){
             tooltipMarkup = genTooltipMarkup('Download');
             buttonDefs.push({
-                text: '<i class="icon-download-alt icon-white" title=""></i>',
+                text: '<i class="fa fa-download fa-inverse" title=""></i>',
                 action: 'download',
                 cssClass: 'btn btn-primary btn-mini',
                 attributes: tooltipMarkup
@@ -112,7 +112,7 @@
         if (item.permissions.edit) {
             tooltipMarkup = genTooltipMarkup('Remove');
             buttonDefs.push({
-                text: '&nbsp;<i class="icon-remove" title=""></i>',
+                text: '&nbsp;<i class="fa fa-times" title=""></i>',
                 action: 'delete',
                 cssClass: 'btn btn-link btn-mini btn-delete',
                 attributes: tooltipMarkup
@@ -146,7 +146,7 @@
         if (this.options.uploads && row.urls.upload &&
                 (row.permissions && row.permissions.edit)) {
             buttonDefs.push({
-                text: '<i class="icon-upload" title=""></i>',
+                text: '<i class="fa fa-arrow-circle-o-up" title=""></i>',
                 action: 'upload',
                 cssClass: 'btn btn-default btn-mini',
                 attributes: tooltipMarkup

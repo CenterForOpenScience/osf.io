@@ -1,7 +1,6 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Search</%def>
 <%def name="content()">
-    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
     <script>
         $('input[name=q]').remove();
     </script>
@@ -11,8 +10,8 @@
                 <form class="input-group" data-bind="submit: submit">
                     <input type="text" class="form-control" placeholder="Search" data-bind="value: query, hasFocus: true">
                     <span class="input-group-btn">
-                        <button type=button class="btn btn-default" data-bind="click: help"><i class="icon-question"></i></button>
-                        <button type=button class="btn btn-default" data-bind="click: submit"><i class="icon-search"></i></button>
+                        <button type=button class="btn btn-default" data-bind="click: help"><i class="fa fa-question"></i></button>
+                        <button type=button class="btn btn-default" data-bind="click: submit"><i class="fa fa-search"></i></button>
                     </span>
                 </form>
                 <br />

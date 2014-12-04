@@ -15,14 +15,14 @@
             <a
                     href="{{latest_download_url}}"
                     class="btn btn-success btn-md"
-                >Download <i class="icon-download-alt" ></i>
+                >Download <i class="fa fa-download" ></i>
             </a>
             % if user['can_edit'] and 'write' in user['permissions']:
                 <a
                         href="#"
                         data-bind="visible: api_url() && !registered(), click: deleteFile"
                         class="btn btn-danger btn-md"
-                    >Delete <i class="icon-trash"></i>
+                    >Delete <i class="fa fa-trash-o"></i>
                 </a>
             % endif
         </p>
@@ -49,7 +49,7 @@
                     <!-- download url; 'Downloads' column 2 -->
                     <td>
                         <a href="{{download_url}}">
-                            <i class="icon-download-alt btn btn-primary btn-sm"></i>
+                            <i class="fa fa-download btn btn-primary btn-sm"></i>
                         </a>
                     </td>
                 </tr>

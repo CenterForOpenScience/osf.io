@@ -114,7 +114,7 @@ class TestGitHubFileView(OsfTestCase):
         assert_in("6dcb09b5b57875f334f61aebed695e2e4193db5e", res)
         assert_in("Thu Apr 14 16:00:49 2011", res)
         assert_in("file-version-history", res)
-        assert_in("icon-download-alt", res)
+        assert_in("fa-download", res)
 
     @mock.patch('website.addons.github.api.GitHub.commits')
     @mock.patch('website.addons.github.api.GitHub.file')
@@ -161,6 +161,6 @@ class TestGitHubFileView(OsfTestCase):
         assert_in("6dcb09b5b57875f334f61aebed695e2e4193db5e", res)
         assert_in("Thu Apr 14 16:00:49 2011", res)
         assert_in("file-version-history", res)
-        assert_in("icon-download-alt", res)
+        assert_in("fa-download", res)
         assert_not_in("Monalisa Octocat", res)
         assert_not_in("support@github.com", res)

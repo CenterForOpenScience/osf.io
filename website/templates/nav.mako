@@ -44,7 +44,7 @@
                 % if user_name and display_name:
                 <li>
                     <a class="hidden-lg hidden-xs" href="/profile/">
-                        <span rel="tooltip" title="${user_name}" class="icon-user"></span>
+                        <span rel="tooltip" title="${user_name}" class="fa fa-user"></span>
                     </a>
                     <a class="visible-lg visible-xs" href="/profile/">
                         <span rel="tooltip" title="${user_name}">${display_name}</span>
@@ -52,13 +52,13 @@
                 </li>
                 <li>
                     <a href="${web_url_for('user_profile')}">
-                        <span rel="tooltip" title="Settings" class="icon-cog hidden-xs"></span>
+                        <span rel="tooltip" title="Settings" class="fa fa-cog hidden-xs"></span>
                         <span class="visible-xs">Settings</span>
                     </a>
                 </li>
                 <li>
                     <a href="${web_url_for('auth_logout')}">
-                        <span rel="tooltip" title="Log&nbsp;out" class="icon-signout hidden-xs"></span>
+                        <span rel="tooltip" title="Log&nbsp;out" class="fa fa-sign-out hidden-xs"></span>
                         <span class="visible-xs">Log out</span>
                     </a>
                 </li>

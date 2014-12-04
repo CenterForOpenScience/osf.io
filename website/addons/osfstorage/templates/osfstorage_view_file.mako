@@ -12,13 +12,13 @@
     <a
             class="btn btn-success btn-md"
             data-bind="attr.href: urls.download"
-        >Download <i class="icon-download-alt"></i>
+        >Download <i class="fa fa-download"></i>
     </a>
     <!-- ko if: editable -->
     <button
             class="btn btn-danger btn-md"
             data-bind="click: askDelete"
-        >Delete <i class="icon-trash"></i>
+        >Delete <i class="fa fa-trash-o"></i>
     </button>
     <!-- /ko -->
 
@@ -48,7 +48,7 @@
                     <a
                             data-bind="attr.href: revision.urls.download"
                             class="btn btn-primary btn-sm"
-                        ><i class="icon-download-alt"></i>
+                        ><i class="fa fa-download"></i>
                     </a>
                 </td>
             </tr>

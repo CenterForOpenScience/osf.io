@@ -5,7 +5,7 @@
 <div class="col-md-8">
     <div class='help-block'>
         % if 'write' in user['permissions'] and not disk_saving_mode:
-            <p>To Upload: Drag files from your desktop into a folder below OR click an upload (<button class="btn btn-default btn-mini" disabled><i class="icon-upload"></i></button>) button.</p>
+            <p>To Upload: Drag files from your desktop into a folder below OR click an upload (<button class="btn btn-default btn-mini" disabled><i class="fa fa-arrow-circle-o-up"></i></button>) button.</p>
         % endif
     </div>
 </div><!-- end col-md-->

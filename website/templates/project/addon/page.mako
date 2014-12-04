@@ -4,7 +4,7 @@
     ${full_name} Add-on
     % if capabilities:
         <span class="addon-capabilities">
-            <i class="icon-question-sign"></i>
+            <i class="fa fa-question-circle"></i>
         </span>
     % endif
 </h4>

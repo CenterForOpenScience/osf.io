@@ -241,7 +241,7 @@
         });
 
         self.toggleIcon = ko.computed(function() {
-            return self.showChildren() ? 'icon-collapse-alt' : 'icon-expand-alt';
+            return self.showChildren() ? 'fa fa-minus-square-o' : 'fa fa-plus-square-o';
         });
         self.editHighlight = ko.computed(function() {
             return self.canEdit() && self.hoverContent();

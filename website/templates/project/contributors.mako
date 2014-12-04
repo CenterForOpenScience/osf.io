@@ -23,7 +23,7 @@
                         <th class="col-md-6">Name</th>
                         <th class="col-md-2">
                             Permissions
-                            <i class="icon-question-sign permission-info"
+                            <i class="fa fa-question-circle permission-info"
                                     data-toggle="popover"
                                     data-title="Permission Information"
                                     data-container="body"
@@ -33,7 +33,7 @@
                         </th>
                         <th class="col-md-3">
                             Visibility
-                            <i class="icon-question-sign visibility-info"
+                            <i class="fa fa-question-circle visibility-info"
                                     data-toggle="popover"
                                     data-title="Visibility Information"
                                     data-container="body"
@@ -100,7 +100,7 @@
                             <div class="btn-group">
                             <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="Click to copy the link"
                                     data-bind="attr: {data-clipboard-text: linkUrl}" >
-                                <span class="icon-copy" ></span>
+                                <span class="fa fa-copy" ></span>
                             </button>
                                 <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}"  />
                             </div>
@@ -126,7 +126,7 @@
                         </td>
                         <td class="col-sm-0">
                             <a data-bind="click: $root.removeLink, tooltip: {title: removeLink}">
-                                <i class="icon-remove text-danger"></i>
+                                <i class="fa fa-times text-danger"></i>
                             </a>
                         </td>
                     </tr>
@@ -179,7 +179,7 @@
                     <a
                             data-bind="click: remove, clickBubble: false, tooltip: {title: removeContributor}"
                         >
-                                <i class="icon-remove text-danger no-sort"></i>
+                                <i class="fa fa-times text-danger no-sort"></i>
                     </a>
                 <!-- /ko -->
                 <!-- ko if: deleteStaged -->
@@ -194,7 +194,7 @@
                             rel="tooltip"
                             title="Remove contributor"
                         >
-                        <i class="icon-remove text-danger no-sort"></i>
+                        <i class="fa fa-times text-danger no-sort"></i>
                     </a>
                     <!-- /ko -->
             <!-- /ko -->

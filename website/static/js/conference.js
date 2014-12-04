@@ -30,7 +30,7 @@
         if (dataContext.downloadUrl) {
             return '<a href="' + dataContext.downloadUrl + '">' +
                 '<button class="btn btn-success btn-mini" style="margin-right: 10px;">' +
-                    '<i class="icon-download-alt icon-white"></i>' +
+                    '<i class="fa fa-download fa-inverse"></i>' +
                 '</button>' +
             '</a>&nbsp;' + value;
         } else {

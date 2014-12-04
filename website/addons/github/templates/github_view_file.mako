@@ -18,13 +18,13 @@
         % if download_url:
              <!--download button-->
              <a class="btn btn-success btn-md" href=${download_url}>
-                 Download <i class="icon-download-alt"></i></a>
+                 Download <i class="fa fa-download"></i></a>
         % endif
 
         % if user['can_edit'] and delete_url:
              <!--delete button-->
              <button class="btn btn-danger btn-md" data-bind="click: deleteFile">
-                 Delete <i class="icon-trash"></i></button>
+                 Delete <i class="fa fa-trash-o"></i></button>
         % endif
      </p>
 
@@ -65,7 +65,7 @@
                     % endif
                     <td>
                         <a href="${commit['download']}" class="btn btn-primary btn-sm" download="${file_name}">
-                            <i class="icon-download-alt"></i>
+                            <i class="fa fa-download"></i>
                         </a>
                     </td>
                 </tr>
