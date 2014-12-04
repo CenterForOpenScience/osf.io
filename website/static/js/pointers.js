@@ -19,6 +19,7 @@ var AddPointerViewModel = function(nodeTitle) {
     var self = this;
 
     self.nodeTitle = nodeTitle;
+    self.submitEnabled = ko.observable(true);
 
     self.query = ko.observable();
     self.results = ko.observableArray();
@@ -91,14 +92,17 @@ var AddPointerViewModel = function(nodeTitle) {
     };
 
     self.submit = function() {
+        self.submitEnabled(false);
         var nodeIds = osfHelpers.mapByProperty(self.selection(), 'id');
         osfHelpers.postJSON(
             nodeApiUrl + 'pointer/',
             {nodeIds: nodeIds}
         ).done(function() {
             window.location.reload();
-        }).fail(
-            osfHelpers.handleJSONError
+        }).fail(function(data) {
+                self.submitEnabled(true);
+                osfHelpers.handleJSONError(data);
+            }
         );
     };
 
