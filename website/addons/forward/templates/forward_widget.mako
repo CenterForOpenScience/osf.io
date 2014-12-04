@@ -33,10 +33,13 @@
 
 </div>
 
-<script>
-    $script(['/static/addons/forward/forwardWidget.js']);
-    $script.ready('forwardWidget', function() {
-        var url = '${node['api_url'] + 'forward/config/'}';
-        var forward = new ForwardWidget('#forwardScope', url);
+<script type="text/javascript">
+    window.contextVars = $.extend(true, {}, window.contextVars, {
+        node: {
+            urls: {
+                api: '${node['api_url']}'
+            }
+        }
     });
 </script>
+<script src="/static/public/js/forward/widget-cfg.js"></script>

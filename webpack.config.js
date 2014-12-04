@@ -45,7 +45,7 @@ var entry = {
 // Collect adddons endpoints. If an addon's static folder has
 // any of the following files, it will be added as an entry point
 // and output to website/static/public/js/<addon-name>/files.js
-var addonModules = ['files.js', 'node-cfg.js', 'user-cfg.js', 'file-detail.js'];
+var addonModules = ['files.js', 'node-cfg.js', 'user-cfg.js', 'file-detail.js', 'widget-cfg.js'];
 addons.addons.forEach(function(addonName) {
     var baseDir = addonName + '/';
     addonModules.forEach(function(module) {
