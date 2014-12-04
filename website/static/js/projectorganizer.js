@@ -1,5 +1,4 @@
-;
-(function (global, factory) {
+;(function (global, factory) {
     if (typeof define === 'function' && define.amd) {
         define(['knockout', 'jquery', 'osfutils', 'hgrid', 'bootstrap', 'hgrid-draggable',
             'typeahead', 'handlebars'], factory);
@@ -12,7 +11,7 @@
     } else {
         global.ProjectOrganizer = factory(jQuery, global.HGrid, global.ko);
     }
-}(this, function ($, HGrid, ko) {
+}(this, function ($, HGrid) {
     'use strict';
     $.ajaxSetup({ cache: false });
 
@@ -27,10 +26,6 @@
     var copyMode = null;
     var projectOrganizer = null;
 
-    var fadeTime = 100;
-
-
-
     //
     // Private Helper Functions
     //
@@ -44,13 +39,6 @@
         var itemParentID = item.parentID;
         var itemParent = theHgrid.grid.getData().getItemById(itemParentID);
         return itemParent.node_id;
-    }
-
-    function addAlert(status, message, priority) {
-        var $alertDiv = $('<div class = "alert alert-' + priority + '"><a href="#" class="close" data-dismiss="alert">&times;</a>' +
-            '<strong>' + status + ':</strong> ' + message +
-            '</div>');
-        $('body').append($alertDiv);
     }
 
     function deleteMultiplePointersFromFolder(theHgrid, pointerIds, folderToDeleteFrom) {
@@ -72,7 +60,7 @@
             });
             deleteAction.done(reloadHgrid);
             deleteAction.fail(function (jqxhr, textStatus, errorThrown){
-                bootbox.alert('Error: ' + textStatus + '. ' + errorThrown);
+                $.osf.growl('Error:', textStatus + '. ' + errorThrown);
             });
         }
     }
@@ -270,7 +258,7 @@
 
                                 });
                                 postAction.fail(function (jqxhr, textStatus, errorThrown){
-                                    bootbox.alert('Error: ' + textStatus + '. ' + errorThrown);
+                                    $.osf.growl('Error:', textStatus + '. ' + errorThrown);
                                 });
                             } else { // From:  if(itemsToMove.length > 0)
 //                                folder.childrenCount = folder.children.length;
@@ -281,7 +269,7 @@
                     } // From: if (copyMode === 'copy' || copyMode === 'move')
                 });
                 getAction.fail(function (jqxhr, textStatus, errorThrown){
-                    bootbox.alert('Error: ' + textStatus + '. ' + errorThrown);
+                    $.osf.growl('Error:', textStatus + '. ' + errorThrown);
                 });
             } else {
                 Raven.captureMessage('Project dashboard: Parent node (' + itemParentNodeID + ') == Folder Node (' + theFolderNodeID + ')');
@@ -454,7 +442,7 @@
                         source: mySourceWithEmptySelectable,
                         templates: {
                             header: function () {
-                                return '<h3 class="category">My Projects</h3>'
+                                return '<h3 class="category">My Projects</h3>';
                             },
                             suggestion: function (data) {
                                 if(typeof data.name !== 'undefined') {
@@ -473,7 +461,7 @@
                         source: publicSourceWithEmptySelectable,
                         templates: {
                             header: function () {
-                                return '<h3 class="category">Public Projects</h3>'
+                                return '<h3 class="category">Public Projects</h3>';
                             },
                             suggestion: function (data) {
                                 if(typeof data.name !== 'undefined') {
@@ -512,7 +500,7 @@
                             linkName = datum.name;
                             linkID = datum.node_id;
                         } else {
-                            $('#add-link-warn-' + theItem.node_id).text('This project is already in the folder')
+                            $('#add-link-warn-' + theItem.node_id).text('This project is already in the folder');
                         }
                     }).fail($.osf.handleJSONError);
 
@@ -650,7 +638,7 @@
                     $('#findNode' + theItem.node_id).show();
                 });
 
-                $('.project-details').show();
+                $('.project-details').toggle();
             } else {
                 $('.project-details').hide();
             }
@@ -667,16 +655,18 @@
         if (!row.isSmartFolder) {
             var buttonDefs = [
                 {
-                    text: '<i class="project-organizer-info-icon" title="" data-placement="right" data-toggle="tooltip" data-original-title="Info"></i>',
+                    text: '<i class="project-organizer-info-icon" title=""></i>',
                     action: 'showProjectDetails',
-                    cssClass: 'project-organizer-icon-info'
+                    cssClass: 'project-organizer-icon-info',
+                    attributes:'data-placement="right" data-toggle="tooltip" data-original-title="Info"'
                 }
             ];
             if (url !== null) {
                 buttonDefs.push({
-                    text: '<i class="project-organizer-visit-icon" title="" data-placement="right" data-toggle="tooltip" data-original-title="Go to page"></i>',
+                    text: '<i class="project-organizer-visit-icon" title="" ></i>',
                     action: 'visitPage',
-                    cssClass: 'project-organizer-icon-visit'
+                    cssClass: 'project-organizer-icon-visit',
+                    attributes:'data-placement="right" data-toggle="tooltip" data-original-title="Go to page"'
                 });
             }
             return HGrid.Fmt.buttons(buttonDefs);
@@ -746,7 +736,7 @@
     ProjectOrganizer.Col.Name.sortable = false;
     ProjectOrganizer.Col.Name.behavior = 'move';
     ProjectOrganizer.Col.Name.indent = 20;
-    ProjectOrganizer.Col.Name.showExpander = function(row, args) {
+    ProjectOrganizer.Col.Name.showExpander = function(row) {
         return (row.childrenCount > 0 &&
                 !row._processing && !row.isDashboard);
     };
@@ -806,9 +796,9 @@
             var gridBackground = $('.grid-canvas');
             var gridHeader = $('.slick-header-column');
 
-            if ((!container.is(e.target) && !altContainer.is(e.target) // if the target of the click isn't the container...
-                && container.has(e.target).length === 0 && altContainer.has(e.target).length === 0) // ... nor a descendant of the container
-                || gridBackground.is(e.target) || gridHeader.is(e.target)) // or the target of the click is the background of the hgrid div
+            if ((!container.is(e.target) && !altContainer.is(e.target) && // if the target of the click isn't the container...
+                container.has(e.target).length === 0 && altContainer.has(e.target).length === 0) || // ... nor a descendant of the container
+                gridBackground.is(e.target) || gridHeader.is(e.target)) // or the target of the click is the background of the hgrid div
             {
                 self.grid.grid.setSelectedRows([]);
                 self.grid.grid.resetActiveCell();
@@ -864,9 +854,8 @@
         //
 
 
-        self.grid.grid.onSelectedRowsChanged.subscribe(function (e, args) {
+        self.grid.grid.onSelectedRowsChanged.subscribe(function () {
             var selectedRows = self.grid.grid.getSelectedRows();
-            var multipleItems = false;
             if(selectedRows.length > 1) {
                 var someItemsAreFolders = false;
                 var pointerIds = [];
@@ -889,7 +878,6 @@
                     };
                     var sampleItem = self.grid.grid.getDataItem(selectedRows[0]);
                     var theParentNode = self.grid.grid.getData().getItemById(sampleItem.parentID);
-                    var theParentNodeID = theParentNode.node_id;
                     var displayHTML = detailTemplate(detailTemplateContext);
                     $('.project-details').html(displayHTML);
                     $('.project-details').show();
@@ -1003,7 +991,7 @@
             },
             fetchError: function(error) {
                 if($('.modal-dialog').length === 0) {
-                    bootbox.alert('Error: ' + error);
+                    $.osf.growl('Error:', error);
                 }
             },
             getExpandState: function(folder) {
@@ -1061,3 +1049,6 @@
 
     return ProjectOrganizer;
 }));
+$(document).ready(function() {
+    $('#projectOrganizerScope').tooltip({selector: '[data-toggle=tooltip]'});
+});

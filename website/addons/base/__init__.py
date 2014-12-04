@@ -158,7 +158,7 @@ class GuidFile(GuidStoredObject):
     redirect_mode = 'proxy'
 
     _id = fields.StringField(primary=True)
-    node = fields.ForeignField('node', index=True)
+    node = fields.ForeignField('node', required=True, index=True)
 
     _meta = {
         'abstract': True,
@@ -235,6 +235,11 @@ class AddonUserSettingsBase(AddonSettingsBase):
     def public_id(self):
         return None
 
+    @property
+    def has_auth(self):
+        """Whether the user has added credentials for this addon."""
+        return False
+
     def get_backref_key(self, schema, backref_name):
         return schema._name + '__' + backref_name
 
@@ -258,6 +263,7 @@ class AddonUserSettingsBase(AddonSettingsBase):
 
     def to_json(self, user):
         ret = super(AddonUserSettingsBase, self).to_json(user)
+        ret['has_auth'] = self.has_auth
         ret.update({
             'nodes': [
                 {

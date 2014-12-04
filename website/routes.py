@@ -4,24 +4,30 @@ import os
 
 from flask import send_from_directory
 
-from framework import sentry, status
+from framework import status
+from framework import sentry
+from framework.routing import Rule
 from framework.flask import redirect
-from framework.auth import get_current_user, get_display_name
+from framework.routing import WebRenderer
 from framework.exceptions import HTTPError
-from framework.routing import (
-    Rule, process_rules, WebRenderer, json_renderer, render_mako_string
-)
+from framework.auth import get_display_name
+from framework.routing import json_renderer
+from framework.routing import process_rules
 from framework.auth import views as auth_views
+from framework.routing import render_mako_string
+from framework.auth.core import _get_current_user
 
-from website import settings, language, util
+from website import util
+from website import settings
+from website import language
+from website.util import sanitize
 from website import views as website_views
-from website.addons.base import views as addon_views
+from website.assets import env as assets_env
 from website.search import views as search_views
-from website.discovery import views as discovery_views
 from website.profile import views as profile_views
 from website.project import views as project_views
-from website.assets import env as assets_env
-from website.util import sanitize
+from website.addons.base import views as addon_views
+from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
 
 
@@ -29,7 +35,7 @@ def get_globals():
     """Context variables that are available for every template rendered by
     OSFWebRenderer.
     """
-    user = get_current_user()
+    user = _get_current_user()
     return {
         'user_name': user.username if user else '',
         'user_full_name': user.fullname if user else '',
@@ -53,6 +59,8 @@ def get_globals():
         'web_url_for': util.web_url_for,
         'api_url_for': util.api_url_for,
         'sanitize': sanitize,
+        'js_str': lambda x: x.replace("'", r"\'").replace('"', r'\"')
+
     }
 
 
@@ -76,7 +84,7 @@ def favicon():
 
 def goodbye(**kwargs):
     # Redirect to dashboard if logged in
-    if get_current_user():
+    if _get_current_user():
         return redirect(util.web_url_for('dashboard'))
     status.push_status_message(language.LOGOUT, 'info')
     return {}
@@ -558,8 +566,6 @@ def make_url_map(app):
         # # TODO: Add API endpoint for tags
         # Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako')),
 
-        Rule('/project/new/', 'get', project_views.node.project_new,
-            OsfWebRenderer('project/new.mako')),
         Rule('/folder/<nid>', 'get', project_views.node.folder_new,
             OsfWebRenderer('project/new_folder.mako')),
         Rule('/api/v1/folder/<nid>', 'post', project_views.node.folder_new_post, json_renderer),
@@ -799,6 +805,11 @@ def make_url_map(app):
             project_views.contributor.project_manage_contributors,
             json_renderer,
         ),
+
+        Rule([
+            '/project/<pid>/get_most_in_common_contributors/',
+            '/project/<pid>/node/<nid>/get_most_in_common_contributors/',
+        ], 'get', project_views.contributor.get_most_in_common_contributors, json_renderer),
 
         Rule([
             '/project/<pid>/get_recently_added_contributors/',

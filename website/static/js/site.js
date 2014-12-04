@@ -17,6 +17,18 @@
     $.osf = {};
 
     /**
+     * Convenience function to create a GrowlBox
+     * Show a growl-style notification for messages. Defaults to an error type.
+     * @param {String} title Shows in bold at the top of the box. Required or it looks foolish.
+     * @param {String} message Shows a line below the title. This could be '' if there's nothing to say.
+     * @param {String} type One of 'success', 'info', 'warning', or 'danger'. Defaults to danger.
+     *
+     */
+    $.osf.growl = function(title, message, type) {
+        new GrowlBox(title, message, type);
+    };
+
+    /**
      * Posts JSON data.
      *
      * NOTE: The `success` and `error` callbacks are deprecated. Prefer the Promise
@@ -87,10 +99,11 @@
         'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.';
 
     $.osf.handleJSONError = function(response) {
-        bootbox.alert({
-            title: response.responseJSON.message_short || errorDefaultShort,
-            message: response.responseJSON.message_long || errorDefaultLong
-        });
+        var title = response.responseJSON.message_short || errorDefaultShort;
+        var message = response.responseJSON.message_long || errorDefaultLong;
+
+        $.osf.growl(title, message);
+
         Raven.captureMessage('Unexpected error occurred in JSON request');
     };
 
@@ -153,7 +166,7 @@
      */
     $.osf.urlParams = function(str) {
         return (str || document.location.search).replace(/(^\?)/,'').split('&')
-            .map(function(n){return n = n.split('='),this[n[0]] = n[1],this;}.bind({}))[0];
+            .map(function(n){return n = n.split('='),this[n[0]] = decodeURIComponent(n[1]).replace(/\+/g, ' '),this;}.bind({}))[0];
     };
 
     ///////////
@@ -288,7 +301,7 @@
     //    }
 
         // Build tooltips on user activity widgets
-        $('.ua-meter').tooltip();
+        $('.progress-user-activity [data-toggle="tooltip"]').tooltip();
         $('[rel=tooltip]').tooltip({
             placement:'bottom'
         });

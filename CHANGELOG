@@ -2,16 +2,34 @@
 Changelog
 *********
 
-0.21.0 (unreleased)
+0.21.12 (unreleased)
+====================
+
+Hotfix release
+
+- Display warning about private Github repos on a public project on files and
+statistics pages.
+- Refactor celery task for rendering files so that file contents are not
+passed to message broker.
+- Use celery to asynchronously provision Piwik sites.
+
+0.21.0 (2014-11-19)
 ===================
 
-- OSF Files 2.0.
-- Improvements to search.
+- OSF storage addon now uses the new OSF Upload Service backed by Rackspace
+Cloudfiles.
+- UI and backend improvements to search.
+- UI fixes to addons' file detail pages.
+- Enable drag-and-drop uploads from Project Overview page.
 
-0.20.0 (unreleased)
+0.20.0 (2014-10-31)
 ===================
 
-- Onboarding interface on dashboard.
+Lots of new UI features and responsiveness improvements.
+
+- "Onboarder" interface: Go to a project, create a project, register a project, and upload files from the dashboard.
+- Responsive index page, header, footer, project navbars, login page, public activity, and user activity meters.
+- Various minor UI fixes to user settings page and view file pages.
 
 0.19.0 (2014-10-22)
 ===================

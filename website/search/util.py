@@ -1,4 +1,4 @@
-def build_query(q='*', start='0', size='10'):
+def build_query(q='*', start=0, size=10):
     return {
         'query': build_query_string(q),
         'from': start,

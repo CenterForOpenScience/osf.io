@@ -59,7 +59,7 @@ class TestUserSettingsModel(OsfTestCase):
     def setUp(self, mocked):
         super(TestUserSettingsModel, self).setUp()
 
-        self.user = UserFactory(username='foo@bar.com')
+        self.user = UserFactory()
         self.user.add_addon('twofactor')
         self.user_settings = self.user.get_addon('twofactor')
 
@@ -78,13 +78,15 @@ class TestUserSettingsModel(OsfTestCase):
 
         assert_equal(url.scheme, 'otpauth')
         assert_equal(url.netloc, 'totp')
-        assert_equal(url.path, '/OSF:foo@bar.com')
+        assert_equal(url.path, '/OSF:{}'.format(self.user.username))
         assert_equal(
             parse_qs(url.query),
             {'secret': [self.TOTP_SECRET_B32]}
         )
 
     def test_json(self):
+        url =  'otpauth://totp/OSF:{}?secret=' + self.TOTP_SECRET_B32
+
         assert_equal(
             self.user_settings.to_json(user=None),
             {
@@ -93,9 +95,9 @@ class TestUserSettingsModel(OsfTestCase):
                 'drift': 0,
                 'is_confirmed': False,
                 'nodes': [],
-                'otpauth_url': 'otpauth://totp/OSF:foo@bar.com'
-                               '?secret=' + self.TOTP_SECRET_B32,
-                'secret': self.TOTP_SECRET_B32
+                'otpauth_url': url.format(self.user.username),
+                'secret': self.TOTP_SECRET_B32,
+                'has_auth': False,
             }
         )
 

@@ -1,6 +1,14 @@
 /* Body and structure
 -------------------------------------------------- */
 
+html, body {
+}
+
+body {
+    padding-top: 70px; /* body padding for fixed top nav */
+    position: relative; /* for bootstrap affix */
+}
+
 /*News page*/
 .spacer {
     height: 20px;
@@ -58,17 +66,14 @@
 .gs-sidebar .nav .nav>.active>a i {
     display: inline-block;
 }
-
-/* affixed sidenav */
-.gs-sidenav,
-.gs-sidenav.affix {
+/* affixed sidebar */
+.gs-sidebar,
+.gs-sidebar.affix,
+.gs-sidebar.affix-top {
     position: fixed;
-    top: 80px;
+    top: 70px;
 }
-.gs-sidenav.affix-top {
-    position: static;
-}
-.gs-sidenav.affix-bottom {
+.gs-sidebar.affix-bottom {
     position: relative;
 }
 
@@ -79,11 +84,6 @@
     margin-left: auto;
     margin-right: auto;
     border: solid 1px #ddd;
-    width: 560px;
-    height: 315px;
-}
-.gs-video iframe {
-    border: 0;
 }
 
 /* phase number counters */
@@ -114,126 +114,110 @@
 
 .hideValidation .validationMessage { display: none; }
 
+
+/* Home Page */
 .hpLink:hover{
     text-decoration: none;
     color: red;
 }
-
-#hpContainerOne{
-    height: 520px;
+.hpContainerOne{
+    margin-top: 0;
 }
-#hpContainerTwo {
-    margin-top: 25px;
-    margin-bottom: 25px;
-    padding-top: 25px;
-    padding-bottom: 25px;
-    clear: both;
+/* >= sm */
+@media (min-width: 768px) {
+    .hpContainerOne {
+        margin-top: 50px;
+    }
 }
-
-#hpContainerTwo  .featureDescriptions  .col-md-4  img {
-    height: 85px;
-    margin-bottom: 25px;
-    padding-top: 5px;
-}
-
-#hpContainerThree {
-    margin-top: 25px;
-    margin-bottom: 25px;
-    padding-top: 25px;
-    padding-bottom: 25px;
-    clear: both;
-}
-#containerOneHeader {
-    float: left;
-    margin-top: 50px;
-}
-.headOne {
+.headOne, /* TODO: cleanup getting started */
+.hpHeadOne {
     font-family: 'Carrois Gothic', Helvetica;
-    letter-spacing:1px;
-    font-size: 50px;
+    letter-spacing: 1px;
+    font-size: 40px;
     color: black;
 }
-
-.headTwo {
+/* >=sm */
+@media (min-width: 768px) {
+    .headOne, /* TODO: cleanup getting started */
+    .hpHeadOne {
+       font-size: 50px;
+    }
+}
+.hpHeadTwo {
+    padding-top: 70px;
     font-family: 'Carrois Gothic', Helvetica;
     letter-spacing:1px;
     font-size: 40px;
     color: black;
 }
-.subHeadOne {
+.hpSubHeadOne {
+    padding-bottom: 30px;
     font-family: 'Inika', Helvetica;
     font-size: 24px;
     letter-spacing: 1px;
 }
-.subHeadTwo {
+.hpSubHeadTwo {
     font-size: 30px;
     font-family: 'Patua One', Helvetica;
     letter-spacing: 1px;
 }
-.subHeadThree {
+.hpSubHeadThree {
     font-size: 28px;
     color: #4089C7;
     font-family: 'Patua One', Helvetica;
     letter-spacing: 1px;
 }
-.subHeadFour {
+.subHeadFour, /* TODO: cleanup getting started */
+.hpSubHeadFour {
     font-family: 'Carrois Gothic', Helvetica;
     letter-spacing:1px;
     font-size: 36px;
     color: black;
 }
-.sign-up {
-    margin-top: 50px;
+.hpSignUp {
     background: #aad4f7;
-    float: right;
     padding: 30px 30px 30px 30px;
     border: solid #bacfd8 1px;
 }
-.sign-up .form-control {
+.hpSignUp .form-control {
     margin-top: 20px;
     height: 40px;
 }
-.sign-up .btn {
+.hpSignUp .btn {
     font-family: 'Inika', Helvetica;
     font-size: 28px;
     letter-spacing: 1pt;
     margin-top: 40px;
-    float: right;
 }
-.text-center {
-    text-align: center;
-}
-.text-right {
-    text-align: right;
-}
-
-.header {
-    display: block;
+.hpHeader {
     font-family: 'Patua One', cursive;
     font-size: 24px;
-    padding-bottom: 20px;
     padding-top: 70px;
 }
-
-.featureDescriptions {
-    padding-top: 75px;
+.hpFeature {
+    padding-bottom: 20px;
+    padding-top: 70px;
     font-size: 22px;
     font-family: 'Carrois Gothic', sans-serif;
 }
-
-.featureDescriptions .featureInfo {
+.hpFeature img {
+    height: 85px;
+    margin-bottom: 25px;
+}
+.hpFeature .hpFeatureInfo {
     font-family: 'Inika', serif;
     font-size: 16px;
 }
-.steps {
+.hpSteps {
     padding-bottom: 20px;
     padding-top: 20px;
 }
-
-.stepsText {
+.hpStepsText {
     font-family: 'Inika', serif;
     font-size: 16px;
+    padding-top: 40px;
 }
+
 
 .padded {
     padding-top: 20px;
@@ -301,14 +285,6 @@ font-weight: bold;
 */
 
 /* Global Styles */
-
-html, body {
-  height:100%;
-}
-
-body {
-  padding-top: 70px; /* body padding for fixed top nav */
-}
 
 .img-home-portfolio,
 .img-customer,
@@ -391,6 +367,10 @@ li.pointer {
     margin-top: 4.8px;
 }
 
+.addon-message {
+    padding-top: 20px;
+}
+
 /* Make embedded iframes responsive */
 .addon-widget-container iframe {
     max-width: 100%;
@@ -462,7 +442,6 @@ h4 {
 }
 
 
-
 /* Bootstrap Navbar */
 .navbar .search-query {
     width:190px
@@ -471,6 +450,12 @@ h4 {
 @media (max-width: 767px) {
     .navbar-btn {
         margin-left: 15px;
+    }
+
+    /* navbar expand to fill entire display (visible logout button) */
+    .navbar-fixed-top .navbar-collapse,
+    .navbar-fixed-bottom .navbar-collapse {
+        max-height: none;
     }
 }
 
@@ -675,40 +660,24 @@ h4 {
 
 /* Data Vis
 -------------------------------------------------- */
-/* Activity meters (user profile) */
-.ua_meter_legend ul{
-    list-style:none;
+/* Activity progress bar (user profile) */
+.progress-user-activity {
+    background-color: transparent;
+    background-image: none;
+    box-shadow: none;
+    border-radius: 0;
+    max-height: 10px;
+    margin-top: 10px;
+    margin-bottom: 5px;
 }
-.ua_meter_legend li{
-    display:inline;
-    float:left;
+.progress-user-activity>.progress-bar:first-child {
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
 }
-.user-activity-meter{
-    height: 10px;
-    margin: 8px 0px;
+.progress-user-activity>.progress-bar.last {
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
 }
-.user-activity-meter ul{
-    height:100%;
-    list-style:none;
-    padding-left: 0px;
-}
-.user-activity-meter ul li{
-    display:inline;
-    float:left;
-    height:100%;
-}
-
-.pa-meter{
-    background:#4572A7;
-}
-.ua-meter{
-    background:#89A54E;
-}
-.pa-meter-label{
-    margin: -4px 0 0 5px;
-    font-size: 11px;
-}
-
 
 /* Footer
 -------------------------------------------------- */
@@ -846,7 +815,21 @@ h1.node-title, h1.node-parent-title {
         font-size: 20px;
         line-height: 20px;
     }
+    .wiki-status-sm {
+        float: none;
+        text-align: center;
+        margin-top: 20px;
+    }
 }
+
+@media (min-width: 768px) {
+    .wiki-status-lg {
+        float: right;
+        margin-left: 20px;
+        display: inline-block;
+    }
+}
+
 
 .wiki-title-container {
     display: inline-block;
@@ -866,12 +849,19 @@ h1.node-title, h1.node-parent-title {
     margin-top: 0.9em;
 }
 
+/* Bootstrap Editable */
+
 .editable {
     border-bottom: none;
 }
 
 .editable:hover{
   background-color:#F3F3F3;
+}
+
+.editable-error-block  {
+    font-size: 16px;
+    max-width: 100%;
 }
 
 /* File list tables */
@@ -940,8 +930,8 @@ h1.unavailable {
 }
 
 .anchor {
-    margin-top: -50px;
-    padding-top: 50px;
+    margin-top: -60px;
+    padding-top: 60px;
     display: block;
 }
 
@@ -975,14 +965,14 @@ h1.unavailable {
     }
 .tag-cloud
     {
-
+    word-break: break-all;
     }
 
 .tag-cloud .cloud-tag
 {
     font-size: 11pt;
     display: inline-block;
-    word-wrap: break-word;
+    word-break: break-all;
     margin: 5px;
     padding: 5px;
     border-radius: 5px;
@@ -1013,6 +1003,20 @@ h1.unavailable {
     {
         margin: 0;
     }
+
+.registration a {
+    color: #666;
+}
+
+.registration small{
+    color: #000000;
+}
+
+.registration .tag-cloud .cloud-tag {
+    background-color: #AAA;
+    color: #ffffff;
+}
+
 .query-label
     {
         margin-right: .5em;
@@ -1062,10 +1066,36 @@ h1.unavailable {
     {
         margin-right: .5em;
     }
+
+div.search-result  {
+    margin-bottom: 10pt;
+    padding: 10px;
+    border-bottom: 1px solid #d3d3d3;
+    overflow-x: hidden;
+}
+
+
+
+.search-results.search-result h5 small{
+    color: white;
+    font-size: 10pt;
+}
+
+.search-result img{
+    margin-top: 10px;
+}
+
+.search-results.search-result {
+    overflow-x: hidden;
+
+}
 /* Search Contributors */
 
 .search-contributor-result td {
     padding-right: 10px;
+}
+.search-contributor-links {
+    padding-top: 10px;
 }
 
 
@@ -1174,6 +1204,11 @@ h1.unavailable {
 }
 
 /* Sidenav */
+.osf-sidenav {
+    /* overflow-wrap css3 */
+    word-wrap: break-word;
+}
+
 .osf-sidenav.affix {
   position: static;
 }
@@ -1263,8 +1298,28 @@ h1.unavailable {
 
 /* Logs */
 
+dl.activity-log dd {
+    margin-bottom: 4px;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+    /* wrap dl in col-sm-* grid layout */
+    dl.activity-log dt {
+        float: inherit;
+        width: inherit;
+        text-align: inherit;
+    }
+    dl.activity-log dd {
+        margin-left: 0;
+    }
+}
+
 .log-file-link {
     cursor: pointer;
+}
+
+.log-node-title-link {
+    font-weight: bold;
 }
 
 .log-date {
@@ -1280,6 +1335,12 @@ h1.unavailable {
     max-width: 100%;
 }
 
+.component-overflow {
+    word-wrap: break-word;
+    max-width: 90%;
+    display: inline-block;
+}
+
 /* Need to use this class with a fixed width */
 .overflow-block {
     display: block;
@@ -1291,9 +1352,6 @@ h1.unavailable {
     width:100%;
 }
 
-div#logScope a.moreLogs{
-    margin-left: 50px;
-}
 
 /* private_link*/
 
@@ -1424,6 +1482,12 @@ li.contributor-list-item a.name {
 
 .contributor-anonymous {
     font-style: italic;
+}
+
+/* Handle paginator on add contributor modal */
+#addContributors .pagination-sm li a, #addContributors .pagination-sm li span {
+    padding: 5px 8px;
+    font-size: 10px;
 }
 
 /* Handle popovers inside modals */
@@ -1600,4 +1664,16 @@ div.pydocx-center{
 .search-term-label,
 .tag {
     white-space: pre;
+}
+
+.bootbox-node-deletion-modal {
+    font-weight: normal;
+    font-size: medium;
+    line-height: normal;
+    padding-top: 10px;
+}
+
+.bootbox-node-deletion-modal ol {
+    padding-left: 40px;
+    list-style-type: disc;
 }

@@ -2,17 +2,23 @@
 <%def name="title()">${file_name}</%def>
 
 <%def name="file_versions()">
-    <div class='scripted' id='s3Scope'>
+    <div id='s3Scope' class="scripted">
 
-        <div id="deletingAlert" class="alert alert-warning fade">
+        <div class="alert alert-warning" data-bind="visible: deleting">
             Deleting your file…
         </div>
 
-        % if user['can_edit'] and 'write' in user['permissions']:
             <p>
-                <a href="#" data-bind="visible: api_url, click: deleteFile" class="btn-danger btn-lg">
-                    Delete <i class="icon-trash"></i>
-                </a>
+                % if download_url:
+                    <!--download button-->
+                    <a class="btn btn-success btn-md" href="${download_url}">
+                        Download <i class="icon-download-alt"></i></a>
+                % endif
+                % if user['can_edit'] and 'write' in user['permissions']:
+                    <!--delete button-->
+                    <a href="#" data-bind="visible: api_url, click: deleteFile" class="btn btn-danger btn-md" >
+                        Delete <i class="icon-trash"></i>
+                    </a>
             </p>
         % endif
 
@@ -38,7 +44,7 @@
                         </td>
                         <td>
                             <a href="${version['download']}" class ="btn btn-primary btn-sm" download="${file_name}">
-                                 Download <i class="icon-download-alt"></i>
+                                 <i class="icon-download-alt"></i>
                             </a>
                         </td>
                     </tr>
@@ -49,10 +55,11 @@
     </div>
     <script>
         $script(['/static/js/deleteFile.js'], function() {
-            var delete_url = '${delete_url}';
-            var url = '${info_url}';
-            var deleteFile = new DeleteFile('#s3Scope', url, delete_url);
+            var urls = {
+                'delete_url': '${delete_url}',
+                'files_page_url': '${files_page_url}'
+            };
+            var deleteFile = new DeleteFile('#s3Scope', urls);
         });
     </script>
-
 </%def>

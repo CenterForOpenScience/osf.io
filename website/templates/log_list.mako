@@ -19,6 +19,11 @@
         <a href="http://en.wikipedia.org/wiki/Coordinated_Universal_Time" target="_blank">UTC</a> offset.
     </p>
 
+    <p data-bind="if: !logs().length" class="help-block">
+        No logs to show. Click the watch icon (<i class="icon-eye-open"></i>) icon on a
+        project's page to get activity updates here.
+    </p>
+
     <dl class="dl-horizontal activity-log" data-bind="foreach: {data: logs, as: 'log'}">
         <dt><span class="date log-date" data-bind="text: log.date.local, tooltip: {title: log.date.utc}"></span></dt>
         <dd class="log-content">
@@ -47,6 +52,6 @@
 
         </dd>
     </dl><!-- end foreach logs -->
-    <a class="moreLogs" data-bind="click: moreLogs, visible: enableMoreLogs">more</a>
+    <a class="btn btn-link pull-right"data-bind="click: moreLogs, visible: enableMoreLogs">More...</a>
 </div><!-- end #logScope -->
 <%include file="_log_templates.mako"/>

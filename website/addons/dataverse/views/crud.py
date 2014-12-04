@@ -113,7 +113,6 @@ def dataverse_download_file_proxy(node_addon, auth, **kwargs):
 @must_have_addon('dataverse', 'node')
 def dataverse_get_file_info(node_addon, auth, **kwargs):
     """API view that gets info for a file."""
-
     node = node_addon.owner
     file_id = kwargs.get('path')
 
@@ -125,13 +124,23 @@ def dataverse_get_file_info(node_addon, auth, **kwargs):
     download_url = node.web_url_for('dataverse_download_file', path=file_id)
     dataverse_url = 'http://{0}/dvn/dv/'.format(HOST) + node_addon.dataverse_alias
     study_url = 'http://dx.doi.org/' + node_addon.study_hdl
+    delete_url = node.api_url_for('dataverse_delete_file', path=file_id)
 
     data = {
+        'node': {
+            'id': node._id,
+            'title': node.title
+        },
+        'filename': scrape_dataverse(file_id, name_only=True)[0],
         'dataverse': privacy_info_handle(node_addon.dataverse, anonymous),
-        'dataverse_url': privacy_info_handle(dataverse_url, anonymous),
         'study': privacy_info_handle(node_addon.study, anonymous),
-        'study_url': privacy_info_handle(study_url, anonymous),
-        'download_url': privacy_info_handle(download_url, anonymous),
+        'urls': {
+            'dataverse': privacy_info_handle(dataverse_url, anonymous),
+            'study': privacy_info_handle(study_url, anonymous),
+            'download': privacy_info_handle(download_url, anonymous),
+            'delete': privacy_info_handle(delete_url, anonymous),
+            'files': node.web_url_for('collect_file_trees'),
+        }
     }
 
     return {
@@ -158,8 +167,8 @@ def dataverse_view_file(node_addon, auth, **kwargs):
         return redirect(redirect_url)
 
     # Get or create rendered file
-    cache_file = '{0}.html'.format(file_id)
-    rendered = get_cache_content(node_addon, cache_file)
+    cache_file_name = '{0}.html'.format(file_id)
+    rendered = get_cache_content(node_addon, cache_file_name)
 
     if rendered is None:
         filename, content = scrape_dataverse(file_id)
@@ -167,9 +176,12 @@ def dataverse_view_file(node_addon, auth, **kwargs):
             'dataverse_download_file_proxy', path=file_id
         )
         rendered = get_cache_content(
-            node_addon, cache_file, start_render=True,
-            file_path=filename, file_content=content,
-            download_path=download_url,
+            node_addon,
+            cache_file_name,
+            start_render=True,
+            remote_path=file_obj.path,
+            file_content=content,
+            download_url=download_url,
         )
     else:
         filename, _ = scrape_dataverse(file_id, name_only=True)
@@ -177,12 +189,15 @@ def dataverse_view_file(node_addon, auth, **kwargs):
     rv = {
         'file_name': filename,
         'rendered': rendered,
-        'render_url': node.api_url_for('dataverse_get_rendered_file',
+        'urls': {
+            'render': node.api_url_for('dataverse_get_rendered_file',
                                        path=file_id),
-        'download_url': node.web_url_for('dataverse_download_file',
+            'download': node.web_url_for('dataverse_download_file',
                                          path=file_id),
-        'info_url': node.api_url_for('dataverse_get_file_info',
+            'info': node.api_url_for('dataverse_get_file_info',
                                      path=file_id),
+        }
+
     }
     rv.update(_view_project(node, auth))
     return rv

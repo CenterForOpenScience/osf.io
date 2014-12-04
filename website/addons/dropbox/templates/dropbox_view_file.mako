@@ -17,14 +17,14 @@
         <!-- Download button -->
         <a
                 data-bind="attr.href: downloadUrl"
-                class="btn btn-success btn-lg"
+                class="btn btn-success btn-md"
             >Download <i class="icon-download-alt" ></i>
         </a>
         % if user['can_edit'] and 'write' in user['permissions']:
             <!--Delete button -->
             <button
                     data-bind="visible: deleteUrl() && !registered(), click: deleteFile"
-                    class="btn btn-danger btn-lg"
+                    class="btn btn-danger btn-md"
                 >Delete <i class="icon-trash"></i>
             </button>
         % endif
@@ -56,7 +56,7 @@
                 <td>{{ revision.modified.local }}</td>
                 <td>
                     <a data-bind="attr: {href: revision.download}" class="btn btn-primary btn-sm">
-                        Download <i class="icon-download-alt"></i>
+                        <i class="icon-download-alt"></i>
                     </a>
                 </td>
             </tr>

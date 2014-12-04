@@ -72,33 +72,9 @@ def validate_personal_site(value):
 def validate_social(value):
     validate_personal_site(value.get('personal_site'))
 
-
-def get_current_username():
-    return session.data.get('auth_user_username')
-
-
-def get_current_user_id():
-    return session.data.get('auth_user_id')
-
-
-def get_current_user():
+def _get_current_user():
     uid = session._get_current_object() and session.data.get('auth_user_id')
     return User.load(uid)
-
-
-# TODO(sloria): This belongs in website.project
-def get_current_node():
-    from website.models import Node
-    nid = session.data.get('auth_node_id')
-    if nid:
-        return Node.load(nid)
-
-
-def get_api_key():
-    # Hack: Avoid circular import
-    from website.project.model import ApiKey
-    api_key = session.data.get('auth_api_key')
-    return ApiKey.load(api_key)
 
 
 # TODO: This should be a class method of User?
@@ -163,15 +139,11 @@ class Auth(object):
 
     @classmethod
     def from_kwargs(cls, request_args, kwargs):
-
-        from website.models import Node  # TODO: fix circular import
-        from website.project.model import ApiKey  # TODO: fix circular import
-
-        user = kwargs.get('user') or get_current_user()
-        api_key = ApiKey.load(request_args.get('api_key')) or kwargs.get('api_key') or get_api_key()
-        user = api_key.user if api_key and not user else user
-        api_node = Node.load(request_args.get('api_node')) or kwargs.get('api_node') or get_current_node()
         private_key = request_args.get('view_only')
+        api_key = request_args.get('api_key') or kwargs.get('api_key')
+        api_node = request_args.get('api_node') or kwargs.get('api_node')
+        user = request_args.get('user') or kwargs.get('user') or _get_current_user()
+
         return cls(
             user=user,
             api_key=api_key,
@@ -187,6 +159,10 @@ class User(GuidStoredObject, AddonModelMixin):
     # Node fields that trigger an update to the search engine on save
     SEARCH_UPDATE_FIELDS = {
         'fullname',
+        'given_name',
+        'middle_names',
+        'family_name',
+        'suffix',
         'merged_by',
         'jobs',
         'schools',
@@ -471,7 +447,7 @@ class User(GuidStoredObject, AddonModelMixin):
     def add_email_verification(self, email):
         """Add an email verification token for a given email."""
         token = generate_confirm_token()
-        self.email_verifications[token] = {'email': email}
+        self.email_verifications[token] = {'email': email.lower()}
         return token
 
     def get_confirmation_token(self, email):
@@ -513,7 +489,7 @@ class User(GuidStoredObject, AddonModelMixin):
             email = self.email_verifications[token]['email']
             self.emails.append(email)
             # Complete registration if primary email
-            if email == self.username:
+            if email.lower() == self.username.lower():
                 self.register(self.username)
                 self.date_confirmed = dt.datetime.utcnow()
             # Revoke token
@@ -626,15 +602,15 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def save(self, *args, **kwargs):
         self.username = self.username.lower().strip() if self.username else None
-        rv = super(User, self).save(*args, **kwargs)
-        if self.SEARCH_UPDATE_FIELDS.intersection(rv) and self.is_confirmed():
+        ret = super(User, self).save(*args, **kwargs)
+        if self.SEARCH_UPDATE_FIELDS.intersection(ret) and self.is_confirmed():
             self.update_search()
         if settings.PIWIK_HOST and not self.piwik_token:
             try:
                 piwik.create_user(self)
             except (piwik.PiwikException, ValueError):
                 logger.error("Piwik user creation failed: " + self._id)
-        return rv
+        return ret
 
     def update_search(self):
         from website.search import search

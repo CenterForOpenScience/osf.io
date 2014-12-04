@@ -123,6 +123,19 @@ class TestUserUpdate(SearchTestCase):
         assert_equal(len(docs), 1)
 
 
+    def test_name_fields(self):
+        names = ['Bill Nye', 'William', 'the science guy', 'Sanford', 'the Great']
+        user = UserFactory(fullname=names[0])
+        user.given_name = names[1]
+        user.middle_names = names[2]
+        user.family_name = names[3]
+        user.suffix = names[4]
+        user.save()
+        docs = [query_user(name)['results'] for name in names]
+        assert_equal(sum(map(len, docs)), len(docs))  # 1 result each
+        assert_true(all([user._id == doc[0]['id'] for doc in docs]))
+
+
 @requires_search
 class TestProject(SearchTestCase):
 
@@ -339,10 +352,10 @@ class TestPublicNodes(SearchTestCase):
 
     def test_count_aggregation(self):
         docs = query("*")['counts']
-        assert docs['total'] == 4
-        assert docs['project'] == 1
-        assert docs['component'] == 1
-        assert docs['registration'] == 1
+        assert_equal(docs['total'], 4)
+        assert_equal(docs['project'], 1)
+        assert_equal(docs['component'], 1)
+        assert_equal(docs['registration'], 1)
 
 
 

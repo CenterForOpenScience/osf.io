@@ -4,7 +4,7 @@ import httplib as http
 
 from flask import request
 from modularodm import Q
-from modularodm.exceptions import ModularOdmException
+from modularodm.exceptions import ModularOdmException, ValidationValueError
 
 from framework import status
 from framework.utils import iso8601format
@@ -23,7 +23,7 @@ from website.project.decorators import (
     must_have_permission,
     must_not_be_registration,
 )
-from website.project.model import has_anonymous_link, resolve_pointer
+from website.project.model import has_anonymous_link, get_pointer_parent
 from website.project.forms import NewNodeForm
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
@@ -45,7 +45,13 @@ def edit_node(auth, **kwargs):
     edited_field = post_data.get('name')
     value = strip_html(post_data.get('value', ''))
     if edited_field == 'title':
-        node.set_title(value, auth=auth)
+        try:
+            node.set_title(value, auth=auth)
+        except ValidationValueError:
+            raise HTTPError(
+                http.BAD_REQUEST,
+                data=dict(message_long='Title cannot be blank.')
+            )
     elif edited_field == 'description':
         node.set_description(value, auth=auth)
     node.save()
@@ -335,7 +341,7 @@ def node_contributors(**kwargs):
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
 
-    rv = _view_project(node, auth)
+    rv = _view_project(node, auth, primary=True)
     rv['contributors'] = utils.serialize_contributors(node.contributors, node)
     return rv
 
@@ -448,9 +454,14 @@ def project_statistics(**kwargs):
 @must_have_permission('admin')
 def project_before_set_public(**kwargs):
     node = kwargs['node'] or kwargs['project']
+    prompt = node.callback('before_make_public')
+    anonymous_link_warning = any(private_link.anonymous for private_link in node.private_links_active)
+    if anonymous_link_warning:
+        prompt.append('Anonymized view-only links <b>DO NOT</b> anonymize '
+                      'contributors after a project or component is made public.')
 
     return {
-        'prompts': node.callback('before_make_public')
+        'prompts': prompt
     }
 
 
@@ -664,7 +675,7 @@ def _view_project(node, auth, primary=False):
         for addon in node.get_addons():
             messages = addon.before_page_load(node, user) or []
             for message in messages:
-                status.push_status_message(message)
+                status.push_status_message(message, dismissible=False)
     data = {
         'node': {
             'id': node._primary_key,
@@ -737,6 +748,7 @@ def _view_project(node, auth, primary=False):
             'piwik_token': user.piwik_token if user else '',
             'id': user._id if user else None,
             'username': user.username if user else None,
+            'fullname': user.fullname if user else '',
             'can_comment': node.can_comment(auth),
             'show_wiki_widget': _should_show_wiki_widget(node, user),
         },
@@ -773,6 +785,7 @@ def _get_children(node, auth, indent=0):
                 'id': child._primary_key,
                 'title': child.title,
                 'indent': indent,
+                'is_public': child.is_public,
             })
             children.extend(_get_children(child, auth, indent + 1))
 
@@ -804,7 +817,7 @@ def get_editable_children(auth, **kwargs):
     children = _get_children(node, auth)
 
     return {
-        'node': {'title': node.title, },
+        'node': {'title': node.title, 'is_public': node.is_public},
         'children': children,
     }
 
@@ -828,11 +841,11 @@ def _get_user_activity(node, auth, rescale_ratio):
 
     # Normalize over all nodes
     try:
-        ua = ua_count / rescale_ratio * settings.USER_ACTIVITY_MAX_WIDTH
+        ua = ua_count / rescale_ratio * 100
     except ZeroDivisionError:
         ua = 0
     try:
-        non_ua = non_ua_count / rescale_ratio * settings.USER_ACTIVITY_MAX_WIDTH
+        non_ua = non_ua_count / rescale_ratio * 100
     except ZeroDivisionError:
         non_ua = 0
 
@@ -911,13 +924,20 @@ def get_summary(**kwargs):
 
 
 @must_be_contributor_or_public
-def get_children(**kwargs):
+def get_children(auth, **kwargs):
+    user = auth.user
     node_to_use = kwargs['node'] or kwargs['project']
-    return _render_nodes([
-        node
-        for node in node_to_use.nodes
-        if not node.is_deleted
-    ])
+    if request.args.get('permissions'):
+        perm = request.args['permissions'].lower().strip()
+        nodes = [node for node in node_to_use.nodes
+                if perm in node.get_permissions(user) and not node.is_deleted]
+    else:
+        nodes = [
+            node
+            for node in node_to_use.nodes
+            if not node.is_deleted
+        ]
+    return _render_nodes(nodes)
 
 @must_be_contributor_or_public
 def get_folder_pointers(**kwargs):
@@ -962,9 +982,17 @@ def project_generate_private_link_post(auth, **kwargs):
 
     nodes = [Node.load(node_id) for node_id in node_ids]
 
+    has_public_node = any(node.is_public for node in nodes)
+
     new_link = new_private_link(
         name=name, user=auth.user, nodes=nodes, anonymous=anonymous
     )
+
+    if anonymous and has_public_node:
+        status.push_status_message(
+            'Anonymized view-only links <b>DO NOT</b> '
+            'anonymize contributors of public project or component.'
+        )
 
     return new_link
 
@@ -1256,7 +1284,7 @@ def abbrev_authors(node):
 
 
 def serialize_pointer(pointer, auth):
-    node = resolve_pointer(pointer)
+    node = get_pointer_parent(pointer)
     if node.can_view(auth):
         return {
             'id': node._id,
@@ -1279,5 +1307,5 @@ def get_pointed(auth, **kwargs):
     return {'pointed': [
         serialize_pointer(each, auth)
         for each in node.pointed
-        if not resolve_pointer(each).is_folder
+        if not get_pointer_parent(each).is_folder
     ]}

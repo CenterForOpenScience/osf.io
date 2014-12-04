@@ -11,7 +11,6 @@
 }(this, function(ko, $) {
     'use strict';
     ko.punches.enableAll();
-    ko.punches.attributeInterpolationMarkup.enable();
 
     function Version(data) {
         this.version_number = data.version_number;
@@ -73,7 +72,7 @@
                         });
                         request.fail(function( jqXHR, textStatus ) {
                             $('#deletingAlert').removeClass('in');
-                            bootbox.alert( 'Could not delete: ' + textStatus );
+                            $.osf.growl( 'Could not delete', textStatus );
                         });
                     }
                 }

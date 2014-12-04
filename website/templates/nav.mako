@@ -37,7 +37,7 @@
             <!-- Search bar -->
             <form id="searchBar" class="navbar-form navbar-left" action="/search/" method="get" role="search">
                 <div class="form-group">
-                    <input type="text" class="form-control search-query" placeholder="Search" name="q">
+                    <input type="text" class="form-control search-query" placeholder="Search the OSF" name="q">
                 </div>
             </form>
             <ul class="nav navbar-nav navbar-right">

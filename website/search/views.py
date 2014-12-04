@@ -1,23 +1,25 @@
 # -*- coding: utf-8 -*-
-
 import time
 import logging
 import functools
 import httplib as http
 
 import bleach
-from modularodm import Q
+
 from flask import request
 
-from framework.auth.core import get_current_user
+from modularodm import Q
+
+from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
 
-import website.search.search as search
-from website.search.util import build_query
-from website.models import User, Node
-from website.project.views.contributor import get_node_contributors_abbrev
-from framework.exceptions import HTTPError
+from website.models import Node
+from website.models import User
 from website.search import exceptions
+import website.search.search as search
+from framework.exceptions import HTTPError
+from website.search.util import build_query
+from website.project.views.contributor import get_node_contributors_abbrev
 
 logger = logging.getLogger(__name__)
 
@@ -27,8 +29,6 @@ def handle_search_errors(func):
     def wrapped(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except exceptions.IndexNotFoundError:
-            pass
         except exceptions.MalformedQueryError:
             raise HTTPError(http.BAD_REQUEST, data={
                 'message_short': 'Bad search query',
@@ -50,8 +50,8 @@ def search_search(**kwargs):
 
     tick = time.time()
 
-    if request.method == 'POST' and request.json:
-        query = request.json
+    if request.method == 'POST':
+        query = request.get_json()
     elif request.method == 'GET':
         q = request.args.get('q', '*')
         # TODO Match javascript params?
@@ -180,11 +180,13 @@ def process_project_search_results(results, **kwargs):
     return out
 
 
-def search_contributor():
+@collect_auth
+def search_contributor(auth):
+    user = auth.user if auth else None
     nid = request.args.get('excludeNode')
-    exclude = Node.load(nid).contributors if nid else list()
+    exclude = Node.load(nid).contributors if nid else []
     query = bleach.clean(request.args.get('query', ''), tags=[], strip=True)
     page = int(bleach.clean(request.args.get('page', '0'), tags=[], strip=True))
-    size = int(bleach.clean(request.args.get('size', '10'), tags=[], strip=True))
+    size = int(bleach.clean(request.args.get('size', '5'), tags=[], strip=True))
     return search.search_contributor(query=query, page=page, size=size,
-                                     exclude=exclude, current_user=get_current_user())
+                                     exclude=exclude, current_user=user)

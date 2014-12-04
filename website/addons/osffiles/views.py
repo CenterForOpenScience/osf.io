@@ -38,6 +38,8 @@ from website.addons.osffiles.exceptions import (
 
 logger = logging.getLogger(__name__)
 
+MEGABYTE = 1024 * 1024
+
 
 def _clean_file_name(name):
     " HTML-escape file name and encode to UTF-8. "
@@ -146,7 +148,7 @@ def upload_file_public(auth, node_addon, **kwargs):
 
     name, content, content_type, size = prepare_file(request.files['file'])
 
-    if size > (node_addon.config.max_file_size):
+    if size > (node_addon.config.max_file_size * MEGABYTE):
         raise HTTPError(
             http.BAD_REQUEST,
             data={
