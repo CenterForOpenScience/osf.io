@@ -3,10 +3,12 @@
     "title": "Open Science Framework",
     "homepage": "http://osf.io",
     "version": "0.1.0",
-    "devDependencies": {
-        "share": "<0.7",
+    "dependencies": {
+        "share": "~0.7.3",
         "express": "~4.10.0",
-        "mongodb": "~1.4.10"
+        "livedb": "~0.4.8",
+        "livedb-mongo": "~0.4.1",
+        "ws": "~0.4.32"
     },
     "repository": {
         "type": "git",
