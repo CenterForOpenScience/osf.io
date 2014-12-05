@@ -3477,6 +3477,18 @@ class TestProfileNodeList(OsfTestCase):
         assert_not_in(self.private._id, node_ids)
         assert_not_in(self.deleted._id, node_ids)
 
+class TestStaticFileViews(OsfTestCase):
+
+    def test_robots_dot_txt(self):
+        res = self.app.get('/robots.txt')
+        assert_equal(res.status_code, 200)
+        assert_in('User-agent', res)
+        assert_in('text/plain', res.headers['Content-Type'])
+
+    def test_favicon(self):
+        res = self.app.get('/favicon.ico')
+        assert_equal(res.status_code, 200)
+        assert_in('image/vnd.microsoft.icon', res.headers['Content-Type'])
 
 if __name__ == '__main__':
     unittest.main()
