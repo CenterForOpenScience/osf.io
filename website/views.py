@@ -66,8 +66,6 @@ def _render_node(node, auth=None):
         print perm_list
         perm = permissions.reduce_permissions(perm_list)
 
-    print perm
-
     return {
         'title': node.title,
         'id': node._primary_key,
