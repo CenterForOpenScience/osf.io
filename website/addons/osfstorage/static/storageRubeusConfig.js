@@ -37,7 +37,7 @@
             var parent = self.getByID(row.parentID);
             row.urls = {
                 'view': buildUrl(parent, file, 'web'),
-                'download': buildUrl(parent, file, 'web', '/download/'),
+                'download': buildUrl(parent, file, 'web', '?mode=download'),
                 'delete': buildUrl(parent, file, 'api')
             };
             row.permissions = parent.permissions;

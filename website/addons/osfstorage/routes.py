@@ -23,6 +23,7 @@ web_routes = {
 
         Rule(
             [
+                # Legacy routes for `view_file`
                 '/project/<pid>/osffiles/<fid>/',
                 '/project/<pid>/node/<nid>/osffiles/<fid>/',
             ],
@@ -140,6 +141,16 @@ api_routes = {
 
         Rule(
             [
+                '/project/<pid>/osfstorage/hooks/archived/<path:path>',
+                '/project/<pid>/node/<nid>/osfstorage/hooks/archived/<path:path>',
+            ],
+            'put',
+            views.osf_storage_upload_archived_hook,
+            json_renderer,
+        ),
+
+        Rule(
+            [
                 '/project/<pid>/osfstorage/hooks/finish/<path:path>',
                 '/project/<pid>/node/<nid>/osfstorage/hooks/finish/<path:path>',
             ],
@@ -165,6 +176,25 @@ api_routes = {
             ],
             'delete',
             views.osf_storage_delete_file,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                # Legacy routes for `download_file`
+                '/project/<pid>/osffiles/<fid>/',
+                '/project/<pid>/node/<nid>/osffiles/<fid>/',
+                '/project/<pid>/files/download/<fid>/',
+                '/project/<pid>/node/<nid>/files/download/<fid>/',
+
+                # Legacy routes for `download_file_by_version`
+                '/project/<pid>/osffiles/<fid>/version/<vid>/',
+                '/project/<pid>/node/<nid>/osffiles/<fid>/version/<vid>/',
+                '/project/<pid>/files/download/<fid>/version/<vid>/',
+                '/project/<pid>/node/<nid>/files/download/<fid>/version/<vid>/',
+            ],
+            'get',
+            views.osf_storage_download_file_legacy,
             json_renderer,
         ),
 

@@ -28,8 +28,15 @@ def celery_teardown_request(error=None):
 
 
 def enqueue_task(signature):
-    if signature not in g._celery_tasks:
-        g._celery_tasks.append(signature)
+    """If working in a request context, push task signature to ``g`` to run
+    after request is complete; else run signature immediately.
+    :param signature: Celery task signature
+    """
+    try:
+        if signature not in g._celery_tasks:
+            g._celery_tasks.append(signature)
+    except RuntimeError:
+        signature()
 
 
 handlers = {

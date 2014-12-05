@@ -38,7 +38,7 @@ ALLOW_REGISTRATION = True
 ALLOW_LOGIN = True
 
 SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
-ELASTIC_URI = 'http://localhost:9200'
+ELASTIC_URI = 'localhost:9200'
 ELASTIC_TIMEOUT = 10
 # Sessions
 # TODO: Override SECRET_KEY in local.py in production

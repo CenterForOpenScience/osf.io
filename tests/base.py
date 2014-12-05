@@ -40,9 +40,6 @@ test_app = init_app(
 )
 
 
-logger = logging.getLogger()
-logger.setLevel(logging.CRITICAL)
-
 # Silence some 3rd-party logging and some "loud" internal loggers
 SILENT_LOGGERS = [
     'factory.generate',
