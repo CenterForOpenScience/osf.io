@@ -121,6 +121,9 @@ class Figshare(object):
     def project(self, node_settings, project_id):
         if not project_id:
             return
+        options = Figshare.from_settings(node_settings.user_settings).get_options()
+        if options == 401:
+            return False
         project = self._send(os.path.join(node_settings.api_url, 'projects', str(project_id)))
         if not project:
             return

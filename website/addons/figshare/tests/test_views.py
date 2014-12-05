@@ -14,8 +14,8 @@ from tests.factories import ProjectFactory, AuthUserFactory, PrivateLinkFactory
 from website.addons.figshare.tests.utils import create_mock_figshare
 from website.addons.figshare import views
 from website.addons.figshare import utils
-
-from website.addons.figshare.views.config import serialize_settings
+from website.addons.figshare.views.config import serialize_settings, serialize_urls
+from website.util import web_url_for, rubeus
 
 from framework.auth import Auth
 
@@ -55,8 +55,10 @@ class TestViewsConfig(OsfTestCase):
 
         self.figshare = create_mock_figshare('test')
 
-    def test_import_auth(self):
+    @mock.patch('website.addons.figshare.api.Figshare.get_options')
+    def test_import_auth(self, mock_options):
         """Testing figshare_import_user_auth to ensure that auth gets imported correctly"""
+        mock_options.return_value = {'label': 'project title', 'value': 'project_123'}
         settings = self.node_settings
         settings.user_settings = None
         settings.save()
@@ -140,17 +142,60 @@ class TestViewsConfig(OsfTestCase):
         assert_equal(res.status_int, http.FORBIDDEN)
         assert_equal(nlogs, len(self.project.logs))
 
-    def test_serialize_settings_helper_returns_correct_auth_info(self):
+    @mock.patch('website.addons.figshare.api.Figshare.get_options')
+    def test_serialize_settings_helper_returns_correct_auth_info(self, mock_options):
+        mock_options.return_value = {'label': 'project title', 'value': 'project_123'}
         result = serialize_settings(self.node_settings, self.user, client=figshare_mock)
         assert_equal(result['nodeHasAuth'], self.node_settings.has_auth)
         assert_true(result['userHasAuth'])
         assert_true(result['userIsOwner'])
+        assert_true(result['validCredentials'])
 
-    def test_serialize_settings_for_user_no_auth(self):
+    @mock.patch('website.addons.figshare.api.Figshare.get_options')
+    def test_serialize_settings_for_user_no_auth(self, mock_options):
+        mock_options.return_value = {'label': 'project title', 'value': 'project_123'}
         no_addon_user = AuthUserFactory()
         result = serialize_settings(self.node_settings, no_addon_user, client=figshare_mock)
         assert_false(result['userIsOwner'])
         assert_false(result['userHasAuth'])
+
+    @mock.patch('website.addons.figshare.api.Figshare.get_options')
+    def test_serialize_settings_invalid_credentials(self, mock_options):
+        mock_options.return_value = 401
+        result = serialize_settings(self.node_settings, self.user, client=figshare_mock)
+        assert_false(result['validCredentials'])
+
+    @mock.patch('website.addons.figshare.api.Figshare.get_options')
+    def test_serialize_urls(self, mock_options):
+        mock_options.return_value = {'label': 'project title', 'value': 'project_123'}
+        node = self.node_settings.owner
+        urls = {
+            'config': node.api_url_for('figshare_config_put'),
+            'deauthorize': node.api_url_for('figshare_deauthorize'),
+            'auth': node.api_url_for('figshare_oauth_start'),
+            'importAuth': node.api_url_for('figshare_import_user_auth'),
+            'options': node.api_url_for('figshare_get_options'),
+            'files': node.web_url_for('collect_file_trees'),
+            # Endpoint for fetching only folders (including root)
+            'contents': node.api_url_for('figshare_hgrid_data_contents'),
+            'settings': web_url_for('user_addons')
+        }
+        result = serialize_urls(self.node_settings)
+        assert_equal(result, urls)
+
+    @mock.patch('website.addons.figshare.api.Figshare.get_options')
+    def test_check_oauth_credentials_valid(self, mock_options):
+        mock_options.return_value = {'label': 'project title', 'value': 'project_123'}
+        url = self.project.api_url_for('check_oauth_credentials')
+        result = self.app.get(url, auth=self.user.auth)
+        assert_equal(result.body, 'true')
+
+    @mock.patch('website.addons.figshare.api.Figshare.get_options')
+    def test_check_oauth_credentials_invalid(self, mock_options):
+        mock_options.return_value = 401
+        url = self.project.api_url_for('check_oauth_credentials')
+        result = self.app.get(url, auth=self.user.auth)
+        assert_equal(result.body, 'false')
 
 
 class TestUtils(OsfTestCase):
@@ -180,6 +225,7 @@ class TestUtils(OsfTestCase):
         self.node_settings.user_settings = self.user_settings
         self.node_settings.figshare_id = '436'
         self.node_settings.figshare_type = 'project'
+        self.node_settings.figshare_title = 'Where the Red Fig Grows'
         self.node_settings.save()
 
     @mock.patch('website.addons.figshare.api.Figshare.project')
@@ -226,10 +272,24 @@ class TestUtils(OsfTestCase):
         assert_equal(ref, None)
 
     @mock.patch('website.addons.figshare.api.Figshare.project')
-    def test_hgrid_deleted_project(self, project):
+    def test_hgrid_deleted_project_still_returns_root(self, project):
         project.return_value = None
-        ref = views.hgrid.figshare_hgrid_data(self.node_settings, self.auth)
-        assert_equal(ref, None)
+        response = views.hgrid.figshare_hgrid_data(self.node_settings, self.auth)
+        expected = [rubeus.build_addon_root(
+            self.node_settings, u'{0}:{1}'.format(self.node_settings.figshare_title, self.node_settings.figshare_id),
+            permissions=self.auth, nodeUrl=self.project.url, nodeApiUrl=self.project.api_url,
+        )]
+        assert_equal(response, expected)
+
+    @mock.patch('website.addons.figshare.api.Figshare.get_options')
+    def test_hgrid_invalid_credentials_returns_root(self, mock_options):
+        mock_options.return_value = 401
+        response = views.hgrid.figshare_hgrid_data(self.node_settings, self.auth)
+        expected = [rubeus.build_addon_root(
+            self.node_settings, u'{0}:{1}'.format(self.node_settings.figshare_title, self.node_settings.figshare_id),
+            permissions=self.auth, nodeUrl=self.project.url, nodeApiUrl=self.project.api_url,
+        )]
+        assert_equal(response, expected)
 
 
 class TestViewsCrud(OsfTestCase):

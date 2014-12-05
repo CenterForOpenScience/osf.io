@@ -52,6 +52,10 @@ settings_routes = {
             '/settings/figshare/oauth/',
             'delete', views.auth.figshare_oauth_delete_user, json_renderer
         ),
+        Rule(
+            '/settings/figshare/oauth/check',
+            'get', views.config.check_oauth_credentials, json_renderer
+        ),
         # OAuth: General
         Rule([
             '/addons/figshare/callback/<uid>/',

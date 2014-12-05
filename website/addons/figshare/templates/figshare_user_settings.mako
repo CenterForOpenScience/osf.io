@@ -13,11 +13,30 @@
             % endif
         </small>
     </h4>
+    <!-- Flashed Messages -->
+    <div class="help-block figshare-message"></div>
 </div>
 
 <%include file="profile/addon_permissions.mako" />
 
 <script type="text/javascript">
+
+    $.ajax({
+            type: 'GET',
+            url: '/api/v1/settings/figshare/oauth/check',
+            contentType: 'application/json',
+            dataType: 'json',
+            success: function(response) {
+                if (!response) {
+                    $("div.figshare-message").html("<p class='text-warning'>Could not retrieve Figshare settings at" +
+                            " this time. The Figshare addon credentials may no longer be valid." +
+                            " Try deauthorizing and reauthorizing Figshare. </p>");
+                } else if ("${has_auth}" === 'True' && "${nodes}" == '[]') {
+                    $("div.figshare-message").html("<p class='text-success addon-message'>" +
+                    "Add-on successfully authorized. To link this add-on to an OSF project, go to the" +
+                    " settings page of the project, enable Figshare, and choose content to connect.</p>")
+                }
+        }});
 
     $(document).ready(function() {
 

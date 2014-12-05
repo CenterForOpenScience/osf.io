@@ -18,6 +18,7 @@ class TestFigshareAPIWrapper(OsfTestCase):
         self.node.add_addon('figshare', auth=Auth(self.node.creator))
         self.node.save()
         self.node_settings = self.node.get_addon('figshare')
+        self.node_settings.figshare_id = '1234'
         self.client = Figshare()
 
     def test_get_project_url(self):
@@ -55,3 +56,9 @@ class TestFigshareAPIWrapper(OsfTestCase):
         self.client.get_project_collaborators(self.node_settings, 123)
         url = _get_project_url(self.node_settings, 123, 'collaborators')
         assert_equal(mock_send.call_args[0][0], url)
+
+    @mock.patch('website.addons.figshare.api.Figshare.get_options')
+    def test_project_invalid_credentials_returns_false(self, mock_options):
+        mock_options.return_value = 401
+        result = self.client.project(self.node_settings, self.node_settings.figshare_id)
+        assert_false(result)
