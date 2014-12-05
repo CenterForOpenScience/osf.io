@@ -439,7 +439,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
 
 
 # TODO: No more magicks
-def init_addon(app, addon_name, log_fp=None, routes=True):
+def init_addon(app, addon_name, routes=True):
     """Load addon module return its create configuration object.
 
     If `log_fp` is provided, the addon's log templates will be appended
@@ -453,20 +453,12 @@ def init_addon(app, addon_name, log_fp=None, routes=True):
         else None
 
     """
-    addon_path = os.path.join('website', 'addons', addon_name)
     import_path = 'website.addons.{0}'.format(addon_name)
 
     # Import addon module
     addon_module = importlib.import_module(import_path)
 
     data = vars(addon_module)
-
-    # Append add-on log templates to main log templates
-    log_templates = os.path.join(
-        addon_path, 'templates', 'log_templates.mako'
-    )
-    if os.path.exists(log_templates) and log_fp:
-        log_fp.write(open(log_templates, 'r').read())
 
     # Add routes
     if routes:
