@@ -123,8 +123,8 @@ def serialize_revision(node, record, version, index):
             'url': version.creator.url,
         },
         'date': (
-            version.date_modified.isoformat()
-            if version.date_modified
+            version.date_created.isoformat()
+            if not version.pending
             else None
         ),
         'downloads': record.get_download_count(version=index),
@@ -259,7 +259,7 @@ def get_filename(version_idx, file_version, file_record):
     name, ext = os.path.splitext(file_record.name)
     return u'{name}-{date}{ext}'.format(
         name=name,
-        date=file_version.date_modified.isoformat(),
+        date=file_version.date_created.isoformat(),
         ext=ext,
     )
 
