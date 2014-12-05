@@ -904,6 +904,15 @@ form.form-horizontal.form-horizontal-narrow .control-group {
 
 
 /* Project page */
+
+.node-description {
+    display: inline;
+
+}
+
+#description {
+    vertical-align: top;
+}
 #addContributors table {
     border-collapse: separate;
     border-spacing: 5px;

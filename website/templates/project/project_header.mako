@@ -25,7 +25,7 @@
 <div id="projectScope">
     <header class="subhead" id="overview">
         <div class="row">
-            <div class="col-sm-6 col-md-7 cite-container">
+            <div class="col-sm-7 col-md-8 cite-container">
                 % if parent_node['id']:
                     % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
                         <h1 class="node-parent-title">
@@ -38,10 +38,13 @@
                     % endif
                 % endif
                 <h1 class="node-title">
-                    <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
+                    <a href="${node['url']}"><span id="nodeTitleEditable" class="overflow">${node['title']}</span></a>
+                    <a id="nodeTitleEditControl">
+                        <i class="icon-pencil" title="Edit the title"></i>
+                    </a>
                 </h1>
             </div>
-            <div class="col-sm-6 col-md-5">
+            <div class="col-sm-5 col-md-4">
                 <div class="btn-toolbar node-control pull-right">
                     <div class="btn-group">
                     % if not node["is_public"]:
@@ -128,17 +131,33 @@
                         <a href="${node['url']}register/${meta['name_no_ext']}">${meta['name_clean']}</a>
                     % endfor
                 % endif
-                <br />Date Created:
+            </div>
+        </div>
+        <div id="dateCreated" class="row">
+            <div class="col-sm-12">
+                Date Created:
                 <span data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}" class="date node-date-created"></span>
                 | Last Updated:
                 <span data-bind="text: dateModified.local, tooltip: {title: dateModified.utc}" class="date node-last-modified-date"></span>
+
+                </div>
+        </div>
+        <div id="descriptionRow" class="row">
+            <div class="col-sm-12">
                 % if parent_node['id']:
-                    <br />Category: <span class="node-category">${node['category']}</span>
+                    Category: <span class="node-category">${node['category']}</span>
                 % elif node['description'] or 'write' in user['permissions']:
-                    <br /><span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
+                    <span id="description">Description:
+                        <a id="nodeDescriptionEditControl">
+                            <i class="icon-pencil" title="Edit the description"></i>
+                        </a>
+                    </span>
+                    <span id="nodeDescriptionEditable" class="node-description overflow">${node['description']}</span>
+
                 % endif
             </div>
         </div>
+        <br />
         <nav id="projectSubnav" class="navbar navbar-default" role="navigation">
             <div class="container-fluid">
                 <div class="navbar-header">

@@ -139,6 +139,7 @@
                 type:  'text',
                 pk:    self._id,
                 url:   self.apiUrl + 'edit/',
+                toggle: 'manual',
                 ajaxOptions: {
                     type: 'POST',
                     dataType: 'json',
@@ -166,12 +167,21 @@
                     }
                 }
             }));
+            $('#nodeTitleEditControl').click(function(e){
+                e.stopPropagation();
+                $('#nodeTitleEditable').editable('toggle');
+            });
             $('#nodeDescriptionEditable').editable($.extend({}, editableOptions, {
                 name:  'description',
                 title: 'Edit Description',
                 emptytext: 'No description',
-                emptyclass: 'text-muted'
+                emptyclass: 'text-muted',
+                type: 'textarea'
             }));
+            $('#nodeDescriptionEditControl').click(function(e){
+                e.stopPropagation();
+                $('#nodeDescriptionEditable').editable('toggle');
+            });
         }
         /**
          * Add project to the Project Organizer.
