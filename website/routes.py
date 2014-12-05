@@ -414,6 +414,20 @@ def make_url_map(app):
         ),
 
         Rule(
+            '/settings/account/',
+            'get',
+            profile_views.user_account,
+            OsfWebRenderer('profile/account.mako'),
+        ),
+
+        Rule(
+            '/settings/account/password',
+            'post',
+            profile_views.user_account_password,
+            OsfWebRenderer('profile/account.mako'),
+        ),
+
+        Rule(
             '/settings/addons/',
             'get',
             profile_views.user_addons,

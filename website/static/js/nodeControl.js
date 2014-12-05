@@ -120,7 +120,7 @@ var ProjectViewModel = function(data) {
     self.category = data.node.category;
     self.isRegistration = data.node.is_registration;
     self.user = data.user;
-    self.nodeIsPublic = data.node.nodeType === PUBLIC;
+    self.nodeIsPublic = data.node.is_public;
     self.nodeType = data.node.node_type;
     // The button text to display (e.g. "Watch" if not watching)
     self.watchButtonDisplay = ko.computed(function() {

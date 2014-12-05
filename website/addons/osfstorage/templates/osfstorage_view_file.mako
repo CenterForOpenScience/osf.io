@@ -5,8 +5,8 @@
 <div class="scripted" id="revisionScope">
 
     <ol class="breadcrumb">
-        <li><a href="{{ urls.files }}">{{ node }}</a></li>
-        <li class="active overflow">{{ path }}</li>
+        <li><a href="{{ urls.files }}" data-bind="html: node"></a></li>
+        <li class="active overflow" data-bind="html: path"></li>
     </ol>
 
     <a
@@ -64,15 +64,16 @@
 
 <script type="text/javascript">
     window.contextVars = window.contextVars;
-    window.contextVars.filePath = ${file_path};
+    window.contextVars.filePath = '${file_path | h}';
     window.contextVars.currentUser = window.contextVars.currentUser || {};
     window.contextVars.currentUser.canEdit = ${int(user['can_edit'])};
     window.contextVars.node = window.contextVars || {};
+    window.contextVars.node.title = '${node['title'] | h}';
     window.contextVars.node.urls = window.contextVars.node.urls || {};
     window.contextVars.node.urls.files = ${files_url};
     window.contextVars.node.urls.download = ${download_url};
     window.contextVars.node.urls.delete = ${delete_url};
     window.contextVars.node.urls.revisions = ${revisions_url};
 </script>
-<script src="/static/public/js/osfstorage/file-detail.js"></script>
+
 </%def>

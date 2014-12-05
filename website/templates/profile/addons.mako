@@ -10,6 +10,7 @@
         <div class="panel panel-default">
             <ul class="nav nav-stacked nav-pills">
                 <li><a href="${ web_url_for('user_profile') }">Profile Information</a></li>
+                <li><a href="${ web_url_for('user_account') }">Account Settings</a></li>
                 <li><a href="#">Configure Add-ons</a></li>
             </ul>
         </div><!-- end sidebar -->
