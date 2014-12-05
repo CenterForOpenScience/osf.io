@@ -21,10 +21,16 @@ from website.addons.base import init_addon
 from website.project.model import ensure_schemas
 
 
-def init_addons(settings, routes=True):
+def init_addons(settings, routes=True, log_fp=None):
+    """Initialize each addon in settings.ADDONS_REQUESTED.
+
+    :param module settings: The settings module.
+    :param bool routes: Add each addon's routing rules to the URL map.
+    :param file log_fp: File pointer for the built logs file.
+    """
     ADDONS_AVAILABLE = []
     for addon_name in settings.ADDONS_REQUESTED:
-        addon = init_addon(app, addon_name, routes)
+        addon = init_addon(app, addon_name, routes=True, log_fp=log_fp)
         if addon:
             ADDONS_AVAILABLE.append(addon)
     settings.ADDONS_AVAILABLE = ADDONS_AVAILABLE
@@ -83,10 +89,10 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
     with open(settings.BUILT_TEMPLATES, 'w') as build_fp:
         init_log_file(build_fp, settings)
 
-    try:
-        init_addons(settings, routes)
-    except AssertionError as error:  # Addon Route map has already been created
-        logger.error(error)
+        try:
+            init_addons(settings, routes, log_fp=build_fp)
+        except AssertionError as error:  # Addon Route map has already been created
+            logger.error(error)
 
     app.debug = settings.DEBUG_MODE
     if set_backends:
