@@ -62,15 +62,15 @@
                         <!-- ko ifnot: inDashboard -->
                            <a data-bind="click: addToDashboard, tooltip: {title: 'Add to Dashboard Folder',
                             placement: 'bottom'}" class="btn btn-default">
-                               <i class="icon-folder-open"></i>
-                               <i class="icon-plus"></i>
+                               <i class="fa fa-folder-open"></i>
+                               <i class="fa fa-plus"></i>
                            </a>
                         <!-- /ko -->
                         <!-- ko if: inDashboard -->
                            <a data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from Dashboard Folder',
                             placement: 'bottom'}" class="btn btn-default">
-                               <i class="icon-folder-open"></i>
-                               <i class="icon-minus"></i>
+                               <i class="fa fa-folder-open"></i>
+                               <i class="fa fa-minus"></i>
                            </a>
                         <!-- /ko -->
 
