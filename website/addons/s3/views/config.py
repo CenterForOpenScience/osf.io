@@ -132,6 +132,15 @@ def s3_node_settings(auth, user_addon, node_addon, **kwargs):
 
         adjust_cors(S3Wrapper.from_addon(node_addon))
 
+@must_be_logged_in
+@must_have_addon('s3', 'node')
+@must_not_be_registration
+def s3_node_settings_config(node_addon, **kwargs):
+    user_settings = node_addon.user_settings
+    if user_settings and user_settings.has_auth:
+        return {'validCredentials': has_access(user_settings.access_key, user_settings.secret_key)}
+
+    return {'validCredentials': True}
 
 @must_have_permission('write')
 @must_have_addon('s3', 'node')
@@ -140,6 +149,13 @@ def s3_remove_node_settings(auth, node_addon, **kwargs):
     node_addon.deauthorize(auth=auth, save=True)
     return {}
 
+
+@must_be_logged_in
+@must_have_addon('s3', 'user')
+def s3_user_settings_config(user_addon, **kwargs):
+    if user_addon.has_auth:
+        return {'validCredentials': has_access(user_addon.access_key, user_addon.secret_key)}
+    return {'validCredentials': True}
 
 @must_be_logged_in
 @must_have_addon('s3', 'user')

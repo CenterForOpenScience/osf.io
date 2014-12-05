@@ -59,15 +59,6 @@
 
         </div> <!-- End form group -->
 
-    % elif node_has_auth and bucket_list is None:
-
-        <div>
-            <i class="icon-spinner icon-large icon-spin"></i>
-            <span class="text-info">
-                S3 access keys loading. Please wait a moment and refresh the page.
-            </span>
-        </div>
-
     % elif not node_has_auth and not user_has_auth:
 
         <div class="form-group">
@@ -87,6 +78,7 @@
     ${self.on_submit()}
 
     <div class="addon-settings-message" style="display: none; padding-top: 10px;"></div>
+    <div class="s3-settings-message" style="display: none; padding-top: 10px;"></div>
 
 </form>
 
@@ -136,13 +128,39 @@
         });
 
         </script>
+    % endif
 
-    % else:
+    % if node_has_auth:
 
         <script type="text/javascript">
+
             $(document).ready(function() {
-                $('#addonSettings${addon_short_name.capitalize()}').on('submit', AddonHelper.onSubmitSettings);
-            });
+                var $this = $(this);
+                var url = nodeApiUrl + 's3/settings/';
+
+                var req = $.getJSON(url, function (res) {
+                    var validCredentials = res.validCredentials;
+                    if (!validCredentials) {
+                        if ("${user_is_owner}" === 'True') {
+                            var message = 'Could not retrieve Amazon S3 settings at this time.' +
+                                    ' The addon credentials may no longer be valid.' +
+                                    ' Try deauthorizing and reauthorizing S3 on your user settings page.';
+                        } else {
+                            message = 'Could not retrieve Amazon S3 settings at this time.' +
+                                    ' The S3 addon credentials may no longer be valid.' +
+                                    ' Contact ' + '${owner}' + ' to verify.'
+                        }
+                        $('.s3-settings-message').text(message).removeAttr('style').addClass('text-warning');
+                    } else if ("${bucket_list}" == 'None') {
+                        $('.s3-settings-message').html("<i class='icon-spinner icon-large icon-spin'></i>"
+                            + "<span class='text-info'> S3 access keys loading. Please wait a moment and refresh the page."
+                            + "</span>").removeAttr('style');
+                    }
+                });
+
+                    $('#addonSettings${addon_short_name.capitalize()}').on('submit', AddonHelper.onSubmitSettings);
+                });
+
         </script>
 
     % endif

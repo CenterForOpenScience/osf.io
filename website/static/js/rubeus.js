@@ -272,7 +272,7 @@
     var default_status = {
         FETCH_SUCCESS: '',
         FETCH_START: '<span class="text-muted">Fetching contents. . .</span>',
-        FETCH_ERROR: '<span class="text-info">Could not retrieve data. Please refresh the page and try again.</span>',
+        FETCH_ERROR: '<span class="text-danger">Could not retrieve data. Please refresh the page and try again.</span>',
 
         UPLOAD_SUCCESS: '<span class="text-success">Successfully uploaded</span>',
         NO_CHANGES: '<span class="text-info">No changes made from previous version. Removing duplicate row. . .</span>',

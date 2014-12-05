@@ -22,6 +22,21 @@ settings_routes = {
             json_renderer
         ),
         Rule(
+            '/settings/s3/',
+            'get',
+            views.config.s3_user_settings_config,
+            json_renderer
+        ),
+        Rule(
+            [
+                '/project/<pid>/s3/settings/',
+                '/project/<pid>/node/<nid>/s3/settings/',
+            ],
+            'get',
+            views.config.s3_node_settings_config,
+            json_renderer,
+        ),
+        Rule(
             [
                 '/project/<pid>/s3/settings/',
                 '/project/<pid>/node/<nid>/s3/settings/',

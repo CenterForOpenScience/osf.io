@@ -148,6 +148,20 @@ class TestS3ViewsConfig(OsfTestCase):
         self.user_settings.reload()
         assert_equals(self.user_settings.access_key, 'scout')
 
+    @mock.patch('website.addons.s3.views.config.has_access')
+    def test_s3_user_settings_config_valid_credentials(self, mock_access):
+        mock_access.return_value = True
+        url = self.project.api_url_for('s3_user_settings_config')
+        res = self.app.get(url, auth=self.user.auth).maybe_follow(auth=self.user.auth)
+        assert_equal('{"validCredentials": true}', res.body)
+
+    @mock.patch('website.addons.s3.views.config.has_access')
+    def test_s3_user_settings_config_invalid_credentials(self, mock_access):
+        mock_access.return_value = False
+        url = self.project.api_url_for('s3_user_settings_config')
+        res = self.app.get(url, auth=self.user.auth).maybe_follow(auth=self.user.auth)
+        assert_equal('{"validCredentials": false}', res.body)
+
     @mock.patch('website.addons.s3.model.AddonS3UserSettings.remove_iam_user')
     def test_s3_remove_user_settings(self, mock_access):
         mock_access.return_value = True
@@ -249,6 +263,19 @@ class TestS3ViewsConfig(OsfTestCase):
         rv = self.app.get(url, auth=self.user.auth)
         assert_true('mybucket' in rv.body)
 
+    @mock.patch('website.addons.s3.views.config.has_access')
+    def test_node_settings_config_valid_credentials(self, mock_access):
+        mock_access.return_value = True
+        url = self.project.api_url_for('s3_node_settings_config')
+        res = self.app.get(url, auth=self.user.auth).maybe_follow(auth=self.user.auth)
+        assert_equal('{"validCredentials": true}', res.body)
+
+    @mock.patch('website.addons.s3.views.config.has_access')
+    def test_node_settings_config_invalid_credentials(self, mock_access):
+        mock_access.return_value = False
+        url = self.project.api_url_for('s3_node_settings_config')
+        res = self.app.get(url, auth=self.user.auth).maybe_follow(auth=self.user.auth)
+        assert_equal('{"validCredentials": false}', res.body)
 
 class TestS3ViewsCRUD(OsfTestCase):
 
