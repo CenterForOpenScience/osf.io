@@ -46,20 +46,18 @@ def handle_search_errors(func):
 
 @handle_search_errors
 def search_search(**kwargs):
-    _type = kwargs.get('type', '_all')
+    _type = kwargs.get('type', None)
 
     tick = time.time()
 
     if request.method == 'POST':
-        query = request.get_json()
+        results = search.search(request.get_json(), doc_type=_type)
     elif request.method == 'GET':
         q = request.args.get('q', '*')
         # TODO Match javascript params?
         start = request.args.get('from', '0')
         size = request.args.get('size', '10')
-        query = build_query(q, start, size)
-
-    results = search.search(query, search_type=_type)
+        results = search.search(build_query(q, start, size), doc_type=_type)
 
     results['time'] = round(time.time() - tick, 2)
     return results

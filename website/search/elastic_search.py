@@ -10,7 +10,11 @@ import unicodedata
 
 import six
 
-import pyelasticsearch
+from elasticsearch import (
+    Elasticsearch,
+    RequestError,
+    NotFoundError
+)
 
 from requests.exceptions import ConnectionError
 
@@ -38,31 +42,33 @@ ALIASES = {
 INDICES = ['website']
 
 try:
-    elastic = pyelasticsearch.ElasticSearch(
+    es = Elasticsearch(
         settings.ELASTIC_URI,
-        timeout=settings.ELASTIC_TIMEOUT
+        request_timeout=settings.ELASTIC_TIMEOUT
     )
-    logging.getLogger('pyelasticsearch').setLevel(logging.WARN)
+    logging.getLogger('elasticsearch').setLevel(logging.WARN)
+    logging.getLogger('elasticsearch.trace').setLevel(logging.WARN)
+    logging.getLogger('urllib3').setLevel(logging.WARN)
     logging.getLogger('requests').setLevel(logging.WARN)
-    elastic.health()
+    es.cluster.health(wait_for_status='yellow')
 except ConnectionError as e:
     sentry.log_exception()
     sentry.log_message("The SEARCH_ENGINE setting is set to 'elastic', but there "
             "was a problem starting the elasticsearch interface. Is "
             "elasticsearch running?")
-    elastic = None
+    es = None
 
 
 def requires_search(func):
     def wrapped(*args, **kwargs):
-        if elastic is not None:
+        if es is not None:
             try:
                 return func(*args, **kwargs)
             except ConnectionError:
                 raise exceptions.SearchUnavailableError('Could not connect to elasticsearch')
-            except pyelasticsearch.exceptions.ElasticHttpNotFoundError as e:
+            except NotFoundError as e:
                 raise exceptions.IndexNotFoundError(e.error)
-            except pyelasticsearch.exceptions.ElasticHttpError as e:
+            except RequestError as e:
                 if 'ParseException' in e.error:
                     raise exceptions.MalformedQueryError(e.error)
                 if 'MapperParsingException' in e.error:
@@ -83,12 +89,12 @@ def get_counts(count_query, clean=True):
             }
         }
     }
-    #pyelastic search is dumb
-    res = elastic.send_request('GET', ['_all', '_search'], body=count_query, query_params={'search_type': 'count'})
+
+    res = es.search(index='_all', doc_type=None, search_type='count', body=count_query)
+
     counts = {x['key']: x['doc_count'] for x in res['aggregations']['counts']['buckets'] if x['key'] in ALIASES.keys()}
 
     counts['total'] = sum([val for val in counts.values()])
-
     return counts
 
 
@@ -100,19 +106,19 @@ def get_tags(query, index):
         }
     }
 
-    results = elastic.search(query, index=index, doc_type='_all')
+    results = es.search(index=index, doc_type=None, body=query)
     tags = results['aggregations']['tag_cloud']['buckets']
 
     return tags
 
 
 @requires_search
-def search(query, index='website', search_type='_all', raw=False):
+def search(query, index='website', doc_type='_all', raw=False):
     """Search for a query
 
     :param query: The substring of the username/project name/tag to search for
     :param index:
-    :param search_type:
+    :param doc_type:
 
     :return: List of dictionaries, each containing the results, counts, tags and typeAliases
         results: All results returned by the query, that are within the index and search type
@@ -124,7 +130,7 @@ def search(query, index='website', search_type='_all', raw=False):
     count_query = copy.deepcopy(query)
 
     # Run the real query and get the results
-    raw_results = elastic.search(query, index=index, doc_type=search_type)
+    raw_results = es.search(index=index, doc_type=doc_type, body=query)
 
     if raw:
         return raw_results
@@ -262,10 +268,7 @@ def update_node(node, index='website'):
         ]:
             elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
 
-        try:
-            elastic.update(index, category, id=elastic_document_id, doc=elastic_document, upsert=elastic_document, refresh=True)
-        except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
-            elastic.index(index, category, doc=elastic_document, id=elastic_document_id, overwrite_existing=True, refresh=True)
+        es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
 
 def generate_social_links(social):
     social_links = {}
@@ -291,10 +294,9 @@ def generate_social_links(social):
 def update_user(user):
     if not user.is_active():
         try:
-            elastic.delete('website', 'user', user._id, refresh=True)
-            logger.debug('User ' + user._id + ' successfully removed from the Elasticsearch index')
-        except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
-            logger.warn('User ' + user._id + 'not in the Elasticsearch index')
+            es.delete(index='website', doc_type='user', id=user._id, refresh=True, ignore=[404])
+        except NotFoundError:
+            pass
         return
 
     names = dict(
@@ -329,10 +331,7 @@ def update_user(user):
         'boost': 2,  # TODO(fabianvf): Probably should make this a constant or something
     }
 
-    try:
-        elastic.update('website', 'user', doc=user_doc, id=user._id, upsert=user_doc, refresh=True)
-    except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
-        elastic.index('website', 'user', id=user._id, doc=user_doc, upsert=user_doc, refresh=True)
+    es.index(index='website', doc_type='user', body=user_doc, id=user._id, refresh=True)
 
 
 @requires_search
@@ -343,10 +342,7 @@ def delete_all():
 
 @requires_search
 def delete_index(index):
-    try:
-        elastic.delete_index(index)
-    except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
-        logger.debug('Index {} does not exist; was unable to delete'.format(index))
+    es.indices.delete(index, ignore=[404])
 
 
 @requires_search
@@ -361,21 +357,15 @@ def create_index():
             },
         }
     }
-    try:
-        elastic.create_index('website')
-        for type_ in ['project', 'component', 'registration', 'user']:
-            elastic.put_mapping('website', type_, mapping)
-    except pyelasticsearch.exceptions.IndexAlreadyExistsError:
-        pass  # No harm done
+    es.indices.create('website', ignore=[400])
+    for type_ in ['project', 'component', 'registration', 'user']:
+        es.indices.put_mapping(index='website', doc_type=type_, body=mapping, ignore=[400, 404])
 
 
 @requires_search
 def delete_doc(elastic_document_id, node, index='website'):
     category = 'registration' if node.is_registration else node.project_or_component
-    try:
-        elastic.delete(index, category, elastic_document_id, refresh=True)
-    except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
-        logger.debug('Document {} does not exist; was unable to delete'.format(elastic_document_id))
+    es.delete(index=index, doc_type=category, id=elastic_document_id, refresh=True, ignore=[404])
 
 
 @requires_search
@@ -400,7 +390,7 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
     query = "  AND ".join('{}*~'.format(item) for item in items) + \
             "".join(' NOT "{}"'.format(excluded) for excluded in exclude)
 
-    results = search(build_query(query, start=start, size=size), index='website', search_type='user')
+    results = search(build_query(query, start=start, size=size), index='website', doc_type='user')
     docs = results['results']
     pages = math.ceil(results['counts'].get('user', 0) / size)
 
