@@ -157,7 +157,7 @@ def user_account_password(auth, **kwargs):
         user.change_password(old_password, new_password, confirm_password)
         user.save()
     except ChangePasswordError as error:
-        push_status_message(', '.join(error.messages) + '.', kind='error')
+        push_status_message('<br />'.join(error.messages) + '.', kind='warning')
     else:
         push_status_message('Password updated successfully.', kind='info')
 
