@@ -445,8 +445,6 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
 
 @requires_search
 def update_metadata(metadata):
-    index = "metadata"
     app_id = metadata.namespace
     data = metadata.to_json()
-    data['category'] = 'metadata'
-    elastic.update(index=index, doc_type=app_id, upsert=data, doc=data, id=metadata._id, refresh=True)
+    es.index(index='metadata', doc_type=app_id, body=data, id=metadata._id, refresh=True)
