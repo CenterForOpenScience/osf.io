@@ -59,7 +59,7 @@
         };
 
         self.createFailure = function() {
-            bootbox.alert('Could not create a new project. Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
+            $.osf.growl('Could not create a new project.', 'Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
         };
 
         self.serialize = function() {
@@ -111,7 +111,7 @@
                 '/api/v1/search/node/',
                 {
                     includePublic: true,
-                    query: q,
+                    query: q
                 }
             ).done(function(data) {
                 var results = [];

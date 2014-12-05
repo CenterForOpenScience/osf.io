@@ -1,13 +1,13 @@
 import re
+import sha
+import hmac
 import time
 import base64
 import urllib
 import hashlib
-import hmac
-import sha
 
-from urllib import quote
 from bson import ObjectId
+
 from dateutil.parser import parse
 
 from boto.iam import IAMConnection
@@ -51,31 +51,6 @@ def adjust_cors(s3wrapper, clobber=False):
 
     # Save changes
     s3wrapper.set_cors_rules(rules)
-
-
-def wrapped_key_to_json(wrapped_key, node):
-    urls = build_urls(node, quote(wrapped_key.s3Key.key.encode('utf-8')))
-    rv = {
-        rubeus.KIND: _key_type_to_rubeus(wrapped_key.type),
-        'name': wrapped_key.name,
-        'size': (wrapped_key.size, wrapped_key.size) if wrapped_key.size is not None else '--',
-        'ext': wrapped_key.extension if wrapped_key.extension is not None else '--',
-        'lastMod': wrapped_key.lastMod.strftime("%Y/%m/%d %I:%M %p") if wrapped_key.lastMod is not None else '--',
-        'urls': {
-            # TODO: Don't use ternary operators here
-            'download': urls['download'] if wrapped_key.type == 'file' else None,
-            'delete': urls['delete'] if wrapped_key.type == 'file' else None,
-            'view': urls['view'] if wrapped_key.type == 'file' else None,
-            'fetch': node.api_url + 's3/hgrid/' + wrapped_key.s3Key.key if wrapped_key.type == 'folder' else None,
-            'upload': urls['upload'],
-        }
-    }
-    if wrapped_key.type == 'folder':
-        rv.update({
-            'nodeUrl': node.url,
-            'nodeApiUrl': node.api_url,
-        })
-    return rv
 
 
 def get_bucket_drop_down(user_settings):
@@ -160,20 +135,21 @@ def remove_osf_user(user_settings):
 
 
 def build_urls(node, file_name, url=None, etag=None, vid=None):
+    file_name = file_name.rstrip('/')
+
     rv = {
-        'upload': u'{node_api}s3/'.format(node_api=node.api_url),
-        'download': u'{node_url}s3/{file_name}/download/{vid}'.format(node_url=node.url, file_name=file_name, vid='' if not vid else '?vid={0}'.format(vid)),
-        'view': u'{node_url}s3/{file_name}/'.format(node_url=node.url, file_name=file_name),
-        'delete': u'{node_api}s3/{file_name}/'.format(node_api=node.api_url, file_name=file_name),
-        'render': u'{node_api}s3/{file_name}/render/{etag}'.format(node_api=node.api_url,
-            file_name=file_name, etag='' if not etag else '?etag={0}'.format(etag)),
-        'fetch': u'{node_api}s3/hgrid/{file_name}'.format(node_api=node.api_url, file_name=file_name),
+        'upload': node.api_url_for('s3_upload'),
+        'view': node.web_url_for('s3_view', path=file_name),
+        'delete': node.api_url_for('s3_delete', path=file_name),
         'info': node.api_url_for('file_delete_info', path=file_name),
+        'fetch': node.api_url_for('s3_hgrid_data_contents', path=file_name),
+        'download': u'{}{}'.format(node.api_url_for('s3_download', path=file_name), '' if not vid else '?vid={0}'.format(vid)),
+        'render': u'{}{}'.format(node.api_url_for('ping_render', path=file_name), '' if not etag else '?etag={0}'.format(etag)),
     }
-    if not url:
-        return rv
-    else:
+
+    if url:
         return rv[url]
+    return rv
 
 
 def get_cache_file_name(key_name, etag):

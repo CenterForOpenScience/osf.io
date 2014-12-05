@@ -4,30 +4,25 @@ import logging
 
 from flask import request
 
-from framework.auth import Auth, get_current_user, get_api_key, get_current_node
-from framework.transactions.handlers import no_auto_transaction
-from framework.auth.decorators import collect_auth
 from framework.exceptions import HTTPError
+from framework.auth.decorators import collect_auth
+from framework.transactions.handlers import no_auto_transaction
 
 
-from website.project.model import NodeLog, has_anonymous_link
-from website.project.decorators import must_be_valid_project
 from website.views import serialize_log
+from website.project.model import NodeLog
+from website.project.model import has_anonymous_link
+from website.project.decorators import must_be_valid_project
 
 logger = logging.getLogger(__name__)
 
 
+@collect_auth
 @no_auto_transaction
-def get_log(log_id):
+def get_log(auth, log_id):
 
     log = NodeLog.load(log_id)
     node_to_use = log.node
-
-    auth = Auth(
-        user=get_current_user(),
-        api_key=get_api_key(),
-        api_node=get_current_node(),
-    )
 
     if not node_to_use.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
