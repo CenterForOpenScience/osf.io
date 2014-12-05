@@ -5,8 +5,8 @@
 <div class="scripted" id="revisionScope">
 
     <ol class="breadcrumb">
-        <li><a href="{{ urls.files }}">{{ node }}</a></li>
-        <li class="active overflow">{{ path }}</li>
+        <li><a href="{{ urls.files }}" data-bind="html: node"></a></li>
+        <li class="active overflow" data-bind="html: path"></li>
     </ol>
 
     <a
@@ -66,8 +66,8 @@
     $script(['/static/addons/osfstorage/storageRevisions.js'], function() {
         var revisionTable = new RevisionTable(
             '#revisionScope',
-            '${node['title']}',
-            '${file_path}',
+            '${node['title'] | h}',
+            '${file_path | h}',
             ${int(user['can_edit'])},
             {
                 files: '${files_url}',

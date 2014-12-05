@@ -8,15 +8,19 @@ from dateutil.parser import parse as parse_date
 from flask import request
 from modularodm.exceptions import ValidationError
 
-from framework.exceptions import HTTPError
 from framework.auth import utils as auth_utils
 from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
+from framework.auth.exceptions import ChangePasswordError
+from framework.exceptions import HTTPError
+from framework.flask import redirect  # VOL-aware redirect
+from framework.status import push_status_message
 
 from website import settings
 from website.models import User
 from website.models import ApiKey
 from website.views import _render_nodes
+from website.util import web_url_for
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
 from website.profile import utils as profile_utils
@@ -132,6 +136,33 @@ def user_profile(auth, **kwargs):
         'user_id': user._id,
         'user_api_url': user.api_url,
     }
+
+
+@must_be_logged_in
+def user_account(auth, **kwargs):
+    user = auth.user
+    return {
+        'user_id': user._id,
+    }
+
+
+@must_be_logged_in
+def user_account_password(auth, **kwargs):
+    user = auth.user
+    old_password = request.form.get('old_password', None)
+    new_password = request.form.get('new_password', None)
+    confirm_password = request.form.get('confirm_password', None)
+
+    try:
+        user.change_password(old_password, new_password, confirm_password)
+        user.save()
+    except ChangePasswordError as error:
+        push_status_message(', '.join(error.messages) + '.', kind='error')
+    else:
+        push_status_message('Password updated successfully.', kind='info')
+
+    return redirect(web_url_for('user_account'))
+
 
 @must_be_logged_in
 def user_addons(auth, **kwargs):

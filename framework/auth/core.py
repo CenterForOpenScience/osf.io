@@ -20,6 +20,7 @@ from framework import analytics
 from framework.guid.model import GuidStoredObject
 from framework.addons import AddonModelMixin
 from framework.auth import utils
+from framework.auth.exceptions import ChangePasswordError
 from framework.exceptions import PermissionsError
 
 from website import settings, filters, security
@@ -427,13 +428,32 @@ class User(GuidStoredObject, AddonModelMixin):
     def set_password(self, raw_password):
         '''Set the password for this user to the hash of ``raw_password``.'''
         self.password = generate_password_hash(raw_password)
-        return None
 
     def check_password(self, raw_password):
         '''Return a boolean of whether ``raw_password`` was correct.'''
         if not self.password or not raw_password:
             return False
         return check_password_hash(self.password, raw_password)
+
+    def change_password(self, raw_old_password, raw_new_password, raw_confirm_password):
+        '''Change the password for this user to the hash of ``raw_new_password``.'''
+        raw_old_password = (raw_old_password or '').strip()
+        raw_new_password = (raw_new_password or '').strip()
+        raw_confirm_password = (raw_confirm_password or '').strip()
+
+        issues = []
+        if not self.check_password(raw_old_password):
+            issues.append('Old password is invalid')
+        if not raw_old_password or not raw_new_password or not raw_confirm_password:
+            issues.append('Passwords cannot be blank')
+        if raw_new_password != raw_confirm_password:
+            issues.append('Password does not match the confirmation')
+        if len(raw_new_password) < 6:
+            issues.append('Password should be at least 6 characters')
+
+        if issues:
+            raise ChangePasswordError(issues)
+        self.set_password(raw_new_password)
 
     def add_email_verification(self, email):
         """Add an email verification token for a given email."""

@@ -19,6 +19,7 @@ from modularodm import Q
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
 from framework.auth import User, Auth
+from framework.auth.exceptions import ChangePasswordError
 from framework.auth.utils import impute_names_model
 from framework.bcrypt import check_password_hash
 from website import filters, language, settings
@@ -385,6 +386,65 @@ class TestUser(OsfTestCase):
         user.save()
         assert_true(user.check_password('ghostrider'))
         assert_false(user.check_password('ghostride'))
+
+    def test_change_password(self):
+        old_password = 'password'
+        new_password = 'new password'
+        confirm_password = new_password
+        self.user.set_password(old_password)
+        self.user.save()
+        self.user.change_password(old_password, new_password, confirm_password)
+        assert_true(self.user.check_password(new_password))
+
+    def test_change_password_invalid(self, old_password=None, new_password=None, confirm_password=None,
+                                     error_message='Old password is invalid'):
+        self.user.set_password('password')
+        self.user.save()
+        with assert_raises(ChangePasswordError) as error:
+            self.user.change_password(old_password, new_password, confirm_password)
+            self.user.save()
+        assert_in(error_message, error.exception.message)
+        assert_false(self.user.check_password(new_password))
+
+    def test_change_password_invalid_old_password(self):
+        self.test_change_password_invalid(
+            'invalid old password',
+            'new password',
+            'new password',
+            'Old password is invalid',
+        )
+
+    def test_change_password_invalid_new_password_length(self):
+        self.test_change_password_invalid(
+            'password',
+            '12345',
+            '12345',
+            'Password should be at least 6 characters',
+        )
+
+    def test_change_password_invalid_confirm_password(self):
+        self.test_change_password_invalid(
+            'password',
+            'new password',
+            'invalid confirm password',
+            'Password does not match the confirmation',
+        )
+
+    def test_change_password_invalid_blank_password(self, old_password='', new_password='', confirm_password=''):
+        self.test_change_password_invalid(
+            old_password,
+            new_password,
+            confirm_password,
+            'Passwords cannot be blank',
+        )
+
+    def test_change_password_invalid_blank_new_password(self):
+        for password in (None, '', '      '):
+            self.test_change_password_invalid_blank_password('password', password, 'new password')
+
+    def test_change_password_invalid_blank_confirm_password(self):
+        for password in (None, '', '      '):
+            self.test_change_password_invalid_blank_password('password', 'new password', password)
 
     def test_url(self):
         assert_equal(
