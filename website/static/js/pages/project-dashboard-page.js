@@ -7,6 +7,9 @@ var LogFeed = require('../logFeed.js');
 var pointers = require('../pointers.js');
 
 var Comment = require('../comment.js');
+var $osf = require('osf-helpers');
+var bootbox = require('bootbox');
+var Raven = require('raven-js');
 
 
 // Since we don't have an Buttons/Status column, we append status messages to the
@@ -43,3 +46,24 @@ if ($comments.length) {
     var hasChildren = window.contextVars.node.hasChildren;
     Comment.init('#commentPane', userName, canComment, hasChildren);
 }
+
+// Widget config error
+$(document).ready(function() {
+    $(".widget-disable").click(function() {
+        var fullName = '${full_name | js_str}';
+        var url = '${node['api_url']}${short_name | js_str}/settings/disable/';
+
+        var req = $osf.postJSON(url, {});
+
+        req.done(function() {
+            location.reload();
+        });
+
+        req.fail(function(jqxhr, status, error) {
+            bootbox.alert('Unable to disable ' + fullName);
+            Raven.captureMessage('Error while attempting to disable ' + fullName, {
+                url: url, status: status, error: error
+            });
+        })
+    });
+});
