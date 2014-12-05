@@ -179,7 +179,7 @@ def dataverse_view_file(node_addon, auth, **kwargs):
             node_addon,
             cache_file_name,
             start_render=True,
-            remote_path=file_obj.path,
+            remote_path=file_obj.file_id,
             file_content=content,
             download_url=download_url,
         )
