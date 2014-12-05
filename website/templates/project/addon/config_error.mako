@@ -10,14 +10,20 @@
 <script>
     $(document).ready(function() {
         $(".widget-disable").click(function() {
-            var req = $.osf.postJSON('${node['api_url']}${short_name | js_str}/settings/disable/', {});
+            var fullName = '${full_name | js_str}';
+            var url = '${node['api_url']}${short_name | js_str}/settings/disable/';
+
+            var req = $.osf.postJSON(url, {});
 
             req.done(function() {
                 location.reload();
             })
 
-            req.fail(function() {
-                bootbox.alert('Unable to disable ${full_name | js_str}');
+            req.fail(function(jqxhr, status, error) {
+                bootbox.alert('Unable to disable ' + fullName);
+                Raven.captureMessage('Error while attempting to disable ' + fullName, {
+                    url: url, status: status, error: error
+                });
             })
         });
     });
