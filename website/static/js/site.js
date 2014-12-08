@@ -305,6 +305,18 @@
         $('[rel=tooltip]').tooltip({
             placement:'bottom'
         });
+
+        // If there isn't a user logged in, show the footer slide-in
+        var slider = $('#footerSlideIn');
+        if (slider.length > 0 && $.cookie("slide") !== "0") {
+            setTimeout(function () {
+                slider.slideDown(1000);
+            }, 3000);
+            $('#footerSlideIn-Close').on('click', function (e) {
+                slider.slideUp(1000);
+                $.cookie('slide', '0', { expires: 1});
+            });
+        }
     });
 
 }));
