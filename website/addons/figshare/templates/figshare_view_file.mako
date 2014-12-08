@@ -43,7 +43,7 @@ $('#figsharePublishArticle').on('click', function(){
                     disabled" data-toggle="popover" data-trigger="hover" title="Cannot Download File"
                         data-content="In order to download private Figshare files and drafts, you will need to log into Figshare."
                 % endif
-            >Download <i class="icon-download-alt"></i></a>
+            >Download <i class="fa fa-download"></i></a>
 
             <!--delete button-->
             % if user['can_edit']:
@@ -54,7 +54,7 @@ $('#figsharePublishArticle').on('click', function(){
                         disabled" data-toggle="popover" data-trigger="hover" title="Cannot Delete File"
                             data-content="Files published on Figshare cannot be deleted."
                     % endif
-                >Delete <i class="icon-trash"></i></button>
+                >Delete <i class="fa fa-trash-o"></i></button>
             % endif
     </p>
 

@@ -153,12 +153,12 @@
         body.toggleClass('hide');
 
         if (body.hasClass('hide')) {
-            icon.removeClass('icon-minus');
-            icon.addClass('icon-plus');
+            icon.removeClass('fa-minus');
+            icon.addClass('fa-plus');
             icon.attr('title', 'More');
         } else {
-            icon.removeClass('icon-plus');
-            icon.addClass('icon-minus');
+            icon.removeClass('fa-plus');
+            icon.addClass('fa-minus');
             icon.attr('title', 'Less');
         }
 

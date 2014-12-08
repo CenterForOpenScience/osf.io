@@ -11,11 +11,11 @@
         <h4 class="list-group-item-heading">
             <span class="component-overflow">
             % if not summary['primary']:
-              <i class="icon icon-link" data-toggle="tooltip" title="Linked ${summary['node_type']}"></i>
+              <i class="fa fa-link" data-toggle="tooltip" title="Linked ${summary['node_type']}"></i>
             % endif
 
             % if not summary['is_public']:
-                <span class="icon icon-lock" data-toggle="tooltip" title="This project is private"></span>
+                <span class="fa fa-lock" data-toggle="tooltip" title="This project is private"></span>
             % endif
             <a href="${summary['url']}">${summary['title']}</a>
 
@@ -26,10 +26,10 @@
 
             <div class="pull-right">
                 % if not summary['primary'] and 'admin' in user['permissions']:
-                    <i class="icon-remove remove-pointer" data-id="${summary['id']}" data-toggle="tooltip" title="Remove link"></i>
-                    <i class="icon-code-fork" onclick="NodeActions.forkPointer('${summary['id']}', '${summary['primary_id']}');" data-toggle="tooltip" title="Fork this ${summary['node_type']} into ${node['node_type']} ${node['title']}"></i>
+                    <i class="fa fa-times remove-pointer" data-id="${summary['id']}" data-toggle="tooltip" title="Remove link"></i>
+                    <i class="fa fa-code-fork" onclick="NodeActions.forkPointer('${summary['id']}', '${summary['primary_id']}');" data-toggle="tooltip" title="Fork this ${summary['node_type']} into ${node['node_type']} ${node['title']}"></i>
                 % endif
-                <i id="icon-${summary['id']}" class="pointer icon-plus" onclick="NodeActions.openCloseNode('${summary['id']}');" data-toggle="tooltip" title="More"></i>
+                <i id="icon-${summary['id']}" class="pointer fa fa-plus" onclick="NodeActions.openCloseNode('${summary['id']}');" data-toggle="tooltip" title="More"></i>
             </div>
         </h4>
         <div class="list-group-item-text"></div>

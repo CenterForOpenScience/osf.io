@@ -139,7 +139,7 @@
                                     <th>Name</th>
                                     <th>
                                         Permissions
-                                        <i class="icon-question-sign permission-info"
+                                        <i class="fa fa-question-circle permission-info"
                                                 data-toggle="popover"
                                                 data-title="Permission Information"
                                                 data-container="#addContributors"

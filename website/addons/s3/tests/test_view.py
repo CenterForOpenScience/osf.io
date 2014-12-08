@@ -289,7 +289,7 @@ class TestS3ViewsCRUD(OsfTestCase):
             auth=self.user.auth,
         )
         assert_equal(res.status_code, 200)
-        assert_in('Delete <i class="icon-trash"></i>', res)
+        assert_in('Delete <i class="fa fa-trash-o"></i>', res)
 
     @mock.patch('website.addons.s3.api.S3Wrapper.get_wrapped_key')
     @mock.patch('website.addons.s3.api.S3Wrapper.from_addon')
@@ -307,7 +307,7 @@ class TestS3ViewsCRUD(OsfTestCase):
             auth=user2.auth,
         )
         assert_equal(res.status_code, 200)
-        assert_not_in('Delete <i class="icon-trash"></i>', res)
+        assert_not_in('Delete <i class="fa fa-trash-o"></i>', res)
 
     @mock.patch('website.addons.s3.views.crud.S3Wrapper.from_addon')
     def test_view_faux_file(self, mock_from_addon):

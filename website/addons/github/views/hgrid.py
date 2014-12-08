@@ -184,8 +184,8 @@ def github_hgrid_data(node_settings, auth, **kwargs):
         'repo': github_repo_url(owner=node_settings.user, repo=node_settings.repo, branch=branch)
     }
     buttons = [
-        rubeus.build_addon_button('<i class="icon-download-alt"></i>', 'githubDownloadZip', "Download Zip"),
-        rubeus.build_addon_button('<i class="icon-external-link"></i>', 'githubVisitRepo', "Visit Repository"),
+        rubeus.build_addon_button('<i class="fa fa-download"></i>', 'githubDownloadZip', "Download Zip"),
+        rubeus.build_addon_button('<i class="fa fa-external-link"></i>', 'githubVisitRepo', "Visit Repository"),
     ]
 
     return [rubeus.build_addon_root(

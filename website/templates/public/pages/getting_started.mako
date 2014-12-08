@@ -8,48 +8,48 @@
                     <li>
                         <a href="#start">Getting Started</a>
                         <ul class="nav">
-                            <li><a href="#start-one"><i class="icon-chevron-right"></i> Creating a Project</a></li>
-                            <li><a href="#start-two"><i class="icon-chevron-right"></i> Contributors and Citations</a></li>
-                            <li><a href="#start-three"><i class="icon-chevron-right"></i> Revisions, Preservation,<br />and Registration</a></li>
+                            <li><a href="#start-one"><i class="fa fa-chevron-right"></i> Creating a Project</a></li>
+                            <li><a href="#start-two"><i class="fa fa-chevron-right"></i> Contributors and Citations</a></li>
+                            <li><a href="#start-three"><i class="fa fa-chevron-right"></i> Revisions, Preservation,<br />and Registration</a></li>
                         </ul>
                     </li>
                     <li>
                         <a href="#structure">Structure</a>
                         <ul class="nav">
-                            <li><a href="#dashboards"><i class="icon-chevron-right"></i> Dashboard</a></li>
-                            <li><a href="#projects"><i class="icon-chevron-right"></i> Projects</a></li>
-                            <li><a href="#components"><i class="icon-chevron-right"></i> Components</a></li>
-                            <li><a href="#files"><i class="icon-chevron-right"></i> Files</a></li>
-                            <li><a href="#links"><i class="icon-chevron-right"></i> Links</a></li>
-                            <li><a href="#forks"><i class="icon-chevron-right"></i> Forks</a></li>
-                            <li><a href="#registrations"><i class="icon-chevron-right"></i> Registrations</a></li>
-                            <li><a href="#organizer"><i class="icon-chevron-right"></i> Project Organizer</a></li>
+                            <li><a href="#dashboards"><i class="fa fa-chevron-right"></i> Dashboard</a></li>
+                            <li><a href="#projects"><i class="fa fa-chevron-right"></i> Projects</a></li>
+                            <li><a href="#components"><i class="fa fa-chevron-right"></i> Components</a></li>
+                            <li><a href="#files"><i class="fa fa-chevron-right"></i> Files</a></li>
+                            <li><a href="#links"><i class="fa fa-chevron-right"></i> Links</a></li>
+                            <li><a href="#forks"><i class="fa fa-chevron-right"></i> Forks</a></li>
+                            <li><a href="#registrations"><i class="fa fa-chevron-right"></i> Registrations</a></li>
+                            <li><a href="#organizer"><i class="fa fa-chevron-right"></i> Project Organizer</a></li>
                         </ul>
                     </li>
                     <li>
                         <a href="#sharing">Sharing</a>
                         <ul class="nav">
-                            <li><a href="#contributors"><i class="icon-chevron-right"></i> Contributors</a></li>
-                            <li><a href="#privacy"><i class="icon-chevron-right"></i> Privacy</a></li>
-                            <li><a href="#viewonly"><i class="icon-chevron-right"></i> View-only Links</a></li>
-                            <li><a href="#comments"><i class="icon-chevron-right"></i> Comments</a></li>
+                            <li><a href="#contributors"><i class="fa fa-chevron-right"></i> Contributors</a></li>
+                            <li><a href="#privacy"><i class="fa fa-chevron-right"></i> Privacy</a></li>
+                            <li><a href="#viewonly"><i class="fa fa-chevron-right"></i> View-only Links</a></li>
+                            <li><a href="#comments"><i class="fa fa-chevron-right"></i> Comments</a></li>
                         </ul>
                     </li>
                     <li>
                         <a href="#addons">Add-ons</a>
                         <ul class="nav">
-                            <li><a href="#dropbox"><i class="icon-chevron-right"></i> Dropbox</a></li>
-                            <li><a href="#github"><i class="icon-chevron-right"></i> GitHub</a></li>
-                            <li><a href="#amazon"><i class="icon-chevron-right"></i> Amazon S3</a></li>
-                            <li><a href="#figshare"><i class="icon-chevron-right"></i> FigShare</a></li>
-                            <li><a href="#dataverse"><i class="icon-chevron-right"></i> Dataverse</a></li>
+                            <li><a href="#dropbox"><i class="fa fa-chevron-right"></i> Dropbox</a></li>
+                            <li><a href="#github"><i class="fa fa-chevron-right"></i> GitHub</a></li>
+                            <li><a href="#amazon"><i class="fa fa-chevron-right"></i> Amazon S3</a></li>
+                            <li><a href="#figshare"><i class="fa fa-chevron-right"></i> FigShare</a></li>
+                            <li><a href="#dataverse"><i class="fa fa-chevron-right"></i> Dataverse</a></li>
                         </ul>
                     </li>
                     <li>
                         <a href="#metrics">Metrics</a>
                         <ul class="nav">
-                            <li><a href="#citations"><i class="icon-chevron-right"></i> Citations</a></li>
-                            <li><a href="#statistics"><i class="icon-chevron-right"></i> Statistics</a></li>
+                            <li><a href="#citations"><i class="fa fa-chevron-right"></i> Citations</a></li>
+                            <li><a href="#statistics"><i class="fa fa-chevron-right"></i> Statistics</a></li>
                         </ul>
                     </li>
                 </ul>
