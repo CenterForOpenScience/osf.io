@@ -26,7 +26,6 @@ var Log = function(params) {
     });
 
     /**
-<<<<<<< HEAD
       * Given an item in self.contributors, return its anchor element representation.
       */
     self._asContribLink = function(person) {

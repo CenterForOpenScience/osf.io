@@ -1,13 +1,3 @@
-//;(function (global, factory) {
-//    if (typeof define === 'function' && define.amd) {
-//        define(['knockout', 'jquery', 'knockoutpunches'], factory);
-//    } else if (typeof $script === 'function') {
-//        global.ForwardWidget = factory(ko, jQuery, window);
-//        $script.done('forwardWidget');
-//    } else {
-//        global.ForwardWidget = factory(ko, jQuery, window);
-//    }
-//}(this, function(ko, $, window) {
 
 'use strict';
 var ko = require('knockout');
