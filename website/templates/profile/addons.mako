@@ -87,6 +87,10 @@
 
 </%def>
 
+<%def name="javascript()">
+    <script src="/static/public/js/addon-permissions.js"></script>
+</%def>
+
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
     <script src="/static/public/js/user-addon-cfg-page.js"></script>
