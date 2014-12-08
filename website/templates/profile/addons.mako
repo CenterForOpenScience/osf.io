@@ -89,6 +89,7 @@
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
+    <script src="/static/public/js/user-addon-cfg-page.js"></script>
     ## Webpack bundles
     % for js_asset in addon_js:
       <script src="${js_asset}"></script>
