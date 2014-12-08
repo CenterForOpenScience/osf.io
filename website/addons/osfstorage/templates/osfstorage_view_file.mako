@@ -63,17 +63,21 @@
 </div>
 
 <script type="text/javascript">
-    window.contextVars = window.contextVars || {};
-    window.contextVars.filePath = '${file_path | h}';
-    window.contextVars.currentUser = window.contextVars.currentUser || {};
-    window.contextVars.currentUser.canEdit = ${int(user['can_edit'])};
-    window.contextVars.node = window.contextVars || {};
-    window.contextVars.node.title = '${node['title'] | h}';
-    window.contextVars.node.urls = window.contextVars.node.urls || {};
-    window.contextVars.node.urls.files = '${files_url}';
-    window.contextVars.node.urls.download = '${download_url}';
-    window.contextVars.node.urls.delete = '${delete_url}';
-    window.contextVars.node.urls.revisions = '${revisions_url}';
+    window.contextVars = $.extend(true, {}, window.ontextVars, {
+        filePath: '${file_path | h}',
+        currentUser: {
+            canEdit: ${int(user['can_edit'])}
+        },
+        node: {
+            title: '${node['title'] | h}',
+            urls: {
+                files:'${files_url}',
+                download:'${download_url}',
+                delete:'${delete_url}',
+                revisions:'${revisions_url}',
+            }
+        }
+    });
 </script>
 
 <script src="/static/public/js/osfstorage/file-detail.js"></script>
