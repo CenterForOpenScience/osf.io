@@ -454,11 +454,17 @@
                             if(item.data.accept && item.data.accept.maxSize){
                                 var size = Math.round(file.size/10000)/100;
                                 var maxSize = item.data.accept.maxSize;  
-                                if(maxSize > size){
+                                if(maxSize >= size && size !== 0){
                                     return true;
                                 }
-                                var msgText = 'File is too large (' + size + ' MB). Max file size is ' + item.data.accept.maxSize + ' MB.' ; 
-                                item.notify.update(msgText, 'warning', undefined, 3000);
+                                if(maxSize < size )  {
+                                    var msgText = 'Ones of the files is too large (' + size + ' MB). Max file size is ' + item.data.accept.maxSize + ' MB.' ; 
+                                    item.notify.update(msgText, 'warning', undefined, 3000);   
+                                }
+                                if(size === 0)  {
+                                    var msgText = 'Some files were ignored because they were empty.' ; 
+                                    item.notify.update(msgText, 'warning', undefined, 3000);   
+                                }
                                 return false;
                             }
                             return true;    
