@@ -1,6 +1,8 @@
 /** Initialization code for the project dashboard. */
 
 var $ = require('jquery');
+require('jquery-tagsinput');
+
 var Rubeus = require('rubeus');
 
 var LogFeed = require('../logFeed.js');
