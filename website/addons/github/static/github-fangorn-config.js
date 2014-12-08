@@ -18,6 +18,7 @@
             event.stopPropagation();
             this.dropzone.hiddenFileInput.click();
             this.dropzoneItemCache = item;
+            this.updateFolder(null, item);  
             console.log('Upload Event triggered', this, event,  item, col);
         }
 
@@ -45,9 +46,6 @@
     function _downloadEvent (event, item, col) {
         event.stopPropagation();
         console.log('Download Event triggered', this, event, item, col);
-        if(!item.data.addon){
-            item.data.downloads++;    
-        }
         window.location = item.data.urls.download;
     }
 
@@ -100,7 +98,7 @@
         }
         return buttons.map(function(btn){ 
             return m('span', { 'data-col' : item.id }, [ m('i', 
-                { 'class' : btn.css, style : btn.style, 'onclick' : function(){ btn.onclick.call(self, event, item, col); } },
+                { 'class' : btn.css, style : btn.style, 'onclick' : function(event){ btn.onclick.call(self, event, item, col); } },
                 [ m('span', { 'class' : btn.icon}, btn.name) ])
             ]);
         }); 
@@ -109,8 +107,6 @@
     function changeBranch(item, branch){
         var tb = this;
         var url = item.data.urls.branch + '?' + $.param({branch: branch});
-        console.log(url);
-
 
         $.ajax({
             type: 'get',
@@ -119,8 +115,8 @@
             console.log("Brach Response", response);
             // Update the item with the new branch data
             var icon = $('.tb-row[data-id="'+item.id+'"]').find('.tb-toggle-icon');
-            var iconCache = icon.html();
-            icon.html('<i class="icon-refresh icon-spin">'); 
+            m.render(icon.get(0), m('i.icon-refresh.icon-spin'));
+            item.data = response[0]; 
             $.ajax({
                 type: 'get',
                 url: response[0].urls.fetch
@@ -129,7 +125,7 @@
                 console.log("data", data);
                 tb.updateFolder(data, item);
                 tb.redraw();
-                icon.html(iconCache);
+            m.render(icon.get(0), m('i.icon-minus'));
             }).fail(function(xhr, status, error){
                 console.log("Error:", xhr, status, error);
             });
@@ -204,11 +200,21 @@
         return undefined;            
     }
 
+    function _fangornUploadComplete(item){
+        console.log('upload complete', this, item);
+        var index = this.returnIndex(item.id);
+        // item.open = false;
+        // item.load = false;
+        //this.toggleFolder(index, null);
+            
+    }
+
     // Register configuration
     Fangorn.config.github = {
         // Handle changing the branch select
         folderIcon: _fangornFolderIcons,
         resolveRows: _fangornColumns,
-        lazyload: _fangornLazyLoad
+        lazyload: _fangornLazyLoad,
+        onUploadComplete : _fangornUploadComplete
     };
 }));

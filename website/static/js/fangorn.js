@@ -159,17 +159,22 @@
         $('.tb-row').removeClass(dropzoneHoverClass);
 
         var closestTarget = $(event.target).closest('.tb-row');
-
-        if(closestTarget.context.dataset.id != undefined) {
-            if (treebeard.find(closestTarget.context.dataset.id).data.urls) {
-                if (treebeard.find(closestTarget.context.dataset.id).data.urls.upload != null) {
+        var itemID =  closestTarget.context.dataset.id;
+        var item = treebeard.find(itemID); 
+        if(itemID != undefined) {
+            if (item.data.urls) {
+                if (item.data.urls.upload != null && item.kind === 'folder') { 
                     $(event.target).closest('.tb-row').addClass(dropzoneHoverClass);
-                }            }
+                }  
+            }
         }
     }
 
     function _fangornComplete (treebeard, file) {
-        window.console.log("Complete", arguments);
+        var item = treebeard.dropzoneItemCache; 
+        var configOption = resolveconfigOption.call(treebeard, item, 'onUploadComplete', [item]);
+
+        window.console.log("Complete", configOption);
     }
 
     function _fangornDropzoneSuccess (treebeard, file, response) {
@@ -211,7 +216,8 @@
             window.event.cancelBubble = true;
         } 
         this.dropzone.hiddenFileInput.click();
-        this.dropzoneItemCache = item; 
+        this.dropzoneItemCache = item;
+        this.updateFolder(null, item); 
         window.console.log('Upload Event triggered', this, event,  item, col);
     }
 
@@ -447,10 +453,10 @@
                 return true;
             },
             addcheck : function (treebeard, item, file) {
-                window.console.log('Add check', this, treebeard, item, file);
-                if(item.data.addon) {
+                //window.console.log('Add check', this, treebeard, item, file);
+                if(item.data.addon && item.kind === 'folder') {
                     if (item.data.permissions.edit){
-                        if(!_fangornFileExists.call(treebeard, item, file)){
+                       if(!_fangornFileExists.call(treebeard, item, file)){
                             if(item.data.accept && item.data.accept.maxSize){
                                 var size = Math.round(file.size/10000)/100;
                                 var maxSize = item.data.accept.maxSize;  
@@ -458,7 +464,7 @@
                                     return true;
                                 }
                                 if(maxSize < size )  {
-                                    var msgText = 'Ones of the files is too large (' + size + ' MB). Max file size is ' + item.data.accept.maxSize + ' MB.' ; 
+                                    var msgText = 'One of the files is too large (' + size + ' MB). Max file size is ' + item.data.accept.maxSize + ' MB.' ; 
                                     item.notify.update(msgText, 'warning', undefined, 3000);   
                                 }
                                 if(size === 0)  {
@@ -472,6 +478,7 @@
                             var msgText = 'File already exists.'; 
                             item.notify.update(msgText, 'warning', 1, 3000);
                         }
+                        
                     } else {
                         var msgText = 'You don\'t have permission to upload here'; 
                         item.notify.update(msgText, 'warning', 1, 3000, 'animated flipInX');                    

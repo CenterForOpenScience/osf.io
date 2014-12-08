@@ -128,11 +128,14 @@
     function _treebeardOnload () {
         var tb = this;
         var folderName = tb.options.initialFolderName;
+        var folderPath = tb.options.initialFolderPath;
         if (folderName != undefined) {
             if (folderName === "None") {
                 tb.options.folderPath = null;
             } else {
-                tb.options.folderPath = folderName.replace('Dropbox', '');
+                if(folderPath) {
+                    tb.options.folderPath = folderName.replace(folderPath, '');  //folderName.replace('Dropbox', '');
+                }
                 var folderArray = folderName.trim().split('/');
                 if (folderArray[folderArray.length - 1] === "") {
                     folderArray.pop();
@@ -194,9 +197,10 @@
         self.options = $.extend({}, defaults, opts);
         self.options.divID = selector.substring(1);
         self.options.initialFolderName = opts.initialFolderName;
+        self.options.initialFolderPath = opts.initialFolderPath;
 
         // Start up the grid
-        self.grid = Treebeard(self.options);
+        self.grid = Treebeard(self.options).tbController;
         // Set up listener for folder selection
 
         $(selector).on('change', 'input[name="' + self.selector + INPUT_NAME + '"]', function(evt) {

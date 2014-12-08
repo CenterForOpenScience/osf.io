@@ -332,6 +332,7 @@
                 $(self.folderPicker).folderpicker({
                     onPickFolder: onPickFolder,
                     initialFolderName : self.folderName(),
+                    initialFolderPath : 'Dropbox',
                     // Fetch Dropbox folders with AJAX
                     filesData: self.urls().folders, // URL for fetching folders
                     // Lazy-load each folder's contents
