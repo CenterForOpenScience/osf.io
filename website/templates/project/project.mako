@@ -143,6 +143,8 @@
 </%def>
 
 <%def name="javascript_bottom()">
+<% import json %>
+
 ${parent.javascript_bottom()}
 
 % for script in addon_widget_js:
@@ -151,72 +153,21 @@ ${parent.javascript_bottom()}
 
 <script type="text/javascript">
     // Hack to allow mako variables to be accessed to JS modules
-    var userName = '${user_full_name | js_str}';
-    var canComment = ${'true' if user['can_comment'] else 'false'};
-    var hasChildren = ${'true' if node['has_children'] else 'false'};
-    window.contextVars.currentUser.name = userName;
-    window.contextVars.currentUser.canComment = canComment;
-    window.contextVars.node.hasChildren = hasChildren;
+
+    window.contextVars = $.extend(true, {}, window.contextVars, {
+        currentUser: {
+            name: '${user_full_name | js_str}',
+            canComment: ${json.dumps(user['can_comment'])},
+            canEdit: ${json.dumps(user['can_edit'])}
+        },
+        node: {
+            hasChildren: ${json.dumps(node['has_children'])},
+            isRegistration: ${json.dumps(node['is_registration'])},
+            tags: ${json.dumps(node['tags'])}
+        }
+    });
 </script>
 
 <script src="/static/public/js/project-dashboard.js"></script>
-## Todo: Move to project.js
-<script>
-
-    $(document).ready(function() {
-
-        // Tooltips
-        $('[data-toggle="tooltip"]').tooltip();
-
-        // Tag input
-        $('#node-tags').tagsInput({
-            width: "100%",
-            interactive: ${'true' if user["can_edit"] else 'false'},
-            maxChars: 128,
-            onAddTag: function(tag){
-                var url = "${node['api_url']}" + "addtag/" + tag + "/";
-                var request = $.ajax({
-                    url: url,
-                    type: "POST",
-                    contentType: "application/json"
-                });
-                request.fail(function(xhr, textStatus, error) {
-                    Raven.captureMessage('Failed to add tag', {
-                        tag: tag, url: url, textStatus: textStatus, error: error
-                    });
-                })
-            },
-            onRemoveTag: function(tag){
-                var url = "${node['api_url']}" + "removetag/" + tag + "/";
-                var request = $.ajax({
-                    url: url,
-                    type: "POST",
-                    contentType: "application/json"
-                });
-                request.fail(function(xhr, textStatus, error) {
-                    Raven.captureMessage('Failed to remove tag', {
-                        tag: tag, url: url, textStatus: textStatus, error: error
-                    });
-                })
-            }
-        });
-
-        // Limit the maximum length that you can type when adding a tag
-        $('#node-tags_tag').attr("maxlength", "128");
-
-        // Remove delete UI if not contributor
-        % if 'write' not in user['permissions'] or node['is_registration']:
-            $('a[title="Removing tag"]').remove();
-            $('span.tag span').each(function(idx, elm) {
-                $(elm).text($(elm).text().replace(/\s*$/, ''))
-            });
-        % endif
-
-        %if node['is_registration'] and not node['tags']:
-            $('div.tags').remove();
-        %endif
-
-    });
-</script>
 
 </%def>

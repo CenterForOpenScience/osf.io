@@ -2,9 +2,6 @@
 <%def name="title()">Search</%def>
 <%def name="content()">
     <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
-    <script>
-        $('input[name=q]').remove();
-    </script>
     <div id="searchControls" class="scripted">
         <div class="row">
             <div class="col-md-12">

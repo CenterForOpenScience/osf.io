@@ -24,8 +24,9 @@
             var gravatar = $('#profile-gravatar');
         });
     % endif
-    $script(['/static/addons/badges/bake-badges.js'], 'bakery');
-    $script(['/static/addons/badges/badge-popover.js'], 'display');
+##    TODO: Make the following modules CommonJS-compatible:
+##    $script(['/static/addons/badges/bake-badges.js'], 'bakery');
+##    $script(['/static/addons/badges/badge-popover.js'], 'display');
 </script>
 % if user['is_profile']:
     <%include file="profile/modal_change_avatar.mako"/>
