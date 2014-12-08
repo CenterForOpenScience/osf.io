@@ -157,11 +157,11 @@ ${parent.javascript_bottom()}
     window.contextVars = $.extend(true, {}, window.contextVars, {
         currentUser: {
             name: '${user_full_name | js_str}',
-            canComment: ${'true' if user['can_comment'] else 'false'},
-            canEdit: ${'true' if user["can_edit"] else 'false'}
+            canComment: ${json.dumps(user['can_comment'])},
+            canEdit: ${json.dumps(user['can_edit'])}
         },
         node: {
-            hasChildren: ${'true' if node['has_children'] else 'false'},
+            hasChildren: ${json.dumps(node['has_children'])},
             isRegistration: ${json.dumps(node['is_registration'])},
             tags: ${json.dumps(node['tags'])}
         }
