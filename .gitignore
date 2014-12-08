@@ -50,6 +50,8 @@ website/static/public/*
 website/static/vendor/node_modules/*
 website/static/vendor/bower_components/
 node_modules
+# Allow robots.txt to be deployment-specific
+website/static/robots.local.txt
 
 # OSF-specific
 ##############

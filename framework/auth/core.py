@@ -444,12 +444,16 @@ class User(GuidStoredObject, AddonModelMixin):
         issues = []
         if not self.check_password(raw_old_password):
             issues.append('Old password is invalid')
+        elif raw_old_password == raw_new_password:
+            issues.append('Password cannot be the same')
+
         if not raw_old_password or not raw_new_password or not raw_confirm_password:
             issues.append('Passwords cannot be blank')
+        elif len(raw_new_password) < 6:
+            issues.append('Password should be at least six characters')
+
         if raw_new_password != raw_confirm_password:
             issues.append('Password does not match the confirmation')
-        if len(raw_new_password) < 6:
-            issues.append('Password should be at least 6 characters')
 
         if issues:
             raise ChangePasswordError(issues)

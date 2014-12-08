@@ -419,7 +419,7 @@ class TestUser(OsfTestCase):
             'password',
             '12345',
             '12345',
-            'Password should be at least 6 characters',
+            'Password should be at least six characters',
         )
 
     def test_change_password_invalid_confirm_password(self):
