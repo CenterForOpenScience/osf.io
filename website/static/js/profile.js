@@ -340,7 +340,7 @@ var NameViewModel = function(urls, modes) {
     BaseViewModel.call(self, urls, modes);
     TrackedMixin.call(self);
 
-    self.full = $osf.ko.sanitizedObservable().extend({
+    self.full = koHelpers.sanitizedObservable().extend({
         required: true
     });
     self.given = koHelpers.sanitizedObservable();
