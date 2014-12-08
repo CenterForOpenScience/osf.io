@@ -1,3 +1,5 @@
+'use strict';
+var $ = require('jquery');
 var ContribManager = require('../contribManager.js');
 var ContribAdder = require('../contribAdder.js');
 
@@ -5,6 +7,8 @@ var PrivateLinkManager = require('../privateLinkManager.js');
 var PrivateLinkTable = require('../privateLinkTable.js');
 
 var ctx = window.contextVars;
+
+var nodeApiUrl = ctx.node.urls.api;
 
 $('body').on('nodeLoad', function(event, data) {
     // If user is a contributor, initialize the contributor modal

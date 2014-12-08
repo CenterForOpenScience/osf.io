@@ -1,3 +1,5 @@
+'use strict';
+var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 var $osf = require('osf-helpers');
@@ -48,7 +50,7 @@ $(document).ready(function() {
         return event.keyCode !== 13;
     });
 
-    registrationViewModel = new MetaData.ViewModel(
+    var registrationViewModel = new MetaData.ViewModel(
         ctx.regSchema,
         ctx.registered,
         [ctx.node.id].concat(ctx.node.children)
