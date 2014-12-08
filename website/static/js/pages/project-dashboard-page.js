@@ -49,55 +49,55 @@ if ($comments.length) {
 
 $(document).ready(function() {
 
-        // Tooltips
-        $('[data-toggle="tooltip"]').tooltip();
+    // Tooltips
+    $('[data-toggle="tooltip"]').tooltip();
 
-        // Tag input
-        $('#node-tags').tagsInput({
-            width: "100%",
-            interactive: window.contextVars.currentUser.canEdit,
-            maxChars: 128,
-            onAddTag: function(tag){
-                var url = window.contextVars.node.urls.api + "addtag/" + tag + "/";
-                var request = $.ajax({
-                    url: url,
-                    type: "POST",
-                    contentType: "application/json"
-                });
-                request.fail(function(xhr, textStatus, error) {
-                    Raven.captureMessage('Failed to add tag', {
-                        tag: tag, url: url, textStatus: textStatus, error: error
-                    });
-                })
-            },
-            onRemoveTag: function(tag){
-                var url = window.contextVars.node.urls.api + "removetag/" + tag + "/";
-                var request = $.ajax({
-                    url: url,
-                    type: "POST",
-                    contentType: "application/json"
-                });
-                request.fail(function(xhr, textStatus, error) {
-                    Raven.captureMessage('Failed to remove tag', {
-                        tag: tag, url: url, textStatus: textStatus, error: error
-                    });
-                })
-            }
-        });
-
-        // Limit the maximum length that you can type when adding a tag
-        $('#node-tags_tag').attr("maxlength", "128");
-
-        // Remove delete UI if not contributor
-        if (!window.contextVars.currentUser.canEdit || window.contextVars.node.isRegistration) {
-            $('a[title="Removing tag"]').remove();
-            $('span.tag span').each(function(idx, elm) {
-                $(elm).text($(elm).text().replace(/\s*$/, ''))
+    // Tag input
+    $('#node-tags').tagsInput({
+        width: "100%",
+        interactive: window.contextVars.currentUser.canEdit,
+        maxChars: 128,
+        onAddTag: function(tag){
+            var url = window.contextVars.node.urls.api + "addtag/" + tag + "/";
+            var request = $.ajax({
+                url: url,
+                type: "POST",
+                contentType: "application/json"
             });
+            request.fail(function(xhr, textStatus, error) {
+                Raven.captureMessage('Failed to add tag', {
+                    tag: tag, url: url, textStatus: textStatus, error: error
+                });
+            })
+        },
+        onRemoveTag: function(tag){
+            var url = window.contextVars.node.urls.api + "removetag/" + tag + "/";
+            var request = $.ajax({
+                url: url,
+                type: "POST",
+                contentType: "application/json"
+            });
+            request.fail(function(xhr, textStatus, error) {
+                Raven.captureMessage('Failed to remove tag', {
+                    tag: tag, url: url, textStatus: textStatus, error: error
+                });
+            })
         }
-
-        if (window.contextVars.node.isRegistration && window.contextVars.node.tags.length === 0) {
-            $('div.tags').remove();
-        }
-
     });
+
+    // Limit the maximum length that you can type when adding a tag
+    $('#node-tags_tag').attr("maxlength", "128");
+
+    // Remove delete UI if not contributor
+    if (!window.contextVars.currentUser.canEdit || window.contextVars.node.isRegistration) {
+        $('a[title="Removing tag"]').remove();
+        $('span.tag span').each(function(idx, elm) {
+            $(elm).text($(elm).text().replace(/\s*$/, ''))
+        });
+    }
+
+    if (window.contextVars.node.isRegistration && window.contextVars.node.tags.length === 0) {
+        $('div.tags').remove();
+    }
+
+});
