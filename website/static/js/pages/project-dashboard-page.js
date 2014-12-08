@@ -8,17 +8,19 @@ var pointers = require('../pointers.js');
 
 var Comment = require('../comment.js');
 
-
 // Since we don't have an Buttons/Status column, we append status messages to the
 // name column
 Rubeus.Col.DashboardName = $.extend({}, Rubeus.Col.Name);
 Rubeus.Col.DashboardName.itemView = function(item) {
     return Rubeus.Col.Name.itemView(item) + '&nbsp;<span data-status></span>';
 };
+
+var nodeApiUrl = window.contextVars.node.urls.api;
+
 var rubeusOpts = {
     data: nodeApiUrl + 'files/grid/',
     columns: [Rubeus.Col.DashboardName],
-    width: "100%",
+    width: '100%',
     uploads: true,
     height: 600,
     progBar: '#filetreeProgressBar',
