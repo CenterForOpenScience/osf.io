@@ -24,7 +24,7 @@
             var gravatar = $('#profile-gravatar');
         });
     % endif
-##    Uncomment when script.js usage is removed from badges
+##    TODO: Make the following modules CommonJS-compatible:
 ##    $script(['/static/addons/badges/bake-badges.js'], 'bakery');
 ##    $script(['/static/addons/badges/badge-popover.js'], 'display');
 </script>

@@ -1,4 +1,8 @@
-
+/**
+ * Module for listing all projects/components authorized for a given addon
+ * on the user settings page. Also handles revoking addon access from these
+ * projects/components.
+ */
 
 var $ = require('jquery');
 var $osf = require('osf-helpers');
