@@ -93,13 +93,10 @@ var errorDefaultLong = 'OSF was unable to resolve your request. If this issue pe
 
 var handleJSONError = function(response) {
     var title = response.responseJSON.message_short || errorDefaultShort;
-    $.growl({
-        title: '<strong>' + title + '<strong><br />',
-        message: response.responseJSON.message_long || errorDefaultLong
-    },{
-        type: 'danger',
-        delay: 0
-    });
+    var message = response.responseJSON.message_long || errorDefaultLong;
+
+    $.osf.growl(title, message);
+
     Raven.captureMessage('Unexpected error occurred in JSON request');
 };
 
@@ -228,6 +225,8 @@ var FormattableDate = function(date) {
     this.utc = moment.utc(this.date).format(UTC_DATEFORMAT);
 };
 
+// Also export these to the global namespace so that these can be used in inline
+// JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
     postJSON: postJSON,
     putJSON: putJSON,
