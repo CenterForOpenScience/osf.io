@@ -667,7 +667,7 @@ def webpack(clean=True, watch=False, production=False):
     if settings.DEBUG_MODE and not production:
         args += ['--colors']
     else:
-        args += ['-p']
+        args += ['-p', '--progress']
     if watch:
         args += ['--watch']
     command = ' '.join(args)
