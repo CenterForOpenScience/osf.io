@@ -5,14 +5,13 @@ import tornado.concurrent
 import tornado.ioloop
 
 
-def make_provider(info):
-    name = info['name']
-    if name == 'dropbox':
+def make_provider(provider, **kwargs):
+    if provider == 'dropbox':
         from providers.contrib.dropbox import DropboxProvider
-        return DropboxProvider(**info)
-    elif name == 's3':
+        return DropboxProvider(**kwargs)
+    elif provider == 's3':
         from providers.contrib.s3 import S3Provider
-        return S3Provider(**info)
+        return S3Provider(**kwargs)
     else:
         raise NotImplementedError
 

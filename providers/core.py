@@ -12,6 +12,7 @@ class ResponseWrapper(object):
         self.response = response
         self.content = response.content
         self.size = response.headers.get('Content-Length')
+        self.content_type = response.headers.get('Content-Type', 'application/octet-stream')
 
 
 class RequestWrapper(object):
