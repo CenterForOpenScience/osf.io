@@ -87,7 +87,7 @@
                         }
                     confirmModal(alerts + message);
                 }
-            )
+            );
         } else {
             confirmModal(message);
         }
@@ -107,12 +107,15 @@
         self.dateForked = new FormattableDate(data.node.forked_date);
         self.watchedCount = ko.observable(data.node.watched_count);
         self.userIsWatching = ko.observable(data.user.is_watching);
+        self.inDashboard = ko.observable(data.node.in_dashboard);
+        self.dashboard = data.user.dashboard_id;
         self.userCanEdit = data.user.can_edit;
         self.description = data.node.description;
         self.title = data.node.title;
         self.category = data.node.category;
         self.isRegistration = data.node.is_registration;
         self.user = data.user;
+        self.nodeIsPublic = data.node.is_public;
         self.nodeType = data.node.node_type;
         // The button text to display (e.g. "Watch" if not watching)
         self.watchButtonDisplay = ko.computed(function() {
@@ -120,6 +123,14 @@
         });
         self.watchButtonAction = ko.computed(function() {
             return self.userIsWatching() ? 'Unwatch' : 'Watch';
+        });
+
+
+        self.canBeOrganized = ko.computed(function(){
+            if (self.user.username && (self.nodeIsPublic || self.user.is_contributor)) {
+                return true;
+            }
+            return false;
         });
 
         // Editable Title and Description
@@ -131,13 +142,13 @@
                 ajaxOptions: {
                     type: 'POST',
                     dataType: 'json',
-                    contentType: 'application/json',
+                    contentType: 'application/json'
                 },
                 params: function(params){
                     // Send JSON data
                     return JSON.stringify(params);
                 },
-                success: function(data){
+                success: function(){
                     document.location.reload(true);
                 },
                 error: $.osf.handleEditableError,
@@ -150,7 +161,7 @@
                 name:  'title',
                 title: 'Edit Title',
                 validate: function(value) {
-                    if($.trim(value) == '') {
+                    if($.trim(value) === '') {
                         return 'Title cannot be blank.';
                     }
                 }
@@ -158,16 +169,48 @@
             $('#nodeDescriptionEditable').editable($.extend({}, editableOptions, {
                 name:  'description',
                 title: 'Edit Description',
-                emptytext: "No description",
-                emptyclass: "text-muted"
+                emptytext: 'No description',
+                emptyclass: 'text-muted'
             }));
         }
+        /**
+         * Add project to the Project Organizer.
+         */
+        self.addToDashboard = function() {
+            self.inDashboard(true);
+            var jsonData = {
+                'toNodeID': self.dashboard,
+                'pointerID': self._id
+            };
+            $.osf.postJSON('/api/v1/pointer/', jsonData)
+                .fail(function(data) {
+                    self.inDashboard(false);
+                    $.osf.handleJSONError(data);
+            });
+        };
+        /**
+         * Remove project from the Project Organizer.
+         */
+        self.removeFromDashboard = function() {
+            self.inDashboard(false);
+            var deleteUrl = '/api/v1/folder/' + self.dashboard + '/pointer/' + self._id;
+            $.ajax({url: deleteUrl, type: 'DELETE'})
+                .fail(function() {
+                    self.inDashboard(true);
+                    $.osf.growl('Error', 'The project could not be removed', 'danger');
+            });
+        };
 
         /**
          * Toggle the watch status for this project.
          */
         self.toggleWatch = function() {
             // Send POST request to node's watch API url and update the watch count
+            if(self.userIsWatching()) {
+                self.watchedCount(self.watchedCount() - 1);
+            } else {
+                self.watchedCount(self.watchedCount() + 1);
+            }
             $.osf.postJSON(
                 self.apiUrl + 'togglewatch/',
                 {}

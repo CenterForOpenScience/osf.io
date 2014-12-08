@@ -85,7 +85,7 @@
                     } catch(error) {
                         msg = textStatus;
                     }
-                    bootbox.alert(msg);
+                    $.osf.growl('Error:', msg);
                 });
             } else {
                 return file.url || this.options.url;
