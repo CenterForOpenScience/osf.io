@@ -673,6 +673,12 @@ def webpack(clean=True, watch=False, production=False):
     command = ' '.join(args)
     run(command, echo=True)
 
+@task()
+def assets(production=True):
+    """Install and build static assets."""
+    bower_install()
+    webpack(clean=True, watch=False, production=production)
+
 @task
 def generate_self_signed(domain):
     """Generate self-signed SSL key and certificate.
