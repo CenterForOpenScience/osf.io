@@ -16,7 +16,7 @@ class S3Provider(core.BaseProvider):
         self.bucket = self.connection.get_bucket(bucket, validate=False)
 
     @coroutine
-    def download(self, path):
+    def download(self, path, **kwargs):
         key = self.bucket.new_key(path)
         url = key.generate_url(100)
         resp = yield from aiohttp.request('GET', url)
