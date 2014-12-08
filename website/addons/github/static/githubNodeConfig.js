@@ -106,9 +106,10 @@
                 self.urls().repos,
                 {},
                 function (repos) {
-                    if (repos.length == 0)
+                    if (repos == null)
                     {
-                        self.changeMessage("You don't have any repository yet !",'text-danger');
+                        if(self.nodeHasAuth())
+                        self.changeMessage("You don't have any repository yet ! ",'text-danger');
                     }
                     else
                     for (var i = 0; i < repos.length; i++) {
@@ -198,15 +199,19 @@
          // Callback for when PUT request to import user access token
         function onImportSuccess(response) {
             var msg = response.message || 'Successfully imported access token from profile.';
-            // Update view model based on response
-            self.changeMessage(msg, 'text-success', 3000);
             self.updateFromData(response.result);
+            // Update view model based on response
+            window.location.reload();
+            self.changeMessage('Successfully imported access token from profile.', 'text-success', 3000);
         }
+
 
         function onImportError() {
             self.displayMessage('Error occurred while importing access token.');
             self.displayMessageClass('text-danger');
         }
+
+
 
         /**
          * Send PUT request to import access token from user profile.
