@@ -1,3 +1,4 @@
 ipython
 jinja2
 pyzmq
+-r requirements.txt
