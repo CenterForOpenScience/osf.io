@@ -9,6 +9,7 @@ require('knockout-validation');
 require('knockout-punches');
 ko.punches.enableAll();
 require('knockout-sortable');
+var koHelpers = require('ko-helpers');
 
 var $osf = require('osf-helpers');
 
@@ -342,10 +343,10 @@ var NameViewModel = function(urls, modes) {
     self.full = $osf.ko.sanitizedObservable().extend({
         required: true
     });
-    self.given = $osf.ko.sanitizedObservable();
-    self.middle = $osf.ko.sanitizedObservable();
-    self.family = $osf.ko.sanitizedObservable();
-    self.suffix = $osf.ko.sanitizedObservable();
+    self.given = koHelpers.sanitizedObservable();
+    self.middle = koHelpers.sanitizedObservable();
+    self.family = koHelpers.sanitizedObservable();
+    self.suffix = koHelpers.sanitizedObservable();
 
     self.trackedProperties = [
         self.full,

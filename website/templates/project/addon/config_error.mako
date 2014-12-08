@@ -6,4 +6,3 @@
         or click <a class="widget-disable">here</a> to disable it.
     % endif
 </div>
-
