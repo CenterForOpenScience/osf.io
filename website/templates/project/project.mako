@@ -143,6 +143,8 @@
 </%def>
 
 <%def name="javascript_bottom()">
+<% import json %>
+
 ${parent.javascript_bottom()}
 
 % for script in addon_widget_js:
@@ -154,69 +156,15 @@ ${parent.javascript_bottom()}
     var userName = '${user_full_name | js_str}';
     var canComment = ${'true' if user['can_comment'] else 'false'};
     var hasChildren = ${'true' if node['has_children'] else 'false'};
+    var canEdit = ${'true' if user["can_edit"] else 'false'};
     window.contextVars.currentUser.name = userName;
     window.contextVars.currentUser.canComment = canComment;
+    window.contextVars.currentUser.canEdit = canEdit;
     window.contextVars.node.hasChildren = hasChildren;
+    window.contextVars.node.isRegistration = ${json.dumps(node['is_registration'])};
+    window.contextVars.node.tags = ${json.dumps(node['tags'])};
 </script>
 
 <script src="/static/public/js/project-dashboard.js"></script>
-## Todo: Move to project.js
-<script>
-
-    $(document).ready(function() {
-
-        // Tooltips
-        $('[data-toggle="tooltip"]').tooltip();
-
-        // Tag input
-        $('#node-tags').tagsInput({
-            width: "100%",
-            interactive: ${'true' if user["can_edit"] else 'false'},
-            maxChars: 128,
-            onAddTag: function(tag){
-                var url = "${node['api_url']}" + "addtag/" + tag + "/";
-                var request = $.ajax({
-                    url: url,
-                    type: "POST",
-                    contentType: "application/json"
-                });
-                request.fail(function(xhr, textStatus, error) {
-                    Raven.captureMessage('Failed to add tag', {
-                        tag: tag, url: url, textStatus: textStatus, error: error
-                    });
-                })
-            },
-            onRemoveTag: function(tag){
-                var url = "${node['api_url']}" + "removetag/" + tag + "/";
-                var request = $.ajax({
-                    url: url,
-                    type: "POST",
-                    contentType: "application/json"
-                });
-                request.fail(function(xhr, textStatus, error) {
-                    Raven.captureMessage('Failed to remove tag', {
-                        tag: tag, url: url, textStatus: textStatus, error: error
-                    });
-                })
-            }
-        });
-
-        // Limit the maximum length that you can type when adding a tag
-        $('#node-tags_tag').attr("maxlength", "128");
-
-        // Remove delete UI if not contributor
-        % if 'write' not in user['permissions'] or node['is_registration']:
-            $('a[title="Removing tag"]').remove();
-            $('span.tag span').each(function(idx, elm) {
-                $(elm).text($(elm).text().replace(/\s*$/, ''))
-            });
-        % endif
-
-        %if node['is_registration'] and not node['tags']:
-            $('div.tags').remove();
-        %endif
-
-    });
-</script>
 
 </%def>
