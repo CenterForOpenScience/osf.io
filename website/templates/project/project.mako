@@ -153,16 +153,19 @@ ${parent.javascript_bottom()}
 
 <script type="text/javascript">
     // Hack to allow mako variables to be accessed to JS modules
-    var userName = '${user_full_name | js_str}';
-    var canComment = ${'true' if user['can_comment'] else 'false'};
-    var hasChildren = ${'true' if node['has_children'] else 'false'};
-    var canEdit = ${'true' if user["can_edit"] else 'false'};
-    window.contextVars.currentUser.name = userName;
-    window.contextVars.currentUser.canComment = canComment;
-    window.contextVars.currentUser.canEdit = canEdit;
-    window.contextVars.node.hasChildren = hasChildren;
-    window.contextVars.node.isRegistration = ${json.dumps(node['is_registration'])};
-    window.contextVars.node.tags = ${json.dumps(node['tags'])};
+
+    window.contextVars = $.extend(true, {}, window.contextVars, {
+        currentUser: {
+            name: '${user_full_name | js_str}',
+            canComment: ${'true' if user['can_comment'] else 'false'},
+            canEdit: ${'true' if user["can_edit"] else 'false'}
+        },
+        node: {
+            hasChildren: ${'true' if node['has_children'] else 'false'},
+            isRegistration: ${json.dumps(node['is_registration'])},
+            tags: ${json.dumps(node['tags'])}
+        }
+    });
 </script>
 
 <script src="/static/public/js/project-dashboard.js"></script>
