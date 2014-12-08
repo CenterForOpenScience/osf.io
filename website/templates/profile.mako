@@ -24,8 +24,9 @@
             var gravatar = $('#profile-gravatar');
         });
     % endif
-    $script(['/static/addons/badges/bake-badges.js'], 'bakery');
-    $script(['/static/addons/badges/badge-popover.js'], 'display');
+##    Uncomment when script.js usage is removed from badges
+##    $script(['/static/addons/badges/bake-badges.js'], 'bakery');
+##    $script(['/static/addons/badges/badge-popover.js'], 'display');
 </script>
 % if user['is_profile']:
     <%include file="profile/modal_change_avatar.mako"/>
