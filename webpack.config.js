@@ -120,6 +120,7 @@ module.exports = {
         // require("jquery") is external and available
         //  on the global var jQuery, which is loaded with CDN
         'jquery': 'jQuery',
-        'jquery-ui': 'jQuery.ui'
+        'jquery-ui': 'jQuery.ui',
+        'raven-js': 'Raven'
     }
 };
