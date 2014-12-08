@@ -44,6 +44,12 @@ def fetch_identity(params):
         params=params,
         headers={'Content-Type': 'application/json'},
     )
+
+    # TOOD Handle Errors nicely
+    if response.status != 200:
+        data = yield from response.read()
+        raise web.HTTPError(response.status)
+
     data = yield from response.json()
     return data
 
@@ -66,7 +72,7 @@ class DownloadHandler(web.RequestHandler):
             **identity
         )
         response = yield from provider.download(**query)
-        _, file_name = os.path.filename(path)
+        _, file_name = os.path.split(path)
         self.set_header('Content-Type', response.content_type)
         self.set_header('Content-Disposition', 'attachment; filename=' + file_name)
         while True:
@@ -74,3 +80,7 @@ class DownloadHandler(web.RequestHandler):
             if not chunk:
                 break
             self.write(chunk)
+
+    def write_error(self, status_code, exc_info, **kwargs):
+        self.set_status(status_code)
+        # self.write(exc_info[1].message)
