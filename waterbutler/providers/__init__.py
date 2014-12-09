@@ -1,1 +1,1 @@
-from providers import contrib
+from waterbutler.providers import contrib

@@ -5,8 +5,8 @@ import aiohttp
 
 from boto.s3.connection import S3Connection
 
-from providers import core
-from providers.exceptions import FileNotFoundError
+from waterbutler.exceptions import FileNotFoundError
+from waterbutler.providers import core
 
 
 @core.register_provider('s3')
@@ -75,9 +75,9 @@ class S3Provider(core.BaseProvider):
     def key_to_dict(self, key, children=[]):
         return {
             'content': children,
-            'provider': 's3'
-            'kind': 'file'
-            'name': os.path.split(fo.Key)[1]
+            'provider': 's3',
+            'kind': 'file',
+            'name': os.path.split(fo.Key)[1],
             'size': fo.Size,
             'path': fo.Key,
             'modified': fo.LastModified,
@@ -97,7 +97,7 @@ class S3Provider(core.BaseProvider):
             'contents': children,
             'provider': 's3',
             'kind': 'folder',
-            'name': getname(prefix.Prefix)
+            'name': getname(prefix.Prefix),
             'path': prefix.Prefix,
             'modified': None,
             'size': None,

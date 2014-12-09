@@ -7,11 +7,10 @@ from base64 import b64decode
 from tornado import web
 from tornado.escape import json_decode
 
-from server import utils
-from server.utils import coroutine
-
-from providers.core import make_provider
-from providers.core import RequestWrapper
+from waterbutler.providers.core import make_provider
+from waterbutler.providers.core import RequestWrapper
+from waterbutler.server import utils
+from waterbutler.server.utils import coroutine
 
 
 @web.stream_request_body

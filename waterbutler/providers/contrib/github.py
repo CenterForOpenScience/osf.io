@@ -8,7 +8,7 @@ from asyncio import coroutine
 import furl
 import aiohttp
 
-from providers import core
+from waterbutler.providers import core
 
 
 class GithubProvider(core.BaseProvider):
