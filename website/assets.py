@@ -38,6 +38,7 @@ js = Bundle(
         "vendor/script.min.js",
     ),
     'vendor/knockout-sortable/knockout-sortable.js',
+    'vendor/bower_components/jquery.cookie/jquery.cookie.js',
     'js/site.js',
     'js/koHelpers.js',
     'js/language.js',
