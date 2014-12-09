@@ -87,9 +87,6 @@ class TestCRUD(OsfTestCase):
 
     @mock.patch('website.addons.github.api.GitHub.history')
     def test_view_file(self, mock_history):
-        file_name = 'my_file'
-        file_content = 'my_content'
-        file_size = 1024
         mock_history.return_value = [
             {
             'sha': '12345',
@@ -108,6 +105,8 @@ class TestCRUD(OsfTestCase):
             url
         )
         assert_equal(res.status_code, 302)
+        res2 = res.follow(auth=self.user.auth)
+        assert_equal(res2.follow(auth=self.user.auth).status_code, 200)
 
 
     @mock.patch('website.addons.github.api.GitHub.from_settings')
