@@ -2,30 +2,22 @@
 
 import os
 import asyncio
-from base64 import b64decode
 
 import aiohttp
 
-from tornado import web, gen
-from tornado.escape import json_decode
-
-from webargs import Arg
-from webargs.tornadoparser import use_kwargs
+from tornado import web
 
 from waterbutler.server import settings
-
 from waterbutler.providers import core
 from waterbutler.server import utils
 from waterbutler.server.utils import coroutine
 
 
-API_URL = 'http://localhost:5000/api/v1/files/auth/'
-
 @asyncio.coroutine
 def fetch_identity(params):
     response = yield from aiohttp.request(
         'get',
-        API_URL,
+        settings.IDENTITY_API_URL,
         params=params,
         headers={'Content-Type': 'application/json'},
     )
@@ -37,7 +29,6 @@ def fetch_identity(params):
 
     data = yield from response.json()
     return data
-
 
 
 def list_or_value(value):
@@ -56,12 +47,6 @@ def get_query_data(request):
     }
 
 
-upload_args = {
-    'provider': Arg(str, required=True, use=lambda v: v.decode('utf-8')),
-    'path': Arg(str, required=True, use=lambda v: v.decode('utf-8')),
-}
-
-
 STREAM_METHODS = ('PUT', 'POST')
 
 ACTION_MAP = {
@@ -75,12 +60,14 @@ ACTION_MAP = {
 class CRUDHandler(web.RequestHandler):
 
     @coroutine
-    @use_kwargs(upload_args)
-    def prepare(self, provider, path):
+    def prepare(self):
         self.arguments = get_query_data(self.request.query_arguments)
         self.arguments['action'] = ACTION_MAP[self.request.method]
         self.credentials = yield from fetch_identity(self.arguments)
-        self.provider = core.make_provider(provider, self.credentials)
+        self.provider = core.make_provider(
+            self.get_argument('provider'),
+            self.credentials,
+        )
         self.prepare_stream()
 
     def prepare_stream(self):

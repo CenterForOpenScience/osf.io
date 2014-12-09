@@ -5,16 +5,13 @@ import tornado.options
 import tornado.platform.asyncio
 import tornado.web
 
-from waterbutler.server.handlers import download
-from waterbutler.server.handlers import upload
+from waterbutler.server.handlers import crud
 
 
 def make_app(debug):
     app = tornado.web.Application(
         [
-            (r'/file', upload.CRUDHandler),
-            # (r'/file/download', download.DownloadHandler),
-            # (r'/file/upload', upload.UploadHandler),
+            (r'/file', crud.CRUDHandler),
         ],
         debug=debug,
     )
