@@ -5,8 +5,8 @@
 <div class="scripted" id="revisionScope">
 
     <ol class="breadcrumb">
-        <li><a href="{{ urls.files }}">{{ node }}</a></li>
-        <li class="active overflow">{{ path }}</li>
+        <li><a href="{{ urls.files }}" data-bind="html: node"></a></li>
+        <li class="active overflow" data-bind="html: path"></li>
     </ol>
 
     <a
@@ -62,21 +62,23 @@
 
 </div>
 
-<script>
-    $script(['/static/addons/osfstorage/storageRevisions.js'], function() {
-        var revisionTable = new RevisionTable(
-            '#revisionScope',
-            '${node['title']}',
-            '${file_path}',
-            ${int(user['can_edit'])},
-            {
-                files: '${files_url}',
-                download: '${download_url}',
-                delete: '${delete_url}',
-                revisions: '${revisions_url}'
+<script type="text/javascript">
+    window.contextVars = $.extend(true, {}, window.contextVars, {
+        filePath: '${file_path | h}',
+        currentUser: {
+            canEdit: ${int(user['can_edit'])}
+        },
+        node: {
+            title: '${node['title'] | h}',
+            urls: {
+                files:'${files_url}',
+                download:'${download_url}',
+                delete:'${delete_url}',
+                revisions:'${revisions_url}',
             }
-        );
+        }
     });
 </script>
 
+<script src="/static/public/js/osfstorage/file-detail.js"></script>
 </%def>

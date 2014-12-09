@@ -136,16 +136,3 @@
         <p data-bind="html: message, attr.class: messageClass"></p>
     </div>
 </div><!-- end #dropboxScope -->
-
-
-<script>
-    $script.ready('zeroclipboard', function() {
-        ZeroClipboard.config({moviePath: '/static/vendor/bower_components/zeroclipboard/ZeroClipboard.swf'})
-    });
-    $script(['/static/addons/dropbox/dropboxNodeConfig.js']);
-    $script.ready('dropboxNodeConfig', function() {
-        // TODO(sloria): Remove this dependency on mako variable
-        var url = '${node["api_url"] + "dropbox/config/"}';
-        var dropbox = new DropboxNodeConfig('#dropboxScope', url, '#myDropboxGrid');
-    });
-</script>

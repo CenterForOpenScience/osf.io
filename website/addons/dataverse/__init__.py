@@ -25,7 +25,7 @@ CATEGORIES = ['storage']
 INCLUDE_JS = {
     'widget': [],
     'page': [],
-    'files': ['dataverse-fangorn-config.js'],
+    'files': [],
 }
 
 INCLUDE_CSS = {

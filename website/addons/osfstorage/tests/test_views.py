@@ -989,3 +989,30 @@ class TestLegacyViews(StorageTestCase):
             version=3,
         )
         assert_urls_equal(res.location, expected_url)
+
+    def test_api_download_file_redirect(self):
+        url = '/api/v1/project/{0}/osffiles/{1}/'.format(self.project._id, self.path)
+        res = self.app.get(url, auth=self.user.auth)
+        print(res.location)
+        assert_equal(res.status_code, 301)
+        expected_url = self.project.web_url_for(
+            'osf_storage_view_file',
+            path=self.path,
+            action='download',
+        )
+        assert_urls_equal(res.location, expected_url)
+
+    def test_api_download_file_version_redirect(self):
+        url = '/api/v1/project/{0}/osffiles/{1}/version/3/'.format(
+            self.project._id,
+            self.path,
+        )
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 301)
+        expected_url = self.project.web_url_for(
+            'osf_storage_view_file',
+            path=self.path,
+            action='download',
+            version=3,
+        )
+        assert_urls_equal(res.location, expected_url)

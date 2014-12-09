@@ -1,15 +1,19 @@
-;
-(function (global, factory) {
-    if (typeof define === 'function' && define.amd) {
-        define(['knockout', 'jquery', 'osfutils', 'treebeard', 'bootstrap', 'hgrid-draggable',
-            'typeahead', 'handlebars'], factory);
-    } else if (typeof $script === 'function') {
-        global.ProjectOrganizer = factory(jQuery, global.Treebeard, global.ko);
-        $script.done('projectorganizer');
-    } else {
-        global.ProjectOrganizer = factory(jQuery, global.Treebeard, global.ko);
-    }
-}(this, function ($, Treebeard, ko) {
+
+'use strict';
+
+var Handlebars = require('handlebars');
+var $ = require('jquery');
+var HGrid = require('hgrid');
+var bootbox = require('bootbox');
+var Bloodhound = require('exports?Bloodhound!typeahead.js');
+var moment = require('moment');
+var Raven = require('raven-js');
+
+require('../vendor/jquery-drag-drop/jquery.event.drag-2.2.js');
+require('../vendor/jquery-drag-drop/jquery.event.drop-2.2.js');
+require('../vendor/bower_components/hgrid/plugins/hgrid-draggable/hgrid-draggable.js');
+
+var osfHelpers = require('./osf-helpers.js');
 
     // copyMode can be 'copy', 'move', 'forbidden', or null.
     var copyMode = null;
@@ -70,15 +74,15 @@
     }
 
 
-    function createProjectDetailHTMLFromTemplate(theItem) {
-        var detailTemplateSource = $('#project-detail-template').html();
-        Handlebars.registerHelper('commalist', function (items, options) {
-            var out = '';
 
-            for (var i = 0, l = items.length; i < l; i++) {
-                out = out + options.fn(items[i]) + (i !== (l - 1) ? ', ' : '');
-            }
-            return out;
+function createProjectDetailHTMLFromTemplate(theItem) {
+    var detailTemplateSource = $('#project-detail-template').html();
+    Handlebars.registerHelper('commalist', function (items, options) {
+        var out = '';
+        for (var i = 0, l = items.length; i < l; i++) {
+            out = out + options.fn(items[i]) + (i !== (l - 1) ? ', ' : '');
+        }
+        return out;
         });
         var detailTemplate = Handlebars.compile(detailTemplateSource);
         var detailTemplateContext = {
@@ -161,7 +165,6 @@
             if (suggestions.length === 0) {
               cb([emptyPublicProjects]);
             }
-
             else {
               cb(suggestions);
             }
@@ -260,7 +263,6 @@
                         $('#add-link-warn-' + theItem.node_id).text('This project is already in the folder')
                     }
                 }).fail($.osf.handleJSONError);
-
             });
             $('#close-' + theItem.node_id).click(function () {
                 $('.project-details').hide();
@@ -464,8 +466,8 @@
         var dateString = moment.utc(item.data.dateModified).fromNow();
         if (item.data.modifiedBy !== '') {
             personString = item.data.modifiedBy.toString();
-        }
 
+        }
         return m('span', dateString + ', by ' + personString );
     }
 
@@ -534,11 +536,6 @@
         item.notify.update('Not allowed: Private folder', 'warning', 1, undefined);
         return false;
     }
-
-    // function _poMouseOverRow (item, event) {
-    //     $('.fg-hover-hide').hide(); 
-    //         $(event.target).closest('.tb-row').find('.fg-hover-hide').show();
-    // }
 
     function _poResolveIcon(item){
 
@@ -1042,5 +1039,4 @@
     };
 
 
-        return ProjectOrganizer;
-}));
+module.exports = ProjectOrganizer;

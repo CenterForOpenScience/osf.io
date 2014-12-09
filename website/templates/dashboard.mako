@@ -22,7 +22,7 @@
         <div class="project-organizer" id="projectOrganizerScope">
             <%include file="projectGridTemplates.html"/>
 
-            <div id="project-grid"></div>
+            <div class="hgrid" id="project-grid"></div>
             <span class='organizer-legend'><img alt="Folder" src="/static/img/hgrid/folder.png">Folder</span>
             <span class='organizer-legend'><img alt="Smart Folder" src="/static/img/hgrid/smart-folder.png">Smart Folder</span>
             <span class='organizer-legend'><img alt="Project" src="/static/img/hgrid/project.png">Project</span>
@@ -114,81 +114,6 @@
 
 <%def name="javascript_bottom()">
 
-<script>
-    $script(['/static/js/onboarder.js']);  // exports onboarder
-    $script(['/static/js/projectCreator.js']);  // exports projectCreator
+<script src="/static/public/js/dashboard-page.js"></script>
 
-    $script.ready(['projectCreator', 'onboarder'], function() {
-        // Send a single request to get the data to populate the typeaheads
-        var url = "${api_url_for('get_dashboard_nodes')}";
-        var request = $.getJSON(url, function(response) {
-            var allNodes = response.nodes;
-            ##  For uploads, only show nodes for which user has write or admin permissions
-            var uploadSelection = ko.utils.arrayFilter(allNodes, function(node) {
-                return $.inArray(node.permissions, ['write', 'admin']) !== -1;
-            });
-            ## Filter out components and nodes for which user is not admin
-            var registrationSelection = ko.utils.arrayFilter(uploadSelection, function(node) {
-                return node.category === 'project' && node.permissions === 'admin';
-            });
-
-            $.osf.applyBindings({nodes: allNodes}, '#obGoToProject');
-            % if not disk_saving_mode:
-              $.osf.applyBindings({nodes: registrationSelection}, '#obRegisterProject');
-              $.osf.applyBindings({nodes: uploadSelection}, '#obUploader');
-            % endif
-
-            function ProjectCreateViewModel() {
-                var self = this;
-                self.isOpen = ko.observable(false),
-                self.focus = ko.observable(false);
-                self.toggle = function() {
-                    self.isOpen(!self.isOpen());
-                    self.focus(self.isOpen());
-                };
-                self.nodes = response.nodes;
-            }
-            $.osf.applyBindings(ProjectCreateViewModel, '#projectCreate');
-        });
-        request.fail(function(xhr, textStatus, error) {
-            Raven.captureMessage('Could not fetch dashboard nodes.', {
-                url: url, textStatus: textStatus, error: error
-            });
-        });
-    });
-
-     // initialize the logfeed
-    $script(['/static/js/logFeed.js']);
-    $script.ready('logFeed', function() {
-        // NOTE: the div#logScope comes from log_list.mako
-        var logFeed = new LogFeed("#logScope", "/api/v1/watched/logs/");
-    });
-</script>
-
-##       Project Organizer
-
-    <script>
-        $script(['/static/js/projectorganizer.js']);
-        $script.ready(['projectorganizer'], function() {
-
-            $.ajax({
-              url:  '/api/v1/dashboard/'
-            })
-            .done(function( data ) {
-                console.log("first data", data);
-                var options = {
-                        placement : 'dashboard',
-                        divID: 'project-grid',
-                        filesData: data.data,
-                        multiselect : true
-                    };
-                    console.log("project Organizer", ProjectOrganizer);
-                    var filebrowser = new ProjectOrganizer(options);   
-
- 
-            });
-
-        });
-
-    </script>
 </%def>

@@ -219,46 +219,12 @@
     <% import json %>
 
     <script type="text/javascript">
-
-    $script(['/static/js/contribAdder.js'], 'contribAdder');
-
-    $('body').on('nodeLoad', function(event, data) {
-        // If user is a contributor, initialize the contributor modal
-        // controller
-        if (data.user.can_edit) {
-            $script.ready('contribAdder', function() {
-                var contribAdder = new ContribAdder(
-                    '#addContributors',
-                    data.node.title,
-                    data.parent_node.id,
-                    data.parent_node.title
-                );
-            });
-        }
-        });
-
-    $script(['/static/js/contribManager.js'], function() {
-        var contributors = ${json.dumps(contributors)};
-        var user = ${json.dumps(user)};
-        var isRegistration = ${json.dumps(node['is_registration'])};
-        var manager = new ContribManager('#manageContributors', contributors, user, isRegistration);
-    });
-
-    % if 'admin' in user['permissions']:
-        $script(['/static/js/privateLinkManager.js',
-                 '/static/js/privateLinkTable.js']);
-
-        $script.ready(['privateLinkManager', 'privateLinkTable'], function () {
-            // Controls the modal
-            var configUrl = nodeApiUrl + 'get_editable_children/';
-            var privateLinkManager = new PrivateLinkManager('#addPrivateLink', configUrl);
-
-            var tableUrl = nodeApiUrl + 'private_link/';
-            var privateLinkTable = new PrivateLinkTable('#linkScope', tableUrl);
-        });
-
-        $("#privateLinkTable").on('click', ".link-url", function(e) { e.target.select() });
-    % endif
+      window.contextVars = window.contextVars || {};
+      window.contextVars.user = ${json.dumps(user)};
+      window.contextVars.isRegistration = ${json.dumps(node['is_registration'])};
+      window.contextVars.contributors = ${json.dumps(contributors)};
 
     </script>
+    <script src="/static/public/js/sharing-page.js"></script>
+
 </%def>

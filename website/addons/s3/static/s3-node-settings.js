@@ -1,3 +1,7 @@
+var $osf = require('osf-helpers');
+var bootbox = require('bootbox');
+var $ = require('jquery');
+
 (function() {
 
     function newBucket() {
@@ -21,7 +25,7 @@
                 });
             } else {
                 bucketName = bucketName.toLowerCase();
-                $.osf.postJSON(
+                $osf.postJSON(
                     nodeApiUrl + 's3/newbucket/',
                     {bucket_name: bucketName}
                 ).done(function() {
@@ -55,18 +59,18 @@
         }).done(function() {
             window.location.reload();
         }).fail(
-            $.osf.handleJSONError
+            $osf.handleJSONError
         );
     };
 
     function importNodeAuth() {
-        $.osf.postJSON(
+        $osf.postJSON(
             nodeApiUrl + 's3/import-auth/',
             {}
         ).done(function() {
             window.location.reload();
         }).fail(
-            $.osf.handleJSONError
+            $osf.handleJSONError
         );
     }
 

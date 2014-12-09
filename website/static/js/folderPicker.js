@@ -1,30 +1,20 @@
 /**
- * A simple folder picker plugin built on Treebeard.
- * Takes the same options as Treebeard and additionally requires an
- * `onChooseFolder` option (the callback executed when a folder is selected).
- *
- * Usage:
- *
- *     $('#myPicker').folderpicker({
- *         data: // Array of Treebeard-formatted data or URL to fetch data
- *         onPickFolder: function(evt, folder) {
- *             // do something with folder
- *         }
- *     });
- */
-;(function (global, factory) {
-    if (typeof define === 'function' && define.amd) {
-        define(['jquery', 'treebeard'], factory);
-    } else if (typeof $script === 'function') {
-        $script.ready(['treebeard'], function() {
-            global.FolderPicker = factory(jQuery, Treebeard);
-            $script.done('folderPicker');
-        });
-    } else {
-        global.FolderPicker = factory(jQuery, global.Treebeard);
-    }
-}(this, function($, Treebeard){
+* A simple folder picker plugin built on HGrid.
+* Takes the same options as HGrid and additionally requires an
+* `onChooseFolder` option (the callback executed when a folder is selected).
+*
+* Usage:
+*
+*     $('#myPicker').folderpicker({
+*         data: // Array of HGrid-formatted data or URL to fetch data
+*         onPickFolder: function(evt, folder) {
+*             // do something with folder
+*         }
+*     });
+*/
     'use strict';
+    var Treebeard = require('treebeard');
+    var $ = require('jquery');
 
     function _treebeardToggleCheck (item) {
         if (item.data.path == "/") {
@@ -123,6 +113,7 @@
         });
 
         return default_columns;
+
     }
 
     function _treebeardOnload () {
@@ -165,12 +156,7 @@
         }
     }
 
-    // Upon clicking the name of folder, toggle its collapsed state
-    //function onClickName(evt, row, grid) {
-    //    grid.toggleCollapse(row);
-    //}
-
-    // Default HGrid options
+    // Default Treebeard options
     var defaults = {
         columnTitles : _treebeardColumnTitle,
         resolveRows : _treebeardResolveRows,
@@ -221,6 +207,5 @@
             return new FolderPicker(selector, options);
         });
     };
-    // Export
-    return FolderPicker;
-}));
+ 
+module.exports = FolderPicker;

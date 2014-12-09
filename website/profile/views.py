@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+
+import os
 import logging
 import operator
 import httplib as http
@@ -8,15 +10,19 @@ from dateutil.parser import parse as parse_date
 from flask import request
 from modularodm.exceptions import ValidationError
 
-from framework.exceptions import HTTPError
 from framework.auth import utils as auth_utils
 from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
+from framework.auth.exceptions import ChangePasswordError
+from framework.exceptions import HTTPError
+from framework.flask import redirect  # VOL-aware redirect
+from framework.status import push_status_message
 
 from website import settings
 from website.models import User
 from website.models import ApiKey
 from website.views import _render_nodes
+from website.util import web_url_for
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
 from website.profile import utils as profile_utils
@@ -133,6 +139,33 @@ def user_profile(auth, **kwargs):
         'user_api_url': user.api_url,
     }
 
+
+@must_be_logged_in
+def user_account(auth, **kwargs):
+    user = auth.user
+    return {
+        'user_id': user._id,
+    }
+
+
+@must_be_logged_in
+def user_account_password(auth, **kwargs):
+    user = auth.user
+    old_password = request.form.get('old_password', None)
+    new_password = request.form.get('new_password', None)
+    confirm_password = request.form.get('confirm_password', None)
+
+    try:
+        user.change_password(old_password, new_password, confirm_password)
+        user.save()
+    except ChangePasswordError as error:
+        push_status_message('<br />'.join(error.messages) + '.', kind='warning')
+    else:
+        push_status_message('Password updated successfully.', kind='info')
+
+    return redirect(web_url_for('user_account'))
+
+
 @must_be_logged_in
 def user_addons(auth, **kwargs):
 
@@ -162,8 +195,34 @@ def user_addons(auth, **kwargs):
     out['addons_available'].sort(key=operator.attrgetter("full_name"), reverse=False)
     out['addons_enabled'] = addons_enabled
     out['addon_enabled_settings'] = addon_enabled_settings
+    out['addon_js'] = collect_user_config_js(user.get_addons())
     return out
 
+
+def collect_user_config_js(addons):
+    """Collect webpack bundles for each of the addons' user-cfg.js modules. Return
+    the URLs for each of the JS modules to be included on the user addons config page.
+
+    :param list addons: List of user's addon config records.
+    """
+    js_modules = []
+    for addon in addons:
+
+        file_path = os.path.join('static',
+                                 'public',
+                                 'js',
+                                 addon.config.short_name,
+                                 'user-cfg.js')
+        js_file = os.path.join(
+            settings.BASE_PATH,
+            file_path,
+        )
+        if os.path.exists(js_file):
+            js_path = os.path.join(
+                '/', file_path
+            )
+            js_modules.append(js_path)
+    return js_modules
 
 @must_be_logged_in
 def profile_addons(**kwargs):

@@ -1,7 +1,9 @@
-(function () {
+var $ = require('jquery');
+var bootbox = require('bootbox');
+var Raven = require('raven-js');
+var $osf = require('osf-helpers');
 
-
-window.ProjectSettings = {};
+var ProjectSettings = {};
 
 /**
 *  returns a random name from this list to use as a confirmation string
@@ -46,7 +48,7 @@ function randomScientist() {
     'Somerville',
     'Tesla',
     'Tyson',
-    'Turing',
+    'Turing'
     ];
 
     return scientists[Math.floor(Math.random() * scientists.length)];
@@ -65,7 +67,7 @@ var request = $.ajax({
 });
 request.done(function(response) {
     var currentUserName = window.contextVars.currentUser.fullname;
-    contribs = response.contributors.filter(function(contrib) { 
+    contribs = response.contributors.filter(function(contrib) {
         return contrib.shortname !== currentUserName;
     });
     moreContribs = response.more;
@@ -100,7 +102,7 @@ ProjectSettings.getConfirmationCode = function(nodeType) {
         $.each(contribs, function(i, b){
             contriblist += '<li>' + b.fullname + '</li>';
         });
-        contribsMsg = 'including:</p>' +
+        contribsMsg = ' Contributors include:</p>' +
             '<ol>' + contriblist +'</ol>' +
             '<p style="font-weight: normal; font-size: medium; line-height: normal;">' +
             ((moreContribs > 0) ? 'and <strong>' + moreContribs + '</strong> others.</p>' : '');
@@ -123,91 +125,13 @@ ProjectSettings.getConfirmationCode = function(nodeType) {
                     url: nodeApiUrl
                 });
                 request.done(successHandler);
-                request.fail($.osf.handleJSONError);
+                request.fail($osf.handleJSONError);
             } else if (result != null) {
-                bootbox.alert({
-                    title: 'Incorrect confirmation',
-                    message: 'The confirmation string you provided was incorrect. Please try again.'
-                });
+                $osf.growl('Incorrect confirmation',
+                    'The confirmation string you provided was incorrect. Please try again.');
             }
         }
     );
 };
 
-$(document).ready(function() {
-
-    // TODO: Knockout-ify me
-    $('#commentSettings').on('submit', function() {
-        var $commentMsg = $('#configureCommentingMessage');
-
-        var $this = $(this);
-        var commentLevel = $this.find('input[name="commentLevel"]:checked').val();
-
-        $.osf.postJSON(
-            nodeApiUrl + 'settings/comments/',
-            {commentLevel: commentLevel}
-        ).done(function() {
-            $commentMsg.addClass('text-success');
-            $commentMsg.text('Successfully updated settings.');
-            window.location.reload();
-        }).fail(function() {
-            bootbox.alert('Could not set commenting configuration. Please try again.');
-        });
-
-        return false;
-
-    });
-
-
-    // Set up submission for addon selection form
-    $('#selectAddonsForm').on('submit', function() {
-
-        var formData = {};
-        $('#selectAddonsForm').find('input').each(function(idx, elm) {
-            var $elm = $(elm);
-            formData[$elm.attr('name')] = $elm.is(':checked');
-        });
-        var msgElm = $(this).find('.addon-settings-message');
-        $.ajax({
-            url: nodeApiUrl + 'settings/addons/',
-            data: JSON.stringify(formData),
-            type: 'POST',
-            contentType: 'application/json',
-            dataType: 'json',
-            success: function() {
-                msgElm.text('Settings updated').fadeIn();
-                window.location.reload();
-            }
-        });
-
-        return false;
-
-    });
-
-
-
-    // Show capabilities modal on selecting an addon; unselect if user
-    // rejects terms
-    $('.addon-select').on('change', function() {
-        var that = this,
-            $that = $(that);
-        if ($that.is(':checked')) {
-            var name = $that.attr('name');
-            var capabilities = $('#capabilities-' + name).html();
-            if (capabilities) {
-                bootbox.confirm(
-                    capabilities,
-                    function(result) {
-                        if (!result) {
-                            $(that).attr('checked', false);
-                        }
-                    }
-                );
-            }
-        }
-    });
-
-
-});
-
-}());
+module.exports = ProjectSettings;

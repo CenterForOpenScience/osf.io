@@ -70,21 +70,16 @@ $('#figsharePublishArticle').on('click', function(){
     <p>FigShare DOI: <a href="${doi}">${doi}</a></p>
 %endif
 </div>
-
-    <script>
-        $script(['/static/js/deleteFile.js'], function() {
-            var urls = {
-                'delete_url': '${urls['delete']}',
-                'files_page_url': '${urls['files']}'
-            };
-            var deleteFile = new DeleteFile('#figshareScope', urls);
+   <script type="text/javascript">
+        window.contextVars = $.extend(true, {}, window.contextVars, {
+            node: {
+                urls: {
+                    delete_url: '${urls['delete']}',
+                    files_page_url: '${urls['files']}'
+                    }
+            }
         });
-
-         $(function () {
-            $("[data-toggle='popover']").popover(({html:true}));
-            $("[data-toggle='popover'].disabled").css("pointer-events", "auto")
-         });
     </script>
-
+    <script src="/static/public/js/figshare/file-detail.js"></script>
 </%def>
 

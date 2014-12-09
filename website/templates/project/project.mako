@@ -46,10 +46,15 @@
 
         <div class="addon-widget-container">
             <h3 class="addon-widget-header"><a href="${node['url']}files/">Files</a></h3>
-            <div id="treeGrid" class="">
-                <div class="fangorn-loading"> <i class="icon-spinner fangorn-spin"></i> <p class="m-t-sm"> Loading files... </p> </div>
-
+            <div id="filetreeProgressBar" class="progress progress-striped active">
+                <div class="progress-bar"  role="progressbar" aria-valuenow="100"
+                    aria-valuemin="0" aria-valuemax="100" style="width: 100%">
+                    <span class="sr-only">Loading</span>
+                </div>
             </div>
+
+            <input role="search" class="form-control" placeholder="Search files..." type="text" id="fileSearch" autofocus>
+            <div id="myGrid" class="filebrowser hgrid"></div>
         </div>
 
     </div>
@@ -138,6 +143,8 @@
 </%def>
 
 <%def name="javascript_bottom()">
+<% import json %>
+
 ${parent.javascript_bottom()}
 
 % for script in addon_widget_js:
@@ -145,155 +152,26 @@ ${parent.javascript_bottom()}
 % endfor
 
 <script type="text/javascript">
-    $script(['/static/js/logFeed.js'], 'logFeed');
+    // Hack to allow mako variables to be accessed to JS modules
 
-    $('body').on('nodeLoad', function(event, data) {
-       $script.ready('logFeed', function() {
-           var logFeed = new LogFeed('#logScope', nodeApiUrl + 'log/');
-       });
-    });
-
-    ##  NOTE: pointers.js is loaded in project_base.mako
-    $script.ready('pointers', function() {
-       var pointerManager = new Pointers.PointerManager('#addPointer', contextVars.node.title);
-    });
-
-
-    var $comments = $('#comments');
-    var userName = '${user_full_name | js_str}';
-    var canComment = ${'true' if user['can_comment'] else 'false'};
-    var hasChildren = ${'true' if node['has_children'] else 'false'};
-
-    if ($comments.length) {
-
-        $script(['/static/js/commentpane.js', '/static/js/comment.js'], 'comments');
-
-        $script.ready('comments', function () {
-            var timestampUrl = nodeApiUrl + 'comments/timestamps/';
-            var onOpen = function() {
-                var request = $.osf.putJSON(timestampUrl);
-                request.fail(function(xhr, textStatus, errorThrown) {
-                    Raven.captureMessage('Could not update comment timestamp', {
-                        url: timestampUrl,
-                        textStatus: textStatus,
-                        errorThrown: errorThrown
-                    });
-                });
-            }
-            var commentPane = new CommentPane('#commentPane', {onOpen: onOpen});
-            Comment.init('#commentPane', userName, canComment, hasChildren);
-        });
-    }
-
-</script>
-
-## Todo: Move to project.js
-<script>
-
-    $(document).ready(function() {
-
-        // Tooltips
-        $('[data-toggle="tooltip"]').tooltip();
-
-        // Tag input
-        $('#node-tags').tagsInput({
-            width: "100%",
-            interactive: ${'true' if user["can_edit"] else 'false'},
-            maxChars: 128,
-            onAddTag: function(tag){
-                var url = "${node['api_url']}" + "addtag/" + tag + "/";
-                var request = $.ajax({
-                    url: url,
-                    type: "POST",
-                    contentType: "application/json"
-                });
-                request.fail(function(xhr, textStatus, error) {
-                    Raven.captureMessage('Failed to add tag', {
-                        tag: tag, url: url, textStatus: textStatus, error: error
-                    });
-                })
-            },
-            onRemoveTag: function(tag){
-                var url = "${node['api_url']}" + "removetag/" + tag + "/";
-                var request = $.ajax({
-                    url: url,
-                    type: "POST",
-                    contentType: "application/json"
-                });
-                request.fail(function(xhr, textStatus, error) {
-                    Raven.captureMessage('Failed to remove tag', {
-                        tag: tag, url: url, textStatus: textStatus, error: error
-                    });
-                })
-            }
-        });
-
-        // Limit the maximum length that you can type when adding a tag
-        $('#node-tags_tag').attr("maxlength", "128");
-
-        // Remove delete UI if not contributor
-        % if 'write' not in user['permissions'] or node['is_registration']:
-            $('a[title="Removing tag"]').remove();
-            $('span.tag span').each(function(idx, elm) {
-                $(elm).text($(elm).text().replace(/\s*$/, ''))
-            });
-        % endif
-
-        %if node['is_registration'] and not node['tags']:
-            $('div.tags').remove();
-        %endif
-
-    });
-
-    function _fangornTitleColumn (item, col) {
-        return m('span', 
-            { onclick : function(){ 
-                if (item.kind === 'item') {
-                    window.location = item.data.urls.view;                    
-                } 
-            }}, 
-            item.data.name);
-    }
-
-    $script(['/static/js/fangorn.js']);
-
-
-    $script.ready(['fangorn'], function() {
-    
-        $.ajax({
-          url:  nodeApiUrl + 'files/grid/'
-        })
-        .done(function( data ) {
-            console.log("data", data);
-            var fangornOpts = {
-                divID: 'treeGrid',
-                filesData: data.data,
-                uploads : false,
-                showFilter : true,
-                filterStyle : { 'float' : 'left', width : '100%'},
-                columnTitles : function(){ 
-                    return [
-                        {
-                        title: 'Name',
-                        width : '100%',
-                        sort : false,
-                        sortType : 'text'
-                        }
-                    ]; 
-                    },
-                resolveRows : function(){ 
-                    return  [{
-                        data : 'name',  
-                        folderIcons : true,
-                        filter : true,
-                        custom : _fangornTitleColumn
-                    }];
-                    },
-            };
-            console.log("fangorn", Fangorn);
-            var filebrowser = new Fangorn(fangornOpts);
-        });
+    window.contextVars = $.extend(true, {}, window.contextVars, {
+        currentUser: {
+            name: '${user_full_name | js_str}',
+            canComment: ${json.dumps(user['can_comment'])},
+            canEdit: ${json.dumps(user['can_edit'])}
+        },
+        node: {
+            hasChildren: ${json.dumps(node['has_children'])},
+            isRegistration: ${json.dumps(node['is_registration'])},
+            tags: ${json.dumps(node['tags'])}
+        }
     });
 </script>
+
+<script src="/static/public/js/project-dashboard.js"></script>
+
+% for asset in addon_widget_js:
+<script src="${asset}"></script>
+% endfor
 
 </%def>

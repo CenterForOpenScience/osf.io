@@ -2,6 +2,26 @@
 Changelog
 *********
 
+0.21.17 (2014-12-02)
+====================
+
+Hotfix release
+
+- Add an endpoint for receiving the webhook payload from the OSF upload
+service when files are backed up to a Amazon Glacier archive.
+- Fix a bug in accessing nested files in S3 addon.
+
+0.21.13 (2014-11-24)
+====================
+
+Hotfix release
+
+- Display warning about private Github repos on a public project on files and
+statistics pages.
+- Refactor celery task for rendering files so that file contents are not
+passed to message broker.
+- Use celery to asynchronously provision Piwik sites.
+
 0.21.0 (2014-11-19)
 ===================
 

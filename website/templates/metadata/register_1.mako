@@ -37,99 +37,20 @@
 
 </div><!-- end #registration_template -->
 
-<!-- Apply view model -->
+<% import json %>
 <script type="text/javascript">
-
-    /**
-     * Unblock UI and display error modal
-     */
-    function registration_failed() {
-        $.osf.unblock();
-        bootbox.alert('Registration failed');
-    }
-
-    function registerNode(data) {
-
-        // Block UI until request completes
-        $.osf.block();
-
-        // POST data
-        $.ajax({
-            url: '${node['api_url']}' + 'register/' + '${template_name if template_name else ''}/',
-            type: 'POST',
-            data: JSON.stringify(data),
-            contentType: 'application/json',
-            dataType: 'json'
-        }).done(function(response) {
-            if (response.status === 'success')
-                window.location.href = response.result;
-            else if (response.status === 'error')
-                registration_failed();
-        }).fail(function() {
-            registration_failed();
-        });
-
-        // Stop event propagation
-        return false;
-
-    }
-
-    $(document).ready(function() {
-
-        // Don't submit form on enter; must use $.delegate rather than $.on
-        // to catch dynamically created form elements
-        $('#registration_template').delegate('input, select', 'keypress', function(event) {
-            return event.keyCode != 13;
-        });
-
-        registrationViewModel = new MetaData.ViewModel(
-            ${schema},
-            ${int(registered)},
-            ${[str(node['id'])] + [str(each) for each in children_ids]}
-        );
-        ko.applyBindings(registrationViewModel, $('#registration_template')[0]);
-        registrationViewModel.updateIdx('add', true);
-
-        % if registered:
-            registrationViewModel.unserialize(${payload});
-        % endif
-
-        $('#registration_template form').on('submit', function() {
-
-            // Serialize responses
-            var serialized = registrationViewModel.serialize(),
-                data = serialized.data,
-                complete = serialized.complete;
-
-            // Clear continue text and stop if incomplete
-            if (!complete) {
-                registrationViewModel.continueText('');
-                return false;
-            }
-
-            $.ajax({
-                url: nodeApiUrl + 'beforeregister/',
-                contentType: 'application/json',
-                success: function(response) {
-                    if (response.prompts && response.prompts.length) {
-                        bootbox.confirm(
-                            $.osf.joinPrompts(response.prompts, 'Are you sure you want to register this project?'),
-                            function(result) {
-                                if (result) {
-                                    registerNode(data)
-                                }
-                            }
-                        )
-                    } else {
-                        registerNode(data);
-                    }
-                }
-            });
-
-            return false;
-
-        });
-
-    });
-
+    ## Make Mako variables accessible to JS modules.
+    ## TODO: This information should be fetched from a JSON endpoint.
+    window.contextVars = window.contextVars || {};
+    window.contextVars.node = window.contextVars.node || {};
+    window.contextVars.node.urls = window.contextVars.node.urls || {};
+    window.contextVars.node.urls.api = ${json.dumps(node['api_url'])};
+    window.contextVars.node.id = ${json.dumps(str(node['id']))};
+    window.contextVars.node.children = ${[str(each) for each in children_ids]};
+    window.contextVars.regTemplate = ${json.dumps(template_name or '')};
+    window.contextVars.regSchema = ${schema};
+    window.contextVars.regPayload = ${json.dumps(payload)};
+    window.contextVars.registered = ${json.dumps(int(registered))};
 </script>
+
+<script src="/static/public/js/register_1-page.js"></script>

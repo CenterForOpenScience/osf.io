@@ -250,21 +250,16 @@ $ invoke migrate_search
 $ invoke elasticsearch
 ```
 
+## NPM
 
-## Using Bower for front-end dependencies
-
-We use [bower](http://bower.io/) to automatically download and manage dependencies for front-end libraries. This should
-be installed with `invoke setup` (above)
-
-To get the bower CLI, you must have Node installed.
+The Node Package Manager (NPM) is required for installing a number of node-based packages.
 
 ```bash
 # For MacOSX
 $ brew update && brew install node
-$ npm install -g bower
 ```
 
-Installing Node and Bower on Ubuntu is slightly more complicated. Node is installed as `nodejs`, but Bower expects
+Installing Node on Ubuntu is slightly more complicated. Node is installed as `nodejs`, but Bower expects
 the binary to be called `node`. Symlink `nodejs` to `node` to fix, then verify that `node` is properly aliased:
 
 ```bash
@@ -272,6 +267,16 @@ the binary to be called `node`. Symlink `nodejs` to `node` to fix, then verify t
 $ sudo apt-get install nodejs
 $ sudo ln -s /usr/bin/nodejs /usr/bin/node
 $ node --version      # v0.10.25
+```
+
+## Using Bower to install front-end dependencies
+
+We use [bower](http://bower.io/) to automatically download and manage dependencies for front-end libraries. This should
+be installed with `invoke setup` (above)
+
+To get the bower CLI, you must have `npm` installed.
+
+```bash
 $ npm install -g bower
 ```
 
@@ -294,6 +299,26 @@ $ bower install zeroclipboard --save
 The `--save` option automatically adds an entry to the `bower.json` after downloading the library.
 
 This will save the library in `website/static/vendor/bower_components/`, where it can be imported like any other module.
+
+## Using webpack for asset bundling and minification
+
+We use [webpack](https://webpack.github.io/docs/) to bundle and minify our static assets.
+
+To get the webpack CLI, you must have `npm` installed.
+
+```bash
+$ npm install -g webpack
+```
+
+### To build assets with webpack
+
+```bash
+# Make sure dependencies are up to date
+$ bower install
+# Run webpack in watch mode
+$ inv pack -w
+```
+
 
 ## Setting up addons
 
@@ -319,6 +344,8 @@ invoke mailserver
 invoke rabbitmq
 invoke celery_worker
 invoke elasticsearch
+bower install
+invoke pack -w
 invoke server
 ```
 

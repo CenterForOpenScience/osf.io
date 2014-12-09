@@ -1,7 +1,7 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Settings</%def>
 <%def name="content()">
-<h2 class="page-header">Account Settings</h2>
+<h2 class="page-header">Profile Information</h2>
 
 ## TODO: Review and un-comment
 ##<div class="row">
@@ -21,6 +21,7 @@
         <div class="panel panel-default">
             <ul class="nav nav-stacked nav-pills">
                 <li><a href="#">Profile Information</a></li>
+                <li><a href="${ web_url_for('user_account') }">Account Settings</a></li>
                 <li><a href="${ web_url_for('user_addons') }">Configure Add-ons</a></li>
             </ul>
         </div><!-- end sidebar -->
@@ -76,31 +77,26 @@
 <%include file="include/profile/social.mako" />
 <%include file="include/profile/jobs.mako" />
 <%include file="include/profile/schools.mako" />
+</%def>
 
+<%def name="javascript_bottom()">
 <script type="text/javascript">
-
-    $script(['/static/js/profile.js']);
-    $script.ready('profile', function() {
-        var nameUrls = {
-            crud: '${ api_url_for('serialize_names') }',
-            impute: '${ api_url_for('impute_names') }'
-        };
-        var socialUrls = {
-            crud: '${ api_url_for('serialize_social') }'
-        };
-        var jobsUrls = {
-            crud: '${ api_url_for('serialize_jobs') }'
-        };
-        var schoolsUrls = {
-            crud: '${ api_url_for('serialize_schools') }'
-        };
-        var names = new profile.Names('#names', nameUrls, ['edit']);
-        var social = new profile.Social('#social', socialUrls, ['edit']);
-        var jobs = new profile.Jobs('#jobs', jobsUrls, ['edit']);
-        var schools = new profile.Schools('#schools', schoolsUrls, ['edit']);
-    });
-
+    ## Store mako variables on window so they are accessible from JS 
+    ## modules. Not sure if this is a good idea.
+    window.contextVars = window.contextVars || {};
+    window.contextVars.nameUrls = {
+        crud: '${ api_url_for('serialize_names') }',
+        impute: '${ api_url_for('impute_names') }'
+    };
+    window.contextVars.socialUrls = {
+        crud: '${ api_url_for('serialize_social') }'
+    };
+    window.contextVars.jobsUrls = {
+        crud: '${ api_url_for('serialize_jobs') }'
+    };
+    window.contextVars.schoolsUrls = {
+        crud: '${ api_url_for('serialize_schools') }'
+    };
 </script>
-
-
+<script src="/static/public/js/profile-settings-page.js"></script>
 </%def>

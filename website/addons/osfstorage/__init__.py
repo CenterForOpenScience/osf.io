@@ -33,7 +33,7 @@ CATEGORIES = ['storage']
 INCLUDE_JS = {
     'widget': [],
     'page': [],
-    'files': ['storageFangornConfig.js'],
+    'files': [],
 }
 
 HAS_HGRID_FILES = True

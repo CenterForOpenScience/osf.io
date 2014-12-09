@@ -1,3 +1,7 @@
+var $osf = require('osf-helpers');
+var $ = require('jquery');
+var bootbox = require('bootbox');
+
 var GithubConfigHelper = (function() {
 
     var updateHidden = function(val) {
@@ -29,7 +33,7 @@ var GithubConfigHelper = (function() {
                 return;
             }
 
-            $.osf.postJSON(
+            $osf.postJSON(
                 '/api/v1/github/repo/create/',
                 {name: repoName}
             ).done(function(response) {
@@ -57,13 +61,13 @@ var GithubConfigHelper = (function() {
         });
 
         $('#githubImportToken').on('click', function() {
-            $.osf.postJSON(
+            $osf.postJSON(
                 nodeApiUrl + 'github/user_auth/',
                 {}
             ).done(function() {
                 window.location.reload();
             }).fail(
-                $.osf.handleJSONError
+                $osf.handleJSONError
             );
         });
 
@@ -83,7 +87,7 @@ var GithubConfigHelper = (function() {
                     }).done(function() {
                         window.location.reload();
                     }).fail(
-                        $.osf.handleJSONError
+                        $osf.handleJSONError
                     );
                     }
                 }
@@ -99,3 +103,5 @@ var GithubConfigHelper = (function() {
     });
 
 })();
+
+module.exports = GithubConfigHelper;
