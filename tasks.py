@@ -677,7 +677,7 @@ def webpack(clean=True, watch=False, production=False):
 def assets(production=True):
     """Install and build static assets."""
     bower_install()
-    webpack(clean=True, watch=False, production=production)
+    webpack(clean=False, watch=False, production=production)
 
 @task
 def generate_self_signed(domain):
