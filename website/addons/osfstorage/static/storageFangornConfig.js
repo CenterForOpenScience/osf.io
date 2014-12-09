@@ -37,6 +37,7 @@
                 'download': buildUrl(parent, file, 'web', '?action=download'),
                 'delete': buildUrl(parent, file, 'api')
             };
+            item.data.downloads = 0;
             console.log("parent permissions", parent.permissions);
             item.data.permissions = parent.permissions;
             return item;

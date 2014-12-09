@@ -1,89 +1,118 @@
-/**
- * Created by huynh on 11/26/14.
- */
-$(document).ready(function() {
+;(function (global, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(['js/fangorn'], factory);
+    } else if (typeof $script === 'function') {
+        $script.ready('fangorn', function() { factory(Fangorn); });
+    } else { factory(Fangorn); }
+}(this, function(Fangorn) {
 
+    // Define Fangorn Button Actions
+    function _fangornActionColumn (item, col){
+        var self = this;
+        var buttons = [];
 
-    $('#figshareAddKey').on('click', function() {
-        if ($(this)[0].outerText == 'Authorize: Create Access Token')
-            window.location.href = nodeApiUrl + 'figshare/oauth/';
-        $.ajax({
-            type: 'POST',
-            url: nodeApiUrl + 'figshare/user_auth/',
-            contentType: 'application/json',
-            dataType: 'json',
-            success: function(response) {
-                window.location.reload();
-            }
-        });
-
-    });
-
-    $('#figshareDelKey').on('click', function() {
-        bootbox.confirm({
-            title: 'Remove access key?',
-            message: 'Are you sure you want to remove your Figshare access key? This will ' +
-            'revoke the ability to modify and upload files to Figshare. If ' +
-            'the associated repo is private, this will also disable viewing ' +
-            'and downloading files from Figshare.',
-            callback: function(result) {
-                if(result) {
-                    $.ajax({
-                        url: nodeApiUrl + 'figshare/oauth/',
-                        type: 'DELETE',
-                        contentType: 'application/json',
-                        dataType: 'json',
-                        success: function() {
-                            window.location.reload();
-                        }
-                    });
-                }
-            }
-        });
-    });
-
-    $('#figshareSelectProject').on('change', function() {
-        var value = $(this).val();
-        if (value) {
-            $('#figshareId').val(value)
-            $('#figshareTitle').val($('#figshareSelectProject option:selected').text())
+        function _uploadEvent (event, item, col){
+            event.stopPropagation();
+            this.dropzone.hiddenFileInput.click();
+            this.dropzoneItemCache = item;
+            this.updateFolder(null, item);  
+            console.log('Upload Event triggered', this, event,  item, col);
         }
-    });
 
-    $('#addonSettingsFigshare .addon-settings-submit').on('click', function() {
-        if ($('#figshareId').val() == '-----') {
-            return false;
-        }
-    });
-
-    $('#figshareCreateFileSet').on('click', function() {
-        createFileSet();
-    });
-
-});
-
-var createFileSet = function() {
-
-    var $elm = $('#addonSettingsFigshare');
-    var $select = $elm.find('select');
-
-    bootbox.prompt('Name your new file set', function(filesetName) {
-        if (filesetName && filesetName.trim() != '') {
-            $.osf.postJSON(
-                nodeApiUrl + 'figshare/new/fileset/',
-                {name: filesetName}
-            ).done(function(response) {
-                    response.article_id = 'fileset_' + response.items[0].article_id;
-                    $select.append('<option value="' + response.article_id + '">' + filesetName + ':' + response.items[0].article_id + '</option>');
-                    $select.val(response.article_id);
-                    $('#figshareId').val(response.article_id)
-                    $('#figshareTitle').val(filesetName)
-                }).fail(function() {
-                    $('#addonSettingsFigshare').find('.addon-settings-message')
-                        .text('Could not create file set')
-                        .removeClass('text-success').addClass('text-danger')
-                        .fadeOut(100).fadeIn();
+        function _removeEvent (event, item, col) {
+            event.stopPropagation();
+            console.log('Remove Event triggered', this, event, item, col);
+            var tb = this;
+            if(item.data.permissions.edit){
+                // delete from server, if successful delete from view
+                $.ajax({
+                  url: item.data.urls.delete,
+                  type : 'DELETE'
+                })
+                .done(function(data) {
+                    // delete view
+                    tb.deleteNode(item.parentID, item.id);
+                    console.log('Delete success: ', data);
+                })
+                .fail(function(data){
+                    console.log('Delete failed: ', data);
                 });
+            }
         }
-    });
-};
+
+        function _downloadEvent (event, item, col) {
+            event.stopPropagation();
+            console.log('Download Event triggered', this, event, item, col);
+            window.location = item.data.urls.download;
+        }
+
+
+        if (item.kind === 'folder'){
+            buttons.push(
+                {
+                    'name' : '',
+                    'icon' : 'icon-upload-alt',
+                    'css' : 'fangorn-clickable btn btn-default btn-xs',
+                    'onclick' : _uploadEvent
+                }
+            );
+        } 
+
+        if (item.kind === "file" && item.data.permissions.download){
+            buttons.push({
+                'name' : '',
+                'icon' : 'icon-download-alt', 
+                'css' : 'btn btn-info btn-xs',
+                'onclick' : _downloadEvent
+            });
+        }
+
+        // if (item.kind === "file"){
+            buttons.push({
+                    'name' : '',
+                    'icon' : 'icon-remove',
+                    'css' : 'm-l-lg text-danger fg-hover-hide',
+                    'style' : 'display:none',
+                    'onclick' : _removeEvent
+                });            
+        // }
+
+        
+        return buttons.map(function(btn){ 
+            return m('span', { 'data-col' : item.id }, [ m('i', 
+                { 'class' : btn.css, style : btn.style, 'onclick' : function(event){ btn.onclick.call(self, event, item, col); } },
+                [ m('span', { 'class' : btn.icon}, btn.name) ])
+            ]);
+        }); 
+    }
+
+    function _fangornColumns (item) {
+        var columns = []; 
+        columns.push({
+                data : 'name',
+                folderIcons : true,
+                filter: true
+        }); 
+
+      if(this.options.placement === 'project-files') {
+        columns.push(
+            {
+                css : 'action-col',
+                filter : false,
+                custom : _fangornActionColumn
+            },
+            {
+                data  : 'downloads',
+                filter : false,
+                css : ''
+            });
+        }
+        return columns; 
+    } 
+
+    Fangorn.config.figshare = {
+        resolveRows: _fangornColumns
+    };
+
+}));
+

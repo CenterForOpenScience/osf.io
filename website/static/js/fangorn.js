@@ -379,7 +379,11 @@
                 custom : function(){ return m(''); }
             });             
         }
-        var configOption = item.data.addon ? resolveconfigOption.call(this, item, 'resolveRows', [item]) : undefined;
+        var checkConfig = false;
+        if(item.data.addon || item.data.permissions) { // Workaround for figshare, TODO : Create issue
+            checkConfig = true;
+        }
+        var configOption = checkConfig ? resolveconfigOption.call(this, item, 'resolveRows', [item]) : undefined;
         return configOption || default_columns;
     }
 

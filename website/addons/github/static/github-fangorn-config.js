@@ -43,11 +43,11 @@
             }
         }
 
-    function _downloadEvent (event, item, col) {
-        event.stopPropagation();
-        console.log('Download Event triggered', this, event, item, col);
-        window.location = item.data.urls.download;
-    }
+        function _downloadEvent (event, item, col) {
+            event.stopPropagation();
+            console.log('Download Event triggered', this, event, item, col);
+            window.location = item.data.urls.download;
+        }
 
         // Download Zip File
         if (item.kind === 'folder' && item.data.addonFullname) {
@@ -80,7 +80,7 @@
                     'onclick' : _uploadEvent
                 }
             );
-        } else if (item.kind === "item"){
+        } else if (item.kind === "file"){
             buttons.push({
                 'name' : '',
                 'icon' : 'icon-download-alt', 
