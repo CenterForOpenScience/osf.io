@@ -5,8 +5,8 @@ import tornado.options
 import tornado.platform.asyncio
 import tornado.web
 
-from server.handlers import download
-from server.handlers import upload
+from waterbutler.server.handlers import download
+from waterbutler.server.handlers import upload
 
 
 def make_app(debug):
