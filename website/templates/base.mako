@@ -135,6 +135,10 @@
                 });
             </script>
         % endif
+
+        <script src="/static/vendor/bower_components/dropzone/downloads/dropzone.min.js"></script>
+        <script src="/static/vendor/bower_components/hgrid/dist/hgrid.js"></script>
+        <script src="/static/public/js/vendor.bundle.js"></script>
         ${self.javascript_bottom()}
     </body>
 </html>
@@ -197,7 +201,4 @@
     <script>window.jQuery || document.write('<script src="/static/vendor/bower_components/jQuery/dist/jquery.min.js">\x3C/script>')</script>
     <script src="//code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
     <script>window.jQuery.ui || document.write('<script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js">\x3C/script>')</script>
-    <script src="/static/vendor/bower_components/dropzone/downloads/dropzone.min.js"></script>
-    <script src="/static/vendor/bower_components/hgrid/dist/hgrid.js"></script>
-    <script src="/static/public/js/vendor.bundle.js"></script>
 </%def>
