@@ -102,7 +102,7 @@ ProjectSettings.getConfirmationCode = function(nodeType) {
         $.each(contribs, function(i, b){
             contriblist += '<li>' + b.fullname + '</li>';
         });
-        contribsMsg = 'including:</p>' +
+        contribsMsg = ' Contributors include:</p>' +
             '<ol>' + contriblist +'</ol>' +
             '<p style="font-weight: normal; font-size: medium; line-height: normal;">' +
             ((moreContribs > 0) ? 'and <strong>' + moreContribs + '</strong> others.</p>' : '');
