@@ -79,7 +79,8 @@
                 <img class="logo" src="/static/img/circle_logo.png"></img>
             </div>
             <div class='col-sm-10 col-xs-12'>
-                <h1>This project is hosted on the Open Science Framework</h1>
+                <a class="close" href="#">&times;</a>
+                <h1>Start managing your projects on the OSF today.</h1>
                 <p>Free and easy to use, the Open Science Framework supports the entire research lifecycle: planning, execution, reporting, archiving, and discovery.</p>
                 <div>
                     <a class="btn btn-primary" href="/login/">Create an Account</a>
