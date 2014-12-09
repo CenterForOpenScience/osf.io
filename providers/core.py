@@ -23,6 +23,17 @@ class RequestWrapper(object):
         self.size = request.headers.get('Content-Length')
 
 
+class FileWrapper(object):
+
+    def __init__(self, file_pointer):
+        self.file_pointer = file_pointer
+        self.content = StreamReader()
+        # TODO: Handle UTF-unsafe characters
+        self.content.feed_data(file_pointer.read())
+        self.content.feed_eof()
+        self.size = file_pointer.tell()
+
+
 class BaseProvider(metaclass=abc.ABCMeta):
 
     def can_intra_copy(self, other):
@@ -67,6 +78,10 @@ class BaseProvider(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def delete(self, **kwargs):
+        pass
+
+    @abc.abstractmethod
+    def metadata(self, **kwargs):
         pass
 
 
