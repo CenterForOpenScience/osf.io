@@ -2,10 +2,10 @@
 
 from invoke import task
 
-from server import settings
+from waterbutler.server import settings
 
 
 @task
 def tornado(port=settings.PORT, address=settings.ADDRESS, debug=settings.DEBUG):
-    from server import main
-    main.main(port, address, debug)
+    from waterbutler.server import serve
+    serve(port, address, debug)
