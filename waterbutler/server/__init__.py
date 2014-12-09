@@ -20,7 +20,7 @@ def make_app(debug):
     return app
 
 
-def main(port, address, debug):
+def serve(port, address, debug):
     tornado.platform.asyncio.AsyncIOMainLoop().install()
     tornado.options.parse_command_line()
 
