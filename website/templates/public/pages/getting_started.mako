@@ -61,7 +61,7 @@
                     <div id="start" class="headOne padded anchor">Getting Started</div>
                     <div id="start-one"></div>
                     <img class="gs-count" src="/static/img/one_big.gif">
-                    <p class="lead"> Getting started with the OSF is easy and we provide you with the tools you need to organize your organize your research and communicate efficiently with your collaborators </p>
+                    <p class="lead"> Getting started with the OSF is easy and we provide you with the tools you need to organize your research and communicate efficiently with your collaborators </p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
                         <div class="embed-responsive-item youtube-loader" id="A3HV4T156TI"></div>
                     </div>
