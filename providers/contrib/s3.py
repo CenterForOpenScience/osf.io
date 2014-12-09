@@ -46,24 +46,60 @@ class S3Provider(core.BaseProvider):
 
         return resp
 
-    # @coroutine
-    # def list(self, **kwargs):
-    #     url = self.bucket.generate_url(100, 'GET')
-    #     resp = yield from aiohttp.request('GET', url, params=kwargs)
-    #
-    #     return (yield from self._response_to_dict_list(resp))
-    #
-    # @coroutine
-    # def _response_to_dict_list(self, resp):
-    #     # TODO: Fix meand clean me
-    #     content = yield from resp.read_and_close()
-    #     # parsed = objectify.fromstring(content)
-    #     # return parsed
-    #     return [{
-    #             'md5': fo.ETag,
-    #             'last_mod': fo.LastModified,
-    #             'full_path': fo.Key,
-    #             'size': fo.Size
-    #         }
-    #         for fo in parsed.Content
-    #     ] + [{'prefix': p.Prefix} for p in parsed.get('CommonPrefixes', ())]
+    @coroutine
+    def metadata(self, path):
+        url = self.bucket.generate_url(100, 'GET')
+        resp = yield from aiohttp.request('GET', url, params={'prefix': path, 'delimiter': '/'})
+
+        if resp.status_code == 404:
+            raise Exception('TODO NOT FOUND ERROR')
+
+        content = yield from resp.read_and_close()
+        obj = lxml.objectify(content)
+
+        files = [
+            self.key_to_dict(k)
+            for k in getattr(obj, 'Contents', [])
+        ]
+
+        folders = [
+            self.key_to_dict(p)
+            for p in getattr(obj, 'CommonPrefixes', [])
+        ]
+
+        if len(folders) == 0 and len(files) == 1:
+            return files[0]
+
+        return files + folders
+
+    def key_to_dict(self, key, children=[]):
+        return {
+            'content': children,
+            'provider': 's3'
+            'kind': 'file'
+            'name': os.path.split(fo.Key)[1]
+            'size': fo.Size,
+            'path': fo.Key,
+            'modified': fo.LastModified,
+            'extra': {
+                'md5': fo.ETag,
+            }
+        }
+
+    def prefix_to_dict(self, prefix, children=[]):
+        def getname(st):
+            sp = st.split('/')
+            if not sp[-1]:
+                return sp[-2]
+            return sp[-1]
+
+        return {
+            'contents': children,
+            'provider': 's3',
+            'kind': 'folder',
+            'name': getname(prefix.Prefix)
+            'path': prefix.Prefix,
+            'modified': None,
+            'size': None,
+            'extra': {}
+        }
