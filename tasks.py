@@ -296,7 +296,6 @@ def requirements(all=False, download_cache=None):
     run(bin_prefix(cmd), echo=True)
     if all:
         addon_requirements(download_cache=download_cache)
-        mfr_requirements()
 
 
 @task
@@ -361,17 +360,6 @@ def addon_requirements(download_cache=None):
             except IOError:
                 pass
     print('Finished')
-
-
-@task
-def mfr_requirements(download_cache=None):
-    """Install modular file renderer requirements"""
-    print('Installing mfr requirements')
-    cmd = 'pip install --upgrade -r mfr/requirements.txt'
-    if download_cache:
-        cmd += ' --download-cache {0}'.format(download_cache)
-    run(bin_prefix(cmd), echo=True)
-
 
 @task
 def encryption(owner=None):
