@@ -5,6 +5,29 @@ import abc
 from asyncio import coroutine
 from asyncio import StreamReader
 
+PROVIDERS = {}
+
+
+def register_provider(name):
+    def _register_provider(cls):
+        if PROVIDERS.get(name) != cls:
+            raise ValueError('{} is already a registered provider'.format(name))
+        cls.__init__ = use_kwargs(cls.ARGS, cls.__init__)
+        PROVIDERS[name] = cls
+        return cls
+    return _register_provider
+
+
+def get_provider(name):
+    try:
+        return PROVIDERS[name]
+    except KeyError:
+        raise NotImplementedError('No provider for {}'.format(name))
+
+
+def make_provider(name, **kwargs):
+    return get_provider(name)(**kwargs)
+
 
 class ResponseWrapper(object):
 
@@ -24,6 +47,8 @@ class RequestWrapper(object):
 
 
 class BaseProvider(metaclass=abc.ABCMeta):
+
+    ARGS = {}
 
     def can_intra_copy(self, other):
         return False
@@ -68,18 +93,3 @@ class BaseProvider(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def delete(self, **kwargs):
         pass
-
-
-class StorageProvider(object):
-
-    @staticmethod
-    def get(info):
-        name = info['name']
-        if name == 'dropbox':
-            from providers.contrib.dropbox import DropboxProvider
-            return DropboxProvider(**info)
-        elif name == 's3':
-            from providers.contrib.s3 import S3Provider
-            return S3Provider(**info)
-        else:
-            raise NotImplementedError

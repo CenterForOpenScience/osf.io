@@ -1,19 +1,9 @@
 # encoding: utf-8
 
 import asyncio
+
 import tornado.concurrent
 import tornado.ioloop
-
-
-def make_provider(provider, **kwargs):
-    if provider == 'dropbox':
-        from providers.contrib.dropbox import DropboxProvider
-        return DropboxProvider(**kwargs)
-    elif provider == 's3':
-        from providers.contrib.s3 import S3Provider
-        return S3Provider(**kwargs)
-    else:
-        raise NotImplementedError
 
 
 # Running Tornado on asyncio's event loop, including 'yield from' support in request handlers
