@@ -1,5 +1,6 @@
 var ko = require('knockout');
 var $ = require('jquery');
+var bootbox = require('bootbox');
 require('bootstrap.growl');
 var History = require('exports?History!history');
 
