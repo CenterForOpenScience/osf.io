@@ -677,6 +677,8 @@ def webpack(clean=False, watch=False, production=False):
 def assets(production=True, watch=False):
     """Install and build static assets."""
     bower_install()
+    # Always set clean=False to prevent possible mistakes
+    # on prod
     webpack(clean=False, watch=watch, production=production)
 
 @task
