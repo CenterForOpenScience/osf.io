@@ -85,7 +85,7 @@
                 <div>
                     <a class="btn btn-primary" href="/login/">Create an Account</a>
                     <a class="btn btn-primary" href="/4znzp/wiki/home/">Learn More</a>
-                    <a id="footerSlideIn-Close">Hide this message</a>
+                    <a data-bind="click: dismiss">Hide this message</a>
                 </div>
             </div>
         </div>
