@@ -1,16 +1,24 @@
 # encoding: utf-8
 
-import aiohttp
 import os.path
-
 from asyncio import coroutine
+
+import aiohttp
+
+from webargs import Arg
 
 from providers import core
 
 
+@core.register_provider('dropbox')
 class DropboxProvider(core.BaseProvider):
 
-    def __init__(self, token, folder, **kwargs):
+    ARGS = {
+        'token': Arg(str, required=True),
+        'folder': Arg(str, required=True),
+    }
+
+    def __init__(self, token, folder):
         self.token = token
         self.folder = folder
 
