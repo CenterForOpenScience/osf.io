@@ -13,12 +13,7 @@ from providers import core
 @core.register_provider('dropbox')
 class DropboxProvider(core.BaseProvider):
 
-    ARGS = {
-        'token': Arg(str, required=True),
-        'folder': Arg(str, required=True),
-    }
-
-    def __init__(self, token, folder):
+    def __init__(self, token, folder, **kwargs):
         self.token = token
         self.folder = folder
 

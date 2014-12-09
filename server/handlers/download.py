@@ -12,6 +12,8 @@ from tornado.escape import json_decode
 from webargs import Arg
 from webargs.tornadoparser import use_kwargs
 
+from providers.core import make_provider
+
 from server import utils
 from server import settings
 from server.utils import coroutine
@@ -55,7 +57,7 @@ def fetch_identity(params):
 
 
 download_args = {
-    'provider': Arg(str, required=True),
+    'provider': Arg(str, use=lambda x: x.decode('utf-8'), required=True),
     'path': Arg(str, required=True),
 }
 
@@ -67,10 +69,7 @@ class DownloadHandler(web.RequestHandler):
     def get(self, provider, path):
         query = get_query_data(self.request.query_arguments)
         identity = yield from fetch_identity(query)
-        provider = utils.make_provider(
-            self.get_argument('provider'),
-            **identity
-        )
+        provider = make_provider(provider, identity['identity'])
         response = yield from provider.download(**query)
         _, file_name = os.path.split(path)
         self.set_header('Content-Type', response.content_type)

@@ -3,8 +3,6 @@ from asyncio import coroutine
 
 import aiohttp
 
-from webargs import Arg
-
 from boto.s3.connection import S3Connection
 
 from providers import core
@@ -13,13 +11,8 @@ from providers.exceptions import FileNotFoundError
 
 @core.register_provider('s3')
 class S3Provider(core.BaseProvider):
-    ARGS = {
-        'access_key': Arg(str, required=True),
-        'secret_key': Arg(str, required=True),
-        'bucket': Arg(str, required=True),
-    }
 
-    def __init__(self, access_key, secret_key, bucket):
+    def __init__(self, access_key, secret_key, bucket, **kwargs):
         self.connection = S3Connection(access_key, secret_key)
         self.bucket = self.connection.get_bucket(bucket, validate=False)
 

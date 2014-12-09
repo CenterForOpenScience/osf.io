@@ -1,7 +1,6 @@
 # encoding: utf-8
 
 import abc
-
 from asyncio import coroutine
 from asyncio import StreamReader
 
@@ -10,9 +9,8 @@ PROVIDERS = {}
 
 def register_provider(name):
     def _register_provider(cls):
-        if PROVIDERS.get(name) != cls:
+        if PROVIDERS.get(name):
             raise ValueError('{} is already a registered provider'.format(name))
-        cls.__init__ = use_kwargs(cls.ARGS, cls.__init__)
         PROVIDERS[name] = cls
         return cls
     return _register_provider
@@ -25,8 +23,8 @@ def get_provider(name):
         raise NotImplementedError('No provider for {}'.format(name))
 
 
-def make_provider(name, **kwargs):
-    return get_provider(name)(**kwargs)
+def make_provider(name, identity):
+    return get_provider(name)(**identity)
 
 
 class ResponseWrapper(object):
@@ -47,8 +45,6 @@ class RequestWrapper(object):
 
 
 class BaseProvider(metaclass=abc.ABCMeta):
-
-    ARGS = {}
 
     def can_intra_copy(self, other):
         return False
