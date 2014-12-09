@@ -12,8 +12,9 @@ from server.handlers import upload
 def make_app(debug):
     app = tornado.web.Application(
         [
-            (r'/file/download', download.DownloadHandler),
-            (r'/file/upload', upload.UploadHandler),
+            (r'/file', upload.CRUDHandler),
+            # (r'/file/download', download.DownloadHandler),
+            # (r'/file/upload', upload.UploadHandler),
         ],
         debug=debug,
     )

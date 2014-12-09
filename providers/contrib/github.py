@@ -5,35 +5,35 @@ import json
 import base64
 from asyncio import coroutine
 
-import furl
 import aiohttp
 
 from providers import core
 
 
+@core.register_provider('github')
 class GithubProvider(core.BaseProvider):
 
     BASE_URL = 'https://api.github.com/'
 
-    def __init__(self, token, owner, repo):
-        self.token = token
-        self.owner = owner
-        self.repo = repo
-
-    def build_url(self, *segments, **query):
-        url = furl.furl(self.BASE_URL)
-        url.path = os.path.join(*segments)
-        url.args = query
-        return url.url
+    def build_repo_url(self, *segments, **query):
+        segments = ('repos', self.identity['owner'], self.identity['repo']) + segments
+        return self.build_url(*segments, **query)
 
     def build_headers(self, extra=None):
-        headers = {'Authorization': 'token {}'.format(self.token)}
+        headers = {'Authorization': 'token {}'.format(self.identity['token'])}
         headers.update(extra or {})
         return headers
 
+    @property
+    def committer(self):
+        return {
+            'name': self.auth['name'],
+            'email': self.auth['email'],
+        }
+
     @coroutine
     def metadata(self, path, ref=None):
-        url = self.build_url('repos', self.owner, self.repo, 'contents', path)
+        url = self.build_repo_url('contents', path)
         response = yield from aiohttp.request('GET', url, headers=self.build_headers())
         data = yield from response.json()
         return [
@@ -55,21 +55,21 @@ class GithubProvider(core.BaseProvider):
         }
 
     @coroutine
-    def download(self, path, sha):
-        url = self.build_url('repos', self.owner, self.repo, 'git', 'blobs', sha)
+    def download(self, sha, **kwargs):
+        url = self.build_repo_url('git', 'blobs', sha)
         headers = self.build_headers({'Accept': 'application/vnd.github.VERSION.raw'})
         response = yield from aiohttp.request('GET', url, headers=headers)
         return core.ResponseWrapper(response)
 
     @coroutine
-    def upload(self, obj, path, message, committer, branch=None):
+    def upload(self, obj, path, message, branch=None, **kwargs):
         content = yield from obj.content.read()
         encoded = base64.b64encode(content)
         data = {
             'path': path,
             'message': message,
             'content': encoded.decode('utf-8'),
-            'committer': committer,
+            'committer': self.committer,
         }
         if branch is not None:
             data['branch'] = branch
@@ -82,17 +82,17 @@ class GithubProvider(core.BaseProvider):
         )
         if existing:
             data['sha'] = existing['extra']['sha']
-        url = self.build_url('repos', self.owner, self.repo, 'contents', path)
+        url = self.build_repo_url('contents', path)
         response = yield from aiohttp.request('PUT', url, data=json.dumps(data), headers=self.build_headers())
         return core.ResponseWrapper(response)
 
     @coroutine
-    def delete(self, path, message, sha, committer, branch=None):
-        url = self.build_url('repos', self.owner, self.repo, 'contents', path)
+    def delete(self, path, message, sha, branch=None):
+        url = self.build_repo_url('contents', path)
         data = {
             'message': message,
             'sha': sha,
-            'committer': committer,
+            'committer': self.committer,
         }
         if branch is not None:
             data['branch'] = branch

@@ -1,8 +1,11 @@
 # encoding: utf-8
 
+import os
 import abc
 from asyncio import coroutine
 from asyncio import StreamReader
+
+import furl
 
 PROVIDERS = {}
 
@@ -23,8 +26,8 @@ def get_provider(name):
         raise NotImplementedError('No provider for {}'.format(name))
 
 
-def make_provider(name, identity):
-    return get_provider(name)(**identity)
+def make_provider(name, credentials):
+    return get_provider(name)(credentials['auth'], credentials['identity'])
 
 
 class ResponseWrapper(object):
@@ -56,6 +59,18 @@ class FileWrapper(object):
 
 
 class BaseProvider(metaclass=abc.ABCMeta):
+
+    BASE_URL = None
+
+    def __init__(self, auth, identity):
+        self.auth = auth
+        self.identity = identity
+
+    def build_url(self, *segments, base_url=None, **query):
+        url = furl.furl(base_url or self.BASE_URL)
+        url.path = os.path.join(*segments)
+        url.args = query
+        return url.url
 
     def can_intra_copy(self, other):
         return False

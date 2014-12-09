@@ -80,6 +80,9 @@ class DownloadHandler(web.RequestHandler):
                 break
             self.write(chunk)
 
+    def delete(self):
+        pass
+
     def write_error(self, status_code, exc_info, **kwargs):
         self.set_status(status_code)
         # self.write(exc_info[1].message)

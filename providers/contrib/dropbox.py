@@ -13,15 +13,17 @@ from providers import core
 @core.register_provider('dropbox')
 class DropboxProvider(core.BaseProvider):
 
-    def __init__(self, token, folder, **kwargs):
-        self.token = token
-        self.folder = folder
+    BASE_URL = 'https://api.dropbox.com/1/'
+
+    # def __init__(self, token, folder, **kwargs):
+    #     self.token = token
+    #     self.folder = folder
 
     def __eq__(self, other):
         try:
             return (
                 type(self) == type(other) and
-                self.token == other.token and self.folder == other.folder
+                self.identity == other.identity
             )
         except AttributeError:
             return False
@@ -34,7 +36,7 @@ class DropboxProvider(core.BaseProvider):
 
     @coroutine
     def intra_copy(self, dest_provider, source_options, dest_options):
-        url = 'https://api.dropbox.com/1/fileops/copy'
+        url = self.build_url('fileops', 'copy')
         from_path = os.path.join(self.folder, source_options['path'])
         to_path = os.path.join(dest_provider.folder, dest_options['path'])
         if self == dest_provider:
@@ -46,7 +48,7 @@ class DropboxProvider(core.BaseProvider):
             }, headers=self._headers())
         else:
             # create from_copy_ref and use with destination provider
-            copy_ref_url = 'https://api.dropbox.com/1/copy_ref/auto/{}'.format(from_path)
+            copy_ref_url = self.build_url('copy_ref', 'auto', from_path)
             copy_ref_resp = yield from aiohttp.request('GET', copy_ref_url, headers=self._headers())
             from_copy_ref = (yield from copy_ref_resp.content.json()).copy_ref
             yield from aiohttp.request('POST', data={
@@ -57,7 +59,7 @@ class DropboxProvider(core.BaseProvider):
 
     @coroutine
     def intra_move(self, dest_provider, source_options, dest_options):
-        url = 'https://api.dropbox.com/1/fileops/move'
+        url = self.build_url('fileops', 'move')
         from_path = os.path.join(self.folder, source_options['path'])
         to_path = os.path.join(dest_provider.folder, dest_options['path'])
         yield from aiohttp.request('POST', url, data={
@@ -69,7 +71,7 @@ class DropboxProvider(core.BaseProvider):
     @coroutine
     def download(self, path, revision=None, **kwargs):
         full_path = os.path.join(self.folder, path)
-        url = 'https://api-content.dropbox.com/1/files/auto/{}'.format(full_path)
+        url = self.build_url('files', 'auth', full_path, base_url='https://api-content.dropbox.com/1/')
         resp = yield from aiohttp.request('GET', url, headers=self._headers())
         return core.ResponseWrapper(resp)
 
@@ -77,26 +79,27 @@ class DropboxProvider(core.BaseProvider):
     def upload(self, obj, path):
         full_path = os.path.join(self.folder, path)
         url = 'https://api-content.dropbox.com/1/files_put/auto/{}'.format(full_path)
+        url = self.build_url('files_put', 'auto', full_path, base_url='https://api-content.dropbox.com/1/')
         resp = yield from aiohttp.request('PUT', url, data=obj.content, headers=self._headers(**{'Content-Length': obj.size}))
         return core.ResponseWrapper(resp)
 
     @coroutine
     def delete(self, path):
         full_path = os.path.join(self.folder, path)
-        url = 'https://api.dropbox.com/1/fileops/delete'
+        url = self.build_url('fileops', 'delete')
         resp = yield from aiohttp.request('POST', url, data={'folder': 'auto', 'path': full_path}, headers=self._headers())
         return resp
 
     @coroutine
     def metadata(self, path):
         full_path = os.path.join(self.folder, path)
-        url = 'https://api.dropbox.com/1/metadata/auto/{}'.format(full_path)
+        url = self.build_url('metadata', 'auto', full_path)
         resp = yield from aiohttp.request('GET', url, headers=self._headers())
         return resp
 
     def _headers(self, **kwargs):
         headers = {
-            'authorization': 'Bearer {}'.format(self.token),
+            'authorization': 'Bearer {}'.format(self.identity['token']),
         }
         headers.update({
             key: value for key, value in kwargs.items()
