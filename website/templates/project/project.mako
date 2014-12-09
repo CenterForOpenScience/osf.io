@@ -170,4 +170,8 @@ ${parent.javascript_bottom()}
 
 <script src="/static/public/js/project-dashboard.js"></script>
 
+% for asset in addon_widget_js:
+<script src="${asset}"></script>
+% endfor
+
 </%def>

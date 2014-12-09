@@ -470,7 +470,7 @@ def collect_addon_assets(node):
 
 
 # TODO: Abstract static collectors
-def collect_addon_js(node, visited=None):
+def collect_addon_js(node, visited=None, filename='files.js', config_entry='files'):
     """Collect JavaScript includes for all add-ons implementing HGrid views.
 
     :return list: List of JavaScript include paths
@@ -482,13 +482,13 @@ def collect_addon_js(node, visited=None):
     js = set()
     for addon in node.get_addons():
         # JS modules configured in each addon's __init__ file
-        js = js.union(addon.config.include_js.get('files', []))
+        js = js.union(addon.config.include_js.get(config_entry, []))
         # Webpack bundle
         file_path = os.path.join('static',
                                  'public',
                                  'js',
                                  addon.config.short_name,
-                                 'files.js')
+                                 filename)
         js_file = os.path.join(
             settings.BASE_PATH, file_path
         )

@@ -24,6 +24,7 @@ from website.project.decorators import (
     must_have_permission,
     must_not_be_registration,
 )
+from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, get_pointer_parent
 from website.project.forms import NewNodeForm
 from website.models import Node, Pointer, WatchConfig, PrivateLink
@@ -400,6 +401,12 @@ def view_project(**kwargs):
     primary = '/api/v1' not in request.path
     rv = _view_project(node_to_use, auth, primary=primary)
     rv['addon_capabilities'] = settings.ADDON_CAPABILITIES
+    # Collect the URIs to the static assets for addons that have widgets
+    rv['addon_widget_js'] = list(collect_addon_js(
+        node_to_use,
+        filename='widget-cfg.js',
+        config_entry='widget'
+    ))
     return rv
 
 

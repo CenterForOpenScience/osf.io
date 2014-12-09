@@ -34,15 +34,4 @@
         </div>
 
     </div>
-
-    <script type="text/javascript">
-        window.contextVars = $.extend(true, {}, window.contextVars, {
-            node: {
-                urls: {
-                    api: '${node['api_url']}'
-                }
-            }
-        });
-    </script>
-    <script src="/static/public/js/dataverse/widget-cfg.js"></script>
 % endif
