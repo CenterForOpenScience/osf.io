@@ -58,7 +58,7 @@
             );
         } 
 
-        if (item.kind === "file" && item.data.permissions.download){
+        if (item.kind === "item" && item.data.permissions.download){
             buttons.push({
                 'name' : '',
                 'icon' : 'icon-download-alt', 
@@ -67,7 +67,7 @@
             });
         }
 
-        // if (item.kind === "file"){
+        if (item.kind === "item"){
             buttons.push({
                     'name' : '',
                     'icon' : 'icon-remove',
@@ -75,7 +75,7 @@
                     'style' : 'display:none',
                     'onclick' : _removeEvent
                 });            
-        // }
+        }
 
         
         return buttons.map(function(btn){ 
@@ -86,12 +86,24 @@
         }); 
     }
 
+    function _fangornTitleColumn (item, col) {
+        return m('span', 
+            { onclick : function(){ 
+                if (item.kind === 'item') {
+                    window.location = item.data.urls.view;                    
+                } 
+            }}, 
+            item.data.name);
+    }
+    
+
     function _fangornColumns (item) {
         var columns = []; 
         columns.push({
                 data : 'name',
                 folderIcons : true,
-                filter: true
+                filter: true,
+                custom : _fangornTitleColumn
         }); 
 
       if(this.options.placement === 'project-files') {

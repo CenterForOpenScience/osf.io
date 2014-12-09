@@ -37,7 +37,7 @@
                 'download': buildUrl(parent, file, 'web', '?action=download'),
                 'delete': buildUrl(parent, file, 'api')
             };
-            item.data.downloads = 0;
+            item.data.downloads = 0;  // This does not update download is a previously deleted file is downloaded. 
             console.log("parent permissions", parent.permissions);
             item.data.permissions = parent.permissions;
             return item;

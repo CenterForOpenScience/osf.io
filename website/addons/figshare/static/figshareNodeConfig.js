@@ -270,7 +270,6 @@
             $(self.folderPicker).folderpicker({
                 onPickFolder: onPickFolder,
                 initialFolderName : self.folderName(),
-                initialFolderPath : '',
                 // Fetch Figshare folders with AJAX
                 filesData: self.urls().options, // URL for fetching folders
                 // Lazy-load each folder's contents
