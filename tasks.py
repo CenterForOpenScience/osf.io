@@ -659,7 +659,7 @@ def clean_assets():
 
 
 @task(aliases=['pack'])
-def webpack(clean=True, watch=False, production=False):
+def webpack(clean=False, watch=False, production=False):
     """Build static assets with webpack."""
     if clean:
         clean_assets()
@@ -674,10 +674,10 @@ def webpack(clean=True, watch=False, production=False):
     run(command, echo=True)
 
 @task()
-def assets(production=True):
+def assets(production=True, watch=False):
     """Install and build static assets."""
     bower_install()
-    webpack(clean=False, watch=False, production=production)
+    webpack(clean=False, watch=watch, production=production)
 
 @task
 def generate_self_signed(domain):
