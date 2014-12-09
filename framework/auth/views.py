@@ -79,7 +79,7 @@ def forgot_password():
             status.push_status_message('Email {email} not found'.format(email=email))
 
     forms.push_errors_to_status(form.errors)
-    return framework.auth_login(forgot_password_form=form)
+    return auth_login(forgot_password_form=form)
 
 
 ###############################################################################

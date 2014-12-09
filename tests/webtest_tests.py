@@ -316,6 +316,26 @@ class TestAUser(OsfTestCase):
         td2 = td1.find_next_sibling('td')
         assert_equal(td2.text, user2.display_absolute_url)
 
+    # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1320
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_can_reset_password(self, mock_send_mail):
+        # A registered user
+        user = UserFactory()
+        # goes to the login page
+        url = web_url_for('auth_login')
+        res = self.app.get(url)
+        # and fills out forgot password form
+        form = res.forms['forgotPassword']
+        form['forgot_password-email'] = user.username
+        # submits
+        res = form.submit()
+        # mail was sent
+        mock_send_mail.assert_called
+        # gets 200 response
+        assert_equal(res.status_code, 200)
+        # URL is /forgotpassword
+        assert_equal(res.request.path, web_url_for('forgot_password'))
+
 
 class TestRegistrations(OsfTestCase):
 
@@ -502,6 +522,38 @@ class TestPrivateLinkView(OsfTestCase):
         res = self.app.get(self.project_url, {'view_only': self.link.key})
         assert_not_in('Citation:', res)
 
+    def test_no_warning_for_read_only_user_with_valid_link(self):
+        link2 = PrivateLinkFactory(anonymous=False)
+        link2.nodes.append(self.project)
+        link2.save()
+        self.project.add_contributor(
+            self.user,
+            permissions=['read'],
+            save=True,
+        )
+        res = self.app.get(self.project_url, {'view_only': link2.key},
+                           auth=self.user.auth)
+        assert_not_in(
+            "is being viewed through a private, view-only link. "
+            "Anyone with the link can view this project. Keep "
+            "the link safe.",
+            res.body
+        )
+
+    def test_no_warning_for_read_only_user_with_invalid_link(self):
+        self.project.add_contributor(
+            self.user,
+            permissions=['read'],
+            save=True,
+        )
+        res = self.app.get(self.project_url, {'view_only': "not_valid"},
+                           auth=self.user.auth)
+        assert_not_in(
+            "is being viewed through a private, view-only link. "
+            "Anyone with the link can view this project. Keep "
+            "the link safe.",
+            res.body
+        )
 
 class TestMergingAccounts(OsfTestCase):
 
