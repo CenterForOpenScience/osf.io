@@ -63,7 +63,7 @@
 </div>
 
 <script type="text/javascript">
-    window.contextVars = $.extend(true, {}, window.ontextVars, {
+    window.contextVars = $.extend(true, {}, window.contextVars, {
         filePath: '${file_path | h}',
         currentUser: {
             canEdit: ${int(user['can_edit'])}
