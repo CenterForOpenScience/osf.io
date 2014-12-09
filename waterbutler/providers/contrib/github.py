@@ -7,7 +7,7 @@ from asyncio import coroutine
 
 import aiohttp
 
-from providers import core
+from waterbutler.providers import core
 
 
 @core.register_provider('github')

@@ -12,14 +12,11 @@ from tornado.escape import json_decode
 from webargs import Arg
 from webargs.tornadoparser import use_kwargs
 
-from server import utils
-from server.utils import coroutine
+from waterbutler.server import settings
 
-from server import settings
-
-from providers import core
-# from providers.core import make_provider
-from providers.core import RequestWrapper
+from waterbutler.providers import core
+from waterbutler.server import utils
+from waterbutler.server.utils import coroutine
 
 
 API_URL = 'http://localhost:5000/api/v1/files/auth/'
@@ -88,7 +85,7 @@ class CRUDHandler(web.RequestHandler):
 
     def prepare_stream(self):
         if self.request.method in STREAM_METHODS:
-            self.obj = RequestWrapper(self.request)
+            self.obj = core.RequestWrapper(self.request)
             self.uploader = self.provider.upload(self.obj, **self.arguments)
         else:
             self.obj = None

@@ -3,3 +3,4 @@ boto
 invoke
 tornado
 webargs
+furl

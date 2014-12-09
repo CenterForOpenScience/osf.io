@@ -7,7 +7,7 @@ import aiohttp
 
 from webargs import Arg
 
-from providers import core
+from waterbutler.providers import core
 
 
 @core.register_provider('dropbox')

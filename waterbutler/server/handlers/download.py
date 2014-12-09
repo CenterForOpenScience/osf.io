@@ -1,9 +1,9 @@
 # encoding: utf-8
 
 import os
+import asyncio
 from base64 import b64decode
 
-import asyncio
 import aiohttp
 
 from tornado import web
@@ -12,11 +12,9 @@ from tornado.escape import json_decode
 from webargs import Arg
 from webargs.tornadoparser import use_kwargs
 
-from providers.core import make_provider
-
-from server import utils
-from server import settings
-from server.utils import coroutine
+from waterbutler.providers.core import make_provider
+from waterbutler.server import settings
+from waterbutler.server.utils import coroutine
 
 
 API_URL = 'http://localhost:5000/api/v1/files/auth/'

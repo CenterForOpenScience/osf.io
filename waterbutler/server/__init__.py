@@ -5,8 +5,8 @@ import tornado.options
 import tornado.platform.asyncio
 import tornado.web
 
-from server.handlers import download
-from server.handlers import upload
+from waterbutler.server.handlers import download
+from waterbutler.server.handlers import upload
 
 
 def make_app(debug):
@@ -21,7 +21,7 @@ def make_app(debug):
     return app
 
 
-def main(port, address, debug):
+def serve(port, address, debug):
     tornado.platform.asyncio.AsyncIOMainLoop().install()
     tornado.options.parse_command_line()
 
