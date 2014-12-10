@@ -1,4 +1,6 @@
+decorator
 ipython
 jinja2
+pytest
 pyzmq
 -r requirements.txt
