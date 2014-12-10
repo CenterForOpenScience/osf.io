@@ -11,6 +11,10 @@ class MetadataHandler(core.BaseHandler):
     }
 
     @utils.coroutine
+    def prepare(self):
+        yield from super().prepare()
+
+    @utils.coroutine
     def get(self):
         """List information about of file or folder"""
         result = yield from self.provider.metadata(**self.arguments)
