@@ -3,6 +3,7 @@
 var $ = require('jquery');
 require('jquery-tagsinput');
 
+var m = require('mithril');
 var Fangorn = require('fangorn');
 
 var LogFeed = require('../logFeed.js');
@@ -34,6 +35,16 @@ if ($comments.length) {
 }
 
 $(document).ready(function() {
+
+    function _fangornTitleColumn (item, col) {
+        return m('span', 
+            { onclick : function(){ 
+                if (item.kind === 'item') {
+                    window.location = item.data.urls.view;                    
+                } 
+            }}, 
+            item.data.name);
+    }
 
     // Treebeard Files view 
     $.ajax({

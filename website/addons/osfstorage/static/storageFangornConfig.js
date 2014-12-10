@@ -3,6 +3,10 @@ var Fangorn = require('fangorn');
 /**
  * Build URL for a freshly uploaded file.
  */
+ var m = require('mithril'); 
+
+var Fangorn = require('fangorn'); 
+
 var buildUrl = function(parent, file, mode, suffix) {
     var base = mode === 'api' ? parent.nodeApiUrl : parent.nodeUrl;
     suffix = suffix !== undefined ? suffix : '/';
@@ -48,8 +52,7 @@ Fangorn.config.osfstorage = {
     if (message === 'Server responded with 0 code.' || message.indexOf('409') !== -1) {
         return 'Unable to upload file. Another upload with the ' +
             'same name may be pending; please try again in a moment.';
+        }
     }
-}
-
 
 };

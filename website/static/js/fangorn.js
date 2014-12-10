@@ -1,32 +1,15 @@
 /**
- *  Defining Treebeard options for OSF.
+ *  Fangorn: Defining Treebeard options for OSF.
  *
- * Module to render the consolidated files view. Reads addon configurations and
- * initializes a Treebeard.
  */
 
-//Unnamed function that attaches fangorn to the global namespace (which will usually be window)
-(function (global, factory) {
-    //AMD Uses the CommonJS practice of string IDs for dependencies.
-    //  Clear declaration of dependencies and avoids the use of globals.
-    //IDs can be mapped to different paths. This allows swapping out implementation.
-    // This is great for creating mocks for unit testing.
-    //Encapsulates the module definition. Gives you the tools to avoid polluting the global namespace.
-    //Clear path to defining the module value. Either use 'return value;' or the CommonJS 'exports' idiom,
-    //  which can be useful for circular dependencies.
-    if (typeof define === 'function' && define.amd) {
-        //asynconously calls these js files before calling the function (factory)
-        define(['jquery', 'js/treebeard', 'bootstrap'], factory);
-    } else if (typeof $script === 'function' ){
-        $script.ready(['dropzone', 'dropzone-patch', 'treebeard'], function() {
-            //A less robust way of calling js files, once it is done call fangorn
-            global.Fangorn = factory(jQuery, global.Treebeard);
-            $script.done('fangorn');
-        });
-    }else {
-        global.Fangorn = factory(jQuery, global.Treebeard);
-    }
-}(this, function($, Treebeard){
+var $ = require('jquery');
+// Required for uploads
+require('dropzone-patch');
+var m = require('mithril');
+var Treebeard = require('treebeard');
+var $osf = require('osf-helpers');
+var bootbox = require('bootbox');
 
     // Returns custom icons for OSF 
     function _fangornResolveIcon(item){
@@ -540,5 +523,4 @@
 
     };
 
-    return Fangorn;
-}));
+module.exports = Fangorn;

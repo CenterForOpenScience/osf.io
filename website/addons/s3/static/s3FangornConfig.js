@@ -1,13 +1,10 @@
 /**
  * Created by faye on 11/6/14.
  */
-;(function (global, factory) {
-    if (typeof define === 'function' && define.amd) {
-        define(['js/fangorn'], factory);
-    } else if (typeof $script === 'function') {
-        $script.ready('fangorn', function() { factory(Fangorn); });
-    } else { factory(Fangorn); }
-}(this, function(Fangorn) {
+var m = require('mithril'); 
+
+var Fangorn = require('fangorn');
+
 
     function _fangornFolderIcons(item){
         if(item.data.addonFullname){
@@ -64,4 +61,4 @@
         uploadSuccess: _fangornUploadSuccess
     };
 
-}));
+

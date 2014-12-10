@@ -11,15 +11,15 @@ $(document).ready(function(){
 	 $.ajax({
       url:  nodeApiUrl + 'files/grid/'
     })
-.done(function( data ) {
-        console.log("data", data);
-        var fangornOpts = {
-            placement : 'project-files',
-            divID: 'treeGrid',
-            filesData: data.data
-        };
-        console.log("fangorn", Fangorn);
-        var filebrowser = new Fangorn(fangornOpts);
-    });
+    .done(function( data ) {
+            console.log("data", data);
+            var fangornOpts = {
+                placement : 'project-files',
+                divID: 'treeGrid',
+                filesData: data.data
+            };
+            console.log("fangorn", Fangorn);
+            var filebrowser = new Fangorn(fangornOpts);
+        });
 
 })
