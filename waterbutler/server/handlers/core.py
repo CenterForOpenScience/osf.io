@@ -8,6 +8,7 @@ from waterbutler import exceptions
 from waterbutler import settings
 from waterbutler.identity import get_identity
 from waterbutler.providers import core
+from waterbutler.server.utils import coroutine
 
 
 def list_or_value(value):
@@ -23,7 +24,7 @@ class BaseHandler(tornado.web.RequestHandler):
 
     ACTION_MAP = {}
 
-    @asyncio.coroutine
+    @coroutine
     def prepare(self):
         self.arguments = {
             key: list_or_value(value)
