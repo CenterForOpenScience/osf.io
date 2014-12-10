@@ -11,13 +11,28 @@ from waterbutler.providers import core
 
 @core.register_provider('s3')
 class S3Provider(core.BaseProvider):
+    """Provider for the Amazon's S3
+    """
 
     def __init__(self, access_key, secret_key, bucket, **kwargs):
+        """
+        :param str access_key: AWS AccessKey
+        :param str secret_key: AWS SecretKey
+        :param str bucket: AWS S3 Bucket name
+        """
         self.connection = S3Connection(access_key, secret_key)
         self.bucket = self.connection.get_bucket(bucket, validate=False)
 
     @coroutine
     def download(self, path, **kwargs):
+        """Returns a ResponseWrapper (Stream) for the specified path
+        raises FileNotFoundError if the status from S3 is not 200
+
+        :param str path: Path to the key you want to download
+        :param dict **kwargs: Additional arguments that are ignored
+        :rtype ResponseWrapper:
+        :raises: waterbutler.FileNotFoundError
+        """
         key = self.bucket.new_key(path)
         url = key.generate_url(100)
         resp = yield from aiohttp.request('GET', url)
@@ -28,6 +43,11 @@ class S3Provider(core.BaseProvider):
 
     @coroutine
     def upload(self, obj, path):
+        """Uploads the given stream to S3
+        :param ResponseWrapper obj: The stream to put to S3
+        :param str path: The full path of the key to upload to/into
+        :rtype ResponseWrapper:
+        """
         key = self.bucket.new_key(path)
         url = key.generate_url(100, 'PUT')
         resp = yield from aiohttp.request(
