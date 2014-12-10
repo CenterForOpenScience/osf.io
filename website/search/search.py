@@ -26,6 +26,9 @@ def search(query, index='website', doc_type=None):
 def update_node(node, index='website'):
     search_engine.update_node(node)
 
+def update_contributors(nodes):
+    search_engine.bulk_update_contributors(nodes)
+
 
 @requires_search
 def update_user(user):

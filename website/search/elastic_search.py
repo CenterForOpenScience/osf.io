@@ -13,7 +13,8 @@ import six
 from elasticsearch import (
     Elasticsearch,
     RequestError,
-    NotFoundError
+    NotFoundError,
+    helpers
 )
 
 from requests.exceptions import ConnectionError
@@ -260,6 +261,31 @@ def update_node(node, index='website'):
             elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
 
         es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
+
+
+def bulk_update_contributors(nodes, index='website'):
+    """
+    Updates only the list of contributors of input projects
+    :param nodes: Projects, components or registrations
+    :param index: Indices of the nodes
+    :return:
+    """
+    actions = []
+    for node in nodes:
+        actions.extend(map(lambda type: {
+            '_op_type': 'update',
+            '_index': index,
+            '_type': type,
+            '_id': node._id,
+            'doc': {
+                'contributors': [
+                    x.fullname for x in node.visible_contributors
+                    if x is not None
+                    and x.is_active()
+                ]
+            }
+        }, ['project', 'component', 'registration']))
+    helpers.bulk(es, actions)
 
 def generate_social_links(social):
     social_links = {}
