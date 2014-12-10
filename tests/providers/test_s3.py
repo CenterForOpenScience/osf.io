@@ -82,6 +82,9 @@ def bucket_contents():
                     <DisplayName>mtd@amazon.com</DisplayName>
                 </Owner>
             </Contents>
+            <CommonPrefixes>
+                <Prefix>photos/</Prefix>
+            </CommonPrefixes>
         </ListBucketResult>"""
 
 
@@ -119,7 +122,7 @@ def test_metadata(provider, bucket_contents):
     result = yield from provider.metadata('')
 
     assert isinstance(result, list)
-    assert len(result) == 2
+    assert len(result) == 3
     assert result[0]['name'] == 'my-image.jpg'
     assert result[1]['extra']['md5'] == '1b2cf535f27731c974343645a3985328'
 
