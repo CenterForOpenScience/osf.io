@@ -117,7 +117,7 @@ def test_download(provider):
 def test_download_bad_status(provider):
     url = provider.build_repo_url('git', 'blobs', 'mysha')
     aiopretty.register_uri('GET', url, body=b'delicious', status=418)
-    with pytest.raises(exceptions.ProviderError):
+    with pytest.raises(exceptions.WaterButlerError):
         yield from provider.download('mysha')
 
 
