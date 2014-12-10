@@ -1,2 +1,0 @@
-class WaterButlerException(Exception):
-    pass

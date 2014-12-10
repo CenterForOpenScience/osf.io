@@ -33,3 +33,9 @@ class BaseHandler(tornado.web.RequestHandler):
             self.arguments['provider'],
             self.credentials
         )
+
+    def write_error(self, status_code, **kwargs):
+        self.finish({
+            "code": status_code,
+            "message": self._reason,
+        })
