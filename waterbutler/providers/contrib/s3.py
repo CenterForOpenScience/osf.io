@@ -91,7 +91,7 @@ class S3Provider(core.BaseProvider):
         ]
 
         folders = [
-            self.key_to_dict(p)
+            self.prefix_to_dict(p)
             for p in getattr(obj, 'CommonPrefixes', [])
         ]
 
