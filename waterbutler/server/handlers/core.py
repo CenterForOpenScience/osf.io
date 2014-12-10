@@ -37,7 +37,7 @@ class BaseHandler(tornado.web.RequestHandler):
 
     def write_error(self, status_code, exc_info):
         etype, exc, _ = exc_info
-        if etype is exceptions.WaterButlerException:
+        if etype is exceptions.WaterButlerError:
             if exc.data:
                 self.finish(exc.data)
                 return
