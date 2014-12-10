@@ -84,7 +84,7 @@
                 <p>Free and easy to use, the Open Science Framework supports the entire research lifecycle: planning, execution, reporting, archiving, and discovery.</p>
                 <div>
                     <a class="btn btn-primary" href="/login/">Create an Account</a>
-                    <a class="btn btn-primary" href="/4znzp/wiki/home/">Learn More</a>
+                    <a class="btn btn-primary" href="/getting-started/">Learn More</a>
                     <a data-bind="click: dismiss">Hide this message</a>
                 </div>
             </div>
