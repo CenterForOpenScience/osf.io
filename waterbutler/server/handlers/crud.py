@@ -13,25 +13,22 @@ from waterbutler.server.handlers import core
 from waterbutler.server.utils import coroutine
 
 
-STREAM_METHODS = ('PUT', 'POST')
-ACTION_MAP = {
-    'GET': 'download',
-    'PUT': 'upload',
-    'DELETE': 'delete',
-}
-
-
 @web.stream_request_body
 class CRUDHandler(core.BaseHandler):
+    ACTION_MAP = {
+        'GET': 'download',
+        'PUT': 'upload',
+        'DELETE': 'delete',
+    }
+    STREAM_METHODS = ('PUT', 'POST')
 
     @coroutine
     def prepare(self):
         yield from super().prepare()
-        self.arguments['action'] = ACTION_MAP[self.request.method]
         self.prepare_stream()
 
     def prepare_stream(self):
-        if self.request.method in STREAM_METHODS:
+        if self.request.method in self.STREAM_METHODS:
             self.obj = RequestWrapper(self.request)
             self.uploader = self.provider.upload(self.obj, **self.arguments)
         else:
@@ -69,5 +66,5 @@ class CRUDHandler(core.BaseHandler):
         self.set_status(result.response.status)
 
     def on_connection_close(self):
-        if self.request.method in STREAM_METHODS:
+        if self.request.method in self.STREAM_METHODS:
             self.obj.content.feed_eof()
