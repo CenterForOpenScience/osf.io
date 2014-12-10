@@ -110,7 +110,7 @@ class S3Provider(core.BaseProvider):
             'path': key.Key.text,
             'modified': key.LastModified.text,
             'extra': {
-                'md5': key.ETag.text,
+                'md5': key.ETag.text.replace('"', ''),
             }
         }
 
