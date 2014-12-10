@@ -4,6 +4,6 @@
 .git
 .idea
 **/*.ipynb*
-**/**.pyc
+**/*.pyc
 **/__pycache__
 local.py
