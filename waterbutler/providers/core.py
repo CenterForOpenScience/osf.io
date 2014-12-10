@@ -45,7 +45,7 @@ def expects(*codes):
             result = yield from func(*args, **kwargs)
             if result.response.status not in codes:
                 cls = CODE_TO_ERROR.get(result.response.status, exceptions.WaterButlerError)
-                raise cls(kwargs['path'])
+                raise cls(kwargs.get('path'))
             return result
         return wrapped
     return wrapper
