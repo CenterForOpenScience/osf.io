@@ -2,10 +2,13 @@
 
 import os
 import abc
-from asyncio import coroutine
-from asyncio import StreamReader
+import asyncio
+import functools
 
 import furl
+
+from waterbutler import exceptions
+
 
 PROVIDERS = {}
 
@@ -30,6 +33,19 @@ def make_provider(name, credentials):
     return get_provider(name)(credentials['auth'], credentials['identity'])
 
 
+def expects(*codes):
+    def wrapper(func):
+        assert asyncio.iscoroutinefunction(func)
+        @functools.wraps(func)
+        def wrapped(*args, **kwargs):
+            result = yield from func(*args, **kwargs)
+            if result.response.status not in codes:
+                raise exceptions.ProviderError(result)
+            return result
+        return wrapped
+    return wrapper
+
+
 class ResponseWrapper(object):
 
     def __init__(self, response):
@@ -43,7 +59,7 @@ class RequestWrapper(object):
 
     def __init__(self, request):
         self.response = request
-        self.content = StreamReader()
+        self.content = asyncio.StreamReader()
         self.size = request.headers.get('Content-Length')
 
 
@@ -51,7 +67,7 @@ class FileWrapper(object):
 
     def __init__(self, file_pointer):
         self.file_pointer = file_pointer
-        self.content = StreamReader()
+        self.content = asyncio.StreamReader()
         # TODO: Handle UTF-unsafe characters
         self.content.feed_data(file_pointer.read())
         self.content.feed_eof()
@@ -84,7 +100,7 @@ class BaseProvider(metaclass=abc.ABCMeta):
     def intra_move(self, dest_provider, source_options, dest_options):
         raise NotImplementedError
 
-    @coroutine
+    @asyncio.coroutine
     def copy(self, dest_provider, source_options, dest_options):
         if self.can_intra_copy(dest_provider):
             try:
@@ -94,7 +110,7 @@ class BaseProvider(metaclass=abc.ABCMeta):
         obj = yield from self.download(**source_options)
         yield from dest_provider.upload(obj, **dest_options)
 
-    @coroutine
+    @asyncio.coroutine
     def move(self, dest_provider, source_options, dest_options):
         if self.can_intra_move(dest_provider):
             try:

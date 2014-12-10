@@ -54,6 +54,7 @@ class GithubProvider(core.BaseProvider):
             },
         }
 
+    @core.expects(200)
     @coroutine
     def download(self, sha, **kwargs):
         url = self.build_repo_url('git', 'blobs', sha)
@@ -61,6 +62,7 @@ class GithubProvider(core.BaseProvider):
         response = yield from aiohttp.request('GET', url, headers=headers)
         return core.ResponseWrapper(response)
 
+    @core.expects(200, 201)
     @coroutine
     def upload(self, obj, path, message, branch=None, **kwargs):
         content = yield from obj.content.read()
@@ -86,6 +88,7 @@ class GithubProvider(core.BaseProvider):
         response = yield from aiohttp.request('PUT', url, data=json.dumps(data), headers=self.build_headers())
         return core.ResponseWrapper(response)
 
+    @core.expects(200)
     @coroutine
     def delete(self, path, message, sha, branch=None):
         url = self.build_repo_url('contents', path)
