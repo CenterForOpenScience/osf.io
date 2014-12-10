@@ -3,14 +3,14 @@
 import pytest
 
 from tests.utils import async
-from tests.mocking import aiopretty, pypretty
+from tests.mocking import aiopretty
 
 import io
 import os
 import json
 import base64
-import asyncio
 
+from waterbutler import exceptions
 from waterbutler.providers import core
 from waterbutler.providers.contrib.github import GithubProvider
 
@@ -50,16 +50,6 @@ def file_like(file_content):
 @pytest.fixture
 def file_wrapper(file_like):
     return core.FileWrapper(file_like)
-
-
-@async
-@pytest.mark.aiopretty
-def test_download(provider):
-    url = provider.build_repo_url('git', 'blobs', 'mysha')
-    aiopretty.register_uri('GET', url, body=b'delicious')
-    result = yield from provider.download('mysha')
-    content = yield from result.response.read()
-    assert content == b'delicious'
 
 
 @pytest.fixture
@@ -114,6 +104,25 @@ class TestGithubHelpers:
 
 @async
 @pytest.mark.aiopretty
+def test_download(provider):
+    url = provider.build_repo_url('git', 'blobs', 'mysha')
+    aiopretty.register_uri('GET', url, body=b'delicious')
+    result = yield from provider.download('mysha')
+    content = yield from result.response.read()
+    assert content == b'delicious'
+
+
+@async
+@pytest.mark.aiopretty
+def test_download_bad_status(provider):
+    url = provider.build_repo_url('git', 'blobs', 'mysha')
+    aiopretty.register_uri('GET', url, body=b'delicious', status=418)
+    with pytest.raises(exceptions.ProviderError):
+        yield from provider.download('mysha')
+
+
+@async
+@pytest.mark.aiopretty
 def test_metadata(provider, repo_contents):
     path = 'snacks'
     url = provider.build_repo_url('contents', path)
@@ -128,10 +137,10 @@ def test_upload_create(provider, repo_contents, file_content, file_wrapper):
     message = 'so hungry'
     path = repo_contents[0]['path'][::-1]
     metadata_url = provider.build_repo_url('contents', os.path.dirname(path))
-    aiopretty.register_json_uri('GET', metadata_url, body=repo_contents)
+    aiopretty.register_json_uri('GET', metadata_url, body=repo_contents, status=201)
     upload_url = provider.build_repo_url('contents', path)
     aiopretty.register_uri('PUT', upload_url)
-    result = yield from provider.upload(file_wrapper, path, message)
+    yield from provider.upload(file_wrapper, path, message)
     expected_data = {
         'path': path,
         'message': message,
@@ -152,7 +161,7 @@ def test_upload_update(provider, repo_contents, file_content, file_wrapper):
     aiopretty.register_json_uri('GET', metadata_url, body=repo_contents)
     upload_url = provider.build_repo_url('contents', path)
     aiopretty.register_uri('PUT', upload_url)
-    result = yield from provider.upload(file_wrapper, path, message)
+    yield from provider.upload(file_wrapper, path, message)
     expected_data = {
         'path': path,
         'message': message,
@@ -173,7 +182,7 @@ def test_delete_with_branch(provider, repo_contents):
     message = 'deleted'
     url = provider.build_repo_url('contents', path)
     aiopretty.register_json_uri('DELETE', url)
-    result = yield from provider.delete(path, message, sha, branch=branch)
+    yield from provider.delete(path, message, sha, branch=branch)
     expected_data = {
         'message': message,
         'sha': sha,
@@ -191,7 +200,7 @@ def test_delete_without_branch(provider, repo_contents):
     message = 'deleted'
     url = provider.build_repo_url('contents', path)
     aiopretty.register_json_uri('DELETE', url)
-    result = yield from provider.delete(path, message, sha)
+    yield from provider.delete(path, message, sha)
     expected_data = {
         'message': message,
         'sha': sha,
