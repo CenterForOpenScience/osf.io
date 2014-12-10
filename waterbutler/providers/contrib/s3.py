@@ -80,7 +80,7 @@ class S3Provider(core.BaseProvider):
         resp = yield from aiohttp.request('GET', url, params={'prefix': path, 'delimiter': '/'})
 
         if resp.status == 404:
-            raise Exception('TODO NOT FOUND ERROR')
+            raise exceptions.FileNotFoundError(path)
 
         content = yield from resp.read_and_close()
         obj = objectify.fromstring(content)
