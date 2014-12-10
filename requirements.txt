@@ -1,5 +1,6 @@
 aiohttp
 boto
-invoke
-tornado
 furl
+invoke
+lxml
+tornado

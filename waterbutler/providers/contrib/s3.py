@@ -1,7 +1,9 @@
-# encoding: utf-8
-from asyncio import coroutine
+# -*- coding: utf-8 -*-
+
+import asyncio
 
 import aiohttp
+import lxml
 
 from boto.s3.connection import S3Connection
 
@@ -23,7 +25,7 @@ class S3Provider(core.BaseProvider):
         self.connection = S3Connection(access_key, secret_key)
         self.bucket = self.connection.get_bucket(bucket, validate=False)
 
-    @coroutine
+    @asyncio.coroutine
     def download(self, path, **kwargs):
         """Returns a ResponseWrapper (Stream) for the specified path
         raises FileNotFoundError if the status from S3 is not 200
@@ -41,7 +43,7 @@ class S3Provider(core.BaseProvider):
 
         return core.ResponseWrapper(resp)
 
-    @coroutine
+    @asyncio.coroutine
     def upload(self, obj, path):
         """Uploads the given stream to S3
         :param ResponseWrapper obj: The stream to put to S3
@@ -58,7 +60,7 @@ class S3Provider(core.BaseProvider):
 
         return core.ResponseWrapper(resp)
 
-    @coroutine
+    @asyncio.coroutine
     def delete(self, path):
         key = self.bucket.new_key(path)
         url = key.generate_url(100, 'DELETE')
@@ -66,7 +68,7 @@ class S3Provider(core.BaseProvider):
 
         return resp
 
-    @coroutine
+    @asyncio.coroutine
     def metadata(self, path):
         url = self.bucket.generate_url(100, 'GET')
         resp = yield from aiohttp.request('GET', url, params={'prefix': path, 'delimiter': '/'})

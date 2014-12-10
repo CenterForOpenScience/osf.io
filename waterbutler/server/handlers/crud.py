@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-import asyncio
-
-import aiohttp
 
 from tornado import web
 
@@ -15,6 +12,7 @@ from waterbutler.server.utils import coroutine
 
 @web.stream_request_body
 class CRUDHandler(core.BaseHandler):
+
     ACTION_MAP = {
         'GET': 'download',
         'PUT': 'upload',

@@ -3,7 +3,7 @@
 import os
 import json
 import base64
-from asyncio import coroutine
+import asyncio
 
 import aiohttp
 
@@ -31,7 +31,7 @@ class GithubProvider(core.BaseProvider):
             'email': self.auth['email'],
         }
 
-    @coroutine
+    @asyncio.coroutine
     def metadata(self, path, ref=None):
         url = self.build_repo_url('contents', path)
         response = yield from aiohttp.request('GET', url, headers=self.build_headers())
@@ -55,7 +55,7 @@ class GithubProvider(core.BaseProvider):
         }
 
     @core.expects(200)
-    @coroutine
+    @asyncio.coroutine
     def download(self, sha, **kwargs):
         url = self.build_repo_url('git', 'blobs', sha)
         headers = self.build_headers({'Accept': 'application/vnd.github.VERSION.raw'})
@@ -63,7 +63,7 @@ class GithubProvider(core.BaseProvider):
         return core.ResponseWrapper(response)
 
     @core.expects(200, 201)
-    @coroutine
+    @asyncio.coroutine
     def upload(self, obj, path, message, branch=None, **kwargs):
         content = yield from obj.content.read()
         encoded = base64.b64encode(content)
@@ -89,7 +89,7 @@ class GithubProvider(core.BaseProvider):
         return core.ResponseWrapper(response)
 
     @core.expects(200)
-    @coroutine
+    @asyncio.coroutine
     def delete(self, path, message, sha, branch=None):
         url = self.build_repo_url('contents', path)
         data = {

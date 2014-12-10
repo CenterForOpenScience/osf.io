@@ -1,6 +1,6 @@
-import asyncio
+# -*- coding: utf-8 -*-
 
-import aiohttp
+import asyncio
 
 import tornado.web
 
@@ -20,6 +20,7 @@ def list_or_value(value):
 
 
 class BaseHandler(tornado.web.RequestHandler):
+
     ACTION_MAP = {}
 
     @asyncio.coroutine
