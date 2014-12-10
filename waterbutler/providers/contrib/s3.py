@@ -3,12 +3,12 @@
 import os
 import asyncio
 
-import lxml
 import aiohttp
+from lxml import objectify
 
 from boto.s3.connection import S3Connection
 
-from waterbutler.exceptions import FileNotFoundError
+from waterbutler import exceptions
 from waterbutler.providers import core
 
 
@@ -17,15 +17,15 @@ class S3Provider(core.BaseProvider):
     """Provider for the Amazon's S3
     """
 
-    def __init__(self, access_key, secret_key, bucket, **kwargs):
+    def __init__(self, identity, auth):
         """
-        :param str access_key: AWS AccessKey
-        :param str secret_key: AWS SecretKey
-        :param str bucket: AWS S3 Bucket name
+        :param dict identity: Not used
+        :param dict auth: A dict containing access_key secret_key and bucket
         """
-        self.connection = S3Connection(access_key, secret_key)
-        self.bucket = self.connection.get_bucket(bucket, validate=False)
+        self.connection = S3Connection(auth['access_key'], auth['secret_key'])
+        self.bucket = self.connection.get_bucket(auth['bucket'], validate=False)
 
+    @core.expects(200)
     @asyncio.coroutine
     def download(self, path, **kwargs):
         """Returns a ResponseWrapper (Stream) for the specified path
@@ -36,16 +36,20 @@ class S3Provider(core.BaseProvider):
         :rtype ResponseWrapper:
         :raises: waterbutler.FileNotFoundError
         """
+        if not path:
+            raise exceptions.ProviderError('Path can not be empty', code=400)
+
         key = self.bucket.new_key(path)
         url = key.generate_url(100)
         resp = yield from aiohttp.request('GET', url)
         if resp.status != 200:
-            raise FileNotFoundError(path)
+            raise exceptions.FileNotFoundError(path)
 
         return core.ResponseWrapper(resp)
 
+    @core.expects(200, 201)
     @asyncio.coroutine
-    def upload(self, obj, path):
+    def upload(self, obj, path, **kwargs):
         """Uploads the given stream to S3
         :param ResponseWrapper obj: The stream to put to S3
         :param str path: The full path of the key to upload to/into
@@ -61,24 +65,25 @@ class S3Provider(core.BaseProvider):
 
         return core.ResponseWrapper(resp)
 
+    @core.expects(200, 204)
     @asyncio.coroutine
-    def delete(self, path):
+    def delete(self, path, **kwargs):
         key = self.bucket.new_key(path)
         url = key.generate_url(100, 'DELETE')
         resp = yield from aiohttp.request('DELETE', url)
 
-        return resp
+        return core.ResponseWrapper(resp)
 
     @asyncio.coroutine
-    def metadata(self, path):
+    def metadata(self, path, **kwargs):
         url = self.bucket.generate_url(100, 'GET')
         resp = yield from aiohttp.request('GET', url, params={'prefix': path, 'delimiter': '/'})
 
-        if resp.status_code == 404:
+        if resp.status == 404:
             raise Exception('TODO NOT FOUND ERROR')
 
         content = yield from resp.read_and_close()
-        obj = lxml.objectify(content)
+        obj = objectify.fromstring(content)
 
         files = [
             self.key_to_dict(k)
@@ -86,7 +91,7 @@ class S3Provider(core.BaseProvider):
         ]
 
         folders = [
-            self.key_to_dict(p)
+            self.prefix_to_dict(p)
             for p in getattr(obj, 'CommonPrefixes', [])
         ]
 
@@ -100,12 +105,12 @@ class S3Provider(core.BaseProvider):
             'content': children,
             'provider': 's3',
             'kind': 'file',
-            'name': os.path.split(key.Key)[1],
-            'size': key.Size,
-            'path': key.Key,
-            'modified': key.LastModified,
+            'name': os.path.split(key.Key.text)[1],
+            'size': key.Size.text,
+            'path': key.Key.text,
+            'modified': key.LastModified.text,
             'extra': {
-                'md5': key.ETag,
+                'md5': key.ETag.text.replace('"', ''),
             }
         }
 
@@ -120,8 +125,8 @@ class S3Provider(core.BaseProvider):
             'contents': children,
             'provider': 's3',
             'kind': 'folder',
-            'name': getname(prefix.Prefix),
-            'path': prefix.Prefix,
+            'name': getname(prefix.Prefix.text),
+            'path': prefix.Prefix.text,
             'modified': None,
             'size': None,
             'extra': {}
