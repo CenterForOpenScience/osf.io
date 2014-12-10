@@ -21,4 +21,4 @@ class ProviderError(WaterButlerError):
 
 class FileNotFoundError(ProviderError):
     def __init__(self, path):
-        super().__init__(404, reason='Could not retrieve file or directory {0}'.format(message))
+        super().__init__('Could not retrieve file or directory {0}'.format(path), code=404)
