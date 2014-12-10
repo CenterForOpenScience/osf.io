@@ -53,7 +53,7 @@ def file_wrapper(file_like):
 
 @pytest.fixture
 def bucket_contents():
-    return b"""<?xml version="1.0" encoding="UTF-8"?>
+    return b'''<?xml version="1.0" encoding="UTF-8"?>
         <ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
             <Name>bucket</Name>
             <Prefix/>
@@ -85,7 +85,7 @@ def bucket_contents():
             <CommonPrefixes>
                 <Prefix>photos/</Prefix>
             </CommonPrefixes>
-        </ListBucketResult>"""
+        </ListBucketResult>'''
 
 
 @async

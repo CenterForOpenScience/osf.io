@@ -5,8 +5,6 @@ import json
 import base64
 import asyncio
 
-import aiohttp
-
 from waterbutler.providers import core
 
 
@@ -19,10 +17,9 @@ class GithubProvider(core.BaseProvider):
         segments = ('repos', self.identity['owner'], self.identity['repo']) + segments
         return self.build_url(*segments, **query)
 
-    def build_headers(self, extra=None):
-        headers = {'Authorization': 'token {}'.format(self.identity['token'])}
-        headers.update(extra or {})
-        return headers
+    @property
+    def default_headers(self):
+        return {'Authorization': 'token {}'.format(self.identity['token'])}
 
     @property
     def committer(self):
@@ -33,8 +30,10 @@ class GithubProvider(core.BaseProvider):
 
     @asyncio.coroutine
     def metadata(self, path, ref=None):
-        url = self.build_repo_url('contents', path)
-        response = yield from aiohttp.request('GET', url, headers=self.build_headers())
+        response = yield from self.make_request(
+            'GET',
+            self.build_repo_url('contents', path),
+        )
         data = yield from response.json()
         return [
             self._serialize_metadata(item)
@@ -57,9 +56,11 @@ class GithubProvider(core.BaseProvider):
     @core.expects(200)
     @asyncio.coroutine
     def download(self, sha, **kwargs):
-        url = self.build_repo_url('git', 'blobs', sha)
-        headers = self.build_headers({'Accept': 'application/vnd.github.VERSION.raw'})
-        response = yield from aiohttp.request('GET', url, headers=headers)
+        response = yield from self.make_request(
+            'GET',
+            self.build_repo_url('git', 'blobs', sha),
+            headers={'Accept': 'application/vnd.github.VERSION.raw'},
+        )
         return core.ResponseWrapper(response)
 
     @core.expects(200, 201)
@@ -84,14 +85,16 @@ class GithubProvider(core.BaseProvider):
         )
         if existing:
             data['sha'] = existing['extra']['sha']
-        url = self.build_repo_url('contents', path)
-        response = yield from aiohttp.request('PUT', url, data=json.dumps(data), headers=self.build_headers())
+        response = yield from self.make_request(
+            'PUT',
+            self.build_repo_url('contents', path),
+            data=json.dumps(data),
+        )
         return core.ResponseWrapper(response)
 
     @core.expects(200)
     @asyncio.coroutine
     def delete(self, path, message, sha, branch=None):
-        url = self.build_repo_url('contents', path)
         data = {
             'message': message,
             'sha': sha,
@@ -99,6 +102,10 @@ class GithubProvider(core.BaseProvider):
         }
         if branch is not None:
             data['branch'] = branch
-        headers = self.build_headers({'Content-Type': 'application/json'})
-        response = yield from aiohttp.request('DELETE', url, data=json.dumps(data), headers=headers)
+        response = yield from self.make_request(
+            'DELETE',
+            self.build_repo_url('contents', path),
+            headers={'Content-Type': 'application/json'},
+            data=json.dumps(data),
+        )
         return core.ResponseWrapper(response)

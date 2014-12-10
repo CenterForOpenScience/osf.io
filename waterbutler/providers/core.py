@@ -4,8 +4,10 @@ import os
 import abc
 import asyncio
 import functools
+import itertools
 
 import furl
+import aiohttp
 
 from waterbutler import exceptions
 
@@ -79,6 +81,20 @@ class FileWrapper(object):
         self.size = file_pointer.tell()
 
 
+def build_url(base, *segments, **query):
+    url = furl.furl(base)
+    segments = filter(
+        lambda segment: segment,
+        map(
+            lambda segment: segment.strip('/'),
+            itertools.chain(url.path.segments, segments)
+        )
+    )
+    url.path = os.path.join(*segments)
+    url.args = query
+    return url.url
+
+
 class BaseProvider(metaclass=abc.ABCMeta):
 
     BASE_URL = None
@@ -87,11 +103,27 @@ class BaseProvider(metaclass=abc.ABCMeta):
         self.auth = auth
         self.identity = identity
 
-    def build_url(self, *segments, base_url=None, **query):
-        url = furl.furl(base_url or self.BASE_URL)
-        url.path = os.path.join(*segments)
-        url.args = query
-        return url.url
+    def build_url(self, *segments, **query):
+        return build_url(self.BASE_URL, *segments, **query)
+
+    @property
+    def default_headers(self):
+        return {}
+
+    def build_headers(self, **kwargs):
+        headers = self.default_headers
+        headers.update(kwargs)
+        return {
+            key: value
+            for key, value in headers.items()
+            if value is not None
+        }
+
+    @asyncio.coroutine
+    def make_request(self, *args, **kwargs):
+        kwargs['headers'] = self.build_headers(**kwargs.get('headers', {}))
+        response = yield from aiohttp.request(*args, **kwargs)
+        return response
 
     def can_intra_copy(self, other):
         return False
