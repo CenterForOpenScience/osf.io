@@ -137,7 +137,6 @@
         % endif
 
         <script src="/static/vendor/bower_components/dropzone/downloads/dropzone.min.js"></script>
-        <script src="/static/vendor/bower_components/hgrid/dist/hgrid.js"></script>
         <script src="/static/public/js/vendor.bundle.js"></script>
         ${self.javascript_bottom()}
     </body>

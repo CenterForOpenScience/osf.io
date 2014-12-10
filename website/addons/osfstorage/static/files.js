@@ -1,1 +1,1 @@
-require('./storageRubeusConfig.js');
+require('./storageFangornConfig.js');

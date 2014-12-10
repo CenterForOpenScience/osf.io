@@ -34,13 +34,13 @@ var entry = {
         'bootstrap',
         'bootbox',
         'select2',
-        'hgrid',
+        'treebeard',
         'osf-helpers',
         'knockout-punches',
         'dropzone',
         'knockout-sortable',
         'dropzone-patch',
-        'rubeus'
+        'fangorn'
     ]
 };
 
@@ -91,7 +91,7 @@ module.exports = {
             'dropzone': staticPath('vendor/bower_components/dropzone/downloads/dropzone.js'),
             // Also alias some internal libraries for easy access
             'dropzone-patch': staticPath('js/dropzone-patch.js'),
-            'rubeus': staticPath('js/rubeus.js'),
+            'fangorn': staticPath('js/fangorn.js'),
             'folderpicker': staticPath('js/folderPicker.js'),
             'osf-helpers': staticPath('js/osf-helpers.js'),
             'osf-language': staticPath('js/osf-language.js'),
@@ -123,7 +123,6 @@ module.exports = {
         'jquery': 'jQuery',
         'jquery-ui': 'jQuery.ui',
         'raven-js': 'Raven',
-        'hgrid': 'HGrid',
         'dropzone': 'Dropzone'
     }
 };

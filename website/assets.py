@@ -16,12 +16,12 @@ css = Bundle(
         'vendor/pygments.css',
         'vendor/bower_components/x-editable/dist/bootstrap3-editable/css/bootstrap-editable.css',
         'vendor/bower_components/bootstrap/dist/css/bootstrap-theme.css',
-        'vendor/bower_components/hgrid/dist/hgrid.css',
+        'vendor/bower_components/treebeard/dist/treebeard.css',
         filters='cssmin'),
     # Site-specific CSS
     Bundle(
         'css/site.css',
-        'css/rubeus.css',
+        'css/fangorn.css',
         'css/commentpane.css',
         'vendor/animate/animate-tasteful.min.css',
         filters="cssmin"),

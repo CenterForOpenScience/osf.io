@@ -3,15 +3,12 @@
 
 var Handlebars = require('handlebars');
 var $ = require('jquery');
-var HGrid = require('hgrid');
+var Treebeard = require('treebeard');
 var bootbox = require('bootbox');
 var Bloodhound = require('exports?Bloodhound!typeahead.js');
 var moment = require('moment');
 var Raven = require('raven-js');
 
-require('../vendor/jquery-drag-drop/jquery.event.drag-2.2.js');
-require('../vendor/jquery-drag-drop/jquery.event.drop-2.2.js');
-require('../vendor/bower_components/hgrid/plugins/hgrid-draggable/hgrid-draggable.js');
 
 var osfHelpers = require('./osf-helpers.js');
 
@@ -980,7 +977,6 @@ function createProjectDetailHTMLFromTemplate(theItem) {
                 },
                 dropEvents : {
                     out  : function () { },
-                    over : function (event, ui) { },
                     drop : _poDrop,
                     over : _poOver
                 },
