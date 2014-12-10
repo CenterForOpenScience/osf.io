@@ -325,7 +325,7 @@ $ npm install -g webpack
 
 ```bash
 # Make sure dependencies are up to date
-$ bower install
+$ bower install && npm install
 # Run webpack in watch mode
 $ inv pack -w
 ```
