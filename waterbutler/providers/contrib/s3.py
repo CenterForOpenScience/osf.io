@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
+import os
 import asyncio
 
-import aiohttp
 import lxml
+import aiohttp
 
 from boto.s3.connection import S3Connection
 
@@ -99,12 +100,12 @@ class S3Provider(core.BaseProvider):
             'content': children,
             'provider': 's3',
             'kind': 'file',
-            'name': os.path.split(fo.Key)[1],
-            'size': fo.Size,
-            'path': fo.Key,
-            'modified': fo.LastModified,
+            'name': os.path.split(key.Key)[1],
+            'size': key.Size,
+            'path': key.Key,
+            'modified': key.LastModified,
             'extra': {
-                'md5': fo.ETag,
+                'md5': key.ETag,
             }
         }
 
