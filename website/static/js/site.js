@@ -312,7 +312,10 @@
                 $.cookie('slide', '0', { expires: 1});
             };
         };
-        if ($(sliderSelector).length > 0) {
+        // Don't show footer on these pages
+        var NO_FOOTER_PATHS = ['/login/', '/getting-started/'];
+        if ($(sliderSelector).length > 0 &&
+                $.inArray(window.location.pathname, NO_FOOTER_PATHS) === -1) {
             $.osf.applyBindings(new SlideInViewModel(), sliderSelector);
         }
     });
