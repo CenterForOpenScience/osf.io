@@ -4,6 +4,7 @@ import aiohttp
 
 import tornado.web
 
+from waterbutler import exceptions
 from waterbutler import settings
 from waterbutler.identity import get_identity
 from waterbutler.providers import core
@@ -34,7 +35,13 @@ class BaseHandler(tornado.web.RequestHandler):
             self.credentials
         )
 
-    def write_error(self, status_code, **kwargs):
+    def write_error(self, status_code, exc_info):
+        etype, exc, _ = exc_info
+        if etype is exceptions.WaterButlerException:
+            if exc.data:
+                self.finish(exc.data)
+                return
+
         self.finish({
             "code": status_code,
             "message": self._reason,
