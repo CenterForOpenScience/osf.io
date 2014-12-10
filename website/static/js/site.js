@@ -303,15 +303,14 @@
             var self = this;
             self.elem = $(sliderSelector);
 
-            // Detect if localStorage is available.
-            // TODO: We should be using a library like Modernizr for this
-            var useLocalStorage = typeof(localStorage) !== 'undefined';
+            var dismissed = false;
 
-            if (useLocalStorage) {
-                var dismissed = localStorage.getItem("slide") === "0";
-            } else {
-                var dismissed = $.cookie("slide") === "0";
-            }
+            try {
+                dismissed = dismissed || localStorage.getItem("slide") === "0"
+            } catch (e) {}
+
+            dismissed = dismissed || $.cookie("slide") === "0";
+
             if (this.elem.length > 0 && !dismissed) {
                 setTimeout(function () {
                     self.elem.slideDown(1000);
@@ -319,9 +318,9 @@
             }
             self.dismiss = function() {
                 self.elem.slideUp(1000);
-                if (useLocalStorage) {
+                try {
                     localStorage.setItem("slide", "0");
-                } else {
+                } catch (e) {
                     $.cookie('slide', '0', { expires: 1});
                 }
             };
