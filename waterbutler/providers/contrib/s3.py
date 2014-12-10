@@ -47,7 +47,7 @@ class S3Provider(core.BaseProvider):
 
         return core.ResponseWrapper(resp)
 
-    @core.expects(201)
+    @core.expects(200, 201)
     @asyncio.coroutine
     def upload(self, obj, path, **kwargs):
         """Uploads the given stream to S3
@@ -72,7 +72,7 @@ class S3Provider(core.BaseProvider):
         url = key.generate_url(100, 'DELETE')
         resp = yield from aiohttp.request('DELETE', url)
 
-        return resp
+        return core.ResponseWrapper(resp)
 
     @asyncio.coroutine
     def metadata(self, path, **kwargs):
