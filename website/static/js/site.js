@@ -306,10 +306,10 @@
             var dismissed = false;
 
             try {
-                dismissed = dismissed || localStorage.getItem("slide") === "0"
+                dismissed = dismissed || localStorage.getItem('slide') === '0';
             } catch (e) {}
 
-            dismissed = dismissed || $.cookie("slide") === "0";
+            dismissed = dismissed || $.cookie('slide') === '0';
 
             if (this.elem.length > 0 && !dismissed) {
                 setTimeout(function () {
@@ -319,9 +319,9 @@
             self.dismiss = function() {
                 self.elem.slideUp(1000);
                 try {
-                    localStorage.setItem("slide", "0");
+                    localStorage.setItem('slide', '0');
                 } catch (e) {
-                    $.cookie('slide', '0', { expires: 1});
+                    $.cookie('slide', '0', { expires: 1, path: '/'});
                 }
             };
         };
