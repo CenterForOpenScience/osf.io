@@ -9,4 +9,4 @@ for mod in os.listdir(os.path.dirname(__file__)):
     if ext == '.py' and root not in ['__init__', 'base']:
         __all__.append(root)
 
-from . import *
+from . import *  # noqa
