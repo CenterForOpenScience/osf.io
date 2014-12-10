@@ -9,46 +9,12 @@ from tornado import web
 
 from waterbutler import settings
 from waterbutler.providers import core
-from waterbutler.server import utils
+from waterbutler.server.handlers import base
 from waterbutler.server.utils import coroutine
-
-
-@asyncio.coroutine
-def fetch_identity(params):
-    response = yield from aiohttp.request(
-        'get',
-        settings.IDENTITY_API_URL,
-        params=params,
-        headers={'Content-Type': 'application/json'},
-    )
-
-    # TOOD Handle Errors nicely
-    if response.status != 200:
-        data = yield from response.read()
-        raise web.HTTPError(response.status)
-
-    data = yield from response.json()
-    return data
-
-
-def list_or_value(value):
-    assert isinstance(value, list)
-    if len(value) == 0:
-        return None
-    if len(value) == 1:
-        return value[0].decode('utf-8')
-    return [item.decode('utf-8') for item in value]
-
-
-def get_query_data(request):
-    return {
-        key: list_or_value(value)
-        for key, value in request.items()
-    }
+from waterbutler.utils import lazyproperty
 
 
 STREAM_METHODS = ('PUT', 'POST')
-
 ACTION_MAP = {
     'GET': 'download',
     'PUT': 'upload',
@@ -57,17 +23,11 @@ ACTION_MAP = {
 
 
 @web.stream_request_body
-class CRUDHandler(web.RequestHandler):
+class CRUDHandler(base.ConvienceHandler):
 
     @coroutine
     def prepare(self):
-        self.arguments = get_query_data(self.request.query_arguments)
-        self.arguments['action'] = ACTION_MAP[self.request.method]
-        self.credentials = yield from fetch_identity(self.arguments)
-        self.provider = core.make_provider(
-            self.get_argument('provider'),
-            self.credentials,
-        )
+        self.provider
         self.prepare_stream()
 
     def prepare_stream(self):
