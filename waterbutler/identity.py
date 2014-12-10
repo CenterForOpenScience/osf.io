@@ -3,6 +3,7 @@ import asyncio
 import aiohttp
 
 from waterbutler import settings
+from waterbutler import exceptions
 
 
 IDENTITY_METHODS = {}
@@ -38,8 +39,12 @@ def fetch_rest_identity(**params):
 
     # TOOD Handle Errors nicely
     if response.status != 200:
-        data = yield from response.read()
-        raise web.HTTPError(response.status)
+        try:
+            data = yield from response.json()
+        except ValueError:
+            data = yield from response.read()
+
+        raise exceptions.WaterButlerException(data, code=response.status)
 
     data = yield from response.json()
     return data
