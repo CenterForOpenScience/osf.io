@@ -8,7 +8,7 @@ from lxml import objectify
 
 from boto.s3.connection import S3Connection
 
-from waterbutler.exceptions import FileNotFoundError
+from waterbutler import exceptions
 from waterbutler.providers import core
 
 
@@ -19,10 +19,13 @@ class S3Provider(core.BaseProvider):
 
     def __init__(self, identity, auth):
         """
+        :param dict identity: Not used
+        :param dict auth: A dict containing access_key secret_key and bucket
         """
         self.connection = S3Connection(auth['access_key'], auth['secret_key'])
         self.bucket = self.connection.get_bucket(auth['bucket'], validate=False)
 
+    @core.expects(200)
     @asyncio.coroutine
     def download(self, path, **kwargs):
         """Returns a ResponseWrapper (Stream) for the specified path
@@ -33,14 +36,18 @@ class S3Provider(core.BaseProvider):
         :rtype ResponseWrapper:
         :raises: waterbutler.FileNotFoundError
         """
+        if not path:
+            raise exceptions.ProviderError('Path can not be empty', code=400)
+
         key = self.bucket.new_key(path)
         url = key.generate_url(100)
         resp = yield from aiohttp.request('GET', url)
         if resp.status != 200:
-            raise FileNotFoundError(path)
+            raise exceptions.FileNotFoundError(path)
 
         return core.ResponseWrapper(resp)
 
+    @core.expects(201)
     @asyncio.coroutine
     def upload(self, obj, path, **kwargs):
         """Uploads the given stream to S3
@@ -58,6 +65,7 @@ class S3Provider(core.BaseProvider):
 
         return core.ResponseWrapper(resp)
 
+    @core.expects(200, 204)
     @asyncio.coroutine
     def delete(self, path, **kwargs):
         key = self.bucket.new_key(path)
