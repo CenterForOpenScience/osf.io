@@ -29,6 +29,7 @@ def fake_request(method, uri, **kwargs):
     mock_response = aiohttp.client.ClientResponse(method, uri)
     mock_response.headers = aiohttp.client.CaseInsensitiveMultiDict(options.get('headers', {}))
     mock_response._content = options.get('body', 'aiopretty')
+    mock_response.status = options.get('status', 200)
     future = asyncio.Future()
     future.set_result(mock_response)
     return future
