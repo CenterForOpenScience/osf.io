@@ -1,0 +1,14 @@
+language: python
+
+python:
+  - "3.4"
+
+install:
+  - travis_retry pip install invoke
+  - travis_retry invoke install --upgrade
+
+before_script:
+  - invoke flake
+
+script:
+  - invoke test
