@@ -260,7 +260,7 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             return messages.AFTER_REMOVE_CONTRIBUTOR.format(
                 user=removed.fullname,
                 url=node.url,
-                category=self.figshare_id
+                category=node.project_or_component
             )
 
     def before_fork(self, node, user):
