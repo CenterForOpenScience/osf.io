@@ -7,7 +7,7 @@ import aiohttp
 
 from tornado import web
 
-from waterbutler.server import settings
+from waterbutler import settings
 from waterbutler.providers import core
 from waterbutler.server import utils
 from waterbutler.server.utils import coroutine
