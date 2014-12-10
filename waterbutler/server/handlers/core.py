@@ -1,8 +1,12 @@
+import asyncio
+
+import aiohttp
+
 import tornado.web
 
+from waterbutler import settings
 from waterbutler.identity import get_identity
 from waterbutler.providers import core
-from waterbutler.utils import lazyproperty
 
 
 def list_or_value(value):
@@ -14,26 +18,24 @@ def list_or_value(value):
     return [item.decode('utf-8') for item in value]
 
 
-class ConvienceHandler(tornado.web.RequestHandler):
-    @lazyproperty
-    def arguments(self):
-        args = {
+class BaseHandler(tornado.web.RequestHandler):
+
+    @asyncio.coroutine
+    def prepare(self):
+        self.arguments = {
             key: list_or_value(value)
             for key, value in self.request.query_arguments.items()
         }
-        args['action'] = self.ACTION_MAP[self.request.method]
-        return args
 
-    @lazyproperty
-    def credentials(self):
-        return (yield from fetch_identity(self.arguments))
+        self.credentials = yield from get_identity(settings.IDENTITY_METHOD, **self.arguments)
 
-    @lazyproperty
-    def provider(self):
-        return core.make_provider(
+        self.provider = core.make_provider(
             self.arguments['provider'],
             self.credentials
         )
 
-    def prepare(self):
-        self.provider
+    def write_error(self, status_code, **kwargs):
+        self.finish({
+            "code": status_code,
+            "message": self._reason,
+        })
