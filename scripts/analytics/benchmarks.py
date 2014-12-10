@@ -9,10 +9,11 @@ from modularodm import Q
 from dateutil.relativedelta import relativedelta
 
 from website import settings
+from website.app import init_app
 from website.models import User, PrivateLink
 from website.addons.dropbox.model import DropboxUserSettings
 
-from scripts.analytics import profile, tabulate_emails
+from scripts.analytics import profile, tabulate_emails, tabulate_logs
 
 
 def get_active_users():
@@ -122,7 +123,9 @@ def main():
         fp.write(table)
 
     tabulate_emails.main()
+    tabulate_logs.main()
 
 
 if __name__ == '__main__':
+    init_app()
     main()
