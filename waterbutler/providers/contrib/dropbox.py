@@ -3,8 +3,6 @@
 import os
 import asyncio
 
-import aiohttp
-
 from waterbutler.providers import core
 
 
@@ -12,10 +10,19 @@ from waterbutler.providers import core
 class DropboxProvider(core.BaseProvider):
 
     BASE_URL = 'https://api.dropbox.com/1/'
+    BASE_CONTENT_URL = 'https://api-content.dropbox.com/1/'
 
-    # def __init__(self, token, folder, **kwargs):
-    #     self.token = token
-    #     self.folder = folder
+    def build_content_url(self, *segments, **query):
+        return core.build_url(self.BASE_CONTENT_URL, *segments, **query)
+
+    def build_path(self, path):
+        return os.path.join(self.identity['folder'], path)
+
+    @property
+    def default_headers(self):
+        return {
+            'Authorization': 'Bearer {}'.format(self.identity['token']),
+        }
 
     def __eq__(self, other):
         try:
@@ -34,73 +41,86 @@ class DropboxProvider(core.BaseProvider):
 
     @asyncio.coroutine
     def intra_copy(self, dest_provider, source_options, dest_options):
-        url = self.build_url('fileops', 'copy')
-        from_path = os.path.join(self.folder, source_options['path'])
-        to_path = os.path.join(dest_provider.folder, dest_options['path'])
+        from_path = self.build_path(source_options['path'])
+        to_path = self.build_path(dest_options['path'])
         if self == dest_provider:
-            # intra copy within the same account
-            yield from aiohttp.request('POST', url, data={
+            response = yield from self.make_request(
+                'POST',
+                self.build_url('fileops', 'copy'),
+                data={
+                    'folder': 'auto',
+                    'from_path': from_path,
+                    'to_path': to_path,
+                },
+            )
+        else:
+            from_ref_resp = yield from self.make_request(
+                'GET',
+                self.build_url('copy_ref', 'auto', from_path),
+            )
+            from_ref_data = yield from from_ref_resp.json()
+            response = yield from self.make_request(
+                'POST',
+                data={
+                    'folder': 'auto',
+                    'from_copy_ref': from_ref_data['copy_ref'],
+                    'to_path': to_path,
+                },
+                headers=dest_provider.default_headers,
+            )
+        return core.ResponseWrapper(response)
+
+    @core.expects(200)
+    @asyncio.coroutine
+    def intra_move(self, dest_provider, source_options, dest_options):
+        from_path = self.build_path(source_options['path'])
+        to_path = self.build_path(dest_options['path'])
+        response = yield from self.make_request(
+            'POST',
+            self.build_url('fileops', 'move'),
+            data={
                 'folder': 'auto',
                 'from_path': from_path,
                 'to_path': to_path,
-            }, headers=self._headers())
-        else:
-            # create from_copy_ref and use with destination provider
-            copy_ref_url = self.build_url('copy_ref', 'auto', from_path)
-            copy_ref_resp = yield from aiohttp.request('GET', copy_ref_url, headers=self._headers())
-            from_copy_ref = (yield from copy_ref_resp.content.json()).copy_ref
-            yield from aiohttp.request('POST', data={
-                'folder': 'auto',
-                'from_copy_ref': from_copy_ref,
-                'to_path': to_path
-            }, headers=dest_provider._headers())
+            },
+        )
+        return core.ResponseWrapper(response)
 
-    @asyncio.coroutine
-    def intra_move(self, dest_provider, source_options, dest_options):
-        url = self.build_url('fileops', 'move')
-        from_path = os.path.join(self.folder, source_options['path'])
-        to_path = os.path.join(dest_provider.folder, dest_options['path'])
-        yield from aiohttp.request('POST', url, data={
-            'folder': 'auto',
-            'from_path': from_path,
-            'to_path': to_path,
-        }, headers=self._headers())
-
+    @core.expects(200)
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
-        full_path = os.path.join(self.folder, path)
-        url = self.build_url('files', 'auth', full_path, base_url='https://api-content.dropbox.com/1/')
-        resp = yield from aiohttp.request('GET', url, headers=self._headers())
+        resp = yield from self.make_request(
+            'GET',
+            self.build_content_url('files', 'auto', self.build_path(path)),
+        )
         return core.ResponseWrapper(resp)
 
+    @core.expects(200)
     @asyncio.coroutine
     def upload(self, obj, path):
-        full_path = os.path.join(self.folder, path)
-        url = 'https://api-content.dropbox.com/1/files_put/auto/{}'.format(full_path)
-        url = self.build_url('files_put', 'auto', full_path, base_url='https://api-content.dropbox.com/1/')
-        resp = yield from aiohttp.request('PUT', url, data=obj.content, headers=self._headers(**{'Content-Length': obj.size}))
+        resp = yield from self.make_request(
+            'PUT',
+            self.build_content_url('files_put', 'auto', self.build_path(path)),
+            headers={'Content-Length': obj.size},
+            data=obj.content,
+        )
         return core.ResponseWrapper(resp)
 
+    @core.expects(200)
     @asyncio.coroutine
     def delete(self, path):
-        full_path = os.path.join(self.folder, path)
-        url = self.build_url('fileops', 'delete')
-        resp = yield from aiohttp.request('POST', url, data={'folder': 'auto', 'path': full_path}, headers=self._headers())
-        return resp
+        response = yield from self.make_request(
+            'POST',
+            self.build_url('fileops', 'delete'),
+            data={'folder': 'auto', 'path': self.build_path(path)},
+        )
+        return core.ResponseWrapper(response)
 
+    @core.expects(200)
     @asyncio.coroutine
     def metadata(self, path):
-        full_path = os.path.join(self.folder, path)
-        url = self.build_url('metadata', 'auto', full_path)
-        resp = yield from aiohttp.request('GET', url, headers=self._headers())
-        return resp
-
-    def _headers(self, **kwargs):
-        headers = {
-            'authorization': 'Bearer {}'.format(self.identity['token']),
-        }
-        headers.update({
-            key: value for key, value in kwargs.items()
-            if value is not None
-        })
-        return headers
+        response = yield from self.make_request(
+            'GET',
+            self.build_url('metadata', 'auto', self.get_path(path)),
+        )
+        return core.ResponseWrapper(response)
