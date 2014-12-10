@@ -2,5 +2,6 @@ decorator
 ipython
 jinja2
 pytest
+pytest-cov
 pyzmq
 -r requirements.txt
