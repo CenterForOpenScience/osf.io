@@ -2,12 +2,6 @@ import asyncio
 
 from waterbutler import settings
 
-IDENTITY_METHODS = {
-    'rest': fetch_rest_identity
-}
-
-get_identity = IDENTITY_METHODS[settings.IDENTITY_METHOD]
-
 
 @asyncio.coroutine
 def fetch_rest_identity(params):
@@ -25,3 +19,9 @@ def fetch_rest_identity(params):
 
     data = yield from response.json()
     return data
+
+IDENTITY_METHODS = {
+    'rest': fetch_rest_identity
+}
+
+get_identity = IDENTITY_METHODS[settings.IDENTITY_METHOD]
