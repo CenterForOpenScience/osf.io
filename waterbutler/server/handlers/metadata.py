@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import aiohttp
-
 from waterbutler.server.handlers import core
 from waterbutler.server.utils import coroutine
 

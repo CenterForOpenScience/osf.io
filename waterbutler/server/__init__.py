@@ -1,6 +1,7 @@
-# encoding: utf-8
+# -*- coding: utf-8 -*-
 
 import asyncio
+
 import tornado.options
 import tornado.platform.asyncio
 import tornado.web

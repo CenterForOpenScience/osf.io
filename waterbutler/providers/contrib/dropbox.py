@@ -1,11 +1,9 @@
-# encoding: utf-8
+# -*- coding: utf-8 -*-
 
-import os.path
-from asyncio import coroutine
+import os
+import asyncio
 
 import aiohttp
-
-from webargs import Arg
 
 from waterbutler.providers import core
 
@@ -34,7 +32,7 @@ class DropboxProvider(core.BaseProvider):
     def can_intra_move(self, dest_provider):
         return self == dest_provider
 
-    @coroutine
+    @asyncio.coroutine
     def intra_copy(self, dest_provider, source_options, dest_options):
         url = self.build_url('fileops', 'copy')
         from_path = os.path.join(self.folder, source_options['path'])
@@ -57,7 +55,7 @@ class DropboxProvider(core.BaseProvider):
                 'to_path': to_path
             }, headers=dest_provider._headers())
 
-    @coroutine
+    @asyncio.coroutine
     def intra_move(self, dest_provider, source_options, dest_options):
         url = self.build_url('fileops', 'move')
         from_path = os.path.join(self.folder, source_options['path'])
@@ -68,14 +66,14 @@ class DropboxProvider(core.BaseProvider):
             'to_path': to_path,
         }, headers=self._headers())
 
-    @coroutine
+    @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
         full_path = os.path.join(self.folder, path)
         url = self.build_url('files', 'auth', full_path, base_url='https://api-content.dropbox.com/1/')
         resp = yield from aiohttp.request('GET', url, headers=self._headers())
         return core.ResponseWrapper(resp)
 
-    @coroutine
+    @asyncio.coroutine
     def upload(self, obj, path):
         full_path = os.path.join(self.folder, path)
         url = 'https://api-content.dropbox.com/1/files_put/auto/{}'.format(full_path)
@@ -83,14 +81,14 @@ class DropboxProvider(core.BaseProvider):
         resp = yield from aiohttp.request('PUT', url, data=obj.content, headers=self._headers(**{'Content-Length': obj.size}))
         return core.ResponseWrapper(resp)
 
-    @coroutine
+    @asyncio.coroutine
     def delete(self, path):
         full_path = os.path.join(self.folder, path)
         url = self.build_url('fileops', 'delete')
         resp = yield from aiohttp.request('POST', url, data={'folder': 'auto', 'path': full_path}, headers=self._headers())
         return resp
 
-    @coroutine
+    @asyncio.coroutine
     def metadata(self, path):
         full_path = os.path.join(self.folder, path)
         url = self.build_url('metadata', 'auto', full_path)
