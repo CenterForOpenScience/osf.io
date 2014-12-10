@@ -269,6 +269,17 @@ $ sudo ln -s /usr/bin/nodejs /usr/bin/node
 $ node --version      # v0.10.25
 ```
 
+
+## Install NPM requirements
+
+To install necessary NPM requiremnts, run:
+
+```bash
+$ npm install
+```
+
+In the OSF root directory.
+
 ## Using Bower to install front-end dependencies
 
 We use [bower](http://bower.io/) to automatically download and manage dependencies for front-end libraries. This should
@@ -314,11 +325,16 @@ $ npm install -g webpack
 
 ```bash
 # Make sure dependencies are up to date
-$ bower install
+$ bower install && npm install
 # Run webpack in watch mode
 $ inv pack -w
 ```
 
+The above commands can be run in one step with:
+
+```bash
+$ inv assets -w
+```
 
 ## Setting up addons
 

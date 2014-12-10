@@ -10,11 +10,12 @@ var staticPath = function(dir) {
 };
 
 var entry = {
+    'base-page': staticPath('js/pages/base-page.js'),
     'home-page': staticPath('js/pages/home-page.js'),
     'dashboard-page': staticPath('js/pages/dashboard-page.js'),
     'profile-page': staticPath('js/pages/profile-page.js'),
     'project-dashboard': staticPath('js/pages/project-dashboard-page.js'),
-    'project-base': staticPath('js/pages/project-base-page.js'),
+    'project-base-page': staticPath('js/pages/project-base-page.js'),
     'wiki-edit-page': staticPath('js/pages/wiki-edit-page.js'),
     'files-page': staticPath('js/pages/files-page.js'),
     'profile-settings-page': staticPath('js/pages/profile-settings-page.js'),
@@ -40,7 +41,8 @@ var entry = {
         'dropzone',
         'knockout-sortable',
         'dropzone-patch',
-        'fangorn'
+        'fangorn',
+        'jquery.cookie'
     ]
 };
 
@@ -84,6 +86,7 @@ module.exports = {
             'zeroclipboard': staticPath('vendor/bower_components/zeroclipboard/dist/ZeroClipboard.js'),
             'bootstrap': staticPath('vendor/bower_components/bootstrap/dist/js/bootstrap.min.js'),
             'jquery-tagsinput': staticPath('vendor/bower_components/jquery.tagsinput/jquery.tagsinput.js'),
+            'jquery.cookie': staticPath('vendor/bower_components/jquery.cookie/jquery.cookie.js'),
             'history': staticPath('vendor/bower_components/history.js/scripts/bundled/html4+html5/jquery.history.js'),
             // Needed for knockout-sortable
             'jquery.ui.sortable': staticPath('vendor/bower_components/jquery-ui/ui/jquery.ui.sortable.js'),

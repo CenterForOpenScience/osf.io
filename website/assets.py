@@ -28,7 +28,6 @@ css = Bundle(
     output="public/css/common.css"
 )
 
-
 logger.debug('Registering asset bundles')
 env.register('css', css)
 # Don't bundle in debug mode

@@ -71,6 +71,28 @@
         </div><!-- end container -->
     </div><!-- end watermarked -->
 
+% if not user_id:
+<div id="footerSlideIn">
+    <div class="container">
+        <div class="row">
+            <div class='col-sm-2 hidden-xs'>
+                <img class="logo" src="/static/img/circle_logo.png"></img>
+            </div>
+            <div class='col-sm-10 col-xs-12'>
+                <a data-bind="click: dismiss" class="close" href="#">&times;</a>
+                <h1>Start managing your projects on the OSF today.</h1>
+                <p>Free and easy to use, the Open Science Framework supports the entire research lifecycle: planning, execution, reporting, archiving, and discovery.</p>
+                <div>
+                    <a class="btn btn-primary" href="/login/">Create an Account</a>
+                    <a class="btn btn-primary" href="/getting-started/">Learn More</a>
+                    <a data-bind="click: dismiss">Hide this message</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+% endif
+
     <%include file="footer.mako"/>
 
         %if use_cdn:
@@ -138,6 +160,7 @@
 
         <script src="/static/vendor/bower_components/dropzone/downloads/dropzone.min.js"></script>
         <script src="/static/public/js/vendor.bundle.js"></script>
+        <script src="/static/public/js/base-page.js"></script>
         ${self.javascript_bottom()}
     </body>
 </html>

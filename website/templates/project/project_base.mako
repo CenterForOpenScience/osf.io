@@ -62,5 +62,5 @@ ${next.body()}
 
 </script>
 ## NOTE: window.contextVars must be set before loading this script
-<script src="/static/public/js/project-base.js"> </script>
+<script src="/static/public/js/project-base-page.js"> </script>
 </%def>
