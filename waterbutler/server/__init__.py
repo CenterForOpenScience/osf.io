@@ -6,12 +6,14 @@ import tornado.platform.asyncio
 import tornado.web
 
 from waterbutler.server.handlers import crud
+from waterbutler.server.handlers import metadata
 
 
 def make_app(debug):
     app = tornado.web.Application(
         [
             (r'/file', crud.CRUDHandler),
+            (r'/data', metadata.MetadataHandler)
         ],
         debug=debug,
     )
