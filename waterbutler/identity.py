@@ -44,7 +44,7 @@ def fetch_rest_identity(**params):
         except ValueError:
             data = yield from response.read()
 
-        raise exceptions.WaterButlerException(data, code=response.status)
+        raise exceptions.WaterButlerError(data, code=response.status)
 
     data = yield from response.json()
     return data
