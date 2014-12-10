@@ -1674,3 +1674,30 @@ div.pydocx-center{
     padding-left: 40px;
     list-style-type: disc;
 }
+
+/* Footer slide-in */
+
+#footerSlideIn {
+    position:fixed;
+    bottom:0;
+    width:100%;
+    padding-top:20px;
+    padding-bottom:20px;
+    z-index:1;
+    background-color:white;
+    border-top:2px solid black;
+    display:none;
+}
+
+#footerSlideIn h1 {
+    margin-top:0;
+}
+
+#footerSlideIn img {
+    width:100%;
+}
+
+#footerSlideIn div > a {
+    margin-right:5px;
+    white-space:nowrap;
+}
