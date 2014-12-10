@@ -2,7 +2,7 @@
 
 from invoke import task
 
-from waterbutler.server import settings
+from waterbutler import settings
 
 
 @task
