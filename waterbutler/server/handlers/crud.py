@@ -65,4 +65,7 @@ class CRUDHandler(core.BaseHandler):
 
     def on_connection_close(self):
         if self.request.method in self.STREAM_METHODS:
-            self.obj.content.feed_eof()
+            try:
+                self.obj.content.feed_eof()
+            except AttributeError:
+                pass
