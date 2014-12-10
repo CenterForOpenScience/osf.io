@@ -6,8 +6,8 @@ from tornado import web
 
 from waterbutler import settings
 from waterbutler.providers.core import RequestWrapper
+from waterbutler.server import utils
 from waterbutler.server.handlers import core
-from waterbutler.server.utils import coroutine
 
 
 @web.stream_request_body
@@ -20,7 +20,7 @@ class CRUDHandler(core.BaseHandler):
     }
     STREAM_METHODS = ('PUT', 'POST')
 
-    @coroutine
+    @utils.coroutine
     def prepare(self):
         yield from super().prepare()
         self.prepare_stream()
@@ -37,7 +37,7 @@ class CRUDHandler(core.BaseHandler):
         if self.obj:
             self.obj.content.feed_data(chunk)
 
-    @coroutine
+    @utils.coroutine
     def get(self):
         """Download a file."""
         result = yield from self.provider.download(**self.arguments)
@@ -50,14 +50,14 @@ class CRUDHandler(core.BaseHandler):
                 break
             self.write(chunk)
 
-    @coroutine
+    @utils.coroutine
     def put(self):
         """Upload a file."""
         self.obj.content.feed_eof()
         result = yield from self.uploader
         self.set_status(result.response.status)
 
-    @coroutine
+    @utils.coroutine
     def delete(self):
         """Delete a file."""
         result = yield from self.provider.delete(**self.arguments)
