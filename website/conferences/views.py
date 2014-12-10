@@ -234,7 +234,7 @@ def check_mailgun_headers():
     ).hexdigest()
 
     if signature != request.form['signature']:
-        logger.warn('Invalid headers on incoming mail')
+        logger.error('Invalid headers on incoming mail')
         raise HTTPError(http.NOT_ACCEPTABLE)
 
 
@@ -287,11 +287,13 @@ def parse_mailgun_receiver(form):
     )
 
     if not match:
+        logger.error('Invalid recipient: {0}'.format(form['recipient']))
         raise HTTPError(http.NOT_ACCEPTABLE)
 
     data = match.groupdict()
 
-    if bool(settings.DEV_MODE) != bool(data):
+    if bool(settings.DEV_MODE) != bool(data['test']):
+        logger.error('Mismatch between `DEV_MODE` and recipient {0}'.format(form['recipient']))
         raise HTTPError(http.NOT_ACCEPTABLE)
 
     return data['meeting'], data['category']
@@ -315,8 +317,10 @@ def meeting_hook():
     # Note: Throw 406 to disable Mailgun retries
     try:
         if not conf.active:
+            logger.error('Conference {0} is not active'.format(conf.endpoint))
             raise HTTPError(http.NOT_ACCEPTABLE)
     except KeyError:
+        # TODO: Can this ever be reached?
         raise HTTPError(http.NOT_ACCEPTABLE)
 
     name, address = get_mailgun_from()
