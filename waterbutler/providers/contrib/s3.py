@@ -117,8 +117,8 @@ class S3Provider(core.BaseProvider):
             'contents': children,
             'provider': 's3',
             'kind': 'folder',
-            'name': getname(prefix.Prefix),
-            'path': prefix.Prefix,
+            'name': getname(prefix.Prefix.text),
+            'path': prefix.Prefix.text,
             'modified': None,
             'size': None,
             'extra': {}
