@@ -8,10 +8,9 @@ import aiohttp
 from tornado import web
 
 from waterbutler import settings
-from waterbutler.providers import core
-from waterbutler.server.handlers import base
+from waterbutler.providers.core import RequestWrapper
+from waterbutler.server.handlers import core
 from waterbutler.server.utils import coroutine
-from waterbutler.utils import lazyproperty
 
 
 STREAM_METHODS = ('PUT', 'POST')
@@ -23,16 +22,17 @@ ACTION_MAP = {
 
 
 @web.stream_request_body
-class CRUDHandler(base.ConvienceHandler):
+class CRUDHandler(core.BaseHandler):
 
     @coroutine
     def prepare(self):
-        self.provider
+        yield from super().prepare()
+        self.arguments['action'] = ACTION_MAP[self.request.method]
         self.prepare_stream()
 
     def prepare_stream(self):
         if self.request.method in STREAM_METHODS:
-            self.obj = core.RequestWrapper(self.request)
+            self.obj = RequestWrapper(self.request)
             self.uploader = self.provider.upload(self.obj, **self.arguments)
         else:
             self.obj = None

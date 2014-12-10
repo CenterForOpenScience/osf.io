@@ -2,13 +2,11 @@
 
 import aiohttp
 
-from waterbutler import settings
-from waterbutler.providers import core
+from waterbutler.server.handlers import core
 from waterbutler.server.utils import coroutine
-from waterbutler.server.handlers import base
 
 
-class MetadataHandler(base.ConvienceHandler):
+class MetadataHandler(core.BaseHandler):
     @coroutine
     def get(self):
         """List information about of file or folder"""
