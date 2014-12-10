@@ -7,6 +7,10 @@ from waterbutler.server.utils import coroutine
 
 
 class MetadataHandler(core.BaseHandler):
+    ACTION_MAP = {
+        'GET': 'metadata',
+    }
+
     @coroutine
     def get(self):
         """List information about of file or folder"""
