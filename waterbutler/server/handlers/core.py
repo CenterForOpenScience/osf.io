@@ -20,6 +20,7 @@ def list_or_value(value):
 
 
 class BaseHandler(tornado.web.RequestHandler):
+    ACTION_MAP = {}
 
     @asyncio.coroutine
     def prepare(self):
@@ -27,6 +28,7 @@ class BaseHandler(tornado.web.RequestHandler):
             key: list_or_value(value)
             for key, value in self.request.query_arguments.items()
         }
+        self.arguments['action'] = self.ACTION_MAP[self.request.method]
 
         self.credentials = yield from get_identity(settings.IDENTITY_METHOD, **self.arguments)
 
