@@ -302,14 +302,28 @@
         var SlideInViewModel = function (){
             var self = this;
             self.elem = $(sliderSelector);
-            if (this.elem.length > 0 && $.cookie('slide') !== '0') {
+
+            // Detect if localStorage is available.
+            // TODO: We should be using a library like Modernizr for this
+            var useLocalStorage = typeof(localStorage) !== 'undefined';
+
+            if (useLocalStorage) {
+                var dismissed = localStorage.getItem("slide") === "0";
+            } else {
+                var dismissed = $.cookie("slide") === "0";
+            }
+            if (this.elem.length > 0 && !dismissed) {
                 setTimeout(function () {
                     self.elem.slideDown(1000);
                 }, 3000);
             }
             self.dismiss = function() {
                 self.elem.slideUp(1000);
-                $.cookie('slide', '0', { expires: 1});
+                if (useLocalStorage) {
+                    localStorage.setItem("slide", "0");
+                } else {
+                    $.cookie('slide', '0', { expires: 1});
+                }
             };
         };
         // Don't show footer on these pages
