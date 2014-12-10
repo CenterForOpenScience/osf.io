@@ -10,6 +10,8 @@ from nose.tools import *  # noqa (PEP8 asserts)
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
 
+import datetime
+
 from github3.git import Commit
 from github3.repos.branch import Branch
 from github3.repos.contents import Contents
@@ -82,13 +84,67 @@ class TestCRUD(OsfTestCase):
             },
         )
 
-    @unittest.skip('Finish me')
-    def test_update_file(self):
-        assert 0
 
-    @unittest.skip('Finish me')
-    def def_view_file(self):
-        assert 0
+    @mock.patch('website.addons.github.api.GitHub.history')
+    def test_view_file(self, mock_history):
+        mock_history.return_value = [
+            {
+            'sha': '12345',
+            'name': 'fred',
+            'email': '{0}@osf.io'.format(self.user._id),
+            'date': datetime.date(2011, 10, 15).ctime(),
+            }
+        ]
+        url = self.project.web_url_for(
+            'github_view_file',
+            sha = '12345',
+            path='my_file',
+            branch='master'
+        )
+        res = self.app.get(
+            url
+        )
+        assert_equal(res.status_code, 302)
+        res2 = res.follow(auth=self.user.auth)
+        assert_equal(res2.follow(auth=self.user.auth).status_code, 200)
+
+
+    @mock.patch('website.addons.github.api.GitHub.from_settings')
+    @mock.patch('website.addons.github.views.crud.build_github_urls')
+    def test_update_file(self, mock_urls, mock_settings):
+        sha = github_mock.tree.return_value.tree[0].sha
+        size = github_mock.tree.return_value.tree[0].size
+        file_name = github_mock.tree.return_value.tree[0].path
+        file_content = 'my_data'
+        branch = 'master'
+        mock_settings.return_value = github_mock
+        github_mock.update_file.return_value = {
+            'commit': Commit(dict(sha=sha)),
+            'content': Contents(dict(size=size, url='http://fake.url/')),
+        }
+        mock_urls.return_value = {}
+        url = self.project.api_url_for('github_upload_file', branch=branch, sha=sha)
+        self.app.post(
+            url,
+            upload_files=[
+                ('file', file_name, file_content),
+            ],
+            auth=self.user.auth,
+        )
+        github_mock.update_file.assert_called_once_with(
+            self.node_settings.user,
+            self.node_settings.repo,
+            file_name,
+            MESSAGES['update'],
+            file_content,
+            sha=sha,
+            branch=branch,
+            author={
+                'name': self.user.fullname,
+                'email': '{0}@osf.io'.format(self.user._id),
+            },
+        )
+
 
     @mock.patch('website.addons.github.api.GitHub.file')
     def test_download_file(self, mock_file):
@@ -107,6 +163,7 @@ class TestCRUD(OsfTestCase):
         )
         assert_equal(res.body, file_content)
 
+
     @mock.patch('website.addons.github.api.GitHub.file')
     def test_download_file_too_big(self, mock_file):
         mock_file.side_effect = TooBigError
@@ -122,10 +179,36 @@ class TestCRUD(OsfTestCase):
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
 
-    @unittest.skip('finish this')
-    def test_delete_file(self):
-        assert 0
 
+    @mock.patch('website.addons.github.api.GitHub.from_settings')
+    @mock.patch('website.addons.github.api.GitHub.delete_file')
+    @mock.patch('website.addons.github.api.GitHub.file')
+    def test_delete_file(self, mock_file, mock_delete, mock_settings):
+        sha = github_mock.tree.return_value.tree[0].sha
+        size = github_mock.tree.return_value.tree[0].size
+        file_name = github_mock.tree.return_value.tree[0].path
+        branch = 'master'
+        mock_settings.return_value = github_mock
+        github_mock.delete_file.return_value = {
+            'commit': Commit(dict(sha=sha)),
+        }
+        url = self.project.api_url_for('github_delete_file', sha=sha, path=file_name, branch=branch)
+        self.app.delete(
+            url,
+            auth=self.user.auth,
+        )
+        github_mock.delete_file.assert_called_once_with(
+            self.node_settings.user,
+            self.node_settings.repo,
+            file_name,
+            MESSAGES['delete'],
+            sha=sha,
+            branch=branch,
+            author={
+                'name': self.user.fullname,
+                'email': '{0}@osf.io'.format(self.user._id),
+            },
+        )
 
 class TestHGridViews(OsfTestCase):
 
