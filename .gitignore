@@ -7,3 +7,4 @@
 **/*.pyc
 **/__pycache__
 local.py
+.coverage
