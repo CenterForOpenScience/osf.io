@@ -77,6 +77,10 @@ class S3Provider(core.BaseProvider):
     @core.expects(200, 204)
     @asyncio.coroutine
     def delete(self, path, **kwargs):
+        """Deletes the key at the specified path
+        :param str path: The path of the key to delete
+        :rtype ResponseWrapper:
+        """
         key = self.bucket.new_key(path)
         url = key.generate_url(TEMP_URL_SECS, 'DELETE')
         resp = yield from self.make_request('DELETE', url)
@@ -85,11 +89,16 @@ class S3Provider(core.BaseProvider):
 
     @asyncio.coroutine
     def metadata(self, path, **kwargs):
+        """Get Metadata about the requested file or folder
+        :param str path: The path to a key or folder
+        :rtype dict:
+        :rtype list:
+        """
         url = self.bucket.generate_url(TEMP_URL_SECS, 'GET')
         resp = yield from self.make_request('GET', url, params={'prefix': path, 'delimiter': '/'})
 
         if resp.status == 404:
-            raise Exception('TODO NOT FOUND ERROR')
+            raise exceptions.FileNotFoundError(path)
 
         content = yield from resp.read_and_close()
         obj = objectify.fromstring(content)
