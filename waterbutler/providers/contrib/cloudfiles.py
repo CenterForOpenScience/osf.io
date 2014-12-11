@@ -1,5 +1,10 @@
 import os
+import hmac
+import time
 import asyncio
+import hashlib
+
+import furl
 
 from waterbutler import exceptions
 from waterbutler.providers import core
@@ -68,13 +73,16 @@ class CloudFilesProvider(core.BaseProvider):
         object_path = '/v1/' + object_path
         seconds = int(seconds)
         expires = int(time() + seconds)
-        hmac_body = '%s\n%s\n%s' % (method, expires, object_path)
-        sig = hmac.new(key, hmac_body, sha1).hexdigest()
+        body = '\n'.join([method, expires, path])
+        signature = hmac.new(key, body, hashlib.sha1).hexdigest()
 
-        url = furl.furl(urlparse.urljoin(self.endpoint, self.container))
-        url = urlparse.urljoin(self.endpoint, self.container)
-        url += '?' + urllib.urlencode({'temp_url_sig': sig, 'expires': expires})
-        return url
+        url = furl.furl(self.endpoint)
+        url.path.add(self.container)
+        url.args.update({
+            'temp_url_sig': signature,
+            'expires': expires,
+        })
+        return url.url
 
     @core.expects(200)
     @asyncio.coroutine
