@@ -179,7 +179,7 @@ def user_addons(auth, **kwargs):
 
 @must_be_logged_in
 def user_notifications(auth, **kwargs):
-    # Get subscribe data from user to check selected lists in form
+    """Get subscribe data from user"""
     out = {}
     mailing_lists = auth.user.mailing_lists
     out['mailing_lists'] = mailing_lists
@@ -201,6 +201,7 @@ def user_choose_addons(**kwargs):
 
 @must_be_logged_in
 def user_choose_mailing_lists(auth, **kwargs):
+    """ Update mailing list subscription on user model"""
     user = auth.user
     json_data = escape_html(request.get_json())
     if json_data:
@@ -215,6 +216,11 @@ def user_choose_mailing_lists(auth, **kwargs):
 
 
 def update_subscription(user, list_name, subscription):
+    """ Update mailing list subscription in mailchimp
+        :param obj user: current user
+        :param str list_name: mailing list
+        :param boolean subscription: true if user is subscribed
+    """
     if subscription:
         subscribe_mailchimp(list_name, user.username)
     else:
@@ -222,11 +228,12 @@ def update_subscription(user, list_name, subscription):
 
 
 def mailchimp_get_endpoint(**kwargs):
+    """Endpoint that the mailchimp webhook hits to check that the OSF is responding"""
     return {}, http.OK
 
 
 def sync_data_from_mailchimp(**kwargs):
-
+    """Endpoint that the mailchimp webhook sends its data to"""
     key = request.args.get('key')
 
     if key == settings.MAILCHIMP_WEBHOOK_SECRET_KEY:
