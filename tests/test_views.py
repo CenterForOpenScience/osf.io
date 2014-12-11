@@ -1521,7 +1521,7 @@ class TestClaimViews(OsfTestCase):
         assert_equal(res.status_code, 200)
         self.user.reload()
         assert_true(self.user.is_registered)
-        assert_true(self.user.is_active())
+        assert_true(self.user.is_active)
         assert_not_in(self.project._primary_key, self.user.unclaimed_records)
 
     def test_posting_to_claim_form_removes_all_unclaimed_data(self):
@@ -2828,7 +2828,7 @@ class TestSearchViews(OsfTestCase):
         assert_equal(brian['fullname'], self.contrib.fullname)
         assert_in('gravatar_url', brian)
         assert_equal(brian['registered'], self.contrib.is_registered)
-        assert_equal(brian['active'], self.contrib.is_active())
+        assert_equal(brian['active'], self.contrib.is_active)
 
     def test_search_pagination_default(self):
         url = api_url_for('search_contributor')

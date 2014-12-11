@@ -388,6 +388,7 @@ class User(GuidStoredObject, AddonModelMixin):
                 return unclaimed_data['name']
         return self.fullname
 
+    @property
     def is_active(self):
         """Returns True if the user is active. The user must have activated
         their account, must not be deleted, suspended, etc.
