@@ -15,6 +15,7 @@ from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
 
 from website import settings
+from website import mailchimp_helpers
 from website.models import User
 from website.models import ApiKey
 from website.views import _render_nodes
@@ -23,14 +24,14 @@ from website.util.sanitize import strip_html
 from website.profile import utils as profile_utils
 
 subscribe_mailchimp = (
-    auth_utils.subscribe.delay
+    mailchimp_helpers.subscribe.delay
     if settings.USE_CELERY
-    else auth_utils.subscribe)
+    else mailchimp_helpers.subscribe)
 
 unsubscribe_mailchimp = (
-    auth_utils.unsubscribe.delay
+    mailchimp_helpers.unsubscribe.delay
     if settings.USE_CELERY
-    else auth_utils.unsubscribe
+    else mailchimp_helpers.unsubscribe
 )
 
 logger = logging.getLogger(__name__)
@@ -231,7 +232,7 @@ def sync_data_from_mailchimp(**kwargs):
     if key == settings.MAILCHIMP_WEBHOOK_SECRET_KEY:
         r = request
         action = r.values['type']
-        list_name = auth_utils.get_list_name_from_id(list_id=r.values['data[list_id]'])
+        list_name = mailchimp_helpers.get_list_name_from_id(list_id=r.values['data[list_id]'])
         username = r.values['data[email]']
         try:
             user = User.find(Q('username', 'eq', username))[0]

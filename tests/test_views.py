@@ -21,6 +21,7 @@ from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 
 import website.app
+from website import mailchimp_helpers
 from website.util import permissions
 from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas, has_anonymous_link
@@ -2221,7 +2222,7 @@ class TestAddonUserViews(OsfTestCase):
 
 class TestConfigureMailingListViews(OsfTestCase):
 
-    @mock.patch('framework.auth.utils.get_mailchimp_api')
+    @mock.patch('website.mailchimp_helpers.get_mailchimp_api')
     def test_user_choose_mailing_lists_updates_user_dict(self, mock_get_mailchimp_api):
         user = AuthUserFactory()
         list_name = 'OSF General'
@@ -2229,7 +2230,7 @@ class TestConfigureMailingListViews(OsfTestCase):
         mock_client = mock.MagicMock()
         mock_get_mailchimp_api.return_value = mock_client
         mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
-        list_id = auth.utils.get_list_id_from_name(list_name)
+        list_id = mailchimp_helpers.get_list_id_from_name(list_name)
 
         payload = {u'OSF General': True}
         url = api_url_for('user_choose_mailing_lists')
@@ -2241,14 +2242,14 @@ class TestConfigureMailingListViews(OsfTestCase):
         assert_equal(user.mailing_lists['OSF General'], payload['OSF General'])
 
         # check that user is subscribed
-        mock_client.lists.subscribe.assert_called_with(id=list_id, email={'email': username}, double_optin=False)
+        mock_client.lists.subscribe.assert_called_with(id=list_id, email={'email': username}, double_optin=False, update_existing=True)
 
     def test_get_mailchimp_get_endpoint_returns_200(self):
         url = api_url_for('mailchimp_get_endpoint')
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
 
-    @mock.patch('framework.auth.utils.get_mailchimp_api')
+    @mock.patch('website.mailchimp_helpers.get_mailchimp_api')
     def test_sync_data_from_mailchimp_updates_user(self, mock_get_mailchimp_api):
         list_id = '12345'
         list_name = 'OSF General'

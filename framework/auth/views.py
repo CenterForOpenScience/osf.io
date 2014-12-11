@@ -23,6 +23,7 @@ import website.settings
 from website import mails
 from website import language
 from website import security
+from website import mailchimp_helpers
 from website.models import User
 from website.util import web_url_for
 
@@ -174,7 +175,7 @@ def confirm_email_get(**kwargs):
 
             # Subscribe user to general OSF mailing list
             if not website.settings.DEV_MODE:
-                utils.subscribe('Open Science Framework General', user.username)
+                mailchimp_helpers.subscribe('Open Science Framework General', user.username)
 
             return framework.auth.authenticate(user, response=response)
     # Return data for the error template
