@@ -3,6 +3,7 @@
 
 var Handlebars = require('handlebars');
 var $ = require('jquery');
+var m = require('mithril');
 var Treebeard = require('treebeard');
 var bootbox = require('bootbox');
 var Bloodhound = require('exports?Bloodhound!typeahead.js');
@@ -456,14 +457,13 @@ function createProjectDetailHTMLFromTemplate(theItem) {
     }
 
     function _poModified (item) {
-
+        var personString;
         if (item.data.modifiedDelta === 0) {
             return m('span');
         }
         var dateString = moment.utc(item.data.dateModified).fromNow();
         if (item.data.modifiedBy !== '') {
             personString = item.data.modifiedBy.toString();
-
         }
         return m('span', dateString + ', by ' + personString );
     }
@@ -951,66 +951,66 @@ function createProjectDetailHTMLFromTemplate(theItem) {
 
 
     // OSF-specific Treebeard options common to all addons
-        tbOptions = {
-                rowHeight : 30,         // user can override or get from .tb-row height
-                showTotal : 15,         // Actually this is calculated with div height, not needed. NEEDS CHECKING
-                paginate : false,       // Whether the applet starts with pagination or not.
-                paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.
-                uploads : false,         // Turns dropzone on/off.
-                columnTitles : _poColumnTitles,
-                resolveRows : _poResolveRows,
-                showFilter : false,     // Gives the option to filter by showing the filter box.
-                title : false,          // Title of the grid, boolean, string OR function that returns a string.
-                allowMove : true,       // Turn moving on or off.
-                moveClass : 'po-draggable',
-                hoverClass : 'fangorn-hover',
-                hoverClassMultiselect : 'po-hover-multiselect',
-                togglecheck : _poToggleCheck,
-                sortButtonSelector : { 
-                    up : 'i.icon-chevron-up',
-                    down : 'i.icon-chevron-down'
-                },
-                dragOptions : {},
-                dropOptions : {},
-                dragEvents : {
-                    start : _poDragStart
-                },
-                dropEvents : {
-                    out  : function () { },
-                    drop : _poDrop,
-                    over : _poOver
-                },
-                onload : function (){
-                    var tb = this;
-                    // reload the data with expand options 
-                    _poLoadOpenChildren.call(tb);
-                },
-                createcheck : function (item, parent) {
-                    window.console.log('createcheck', this, item, parent);
-                    return true;
-                },
-                deletecheck : function (item) {  // When user attempts to delete a row, allows for checking permissions etc.
-                    window.console.log('deletecheck', this, item);
-                    return true;
-                },
-                onselectrow : function (item) {
-                    console.log('Row: ', item);
-                },
-                ontogglefolder : function (item, event) {
-                    var tb = this;
-                    console.log("Event", event);
-                    if(event) {
-                        saveExpandState(item.data);                        
-                    }
-                    if (!item.open) {
-                        item.load = false;
-                    }
-                },
-                onmultiselect : _poMultiselect,
-                resolveIcon : _poResolveIcon,
-                resolveToggle : _poResolveToggle,
-                resolveLazyloadUrl : _poResolveLazyLoad,
-                lazyLoadOnLoad : expandStateLoad,
+    var tbOptions = {
+        rowHeight : 30,         // user can override or get from .tb-row height
+        showTotal : 15,         // Actually this is calculated with div height, not needed. NEEDS CHECKING
+        paginate : false,       // Whether the applet starts with pagination or not.
+        paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.
+        uploads : false,         // Turns dropzone on/off.
+        columnTitles : _poColumnTitles,
+        resolveRows : _poResolveRows,
+        showFilter : false,     // Gives the option to filter by showing the filter box.
+        title : false,          // Title of the grid, boolean, string OR function that returns a string.
+        allowMove : true,       // Turn moving on or off.
+        moveClass : 'po-draggable',
+        hoverClass : 'fangorn-hover',
+        hoverClassMultiselect : 'po-hover-multiselect',
+        togglecheck : _poToggleCheck,
+        sortButtonSelector : { 
+            up : 'i.icon-chevron-up',
+            down : 'i.icon-chevron-down'
+        },
+        dragOptions : {},
+        dropOptions : {},
+        dragEvents : {
+            start : _poDragStart
+        },
+        dropEvents : {
+            out  : function () { },
+            drop : _poDrop,
+            over : _poOver
+        },
+        onload : function (){
+            var tb = this;
+            // reload the data with expand options 
+            _poLoadOpenChildren.call(tb);
+        },
+        createcheck : function (item, parent) {
+            window.console.log('createcheck', this, item, parent);
+            return true;
+        },
+        deletecheck : function (item) {  // When user attempts to delete a row, allows for checking permissions etc.
+            window.console.log('deletecheck', this, item);
+            return true;
+        },
+        onselectrow : function (item) {
+            console.log('Row: ', item);
+        },
+        ontogglefolder : function (item, event) {
+            var tb = this;
+            console.log("Event", event);
+            if(event) {
+                saveExpandState(item.data);                        
+            }
+            if (!item.open) {
+                item.load = false;
+            }
+        },
+        onmultiselect : _poMultiselect,
+        resolveIcon : _poResolveIcon,
+        resolveToggle : _poResolveToggle,
+        resolveLazyloadUrl : _poResolveLazyLoad,
+        lazyLoadOnLoad : expandStateLoad,
     };
 
 
@@ -1033,6 +1033,5 @@ function createProjectDetailHTMLFromTemplate(theItem) {
         }
 
     };
-
 
 module.exports = ProjectOrganizer;

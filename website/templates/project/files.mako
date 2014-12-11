@@ -15,7 +15,9 @@
 </div>
 </div><!--end row -->
 
-<div id="treeGrid"></div>
+<div id="treeGrid">
+<div class="fangorn-loading"> <i class="icon-spinner fangorn-spin"></i> <p class="m-t-sm fg-load-message"> Loading files...  </p> </div>
+</div>
 
 
 <%def name="stylesheets()">
