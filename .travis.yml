@@ -3,9 +3,13 @@ language: python
 python:
   - "3.4"
 
+cache:
+  directories:
+    - tmp/.pip-cache/
+
 install:
   - travis_retry pip install invoke
-  - travis_retry invoke install --upgrade
+  - travis_retry invoke install --upgrade --download-cache=$HOME/.pip-cache --wheel-repo=https://github.com/icereval/wheelhouse
 
 before_script:
   - invoke flake
