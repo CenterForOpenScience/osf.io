@@ -13,6 +13,7 @@
 *     });
 */
     'use strict';
+    var m = require('mithril');
     var Treebeard = require('treebeard');
     var $ = require('jquery');
 
@@ -120,6 +121,7 @@
         var tb = this;
         var folderName = tb.options.initialFolderName;
         var folderPath = tb.options.initialFolderPath;
+        console.log(tb.options);
         if (folderName != undefined) {
             if (folderName === "None") {
                 tb.options.folderPath = null;
@@ -186,7 +188,7 @@
         self.options.initialFolderPath = opts.initialFolderPath;
 
         // Start up the grid
-        self.grid = Treebeard(self.options).tbController;
+        self.grid = new Treebeard(self.options).tbController;
         // Set up listener for folder selection
 
         $(selector).on('change', 'input[name="' + self.selector + INPUT_NAME + '"]', function(evt) {

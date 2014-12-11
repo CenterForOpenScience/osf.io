@@ -219,7 +219,7 @@ var ViewModel = function(url, selector, folderPicker) {
         */
     self.cancelSelection = function() {
         self.selected(null);
-        $(selector + ' input[type="radio"]').prop('checked', false);
+        // $(selector + ' input[type="radio"]').prop('checked', false);
     };
 
     /** Change the flashed message. */
@@ -322,6 +322,7 @@ var ViewModel = function(url, selector, folderPicker) {
         if (!self.loadedFolders()) {
             // Show loading indicator
             self.loading(true);
+            console.log("self.folderpicker", self.folderPicker);
             $(self.folderPicker).folderpicker({
                 onPickFolder: onPickFolder,
                 initialFolderName : self.folderName(),
