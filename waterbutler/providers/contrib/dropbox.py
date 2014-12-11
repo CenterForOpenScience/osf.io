@@ -129,14 +129,10 @@ class DropboxProvider(core.BaseProvider):
             raise exceptions.FileNotFoundError(path)
 
         data = yield from response.json()
-        return self.format_metadata(data)
+        return [self.format_metadata(x) for x in data]
 
     def format_metadata(self, data):
         return {
-            'contents': [
-                self.format_metadata(content)
-                for content in data.get('contents', [])
-            ],
             'provider': 'dropbox',
             'kind': 'folder' if data['is_dir'] else 'file',
             'name': os.path.split(data['path'])[1],
