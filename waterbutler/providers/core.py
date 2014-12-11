@@ -7,15 +7,10 @@ import itertools
 import furl
 import aiohttp
 
-from waterbutler import exceptions
+from waterbutler.exceptions import exception_from_reponse
 
 
 PROVIDERS = {}
-
-CODE_TO_ERROR = {
-    404: exceptions.FileNotFoundError
-}
-
 
 def register_provider(name):
     def _register_provider(cls):
@@ -44,8 +39,7 @@ def expects(*codes):
         def wrapped(*args, **kwargs):
             result = yield from func(*args, **kwargs)
             if result.response.status not in codes:
-                cls = CODE_TO_ERROR.get(result.response.status, exceptions.WaterButlerError)
-                raise cls(kwargs.get('path'))
+                raise (yield from exception_from_reponse(result.response, **kwargs))
             return result
         return wrapped
     return wrapper
