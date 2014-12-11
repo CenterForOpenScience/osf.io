@@ -59,10 +59,8 @@ def get_list_name_from_id(list_id):
 def subscribe(list_name, username):
     m = get_mailchimp_api()
     list_id = get_list_id_from_name(list_name=list_name)
-    try:
-        m.lists.subscribe(id=list_id, email={'email': username}, double_optin=False)
-    except mailchimp.ListAlreadySubscribedError:
-        pass
+    m.lists.subscribe(id=list_id, email={'email': username}, double_optin=False, update_existing=True)
+
 
 @app.task
 def unsubscribe(list_name, username):
