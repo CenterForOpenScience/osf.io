@@ -6,7 +6,7 @@ import httplib as http
 from dateutil.parser import parse as parse_date
 
 from flask import request
-from modularodm.exceptions import ValidationError
+from modularodm.exceptions import ValidationError, NoResultsFound
 from modularodm import Q
 
 from framework.exceptions import HTTPError
@@ -191,13 +191,15 @@ def user_choose_addons(**kwargs):
 def user_choose_mailing_lists(auth, **kwargs):
     user = auth.user
     json_data = escape_html(request.get_json())
-
     if json_data:
         for list_name in json_data:
             user.mailing_lists[list_name] = json_data[list_name]
             update_subscription(user, list_name, json_data[list_name])
+    else:
+        raise HTTPError(http.BAD_REQUEST)
 
     user.save()
+    return {'message': 'Successfully updated mailing lists', 'result': user.mailing_lists}, 200
 
 
 def update_subscription(user, list_name, subscription):
@@ -208,7 +210,7 @@ def update_subscription(user, list_name, subscription):
 
 
 def mailchimp_get_endpoint(**kwargs):
-    return http.OK
+    return {}, http.OK
 
 
 def sync_data_from_mailchimp(**kwargs):
@@ -220,13 +222,12 @@ def sync_data_from_mailchimp(**kwargs):
         action = r.values['type']
         list_name = auth_utils.get_list_name_from_id(list_id=r.values['data[list_id]'])
         username = r.values['data[email]']
-        user = User.find(Q('username', 'eq', username))[0]
-
-        if action == 'subscribe':
-            user.mailing_lists[list_name] = True
-        else:
-            user.mailing_lists[list_name] = False
-
+        try:
+            user = User.find(Q('username', 'eq', username))[0]
+        except NoResultsFound:
+            raise HTTPError(404, data=dict(message_short='User not found',
+                                           message_long='A user with this username does not exist'))
+        user.mailing_lists[list_name] = (action == 'subscribe')
         user.save()
 
     else:
