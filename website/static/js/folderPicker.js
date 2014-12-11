@@ -82,7 +82,6 @@
         }
 
         if (this.options.folderArray && item.data.name === this.options.folderArray[0]) {
-                            console.log("YES-", item, this.options.folderPath);
             return m("input",{
                 type:"radio",
                 checked : 'checked',
@@ -140,7 +139,6 @@
         var tb = this;
         var folderName = tb.options.initialFolderName;
         var folderPath = tb.options.initialFolderPath;
-        console.log("==", tb.options);
         if (folderName != undefined) {
             if (folderName === "None") {
                 tb.options.folderPath = null;
@@ -149,7 +147,6 @@
                     tb.options.folderPath = folderName.replace(folderPath, '');  //folderName.replace('Dropbox', '');
                 }
                 var folderArray = folderName.trim().split('/');
-                console.log(folderArray);
                 if (folderArray[folderArray.length - 1] === "") {
                     folderArray.pop();
                 }
@@ -157,7 +154,6 @@
                     folderArray.shift();
                 }
                 tb.options.folderArray = folderArray;
-                console.log(folderArray);
             }
 
             for (var i = 0; i < tb.treeData.children.length; i++) {
