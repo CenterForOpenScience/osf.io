@@ -1,5 +1,5 @@
-import os
 import hmac
+import json
 import time
 import asyncio
 import hashlib
@@ -14,9 +14,11 @@ TEMP_URL_SECS = 100
 
 
 def ensure_connection(func):
+    @asyncio.coroutine
     def wrapped(self, *args, **kwargs):
         yield from self._ensure_connection()
-        return func(self, *args, **kwargs)
+        return (yield from func(self, *args, **kwargs))
+    return wrapped
 
 
 @core.register_provider('cloudfiles')
@@ -28,6 +30,7 @@ class CloudFilesProvider(core.BaseProvider):
         super().__init__(auth, identity)
         self.token = None
         self.endpoint = None
+        self.temp_url_key = None
         self.region = self.identity['region']
         self.og_token = self.identity['token']
         self.username = self.identity['username']
@@ -38,14 +41,14 @@ class CloudFilesProvider(core.BaseProvider):
         resp = yield from self.make_request(
             'POST',
             'https://identity.api.rackspacecloud.com/v2.0/tokens',
-            data={
+            data=json.dumps({
                 'auth': {
                     'RAX-KSKEY:apiKeyCredentials': {
                         'username': self.username,
                         'apiKey': self.og_token,
                     }
                 }
-            },
+            }),
             headers={
                 'Content-Type': 'application/json',
             }
@@ -59,26 +62,18 @@ class CloudFilesProvider(core.BaseProvider):
             data = yield from self.get_token()
             self.token = data['access']['token']['id']
             self.endpoint = self.extract_endpoint(data)
+            resp = yield from self.make_request('HEAD', self.endpoint)
+            try:
+                self.temp_url_key = resp.headers['X-Account-Meta-Temp-URL-Key'].encode()
+            except KeyError:
+                raise exceptions.ProviderError('Not temp url key is available', code=503)
 
     @property
-    @ensure_connection
     def default_headers(self):
         return {
             'X-Auth-Token': self.token,
             'Accept': 'application/json',
         }
-
-    @property
-    @ensure_connection
-    def temp_url_key(self):
-        try:
-            return self.__temp_url_key
-        except AttributeError:
-            resp = yield from self.make_request('HEAD', self.endpoint)
-            try:
-                self.__temp_url_key = resp.headers['X-Account-Meta-Temp-URL-Key']
-            except KeyError:
-                raise exceptions.ProviderError('Not temp url key is available', code=503)
 
     def extract_endpoint(self, data):
         for service in reversed(data['access']['serviceCatalog']):
@@ -87,30 +82,28 @@ class CloudFilesProvider(core.BaseProvider):
                     if region['region'] == self.region:
                         return region['publicURL']
 
-    @ensure_connection
     def build_url(self, obj):
         url = furl.furl(self.endpoint)
         url.path.add(self.container)
         url.path.add(obj)
         return url.url
 
-    @ensure_connection
     def generate_url(self, obj, method='GET', seconds=60):
         method = method.upper()
-        expires = int(time() + seconds)
+        expires = str(int(time.time() + seconds))
         url = furl.furl(self.build_url(obj))
 
-        body = '\n'.join([method, expires, path])
+        body = '\n'.join([method, expires, str(url.path)]).encode()
         signature = hmac.new(self.temp_url_key, body, hashlib.sha1).hexdigest()
 
         url.args.update({
             'temp_url_sig': signature,
-            'expires': expires,
+            'temp_url_expires': expires,
         })
         return url.url
 
     @core.expects(200)
-    @asyncio.coroutine
+    @ensure_connection
     def download(self, path, accept_url=False, **kwargs):
         """Returns a ResponseWrapper (Stream) for the specified path
         :param str path: Path to the object you want to download
@@ -128,7 +121,7 @@ class CloudFilesProvider(core.BaseProvider):
         return core.ResponseWrapper(resp)
 
     @core.expects(200, 201)
-    @asyncio.coroutine
+    @ensure_connection
     def upload(self, obj, path, **kwargs):
         """Uploads the given stream to S3
         :param ResponseWrapper obj: The stream to put to Cloudfiles
@@ -146,7 +139,7 @@ class CloudFilesProvider(core.BaseProvider):
         return core.ResponseWrapper(resp)
 
     @core.expects(204)
-    @asyncio.coroutine
+    @ensure_connection
     def delete(self, path, **kwargs):
         """Deletes the key at the specified path
         :param str path: The path of the key to delete
@@ -156,7 +149,7 @@ class CloudFilesProvider(core.BaseProvider):
 
         return core.ResponseWrapper(resp)
 
-    @asyncio.coroutine
+    @ensure_connection
     def metadata(self, path, **kwargs):
         """Get Metadata about the requested file or folder
         :param str path: The path to a key or folder
