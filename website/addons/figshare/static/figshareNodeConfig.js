@@ -162,7 +162,7 @@ var ViewModel = function(url, selector, folderPicker) {
      */
     self.cancelSelection = function() {
         self.selected(null);
-        $(selector + ' input[type="radio"]').prop('checked', false);
+        // $(selector + ' input[type="radio"]').prop('checked', false);
     };
 
     /** Change the flashed message. */
@@ -267,7 +267,7 @@ var ViewModel = function(url, selector, folderPicker) {
         $(self.folderPicker).folderpicker({
             onPickFolder: onPickFolder,
             initialFolderName : self.folderName(),
-            initialFolderPath : '',
+            initialFolderPath : undefined,
             // Fetch Figshare folders with AJAX
             filesData: self.urls().options, // URL for fetching folders
             // Lazy-load each folder's contents
@@ -290,9 +290,9 @@ var ViewModel = function(url, selector, folderPicker) {
                     });
                 }
             },
-            init: function() {
+            folderPickerOnload: function() {
                 // Hide loading indicator
-                self.loading(false);
+                self.loading(false);                
             }
         });
     };

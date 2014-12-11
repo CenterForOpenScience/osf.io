@@ -18,6 +18,10 @@
     var $ = require('jquery');
 
     function _treebeardToggleCheck (item) {
+        if(item.data.addon === 'figshare') {
+            return false; 
+        }
+
         if (item.data.path == "/") {
             return false;
         }
@@ -25,6 +29,10 @@
     }
 
     function _treebeardResolveToggle(item){
+        if(item.data.addon === 'figshare') {
+            return ''; 
+        }
+
         if (item.data.path!="/") {
             var toggleMinus = m('i.icon-minus', ' '),
                 togglePlus = m('i.icon-plus', ' ');
@@ -61,6 +69,7 @@
      * Returns the folder select button for a single row.
      */
     function _treebeardSelectView(item) {
+
         if(item.data.path != undefined){
             if (item.data.path === this.options.folderPath) {
                 return m("input",{
@@ -70,6 +79,16 @@
                 value:item.id
                 }, " ");
             }
+        }
+
+        if (this.options.folderArray && item.data.name === this.options.folderArray[0]) {
+                            console.log("YES-", item, this.options.folderPath);
+            return m("input",{
+                type:"radio",
+                checked : 'checked',
+                name: "#" + this.options.divID + INPUT_NAME,
+                value:item.id
+                }, " ");
         }
 
         return m("input",{
@@ -121,7 +140,7 @@
         var tb = this;
         var folderName = tb.options.initialFolderName;
         var folderPath = tb.options.initialFolderPath;
-        console.log(tb.options);
+        console.log("==", tb.options);
         if (folderName != undefined) {
             if (folderName === "None") {
                 tb.options.folderPath = null;
@@ -130,29 +149,36 @@
                     tb.options.folderPath = folderName.replace(folderPath, '');  //folderName.replace('Dropbox', '');
                 }
                 var folderArray = folderName.trim().split('/');
+                console.log(folderArray);
                 if (folderArray[folderArray.length - 1] === "") {
                     folderArray.pop();
                 }
-                folderArray.shift();
-                tb.options.dropboxArray = folderArray;
+                if (folderArray[0] === folderPath) {
+                    folderArray.shift();
+                }
+                tb.options.folderArray = folderArray;
                 console.log(folderArray);
             }
 
             for (var i = 0; i < tb.treeData.children.length; i++) {
-                if (tb.treeData.children[i].data.name === folderArray[0]) {
+                if (tb.treeData.children[i].data.addon !== 'figshare' && tb.treeData.children[i].data.name === folderArray[0]) {
                     tb.updateFolder(null, tb.treeData.children[i]);
                 }
             }
-            tb.options.dropboxIndex = 1;
+            tb.options.folderIndex = 1;
         }
+        tb.options.folderPickerOnload(); 
     }
 
     function _treebeardLazyLoadOnLoad  (item) {
         var tb = this; 
         for (var i = 0; i < item.children.length; i++) {
-            if (item.children[i].data.name === tb.options.dropboxArray[tb.options.dropboxIndex]) {
+            if (item.children[i].data.addon === 'figshare'){
+                return;
+            }
+            if (item.children[i].data.name === tb.options.folderArray[tb.options.folderIndex]) {
                 tb.updateFolder(null,item.children[i]);
-                tb.options.dropboxIndex++; 
+                tb.options.folderIndex++; 
                 return; 
             }
         }
@@ -181,7 +207,6 @@
         if (!opts.onPickFolder) {
             throw 'FolderPicker must have the "onPickFolder" option defined';
         }
-        console.log("Opts", opts);
         self.options = $.extend({}, defaults, opts);
         self.options.divID = selector.substring(1);
         self.options.initialFolderName = opts.initialFolderName;

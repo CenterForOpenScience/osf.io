@@ -350,7 +350,7 @@ var ViewModel = function(url, selector, folderPicker) {
                         });
                     }
                 },
-                init: function() {
+                folderPickerOnload: function() {
                     // Hide loading indicator
                     self.loading(false);
                     // Set flag to prevent repeated requests
