@@ -2714,13 +2714,6 @@ class WatchConfig(StoredObject):
         return '<WatchConfig(node="{self.node}")>'.format(self=self)
 
 
-class MailRecord(StoredObject):
-
-    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
-    data = fields.DictionaryField()
-    records = fields.AbstractForeignField(list=True, backref='created')
-
-
 class PrivateLink(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))

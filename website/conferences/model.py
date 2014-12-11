@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
+import bson
 from modularodm import fields
 
 from framework.mongo import StoredObject
+
 
 class Conference(StoredObject):
     #: Determines the email address for submission and the OSF url
@@ -18,3 +20,9 @@ class Conference(StoredObject):
     admins = fields.ForeignField('user', list=True, required=False, default=None)
     #: Whether to make submitted projects public
     public_projects = fields.BooleanField(required=False, default=True)
+
+
+class MailRecord(StoredObject):
+    _id = fields.StringField(primary=True, default=lambda: str(bson.ObjectId()))
+    data = fields.DictionaryField()
+    records = fields.AbstractForeignField(list=True, backref='created')
