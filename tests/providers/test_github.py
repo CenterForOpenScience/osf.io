@@ -124,7 +124,7 @@ def test_download_bad_status(provider):
 def test_metadata(provider, repo_contents):
     path = 'snacks'
     url = provider.build_repo_url('contents', path)
-    aiopretty.register_uri('GET', url, body=json.dumps(repo_contents).encode('utf-8'), headers={'Content-Type': 'application/json'})
+    aiopretty.register_json_uri('GET', url, body=repo_contents)
     result = yield from provider.metadata(path)
     assert result == [provider._serialize_metadata(item) for item in repo_contents]
 
