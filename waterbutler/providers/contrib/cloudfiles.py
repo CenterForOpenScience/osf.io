@@ -3,6 +3,7 @@ import json
 import time
 import asyncio
 import hashlib
+import functools
 
 import furl
 
@@ -14,6 +15,9 @@ TEMP_URL_SECS = 100
 
 
 def ensure_connection(func):
+    """Runs ``_ensure_connection`` before continuing to the method
+    """
+    @functools.wraps(func)
     @asyncio.coroutine
     def wrapped(self, *args, **kwargs):
         yield from self._ensure_connection()
@@ -38,6 +42,11 @@ class CloudFilesProvider(core.BaseProvider):
 
     @asyncio.coroutine
     def get_token(self):
+        """Fetchs an access token from cloudfiles for actual api requests
+        Returns the entire json response from the tokens endpoint
+        Notably containing our token and proper endpoint to send requests to
+        :rtype dict:
+        """
         resp = yield from self.make_request(
             'POST',
             'https://identity.api.rackspacecloud.com/v2.0/tokens',
@@ -58,6 +67,11 @@ class CloudFilesProvider(core.BaseProvider):
 
     @asyncio.coroutine
     def _ensure_connection(self):
+        """Defines token, endpoint and temp_url_key if they are not already defined
+        :raises ProviderError: If no temp url key is available
+        """
+        # Must have a temp url key for download and upload
+        # Currently You must have one for everything however
         if not self.token or not self.endpoint or not self.temp_url_key:
             data = yield from self.get_token()
             self.token = data['access']['token']['id']
@@ -76,6 +90,11 @@ class CloudFilesProvider(core.BaseProvider):
         }
 
     def extract_endpoint(self, data):
+        """Pulls the proper cloudfiles url from the return of tokens
+        Very optimized.
+        :param dict data: The json response from the token endpoint
+        :rtype str:
+        """
         for service in reversed(data['access']['serviceCatalog']):
             if service['name'] == 'cloudFiles':
                 for region in service['endpoints']:
@@ -83,12 +102,22 @@ class CloudFilesProvider(core.BaseProvider):
                         return region['publicURL']
 
     def build_url(self, obj):
+        """Build the url for the specified object
+        :param str obj: The object in question
+        :rtype str:
+        """
         url = furl.furl(self.endpoint)
         url.path.add(self.container)
         url.path.add(obj)
         return url.url
 
     def generate_url(self, obj, method='GET', seconds=60):
+        """Build and sign a temp url for the specified object
+        :param str obj: The requested object's path
+        :param str method: The HTTP method used to access the returned url
+        :param int seconds: Time for the url to live
+        :rtype str:
+        """
         method = method.upper()
         expires = str(int(time.time() + seconds))
         url = furl.furl(self.build_url(obj))
