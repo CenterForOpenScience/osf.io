@@ -66,6 +66,9 @@ def _profile_view(profile, is_profile):
     # TODO: Fix circular import
     from website.addons.badges.util import get_sorted_user_badges
 
+    if profile and profile.is_disabled:
+        raise HTTPError(http.GONE)
+
     if 'badges' in settings.ADDONS_REQUESTED:
         badge_assertions = get_sorted_user_badges(profile),
         badges = _get_user_created_badges(profile)
