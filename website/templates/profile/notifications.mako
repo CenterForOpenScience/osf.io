@@ -1,6 +1,8 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Notifications</%def>
 <%def name="content()">
+<% import json %>
+
 <h2 class="page-header">Notifications</h2>
 
 <div class="row">
@@ -16,63 +18,42 @@
     </div>
 
     <div class="col-md-6">
-        <div class="panel panel-default">
+        <div class="panel panel-default scripted" id="selectLists">
             <div class="panel-heading"><h3 class="panel-title">Configure Email Preferences</h3></div>
             <div class="panel-body">
                  <h3>Emails</h3>
                     </br>
-                    <form id="selectLists">
+                    <form>
                         <div class="form-group">
+
                             <input type="checkbox"
-                                   name="Open Science Framework General"
-                                   ${'checked' if (mailing_lists['Open Science Framework General']) else ''}
-                                    />
+                                   data-bind="checked: subscribed"/>
                             <label>Open Science Framework General</label>
                             <p class="text-muted" style="padding-left: 15px">Receive general notifications</p>
                         </div>
                         <div class="padded">
                         <button
                             type="submit"
-                            id="settings-submit"
                             class="btn btn-success"
+                            data-bind="click: submit"
                         >Submit</button>
                         </div>
+
                     </form>
 
                     <!-- Flashed Messages -->
-                    <div id="message"></div>
-            </div>
+                    <div data-bind="html: message, attr: {class: messageClass}"></div>
+            </div><!--view model scope ends -->
             </div>
     </div>
 </div>
 
-<script>
-
-    $('#selectLists').on('submit', function() {
-
-        var formData = {};
-        $('#selectLists').find('input').each(function (idx, elm) {
-            var $elm = $(elm);
-            formData[$elm.attr('name')] = $elm.is(':checked');
-        });
-
-        var submit = function () {
-            var request = $.osf.postJSON('/api/v1/settings/notifications/', formData);
-            request.done(function () {
-                $('#message').addClass('text-success').text('Settings updated').fadeIn().fadeOut(2000);
-            });
-            request.fail(function () {
-                var message = 'Could not update settings.';
-                $('#message').addClass('text-danger').text(message).fadeIn().fadeOut(2000);
-
-            });
-        };
-
-        submit();
-        return false;
+<script type="text/javascript">
+    var subscribeInfo = ${json.dumps(mailing_lists)};
+    $script(['/static/js/notificationsConfig.js']);
+    $script.ready('NotificationsConfig', function() {
+        var notifications = new NotificationsConfig('#selectLists', subscribeInfo);
     });
-
-
 </script>
 
 </%def>
