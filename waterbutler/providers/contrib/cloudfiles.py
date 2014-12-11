@@ -26,23 +26,12 @@ class CloudFilesProvider(core.BaseProvider):
 
     def __init__(self, auth, identity):
         super().__init__(auth, identity)
-        self.container = self.identity['container']
+        self.token = None
+        self.endpoint = None
         self.region = self.identity['region']
-        self.token = self.identity['token']
-
-    def extract_endpoint(self, data):
-        for service in reversed(data['access']['serviceCatalog']):
-            if service['name'] == 'cloudFiles':
-                for region in service['endpoints']:
-                    if region['region'] == self.region:
-                        return region['publicURL']
-
-    @asyncio.coroutine
-    def _ensure_connection(self):
-        if not self.token or not self.endpoint:
-            data = yield from self.get_token()
-            self.token = data['access']['token']['id']
-            self.endpoint = self.extract_endpoint(data)
+        self.og_token = self.identity['token']
+        self.username = self.identity['username']
+        self.container = self.identity['container']
 
     @asyncio.coroutine
     def get_token(self):
@@ -50,12 +39,12 @@ class CloudFilesProvider(core.BaseProvider):
             'POST',
             'https://identity.api.rackspacecloud.com/v2.0/tokens',
             data={
-               'auth': {
-                  'RAX-KSKEY:apiKeyCredentials': {
-                     'username': self.identity['username'],
-                     'apiKey': self.identity['token'],
-                  }
-               }
+                'auth': {
+                    'RAX-KSKEY:apiKeyCredentials': {
+                        'username': self.username,
+                        'apiKey': self.og_token,
+                    }
+                }
             },
             headers={
                 'Content-Type': 'application/json',
@@ -64,20 +53,56 @@ class CloudFilesProvider(core.BaseProvider):
         data = yield from resp.json()
         return data
 
-    def build_url(self):
-        pass
+    @asyncio.coroutine
+    def _ensure_connection(self):
+        if not self.token or not self.endpoint:
+            data = yield from self.get_token()
+            self.token = data['access']['token']['id']
+            self.endpoint = self.extract_endpoint(data)
 
-    def build_hmac_url(self, url, method='GET', seconds=60):
-        method = method.upper()
-        base_url, object_path = url.split('/v1/')
-        object_path = '/v1/' + object_path
-        seconds = int(seconds)
-        expires = int(time() + seconds)
-        body = '\n'.join([method, expires, path])
-        signature = hmac.new(key, body, hashlib.sha1).hexdigest()
+    @property
+    @ensure_connection
+    def default_headers(self):
+        return {
+            'X-Auth-Token': self.token,
+            'Accept': 'application/json',
+        }
 
+    @property
+    @ensure_connection
+    def temp_url_key(self):
+        try:
+            return self.__temp_url_key
+        except AttributeError:
+            resp = yield from self.make_request('HEAD', self.endpoint)
+            try:
+                self.__temp_url_key = resp.headers['X-Account-Meta-Temp-URL-Key']
+            except KeyError:
+                raise exceptions.ProviderError('Not temp url key is available', code=503)
+
+    def extract_endpoint(self, data):
+        for service in reversed(data['access']['serviceCatalog']):
+            if service['name'] == 'cloudFiles':
+                for region in service['endpoints']:
+                    if region['region'] == self.region:
+                        return region['publicURL']
+
+    @ensure_connection
+    def build_url(self, obj):
         url = furl.furl(self.endpoint)
         url.path.add(self.container)
+        url.path.add(obj)
+        return url.url
+
+    @ensure_connection
+    def generate_url(self, obj, method='GET', seconds=60):
+        method = method.upper()
+        expires = int(time() + seconds)
+        url = furl.furl(self.build_url(obj))
+
+        body = '\n'.join([method, expires, path])
+        signature = hmac.new(self.temp_url_key, body, hashlib.sha1).hexdigest()
+
         url.args.update({
             'temp_url_sig': signature,
             'expires': expires,
