@@ -30,13 +30,14 @@ def format_metadata(data):
     if data.get('subdir'):
         return {
             'name': data['subdir'],
-            'path': data['subdir']
+            'path': data['subdir'],
         }
     else:
         return {
             'name': os.path.split(data['name'])[1],
             'path': data['name'],
-            'size': data['bytes']
+            'size': data['bytes'],
+            'modified': data['last_modified'],
         }
 
 
@@ -210,8 +211,6 @@ class CloudFilesProvider(core.BaseProvider):
             return []  # TODO Correct value?
 
         content = yield from resp.json()
-
-        # TODO process metadata
 
         return [
             format_metadata(chunk)
