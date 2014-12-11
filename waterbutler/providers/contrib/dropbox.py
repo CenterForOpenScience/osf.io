@@ -10,16 +10,21 @@ class DropboxProvider(core.BaseProvider):
     BASE_URL = 'https://api.dropbox.com/1/'
     BASE_CONTENT_URL = 'https://api-content.dropbox.com/1/'
 
+    def __init__(self, auth, identity):
+        super().__init__(auth, identity)
+        self.folder = self.identity['folder']
+        self.token = self.identity['token']
+
     def build_content_url(self, *segments, **query):
         return core.build_url(self.BASE_CONTENT_URL, *segments, **query)
 
     def build_path(self, path):
-        return os.path.join(self.identity['folder'], path)
+        return os.path.join(self.folder, path)
 
     @property
     def default_headers(self):
         return {
-            'Authorization': 'Bearer {}'.format(self.identity['token']),
+            'Authorization': 'Bearer {}'.format(self.token),
         }
 
     def __eq__(self, other):
@@ -95,7 +100,7 @@ class DropboxProvider(core.BaseProvider):
 
     @core.expects(200)
     @asyncio.coroutine
-    def upload(self, obj, path):
+    def upload(self, obj, path, **kwargs):
         resp = yield from self.make_request(
             'PUT',
             self.build_content_url('files_put', 'auto', self.build_path(path)),
@@ -106,7 +111,7 @@ class DropboxProvider(core.BaseProvider):
 
     @core.expects(200)
     @asyncio.coroutine
-    def delete(self, path):
+    def delete(self, path, **kwargs):
         response = yield from self.make_request(
             'POST',
             self.build_url('fileops', 'delete'),
@@ -114,11 +119,29 @@ class DropboxProvider(core.BaseProvider):
         )
         return core.ResponseWrapper(response)
 
-    @core.expects(200)
     @asyncio.coroutine
-    def metadata(self, path):
+    def metadata(self, path, **kwargs):
         response = yield from self.make_request(
             'GET',
-            self.build_url('metadata', 'auto', self.get_path(path)),
+            self.build_url('metadata', 'auto', self.build_path(path)),
         )
-        return core.ResponseWrapper(response)
+        if response.status != 200:
+            raise exceptions.FileNotFoundError(path)
+
+        data = yield from response.json()
+        return self.format_metadata(data)
+
+    def format_metadata(self, data):
+        return {
+            'contents': [
+                self.format_metadata(content)
+                for content in data.get('contents', [])
+            ],
+            'provider': 'dropbox',
+            'kind': 'folder' if data['is_dir'] else 'file',
+            'name': os.path.split(data['path'])[1],
+            'path': data['path'],
+            'size': data['bytes'],
+            'modified': data['modified'],
+            'extra': {}  # TODO Include extra data from dropbox
+        }
