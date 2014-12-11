@@ -642,3 +642,10 @@ def generate_self_signed(domain):
         ' -keyout {0}.key -out {0}.crt'
     ).format(domain)
     run(cmd)
+
+
+# NOTE: This just does a `bower install` for now. This will
+# eventually include webpack when it is merged
+@task
+def assets():
+    bower_install()
