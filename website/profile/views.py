@@ -22,6 +22,17 @@ from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
 from website.profile import utils as profile_utils
 
+subscribe_mailchimp = (
+    auth_utils.subscribe.delay
+    if settings.USE_CELERY
+    else auth_utils.subscribe)
+
+unsubscribe_mailchimp = (
+    auth_utils.unsubscribe.delay
+    if settings.USE_CELERY
+    else auth_utils.unsubscribe
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -204,9 +215,9 @@ def user_choose_mailing_lists(auth, **kwargs):
 
 def update_subscription(user, list_name, subscription):
     if subscription:
-        auth_utils.subscribe(list_name, user.username)
+        subscribe_mailchimp(list_name, user.username)
     else:
-        auth_utils.unsubscribe(list_name, user.username)
+        unsubscribe_mailchimp(list_name, user.username)
 
 
 def mailchimp_get_endpoint(**kwargs):
