@@ -7,6 +7,10 @@ cache:
   directories:
     - tmp/.pip-cache/
 
+before_install:
+  - sudo apt-get update
+  - sudo apt-get -y install libxml2-dev libxslt1-dev
+
 install:
   - travis_retry pip install invoke
   - travis_retry invoke install --upgrade --pip-cache=$HOME/.pip-cache --wheel-repo=https://github.com/icereval/wheelhouse
