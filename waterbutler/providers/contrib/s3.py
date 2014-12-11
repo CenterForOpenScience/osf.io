@@ -12,13 +12,6 @@ from waterbutler.providers import core
 TEMP_URL_SECS = 100
 
 
-def getname(st):
-    sp = st.split('/')
-    if not sp[-1]:
-        return sp[-2]
-    return sp[-1]
-
-
 @core.register_provider('s3')
 class S3Provider(core.BaseProvider):
     """Provider for the Amazon's S3
@@ -138,7 +131,7 @@ class S3Provider(core.BaseProvider):
             'contents': children,
             'provider': 's3',
             'kind': 'folder',
-            'name': getname(prefix.Prefix.text),
+            'name': prefix.Prefix.text.split('/')[-2],
             'path': prefix.Prefix.text,
             'modified': None,
             'size': None,
