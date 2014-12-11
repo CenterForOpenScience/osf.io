@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from waterbutler.server import utils
 from waterbutler.server.handlers import core
 
