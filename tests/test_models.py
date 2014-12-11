@@ -172,7 +172,7 @@ class TestUser(OsfTestCase):
                  is_registered=False)
         u.set_password('killerqueen')
         u.save()
-        assert_false(u.is_active())
+        assert_false(u.is_active)
 
     def test_create_unregistered(self):
         name, email = fake.name(), fake.email()
@@ -209,12 +209,12 @@ class TestUser(OsfTestCase):
             is_registered=True,
         )
         u.save()
-        assert_false(u.is_active())
+        assert_false(u.is_active)
 
     def test_merged_user_is_not_active(self):
         master = UserFactory()
         dupe = UserFactory(merged_by=master)
-        assert_false(dupe.is_active())
+        assert_false(dupe.is_active)
 
     def test_cant_create_user_without_username(self):
         u = User()  # No username given
@@ -482,7 +482,7 @@ class TestUser(OsfTestCase):
         assert_equal(d['registered'], user.is_registered)
         assert_equal(d['absolute_url'], user.absolute_url)
         assert_equal(d['date_registered'], user.date_registered.strftime('%Y-%m-%d'))
-        assert_equal(d['active'], user.is_active())
+        assert_equal(d['active'], user.is_active)
 
     def test_serialize_user_full(self):
         master = UserFactory()
