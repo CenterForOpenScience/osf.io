@@ -31,6 +31,7 @@ class S3Provider(core.BaseProvider):
         :param dict auth: Not used
         :param dict identity: A dict containing access_key secret_key and bucket
         """
+        super().__init__(auth, identity)
         self.connection = S3Connection(identity['access_key'], identity['secret_key'])
         self.bucket = self.connection.get_bucket(identity['bucket'], validate=False)
 
