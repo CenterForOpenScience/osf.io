@@ -85,35 +85,38 @@ class TestCRUD(OsfTestCase):
         )
 
 
+    @mock.patch('website.addons.github.api.GitHub.contents')
     @mock.patch('website.addons.github.api.GitHub.from_settings')
     @mock.patch('website.project.views.file.get_cache_content')
-    def test_view_file(self, mock_cache, mock_settings):
+    def test_view_file(self, mock_cache, mock_settings, mock_contents):
         mock_settings.return_value = github_mock
+        sha = github_mock.tree.return_value.tree[0].sha
         github_mock.history.return_value = [
             {
-            'sha': github_mock.tree.return_value.tree[0].sha,
+            'sha': sha,
             'name': 'fred',
             'email': '{0}@osf.io'.format(self.user._id),
             'date': datetime.date(2011, 10, 15).ctime(),
             }
         ]
         mock_cache = "this is some html"
+        guid = GithubGuidFile()
+        path = github_mock.tree.return_value.tree[0].path
+        guid.path = path
+        guid.node = self.project
+        guid.save()
+        mock_contents.return_value.sha = sha
+        github_mock.contents.return_value = mock_contents
+        github_mock.file.return_value = (' ', ' ', 255)
         url = self.project.web_url_for(
             'github_view_file',
-            sha = github_mock.tree.return_value.tree[0].sha,
-            path=github_mock.tree.return_value.tree[0].path
+            sha = sha,
+            path = path
         )
-        guid = GithubGuidFile()
-        guid.path = url.split('/')[5]
-        guid.node = url.split('/')[2]
-        guid._id = url.split('/')[2]
-        guid.save()
-        print('URL from self.project.web_url_for(): {0}\n'.format(url))
         res = self.app.get(
             url,
             auth=self.user.auth,
         )
-        print(res)
         assert_equal(res.status_code, 302)
         res2 = res.follow(auth=self.user.auth)
         assert_equal(res2.status_code, 200)
