@@ -5,8 +5,8 @@ from modularodm.exceptions import ValidationError
 
 import hmac
 import hashlib
+from cStringIO import StringIO
 
-# from website.conferences.views import parse_email_name, _render_conference_node
 from website import settings
 from website.conferences.views import _render_conference_node
 from website.conferences.model import Conference
@@ -227,6 +227,26 @@ class TestMessage(OsfTestCase):
             msg = message.ConferenceMessage()
             assert_equal(msg.conference_name, 'conf')
             assert_equal(msg.conference_category, 'talk')
+
+    def test_attachments_count_zero(self):
+        with self.test_context(data={'attachment-count': '0'}):
+            msg = message.ConferenceMessage()
+            assert_equal(msg.attachments, [])
+
+    def test_attachments_count_one(self):
+        content = 'slightly mad'
+        sio = StringIO(content)
+        ctx = self.test_context(
+            method='POST',
+            data={
+                'attachment-count': 1,
+                'attachment-1': (sio, 'attachment-1'),
+            },
+        )
+        with ctx:
+            msg = message.ConferenceMessage()
+            assert_equal(len(msg.attachments), 1)
+            assert_equal(msg.attachments[0].read(), content)
 
 
 class TestConferenceEmailViews(OsfTestCase):
