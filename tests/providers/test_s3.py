@@ -86,6 +86,29 @@ def bucket_contents():
         </ListBucketResult>'''
 
 
+@pytest.fixture
+def bucket_content():
+    return b'''<?xml version="1.0" encoding="UTF-8"?>
+        <ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+            <Name>bucket</Name>
+            <Prefix/>
+            <Marker/>
+            <MaxKeys>1000</MaxKeys>
+            <IsTruncated>false</IsTruncated>
+            <Contents>
+                <Key>my-image.jpg</Key>
+                <LastModified>2009-10-12T17:50:30.000Z</LastModified>
+                <ETag>&quot;fba9dede5f27731c9771645a39863328&quot;</ETag>
+                <Size>434234</Size>
+                <StorageClass>STANDARD</StorageClass>
+                <Owner>
+                    <ID>75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a</ID>
+                    <DisplayName>mtd@amazon.com</DisplayName>
+                </Owner>
+            </Contents>
+        </ListBucketResult>'''
+
+
 @async
 @pytest.mark.aiopretty
 def test_download(provider):
@@ -123,6 +146,28 @@ def test_metadata(provider, bucket_contents):
     assert len(result) == 3
     assert result[0]['name'] == 'my-image.jpg'
     assert result[1]['extra']['md5'] == '1b2cf535f27731c974343645a3985328'
+
+
+@async
+@pytest.mark.aiopretty
+def test_metadata_single(provider, bucket_content):
+    url = provider.bucket.generate_url(100)
+    aiopretty.register_uri('GET', url, body=bucket_content, headers={'Content-Type': 'application/xml'})
+    result = yield from provider.metadata('')
+
+    assert isinstance(result, dict)
+    assert result['name'] == 'my-image.jpg'
+    assert result['extra']['md5'] == 'fba9dede5f27731c9771645a39863328'
+
+
+@async
+@pytest.mark.aiopretty
+def test_metadata_missing(provider, bucket_content):
+    url = provider.bucket.generate_url(100)
+    aiopretty.register_uri('GET', url, status=404, headers={'Content-Type': 'application/xml'})
+
+    with pytest.raises(exceptions.FileNotFoundError):
+        result = yield from provider.metadata('')
 
 
 @async
