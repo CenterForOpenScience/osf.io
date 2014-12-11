@@ -22,12 +22,18 @@ from tests.factories import UserFactory, UnconfirmedUserFactory
 from nose.tools import *
 import mock
 
+import logging
+from scripts import utils as script_utils
+
+logger = logging.getLogger(__name__)
+script_utils.add_file_logger(logger, __file__)
+
 
 def main():
     # Set up storage backends
     init_app(routes=False)
     subscribe = subscribe_users(list_name='Open Science Framework General') #confirm list name before running script
-    print '{n} users subscribed'.format(n=subscribe['add_count'])
+    logger.info('{n} users subscribed'.format(n=subscribe['add_count']))
 
 
 def get_user_emails():
@@ -42,7 +48,7 @@ def get_user_emails():
 def subscribe_users(list_name):
     m = utils.get_mailchimp_api()
     list_id = utils.get_list_id_from_name(list_name=list_name)
-    return m.lists.batch_subscribe(id=list_id, batch=get_user_emails(), double_optin=False)
+    return m.lists.batch_subscribe(id=list_id, batch=get_user_emails(), double_optin=False, update_existing=True)
 
 
 class TestSyncEmail(OsfTestCase):
@@ -64,9 +70,9 @@ class TestSyncEmail(OsfTestCase):
         list_name = 'foo'
         mock_list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
         list_id = utils.get_list_id_from_name(list_name)
-        batch = [{'email': {'email': self.user.username}, 'email_type': 'html'}]
+        batch = get_user_emails()
         subscribe_users(list_name=list_name)
-        mock_subscribe.assert_called_with(id=list_id, batch=batch, double_optin=False)
+        mock_subscribe.assert_called_with(id=list_id, batch=batch, double_optin=False, update_existing=True)
 
 
 if __name__ == '__main__':
