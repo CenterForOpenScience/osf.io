@@ -39,6 +39,8 @@ def privacy_info_handle(info, anonymous, name=False):
 
 
 def get_mailchimp_api():
+    if not settings.MAILCHIMP_API_KEY:
+        raise RuntimeError("An API key is required to connect to Mailchimp.")
     return mailchimp.Mailchimp(settings.MAILCHIMP_API_KEY)
 
 
