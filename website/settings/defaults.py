@@ -64,6 +64,10 @@ MAIL_SERVER = 'smtp.sendgrid.net'
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = ''  # Set this in local.py
 
+# Mailchimp
+MAILCHIMP_API_KEY = 'CHANGEME'
+MAILCHIMP_WEBHOOK_SECRET_KEY = 'CHANGEME'  # OSF secret key to ensure webhook is secure
+
 # TODO: Override in local.py
 MAILGUN_API_KEY = None
 
