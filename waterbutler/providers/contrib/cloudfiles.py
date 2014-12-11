@@ -139,52 +139,17 @@ class CloudFilesProvider(core.BaseProvider):
         :rtype dict:
         :rtype list:
         """
-        url = self.bucket.generate_url(TEMP_URL_SECS, 'GET')
-        resp = yield from self.make_request('GET', url, params={'prefix': path, 'delimiter': '/'})
+        url = furl.furl(self.build_url(path))
+        url.args.update({'prefix': path, 'delimiter': '/'})
+        resp = yield from self.make_request('GET', url.url)
 
         if resp.status == 404:
             raise exceptions.FileNotFoundError(path)
+        if resp.status == 204:
+            return []  # TODO Correct value?
 
-        content = yield from resp.read_and_close()
-        obj = objectify.fromstring(content)
+        content = yield from resp.json()
 
-        files = [
-            self.key_to_dict(k)
-            for k in getattr(obj, 'Contents', [])
-        ]
+        # TODO process metadata
 
-        folders = [
-            self.prefix_to_dict(p)
-            for p in getattr(obj, 'CommonPrefixes', [])
-        ]
-
-        if len(folders) == 0 and len(files) == 1:
-            return files[0]
-
-        return files + folders
-
-    def key_to_dict(self, key, children=[]):
-        return {
-            'content': children,
-            'provider': 's3',
-            'kind': 'file',
-            'name': os.path.split(key.Key.text)[1],
-            'size': key.Size.text,
-            'path': key.Key.text,
-            'modified': key.LastModified.text,
-            'extra': {
-                'md5': key.ETag.text.replace('"', ''),
-            },
-        }
-
-    def prefix_to_dict(self, prefix, children=[]):
-        return {
-            'contents': children,
-            'provider': 's3',
-            'kind': 'folder',
-            'name': getname(prefix.Prefix.text),
-            'path': prefix.Prefix.text,
-            'modified': None,
-            'size': None,
-            'extra': {},
-        }
+        return content
