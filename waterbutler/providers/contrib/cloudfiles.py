@@ -1,3 +1,4 @@
+import os
 import hmac
 import json
 import time
@@ -23,6 +24,20 @@ def ensure_connection(func):
         yield from self._ensure_connection()
         return (yield from func(self, *args, **kwargs))
     return wrapped
+
+
+def format_metadata(data):
+    if data.get('subdir'):
+        return {
+            'name': data['subdir'],
+            'path': data['subdir']
+        }
+    else:
+        return {
+            'name': os.path.split(data['name'])[1],
+            'path': data['name'],
+            'size': data['bytes']
+        }
 
 
 @core.register_provider('cloudfiles')
@@ -198,4 +213,7 @@ class CloudFilesProvider(core.BaseProvider):
 
         # TODO process metadata
 
-        return content
+        return [
+            format_metadata(chunk)
+            for chunk in content
+        ]
