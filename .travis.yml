@@ -9,7 +9,7 @@ cache:
 
 install:
   - travis_retry pip install invoke
-  - travis_retry invoke install --upgrade --download-cache=$HOME/.pip-cache --wheel-repo=https://github.com/icereval/wheelhouse
+  - travis_retry invoke install --upgrade --pip-cache=$HOME/.pip-cache --wheel-repo=https://github.com/icereval/wheelhouse
 
 before_script:
   - invoke flake
