@@ -55,7 +55,7 @@ var Fangorn = require('fangorn');
             );
         } 
 
-        if (item.kind === "item" && item.data.permissions.download){
+        if (item.kind === "item" && item.data.permissions && item.data.permissions.download){
             buttons.push({
                 'name' : '',
                 'icon' : 'icon-download-alt', 
