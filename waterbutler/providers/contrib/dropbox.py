@@ -1,6 +1,7 @@
 import os
 import asyncio
 
+from waterbutler import exceptions
 from waterbutler.providers import core
 
 
