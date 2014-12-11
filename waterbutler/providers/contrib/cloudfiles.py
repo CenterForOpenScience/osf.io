@@ -58,7 +58,7 @@ class CloudFilesProvider(core.BaseProvider):
 
     @asyncio.coroutine
     def _ensure_connection(self):
-        if not self.token or not self.endpoint:
+        if not self.token or not self.endpoint or not self.temp_url_key:
             data = yield from self.get_token()
             self.token = data['access']['token']['id']
             self.endpoint = self.extract_endpoint(data)
@@ -156,7 +156,7 @@ class CloudFilesProvider(core.BaseProvider):
         :rtype dict:
         :rtype list:
         """
-        url = furl.furl(self.build_url(path))
+        url = furl.furl(self.build_url(''))
         url.args.update({'prefix': path, 'delimiter': '/'})
         resp = yield from self.make_request('GET', url.url)
 
