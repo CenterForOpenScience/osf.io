@@ -20,17 +20,19 @@ if (!window.contextVars.currentUser.hasAuth) {
                 contentType: 'application/json',
                 dataType: 'json'
             }).done(function () {
-                msgElm.text('Settings updated')
-                    .removeClass('text-danger').addClass('text-success')
-                    .fadeOut(100).fadeIn();
-                window.location.reload();
+                msgElm.text('S3 access keys loading...')
+                        .removeClass('text-danger').addClass('text-info')
+                        .fadeIn(1000);
+                setTimeout(function(){
+                    window.location.reload();
+                }, 5000);
             }).fail(function (xhr) {
                 var message = 'Error: ';
                 var response = JSON.parse(xhr.responseText);
                 if (response && response.message) {
                     message += response.message;
                 } else {
-                    message += 'Settings not updated.'
+                    message += 'Settings not updated.';
                 }
                 msgElm.text(message)
                     .removeClass('text-success').addClass('text-danger')
