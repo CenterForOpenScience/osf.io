@@ -112,6 +112,8 @@ def auth_login(auth, registration_form=None, forgot_password_form=None, **kwargs
                     twofactor_code
                 )
                 return response
+            except exceptions.LoginDisabledError:
+                status.push_status_message(language.DISABLED, 'error')
             except exceptions.LoginNotAllowedError:
                 status.push_status_message(language.UNCONFIRMED, 'warning')
                 # Don't go anywhere

@@ -165,6 +165,7 @@ class User(GuidStoredObject, AddonModelMixin):
         'family_name',
         'suffix',
         'merged_by',
+        'date_disabled',
         'jobs',
         'schools',
         'social',
@@ -277,6 +278,9 @@ class User(GuidStoredObject, AddonModelMixin):
     date_last_login = fields.DateTimeField()
 
     date_confirmed = fields.DateTimeField()
+
+    # When the user was disabled.
+    date_disabled = fields.DateTimeField()
 
     # Format: {
     #   'node_id': 'timestamp'
@@ -399,10 +403,13 @@ class User(GuidStoredObject, AddonModelMixin):
     def is_active(self):
         """Returns True if the user is active. The user must have activated
         their account, must not be deleted, suspended, etc.
+
+        :return: bool
         """
         return (self.is_registered and
                 self.password is not None and
                 not self.is_merged and
+                not self.is_disabled and
                 self.is_confirmed())
 
     def get_unclaimed_record(self, project_id):
@@ -604,6 +611,24 @@ class User(GuidStoredObject, AddonModelMixin):
     def get_activity_points(self, db=None):
         db = db or framework.mongo.database
         return analytics.get_total_activity_count(self._primary_key, db=db)
+
+    @property
+    def is_disabled(self):
+        """Whether or not this account has been disabled.
+
+        Abstracts ``User.date_disabled``.
+
+        :return: bool
+        """
+        return self.date_disabled is not None
+
+    @is_disabled.setter
+    def is_disabled(self, val):
+        """Set whether or not this account has been disabled."""
+        if val:
+            self.date_disabled = dt.datetime.utcnow()
+        else:
+            self.date_disabled = None
 
     @property
     def is_merged(self):

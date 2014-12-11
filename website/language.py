@@ -26,6 +26,11 @@ ALREADY_REGISTERED = '''The email <em>{email}</em> has already been registered.'
 UNCONFIRMED = ('This login email has been registered but not confirmed. Please check your email (and spam folder).'
                ' <a href="/resend/">Click here</a> to resend your confirmation email.')
 
+# Shown if the user's account is disabled
+DISABLED = '''
+Log-in failed: Deactivated account.
+'''
+
 # Shown on incorrect password attempt
 LOGIN_FAILED = '''
 Log-in failed. Please try again or reset your password.
