@@ -378,7 +378,7 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
     items = re.split(r'[\s-]+', query)
     query = ''
 
-    query = "  AND ".join('{}*~'.format(item) for item in items) + \
+    query = "  AND ".join('{}*~'.format(re.escape(item)) for item in items) + \
             "".join(' NOT "{}"'.format(excluded) for excluded in exclude)
 
     results = search(build_query(query, start=start, size=size), index='website', doc_type='user')
