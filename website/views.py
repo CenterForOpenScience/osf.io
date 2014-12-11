@@ -63,7 +63,6 @@ def _render_node(node, auth=None):
     perm = None
     if auth and node.get_permissions(auth.user):
         perm_list = node.get_permissions(auth.user)
-        print perm_list
         perm = permissions.reduce_permissions(perm_list)
 
     return {

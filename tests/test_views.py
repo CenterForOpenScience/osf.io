@@ -21,6 +21,7 @@ from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 
 import website.app
+from website.views import _rescale_ratio
 from website.util import permissions
 from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas, has_anonymous_link
@@ -766,7 +767,8 @@ class TestChildrenViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
 
         rescale_ratio = res.json['rescale_ratio']
-        assert_not_equal(rescale_ratio, 0.0)
+        assert_is_instance(rescale_ratio, float)
+        assert_equal(rescale_ratio, _rescale_ratio(Auth(self.user), [child]))
 
     def test_get_children_render_nodes_receives_auth(self):
         project = ProjectFactory(creator=self.user)
@@ -776,7 +778,7 @@ class TestChildrenViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
 
         perm = res.json['nodes'][0]['permissions']
-        assert_not_equal(perm, None)
+        assert_equal(perm, 'admin')
 
 
 class TestUserProfile(OsfTestCase):
