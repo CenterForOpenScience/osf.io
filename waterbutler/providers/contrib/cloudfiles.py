@@ -88,16 +88,17 @@ class CloudFilesProvider(core.BaseProvider):
     @asyncio.coroutine
     def download(self, path, accept_url=False, **kwargs):
         """Returns a ResponseWrapper (Stream) for the specified path
-        raises FileNotFoundError if the status from S3 is not 200
-
-        :param str path: Path to the key you want to download
+        :param str path: Path to the object you want to download
         :param dict **kwargs: Additional arguments that are ignored
+        :rtype str:
         :rtype ResponseWrapper:
         :raises: waterbutler.FileNotFoundError
         """
-        url = build_url('...')
+        url = self.generate_url(path)
+
         if accept_url:
             return url
+
         resp = yield from self.make_request('GET', url)
         return core.ResponseWrapper(resp)
 
@@ -105,12 +106,12 @@ class CloudFilesProvider(core.BaseProvider):
     @asyncio.coroutine
     def upload(self, obj, path, **kwargs):
         """Uploads the given stream to S3
-        :param ResponseWrapper obj: The stream to put to S3
-        :param str path: The full path of the key to upload to/into
+        :param ResponseWrapper obj: The stream to put to Cloudfiles
+        :param str path: The full path of the object to upload to/into
         :rtype ResponseWrapper:
         """
-        key = self.bucket.new_key(path)
-        url = key.generate_url(TEMP_URL_SECS, 'PUT')
+        url = self.generate_url(path, 'PUT')
+
         resp = yield from self.make_request(
             'PUT', url,
             data=obj.content,
@@ -119,16 +120,14 @@ class CloudFilesProvider(core.BaseProvider):
 
         return core.ResponseWrapper(resp)
 
-    @core.expects(200, 204)
+    @core.expects(204)
     @asyncio.coroutine
     def delete(self, path, **kwargs):
         """Deletes the key at the specified path
         :param str path: The path of the key to delete
         :rtype ResponseWrapper:
         """
-        key = self.bucket.new_key(path)
-        url = key.generate_url(TEMP_URL_SECS, 'DELETE')
-        resp = yield from self.make_request('DELETE', url)
+        resp = yield from self.make_request('DELETE', self.build_url(path))
 
         return core.ResponseWrapper(resp)
 
