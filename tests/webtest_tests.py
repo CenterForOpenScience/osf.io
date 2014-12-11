@@ -521,6 +521,38 @@ class TestPrivateLinkView(OsfTestCase):
         res = self.app.get(self.project_url, {'view_only': self.link.key})
         assert_not_in('Citation:', res)
 
+    def test_no_warning_for_read_only_user_with_valid_link(self):
+        link2 = PrivateLinkFactory(anonymous=False)
+        link2.nodes.append(self.project)
+        link2.save()
+        self.project.add_contributor(
+            self.user,
+            permissions=['read'],
+            save=True,
+        )
+        res = self.app.get(self.project_url, {'view_only': link2.key},
+                           auth=self.user.auth)
+        assert_not_in(
+            "is being viewed through a private, view-only link. "
+            "Anyone with the link can view this project. Keep "
+            "the link safe.",
+            res.body
+        )
+
+    def test_no_warning_for_read_only_user_with_invalid_link(self):
+        self.project.add_contributor(
+            self.user,
+            permissions=['read'],
+            save=True,
+        )
+        res = self.app.get(self.project_url, {'view_only': "not_valid"},
+                           auth=self.user.auth)
+        assert_not_in(
+            "is being viewed through a private, view-only link. "
+            "Anyone with the link can view this project. Keep "
+            "the link safe.",
+            res.body
+        )
 
 class TestMergingAccounts(OsfTestCase):
 
