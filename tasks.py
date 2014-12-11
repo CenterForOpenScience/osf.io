@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from invoke import task, run
 
 from waterbutler import settings
