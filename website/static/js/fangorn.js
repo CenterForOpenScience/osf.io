@@ -111,7 +111,12 @@ var bootbox = require('bootbox');
         window.console.log('File Progress', this, arguments);
         var item = treebeard.dropzoneItemCache.children[0];
         var msgText = 'Uploaded ' + Math.floor(progress) + '%'; 
-        item.notify.update(msgText, 'success', 1, undefined);
+        if(progress < 100) {
+            item.notify.update(msgText, 'success', 1, 0);
+        } else {
+            item.notify.update(msgText, 'success', 1, 2000);
+        }
+
     }
 
     function _fangornSending (treebeard, file, xhr, formData) {
