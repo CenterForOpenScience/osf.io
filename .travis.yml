@@ -16,3 +16,6 @@ before_script:
 
 script:
   - invoke test
+
+notifications:
+  flowdock: 9f8a6baf3feafdb62e515718698d06d0
