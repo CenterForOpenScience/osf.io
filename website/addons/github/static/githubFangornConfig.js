@@ -77,7 +77,7 @@ var Fangorn = require('fangorn');
                     'onclick' : _uploadEvent
                 }
             );
-        } else if (item.kind === "file"){
+        } else if (item.kind === "item"){
             buttons.push({
                 'name' : '',
                 'icon' : 'icon-download-alt', 
