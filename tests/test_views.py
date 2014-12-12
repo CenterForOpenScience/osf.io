@@ -2338,7 +2338,7 @@ class TestAddonUserViews(OsfTestCase):
 
 class TestConfigureMailingListViews(OsfTestCase):
 
-    @mock.patch('website.mailchimp_helpers.get_mailchimp_api')
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_user_choose_mailing_lists_updates_user_dict(self, mock_get_mailchimp_api):
         user = AuthUserFactory()
         list_name = 'OSF General'
@@ -2365,7 +2365,7 @@ class TestConfigureMailingListViews(OsfTestCase):
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
 
-    @mock.patch('website.mailchimp_helpers.get_mailchimp_api')
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_sync_data_from_mailchimp_updates_user(self, mock_get_mailchimp_api):
         list_id = '12345'
         list_name = 'OSF General'
