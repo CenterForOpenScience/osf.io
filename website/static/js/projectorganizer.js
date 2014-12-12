@@ -1,391 +1,141 @@
+
 'use strict';
 
 var Handlebars = require('handlebars');
 var $ = require('jquery');
-var HGrid = require('hgrid');
+var m = require('mithril');
+var Treebeard = require('treebeard');
 var bootbox = require('bootbox');
 var Bloodhound = require('exports?Bloodhound!typeahead.js');
 var moment = require('moment');
 var Raven = require('raven-js');
 
-require('../vendor/jquery-drag-drop/jquery.event.drag-2.2.js');
-require('../vendor/jquery-drag-drop/jquery.event.drop-2.2.js');
-require('../vendor/bower_components/hgrid/plugins/hgrid-draggable/hgrid-draggable.js');
 
 var osfHelpers = require('./osf-helpers.js');
 
-//
-// Globals
-//
-// ReloadNextFolder semaphores
-var reloadNewFolder = false;
-var rnfPrevItem = '';
-var rnfToReload = '';
-// copyMode can be 'copy', 'move', 'forbidden', or null.
-var copyMode = null;
-var projectOrganizer = null;
+    // copyMode can be 'copy', 'move', 'forbidden', or null.
+    var copyMode = null;
 
-$.ajaxSetup({ cache: false });
+    var projectOrganizer = {}; 
 
-//
-// Private Helper Functions
-//
-function setReloadNextFolder(prevItem, toReload){
-    reloadNewFolder = true;
-    rnfPrevItem = prevItem;
-    rnfToReload = toReload;
-}
-
-function getItemParentNodeId(theHgrid, item) {
-    var itemParentID = item.parentID;
-    var itemParent = theHgrid.grid.getData().getItemById(itemParentID);
-    return itemParent.node_id;
-}
-
-function addAlert(status, message, priority) {
-    var $alertDiv = $('<div class = "alert alert-' + priority + '"><a href="#" class="close" data-dismiss="alert">&times;</a>' +
-        '<strong>' + status + ':</strong> ' + message +
-        '</div>');
-    $('body').append($alertDiv);
-}
-
-function deleteMultiplePointersFromFolder(theHgrid, pointerIds, folderToDeleteFrom) {
-    if(pointerIds.length > 0) {
-        var folderNodeId = folderToDeleteFrom.node_id;
-        var url = '/api/v1/folder/' + folderNodeId + '/pointers/';
-        var postData = JSON.stringify({pointerIds: pointerIds});
-        var reloadHgrid = function () {
-            if (theHgrid !== null) {
-                reloadFolder(theHgrid, folderToDeleteFrom);
-            }
-        };
-        var deleteAction = $.ajax({
-            type: 'DELETE',
-            url: url,
-            data: postData,
-            contentType: 'application/json',
-            dataType: 'json'
-        });
-        deleteAction.done(reloadHgrid);
-        deleteAction.fail(function (jqxhr, textStatus, errorThrown){
-            osfHelpers.growl('Error:', textStatus + '. ' + errorThrown);
-
-        });
-    }
-}
-
-function setItemToExpand(item, callback) {
-    var expandUrl = item.apiURL + 'expand/';
-    var postAction = osfHelpers.postJSON(expandUrl,{});
-    postAction.done(function() {
-        item.expand = false;
-        if (typeof callback !== 'undefined') {
-            callback();
+    projectOrganizer.publicProjects = new Bloodhound({
+        datumTokenizer: function (d) {
+            return Bloodhound.tokenizers.whitespace(d.name);
+        },
+        queryTokenizer: Bloodhound.tokenizers.whitespace,
+        remote: {
+            url: '/api/v1/search/projects/?term=%QUERY&maxResults=20&includePublic=yes&includeContributed=no',
+            filter: function (projects) {
+                return $.map(projects, function (project) {
+                    return {
+                        name: project.value,
+                        node_id: project.id,
+                        category: project.category
+                    };
+                });
+            },
+            limit: 10
         }
-    }).fail(osfHelpers.handleJSONError);
-}
+    });
 
-function reloadFolder(hgrid, theItem, theParentNode) {
-    var toReload = theItem;
-    if(typeof theParentNode !== 'undefined' || theItem.kind !== 'folder') {
-        toReload = theParentNode;
-    }
-    hgrid.reloadFolder(toReload);
-    hgrid.grid.setSelectedRows([]);
-    hgrid.grid.resetActiveCell();
-    return toReload;
-}
-function canAcceptDrop(items, folder){
-    // folder is the drop target.
-    // items is an array of things to go into the drop target.
-
-    if (folder.isSmartFolder || !folder.isFolder){
-        return false;
-    }
-
-
-    // if the folder is contained by the item, return false
-
-    var representativeItem = items[0];
-    if (draggable.grid.folderContains(representativeItem.id, folder.id)){
-        return false;
-    }
-
-    // If trying to drop on the folder it came from originally, return false
-    var itemParentNodeId = getItemParentNodeId(draggable.grid, representativeItem);
-    if (itemParentNodeId === folder.node_id){
-        return false;
-    }
-
-    var hasComponents = false;
-    var hasFolders = false;
-    var copyable = true;
-    var movable = true;
-    var canDrop = true;
-
-    items.forEach(function(item){
-        hasComponents = hasComponents || item.isComponent;
-        hasFolders = hasFolders || item.isFolder;
-        copyable = copyable && item.permissions.copyable;
-        movable = movable && item.permissions.movable;
+    projectOrganizer.myProjects = new Bloodhound({
+        datumTokenizer: function (d) {
+            return Bloodhound.tokenizers.whitespace(d.name);
+        },
+        queryTokenizer: Bloodhound.tokenizers.whitespace,
+        remote: {
+            url: '/api/v1/search/projects/?term=%QUERY&maxResults=20&includePublic=no&includeContributed=yes',
+            filter: function (projects) {
+                return $.map(projects, function (project) {
+                    return {
+                        name: project.value,
+                        node_id: project.id,
+                        category: project.category
+                    };
+                });
+            },
+            limit: 10
+        }
     });
 
 
-    if(hasComponents){
-        canDrop = canDrop && folder.permissions.acceptsComponents;
-    }
-    if(hasFolders){
-        canDrop = canDrop && folder.permissions.acceptsFolders;
-    }
-    if(copyMode === 'move'){
-        canDrop = canDrop && folder.permissions.acceptsMoves && movable;
-    }
-    if(copyMode === 'copy'){
-        canDrop = canDrop && folder.permissions.acceptsCopies && copyable;
-    }
-    return canDrop;
-}
-
-function dragLogic(event, items, folder){
-    var canCopy = true;
-    var canMove = true;
-    items.forEach(function (item) {
-        canCopy = canCopy && item.permissions.copyable;
-        canMove = canMove && item.permissions.movable;
-    });
-
-    // Check through possible move and copy options, and set the copyMode appropriately.
-    if (!(canMove && canCopy && canAcceptDrop(items, folder))) {
-        copyMode = 'forbidden';
-    }
-    else if (canMove && canCopy) {
-        if (altKey) {
-            copyMode = 'copy';
-        } else {
-            copyMode = 'move';
-        }
-    }
-    if (!canMove && canCopy) {
-        copyMode = 'copy';
-    }
-    if (!canCopy && canMove) {
-        copyMode = 'move';
+    function _poTitleColumn (item) {
+        //  smart folders should be italicized.
+        var css = item.data.isSmartFolder ? 'project-smart-folder smart-folder' : '';
+        return m('span', { 'class' : css }, item.data.name);
     }
 
-    // Set the cursor to match the appropriate copy mode
-    switch (copyMode) {
-        case 'forbidden':
-            $('.project-organizer-dand').css('cursor', 'not-allowed');
-            break;
-        case 'copy':
-            $('.project-organizer-dand').css('cursor', 'copy');
-            break;
-        case 'move':
-            $('.project-organizer-dand').css('cursor', 'move');
-            break;
-        default:
-            $('.project-organizer-dand').css('cursor', 'default');
+    function _gotoEvent (event, item, col) {
+        // var evt = event || window.event;
+        // evt.stopPropagation();
+        window.location = item.data.urls.fetch;
     }
 
-}
 
-function dropLogic(event, items, folder) {
-    if (typeof folder !== 'undefined' && folder !== null) {
-        var theFolderNodeID = folder.node_id;
-        var getChildrenURL = folder.apiURL + 'get_folder_pointers/';
-        var folderChildren;
-        var sampleItem = items[0];
-        var itemParentID = sampleItem.parentID;
-        var itemParent = draggable.grid.grid.getData().getItemById(itemParentID);
-        var itemParentNodeID = itemParent.node_id;
-        if (itemParentNodeID !== theFolderNodeID) { // This shouldn't happen, but if it does, it's bad
-            var getAction = $.getJSON(getChildrenURL, function (data) {
-                // We can't add a pointer to a folder that already has those pointers, so cull those away
-                folderChildren = data;
-                var itemsToMove = [];
-                var itemsNotToMove = [];
-                items.forEach(function (item) {
-                    if ($.inArray(item.node_id, folderChildren) === -1) { // pointer not in folder to be moved to
-                        itemsToMove.push(item.node_id);
-                    } else if (copyMode === 'move') { // Pointer is already in the folder and it's a move
-//                              We  need to make sure not to delete the folder if the item is moved to the same folder.
-//                              When we add the ability to reorganize within a folder, this will have to change.
-                        itemsNotToMove.push(item.node_id);
-                    }
-                });
-
-                var postInfo = {
-                    'copy': {
-                        'url': '/api/v1/project/' + theFolderNodeID + '/pointer/',
-                        'json': {
-                            nodeIds: itemsToMove
-                        }
-                    },
-                    'move': {
-                        'url': '/api/v1/pointers/move/',
-                        'json': {
-                            pointerIds: itemsToMove,
-                            toNodeId: theFolderNodeID,
-                            fromNodeId: itemParentNodeID
-                        }
-                    }
-                };
-
-                if (copyMode === 'copy' || copyMode === 'move') {
-                    // Remove all the duplicated pointers
-                    deleteMultiplePointersFromFolder(null, itemsNotToMove, itemParent);
-                    setItemToExpand(folder, function () {
-                        if (itemsToMove.length > 0) {
-                            var url = postInfo[copyMode].url;
-                            var postData = JSON.stringify(postInfo[copyMode].json);
-                            var outerFolderID = whichIsContainer(draggable.grid, itemParentID, folder.id);
-
-                            var postAction = $.ajax({
-                                type: 'POST',
-                                url: url,
-                                data: postData,
-                                contentType: 'application/json',
-                                dataType: 'json'
-                            });
-                            postAction.always(function () {
-                                    if (copyMode === 'move') {
-                                        if (typeof outerFolderID === 'undefined' || outerFolderID === null) {
-                                            itemParent = draggable.grid.grid.getData().getItemById(itemParentID);
-                                            setReloadNextFolder(itemParentID, folder.id);
-                                            draggable.grid.reloadFolder(itemParent);
-
-                                        } else {
-                                            var outerFolder = draggable.grid.grid.getData().getItemById(outerFolderID);
-                                            reloadFolder(draggable.grid, outerFolder);
-                                        }
-
-                                    } else {
-                                        reloadFolder(draggable.grid, folder);
-
-                                    }
-                                    copyMode = null;
-
-                            });
-                            postAction.fail(function (jqxhr, textStatus, errorThrown){
-                                osfHelpers.growl('Error:', textStatus + '. ' + errorThrown);
-                            });
-                        } else { // From:  if(itemsToMove.length > 0)
-//                                folder.childrenCount = folder.children.length;
-                                draggable.grid.refreshData();
-                                reloadFolder(draggable.grid, itemParent);
-                            }
-                        });
-                    } // From: if (copyMode === 'copy' || copyMode === 'move')
-                });
-                getAction.fail(function (jqxhr, textStatus, errorThrown){
-                    osfHelpers.growl('Error:', textStatus + '. ' + errorThrown);
-                });
-            } else {
-                Raven.captureMessage('Project dashboard: Parent node (' + itemParentNodeID + ') == Folder Node (' + theFolderNodeID + ')');
-            }
-    } else {
-        if (typeof folder === 'undefined') {
-            Raven.captureMessage('onDrop folder is undefined.');
-        }/* else {
-            Raven.captureMessage('onDrop folder is null.');
-        }*/
-    }
-    $('.project-organizer-dand').css('cursor', 'default');
-}
-  /**
-  * Takes two element IDs and tries to determine if one contains the other. Returns the container or null if
-  * they are not directly related. Items contain themselves.
-  * @method whichIsContainer
-  * @param hgrid {Object: Hgrid}
-  * @param itemOneID {Number}
-  * @param itemTwoID {Number}
-  * @returns item ID or null
-  */
-function whichIsContainer(hgrid, itemOneID, itemTwoID){
-    var pathToOne = hgrid.getPathToRoot(itemOneID);
-    var pathToTwo = hgrid.getPathToRoot(itemTwoID);
-    if(pathToOne.indexOf(itemTwoID) > -1 ){
-        return itemTwoID;
-    } else if (pathToTwo.indexOf(itemOneID) > -1) {
-        return itemOneID;
-    } else {
-        return null;
-    }
-}
 
 function createProjectDetailHTMLFromTemplate(theItem) {
     var detailTemplateSource = $('#project-detail-template').html();
     Handlebars.registerHelper('commalist', function (items, options) {
         var out = '';
-
         for (var i = 0, l = items.length; i < l; i++) {
             out = out + options.fn(items[i]) + (i !== (l - 1) ? ', ' : '');
         }
         return out;
-    });
-    var detailTemplate = Handlebars.compile(detailTemplateSource);
-    var detailTemplateContext = {
-        theItem: theItem,
-        multipleContributors: theItem.contributors.length > 1,
-        parentIsSmartFolder: theItem.parentIsSmartFolder
-    };
-    var displayHTML = detailTemplate(detailTemplateContext);
-    $('.project-details').html(displayHTML);
-    addFormKeyBindings(theItem.node_id);
+        });
+        var detailTemplate = Handlebars.compile(detailTemplateSource);
+        var detailTemplateContext = {
+            theItem: theItem,
+            multipleContributors: theItem.contributors.length > 1,
+            parentIsSmartFolder: theItem.parentIsSmartFolder
+        };
+        var displayHTML = detailTemplate(detailTemplateContext);
+        $('.project-details').html(displayHTML);
+       addFormKeyBindings(theItem.node_id);
 
-}
-
-var altKey = false;
-$(document).keydown(function (e) {
-    if (e.altKey) {
-        altKey = true;
     }
-});
-$(document).keyup(function (e) {
-    if (!e.altKey) {
-        altKey = false;
-    }
-});
 
-function addFormKeyBindings(nodeID){
-    $('#ptd-'+nodeID).keyup(function (e){
-        /*if(e.which == 13){ //return
-            // Find visible submit-button in this div and activate it
-            $('#ptd-'+nodeID).find('.submit-button-'+nodeID).filter(':visible').click();
-            return false;
-        } else*/ if (e.which === 27) {//esc
-            // Find visible cancel-button in this div and activate it
-            $('#ptd-'+nodeID).find('.cancel-button-'+nodeID).filter(':visible').click();
-            return false;
+    function addFormKeyBindings(nodeID){
+        $('#ptd-'+nodeID).keyup(function (e){
+            /*if(e.which == 13){ //return
+                // Find visible submit-button in this div and activate it
+                $('#ptd-'+nodeID).find('.submit-button-'+nodeID).filter(':visible').click();
+                return false;
+            } else*/ if (e.which === 27) {//esc
+                // Find visible cancel-button in this div and activate it
+                $('#ptd-'+nodeID).find('.cancel-button-'+nodeID).filter(':visible').click();
+                return false;
+            }
+        });
+    }
+
+    function saveExpandState (item, callback) {
+        if(!item.apiURL) { 
+            return; 
         }
-    });
-}
 
-var collapseAllInHGrid = function (grid) {
-    grid.collapseAll();
-};
-
-var expandAllInHGrid = function (grid) {
-    grid.getData().forEach(function (item) {
-        grid.expandItem(item);
-    });
-};
-
-//
-// HGrid Customization
-//
-
-HGrid.Actions['visitPage'] = {
-    on: 'click',
-    callback: function(event, item) {
-        var url = item.urls.fetch;
-        window.location = url;
+        if(item.expand) {
+            // turn to false
+            var collapseUrl = item.apiURL + 'collapse/';
+                    var postAction = $.osf.postJSON(collapseUrl, {});
+                    postAction.done(function() {
+                        if (typeof callback !== 'undefined') {
+                            callback();
+                        }
+                    }).fail($.osf.handleJSONError);
+        } else {
+            // turn to true
+            var expandUrl = item.apiURL + 'expand/';
+            var postAction = $.osf.postJSON(expandUrl,{});
+            postAction.done(function() {
+                if (typeof callback !== 'undefined') {
+                    callback();
+                }
+            }).fail($.osf.handleJSONError);
+        }
     }
-};
-HGrid.Actions['showProjectDetails'] =  {
-    on: 'click',
-    callback: function(evt, item) {
 
+    function _showProjectDetails (event, item, col) {
+        var treebeard = this; 
         projectOrganizer.myProjects.initialize();
         projectOrganizer.publicProjects.initialize();
         // injecting error into search results from https://github.com/twitter/typeahead.js/issues/747
@@ -413,7 +163,6 @@ HGrid.Actions['showProjectDetails'] =  {
             if (suggestions.length === 0) {
               cb([emptyPublicProjects]);
             }
-
             else {
               cb(suggestions);
             }
@@ -423,14 +172,14 @@ HGrid.Actions['showProjectDetails'] =  {
 
         var linkName;
         var linkID;
-        var theItem = item;
+        var theItem = item.data;
 
-        var theParentNode = projectOrganizer.grid.grid.getData().getItemById(theItem.parentID);
+        var theParentNode = item.parent();
         if (typeof theParentNode === 'undefined') {
             theParentNode = theItem;
             theItem.parentIsSmartFolder = true;
         }
-        theItem.parentNode = theParentNode;
+        theItem.parentNode = theParentNode.data;
 
             var theParentNodeID = theParentNode.node_id;
             theItem.parentIsSmartFolder = theParentNode.isSmartFolder;
@@ -451,7 +200,7 @@ HGrid.Actions['showProjectDetails'] =  {
                     source: mySourceWithEmptySelectable,
                     templates: {
                         header: function () {
-                            return '<h3 class="category">My Projects</h3>';
+                            return '<h3 class="category">My Projects</h3>'
                         },
                         suggestion: function (data) {
                             if(typeof data.name !== 'undefined') {
@@ -470,7 +219,7 @@ HGrid.Actions['showProjectDetails'] =  {
                     source: publicSourceWithEmptySelectable,
                     templates: {
                         header: function () {
-                            return '<h3 class="category">Public Projects</h3>';
+                            return '<h3 class="category">Public Projects</h3>'
                         },
                         suggestion: function (data) {
                             if(typeof data.name !== 'undefined') {
@@ -509,10 +258,9 @@ HGrid.Actions['showProjectDetails'] =  {
                         linkName = datum.name;
                         linkID = datum.node_id;
                     } else {
-                        $('#add-link-warn-' + theItem.node_id).text('This project is already in the folder');
+                        $('#add-link-warn-' + theItem.node_id).text('This project is already in the folder')
                     }
-                }).fail(osfHelpers.handleJSONError);
-
+                }).fail($.osf.handleJSONError);
             });
             $('#close-' + theItem.node_id).click(function () {
                 $('.project-details').hide();
@@ -525,7 +273,9 @@ HGrid.Actions['showProjectDetails'] =  {
                         pointerID: linkID,
                         toNodeID: theItem.node_id
                     });
-                setItemToExpand(theItem, function() {
+                theItem.expand = false;
+                saveExpandState(theItem, function() {
+                    var tb = treebeard; 
                     var postAction = $.ajax({
                         type: 'POST',
                         url: url,
@@ -534,9 +284,10 @@ HGrid.Actions['showProjectDetails'] =  {
                         dataType: 'json'
                     });
                     postAction.done(function () {
-                        reloadFolder(projectOrganizer.grid, theItem, theParentNode);
+                        tb.updateFolder(null, item);
                     });
                 });
+                $('.project-details').hide();
                 return false;
             });
 
@@ -549,7 +300,7 @@ HGrid.Actions['showProjectDetails'] =  {
                     dataType: 'json'
                 });
                 deleteAction.done(function () {
-                    reloadFolder(projectOrganizer.grid, theParentNode);
+                        treebeard.updateFolder(null, theParentNode);
                 });
             });
             $('#delete-folder-' + theItem.node_id).click(function () {
@@ -567,7 +318,8 @@ HGrid.Actions['showProjectDetails'] =  {
                                 dataType: 'json'
                             });
                             deleteAction.done(function () {
-                                reloadFolder(projectOrganizer.grid, theParentNode);
+                                treebeard.updateFolder(null, item.parent());
+                                $('.project-details').hide();
                             });
                         }
                     }
@@ -594,11 +346,13 @@ HGrid.Actions['showProjectDetails'] =  {
                     node_id: theItem.node_id,
                     title: $.trim($('#add-folder-input' + theItem.node_id).val())
                 };
-                setItemToExpand(theItem, function() {
-                    var putAction = osfHelpers.putJSON(url, postData);
+                theItem.expand = false;
+                saveExpandState(theItem, function() {
+                    var putAction = $.osf.putJSON(url, postData);
                     putAction.done(function () {
-                        reloadFolder(projectOrganizer.grid, theItem, theParentNode);
-                    }).fail(osfHelpers.handleJSONError);
+                        treebeard.updateFolder(null, item);
+                        $('.project-details').hide();
+                    }).fail($.osf.handleJSONError);
 
                 });
                 return false;
@@ -625,10 +379,11 @@ HGrid.Actions['showProjectDetails'] =  {
                     name: 'title',
                     value: $.trim($('#rename-node-input' + theItem.node_id).val())
                 };
-                var postAction = osfHelpers.postJSON(url, postData);
+                var postAction = $.osf.postJSON(url, postData);
                 postAction.done(function () {
-                        reloadFolder(projectOrganizer.grid, theParentNode);
-                    }).fail(osfHelpers.handleJSONError);
+                        treebeard.updateFolder(null, theParentNode);
+                        $('.project-details').hide();
+                    }).fail($.osf.handleJSONError);
                 return false;
             });
             $('.cancel-button-' + theItem.node_id).click(function() {
@@ -651,233 +406,235 @@ HGrid.Actions['showProjectDetails'] =  {
         } else {
             $('.project-details').hide();
         }
-
     }
-};
 
-ProjectOrganizer.Html = $.extend({}, HGrid.Html);
-ProjectOrganizer.Col = {};
-ProjectOrganizer.Col.Name = $.extend({}, HGrid.Col.Name);
-
-var iconButtons = function (row) {
-    var url = row.urls.fetch;
-    if (!row.isSmartFolder) {
-        var buttonDefs = [
-            {
-                text: '<i class="project-organizer-info-icon" title=""></i>',
-                action: 'showProjectDetails',
-                cssClass: 'project-organizer-icon-info',
-                attributes:'data-placement="right" data-toggle="tooltip" data-original-title="Info"'
-            }
-        ];
-        if (url !== null) {
-            buttonDefs.push({
-                text: '<i class="project-organizer-visit-icon" title="" ></i>',
-                action: 'visitPage',
-                cssClass: 'project-organizer-icon-visit',
-                attributes:'data-placement="right" data-toggle="tooltip" data-original-title="Go to page"'
+    function _poActionColumn (item, col) {
+        var self = this; 
+        var buttons = [];
+        var url = item.data.urls.fetch;
+        if (!item.data.isSmartFolder) {
+           
+            buttons.push({ 
+                'name' : '',
+                'icon' : 'icon-info',
+                'css' : 'project-organizer-iconinfo fangorn-clickable btn btn-default btn-xs',
+                'onclick' : _showProjectDetails
             });
-        }
-        return HGrid.Fmt.buttons(buttonDefs);
-    }
 
-};
-
-var dateModifiedColumn = {
-    id: 'date-modified',
-    text: 'Modified',
-    // Using a function that receives `row` containing all the item information
-    itemView: function (row) {
-        if (row.modifiedDelta === 0) {
-            return '';
-        }
-        var returnString = moment.utc(row.dateModified).fromNow();
-        if (row.modifiedBy !== '') {
-            returnString +=  ', ' + row.modifiedBy.toString();
-        }
-        return returnString;
-    },
-    folderView: function (row) {
-        if (row.modifiedDelta === 0) {
-            return '';
-        }
-        return moment.utc(row.dateModified).fromNow() + ', ' + row.modifiedBy.toString();
-    },
-    sortable: false,
-    selectable: true,
-    behavior: 'move',
-    width: 40
-};
-
-var contributorsColumn = {
-    id: 'contributors',
-    text: 'Contributors',
-    // Using a function that receives `row` containing all the item information
-    itemView: function (row) {
-        var contributorCount = row.contributors.length;
-        if (contributorCount === 0) {
-            return '';
-        }
-        var contributorString = row.contributors[0].name.toString();
-        if (contributorCount > 1) {
-            contributorString += ' +' + (contributorCount - 1);
-        }
-        return contributorString;
-    },
-    folderView: function (row) {
-        var contributorCount = row.contributors.length;
-        if (contributorCount === 0) {
-            return '';
-        }
-        var contributorString = row.contributors[0].name.toString();
-        if (contributorCount > 1) {
-            contributorString += ' +' + (contributorCount - 1);
-        }
-        return contributorString;
-    },
-    sortable: false,
-    selectable: true,
-    behavior: 'move',
-    width: 30
-};
-
-ProjectOrganizer.Col.Name.selectable = true;
-ProjectOrganizer.Col.Name.sortable = false;
-ProjectOrganizer.Col.Name.behavior = 'move';
-ProjectOrganizer.Col.Name.indent = 20;
-ProjectOrganizer.Col.Name.showExpander = function(row, args) {
-    return (row.childrenCount > 0 &&
-            !row._processing && !row.isDashboard);
-};
-ProjectOrganizer.Col.Name.itemView = function (row) {
-    var name = row.name.toString();
-
-    var url = row.urls.fetch;
-    var linkString = name;
-    var extraClass = '';
-    var nodeLink = '';
-    var nodeLinkEnd = '';
-    if (url != null) {
-        nodeLink = '<a href=' + url + '>';
-        nodeLinkEnd = '</a>';
-    }
-
-
-    var type = row.type;
-
-    if (row.isSmartFolder) {
-        extraClass += ' smart-folder';
-    }
-
-    var regType = '';
-    if(row.isRegistration){
-        regType = 'reg-';
-        extraClass += ' registration';
-    }
-    return nodeLink + "<span class='project-organizer-icon-" + regType + type + "'></span>" + nodeLinkEnd +
-        "<span class='project-" + type + extraClass + "'>" + linkString + "</span>";
-};
-ProjectOrganizer.Col.Name.folderView = ProjectOrganizer.Col.Name.itemView;
-
-
-//
-// Hgrid Init
-//
-
-var hgridInit = function () {
-    var self = this;
-    self.gridData = self.grid.grid.getData();
-    self.myProjects = [];
-    self.grid.registerPlugin(draggable);
-    // Expand/collapse All functions
-    $('.pg-expand-all').click(function () {
-        expandAllInHGrid(self.grid);
-    });
-    $('.pg-collapse-all').click(function () {
-        collapseAllInHGrid(self.grid);
-    });
-
-    // This useful function found on StackOverflow http://stackoverflow.com/a/7385673
-    // Used to hide the detail card when you click outside of it onto its containing div
-    $(document).click(function (e) {
-        var container = $('#project-grid');
-        var altContainer = $('.project-details');
-        var gridBackground = $('.grid-canvas');
-        var gridHeader = $('.slick-header-column');
-
-        if ((!container.is(e.target) && !altContainer.is(e.target) // if the target of the click isn't the container...
-            && container.has(e.target).length === 0 && altContainer.has(e.target).length === 0) // ... nor a descendant of the container
-            || gridBackground.is(e.target) || gridHeader.is(e.target)) // or the target of the click is the background of the hgrid div
-        {
-            self.grid.grid.setSelectedRows([]);
-            self.grid.grid.resetActiveCell();
-        }
-    });
-
-
-    self.publicProjects = new Bloodhound({
-        datumTokenizer: function (d) {
-            return Bloodhound.tokenizers.whitespace(d.name);
-        },
-        queryTokenizer: Bloodhound.tokenizers.whitespace,
-        remote: {
-            url: '/api/v1/search/projects/?term=%QUERY&maxResults=20&includePublic=yes&includeContributed=no',
-            filter: function (projects) {
-                return $.map(projects, function (project) {
-                    return {
-                        name: project.value,
-                        node_id: project.id,
-                        category: project.category
-                    };
+            
+            if (url !== null) {
+                buttons.push({
+                    'name' : '',    
+                    'icon' : 'icon-chevron-right',
+                    'css' : 'project-organizer-icon-visit fangorn-clickable btn btn-info btn-xs',
+                    'onclick' : _gotoEvent
                 });
+            }
+        }    
+
+        // Build the template for icons
+        return buttons.map(function(btn){ 
+            return m('span', { 'data-col' : item.id }, [ m('i', 
+                { 'class' : btn.css, style : btn.style, 'onclick' : function(event){ btn.onclick.call(self, event, item, col); } },
+                [ m('span', { 'class' : btn.icon}, btn.name) ])
+            ]);
+        }); 
+    }
+
+    function _poContributors (item) {
+        if(!item.data.contributors){
+            return '';
+        }
+        return item.data.contributors.map(function(person, index, arr){
+            if (index > 2) {
+                return;
+            }
+            if(index === 2) {
+                return m('span',' + ' + (arr.length-2));
+            }
+            return m('span',person.name + ', ');
+        });
+    }
+
+    function _poModified (item) {
+        var personString;
+        if (item.data.modifiedDelta === 0) {
+            return m('span');
+        }
+        var dateString = moment.utc(item.data.dateModified).fromNow();
+        if (item.data.modifiedBy !== '') {
+            personString = item.data.modifiedBy.toString();
+        }
+        return m('span', dateString + ', by ' + personString );
+    }
+
+    function _poResolveRows(item){
+        // this = treebeard;
+        var css = '',
+            draggable = false;
+        if(item.data.permissions) {
+            draggable = item.data.permissions.movable || item.data.permissions.copyable;
+        }
+        if(draggable) {
+            css = 'po-draggable'; 
+        } 
+        item.css = '';
+        var default_columns = [{
+            data : 'name',  // Data field name
+            folderIcons : true,
+            filter : true,
+            css : css,
+            custom : _poTitleColumn
+        },{
+            sortInclude : false,
+            custom : _poActionColumn
+        },{
+            filter : true,
+            custom : _poContributors
+        },{
+            filter : false,
+            custom : _poModified
+        }];
+
+        
+        return default_columns;
+    }
+
+    function _poColumnTitles () {
+        var columns = [];
+        columns.push({
+                title: 'Name',
+                width : '45%',
+                sort : true,
+                sortType : 'text'
             },
-            limit: 10
+            {
+                title : 'Actions',
+                width : '10%',
+                sort : false
+            }, 
+            {
+                title : 'Contributors',
+                width : '20%',
+                sort : false
+            }, 
+            {
+                title : 'Modified',
+                width : '25%',
+                sort : false
+            });
+        return columns;  
+    } 
+
+    function _poToggleCheck (item) {
+        if (item.data.permissions.view) {
+            return true;
+        }
+        item.notify.update('Not allowed: Private folder', 'warning', 1, undefined);
+        return false;
+    }
+
+    function _poResolveIcon(item){
+
+        var icons = {
+            folder : 'project-organizer-icon-folder',
+            smartFolder : 'project-organizer-icon-smart-folder',
+            project : 'project-organizer-icon-project',
+            registration :  'project-organizer-icon-reg-project',
+            component :  'project-organizer-icon-component',
+            registeredComponent :  'project-organizer-icon-reg-component',
+            link :  'project-organizer-icon-pointer'
+        };
+        var viewLink = item.data.urls.fetch;
+
+        function returnView (type) { 
+            var template = m('span', { 'class' : icons[type]});
+            if (viewLink) {
+                return m('a', { href : viewLink}, template); 
+            } 
+            return template;
         }
 
-    });
-
-    self.myProjects = new Bloodhound({
-        datumTokenizer: function (d) {
-            return Bloodhound.tokenizers.whitespace(d.name);
-        },
-        queryTokenizer: Bloodhound.tokenizers.whitespace,
-        remote: {
-            url: '/api/v1/search/projects/?term=%QUERY&maxResults=20&includePublic=no&includeContributed=yes',
-            filter: function (projects) {
-                return $.map(projects, function (project) {
-                    return {
-                        name: project.value,
-                        node_id: project.id,
-                        category: project.category
-                    };
-                });
-            },
-            limit: 10
+        if (item.data.isFolder) {
+            return returnView('folder');
         }
-    });
+        if(item.data.isSmartFolder) {
+            return returnView('smartFolder');
+        } 
+        if(item.data.isProject) {
+            return returnView('project');
+        }
+        if(item.data.isRegistration) {
+            return returnView('registration');
+        }
+        if(item.data.isComponent) {
+            return returnView('component');
+        }
+        if(item.data.isRegistration && item.data.isComponent) {
+            return returnView('registeredComponent');
+        }
+        if (item.data.isPointer) {
+            return returnView('link');
+        }
+        return returnView('folder'); 
+    }
 
-    //
-    // When the selection changes, create the div that holds the detail information for the project including
-    // whichever action buttons will work with that type of node. This is what will be changed by moving
-    // to Knockout.js
-    //
+    function _poResolveToggle(item){
+        var toggleMinus = m('i.icon-minus', ' '),
+            togglePlus = m('i.icon-plus', ' ');
+        if (item.kind === 'folder' && item.data.childrenCount > 0) {
+            if (item.open) {
+                return toggleMinus;
+            }
+            return togglePlus;
+        }
+        return '';
+    }
 
+    function _poResolveLazyLoad(tree, item){
+        console.log("tree", item);
+        return '/api/v1/dashboard/' + item.data.node_id;
+    }
 
-    self.grid.grid.onSelectedRowsChanged.subscribe(function (e, args) {
-        var selectedRows = self.grid.grid.getSelectedRows();
+    function expandStateLoad  (item) {
+        var tb = this;
+        if(item.children.length > 0 && item.depth > 0){
+            for ( var i = 0; i < item.children.length; i++){
+                if (item.children[i].data.expand) {
+                    tb.updateFolder (null, item.children[i]);
+                }
+            }    
+        }
+        
+    }
+
+    function _poLoadOpenChildren () {
+        var tb = this;
+        this.treeData.children.map(function(item){
+            if(item.data.expand) {
+                tb.updateFolder(null, item);                
+            }
+        }); 
+    }
+
+    function _poMultiselect (event, tree) {
+        var tb = this;
+        var selectedRows = filterRowsNotInParent.call(this, this.multiselected);
+        console.log("SelectedRows", selectedRows);
+        var multipleItems = false;
+
         if(selectedRows.length > 1) {
             var someItemsAreFolders = false;
             var pointerIds = [];
-
             selectedRows.forEach(function(item){
-                var thisItem = self.grid.grid.getDataItem(item);
+                var thisItem = item.data;
                 someItemsAreFolders = someItemsAreFolders ||
                                       thisItem.isFolder ||
                                       thisItem.isSmartFolder ||
-                                      thisItem.parentIsSmartFolder;
+                                      thisItem.parentIsSmartFolder ||
+                                      !thisItem.permissions.movable;
                 pointerIds.push(thisItem.node_id);
             });
-
             if(!someItemsAreFolders) {
                 var multiItemDetailTemplateSource = $('#project-detail-multi-item-template').html();
                 var detailTemplate = Handlebars.compile(multiItemDetailTemplateSource);
@@ -885,13 +642,13 @@ var hgridInit = function () {
                     multipleItems: true,
                     itemsCount: selectedRows.length
                 };
-                var sampleItem = self.grid.grid.getDataItem(selectedRows[0]);
-                var theParentNode = self.grid.grid.getData().getItemById(sampleItem.parentID);
+                var theParentNode = selectedRows[0].parent();
                 var displayHTML = detailTemplate(detailTemplateContext);
                 $('.project-details').html(displayHTML);
                 $('.project-details').show();
                 $('#remove-links-multiple').click(function(){
-                    deleteMultiplePointersFromFolder(self.grid, pointerIds, theParentNode);
+                    deleteMultiplePointersFromFolder.call(tb, self.grid, pointerIds, theParentNode);
+                    $('.project-details').hide();       
                 });
                 $('#close-multi-select').click(function () {
                     $('.project-details').hide();
@@ -902,158 +659,379 @@ var hgridInit = function () {
                 $('.project-details').hide();
             }
         } else {
-                $('.project-details').hide();
-            }
+            $('.project-details').hide();
+        }   
+    } // end onSelectedRowsChanged
 
+    function deleteMultiplePointersFromFolder(theHgrid, pointerIds, folderToDeleteFrom) {
+        var tb = this; 
+        if(pointerIds.length > 0) {
+            var folderNodeId = folderToDeleteFrom.data.node_id;
+            var url = '/api/v1/folder/' + folderNodeId + '/pointers/';
+            var postData = JSON.stringify({pointerIds: pointerIds});
+            var deleteAction = $.ajax({
+                type: 'DELETE',
+                url: url,
+                data: postData,
+                contentType: 'application/json',
+                dataType: 'json'
+            });
+            deleteAction.done(function(){                         
+                tb.updateFolder(null, folderToDeleteFrom);
+                });
+            deleteAction.fail(function (jqxhr, textStatus, errorThrown){
+                bootbox.alert('Error: ' + textStatus + '. ' + errorThrown);
+            });
+        }
+    }
 
-    }); // end onSelectedRowsChanged
+    function filterRowsNotInParent(rows) {
+            // GET ORIGINAL ITEM
+            // filter checking if : every item has the same parent as original item:  if not discard; 
+            // return the new list and update selection view 
 
-    // Disable right clicking within the grid
-    // Fixes https://github.com/CenterForOpenScience/openscienceframework.org/issues/945
-    self.grid.element[0].oncontextmenu = function() {
-        return false;
-    };
-
-};
-
-
-var draggable = new HGrid.Draggable({
-    onBeforeDrag: function(){
-        $('.project-details').hide();
-    },
-    onDrag: function (event, items, folder) {
-
-        dragLogic(event, items, folder);
-    },
-    onDrop: function (event, items, folder) {
-        dropLogic(event, items, folder);
-    },
-    canDrag: function (item) {
-        return item.permissions.copyable || item.permissions.movable;
-    },
-    acceptDrop: function (item, folder, done) {
-        done();
-    },
-    canAcceptDrop: function(items, folder) {
-        return canAcceptDrop(items, folder);
-    },
-    enableMove: false,
-    rowMoveManagerOptions: {proxyClass: 'project-organizer-dand'}
-});
-
-
-//
-// Public methods
-//
-
-function ProjectOrganizer(selector, options) {
-    var self = this;
-    projectOrganizer = self;
-    var baseHGridOptions = {
-        width: '98%',
-        height: '600',
-        columns: [
-            ProjectOrganizer.Col.Name,
-            {
-                text: 'Action',
-                itemView: iconButtons,
-                folderView: iconButtons,
-                width: 10
-            },
-            contributorsColumn,
-            dateModifiedColumn
-        ],
-        slickgridOptions: {
-            editable: true,
-            enableAddRow: false,
-            enableCellNavigation: true,
-            multiSelect: true,
-            forceFitColumns: true,
-            autoEdit: false,
-            addExtraRowsAtEnd: 1
-        },
-        data: '/api/v1/dashboard/',  // Where to get the initial data
-        fetchUrl: function (folder) {
-            return '/api/v1/dashboard/' + folder.node_id;
-        },
-        fetchSuccess: function(newData, item){
-
-            if(reloadNewFolder) {
-                reloadNewFolder = false;
-                var toReloadItem = draggable.grid.grid.getData().getItemById(rnfToReload);
-                if (rnfPrevItem !== rnfToReload && typeof toReloadItem !== 'undefined') {
-                    draggable.grid.reloadFolder(toReloadItem);
-                }
-                draggable.grid.grid.setSelectedRows([]);
-                draggable.grid.grid.resetActiveCell();
-            }
-            if(typeof newData.data !== 'undefined' ) {
-                item.childrenCount = newData.data.length;
-            } else {
-                return false;
-            }
-
-            var row = draggable.grid.getDataView().getRowById(item.id);
-            draggable.grid.grid.invalidateRow(row);
-            draggable.grid.grid.render();
-            self.options.success.call();
-        },
-        fetchError: function(error) {
-            if($('.modal-dialog').length === 0) {
-                osfHelpers.growl('Error:', error);
-            }
-        },
-        getExpandState: function(folder) {
-            return folder.expand;
-        },
-        onExpand: function(event, item) {
-            var self = this;
-            item.expand = false;
-            self.emptyFolder(item);
-            if(typeof event !== 'undefined' && typeof item.apiURL !== 'undefined' && item.type !== 'pointer') {
-                setItemToExpand(item);
-            }
-        },
-        onCollapse: function(event, item) {
-            item.expand = false;
-            if (typeof event !== 'undefined' && typeof item.apiURL !== 'undefined' && item.type !== 'pointer') {
-                var collapseUrl = item.apiURL + 'collapse/';
-                var postAction = osfHelpers.postJSON(collapseUrl, {});
-                postAction.done(function() {
-                    item.expand = false;
-                    if (item._node._load_status === HGrid.LOADING_FINISHED) {
-                        draggable.grid.resetLoadedState(item);
+            var i, newRows = [];
+            var originalRow = this.find(this.selected);
+            if(typeof originalRow !== "undefined") {
+                var originalParent = originalRow.parentID;
+                for (i = 0; i < rows.length; i++) {
+                    var currentItem = rows[i];
+                    if(currentItem.parentID === originalParent && currentItem.id !== -1){
+                        newRows.push(rows[i]);
                     }
-                }).fail(osfHelpers.handleJSONError);
-            } else if(typeof event !== 'undefined') {
-                if (item._node._load_status === HGrid.LOADING_FINISHED) {
-                    draggable.grid.resetLoadedState(item);
                 }
             }
+            this.multiselected = newRows;
+            this.highlightMultiselect.call(this); 
+            return newRows;
+        }
+
+
+
+    // DRAG AND DROP METHODS
+    function _poDragStart (event, ui) {
+        var itemID = $(event.target).attr('data-id');
+        var item = this.find(itemID);
+        $('.project-details').hide();
+        this.selected = item.id;
+        $(ui.helper).css({ 'height' : '25px', 'width' : '400px', 'background' : 'white', 'padding' : '0px 10px', 'box-shadow' : '0 0 4px #ccc'});
+        items = this.multiselected.length > 0 ? this.multiselected : [item]; 
+    }
+
+    function _poDrop (event, ui) {
+        var items = this.multiselected.length === 0 ? [this.find(this.selected)] : this.multiselected, 
+            folder = this.find($(event.target).attr('data-id'));
+       dropLogic.call(this, event, items, folder);
+    }
+
+    function _poOver (event, ui) {
+        var items = this.multiselected.length === 0 ? [this.find(this.selected)] : this.multiselected, 
+            folder = this.find($(event.target).attr('data-id'));
+            dragLogic.call(this, event, items, ui);
+
+        //     acceptDrop = canAcceptDrop (items, folder); 
+        // $('.tb-row').removeClass('tb-h-success tb-h-error');
+        // if(acceptDrop) {
+        //     $('.tb-row[data-id="' + folder.id + '"]').addClass('tb-h-success');
+        // }       
+        // else {
+        //     $('.tb-row[data-id="' + folder.id + '"]').addClass('tb-h-error');
+        // }
+    }
+
+
+    var altKey = false;
+    $(document).keydown(function (e) {
+        if (e.altKey) {
+            altKey = true;
+        }
+    });
+    $(document).keyup(function (e) {
+        if (!e.altKey) {
+            altKey = false;
+        }
+    });
+
+
+    function dragLogic(event, items, ui){
+        var canCopy = true;
+        var canMove = true;
+        var folder = this.find($(event.target).attr('data-id'));
+        items.forEach(function (item) {
+            canCopy = canCopy && item.data.permissions.copyable;
+            canMove = canMove && item.data.permissions.movable;
+        });
+
+
+        // Check through possible move and copy options, and set the copyMode appropriately.
+        if (!(canMove && canCopy && canAcceptDrop(items, folder))) { 
+            copyMode = 'forbidden';
+        }
+        else if (canMove && canCopy) {
+            if (altKey) {
+                copyMode = 'copy';
+            } else {
+                copyMode = 'move';
+            }
+        }
+        if (!canMove && canCopy) {
+            copyMode = 'copy';
+        }
+        if (!canCopy && canMove) {
+            copyMode = 'move';
+        }
+        // console.log('copyMode', copyMode);
+        // Set the cursor to match the appropriate copy mode
+        switch (copyMode) {
+            case 'forbidden':
+                $(ui.helper).css('cursor', 'not-allowed');
+                break;
+            case 'copy':
+                $(ui.helper).css('cursor', 'copy');
+                break;
+            case 'move':
+                $(ui.helper).css('cursor', 'move');
+                break;
+            default:
+                $(ui.helper).css('cursor', 'default');
+        }
+    }
+
+    function canAcceptDrop(items, folder){
+        // folder is the drop target.
+        // items is an array of things to go into the drop target.
+        if (folder.data.isSmartFolder || !folder.data.isFolder){
+            return false;
+        }
+        // if the folder is contained by the item, return false
+        var representativeItem = items[0];
+        if (representativeItem.isAncestor(folder) || representativeItem.id === folder.id){
+            return false;
+        }
+        // If trying to drop on the folder it came from originally, return false
+        var itemParentNodeId = representativeItem.parent().data.node_id;
+        if (itemParentNodeId === folder.data.node_id){
+            return false;
+        }
+
+        var hasComponents = false;
+        var hasFolders = false;
+        var copyable = true;
+        var movable = true;
+        var canDrop = true;
+
+        items.forEach(function(item){
+            hasComponents = hasComponents || item.data.isComponent;
+            hasFolders = hasFolders || item.data.isFolder;
+            copyable = copyable && item.data.permissions.copyable;
+            movable = movable && item.data.permissions.movable;
+        });
+
+
+        if(hasComponents){
+            canDrop = canDrop && folder.data.permissions.acceptsComponents;
+        }
+        if(hasFolders){
+            canDrop = canDrop && folder.data.permissions.acceptsFolders;
+        }
+        if(copyMode === 'move'){
+            canDrop = canDrop && folder.data.permissions.acceptsMoves && movable;
+        }
+        if(copyMode === 'copy'){
+            canDrop = canDrop && folder.data.permissions.acceptsCopies && copyable;
+        }
+        return canDrop;
+    }
+
+    function dropLogic(event, items, folder) {
+        var tb = this; 
+        if (typeof folder !== 'undefined' && folder !== null) {
+            var theFolderNodeID = folder.data.node_id;
+            var getChildrenURL = folder.data.apiURL + 'get_folder_pointers/';
+            var folderChildren;
+            var sampleItem = items[0];
+            var itemParentID = sampleItem.parentID;
+            var itemParent = sampleItem.parent();
+            var itemParentNodeID = itemParent.data.node_id;
+            if (itemParentNodeID !== theFolderNodeID) { // This shouldn't happen, but if it does, it's bad
+                var getAction = $.getJSON(getChildrenURL, function (data) {
+                    folderChildren = data;
+                    var itemsToMove = [];
+                    var itemsNotToMove = [];
+
+                    items.forEach(function (item) {
+                        if ($.inArray(item.data.node_id, folderChildren) === -1) { // pointer not in folder to be moved to
+                            itemsToMove.push(item.data.node_id);
+                        } else if (copyMode === 'move') { // Pointer is already in the folder and it's a move
+                                    // We  need to make sure not to delete the folder if the item is moved to the same folder.
+                                    // When we add the ability to reorganize within a folder, this will have to change.
+                            itemsNotToMove.push(item.data.node_id);
+                        }
+                    });
+                    var postInfo = {
+                        'copy': {
+                            'url': '/api/v1/project/' + theFolderNodeID + '/pointer/',
+                            'json': {
+                                nodeIds: itemsToMove
+                            }
+                        },
+                        'move': {
+                            'url': '/api/v1/pointers/move/',
+                            'json': {
+                                pointerIds: itemsToMove,
+                                toNodeId: theFolderNodeID,
+                                fromNodeId: itemParentNodeID
+                            }
+                        }
+                    };
+                    if (copyMode === 'copy' || copyMode === 'move') {
+                        deleteMultiplePointersFromFolder.call(tb, null, itemsNotToMove, itemParent);
+                        if (itemsToMove.length > 0) {
+                                var url = postInfo[copyMode]['url'];
+                                var postData = JSON.stringify(postInfo[copyMode]['json']);
+                                var outerFolder = whichIsContainer.call(tb, itemParent, folder);
+                                var postAction = $.ajax({
+                                    type: 'POST',
+                                    url: url,
+                                    data: postData,
+                                    contentType: 'application/json',
+                                    dataType: 'json'
+                                });
+                                postAction.always(function (result) {
+                                    if (copyMode === 'move') {
+                                        if (!outerFolder) {
+                                            tb.updateFolder(null, itemParent);
+                                        } else {
+                                            tb.updateFolder(null, outerFolder);
+                                        }
+                                    } else {
+                                        tb.updateFolder(null, folder);
+                                    }
+                                });
+                                postAction.fail(function (jqxhr, textStatus, errorThrown){
+                                    bootbox.alert('Error: ' + textStatus + '. ' + errorThrown);
+                                });
+                            } else { // From:  if(itemsToMove.length > 0)
+                                tb.updateFolder(null, itemParent);
+                            }
+                    }
+                });
+                getAction.fail(function (jqxhr, textStatus, errorThrown){
+                    bootbox.alert('Error: ' + textStatus + '. ' + errorThrown);
+                });
+            } else {
+                Raven.captureMessage('Project dashboard: Parent node (' + itemParentNodeID + ') == Folder Node (' + theFolderNodeID + ')');
+            }
+        } else {
+            if (typeof folder === 'undefined') {
+                Raven.captureMessage('onDrop folder is undefined.');
+            }/* else {
+                Raven.captureMessage('onDrop folder is null.');
+            }*/
+        }
+        $('.project-organizer-dand').css('cursor', 'default');
+
+    }
+
+    function whichIsContainer(itemOne, itemTwo){
+        var tb = this;
+        var isOneAncestor = itemOne.isAncestor(itemTwo);
+        var isTwoAncestor = itemTwo.isAncestor(itemOne);
+        if (isOneAncestor && isTwoAncestor) {
+            return null; 
+        }
+        if (isOneAncestor) {
+            return itemOne;
+        }
+        if (isTwoAncestor) {
+            return itemTwo;
+        }
+        return null; 
+    }
+
+
+    // OSF-specific Treebeard options common to all addons
+    var tbOptions = {
+        rowHeight : 30,         // user can override or get from .tb-row height
+        showTotal : 15,         // Actually this is calculated with div height, not needed. NEEDS CHECKING
+        paginate : false,       // Whether the applet starts with pagination or not.
+        paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.
+        uploads : false,         // Turns dropzone on/off.
+        columnTitles : _poColumnTitles,
+        resolveRows : _poResolveRows,
+        showFilter : false,     // Gives the option to filter by showing the filter box.
+        title : false,          // Title of the grid, boolean, string OR function that returns a string.
+        allowMove : true,       // Turn moving on or off.
+        moveClass : 'po-draggable',
+        hoverClass : 'fangorn-hover',
+        hoverClassMultiselect : 'po-hover-multiselect',
+        togglecheck : _poToggleCheck,
+        sortButtonSelector : { 
+            up : 'i.icon-chevron-up',
+            down : 'i.icon-chevron-down'
         },
-
-        init: hgridInit.bind(self)
+        dragOptions : {},
+        dropOptions : {},
+        dragEvents : {
+            start : _poDragStart
+        },
+        dropEvents : {
+            out  : function () { },
+            drop : _poDrop,
+            over : _poOver
+        },
+        onload : function (){
+            var tb = this;
+            // reload the data with expand options 
+            _poLoadOpenChildren.call(tb);
+        },
+        createcheck : function (item, parent) {
+            window.console.log('createcheck', this, item, parent);
+            return true;
+        },
+        deletecheck : function (item) {  // When user attempts to delete a row, allows for checking permissions etc.
+            window.console.log('deletecheck', this, item);
+            return true;
+        },
+        onselectrow : function (item) {
+            console.log('Row: ', item);
+        },
+        ontogglefolder : function (item, event) {
+            var tb = this;
+            console.log("Event", event);
+            if(event) {
+                saveExpandState(item.data);                        
+            }
+            if (!item.open) {
+                item.load = false;
+            }
+        },
+        onmultiselect : _poMultiselect,
+        resolveIcon : _poResolveIcon,
+        resolveToggle : _poResolveToggle,
+        resolveLazyloadUrl : _poResolveLazyLoad,
+        lazyLoadOnLoad : expandStateLoad,
     };
 
-    var defaultOptions = {
-        success: function() {}
+
+    function ProjectOrganizer(options) {
+        this.options = $.extend({}, tbOptions, options);
+        console.log('Options', this.options);
+        this.grid = null; // Set by _initGrid
+        this.init();
+    }
+
+    ProjectOrganizer.prototype = {
+        constructor: ProjectOrganizer,
+        init: function() {
+            this._initGrid();
+        },
+        // Create the Treebeard once all addons have been configured
+        _initGrid: function() {
+            this.grid = Treebeard(this.options);
+            return this.grid;
+        }
+
     };
-
-    self.selector = selector;
-    self.options = $.extend(defaultOptions, options);
-    self.hgridOptions = baseHGridOptions;
-
-    self.init(self);
-    self.altKey = false;
-}
-
-ProjectOrganizer.prototype.init = function () {
-    var self = this;
-    self.grid = new HGrid(self.selector, self.hgridOptions);
-};
-
-ProjectOrganizer.prototype.getGrid = function() {
-    return this.grid;
-};
 
 module.exports = ProjectOrganizer;

@@ -48,11 +48,23 @@ request.fail(function(xhr, textStatus, error) {
 });
 
 
-// Initialize ProjectOrganizer
-new ProjectOrganizer('#project-grid');
-
 $(document).ready(function() {
     $('#projectOrganizerScope').tooltip({selector: '[data-toggle=tooltip]'});
+     $.ajax({
+              url:  '/api/v1/dashboard/'
+            })
+            .done(function( data ) {
+                console.log("first data", data);
+                var options = {
+                        placement : 'dashboard',
+                        divID: 'project-grid',
+                        filesData: data.data,
+                        multiselect : true
+                    };
+                    console.log("project Organizer", ProjectOrganizer);
+                    var filebrowser = new ProjectOrganizer(options);   
+ 
+            });
 });
 // Initialize logfeed
 new LogFeed('#logScope', '/api/v1/watched/logs/');

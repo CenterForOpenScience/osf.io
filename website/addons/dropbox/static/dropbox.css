@@ -33,3 +33,10 @@
     background-color: #ebebeb;
     border-color: #adadad;
 }
+
+.dropbox-folderpicker-odd {
+    background-color: #f5f5f5;
+}
+.dropbox-folderpicker-even {
+    background-color: #fff;
+}

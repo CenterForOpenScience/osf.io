@@ -162,7 +162,7 @@ var ViewModel = function(url, selector, folderPicker) {
      */
     self.cancelSelection = function() {
         self.selected(null);
-        $(selector + ' input[type="radio"]').prop('checked', false);
+        // $(selector + ' input[type="radio"]').prop('checked', false);
     };
 
     /** Change the flashed message. */
@@ -250,16 +250,11 @@ var ViewModel = function(url, selector, folderPicker) {
     *   Just changes the ViewModel's self.selected observable to the selected
     *   folder.
     */
-    function onPickFolder(evt, row) {
-        evt.preventDefault();
-        self.selected({title: row.name, type: row.type, id: row.id})
-        return false; // Prevent event propagation
-    }
-
-    // Hide +/- icon for root folder
-    FolderPicker.Col.Name.showExpander = function(item) {
-        return item.path !== '/';
-    };
+        function onPickFolder(evt, item) {
+            evt.preventDefault();
+            self.selected({title: item.data.name, type: item.data.type, id: item.data.id});
+            return false; // Prevent event propagation
+        }
 
     /**
      * Activates the HGrid folder picker.
@@ -270,12 +265,18 @@ var ViewModel = function(url, selector, folderPicker) {
         self.loading(true);
         $(self.folderPicker).folderpicker({
             onPickFolder: onPickFolder,
+            initialFolderName : self.folderName(),
+            initialFolderPath : undefined,
             // Fetch Figshare folders with AJAX
-            data: self.urls().options, // URL for fetching folders
+            filesData: self.urls().options, // URL for fetching folders
             // Lazy-load each folder's contents
             // Each row stores its url for fetching the folders it contains
-            fetchUrl: function(row) {
-                return row.urls.fetch;
+            resolveLazyloadUrl : function(tree, item){
+                return item.data.urls.fetch;
+            },
+            oddEvenClass : {
+                odd : 'figshare-folderpicker-odd',
+                even : 'figshare-folderpicker-even'
             },
             ajaxOptions: {
                error: function(xhr, textStatus, error) {
@@ -288,9 +289,9 @@ var ViewModel = function(url, selector, folderPicker) {
                     });
                 }
             },
-            init: function() {
+            folderPickerOnload: function() {
                 // Hide loading indicator
-                self.loading(false);
+                self.loading(false);                
             }
         });
     };

@@ -1516,7 +1516,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         :data: Form data
 
         """
-        # TODO: Throw error instead of returning?
         if not self.can_edit(auth):
             return
 

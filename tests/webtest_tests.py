@@ -129,8 +129,7 @@ class TestAUser(OsfTestCase):
         res = form.submit().maybe_follow()
         # Sees dashboard with projects and watched projects
         assert_in('Projects', res)
-        assert_in('Watchlist', res)
-
+        assert_in('Watched Projects', res)
 
     def test_sees_flash_message_on_bad_login(self):
         # Goes to log in page

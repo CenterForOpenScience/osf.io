@@ -3,7 +3,8 @@
 var $ = require('jquery');
 require('jquery-tagsinput');
 
-var Rubeus = require('rubeus');
+var m = require('mithril');
+var Fangorn = require('fangorn');
 
 var LogFeed = require('../logFeed.js');
 var pointers = require('../pointers.js');
@@ -11,25 +12,9 @@ var pointers = require('../pointers.js');
 var Comment = require('../comment.js');
 var Raven = require('raven-js');
 
-// Since we don't have an Buttons/Status column, we append status messages to the
-// name column
-Rubeus.Col.DashboardName = $.extend({}, Rubeus.Col.Name);
-Rubeus.Col.DashboardName.itemView = function(item) {
-    return Rubeus.Col.Name.itemView(item) + '&nbsp;<span data-status></span>';
-};
 
 var nodeApiUrl = window.contextVars.node.urls.api;
 
-var rubeusOpts = {
-    data: nodeApiUrl + 'files/grid/',
-    columns: [Rubeus.Col.DashboardName],
-    width: '100%',
-    uploads: true,
-    height: 600,
-    progBar: '#filetreeProgressBar',
-    searchInput: '#fileSearch'
-};
-new Rubeus('#myGrid', rubeusOpts);
 
 // Initialize controller for "Add Links" modal
 new pointers.PointerManager('#addPointer', window.contextVars.node.title);
@@ -50,6 +35,52 @@ if ($comments.length) {
 }
 
 $(document).ready(function() {
+
+    function _fangornTitleColumn (item, col) {
+        return m('span', 
+            { onclick : function(){ 
+                if (item.kind === 'item') {
+                    window.location = item.data.urls.view;                    
+                } 
+            }}, 
+            item.data.name);
+    }
+
+    // Treebeard Files view 
+    $.ajax({
+      url:  nodeApiUrl + 'files/grid/'
+    })
+    .done(function( data ) {
+        console.log("data", data);
+        var fangornOpts = {
+            divID: 'treeGrid',
+            filesData: data.data,
+            uploads : false,
+            showFilter : true,
+            filterStyle : { 'float' : 'left', width : '100%'},
+            columnTitles : function(){ 
+                return [
+                    {
+                    title: 'Name',
+                    width : '100%',
+                    sort : false,
+                    sortType : 'text'
+                    }
+                ]; 
+                },
+            resolveRows : function(){ 
+                return  [{
+                    data : 'name',  
+                    folderIcons : true,
+                    filter : true,
+                    custom : _fangornTitleColumn
+                }];
+                },
+        };
+        console.log("fangorn", Fangorn);
+        var filebrowser = new Fangorn(fangornOpts);
+    });
+
 
     // Tooltips
     $('[data-toggle="tooltip"]').tooltip();

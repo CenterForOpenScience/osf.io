@@ -86,8 +86,9 @@ def file_to_hgrid(node, article, item):
     }
 
     return {
+        'addon' : 'figshare',
         'name': item['name'],
-        'kind': 'file',
+        'kind': 'item',
         'published': '',
         'tags': '',
         'description': '',

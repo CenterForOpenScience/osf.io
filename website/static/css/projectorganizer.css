@@ -1,33 +1,8 @@
+.po-hover-multiselect { 
+    background : lightgoldenrodyellow;
+}
+
 /* @override http://localhost:5000/static/css/projectorganizer.css */
-
-/* Project organizer HGrid  */
-.project-organizer .cell-selection {
-    border-right-color: silver;
-    border-right-style: solid;
-    background: #f5f5f5;
-    color: gray;
-    text-align: right;
-    font-size: 10px;
-}
-
-.project-organizer .slick-row.active{
-    /*background-color: #fefab4;*/
-}
-.slick-row .l1 {
-    overflow: visible;
-}
-
-.project-organizer-dand {
-	display: block;
-	background: blue;
-	opacity: 0.15;
-	filter: alpha(opacity=15);
-	cursor: move;
-}
-
-.hg-cell.selected {
-    background-color: lightyellow;
-}
 
 span.project-smart-folder.smart-folder{
     font-style: italic;
@@ -157,7 +132,7 @@ button.project-organizer-icon-visit {
     background-repeat: no-repeat;
 }
 
-.project-organizer button.hg-btn {
+button.hg-btn {
     background-color: transparent;
     border: 0px;
 }
@@ -173,7 +148,7 @@ span.project-folder {
     text-decoration: none;
 }
 
-.project-organizer .hg-item-name:hover {
+.hg-item-name:hover {
     text-decoration: none !important;
     cursor: default;
 }
@@ -301,7 +276,7 @@ div.organize-project-controls {
 
 /* Typeahead autocomplete box */
 
-.project-organizer input.typeahead{
+input.typeahead{
     width: 100%;
     margin-bottom: 5px;
 }
@@ -314,8 +289,8 @@ div.organize-project-controls {
 /* Typeahead scaffolding */
 /* ----------- */
 
-.project-organizer .tt-dropdown-menu,
-.project-organizer .gist {
+.tt-dropdown-menu,
+.gist {
     text-align: left;
     overflow-x: hidden;
 }
@@ -323,8 +298,8 @@ div.organize-project-controls {
 /* Typeahead base styles */
 /* ----------- */
 
-.project-organizer .typeahead,
-.project-organizer .tt-query {
+.typeahead,
+.tt-query {
     width: 100%;
     height: 30px;
     font-size: 18px;
@@ -335,32 +310,32 @@ div.organize-project-controls {
     outline: none;
 }
 
-.project-organizer .typeahead {
+.typeahead {
     background-color: #fff;
 }
 
-.project-organizer .typeahead:focus {
+.typeahead:focus {
     -webkit-box-shadow: rgba(102, 175, 232, 0.576471) 0px 0px 7.668470859527588px 0px;
     -moz-box-shadow: rgba(102, 175, 232, 0.576471) 0px 0px 7.668470859527588px 0px;
     box-shadow: rgba(102, 175, 232, 0.576471) 0px 0px 7.668470859527588px 0px;
 }
 
-.project-organizer .tt-query {
+.tt-query {
     -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
     -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
     box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
 }
 /* rgb of glow 106 176 232
 */
-.project-organizer .tt-hint {
+.tt-hint {
     color: #999;
 }
-.project-organizer h3.category {
+h3.category {
     font-size: 18px;
     margin-top: 5px;
     margin-left: 5px;
 }
-.project-organizer .tt-dropdown-menu {
+.tt-dropdown-menu {
     width: 422px;
     padding: 8px 0;
     background-color: #fff;
@@ -372,24 +347,28 @@ div.organize-project-controls {
     -webkit-box-shadow: 0 5px 10px rgba(0, 0, 0, .2);
     -moz-box-shadow: 0 5px 10px rgba(0, 0, 0, .2);
     box-shadow: 0 5px 10px rgba(0, 0, 0, .2);
-	margin-top: 6px;
+    margin-top: 6px;
 }
 
-.project-organizer .tt-suggestion {
+.tt-suggestion {
     padding: 3px 5px;
     font-size: 12px;
     line-height: 14px;
 }
 
-.project-organizer .tt-suggestion.tt-cursor {
+.tt-suggestion.tt-cursor {
     color: #fff;
     background-color: #0097cf;
+
 }
 
-.project-organizer .tt-suggestion p {
+.tt-suggestion p {
     margin: 0;
 }
 
-.project-organizer .gist {
+.gist {
     font-size: 14px;
+}
+.tb-row {
+    font-size: 13px;
 }

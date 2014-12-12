@@ -46,15 +46,10 @@
 
         <div class="addon-widget-container">
             <h3 class="addon-widget-header"><a href="${node['url']}files/">Files</a></h3>
-            <div id="filetreeProgressBar" class="progress progress-striped active">
-                <div class="progress-bar"  role="progressbar" aria-valuenow="100"
-                    aria-valuemin="0" aria-valuemax="100" style="width: 100%">
-                    <span class="sr-only">Loading</span>
-                </div>
+        
+            <div id="treeGrid">
+                <div class="fangorn-loading"> <i class="icon-spinner fangorn-spin"></i> <p class="m-t-sm fg-load-message"> Loading files...  </p> </div>
             </div>
-
-            <input role="search" class="form-control" placeholder="Search files..." type="text" id="fileSearch" autofocus>
-            <div id="myGrid" class="filebrowser hgrid"></div>
         </div>
 
     </div>
