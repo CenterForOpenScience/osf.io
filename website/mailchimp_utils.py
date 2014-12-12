@@ -29,6 +29,14 @@ def subscribe(list_name, username):
 
 @app.task
 def unsubscribe(list_name, username):
+    """ Unsubscribe a user from a mailchimp mailing list given its name.
+
+        :param str list_name: mailchimp mailing list name
+        :param str username: current user's email
+
+        A ListNotSubscribed error will be raised if a user
+        not subscribed to the list tries to unsubscribe again.
+    """
     m = get_mailchimp_api()
     list_id = get_list_id_from_name(list_name=list_name)
     m.lists.unsubscribe(id=list_id, email={'email': username})
