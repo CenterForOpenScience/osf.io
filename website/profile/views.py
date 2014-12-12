@@ -256,7 +256,9 @@ def update_subscription(user, list_name, subscription):
         try:
             mailchimp_utils.unsubscribe_mailchimp(list_name, user.username)
         except mailchimp_utils.mailchimp.ListNotSubscribedError:
-            raise HTTPError(http.BAD_REQUEST, data=dict(message_short="ListNotSubscribedError", message_long="The user is already unsubscribed from this mailing list."))
+            raise HTTPError(http.BAD_REQUEST, data=dict(message_short="ListNotSubscribedError",
+                                                        message_long="The user is already unsubscribed from this mailing list.",
+                                                        error_type="not_subscribed"))
 
 
 def mailchimp_get_endpoint(**kwargs):
