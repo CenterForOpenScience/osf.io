@@ -90,7 +90,7 @@ def add_poster_by_email(conference, message):
 
     # Send confirmation email
     send_mail(
-        message.address,
+        message.sender_email,
         CONFERENCE_SUBMITTED,
         conf_full_name=conference.name,
         conf_view_url=web_url_for(

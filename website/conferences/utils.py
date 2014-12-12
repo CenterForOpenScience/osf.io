@@ -76,8 +76,9 @@ def provision_node(conference, message, node, user):
     if not message.is_spam and conference.public_projects:
         node.set_privacy('public', auth=auth)
 
+    node.add_tag(message.conference_name, auth=auth)
     node.add_tag(message.conference_category, auth=auth)
-    node.system_tags.extend(['emailed', message.conference_category])
+    node.system_tags.extend(['emailed', message.conference_name, message.conference_category])
     if message.is_spam:
         node.system_tags.append('spam')
 

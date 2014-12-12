@@ -2,6 +2,8 @@
 
 import mock
 from nose.tools import *  # noqa (PEP8 asserts)
+
+from modularodm import Q
 from modularodm.exceptions import ValidationError
 
 import hmac
@@ -11,6 +13,7 @@ from StringIO import StringIO
 from framework.auth.core import Auth
 
 from website import settings
+from website.models import User, Node
 from website.conferences.views import _render_conference_node
 from website.conferences.model import Conference
 from website.conferences import utils, message
@@ -161,6 +164,8 @@ class TestProvisionNode(ContextTestCase):
         assert_true(self.node.is_public)
         assert_in(self.conference.admins[0], self.node.contributors)
         assert_in('emailed', self.node.system_tags)
+        assert_in(self.conference.endpoint, self.node.system_tags)
+        assert_in(self.conference.endpoint, self.node.tags)
         assert_not_in('spam', self.node.system_tags)
         mock_upload.assert_called_with(self.user, self.node, msg.attachments)
 
@@ -412,3 +417,46 @@ class TestConferenceModel(OsfTestCase):
             ConferenceFactory(endpoint=None, name=fake.company()).save()
         with assert_raises(ValidationError):
             ConferenceFactory(endpoint='spsp2014', name=None).save()
+
+
+class TestConferenceIntegration(OsfTestCase):
+
+    def test_integration(self):
+        fullname = 'John Deacon'
+        username = 'deacon@queen.com'
+        title = 'good songs'
+        conference = ConferenceFactory()
+        body = 'dragon on my back'
+        content = 'dragon attack'
+        recipient = '{0}-{1}-poster@osf.io'.format(
+            'test' if settings.DEV_MODE else '',
+            conference.endpoint,
+        )
+        res = self.app.post(
+            api_url_for('meeting_hook'),
+            {
+                'X-Mailgun-Sscore': 0,
+                'timestamp': '123',
+                'token': 'secret',
+                'signature': hmac.new(
+                    key=settings.MAILGUN_API_KEY,
+                    msg='{}{}'.format('123', 'secret'),
+                    digestmod=hashlib.sha256,
+                ).hexdigest(),
+                'attachment-count': '1',
+                'X-Mailgun-Sscore': 0,
+                'from': '{0} <{1}>'.format(fullname, username),
+                'recipient': recipient,
+                'subject': title,
+                'stripped-text': body,
+            },
+            upload_files=[
+                ('attachment-1', 'attachment-1', content),
+            ],
+        )
+        users = User.find(Q('username', 'eq', username))
+        assert_equal(users.count(), 1)
+        nodes = Node.find(Q('title', 'eq', title))
+        assert_equal(nodes.count(), 1)
+        node = nodes[0]
+        assert_equal(node.get_wiki_page('home').content, body)
