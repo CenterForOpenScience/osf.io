@@ -230,7 +230,7 @@ def user_choose_mailing_lists(auth, **kwargs):
             user.mailing_lists[list_name] = json_data[list_name]
             update_subscription(user, list_name, json_data[list_name])
     else:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http.BAD_REQUEST, data=dict(message_long="Must provide a dictionary of the format {'mailing list name': Boolean}"))
 
     user.save()
     return {'message': 'Successfully updated mailing lists', 'result': user.mailing_lists}, 200
