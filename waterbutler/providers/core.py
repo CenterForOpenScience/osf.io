@@ -12,6 +12,7 @@ from waterbutler.exceptions import exception_from_reponse
 
 PROVIDERS = {}
 
+
 def register_provider(name):
     def _register_provider(cls):
         if PROVIDERS.get(name):
@@ -45,32 +46,87 @@ def expects(*codes):
     return wrapper
 
 
-class ResponseWrapper(object):
+class BaseStream(asyncio.StreamReader, metaclass=abc.ABCMeta):
+
+    def __init__(self):
+        self.hashes = {}
+        self.size = None
+
+    def set_hashes(self, *hashes):
+        self.hashes = {}
+        for hash in hashes:
+            hasher = hash()
+            self.hashes[hasher.name] = hasher
+
+    def feed_hashes(self, chunk):
+        for hash in self.hashes.values():
+            hash.update(chunk)
+
+    @asyncio.coroutine
+    def read(self, size=-1):
+        chunk = yield from self._read(size)
+        self.feed_hashes(chunk)
+        return chunk
+
+    @abc.abstractmethod
+    @asyncio.coroutine
+    def _read(self, size):
+        pass
+
+
+class ResponseStream(BaseStream):
 
     def __init__(self, response):
+        super().__init__()
         self.response = response
-        self.content = response.content
         self.size = response.headers.get('Content-Length')
         self.content_type = response.headers.get('Content-Type', 'application/octet-stream')
 
+    @asyncio.coroutine
+    def _read(self, size):
+        return (yield from self.response.content.read(size))
 
-class RequestWrapper(object):
+
+class RequestStream(BaseStream):
 
     def __init__(self, request):
-        self.response = request
-        self.content = asyncio.StreamReader()
-        self.size = request.headers.get('Content-Length')
+        super().__init__()
+        self.request = request
+        self.size = self.request.headers.get('Content-Length')
+
+    @asyncio.coroutine
+    def _read(self, size):
+        return (yield from self.request.content.read(size))
 
 
-class FileWrapper(object):
+class FileStream(BaseStream):
 
-    def __init__(self, file_pointer):
-        self.file_pointer = file_pointer
-        self.content = asyncio.StreamReader()
-        # TODO: Handle UTF-unsafe characters
-        self.content.feed_data(file_pointer.read())
-        self.content.feed_eof()
-        self.size = file_pointer.tell()
+    def __init__(self, file_object):
+        super().__init__()
+        self.file_gen = self.read_as_gen()
+        self.file_object = file_object
+        self.file_object.seek(0, os.SEEK_END)
+        self.read_size = None
+        self.size = self.file_object.tell()
+
+    @asyncio.coroutine
+    def _read(self, size):
+        # add sleep of 0 so read will yield and continue in next io loop iteration
+        yield from asyncio.sleep(0)
+        self.read_size = size
+        try:
+            return next(self.file_gen)
+        except StopIteration:
+            return b''
+
+    def read_as_gen(self):
+        self.file_object.seek(0)
+
+        while True:
+            data = self.file_object.read(self.read_size)
+            if not data:
+                break
+            yield data
 
 
 def build_url(base, *segments, **query):
@@ -136,8 +192,8 @@ class BaseProvider(metaclass=abc.ABCMeta):
                 return (yield from self.intra_copy(dest_provider, source_options, dest_options))
             except NotImplementedError:
                 pass
-        obj = yield from self.download(**source_options)
-        yield from dest_provider.upload(obj, **dest_options)
+        stream = yield from self.download(**source_options)
+        yield from dest_provider.upload(stream, **dest_options)
 
     @asyncio.coroutine
     def move(self, dest_provider, source_options, dest_options):
@@ -154,7 +210,7 @@ class BaseProvider(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def upload(self, obj, **kwargs):
+    def upload(self, stream, **kwargs):
         pass
 
     @abc.abstractmethod

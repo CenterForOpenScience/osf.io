@@ -72,7 +72,7 @@ class DropboxProvider(core.BaseProvider):
                 },
                 headers=dest_provider.default_headers,
             )
-        return core.ResponseWrapper(response)
+        return core.ResponseStream(response)
 
     @core.expects(200)
     @asyncio.coroutine
@@ -88,7 +88,7 @@ class DropboxProvider(core.BaseProvider):
                 'to_path': to_path,
             },
         )
-        return core.ResponseWrapper(response)
+        return core.ResponseStream(response)
 
     @core.expects(200)
     @asyncio.coroutine
@@ -97,18 +97,18 @@ class DropboxProvider(core.BaseProvider):
             'GET',
             self.build_content_url('files', 'auto', self.build_path(path)),
         )
-        return core.ResponseWrapper(resp)
+        return core.ResponseStream(resp)
 
     @core.expects(200)
     @asyncio.coroutine
-    def upload(self, obj, path, **kwargs):
+    def upload(self, stream, path, **kwargs):
         resp = yield from self.make_request(
             'PUT',
             self.build_content_url('files_put', 'auto', self.build_path(path)),
-            headers={'Content-Length': obj.size},
-            data=obj.content,
+            headers={'Content-Length': str(stream.size)},
+            data=stream,
         )
-        return core.ResponseWrapper(resp)
+        return core.ResponseStream(resp)
 
     @core.expects(200)
     @asyncio.coroutine
@@ -118,7 +118,7 @@ class DropboxProvider(core.BaseProvider):
             self.build_url('fileops', 'delete'),
             data={'folder': 'auto', 'path': self.build_path(path)},
         )
-        return core.ResponseWrapper(response)
+        return core.ResponseStream(response)
 
     @asyncio.coroutine
     def metadata(self, path, **kwargs):

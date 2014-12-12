@@ -117,26 +117,26 @@ class CloudFilesProvider(core.BaseProvider):
                     if region['region'] == self.region:
                         return region['publicURL']
 
-    def build_url(self, obj):
+    def build_url(self, stream):
         """Build the url for the specified object
-        :param str obj: The object in question
+        :param str stream: The stream in question
         :rtype str:
         """
         url = furl.furl(self.endpoint)
         url.path.add(self.container)
-        url.path.add(obj)
+        url.path.add(stream)
         return url.url
 
-    def generate_url(self, obj, method='GET', seconds=60):
-        """Build and sign a temp url for the specified object
-        :param str obj: The requested object's path
+    def generate_url(self, stream, method='GET', seconds=60):
+        """Build and sign a temp url for the specified stream
+        :param str stream: The requested stream's path
         :param str method: The HTTP method used to access the returned url
         :param int seconds: Time for the url to live
         :rtype str:
         """
         method = method.upper()
         expires = str(int(time.time() + seconds))
-        url = furl.furl(self.build_url(obj))
+        url = furl.furl(self.build_url(stream))
 
         body = '\n'.join([method, expires, str(url.path)]).encode()
         signature = hmac.new(self.temp_url_key, body, hashlib.sha1).hexdigest()
@@ -163,25 +163,23 @@ class CloudFilesProvider(core.BaseProvider):
             return url
 
         resp = yield from self.make_request('GET', url)
-        return core.ResponseWrapper(resp)
+        return core.ResponseStream(resp)
 
     @core.expects(200, 201)
     @ensure_connection
-    def upload(self, obj, path, **kwargs):
+    def upload(self, stream, path, **kwargs):
         """Uploads the given stream to S3
-        :param ResponseWrapper obj: The stream to put to Cloudfiles
+        :param ResponseWrapper stream: The stream to put to Cloudfiles
         :param str path: The full path of the object to upload to/into
         :rtype ResponseWrapper:
         """
         url = self.generate_url(path, 'PUT')
-
         resp = yield from self.make_request(
             'PUT', url,
-            data=obj.content,
-            headers={'Content-Length': obj.size},
+            data=stream,
+            headers={'Content-Length': str(stream.size)},
         )
-
-        return core.ResponseWrapper(resp)
+        return core.ResponseStream(resp)
 
     @core.expects(204)
     @ensure_connection
@@ -192,7 +190,7 @@ class CloudFilesProvider(core.BaseProvider):
         """
         resp = yield from self.make_request('DELETE', self.build_url(path))
 
-        return core.ResponseWrapper(resp)
+        return core.ResponseStream(resp)
 
     @ensure_connection
     def metadata(self, path, **kwargs):
