@@ -140,8 +140,8 @@ class TestProvisionNode(ContextTestCase):
         self.body = 'dragon on my back'
         self.content = 'dragon attack'
         self.attachment = StringIO(self.content)
-        self.recipient = '{0}-{1}-poster@osf.io'.format(
-            'test' if settings.DEV_MODE else '',
+        self.recipient = '{0}{1}-poster@osf.io'.format(
+            'test-' if settings.DEV_MODE else '',
             self.conference.endpoint,
         )
 
@@ -346,7 +346,7 @@ class TestMessage(ContextTestCase):
                 msg.route
 
     def test_route_invalid_test(self):
-        recipient = '{0}-conf-talk@osf.io'.format('' if settings.DEV_MODE else 'test')
+        recipient = '{0}conf-talk@osf.io'.format('' if settings.DEV_MODE else 'test-')
         with self.make_context(data={'recipient': recipient}):
             self.app.app.preprocess_request()
             msg = message.ConferenceMessage()
@@ -354,7 +354,7 @@ class TestMessage(ContextTestCase):
                 msg.route
 
     def test_route_valid(self):
-        recipient = '{0}-conf-talk@osf.io'.format('test' if settings.DEV_MODE else '')
+        recipient = '{0}conf-talk@osf.io'.format('test-' if settings.DEV_MODE else '')
         with self.make_context(data={'recipient': recipient}):
             self.app.app.preprocess_request()
             msg = message.ConferenceMessage()
@@ -429,8 +429,8 @@ class TestConferenceIntegration(ContextTestCase):
         conference = ConferenceFactory()
         body = 'dragon on my back'
         content = 'dragon attack'
-        recipient = '{0}-{1}-poster@osf.io'.format(
-            'test' if settings.DEV_MODE else '',
+        recipient = '{0}{1}-poster@osf.io'.format(
+            'test-' if settings.DEV_MODE else '',
             conference.endpoint,
         )
         res = self.app.post(
