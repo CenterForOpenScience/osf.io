@@ -63,7 +63,7 @@ MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = ''  # Set this in local.py
 
 # Mailchimp
-MAILCHIMP_API_KEY = 'CHANGEME'
+MAILCHIMP_API_KEY = None
 MAILCHIMP_WEBHOOK_SECRET_KEY = None  # OSF secret key to ensure webhook is secure
 ENABLE_EMAIL_SUBSCRIPTIONS = True
 
