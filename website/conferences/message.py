@@ -11,6 +11,7 @@ from werkzeug.utils import cached_property
 from framework.flask import request
 
 from website import settings
+from website.conferences.exceptions import ConferenceError
 
 
 logger = logging.getLogger(__name__)
@@ -32,15 +33,14 @@ ROUTE_REGEX = re.compile(
 )
 
 
-class ConferenceError(Exception):
-    pass
-
-
 class ConferenceMessage(object):
 
     def __init__(self):
         self.request = request._get_current_object()
+
+    def verify(self):
         self.verify_signature()
+        _ = [self.sender_email, self.route]  # noqa
 
     def verify_signature(self):
         """Verify that request comes from Mailgun. Based on sample code from
@@ -80,6 +80,14 @@ class ConferenceMessage(object):
     @cached_property
     def form(self):
         return self.request.form.to_dict()
+
+    @cached_property
+    def raw(self):
+        return {
+            'headers': dict(self.request.headers),
+            'form': self.request.form.to_dict(),
+            'args': self.request.args.to_dict(),
+        }
 
     @cached_property
     def subject(self):

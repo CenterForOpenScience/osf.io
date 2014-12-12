@@ -4,105 +4,42 @@ import json
 import httplib
 import logging
 
-import requests
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
-from framework.auth import Auth
-from framework.flask import request
 from framework.exceptions import HTTPError
 
 from website import settings
-from website.util import web_url_for
 from website.models import Node
+from website.util import web_url_for
 from website.mails import send_mail, CONFERENCE_SUBMITTED, CONFERENCE_FAILED
 
 from website.conferences import utils
-from website.conferences.message import ConferenceMessage
-from website.conferences.model import Conference, MailRecord
+from website.conferences.message import ConferenceMessage, ConferenceError
+from website.conferences.model import Conference
+
 
 logger = logging.getLogger(__name__)
 
 
-def request_to_data():
-    return {
-        'headers': dict(request.headers),
-        'form': request.form.to_dict(),
-        'args': request.args.to_dict(),
-    }
-
-
-def prepare_contributors(conference):
-    return [
-        {
-            'user': contributor,
-            'permissions': ['read', 'write', 'admin'],
-            'visible': False,
-        }
-        for contributor in conference.admins
-    ]
-
-
-def upload_attachment(user, node, attachment):
-    from website.addons.osfstorage import utils as storage_utils
-    attachment.seek(0)
-    name = attachment.filename or settings.MISSING_FILE_NAME
-    content_type = attachment.content_type
-    content = attachment.read()
-    size = content.tell()
-    upload_url = storage_utils.get_upload_url(node, user, size, content_type, name)
-    requests.put(
-        upload_url,
-        data=content,
-        headers={'Content-Type': attachment.content_type},
-    )
-
-
-def upload_attachments(user, node, attachments):
-    for attachment in attachments:
-        upload_attachment(user, node, attachment)
-
-
 def meeting_hook():
-
+    """View function for email conference submission.
+    """
     message = ConferenceMessage()
 
     try:
-        conference = Conference.find_one(Q('endpoint', 'iexact', message.conference_name))
-    except ModularOdmException:
-        raise HTTPError(httplib.NOT_FOUND)
-
-    if not conference.active:
-        logger.error('Conference {0} is not active'.format(conference.endpoint))
+        message.verify()
+    except ConferenceError as error:
+        logger.error(error)
         raise HTTPError(httplib.NOT_ACCEPTABLE)
 
-    # Add poster
+    try:
+        conference = Conference.get_by_endpoint(message.conference_name)
+    except ConferenceError as error:
+        logger.error(error)
+        raise HTTPError(httplib.NOT_ACCEPTABLE)
+
     add_poster_by_email(conference=conference, message=message)
-
-
-def provision_node(conference, message, node, user):
-    """
-    :param Conference conference:
-    :param ConferenceMessage message:
-    :param Node node:
-    :param User user:
-    """
-    auth = Auth(user=user)
-
-    node.update_node_wiki('home', message, auth)
-    node.add_contributors(prepare_contributors(conference.admins), log=False)
-
-    if not message.is_spam and conference.public_projects:
-        node.set_privacy('public', auth=auth)
-
-    node.add_tag(message.conference_category, auth=auth)
-    node.system_tags.extend(['emailed', message.conference_category])
-    if message.is_spam:
-        node.system_tags.append('spam')
-
-    upload_attachments(user, node, message.attachments)
-
-    node.save()
 
 
 def add_poster_by_email(conference, message):
@@ -141,7 +78,8 @@ def add_poster_by_email(conference, message):
     if node_created:
         created.append(node)
 
-    provision_node(conference, message, node, user)
+    utils.provision_node(conference, message, node, user)
+    utils.record_message(message, created)
 
     download_url = node.web_url_for(
         'osf_storage_view_file',
@@ -149,13 +87,6 @@ def add_poster_by_email(conference, message):
         action='download',
         _absolute=True,
     )
-
-    # Add mail record
-    mail_record = MailRecord(
-        data=request_to_data(),
-        records=created,
-    )
-    mail_record.save()
 
     # Send confirmation email
     send_mail(

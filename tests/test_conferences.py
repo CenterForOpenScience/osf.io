@@ -1,29 +1,36 @@
 # -*- coding: utf-8 -*-
 
+import mock
 from nose.tools import *  # noqa (PEP8 asserts)
 from modularodm.exceptions import ValidationError
 
 import hmac
 import hashlib
-from cStringIO import StringIO
+from StringIO import StringIO
+
+from framework.auth.core import Auth
 
 from website import settings
 from website.conferences.views import _render_conference_node
 from website.conferences.model import Conference
 from website.conferences import utils, message
 from website.util import api_url_for, web_url_for
-from framework.auth.core import Auth
 
 from tests.base import OsfTestCase, fake
 from tests.factories import ModularOdmFactory, FakerAttribute, ProjectFactory, UserFactory
+from factory import Sequence, post_generation
 
 
 class ConferenceFactory(ModularOdmFactory):
     FACTORY_FOR = Conference
 
-    endpoint = FakerAttribute('slug')
+    endpoint = Sequence(lambda n: 'conference{0}'.format(n))
     name = FakerAttribute('catch_phrase')
     active = True
+
+    @post_generation
+    def admins(self, create, extracted, **kwargs):
+        self.admins = extracted or [UserFactory()]
 
 
 def create_fake_conference_nodes(n, endpoint):
@@ -86,10 +93,7 @@ class TestConferenceUtils(OsfTestCase):
         assert_not_equal(node._id, fetched._id)
 
 
-class TestMessage(OsfTestCase):
-
-    def setUp(self):
-        super(OsfTestCase, self).setUp()
+class ContextTestCase(OsfTestCase):
 
     def test_context(self, method='POST', **kwargs):
         data = {
@@ -103,17 +107,129 @@ class TestMessage(OsfTestCase):
             ).hexdigest(),
         }
         data.update(kwargs.pop('data', {}))
+        data = {
+            key: value
+            for key, value in data.iteritems()
+            if value is not None
+        }
         return self.app.app.test_request_context(method=method, data=data, **kwargs)
+
+
+class TestProvisionNode(ContextTestCase):
+
+    def setUp(self):
+        super(TestProvisionNode, self).setUp()
+        self.node = ProjectFactory()
+        self.user = self.node.creator
+        self.conference = ConferenceFactory()
+        self.body = 'dragon on my back'
+        self.content = 'dragon attack'
+        self.attachment = StringIO(self.content)
+        self.recipient = '{0}-{1}-poster@osf.io'.format(
+            'test' if settings.DEV_MODE else '',
+            self.conference.endpoint,
+        )
+
+    def test_context(self, **kwargs):
+        data = {
+            'attachment-count': '1',
+            'attachment-1': (self.attachment, 'attachment-1'),
+            'X-Mailgun-Sscore': 0,
+            'recipient': self.recipient,
+            'stripped-text': self.body,
+        }
+        data.update(kwargs.pop('data', {}))
+        return super(TestProvisionNode, self).test_context(data=data, **kwargs)
+
+    @mock.patch('website.conferences.utils.upload_attachments')
+    def test_provision(self, mock_upload):
+        with self.test_context():
+            msg = message.ConferenceMessage()
+            utils.provision_node(self.conference, msg, self.node, self.user)
+        assert_true(self.node.is_public)
+        assert_in(self.conference.admins[0], self.node.contributors)
+        assert_in('emailed', self.node.system_tags)
+        assert_not_in('spam', self.node.system_tags)
+        mock_upload.assert_called_with(self.user, self.node, msg.attachments)
+
+    @mock.patch('website.conferences.utils.upload_attachments')
+    def test_provision_private(self, mock_upload):
+        self.conference.public_projects = False
+        self.conference.save()
+        with self.test_context():
+            msg = message.ConferenceMessage()
+            utils.provision_node(self.conference, msg, self.node, self.user)
+        assert_false(self.node.is_public)
+        assert_in(self.conference.admins[0], self.node.contributors)
+        assert_in('emailed', self.node.system_tags)
+        assert_not_in('spam', self.node.system_tags)
+        mock_upload.assert_called_with(self.user, self.node, msg.attachments)
+
+    @mock.patch('website.conferences.utils.upload_attachments')
+    def test_provision_spam(self, mock_upload):
+        with self.test_context(data={'X-Mailgun-Sscore': message.SSCORE_MAX_VALUE + 1}):
+            msg = message.ConferenceMessage()
+            utils.provision_node(self.conference, msg, self.node, self.user)
+        assert_false(self.node.is_public)
+        assert_in(self.conference.admins[0], self.node.contributors)
+        assert_in('emailed', self.node.system_tags)
+        assert_in('spam', self.node.system_tags)
+        mock_upload.assert_called_with(self.user, self.node, msg.attachments)
+
+    @mock.patch('website.conferences.utils.requests.put')
+    @mock.patch('website.addons.osfstorage.utils.get_upload_url')
+    def test_upload(self, mock_get_url, mock_put):
+        mock_get_url.return_value = 'http://queen.com/'
+        self.attachment.filename = 'hammer-to-fall'
+        self.attachment.content_type = 'application/json'
+        utils.upload_attachment(self.user, self.node, self.attachment)
+        mock_get_url.assert_called_with(
+            self.node,
+            self.user,
+            len(self.content),
+            self.attachment.content_type,
+            self.attachment.filename,
+        )
+        mock_put.assert_called_with(
+            mock_get_url.return_value,
+            data=self.content,
+            headers={'Content-Type': self.attachment.content_type},
+        )
+
+    @mock.patch('website.conferences.utils.requests.put')
+    @mock.patch('website.addons.osfstorage.utils.get_upload_url')
+    def test_upload_no_file_name(self, mock_get_url, mock_put):
+        mock_get_url.return_value = 'http://queen.com/'
+        self.attachment.filename = ''
+        self.attachment.content_type = 'application/json'
+        utils.upload_attachment(self.user, self.node, self.attachment)
+        mock_get_url.assert_called_with(
+            self.node,
+            self.user,
+            len(self.content),
+            self.attachment.content_type,
+            settings.MISSING_FILE_NAME,
+        )
+        mock_put.assert_called_with(
+            mock_get_url.return_value,
+            data=self.content,
+            headers={'Content-Type': self.attachment.content_type},
+        )
+
+
+class TestMessage(ContextTestCase):
 
     def test_verify_signature_valid(self):
         with self.test_context():
-            message.ConferenceMessage()
+            msg = message.ConferenceMessage()
+            msg.verify_signature()
 
     def test_verify_signature_invalid(self):
         with self.test_context(data={'signature': 'fake'}):
             self.app.app.preprocess_request()
+            msg = message.ConferenceMessage()
             with assert_raises(message.ConferenceError):
-                message.ConferenceMessage()
+                msg.verify_signature()
 
     def test_is_spam_false_missing_headers(self):
         ctx = self.test_context(
@@ -256,8 +372,10 @@ class TestConferenceEmailViews(OsfTestCase):
 
         # Create conference nodes
         n_conference_nodes = 3
-        conf_nodes = create_fake_conference_nodes(n_conference_nodes,
-            conference.endpoint)
+        conf_nodes = create_fake_conference_nodes(
+            n_conference_nodes,
+            conference.endpoint,
+        )
         # Create a non-conference node
         ProjectFactory()
 

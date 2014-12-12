@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import bson
-from modularodm import fields
+from modularodm import fields, Q
+from modularodm.exceptions import ModularOdmException
 
 from framework.mongo import StoredObject
+
+from website.conferences.exceptions import ConferenceError
 
 
 class Conference(StoredObject):
@@ -20,6 +23,16 @@ class Conference(StoredObject):
     admins = fields.ForeignField('user', list=True, required=False, default=None)
     #: Whether to make submitted projects public
     public_projects = fields.BooleanField(required=False, default=True)
+
+    @classmethod
+    def get_by_endpoint(cls, endpoint, active=True):
+        query = Q('endpoint', 'iexact', endpoint)
+        if active:
+            query &= Q('active', 'eq', True)
+        try:
+            return Conference.find_one(query)
+        except ModularOdmException:
+            raise ConferenceError('Endpoint {0} not found'.format(endpoint))
 
 
 class MailRecord(StoredObject):
