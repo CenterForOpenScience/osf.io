@@ -28,7 +28,7 @@
                 error: function() {
                     var message = 'Could not retrieve settings information.';
                     self.changeMessage(message, 'text-danger', 5000);
-                }})
+                }});
         };
 
         self.getListInfo();
@@ -53,7 +53,7 @@
                 self.changeMessage('Settings updated.', 'text-success', 5000);
             });
             request.fail(function (xhr) {
-                if (xhr.status != 400) {
+                if (xhr.status !== 400) {
                     var message = 'Could not update settings.';
                     self.changeMessage(message, 'text-danger', 5000);
                 }
