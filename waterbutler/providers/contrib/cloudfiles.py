@@ -177,7 +177,7 @@ class CloudFilesProvider(core.BaseProvider):
         resp = yield from self.make_request(
             'PUT', url,
             data=stream,
-            headers={'Content-Length': stream.size},
+            headers={'Content-Length': str(stream.size)},
         )
         return core.ResponseStream(resp)
 

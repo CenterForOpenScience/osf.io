@@ -63,14 +63,14 @@ class BaseStream(asyncio.StreamReader, metaclass=abc.ABCMeta):
             hash.update(chunk)
 
     @asyncio.coroutine
-    def read(self, size=None):
+    def read(self, size=-1):
         chunk = yield from self._read(size)
         self.feed_hashes(chunk)
         return chunk
 
     @abc.abstractmethod
     @asyncio.coroutine
-    def _read(self, chunk):
+    def _read(self, size):
         pass
 
 
@@ -83,7 +83,7 @@ class ResponseStream(BaseStream):
         self.content_type = response.headers.get('Content-Type', 'application/octet-stream')
 
     @asyncio.coroutine
-    def _read(self, size=None):
+    def _read(self, size):
         return (yield from self.response.content.read(size))
 
 
@@ -95,7 +95,7 @@ class RequestStream(BaseStream):
         self.size = self.request.headers.get('Content-Length')
 
     @asyncio.coroutine
-    def _read(self, size=None):
+    def _read(self, size):
         return (yield from self.request.content.read(size))
 
 
@@ -105,12 +105,12 @@ class FileStream(BaseStream):
         super().__init__()
         self.file_gen = self.read_as_gen()
         self.file_object = file_object
-        self.file_object.seek(os.SEEK_END)
+        self.file_object.seek(0, os.SEEK_END)
         self.read_size = None
         self.size = self.file_object.tell()
 
     @asyncio.coroutine
-    def _read(self, size=None):
+    def _read(self, size):
         # add sleep of 0 so read will yield and continue in next io loop iteration
         yield from asyncio.sleep(0)
         self.read_size = size
