@@ -222,13 +222,21 @@ def user_choose_addons(**kwargs):
 
 @must_be_logged_in
 def user_choose_mailing_lists(auth, **kwargs):
-    """ Update mailing list subscription on user model"""
+    """ Update mailing list subscription on user model and in mailchimp
+
+        Example input:
+        {
+            "Open Science Framework General": true,
+            ...
+        }
+
+    """
     user = auth.user
     json_data = escape_html(request.get_json())
     if json_data:
-        for list_name in json_data:
-            user.mailing_lists[list_name] = json_data[list_name]
-            update_subscription(user, list_name, json_data[list_name])
+        for list_name, subscribe in json_data.items():
+            user.mailing_lists[list_name] = subscribe
+            update_subscription(user, list_name, subscribe)
     else:
         raise HTTPError(http.BAD_REQUEST, data=dict(message_long="Must provide a dictionary of the format {'mailing list name': Boolean}"))
 
