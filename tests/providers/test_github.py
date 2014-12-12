@@ -46,7 +46,7 @@ def file_like(file_content):
 
 
 @pytest.fixture
-def file_wrapper(file_like):
+def file_stream(file_like):
     return core.FileStream(file_like)
 
 
@@ -131,14 +131,14 @@ def test_metadata(provider, repo_contents):
 
 @async
 @pytest.mark.aiopretty
-def test_upload_create(provider, repo_contents, file_content, file_wrapper):
+def test_upload_create(provider, repo_contents, file_content, file_stream):
     message = 'so hungry'
     path = repo_contents[0]['path'][::-1]
     metadata_url = provider.build_repo_url('contents', os.path.dirname(path))
     aiopretty.register_json_uri('GET', metadata_url, body=repo_contents, status=201)
     upload_url = provider.build_repo_url('contents', path)
     aiopretty.register_uri('PUT', upload_url)
-    yield from provider.upload(file_wrapper, path, message)
+    yield from provider.upload(file_stream, path, message)
     expected_data = {
         'path': path,
         'message': message,
@@ -151,7 +151,7 @@ def test_upload_create(provider, repo_contents, file_content, file_wrapper):
 
 @async
 @pytest.mark.aiopretty
-def test_upload_update(provider, repo_contents, file_content, file_wrapper):
+def test_upload_update(provider, repo_contents, file_content, file_stream):
     path = repo_contents[0]['path']
     sha = repo_contents[0]['sha']
     message = 'so hungry'
@@ -159,7 +159,7 @@ def test_upload_update(provider, repo_contents, file_content, file_wrapper):
     aiopretty.register_json_uri('GET', metadata_url, body=repo_contents)
     upload_url = provider.build_repo_url('contents', path)
     aiopretty.register_uri('PUT', upload_url)
-    yield from provider.upload(file_wrapper, path, message)
+    yield from provider.upload(file_stream, path, message)
     expected_data = {
         'path': path,
         'message': message,
