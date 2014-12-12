@@ -8,10 +8,13 @@ import tabulate
 from modularodm import Q
 from dateutil.relativedelta import relativedelta
 
+from framework.analytics import get_basic_counters
+
 from website import settings
 from website.app import init_app
 from website.models import User, PrivateLink
 from website.addons.dropbox.model import DropboxUserSettings
+from website.addons.osfstorage.model import OsfStorageFileRecord
 
 from scripts.analytics import profile, tabulate_emails, tabulate_logs
 
@@ -80,6 +83,16 @@ def count_at_least(counts, at_least):
     ])
 
 
+def count_file_downloads():
+    downloads_unique, downloads_total = 0, 0
+    for record in OsfStorageFileRecord.find():
+        page = ':'.join(['download', record.node._id, record.path])
+        unique, total = get_basic_counters(page)
+        downloads_unique += unique or 0
+        downloads_total += total or 0
+    return downloads_unique, downloads_total
+
+
 def main():
     active_users = get_active_users()
     dropbox_metrics = get_dropbox_metrics()
@@ -101,6 +114,8 @@ def main():
     logs_at_least_1_3months = count_at_least(log_counts_3months, 1)
     logs_at_least_11_3months = count_at_least(log_counts_3months, 11)
 
+    downloads_unique, downloads_total = count_file_downloads()
+
     table = tabulate.tabulate(
         [
             ['active-users', active_users.count()],
@@ -115,6 +130,8 @@ def main():
             ['logs-gte-11', logs_at_least_11],
             ['logs-gte-1-last-3m', logs_at_least_1_3months],
             ['logs-gte-11-last-3m', logs_at_least_11_3months],
+            ['downloads-unique', downloads_unique],
+            ['downloads-total', downloads_total],
         ],
         headers=['label', 'value']
     )
