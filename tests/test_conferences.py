@@ -95,7 +95,19 @@ class TestConferenceUtils(OsfTestCase):
 
 class ContextTestCase(OsfTestCase):
 
-    def test_context(self, method='POST', **kwargs):
+    MAILGUN_API_KEY = 'mailkimp'
+
+    @classmethod
+    def setUpClass(cls):
+        super(ContextTestCase, cls).setUpClass()
+        settings.MAILGUN_API_KEY, cls._MAILGUN_API_KEY = cls.MAILGUN_API_KEY, settings.MAILGUN_API_KEY
+
+    @classmethod
+    def tearDownClass(cls):
+        super(ContextTestCase, cls).tearDownClass()
+        settings.MAILGUN_API_KEY = cls._MAILGUN_API_KEY
+
+    def make_context(self, method='POST', **kwargs):
         data = {
             'X-Mailgun-Sscore': 0,
             'timestamp': '123',
@@ -130,7 +142,7 @@ class TestProvisionNode(ContextTestCase):
             self.conference.endpoint,
         )
 
-    def test_context(self, **kwargs):
+    def make_context(self, **kwargs):
         data = {
             'attachment-count': '1',
             'attachment-1': (self.attachment, 'attachment-1'),
@@ -139,11 +151,11 @@ class TestProvisionNode(ContextTestCase):
             'stripped-text': self.body,
         }
         data.update(kwargs.pop('data', {}))
-        return super(TestProvisionNode, self).test_context(data=data, **kwargs)
+        return super(TestProvisionNode, self).make_context(data=data, **kwargs)
 
     @mock.patch('website.conferences.utils.upload_attachments')
     def test_provision(self, mock_upload):
-        with self.test_context():
+        with self.make_context():
             msg = message.ConferenceMessage()
             utils.provision_node(self.conference, msg, self.node, self.user)
         assert_true(self.node.is_public)
@@ -156,7 +168,7 @@ class TestProvisionNode(ContextTestCase):
     def test_provision_private(self, mock_upload):
         self.conference.public_projects = False
         self.conference.save()
-        with self.test_context():
+        with self.make_context():
             msg = message.ConferenceMessage()
             utils.provision_node(self.conference, msg, self.node, self.user)
         assert_false(self.node.is_public)
@@ -167,7 +179,7 @@ class TestProvisionNode(ContextTestCase):
 
     @mock.patch('website.conferences.utils.upload_attachments')
     def test_provision_spam(self, mock_upload):
-        with self.test_context(data={'X-Mailgun-Sscore': message.SSCORE_MAX_VALUE + 1}):
+        with self.make_context(data={'X-Mailgun-Sscore': message.SSCORE_MAX_VALUE + 1}):
             msg = message.ConferenceMessage()
             utils.provision_node(self.conference, msg, self.node, self.user)
         assert_false(self.node.is_public)
@@ -220,19 +232,19 @@ class TestProvisionNode(ContextTestCase):
 class TestMessage(ContextTestCase):
 
     def test_verify_signature_valid(self):
-        with self.test_context():
+        with self.make_context():
             msg = message.ConferenceMessage()
             msg.verify_signature()
 
     def test_verify_signature_invalid(self):
-        with self.test_context(data={'signature': 'fake'}):
+        with self.make_context(data={'signature': 'fake'}):
             self.app.app.preprocess_request()
             msg = message.ConferenceMessage()
             with assert_raises(message.ConferenceError):
                 msg.verify_signature()
 
     def test_is_spam_false_missing_headers(self):
-        ctx = self.test_context(
+        ctx = self.make_context(
             method='POST',
             data={'X-Mailgun-Sscore': message.SSCORE_MAX_VALUE - 1},
         )
@@ -241,7 +253,7 @@ class TestMessage(ContextTestCase):
             assert not msg.is_spam
 
     def test_is_spam_false_all_headers(self):
-        ctx = self.test_context(
+        ctx = self.make_context(
             method='POST',
             data={
                 'X-Mailgun-Sscore': message.SSCORE_MAX_VALUE - 1,
@@ -254,7 +266,7 @@ class TestMessage(ContextTestCase):
             assert not msg.is_spam
 
     def test_is_spam_true_sscore(self):
-        ctx = self.test_context(
+        ctx = self.make_context(
             method='POST',
             data={'X-Mailgun-Sscore': message.SSCORE_MAX_VALUE + 1},
         )
@@ -263,7 +275,7 @@ class TestMessage(ContextTestCase):
             assert msg.is_spam
 
     def test_is_spam_true_dkim(self):
-        ctx = self.test_context(
+        ctx = self.make_context(
             method='POST',
             data={'X-Mailgun-Dkim-Check-Result': message.DKIM_PASS_VALUES[0][::-1]},
         )
@@ -272,7 +284,7 @@ class TestMessage(ContextTestCase):
             assert msg.is_spam
 
     def test_is_spam_true_spf(self):
-        ctx = self.test_context(
+        ctx = self.make_context(
             method='POST',
             data={'X-Mailgun-Spf': message.SPF_PASS_VALUES[0][::-1]},
         )
@@ -281,7 +293,7 @@ class TestMessage(ContextTestCase):
             assert msg.is_spam
 
     def test_subject(self):
-        ctx = self.test_context(
+        ctx = self.make_context(
             method='POST',
             data={'subject': 'RE: Hip Hopera'},
         )
@@ -291,7 +303,7 @@ class TestMessage(ContextTestCase):
 
     def test_recipient(self):
         address = 'test-conference@osf.io'
-        ctx = self.test_context(
+        ctx = self.make_context(
             method='POST',
             data={'recipient': address},
         )
@@ -301,7 +313,7 @@ class TestMessage(ContextTestCase):
 
     def test_text(self):
         text = 'welcome to my nuclear family'
-        ctx = self.test_context(
+        ctx = self.make_context(
             method='POST',
             data={'stripped-text': text},
         )
@@ -317,12 +329,12 @@ class TestMessage(ContextTestCase):
             (u'"Fred" <fred@queen.com>', u'Fred'),
         ]
         for name in names:
-            with self.test_context(data={'from': name[0]}):
+            with self.make_context(data={'from': name[0]}):
                 msg = message.ConferenceMessage()
                 assert_equal(msg.sender_name, name[1])
 
     def test_route_invalid_pattern(self):
-        with self.test_context(data={'recipient': 'spam@osf.io'}):
+        with self.make_context(data={'recipient': 'spam@osf.io'}):
             self.app.app.preprocess_request()
             msg = message.ConferenceMessage()
             with assert_raises(message.ConferenceError):
@@ -330,7 +342,7 @@ class TestMessage(ContextTestCase):
 
     def test_route_invalid_test(self):
         recipient = '{0}-conf-talk@osf.io'.format('' if settings.DEV_MODE else 'test')
-        with self.test_context(data={'recipient': recipient}):
+        with self.make_context(data={'recipient': recipient}):
             self.app.app.preprocess_request()
             msg = message.ConferenceMessage()
             with assert_raises(message.ConferenceError):
@@ -338,21 +350,21 @@ class TestMessage(ContextTestCase):
 
     def test_route_valid(self):
         recipient = '{0}-conf-talk@osf.io'.format('test' if settings.DEV_MODE else '')
-        with self.test_context(data={'recipient': recipient}):
+        with self.make_context(data={'recipient': recipient}):
             self.app.app.preprocess_request()
             msg = message.ConferenceMessage()
             assert_equal(msg.conference_name, 'conf')
             assert_equal(msg.conference_category, 'talk')
 
     def test_attachments_count_zero(self):
-        with self.test_context(data={'attachment-count': '0'}):
+        with self.make_context(data={'attachment-count': '0'}):
             msg = message.ConferenceMessage()
             assert_equal(msg.attachments, [])
 
     def test_attachments_count_one(self):
         content = 'slightly mad'
         sio = StringIO(content)
-        ctx = self.test_context(
+        ctx = self.make_context(
             method='POST',
             data={
                 'attachment-count': 1,
