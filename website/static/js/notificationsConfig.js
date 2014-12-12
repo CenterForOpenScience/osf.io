@@ -9,12 +9,29 @@
     'use strict';
     ko.punches.enableAll();
 
-    var ViewModel = function(subscribeInfo) {
+    var ViewModel = function() {
         var self = this;
-        self.subscribed = ko.observable(subscribeInfo['Open Science Framework General']);
+        self.list = 'Open Science Framework General';
+        self.subscribed = ko.observable();
         // Flashed messages
         self.message = ko.observable('');
         self.messageClass = ko.observable('text-success');
+
+        self.getListInfo = function() {
+            $.ajax({
+                    url: '/api/v1/settings/notifications',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(response) {
+                        self.subscribed(response['mailing_lists'][self.list]);
+                },
+                error: function() {
+                    var message = 'Could not retrieve settings information.';
+                    self.changeMessage(message, 'text-danger', 5000);
+                }})
+        };
+
+        self.getListInfo();
 
         /** Change the flashed status message */
         self.changeMessage = function(text, css, timeout) {
@@ -45,9 +62,9 @@
     };
 
     // API
-    function NotificationsViewModel(selector, subscribeInfo) {
+    function NotificationsViewModel(selector) {
         var self = this;
-        self.viewModel = new ViewModel(subscribeInfo);
+        self.viewModel = new ViewModel();
         $.osf.applyBindings(self.viewModel, selector);
     }
 

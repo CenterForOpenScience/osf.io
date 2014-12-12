@@ -49,10 +49,9 @@
 </div>
 
 <script type="text/javascript">
-    var subscribeInfo = ${json.dumps(mailing_lists)};
     $script(['/static/js/notificationsConfig.js']);
     $script.ready('NotificationsConfig', function() {
-        var notifications = new NotificationsConfig('#selectLists', subscribeInfo);
+        var notifications = new NotificationsConfig('#selectLists');
     });
 </script>
 

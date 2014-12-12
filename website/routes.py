@@ -1070,6 +1070,13 @@ def make_url_map(app):
 
         Rule(
             '/settings/notifications/',
+            'get',
+            profile_views.user_notifications,
+            json_renderer,
+        ),
+
+        Rule(
+            '/settings/notifications/',
             'post',
             profile_views.user_choose_mailing_lists,
             json_renderer,
