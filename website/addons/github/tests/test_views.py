@@ -86,9 +86,9 @@ class TestCRUD(OsfTestCase):
     @mock.patch('website.addons.github.api.GitHub.from_settings')
     @mock.patch('website.project.views.file.get_cache_content')
     def test_view_file(self, mock_cache, mock_settings, mock_contents):
-        github_mock = create_mock_github(user='fred', private=False)
+        github_mock = self.github
         mock_settings.return_value = github_mock
-        sha = github_mock.tree.return_value.tree[0].sha
+        sha = self.github.tree.return_value.tree[0].sha
         github_mock.history.return_value = [
             {
             'sha': sha,
@@ -123,7 +123,7 @@ class TestCRUD(OsfTestCase):
     @mock.patch('website.addons.github.api.GitHub.from_settings')
     @mock.patch('website.addons.github.views.crud.build_github_urls')
     def test_update_file(self, mock_urls, mock_settings):
-        github_mock = create_mock_github(user='fred', private=False)
+        github_mock = self.github
         sha = github_mock.tree.return_value.tree[0].sha
         size = github_mock.tree.return_value.tree[0].size
         file_name = github_mock.tree.return_value.tree[0].path
@@ -196,7 +196,7 @@ class TestCRUD(OsfTestCase):
     @mock.patch('website.addons.github.api.GitHub.delete_file')
     @mock.patch('website.addons.github.api.GitHub.file')
     def test_delete_file(self, mock_file, mock_delete, mock_settings):
-        github_mock = create_mock_github(user='fred', private=False)
+        github_mock = self.github
         sha = github_mock.tree.return_value.tree[0].sha
         size = github_mock.tree.return_value.tree[0].size
         file_name = github_mock.tree.return_value.tree[0].path
@@ -241,7 +241,7 @@ class TestHGridViews(OsfTestCase):
         self.node_settings.save()
 
     def test_to_hgrid(self):
-        github_mock = create_mock_github(user='fred', private=False)
+        github_mock = self.github
         contents = github_mock.contents(user='octocat', repo='hello', ref='12345abc')
         res = views.hgrid.to_hgrid(
             contents,
@@ -292,7 +292,7 @@ class TestGithubViews(OsfTestCase):
         self.node_settings.save()
 
     def _get_sha_for_branch(self, branch=None, mock_branches=None):
-        github_mock = create_mock_github(user='fred', private=False)
+        github_mock = self.github
         if mock_branches is None:
             mock_branches = github_mock.branches
         if branch is None:  # Get default branch name
@@ -306,7 +306,7 @@ class TestGithubViews(OsfTestCase):
     @mock.patch('website.addons.github.api.GitHub.branches')
     @mock.patch('website.addons.github.api.GitHub.repo')
     def test_get_refs_defaults(self, mock_repo, mock_branches):
-        github_mock = create_mock_github(user='fred', private=False)
+        github_mock = self.github
         mock_repo.return_value = github_mock.repo.return_value
         mock_branches.return_value = github_mock.branches.return_value
         branch, sha, branches = utils.get_refs(self.node_settings)
@@ -323,7 +323,7 @@ class TestGithubViews(OsfTestCase):
     @mock.patch('website.addons.github.api.GitHub.branches')
     @mock.patch('website.addons.github.api.GitHub.repo')
     def test_get_refs_branch(self, mock_repo, mock_branches):
-        github_mock = create_mock_github(user='fred', private=False)
+        github_mock = self.github
         mock_repo.return_value = github_mock.repo.return_value
         mock_branches.return_value = github_mock.branches.return_value
         branch, sha, branches = utils.get_refs(self.node_settings, 'master')
@@ -371,7 +371,7 @@ class TestGithubViews(OsfTestCase):
             utils.get_refs(self.node_settings, sha='12345')
 
     def test_get_refs_registered_missing_branch(self):
-        github_mock = create_mock_github(user='fred', private=False)
+        github_mock = self.github
         self.node_settings.registration_data = {
             'branches': [
                 branch.to_json()
@@ -386,7 +386,7 @@ class TestGithubViews(OsfTestCase):
     # Tests for _check_permissions
     # make a user with no authorization; make sure check_permissions returns false
     def test_permissions_no_auth(self):
-        github_mock = create_mock_github(user='fred', private=False)
+        github_mock = self.github
         # project is set to private right now
         connection = github_mock
         non_authenticated_user = UserFactory()
@@ -399,7 +399,7 @@ class TestGithubViews(OsfTestCase):
     @mock.patch('website.addons.github.model.AddonGitHubUserSettings.has_auth')
     @mock.patch('website.addons.github.api.GitHub.repo')
     def test_permissions_no_access(self, mock_repo, mock_has_auth):
-        github_mock = create_mock_github(user='fred', private=False)
+        github_mock = self.github
         mock_has_auth.return_value = True
         connection = github_mock
         branch = 'master'
@@ -419,7 +419,7 @@ class TestGithubViews(OsfTestCase):
     # make a branch with a different commit than the commit being passed into check_permissions
     @mock.patch('website.addons.github.model.AddonGitHubUserSettings.has_auth')
     def test_permissions_not_head(self, mock_has_auth):
-        github_mock = create_mock_github(user='fred', private=False)
+        github_mock = self.github
         mock_has_auth.return_value = True
         connection = github_mock
         mock_branch = mock.NonCallableMock()
@@ -431,7 +431,7 @@ class TestGithubViews(OsfTestCase):
     # make sure permissions are not granted for editing a registration
     @mock.patch('website.addons.github.model.AddonGitHubUserSettings.has_auth')
     def test_permissions(self, mock_has_auth):
-        github_mock = create_mock_github(user='fred', private=False)
+        github_mock = self.github
         mock_has_auth.return_value = True
         connection = github_mock
         self.node_settings.owner.is_registration = True
@@ -606,7 +606,7 @@ class TestGithubViews(OsfTestCase):
     @mock.patch('website.addons.github.api.GitHub.contents')
     @mock.patch('website.addons.github.api.GitHub.repo')
     def test_view_not_found_does_not_create_guid(self, mock_repo, mock_contents, mock_history):
-        github_mock = create_mock_github(user='fred', private=False)
+        github_mock = self.github
         mock_repo.return_value = github_mock.repo.return_value
         mock_contents.return_value = github_mock.contents.return_value['octokit']
         mock_history.return_value = []
@@ -636,7 +636,7 @@ class TestGithubViews(OsfTestCase):
     @mock.patch('website.addons.github.api.GitHub.contents')
     @mock.patch('website.addons.github.api.GitHub.repo')
     def test_view_creates_guid(self, mock_repo, mock_contents, mock_history):
-        github_mock = create_mock_github(user='fred', private=False)
+        github_mock = self.github
         mock_repo.return_value = github_mock.repo.return_value
         mock_contents.return_value = github_mock.contents.return_value['octokit']
         mock_history.return_value = github_mock.commits.return_value
@@ -806,7 +806,7 @@ class TestGithubSettings(OsfTestCase):
     def setUp(self):
 
         super(TestGithubSettings, self).setUp()
-
+        self.github = create_mock_github(user='fred', private=False)
         self.project = ProjectFactory.build()
         self.project.save()
         self.auth = self.project.creator.auth
@@ -824,7 +824,7 @@ class TestGithubSettings(OsfTestCase):
     @mock.patch('website.addons.github.model.AddonGitHubNodeSettings.add_hook')
     @mock.patch('website.addons.github.api.GitHub.repo')
     def test_link_repo(self, mock_repo, mock_add_hook):
-        github_mock = create_mock_github(user='fred', private=False)
+        github_mock = self.github
         mock_repo.return_value = github_mock.repo.return_value
 
         url = self.project.api_url + 'github/settings/'
@@ -848,7 +848,7 @@ class TestGithubSettings(OsfTestCase):
     @mock.patch('website.addons.github.model.AddonGitHubNodeSettings.add_hook')
     @mock.patch('website.addons.github.api.GitHub.repo')
     def test_link_repo_no_change(self, mock_repo, mock_add_hook):
-        github_mock = create_mock_github(user='fred', private=False)
+        github_mock = self.github
         mock_repo.return_value = github_mock.repo.return_value
 
         log_count = len(self.project.logs)
