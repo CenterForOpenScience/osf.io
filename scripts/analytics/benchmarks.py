@@ -88,8 +88,8 @@ def count_file_downloads():
     for record in OsfStorageFileRecord.find():
         page = ':'.join(['download', record.node._id, record.path])
         unique, total = get_basic_counters(page)
-        downloads_unique += unique
-        downloads_total += total
+        downloads_unique += unique or 0
+        downloads_total += total or 0
     return downloads_unique, downloads_total
 
 
