@@ -54,7 +54,7 @@
             });
             request.fail(function (xhr) {
                 if (xhr.responseJSON.error_type !== 'not_subscribed') {
-                    var message = 'Could not subscribe to ' + self.list + ' at this time. If this issue persists, '
+                    var message = 'Could not update email preferences at this time. If this issue persists, '
                         + 'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.';
                     self.changeMessage(message, 'text-danger', 5000);
                 }
