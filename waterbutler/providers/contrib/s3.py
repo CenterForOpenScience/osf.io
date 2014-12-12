@@ -59,7 +59,7 @@ class S3Provider(core.BaseProvider):
         :param str path: The full path of the key to upload to/into
         :rtype ResponseWrapper:
         """
-        stream.set_hashes(hashlib.md5)
+        stream.add_hashes(hashlib.md5)
         key = self.bucket.new_key(path)
         url = key.generate_url(TEMP_URL_SECS, 'PUT')
         resp = yield from self.make_request(
