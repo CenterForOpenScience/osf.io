@@ -74,11 +74,27 @@ class OsfWebRenderer(WebRenderer):
 notemplate = OsfWebRenderer('', render_mako_string)
 
 
+# Static files (robots.txt, etc.)
+
 def favicon():
     return send_from_directory(
         settings.STATIC_FOLDER,
         'favicon.ico',
         mimetype='image/vnd.microsoft.icon'
+    )
+
+def robots():
+    """Serves the robots.txt file."""
+    # Allow local robots.txt
+    if os.path.exists(os.path.join(settings.STATIC_FOLDER,
+                                   'robots.local.txt')):
+        robots_file = 'robots.local.txt'
+    else:
+        robots_file = 'robots.txt'
+    return send_from_directory(
+        settings.STATIC_FOLDER,
+        robots_file,
+        mimetype='text/plain'
     )
 
 
@@ -129,8 +145,10 @@ def make_url_map(app):
 
     ])
 
+    # Static files
     process_rules(app, [
         Rule('/favicon.ico', 'get', favicon, json_renderer),
+        Rule('/robots.txt', 'get', robots, json_renderer),
     ])
 
     ### Base ###
@@ -413,6 +431,20 @@ def make_url_map(app):
             'get',
             profile_views.user_profile,
             OsfWebRenderer('profile/settings.mako'),
+        ),
+
+        Rule(
+            '/settings/account/',
+            'get',
+            profile_views.user_account,
+            OsfWebRenderer('profile/account.mako'),
+        ),
+
+        Rule(
+            '/settings/account/password',
+            'post',
+            profile_views.user_account_password,
+            OsfWebRenderer('profile/account.mako'),
         ),
 
         Rule(

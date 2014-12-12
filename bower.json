@@ -22,6 +22,7 @@
     "bootstrap.growl": "~2.0.1",
     "jquery.tagsinput": "~1.3.2",
     "jquery-autosize": "~1.18.15",
-    "x-editable": "~1.5.1"
+    "x-editable": "~1.5.1",
+    "jquery.cookie": "~1.4.1"
   }
 }

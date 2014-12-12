@@ -22,6 +22,7 @@ from framework.auth.utils import impute_names_model
 
 import website.app
 from website import mailchimp_helpers
+from website.views import _rescale_ratio
 from website.util import permissions
 from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas, has_anonymous_link
@@ -759,6 +760,26 @@ class TestChildrenViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['nodes']), 0)
 
+    def test_get_children_rescale_ratio(self):
+        project = ProjectFactory(creator=self.user)
+        child = NodeFactory(project=project, creator=self.user)
+
+        url = project.api_url_for('get_children')
+        res = self.app.get(url, auth=self.user.auth)
+
+        rescale_ratio = res.json['rescale_ratio']
+        assert_is_instance(rescale_ratio, float)
+        assert_equal(rescale_ratio, _rescale_ratio(Auth(self.user), [child]))
+
+    def test_get_children_render_nodes_receives_auth(self):
+        project = ProjectFactory(creator=self.user)
+        child = NodeFactory(project=project, creator=self.user)
+
+        url = project.api_url_for('get_children')
+        res = self.app.get(url, auth=self.user.auth)
+
+        perm = res.json['nodes'][0]['permissions']
+        assert_equal(perm, 'admin')
 
 
 class TestUserProfile(OsfTestCase):
@@ -986,6 +1007,101 @@ class TestUserProfile(OsfTestCase):
         url = api_url_for('unserialize_jobs')
         res = self.app.put_json(url, payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
+
+
+class TestUserAccount(OsfTestCase):
+
+    def setUp(self):
+        super(TestUserAccount, self).setUp()
+        self.user = AuthUserFactory()
+        self.user.set_password('password')
+        self.user.save()
+
+    @mock.patch('website.profile.views.push_status_message')
+    def test_password_change_valid(self, mock_push_status_message):
+        old_password = 'password'
+        new_password = 'Pa$$w0rd'
+        confirm_password = new_password
+        url = web_url_for('user_account_password')
+        post_data = {
+            'old_password': old_password,
+            'new_password': new_password,
+            'confirm_password': confirm_password,
+        }
+        res = self.app.post(url, post_data, auth=self.user.auth)
+        assert_true(302, res.status_code)
+        res = res.follow(auth=self.user.auth)
+        assert_true(200, res.status_code)
+        self.user.reload()
+        assert_true(self.user.check_password(new_password))
+        assert_true(mock_push_status_message.called)
+        assert_in('Password updated successfully', mock_push_status_message.mock_calls[0][1][0])
+
+    @mock.patch('website.profile.views.push_status_message')
+    def test_password_change_invalid(self, mock_push_status_message, old_password='', new_password='',
+                                     confirm_password='', error_message='Old password is invalid'):
+        url = web_url_for('user_account_password')
+        post_data = {
+            'old_password': old_password,
+            'new_password': new_password,
+            'confirm_password': confirm_password,
+        }
+        res = self.app.post(url, post_data, auth=self.user.auth)
+        assert_true(302, res.status_code)
+        res = res.follow(auth=self.user.auth)
+        assert_true(200, res.status_code)
+        self.user.reload()
+        assert_false(self.user.check_password(new_password))
+        assert_true(mock_push_status_message.called)
+        assert_in(error_message, mock_push_status_message.mock_calls[0][1][0])
+
+    def test_password_change_invalid_old_password(self):
+        self.test_password_change_invalid(
+            old_password='invalid old password',
+            new_password='new password',
+            confirm_password='new password',
+            error_message='Old password is invalid',
+        )
+
+    def test_password_change_invalid_confirm_password(self):
+        self.test_password_change_invalid(
+            old_password='password',
+            new_password='new password',
+            confirm_password='invalid confirm password',
+            error_message='Password does not match the confirmation',
+        )
+
+    def test_password_change_invalid_new_password_length(self):
+        self.test_password_change_invalid(
+            old_password='password',
+            new_password='12345',
+            confirm_password='12345',
+            error_message='Password should be at least six characters',
+        )
+
+    def test_password_change_invalid_confirm_password(self):
+        self.test_password_change_invalid(
+            old_password='password',
+            new_password='new password',
+            confirm_password='invalid confirm password',
+            error_message='Password does not match the confirmation',
+        )
+
+    def test_password_change_invalid_blank_password(self, old_password='', new_password='', confirm_password=''):
+        self.test_password_change_invalid(
+            old_password=old_password,
+            new_password=new_password,
+            confirm_password=confirm_password,
+            error_message='Passwords cannot be blank',
+        )
+
+    def test_password_change_invalid_blank_new_password(self):
+        for password in ('', '      '):
+            self.test_password_change_invalid_blank_password('password', password, 'new password')
+
+    def test_password_change_invalid_blank_confirm_password(self):
+        for password in ('', '      '):
+            self.test_password_change_invalid_blank_password('password', 'new password', password)
 
 
 class TestAddingContributorViews(OsfTestCase):
@@ -3450,6 +3566,18 @@ class TestProfileNodeList(OsfTestCase):
         assert_not_in(self.private._id, node_ids)
         assert_not_in(self.deleted._id, node_ids)
 
+class TestStaticFileViews(OsfTestCase):
+
+    def test_robots_dot_txt(self):
+        res = self.app.get('/robots.txt')
+        assert_equal(res.status_code, 200)
+        assert_in('User-agent', res)
+        assert_in('text/plain', res.headers['Content-Type'])
+
+    def test_favicon(self):
+        res = self.app.get('/favicon.ico')
+        assert_equal(res.status_code, 200)
+        assert_in('image/vnd.microsoft.icon', res.headers['Content-Type'])
 
 if __name__ == '__main__':
     unittest.main()

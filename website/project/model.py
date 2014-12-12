@@ -2739,10 +2739,12 @@ class PrivateLink(StoredObject):
         return node_ids
 
     def node_scale(self, node):
-        if node.parent_id not in self.node_ids:
+        # node may be None if previous node's parent is deleted
+        if node is None or node.parent_id not in self.node_ids:
             return -40
         else:
-            return 20 + self.node_scale(node.parent_node)
+            offset = 20 if node.parent_node is not None else 0
+            return offset + self.node_scale(node.parent_node)
 
     def node_icon(self, node):
         if node.category == 'project':
@@ -2758,6 +2760,7 @@ class PrivateLink(StoredObject):
             "key": self.key,
             "name": self.name,
             "creator": {'fullname': self.creator.fullname, 'url': self.creator.profile_url},
-            "nodes": [{'title': x.title, 'url': x.url, 'scale': str(self.node_scale(x)) + 'px', 'imgUrl': self.node_icon(x)} for x in self.nodes],
+            "nodes": [{'title': x.title, 'url': x.url, 'scale': str(self.node_scale(x)) + 'px', 'imgUrl': self.node_icon(x)}
+                      for x in self.nodes if not x.is_deleted],
             "anonymous": self.anonymous
         }
