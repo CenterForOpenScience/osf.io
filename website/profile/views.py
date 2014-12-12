@@ -9,6 +9,7 @@ from flask import request
 from modularodm.exceptions import ValidationError, NoResultsFound
 from modularodm import Q
 
+from framework import sentry
 from framework.auth import utils as auth_utils
 from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
@@ -267,6 +268,8 @@ def sync_data_from_mailchimp(**kwargs):
         try:
             user = User.find(Q('username', 'eq', username))[0]
         except NoResultsFound:
+            sentry.log_exception()
+            sentry.log_message("A user with this username does not exist.")
             raise HTTPError(404, data=dict(message_short='User not found',
                                            message_long='A user with this username does not exist'))
         user.mailing_lists[list_name] = (action == 'subscribe')
