@@ -421,7 +421,8 @@ class TestConferenceModel(OsfTestCase):
 
 class TestConferenceIntegration(ContextTestCase):
 
-    def test_integration(self):
+    @mock.patch('website.conferences.utils.upload_attachments')
+    def test_integration(self, mock_upload):
         fullname = 'John Deacon'
         username = 'deacon@queen.com'
         title = 'good songs'
@@ -454,6 +455,7 @@ class TestConferenceIntegration(ContextTestCase):
                 ('attachment-1', 'attachment-1', content),
             ],
         )
+        assert_true(mock_upload.called)
         users = User.find(Q('username', 'eq', username))
         assert_equal(users.count(), 1)
         nodes = Node.find(Q('title', 'eq', title))
