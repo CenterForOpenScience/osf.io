@@ -1,6 +1,7 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Settings</%def>
 <%def name="content()">
+<% from website import settings %>
 <h2 class="page-header">Profile Information</h2>
 
 ## TODO: Review and un-comment
@@ -23,7 +24,9 @@
                 <li><a href="#">Profile Information</a></li>
                 <li><a href="${ web_url_for('user_account') }">Account Settings</a></li>
                 <li><a href="${ web_url_for('user_addons') }">Configure Add-ons</a></li>
-                <li><a href="${ web_url_for('user_notifications') }">Notifications</a></li>
+                %if settings.ENABLE_EMAIL_SUBSCRIPTIONS:
+                    <li><a href="${ web_url_for('user_notifications') }">Notifications</a></li>
+                %endif
             </ul>
         </div><!-- end sidebar -->
     </div>
