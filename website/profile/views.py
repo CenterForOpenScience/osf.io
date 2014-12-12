@@ -27,16 +27,6 @@ from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
 from website.profile import utils as profile_utils
 
-subscribe_mailchimp = (
-    mailchimp_helpers.subscribe.delay
-    if settings.USE_CELERY
-    else mailchimp_helpers.subscribe)
-
-unsubscribe_mailchimp = (
-    mailchimp_helpers.unsubscribe.delay
-    if settings.USE_CELERY
-    else mailchimp_helpers.unsubscribe
-)
 
 logger = logging.getLogger(__name__)
 
@@ -253,9 +243,9 @@ def update_subscription(user, list_name, subscription):
         :param boolean subscription: true if user is subscribed
     """
     if subscription:
-        subscribe_mailchimp(list_name, user.username)
+        mailchimp_helpers.subscribe_mailchimp(list_name, user.username)
     else:
-        unsubscribe_mailchimp(list_name, user.username)
+        mailchimp_helpers.unsubscribe_mailchimp(list_name, user.username)
 
 
 def mailchimp_get_endpoint(**kwargs):

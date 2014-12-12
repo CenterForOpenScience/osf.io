@@ -35,3 +35,14 @@ def unsubscribe(list_name, username):
         m.lists.unsubscribe(id=list_id, email={'email': username})
     except mailchimp.ListNotSubscribedError:
         pass
+
+subscribe_mailchimp = (
+    subscribe.delay
+    if settings.USE_CELERY
+    else subscribe)
+
+unsubscribe_mailchimp = (
+    unsubscribe.delay
+    if settings.USE_CELERY
+    else unsubscribe
+)
