@@ -201,10 +201,9 @@ def user_addons(auth, **kwargs):
 @must_be_logged_in
 def user_notifications(auth, **kwargs):
     """Get subscribe data from user"""
-    out = {}
-    mailing_lists = auth.user.mailing_lists
-    out['mailing_lists'] = mailing_lists
-    return out
+    return {
+        'mailing_lists': auth.user.mailing_lists
+    }
 
 @must_be_logged_in
 def profile_addons(**kwargs):
