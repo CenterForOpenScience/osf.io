@@ -48,7 +48,7 @@ class S3Provider(core.BaseProvider):
         if resp.status != 200:
             raise exceptions.FileNotFoundError(path)
 
-        return core.ResponseWrapper(resp)
+        return core.ResponseStream(resp)
 
     @core.expects(200, 201)
     @asyncio.coroutine
@@ -66,7 +66,7 @@ class S3Provider(core.BaseProvider):
             headers={'Content-Length': stream.size},
         )
 
-        return core.ResponseWrapper(resp)
+        return core.ResponseStream(resp)
 
     @core.expects(200, 204)
     @asyncio.coroutine
@@ -79,7 +79,7 @@ class S3Provider(core.BaseProvider):
         url = key.generate_url(TEMP_URL_SECS, 'DELETE')
         resp = yield from self.make_request('DELETE', url)
 
-        return core.ResponseWrapper(resp)
+        return core.ResponseStream(resp)
 
     @asyncio.coroutine
     def metadata(self, path, **kwargs):

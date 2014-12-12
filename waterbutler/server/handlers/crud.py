@@ -3,7 +3,7 @@ import os
 from tornado import web
 
 from waterbutler import settings
-from waterbutler.providers.core import RequestWrapper
+from waterbutler.providers.core import RequestStream
 from waterbutler.server import utils
 from waterbutler.server.handlers import core
 
@@ -25,7 +25,7 @@ class CRUDHandler(core.BaseHandler):
 
     def prepare_stream(self):
         if self.request.method in self.STREAM_METHODS:
-            self.stream = RequestWrapper(self.request)
+            self.stream = RequestStream(self.request)
             self.uploader = self.provider.upload(self.stream, **self.arguments)
         else:
             self.stream = None
