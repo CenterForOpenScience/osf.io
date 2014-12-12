@@ -64,7 +64,7 @@ MAIL_PASSWORD = ''  # Set this in local.py
 
 # Mailchimp
 MAILCHIMP_API_KEY = 'CHANGEME'
-MAILCHIMP_WEBHOOK_SECRET_KEY = 'CHANGEME'  # OSF secret key to ensure webhook is secure
+MAILCHIMP_WEBHOOK_SECRET_KEY = None  # OSF secret key to ensure webhook is secure
 ENABLE_EMAIL_SUBSCRIPTIONS = True
 
 # TODO: Override in local.py
