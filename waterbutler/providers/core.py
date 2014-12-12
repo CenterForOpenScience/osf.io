@@ -52,8 +52,7 @@ class BaseStream(asyncio.StreamReader, metaclass=abc.ABCMeta):
         self.hashes = {}
         self.size = None
 
-    def set_hashes(self, *hashes):
-        self.hashes = {}
+    def add_hashes(self, *hashes):
         for hash in hashes:
             hasher = hash()
             self.hashes[hasher.name] = hasher
