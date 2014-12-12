@@ -163,7 +163,7 @@ class CloudFilesProvider(core.BaseProvider):
             return url
 
         resp = yield from self.make_request('GET', url)
-        return core.ResponseWrapper(resp)
+        return core.ResponseStream(resp)
 
     @core.expects(200, 201)
     @ensure_connection
@@ -174,14 +174,12 @@ class CloudFilesProvider(core.BaseProvider):
         :rtype ResponseWrapper:
         """
         url = self.generate_url(path, 'PUT')
-
         resp = yield from self.make_request(
             'PUT', url,
             data=stream,
             headers={'Content-Length': stream.size},
         )
-
-        return core.ResponseWrapper(resp)
+        return core.ResponseStream(resp)
 
     @core.expects(204)
     @ensure_connection
@@ -192,7 +190,7 @@ class CloudFilesProvider(core.BaseProvider):
         """
         resp = yield from self.make_request('DELETE', self.build_url(path))
 
-        return core.ResponseWrapper(resp)
+        return core.ResponseStream(resp)
 
     @ensure_connection
     def metadata(self, path, **kwargs):

@@ -45,17 +45,35 @@ def expects(*codes):
     return wrapper
 
 
-class BaseWrapper(metaclass=abc.ABCMeta):
+class BaseStream(metaclass=abc.ABCMeta):
 
-    size = None
+    def __init__(self):
+        self.hashes = {}
+        self.size = None
+
+    def set_hashes(self, *hashes):
+        self.hashes = {}
+        for hash in hashes:
+            hasher = hash()
+            self.hashes[hasher.name] = hasher
+
+    def feed_hashes(self, chunk):
+        for hash in self.hashes.values():
+            hash.update(chunk)
+
+    @asyncio.coroutine
+    def read(self, size=None):
+        chunk = yield from self._read(size)
+        self.feed_hashes(chunk)
+        return chunk
 
     @abc.abstractmethod
     @asyncio.coroutine
-    def read(self, **kwargs):
+    def _read(self, chunk):
         pass
 
 
-class ResponseWrapper(BaseWrapper, asyncio.StreamReader):
+class ResponseStream(BaseStream):
 
     def __init__(self, response):
         super().__init__()
@@ -64,41 +82,47 @@ class ResponseWrapper(BaseWrapper, asyncio.StreamReader):
         self.content_type = response.headers.get('Content-Type', 'application/octet-stream')
 
     @asyncio.coroutine
-    def read(self, size=None):
-        return (yield from self.response.read(size))
+    def _read(self, size=None):
+        return (yield from self.response.content.read(size))
 
 
-class RequestWrapper(BaseWrapper, asyncio.StreamReader):
+class RequestStream(BaseStream):
 
     def __init__(self, request):
         super().__init__()
         self.request = request
         self.size = self.request.headers.get('Content-Length')
 
+    @asyncio.coroutine
+    def _read(self, size=None):
+        return (yield from self.request.content.read(size))
 
-class FileWrapper(BaseWrapper, asyncio.StreamReader):
 
-    _reader = None
+class FileStream(BaseStream):
 
     def __init__(self, file_object):
         super().__init__()
+        self.file_gen = self.read_as_gen()
         self.file_object = file_object
-        self.file_object.seek(0, os.SEEK_END)
+        self.file_object.seek(os.SEEK_END)
+        self.read_size = None
         self.size = self.file_object.tell()
 
     @asyncio.coroutine
-    def read(self, size=None):
-        if not self._reader:
-            self._reader = self._read(size)
+    def _read(self, size=None):
         # add sleep of 0 so read will yield and continue in next io loop iteration
         yield from asyncio.sleep(0)
-        return next(self._reader)
+        self.read_size = size
+        try:
+            return next(self.file_gen)
+        except StopIteration:
+            return ''
 
-    def _read(self, size=None):
+    def read_as_gen(self):
         self.file_object.seek(0)
 
         while True:
-            data = self.file_object.read(size)
+            data = self.file_object.read(self.read_size)
             if not data:
                 break
             yield data
