@@ -4,8 +4,7 @@ from tests.utils import async
 from tests.mocking import aiopretty
 
 import io
-import os
-import json
+import hashlib
 
 from waterbutler import exceptions
 from waterbutler.providers import core
@@ -45,7 +44,7 @@ def file_like(file_content):
 
 
 @pytest.fixture
-def file_wrapper(file_like):
+def file_stream(file_like):
     return core.FileStream(file_like)
 
 
@@ -172,12 +171,13 @@ def test_metadata_missing(provider, bucket_content):
 
 @async
 @pytest.mark.aiopretty
-def test_upload(provider, file_wrapper):
+def test_upload(provider, file_content, file_stream):
     path = 'foobah'
+    content_md5 = hashlib.md5(file_content).hexdigest()
     url = provider.bucket.new_key(path).generate_url(100, 'PUT')
-    aiopretty.register_uri('PUT', url, status=200)
+    aiopretty.register_uri('PUT', url, status=200, headers={'ETag': '"{}"'.format(content_md5)})
 
-    resp = yield from provider.upload(file_wrapper, path)
+    resp = yield from provider.upload(file_stream, path)
 
     assert resp.response.status == 200
     assert aiopretty.has_call(method='PUT', uri=url)
@@ -185,12 +185,13 @@ def test_upload(provider, file_wrapper):
 
 @async
 @pytest.mark.aiopretty
-def test_upload_update(provider, file_wrapper):
+def test_upload_update(provider, file_content, file_stream):
     path = 'foobah'
+    content_md5 = hashlib.md5(file_content).hexdigest()
     url = provider.bucket.new_key(path).generate_url(100, 'PUT')
-    aiopretty.register_uri('PUT', url, status=201)
+    aiopretty.register_uri('PUT', url, status=201, headers={'ETag': '"{}"'.format(content_md5)})
 
-    resp = yield from provider.upload(file_wrapper, path)
+    resp = yield from provider.upload(file_stream, path)
 
     assert resp.response.status == 201
     assert aiopretty.has_call(method='PUT', uri=url)

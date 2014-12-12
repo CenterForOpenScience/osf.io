@@ -18,19 +18,27 @@ def make_call(**kwargs):
     return kwargs
 
 
+@asyncio.coroutine
+def process_request(**kwargs):
+    """Process request options as if the request was actually executed."""
+    data = kwargs.get('data')
+    if isinstance(data, asyncio.StreamReader):
+        yield from data.read()
+
+
+@asyncio.coroutine
 def fake_request(method, uri, **kwargs):
     try:
         options = aiopretty.registry[(method, uri)]
     except KeyError:
         raise Exception('NO')
+    yield from process_request(**kwargs)
     aiopretty.calls.append(make_call(method=method, uri=uri, **kwargs))
     mock_response = aiohttp.client.ClientResponse(method, uri)
-    mock_response.headers = aiohttp.client.CaseInsensitiveMultiDict(options.get('headers', {}))
     mock_response._content = options.get('body', 'aiopretty')
+    mock_response.headers = aiohttp.client.CaseInsensitiveMultiDict(options.get('headers', {}))
     mock_response.status = options.get('status', 200)
-    future = asyncio.Future()
-    future.set_result(mock_response)
-    return future
+    return mock_response
 
 
 def register_uri(method, uri, **options):

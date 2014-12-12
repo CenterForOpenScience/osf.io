@@ -12,6 +12,7 @@ from waterbutler.exceptions import exception_from_reponse
 
 PROVIDERS = {}
 
+
 def register_provider(name):
     def _register_provider(cls):
         if PROVIDERS.get(name):
@@ -45,7 +46,7 @@ def expects(*codes):
     return wrapper
 
 
-class BaseStream(metaclass=abc.ABCMeta):
+class BaseStream(asyncio.StreamReader, metaclass=abc.ABCMeta):
 
     def __init__(self):
         self.hashes = {}
@@ -116,7 +117,7 @@ class FileStream(BaseStream):
         try:
             return next(self.file_gen)
         except StopIteration:
-            return ''
+            return b''
 
     def read_as_gen(self):
         self.file_object.seek(0)
