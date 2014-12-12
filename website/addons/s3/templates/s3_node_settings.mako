@@ -62,9 +62,8 @@
     % elif node_has_auth and bucket_list is None:
 
         <div>
-            <i class="icon-spinner icon-large icon-spin"></i>
-            <span class="text-info">
-                S3 access keys loading. Please wait a moment and refresh the page.
+            <span class="text-danger">
+                Error loading S3 access keys. Please refresh the page.
             </span>
         </div>
 
@@ -112,10 +111,12 @@
                 contentType: 'application/json',
                 dataType: 'json'
             }).done(function() {
-                msgElm.text('Settings updated')
-                    .removeClass('text-danger').addClass('text-success')
-                    .fadeOut(100).fadeIn();
-                window.location.reload();
+                msgElm.text('S3 access keys loading...')
+                        .removeClass('text-danger').addClass('text-info')
+                        .fadeIn(1000);
+                setTimeout(function(){
+                    window.location.reload();
+                }, 5000);
             }).fail(function(xhr) {
                 var message = 'Error: ';
                 var response = JSON.parse(xhr.responseText);
@@ -148,3 +149,4 @@
     % endif
 
 </%def>
+
