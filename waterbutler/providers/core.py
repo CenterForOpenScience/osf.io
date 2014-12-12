@@ -45,32 +45,63 @@ def expects(*codes):
     return wrapper
 
 
-class ResponseWrapper(object):
+class BaseWrapper(metaclass=abc.ABCMeta):
+
+    size = None
+
+    @abc.abstractmethod
+    @asyncio.coroutine
+    def read(self, **kwargs):
+        pass
+
+
+class ResponseWrapper(BaseWrapper, asyncio.StreamReader):
 
     def __init__(self, response):
+        super().__init__()
         self.response = response
-        self.content = response.content
         self.size = response.headers.get('Content-Length')
         self.content_type = response.headers.get('Content-Type', 'application/octet-stream')
 
+    @asyncio.coroutine
+    def read(self, size=None):
+        return (yield from self.response.read(size))
 
-class RequestWrapper(object):
+
+class RequestWrapper(BaseWrapper, asyncio.StreamReader):
 
     def __init__(self, request):
-        self.response = request
-        self.content = asyncio.StreamReader()
-        self.size = request.headers.get('Content-Length')
+        super().__init__()
+        self.request = request
+        self.size = self.request.headers.get('Content-Length')
 
 
-class FileWrapper(object):
+class FileWrapper(BaseWrapper, asyncio.StreamReader):
 
-    def __init__(self, file_pointer):
-        self.file_pointer = file_pointer
-        self.content = asyncio.StreamReader()
-        # TODO: Handle UTF-unsafe characters
-        self.content.feed_data(file_pointer.read())
-        self.content.feed_eof()
-        self.size = file_pointer.tell()
+    _reader = None
+
+    def __init__(self, file_object):
+        super().__init__()
+        self.file_object = file_object
+        self.file_object.seek(0, os.SEEK_END)
+        self.size = self.file_object.tell()
+
+    @asyncio.coroutine
+    def read(self, size=None):
+        if not self._reader:
+            self._reader = self._read(size)
+        # add sleep of 0 so read will yield and continue in next io loop iteration
+        yield from asyncio.sleep(0)
+        return next(self._reader)
+
+    def _read(self, size=None):
+        self.file_object.seek(0)
+
+        while True:
+            data = self.file_object.read(size)
+            if not data:
+                break
+            yield data
 
 
 def build_url(base, *segments, **query):
@@ -136,8 +167,8 @@ class BaseProvider(metaclass=abc.ABCMeta):
                 return (yield from self.intra_copy(dest_provider, source_options, dest_options))
             except NotImplementedError:
                 pass
-        obj = yield from self.download(**source_options)
-        yield from dest_provider.upload(obj, **dest_options)
+        stream = yield from self.download(**source_options)
+        yield from dest_provider.upload(stream, **dest_options)
 
     @asyncio.coroutine
     def move(self, dest_provider, source_options, dest_options):
@@ -154,7 +185,7 @@ class BaseProvider(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def upload(self, obj, **kwargs):
+    def upload(self, stream, **kwargs):
         pass
 
     @abc.abstractmethod

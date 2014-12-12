@@ -101,12 +101,12 @@ class DropboxProvider(core.BaseProvider):
 
     @core.expects(200)
     @asyncio.coroutine
-    def upload(self, obj, path, **kwargs):
+    def upload(self, stream, path, **kwargs):
         resp = yield from self.make_request(
             'PUT',
             self.build_content_url('files_put', 'auto', self.build_path(path)),
-            headers={'Content-Length': obj.size},
-            data=obj.content,
+            headers={'Content-Length': stream.size},
+            data=stream,
         )
         return core.ResponseWrapper(resp)
 

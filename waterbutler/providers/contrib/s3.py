@@ -52,9 +52,9 @@ class S3Provider(core.BaseProvider):
 
     @core.expects(200, 201)
     @asyncio.coroutine
-    def upload(self, obj, path, **kwargs):
+    def upload(self, stream, path, **kwargs):
         """Uploads the given stream to S3
-        :param ResponseWrapper obj: The stream to put to S3
+        :param ResponseWrapper stream: The stream to put to S3
         :param str path: The full path of the key to upload to/into
         :rtype ResponseWrapper:
         """
@@ -62,8 +62,8 @@ class S3Provider(core.BaseProvider):
         url = key.generate_url(TEMP_URL_SECS, 'PUT')
         resp = yield from self.make_request(
             'PUT', url,
-            data=obj.content,
-            headers={'Content-Length': obj.size},
+            data=stream,
+            headers={'Content-Length': stream.size},
         )
 
         return core.ResponseWrapper(resp)
