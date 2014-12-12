@@ -419,7 +419,7 @@ class TestConferenceModel(OsfTestCase):
             ConferenceFactory(endpoint='spsp2014', name=None).save()
 
 
-class TestConferenceIntegration(OsfTestCase):
+class TestConferenceIntegration(ContextTestCase):
 
     def test_integration(self):
         fullname = 'John Deacon'
