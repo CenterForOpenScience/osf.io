@@ -37,7 +37,7 @@ CODE_TO_ERROR = {
 @asyncio.coroutine
 def exception_from_reponse(resp, **kwargs):
     """Build and return, not raise, an exception from a response
-    :param Response resp: An AioResponse obj with a non 200 range status
+    :param Response resp: An AioResponse stream with a non 200 range status
     :param dict **kwargs: Additional context to extract information from
     :rtype WaterButlerError:
     """
