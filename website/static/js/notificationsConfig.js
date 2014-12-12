@@ -35,10 +35,11 @@
             request.done(function () {
                 self.changeMessage('Settings updated.', 'text-success', 5000);
             });
-            request.fail(function () {
-                var message = 'Could not update settings.';
-                self.changeMessage(message, 'text-danger', 5000);
-
+            request.fail(function (xhr) {
+                if (xhr.status != 400) {
+                    var message = 'Could not update settings.';
+                    self.changeMessage(message, 'text-danger', 5000);
+                }
             });
         };
     };

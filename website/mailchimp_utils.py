@@ -31,10 +31,8 @@ def subscribe(list_name, username):
 def unsubscribe(list_name, username):
     m = get_mailchimp_api()
     list_id = get_list_id_from_name(list_name=list_name)
-    try:
-        m.lists.unsubscribe(id=list_id, email={'email': username})
-    except mailchimp.ListNotSubscribedError:
-        pass
+    m.lists.unsubscribe(id=list_id, email={'email': username})
+
 
 subscribe_mailchimp = (
     subscribe.delay
