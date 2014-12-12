@@ -27,6 +27,11 @@ from website import mailchimp_helpers
 from website.models import User
 from website.util import web_url_for
 
+subscribe_mailchimp = (
+    mailchimp_helpers.subscribe.delay
+    if website.settings.USE_CELERY
+    else mailchimp_helpers.subscribe)
+
 
 def reset_password(**kwargs):
 
@@ -175,7 +180,7 @@ def confirm_email_get(**kwargs):
 
             # Subscribe user to general OSF mailing list
             if not website.settings.DEV_MODE:
-                mailchimp_helpers.subscribe('Open Science Framework General', user.username)
+                subscribe_mailchimp('Open Science Framework General', user.username)
 
             return framework.auth.authenticate(user, response=response)
     # Return data for the error template
