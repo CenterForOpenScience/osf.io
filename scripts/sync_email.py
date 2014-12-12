@@ -15,7 +15,7 @@ http://apidocs.mailchimp.com/api/how-to/sync-you-to-mailchimp.php
 
 from modularodm import Q
 from framework.auth.core import User
-from website import mailchimp_helpers
+from website import mailchimp_utils
 from website.app import init_app
 from tests.base import OsfTestCase
 from tests.factories import UserFactory, UnconfirmedUserFactory
@@ -46,8 +46,8 @@ def get_user_emails():
 
 
 def subscribe_users(list_name):
-    m = mailchimp_helpers.get_mailchimp_api()
-    list_id = mailchimp_helpers.get_list_id_from_name(list_name=list_name)
+    m = mailchimp_utils.get_mailchimp_api()
+    list_id = mailchimp_utils.get_list_id_from_name(list_name=list_name)
     return m.lists.batch_subscribe(id=list_id, batch=get_user_emails(), double_optin=False, update_existing=True)
 
 
@@ -69,7 +69,7 @@ class TestSyncEmail(OsfTestCase):
     def test_subscribe_users_called_with_correct_arguments(self, mock_subscribe, mock_list):
         list_name = 'foo'
         mock_list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
-        list_id = mailchimp_helpers.get_list_id_from_name(list_name)
+        list_id = mailchimp_utils.get_list_id_from_name(list_name)
         batch = get_user_emails()
         subscribe_users(list_name=list_name)
         mock_subscribe.assert_called_with(id=list_id, batch=batch, double_optin=False, update_existing=True)

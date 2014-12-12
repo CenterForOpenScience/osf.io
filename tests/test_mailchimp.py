@@ -1,5 +1,5 @@
 import mock
-from website import mailchimp_helpers
+from website import mailchimp_utils
 from tests.base import OsfTestCase
 from nose.tools import *  # PEP8 asserts
 
@@ -12,7 +12,7 @@ class TestMailChimpHelpers(OsfTestCase):
         mock_client = mock.MagicMock()
         mock_get_mailchimp_api.return_value = mock_client
         mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
-        list_id = mailchimp_helpers.get_list_id_from_name(list_name)
+        list_id = mailchimp_utils.get_list_id_from_name(list_name)
         mock_client.lists.list.assert_called_with(filters={'list_name': list_name})
         assert_equal(list_id, 1)
 
@@ -22,7 +22,7 @@ class TestMailChimpHelpers(OsfTestCase):
         mock_client = mock.MagicMock()
         mock_get_mailchimp_api.return_value = mock_client
         mock_client.lists.list.return_value = {'data': [{'id': list_id, 'name': 'foo'}]}
-        list_name = mailchimp_helpers.get_list_name_from_id(list_id)
+        list_name = mailchimp_utils.get_list_name_from_id(list_id)
         mock_client.lists.list.assert_called_with(filters={'list_id': list_id})
         assert_equal(list_name, 'foo')
 
@@ -33,8 +33,8 @@ class TestMailChimpHelpers(OsfTestCase):
         mock_client = mock.MagicMock()
         mock_get_mailchimp_api.return_value = mock_client
         mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
-        list_id = mailchimp_helpers.get_list_id_from_name(list_name)
-        mailchimp_helpers.subscribe(list_id, username)
+        list_id = mailchimp_utils.get_list_id_from_name(list_name)
+        mailchimp_utils.subscribe(list_id, username)
         mock_client.lists.subscribe.assert_called_with(id=list_id, email={'email': username}, double_optin=False, update_existing=True)
 
     @mock.patch('website.mailchimp_helpers.get_mailchimp_api')
@@ -44,6 +44,6 @@ class TestMailChimpHelpers(OsfTestCase):
         mock_client = mock.MagicMock()
         mock_get_mailchimp_api.return_value = mock_client
         mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
-        list_id = mailchimp_helpers.get_list_id_from_name(list_name)
-        mailchimp_helpers.unsubscribe(list_id, username)
+        list_id = mailchimp_utils.get_list_id_from_name(list_name)
+        mailchimp_utils.unsubscribe(list_id, username)
         mock_client.lists.unsubscribe.assert_called_with(id=list_id, email={'email': username})

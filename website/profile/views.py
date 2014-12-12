@@ -18,7 +18,7 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
 
 from website import settings
-from website import mailchimp_helpers
+from website import mailchimp_utils
 from website.models import User
 from website.models import ApiKey
 from website.views import _render_nodes
@@ -243,9 +243,9 @@ def update_subscription(user, list_name, subscription):
         :param boolean subscription: true if user is subscribed
     """
     if subscription:
-        mailchimp_helpers.subscribe_mailchimp(list_name, user.username)
+        mailchimp_utils.subscribe_mailchimp(list_name, user.username)
     else:
-        mailchimp_helpers.unsubscribe_mailchimp(list_name, user.username)
+        mailchimp_utils.unsubscribe_mailchimp(list_name, user.username)
 
 
 def mailchimp_get_endpoint(**kwargs):
@@ -260,7 +260,7 @@ def sync_data_from_mailchimp(**kwargs):
     if key == settings.MAILCHIMP_WEBHOOK_SECRET_KEY:
         r = request
         action = r.values['type']
-        list_name = mailchimp_helpers.get_list_name_from_id(list_id=r.values['data[list_id]'])
+        list_name = mailchimp_utils.get_list_name_from_id(list_id=r.values['data[list_id]'])
         username = r.values['data[email]']
         try:
             user = User.find(Q('username', 'eq', username))[0]

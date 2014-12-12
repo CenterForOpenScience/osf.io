@@ -21,7 +21,7 @@ from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 
 import website.app
-from website import mailchimp_helpers
+from website import mailchimp_utils
 from website.views import _rescale_ratio
 from website.util import permissions
 from website.models import Node, Pointer, NodeLog
@@ -2346,7 +2346,7 @@ class TestConfigureMailingListViews(OsfTestCase):
         mock_client = mock.MagicMock()
         mock_get_mailchimp_api.return_value = mock_client
         mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
-        list_id = mailchimp_helpers.get_list_id_from_name(list_name)
+        list_id = mailchimp_utils.get_list_id_from_name(list_name)
 
         payload = {u'OSF General': True}
         url = api_url_for('user_choose_mailing_lists')
