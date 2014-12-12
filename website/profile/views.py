@@ -274,7 +274,7 @@ def sync_data_from_mailchimp(**kwargs):
         list_name = mailchimp_utils.get_list_name_from_id(list_id=r.values['data[list_id]'])
         username = r.values['data[email]']
         try:
-            user = User.find(Q('username', 'eq', username))[0]
+            user = User.find_one(Q('username', 'eq', username))[0]
         except NoResultsFound:
             sentry.log_exception()
             sentry.log_message("A user with this username does not exist.")
