@@ -59,12 +59,12 @@ class GithubProvider(core.BaseProvider):
             self.build_repo_url('git', 'blobs', sha),
             headers={'Accept': 'application/vnd.github.VERSION.raw'},
         )
-        return core.ResponseWrapper(response)
+        return core.ResponseStream(response)
 
     @core.expects(200, 201)
     @asyncio.coroutine
-    def upload(self, obj, path, message, branch=None, **kwargs):
-        content = yield from obj.content.read()
+    def upload(self, stream, path, message, branch=None, **kwargs):
+        content = yield from stream.read()
         encoded = base64.b64encode(content)
         data = {
             'path': path,
@@ -88,7 +88,7 @@ class GithubProvider(core.BaseProvider):
             self.build_repo_url('contents', path),
             data=json.dumps(data),
         )
-        return core.ResponseWrapper(response)
+        return core.ResponseStream(response)
 
     @core.expects(200)
     @asyncio.coroutine
@@ -106,4 +106,4 @@ class GithubProvider(core.BaseProvider):
             headers={'Content-Type': 'application/json'},
             data=json.dumps(data),
         )
-        return core.ResponseWrapper(response)
+        return core.ResponseStream(response)

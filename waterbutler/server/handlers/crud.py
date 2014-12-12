@@ -3,7 +3,7 @@ import os
 from tornado import web
 
 from waterbutler import settings
-from waterbutler.providers.core import RequestWrapper
+from waterbutler.providers.core import RequestStream
 from waterbutler.server import utils
 from waterbutler.server.handlers import core
 
@@ -25,15 +25,15 @@ class CRUDHandler(core.BaseHandler):
 
     def prepare_stream(self):
         if self.request.method in self.STREAM_METHODS:
-            self.obj = RequestWrapper(self.request)
-            self.uploader = self.provider.upload(self.obj, **self.arguments)
+            self.stream = RequestStream(self.request)
+            self.uploader = self.provider.upload(self.stream, **self.arguments)
         else:
-            self.obj = None
+            self.stream = None
 
     def data_received(self, chunk):
         """Note: Only called during uploads."""
-        if self.obj:
-            self.obj.content.feed_data(chunk)
+        if self.stream:
+            self.stream.feed_data(chunk)
 
     @utils.coroutine
     def get(self):
@@ -43,7 +43,7 @@ class CRUDHandler(core.BaseHandler):
         self.set_header('Content-Type', result.content_type)
         self.set_header('Content-Disposition', 'attachment; filename=' + file_name)
         while True:
-            chunk = yield from result.content.read(settings.CHUNK_SIZE)
+            chunk = yield from result.read(settings.CHUNK_SIZE)
             if not chunk:
                 break
             self.write(chunk)
@@ -51,7 +51,7 @@ class CRUDHandler(core.BaseHandler):
     @utils.coroutine
     def put(self):
         """Upload a file."""
-        self.obj.content.feed_eof()
+        self.stream.feed_eof()
         result = yield from self.uploader
         self.set_status(result.response.status)
 
@@ -64,6 +64,6 @@ class CRUDHandler(core.BaseHandler):
     def on_connection_close(self):
         if self.request.method in self.STREAM_METHODS:
             try:
-                self.obj.content.feed_eof()
+                self.stream.feed_eof()
             except AttributeError:
                 pass
