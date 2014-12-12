@@ -46,25 +46,108 @@ def expects(*codes):
     return wrapper
 
 
-class BaseStream(asyncio.StreamReader, metaclass=abc.ABCMeta):
+class HashStream:
+    """Stream-like object that hashes and discards its input."""
+    def __init__(self, hasher):
+        self.hash = hasher()
+
+    def feed_data(self, data):
+        self.hash.update(data)
+
+    def feed_eof(self):
+        pass
+
+    @property
+    def hexdigest(self):
+        return self.hash.hexdigest()
+
+
+class FileStreamWriter:
+
+    def __init__(self, file_pointer):
+        self.file_pointer = file_pointer
+
+    def feed_data(self, data):
+        self.hash.update(data)
+
+    def feed_eof(self):
+        pass
+
+
+
+class Pipeable:
 
     def __init__(self):
-        self.hashes = {}
-        self.size = None
+        self.pipes = {}
 
-    def add_hashes(self, *hashes):
-        for hash in hashes:
-            hasher = hash()
-            self.hashes[hasher.name] = hasher
+    def pipe(self, name, stream):
+        self.pipes[name] = stream
 
-    def feed_hashes(self, chunk):
-        for hash in self.hashes.values():
-            hash.update(chunk)
+
+
+class BaseStreamWriter(Pipeable):
+
+    def __init__(self, *args, **kwargs):
+        Pipeable.__init__(self)
+        #asyncio.StreamWriter.__init__(self, *args, **kwargs)
+
+    @asyncio.coroutine
+    def write(self, chunk):
+        for pipe in self.pipes.values():
+            yield from pipe.feed_data(chunk)
+        yield from self._write(chunk)
+
+    def close(self):
+        for pipe in self.pipes:
+            pipe.feed_eof()
+
+    def _write(self, data):
+        return super().write(data)
+
+
+class BaseStreamReader(Pipeable, asyncio.StreamReader):
+
+    def __init__(self, *args, **kwargs):
+        Pipeable.__init__(self)
+        asyncio.StreamReader.__init__(self, *args, **kwargs)
 
     @asyncio.coroutine
     def read(self, size=-1):
         chunk = yield from self._read(size)
-        self.feed_hashes(chunk)
+        for pipe in self.pipes.values():
+            yield from pipe.write(chunk)
+        return chunk
+
+    def _read(self, size):
+        return super().read(size)
+
+
+
+
+class BaseStream(asyncio.StreamReader, metaclass=abc.ABCMeta):
+
+    def __init__(self):
+        self.size = None
+        self.streams = {}
+
+    def add_streams(self, **streams):
+        self.streams.update(streams)
+
+    def feed_streams(self, chunk):
+        for stream in self.streams:
+            stream.feed_data(chunk)
+
+    def feed_streams_eof(self):
+        super().feed_eof()
+        for stream in self.streams:
+            stream.feed_eof()
+
+    @asyncio.coroutine
+    def read(self, size=-1):
+        chunk = yield from self._read(size)
+        self.feed_streams(chunk)
+        if not chunk:
+            self.feed_streams_eof()
         return chunk
 
     @abc.abstractmethod
@@ -98,19 +181,26 @@ class RequestStream(BaseStream):
         return (yield from self.request.content.read(size))
 
 
-class FileStream(BaseStream):
+class FileStreamReader(BaseStream):
 
     def __init__(self, file_object):
         super().__init__()
-        self.file_gen = self.read_as_gen()
+        self.file_gen = None
         self.file_object = file_object
-        self.file_object.seek(0, os.SEEK_END)
         self.read_size = None
-        self.size = self.file_object.tell()
+
+    @property
+    def size(self):
+        cursor = self.file_object.tell()
+        self.file_object.seek(0, os.SEEK_END)
+        ret = self.file_object.tell()
+        self.file_object.seek(cursor)
+        return ret
 
     @asyncio.coroutine
     def _read(self, size):
         # add sleep of 0 so read will yield and continue in next io loop iteration
+        self.file_gen = self.file_gen or self.read_as_gen()
         yield from asyncio.sleep(0)
         self.read_size = size
         try:
@@ -126,6 +216,12 @@ class FileStream(BaseStream):
             if not data:
                 break
             yield data
+
+    def feed_data(self, data):
+        self.file_object.write(data)
+
+    def feed_eof(self):
+        self.file_object.close()
 
 
 def build_url(base, *segments, **query):
