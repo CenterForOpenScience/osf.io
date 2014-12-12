@@ -105,7 +105,7 @@ class DropboxProvider(core.BaseProvider):
         resp = yield from self.make_request(
             'PUT',
             self.build_content_url('files_put', 'auto', self.build_path(path)),
-            headers={'Content-Length': stream.size},
+            headers={'Content-Length': str(stream.size)},
             data=stream,
         )
         return core.ResponseStream(resp)

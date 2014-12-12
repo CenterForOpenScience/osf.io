@@ -65,9 +65,10 @@ class S3Provider(core.BaseProvider):
         resp = yield from self.make_request(
             'PUT', url,
             data=stream,
-            headers={'Content-Length': stream.size},
+            headers={'Content-Length': str(stream.size)},
         )
         # md5 is returned as ETag header as long as server side encryption is not used.
+        # TODO: nice assertion error goes here
         assert resp.headers['ETag'].replace('"', '') == stream.hashes['md5'].hexdigest()
 
         return core.ResponseStream(resp)
