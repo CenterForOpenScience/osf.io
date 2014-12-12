@@ -79,7 +79,7 @@ class ConferenceMessage(object):
 
     @cached_property
     def form(self):
-        return self.request.form.to_dict()
+        return self.request.form
 
     @cached_property
     def raw(self):
