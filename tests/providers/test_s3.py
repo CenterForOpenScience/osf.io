@@ -150,13 +150,14 @@ def test_metadata(provider, bucket_contents):
 @async
 @pytest.mark.aiopretty
 def test_metadata_single(provider, bucket_content):
+    name = 'my-image.jpg'
     url = provider.bucket.generate_url(100)
     aiopretty.register_uri('GET', url, body=bucket_content, headers={'Content-Type': 'application/xml'})
-    result = yield from provider.metadata('')
+    result = yield from provider.metadata(name)
 
     assert isinstance(result, dict)
 
-    assert result['name'] == 'my-image.jpg'
+    assert result['name'] == name
     assert result['extra']['md5'] == 'fba9dede5f27731c9771645a39863328'
 
 
@@ -167,21 +168,24 @@ def test_metadata_missing(provider, bucket_content):
     aiopretty.register_uri('GET', url, status=404, headers={'Content-Type': 'application/xml'})
 
     with pytest.raises(exceptions.MetadataError):
-        result = yield from provider.metadata('')
+        yield from provider.metadata('')
 
 
 @async
 @pytest.mark.aiopretty
-def test_upload(provider, file_content, file_stream):
+def test_upload(provider, file_content, file_stream, bucket_content):
     path = 'foobah'
     content_md5 = hashlib.md5(file_content).hexdigest()
     url = provider.bucket.new_key(path).generate_url(100, 'PUT')
     aiopretty.register_uri('PUT', url, status=200, headers={'ETag': '"{}"'.format(content_md5)})
+    metadata_url = provider.bucket.generate_url(100, 'GET')
+    aiopretty.register_uri('GET', metadata_url, body=bucket_content, headers={'Content-Type': 'application/xml'})
 
     resp = yield from provider.upload(file_stream, path)
 
-    assert resp.response.status == 200
+    assert resp['kind'] == 'file'
     assert aiopretty.has_call(method='PUT', uri=url)
+    assert aiopretty.has_call(method='GET', uri=metadata_url)
 
 
 @async
