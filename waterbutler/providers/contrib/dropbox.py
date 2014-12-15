@@ -107,7 +107,8 @@ class DropboxProvider(core.BaseProvider):
             expects=(200, ),
             throws=exceptions.UploadError,
         )
-        return streams.ResponseStreamReader(resp)
+        metadata = yield from resp.json()
+        return DropboxMetadata(metadata).serialized()
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
