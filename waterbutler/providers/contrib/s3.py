@@ -36,7 +36,6 @@ class S3Provider(core.BaseProvider):
     def can_intra_move(self, dest_provider):
         return type(self) == type(dest_provider)
 
-    @core.expects(200, error=exceptions.IntraCopyError)
     @asyncio.coroutine
     def intra_copy(self, dest_provider, source_options, dest_options):
         """Copy key from one S3 bucket to another. The identity specified in
@@ -50,10 +49,15 @@ class S3Provider(core.BaseProvider):
             'PUT',
             headers=headers,
         )
-        resp = yield from self.make_request('PUT', url, headers=headers)
+        resp = yield from self.make_request(
+            'PUT',
+            url,
+            headers=headers,
+            expects=(200, ),
+            throws=exceptions.IntraCopyError,
+        )
         return streams.ResponseStreamReader(resp)
 
-    @core.expects(200, error=exceptions.DownloadError)
     @asyncio.coroutine
     def download(self, path, **kwargs):
         """Returns a ResponseWrapper (Stream) for the specified path
@@ -69,13 +73,17 @@ class S3Provider(core.BaseProvider):
 
         key = self.bucket.new_key(path)
         url = key.generate_url(TEMP_URL_SECS)
-        resp = yield from self.make_request('GET', url)
+        resp = yield from self.make_request(
+            'GET',
+            url,
+            expects=(200, ),
+            throws=exceptions.DownloadError,
+        )
         if resp.status != 200:
             raise exceptions.FileNotFoundError(path)
 
         return streams.ResponseStreamReader(resp)
 
-    @core.expects(200, 201, error=exceptions.UploadError)
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
         """Uploads the given stream to S3
@@ -90,6 +98,8 @@ class S3Provider(core.BaseProvider):
             'PUT', url,
             data=stream,
             headers={'Content-Length': str(stream.size)},
+            expects=(200, 201),
+            throws=exceptions.UploadError,
         )
         # md5 is returned as ETag header as long as server side encryption is not used.
         # TODO: nice assertion error goes here
@@ -97,7 +107,6 @@ class S3Provider(core.BaseProvider):
 
         return streams.ResponseStreamReader(resp)
 
-    @core.expects(200, 204, error=exceptions.DeleteError)
     @asyncio.coroutine
     def delete(self, path, **kwargs):
         """Deletes the key at the specified path
@@ -106,8 +115,12 @@ class S3Provider(core.BaseProvider):
         """
         key = self.bucket.new_key(path)
         url = key.generate_url(TEMP_URL_SECS, 'DELETE')
-        resp = yield from self.make_request('DELETE', url)
-
+        resp = yield from self.make_request(
+            'DELETE',
+            url,
+            expects=(200, 204),
+            throws=exceptions.DeleteError,
+        )
         return streams.ResponseStreamReader(resp)
 
     @asyncio.coroutine
@@ -118,11 +131,13 @@ class S3Provider(core.BaseProvider):
         :rtype list:
         """
         url = self.bucket.generate_url(TEMP_URL_SECS, 'GET')
-        resp = yield from self.make_request('GET', url, params={'prefix': path, 'delimiter': '/'})
-
-        if resp.status == 404:
-            raise exceptions.FileNotFoundError(path)
-
+        resp = yield from self.make_request(
+            'GET',
+            url,
+            params={'prefix': path, 'delimiter': '/'},
+            expects=(200, ),
+            throws=exceptions.MetadataError,
+        )
         content = yield from resp.read_and_close()
         obj = objectify.fromstring(content)
 

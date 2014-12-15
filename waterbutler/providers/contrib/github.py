@@ -28,17 +28,17 @@ class GithubProvider(core.BaseProvider):
             'email': self.auth['email'],
         }
 
-    @core.expects(200, error=exceptions.DownloadError)
     @asyncio.coroutine
     def download(self, sha, **kwargs):
         response = yield from self.make_request(
             'GET',
             self.build_repo_url('git', 'blobs', sha),
             headers={'Accept': 'application/vnd.github.VERSION.raw'},
+            expects=(200, ),
+            throws=exceptions.DownloadError,
         )
         return streams.ResponseStreamReader(response)
 
-    @core.expects(200, 201, error=exceptions.UploadError)
     @asyncio.coroutine
     def upload(self, stream, path, message, branch=None, **kwargs):
         content = yield from stream.read()
@@ -64,10 +64,11 @@ class GithubProvider(core.BaseProvider):
             'PUT',
             self.build_repo_url('contents', path),
             data=json.dumps(data),
+            expects=(200, 201),
+            throws=exceptions.UploadError,
         )
         return streams.ResponseStreamReader(response)
 
-    @core.expects(200, error=exceptions.DeleteError)
     @asyncio.coroutine
     def delete(self, path, message, sha, branch=None):
         data = {
@@ -82,6 +83,8 @@ class GithubProvider(core.BaseProvider):
             self.build_repo_url('contents', path),
             headers={'Content-Type': 'application/json'},
             data=json.dumps(data),
+            expects=(200, ),
+            throws=exceptions.DeleteError,
         )
         return streams.ResponseStreamReader(response)
 
