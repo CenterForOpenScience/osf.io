@@ -28,31 +28,6 @@ class GithubProvider(core.BaseProvider):
             'email': self.auth['email'],
         }
 
-    @asyncio.coroutine
-    def metadata(self, path, ref=None):
-        response = yield from self.make_request(
-            'GET',
-            self.build_repo_url('contents', path),
-        )
-        data = yield from response.json()
-        return [
-            self._serialize_metadata(item)
-            for item in data
-        ]
-
-    def _serialize_metadata(self, item):
-        return {
-            'provider': 'github',
-            'kind': 'file' if item['type'] == 'file' else 'folder',
-            'name': item['name'],
-            'path': item['path'],
-            'size': item['size'],
-            'modified': None,
-            'extra': {
-                'sha': item['sha'],
-            },
-        }
-
     @core.expects(200, error=exceptions.DownloadError)
     @asyncio.coroutine
     def download(self, sha, **kwargs):
@@ -109,3 +84,28 @@ class GithubProvider(core.BaseProvider):
             data=json.dumps(data),
         )
         return streams.ResponseStreamReader(response)
+
+    @asyncio.coroutine
+    def metadata(self, path, ref=None):
+        response = yield from self.make_request(
+            'GET',
+            self.build_repo_url('contents', path),
+        )
+        data = yield from response.json()
+        return [
+            self._serialize_metadata(item)
+            for item in data
+        ]
+
+    def _serialize_metadata(self, item):
+        return {
+            'provider': 'github',
+            'kind': 'file' if item['type'] == 'file' else 'folder',
+            'name': item['name'],
+            'path': item['path'],
+            'size': item['size'],
+            'modified': None,
+            'extra': {
+                'sha': item['sha'],
+            },
+        }
