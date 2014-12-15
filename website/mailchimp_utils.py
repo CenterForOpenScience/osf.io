@@ -1,6 +1,7 @@
 import mailchimp
 from website import settings
 from framework.tasks import app
+from framework.auth.signals import user_confirmed
 
 
 def get_mailchimp_api():
@@ -55,6 +56,12 @@ def unsubscribe(list_name, user):
 
     user.mailing_lists[list_name] = False
     user.save()
+
+@user_confirmed.connect
+def subscribe_on_confirm(user):
+    # Subscribe user to general OSF mailing list upon account confirmation
+    if not settings.ENABLE_EMAIL_SUBSCRIPTIONS:
+        subscribe_mailchimp('Open Science Framework General', user)
 
 subscribe_mailchimp = (
     subscribe.delay

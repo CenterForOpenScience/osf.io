@@ -12,6 +12,7 @@ import framework.auth
 from framework import forms, status
 from framework.flask import redirect  # VOL-aware redirect
 from framework.auth import exceptions
+from framework.auth import signals
 from framework.exceptions import HTTPError
 from framework.sessions import set_previous_url
 from framework.auth import (login, logout, get_user, DuplicateEmailError)
@@ -173,9 +174,8 @@ def confirm_email_get(**kwargs):
             status.push_status_message(language.WELCOME_MESSAGE, 'success')
             response = redirect('/settings/')
 
-            # Subscribe user to general OSF mailing list
-            if not website.settings.DEV_MODE:
-                mailchimp_utils.subscribe_mailchimp('Open Science Framework General', user)
+            # Emit signal that a user has confirmed
+            signals.user_confirmed.send(user)
 
             return framework.auth.authenticate(user, response=response)
     # Return data for the error template
