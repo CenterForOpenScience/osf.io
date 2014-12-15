@@ -125,7 +125,8 @@ class BaseProvider(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     def intra_move(self, dest_provider, source_options, dest_options):
-        raise NotImplementedError
+        yield from self.intra_copy(dest_provider, source_options, dest_options)
+        yield from self.delete(**source_options)
 
     @asyncio.coroutine
     def copy(self, dest_provider, source_options, dest_options):
