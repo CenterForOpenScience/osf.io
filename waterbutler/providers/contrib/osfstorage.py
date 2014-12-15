@@ -16,7 +16,7 @@ class OSFStorageProvider(core.BaseProvider):
 
     def __init__(self, auth, identity):
         super().__init__(auth, identity)
-        self.provider = core.make_provider(identity['provider'], {'auth': auth, 'identity': identity})
+        self.provider = core.make_provider(identity['provider'], auth=auth, identity=identity)
 
     @core.expects(200)
     @asyncio.coroutine
