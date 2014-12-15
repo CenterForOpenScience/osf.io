@@ -1,3 +1,8 @@
+import os
+import abc
+import asyncio
+
+
 class BaseStream(asyncio.StreamReader, metaclass=abc.ABCMeta):
 
     def __init__(self):
