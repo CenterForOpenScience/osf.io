@@ -251,10 +251,10 @@ def update_subscription(user, list_name, subscription):
         :param boolean subscription: true if user is subscribed
     """
     if subscription:
-        mailchimp_utils.subscribe_mailchimp(list_name, user)
+        mailchimp_utils.subscribe_mailchimp(list_name, user._id)
     else:
         try:
-            mailchimp_utils.unsubscribe_mailchimp(list_name, user)
+            mailchimp_utils.unsubscribe_mailchimp(list_name, user._id)
         except mailchimp_utils.mailchimp.ListNotSubscribedError:
             raise HTTPError(http.BAD_REQUEST, data=dict(message_short="ListNotSubscribedError",
                                                         message_long="The user is already unsubscribed from this mailing list.",
