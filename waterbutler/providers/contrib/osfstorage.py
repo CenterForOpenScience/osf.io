@@ -33,16 +33,15 @@ class OSFStorageProvider(core.BaseProvider):
     @core.expects(200, error=exceptions.UploadError)
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
-        pending_name = uuid.uuid4()
+        pending_name = str(uuid.uuid4())
         pending_path = '/tmp/pending/{}'.format(pending_name)
+
+        stream.add_writer('md5', streams.HashStreamWriter(hashlib.md5))
+        stream.add_writer('sha1', streams.HashStreamWriter(hashlib.sha1))
         stream.add_writer('sha256', streams.HashStreamWriter(hashlib.sha256))
         stream.add_writer('file', open(pending_path, 'wb'))
-        resp = yield from self.make_request(
-            'PUT',
-            self.build_content_url('files_put', 'auto', self.build_path(path)),
-            headers={'Content-Length': str(stream.size)},
-            data=stream,
-        )
+        resp = yield from self.provider.upload(stream, pending_name, **kwargs)
+
         complete_name = stream.streams['sha256'].hexdigest
         complete_path = '/tmp/complete/{}'.format(complete_name)
         yield from self.provider.move(
@@ -55,9 +54,19 @@ class OSFStorageProvider(core.BaseProvider):
             'PUT',
             self.identity['crudCallback'],
             data={
-                '...auth..provider metadata...hashes...nid, virtual_path': '...'
+                '...auth..provider metadata...hashes...nid, virtual_path': '...',
+                'auth': self.auth,
+                'identity': self.identity,
+                'location': {
+                    'service': self.identity['provider'],
+                    # 'container': ''
+                },
+                'metadata': {
+                    '...': '...',
+                },
             }
         )
+
         # TODO: Celery Tasks for Parity & Archive
         # tasks.Archive()
         return streams.ResponseStreamReader(resp)
