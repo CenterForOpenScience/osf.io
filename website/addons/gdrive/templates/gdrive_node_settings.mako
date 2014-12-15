@@ -35,11 +35,20 @@
         <span data-bind = "text:selectedName"> </span>
        </p>
 
-       <div class="btn-group" >
-           <button data-bind="click:changeFolder" class="btn btn-sm btn-dropbox"> Change Folder</button>
-           <button data-bind="newFolder" class="btn btn-sm btn-dropbox"> Add New Folder</button>
-       </div>
+        <div id="display-permissions">
+            <p>
+            <select data-bind = "value : selectedFileTypeOption , optionsCaption : 'Choose..'">
+                <option value="">Chose...</option>
+                <option value="owner">Owned only by Me</option>
+                <option value="incoming">Shared by me but not owned by me</option>
+                <option value="all">All files</option>
+            </select>
+            </p>
+        </div>
 
+         <div class="btn-group" >
+           <button data-bind="click:changeFolder" class="btn btn-sm btn-dropbox"> Change Folder</button>
+       </div>
         <div id="myGdriveGrid"
              class="filebrowser hgrid dropbox-folder-picker">
 
@@ -54,13 +63,3 @@
 
 </div> <!-- End of driveAddonScope -->
 
-
-##<script>
-##    $script(['/static/addons/gdrive/gdriveNodeConfig.js'], function() {
-##
-##        var url = '${node["api_url"] + "gdrive/config/"}';
-##        var drive = new GdriveNodeConfig('#driveAddonScope', url);
-##
-##    });
-##
-##</script>

@@ -1,16 +1,3 @@
-///**
-// * Module that controls the Google Drive node settings. Includes Knockout view-model
-// * for syncing data.
-// */
-//;(function (global, factory) {
-//    if (typeof define === 'function' && define.amd) {
-//        define(['knockout', 'jquery', 'osfutils', 'knockoutpunches'], factory);
-//    } else {
-//        global.GdriveNodeConfig  = factory(ko, jQuery);
-//    }
-//}(this, function(ko, $) {
-//    // Enable knockout punches
-//    ko.punches.enableAll();
 
 /**
 * Module that controls the Dropbox node settings. Includes Knockout view-model
@@ -40,8 +27,7 @@ ko.punches.enableAll();
         self.userHasAuth = ko.observable(false);
 
         //Api key required for Google picker
-        self.api_key = ko.observable();
-        var access_token;
+        self.access_token = ko.observable();
 
         self.owner = ko.observable();
         self.ownerName = ko.observable();
@@ -51,8 +37,11 @@ ko.punches.enableAll();
         self.folderPicker =  folderPicker;
         self.selected = ko.observable(null);
         self.selectedName = ko.observable();
+        self.showFileTypes = ko.observable(false);
+        var setOwner;
 
         self.loadedSettings = ko.observable(false);
+        self.selectedFileTypeOption = ko.observable('');
 
         // Flashed messages
         self.message = ko.observable('');
@@ -66,8 +55,7 @@ ko.punches.enableAll();
             self.urls(response.result.urls);
             self.ownerName(response.result.ownerName);
             self.owner(response.result.urls.owner);
-            self.api_key(response.result.api_key);
-            access_token = response.result.access_token;
+            self.access_token (response.result.access_token);
             self.loadedSettings(true);
         }
         function onFetchError(xhr, textstatus, error) {
@@ -210,14 +198,22 @@ ko.punches.enableAll();
          */
         self.changeFolder = function() {
 
-            var setOwner;
-
+            if (self.selectedFileTypeOption() != "")
+            {
+            if (self.selectedFileTypeOption() == "owner")
+                setOwner = true;
+            else if (self.selectedFileTypeOption() == "incoming")
+                setOwner = false;
+            }
+            else
+                var setOwner;
 
             $.getScript('https://apis.google.com/js/api.js?onload=onApiLoad', function () {
 
                 gapi.load('picker', {'callback': onPickerApiLoad });
 
                 function onPickerApiLoad() {
+
 
                     var docsView = new google.picker.DocsView().
                         setIncludeFolders(true).
@@ -227,8 +223,8 @@ ko.punches.enableAll();
                     var picker = new google.picker.PickerBuilder().
                         addView(docsView).
 //                        addView(google.picker.ViewId.FOLDERS).
-                        setOAuthToken(access_token).
-                        setDeveloperKey(self.api_key()).
+                        setOAuthToken(self.access_token()).
+//                        setDeveloperKey(self.api_key()).
                         enableFeature(google.picker.Feature.MULTISELECT_ENABLED).
                         setCallback(pickerCallback).
                         build();
@@ -277,72 +273,23 @@ ko.punches.enableAll();
                                 ]
 
                                 $(self.folderPicker).folderpicker({
-                                    onPickFolder : onPickFolder,
-                                    filesData : files,
+                                    onPickFolder: onPickFolder,
+                                    filesData: files,
                                     ajaxOptions: {
-                                        error: function(xhr, textStatus, error) {
+                                        error: function (xhr, textStatus, error) {
                                             self.loading(false);
-                                            self.changeMessage('Could not connect to Dropbox at this time. ' +
-                                                                'Please try again later.', 'text-warning');
-                                            Raven.captureMessage('Could not GET get Dropbox contents.', {
+                                            self.changeMessage('Could not connect to Google Drive at this time. ' +
+                                                'Please try again later.', 'text-warning');
+                                            Raven.captureMessage('Could not GET get Google Drive contents.', {
                                                 textStatus: textStatus,
                                                 error: error
                                             });
                                         }
                                     },
-                                    folderPickerOnload: function() {
-                                    // TODO
-                }
+                                    folderPickerOnload: function () {
+                                        // TODO
+                                    }
                                 });
-                                // Treebeard options
-                                var options = {
-                                    divID: "myGdriveGrid",
-                                    filesData: files,     // Array variable to be passed in
-                                    rowHeight: 35,
-                                    paginate: false,
-                                    showPaginate: false,
-                                    uploads: false,
-                                    columnTitles: function () {
-                                        return [
-                                            {
-                                                title: "ID",
-                                                width: "10%",
-                                                sortType: "text",
-                                                sort: false
-                                            },
-                                            {
-                                                title: "Name",
-                                                width: "60%",
-                                                sortType: "text",
-                                                sort: true
-                                            },
-                                            {
-                                                title: "Kind",
-                                                width: "15%",
-                                                sortType: "text",
-                                                sort: false
-                                            }
-                                        ]
-                                    },
-                                    resolveRows: function (item) {
-                                        return [
-                                            {
-                                                data: "id",
-                                                filter: false
-                                            },
-                                            {
-                                                data: "name",
-                                                filter: true,
-                                                folderIcons: true
-                                            },
-                                            {
-                                                data: "kind",
-                                                filter: false
-                                            }
-                                        ]
-                                    },
-                                    allowMove: false
-                                }
 
                             }
                         );
@@ -353,8 +300,9 @@ ko.punches.enableAll();
             });
         }
 
-
-        self.showFolders = ko.observable(true);
+        self.showFolders = ko.computed(function(){
+            return self.nodeHasAuth();
+        })
 
 
     };

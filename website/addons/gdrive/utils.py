@@ -28,7 +28,6 @@ def serialize_settings(node_settings, current_user):
         'nodeHasAuth': node_settings.has_auth,
         'userIsOwner': user_is_owner,
         'userHasAuth': current_user_settings is not None and current_user_settings.has_auth,
-        'api_key' : settings.API_KEY,
         'urls': serialize_urls(node_settings)
     }
     if node_settings.has_auth:

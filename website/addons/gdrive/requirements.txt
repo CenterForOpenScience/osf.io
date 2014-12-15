@@ -1,1 +1,4 @@
 # Requirements for the gdrive add-on
+
+google-api-python-client==1.2
+

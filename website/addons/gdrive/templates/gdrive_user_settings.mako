@@ -19,22 +19,8 @@
     </small>
 
 </h4>
-
-
     <!-- Flashed Messages -->
     <div class="help-block">
         <p data-bind="html: message, attr: {class: messageClass}"></p>
     </div>
-
-
 </div>
-
-##<script>
-##    $script(['/static/addons/gdrive/gdriveUserConfig.js'], function() {
-##        //Endpoint for Drive user settings
-##        var url = '/api/v1/settings/gdrive';
-##        // Start up the Drive Config Manager
-##        var drive = new GdriveUserConfig('#driveAddonScope', url);
-##    });
-##
-##</script>
