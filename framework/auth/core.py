@@ -213,6 +213,14 @@ class User(GuidStoredObject, AddonModelMixin):
     # }
     # TODO: add timestamp to allow for timed expiration?
     email_verifications = fields.DictionaryField()
+
+    # Format: {
+    #   'list1': True,
+    #   'list2: False,
+    #    ...
+    # }
+    mailing_lists = fields.DictionaryField()
+
     aka = fields.StringField(list=True)
     date_registered = fields.DateTimeField(auto_now_add=dt.datetime.utcnow)
     # Watched nodes are stored via a list of WatchConfigs
