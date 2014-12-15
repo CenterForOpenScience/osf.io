@@ -63,27 +63,17 @@ class CloudFilesProvider(core.BaseProvider):
     def can_intra_move(self, dest_provider):
         return self == dest_provider
 
-    @core.expects(200, 201, error=exceptions.IntraCopyError)
+    @core.expects(201, error=exceptions.IntraCopyError)
     @asyncio.coroutine
     def intra_copy(self, dest_provider, source_options, dest_options):
-        url = self.build_url(source_options['path'])
+        url = dest_provider.build_url(dest_options['path'])
         resp = yield from self.make_request(
-            'POST', url,
+            'PUT', url,
             headers={
-                'Destination': os.path.join(dest_provider.container, dest_options['path'])
+                'X-Copy-From': os.path.join(self.container, source_options['path'])
             },
         )
-        if resp.status == 201:
-            return True
-        raise exceptions.IntraCopyError('Failed to intra copy {} to {}'.format(source_options['path'], dest_options['path']))
-
-    @core.expects(200, error=exceptions.IntraMoveError)
-    @asyncio.coroutine
-    def intra_move(self, dest_provider, source_options, dest_options):
-        res = yield from self.intra_copy(dest_provider, source_options, dest_options)
-        if res:
-            yield from self.delete(source_options['path'])
-        raise exceptions.IntraMoveError('Failed to intra copy {} to {}'.format(source_options['path'], dest_options['path']))
+        return streams.ResponseStreamReader(resp)
 
     @asyncio.coroutine
     def get_token(self):
@@ -179,11 +169,11 @@ class CloudFilesProvider(core.BaseProvider):
     @core.expects(200, error=exceptions.DownloadError)
     @ensure_connection
     def download(self, path, accept_url=False, **kwargs):
-        """Returns a ResponseWrapper (Stream) for the specified path
+        """Returns a ResponseStreamReader (Stream) for the specified path
         :param str path: Path to the object you want to download
         :param dict **kwargs: Additional arguments that are ignored
         :rtype str:
-        :rtype ResponseWrapper:
+        :rtype ResponseStreamReader:
         :raises: waterbutler.FileNotFoundError
         """
         url = self.generate_url(path)
@@ -198,9 +188,9 @@ class CloudFilesProvider(core.BaseProvider):
     @ensure_connection
     def upload(self, stream, path, **kwargs):
         """Uploads the given stream to S3
-        :param ResponseWrapper stream: The stream to put to Cloudfiles
+        :param ResponseStreamReader stream: The stream to put to Cloudfiles
         :param str path: The full path of the object to upload to/into
-        :rtype ResponseWrapper:
+        :rtype ResponseStreamReader:
         """
         url = self.generate_url(path, 'PUT')
         resp = yield from self.make_request(
@@ -215,7 +205,7 @@ class CloudFilesProvider(core.BaseProvider):
     def delete(self, path, **kwargs):
         """Deletes the key at the specified path
         :param str path: The path of the key to delete
-        :rtype ResponseWrapper:
+        :rtype ResponseStreamReader:
         """
         resp = yield from self.make_request('DELETE', self.build_url(path))
         return streams.ResponseStreamReader(resp)
