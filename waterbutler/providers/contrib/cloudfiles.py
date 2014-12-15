@@ -63,16 +63,17 @@ class CloudFilesProvider(core.BaseProvider):
     def can_intra_move(self, dest_provider):
         return self == dest_provider
 
-    @asyncio.coroutine
+    @core.expects(201)
+    @ensure_connection
     def intra_copy(self, dest_provider, source_options, dest_options):
-        url = self.build_url(source_options['path'])
+        url = dest_provider.build_url(dest_options['path'])
         resp = yield from self.make_request(
-            'POST', url,
+            'PUT', url,
             headers={
-                'Destination': os.path.join(dest_provider.container, dest_options['path'])
+                'X-Copy-From': os.path.join(self.container, source_options['path'])
             },
         )
-        return streams.ResponseWrapper(resp)
+        return streams.ResponseStreamReader(resp)
 
     @asyncio.coroutine
     def get_token(self):
