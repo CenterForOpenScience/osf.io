@@ -9,8 +9,8 @@ import functools
 import furl
 
 from waterbutler import streams
-from waterbutler import exceptions
 from waterbutler.providers import core
+from waterbutler.providers import exceptions
 
 
 TEMP_URL_SECS = 100
@@ -63,8 +63,8 @@ class CloudFilesProvider(core.BaseProvider):
     def can_intra_move(self, dest_provider):
         return self == dest_provider
 
-    @core.expects(201)
-    @ensure_connection
+    @core.expects(201, error=exceptions.IntraCopyError)
+    @asyncio.coroutine
     def intra_copy(self, dest_provider, source_options, dest_options):
         url = dest_provider.build_url(dest_options['path'])
         resp = yield from self.make_request(
@@ -166,7 +166,7 @@ class CloudFilesProvider(core.BaseProvider):
         })
         return url.url
 
-    @core.expects(200)
+    @core.expects(200, error=exceptions.DownloadError)
     @ensure_connection
     def download(self, path, accept_url=False, **kwargs):
         """Returns a ResponseStreamReader (Stream) for the specified path
@@ -184,7 +184,7 @@ class CloudFilesProvider(core.BaseProvider):
         resp = yield from self.make_request('GET', url)
         return streams.ResponseStreamReader(resp)
 
-    @core.expects(200, 201)
+    @core.expects(200, 201, error=exceptions.UploadError)
     @ensure_connection
     def upload(self, stream, path, **kwargs):
         """Uploads the given stream to S3
@@ -200,7 +200,7 @@ class CloudFilesProvider(core.BaseProvider):
         )
         return streams.ResponseStreamReader(resp)
 
-    @core.expects(204)
+    @core.expects(204, error=exceptions.DeleteError)
     @ensure_connection
     def delete(self, path, **kwargs):
         """Deletes the key at the specified path

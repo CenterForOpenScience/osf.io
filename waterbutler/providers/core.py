@@ -8,7 +8,7 @@ import itertools
 import furl
 import aiohttp
 
-from waterbutler.exceptions import exception_from_reponse
+from waterbutler.providers import exceptions
 
 logger = logging.getLogger(__name__)
 
@@ -49,14 +49,14 @@ def make_provider(name, auth=None, identity=None):
     return get_provider(name)(auth or {}, identity or {})
 
 
-def expects(*codes):
+def expects(*codes, error=exceptions.ProviderError):
     def wrapper(func):
         assert asyncio.iscoroutinefunction(func)
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
             result = yield from func(*args, **kwargs)
             if result.response.status not in codes:
-                raise (yield from exception_from_reponse(result.response, **kwargs))
+                raise (yield from exceptions.exception_from_response(result.response, error=error, **kwargs))
             return result
         return wrapped
     return wrapper

@@ -9,8 +9,8 @@ import json
 import base64
 
 from waterbutler import streams
-from waterbutler import exceptions
 from waterbutler.providers import core
+from waterbutler.providers import exceptions
 from waterbutler.providers.contrib.github import GithubProvider
 
 
@@ -116,7 +116,7 @@ def test_download(provider):
 def test_download_bad_status(provider):
     url = provider.build_repo_url('git', 'blobs', 'mysha')
     aiopretty.register_uri('GET', url, body=b'delicious', status=418)
-    with pytest.raises(exceptions.WaterButlerError):
+    with pytest.raises(exceptions.DownloadError):
         yield from provider.download('mysha')
 
 
