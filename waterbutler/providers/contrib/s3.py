@@ -14,74 +14,6 @@ from waterbutler.providers import exceptions
 TEMP_URL_SECS = 100
 
 
-class S3MetadataFile(core.BaseMetadata):
-
-    @property
-    def content(self):
-        return []
-
-    @property
-    def provider(self):
-        return 's3'
-
-    @property
-    def kind(self):
-        return 'file'
-
-    @property
-    def name(self):
-        return os.path.split(self.raw.Key.text)[1]
-
-    @property
-    def path(self):
-        return self.raw.Key.text
-
-    @property
-    def size(self):
-        return self.raw.Size.text
-
-    @property
-    def modified(self):
-        return self.raw.LastModified.text
-
-    @property
-    def extra(self):
-        return {
-            'md5': self.raw.ETag.text.replace('"', '')
-        }
-
-
-class S3MetadataFolder(core.BaseMetadata):
-
-    @property
-    def content(self):
-        return []
-
-    @property
-    def provider(self):
-        return 's3'
-
-    @property
-    def kind(self):
-        return 'folder'
-
-    @property
-    def name(self):
-        return self.raw.Prefix.text.split('/')[-2]
-
-    @property
-    def path(self):
-        return self.raw.Prefix.text
-
-    @property
-    def size(self):
-        return None
-
-    @property
-    def modified(self):
-        return None
-
-
 @core.register_provider('s3')
 class S3Provider(core.BaseProvider):
     """Provider for the Amazon's S3
@@ -208,3 +140,71 @@ class S3Provider(core.BaseProvider):
             return files[0]
 
         return files + folders
+
+
+class S3MetadataFile(core.BaseMetadata):
+
+    @property
+    def content(self):
+        return []
+
+    @property
+    def provider(self):
+        return 's3'
+
+    @property
+    def kind(self):
+        return 'file'
+
+    @property
+    def name(self):
+        return os.path.split(self.raw.Key.text)[1]
+
+    @property
+    def path(self):
+        return self.raw.Key.text
+
+    @property
+    def size(self):
+        return self.raw.Size.text
+
+    @property
+    def modified(self):
+        return self.raw.LastModified.text
+
+    @property
+    def extra(self):
+        return {
+            'md5': self.raw.ETag.text.replace('"', '')
+        }
+
+
+class S3MetadataFolder(core.BaseMetadata):
+
+    @property
+    def content(self):
+        return []
+
+    @property
+    def provider(self):
+        return 's3'
+
+    @property
+    def kind(self):
+        return 'folder'
+
+    @property
+    def name(self):
+        return self.raw.Prefix.text.split('/')[-2]
+
+    @property
+    def path(self):
+        return self.raw.Prefix.text
+
+    @property
+    def size(self):
+        return None
+
+    @property
+    def modified(self):
+        return None
