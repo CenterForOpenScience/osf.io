@@ -36,13 +36,22 @@ class S3Provider(core.BaseProvider):
     def can_intra_move(self, dest_provider):
         return type(self) == type(dest_provider)
 
+    @core.expects(200)
     @asyncio.coroutine
     def intra_copy(self, dest_provider, source_options, dest_options):
-        yield asyncio.sleep(0)
-
-    @asyncio.coroutine
-    def intra_move(self, dest_provider, source_options, dest_options):
-        yield asyncio.sleep(0)
+        """Copy key from one S3 bucket to another. The identity specified in
+        `dest_provider` must have read access to `source.bucket`.
+        """
+        dest_key = dest_provider.bucket.new_key(dest_options['path'])
+        source_path = '/' + os.path.join(self.identity['bucket'], source_options['path'])
+        headers = {'x-amz-copy-source': source_path}
+        url = dest_key.generate_url(
+            TEMP_URL_SECS,
+            'PUT',
+            headers=headers,
+        )
+        resp = yield from self.make_request('PUT', url, headers=headers)
+        return streams.ResponseStreamReader(resp)
 
     @core.expects(200)
     @asyncio.coroutine
