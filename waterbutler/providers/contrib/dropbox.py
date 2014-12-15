@@ -98,6 +98,10 @@ class DropboxProvider(core.BaseProvider):
             'GET',
             self.build_content_url('files', 'auto', self.build_path(path)),
         )
+
+        if resp.status == 404:
+            raise exceptions.FileNotFoundError(path)
+
         return streams.ResponseStreamReader(resp)
 
     @core.expects(200)
