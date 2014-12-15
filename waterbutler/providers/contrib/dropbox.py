@@ -128,7 +128,10 @@ class DropboxProvider(core.BaseProvider):
 
         data = yield from response.json()
         if data['is_dir']:
-            return [DropboxMetadata(x).serialized() for x in data['contents']]
+            return [
+                DropboxMetadata(item).serialized()
+                for item in data['contents']
+            ]
         return DropboxMetadata(data).serialized()
 
 

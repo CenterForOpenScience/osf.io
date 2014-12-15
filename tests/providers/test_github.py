@@ -11,7 +11,7 @@ import base64
 from waterbutler import streams
 from waterbutler.providers import core
 from waterbutler.providers import exceptions
-from waterbutler.providers.contrib.github import GithubProvider
+from waterbutler.providers.contrib.github import GithubProvider, GithubMetadata
 
 
 @pytest.fixture
@@ -127,7 +127,7 @@ def test_metadata(provider, repo_contents):
     url = provider.build_repo_url('contents', path)
     aiopretty.register_json_uri('GET', url, body=repo_contents)
     result = yield from provider.metadata(path)
-    assert result == [provider._serialize_metadata(item) for item in repo_contents]
+    assert result == [GithubMetadata(item).serialized() for item in repo_contents]
 
 
 @async
