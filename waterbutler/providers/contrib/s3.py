@@ -79,8 +79,6 @@ class S3Provider(core.BaseProvider):
             expects=(200, ),
             throws=exceptions.DownloadError,
         )
-        if resp.status != 200:
-            raise exceptions.FileNotFoundError(path)
 
         return streams.ResponseStreamReader(resp)
 
