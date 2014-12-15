@@ -7,8 +7,8 @@ from lxml import objectify
 from boto.s3.connection import S3Connection
 
 from waterbutler import streams
-from waterbutler import exceptions
 from waterbutler.providers import core
+from waterbutler.providers import exceptions
 
 
 TEMP_URL_SECS = 100
@@ -36,7 +36,7 @@ class S3Provider(core.BaseProvider):
     def can_intra_move(self, dest_provider):
         return type(self) == type(dest_provider)
 
-    @core.expects(200)
+    @core.expects(200, error=exceptions.IntraCopyError)
     @asyncio.coroutine
     def intra_copy(self, dest_provider, source_options, dest_options):
         """Copy key from one S3 bucket to another. The identity specified in
@@ -53,7 +53,7 @@ class S3Provider(core.BaseProvider):
         resp = yield from self.make_request('PUT', url, headers=headers)
         return streams.ResponseStreamReader(resp)
 
-    @core.expects(200)
+    @core.expects(200, error=exceptions.DownloadError)
     @asyncio.coroutine
     def download(self, path, **kwargs):
         """Returns a ResponseWrapper (Stream) for the specified path
@@ -75,7 +75,7 @@ class S3Provider(core.BaseProvider):
 
         return streams.ResponseStreamReader(resp)
 
-    @core.expects(200, 201)
+    @core.expects(200, 201, error=exceptions.UploadError)
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
         """Uploads the given stream to S3
@@ -97,7 +97,7 @@ class S3Provider(core.BaseProvider):
 
         return streams.ResponseStreamReader(resp)
 
-    @core.expects(200, 204)
+    @core.expects(200, 204, error=exceptions.DeleteError)
     @asyncio.coroutine
     def delete(self, path, **kwargs):
         """Deletes the key at the specified path
