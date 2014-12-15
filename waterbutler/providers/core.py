@@ -40,13 +40,13 @@ def get_provider(name):
         raise NotImplementedError('No provider for {}'.format(name))
 
 
-def make_provider(name, credentials):
+def make_provider(name, auth=None, identity=None):
     """Fetches a provider registed under name and returns an instance of it
     :param str name: Name of the provider
     :param dict credentials: a dictionary containing keys `auth` and `identity`
     :rtype BaseProvider:
     """
-    return get_provider(name)(credentials['auth'], credentials['identity'])
+    return get_provider(name)(auth or {}, identity or {})
 
 
 def expects(*codes):
