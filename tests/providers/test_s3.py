@@ -155,6 +155,7 @@ def test_metadata_single(provider, bucket_content):
     result = yield from provider.metadata('')
 
     assert isinstance(result, dict)
+
     assert result['name'] == 'my-image.jpg'
     assert result['extra']['md5'] == 'fba9dede5f27731c9771645a39863328'
 
