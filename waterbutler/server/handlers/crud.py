@@ -3,7 +3,7 @@ import os
 from tornado import web
 
 from waterbutler import settings
-from waterbutler.providers.core import RequestStreamReader
+from waterbutler.streams import RequestStreamReader
 from waterbutler.server import utils
 from waterbutler.server.handlers import core
 
