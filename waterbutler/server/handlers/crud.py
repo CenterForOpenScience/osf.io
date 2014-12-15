@@ -53,13 +53,14 @@ class CRUDHandler(core.BaseHandler):
         """Upload a file."""
         self.stream.feed_eof()
         result = yield from self.uploader
-        self.set_status(result.response.status)
+        self.write(result)
 
     @utils.coroutine
     def delete(self):
         """Delete a file."""
         result = yield from self.provider.delete(**self.arguments)
-        self.set_status(result.response.status)
+        self.set_status(204)
+        self.write(result)
 
     def on_connection_close(self):
         if self.request.method in self.STREAM_METHODS:
