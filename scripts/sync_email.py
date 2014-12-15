@@ -12,6 +12,7 @@ mailing list on mailchimp. From the API docs:
 
 http://apidocs.mailchimp.com/api/how-to/sync-you-to-mailchimp.php
 """
+import sys
 
 from modularodm import Q
 from framework.auth.core import User
@@ -28,22 +29,22 @@ from scripts import utils as script_utils
 logger = logging.getLogger(__name__)
 GENERAL_LIST = 'Open Science Framework General'
 
-def main():
+def main(dry=True):
     script_utils.add_file_logger(logger, __file__)
     # Set up storage backends
     init_app(routes=False)
     users = list(get_users())
-    update_users(users)
-    subscribe = subscribe_users(users) # confirm list name before running script
-    logger.info('{n} users subscribed'.format(n=subscribe['add_count']))
+    update_users(users, dry=dry)
+    subscribe_users(users, dry=dry) # confirm list name before running script
 
-def update_users(users):
+def update_users(users, dry=True):
     for user in get_users():
-        if user.mailing_lists is None:
-            user.mailing_lists = {}
+        if not dry:
+            if user.mailing_lists is None:
+                user.mailing_lists = {}
+            user.mailing_lists[GENERAL_LIST] = True
+            user.save()
         logger.info('User {}\'s mailing_lists dict updated.'.format(user._id))
-        user.mailing_lists[GENERAL_LIST] = True
-        user.save()
 
 def get_users():
     """Get all users who will be subscribed to the OSF General mailing list."""
@@ -59,16 +60,20 @@ def serialize_user(user):
     return {'email': {'email': user.username}, 'email_type': 'html'}
 
 
-def subscribe_users(users):
+def subscribe_users(users, dry=True):
     serialized = [serialize_user(user) for user in users]
     m = mailchimp_utils.get_mailchimp_api()
     list_id = mailchimp_utils.get_list_id_from_name(list_name=GENERAL_LIST)
-    return m.lists.batch_subscribe(
-            id=list_id,
-            batch=serialized,
-            double_optin=False,
-            update_existing=True
-    )
+    logger.info('Subscribing {0} users to {1}...'.format(len(users), GENERAL_LIST))
+    if not dry:
+        subscribe_info = m.lists.batch_subscribe(
+                id=list_id,
+                batch=serialized,
+                double_optin=False,
+                update_existing=True
+        )
+        logger.info('{n} users subscribed'.format(n=subscribe_info['add_count']))
+
 
 
 class TestSyncEmail(OsfTestCase):
@@ -97,7 +102,7 @@ class TestSyncEmail(OsfTestCase):
         users = get_users()
         assert_false(self.user.mailing_lists)
 
-        update_users(users)
+        update_users(users, dry=False)
 
         assert_equal(self.user.mailing_lists, {'Open Science Framework General': True})
 
@@ -120,7 +125,7 @@ class TestSyncEmail(OsfTestCase):
 
         users = list(get_users())
 
-        subscribe_users(users)
+        subscribe_users(users, dry=False)
 
         serialized = [serialize_user(u) for u in users]
         mock_subscribe.assert_called_with(id=list_id,
@@ -136,11 +141,11 @@ class TestSyncEmail(OsfTestCase):
 
         assert_false(self.user.mailing_lists)
 
-        main()
+        main(dry=False)
 
         assert_true(self.user.mailing_lists['Open Science Framework General'])
         mock_subscribe.assert_called
 
 
 if __name__ == '__main__':
-    main()
+    main(dry='dry' in sys.argv)
