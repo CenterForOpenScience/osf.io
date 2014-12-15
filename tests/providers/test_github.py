@@ -47,7 +47,7 @@ def file_like(file_content):
 
 @pytest.fixture
 def file_stream(file_like):
-    return core.FileStream(file_like)
+    return core.FileStreamReader(file_like)
 
 
 @pytest.fixture

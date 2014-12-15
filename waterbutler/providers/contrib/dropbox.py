@@ -72,7 +72,7 @@ class DropboxProvider(core.BaseProvider):
                 },
                 headers=dest_provider.default_headers,
             )
-        return core.ResponseStream(response)
+        return core.ResponseStreamReader(response)
 
     @core.expects(200)
     @asyncio.coroutine
@@ -88,7 +88,7 @@ class DropboxProvider(core.BaseProvider):
                 'to_path': to_path,
             },
         )
-        return core.ResponseStream(response)
+        return core.ResponseStreamReader(response)
 
     @core.expects(200)
     @asyncio.coroutine
@@ -97,7 +97,7 @@ class DropboxProvider(core.BaseProvider):
             'GET',
             self.build_content_url('files', 'auto', self.build_path(path)),
         )
-        return core.ResponseStream(resp)
+        return core.ResponseStreamReader(resp)
 
     @core.expects(200)
     @asyncio.coroutine
@@ -108,7 +108,7 @@ class DropboxProvider(core.BaseProvider):
             headers={'Content-Length': str(stream.size)},
             data=stream,
         )
-        return core.ResponseStream(resp)
+        return core.ResponseStreamReader(resp)
 
     @core.expects(200)
     @asyncio.coroutine
@@ -118,7 +118,7 @@ class DropboxProvider(core.BaseProvider):
             self.build_url('fileops', 'delete'),
             data={'folder': 'auto', 'path': self.build_path(path)},
         )
-        return core.ResponseStream(response)
+        return core.ResponseStreamReader(response)
 
     @asyncio.coroutine
     def metadata(self, path, **kwargs):

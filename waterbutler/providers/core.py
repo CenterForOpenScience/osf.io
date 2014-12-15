@@ -46,109 +46,49 @@ def expects(*codes):
     return wrapper
 
 
-class HashStream:
-    """Stream-like object that hashes and discards its input."""
-    def __init__(self, hasher):
-        self.hash = hasher()
-
-    def feed_data(self, data):
-        self.hash.update(data)
-
-    def feed_eof(self):
-        pass
-
-    @property
-    def hexdigest(self):
-        return self.hash.hexdigest()
-
-
-class FileStreamWriter:
-
-    def __init__(self, file_pointer):
-        self.file_pointer = file_pointer
-
-    def feed_data(self, data):
-        self.hash.update(data)
-
-    def feed_eof(self):
-        pass
-
-
-
-class Pipeable:
-
-    def __init__(self):
-        self.pipes = {}
-
-    def pipe(self, name, stream):
-        self.pipes[name] = stream
-
-
-
-class BaseStreamWriter(Pipeable):
-
-    def __init__(self, *args, **kwargs):
-        Pipeable.__init__(self)
-        #asyncio.StreamWriter.__init__(self, *args, **kwargs)
-
-    @asyncio.coroutine
-    def write(self, chunk):
-        for pipe in self.pipes.values():
-            yield from pipe.feed_data(chunk)
-        yield from self._write(chunk)
-
-    def close(self):
-        for pipe in self.pipes:
-            pipe.feed_eof()
-
-    def _write(self, data):
-        return super().write(data)
-
-
-class BaseStreamReader(Pipeable, asyncio.StreamReader):
-
-    def __init__(self, *args, **kwargs):
-        Pipeable.__init__(self)
-        asyncio.StreamReader.__init__(self, *args, **kwargs)
-
-    @asyncio.coroutine
-    def read(self, size=-1):
-        chunk = yield from self._read(size)
-        for pipe in self.pipes.values():
-            yield from pipe.write(chunk)
-        return chunk
-
-    def _read(self, size):
-        return super().read(size)
-
-
-
-
 class BaseStream(asyncio.StreamReader, metaclass=abc.ABCMeta):
 
     def __init__(self):
-        self.size = None
-        self.streams = {}
+        super().__init__()
+        self.readers = {}
+        self.writers = {}
 
-    def add_streams(self, **streams):
-        self.streams.update(streams)
+    @abc.abstractproperty
+    def size(self):
+        pass
 
-    def feed_streams(self, chunk):
-        for stream in self.streams:
-            stream.feed_data(chunk)
+    def add_reader(self, name, reader):
+        self.readers[name] = reader
 
-    def feed_streams_eof(self):
+    def remove_reader(self, name):
+        del self.readers[name]
+
+    def add_writer(self, name, writer):
+        self.writers[name] = writer
+
+    def remove_writer(self, name):
+        del self.writers[name]
+
+    def feed_eof(self):
+        import pdb; pdb.set_trace()
         super().feed_eof()
-        for stream in self.streams:
-            stream.feed_eof()
+        for reader in self.readers.values():
+            reader.feed_eof()
+        for writer in self.writers.values():
+            if writer.can_write_eof():
+                writer.write_eof()
+            else:
+                writer.close()
 
     @asyncio.coroutine
     def read(self, size=-1):
-        chunk = yield from self._read(size)
-        self.feed_streams(chunk)
-        if not chunk:
-            self.feed_streams_eof()
-        return chunk
+        data = yield from self._read(size)
+        if not self.at_eof():
+            for reader in self.readers.values():
+                reader.feed_data(data)
+            for writer in self.writers.values():
+                writer.write(data)
+        return data
 
     @abc.abstractmethod
     @asyncio.coroutine
@@ -156,25 +96,31 @@ class BaseStream(asyncio.StreamReader, metaclass=abc.ABCMeta):
         pass
 
 
-class ResponseStream(BaseStream):
+class ResponseStreamReader(BaseStream):
 
     def __init__(self, response):
         super().__init__()
         self.response = response
-        self.size = response.headers.get('Content-Length')
-        self.content_type = response.headers.get('Content-Type', 'application/octet-stream')
+        self.content_type = self.response.headers.get('Content-Type', 'application/octet-stream')
+
+    @property
+    def size(self):
+        return self.response.headers.get('Content-Length')
 
     @asyncio.coroutine
     def _read(self, size):
         return (yield from self.response.content.read(size))
 
 
-class RequestStream(BaseStream):
+class RequestStreamReader(BaseStream):
 
     def __init__(self, request):
         super().__init__()
         self.request = request
-        self.size = self.request.headers.get('Content-Length')
+
+    @property
+    def size(self):
+        return self.request.headers.get('Content-Length')
 
     @asyncio.coroutine
     def _read(self, size):
@@ -183,24 +129,36 @@ class RequestStream(BaseStream):
 
 class FileStreamReader(BaseStream):
 
-    def __init__(self, file_object):
+    def __init__(self, file_pointer):
         super().__init__()
         self.file_gen = None
-        self.file_object = file_object
+        self.file_pointer = file_pointer
         self.read_size = None
 
     @property
     def size(self):
-        cursor = self.file_object.tell()
-        self.file_object.seek(0, os.SEEK_END)
-        ret = self.file_object.tell()
-        self.file_object.seek(cursor)
+        cursor = self.file_pointer.tell()
+        self.file_pointer.seek(0, os.SEEK_END)
+        ret = self.file_pointer.tell()
+        self.file_pointer.seek(cursor)
         return ret
+
+    def close(self):
+        self.file_pointer.close()
+        self.feed_eof()
+
+    def read_as_gen(self):
+        self.file_pointer.seek(0)
+        while True:
+            data = self.file_pointer.read(self.read_size)
+            if not data:
+                break
+            yield data
 
     @asyncio.coroutine
     def _read(self, size):
-        # add sleep of 0 so read will yield and continue in next io loop iteration
         self.file_gen = self.file_gen or self.read_as_gen()
+        # add sleep of 0 so read will yield and continue in next io loop iteration
         yield from asyncio.sleep(0)
         self.read_size = size
         try:
@@ -208,20 +166,24 @@ class FileStreamReader(BaseStream):
         except StopIteration:
             return b''
 
-    def read_as_gen(self):
-        self.file_object.seek(0)
 
-        while True:
-            data = self.file_object.read(self.read_size)
-            if not data:
-                break
-            yield data
+class HashStreamWriter:
+    """Stream-like object that hashes and discards its input."""
+    def __init__(self, hasher):
+        self.hash = hasher()
 
-    def feed_data(self, data):
-        self.file_object.write(data)
+    @property
+    def hexdigest(self):
+        return self.hash.hexdigest()
 
-    def feed_eof(self):
-        self.file_object.close()
+    def can_write_eof(self):
+        return False
+
+    def write(self, data):
+        self.hash.update(data)
+
+    def close(self):
+        pass
 
 
 def build_url(base, *segments, **query):
