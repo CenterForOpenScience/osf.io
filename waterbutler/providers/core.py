@@ -1,6 +1,7 @@
 import os
 import abc
 import asyncio
+import logging
 import functools
 import itertools
 
@@ -9,20 +10,30 @@ import aiohttp
 
 from waterbutler.exceptions import exception_from_reponse
 
+logger = logging.getLogger(__name__)
 
 PROVIDERS = {}
 
 
 def register_provider(name):
+    """A decorator that adds the specifed class into the `PROVIDERS` dict
+    :param str name: The name to register
+    """
     def _register_provider(cls):
         if PROVIDERS.get(name):
-            raise ValueError('{} is already a registered provider'.format(name))
+            logging.warning('{} is already a registered provider'.format(name))
+
         PROVIDERS[name] = cls
         return cls
     return _register_provider
 
 
 def get_provider(name):
+    """Return the provider *class* of the registed name
+    Raises a NotImplementedError if one is not found
+    :param str name: Name of the provider to find
+    :rtype type(BaseProvider):
+    """
     try:
         return PROVIDERS[name]
     except KeyError:
@@ -30,6 +41,11 @@ def get_provider(name):
 
 
 def make_provider(name, credentials):
+    """Fetches a provider registed under name and returns an instance of it
+    :param str name: Name of the provider
+    :param dict credentials: a dictionary containing keys `auth` and `identity`
+    :rtype BaseProvider:
+    """
     return get_provider(name)(credentials['auth'], credentials['identity'])
 
 
