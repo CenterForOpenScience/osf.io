@@ -203,16 +203,19 @@ def test_copy(provider):
 
 @async
 @pytest.mark.aiopretty
-def test_upload_update(provider, file_content, file_stream):
+def test_upload_update(provider, file_content, file_stream, bucket_content):
     path = 'foobah'
     content_md5 = hashlib.md5(file_content).hexdigest()
     url = provider.bucket.new_key(path).generate_url(100, 'PUT')
     aiopretty.register_uri('PUT', url, status=201, headers={'ETag': '"{}"'.format(content_md5)})
+    metadata_url = provider.bucket.generate_url(100, 'GET')
+    aiopretty.register_uri('GET', metadata_url, body=bucket_content, headers={'Content-Type': 'application/xml'})
 
     resp = yield from provider.upload(file_stream, path)
 
-    assert resp.response.status == 201
+    assert resp['kind'] == 'file'
     assert aiopretty.has_call(method='PUT', uri=url)
+    assert aiopretty.has_call(method='GET', uri=metadata_url)
 
 
 @async
