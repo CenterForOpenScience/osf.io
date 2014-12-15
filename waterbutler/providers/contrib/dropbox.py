@@ -127,11 +127,14 @@ class DropboxProvider(core.BaseProvider):
             'GET',
             self.build_url('metadata', 'auto', self.build_path(path)),
         )
-        if response.status != 200:
+        if response.status == 404:
             raise exceptions.FileNotFoundError(path)
 
         data = yield from response.json()
-        return [self.format_metadata(x) for x in data]
+
+        if data['is_dir']:
+            return [self.format_metadata(x) for x in data['contents']]
+        return self.format_metadata(data)
 
     def format_metadata(self, data):
         return {
