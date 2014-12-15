@@ -3,7 +3,7 @@ import uuid
 import asyncio
 import hashlib
 
-from waterbutler import exceptions
+# from waterbutler import exceptions
 from waterbutler.providers import core
 
 
@@ -64,11 +64,12 @@ class OSFStorageProvider(core.BaseProvider):
     @core.expects(200)
     @asyncio.coroutine
     def delete(self, path, **kwargs):
-        resp = yield from self.make_request(
-            'DELETE',
-            self.identity['crudCallback'],
-            params=kwargs,
-        )
+        # resp = yield from self.make_request(
+        #     'DELETE',
+        #     self.identity['crudCallback'],
+        #     params=kwargs,
+        # )
+        pass
         # # call to osf metadata
         # response = yield from self.make_request(
         #     'POST',
