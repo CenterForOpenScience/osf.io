@@ -70,7 +70,6 @@ class BaseStream(asyncio.StreamReader, metaclass=abc.ABCMeta):
         del self.writers[name]
 
     def feed_eof(self):
-        import pdb; pdb.set_trace()
         super().feed_eof()
         for reader in self.readers.values():
             reader.feed_eof()
