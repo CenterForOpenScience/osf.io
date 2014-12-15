@@ -57,6 +57,20 @@ class CloudFilesProvider(core.BaseProvider):
         self.username = self.identity['username']
         self.container = self.identity['container']
 
+    def can_intra_copy(self, dest_provider):
+        return type(self) == type(dest_provider)
+
+    def can_intra_move(self, dest_provider):
+        return type(self) == type(dest_provider)
+
+    @asyncio.coroutine
+    def intra_copy(self, dest_provider, source_options, dest_options):
+        yield asyncio.sleep(0)
+
+    @asyncio.coroutine
+    def intra_move(self, dest_provider, source_options, dest_options):
+        yield asyncio.sleep(0)
+
     @asyncio.coroutine
     def get_token(self):
         """Fetchs an access token from cloudfiles for actual api requests

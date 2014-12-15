@@ -84,6 +84,15 @@ class BaseProvider(metaclass=abc.ABCMeta):
         self.auth = auth
         self.identity = identity
 
+    def __eq__(self, other):
+        try:
+            return (
+                type(self) == type(other) and
+                self.identity == other.identity
+            )
+        except AttributeError:
+            return False
+
     def build_url(self, *segments, **query):
         return build_url(self.BASE_URL, *segments, **query)
 
