@@ -234,6 +234,8 @@ def user_choose_mailing_lists(auth, **kwargs):
     user = auth.user
     json_data = escape_html(request.get_json())
     if json_data:
+        if user.mailing_lists is None:
+            user.mailing_lists = {}
         for list_name, subscribe in json_data.items():
             user.mailing_lists[list_name] = subscribe
             update_subscription(user, list_name, subscribe)

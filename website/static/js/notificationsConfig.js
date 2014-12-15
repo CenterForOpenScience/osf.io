@@ -11,7 +11,7 @@
 
     var ViewModel = function(list) {
         var self = this;
-        self.list = ko.observable(list);
+        self.list = list;
         self.subscribed = ko.observable();
         // Flashed messages
         self.message = ko.observable('');
@@ -19,11 +19,12 @@
 
         self.getListInfo = function() {
             $.ajax({
-                    url: '/api/v1/settings/notifications',
-                    type: 'GET',
-                    dataType: 'json',
-                    success: function(response) {
-                        self.subscribed(response['mailing_lists'][self.list]);
+                url: '/api/v1/settings/notifications',
+                type: 'GET',
+                dataType: 'json',
+                success: function(response) {
+                    var isSubscribed = response.mailing_lists ? response.mailing_lists[self.list] : false;
+                    self.subscribed(isSubscribed);
                 },
                 error: function() {
                     var message = 'Could not retrieve settings information.';
@@ -48,14 +49,16 @@
         };
 
         self.submit = function () {
-            var request = $.osf.postJSON('/api/v1/settings/notifications/', {'Open Science Framework General': self.subscribed()});
+            var payload = {};
+            payload[self.list] = self.subscribed();
+            var request = $.osf.postJSON('/api/v1/settings/notifications/', payload);
             request.done(function () {
                 self.changeMessage('Settings updated.', 'text-success', 5000);
             });
             request.fail(function (xhr) {
                 if (xhr.responseJSON.error_type !== 'not_subscribed') {
-                    var message = 'Could not update email preferences at this time. If this issue persists, '
-                        + 'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.';
+                    var message = 'Could not update email preferences at this time. If this issue persists, ' +
+                        'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.';
                     self.changeMessage(message, 'text-danger', 5000);
                 }
             });
