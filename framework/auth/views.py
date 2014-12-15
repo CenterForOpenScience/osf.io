@@ -175,7 +175,7 @@ def confirm_email_get(**kwargs):
 
             # Subscribe user to general OSF mailing list
             if not website.settings.DEV_MODE:
-                mailchimp_utils.subscribe_mailchimp('Open Science Framework General', user.username)
+                mailchimp_utils.subscribe_mailchimp('Open Science Framework General', user)
 
             return framework.auth.authenticate(user, response=response)
     # Return data for the error template

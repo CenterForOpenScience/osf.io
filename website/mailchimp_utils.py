@@ -21,14 +21,21 @@ def get_list_name_from_id(list_id):
     return mailing_list['data'][0]['name']
 
 @app.task
-def subscribe(list_name, username):
+def subscribe(list_name, user):
     m = get_mailchimp_api()
     list_id = get_list_id_from_name(list_name=list_name)
-    m.lists.subscribe(id=list_id, email={'email': username}, double_optin=False, update_existing=True)
+    m.lists.subscribe(id=list_id, email={'email': user.username}, double_optin=False, update_existing=True)
 
+    # Update mailing_list user field
+    if user.mailing_lists is None:
+        user.mailing_lists = {}
+        user.save()
+
+    user.mailing_lists[list_name] = True
+    user.save()
 
 @app.task
-def unsubscribe(list_name, username):
+def unsubscribe(list_name, user):
     """ Unsubscribe a user from a mailchimp mailing list given its name.
 
         :param str list_name: mailchimp mailing list name
@@ -39,8 +46,15 @@ def unsubscribe(list_name, username):
     """
     m = get_mailchimp_api()
     list_id = get_list_id_from_name(list_name=list_name)
-    m.lists.unsubscribe(id=list_id, email={'email': username})
+    m.lists.unsubscribe(id=list_id, email={'email': user.username})
 
+    # Update mailing_list user field
+    if user.mailing_lists is None:
+        user.mailing_lists = {}
+        user.save()
+
+    user.mailing_lists[list_name] = False
+    user.save()
 
 subscribe_mailchimp = (
     subscribe.delay

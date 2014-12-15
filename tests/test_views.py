@@ -2342,7 +2342,6 @@ class TestConfigureMailingListViews(OsfTestCase):
     def test_user_choose_mailing_lists_updates_user_dict(self, mock_get_mailchimp_api):
         user = AuthUserFactory()
         list_name = 'OSF General'
-        username = user.username
         mock_client = mock.MagicMock()
         mock_get_mailchimp_api.return_value = mock_client
         mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
@@ -2358,7 +2357,7 @@ class TestConfigureMailingListViews(OsfTestCase):
         assert_equal(user.mailing_lists['OSF General'], payload['OSF General'])
 
         # check that user is subscribed
-        mock_client.lists.subscribe.assert_called_with(id=list_id, email={'email': username}, double_optin=False, update_existing=True)
+        mock_client.lists.subscribe.assert_called_with(id=list_id, email={'email': user.username}, double_optin=False, update_existing=True)
 
     def test_get_mailchimp_get_endpoint_returns_200(self):
         url = api_url_for('mailchimp_get_endpoint')
