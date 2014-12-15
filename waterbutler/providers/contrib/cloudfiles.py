@@ -67,10 +67,9 @@ class CloudFilesProvider(core.BaseProvider):
     def intra_copy(self, dest_provider, source_options, dest_options):
         url = self.build_url(source_options['path'])
         resp = yield from self.make_request(
-            'PUT', url,
+            'POST', url,
             headers={
-                'Content-Length': 0,
-                'X-Copy-From': os.path.join(dest_provider.container, dest_options['path'])
+                'Destination': os.path.join(dest_provider.container, dest_options['path'])
             },
         )
         if resp.status == 201:
