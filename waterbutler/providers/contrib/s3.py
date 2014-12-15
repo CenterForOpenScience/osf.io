@@ -6,6 +6,7 @@ from lxml import objectify
 
 from boto.s3.connection import S3Connection
 
+from waterbutler import streams
 from waterbutler import exceptions
 from waterbutler.providers import core
 
@@ -29,6 +30,20 @@ class S3Provider(core.BaseProvider):
         self.connection = S3Connection(identity['access_key'], identity['secret_key'])
         self.bucket = self.connection.get_bucket(identity['bucket'], validate=False)
 
+    def can_intra_copy(self, dest_provider):
+        return type(self) == type(dest_provider)
+
+    def can_intra_move(self, dest_provider):
+        return type(self) == type(dest_provider)
+
+    @asyncio.coroutine
+    def intra_copy(self, dest_provider, source_options, dest_options):
+        yield asyncio.sleep(0)
+
+    @asyncio.coroutine
+    def intra_move(self, dest_provider, source_options, dest_options):
+        yield asyncio.sleep(0)
+
     @core.expects(200)
     @asyncio.coroutine
     def download(self, path, **kwargs):
@@ -49,7 +64,7 @@ class S3Provider(core.BaseProvider):
         if resp.status != 200:
             raise exceptions.FileNotFoundError(path)
 
-        return core.ResponseStream(resp)
+        return streams.ResponseStreamReader(resp)
 
     @core.expects(200, 201)
     @asyncio.coroutine
@@ -59,7 +74,7 @@ class S3Provider(core.BaseProvider):
         :param str path: The full path of the key to upload to/into
         :rtype ResponseWrapper:
         """
-        stream.set_hashes(hashlib.md5)
+        stream.add_writer('md5', streams.HashStreamWriter(hashlib.md5))
         key = self.bucket.new_key(path)
         url = key.generate_url(TEMP_URL_SECS, 'PUT')
         resp = yield from self.make_request(
@@ -69,9 +84,9 @@ class S3Provider(core.BaseProvider):
         )
         # md5 is returned as ETag header as long as server side encryption is not used.
         # TODO: nice assertion error goes here
-        assert resp.headers['ETag'].replace('"', '') == stream.hashes['md5'].hexdigest()
+        assert resp.headers['ETag'].replace('"', '') == stream.writers['md5'].hexdigest
 
-        return core.ResponseStream(resp)
+        return streams.ResponseStreamReader(resp)
 
     @core.expects(200, 204)
     @asyncio.coroutine
@@ -84,7 +99,7 @@ class S3Provider(core.BaseProvider):
         url = key.generate_url(TEMP_URL_SECS, 'DELETE')
         resp = yield from self.make_request('DELETE', url)
 
-        return core.ResponseStream(resp)
+        return streams.ResponseStreamReader(resp)
 
     @asyncio.coroutine
     def metadata(self, path, **kwargs):

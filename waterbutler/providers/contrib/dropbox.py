@@ -1,6 +1,7 @@
 import os
 import asyncio
 
+from waterbutler import streams
 from waterbutler import exceptions
 from waterbutler.providers import core
 
@@ -27,15 +28,6 @@ class DropboxProvider(core.BaseProvider):
         return {
             'Authorization': 'Bearer {}'.format(self.token),
         }
-
-    def __eq__(self, other):
-        try:
-            return (
-                type(self) == type(other) and
-                self.identity == other.identity
-            )
-        except AttributeError:
-            return False
 
     def can_intra_copy(self, dest_provider):
         return type(self) == type(dest_provider)
@@ -72,7 +64,7 @@ class DropboxProvider(core.BaseProvider):
                 },
                 headers=dest_provider.default_headers,
             )
-        return core.ResponseStream(response)
+        return streams.ResponseStreamReader(response)
 
     @core.expects(200)
     @asyncio.coroutine
@@ -88,7 +80,7 @@ class DropboxProvider(core.BaseProvider):
                 'to_path': to_path,
             },
         )
-        return core.ResponseStream(response)
+        return streams.ResponseStreamReader(response)
 
     @core.expects(200)
     @asyncio.coroutine
@@ -97,7 +89,11 @@ class DropboxProvider(core.BaseProvider):
             'GET',
             self.build_content_url('files', 'auto', self.build_path(path)),
         )
-        return core.ResponseStream(resp)
+
+        if resp.status == 404:
+            raise exceptions.FileNotFoundError(path)
+
+        return streams.ResponseStreamReader(resp)
 
     @core.expects(200)
     @asyncio.coroutine
@@ -108,7 +104,7 @@ class DropboxProvider(core.BaseProvider):
             headers={'Content-Length': str(stream.size)},
             data=stream,
         )
-        return core.ResponseStream(resp)
+        return streams.ResponseStreamReader(resp)
 
     @core.expects(200)
     @asyncio.coroutine
@@ -118,7 +114,7 @@ class DropboxProvider(core.BaseProvider):
             self.build_url('fileops', 'delete'),
             data={'folder': 'auto', 'path': self.build_path(path)},
         )
-        return core.ResponseStream(response)
+        return streams.ResponseStreamReader(response)
 
     @asyncio.coroutine
     def metadata(self, path, **kwargs):
@@ -126,11 +122,14 @@ class DropboxProvider(core.BaseProvider):
             'GET',
             self.build_url('metadata', 'auto', self.build_path(path)),
         )
-        if response.status != 200:
+        if response.status == 404:
             raise exceptions.FileNotFoundError(path)
 
         data = yield from response.json()
-        return [self.format_metadata(x) for x in data]
+
+        if data['is_dir']:
+            return [self.format_metadata(x) for x in data['contents']]
+        return self.format_metadata(data)
 
     def format_metadata(self, data):
         return {

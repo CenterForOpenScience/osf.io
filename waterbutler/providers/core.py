@@ -1,6 +1,7 @@
 import os
 import abc
 import asyncio
+import logging
 import functools
 import itertools
 
@@ -9,20 +10,30 @@ import aiohttp
 
 from waterbutler.exceptions import exception_from_reponse
 
+logger = logging.getLogger(__name__)
 
 PROVIDERS = {}
 
 
 def register_provider(name):
+    """A decorator that adds the specifed class into the `PROVIDERS` dict
+    :param str name: The name to register
+    """
     def _register_provider(cls):
         if PROVIDERS.get(name):
-            raise ValueError('{} is already a registered provider'.format(name))
+            logging.warning('{} is already a registered provider'.format(name))
+
         PROVIDERS[name] = cls
         return cls
     return _register_provider
 
 
 def get_provider(name):
+    """Return the provider *class* of the registed name
+    Raises a NotImplementedError if one is not found
+    :param str name: Name of the provider to find
+    :rtype type(BaseProvider):
+    """
     try:
         return PROVIDERS[name]
     except KeyError:
@@ -30,6 +41,11 @@ def get_provider(name):
 
 
 def make_provider(name, credentials):
+    """Fetches a provider registed under name and returns an instance of it
+    :param str name: Name of the provider
+    :param dict credentials: a dictionary containing keys `auth` and `identity`
+    :rtype BaseProvider:
+    """
     return get_provider(name)(credentials['auth'], credentials['identity'])
 
 
@@ -44,89 +60,6 @@ def expects(*codes):
             return result
         return wrapped
     return wrapper
-
-
-class BaseStream(asyncio.StreamReader, metaclass=abc.ABCMeta):
-
-    def __init__(self):
-        self.hashes = {}
-        self.size = None
-
-    def set_hashes(self, *hashes):
-        self.hashes = {}
-        for hash in hashes:
-            hasher = hash()
-            self.hashes[hasher.name] = hasher
-
-    def feed_hashes(self, chunk):
-        for hash in self.hashes.values():
-            hash.update(chunk)
-
-    @asyncio.coroutine
-    def read(self, size=-1):
-        chunk = yield from self._read(size)
-        self.feed_hashes(chunk)
-        return chunk
-
-    @abc.abstractmethod
-    @asyncio.coroutine
-    def _read(self, size):
-        pass
-
-
-class ResponseStream(BaseStream):
-
-    def __init__(self, response):
-        super().__init__()
-        self.response = response
-        self.size = response.headers.get('Content-Length')
-        self.content_type = response.headers.get('Content-Type', 'application/octet-stream')
-
-    @asyncio.coroutine
-    def _read(self, size):
-        return (yield from self.response.content.read(size))
-
-
-class RequestStream(BaseStream):
-
-    def __init__(self, request):
-        super().__init__()
-        self.request = request
-        self.size = self.request.headers.get('Content-Length')
-
-    @asyncio.coroutine
-    def _read(self, size):
-        return (yield from self.request.content.read(size))
-
-
-class FileStream(BaseStream):
-
-    def __init__(self, file_object):
-        super().__init__()
-        self.file_gen = self.read_as_gen()
-        self.file_object = file_object
-        self.file_object.seek(0, os.SEEK_END)
-        self.read_size = None
-        self.size = self.file_object.tell()
-
-    @asyncio.coroutine
-    def _read(self, size):
-        # add sleep of 0 so read will yield and continue in next io loop iteration
-        yield from asyncio.sleep(0)
-        self.read_size = size
-        try:
-            return next(self.file_gen)
-        except StopIteration:
-            return b''
-
-    def read_as_gen(self):
-        self.file_object.seek(0)
-
-        while True:
-            data = self.file_object.read(self.read_size)
-            if not data:
-                break
-            yield data
 
 
 def build_url(base, *segments, **query):
@@ -150,6 +83,15 @@ class BaseProvider(metaclass=abc.ABCMeta):
     def __init__(self, auth, identity):
         self.auth = auth
         self.identity = identity
+
+    def __eq__(self, other):
+        try:
+            return (
+                type(self) == type(other) and
+                self.identity == other.identity
+            )
+        except AttributeError:
+            return False
 
     def build_url(self, *segments, **query):
         return build_url(self.BASE_URL, *segments, **query)

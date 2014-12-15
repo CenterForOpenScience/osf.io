@@ -5,7 +5,7 @@ from tests.mocking import aiopretty
 
 import io
 import hashlib
-
+from waterbutler import streams
 from waterbutler import exceptions
 from waterbutler.providers import core
 from waterbutler.providers.contrib.s3 import S3Provider
@@ -45,7 +45,7 @@ def file_like(file_content):
 
 @pytest.fixture
 def file_stream(file_like):
-    return core.FileStream(file_like)
+    return streams.FileStreamReader(file_like)
 
 
 @pytest.fixture
@@ -200,7 +200,7 @@ def test_upload_update(provider, file_content, file_stream):
 @async
 @pytest.mark.aiopretty
 def test_delete(provider):
-    path = 'My Ex wife'
+    path = 'My Ex'
     url = provider.bucket.new_key(path).generate_url(100, 'DELETE')
 
     aiopretty.register_uri('DELETE', url, status=200)

@@ -8,6 +8,7 @@ import functools
 
 import furl
 
+from waterbutler import streams
 from waterbutler import exceptions
 from waterbutler.providers import core
 
@@ -55,6 +56,20 @@ class CloudFilesProvider(core.BaseProvider):
         self.og_token = self.identity['token']
         self.username = self.identity['username']
         self.container = self.identity['container']
+
+    def can_intra_copy(self, dest_provider):
+        return type(self) == type(dest_provider)
+
+    def can_intra_move(self, dest_provider):
+        return type(self) == type(dest_provider)
+
+    @asyncio.coroutine
+    def intra_copy(self, dest_provider, source_options, dest_options):
+        yield asyncio.sleep(0)
+
+    @asyncio.coroutine
+    def intra_move(self, dest_provider, source_options, dest_options):
+        yield asyncio.sleep(0)
 
     @asyncio.coroutine
     def get_token(self):
@@ -163,7 +178,7 @@ class CloudFilesProvider(core.BaseProvider):
             return url
 
         resp = yield from self.make_request('GET', url)
-        return core.ResponseStream(resp)
+        return streams.ResponseStreamReader(resp)
 
     @core.expects(200, 201)
     @ensure_connection
@@ -179,7 +194,7 @@ class CloudFilesProvider(core.BaseProvider):
             data=stream,
             headers={'Content-Length': str(stream.size)},
         )
-        return core.ResponseStream(resp)
+        return streams.ResponseStreamReader(resp)
 
     @core.expects(204)
     @ensure_connection
@@ -190,7 +205,7 @@ class CloudFilesProvider(core.BaseProvider):
         """
         resp = yield from self.make_request('DELETE', self.build_url(path))
 
-        return core.ResponseStream(resp)
+        return streams.ResponseStreamReader(resp)
 
     @ensure_connection
     def metadata(self, path, **kwargs):
