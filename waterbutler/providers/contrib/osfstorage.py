@@ -34,10 +34,8 @@ class OSFStorageProvider(core.BaseProvider):
     def upload(self, stream, path, **kwargs):
         pending_name = uuid.uuid4()
         pending_path = '/tmp/pending/{}'.format(pending_name)
-        stream.add_streams(
-            file=core.FileStream(pending_path),
-            sha256=core.HashStream(hashlib.sha256),
-        )
+        stream.add_writer('sha256', core.HashStreamWriter(hashlib.sha256))
+        stream.add_writer('file', open(pending_path, 'wb'))
         resp = yield from self.make_request(
             'PUT',
             self.build_content_url('files_put', 'auto', self.build_path(path)),
@@ -61,7 +59,7 @@ class OSFStorageProvider(core.BaseProvider):
         )
         # TODO: Celery Tasks for Parity & Archive
         # tasks.Archive()
-        return core.ResponseStream(resp)
+        return core.ResponseStreamReader(resp)
 
     @core.expects(200)
     @asyncio.coroutine

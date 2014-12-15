@@ -163,7 +163,7 @@ class CloudFilesProvider(core.BaseProvider):
             return url
 
         resp = yield from self.make_request('GET', url)
-        return core.ResponseStream(resp)
+        return core.ResponseStreamReader(resp)
 
     @core.expects(200, 201)
     @ensure_connection
@@ -179,7 +179,7 @@ class CloudFilesProvider(core.BaseProvider):
             data=stream,
             headers={'Content-Length': str(stream.size)},
         )
-        return core.ResponseStream(resp)
+        return core.ResponseStreamReader(resp)
 
     @core.expects(204)
     @ensure_connection
@@ -190,7 +190,7 @@ class CloudFilesProvider(core.BaseProvider):
         """
         resp = yield from self.make_request('DELETE', self.build_url(path))
 
-        return core.ResponseStream(resp)
+        return core.ResponseStreamReader(resp)
 
     @ensure_connection
     def metadata(self, path, **kwargs):
