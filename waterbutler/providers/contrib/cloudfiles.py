@@ -58,18 +58,29 @@ class CloudFilesProvider(core.BaseProvider):
         self.container = self.identity['container']
 
     def can_intra_copy(self, dest_provider):
-        return type(self) == type(dest_provider)
+        return self == dest_provider
 
     def can_intra_move(self, dest_provider):
-        return type(self) == type(dest_provider)
+        return self == dest_provider
 
     @asyncio.coroutine
     def intra_copy(self, dest_provider, source_options, dest_options):
-        yield asyncio.sleep(0)
+        url = self.build_url(source_options['path'])
+        resp = yield from self.make_request(
+            'PUT', url,
+            headers={
+                'Content-Length': 0,
+                'X-Copy-From': os.path.join(dest_provider.container, dest_options['path'])
+            },
+        )
+        if resp.status == 201:
+            return True
+        raise exceptions.WaterButlerError('Failed to intra copy {} to {}'.format(source_options['path'], dest_options['path']))
 
     @asyncio.coroutine
     def intra_move(self, dest_provider, source_options, dest_options):
-        yield asyncio.sleep(0)
+        yield from self.intra_copy(dest_provider, source_options, dest_options)
+        yield from self.delete(source_options['path'])
 
     @asyncio.coroutine
     def get_token(self):
