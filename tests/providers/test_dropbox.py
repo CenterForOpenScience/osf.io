@@ -9,7 +9,7 @@ from tests.mocking import aiopretty
 from waterbutler import streams
 from waterbutler.providers import core
 from waterbutler.providers import exceptions
-from waterbutler.providers.contrib.dropbox import DropboxProvider
+from waterbutler.providers.contrib.dropbox import DropboxProvider, DropboxMetadata
 
 
 @pytest.fixture
@@ -49,7 +49,7 @@ def file_stream(file_like):
 
 
 @pytest.fixture
-def folder_contents():
+def folder_metadata():
     return {
         "size": "0 bytes",
         "hash": "37eb1ba1849d4b0fb0b28caf7ef3af52",
@@ -89,7 +89,7 @@ def folder_contents():
 
 
 @pytest.fixture
-def folder_content():
+def file_metadata():
     return {
         "size": "225.4KB",
         "rev": "35e97029684fe",
@@ -127,9 +127,9 @@ def test_download_not_found(provider):
 
 @async
 @pytest.mark.aiopretty
-def test_metadata(provider, folder_contents):
+def test_metadata(provider, folder_metadata):
     url = provider.build_url('metadata', 'auto', provider.build_path(''))
-    aiopretty.register_json_uri('GET', url, body=folder_contents)
+    aiopretty.register_json_uri('GET', url, body=folder_metadata)
     result = yield from provider.metadata('')
 
     assert isinstance(result, list)
@@ -139,9 +139,9 @@ def test_metadata(provider, folder_contents):
 
 @async
 @pytest.mark.aiopretty
-def test_metadata_single(provider, folder_content):
+def test_metadata_single(provider, file_metadata):
     url = provider.build_url('metadata', 'auto', provider.build_path('phile'))
-    aiopretty.register_json_uri('GET', url, body=folder_content)
+    aiopretty.register_json_uri('GET', url, body=file_metadata)
     result = yield from provider.metadata('phile')
 
     assert isinstance(result, dict)
@@ -160,14 +160,15 @@ def test_metadata_missing(provider):
 
 @async
 @pytest.mark.aiopretty
-def test_upload(provider, file_content, file_stream):
+def test_upload(provider, file_metadata, file_stream):
     path = 'phile'
     url = provider.build_content_url('files_put', 'auto', provider.build_path(path))
-    aiopretty.register_uri('PUT', url, status=200)
+    aiopretty.register_json_uri('PUT', url, status=200, body=file_metadata)
 
-    resp = yield from provider.upload(file_stream, path)
+    metadata = yield from provider.upload(file_stream, path)
+    expected = DropboxMetadata(file_metadata).serialized()
+    assert metadata == expected
 
-    assert resp.response.status == 200
     assert aiopretty.has_call(method='PUT', uri=url)
 
 
