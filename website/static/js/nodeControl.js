@@ -10,6 +10,9 @@
     }
 }(this, function($, ko) {
     'use strict';
+    
+    // Don't cache AJAX requests, IE. Just… stop.
+    jQuery.ajaxSetup({ cache: false });
 
     // Modal language
     var MESSAGES = {
