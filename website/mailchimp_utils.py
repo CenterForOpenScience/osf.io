@@ -1,6 +1,7 @@
 import mailchimp
 from website import settings
 from framework.tasks import app
+from framework.auth.core import User
 from framework.auth.signals import user_confirmed
 
 
@@ -22,7 +23,8 @@ def get_list_name_from_id(list_id):
     return mailing_list['data'][0]['name']
 
 @app.task
-def subscribe(list_name, user):
+def subscribe(list_name, user_id):
+    user = User.load(user_id)
     m = get_mailchimp_api()
     list_id = get_list_id_from_name(list_name=list_name)
     m.lists.subscribe(id=list_id, email={'email': user.username}, double_optin=False, update_existing=True)
@@ -36,7 +38,7 @@ def subscribe(list_name, user):
     user.save()
 
 @app.task
-def unsubscribe(list_name, user):
+def unsubscribe(list_name, user_id):
     """ Unsubscribe a user from a mailchimp mailing list given its name.
 
         :param str list_name: mailchimp mailing list name
@@ -45,6 +47,7 @@ def unsubscribe(list_name, user):
         A ListNotSubscribed error will be raised if a user
         not subscribed to the list tries to unsubscribe again.
     """
+    user = User.load(user_id)
     m = get_mailchimp_api()
     list_id = get_list_id_from_name(list_name=list_name)
     m.lists.unsubscribe(id=list_id, email={'email': user.username})
@@ -61,7 +64,7 @@ def unsubscribe(list_name, user):
 def subscribe_on_confirm(user):
     # Subscribe user to general OSF mailing list upon account confirmation
     if not settings.ENABLE_EMAIL_SUBSCRIPTIONS:
-        subscribe_mailchimp('Open Science Framework General', user)
+        subscribe_mailchimp('Open Science Framework General', user._id)
 
 subscribe_mailchimp = (
     subscribe.delay
