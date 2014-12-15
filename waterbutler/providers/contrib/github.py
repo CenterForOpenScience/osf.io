@@ -67,7 +67,8 @@ class GithubProvider(core.BaseProvider):
             expects=(200, 201),
             throws=exceptions.UploadError,
         )
-        return streams.ResponseStreamReader(response)
+        metadata = yield from response.json()
+        return GithubMetadata(metadata['content']).serialized()
 
     @asyncio.coroutine
     def delete(self, path, message, sha, branch=None):
