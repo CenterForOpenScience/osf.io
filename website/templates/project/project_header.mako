@@ -61,14 +61,14 @@
 
                         <!-- ko ifnot: inDashboard -->
                            <a data-bind="click: addToDashboard, tooltip: {title: 'Add to Dashboard Folder',
-                            placement: 'bottom'}" class="btn btn-default">
+                            placement: 'bottom'}, css: {disabled: !dashboardButtonEnabled()}"  class="btn btn-default">
                                <i class="icon-folder-open"></i>
                                <i class="icon-plus"></i>
                            </a>
                         <!-- /ko -->
                         <!-- ko if: inDashboard -->
                            <a data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from Dashboard Folder',
-                            placement: 'bottom'}" class="btn btn-default">
+                            placement: 'bottom'}, css: {disabled: !dashboardButtonEnabled()}" class="btn btn-default">
                                <i class="icon-folder-open"></i>
                                <i class="icon-minus"></i>
                            </a>

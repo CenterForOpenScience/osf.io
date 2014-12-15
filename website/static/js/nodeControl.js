@@ -117,6 +117,7 @@
         self.user = data.user;
         self.nodeIsPublic = data.node.is_public;
         self.nodeType = data.node.node_type;
+        self.dashboardButtonEnabled = ko.observable(true);
         // The button text to display (e.g. "Watch" if not watching)
         self.watchButtonDisplay = ko.computed(function() {
             return self.watchedCount().toString();
@@ -177,27 +178,41 @@
          * Add project to the Project Organizer.
          */
         self.addToDashboard = function() {
+            self.dashboardButtonEnabled(false);
             self.inDashboard(true);
             var jsonData = {
                 'toNodeID': self.dashboard,
                 'pointerID': self._id
             };
             $.osf.postJSON('/api/v1/pointer/', jsonData)
+                .done(function() {
+                    self.dashboardButtonEnabled(true);
+                })
                 .fail(function(data) {
                     self.inDashboard(false);
-                    $.osf.handleJSONError(data);
+                    $.osf.growl('Error', 'The project could not be added. Reload the page to re-enable.', 'danger');
+                    Raven.captureMessage('Could not add project to dashboard from project page: '+ data, {
+                        url: url
+                    });
             });
         };
         /**
          * Remove project from the Project Organizer.
          */
         self.removeFromDashboard = function() {
+            self.dashboardButtonEnabled(false);
             self.inDashboard(false);
             var deleteUrl = '/api/v1/folder/' + self.dashboard + '/pointer/' + self._id;
             $.ajax({url: deleteUrl, type: 'DELETE'})
+                .done(function() {
+                    self.dashboardButtonEnabled(true);
+                })
                 .fail(function() {
                     self.inDashboard(true);
-                    $.osf.growl('Error', 'The project could not be removed', 'danger');
+                    $.osf.growl('Error', 'The project could not be removed. Reload the page to re-enable.', 'danger');
+                    Raven.captureMessage('Could not remove project to dashboard from project page: '+ data, {
+                        url: url
+                    });
             });
         };
 
