@@ -78,10 +78,8 @@ class CloudFilesProvider(core.BaseProvider):
 
     @asyncio.coroutine
     def intra_move(self, dest_provider, source_options, dest_options):
-        res = yield from self.intra_copy(dest_provider, source_options, dest_options)
-        if res:
-            yield from self.delete(source_options['path'])
-        raise exceptions.WaterButlerError('Failed to intra copy {} to {}'.format(source_options['path'], dest_options['path']))
+        yield from self.intra_copy(dest_provider, source_options, dest_options)
+        yield from self.delete(source_options['path'])
 
     @asyncio.coroutine
     def get_token(self):
