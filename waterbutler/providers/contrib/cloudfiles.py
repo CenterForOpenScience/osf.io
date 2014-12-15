@@ -63,7 +63,6 @@ class CloudFilesProvider(core.BaseProvider):
     def can_intra_move(self, dest_provider):
         return self == dest_provider
 
-    @core.expects(201, error=exceptions.IntraCopyError)
     @asyncio.coroutine
     def intra_copy(self, dest_provider, source_options, dest_options):
         url = dest_provider.build_url(dest_options['path'])
@@ -72,6 +71,8 @@ class CloudFilesProvider(core.BaseProvider):
             headers={
                 'X-Copy-From': os.path.join(self.container, source_options['path'])
             },
+            expects=(201, ),
+            throws=exceptions.IntraCopyError,
         )
         return streams.ResponseStreamReader(resp)
 
@@ -166,7 +167,6 @@ class CloudFilesProvider(core.BaseProvider):
         })
         return url.url
 
-    @core.expects(200, error=exceptions.DownloadError)
     @ensure_connection
     def download(self, path, accept_url=False, **kwargs):
         """Returns a ResponseStreamReader (Stream) for the specified path
@@ -181,10 +181,14 @@ class CloudFilesProvider(core.BaseProvider):
         if accept_url:
             return url
 
-        resp = yield from self.make_request('GET', url)
+        resp = yield from self.make_request(
+            'GET',
+            url,
+            expects=(200, ),
+            throws=exceptions.DownloadError,
+        )
         return streams.ResponseStreamReader(resp)
 
-    @core.expects(200, 201, error=exceptions.UploadError)
     @ensure_connection
     def upload(self, stream, path, **kwargs):
         """Uploads the given stream to S3
@@ -197,17 +201,23 @@ class CloudFilesProvider(core.BaseProvider):
             'PUT', url,
             data=stream,
             headers={'Content-Length': str(stream.size)},
+            expects=(200, 201),
+            throws=exceptions.UploadError,
         )
         return streams.ResponseStreamReader(resp)
 
-    @core.expects(204, error=exceptions.DeleteError)
     @ensure_connection
     def delete(self, path, **kwargs):
         """Deletes the key at the specified path
         :param str path: The path of the key to delete
         :rtype ResponseStreamReader:
         """
-        resp = yield from self.make_request('DELETE', self.build_url(path))
+        resp = yield from self.make_request(
+            'DELETE',
+            self.build_url(path),
+            excepts=(204, ),
+            throws=exceptions.DeleteError,
+        )
         return streams.ResponseStreamReader(resp)
 
     @ensure_connection
@@ -219,12 +229,16 @@ class CloudFilesProvider(core.BaseProvider):
         """
         url = furl.furl(self.build_url(''))
         url.args.update({'prefix': path, 'delimiter': '/'})
-        resp = yield from self.make_request('GET', url.url)
+        resp = yield from self.make_request(
+            'GET',
+            url.url,
+            expects=(200, 204),
+            throws=exceptions.MetadataError,
+        )
 
-        if resp.status == 404:
-            raise exceptions.FileNotFoundError(path)
+        # TODO: Is this necessary?
         if resp.status == 204:
-            return []  # TODO Correct value?
+            return []
 
         data = yield from resp.json()
 

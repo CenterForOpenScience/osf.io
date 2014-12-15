@@ -121,7 +121,7 @@ def test_download(provider):
 def test_download_not_found(provider):
     url = provider.build_content_url('files', 'auto', provider.build_path('MUHVECTORS'))
     aiopretty.register_uri('GET', url, status=404)
-    with pytest.raises(exceptions.FileNotFoundError):
+    with pytest.raises(exceptions.DownloadError):
         yield from provider.download('MUHVECTORS')
 
 
