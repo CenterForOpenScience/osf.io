@@ -64,7 +64,7 @@ def unsubscribe(list_name, user_id):
 def subscribe_on_confirm(user):
     # Subscribe user to general OSF mailing list upon account confirmation
     if not settings.ENABLE_EMAIL_SUBSCRIPTIONS:
-        subscribe_mailchimp('Open Science Framework General', user._id)
+        subscribe_mailchimp(settings.MAILCHIMP_GENERAL_LIST, user._id)
 
 subscribe_mailchimp = (
     subscribe.delay

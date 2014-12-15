@@ -27,7 +27,8 @@ import logging
 from scripts import utils as script_utils
 
 logger = logging.getLogger(__name__)
-GENERAL_LIST = 'Open Science Framework General'
+GENERAL_LIST = settings.MAILCHIMP_GENERAL_LIST
+
 
 def main(dry=True):
     # Set up storage backends
@@ -142,8 +143,8 @@ class TestSyncEmail(OsfTestCase):
 
         main(dry=False)
 
-        assert_true(self.user.mailing_lists['Open Science Framework General'])
-        mock_subscribe.assert_called
+        assert_true(self.user.mailing_lists[GENERAL_LIST])
+        mock_subscribe.assert_called()
 
 
 if __name__ == '__main__':
