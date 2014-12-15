@@ -31,7 +31,7 @@ def fake_request(method, uri, **kwargs):
     try:
         options = aiopretty.registry[(method, uri)]
     except KeyError:
-        raise Exception('No URLs matching {method} {uri}. Not making request. Go fix your test.'.format(**locals())
+        raise Exception('No URLs matching {method} {uri}. Not making request. Go fix your test.'.format(**locals()))
 
     yield from process_request(**kwargs)
     aiopretty.calls.append(make_call(method=method, uri=uri, **kwargs))
