@@ -2,8 +2,8 @@ import os
 import asyncio
 
 from waterbutler import streams
-from waterbutler import exceptions
 from waterbutler.providers import core
+from waterbutler.providers import exceptions
 
 
 @core.register_provider('dropbox')
@@ -35,6 +35,7 @@ class DropboxProvider(core.BaseProvider):
     def can_intra_move(self, dest_provider):
         return self == dest_provider
 
+    @core.expects(200, 201, error=exceptions.IntraCopyError)
     @asyncio.coroutine
     def intra_copy(self, dest_provider, source_options, dest_options):
         from_path = self.build_path(source_options['path'])
@@ -66,7 +67,7 @@ class DropboxProvider(core.BaseProvider):
             )
         return streams.ResponseStreamReader(response)
 
-    @core.expects(200)
+    @core.expects(200, error=exceptions.IntraMoveError)
     @asyncio.coroutine
     def intra_move(self, dest_provider, source_options, dest_options):
         from_path = self.build_path(source_options['path'])
@@ -82,7 +83,7 @@ class DropboxProvider(core.BaseProvider):
         )
         return streams.ResponseStreamReader(response)
 
-    @core.expects(200)
+    @core.expects(200, error=exceptions.DownloadError)
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
         resp = yield from self.make_request(
@@ -95,7 +96,7 @@ class DropboxProvider(core.BaseProvider):
 
         return streams.ResponseStreamReader(resp)
 
-    @core.expects(200)
+    @core.expects(200, error=exceptions.UploadError)
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
         resp = yield from self.make_request(
@@ -106,7 +107,7 @@ class DropboxProvider(core.BaseProvider):
         )
         return streams.ResponseStreamReader(resp)
 
-    @core.expects(200)
+    @core.expects(200, error=exceptions.DeleteError)
     @asyncio.coroutine
     def delete(self, path, **kwargs):
         response = yield from self.make_request(

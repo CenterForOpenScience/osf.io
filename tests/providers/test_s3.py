@@ -6,8 +6,8 @@ from tests.mocking import aiopretty
 import io
 import hashlib
 from waterbutler import streams
-from waterbutler import exceptions
 from waterbutler.providers import core
+from waterbutler.providers import exceptions
 from waterbutler.providers.contrib.s3 import S3Provider
 
 
