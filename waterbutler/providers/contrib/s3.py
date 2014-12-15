@@ -14,6 +14,74 @@ from waterbutler.providers import exceptions
 TEMP_URL_SECS = 100
 
 
+class S3MetadataFile(core.BaseMetadata):
+
+    @property
+    def content(self):
+        return []
+
+    @property
+    def provider(self):
+        return 's3'
+
+    @property
+    def kind(self):
+        return 'file'
+
+    @property
+    def name(self):
+        return os.path.split(self.raw.Key.text)[1]
+
+    @property
+    def path(self):
+        return self.raw.Key.text
+
+    @property
+    def size(self):
+        return self.raw.Size.text
+
+    @property
+    def modified(self):
+        return self.raw.LastModified.text
+
+    @property
+    def extra(self):
+        return {
+            'md5': self.raw.ETag.text.replace('"', '')
+        }
+
+
+class S3MetadataFolder(core.BaseMetadata):
+
+    @property
+    def content(self):
+        return []
+
+    @property
+    def provider(self):
+        return 's3'
+
+    @property
+    def kind(self):
+        return 'folder'
+
+    @property
+    def name(self):
+        return self.raw.Prefix.text.split('/')[-2]
+
+    @property
+    def path(self):
+        return self.raw.Prefix.text
+
+    @property
+    def size(self):
+        return None
+
+    @property
+    def modified(self):
+        return None
+
+
 @core.register_provider('s3')
 class S3Provider(core.BaseProvider):
     """Provider for the Amazon's S3
@@ -127,12 +195,12 @@ class S3Provider(core.BaseProvider):
         obj = objectify.fromstring(content)
 
         files = [
-            self.key_to_dict(k)
+            S3MetadataFile(k).serialized()
             for k in getattr(obj, 'Contents', [])
         ]
 
         folders = [
-            self.prefix_to_dict(p)
+            S3MetadataFolder(p).serialized()
             for p in getattr(obj, 'CommonPrefixes', [])
         ]
 
@@ -140,29 +208,3 @@ class S3Provider(core.BaseProvider):
             return files[0]
 
         return files + folders
-
-    def key_to_dict(self, key, children=[]):
-        return {
-            'content': children,
-            'provider': 's3',
-            'kind': 'file',
-            'name': os.path.split(key.Key.text)[1],
-            'size': key.Size.text,
-            'path': key.Key.text,
-            'modified': key.LastModified.text,
-            'extra': {
-                'md5': key.ETag.text.replace('"', ''),
-            },
-        }
-
-    def prefix_to_dict(self, prefix, children=[]):
-        return {
-            'contents': children,
-            'provider': 's3',
-            'kind': 'folder',
-            'name': prefix.Prefix.text.split('/')[-2],
-            'path': prefix.Prefix.text,
-            'modified': None,
-            'size': None,
-            'extra': {},
-        }
