@@ -1,4 +1,4 @@
-<div id="commentPane">
+<div class="commentPane">
 
     <div class="cp-handle" data-bind="click:removeCount">
         <p data-bind="text: displayCount" class="unread-comments-count"></p>
@@ -6,9 +6,9 @@
     </div>
     <div class="cp-bar"></div>
 
-    <div id="comments" class="cp-sidebar">
+    <div class="comments cp-sidebar">
         <h4>
-            <span>${node['title']} Discussion</span>
+            <span>{{title}} Discussion</span>
             <span data-bind="foreach: {data: discussion, afterAdd: setupToolTips}" class="pull-right">
                 <a data-toggle="tooltip" data-bind="attr: {href: url, title: fullname}" data-placement="bottom">
                     <img data-bind="attr: {src: gravatarUrl}"/>

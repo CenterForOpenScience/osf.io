@@ -47,7 +47,9 @@ ${next.body()}
             id: '${user_id}',
             urls: {api: userApiUrl},
             isContributor: ${json.dumps(user.get('is_contributor', False))},
-            fullname: ${json.dumps(user['fullname']) | n}
+            fullname: ${json.dumps(user['fullname']) | n},
+            canComment: ${json.dumps(user['can_comment'])},
+            canEdit: ${json.dumps(user['can_edit'])}
         },
         node: {
             ## TODO: Abstract me

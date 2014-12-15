@@ -41,12 +41,13 @@ $('body').on('nodeLoad', function() {
 
 
 // Initialize comment pane w/ it's viewmodel
-var $comments = $('#comments');
+var $comments = $('.comments');
 if ($comments.length) {
     var userName = window.contextVars.currentUser.name;
     var canComment = window.contextVars.currentUser.canComment;
     var hasChildren = window.contextVars.node.hasChildren;
-    Comment.init('#commentPane', userName, canComment, hasChildren);
+    var title = window.contextVars.node.title;
+    Comment.init('.commentPane', title, userName, canComment, hasChildren);
 }
 
 $(document).ready(function() {

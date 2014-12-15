@@ -1,4 +1,4 @@
-#commentPane {
+.commentPane {
     position: fixed;
     z-index: 999; /* Note: Must be lower than Bootstrap modals, BlockUI */
     width: 0;

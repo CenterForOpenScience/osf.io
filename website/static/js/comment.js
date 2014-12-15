@@ -1,5 +1,5 @@
 /**
-* Controller for the Add Contributor modal.
+* Controller for the comments.
 */
 'use strict';
 
@@ -415,7 +415,7 @@ CommentModel.prototype.onSubmitSuccess = function() {
 /*
     *
     */
-var CommentListModel = function(userName, canComment, hasChildren) {
+var CommentListModel = function(userName, title, canComment, hasChildren) {
 
     BaseComment.prototype.constructor.call(this);
 
@@ -424,6 +424,7 @@ var CommentListModel = function(userName, canComment, hasChildren) {
     self.$root = self;
     self.MAXLENGTH = MAXLENGTH;
 
+    self.title = title;
     self.editors = 0;
     self.commented = ko.observable(false);
     self.userName = ko.observable(userName);
@@ -472,9 +473,9 @@ var onOpen = function() {
     });
 };
 
-var init = function(selector, userName, canComment, hasChildren) {
+var init = function(selector, title, userName, canComment, hasChildren) {
     new CommentPane(selector, {onOpen: onOpen});
-    var viewModel = new CommentListModel(userName, canComment, hasChildren);
+    var viewModel = new CommentListModel(userName, title, canComment, hasChildren);
     var $elm = $(selector);
     if (!$elm.length) {
         throw('No results found for selector');
