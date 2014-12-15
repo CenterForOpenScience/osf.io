@@ -3,6 +3,7 @@ import json
 import base64
 import asyncio
 
+from waterbutler import streams
 from waterbutler.providers import core
 
 
@@ -59,7 +60,7 @@ class GithubProvider(core.BaseProvider):
             self.build_repo_url('git', 'blobs', sha),
             headers={'Accept': 'application/vnd.github.VERSION.raw'},
         )
-        return core.ResponseStreamReader(response)
+        return streams.ResponseStreamReader(response)
 
     @core.expects(200, 201)
     @asyncio.coroutine
@@ -88,7 +89,7 @@ class GithubProvider(core.BaseProvider):
             self.build_repo_url('contents', path),
             data=json.dumps(data),
         )
-        return core.ResponseStreamReader(response)
+        return streams.ResponseStreamReader(response)
 
     @core.expects(200)
     @asyncio.coroutine
@@ -106,4 +107,4 @@ class GithubProvider(core.BaseProvider):
             headers={'Content-Type': 'application/json'},
             data=json.dumps(data),
         )
-        return core.ResponseStreamReader(response)
+        return streams.ResponseStreamReader(response)

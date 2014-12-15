@@ -1,6 +1,7 @@
 import os
 import asyncio
 
+from waterbutler import streams
 from waterbutler import exceptions
 from waterbutler.providers import core
 
@@ -72,7 +73,7 @@ class DropboxProvider(core.BaseProvider):
                 },
                 headers=dest_provider.default_headers,
             )
-        return core.ResponseStreamReader(response)
+        return streams.ResponseStreamReader(response)
 
     @core.expects(200)
     @asyncio.coroutine
@@ -88,7 +89,7 @@ class DropboxProvider(core.BaseProvider):
                 'to_path': to_path,
             },
         )
-        return core.ResponseStreamReader(response)
+        return streams.ResponseStreamReader(response)
 
     @core.expects(200)
     @asyncio.coroutine
@@ -97,7 +98,7 @@ class DropboxProvider(core.BaseProvider):
             'GET',
             self.build_content_url('files', 'auto', self.build_path(path)),
         )
-        return core.ResponseStreamReader(resp)
+        return streams.ResponseStreamReader(resp)
 
     @core.expects(200)
     @asyncio.coroutine
@@ -108,7 +109,7 @@ class DropboxProvider(core.BaseProvider):
             headers={'Content-Length': str(stream.size)},
             data=stream,
         )
-        return core.ResponseStreamReader(resp)
+        return streams.ResponseStreamReader(resp)
 
     @core.expects(200)
     @asyncio.coroutine
@@ -118,7 +119,7 @@ class DropboxProvider(core.BaseProvider):
             self.build_url('fileops', 'delete'),
             data={'folder': 'auto', 'path': self.build_path(path)},
         )
-        return core.ResponseStreamReader(response)
+        return streams.ResponseStreamReader(response)
 
     @asyncio.coroutine
     def metadata(self, path, **kwargs):
