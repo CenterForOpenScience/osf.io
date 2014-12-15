@@ -21,6 +21,9 @@ class BaseHandler(tornado.web.RequestHandler):
 
     ACTION_MAP = {}
 
+    def set_default_headers(self):
+        self.set_header('Access-Control-Allow-Origin', '*')
+
     @asyncio.coroutine
     def prepare(self):
         self.arguments = {
