@@ -2,7 +2,7 @@
 <%def name="title()">Notifications</%def>
 <%def name="content()">
 <% import json %>
-
+<% import website%>
 <h2 class="page-header">Notifications</h2>
 
 <div class="row">
@@ -29,7 +29,7 @@
 
                             <input type="checkbox"
                                    data-bind="checked: subscribed"/>
-                            <label>Open Science Framework General</label>
+                            <label data-bind="text: list"></label>
                             <p class="text-muted" style="padding-left: 15px">Receive general notifications</p>
                         </div>
                         <div class="padded">
@@ -50,9 +50,10 @@
 </div>
 
 <script type="text/javascript">
+
     $script(['/static/js/notificationsConfig.js']);
     $script.ready('NotificationsConfig', function() {
-        var notifications = new NotificationsConfig('#selectLists');
+        var notifications = new NotificationsConfig('#selectLists', '${website.settings.MAILCHIMP_GENERAL_LIST}');
     });
 </script>
 

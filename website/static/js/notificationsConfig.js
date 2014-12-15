@@ -9,9 +9,9 @@
     'use strict';
     ko.punches.enableAll();
 
-    var ViewModel = function() {
+    var ViewModel = function(list) {
         var self = this;
-        self.list = 'Open Science Framework General';
+        self.list = ko.observable(list);
         self.subscribed = ko.observable();
         // Flashed messages
         self.message = ko.observable('');
@@ -63,9 +63,9 @@
     };
 
     // API
-    function NotificationsViewModel(selector) {
+    function NotificationsViewModel(selector, list) {
         var self = this;
-        self.viewModel = new ViewModel();
+        self.viewModel = new ViewModel(list);
         $.osf.applyBindings(self.viewModel, selector);
     }
 
