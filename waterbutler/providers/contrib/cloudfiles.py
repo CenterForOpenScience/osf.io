@@ -8,6 +8,7 @@ import functools
 
 import furl
 
+from waterbutler import streams
 from waterbutler import exceptions
 from waterbutler.providers import core
 
@@ -163,7 +164,7 @@ class CloudFilesProvider(core.BaseProvider):
             return url
 
         resp = yield from self.make_request('GET', url)
-        return core.ResponseStreamReader(resp)
+        return streams.ResponseStreamReader(resp)
 
     @core.expects(200, 201)
     @ensure_connection
@@ -179,7 +180,7 @@ class CloudFilesProvider(core.BaseProvider):
             data=stream,
             headers={'Content-Length': str(stream.size)},
         )
-        return core.ResponseStreamReader(resp)
+        return streams.ResponseStreamReader(resp)
 
     @core.expects(204)
     @ensure_connection
@@ -190,7 +191,7 @@ class CloudFilesProvider(core.BaseProvider):
         """
         resp = yield from self.make_request('DELETE', self.build_url(path))
 
-        return core.ResponseStreamReader(resp)
+        return streams.ResponseStreamReader(resp)
 
     @ensure_connection
     def metadata(self, path, **kwargs):

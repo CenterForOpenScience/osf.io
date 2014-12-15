@@ -6,6 +6,7 @@ from lxml import objectify
 
 from boto.s3.connection import S3Connection
 
+from waterbutler import streams
 from waterbutler import exceptions
 from waterbutler.providers import core
 
@@ -49,7 +50,7 @@ class S3Provider(core.BaseProvider):
         if resp.status != 200:
             raise exceptions.FileNotFoundError(path)
 
-        return core.ResponseStreamReader(resp)
+        return streams.ResponseStreamReader(resp)
 
     @core.expects(200, 201)
     @asyncio.coroutine
@@ -59,7 +60,7 @@ class S3Provider(core.BaseProvider):
         :param str path: The full path of the key to upload to/into
         :rtype ResponseWrapper:
         """
-        stream.add_writer('md5', core.HashStreamWriter(hashlib.md5))
+        stream.add_writer('md5', streams.HashStreamWriter(hashlib.md5))
         key = self.bucket.new_key(path)
         url = key.generate_url(TEMP_URL_SECS, 'PUT')
         resp = yield from self.make_request(
@@ -71,7 +72,7 @@ class S3Provider(core.BaseProvider):
         # TODO: nice assertion error goes here
         assert resp.headers['ETag'].replace('"', '') == stream.writers['md5'].hexdigest
 
-        return core.ResponseStreamReader(resp)
+        return streams.ResponseStreamReader(resp)
 
     @core.expects(200, 204)
     @asyncio.coroutine
@@ -84,7 +85,7 @@ class S3Provider(core.BaseProvider):
         url = key.generate_url(TEMP_URL_SECS, 'DELETE')
         resp = yield from self.make_request('DELETE', url)
 
-        return core.ResponseStreamReader(resp)
+        return streams.ResponseStreamReader(resp)
 
     @asyncio.coroutine
     def metadata(self, path, **kwargs):

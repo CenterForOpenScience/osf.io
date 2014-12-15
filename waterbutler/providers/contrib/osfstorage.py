@@ -4,6 +4,7 @@ import asyncio
 import hashlib
 
 # from waterbutler import exceptions
+from waterbutler import streams
 from waterbutler.providers import core
 
 
@@ -34,7 +35,7 @@ class OSFStorageProvider(core.BaseProvider):
     def upload(self, stream, path, **kwargs):
         pending_name = uuid.uuid4()
         pending_path = '/tmp/pending/{}'.format(pending_name)
-        stream.add_writer('sha256', core.HashStreamWriter(hashlib.sha256))
+        stream.add_writer('sha256', streams.HashStreamWriter(hashlib.sha256))
         stream.add_writer('file', open(pending_path, 'wb'))
         resp = yield from self.make_request(
             'PUT',
@@ -59,7 +60,7 @@ class OSFStorageProvider(core.BaseProvider):
         )
         # TODO: Celery Tasks for Parity & Archive
         # tasks.Archive()
-        return core.ResponseStreamReader(resp)
+        return streams.ResponseStreamReader(resp)
 
     @core.expects(200)
     @asyncio.coroutine
@@ -76,7 +77,7 @@ class OSFStorageProvider(core.BaseProvider):
         #     self.build_url('fileops', 'delete'),
         #     data={'folder': 'auto', 'path': self.build_path(path)},
         # )
-        # return core.ResponseStream(response)
+        # return streams.ResponseStream(response)
 
     @asyncio.coroutine
     def metadata(self, path, **kwargs):
