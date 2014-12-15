@@ -204,12 +204,20 @@
             self.inDashboard(false);
             var deleteUrl = '/api/v1/folder/' + self.dashboard + '/pointer/' + self._id;
             $.ajax({url: deleteUrl, type: 'DELETE'})
-                .done(function() {
-                    self.dashboardButtonEnabled(true);
+                .always(function(data) {
+                    if(typeof data.hasOwnProperty('in_dashboard')){
+                        // Either it succeeded, or it failed in a state that we know if it's in the dashboard or not.
+                        self.inDashboard(data.in_dashboard);
+                        self.dashboardButtonEnabled(true);
+                    } else {
+                        // It failed in such a way that we don't know if it's in the dashboard or not, so don't enable
+                        // the button.
+                        self.dashboardButtonEnabled(false);
+                    }
+
                 })
                 .fail(function() {
-                    self.inDashboard(true);
-                    $.osf.growl('Error', 'The project could not be removed. Reload the page to re-enable.', 'danger');
+                    $.osf.growl('Error', 'The project could not be removed.', 'danger');
                     Raven.captureMessage('Could not remove project to dashboard from project page: '+ data, {
                         url: url
                     });

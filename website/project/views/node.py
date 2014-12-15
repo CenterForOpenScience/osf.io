@@ -1222,6 +1222,7 @@ def remove_pointer_from_folder(pointer_id, **kwargs):
     """
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
+    data = {'in_dashboard': False}
 
     if pointer_id is None:
         raise HTTPError(http.BAD_REQUEST)
@@ -1231,7 +1232,7 @@ def remove_pointer_from_folder(pointer_id, **kwargs):
     pointer = Pointer.load(pointer_id)
 
     if pointer is None:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http.BAD_REQUEST, data)
 
     try:
         node.rm_pointer(pointer, auth=auth)
@@ -1239,6 +1240,8 @@ def remove_pointer_from_folder(pointer_id, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     node.save()
+
+    return data
 
 
 @must_be_valid_project  # injects project
