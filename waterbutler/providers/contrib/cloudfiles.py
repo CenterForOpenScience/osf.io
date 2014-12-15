@@ -72,14 +72,7 @@ class CloudFilesProvider(core.BaseProvider):
                 'Destination': os.path.join(dest_provider.container, dest_options['path'])
             },
         )
-        if resp.status == 201:
-            return True
-        raise exceptions.WaterButlerError('Failed to intra copy {} to {}'.format(source_options['path'], dest_options['path']))
-
-    @asyncio.coroutine
-    def intra_move(self, dest_provider, source_options, dest_options):
-        yield from self.intra_copy(dest_provider, source_options, dest_options)
-        yield from self.delete(source_options['path'])
+        return streams.ResponseWrapper(resp)
 
     @asyncio.coroutine
     def get_token(self):
