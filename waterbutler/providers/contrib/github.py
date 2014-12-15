@@ -93,19 +93,39 @@ class GithubProvider(core.BaseProvider):
         )
         data = yield from response.json()
         return [
-            self._serialize_metadata(item)
+            GithubMetadata(item).serialized()
             for item in data
         ]
 
-    def _serialize_metadata(self, item):
+
+class GithubMetadata(core.BaseMetadata):
+
+    @property
+    def provider(self):
+        return 'github'
+
+    @property
+    def kind(self):
+        return 'file' if self.raw['type'] == 'file' else 'folder'
+
+    @property
+    def name(self):
+        return self.raw['name']
+
+    @property
+    def path(self):
+        return self.raw['path']
+
+    @property
+    def size(self):
+        return self.raw['size']
+
+    @property
+    def modified(self):
+        return None
+
+    @property
+    def extra(self):
         return {
-            'provider': 'github',
-            'kind': 'file' if item['type'] == 'file' else 'folder',
-            'name': item['name'],
-            'path': item['path'],
-            'size': item['size'],
-            'modified': None,
-            'extra': {
-                'sha': item['sha'],
-            },
+            'sha': self.raw['sha']
         }

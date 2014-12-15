@@ -127,13 +127,13 @@ class S3Provider(core.BaseProvider):
         obj = objectify.fromstring(content)
 
         files = [
-            S3FileMetadata(k).serialized()
-            for k in getattr(obj, 'Contents', [])
+            S3FileMetadata(item).serialized()
+            for item in getattr(obj, 'Contents', [])
         ]
 
         folders = [
-            S3FolderMetadata(p).serialized()
-            for p in getattr(obj, 'CommonPrefixes', [])
+            S3FolderMetadata(item).serialized()
+            for item in getattr(obj, 'CommonPrefixes', [])
         ]
 
         if len(folders) == 0 and len(files) == 1:
