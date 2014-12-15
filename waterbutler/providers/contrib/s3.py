@@ -30,6 +30,20 @@ class S3Provider(core.BaseProvider):
         self.connection = S3Connection(identity['access_key'], identity['secret_key'])
         self.bucket = self.connection.get_bucket(identity['bucket'], validate=False)
 
+    def can_intra_copy(self, dest_provider):
+        return type(self) == type(dest_provider)
+
+    def can_intra_move(self, dest_provider):
+        return type(self) == type(dest_provider)
+
+    @asyncio.coroutine
+    def intra_copy(self, dest_provider, source_options, dest_options):
+        yield asyncio.sleep(0)
+
+    @asyncio.coroutine
+    def intra_move(self, dest_provider, source_options, dest_options):
+        yield asyncio.sleep(0)
+
     @core.expects(200)
     @asyncio.coroutine
     def download(self, path, **kwargs):

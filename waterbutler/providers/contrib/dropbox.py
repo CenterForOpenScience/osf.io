@@ -29,15 +29,6 @@ class DropboxProvider(core.BaseProvider):
             'Authorization': 'Bearer {}'.format(self.token),
         }
 
-    def __eq__(self, other):
-        try:
-            return (
-                type(self) == type(other) and
-                self.identity == other.identity
-            )
-        except AttributeError:
-            return False
-
     def can_intra_copy(self, dest_provider):
         return type(self) == type(dest_provider)
 
