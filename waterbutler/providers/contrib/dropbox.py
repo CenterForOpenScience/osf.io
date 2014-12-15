@@ -127,18 +127,33 @@ class DropboxProvider(core.BaseProvider):
             raise exceptions.FileNotFoundError(path)
 
         data = yield from response.json()
-
         if data['is_dir']:
-            return [self.format_metadata(x) for x in data['contents']]
-        return self.format_metadata(data)
+            return [DropboxMetadata(x).serialized() for x in data['contents']]
+        return DropboxMetadata(data).serialized()
 
-    def format_metadata(self, data):
-        return {
-            'provider': 'dropbox',
-            'kind': 'folder' if data['is_dir'] else 'file',
-            'name': os.path.split(data['path'])[1],
-            'path': data['path'],
-            'size': data['bytes'],
-            'modified': data['modified'],
-            'extra': {}  # TODO Include extra data from dropbox
-        }
+
+class DropboxMetadata(core.BaseMetadata):
+
+    @property
+    def provider(self):
+        return 'dropbox'
+
+    @property
+    def kind(self):
+        return 'folder' if self.raw['is_dir'] else 'file'
+
+    @property
+    def name(self):
+        return os.path.split(self.raw['path'])[1]
+
+    @property
+    def path(self):
+        return self.raw['path']
+
+    @property
+    def size(self):
+        return self.raw['bytes']
+
+    @property
+    def modified(self):
+        return self.raw['modified']
