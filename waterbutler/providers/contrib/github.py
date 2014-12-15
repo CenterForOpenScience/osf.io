@@ -5,6 +5,7 @@ import asyncio
 
 from waterbutler import streams
 from waterbutler.providers import core
+from waterbutler.providers import exceptions
 
 
 @core.register_provider('github')
@@ -52,7 +53,7 @@ class GithubProvider(core.BaseProvider):
             },
         }
 
-    @core.expects(200)
+    @core.expects(200, error=exceptions.DownloadError)
     @asyncio.coroutine
     def download(self, sha, **kwargs):
         response = yield from self.make_request(
@@ -62,7 +63,7 @@ class GithubProvider(core.BaseProvider):
         )
         return streams.ResponseStreamReader(response)
 
-    @core.expects(200, 201)
+    @core.expects(200, 201, error=exceptions.UploadError)
     @asyncio.coroutine
     def upload(self, stream, path, message, branch=None, **kwargs):
         content = yield from stream.read()
@@ -91,7 +92,7 @@ class GithubProvider(core.BaseProvider):
         )
         return streams.ResponseStreamReader(response)
 
-    @core.expects(200)
+    @core.expects(200, error=exceptions.DeleteError)
     @asyncio.coroutine
     def delete(self, path, message, sha, branch=None):
         data = {

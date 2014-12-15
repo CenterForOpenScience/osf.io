@@ -9,8 +9,8 @@ import functools
 import furl
 
 from waterbutler import streams
-from waterbutler import exceptions
 from waterbutler.providers import core
+from waterbutler.providers import exceptions
 
 
 TEMP_URL_SECS = 100
@@ -63,6 +63,7 @@ class CloudFilesProvider(core.BaseProvider):
     def can_intra_move(self, dest_provider):
         return self == dest_provider
 
+    @core.expects(200, 201, error=exceptions.IntraCopyError)
     @asyncio.coroutine
     def intra_copy(self, dest_provider, source_options, dest_options):
         url = self.build_url(source_options['path'])
@@ -74,14 +75,15 @@ class CloudFilesProvider(core.BaseProvider):
         )
         if resp.status == 201:
             return True
-        raise exceptions.WaterButlerError('Failed to intra copy {} to {}'.format(source_options['path'], dest_options['path']))
+        raise exceptions.IntraCopyError('Failed to intra copy {} to {}'.format(source_options['path'], dest_options['path']))
 
+    @core.expects(200, error=exceptions.IntraMoveError)
     @asyncio.coroutine
     def intra_move(self, dest_provider, source_options, dest_options):
         res = yield from self.intra_copy(dest_provider, source_options, dest_options)
         if res:
             yield from self.delete(source_options['path'])
-        raise exceptions.WaterButlerError('Failed to intra copy {} to {}'.format(source_options['path'], dest_options['path']))
+        raise exceptions.IntraMoveError('Failed to intra copy {} to {}'.format(source_options['path'], dest_options['path']))
 
     @asyncio.coroutine
     def get_token(self):
@@ -174,7 +176,7 @@ class CloudFilesProvider(core.BaseProvider):
         })
         return url.url
 
-    @core.expects(200)
+    @core.expects(200, error=exceptions.DownloadError)
     @ensure_connection
     def download(self, path, accept_url=False, **kwargs):
         """Returns a ResponseWrapper (Stream) for the specified path
@@ -192,7 +194,7 @@ class CloudFilesProvider(core.BaseProvider):
         resp = yield from self.make_request('GET', url)
         return streams.ResponseStreamReader(resp)
 
-    @core.expects(200, 201)
+    @core.expects(200, 201, error=exceptions.UploadError)
     @ensure_connection
     def upload(self, stream, path, **kwargs):
         """Uploads the given stream to S3
@@ -208,7 +210,7 @@ class CloudFilesProvider(core.BaseProvider):
         )
         return streams.ResponseStreamReader(resp)
 
-    @core.expects(204)
+    @core.expects(204, error=exceptions.DeleteError)
     @ensure_connection
     def delete(self, path, **kwargs):
         """Deletes the key at the specified path

@@ -3,9 +3,9 @@ import uuid
 import asyncio
 import hashlib
 
-# from waterbutler import exceptions
 from waterbutler import streams
 from waterbutler.providers import core
+from waterbutler.providers import exceptions
 
 
 @core.register_provider('osfstorage')
@@ -18,7 +18,7 @@ class OSFStorageProvider(core.BaseProvider):
         super().__init__(auth, identity)
         self.provider = core.make_provider(identity['provider'], {'auth': auth, 'identity': identity})
 
-    @core.expects(200)
+    @core.expects(200, error=exceptions.DownloadError)
     @asyncio.coroutine
     def download(self, path, **kwargs):
         # osf storage metadata will return a virtual path within the provider
@@ -30,7 +30,7 @@ class OSFStorageProvider(core.BaseProvider):
         data = yield from resp.json()
         return (yield from self.provider.download(**data))
 
-    @core.expects(200)
+    @core.expects(200, error=exceptions.UploadError)
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
         pending_name = uuid.uuid4()
@@ -62,7 +62,7 @@ class OSFStorageProvider(core.BaseProvider):
         # tasks.Archive()
         return streams.ResponseStreamReader(resp)
 
-    @core.expects(200)
+    @core.expects(200, error=exceptions.DeleteError)
     @asyncio.coroutine
     def delete(self, path, **kwargs):
         # resp = yield from self.make_request(

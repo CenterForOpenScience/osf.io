@@ -7,8 +7,8 @@ from tests.utils import async
 from tests.mocking import aiopretty
 
 from waterbutler import streams
-from waterbutler import exceptions
 from waterbutler.providers import core
+from waterbutler.providers import exceptions
 from waterbutler.providers.contrib.dropbox import DropboxProvider
 
 
