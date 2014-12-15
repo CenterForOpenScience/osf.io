@@ -185,6 +185,19 @@ def test_upload(provider, file_content, file_stream):
 
 @async
 @pytest.mark.aiopretty
+def test_copy(provider):
+    source_path = 'source'
+    dest_path = 'dest'
+    headers = {'x-amz-copy-source': '/{}/{}'.format(provider.identity['bucket'], source_path)}
+    url = provider.bucket.new_key(dest_path).generate_url(100, 'PUT', headers=headers)
+    aiopretty.register_uri('PUT', url, status=200)
+    resp = yield from provider.copy(provider, {'path': source_path}, {'path': dest_path})
+    assert resp.response.status == 200
+    assert aiopretty.has_call(method='PUT', uri=url, headers=headers)
+
+
+@async
+@pytest.mark.aiopretty
 def test_upload_update(provider, file_content, file_stream):
     path = 'foobah'
     content_md5 = hashlib.md5(file_content).hexdigest()
