@@ -79,8 +79,6 @@ class S3Provider(core.BaseProvider):
             expects=(200, ),
             throws=exceptions.DownloadError,
         )
-        if resp.status != 200:
-            raise exceptions.FileNotFoundError(path)
 
         return streams.ResponseStreamReader(resp)
 
@@ -105,7 +103,7 @@ class S3Provider(core.BaseProvider):
         # TODO: nice assertion error goes here
         assert resp.headers['ETag'].replace('"', '') == stream.writers['md5'].hexdigest
 
-        return streams.ResponseStreamReader(resp)
+        return (yield from self.metadata(path))
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
