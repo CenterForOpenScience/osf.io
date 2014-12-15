@@ -35,7 +35,6 @@ class DropboxProvider(core.BaseProvider):
     def can_intra_move(self, dest_provider):
         return self == dest_provider
 
-    @core.expects(200, 201, error=exceptions.IntraCopyError)
     @asyncio.coroutine
     def intra_copy(self, dest_provider, source_options, dest_options):
         from_path = self.build_path(source_options['path'])
@@ -49,6 +48,8 @@ class DropboxProvider(core.BaseProvider):
                     'from_path': from_path,
                     'to_path': to_path,
                 },
+                expects=(200, 201),
+                throws=exceptions.IntraCopyError,
             )
         else:
             from_ref_resp = yield from self.make_request(
@@ -64,10 +65,11 @@ class DropboxProvider(core.BaseProvider):
                     'to_path': to_path,
                 },
                 headers=dest_provider.default_headers,
+                expects=(200, 201),
+                throws=exceptions.IntraCopyError,
             )
         return streams.ResponseStreamReader(response)
 
-    @core.expects(200, error=exceptions.IntraMoveError)
     @asyncio.coroutine
     def intra_move(self, dest_provider, source_options, dest_options):
         from_path = self.build_path(source_options['path'])
@@ -80,23 +82,21 @@ class DropboxProvider(core.BaseProvider):
                 'from_path': from_path,
                 'to_path': to_path,
             },
+            expects=(200, ),
+            throws=exceptions.IntraMoveError,
         )
         return streams.ResponseStreamReader(response)
 
-    @core.expects(200, error=exceptions.DownloadError)
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
         resp = yield from self.make_request(
             'GET',
             self.build_content_url('files', 'auto', self.build_path(path)),
+            expects=(200, ),
+            throws=exceptions.DownloadError,
         )
-
-        if resp.status == 404:
-            raise exceptions.FileNotFoundError(path)
-
         return streams.ResponseStreamReader(resp)
 
-    @core.expects(200, error=exceptions.UploadError)
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
         resp = yield from self.make_request(
@@ -104,16 +104,19 @@ class DropboxProvider(core.BaseProvider):
             self.build_content_url('files_put', 'auto', self.build_path(path)),
             headers={'Content-Length': str(stream.size)},
             data=stream,
+            expects=(200, ),
+            throws=exceptions.UploadError,
         )
         return streams.ResponseStreamReader(resp)
 
-    @core.expects(200, error=exceptions.DeleteError)
     @asyncio.coroutine
     def delete(self, path, **kwargs):
         response = yield from self.make_request(
             'POST',
             self.build_url('fileops', 'delete'),
             data={'folder': 'auto', 'path': self.build_path(path)},
+            expects=(200, ),
+            throws=exceptions.DeleteError,
         )
         return streams.ResponseStreamReader(response)
 

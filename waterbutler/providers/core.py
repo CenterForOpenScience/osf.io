@@ -2,7 +2,6 @@ import os
 import abc
 import asyncio
 import logging
-import functools
 import itertools
 
 import furl
@@ -47,19 +46,6 @@ def make_provider(name, auth=None, identity=None):
     :rtype BaseProvider:
     """
     return get_provider(name)(auth or {}, identity or {})
-
-
-def expects(*codes, error=exceptions.ProviderError):
-    def wrapper(func):
-        assert asyncio.iscoroutinefunction(func)
-        @functools.wraps(func)
-        def wrapped(*args, **kwargs):
-            result = yield from func(*args, **kwargs)
-            if result.response.status not in codes:
-                raise (yield from exceptions.exception_from_response(result.response, error=error, **kwargs))
-            return result
-        return wrapped
-    return wrapper
 
 
 def build_url(base, *segments, **query):
@@ -112,7 +98,11 @@ class BaseProvider(metaclass=abc.ABCMeta):
     @asyncio.coroutine
     def make_request(self, *args, **kwargs):
         kwargs['headers'] = self.build_headers(**kwargs.get('headers', {}))
+        expects = kwargs.pop('expects', None)
+        throws = kwargs.pop('throws', exceptions.ProviderError)
         response = yield from aiohttp.request(*args, **kwargs)
+        if expects and response.status not in expects:
+            raise (yield from exceptions.exception_from_response(response, error=throws, **kwargs))
         return response
 
     def can_intra_copy(self, other):

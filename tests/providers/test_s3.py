@@ -123,7 +123,7 @@ def test_download(provider):
 def test_download_not_found(provider):
     url = provider.bucket.new_key('muhtriangle').generate_url(100)
     aiopretty.register_uri('GET', url, status=404)
-    with pytest.raises(exceptions.FileNotFoundError):
+    with pytest.raises(exceptions.DownloadError):
         yield from provider.download('muhtriangle')
 
 
@@ -166,7 +166,7 @@ def test_metadata_missing(provider, bucket_content):
     url = provider.bucket.generate_url(100)
     aiopretty.register_uri('GET', url, status=404, headers={'Content-Type': 'application/xml'})
 
-    with pytest.raises(exceptions.FileNotFoundError):
+    with pytest.raises(exceptions.MetadataError):
         result = yield from provider.metadata('')
 
 

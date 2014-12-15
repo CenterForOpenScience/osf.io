@@ -49,13 +49,6 @@ class FileNotFoundError(ProviderError):
         super().__init__('Could not retrieve file or directory {0}'.format(path), code=404)
 
 
-# A dict of status codes mapped to
-# an exeption and a tuple of args to extract from kwargs
-CODE_TO_ERROR = {
-    404: (FileNotFoundError, ('path',))  # Sha?
-}
-
-
 @asyncio.coroutine
 def exception_from_response(resp, error=ProviderError, **kwargs):
     """Build and return, not raise, an exception from a response
@@ -64,19 +57,9 @@ def exception_from_response(resp, error=ProviderError, **kwargs):
     :rtype WaterButlerError:
     """
     try:
-        # If our exception exists build and return it
-        exc, args = CODE_TO_ERROR[resp.status]
-        return exc(**{
-            key: val
-            for key, val
-            in kwargs.items()
-            if key in args
-        })
-    except KeyError:
-        try:
-            # Try to make an exception from our received json
-            data = yield from resp.json()
-            return error(data, code=resp.status)
-        except Exception:
-            # When all else fails return the most generic return message
-            return error(DEFAULT_ERROR_MSG.format(response=resp), code=resp.status)
+        # Try to make an exception from our received json
+        data = yield from resp.json()
+        return error(data, code=resp.status)
+    except Exception:
+        # When all else fails return the most generic return message
+        return error(DEFAULT_ERROR_MSG.format(response=resp), code=resp.status)
