@@ -32,7 +32,7 @@
     <div id="currentFolder" data-bind="if:showFolders()">
        <p>
         <strong> Current folder:</strong>
-        <span>sdjbdk/cgdshcj </span>
+        <span data-bind = "text:selectedName"> </span>
        </p>
 
        <div class="btn-group" >

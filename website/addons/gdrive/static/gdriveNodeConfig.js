@@ -50,6 +50,7 @@ ko.punches.enableAll();
         //Folderpicker specific
         self.folderPicker =  folderPicker;
         self.selected = ko.observable(null);
+        self.selectedName = ko.observable();
 
         self.loadedSettings = ko.observable(false);
 
@@ -208,6 +209,10 @@ ko.punches.enableAll();
          * to replace existing folder
          */
         self.changeFolder = function() {
+
+            var setOwner;
+
+
             $.getScript('https://apis.google.com/js/api.js?onload=onApiLoad', function () {
 
                 gapi.load('picker', {'callback': onPickerApiLoad });
@@ -216,7 +221,8 @@ ko.punches.enableAll();
 
                     var docsView = new google.picker.DocsView().
                         setIncludeFolders(true).
-                        setSelectFolderEnabled(true);
+                        setSelectFolderEnabled(true).
+                        setOwnedByMe(setOwner);
 
                     var picker = new google.picker.PickerBuilder().
                         addView(docsView).
@@ -235,7 +241,7 @@ ko.punches.enableAll();
                     if (data[google.picker.Response.ACTION] == google.picker.Action.PICKED) {
                         var doc = data[google.picker.Response.DOCUMENTS][0];
                         var id = doc[google.picker.Document.ID];
-                        name = doc[google.picker.Document.NAME];
+                        self.selectedName(doc[google.picker.Document.NAME]);
                         console.log(id);
                         console.log(name);
 
@@ -264,7 +270,7 @@ ko.punches.enableAll();
                                 var files = [
                                     {
                                         id: id,
-                                        name: name,
+                                        name: self.selectedName(),
                                         kind: 'folder',
                                         children: Items
                                     }
@@ -340,8 +346,6 @@ ko.punches.enableAll();
 
                             }
                         );
-                        self.changeMessage('You picked: ' + name, 'text-primary');
-
                     }
 
 
