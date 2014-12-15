@@ -218,7 +218,6 @@ class CloudFilesProvider(core.BaseProvider):
         :rtype ResponseWrapper:
         """
         resp = yield from self.make_request('DELETE', self.build_url(path))
-
         return streams.ResponseStreamReader(resp)
 
     @ensure_connection
@@ -237,9 +236,66 @@ class CloudFilesProvider(core.BaseProvider):
         if resp.status == 204:
             return []  # TODO Correct value?
 
-        content = yield from resp.json()
+        data = yield from resp.json()
 
-        return [
-            format_metadata(chunk)
-            for chunk in content
-        ]
+        items = []
+        for item in data:
+            if item.get('subdir'):
+                items.append(CloudFilesFolderMetadata(item).serialized())
+            else:
+                items.append(CloudFilesFileMetadata(item).serialized())
+        return items
+
+
+class CloudFilesFileMetadata(core.BaseMetadata):
+
+    @property
+    def provider(self):
+        return 'cloudfiles'
+
+    @property
+    def kind(self):
+        return 'file'
+
+    @property
+    def name(self):
+        return os.path.split(self.raw['name'])[1]
+
+    @property
+    def path(self):
+        return self.raw['name']
+
+    @property
+    def size(self):
+        return self.raw['bytes']
+
+    @property
+    def modified(self):
+        return self.raw['last_modified']
+
+
+class CloudFilesFolderMetadata(core.BaseMetadata):
+
+    @property
+    def provider(self):
+        return 'cloudfiles'
+
+    @property
+    def kind(self):
+        return 'folder'
+
+    @property
+    def name(self):
+        return self.raw['subdir']
+
+    @property
+    def path(self):
+        return self.raw['subdir']
+
+    @property
+    def size(self):
+        return None
+
+    @property
+    def modified(self):
+        return None

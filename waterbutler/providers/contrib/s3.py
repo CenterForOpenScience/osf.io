@@ -127,12 +127,12 @@ class S3Provider(core.BaseProvider):
         obj = objectify.fromstring(content)
 
         files = [
-            S3MetadataFile(k).serialized()
+            S3FileMetadata(k).serialized()
             for k in getattr(obj, 'Contents', [])
         ]
 
         folders = [
-            S3MetadataFolder(p).serialized()
+            S3FolderMetadata(p).serialized()
             for p in getattr(obj, 'CommonPrefixes', [])
         ]
 
@@ -142,11 +142,7 @@ class S3Provider(core.BaseProvider):
         return files + folders
 
 
-class S3MetadataFile(core.BaseMetadata):
-
-    @property
-    def content(self):
-        return []
+class S3FileMetadata(core.BaseMetadata):
 
     @property
     def provider(self):
@@ -179,11 +175,7 @@ class S3MetadataFile(core.BaseMetadata):
         }
 
 
-class S3MetadataFolder(core.BaseMetadata):
-
-    @property
-    def content(self):
-        return []
+class S3FolderMetadata(core.BaseMetadata):
 
     @property
     def provider(self):

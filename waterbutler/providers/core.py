@@ -171,7 +171,6 @@ class BaseMetadata(metaclass=abc.ABCMeta):
 
     def serialized(self):
         return {
-            'content': self.content,
             'provider': self.provider,
             'kind': self.kind,
             'name': self.name,
@@ -180,10 +179,6 @@ class BaseMetadata(metaclass=abc.ABCMeta):
             'modified': self.modified,
             'extra': self.extra,
         }
-
-    @abc.abstractproperty
-    def content(self):
-        pass
 
     @abc.abstractproperty
     def provider(self):
