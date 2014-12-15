@@ -30,7 +30,6 @@ logger = logging.getLogger(__name__)
 GENERAL_LIST = 'Open Science Framework General'
 
 def main(dry=True):
-    script_utils.add_file_logger(logger, __file__)
     # Set up storage backends
     init_app(routes=False)
     users = list(get_users())
@@ -148,4 +147,5 @@ class TestSyncEmail(OsfTestCase):
 
 
 if __name__ == '__main__':
+    script_utils.add_file_logger(logger, __file__)
     main(dry='dry' in sys.argv)
