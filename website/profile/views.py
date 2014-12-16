@@ -237,23 +237,23 @@ def user_choose_mailing_lists(auth, **kwargs):
     user = auth.user
     json_data = escape_html(request.get_json())
     if json_data:
-        if user.mailing_lists is None:
-            user.mailing_lists = {}
         for list_name, subscribe in json_data.items():
-            user.mailing_lists[list_name] = subscribe
             update_subscription(user, list_name, subscribe)
     else:
-        raise HTTPError(http.BAD_REQUEST, data=dict(message_long="Must provide a dictionary of the format {'mailing list name': Boolean}"))
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_long="Must provide a dictionary of the format {'mailing list name': Boolean}")
+        )
 
     user.save()
     return {'message': 'Successfully updated mailing lists', 'result': user.mailing_lists}, 200
 
 
 def update_subscription(user, list_name, subscription):
-    """ Update mailing list subscription in mailchimp
-        :param obj user: current user
-        :param str list_name: mailing list
-        :param boolean subscription: true if user is subscribed
+    """ Update mailing list subscription in mailchimp.
+
+    :param obj user: current user
+    :param str list_name: mailing list
+    :param boolean subscription: true if user is subscribed
     """
     if subscription:
         mailchimp_utils.subscribe_mailchimp(list_name, user._id)
@@ -261,9 +261,11 @@ def update_subscription(user, list_name, subscription):
         try:
             mailchimp_utils.unsubscribe_mailchimp(list_name, user._id)
         except mailchimp_utils.mailchimp.ListNotSubscribedError:
-            raise HTTPError(http.BAD_REQUEST, data=dict(message_short="ListNotSubscribedError",
-                                                        message_long="The user is already unsubscribed from this mailing list.",
-                                                        error_type="not_subscribed"))
+            raise HTTPError(http.BAD_REQUEST,
+                data=dict(message_short="ListNotSubscribedError",
+                        message_long="The user is already unsubscribed from this mailing list.",
+                        error_type="not_subscribed")
+            )
 
 
 def mailchimp_get_endpoint(**kwargs):
