@@ -16,7 +16,7 @@ class CRUDHandler(core.BaseHandler):
         'PUT': 'upload',
         'DELETE': 'delete',
     }
-    STREAM_METHODS = ('PUT', 'POST')
+    STREAM_METHODS = ('PUT', )
 
     @utils.coroutine
     def prepare(self):
