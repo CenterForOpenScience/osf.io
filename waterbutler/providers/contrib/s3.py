@@ -150,10 +150,13 @@ class S3Provider(core.BaseProvider):
             for item in getattr(obj, 'CommonPrefixes', [])
         ]
 
-        if len(folders) == 0 and len(files) == 1:
-            return files[0]
+        if path[-1] == '/':
+            return files + folders
 
-        return files + folders
+        try:
+            return files[0]
+        except IndexError:
+            raise exceptions.MetadataError(path, code=404)
 
 
 class S3FileMetadata(core.BaseMetadata):
