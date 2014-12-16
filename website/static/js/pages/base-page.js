@@ -37,7 +37,7 @@ var SlideInViewModel = function (){
         }
     };
 };
-var NO_FOOTER_PATHS = ['/login/', '/getting-started/'];
+var NO_FOOTER_PATHS = ['/login/', '/getting-started/', '/register/'];
 if ($(sliderSelector).length > 0 &&
         $.inArray(window.location.pathname, NO_FOOTER_PATHS) === -1) {
     $osf.applyBindings(new SlideInViewModel(), sliderSelector);

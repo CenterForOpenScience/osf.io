@@ -983,7 +983,7 @@ def get_children(auth, **kwargs):
             for node in node_to_use.nodes
             if not node.is_deleted
         ]
-    return _render_nodes(nodes)
+    return _render_nodes(nodes, auth)
 
 
 @must_be_contributor_or_public
