@@ -41,12 +41,15 @@ class CRUDHandler(core.BaseHandler):
         result = yield from self.provider.download(**self.arguments)
         _, file_name = os.path.split(self.arguments['path'])
         self.set_header('Content-Type', result.content_type)
+        if result.size:
+            self.set_header('Content-Length', str(result.size))
         self.set_header('Content-Disposition', 'attachment; filename=' + file_name)
         while True:
             chunk = yield from result.read(settings.CHUNK_SIZE)
             if not chunk:
                 break
             self.write(chunk)
+            yield from utils.future_wrapper(self.flush())
 
     @utils.coroutine
     def put(self):

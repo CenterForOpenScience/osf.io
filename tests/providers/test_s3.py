@@ -6,7 +6,6 @@ from tests.mocking import aiopretty
 import io
 import hashlib
 from waterbutler import streams
-from waterbutler.providers import core
 from waterbutler.providers import exceptions
 from waterbutler.providers.contrib.s3 import S3Provider
 
@@ -49,7 +48,7 @@ def file_stream(file_like):
 
 
 @pytest.fixture
-def bucket_contents():
+def folder_metadata():
     return b'''<?xml version="1.0" encoding="UTF-8"?>
         <ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
             <Name>bucket</Name>
@@ -86,7 +85,7 @@ def bucket_contents():
 
 
 @pytest.fixture
-def bucket_content():
+def file_metadata():
     return b'''<?xml version="1.0" encoding="UTF-8"?>
         <ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
             <Name>bucket</Name>
@@ -113,8 +112,10 @@ def bucket_content():
 def test_download(provider):
     url = provider.bucket.new_key('muhtriangle').generate_url(100)
     aiopretty.register_uri('GET', url, body=b'delicious')
+
     result = yield from provider.download('muhtriangle')
     content = yield from result.response.read()
+
     assert content == b'delicious'
 
 
@@ -123,6 +124,7 @@ def test_download(provider):
 def test_download_not_found(provider):
     url = provider.bucket.new_key('muhtriangle').generate_url(100)
     aiopretty.register_uri('GET', url, status=404)
+
     with pytest.raises(exceptions.DownloadError):
         yield from provider.download('muhtriangle')
 
@@ -136,9 +138,9 @@ def test_download_no_name(provider):
 
 @async
 @pytest.mark.aiopretty
-def test_metadata(provider, bucket_contents):
+def test_metadata_folder(provider, folder_metadata):
     url = provider.bucket.generate_url(100)
-    aiopretty.register_uri('GET', url, body=bucket_contents, headers={'Content-Type': 'application/xml'})
+    aiopretty.register_uri('GET', url, body=folder_metadata, headers={'Content-Type': 'application/xml'})
     result = yield from provider.metadata('')
 
     assert isinstance(result, list)
@@ -149,10 +151,10 @@ def test_metadata(provider, bucket_contents):
 
 @async
 @pytest.mark.aiopretty
-def test_metadata_single(provider, bucket_content):
+def test_metadata_file(provider, file_metadata):
     name = 'my-image.jpg'
     url = provider.bucket.generate_url(100)
-    aiopretty.register_uri('GET', url, body=bucket_content, headers={'Content-Type': 'application/xml'})
+    aiopretty.register_uri('GET', url, body=file_metadata, headers={'Content-Type': 'application/xml'})
     result = yield from provider.metadata(name)
 
     assert isinstance(result, dict)
@@ -163,23 +165,24 @@ def test_metadata_single(provider, bucket_content):
 
 @async
 @pytest.mark.aiopretty
-def test_metadata_missing(provider, bucket_content):
+def test_metadata_file_missing(provider):
+    name = 'notfound.txt'
     url = provider.bucket.generate_url(100)
     aiopretty.register_uri('GET', url, status=404, headers={'Content-Type': 'application/xml'})
 
     with pytest.raises(exceptions.MetadataError):
-        yield from provider.metadata('')
+        yield from provider.metadata(name)
 
 
 @async
 @pytest.mark.aiopretty
-def test_upload(provider, file_content, file_stream, bucket_content):
+def test_upload(provider, file_content, file_stream, file_metadata):
     path = 'foobah'
     content_md5 = hashlib.md5(file_content).hexdigest()
     url = provider.bucket.new_key(path).generate_url(100, 'PUT')
     aiopretty.register_uri('PUT', url, status=200, headers={'ETag': '"{}"'.format(content_md5)})
     metadata_url = provider.bucket.generate_url(100, 'GET')
-    aiopretty.register_uri('GET', metadata_url, body=bucket_content, headers={'Content-Type': 'application/xml'})
+    aiopretty.register_uri('GET', metadata_url, body=file_metadata, headers={'Content-Type': 'application/xml'})
 
     resp = yield from provider.upload(file_stream, path)
 
@@ -196,20 +199,22 @@ def test_copy(provider):
     headers = {'x-amz-copy-source': '/{}/{}'.format(provider.identity['bucket'], source_path)}
     url = provider.bucket.new_key(dest_path).generate_url(100, 'PUT', headers=headers)
     aiopretty.register_uri('PUT', url, status=200)
+
     resp = yield from provider.copy(provider, {'path': source_path}, {'path': dest_path})
+
     assert resp.response.status == 200
     assert aiopretty.has_call(method='PUT', uri=url, headers=headers)
 
 
 @async
 @pytest.mark.aiopretty
-def test_upload_update(provider, file_content, file_stream, bucket_content):
+def test_upload_update(provider, file_content, file_stream, file_metadata):
     path = 'foobah'
     content_md5 = hashlib.md5(file_content).hexdigest()
     url = provider.bucket.new_key(path).generate_url(100, 'PUT')
     aiopretty.register_uri('PUT', url, status=201, headers={'ETag': '"{}"'.format(content_md5)})
     metadata_url = provider.bucket.generate_url(100, 'GET')
-    aiopretty.register_uri('GET', metadata_url, body=bucket_content, headers={'Content-Type': 'application/xml'})
+    aiopretty.register_uri('GET', metadata_url, body=file_metadata, headers={'Content-Type': 'application/xml'})
 
     resp = yield from provider.upload(file_stream, path)
 
@@ -223,7 +228,6 @@ def test_upload_update(provider, file_content, file_stream, bucket_content):
 def test_delete(provider):
     path = 'My Ex'
     url = provider.bucket.new_key(path).generate_url(100, 'DELETE')
-
     aiopretty.register_uri('DELETE', url, status=200)
 
     yield from provider.delete(path)
