@@ -25,10 +25,10 @@ def install(upgrade=False, pip_cache=None, wheel_repo=None):
         run('curl -o {} -L {}'.format(name, url), pty=True)
         run('unzip {}'.format(name), pty=True)
         # run pip install w/ the wheelhouse folder specified
-        run(cmd + ' --use-wheel --find-links={}'.format(folder), pty=True)
+        run('{} --use-wheel --find-links={}'.format(cmd, folder), pty=True)
         # cleanup wheelhouse folder and archive file
         run('rm -rf {}'.format(folder), pty=True)
-        run('rm -f {}{}'.format(name), pty=True)
+        run('rm -f {}'.format(name), pty=True)
     else:
         run(cmd, pty=True)
 
