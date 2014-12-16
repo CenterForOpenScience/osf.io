@@ -1,14 +1,5 @@
 # OSF Google Drive Addon
 
-# TODO
-
-
-1. Copy settings/local-dist.py to settings/local.py and change the necessary settings.
-...
-
-
-
-# OSF Dropbox Addon
 
 Enabling the addon for development
 
