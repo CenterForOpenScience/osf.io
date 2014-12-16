@@ -23,17 +23,21 @@ def auth():
 
 
 @pytest.fixture
-def identity():
+def credentials():
+    return {'token': 'naps'}
+
+
+@pytest.fixture
+def settings():
     return {
         'owner': 'cat',
         'repo': 'food',
-        'token': 'naps',
     }
 
 
 @pytest.fixture
-def provider(auth, identity):
-    return GithubProvider(auth, identity)
+def provider(auth, credentials, settings):
+    return GithubProvider(auth, credentials, settings)
 
 
 @pytest.fixture
@@ -137,8 +141,8 @@ def upload_response():
 
 class TestGithubHelpers:
 
-    def test_build_repo_url(self, identity, provider):
-        expected = provider.build_url('repos', identity['owner'], identity['repo'], 'contents')
+    def test_build_repo_url(self, provider, settings):
+        expected = provider.build_url('repos', settings['owner'], settings['repo'], 'contents')
         assert provider.build_repo_url('contents') == expected
 
     def test_committer(self, auth, provider):

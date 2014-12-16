@@ -19,16 +19,17 @@ class S3Provider(core.BaseProvider):
     """Provider for the Amazon's S3
     """
 
-    def __init__(self, auth, identity):
+    def __init__(self, auth, credentials, settings):
         """
         Note: Neither `S3Connection#__init__` nor `S3Connection#get_bucket`
         sends a request.
         :param dict auth: Not used
-        :param dict identity: A dict containing access_key secret_key and bucket
+        :param dict credentials: Dict containing `access_key` and `secret_key`
+        :param dict settings: Dict containing `bucket`
         """
-        super().__init__(auth, identity)
-        self.connection = S3Connection(identity['access_key'], identity['secret_key'])
-        self.bucket = self.connection.get_bucket(identity['bucket'], validate=False)
+        super().__init__(auth, credentials, settings)
+        self.connection = S3Connection(credentials['access_key'], credentials['secret_key'])
+        self.bucket = self.connection.get_bucket(settings['bucket'], validate=False)
 
     def can_intra_copy(self, dest_provider):
         return type(self) == type(dest_provider)
@@ -38,11 +39,11 @@ class S3Provider(core.BaseProvider):
 
     @asyncio.coroutine
     def intra_copy(self, dest_provider, source_options, dest_options):
-        """Copy key from one S3 bucket to another. The identity specified in
+        """Copy key from one S3 bucket to another. The credentials specified in
         `dest_provider` must have read access to `source.bucket`.
         """
         dest_key = dest_provider.bucket.new_key(dest_options['path'])
-        source_path = '/' + os.path.join(self.identity['bucket'], source_options['path'])
+        source_path = '/' + os.path.join(self.settings['bucket'], source_options['path'])
         headers = {'x-amz-copy-source': source_path}
         url = dest_key.generate_url(
             TEMP_URL_SECS,

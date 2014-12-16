@@ -14,12 +14,12 @@ class GithubProvider(core.BaseProvider):
     BASE_URL = 'https://api.github.com/'
 
     def build_repo_url(self, *segments, **query):
-        segments = ('repos', self.identity['owner'], self.identity['repo']) + segments
+        segments = ('repos', self.settings['owner'], self.settings['repo']) + segments
         return self.build_url(*segments, **query)
 
     @property
     def default_headers(self):
-        return {'Authorization': 'token {}'.format(self.identity['token'])}
+        return {'Authorization': 'token {}'.format(self.credentials['token'])}
 
     @property
     def committer(self):
