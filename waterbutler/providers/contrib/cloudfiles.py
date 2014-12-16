@@ -14,6 +14,7 @@ from waterbutler.providers import exceptions
 
 
 TEMP_URL_SECS = 100
+AUTH_URL = 'https://identity.api.rackspacecloud.com/v2.0/tokens'
 
 
 def ensure_connection(func):
@@ -67,7 +68,8 @@ class CloudFilesProvider(core.BaseProvider):
     def intra_copy(self, dest_provider, source_options, dest_options):
         url = dest_provider.build_url(dest_options['path'])
         resp = yield from self.make_request(
-            'PUT', url,
+            'PUT',
+            url,
             headers={
                 'X-Copy-From': os.path.join(self.container, source_options['path'])
             },
@@ -85,7 +87,7 @@ class CloudFilesProvider(core.BaseProvider):
         """
         resp = yield from self.make_request(
             'POST',
-            'https://identity.api.rackspacecloud.com/v2.0/tokens',
+            AUTH_URL,
             data=json.dumps({
                 'auth': {
                     'RAX-KSKEY:apiKeyCredentials': {
@@ -96,7 +98,8 @@ class CloudFilesProvider(core.BaseProvider):
             }),
             headers={
                 'Content-Type': 'application/json',
-            }
+            },
+            expects=(200, ),
         )
         data = yield from resp.json()
         return data
@@ -112,11 +115,11 @@ class CloudFilesProvider(core.BaseProvider):
             data = yield from self.get_token()
             self.token = data['access']['token']['id']
             self.endpoint = self.extract_endpoint(data)
-            resp = yield from self.make_request('HEAD', self.endpoint)
+            resp = yield from self.make_request('HEAD', self.endpoint, expects=(204 ,))
             try:
                 self.temp_url_key = resp.headers['X-Account-Meta-Temp-URL-Key'].encode()
             except KeyError:
-                raise exceptions.ProviderError('Not temp url key is available', code=503)
+                raise exceptions.ProviderError('No temp url key is available', code=503)
 
     @property
     def default_headers(self):
@@ -132,9 +135,9 @@ class CloudFilesProvider(core.BaseProvider):
         :rtype str:
         """
         for service in reversed(data['access']['serviceCatalog']):
-            if service['name'] == 'cloudFiles':
+            if service['name'].lower() == 'cloudfiles':
                 for region in service['endpoints']:
-                    if region['region'] == self.region:
+                    if region['region'].lower() == self.region.lower():
                         return region['publicURL']
 
     def build_url(self, stream):
@@ -197,14 +200,15 @@ class CloudFilesProvider(core.BaseProvider):
         :rtype ResponseStreamReader:
         """
         url = self.generate_url(path, 'PUT')
-        resp = yield from self.make_request(
-            'PUT', url,
+        yield from self.make_request(
+            'PUT',
+            url,
             data=stream,
             headers={'Content-Length': str(stream.size)},
             expects=(200, 201),
             throws=exceptions.UploadError,
         )
-        return streams.ResponseStreamReader(resp)
+        return (yield from self.metadata(path))
 
     @ensure_connection
     def delete(self, path, **kwargs):
@@ -236,19 +240,23 @@ class CloudFilesProvider(core.BaseProvider):
             throws=exceptions.MetadataError,
         )
 
-        # TODO: Is this necessary?
-        if resp.status == 204:
-            return []
-
         data = yield from resp.json()
 
-        items = []
-        for item in data:
-            if item.get('subdir'):
-                items.append(CloudFilesFolderMetadata(item).serialized())
-            else:
-                items.append(CloudFilesFileMetadata(item).serialized())
-        return items
+        if not data:
+            raise exceptions.MetadataError(
+                'Could not retrieve file or directory {0}'.format(path),
+                code=404,
+            )
+
+        if path.endswith('/'):
+            return [self._serialize_metadata(item) for item in data]
+        if data:
+            return self._serialize_metadata(data[0])
+
+    def _serialize_metadata(self, metadata):
+        if metadata.get('subdir'):
+            return CloudFilesFolderMetadata(metadata).serialized()
+        return CloudFilesFileMetadata(metadata).serialized()
 
 
 class CloudFilesFileMetadata(core.BaseMetadata):
