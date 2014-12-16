@@ -19,7 +19,7 @@ from framework.bcrypt import generate_password_hash, check_password_hash
 from framework import analytics
 from framework.guid.model import GuidStoredObject
 from framework.addons import AddonModelMixin
-from framework.auth import utils
+from framework.auth import utils, signals
 from framework.auth.exceptions import ChangePasswordError
 from framework.exceptions import PermissionsError
 
@@ -355,6 +355,10 @@ class User(GuidStoredObject, AddonModelMixin):
         self.date_confirmed = dt.datetime.utcnow()
         self.update_search()
         self.update_search_nodes()
+
+        # Emit signal that a user has confirmed
+        signals.user_confirmed.send(self)
+
         return self
 
     def add_unclaimed_record(self, node, referrer, given_name, email=None):
