@@ -115,7 +115,7 @@ class CloudFilesProvider(core.BaseProvider):
             data = yield from self.get_token()
             self.token = data['access']['token']['id']
             self.endpoint = self.extract_endpoint(data)
-            resp = yield from self.make_request('HEAD', self.endpoint, expects=(204 ,))
+            resp = yield from self.make_request('HEAD', self.endpoint, expects=(204, ))
             try:
                 self.temp_url_key = resp.headers['X-Account-Meta-Temp-URL-Key'].encode()
             except KeyError:
