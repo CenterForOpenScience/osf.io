@@ -131,7 +131,7 @@ class BaseProvider(metaclass=abc.ABCMeta):
             except NotImplementedError:
                 pass
         stream = yield from self.download(**source_options)
-        yield from dest_provider.upload(stream, **dest_options)
+        return (yield from dest_provider.upload(stream, **dest_options))
 
     @asyncio.coroutine
     def move(self, dest_provider, source_options, dest_options):
@@ -140,8 +140,9 @@ class BaseProvider(metaclass=abc.ABCMeta):
                 return (yield from self.intra_move(dest_provider, source_options, dest_options))
             except NotImplementedError:
                 pass
-        yield from self.copy(dest_provider, source_options, dest_options)
+        metadata = yield from self.copy(dest_provider, source_options, dest_options)
         yield from self.delete(**source_options)
+        return metadata
 
     @abc.abstractmethod
     def download(self, **kwargs):

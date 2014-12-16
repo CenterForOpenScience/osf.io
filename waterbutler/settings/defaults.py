@@ -6,3 +6,6 @@ CHUNK_SIZE = 65536  # 64KB
 
 IDENTITY_METHOD = 'rest'
 IDENTITY_API_URL = 'changeme'
+
+FILE_PATH_PENDING = '/tmp/pending'
+FILE_PATH_COMPLETE = '/tmp/complete'
