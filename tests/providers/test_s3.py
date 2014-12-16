@@ -152,7 +152,7 @@ def test_metadata(provider, bucket_contents):
 def test_metadata_single(provider, bucket_content):
     url = provider.bucket.generate_url(100)
     aiopretty.register_uri('GET', url, body=bucket_content, headers={'Content-Type': 'application/xml'})
-    result = yield from provider.metadata('')
+    result = yield from provider.metadata('my-image.jpg')
 
     assert isinstance(result, dict)
 

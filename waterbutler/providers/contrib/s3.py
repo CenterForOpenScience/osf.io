@@ -150,7 +150,7 @@ class S3Provider(core.BaseProvider):
             for item in getattr(obj, 'CommonPrefixes', [])
         ]
 
-        if path[-1] == '/':
+        if not path or path[-1] == '/':
             return files + folders
 
         try:
