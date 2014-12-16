@@ -142,6 +142,7 @@ class S3Provider(core.BaseProvider):
         files = [
             S3FileMetadata(item).serialized()
             for item in getattr(obj, 'Contents', [])
+            if os.path.split(item.Key.text)[1]
         ]
 
         folders = [
