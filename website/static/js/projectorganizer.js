@@ -135,6 +135,8 @@ function createProjectDetailHTMLFromTemplate(theItem) {
     }
 
     function _showProjectDetails (event, item, col) {
+        event.stopImmediatePropagation();
+        console.log("_showProjectDetails", event, item, col);
         var treebeard = this; 
         projectOrganizer.myProjects.initialize();
         projectOrganizer.publicProjects.initialize();
@@ -695,7 +697,7 @@ function createProjectDetailHTMLFromTemplate(theItem) {
             if(this.multiselected.length < 2) {
                 return this.multiselected;
             }
-            
+
             var i, newRows = [];
             var originalRow = this.find(this.selected);
             if(typeof originalRow !== "undefined") {
@@ -734,16 +736,15 @@ function createProjectDetailHTMLFromTemplate(theItem) {
     function _poOver (event, ui) {
         var items = this.multiselected.length === 0 ? [this.find(this.selected)] : this.multiselected, 
             folder = this.find($(event.target).attr('data-id'));
-            dragLogic.call(this, event, items, ui);
+        var dragState = dragLogic.call(this, event, items, ui);
 
-        var acceptDrop = canAcceptDrop (items, folder); 
-        $('.tb-row').removeClass('tb-h-success');
-        if(acceptDrop) {
+        $('.tb-row').removeClass('tb-h-success po-hover');
+        if(dragState !== 'forbidden') {
             $('.tb-row[data-id="' + folder.id + '"]').addClass('tb-h-success');
         }       
-        // else {
-        //     $('.tb-row[data-id="' + folder.id + '"]').addClass('tb-h-error');
-        // }
+        else {
+            $('.tb-row[data-id="' + folder.id + '"]').addClass('po-hover');
+        }
     }
 
 
@@ -810,6 +811,7 @@ function createProjectDetailHTMLFromTemplate(theItem) {
             default:
                 $(ui.helper).css('cursor', 'default');
         }
+        return copyMode;
     }
 
     function canAcceptDrop(items, folder){
@@ -986,7 +988,7 @@ function createProjectDetailHTMLFromTemplate(theItem) {
         title : false,          // Title of the grid, boolean, string OR function that returns a string.
         allowMove : true,       // Turn moving on or off.
         moveClass : 'po-draggable',
-        hoverClass : 'fangorn-hover',
+        hoverClass : 'po-hover',
         hoverClassMultiselect : 'po-hover-multiselect',
         togglecheck : _poToggleCheck,
         sortButtonSelector : { 
