@@ -12,10 +12,10 @@ class DropboxProvider(core.BaseProvider):
     BASE_URL = 'https://api.dropbox.com/1/'
     BASE_CONTENT_URL = 'https://api-content.dropbox.com/1/'
 
-    def __init__(self, auth, identity):
-        super().__init__(auth, identity)
-        self.folder = self.identity['folder']
-        self.token = self.identity['token']
+    def __init__(self, auth, credentials, settings):
+        super().__init__(auth, credentials, settings)
+        self.token = self.credentials['token']
+        self.folder = self.settings['folder']
 
     def build_content_url(self, *segments, **query):
         return core.build_url(self.BASE_CONTENT_URL, *segments, **query)
