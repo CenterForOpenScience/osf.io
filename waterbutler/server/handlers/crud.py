@@ -41,25 +41,29 @@ class CRUDHandler(core.BaseHandler):
         result = yield from self.provider.download(**self.arguments)
         _, file_name = os.path.split(self.arguments['path'])
         self.set_header('Content-Type', result.content_type)
+        if result.size:
+            self.set_header('Content-Length', str(result.size))
         self.set_header('Content-Disposition', 'attachment; filename=' + file_name)
         while True:
             chunk = yield from result.read(settings.CHUNK_SIZE)
             if not chunk:
                 break
             self.write(chunk)
+            yield from utils.future_wrapper(self.flush())
 
     @utils.coroutine
     def put(self):
         """Upload a file."""
         self.stream.feed_eof()
         result = yield from self.uploader
-        self.set_status(result.response.status)
+        self.write(result)
 
     @utils.coroutine
     def delete(self):
         """Delete a file."""
         result = yield from self.provider.delete(**self.arguments)
-        self.set_status(result.response.status)
+        self.set_status(204)
+        self.write(result)
 
     def on_connection_close(self):
         if self.request.method in self.STREAM_METHODS:
