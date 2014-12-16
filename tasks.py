@@ -16,19 +16,19 @@ def install(upgrade=False, pip_cache=None, wheel_repo=None):
 
     if wheel_repo:
         run('pip install wheel', pty=True)
-        # get the current python version, expected git branch name
+        # current python version, expected git branch name
         ver = '.'.join([str(i) for i in sys.version_info[0:2]])
-        name = 'wheelhouse-{}'.format(ver)
-        ext = '.zip'
-        url = '{}/archive/{}{}'.format(wheel_repo, ver, ext)
+        folder = 'wheelhouse-{}'.format(ver)
+        name = 'wheelhouse-{}.zip'.format(ver)
+        url = '{}/archive/{}.zip'.format(wheel_repo, ver)
         # download and extract the wheelhouse github repository archive
-        run('curl -o {}{} -L {}'.format(name, ext, url), pty=True)
-        run('unzip {}{}'.format(name, ext, name), pty=True)
-        # run pip install w/ the wheelhouse dependencies available
-        run(cmd + ' --use-wheel --find-links={}'.format(name), pty=True)
-        # cleanup wheelhouse-{ver} folder and wheelhouse-{ver}{ext} file
-        run('rm -rf {}'.format(name), pty=True)
-        run('rm -f {}{}'.format(name, ext), pty=True)
+        run('curl -o {} -L {}'.format(name, url), pty=True)
+        run('unzip {}'.format(name), pty=True)
+        # run pip install w/ the wheelhouse folder specified
+        run(cmd + ' --use-wheel --find-links={}'.format(folder), pty=True)
+        # cleanup wheelhouse folder and archive file
+        run('rm -rf {}'.format(folder), pty=True)
+        run('rm -f {}{}'.format(name), pty=True)
     else:
         run(cmd, pty=True)
 
