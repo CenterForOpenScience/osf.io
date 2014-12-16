@@ -2353,8 +2353,11 @@ class TestConfigureMailingListViews(OsfTestCase):
         user.reload()
 
         # check user.mailing_lists is updated
-        assert_true(user.mailing_lists['OSF General'])
-        assert_equal(user.mailing_lists['OSF General'], payload['OSF General'])
+        assert_true(user.mailing_lists[settings.MAILCHIMP_GENERAL_LIST])
+        assert_equal(
+            user.mailing_lists[settings.MAILCHIMP_GENERAL_LIST],
+            payload[settings.MAILCHIMP_GENERAL_LIST]
+        )
 
         # check that user is subscribed
         mock_client.lists.subscribe.assert_called_with(id=list_id, email={'email': user.username}, double_optin=False, update_existing=True)
