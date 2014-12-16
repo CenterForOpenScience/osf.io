@@ -80,7 +80,7 @@ class RequestStreamReader(BaseStream):
 
     @asyncio.coroutine
     def _read(self, size):
-        return (yield from self.request.content.read(size))
+        return (yield from asyncio.StreamReader.read(self, size))
 
 
 class FileStreamReader(BaseStream):

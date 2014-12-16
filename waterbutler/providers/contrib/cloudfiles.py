@@ -67,7 +67,7 @@ class CloudFilesProvider(core.BaseProvider):
     @asyncio.coroutine
     def intra_copy(self, dest_provider, source_options, dest_options):
         url = dest_provider.build_url(dest_options['path'])
-        resp = yield from self.make_request(
+        yield from self.make_request(
             'PUT',
             url,
             headers={
@@ -76,7 +76,7 @@ class CloudFilesProvider(core.BaseProvider):
             expects=(201, ),
             throws=exceptions.IntraCopyError,
         )
-        return streams.ResponseStreamReader(resp)
+        return (yield from dest_provider.metadata(dest_options['path']))
 
     @asyncio.coroutine
     def get_token(self):
@@ -216,13 +216,12 @@ class CloudFilesProvider(core.BaseProvider):
         :param str path: The path of the key to delete
         :rtype ResponseStreamReader:
         """
-        resp = yield from self.make_request(
+        yield from self.make_request(
             'DELETE',
             self.build_url(path),
-            excepts=(204, ),
+            expects=(204, ),
             throws=exceptions.DeleteError,
         )
-        return streams.ResponseStreamReader(resp)
 
     @ensure_connection
     def metadata(self, path, **kwargs):

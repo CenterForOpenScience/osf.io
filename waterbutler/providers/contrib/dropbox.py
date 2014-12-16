@@ -21,7 +21,7 @@ class DropboxProvider(core.BaseProvider):
         return core.build_url(self.BASE_CONTENT_URL, *segments, **query)
 
     def build_path(self, path):
-        return os.path.join(self.folder, path)
+        return os.path.join(self.folder, path.strip('/'))
 
     @property
     def default_headers(self):
@@ -155,7 +155,7 @@ class DropboxMetadata(core.BaseMetadata):
 
     @property
     def path(self):
-        return self.raw['path']
+        return self.raw['path'].strip('/')
 
     @property
     def size(self):
