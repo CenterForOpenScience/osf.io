@@ -21,16 +21,18 @@ def auth():
 
 
 @pytest.fixture
-def identity():
-    return {
-        'token': 'wrote harry potter',
-        'folder': 'similar to a (w)rapper',
-    }
+def credentials():
+    return {'token': 'wrote harry potter'}
 
 
 @pytest.fixture
-def provider(auth, identity):
-    return DropboxProvider(auth, identity)
+def settings():
+    return {'folder': 'similar to a (w)rapper'}
+
+
+@pytest.fixture
+def provider(auth, credentials, settings):
+    return DropboxProvider(auth, credentials, settings)
 
 
 @pytest.fixture

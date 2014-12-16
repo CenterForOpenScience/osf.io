@@ -39,13 +39,15 @@ def get_provider(name):
         raise NotImplementedError('No provider for {}'.format(name))
 
 
-def make_provider(name, auth=None, identity=None):
+def make_provider(name, auth, credentials, settings):
     """Fetches a provider registed under name and returns an instance of it
     :param str name: Name of the provider
-    :param dict credentials: a dictionary containing keys `auth` and `identity`
+    :param dict auth: User authorizing provider
+    :param dict credentials: Provider authentication credentials
+    :param dict settings: Provider settings
     :rtype BaseProvider:
     """
-    return get_provider(name)(auth or {}, identity or {})
+    return get_provider(name)(auth, credentials, settings)
 
 
 def build_url(base, *segments, **query):
@@ -66,9 +68,10 @@ class BaseProvider(metaclass=abc.ABCMeta):
 
     BASE_URL = None
 
-    def __init__(self, auth, identity):
+    def __init__(self, auth, credentials, settings):
         self.auth = auth
-        self.identity = identity
+        self.credentials = credentials
+        self.settings = settings
 
     def __eq__(self, other):
         try:

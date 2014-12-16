@@ -48,15 +48,15 @@ class CloudFilesProvider(core.BaseProvider):
     """Provider for Rackspace CloudFiles
     """
 
-    def __init__(self, auth, identity):
-        super().__init__(auth, identity)
+    def __init__(self, auth, credentials, settings):
+        super().__init__(auth, credentials, settings)
         self.token = None
         self.endpoint = None
         self.temp_url_key = None
-        self.region = self.identity['region']
-        self.og_token = self.identity['token']
-        self.username = self.identity['username']
-        self.container = self.identity['container']
+        self.region = self.credentials['region']
+        self.og_token = self.credentials['token']
+        self.username = self.credentials['username']
+        self.container = self.settings['container']
 
     def can_intra_copy(self, dest_provider):
         return self == dest_provider

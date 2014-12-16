@@ -32,11 +32,13 @@ class BaseHandler(tornado.web.RequestHandler):
         }
         self.arguments['action'] = self.ACTION_MAP[self.request.method]
 
-        self.credentials = yield from get_identity(settings.IDENTITY_METHOD, **self.arguments)
+        self.payload = yield from get_identity(settings.IDENTITY_METHOD, **self.arguments)
 
         self.provider = core.make_provider(
             self.arguments['provider'],
-            **self.credentials
+            self.payload['auth'],
+            self.payload['credentials'],
+            self.payload['settings'],
         )
 
     def write_error(self, status_code, exc_info):

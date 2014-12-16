@@ -25,18 +25,22 @@ def auth():
 
 
 @pytest.fixture
-def identity():
+def credentials():
     return {
         'username': 'prince',
         'token': 'revolutionary',
         'region': 'iad',
-        'container': 'purple rain',
     }
 
 
 @pytest.fixture
-def provider(auth, identity):
-    return cloudfiles.CloudFilesProvider(auth, identity)
+def settings():
+    return {'container': 'purple rain'}
+
+
+@pytest.fixture
+def provider(auth, credentials, settings):
+    return cloudfiles.CloudFilesProvider(auth, credentials, settings)
 
 
 @pytest.fixture

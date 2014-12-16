@@ -19,17 +19,21 @@ def auth():
 
 
 @pytest.fixture
-def identity():
+def credentials():
     return {
         'access_key': 'Dont dead',
         'secret_key': 'open inside',
-        'bucket': 'that kerning',
     }
 
 
 @pytest.fixture
-def provider(auth, identity):
-    return S3Provider(auth, identity)
+def settings():
+    return {'bucket': 'that kerning'}
+
+
+@pytest.fixture
+def provider(auth, credentials, settings):
+    return S3Provider(auth, credentials, settings)
 
 
 @pytest.fixture
@@ -196,7 +200,7 @@ def test_upload(provider, file_content, file_stream, file_metadata):
 def test_copy(provider):
     source_path = 'source'
     dest_path = 'dest'
-    headers = {'x-amz-copy-source': '/{}/{}'.format(provider.identity['bucket'], source_path)}
+    headers = {'x-amz-copy-source': '/{}/{}'.format(provider.settings['bucket'], source_path)}
     url = provider.bucket.new_key(dest_path).generate_url(100, 'PUT', headers=headers)
     aiopretty.register_uri('PUT', url, status=200)
 
