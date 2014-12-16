@@ -179,10 +179,10 @@ function createProjectDetailHTMLFromTemplate(theItem) {
             theParentNode = theItem;
             theItem.parentIsSmartFolder = true;
         }
-        theItem.parentNode = theParentNode.data;
+        theItem.parentNode = theParentNode;
 
-            var theParentNodeID = theParentNode.node_id;
-            theItem.parentIsSmartFolder = theParentNode.isSmartFolder;
+            var theParentNodeID = theParentNode.data.node_id;
+            theItem.parentIsSmartFolder = theParentNode.data.isSmartFolder;
             theItem.parentNodeID = theParentNodeID;
 
 
@@ -300,7 +300,9 @@ function createProjectDetailHTMLFromTemplate(theItem) {
                     dataType: 'json'
                 });
                 deleteAction.done(function () {
-                        treebeard.updateFolder(null, theParentNode);
+                    treebeard.updateFolder(null, theParentNode);
+                    $('.project-details').hide();
+
                 });
             });
             $('#delete-folder-' + theItem.node_id).click(function () {
@@ -435,7 +437,7 @@ function createProjectDetailHTMLFromTemplate(theItem) {
         // Build the template for icons
         return buttons.map(function(btn){ 
             return m('span', { 'data-col' : item.id }, [ m('i', 
-                { 'class' : btn.css, style : btn.style, 'onclick' : function(event){ btn.onclick.call(self, event, item, col); } },
+                { 'class' : btn.css, 'style' : btn.style, 'onclick' : function(event){ btn.onclick.call(self, event, item, col); } },
                 [ m('span', { 'class' : btn.icon}, btn.name) ])
             ]);
         }); 
@@ -690,6 +692,10 @@ function createProjectDetailHTMLFromTemplate(theItem) {
             // filter checking if : every item has the same parent as original item:  if not discard; 
             // return the new list and update selection view 
 
+            if(this.multiselected.length < 2) {
+                return this.multiselected;
+            }
+            
             var i, newRows = [];
             var originalRow = this.find(this.selected);
             if(typeof originalRow !== "undefined") {
@@ -710,11 +716,12 @@ function createProjectDetailHTMLFromTemplate(theItem) {
 
     // DRAG AND DROP METHODS
     function _poDragStart (event, ui) {
+        var items;
         var itemID = $(event.target).attr('data-id');
         var item = this.find(itemID);
         $('.project-details').hide();
         this.selected = item.id;
-        $(ui.helper).css({ 'height' : '25px', 'width' : '400px', 'background' : 'white', 'padding' : '0px 10px', 'box-shadow' : '0 0 4px #ccc'});
+        $(ui.helper).css({ 'height' : '25px', 'width' : '400px', 'background' : 'white', 'padding' : '0px 10px', 'box-shadow' : '0 0 4px #ccc'}); // TODO remove 
         items = this.multiselected.length > 0 ? this.multiselected : [item]; 
     }
 
@@ -729,11 +736,11 @@ function createProjectDetailHTMLFromTemplate(theItem) {
             folder = this.find($(event.target).attr('data-id'));
             dragLogic.call(this, event, items, ui);
 
-        //     acceptDrop = canAcceptDrop (items, folder); 
-        // $('.tb-row').removeClass('tb-h-success tb-h-error');
-        // if(acceptDrop) {
-        //     $('.tb-row[data-id="' + folder.id + '"]').addClass('tb-h-success');
-        // }       
+        var acceptDrop = canAcceptDrop (items, folder); 
+        $('.tb-row').removeClass('tb-h-success');
+        if(acceptDrop) {
+            $('.tb-row[data-id="' + folder.id + '"]').addClass('tb-h-success');
+        }       
         // else {
         //     $('.tb-row[data-id="' + folder.id + '"]').addClass('tb-h-error');
         // }
@@ -754,10 +761,17 @@ function createProjectDetailHTMLFromTemplate(theItem) {
 
 
     function dragLogic(event, items, ui){
+
         var canCopy = true;
         var canMove = true;
         var folder = this.find($(event.target).attr('data-id'));
+        console.log(folder, ui)
+        var isSelf = false; 
         items.forEach(function (item) {
+            if(!isSelf) {
+                console.log("check", item.id, folder.id);
+                isSelf = item.id === folder.id;
+            }
             canCopy = canCopy && item.data.permissions.copyable;
             canMove = canMove && item.data.permissions.movable;
         });
@@ -773,12 +787,13 @@ function createProjectDetailHTMLFromTemplate(theItem) {
             } else {
                 copyMode = 'move';
             }
-        }
-        if (!canMove && canCopy) {
+        } else if (!canMove && canCopy) {
             copyMode = 'copy';
-        }
-        if (!canCopy && canMove) {
+        } else  if (!canCopy && canMove) {
             copyMode = 'move';
+        }
+        if(isSelf) {
+            copyMode = 'forbidden';
         }
         // console.log('copyMode', copyMode);
         // Set the cursor to match the appropriate copy mode
@@ -800,6 +815,7 @@ function createProjectDetailHTMLFromTemplate(theItem) {
     function canAcceptDrop(items, folder){
         // folder is the drop target.
         // items is an array of things to go into the drop target.
+
         if (folder.data.isSmartFolder || !folder.data.isFolder){
             return false;
         }
@@ -819,15 +835,22 @@ function createProjectDetailHTMLFromTemplate(theItem) {
         var copyable = true;
         var movable = true;
         var canDrop = true;
+        var isSelf = false;
 
         items.forEach(function(item){
+            // if (!isSelf) {
+            //     isSelf = item.id === folder.id;                 
+            // }
             hasComponents = hasComponents || item.data.isComponent;
             hasFolders = hasFolders || item.data.isFolder;
             copyable = copyable && item.data.permissions.copyable;
             movable = movable && item.data.permissions.movable;
         });
 
-
+        // if (isSelf) {
+        //     console.log('isself', isSelf);
+        //     return false;
+        // }
         if(hasComponents){
             canDrop = canDrop && folder.data.permissions.acceptsComponents;
         }
@@ -994,7 +1017,6 @@ function createProjectDetailHTMLFromTemplate(theItem) {
             return true;
         },
         onselectrow : function (item) {
-            console.log('Row: ', item);
         },
         ontogglefolder : function (item, event) {
             var tb = this;

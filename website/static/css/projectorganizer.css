@@ -230,7 +230,7 @@ div.project-details {
     margin-left: 35%;
     margin-top: 130px;
     position: fixed;
-    z-index: 9999999;
+    z-index: 999;
     display: none;
     overflow: visible;
 
@@ -240,10 +240,9 @@ div.project-details {
     background-color: #fff;
     -webkit-background-clip: padding-box;
     background-clip: padding-box;
-    border: 1px solid rgba(0,0,0,.2);
     border-radius: 6px;
-    -webkit-box-shadow: 0 5px 10px rgba(0,0,0,.7);
-    box-shadow: 0 5px 10px rgba(0,0,0,.7);
+    -webkit-box-shadow: 0 0px 15px -2px #000;
+    box-shadow: 0 0px 15px -2px #000;
 
 }
 
@@ -362,9 +361,9 @@ h3.category {
 
 }
 
-.tt-suggestion p {
+/*.tt-suggestion p {
     margin: 0;
-}
+}*/
 
 .gist {
     font-size: 14px;
