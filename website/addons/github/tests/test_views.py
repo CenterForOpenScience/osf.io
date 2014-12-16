@@ -97,7 +97,7 @@ class TestCRUD(OsfTestCase):
             'date': datetime.date(2011, 10, 15).ctime(),
             }
         ]
-        mock_cache = "this is some html"
+        mock_cache.return_value = "this is some html"
         guid = GithubGuidFile()
         path = github_mock.tree.return_value.tree[0].path
         guid.path = path
@@ -117,6 +117,7 @@ class TestCRUD(OsfTestCase):
         )
         assert_equal(res.status_code, 302)
         res2 = res.follow(auth=self.user.auth)
+        assert_equal(res2.request.path, '/{0}/'.format(guid._id))
         assert_equal(res2.status_code, 200)
 
 
