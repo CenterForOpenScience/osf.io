@@ -50,3 +50,8 @@ class BaseHandler(tornado.web.RequestHandler):
             "code": status_code,
             "message": self._reason,
         })
+
+    def options(self):
+        self.set_status(204)
+        self.set_header('Access-Control-Allow-Methods', 'PUT'),
+        self.set_header('Access-Control-Allow-Headers', ', '.join(CORS_ACCEPT_HEADERS))
