@@ -102,6 +102,11 @@ def auth_json():
 
 
 @pytest.fixture
+def token(auth_json):
+    return auth_json['access']['token']['id']
+
+
+@pytest.fixture
 def endpoint(auth_json):
     return auth_json['access']['serviceCatalog'][0]['endpoints'][0]['publicURL']
 
@@ -137,27 +142,33 @@ def mock_time(monkeypatch):
     monkeypatch.setattr(time, 'time', mock_time)
 
 
+@pytest.fixture
+def connected_provider(provider, token, endpoint, temp_url_key, mock_time):
+    provider.token = token
+    provider.endpoint = endpoint
+    provider.temp_url_key = temp_url_key.encode()
+    return provider
+
+
 @async
 @pytest.mark.aiopretty
-def test_download(provider, mock_auth, mock_temp_key, mock_time):
+def test_download(connected_provider):
     path = 'lets-go-crazy'
     body = b'dearly-beloved'
-    yield from provider._ensure_connection()
-    url = provider.generate_url(path)
+    url = connected_provider.generate_url(path)
     aiopretty.register_uri('GET', url, body=body)
-    result = yield from provider.download(path)
+    result = yield from connected_provider.download(path)
     content = yield from result.response.read()
     assert content == body
 
 
 @async
 @pytest.mark.aiopretty
-def test_download_accept_url(provider, mock_auth, mock_temp_key, mock_time):
+def test_download_accept_url(connected_provider):
     path = 'lets-go-crazy'
     body = b'dearly-beloved'
-    yield from provider._ensure_connection()
-    url = provider.generate_url(path)
-    result = yield from provider.download(path, accept_url=True)
+    url = connected_provider.generate_url(path)
+    result = yield from connected_provider.download(path, accept_url=True)
     assert result == url
     aiopretty.register_uri('GET', url, body=body)
     response = yield from aiohttp.request('GET', url)
@@ -165,7 +176,11 @@ def test_download_accept_url(provider, mock_auth, mock_temp_key, mock_time):
     assert content == body
 
 
-# @async
-# @pytest.mark.aiopretty
-# def test_download_not_found(provider):
-#     pass
+@async
+@pytest.mark.aiopretty
+def test_download_not_found(connected_provider):
+    path = 'lets-go-crazy'
+    url = connected_provider.generate_url(path)
+    aiopretty.register_uri('GET', url, status=404)
+    with pytest.raises(exceptions.DownloadError):
+        result = yield from connected_provider.download(path)
