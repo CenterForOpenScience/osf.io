@@ -103,7 +103,7 @@ class S3Provider(core.BaseProvider):
         # TODO: nice assertion error goes here
         assert resp.headers['ETag'].replace('"', '') == stream.writers['md5'].hexdigest
 
-        return streams.ResponseStreamReader(resp)
+        return (yield from self.metadata(path))
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):

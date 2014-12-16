@@ -204,6 +204,7 @@ class CloudFilesProvider(core.BaseProvider):
             expects=(200, 201),
             throws=exceptions.UploadError,
         )
+        yield
         return streams.ResponseStreamReader(resp)
 
     @ensure_connection
