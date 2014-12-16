@@ -175,9 +175,6 @@ def confirm_email_get(**kwargs):
             status.push_status_message(language.WELCOME_MESSAGE, 'success')
             response = redirect('/settings/')
 
-            # Emit signal that a user has confirmed
-            signals.user_confirmed.send(user)
-
             return framework.auth.authenticate(user, response=response)
     # Return data for the error template
     return {

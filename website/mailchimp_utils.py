@@ -63,7 +63,7 @@ def unsubscribe(list_name, user_id):
 @user_confirmed.connect
 def subscribe_on_confirm(user):
     # Subscribe user to general OSF mailing list upon account confirmation
-    if not settings.ENABLE_EMAIL_SUBSCRIPTIONS:
+    if settings.ENABLE_EMAIL_SUBSCRIPTIONS:
         subscribe_mailchimp(settings.MAILCHIMP_GENERAL_LIST, user._id)
 
 subscribe_mailchimp = (
