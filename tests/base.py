@@ -148,7 +148,14 @@ class OsfTestCase(DbTestCase, AppTestCase, UploadTestCase):
     application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
     """
-    pass
+    def setUpClass(cls):
+        super(OsfTestCase, cls).setUpClass()
+        cls._enable_subscribed = settings.ENABLE_EMAIL_SUBSCRIPTIONS
+        settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
+
+    def tearDownClass(cls):
+        super(OsfTestCase, cls).tearDownClass()
+        settings.ENABLE_EMAIL_SUBSCRIPTIONS = cls._enable_subscribed
 
 
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py
