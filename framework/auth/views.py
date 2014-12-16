@@ -12,7 +12,6 @@ import framework.auth
 from framework import forms, status
 from framework.flask import redirect  # VOL-aware redirect
 from framework.auth import exceptions
-from framework.auth import signals
 from framework.exceptions import HTTPError
 from framework.sessions import set_previous_url
 from framework.auth import (login, logout, get_user, DuplicateEmailError)
