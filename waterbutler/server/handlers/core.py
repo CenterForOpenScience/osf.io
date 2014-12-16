@@ -16,6 +16,11 @@ def list_or_value(value):
         return value[0].decode('utf-8')
     return [item.decode('utf-8') for item in value]
 
+CORS_ACCEPT_HEADERS = [
+    'Content-Type',
+    'Cache-Control',
+    'X-Requested-With',
+]
 
 class BaseHandler(tornado.web.RequestHandler):
 
@@ -30,7 +35,11 @@ class BaseHandler(tornado.web.RequestHandler):
             key: list_or_value(value)
             for key, value in self.request.query_arguments.items()
         }
-        self.arguments['action'] = self.ACTION_MAP[self.request.method]
+
+        try:
+            self.arguments['action'] = self.ACTION_MAP[self.request.method]
+        except KeyError:
+            return
 
         self.credentials = yield from get_identity(settings.IDENTITY_METHOD, **self.arguments)
 
