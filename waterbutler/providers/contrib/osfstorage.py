@@ -1,14 +1,29 @@
 import os
 import json
+import time
 import uuid
 import asyncio
 import hashlib
 
+import furl
+
 import waterbutler
+from waterbutler import signing
 from waterbutler import streams
 from waterbutler import settings
 from waterbutler.providers import core
 from waterbutler.providers import exceptions
+
+
+def sign_url(url, payload, ttl=100):
+    payload['time'] = int(time.time() + ttl)
+    payload, signature = signing.osf_signer.sign_payload(payload)
+    f_url = furl.furl(url)
+    f_url.args = {
+        'payload': payload.decode(),
+        'signature': signature,
+    }
+    return f_url.url
 
 
 @core.register_provider('osfstorage')
@@ -38,10 +53,10 @@ class OSFStorageProvider(core.BaseProvider):
     @asyncio.coroutine
     def download(self, **kwargs):
         # osf storage metadata will return a virtual path within the provider
+        url = sign_url(self.callback, kwargs)
         resp = yield from self.make_request(
             'GET',
-            self.callback,
-            params=kwargs,
+            url,
             expects=(200, ),
             throws=exceptions.DownloadError,
         )
@@ -118,10 +133,11 @@ class OSFStorageProvider(core.BaseProvider):
 
     @asyncio.coroutine
     def metadata(self, **kwargs):
+        signed_url = sign_url(self.metadata_url, kwargs)
         resp = yield from self.make_request(
             'GET',
-            self.metadata_url,
-            params=kwargs,
+            signed_url,
+            expects=(200, )
         )
         # response = yield from self.make_request(
         #     'GET',
