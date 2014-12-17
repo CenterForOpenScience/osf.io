@@ -31,6 +31,7 @@
 % if user['is_profile']:
     <%include file="profile/modal_change_avatar.mako"/>
 % endif
+<script src="/static/public/js/profile-page.js"></script>
 
 </%def>
 
@@ -206,6 +207,5 @@
       });
   })();
 </script>
-<script src="/static/public/js/profile-page.js"></script>
 
 </%def>
