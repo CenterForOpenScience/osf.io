@@ -145,7 +145,7 @@ class HashStreamWriter:
 
 class HashTreeStreamWriter:
     """Stream-like object that hashes and discards its input."""
-    def __init__(self, hasher, chunk_size=1024*1024):
+    def __init__(self, hasher, chunk_size=1024 * 1024):
         self._hasher = hasher
         self._hashes = []
         self._chunks = b''
