@@ -101,7 +101,7 @@ module.exports = {
             'addons': path.join(__dirname, 'website', 'addons'),
             'addon-helpers': staticPath('js/addons.js'),
             'ko-helpers': staticPath('js/koHelpers.js'),
-            'metadata-1': staticPath('js/metadata_1.js'),
+            'metadata-1': staticPath('js/metadata_1.js')
         }
     },
     plugins: [

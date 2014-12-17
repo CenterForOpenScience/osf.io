@@ -50,5 +50,3 @@
     window.contextVars.regPayload = ${json.dumps(payload)};
     window.contextVars.registered = ${json.dumps(int(registered))};
 </script>
-
-<script src="/static/public/js/register_1-page.js"></script>
