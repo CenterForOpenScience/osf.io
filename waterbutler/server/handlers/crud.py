@@ -68,9 +68,8 @@ class CRUDHandler(core.BaseHandler):
     @utils.coroutine
     def delete(self):
         """Delete a file."""
-        result = yield from self.provider.delete(**self.arguments)
+        yield from self.provider.delete(**self.arguments)
         self.set_status(204)
-        self.write(result)
 
     def on_connection_close(self):
         if self.request.method in self.STREAM_METHODS:
