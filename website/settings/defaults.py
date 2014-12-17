@@ -38,7 +38,7 @@ ALLOW_REGISTRATION = True
 ALLOW_LOGIN = True
 
 SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
-ELASTIC_URI = 'http://localhost:9200'
+ELASTIC_URI = 'localhost:9200'
 ELASTIC_TIMEOUT = 10
 # Sessions
 # TODO: Override SECRET_KEY in local.py in production
@@ -61,6 +61,12 @@ FROM_EMAIL = 'openscienceframework-noreply@osf.io'
 MAIL_SERVER = 'smtp.sendgrid.net'
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = ''  # Set this in local.py
+
+# Mailchimp
+MAILCHIMP_API_KEY = None
+MAILCHIMP_WEBHOOK_SECRET_KEY = 'CHANGEME'  # OSF secret key to ensure webhook is secure
+ENABLE_EMAIL_SUBSCRIPTIONS = False
+MAILCHIMP_GENERAL_LIST = 'Open Science Framework General'
 
 # TODO: Override in local.py
 MAILGUN_API_KEY = None
@@ -148,6 +154,7 @@ CELERY_IMPORTS = (
     'framework.email.tasks',
     'framework.render.tasks',
     'framework.analytics.tasks',
+    'website.mailchimp_utils',
 )
 
 # Add-ons

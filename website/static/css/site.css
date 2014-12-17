@@ -1332,6 +1332,12 @@ dl.activity-log dd {
     max-width: 100%;
 }
 
+.component-overflow {
+    word-wrap: break-word;
+    max-width: 90%;
+    display: inline-block;
+}
+
 /* Need to use this class with a fixed width */
 .overflow-block {
     display: block;

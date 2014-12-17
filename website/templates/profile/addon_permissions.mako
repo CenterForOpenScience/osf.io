@@ -53,7 +53,7 @@
                         },
 
                         error: function() {
-                            bootbox.alert('An error occurred, the project has not been deauthorized. ' +
+                            $.osf.growl('An error occurred, the project has not been deauthorized. ',
                                 'If the issue persists, please report it to <a href="mailto:support@osf.io">support@osf.io</a>.');
                         }
                     });

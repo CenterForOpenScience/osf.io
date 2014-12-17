@@ -1,6 +1,7 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Configure Add-ons</%def>
 <%def name="content()">
+<% from website import settings %>
 <h2 class="page-header">Configure Add-ons</h2>
 
 <div class="row">
@@ -10,7 +11,11 @@
         <div class="panel panel-default">
             <ul class="nav nav-stacked nav-pills">
                 <li><a href="${ web_url_for('user_profile') }">Profile Information</a></li>
+                <li><a href="${ web_url_for('user_account') }">Account Settings</a></li>
                 <li><a href="#">Configure Add-ons</a></li>
+                %if settings.ENABLE_EMAIL_SUBSCRIPTIONS:
+                    <li><a href="${ web_url_for('user_notifications') }">Notifications</a></li>
+                %endif
             </ul>
         </div><!-- end sidebar -->
 
@@ -116,7 +121,7 @@
             });
             request.fail(function() {
                 var msg = 'Sorry, we had trouble saving your settings. If this persists please contact <a href="mailto: support@osf.io">support@osf.io</a>';
-                bootbox.alert({title: 'Request failed', message: msg});
+                $.osf.growl('Request failed', msg);
             });
         }
 
