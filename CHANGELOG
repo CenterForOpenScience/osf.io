@@ -5,8 +5,11 @@ Changelog
 0.22.0 (unreleased)
 ===================
 
-- Add page for subscribing/unsubsribing to OSF mailing lists.
-- Add "Add to Dashboard" button in project header to add a project to the project organizer.
+- Add API for subscribing/unsubscribing users to Mailchimp mailing lists. Add
+sync_email.py script to add all registered, confirmed users to the OSF General
+Mailing list.
+- Add "Add to Dashboard" button in project header to add a project to the
+dashboard organizer.
 - Add "Account Settings" page with form to change password.
 - Growl-style notifications and messages.
 - Developers: Switch elasticsearch client to elasticsearch-py.
