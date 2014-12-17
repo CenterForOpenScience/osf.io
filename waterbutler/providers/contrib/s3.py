@@ -60,7 +60,7 @@ class S3Provider(core.BaseProvider):
         return (yield from dest_provider.metadata(dest_options['path']))
 
     @asyncio.coroutine
-    def download(self, path, **kwargs):
+    def download(self, path, accept_url=False, **kwargs):
         """Returns a ResponseWrapper (Stream) for the specified path
         raises FileNotFoundError if the status from S3 is not 200
 
@@ -73,7 +73,11 @@ class S3Provider(core.BaseProvider):
             raise exceptions.ProviderError('Path can not be empty', code=400)
 
         key = self.bucket.new_key(path)
-        url = key.generate_url(TEMP_URL_SECS)
+        url = key.generate_url(TEMP_URL_SECS, headers={'response-content-disposition': 'attachment'})
+
+        if accept_url:
+            return url
+
         resp = yield from self.make_request(
             'GET',
             url,
