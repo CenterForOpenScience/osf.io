@@ -1,5 +1,5 @@
 // TODO: Deprecate me
-var $osf = require('osf-helpers');
+var $osf = require('osfHelpers');
 var $ = require('jquery');
 
 var AddonHelper = (function() {

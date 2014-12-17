@@ -2,10 +2,10 @@
 var ko = require('knockout');
 require('knockout-punches');
 var $ = require('jquery');
-var $osf = require('osf-helpers');
+var $osf = require('osfHelpers');
 
 ko.punches.enableAll();
-var language = require('osf-language').Addons.dataverse;
+var language = require('osfLanguage').Addons.dataverse;
 
 function ViewModel(url) {
     var self = this;

@@ -9,9 +9,9 @@ require('knockout-validation');
 require('knockout-punches');
 ko.punches.enableAll();
 require('knockout-sortable');
-var koHelpers = require('ko-helpers');
+var koHelpers = require('koHelpers');
 
-var $osf = require('osf-helpers');
+var $osf = require('osfHelpers');
 
 var socialRules = {
     orcid: /orcid\.org\/([-\d]+)/i,

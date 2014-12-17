@@ -5,9 +5,8 @@
 
 var $ = require('jquery');
 var ko = require('knockout');
-var bootbox = require('bootbox');
 
-var osfHelpers = require('./osf-helpers.js');
+var osfHelpers = require('osfHelpers');
 
 
 // Grab nodeID from global context (mako)

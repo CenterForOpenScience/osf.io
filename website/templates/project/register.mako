@@ -37,7 +37,6 @@
 <%def name="javascript_bottom()">
   ${parent.javascript_bottom()}
   % if schema:
-    <script type="text/javascript" src="/static/public/js/metadata-${str(metadata_version)}.js"></script>
     <script src="/static/public/js/register_${str(metadata_version)}-page.js"></script>
   % endif
 </%def>

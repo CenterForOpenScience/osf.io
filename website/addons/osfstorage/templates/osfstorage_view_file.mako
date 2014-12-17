@@ -80,5 +80,9 @@
     });
 </script>
 
+</%def>
+
+<%def name="javascript_bottom()">
+${parent.javascript_bottom()}
 <script src="/static/public/js/osfstorage/file-detail.js"></script>
 </%def>

@@ -2,7 +2,7 @@ var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 require('jquery-ui');
-var $osf = require('osf-helpers');
+var $osf = require('osfHelpers');
 require('knockout-sortable');
 
 var contribsEqual = function(a, b) {

@@ -3,7 +3,7 @@
 */
 var $ = require('jquery');
 var ko = require('knockout');
-var $osf = require('osf-helpers');
+var $osf = require('osfHelpers');
 var bootbox = require('bootbox');
 require('bootstrap-editable');
 
