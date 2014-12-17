@@ -43,12 +43,18 @@ class CRUDHandler(core.BaseHandler):
     @utils.coroutine
     def get(self):
         """Download a file."""
-        result = yield from self.provider.download(**self.arguments)
+        result = yield from self.provider.download(accept_url=True, **self.arguments)
+
+        if isinstance(result, str):
+            return self.redirect(result)
+
         _, file_name = os.path.split(self.arguments['path'])
         self.set_header('Content-Type', result.content_type)
+
         if result.size:
             self.set_header('Content-Length', str(result.size))
         self.set_header('Content-Disposition', 'attachment; filename=' + file_name)
+
         while True:
             chunk = yield from result.read(settings.CHUNK_SIZE)
             if not chunk:
