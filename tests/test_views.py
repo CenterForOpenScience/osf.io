@@ -2375,7 +2375,71 @@ class TestConfigureMailingListViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
-    def test_sync_data_from_mailchimp_updates_user(self, mock_get_mailchimp_api):
+    def test_mailchimp_webhook_subscribe_action_does_not_change_user(self, mock_get_mailchimp_api):
+        """ Test that 'subscribe' actions sent to the OSF via mailchimp
+            webhooks do not cause any database changes.
+        """
+        list_id = '12345'
+        list_name = 'OSF General'
+        mock_client = mock.MagicMock()
+        mock_get_mailchimp_api.return_value = mock_client
+        mock_client.lists.list.return_value = {'data': [{'id': list_id, 'name': list_name}]}
+
+        # user is not subscribed to a list
+        user = AuthUserFactory()
+        user.mailing_lists = {'OSF General': False}
+        user.save()
+
+        # user subscribes and webhook sends request (when configured
+        # to update on changes made through the API)
+        data = {'type': 'subscribe',
+                'data[list_id]': list_id,
+                'data[email]': user.username
+        }
+        url = api_url_for('sync_data_from_mailchimp') + '?key=' + settings.MAILCHIMP_WEBHOOK_SECRET_KEY
+        res = self.app.post(url,
+                            data,
+                            content_type="application/x-www-form-urlencoded",
+                            auth=user.auth)
+
+        # user field does not change
+        user.reload()
+        assert_false(user.mailing_lists[list_name])
+
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_mailchimp_webhook_profile_action_does_not_change_user(self, mock_get_mailchimp_api):
+        """ Test that 'profile' actions sent to the OSF via mailchimp
+            webhooks do not cause any database changes.
+        """
+        list_id = '12345'
+        list_name = 'OSF General'
+        mock_client = mock.MagicMock()
+        mock_get_mailchimp_api.return_value = mock_client
+        mock_client.lists.list.return_value = {'data': [{'id': list_id, 'name': list_name}]}
+
+        # user is subscribed to a list
+        user = AuthUserFactory()
+        user.mailing_lists = {'OSF General': True}
+        user.save()
+
+        # user hits subscribe again, which will update the user's existing info on mailchimp
+        # webhook sends request (when configured to update on changes made through the API)
+        data = {'type': 'profile',
+                'data[list_id]': list_id,
+                'data[email]': user.username
+        }
+        url = api_url_for('sync_data_from_mailchimp') + '?key=' + settings.MAILCHIMP_WEBHOOK_SECRET_KEY
+        res = self.app.post(url,
+                            data,
+                            content_type="application/x-www-form-urlencoded",
+                            auth=user.auth)
+
+        # user field does not change
+        user.reload()
+        assert_true(user.mailing_lists[list_name])
+
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_sync_data_from_mailchimp_unsubscribes_user(self, mock_get_mailchimp_api):
         list_id = '12345'
         list_name = 'OSF General'
         mock_client = mock.MagicMock()
