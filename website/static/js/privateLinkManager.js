@@ -1,6 +1,6 @@
 var $ = require('jquery');
 var ko = require('knockout');
-var $osf = require('osf-helpers');
+var $osf = require('osfHelpers');
 
 var NODE_OFFSET = 25;
 var PrivateLinkViewModel = function(url) {

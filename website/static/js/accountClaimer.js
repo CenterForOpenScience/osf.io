@@ -7,7 +7,7 @@
 'use strict';
 
 var $ = require('jquery');
-var $osf = require('osf-helpers');
+var $osf = require('osfHelpers');
 var bootbox = require('bootbox');
 
 var currentUserId = window.contextVars.currentUser.id;

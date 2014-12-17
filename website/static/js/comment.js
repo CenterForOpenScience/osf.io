@@ -11,7 +11,7 @@ require('knockout-punches');
 require('jquery-autosize');
 ko.punches.enableAll();
 
-var osfHelpers = require('./osf-helpers.js');
+var osfHelpers = require('osfHelpers');
 var CommentPane = require('./commentpane.js');
 
 var nodeApiUrl = window.contextVars.node.urls.api;

@@ -3,7 +3,7 @@ var bootbox = require('bootbox');
 
 var ProjectSettings = require('../projectSettings.js');
 
-var $osf = require('osf-helpers');
+var $osf = require('osfHelpers');
 
 var ctx = window.contextVars;
 

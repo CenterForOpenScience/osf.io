@@ -7,7 +7,7 @@ var ko = require('knockout');
 var $ = require('jquery');
 
 
-var osfHelpers = require('../osf-helpers.js');
+var $osf = require('osfHelpers');
 var ProjectOrganizer = require('../projectorganizer.js');
 var LogFeed = require('../logFeed.js');
 // Knockout components for the onboarder
@@ -25,9 +25,9 @@ var request = $.getJSON(url, function(response) {
         return node.category === 'project' && node.permissions === 'admin';
     });
 
-    osfHelpers.applyBindings({nodes: allNodes}, '#obGoToProject');
-    osfHelpers.applyBindings({nodes: registrationSelection}, '#obRegisterProject');
-    osfHelpers.applyBindings({nodes: uploadSelection}, '#obUploader');
+    $osf.applyBindings({nodes: allNodes}, '#obGoToProject');
+    $osf.applyBindings({nodes: registrationSelection}, '#obRegisterProject');
+    $osf.applyBindings({nodes: uploadSelection}, '#obUploader');
 
     function ProjectCreateViewModel() {
         var self = this;
@@ -39,7 +39,7 @@ var request = $.getJSON(url, function(response) {
         };
         self.nodes = response.nodes;
     }
-    osfHelpers.applyBindings(ProjectCreateViewModel, '#projectCreate');
+    $osf.applyBindings(ProjectCreateViewModel, '#projectCreate');
 });
 request.fail(function(xhr, textStatus, error) {
     Raven.captureMessage('Could not fetch dashboard nodes.', {

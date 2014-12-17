@@ -1,4 +1,4 @@
-var AddonHelper = require('addon-helpers');
+var AddonHelper = require('addonHelper');
 var $ = require('jquery');
 var bootbox = require('bootbox');
 

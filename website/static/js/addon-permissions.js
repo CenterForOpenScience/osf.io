@@ -5,7 +5,7 @@
  */
 
 var $ = require('jquery');
-var $osf = require('osf-helpers');
+var $osf = require('osfHelpers');
 var bootbox = require('bootbox');
 
 var AddonPermissionsTable = {

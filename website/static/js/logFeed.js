@@ -7,7 +7,7 @@ var ko = require('knockout');
 var $ = require('jquery');
 var moment = require('moment');
 require('knockout-punches');
-var osfHelpers = require('./osf-helpers.js');
+var $osf = require('osfHelpers');
 
 ko.punches.enableAll();  // Enable knockout punches
 /**
@@ -17,7 +17,7 @@ var Log = function(params) {
     var self = this;
 
     $.extend(self, params);
-    self.date = new osfHelpers.FormattableDate(params.date);
+    self.date = new $osf.FormattableDate(params.date);
     self.wikiUrl = ko.computed(function() {
         return self.nodeUrl + 'wiki/' + encodeURIComponent(self.params.page);
     });
@@ -102,7 +102,7 @@ var LogsViewModel = function(logs, hasMoreLogs, url) {
             }
             self.enableMoreLogs(response.has_more_logs);
         }).fail(
-            osfHelpers.handleJSONError
+            $osf.handleJSONError
         );
     };
 
@@ -185,7 +185,7 @@ LogFeed.prototype.init = function() {
     var self = this;
     self.$progBar.hide();
     ko.cleanNode(self.$element[0]);
-    osfHelpers.applyBindings(self.viewModel, self.selector);
+    $osf.applyBindings(self.viewModel, self.selector);
 };
 
 module.exports = LogFeed;
