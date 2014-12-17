@@ -1,3 +1,5 @@
+import hashlib
+
 ADDRESS = '127.0.0.1'
 PORT = 7777
 DEBUG = True
@@ -51,3 +53,6 @@ PARITY_PROVIDER_SETTINGS = {}
 AWS_ACCESS_KEY = 'AKIAJOQERWQ3GFZUUAQQ'
 AWS_SECRET_KEY = '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'
 GLACIER_VAULT = 'osf-storage-staging'
+
+HMAC_SECRET = 'changeme'
+HMAC_ALGORITHM = hashlib.sha256
