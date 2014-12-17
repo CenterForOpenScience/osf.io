@@ -2,6 +2,8 @@ import os
 import abc
 import asyncio
 
+import boto.glacier.utils
+
 
 class BaseStream(asyncio.StreamReader, metaclass=abc.ABCMeta):
 
@@ -140,3 +142,30 @@ class HashStreamWriter:
 
     def close(self):
         pass
+
+
+class HashTreeStreamWriter:
+    """Stream-like object that hashes and discards its input."""
+    def __init__(self, hasher, chunk_size=1024*1024):
+        self._hasher = hasher
+        self._hashes = []
+        self._chunks = b''
+        self._chunk_size = chunk_size
+
+    @property
+    def hexdigest(self):
+        return boto.glacier.utils.bytes_to_hex(boto.glacier.utils.tree_hash(self._hashes))
+
+    def can_write_eof(self):
+        return False
+
+    def write(self, data):
+        self._chunks += data
+        if len(self._chunks) >= self._chunk_size:
+            to_hash = self._chunks[:self._chunk_size]
+            self._chunks = self._chunks[self._chunk_size:]
+            self._hashes.append(self._hasher(to_hash).digest())
+
+    def close(self):
+        if self._chunks:
+            self._hashes.append(self._hasher(self._chunks).digest())
