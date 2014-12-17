@@ -2344,6 +2344,7 @@ class TestConfigureMailingListViews(OsfTestCase):
         cls._original_enable_email_subscriptions = settings.ENABLE_EMAIL_SUBSCRIPTIONS
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = True
 
+    @unittest.skipIf(settings.USE_CELERY, 'Subscription must happen synchronously for this test')
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_user_choose_mailing_lists_updates_user_dict(self, mock_get_mailchimp_api):
         user = AuthUserFactory()
@@ -2353,7 +2354,7 @@ class TestConfigureMailingListViews(OsfTestCase):
         mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
         list_id = mailchimp_utils.get_list_id_from_name(list_name)
 
-        payload = {u'OSF General': True}
+        payload = {settings.MAILCHIMP_GENERAL_LIST: True}
         url = api_url_for('user_choose_mailing_lists')
         res = self.app.post_json(url, payload, auth=user.auth)
         user.reload()
