@@ -13,7 +13,8 @@ def list_or_value(value):
     if len(value) == 0:
         return None
     if len(value) == 1:
-        return value[0].decode('utf-8')
+        # Remove leading slashes as they break things
+        return value[0].decode('utf-8').lstrip('/')
     return [item.decode('utf-8') for item in value]
 
 CORS_ACCEPT_HEADERS = [
