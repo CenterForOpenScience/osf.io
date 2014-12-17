@@ -1,7 +1,7 @@
 {
   "name": "OSF",
   "dependencies": {
-    "jQuery": "~1.11.0",
+    "jquery": "~1.11.0",
     "jquery-ui": "~1.10.4",
     "bootstrap": "~3.3.0",
     "requirejs": "~2.1.11",

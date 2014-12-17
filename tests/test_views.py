@@ -2344,6 +2344,7 @@ class TestConfigureMailingListViews(OsfTestCase):
         cls._original_enable_email_subscriptions = settings.ENABLE_EMAIL_SUBSCRIPTIONS
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = True
 
+    @unittest.skipIf(settings.USE_CELERY, 'Subscription must happen synchronously for this test')
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_user_choose_mailing_lists_updates_user_dict(self, mock_get_mailchimp_api):
         user = AuthUserFactory()
@@ -2353,14 +2354,17 @@ class TestConfigureMailingListViews(OsfTestCase):
         mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
         list_id = mailchimp_utils.get_list_id_from_name(list_name)
 
-        payload = {u'OSF General': True}
+        payload = {settings.MAILCHIMP_GENERAL_LIST: True}
         url = api_url_for('user_choose_mailing_lists')
         res = self.app.post_json(url, payload, auth=user.auth)
         user.reload()
 
         # check user.mailing_lists is updated
-        assert_true(user.mailing_lists['OSF General'])
-        assert_equal(user.mailing_lists['OSF General'], payload['OSF General'])
+        assert_true(user.mailing_lists[settings.MAILCHIMP_GENERAL_LIST])
+        assert_equal(
+            user.mailing_lists[settings.MAILCHIMP_GENERAL_LIST],
+            payload[settings.MAILCHIMP_GENERAL_LIST]
+        )
 
         # check that user is subscribed
         mock_client.lists.subscribe.assert_called_with(id=list_id, email={'email': user.username}, double_optin=False, update_existing=True)
