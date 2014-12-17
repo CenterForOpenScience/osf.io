@@ -585,12 +585,13 @@ function createProjectDetailHTMLFromTemplate(theItem) {
 
     function _poResolveToggle(item){
         var toggleMinus = m('i.icon-minus', ' '),
-            togglePlus = m('i.icon-plus', ' ');
-        if (item.kind === 'folder' && item.data.childrenCount > 0) {
-            if (item.open) {
+            togglePlus = m('i.icon-plus', ' '),
+            childrenCount = item.data.childrenCount || item.children.length ;
+        if (item.kind === 'folder' && childrenCount > 0) {
+                if (item.open) {
                 return toggleMinus;
             }
-            return togglePlus;
+            return togglePlus;  
         }
         return '';
     }
