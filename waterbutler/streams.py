@@ -38,8 +38,9 @@ class BaseStream(asyncio.StreamReader, metaclass=abc.ABCMeta):
 
     @asyncio.coroutine
     def read(self, size=-1):
+        eof = self.at_eof()
         data = yield from self._read(size)
-        if not self.at_eof():
+        if not eof:
             for reader in self.readers.values():
                 reader.feed_data(data)
             for writer in self.writers.values():
