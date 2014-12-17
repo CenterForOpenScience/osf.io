@@ -1,6 +1,8 @@
 aiohttp
 boto
+celery
 furl
 invoke
 lxml
+redis
 tornado
