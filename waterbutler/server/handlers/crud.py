@@ -66,8 +66,6 @@ class CRUDHandler(core.BaseHandler):
     def put(self):
         """Upload a file."""
         self.stream.feed_eof()
-        # data = yield from self.stream.read()
-        # import pdb; pdb.set_trace()
         result = yield from self.uploader
         self.write(result)
 

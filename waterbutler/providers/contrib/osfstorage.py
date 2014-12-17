@@ -9,6 +9,7 @@ from waterbutler import streams
 from waterbutler import settings
 from waterbutler.providers import core
 from waterbutler.providers import exceptions
+from waterbutler.tasks import parity, backup
 
 
 @core.register_provider('osfstorage')
@@ -57,10 +58,10 @@ class OSFStorageProvider(core.BaseProvider):
         stream.add_writer('md5', streams.HashStreamWriter(hashlib.md5))
         stream.add_writer('sha1', streams.HashStreamWriter(hashlib.sha1))
         stream.add_writer('sha256', streams.HashStreamWriter(hashlib.sha256))
-        stream.add_writer('file', open(pending_path, 'wb'))
-
-        provider = self.make_provider(self.settings)
-        yield from provider.upload(stream, pending_name, **kwargs)
+        with open(pending_path, 'wb') as file_pointer:
+            stream.add_writer('file', file_pointer)
+            provider = self.make_provider(self.settings)
+            yield from provider.upload(stream, pending_name, **kwargs)
 
         complete_name = stream.writers['sha256'].hexdigest
         complete_path = os.path.join(settings.FILE_PATH_COMPLETE, complete_name)
@@ -70,11 +71,10 @@ class OSFStorageProvider(core.BaseProvider):
             {'path': complete_name},
         )
         os.rename(pending_path, complete_path)
-        yield from self.make_request(
+        response = yield from self.make_request(
             'POST',
             self.callback,
             data=json.dumps({
-                # '...auth..provider metadata...hashes...virtual_path': '...',
                 'auth': self.auth,
                 'settings': self.settings,
                 'metadata': metadata,
@@ -93,9 +93,19 @@ class OSFStorageProvider(core.BaseProvider):
             }),
             headers={'Content-Type': 'application/json'},
         )
+        data = yield from response.json()
+        version_id = data['version_id']
 
         # TODO: Celery Tasks for Parity & Archive
         # tasks.Archive()
+        parity.main(
+            complete_path,
+        )
+        backup.main(
+            complete_path,
+            version_id,
+            self.callback,
+        )
         metadata['name'] = path
         return metadata
         # return OsfStorageMetadata(metadata, path)

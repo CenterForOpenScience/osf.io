@@ -48,3 +48,9 @@ def test():
 def tornado(port=settings.PORT, address=settings.ADDRESS, debug=settings.DEBUG):
     from waterbutler.server import serve
     serve(port, address, debug)
+
+
+@task
+def celery():
+    from waterbutler.tasks import app
+    app.worker_main(['worker'])
