@@ -50,14 +50,14 @@ class S3Provider(core.BaseProvider):
             'PUT',
             headers=headers,
         )
-        resp = yield from self.make_request(
+        yield from self.make_request(
             'PUT',
             url,
             headers=headers,
             expects=(200, ),
             throws=exceptions.IntraCopyError,
         )
-        return streams.ResponseStreamReader(resp)
+        return (yield from dest_provider.metadata(dest_options['path']))
 
     @asyncio.coroutine
     def download(self, path, **kwargs):
@@ -114,13 +114,12 @@ class S3Provider(core.BaseProvider):
         """
         key = self.bucket.new_key(path)
         url = key.generate_url(TEMP_URL_SECS, 'DELETE')
-        resp = yield from self.make_request(
+        yield from self.make_request(
             'DELETE',
             url,
             expects=(200, 204),
             throws=exceptions.DeleteError,
         )
-        return streams.ResponseStreamReader(resp)
 
     @asyncio.coroutine
     def metadata(self, path, **kwargs):

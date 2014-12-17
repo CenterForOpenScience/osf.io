@@ -40,7 +40,7 @@ class DropboxProvider(core.BaseProvider):
         from_path = self.build_path(source_options['path'])
         to_path = self.build_path(dest_options['path'])
         if self == dest_provider:
-            response = yield from self.make_request(
+            resp = yield from self.make_request(
                 'POST',
                 self.build_url('fileops', 'copy'),
                 data={
@@ -57,7 +57,7 @@ class DropboxProvider(core.BaseProvider):
                 self.build_url('copy_ref', 'auto', from_path),
             )
             from_ref_data = yield from from_ref_resp.json()
-            response = yield from self.make_request(
+            resp = yield from self.make_request(
                 'POST',
                 data={
                     'folder': 'auto',
@@ -68,13 +68,14 @@ class DropboxProvider(core.BaseProvider):
                 expects=(200, 201),
                 throws=exceptions.IntraCopyError,
             )
-        return streams.ResponseStreamReader(response)
+        metadata = yield from resp.json()
+        return DropboxMetadata(metadata).serialized()
 
     @asyncio.coroutine
     def intra_move(self, dest_provider, source_options, dest_options):
         from_path = self.build_path(source_options['path'])
         to_path = self.build_path(dest_options['path'])
-        response = yield from self.make_request(
+        resp = yield from self.make_request(
             'POST',
             self.build_url('fileops', 'move'),
             data={
@@ -85,7 +86,8 @@ class DropboxProvider(core.BaseProvider):
             expects=(200, ),
             throws=exceptions.IntraMoveError,
         )
-        return streams.ResponseStreamReader(response)
+        metadata = yield from resp.json()
+        return DropboxMetadata(metadata).serialized()
 
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
@@ -112,14 +114,13 @@ class DropboxProvider(core.BaseProvider):
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
-        response = yield from self.make_request(
+        yield from self.make_request(
             'POST',
             self.build_url('fileops', 'delete'),
             data={'folder': 'auto', 'path': self.build_path(path)},
             expects=(200, ),
             throws=exceptions.DeleteError,
         )
-        return streams.ResponseStreamReader(response)
 
     @asyncio.coroutine
     def metadata(self, path, **kwargs):

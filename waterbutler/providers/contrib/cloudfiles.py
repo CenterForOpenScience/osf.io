@@ -28,21 +28,6 @@ def ensure_connection(func):
     return wrapped
 
 
-def format_metadata(data):
-    if data.get('subdir'):
-        return {
-            'name': data['subdir'],
-            'path': data['subdir'],
-        }
-    else:
-        return {
-            'name': os.path.split(data['name'])[1],
-            'path': data['name'],
-            'size': data['bytes'],
-            'modified': data['last_modified'],
-        }
-
-
 @core.register_provider('cloudfiles')
 class CloudFilesProvider(core.BaseProvider):
     """Provider for Rackspace CloudFiles
