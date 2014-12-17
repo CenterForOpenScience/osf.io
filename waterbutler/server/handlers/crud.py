@@ -1,4 +1,5 @@
 import os
+import asyncio
 
 from tornado import web
 
@@ -7,6 +8,8 @@ from waterbutler.streams import RequestStreamReader
 from waterbutler.server import utils
 from waterbutler.server.handlers import core
 
+
+loop = asyncio.get_event_loop()
 
 @web.stream_request_body
 class CRUDHandler(core.BaseHandler):
@@ -23,13 +26,15 @@ class CRUDHandler(core.BaseHandler):
         yield from super().prepare()
         self.prepare_stream()
 
+    # @asyncio.coroutine
     def prepare_stream(self):
         if self.request.method in self.STREAM_METHODS:
             self.stream = RequestStreamReader(self.request)
-            self.uploader = self.provider.upload(self.stream, **self.arguments)
+            self.uploader = asyncio.async(self.provider.upload(self.stream, **self.arguments))
         else:
             self.stream = None
 
+    @utils.coroutine
     def data_received(self, chunk):
         """Note: Only called during uploads."""
         if self.stream:

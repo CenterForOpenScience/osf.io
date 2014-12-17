@@ -5,8 +5,8 @@ import asyncio
 
 class BaseStream(asyncio.StreamReader, metaclass=abc.ABCMeta):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.readers = {}
         self.writers = {}
 
