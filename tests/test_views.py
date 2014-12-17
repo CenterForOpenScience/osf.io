@@ -21,6 +21,7 @@ from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 
 import website.app
+from website import mailchimp_utils
 from website.views import _rescale_ratio
 from website.util import permissions
 from website.models import Node, Pointer, NodeLog
@@ -32,7 +33,7 @@ from website.project.views.contributor import (
 from website.profile.utils import add_contributor_json, serialize_unregistered
 from website.profile.views import fmt_date_or_none
 from website.util import api_url_for, web_url_for
-from website import mails
+from website import mails, settings
 from website.util import rubeus
 from website.project.views.node import _view_project, abbrev_authors, _should_show_wiki_widget
 from website.project.views.comment import serialize_comment
@@ -1542,7 +1543,7 @@ class TestClaimViews(OsfTestCase):
         assert_equal(res.status_code, 200)
         self.user.reload()
         assert_true(self.user.is_registered)
-        assert_true(self.user.is_active())
+        assert_true(self.user.is_active)
         assert_not_in(self.project._primary_key, self.user.unclaimed_records)
 
     def test_posting_to_claim_form_removes_all_unclaimed_data(self):
@@ -2335,6 +2336,86 @@ class TestAddonUserViews(OsfTestCase):
         assert_false(self.user.get_addon('github'))
 
 
+class TestConfigureMailingListViews(OsfTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super(TestConfigureMailingListViews, cls).setUpClass()
+        cls._original_enable_email_subscriptions = settings.ENABLE_EMAIL_SUBSCRIPTIONS
+        settings.ENABLE_EMAIL_SUBSCRIPTIONS = True
+
+    @unittest.skipIf(settings.USE_CELERY, 'Subscription must happen synchronously for this test')
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_user_choose_mailing_lists_updates_user_dict(self, mock_get_mailchimp_api):
+        user = AuthUserFactory()
+        list_name = 'OSF General'
+        mock_client = mock.MagicMock()
+        mock_get_mailchimp_api.return_value = mock_client
+        mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
+        list_id = mailchimp_utils.get_list_id_from_name(list_name)
+
+        payload = {settings.MAILCHIMP_GENERAL_LIST: True}
+        url = api_url_for('user_choose_mailing_lists')
+        res = self.app.post_json(url, payload, auth=user.auth)
+        user.reload()
+
+        # check user.mailing_lists is updated
+        assert_true(user.mailing_lists[settings.MAILCHIMP_GENERAL_LIST])
+        assert_equal(
+            user.mailing_lists[settings.MAILCHIMP_GENERAL_LIST],
+            payload[settings.MAILCHIMP_GENERAL_LIST]
+        )
+
+        # check that user is subscribed
+        mock_client.lists.subscribe.assert_called_with(id=list_id, email={'email': user.username}, double_optin=False, update_existing=True)
+
+    def test_get_mailchimp_get_endpoint_returns_200(self):
+        url = api_url_for('mailchimp_get_endpoint')
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_sync_data_from_mailchimp_updates_user(self, mock_get_mailchimp_api):
+        list_id = '12345'
+        list_name = 'OSF General'
+        mock_client = mock.MagicMock()
+        mock_get_mailchimp_api.return_value = mock_client
+        mock_client.lists.list.return_value = {'data': [{'id': list_id, 'name': list_name}]}
+
+        # user is subscribed to a list
+        user = AuthUserFactory()
+        user.mailing_lists = {'OSF General': True}
+        user.save()
+
+        # user unsubscribes through mailchimp and webhook sends request
+        data = {'type': 'unsubscribe',
+                'data[list_id]': list_id,
+                'data[email]': user.username
+        }
+        url = api_url_for('sync_data_from_mailchimp') + '?key=' + settings.MAILCHIMP_WEBHOOK_SECRET_KEY
+        res = self.app.post(url,
+                            data,
+                            content_type="application/x-www-form-urlencoded",
+                            auth=user.auth)
+
+        # user field is updated on the OSF
+        user.reload()
+        assert_false(user.mailing_lists[list_name])
+
+    def test_sync_data_from_mailchimp_fails_without_secret_key(self):
+        user = AuthUserFactory()
+        payload = {'values': {'type': 'unsubscribe',
+                              'data': {'list_id': '12345',
+                                       'email': 'freddie@cos.io'}}}
+        url = api_url_for('sync_data_from_mailchimp')
+        res = self.app.post_json(url, payload, auth= user.auth, expect_errors=True)
+        assert_equal(res.status_code, http.UNAUTHORIZED)
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestConfigureMailingListViews, cls).tearDownClass()
+        settings.ENABLE_EMAIL_SUBSCRIPTIONS = cls._original_enable_email_subscriptions
+
 # TODO: Move to OSF Storage
 class TestFileViews(OsfTestCase):
 
@@ -2849,7 +2930,7 @@ class TestSearchViews(OsfTestCase):
         assert_equal(brian['fullname'], self.contrib.fullname)
         assert_in('gravatar_url', brian)
         assert_equal(brian['registered'], self.contrib.is_registered)
-        assert_equal(brian['active'], self.contrib.is_active())
+        assert_equal(brian['active'], self.contrib.is_active)
 
     def test_search_pagination_default(self):
         url = api_url_for('search_contributor')
