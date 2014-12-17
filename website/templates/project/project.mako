@@ -147,10 +147,6 @@
 
 ${parent.javascript_bottom()}
 
-% for script in addon_widget_js:
-    <script type="text/javascript" src="${script}"></script>
-% endfor
-
 <script type="text/javascript">
     // Hack to allow mako variables to be accessed to JS modules
 
