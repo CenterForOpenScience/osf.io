@@ -70,4 +70,4 @@ class Signer(object):
 
 
 # default_signer = Signer(settings.DEFAULT_HMAC_KEY, settings.DEFAULT_HMAC_ALGORITHM)
-osf_signer = Signer(settings.OSF_HMAC_SECRET, settings.OSF_HMAC_ALGORITHM)
+osf_signer = Signer(settings.HMAC_SECRET, settings.HMAC_ALGORITHM)
