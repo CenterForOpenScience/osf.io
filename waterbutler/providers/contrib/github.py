@@ -79,7 +79,7 @@ class GithubProvider(core.BaseProvider):
         }
         if branch is not None:
             data['branch'] = branch
-        response = yield from self.make_request(
+        yield from self.make_request(
             'DELETE',
             self.build_repo_url('contents', path),
             headers={'Content-Type': 'application/json'},
@@ -87,7 +87,6 @@ class GithubProvider(core.BaseProvider):
             expects=(200, ),
             throws=exceptions.DeleteError,
         )
-        return streams.ResponseStreamReader(response)
 
     @asyncio.coroutine
     def metadata(self, path, ref=None):

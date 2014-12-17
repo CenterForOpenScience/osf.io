@@ -197,17 +197,21 @@ def test_upload(provider, file_content, file_stream, file_metadata):
 
 @async
 @pytest.mark.aiopretty
-def test_copy(provider):
+def test_copy(provider, file_metadata):
     source_path = 'source'
     dest_path = 'dest'
     headers = {'x-amz-copy-source': '/{}/{}'.format(provider.settings['bucket'], source_path)}
     url = provider.bucket.new_key(dest_path).generate_url(100, 'PUT', headers=headers)
     aiopretty.register_uri('PUT', url, status=200)
+    metadata_url = provider.bucket.generate_url(100, 'GET')
+    aiopretty.register_uri('GET', metadata_url, body=file_metadata, headers={'Content-Type': 'application/xml'})
 
     resp = yield from provider.copy(provider, {'path': source_path}, {'path': dest_path})
 
-    assert resp.response.status == 200
+    # TODO: matching url content for request
+    assert resp['kind'] == 'file'
     assert aiopretty.has_call(method='PUT', uri=url, headers=headers)
+    assert aiopretty.has_call(method='GET', uri=metadata_url)
 
 
 @async
