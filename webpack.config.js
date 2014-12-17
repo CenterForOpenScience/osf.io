@@ -89,7 +89,7 @@ module.exports = {
             'jquery.cookie': staticPath('vendor/bower_components/jquery.cookie/jquery.cookie.js'),
             'history': staticPath('vendor/bower_components/history.js/scripts/bundled/html4+html5/jquery.history.js'),
             // Needed for knockout-sortable
-            'jquery.ui.sortable': staticPath('vendor/bower_components/jquery-ui/ui/jquery.ui.sortable.js'),
+            'jquery.ui.sortable': staticPath('vendor/bower_components/jquery-ui-sortable/jquery-ui-sortable.min.js'),
             // Dropzone doesn't have a proper 'main' entry in its bower.json
             'dropzone': staticPath('vendor/bower_components/dropzone/downloads/dropzone.js'),
             // Also alias some internal libraries for easy access
