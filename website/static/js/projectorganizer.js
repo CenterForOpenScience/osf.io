@@ -596,7 +596,7 @@ function createProjectDetailHTMLFromTemplate(theItem) {
         return '';
     }
 
-    function _poResolveLazyLoad(tree, item){
+    function _poResolveLazyLoad(item){
         console.log("tree", item);
         return '/api/v1/dashboard/' + item.data.node_id;
     }
