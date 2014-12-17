@@ -3592,5 +3592,40 @@ class TestStaticFileViews(OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_in('image/vnd.microsoft.icon', res.headers['Content-Type'])
 
+
+class TestUserConfirmSignal(OsfTestCase):
+
+    def test_confirm_user_signal_called_when_user_claims_account(self):
+        unclaimed_user = UnconfirmedUserFactory()
+        # unclaimed user has been invited to a project.
+        referrer = UserFactory()
+        project = ProjectFactory(creator=referrer)
+        unclaimed_user.add_unclaimed_record(project, referrer, 'foo')
+        unclaimed_user.save()
+
+        token = unclaimed_user.get_unclaimed_record(project._primary_key)['token']
+        with capture_signals() as mock_signals:
+            url = web_url_for('claim_user_form', pid=project._id, uid=unclaimed_user._id, token=token)
+            payload = {'username': unclaimed_user.username,
+                       'password': 'password',
+                       'password2': 'password'}
+            res = self.app.post(url, payload)
+            assert_equal(res.status_code, 302)
+
+        assert_equal(mock_signals.signals_sent(), set([auth.signals.user_confirmed]))
+
+    def test_confirm_user_signal_called_when_user_confirms_email(self):
+        unconfirmed_user = UnconfirmedUserFactory()
+        unconfirmed_user.save()
+
+        # user goes to email confirmation link
+        token = unconfirmed_user.get_confirmation_token(unconfirmed_user.username)
+        with capture_signals() as mock_signals:
+            url = web_url_for('confirm_email_get', uid=unconfirmed_user._id, token=token)
+            res = self.app.get(url)
+            assert_equal(res.status_code, 302)
+
+        assert_equal(mock_signals.signals_sent(), set([auth.signals.user_confirmed]))
+
 if __name__ == '__main__':
     unittest.main()
