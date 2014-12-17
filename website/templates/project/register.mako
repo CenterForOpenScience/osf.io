@@ -6,6 +6,10 @@
 % if schema:
 
     <%include file="metadata/register_${str(metadata_version)}.mako" />
+    <%def name="javascript_bottom()">
+        <script type="text/javascript" src="/static/public/js/metadata-${str(metadata_version)}.js"></script>
+        <script src="/static/public/js/register_${str(metadata_version)}-page.js"></script>
+    </%def>
 
 % else:
 
