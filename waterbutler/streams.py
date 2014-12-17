@@ -33,10 +33,8 @@ class BaseStream(asyncio.StreamReader, metaclass=abc.ABCMeta):
         for reader in self.readers.values():
             reader.feed_eof()
         for writer in self.writers.values():
-            if writer.can_write_eof():
+            if hasattr(writer, 'can_write_eof') and writer.can_write_eof():
                 writer.write_eof()
-            else:
-                writer.close()
 
     @asyncio.coroutine
     def read(self, size=-1):
