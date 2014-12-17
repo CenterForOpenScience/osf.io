@@ -205,6 +205,8 @@ def user_addons(auth, **kwargs):
 @must_be_logged_in
 def user_notifications(auth, **kwargs):
     """Get subscribe data from user"""
+    if not settings.ENABLE_EMAIL_SUBSCRIPTIONS:
+        raise HTTPError(http.BAD_REQUEST)
     return {
         'mailing_lists': auth.user.mailing_lists
     }

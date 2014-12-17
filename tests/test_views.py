@@ -2338,6 +2338,12 @@ class TestAddonUserViews(OsfTestCase):
 
 class TestConfigureMailingListViews(OsfTestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        super(TestConfigureMailingListViews, cls).setUpClass()
+        cls._original_enable_email_subscriptions = settings.ENABLE_EMAIL_SUBSCRIPTIONS
+        settings.ENABLE_EMAIL_SUBSCRIPTIONS = True
+
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_user_choose_mailing_lists_updates_user_dict(self, mock_get_mailchimp_api):
         user = AuthUserFactory()
@@ -2404,6 +2410,10 @@ class TestConfigureMailingListViews(OsfTestCase):
         res = self.app.post_json(url, payload, auth= user.auth, expect_errors=True)
         assert_equal(res.status_code, http.UNAUTHORIZED)
 
+    @classmethod
+    def tearDownClass(cls):
+        super(TestConfigureMailingListViews, cls).tearDownClass()
+        settings.ENABLE_EMAIL_SUBSCRIPTIONS = cls._original_enable_email_subscriptions
 
 # TODO: Move to OSF Storage
 class TestFileViews(OsfTestCase):
