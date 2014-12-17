@@ -29,6 +29,21 @@ from framework.render.tasks import ensure_path
 from website.util import api_url_for, web_url_for
 
 
+class TestDisabledUser(OsfTestCase):
+
+    def setUp(self):
+        super(TestDisabledUser, self).setUp()
+        self.user = UserFactory()
+        self.user.set_password('Korben Dallas')
+        self.user.is_disabled = True
+        self.user.save()
+
+    def test_profile_disabled(self):
+        """Disabled user profiles return 401 (GONE)"""
+        res = self.app.get(self.user.url, expect_errors=True)
+        assert_equal(res.status_code, 410)
+
+
 class TestAnUnregisteredUser(OsfTestCase):
 
     def test_can_register(self):

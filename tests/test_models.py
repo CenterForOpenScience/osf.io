@@ -172,7 +172,7 @@ class TestUser(OsfTestCase):
                  is_registered=False)
         u.set_password('killerqueen')
         u.save()
-        assert_false(u.is_active())
+        assert_false(u.is_active)
 
     def test_create_unregistered(self):
         name, email = fake.name(), fake.email()
@@ -209,12 +209,12 @@ class TestUser(OsfTestCase):
             is_registered=True,
         )
         u.save()
-        assert_false(u.is_active())
+        assert_false(u.is_active)
 
     def test_merged_user_is_not_active(self):
         master = UserFactory()
         dupe = UserFactory(merged_by=master)
-        assert_false(dupe.is_active())
+        assert_false(dupe.is_active)
 
     def test_cant_create_user_without_username(self):
         u = User()  # No username given
@@ -482,7 +482,7 @@ class TestUser(OsfTestCase):
         assert_equal(d['registered'], user.is_registered)
         assert_equal(d['absolute_url'], user.absolute_url)
         assert_equal(d['date_registered'], user.date_registered.strftime('%Y-%m-%d'))
-        assert_equal(d['active'], user.is_active())
+        assert_equal(d['active'], user.is_active)
 
     def test_serialize_user_full(self):
         master = UserFactory()
@@ -618,6 +618,36 @@ class TestUserParse(unittest.TestCase):
         parsed = impute_names_model('John van der Slice')
         assert_equal(parsed['given_name'], 'John')
         assert_equal(parsed['family_name'], 'van der Slice')
+
+
+class TestDisablingUsers(OsfTestCase):
+    def setUp(self):
+        super(TestDisablingUsers, self).setUp()
+        self.user = UserFactory()
+
+    def test_user_enabled_by_default(self):
+        assert_false(self.user.is_disabled)
+
+    def test_disabled_user(self):
+        """Ensure disabling a user sets date_disabled"""
+        self.user.is_disabled = True
+        self.user.save()
+
+        assert_true(isinstance(self.user.date_disabled, datetime.datetime))
+        assert_true(self.user.is_disabled)
+        assert_false(self.user.is_active)
+
+    def test_reenabled_user(self):
+        """Ensure restoring a disabled user unsets date_disabled"""
+        self.user.is_disabled = True
+        self.user.save()
+
+        self.user.is_disabled = False
+        self.user.save()
+
+        assert_is_none(self.user.date_disabled)
+        assert_false(self.user.is_disabled)
+        assert_true(self.user.is_active)
 
 
 class TestMergingUsers(OsfTestCase):
