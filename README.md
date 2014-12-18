@@ -44,13 +44,7 @@ $ invoke setup
 ```
 
 
-- Optionally, you may install the requirements for the Modular File Renderer:
-
-```bash
-$ invoke mfr_requirements
-```
-
-and for addons:
+- Optionally, you may install the requirements for addons:
 
 ```bash
 $ invoke addon_requirements
