@@ -6,8 +6,7 @@
 // TODO: Use commonjs+webpack to load pagedown modules
 var ko = require('knockout');
 var $ = require('jquery');
-var osfHelpers = require('osf-helpers');
-var bootbox = require('bootbox');
+var $osf = require('osfHelpers');
 var Raven = require('raven-js');
 require('bootstrap-editable');
 
@@ -32,7 +31,7 @@ function ViewModel(url) {
             self.wikiText(response.wiki_content);
         },
         error: function(xhr, textStatus, error) {
-            osfHelpers.growl('Error','The wiki content could not be loaded.');
+            $osf.growl('Error','The wiki content could not be loaded.');
             Raven.captureMessage('Could not GET get wiki contents.', {
                 url: url,
                 textStatus: textStatus,
@@ -50,7 +49,7 @@ function ViewModel(url) {
 
 function WikiEditor(selector, url) {
     var viewModel = new ViewModel(url);
-    osfHelpers.applyBindings(viewModel, selector);
+    $osf.applyBindings(viewModel, selector);
     var converter1 = Markdown.getSanitizingConverter();
     var editor1 = new Markdown.Editor(converter1);
     editor1.run();

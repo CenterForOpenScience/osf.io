@@ -7,7 +7,7 @@ var $ = require('jquery');
 require('select2');
 var ko = require('knockout');
 var bootbox = require('bootbox');
-var $osf = require('osf-helpers');
+var $osf = require('osfHelpers');
 
 var CREATE_URL = '/api/v1/project/new/';
 

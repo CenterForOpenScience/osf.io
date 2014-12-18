@@ -1,6 +1,6 @@
 var $ = require('jquery');
 var bootbox = require('bootbox');
-var osfHelpers = require('osf-helpers');
+var osfHelpers = require('osfHelpers');
 
 // Set up submission for addon selection form
 var checkedOnLoad = $("#selectAddonsForm input:checked");

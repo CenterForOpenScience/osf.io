@@ -1,6 +1,6 @@
 var pointers = require('../pointers.js');
 var AccountClaimer = require('../accountClaimer.js');
-var $osf = require('osf-helpers');
+var $osf = require('osfHelpers');
 var NodeControl = require('../nodeControl.js');
 
 // NodeActions is needed for rendering recent logs in nodelists (e.g. regsitrations and forks
