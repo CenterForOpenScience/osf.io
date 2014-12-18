@@ -27,7 +27,7 @@ def credentials():
 
 @pytest.fixture
 def settings():
-    return {'folder': 'similar to a (w)rapper'}
+    return {'folder': '/Photos'}
 
 
 @pytest.fixture
@@ -99,7 +99,7 @@ def file_metadata():
         "bytes": 230783,
         "modified": "Tue, 19 Jul 2011 21:55:38 +0000",
         "client_mtime": "Mon, 18 Jul 2011 18:04:35 +0000",
-        "path": "/Getting_Started.pdf",
+        "path": "/Photos/Getting_Started.pdf",
         "is_dir": False,
         "icon": "page_white_acrobat",
         "root": "dropbox",
@@ -156,19 +156,19 @@ def test_metadata_missing(provider):
     url = provider.build_url('metadata', 'auto', provider.build_path('phile'))
     aiopretty.register_uri('GET', url, status=404)
 
-    with pytest.raises(exceptions.FileNotFoundError):
+    with pytest.raises(exceptions.MetadataError):
         result = yield from provider.metadata('phile')
 
 
 @async
 @pytest.mark.aiopretty
-def test_upload(provider, file_metadata, file_stream):
+def test_upload(provider, file_metadata, file_stream, settings):
     path = 'phile'
     url = provider.build_content_url('files_put', 'auto', provider.build_path(path))
     aiopretty.register_json_uri('PUT', url, status=200, body=file_metadata)
 
     metadata = yield from provider.upload(file_stream, path)
-    expected = DropboxMetadata(file_metadata).serialized()
+    expected = DropboxMetadata(file_metadata, settings['folder']).serialized()
     assert metadata == expected
 
     assert aiopretty.has_call(method='PUT', uri=url)
@@ -179,7 +179,7 @@ def test_upload(provider, file_metadata, file_stream):
 def test_delete(provider):
     path = 'The past'
     url = provider.build_url('fileops', 'delete')
-    data = {'folder': 'auto', 'path': provider.build_path(path)}
+    data = {'root': 'auto', 'path': provider.build_path(path)}
 
     aiopretty.register_uri('POST', url, status=200)
 
