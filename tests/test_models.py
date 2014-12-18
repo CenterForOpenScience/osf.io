@@ -338,7 +338,7 @@ class TestUser(OsfTestCase):
         valid_token = u.get_confirmation_token('foo@bar.com')
         assert_true(u.verify_confirmation_token(valid_token))
         manual_expiration=datetime.datetime.utcnow()-datetime.timedelta(0,10)
-        u.set_email_token_expiration(valid_token, manual_expiration=manual_expiration)
+        u._set_email_token_expiration(valid_token, expiration=manual_expiration)
         assert_false(u.verify_confirmation_token(valid_token))
 
     def test_factory(self):
