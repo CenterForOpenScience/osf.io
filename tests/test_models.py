@@ -267,12 +267,21 @@ class TestUser(OsfTestCase):
 
     @mock.patch('website.security.random_string')
     def test_add_email_verification(self, random_string):
-        random_string.return_value = '12345'
+        token = fake.lexify('???????')
+        random_string.return_value = token
         u = UserFactory()
         assert_equal(len(u.email_verifications.keys()), 0)
         u.add_email_verification('foo@bar.com')
         assert_equal(len(u.email_verifications.keys()), 1)
-        assert_equal(u.email_verifications['12345']['email'], 'foo@bar.com')
+        assert_equal(u.email_verifications[token]['email'], 'foo@bar.com')
+
+    @mock.patch('website.security.random_string')
+    def test_add_email_verification_adds_expiration_date(self, random_string):
+        token = fake.lexify('???????')
+        random_string.return_value = token
+        u = UserFactory()
+        u.add_email_verification(u.username)
+        assert_is_instance(u.email_verifications[token]['expiration'], datetime.datetime)
 
     @mock.patch('website.security.random_string')
     def test_get_confirmation_token(self, random_string):
