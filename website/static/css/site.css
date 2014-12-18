@@ -1703,4 +1703,9 @@ div.pydocx-center{
 #footerSlideIn div > a {
     margin-right:5px;
     white-space:nowrap;
+
+/* Necessary to handle lots of text in tooltips */
+.tooltip-inner {
+    overflow: hidden;
+    text-overflow: ellipsis;
 }

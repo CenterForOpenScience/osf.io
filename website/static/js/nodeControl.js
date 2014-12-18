@@ -11,10 +11,9 @@ require('bootstrap-editable');
 require('knockout-punches');
 ko.punches.enableAll();
 
-var osfHelpers = require('./osf-helpers.js');
+$.ajaxSetup({ cache: false });
+var osfHelpers = require('osfHelpers');
 var NodeActions = require('./project.js');
-
-// Modal language
 
 // Modal language
 var MESSAGES = {

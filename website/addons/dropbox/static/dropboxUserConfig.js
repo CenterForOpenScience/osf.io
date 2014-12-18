@@ -9,8 +9,8 @@ var $ = require('jquery');
 var Raven = require('raven-js');
 var bootbox = require('bootbox');
 
-var language = require('osf-language').Addons.dropbox;
-var osfHelpers = require('osf-helpers');
+var language = require('osfLanguage').Addons.dropbox;
+var osfHelpers = require('osfHelpers');
 function ViewModel(url) {
     var self = this;
     self.userHasAuth = ko.observable(false);

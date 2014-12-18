@@ -2,7 +2,7 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
-var $osf = require('osf-helpers');
+var $osf = require('osfHelpers');
 
 var MetaData = require('../metadata_1.js');
 var ctx = window.contextVars;

@@ -7,9 +7,9 @@
 
 var $ = require('jquery');
 // Required for uploads
-require('dropzone-patch');
+require('dropzonePatch');
 var HGrid = require('hgrid');
-var $osf = require('osf-helpers');
+var $osf = require('osfHelpers');
 var bootbox = require('bootbox');
 
 /////////////////////////

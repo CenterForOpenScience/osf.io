@@ -21,6 +21,7 @@ from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 
 import website.app
+from website import mailchimp_utils
 from website.views import _rescale_ratio
 from website.util import permissions
 from website.models import Node, Pointer, NodeLog
@@ -32,7 +33,7 @@ from website.project.views.contributor import (
 from website.profile.utils import add_contributor_json, serialize_unregistered
 from website.profile.views import fmt_date_or_none
 from website.util import api_url_for, web_url_for
-from website import mails
+from website import mails, settings
 from website.util import rubeus
 from website.project.views.node import _view_project, abbrev_authors, _should_show_wiki_widget
 from website.project.views.comment import serialize_comment
@@ -1542,7 +1543,7 @@ class TestClaimViews(OsfTestCase):
         assert_equal(res.status_code, 200)
         self.user.reload()
         assert_true(self.user.is_registered)
-        assert_true(self.user.is_active())
+        assert_true(self.user.is_active)
         assert_not_in(self.project._primary_key, self.user.unclaimed_records)
 
     def test_posting_to_claim_form_removes_all_unclaimed_data(self):
@@ -2335,6 +2336,150 @@ class TestAddonUserViews(OsfTestCase):
         assert_false(self.user.get_addon('github'))
 
 
+class TestConfigureMailingListViews(OsfTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super(TestConfigureMailingListViews, cls).setUpClass()
+        cls._original_enable_email_subscriptions = settings.ENABLE_EMAIL_SUBSCRIPTIONS
+        settings.ENABLE_EMAIL_SUBSCRIPTIONS = True
+
+    @unittest.skipIf(settings.USE_CELERY, 'Subscription must happen synchronously for this test')
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_user_choose_mailing_lists_updates_user_dict(self, mock_get_mailchimp_api):
+        user = AuthUserFactory()
+        list_name = 'OSF General'
+        mock_client = mock.MagicMock()
+        mock_get_mailchimp_api.return_value = mock_client
+        mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
+        list_id = mailchimp_utils.get_list_id_from_name(list_name)
+
+        payload = {settings.MAILCHIMP_GENERAL_LIST: True}
+        url = api_url_for('user_choose_mailing_lists')
+        res = self.app.post_json(url, payload, auth=user.auth)
+        user.reload()
+
+        # check user.mailing_lists is updated
+        assert_true(user.mailing_lists[settings.MAILCHIMP_GENERAL_LIST])
+        assert_equal(
+            user.mailing_lists[settings.MAILCHIMP_GENERAL_LIST],
+            payload[settings.MAILCHIMP_GENERAL_LIST]
+        )
+
+        # check that user is subscribed
+        mock_client.lists.subscribe.assert_called_with(id=list_id, email={'email': user.username}, double_optin=False, update_existing=True)
+
+    def test_get_mailchimp_get_endpoint_returns_200(self):
+        url = api_url_for('mailchimp_get_endpoint')
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_mailchimp_webhook_subscribe_action_does_not_change_user(self, mock_get_mailchimp_api):
+        """ Test that 'subscribe' actions sent to the OSF via mailchimp
+            webhooks do not cause any database changes.
+        """
+        list_id = '12345'
+        list_name = 'OSF General'
+        mock_client = mock.MagicMock()
+        mock_get_mailchimp_api.return_value = mock_client
+        mock_client.lists.list.return_value = {'data': [{'id': list_id, 'name': list_name}]}
+
+        # user is not subscribed to a list
+        user = AuthUserFactory()
+        user.mailing_lists = {'OSF General': False}
+        user.save()
+
+        # user subscribes and webhook sends request (when configured
+        # to update on changes made through the API)
+        data = {'type': 'subscribe',
+                'data[list_id]': list_id,
+                'data[email]': user.username
+        }
+        url = api_url_for('sync_data_from_mailchimp') + '?key=' + settings.MAILCHIMP_WEBHOOK_SECRET_KEY
+        res = self.app.post(url,
+                            data,
+                            content_type="application/x-www-form-urlencoded",
+                            auth=user.auth)
+
+        # user field does not change
+        user.reload()
+        assert_false(user.mailing_lists[list_name])
+
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_mailchimp_webhook_profile_action_does_not_change_user(self, mock_get_mailchimp_api):
+        """ Test that 'profile' actions sent to the OSF via mailchimp
+            webhooks do not cause any database changes.
+        """
+        list_id = '12345'
+        list_name = 'OSF General'
+        mock_client = mock.MagicMock()
+        mock_get_mailchimp_api.return_value = mock_client
+        mock_client.lists.list.return_value = {'data': [{'id': list_id, 'name': list_name}]}
+
+        # user is subscribed to a list
+        user = AuthUserFactory()
+        user.mailing_lists = {'OSF General': True}
+        user.save()
+
+        # user hits subscribe again, which will update the user's existing info on mailchimp
+        # webhook sends request (when configured to update on changes made through the API)
+        data = {'type': 'profile',
+                'data[list_id]': list_id,
+                'data[email]': user.username
+        }
+        url = api_url_for('sync_data_from_mailchimp') + '?key=' + settings.MAILCHIMP_WEBHOOK_SECRET_KEY
+        res = self.app.post(url,
+                            data,
+                            content_type="application/x-www-form-urlencoded",
+                            auth=user.auth)
+
+        # user field does not change
+        user.reload()
+        assert_true(user.mailing_lists[list_name])
+
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_sync_data_from_mailchimp_unsubscribes_user(self, mock_get_mailchimp_api):
+        list_id = '12345'
+        list_name = 'OSF General'
+        mock_client = mock.MagicMock()
+        mock_get_mailchimp_api.return_value = mock_client
+        mock_client.lists.list.return_value = {'data': [{'id': list_id, 'name': list_name}]}
+
+        # user is subscribed to a list
+        user = AuthUserFactory()
+        user.mailing_lists = {'OSF General': True}
+        user.save()
+
+        # user unsubscribes through mailchimp and webhook sends request
+        data = {'type': 'unsubscribe',
+                'data[list_id]': list_id,
+                'data[email]': user.username
+        }
+        url = api_url_for('sync_data_from_mailchimp') + '?key=' + settings.MAILCHIMP_WEBHOOK_SECRET_KEY
+        res = self.app.post(url,
+                            data,
+                            content_type="application/x-www-form-urlencoded",
+                            auth=user.auth)
+
+        # user field is updated on the OSF
+        user.reload()
+        assert_false(user.mailing_lists[list_name])
+
+    def test_sync_data_from_mailchimp_fails_without_secret_key(self):
+        user = AuthUserFactory()
+        payload = {'values': {'type': 'unsubscribe',
+                              'data': {'list_id': '12345',
+                                       'email': 'freddie@cos.io'}}}
+        url = api_url_for('sync_data_from_mailchimp')
+        res = self.app.post_json(url, payload, auth= user.auth, expect_errors=True)
+        assert_equal(res.status_code, http.UNAUTHORIZED)
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestConfigureMailingListViews, cls).tearDownClass()
+        settings.ENABLE_EMAIL_SUBSCRIPTIONS = cls._original_enable_email_subscriptions
+
 # TODO: Move to OSF Storage
 class TestFileViews(OsfTestCase):
 
@@ -2849,7 +2994,7 @@ class TestSearchViews(OsfTestCase):
         assert_equal(brian['fullname'], self.contrib.fullname)
         assert_in('gravatar_url', brian)
         assert_equal(brian['registered'], self.contrib.is_registered)
-        assert_equal(brian['active'], self.contrib.is_active())
+        assert_equal(brian['active'], self.contrib.is_active)
 
     def test_search_pagination_default(self):
         url = api_url_for('search_contributor')
@@ -3510,6 +3655,41 @@ class TestStaticFileViews(OsfTestCase):
         res = self.app.get('/favicon.ico')
         assert_equal(res.status_code, 200)
         assert_in('image/vnd.microsoft.icon', res.headers['Content-Type'])
+
+
+class TestUserConfirmSignal(OsfTestCase):
+
+    def test_confirm_user_signal_called_when_user_claims_account(self):
+        unclaimed_user = UnconfirmedUserFactory()
+        # unclaimed user has been invited to a project.
+        referrer = UserFactory()
+        project = ProjectFactory(creator=referrer)
+        unclaimed_user.add_unclaimed_record(project, referrer, 'foo')
+        unclaimed_user.save()
+
+        token = unclaimed_user.get_unclaimed_record(project._primary_key)['token']
+        with capture_signals() as mock_signals:
+            url = web_url_for('claim_user_form', pid=project._id, uid=unclaimed_user._id, token=token)
+            payload = {'username': unclaimed_user.username,
+                       'password': 'password',
+                       'password2': 'password'}
+            res = self.app.post(url, payload)
+            assert_equal(res.status_code, 302)
+
+        assert_equal(mock_signals.signals_sent(), set([auth.signals.user_confirmed]))
+
+    def test_confirm_user_signal_called_when_user_confirms_email(self):
+        unconfirmed_user = UnconfirmedUserFactory()
+        unconfirmed_user.save()
+
+        # user goes to email confirmation link
+        token = unconfirmed_user.get_confirmation_token(unconfirmed_user.username)
+        with capture_signals() as mock_signals:
+            url = web_url_for('confirm_email_get', uid=unconfirmed_user._id, token=token)
+            res = self.app.get(url)
+            assert_equal(res.status_code, 302)
+
+        assert_equal(mock_signals.signals_sent(), set([auth.signals.user_confirmed]))
 
 if __name__ == '__main__':
     unittest.main()

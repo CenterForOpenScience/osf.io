@@ -5,7 +5,7 @@
 /*jshint ignore:start */
 
 var Dropzone = require('dropzone');
-var $osf = require('osf-helpers');
+var $osf = require('osfHelpers');
 var $ = require('jquery');
 
 __hasProp = {}.hasOwnProperty,

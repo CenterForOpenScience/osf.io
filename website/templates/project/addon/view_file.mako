@@ -39,7 +39,8 @@
 
 <%def name="file_versions()"></%def>
 
-<%def name="javascript()">
+<%def name="javascript_bottom()">
+  ${parent.javascript_bottom()}
     % if rendered is None:
         <script type="text/javascript">
             window.contextVars = window.contextVars || {};

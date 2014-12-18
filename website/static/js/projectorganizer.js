@@ -12,7 +12,7 @@ require('../vendor/jquery-drag-drop/jquery.event.drag-2.2.js');
 require('../vendor/jquery-drag-drop/jquery.event.drop-2.2.js');
 require('../vendor/bower_components/hgrid/plugins/hgrid-draggable/hgrid-draggable.js');
 
-var osfHelpers = require('./osf-helpers.js');
+var $osf = require('osfHelpers');
 
 //
 // Globals
@@ -68,7 +68,7 @@ function deleteMultiplePointersFromFolder(theHgrid, pointerIds, folderToDeleteFr
         });
         deleteAction.done(reloadHgrid);
         deleteAction.fail(function (jqxhr, textStatus, errorThrown){
-            osfHelpers.growl('Error:', textStatus + '. ' + errorThrown);
+            $osf.growl('Error:', textStatus + '. ' + errorThrown);
 
         });
     }
@@ -76,13 +76,13 @@ function deleteMultiplePointersFromFolder(theHgrid, pointerIds, folderToDeleteFr
 
 function setItemToExpand(item, callback) {
     var expandUrl = item.apiURL + 'expand/';
-    var postAction = osfHelpers.postJSON(expandUrl,{});
+    var postAction = $osf.postJSON(expandUrl,{});
     postAction.done(function() {
         item.expand = false;
         if (typeof callback !== 'undefined') {
             callback();
         }
-    }).fail(osfHelpers.handleJSONError);
+    }).fail($osf.handleJSONError);
 }
 
 function reloadFolder(hgrid, theItem, theParentNode) {
@@ -267,7 +267,7 @@ function dropLogic(event, items, folder) {
 
                             });
                             postAction.fail(function (jqxhr, textStatus, errorThrown){
-                                osfHelpers.growl('Error:', textStatus + '. ' + errorThrown);
+                                $osf.growl('Error:', textStatus + '. ' + errorThrown);
                             });
                         } else { // From:  if(itemsToMove.length > 0)
 //                                folder.childrenCount = folder.children.length;
@@ -278,7 +278,7 @@ function dropLogic(event, items, folder) {
                     } // From: if (copyMode === 'copy' || copyMode === 'move')
                 });
                 getAction.fail(function (jqxhr, textStatus, errorThrown){
-                    osfHelpers.growl('Error:', textStatus + '. ' + errorThrown);
+                    $osf.growl('Error:', textStatus + '. ' + errorThrown);
                 });
             } else {
                 Raven.captureMessage('Project dashboard: Parent node (' + itemParentNodeID + ') == Folder Node (' + theFolderNodeID + ')');
@@ -511,7 +511,7 @@ HGrid.Actions['showProjectDetails'] =  {
                     } else {
                         $('#add-link-warn-' + theItem.node_id).text('This project is already in the folder');
                     }
-                }).fail(osfHelpers.handleJSONError);
+                }).fail($osf.handleJSONError);
 
             });
             $('#close-' + theItem.node_id).click(function () {
@@ -595,10 +595,10 @@ HGrid.Actions['showProjectDetails'] =  {
                     title: $.trim($('#add-folder-input' + theItem.node_id).val())
                 };
                 setItemToExpand(theItem, function() {
-                    var putAction = osfHelpers.putJSON(url, postData);
+                    var putAction = $osf.putJSON(url, postData);
                     putAction.done(function () {
                         reloadFolder(projectOrganizer.grid, theItem, theParentNode);
-                    }).fail(osfHelpers.handleJSONError);
+                    }).fail($osf.handleJSONError);
 
                 });
                 return false;
@@ -625,10 +625,10 @@ HGrid.Actions['showProjectDetails'] =  {
                     name: 'title',
                     value: $.trim($('#rename-node-input' + theItem.node_id).val())
                 };
-                var postAction = osfHelpers.postJSON(url, postData);
+                var postAction = $osf.postJSON(url, postData);
                 postAction.done(function () {
                         reloadFolder(projectOrganizer.grid, theParentNode);
-                    }).fail(osfHelpers.handleJSONError);
+                    }).fail($osf.handleJSONError);
                 return false;
             });
             $('.cancel-button-' + theItem.node_id).click(function() {
@@ -1000,7 +1000,7 @@ function ProjectOrganizer(selector, options) {
         },
         fetchError: function(error) {
             if($('.modal-dialog').length === 0) {
-                osfHelpers.growl('Error:', error);
+                $osf.growl('Error:', error);
             }
         },
         getExpandState: function(folder) {
@@ -1018,13 +1018,13 @@ function ProjectOrganizer(selector, options) {
             item.expand = false;
             if (typeof event !== 'undefined' && typeof item.apiURL !== 'undefined' && item.type !== 'pointer') {
                 var collapseUrl = item.apiURL + 'collapse/';
-                var postAction = osfHelpers.postJSON(collapseUrl, {});
+                var postAction = $osf.postJSON(collapseUrl, {});
                 postAction.done(function() {
                     item.expand = false;
                     if (item._node._load_status === HGrid.LOADING_FINISHED) {
                         draggable.grid.resetLoadedState(item);
                     }
-                }).fail(osfHelpers.handleJSONError);
+                }).fail($osf.handleJSONError);
             } else if(typeof event !== 'undefined') {
                 if (item._node._load_status === HGrid.LOADING_FINISHED) {
                     draggable.grid.resetLoadedState(item);
