@@ -7,7 +7,7 @@ import codecs
 
 from framework.tasks import app
 from website import settings
-from website.language import ERROR_PREFIX, STATA_VERSION_ERROR, BLANK_OR_CORRUPT_TABLE_ERROR
+from website.language import ERROR_PREFIX
 
 logger = logging.getLogger(__name__)
 

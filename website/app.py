@@ -115,7 +115,7 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
     build_log_templates(settings)
     init_addons(settings, routes)
 
-    try:   
+    try:
         # Available file handlers
         HANDLERS = [
             mfr_audio.Handler,
