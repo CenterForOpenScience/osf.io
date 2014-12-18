@@ -5,8 +5,6 @@ import uuid
 import asyncio
 import hashlib
 
-import furl
-
 import waterbutler
 from waterbutler import signing
 from waterbutler import streams
@@ -14,17 +12,6 @@ from waterbutler import settings
 from waterbutler.providers import core
 from waterbutler.providers import exceptions
 from waterbutler.tasks import parity, backup
-
-
-def sign_url(url, payload, ttl=100):
-    payload['time'] = int(time.time() + ttl)
-    payload, signature = signing.osf_signer.sign_payload(payload)
-    f_url = furl.furl(url)
-    f_url.args = {
-        'payload': payload.decode(),
-        'signature': signature,
-    }
-    return f_url.url
 
 
 @core.register_provider('osfstorage')
@@ -131,35 +118,27 @@ class OSFStorageProvider(core.BaseProvider):
             headers={'Content-Type': 'application/json'},
         )
         data = yield from response.json()
-        version_id = data['version_id']
-        # TODO: Celery Tasks for Parity & Archive
-        # tasks.Archive()
-        # parity.main(
-        #     complete_path,
-        # )
-        # backup.main(
-        #     complete_path,
-        #     version_id,
-        #     self.callback,
-        # )
+        if settings.RUN_PARITY:
+            version_id = data['version_id']
+            parity.main(
+                complete_path,
+            )
+            backup.main(
+                complete_path,
+                version_id,
+                self.callback,
+            )
         return OsfStorageMetadata(metadata, path).serialized()
 
     @asyncio.coroutine
     def delete(self, **kwargs):
         kwargs['auth'] = self.auth
-        resp = yield from self.make_signed_request(
+        yield from self.make_signed_request(
             'DELETE',
             self.callback,
             params=kwargs,
             expects=(200, )
         )
-        # # call to osf metadata
-        # response = yield from self.make_request(
-        #     'POST',
-        #     self.build_url('fileops', 'delete'),
-        #     data={'folder': 'auto', 'path': self.build_path(path)},
-        # )
-        # return streams.ResponseStream(response)
 
     @asyncio.coroutine
     def metadata(self, **kwargs):
@@ -176,7 +155,6 @@ class OSFStorageProvider(core.BaseProvider):
 class OsfStorageMetadata(core.BaseMetadata):
 
     def __init__(self, raw, path):
-        import ipdb; ipdb.set_trace()
         super().__init__(raw)
         self._path = path
 
