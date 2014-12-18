@@ -1,3 +1,7 @@
+// TODO: Deprecate me
+var $osf = require('osfHelpers');
+var $ = require('jquery');
+
 var AddonHelper = (function() {
 
     /**
@@ -18,7 +22,6 @@ var AddonHelper = (function() {
      * Submit add-on settings.
      */
     function onSubmitSettings() {
-
         var $this = $(this);
         var addon = $this.attr('data-addon');
         var owner = $this.find('span[data-owner]').attr('data-owner');
@@ -28,7 +31,7 @@ var AddonHelper = (function() {
             ? '/api/v1/settings/' + addon + '/'
             : nodeApiUrl + addon + '/settings/';
 
-        $.osf.postJSON(
+        $osf.postJSON(
             url,
             formToObj($this)
         ).done(function() {
@@ -53,9 +56,15 @@ var AddonHelper = (function() {
     }
 
     // Expose public methods
-    return {
+    exports = {
         formToObj: formToObj,
         onSubmitSettings: onSubmitSettings,
-    }
+    };
 
+    if (typeof module === 'object') {
+        module.exports = exports; 
+    } 
+    return exports;
 })();
+
+

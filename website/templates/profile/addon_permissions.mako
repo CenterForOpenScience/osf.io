@@ -28,50 +28,6 @@
         </div>
     %endif
     <script>
-        $('.${addon_short_name}-remove-token').on('click', function(event) {
-            var nodeId = $(this).attr('node-id');
-            bootbox.confirm({
-                title: 'Remove addon?',
-                message: 'Are you sure you want to remove the ${addon_full_name} authorization from this project?',
-                callback: function(confirm) {
-                    if(confirm) {
-                        $.ajax({
-                        type: 'DELETE',
-                        url: '/api/v1/project/' + nodeId + '/${addon_short_name}/config/',
-
-                        success: function(response) {
-
-                            $("#${addon_short_name}-" + nodeId + "-auth-row").hide();
-                            var numNodes = $("#${addon_short_name}-auth-table tr:visible").length;
-                            if (numNodes === 1) {
-                                $("#${addon_short_name}-auth-table").hide();
-                            }
-                            if (numNodes === 4) {
-                                $("#${addon_short_name}-more").hide();
-                                $("#${addon_short_name}-less").hide();
-                            }
-                        },
-
-                        error: function() {
-                            $.osf.growl('An error occurred, the project has not been deauthorized. ',
-                                'If the issue persists, please report it to <a href="mailto:support@osf.io">support@osf.io</a>.');
-                        }
-                    });
-                    }
-                }
-            });
-        });
-
-        $('#${addon_short_name}-more').on('click', function(event) {
-            $('#${addon_short_name}-header').removeClass('table-less');
-            $('#${addon_short_name}-more').hide();
-            $('#${addon_short_name}-less').show();
-        });
-        $('#${addon_short_name}-less').on('click', function(event) {
-            $('#${addon_short_name}-header').addClass('table-less');
-            $('#${addon_short_name}-less').hide();
-            $('#${addon_short_name}-more').show();
-        });
-
+        AddonPermissionsTable.init("${addon_short_name}", "${addon_full_name}");
     </script>
 % endif

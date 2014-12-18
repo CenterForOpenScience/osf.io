@@ -185,13 +185,14 @@
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
-    <script type="text/javascript" src="/static/js/metadata_1.js"></script>
-    <script type="text/javascript" src="/static/js/projectSettings.js"></script>
-    <script type="text/javascript">
-        $(document).ready(function() {
-            $('#deleteNode').on('click', function() {
-                ProjectSettings.getConfirmationCode('${node["node_type"]}');
-            });
-        });
+    <script>
+      window.contextVars = window.contextVars || {};
+      window.contextVars.node = window.contextVars.node || {};
+      window.contextVars.node.nodeType = '${node['node_type']}';
     </script>
+    <script type="text/javascript" src="/static/public/js/project-settings-page.js"></script>
+    % for js_asset in addon_js:
+      <script src="${js_asset}"></script>
+    % endfor
+
 </%def>

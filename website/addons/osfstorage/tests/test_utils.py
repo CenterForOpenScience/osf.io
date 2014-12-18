@@ -212,7 +212,7 @@ class TestGetDownloadUrl(StorageTestCase):
         filename = utils.get_filename(2, self.record.versions[-2], self.record)
         expected = ''.join([
             'reviews-',
-            self.record.versions[-2].date_modified.isoformat(),
+            self.record.versions[-2].date_created.isoformat(),
             '.gif',
         ])
         assert_equal(filename, expected)
@@ -246,10 +246,7 @@ class TestSerializeRevision(StorageTestCase):
         self.path = 'kind/of/magic.mp3'
         self.record = model.OsfStorageFileRecord.get_or_create(self.path, self.node_settings)
         self.versions = [
-             factories.FileVersionFactory(
-                creator=self.user,
-                date_modified=datetime.datetime.utcnow(),
-            )
+             factories.FileVersionFactory(creator=self.user)
             for _ in range(3)
         ]
         self.record.versions = self.versions
@@ -277,7 +274,7 @@ class TestSerializeRevision(StorageTestCase):
                 'name': self.user.fullname,
                 'url': self.user.url,
             },
-            'date': self.versions[0].date_modified.isoformat(),
+            'date': self.versions[0].date_created.isoformat(),
             'downloads': 2,
             'urls': {
                 'view': self.project.web_url_for(
@@ -302,10 +299,7 @@ class TestSerializeRevision(StorageTestCase):
         assert_equal(expected, observed)
 
     def test_serialize_revision_uploading(self):
-        version = factories.FileVersionFactory(
-            status=model.status_map['UPLOADING'],
-            date_modified=None,
-        )
+        version = factories.FileVersionFactory(status=model.status_map['UPLOADING'])
         self.record.versions.append(version)
         self.record.save()
         serialized = utils.serialize_revision(

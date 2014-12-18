@@ -144,7 +144,7 @@ class TestContributorViews(OsfTestCase):
         url = self.project.api_url_for('get_recently_added_contributors')
         res = self.app.get(url, auth=self.user.auth)
         project.reload()
-        recent = [c for c in self.user.recently_added if c.is_active()]
+        recent = [c for c in self.user.recently_added if c.is_active]
         assert_equal(len(res.json['contributors']), len(recent))
 
 

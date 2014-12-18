@@ -50,7 +50,6 @@
 </div>
 
 <script>
-    $script(['/static/addons/twofactor/twoFactorUserConfig.js'], function() {
-        new TwoFactorUserConfig('#twoFactorScope', '#twoFactorQrCode', "${ otpauth_url }");
-    });
+    window.contextVars = window.contextVars || {};
+    window.contextVars.otpauthURL = "${otpauth_url}";
 </script>
