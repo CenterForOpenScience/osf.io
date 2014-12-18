@@ -1,4 +1,5 @@
 import os
+import re
 import asyncio
 
 from waterbutler import streams
@@ -60,7 +61,7 @@ class DropboxProvider(core.BaseProvider):
             resp = yield from self.make_request(
                 'POST',
                 data={
-                    'folder': 'auto',
+                    'root': 'auto',
                     'from_copy_ref': from_ref_data['copy_ref'],
                     'to_path': to_path,
                 },
@@ -69,7 +70,7 @@ class DropboxProvider(core.BaseProvider):
                 throws=exceptions.IntraCopyError,
             )
         metadata = yield from resp.json()
-        return DropboxMetadata(metadata).serialized()
+        return DropboxMetadata(metadata, self.folder).serialized()
 
     @asyncio.coroutine
     def intra_move(self, dest_provider, source_options, dest_options):
@@ -79,7 +80,7 @@ class DropboxProvider(core.BaseProvider):
             'POST',
             self.build_url('fileops', 'move'),
             data={
-                'folder': 'auto',
+                'root': 'auto',
                 'from_path': from_path,
                 'to_path': to_path,
             },
@@ -87,7 +88,7 @@ class DropboxProvider(core.BaseProvider):
             throws=exceptions.IntraMoveError,
         )
         metadata = yield from resp.json()
-        return DropboxMetadata(metadata).serialized()
+        return DropboxMetadata(metadata, self.folder).serialized()
 
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
@@ -110,14 +111,14 @@ class DropboxProvider(core.BaseProvider):
             throws=exceptions.UploadError,
         )
         metadata = yield from resp.json()
-        return DropboxMetadata(metadata).serialized()
+        return DropboxMetadata(metadata, self.folder).serialized()
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
         yield from self.make_request(
             'POST',
             self.build_url('fileops', 'delete'),
-            data={'folder': 'auto', 'path': self.build_path(path)},
+            data={'root': 'auto', 'path': self.build_path(path)},
             expects=(200, ),
             throws=exceptions.DeleteError,
         )
@@ -127,20 +128,28 @@ class DropboxProvider(core.BaseProvider):
         response = yield from self.make_request(
             'GET',
             self.build_url('metadata', 'auto', self.build_path(path)),
+            expects=(200, ),
+            throws=exceptions.MetadataError
         )
-        if response.status == 404:
-            raise exceptions.FileNotFoundError(path)
 
         data = yield from response.json()
+
         if data['is_dir']:
             return [
-                DropboxMetadata(item).serialized()
+                DropboxMetadata(item, self.folder).serialized()
                 for item in data['contents']
             ]
-        return DropboxMetadata(data).serialized()
+
+        return DropboxMetadata(data, self.folder).serialized()
 
 
 class DropboxMetadata(core.BaseMetadata):
+
+    def __init__(self, data, root):
+        stripped = re.sub('^{}/?'.format(re.escape(root)), '', data['path'])
+        assert stripped != data['path'], 'Root folder not present in path'
+        data['path'] = stripped
+        super().__init__(data)
 
     @property
     def provider(self):
@@ -156,7 +165,7 @@ class DropboxMetadata(core.BaseMetadata):
 
     @property
     def path(self):
-        return self.raw['path'].strip('/')
+        return self.raw['path']
 
     @property
     def size(self):
