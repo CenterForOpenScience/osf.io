@@ -4,10 +4,10 @@
  */
 
 var $ = require('jquery');
-require('dropzone-patch'); // Required for uploads
+require('dropzonePatch'); // Required for uploads
 var m = require('mithril');
 var Treebeard = require('treebeard');
-var $osf = require('osf-helpers');
+var $osf = require('osfHelpers');
 var bootbox = require('bootbox');
 
 var tbOptions;
