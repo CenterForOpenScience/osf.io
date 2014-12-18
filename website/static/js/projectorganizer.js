@@ -11,68 +11,92 @@ var moment = require('moment');
 var Raven = require('raven-js');
 
 
-var osfHelpers = require('./osf-helpers.js');
+var $osf = require('./osfHelpers.js');
 
-    // copyMode can be 'copy', 'move', 'forbidden', or null.
-    var copyMode = null;
+// copyMode can be 'copy', 'move', 'forbidden', or null.
+// This is set at draglogic and is used as global within this module
+var copyMode = null;
 
-    var projectOrganizer = {}; 
+// Initialize projectOrganizer object (separate from the ProjectOrganizer constructor at the end)
+var projectOrganizer = {};
 
-    projectOrganizer.publicProjects = new Bloodhound({
-        datumTokenizer: function (d) {
-            return Bloodhound.tokenizers.whitespace(d.name);
+/**
+ * TODO: Fill description
+ * @type {Bloodhound}
+ */
+projectOrganizer.publicProjects = new Bloodhound({
+    datumTokenizer: function (d) {
+        return Bloodhound.tokenizers.whitespace(d.name);
+    },
+    queryTokenizer: Bloodhound.tokenizers.whitespace,
+    remote: {
+        url: '/api/v1/search/projects/?term=%QUERY&maxResults=20&includePublic=yes&includeContributed=no',
+        filter: function (projects) {
+            return $.map(projects, function (project) {
+                return {
+                    name: project.value,
+                    node_id: project.id,
+                    category: project.category
+                };
+            });
         },
-        queryTokenizer: Bloodhound.tokenizers.whitespace,
-        remote: {
-            url: '/api/v1/search/projects/?term=%QUERY&maxResults=20&includePublic=yes&includeContributed=no',
-            filter: function (projects) {
-                return $.map(projects, function (project) {
-                    return {
-                        name: project.value,
-                        node_id: project.id,
-                        category: project.category
-                    };
-                });
-            },
-            limit: 10
-        }
-    });
+        limit: 10
+    }
+});
 
-    projectOrganizer.myProjects = new Bloodhound({
-        datumTokenizer: function (d) {
-            return Bloodhound.tokenizers.whitespace(d.name);
+/**
+ * TODO : Fill description
+ * @type {Bloodhound}
+ */
+projectOrganizer.myProjects = new Bloodhound({
+    datumTokenizer: function (d) {
+        return Bloodhound.tokenizers.whitespace(d.name);
+    },
+    queryTokenizer: Bloodhound.tokenizers.whitespace,
+    remote: {
+        url: '/api/v1/search/projects/?term=%QUERY&maxResults=20&includePublic=no&includeContributed=yes',
+        filter: function (projects) {
+            return $.map(projects, function (project) {
+                return {
+                    name: project.value,
+                    node_id: project.id,
+                    category: project.category
+                };
+            });
         },
-        queryTokenizer: Bloodhound.tokenizers.whitespace,
-        remote: {
-            url: '/api/v1/search/projects/?term=%QUERY&maxResults=20&includePublic=no&includeContributed=yes',
-            filter: function (projects) {
-                return $.map(projects, function (project) {
-                    return {
-                        name: project.value,
-                        node_id: project.id,
-                        category: project.category
-                    };
-                });
-            },
-            limit: 10
-        }
-    });
-
-
-    function _poTitleColumn (item) {
-        //  smart folders should be italicized.
-        var css = item.data.isSmartFolder ? 'project-smart-folder smart-folder' : '';
-        return m('span', { 'class' : css }, item.data.name);
+        limit: 10
     }
+});
 
-    function _gotoEvent (event, item, col) {
-        // var evt = event || window.event;
-        // evt.stopPropagation();
-        window.location = item.data.urls.fetch;
-    }
+/**
+ * Edits the template for the column titles.
+ * Used here to make smart folder italicized
+ * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
+ * @this Treebeard.controller Check Treebeard API for methods available
+ * @private
+ */
+function _poTitleColumn(item) {
+    //  smart folders should be italicized.
+    var css = item.data.isSmartFolder ? 'project-smart-folder smart-folder' : '';
+    return m('span', { 'class' : css }, item.data.name);
+}
 
+/**
+ *
+ * @param event Click event
+ * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
+ * @param {Object} col Column options
+ * @this Treebeard.controller Check Treebeard API for methods available
+ * @private
+ */
+function _gotoEvent(event, item, col) {
+    window.location = item.data.urls.fetch;
+}
 
-
+/**
+ * the project detail popup is populated based on the row that it was clicked from
+ * @param {Object} theItem Only the item.data portion of A Treebeard _item object for the row involved.
+ */
 function createProjectDetailHTMLFromTemplate(theItem) {
     var detailTemplateSource = $('#project-detail-template').html();
     Handlebars.registerHelper('commalist', function (items, options) {
@@ -91,7 +115,6 @@ function createProjectDetailHTMLFromTemplate(theItem) {
         var displayHTML = detailTemplate(detailTemplateContext);
         $('.project-details').html(displayHTML);
        addFormKeyBindings(theItem.node_id);
-
     }
 
     function addFormKeyBindings(nodeID){
@@ -116,21 +139,21 @@ function createProjectDetailHTMLFromTemplate(theItem) {
         if(item.expand) {
             // turn to false
             var collapseUrl = item.apiURL + 'collapse/';
-                    var postAction = $.osf.postJSON(collapseUrl, {});
+                    var postAction = $osf.postJSON(collapseUrl, {});
                     postAction.done(function() {
                         if (typeof callback !== 'undefined') {
                             callback();
                         }
-                    }).fail($.osf.handleJSONError);
+                    }).fail($osf.handleJSONError);
         } else {
             // turn to true
             var expandUrl = item.apiURL + 'expand/';
-            var postAction = $.osf.postJSON(expandUrl,{});
+            var postAction = $osf.postJSON(expandUrl,{});
             postAction.done(function() {
                 if (typeof callback !== 'undefined') {
                     callback();
                 }
-            }).fail($.osf.handleJSONError);
+            }).fail($osf.handleJSONError);
         }
     }
 
@@ -262,7 +285,7 @@ function createProjectDetailHTMLFromTemplate(theItem) {
                     } else {
                         $('#add-link-warn-' + theItem.node_id).text('This project is already in the folder')
                     }
-                }).fail($.osf.handleJSONError);
+                }).fail($osf.handleJSONError);
             });
             $('#close-' + theItem.node_id).click(function () {
                 $('.project-details').hide();
@@ -352,11 +375,11 @@ function createProjectDetailHTMLFromTemplate(theItem) {
                 };
                 theItem.expand = false;
                 saveExpandState(theItem, function() {
-                    var putAction = $.osf.putJSON(url, postData);
+                    var putAction = $osf.putJSON(url, postData);
                     putAction.done(function () {
                         treebeard.updateFolder(null, item);
                         $('.project-details').hide();
-                    }).fail($.osf.handleJSONError);
+                    }).fail($osf.handleJSONError);
 
                 });
                 return false;
@@ -383,11 +406,11 @@ function createProjectDetailHTMLFromTemplate(theItem) {
                     name: 'title',
                     value: $.trim($('#rename-node-input' + theItem.node_id).val())
                 };
-                var postAction = $.osf.postJSON(url, postData);
+                var postAction = $osf.postJSON(url, postData);
                 postAction.done(function () {
                         treebeard.updateFolder(null, theParentNode);
                         $('.project-details').hide();
-                    }).fail($.osf.handleJSONError);
+                    }).fail($osf.handleJSONError);
                 return false;
             });
             $('.cancel-button-' + theItem.node_id).click(function() {
@@ -685,7 +708,7 @@ function createProjectDetailHTMLFromTemplate(theItem) {
                 tb.updateFolder(null, folderToDeleteFrom);
                 });
             deleteAction.fail(function (jqxhr, textStatus, errorThrown){
-                bootbox.alert('Error: ' + textStatus + '. ' + errorThrown);
+                $osf.growl('Error:', textStatus + '. ' + errorThrown);
             });
         }
     }
@@ -722,10 +745,10 @@ function createProjectDetailHTMLFromTemplate(theItem) {
         var items;
         var itemID = $(event.target).attr('data-id');
         var item = this.find(itemID);
+        if(this.multiselected.length < 2) {
+            this.multiselected = [item];
+        }
         $('.project-details').hide();
-        this.selected = item.id;
-        $(ui.helper).css({ 'height' : '25px', 'width' : '400px', 'background' : 'white', 'padding' : '0px 10px', 'box-shadow' : '0 0 4px #ccc'}); // TODO remove 
-        items = this.multiselected.length > 0 ? this.multiselected : [item]; 
     }
 
     function _poDrop (event, ui) {
@@ -763,7 +786,6 @@ function createProjectDetailHTMLFromTemplate(theItem) {
 
 
     function dragLogic(event, items, ui){
-
         var canCopy = true;
         var canMove = true;
         var folder = this.find($(event.target).attr('data-id'));
@@ -779,38 +801,60 @@ function createProjectDetailHTMLFromTemplate(theItem) {
         });
 
 
-        // Check through possible move and copy options, and set the copyMode appropriately.
-        if (!(canMove && canCopy && canAcceptDrop(items, folder))) { 
-            copyMode = 'forbidden';
-        }
-        else if (canMove && canCopy) {
-            if (altKey) {
-                copyMode = 'copy';
-            } else {
+        if(canAcceptDrop(items, folder) && (canMove || canCopy)){
+            if(canMove && canCopy) {
+                if(altKey){
+                    copyMode = 'copy';
+                } else {
+                    copyMode = 'move';
+                }
+            }
+            if(canMove && !canCopy) {
                 copyMode = 'move';
             }
-        } else if (!canMove && canCopy) {
-            copyMode = 'copy';
-        } else  if (!canCopy && canMove) {
-            copyMode = 'move';
+            if(canCopy && !canMove) {
+                copyMode = 'copy';
+            }
+        } else {
+            copyMode = 'forbidden';
         }
+
+
+
+        //// Check through possible move and copy options, and set the copyMode appropriately.
+        //if (!(canMove && canCopy && canAcceptDrop(items, folder))) {
+        //    copyMode = 'forbidden';
+        //}
+        //else if (canMove && canCopy) {
+        //    if (altKey) {
+        //        copyMode = 'copy';
+        //    } else {
+        //        copyMode = 'move';
+        //    }
+        //} else if (!canMove && canCopy) {
+        //    copyMode = 'copy';
+        //} else  if (!canCopy && canMove) {
+        //    copyMode = 'move';
+        //}
         if(isSelf) {
             copyMode = 'forbidden';
         }
-        // console.log('copyMode', copyMode);
+
+        console.log('copyMode', copyMode, canMove, canCopy, canAcceptDrop(items, folder));
+        console.log(items, folder);
         // Set the cursor to match the appropriate copy mode
         switch (copyMode) {
             case 'forbidden':
-                $(ui.helper).css('cursor', 'not-allowed');
+                $('.tb-drag-ghost').css('cursor', 'not-allowed');
                 break;
             case 'copy':
-                $(ui.helper).css('cursor', 'copy');
+                $('.tb-drag-ghost').css('cursor', 'copy');
                 break;
             case 'move':
-                $(ui.helper).css('cursor', 'move');
+                $('.tb-drag-ghost').css('cursor', 'move');
                 break;
             default:
-                $(ui.helper).css('cursor', 'default');
+                $('.tb-drag-ghost').css('cursor', 'default');
         }
         return copyMode;
     }
@@ -935,7 +979,7 @@ function createProjectDetailHTMLFromTemplate(theItem) {
                                     }
                                 });
                                 postAction.fail(function (jqxhr, textStatus, errorThrown){
-                                    bootbox.alert('Error: ' + textStatus + '. ' + errorThrown);
+                                    $osf.growl('Error:', textStatus + '. ' + errorThrown);
                                 });
                             } else { // From:  if(itemsToMove.length > 0)
                                 tb.updateFolder(null, itemParent);
@@ -943,7 +987,7 @@ function createProjectDetailHTMLFromTemplate(theItem) {
                     }
                 });
                 getAction.fail(function (jqxhr, textStatus, errorThrown){
-                    bootbox.alert('Error: ' + textStatus + '. ' + errorThrown);
+                    $osf.growl('Error:', textStatus + '. ' + errorThrown);
                 });
             } else {
                 Raven.captureMessage('Project dashboard: Parent node (' + itemParentNodeID + ') == Folder Node (' + theFolderNodeID + ')');
@@ -1035,7 +1079,7 @@ function createProjectDetailHTMLFromTemplate(theItem) {
         resolveIcon : _poResolveIcon,
         resolveToggle : _poResolveToggle,
         resolveLazyloadUrl : _poResolveLazyLoad,
-        lazyLoadOnLoad : expandStateLoad,
+        lazyLoadOnLoad : expandStateLoad
     };
 
 
