@@ -52,12 +52,34 @@ class OSFStorageProvider(core.BaseProvider):
         )
 
     @asyncio.coroutine
+    def make_signed_request(self, method, url, data=None, params=None, ttl=100, **kwargs):
+        exp_time = int(time.time() + ttl)
+
+        if method in ('GET', 'DELETE'):
+            params['time'] = exp_time
+            payload, signature = signing.osf_signer.sign_payload(params)
+            params = {
+                'payload': payload.decode(),
+                'signature': signature
+            }
+        else:
+            data = json.loads(data)
+            data['time'] = exp_time
+            payload, signature = signing.osf_signer.sign_payload(data)
+            data = json.dumps({
+                'payload': payload.decode(),
+                'signature': signature
+            })
+
+        return (yield from self.make_request(method, url, data=data, params=params, **kwargs))
+
+    @asyncio.coroutine
     def download(self, **kwargs):
         # osf storage metadata will return a virtual path within the provider
-        url = sign_url(self.callback, kwargs)
-        resp = yield from self.make_request(
+        resp = yield from self.make_signed_request(
             'GET',
-            url,
+            self.callback,
+            params=kwargs,
             expects=(200, ),
             throws=exceptions.DownloadError,
         )
@@ -86,7 +108,7 @@ class OSFStorageProvider(core.BaseProvider):
             {'path': complete_name},
         )
         os.rename(pending_path, complete_path)
-        response = yield from self.make_request(
+        response = yield from self.make_signed_request(
             'POST',
             self.callback,
             data=json.dumps({
@@ -110,18 +132,19 @@ class OSFStorageProvider(core.BaseProvider):
         )
         data = yield from response.json()
         version_id = data['version_id']
-
         # TODO: Celery Tasks for Parity & Archive
         # tasks.Archive()
-        parity.main(
-            complete_path,
-        )
-        backup.main(
-            complete_path,
-            version_id,
-            self.callback,
-        )
+        # parity.main(
+        #     complete_path,
+        # )
+        # backup.main(
+        #     complete_path,
+        #     version_id,
+        #     self.callback,
+        # )
         metadata['name'] = path
+        metadata['path'] = path
+        metadata['provider'] = 'osfstorage'
         return metadata
         # return OsfStorageMetadata(metadata, path)
 
@@ -143,10 +166,10 @@ class OSFStorageProvider(core.BaseProvider):
 
     @asyncio.coroutine
     def metadata(self, **kwargs):
-        signed_url = sign_url(self.metadata_url, kwargs)
-        resp = yield from self.make_request(
+        resp = yield from self.make_signed_request(
             'GET',
-            signed_url,
+            self.metadata_url,
+            params=kwargs,
             expects=(200, )
         )
         # response = yield from self.make_request(
