@@ -446,23 +446,17 @@ class User(GuidStoredObject, AddonModelMixin):
                     .format(**locals())
 
     def set_password(self, raw_password):
-        '''Set the password for this user to the hash of ``raw_password``.'''
+        """Set the password for this user to the hash of ``raw_password``."""
         self.password = generate_password_hash(raw_password)
 
     def check_password(self, raw_password):
-        '''Return a boolean of whether ``raw_password`` was correct.'''
+        """Return a boolean of whether ``raw_password`` was correct."""
         if not self.password or not raw_password:
             return False
         return check_password_hash(self.password, raw_password)
 
-    def set_email_token_expiration(self, token, manual_expiration=None):
-        '''manual_expiration should be in the same format as utcnow()'''
-        expiration = manual_expiration or dt.datetime.utcnow() + dt.timedelta(1)
-        self.email_verifications[token]['expiration'] = expiration
-        return expiration
-
     def change_password(self, raw_old_password, raw_new_password, raw_confirm_password):
-        '''Change the password for this user to the hash of ``raw_new_password``.'''
+        """Change the password for this user to the hash of ``raw_new_password``."""
         raw_old_password = (raw_old_password or '').strip()
         raw_new_password = (raw_new_password or '').strip()
         raw_confirm_password = (raw_confirm_password or '').strip()
@@ -485,12 +479,23 @@ class User(GuidStoredObject, AddonModelMixin):
             raise ChangePasswordError(issues)
         self.set_password(raw_new_password)
 
+    def _set_email_token_expiration(self, token, expiration=None):
+        """Set the expiration date for given email token.
+
+        :param str token: The email token to set the expiration for.
+        :param datetime expiration: Datetime at which to expire the token. If ``None``,
+            `datetime.datetime.utcnow()` is used.
+        """
+        expiration = expiration or dt.datetime.utcnow() + dt.timedelta(1)
+        self.email_verifications[token]['expiration'] = expiration
+        return expiration
+
     def add_email_verification(self, email):
         """Add an email verification token for a given email."""
         token = generate_confirm_token()
 
         self.email_verifications[token] = {'email': email.lower()}
-        self.set_email_token_expiration(token)
+        self._set_email_token_expiration(token)
         return token
 
     def get_confirmation_token(self, email):
