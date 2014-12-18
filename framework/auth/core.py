@@ -210,9 +210,9 @@ class User(GuidStoredObject, AddonModelMixin):
     emails = fields.StringField(list=True)
     # Email verification tokens
     # Format: {
-    #   <token> : {'email': <email address>}
+    #   <token> : {'email': <email address>,
+    #              'expiration': <datetime>}
     # }
-    # TODO: add timestamp to allow for timed expiration?
     email_verifications = fields.DictionaryField()
 
     # Format: {
@@ -446,17 +446,17 @@ class User(GuidStoredObject, AddonModelMixin):
                     .format(**locals())
 
     def set_password(self, raw_password):
-        '''Set the password for this user to the hash of ``raw_password``.'''
+        """Set the password for this user to the hash of ``raw_password``."""
         self.password = generate_password_hash(raw_password)
 
     def check_password(self, raw_password):
-        '''Return a boolean of whether ``raw_password`` was correct.'''
+        """Return a boolean of whether ``raw_password`` was correct."""
         if not self.password or not raw_password:
             return False
         return check_password_hash(self.password, raw_password)
 
     def change_password(self, raw_old_password, raw_new_password, raw_confirm_password):
-        '''Change the password for this user to the hash of ``raw_new_password``.'''
+        """Change the password for this user to the hash of ``raw_new_password``."""
         raw_old_password = (raw_old_password or '').strip()
         raw_new_password = (raw_new_password or '').strip()
         raw_confirm_password = (raw_confirm_password or '').strip()
@@ -479,10 +479,23 @@ class User(GuidStoredObject, AddonModelMixin):
             raise ChangePasswordError(issues)
         self.set_password(raw_new_password)
 
+    def _set_email_token_expiration(self, token, expiration=None):
+        """Set the expiration date for given email token.
+
+        :param str token: The email token to set the expiration for.
+        :param datetime expiration: Datetime at which to expire the token. If ``None``,
+            `datetime.datetime.utcnow()` is used.
+        """
+        expiration = expiration or dt.datetime.utcnow() + dt.timedelta(1)
+        self.email_verifications[token]['expiration'] = expiration
+        return expiration
+
     def add_email_verification(self, email):
         """Add an email verification token for a given email."""
         token = generate_confirm_token()
+
         self.email_verifications[token] = {'email': email.lower()}
+        self._set_email_token_expiration(token)
         return token
 
     def get_confirmation_token(self, email):
@@ -506,8 +519,11 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def verify_confirmation_token(self, token):
         """Return whether or not a confirmation token is valid for this user.
+        :rtype: bool
         """
-        return token in self.email_verifications.keys()
+        if token in self.email_verifications.keys():
+            return self.email_verifications.get(token)['expiration'] > dt.datetime.utcnow()
+        return False
 
     def verify_claim_token(self, token, project_id):
         """Return whether or not a claim token is valid for this user for
