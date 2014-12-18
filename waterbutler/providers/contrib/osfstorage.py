@@ -142,20 +142,17 @@ class OSFStorageProvider(core.BaseProvider):
         #     version_id,
         #     self.callback,
         # )
-        metadata['name'] = path
-        metadata['path'] = path
-        metadata['provider'] = 'osfstorage'
-        return metadata
-        # return OsfStorageMetadata(metadata, path)
+        return OsfStorageMetadata(metadata, path).serialized()
 
     @asyncio.coroutine
-    def delete(self, path, **kwargs):
-        # resp = yield from self.make_request(
-        #     'DELETE',
-        #     self.identity['crudCallback'],
-        #     params=kwargs,
-        # )
-        pass
+    def delete(self, **kwargs):
+        kwargs['auth'] = self.auth
+        resp = yield from self.make_signed_request(
+            'DELETE',
+            self.callback,
+            params=kwargs,
+            expects=(200, )
+        )
         # # call to osf metadata
         # response = yield from self.make_request(
         #     'POST',
@@ -172,59 +169,41 @@ class OSFStorageProvider(core.BaseProvider):
             params=kwargs,
             expects=(200, )
         )
-        # response = yield from self.make_request(
-        #     'GET',
-        #     self.build_url('metadata', 'auto', self.build_path(path)),
-        # )
-        # if response.status != 200:
-        #     raise exceptions.FileNotFoundError(path)
-        #
-        data = yield from resp.json()
-        return data
-        return [self.format_metadata(x) for x in data]
-
-    def format_metadata(self, data):
-        return {
-            'provider': 'dropbox',
-            'kind': 'folder' if data['is_dir'] else 'file',
-            'name': os.path.split(data['path'])[1],
-            'path': data['path'],
-            'size': data['bytes'],
-            'modified': data['modified'],
-            'extra': {}  # TODO Include extra data from dropbox
-        }
+        return (yield from resp.json())
+        # return [OsfStorageMetadata(x, kwargs['path']).serialized() for x in data]
 
 
-# class OsfStorageMetadata(core.BaseMetadata):
+class OsfStorageMetadata(core.BaseMetadata):
 
-#     def __init__(self, raw, path):
-#         super().__init__(raw)
-#         self.path = path
+    def __init__(self, raw, path):
+        import ipdb; ipdb.set_trace()
+        super().__init__(raw)
+        self._path = path
 
-#     @property
-#     def provider(self):
-#         pass
+    @property
+    def provider(self):
+        return 'osfstorage'
 
-#     @property
-#     def kind(self):
-#         pass
+    @property
+    def kind(self):
+        return self.raw['kind']
 
-#     @property
-#     def name(self):
-#         pass
+    @property
+    def name(self):
+        return os.path.split(self.path)[1]
 
-#     @property
-#     def path(self):
-#         pass
+    @property
+    def path(self):
+        return self._path
 
-#     @property
-#     def modified(self):
-#         pass
+    @property
+    def modified(self):
+        return self.raw['modified']
 
-#     @property
-#     def size(self):
-#         pass
+    @property
+    def size(self):
+        return self.raw.get('size')
 
-#     @property
-#     def extra(self):
-#         return {}
+    @property
+    def extra(self):
+        return {}
