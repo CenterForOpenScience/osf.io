@@ -36,11 +36,11 @@ var entry = {
         'bootbox',
         'select2',
         'hgrid',
-        'osf-helpers',
+        'osfHelpers',
         'knockout-punches',
         'dropzone',
         'knockout-sortable',
-        'dropzone-patch',
+        'dropzonePatch',
         'rubeus',
         'jquery.cookie'
     ]
@@ -93,15 +93,14 @@ module.exports = {
             // Dropzone doesn't have a proper 'main' entry in its bower.json
             'dropzone': staticPath('vendor/bower_components/dropzone/downloads/dropzone.js'),
             // Also alias some internal libraries for easy access
-            'dropzone-patch': staticPath('js/dropzone-patch.js'),
+            'dropzonePatch': staticPath('js/dropzonePatch.js'),
             'rubeus': staticPath('js/rubeus.js'),
             'folderpicker': staticPath('js/folderPicker.js'),
-            'osf-helpers': staticPath('js/osf-helpers.js'),
-            'osf-language': staticPath('js/osf-language.js'),
+            'osfHelpers': staticPath('js/osfHelpers.js'),
+            'osfLanguage': staticPath('js/osfLanguage.js'),
             'addons': path.join(__dirname, 'website', 'addons'),
-            'addon-helpers': staticPath('js/addons.js'),
-            'ko-helpers': staticPath('js/koHelpers.js'),
-            'metadata-1': staticPath('js/metadata_1.js'),
+            'addonHelper': staticPath('js/addonHelper.js'),
+            'koHelpers': staticPath('js/koHelpers.js')
         }
     },
     plugins: [

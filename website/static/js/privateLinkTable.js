@@ -3,7 +3,7 @@ var ko = require('knockout');
 require('bootstrap-editable');
 var bootbox = require('bootbox');
 var ZeroClipboard = require('zeroclipboard');
-var $osf = require('osf-helpers');
+var $osf = require('osfHelpers');
 
 // Make sure ZeroClipboard finds the right flash file
 ZeroClipboard.config({

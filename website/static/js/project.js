@@ -5,7 +5,7 @@ var $ = require('jquery');
 var bootbox = require('bootbox');
 
 var LogFeed = require('./logFeed.js');
-var osfHelpers = require('./osf-helpers.js');
+var $osf = require('osfHelpers');
 
 var NodeActions = {}; // Namespace for NodeActions
 
@@ -16,7 +16,7 @@ NodeActions.beforeForkNode = function(url, done) {
         contentType: 'application/json'
     }).done(function(response) {
         bootbox.confirm(
-            osfHelpers.joinPrompts(response.prompts, 'Are you sure you want to fork this project?'),
+            $osf.joinPrompts(response.prompts, 'Are you sure you want to fork this project?'),
             function(result) {
                 if (result) {
                     done && done();
@@ -24,26 +24,26 @@ NodeActions.beforeForkNode = function(url, done) {
             }
         );
     }).fail(
-        osfHelpers.handleJSONError
+        $osf.handleJSONError
     );
 };
 
 NodeActions.forkNode = function() {
     NodeActions.beforeForkNode(nodeApiUrl + 'fork/before/', function() {
         // Block page
-        osfHelpers.block();
+        $osf.block();
         // Fork node
-        osfHelpers.postJSON(
+        $osf.postJSON(
             nodeApiUrl + 'fork/',
             {}
         ).done(function(response) {
             window.location = response;
         }).fail(function(response) {
-            osfHelpers.unblock();
+            $osf.unblock();
             if (response.status === 403) {
-                osfHelpers.growl('Sorry:', 'you do not have permission to fork this project');
+                $osf.growl('Sorry:', 'you do not have permission to fork this project');
             } else {
-                osfHelpers.growl('Error:', 'Forking failed');
+                $osf.growl('Error:', 'Forking failed');
                 Raven.captureMessage('Error occurred during forking');
             }
         });
@@ -57,17 +57,17 @@ NodeActions.forkPointer = function(pointerId) {
         callback: function(result) {
             if(result) {
                 // Block page
-                osfHelpers.block();
+                $osf.block();
 
                 // Fork pointer
-                osfHelpers.postJSON(
+                $osf.postJSON(
                     nodeApiUrl + 'pointer/fork/',
                     {pointerId: pointerId}
                 ).done(function() {
                     window.location.reload();
                 }).fail(function() {
-                    osfHelpers.unblock();
-                    osfHelpers.growl('Error','Could not fork link.');
+                    $osf.unblock();
+                    $osf.growl('Error','Could not fork link.');
                 });
             }
         }
@@ -80,7 +80,7 @@ NodeActions.beforeTemplate = function(url, done) {
         contentType: 'application/json'
     }).success(function(response) {
         bootbox.confirm(
-            osfHelpers.joinPrompts(response.prompts,
+            $osf.joinPrompts(response.prompts,
                 ('Are you sure you want to create a new project using this project as a template? ' +
                   'Any add-ons configured for this project will not be authenticated in the new project.')),
             function (result) {
@@ -99,16 +99,16 @@ NodeActions.addonFileRedirect = function(item) {
 
 NodeActions.useAsTemplate = function() {
     NodeActions.beforeTemplate('/project/new/' + nodeId + '/beforeTemplate/', function () {
-        osfHelpers.block();
+        $osf.block();
 
-        osfHelpers.postJSON(
+        $osf.postJSON(
             '/api/v1/project/new/' + nodeId + '/',
             {}
         ).done(function(response) {
             window.location = response.url;
         }).fail(function(response) {
-            osfHelpers.unblock();
-            osfHelpers.handleJSONError(response);
+            $osf.unblock();
+            $osf.handleJSONError(response);
         });
     });
 };
@@ -168,12 +168,12 @@ NodeActions._openCloseNode = function(nodeId) {
 
 
 NodeActions.reorderChildren = function(idList, elm) {
-    osfHelpers.postJSON(
+    $osf.postJSON(
         nodeApiUrl + 'reorder_components/',
         {new_list: idList}
     ).fail(function(response) {
         $(elm).sortable('cancel');
-        osfHelpers.handleJSONError(response);
+        $osf.handleJSONError(response);
     });
 };
 
@@ -189,7 +189,7 @@ NodeActions.removePointer = function(pointerId, pointerElm) {
     }).done(function() {
         pointerElm.remove();
     }).fail(
-        osfHelpers.handleJSONError
+        $osf.handleJSONError
     );
 };
 

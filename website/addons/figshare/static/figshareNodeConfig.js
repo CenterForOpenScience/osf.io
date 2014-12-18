@@ -13,7 +13,7 @@
     var FolderPicker = require('folderpicker');
     var ZeroClipboard = require('zeroclipboard');
     ZeroClipboard.config('/static/vendor/bower_components/zeroclipboard/dist/ZeroClipboard.swf');
-    var $osf = require('osf-helpers');
+    var $osf = require('osfHelpers');
 
     ko.punches.enableAll();
 /**

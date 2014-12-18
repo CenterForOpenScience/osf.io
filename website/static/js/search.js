@@ -4,7 +4,7 @@ var bootbox = require('bootbox');
 require('bootstrap.growl');
 var History = require('exports?History!history');
 
-var $osf = require('osf-helpers');
+var $osf = require('osfHelpers');
 // Enable knockout punches
 ko.punches.enableAll();
 

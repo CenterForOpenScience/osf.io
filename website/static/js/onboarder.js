@@ -13,7 +13,7 @@ require('typeahead.js');
 
 
 require('./projectCreator.js');
-var osfHelpers = require('./osf-helpers.js');
+var $osf = require('osfHelpers');
 
 function noop() {}
 var MAX_RESULTS = 14;
@@ -87,7 +87,7 @@ function initTypeahead(element, nodes, viewModel, params){
 
 // Defines the format of items in the typeahead data source
 function serializeNode(node) {
-    var dateModified = new osfHelpers.FormattableDate(node.date_modified);
+    var dateModified = new $osf.FormattableDate(node.date_modified);
     return {
         name: node.title,
         id: node.id,
