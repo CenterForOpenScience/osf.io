@@ -21,7 +21,9 @@ from website.project.model import has_anonymous_link
 def resolve_target(node, guid):
 
     if not guid:
-        return node
+        #print(".......................................", getattr(node, 'comment_pane_overview'), "................................")
+        return node.comment_pane_overview
+        #return node
     target = Guid.load(guid)
     if target is None:
         raise HTTPError(http.BAD_REQUEST)

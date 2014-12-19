@@ -25,6 +25,12 @@ var ABUSE_CATEGORIES = {
     violence: 'Violence or harmful behavior'
 };
 
+var INDICES = { // TODO rename
+    'total': 0,
+    'overview': 1,
+    'files': 2
+}
+
 /*
     * Format UTC datetime relative to current datetime, ensuring that time
     * is in the past.
@@ -171,6 +177,7 @@ BaseComment.prototype.submitReply = function() {
         {
             target: self.id(),
             content: self.replyContent(),
+            // add overview or files here
         }
     ).done(function(response) {
         self.cancelReply();

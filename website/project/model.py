@@ -148,7 +148,7 @@ def validate_comment_reports(value, *args, **kwargs):
             )
 
 
-class Comment(GuidStoredObject):
+class Comment(GuidStoredObject): # TODO add pane; backref declares new property? Declare type here
 
     _id = fields.StringField(primary=True)
 
@@ -172,8 +172,9 @@ class Comment(GuidStoredObject):
 
     @classmethod
     def create(cls, auth, **kwargs):
-
+        print(",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,",kwargs.get('target'),",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,")
         comment = cls(**kwargs)
+        print(",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,",comment.target,",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,")
         comment.save()
 
         comment.node.add_log(
@@ -273,6 +274,20 @@ class Comment(GuidStoredObject):
         if save:
             self.save()
 
+class CommentPane(StoredObject):
+
+    # The key is also its primary key
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    node = fields.ForeignField('node', required=True)
+
+    @classmethod
+    def create(cls, **kwargs):
+        commentpane = cls(**kwargs)
+        #print(",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,",comment.target,",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,")
+        commentpane.save()
+        #commentpane.node.save()
+
+        return commentpane
 
 class ApiKey(StoredObject):
 
@@ -624,6 +639,11 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     piwik_site_id = fields.StringField()
 
+    comment_pane_overview = fields.ForeignField('commentpane', backref='project')
+    comment_pane_files = fields.ForeignField('commentpane', backref='project')
+
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", comment_pane_overview,"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+
     _meta = {
         'optimistic': True,
     }
@@ -635,7 +655,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         project = kwargs.get('project')
         if project and project.category != 'project':
             raise ValueError('Parent must be a project.')
-
+        if not kwargs.get('comment_pane_overview'):
+            self.comment_pane_overview = CommentPane.create(node=self)
+            self.comment_pane_files = CommentPane.create(node=self)
         if kwargs.get('_is_loaded', False):
             return
 
@@ -646,6 +668,10 @@ class Node(GuidStoredObject, AddonModelMixin):
             # Add default creator permissions
             for permission in CREATOR_PERMISSIONS:
                 self.add_permission(self.creator, permission, save=False)
+
+        if not kwargs.get('comment_pane_overview'):
+            self.comment_pane_overview = CommentPane.create()
+            self.comment_pane_files = CommentPane.create()
 
     def __repr__(self):
         return ('<Node(title={self.title!r}, category={self.category!r}) '
