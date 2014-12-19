@@ -1,5 +1,5 @@
 <% import json %>
-<% import website.settings %>
+<% from website import settings %>
 
 <!DOCTYPE html>
 <html lang="en">
