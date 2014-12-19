@@ -588,10 +588,14 @@ var ListViewModel = function(ContentModel, urls, modes) {
     self.hasValidProperty(true);
 
     /** Determine if any of the models in the list are dirty
-        *
-        * Emulates the interface of TrackedMixin.dirty
-        * */
+    *
+    * Emulates the interface of TrackedMixin.dirty
+    * */
     self.dirty = function() {
+        // if the length of the list has changed
+        if (self.originalItems.length !== self.contents().length) {
+            return true;
+        }
         for (var i=0; i<self.contents().length; i++) {
             if (
                 // object has changed
