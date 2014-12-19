@@ -219,6 +219,7 @@
     % for url in css_all:
     <link rel="stylesheet" href="${url}">
     % endfor
+    ## <link rel="stylesheet" href="/static/css/site.css">
 
     <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
     <script>window.jQuery || document.write('<script src="/static/vendor/bower_components/jQuery/dist/jquery.min.js">\x3C/script>')</script>
