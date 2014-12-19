@@ -142,6 +142,22 @@ class DropboxProvider(core.BaseProvider):
 
         return DropboxMetadata(data, self.folder).serialized()
 
+    @asyncio.coroutine
+    def revisions(self, path, **kwargs):
+        response = yield from self.make_request(
+            'GET',
+            self.build_url('revisions', 'auto', self.build_path(path)),
+            expects=(200, ),
+            throws=exceptions.RevisionError
+        )
+
+        data = yield from response.json()
+
+        return [
+            DropboxRevision(item).serialized()
+            for item in data
+        ]
+
 
 class DropboxMetadata(core.BaseMetadata):
 
@@ -174,3 +190,29 @@ class DropboxMetadata(core.BaseMetadata):
     @property
     def modified(self):
         return self.raw['modified']
+
+
+# TODO dates!
+class DropboxRevision(core.BaseRevision):
+
+    @property
+    def provider(self):
+        return 'dropbox'
+
+    @property
+    def size(self):
+        return self.raw['bytes']
+
+    @property
+    def modified(self):
+        return self.raw['modified']
+
+    @property
+    def revision(self):
+        return self.raw['rev']
+
+    @property
+    def extra(self):
+        return {
+            'revisionNumber': self.raw['revision']
+        }
