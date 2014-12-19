@@ -188,9 +188,9 @@ def test_upload_create(provider, upload_response, file_content, file_stream):
     message = 'so hungry'
     path = upload_response['content']['path'][::-1]
     metadata_url = provider.build_repo_url('contents', os.path.dirname(path))
-    aiopretty.register_json_uri('GET', metadata_url, body=[upload_response['content']], status=201)
+    aiopretty.register_json_uri('GET', metadata_url, body=[upload_response['content']], status=200)
     upload_url = provider.build_repo_url('contents', path)
-    aiopretty.register_json_uri('PUT', upload_url, body=upload_response)
+    aiopretty.register_json_uri('PUT', upload_url, body=upload_response, status=201)
     yield from provider.upload(file_stream, path, message)
     expected_data = {
         'path': path,
