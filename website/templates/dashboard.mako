@@ -31,7 +31,7 @@
             <span class='organizer-legend'><img alt="Registered Component" src="/static/img/hgrid/reg-component.png">Registered Component</span>
             <span class='organizer-legend'><img alt="Link" src="/static/img/hgrid/pointer.png">Link</span>
         </div><!-- end project-organizer -->
-    </div>
+    </div><!-- end col -->
 
     ## Knockout componenet templates
     <%include file="components/dashboard_templates.mako"/>
@@ -88,7 +88,7 @@
                 ## <%include file="dashboard_badges.mako"/>
             ## %endif
         </div><!-- end .tab-content -->
-    </div>
+    </div><!-- end col -->
 </div><!-- end row -->
 %if 'badges' in addons_enabled:
     <div class="row">
@@ -107,7 +107,7 @@
             <div class="page-header">
                 <h3>Badges You've Awarded</h3>
             </div>
-        </div>
+        </div><!-- end col -->
     </div><!-- end row -->
 %endif
 </%def>
