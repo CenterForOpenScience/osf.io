@@ -44,6 +44,10 @@ class MetadataError(ProviderError):
     pass
 
 
+class RevisionsError(ProviderError):
+    pass
+
+
 class FileNotFoundError(ProviderError):
     def __init__(self, path):
         super().__init__('Could not retrieve file or directory {0}'.format(path), code=404)
