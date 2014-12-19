@@ -125,7 +125,7 @@
 
         <div class="row">
             <div class="col-md-2">
-                <img data-bind="visible: gravatarUrl(), attr.src: gravatarUrl()">
+                <img class="social-gravatar" data-bind="visible: gravatarUrl(), attr.src: gravatarUrl()">
             </div>
             <div class="col-md-10">
                 <h4><a data-bind="attr.href: url"><span>{{ user }}</span></a></h4>
@@ -139,43 +139,43 @@
                 <ul class="list-inline">
                     <li data-bind="visible: social.personal">
                         <a data-bind="attr.href: social.personal">
-                            <i class="fa fa-globe" data-toggle="tooltip" title="Personal Website"></i>
+                            <i class="fa fa-globe social-icons" data-toggle="tooltip" title="Personal Website"></i>
                         </a>
                     </li>
 
                     <li data-bind="visible: social.twitter">
                         <a data-bind="attr.href: social.twitter">
-                            <i class="fa fa-twitter" data-toggle="tooltip" title="Twitter"></i>
+                            <i class="fa fa-twitter social-icons" data-toggle="tooltip" title="Twitter"></i>
                         </a>
                     </li>
                     <li data-bind="visible: social.github">
                         <a data-bind="attr.href: social.github">
-                            <i class="fa fa-github-alt" data-toggle="tooltip" title="Github"></i>
+                            <i class="fa fa-github-alt social-icons" data-toggle="tooltip" title="Github"></i>
                         </a>
                     </li>
                     <li data-bind="visible: social.linkedIn">
                         <a data-bind="attr.href: social.linkedIn">
-                            <i class="fa fa-linkedin" data-toggle="tooltip" title="LinkedIn"></i>
+                            <i class="fa fa-linkedin social-icons" data-toggle="tooltip" title="LinkedIn"></i>
                         </a>
                     </li>
                     <li data-bind="visible: social.scholar">
                         <a data-bind="attr.href: social.scholar">
-                            <img height=14 src="/static/img/googlescholar.png"data-toggle="tooltip" title="Google Scholar">
+                            <img class="social-icons" src="/static/img/googlescholar.png"data-toggle="tooltip" title="Google Scholar">
                         </a>
                     </li>
                     <li data-bind="visible: social.impactStory">
                         <a data-bind="attr.href: social.impactStory">
-                            <i class="fa fa-info-circle" data-toggle="tooltip" title="ImpactStory"></i>
+                            <i class="fa fa-info-circle social-icons" data-toggle="tooltip" title="ImpactStory"></i>
                         </a>
                     </li>
                     <li data-bind="visible: social.orcid">
                         <a data-bind="attr.href: social.orcid">
-                            <i class="fa" data-toggle="tooltip" title="ORCiD">iD</i>
+                            <i class="fa social-icons" data-toggle="tooltip" title="ORCiD">iD</i>
                         </a>
                     </li>
                     <li data-bind="visible: social.researcherId">
                         <a data-bind="attr.href: social.researcherId">
-                            <i class="fa" data-toggle="tooltip" title="ResearcherID">R</i>
+                            <i class="fa social-icons" data-toggle="tooltip" title="ResearcherID">R</i>
                         </a>
                     </li>
                 </ul>
