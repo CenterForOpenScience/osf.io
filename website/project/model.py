@@ -172,9 +172,8 @@ class Comment(GuidStoredObject): # TODO add pane; backref declares new property?
 
     @classmethod
     def create(cls, auth, **kwargs):
-        print(",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,",kwargs.get('target'),",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,")
+
         comment = cls(**kwargs)
-        print(",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,",comment.target,",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,")
         comment.save()
 
         comment.node.add_log(
@@ -283,9 +282,8 @@ class CommentPane(StoredObject):
     @classmethod
     def create(cls, **kwargs):
         commentpane = cls(**kwargs)
-        #print(",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,",comment.target,",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,")
+
         commentpane.save()
-        #commentpane.node.save()
 
         return commentpane
 
@@ -612,6 +610,8 @@ class Node(GuidStoredObject, AddonModelMixin):
     # One of 'public', 'private'
     # TODO: Add validator
     comment_level = fields.StringField(default='private')
+    comment_pane_overview = fields.ForeignField('commentpane', backref='project')
+    comment_pane_files = fields.ForeignField('commentpane', backref='project')
 
     files_current = fields.DictionaryField()
     files_versions = fields.DictionaryField()
@@ -638,11 +638,6 @@ class Node(GuidStoredObject, AddonModelMixin):
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
     piwik_site_id = fields.StringField()
-
-    comment_pane_overview = fields.ForeignField('commentpane', backref='project')
-    comment_pane_files = fields.ForeignField('commentpane', backref='project')
-
-    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", comment_pane_overview,"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
     _meta = {
         'optimistic': True,

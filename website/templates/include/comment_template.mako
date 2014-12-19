@@ -8,7 +8,7 @@
 
     <div class="comments cp-sidebar">
         <h4>
-            <span>{{title}} Discussion</span>
+            <span>${node['title']} {{title}}Discussion</span>
             <span data-bind="foreach: {data: discussion, afterAdd: setupToolTips}" class="pull-right">
                 <a data-toggle="tooltip" data-bind="attr: {href: url, title: fullname}" data-placement="bottom">
                     <img data-bind="attr: {src: gravatarUrl}"/>

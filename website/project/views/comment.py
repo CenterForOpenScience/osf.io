@@ -18,12 +18,11 @@ from datetime import datetime
 from website.project.model import has_anonymous_link
 
 
-def resolve_target(node, guid):
+def resolve_target(node, pagename, guid):
 
     if not guid:
-        #print(".......................................", getattr(node, 'comment_pane_overview'), "................................")
-        return node.comment_pane_overview
-        #return node
+        page_attr = 'comment_pane_' + str(pagename)
+        return getattr(node, page_attr, node.comment_pane_overview)
     target = Guid.load(guid)
     if target is None:
         raise HTTPError(http.BAD_REQUEST)
@@ -39,7 +38,7 @@ def collect_discussion(target, users=None):
         collect_discussion(comment, users=users)
     return users
 
-
+# TODO get discussion from comment pane (in model)
 @must_be_contributor_or_public
 def comment_discussion(**kwargs):
 
@@ -131,6 +130,7 @@ def add_comment(**kwargs):
 
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
+    page = request.json.get('page')
 
     if not node.comment_level:
         raise HTTPError(http.BAD_REQUEST)
@@ -139,7 +139,7 @@ def add_comment(**kwargs):
         raise HTTPError(http.FORBIDDEN)
 
     guid = request.json.get('target')
-    target = resolve_target(node, guid)
+    target = resolve_target(node, page, guid)
 
     content = request.json.get('content').strip()
     content = sanitize(content)
@@ -163,11 +163,13 @@ def add_comment(**kwargs):
 
 
 @must_be_contributor_or_public
-def list_comments(auth, **kwargs):
+def list_comments(auth, page=None, **kwargs):
     node = kwargs['node'] or kwargs['project']
+    if not page:
+        page = request.args.get('page')
     anonymous = has_anonymous_link(node, auth)
     guid = request.args.get('target')
-    target = resolve_target(node, guid)
+    target = resolve_target(node, page, guid)
     serialized_comments = serialize_comments(target, auth, anonymous)
     n_unread = 0
 
@@ -246,7 +248,8 @@ def update_comments_timestamp(auth, **kwargs):
     if node.is_contributor(auth.user):
         auth.user.comments_viewed_timestamp[node._id] = datetime.utcnow()
         auth.user.save()
-        list_comments(**kwargs)
+        page = request.json.get('page')
+        list_comments(page=page, **kwargs)
         return {node._id: auth.user.comments_viewed_timestamp[node._id].isoformat()}
     else:
         return {}

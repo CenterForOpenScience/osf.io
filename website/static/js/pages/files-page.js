@@ -18,6 +18,6 @@ if ($comments.length) {
     var userName = window.contextVars.currentUser.name;
     var canComment = window.contextVars.currentUser.canComment;
     var hasChildren = window.contextVars.node.hasChildren;
-    var title = window.contextVars.node.title + ' Files';
-    Comment.init('.commentPane', title, userName, canComment, hasChildren);
+    var page = 'files';
+    Comment.init('.commentPane', page, userName, canComment, hasChildren);
 }

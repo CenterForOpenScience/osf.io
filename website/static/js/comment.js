@@ -25,12 +25,6 @@ var ABUSE_CATEGORIES = {
     violence: 'Violence or harmful behavior'
 };
 
-var INDICES = { // TODO rename
-    'total': 0,
-    'overview': 1,
-    'files': 2
-}
-
 /*
     * Format UTC datetime relative to current datetime, ensuring that time
     * is in the past.
@@ -77,6 +71,8 @@ var BaseComment = function() {
 
     self._loaded = false;
     self.id = ko.observable();
+
+    self.page = ''; // Default
 
     self.errorMessage = ko.observable();
     self.editErrorMessage = ko.observable();
@@ -146,7 +142,10 @@ BaseComment.prototype.fetch = function() {
     }
     $.getJSON(
         nodeApiUrl + 'comments/',
-        {target: self.id()},
+        {
+            target: self.id(),
+            page: self.page
+        },
         function(response) {
             self.comments(
                 ko.utils.arrayMap(response.comments.reverse(), function(comment) {
@@ -177,7 +176,7 @@ BaseComment.prototype.submitReply = function() {
         {
             target: self.id(),
             content: self.replyContent(),
-            // add overview or files here
+            page: self.page
         }
     ).done(function(response) {
         self.cancelReply();
@@ -422,7 +421,7 @@ CommentModel.prototype.onSubmitSuccess = function() {
 /*
     *
     */
-var CommentListModel = function(userName, title, canComment, hasChildren) {
+var CommentListModel = function(userName, pageName, canComment, hasChildren) {
 
     BaseComment.prototype.constructor.call(this);
 
@@ -431,7 +430,15 @@ var CommentListModel = function(userName, title, canComment, hasChildren) {
     self.$root = self;
     self.MAXLENGTH = MAXLENGTH;
 
-    self.title = title;
+    self.title = ko.computed(function(){
+        if (pageName === 'total' || pageName === 'overview') {
+            return '';
+        } else {
+            var modified = pageName.substring(0,1).toUpperCase() + pageName.substring(1) + ' ';
+            return modified;
+        }
+    });
+    self.page = pageName;
     self.editors = 0;
     self.commented = ko.observable(false);
     self.userName = ko.observable(userName);
@@ -469,8 +476,13 @@ CommentListModel.prototype.initListeners = function() {
 };
 
 var timestampUrl = nodeApiUrl + 'comments/timestamps/';
-var onOpen = function() {
-    var request = osfHelpers.putJSON(timestampUrl);
+var onOpen = function(pagename) {
+    var request = osfHelpers.putJSON(
+        timestampUrl,
+        {
+            page: pagename
+        }
+    );
     request.fail(function(xhr, textStatus, errorThrown) {
         Raven.captureMessage('Could not update comment timestamp', {
             url: timestampUrl,
@@ -480,9 +492,9 @@ var onOpen = function() {
     });
 };
 
-var init = function(selector, title, userName, canComment, hasChildren) {
-    new CommentPane(selector, {onOpen: onOpen});
-    var viewModel = new CommentListModel(userName, title, canComment, hasChildren);
+var init = function(selector, pageName, userName, canComment, hasChildren) {
+    new CommentPane(selector, {onOpen: onOpen(pageName)});
+    var viewModel = new CommentListModel(userName, pageName, canComment, hasChildren);
     var $elm = $(selector);
     if (!$elm.length) {
         throw('No results found for selector');
