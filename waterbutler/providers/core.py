@@ -160,6 +160,9 @@ class BaseProvider(metaclass=abc.ABCMeta):
     def metadata(self, **kwargs):
         pass
 
+    def revisions(self, **kwargs):
+        return []
+
 
 class BaseMetadata(metaclass=abc.ABCMeta):
 
@@ -199,6 +202,41 @@ class BaseMetadata(metaclass=abc.ABCMeta):
 
     @abc.abstractproperty
     def size(self):
+        pass
+
+    @property
+    def extra(self):
+        return {}
+
+
+class BaseRevision(metaclass=abc.ABCMeta):
+
+    def __init__(self, raw):
+        self.raw = raw
+
+    def serialized(self):
+        return {
+            'provider': self.provider,
+            'size': self.size,
+            'modified': self.modified,
+            'revision': self.revision,
+            'extra': self.extra,
+        }
+
+    @abc.abstractproperty
+    def provider(self):
+        pass
+
+    @abc.abstractproperty
+    def modified(self):
+        pass
+
+    @abc.abstractproperty
+    def size(self):
+        pass
+
+    @abc.abstractproperty
+    def revision(self):
         pass
 
     @property
