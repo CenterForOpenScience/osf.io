@@ -11,7 +11,7 @@
     <div class="alert alert-info"><strong>NOTICE: </strong>Forks, registrations, and uploads will be temporarily disabled while the OSF undergoes a hardware upgrade. These features will return shortly. Thank you for your patience.</div>
 % endif
 <div class="row">
-    <div class="col-md-7">
+    <div class="col-sm-7">
         <div class="project-details"></div>
         <div class="page-header">
             <div class="pull-right"><a class="btn btn-default" href="/folder/${dashboard_id}" id = "${dashboard_id}">New Folder</a></div>
@@ -31,11 +31,11 @@
             <span class='organizer-legend'><img alt="Registered Component" src="/static/img/hgrid/reg-component.png">Registered Component</span>
             <span class='organizer-legend'><img alt="Link" src="/static/img/hgrid/pointer.png">Link</span>
         </div><!-- end project-organizer -->
-    </div> <!-- end col-md -->
+    </div><!-- end col -->
 
     ## Knockout componenet templates
     <%include file="components/dashboard_templates.mako"/>
-    <div class="col-md-5">
+    <div class="col-sm-5">
         <div class="ob-tab-head" id="obTabHead">
             <ul class="nav nav-tabs" role="tablist">
             <li class="active"><a href="#quicktasks" role="tab" data-toggle="tab">Quick Tasks</a></li>
@@ -88,11 +88,11 @@
                 ## <%include file="dashboard_badges.mako"/>
             ## %endif
         </div><!-- end .tab-content -->
-    </div><!-- end col-md -->
+    </div><!-- end col -->
 </div><!-- end row -->
 %if 'badges' in addons_enabled:
     <div class="row">
-        <div class="col-md-5">
+        <div class="col-sm-5">
             <div class="page-header">
               <button class="btn btn-success pull-right" id="newBadge" type="button">New Badge</button>
                 <h3>Your Badges</h3>
@@ -102,12 +102,12 @@
                      "uri": "/api/v1/dashboard/get_badges/",
                      "replace": true
                 }'></div>
-        </div><!-- end col-md -->
-        <div class="col-md-5">
+        </div>
+        <div class="col-sm-5">
             <div class="page-header">
                 <h3>Badges You've Awarded</h3>
             </div>
-        </div><!-- end col-md-->
+        </div><!-- end col -->
     </div><!-- end row -->
 %endif
 </%def>
