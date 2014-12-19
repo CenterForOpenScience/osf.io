@@ -44,7 +44,9 @@ def comment_discussion(**kwargs):
 
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
-    users = collect_discussion(node)
+    page_name = request.args.get('page')
+    target = getattr(node, 'comment_pane_' + str(page_name), node)
+    users = collect_discussion(target)
     anonymous = has_anonymous_link(node, auth)
     # Sort users by comment frequency
     # TODO: Allow sorting by recency, combination of frequency and recency

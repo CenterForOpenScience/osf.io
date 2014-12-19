@@ -459,6 +459,9 @@ CommentListModel.prototype.fetchDiscussion = function() {
     var self = this;
     $.getJSON(
         nodeApiUrl + 'comments/discussion/',
+        {
+            page: self.page
+        },
         function(response) {
             self.discussion(response.discussion);
         }
