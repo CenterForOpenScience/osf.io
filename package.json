@@ -1,0 +1,11 @@
+{
+  "name": "OSF",
+  "version": "0.0.0",
+  "description": "",
+  "author": "Center for Open Science",
+  "devDependencies": {
+    "exports-loader": "^0.6.2",
+    "imports-loader": "^0.6.3",
+    "webpack": "^1.4.13"
+  }
+}

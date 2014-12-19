@@ -1,30 +1,25 @@
-
 /**
  * Module that controls the GitHub node settings. Includes Knockout view-model
  * for syncing data.
  */
 
+'use strict';
 
+var ko = require('knockout');
+require('knockout-punches');
+var $ = require('jquery');
+var bootbox = require('bootbox');
+var Raven = require('raven-js');
 
-;(function (global, factory) {
-    if (typeof define === 'function' && define.amd) {
-        define(['knockout', 'jquery',
-                'zeroclipboard', 'osfutils', 'knockoutpunches'], factory);
-    } else if (typeof $script === 'function') {
-        $script.ready(['folderPicker', 'zeroclipboard'], function() {
+var ZeroClipboard = require('zeroclipboard');
+ZeroClipboard.config('/static/vendor/bower_components/zeroclipboard/dist/ZeroClipboard.swf');
+var $osf = require('osfHelpers');
 
-            global.GithubNodeConfig  = factory(ko, jQuery, ZeroClipboard);
-            $script.done('githubNodeConfig');
-        });
-    } else {
-        global.GithubNodeConfig  = factory(ko, jQuery, ZeroClipboard);
-    }
-}(this, function(ko, $, FolderPicker, ZeroClipboard) {
-    'use strict';
-    ko.punches.attributeInterpolationMarkup.enable();
-    /**
-     * Knockout view model for the Github node settings widget.
-     */
+ko.punches.enableAll();
+/**
+    * Knockout view model for the Github node settings widget.
+    */
+
     var ViewModel = function(url, submitUrl, selector) {
         var self = this;
         var repoInFiles;
@@ -309,5 +304,4 @@
         window.bobob = self.viewModel;
     }
 
-    return GithubNodeConfig;
-}));
+    module.exports = GithubNodeConfig;

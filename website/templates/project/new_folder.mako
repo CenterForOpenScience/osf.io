@@ -26,11 +26,11 @@
 </%def>
 
 <%def name="javascript_bottom()">
+${parent.javascript_bottom()}
 <script>
-    $script(['/static/js/folderCreator.js'], function() {
-
-        var folderCreator = new FolderCreator('#creationForm', '/api/v1/folder/${node_id}');
-    });
+    window.contextVars = window.contextVars || {};
+    window.contextVars.nodeID = '${node_id}';
 </script>
+<script src="/static/public/js/new-folder-page.js"></script>
 </%def>
 

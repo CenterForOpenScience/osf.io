@@ -1,6 +1,5 @@
 <%inherit file="project/addon/view_file.mako" />
 
-
 <%def name="file_versions()">
 <div class="scripted" id="revisionScope">
     <div id="deletingAlert" class="alert alert-warning fade">
@@ -70,10 +69,17 @@
     </div>
 </div>
 
-<script>
-    $script(["/static/addons/dropbox/revisions.js"], function() {
-        var url = '${revisions_url}';
-        var revisionTable = new RevisionTable('#revisionScope', url);
+<script type="text/javascript">
+    window.contextVars = $.extend(true, {}, window.contextVars, {
+        node: {
+            urls: {
+                revisions_url: '${revisions_url}'
+                }
+        }
     });
 </script>
+</%def>
+<%def name="javascript_bottom()">
+${parent.javascript_bottom()}
+<script src="/static/public/js/dropbox/file-detail.js"></script>
 </%def>

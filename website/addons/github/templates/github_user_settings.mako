@@ -30,13 +30,6 @@
 
 <%include file="profile/addon_permissions.mako" />
 
-<script>
-    $script(['/static/addons/github/githubUserConfig.js'], function() {
-        // Endpoint for github user settings
-        var url = '/api/v1/settings/github/';
-        // Start up the Github Config manager
-        var github = new GithubUserConfig('#githubAddonScope', url);
-    });
-</script>
+
 
 

@@ -1,3 +1,7 @@
+var $osf = require('osfHelpers');
+var bootbox = require('bootbox');
+var $ = require('jquery');
+
 (function() {
 
     function newBucket() {
@@ -21,7 +25,7 @@
                 });
             } else {
                 bucketName = bucketName.toLowerCase();
-                $.osf.postJSON(
+                $osf.postJSON(
                     nodeApiUrl + 's3/newbucket/',
                     {bucket_name: bucketName}
                 ).done(function() {
@@ -55,18 +59,18 @@
         }).done(function() {
             window.location.reload();
         }).fail(
-            $.osf.handleJSONError
+            $osf.handleJSONError
         );
     };
 
     function importNodeAuth() {
-        $.osf.postJSON(
+        $osf.postJSON(
             nodeApiUrl + 's3/import-auth/',
             {}
         ).done(function() {
             window.location.reload();
         }).fail(
-            $.osf.handleJSONError
+            $osf.handleJSONError
         );
     }
 
@@ -92,11 +96,27 @@
             importNodeAuth();
         });
 
+        $('#s3_bucket').on('change', function(){
+            if($(this)[0].value == "" )
+                $('#showSubmit').hide();
+            else {
+                $('#bucketInDisplay')[0].textContent = "Connect " + '"' + $(this)[0].value + '"';
+                $('#showSubmit').show();
+            }
+        })
+
+
+        $('#cancel').on('click', function(){
+            $('#s3_bucket').val("");
+            $('#showSubmit').hide();
+
+        })
+
         $('#addonSettingsS3 .addon-settings-submit').on('click', function() {
             var $bucket = $('#s3_bucket');
             if ($bucket.length && !$bucket.val()) {
                 return false;
-            }
+            }   
         });
 
     });

@@ -5,6 +5,7 @@ These settings can be overridden in local.py.
 """
 
 import os
+import json
 
 os_env = os.environ
 
@@ -18,6 +19,7 @@ APP_PATH = parent_dir(BASE_PATH)
 ADDON_PATH = os.path.join(BASE_PATH, 'addons')
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = "/static"
+ROOT = os.path.join(BASE_PATH, '..')
 
 LOAD_BALANCER = False
 
@@ -61,6 +63,12 @@ FROM_EMAIL = 'openscienceframework-noreply@osf.io'
 MAIL_SERVER = 'smtp.sendgrid.net'
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = ''  # Set this in local.py
+
+# Mailchimp
+MAILCHIMP_API_KEY = None
+MAILCHIMP_WEBHOOK_SECRET_KEY = 'CHANGEME'  # OSF secret key to ensure webhook is secure
+ENABLE_EMAIL_SUBSCRIPTIONS = False
+MAILCHIMP_GENERAL_LIST = 'Open Science Framework General'
 
 # TODO: Override in local.py
 MAILGUN_API_KEY = None
@@ -148,23 +156,14 @@ CELERY_IMPORTS = (
     'framework.email.tasks',
     'framework.render.tasks',
     'framework.analytics.tasks',
+    'website.mailchimp_utils',
 )
 
 # Add-ons
 
-ADDONS_REQUESTED = [
-    # 'badges',
-    'dataverse',
-    'dropbox',
-    'figshare',
-    'forward',
-    'github',
-    # 'osffiles',
-    'osfstorage',
-    's3',
-    'twofactor',
-    'wiki',
-]
+# Load addons from addons.json
+with open(os.path.join(ROOT, 'addons.json')) as fp:
+    ADDONS_REQUESTED = json.load(fp)['addons']
 
 ADDON_CATEGORIES = [
     'documentation',

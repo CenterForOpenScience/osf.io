@@ -17,6 +17,8 @@ from website import settings
 
 logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+
 def get_bin_path():
     """Get parent path of current python binary.
     """
@@ -485,6 +487,8 @@ def setup():
 
 @task
 def analytics():
+    from website.app import init_app
+    init_app()
     from scripts.analytics import (
         logs, addons, comments, links, watch, email_invites,
         permissions, profile, benchmarks
@@ -644,6 +648,40 @@ def bundle_certs(domain, cert_path):
     )
     run(cmd)
 
+@task
+def clean_assets():
+    """Remove built JS files."""
+    build_path = os.path.join(HERE,
+                              'website',
+                              'static',
+                              'public',
+                              'js',
+                              '*')
+    run('rm -rf {0}'.format(build_path), echo=True)
+
+
+@task(aliases=['pack'])
+def webpack(clean=False, watch=False, production=False):
+    """Build static assets with webpack."""
+    if clean:
+        clean_assets()
+    args = ['webpack']
+    if settings.DEBUG_MODE and not production:
+        args += ['--colors']
+    else:
+        args += ['-p', '--progress']
+    if watch:
+        args += ['--watch']
+    command = ' '.join(args)
+    run(command, echo=True)
+
+@task()
+def assets(production=False, watch=False):
+    """Install and build static assets."""
+    bower_install()
+    # Always set clean=False to prevent possible mistakes
+    # on prod
+    webpack(clean=False, watch=watch, production=production)
 
 @task
 def generate_self_signed(domain):

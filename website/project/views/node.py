@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 import httplib as http
+import os
 
 from flask import request
 from modularodm import Q
@@ -23,6 +24,7 @@ from website.project.decorators import (
     must_have_permission,
     must_not_be_registration,
 )
+from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, get_pointer_parent
 from website.project.forms import NewNodeForm
 from website.models import Node, Pointer, WatchConfig, PrivateLink
@@ -320,11 +322,38 @@ def node_setting(**kwargs):
     rv['addon_enabled_settings'] = addon_enabled_settings
     rv['addon_capabilities'] = settings.ADDON_CAPABILITIES
 
+    rv['addon_js'] = collect_node_config_js(node.get_addons())
+
     rv['comments'] = {
         'level': node.comment_level,
     }
 
     return rv
+
+def collect_node_config_js(addons):
+    """Collect webpack bundles for each of the addons' node-cfg.js modules. Return
+    the URLs for each of the JS modules to be included on the node addons config page.
+
+    :param list addons: List of node's addon config records.
+    """
+    js_modules = []
+    for addon in addons:
+
+        file_path = os.path.join('static',
+                                 'public',
+                                 'js',
+                                 addon.config.short_name,
+                                 'node-cfg.js')
+        js_file = os.path.join(
+            settings.BASE_PATH,
+            file_path,
+        )
+        if os.path.exists(js_file):
+            js_path = os.path.join(
+                '/', file_path
+            )
+            js_modules.append(js_path)
+    return js_modules
 
 
 @must_have_permission('write')
@@ -372,6 +401,12 @@ def view_project(**kwargs):
     primary = '/api/v1' not in request.path
     rv = _view_project(node_to_use, auth, primary=primary)
     rv['addon_capabilities'] = settings.ADDON_CAPABILITIES
+    # Collect the URIs to the static assets for addons that have widgets
+    rv['addon_widget_js'] = list(collect_addon_js(
+        node_to_use,
+        filename='widget-cfg.js',
+        config_entry='widget'
+    ))
     return rv
 
 
@@ -948,7 +983,7 @@ def get_children(auth, **kwargs):
             for node in node_to_use.nodes
             if not node.is_deleted
         ]
-    return _render_nodes(nodes)
+    return _render_nodes(nodes, auth)
 
 
 @must_be_contributor_or_public

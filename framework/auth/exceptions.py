@@ -26,10 +26,17 @@ class LoginNotAllowedError(AuthError):
     """
     pass
 
+
+class LoginDisabledError(AuthError):
+    """Raised if the ``User.is_disabled`` is True for the user logging in."""
+    pass
+
+
 class PasswordIncorrectError(AuthError):
     """Raised if login is called with an incorrect password attempt.
     """
     pass
+
 
 class TwoFactorValidationError(AuthError):
     """Raised in case an incorrect two-factor code is provided by the user."""

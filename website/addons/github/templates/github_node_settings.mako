@@ -48,8 +48,8 @@
                     <div class="row" style="padding-top: 20px" data-bind="visible:SelectedRepository() && SelectedRepository()!=repoFullName()  ">
                         <h4 class="col-md-8">Connect "<span data-bind="text:SelectedRepository()"></span>"?</h4>
                         <div class="col-md-4">
-                            <button class="btn btn-default pull-right" data-bind="click:cancel">Cancel</button>
                             <input type="submit" class="btn btn-primary pull-right" value="Submit">
+                            <button class="btn btn-default pull-right" data-bind="click:cancel">Cancel</button>
                         </div>
                     </div>
                 </form>
@@ -59,16 +59,3 @@
 
     </div><!-- End of githubScope-->
 
-
-<script>
-    $script.ready('zeroclipboard', function() {
-        ZeroClipboard.config({moviePath: '/static/vendor/bower_components/zeroclipboard/ZeroClipboard.swf'})
-    });
-    $script(['/static/addons/github/githubNodeConfig.js']);
-    $script.ready('githubNodeConfig', function() {
-
-        var url = '${node["api_url"] + "github/config/"}';
-        var submitUrl = '${node["api_url"] + "github/settings/"}'
-        var github = new GithubNodeConfig('#githubScope', url, submitUrl);
-    });
-</script>

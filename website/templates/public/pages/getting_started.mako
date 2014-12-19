@@ -61,7 +61,7 @@
                     <div id="start" class="headOne padded anchor">Getting Started</div>
                     <div id="start-one"></div>
                     <img class="gs-count" src="/static/img/one_big.gif">
-                    <p class="lead"> Getting started with the OSF is easy and we provide you with the tools you need to organize your organize your research and communicate efficiently with your collaborators </p>
+                    <p class="lead"> Getting started with the OSF is easy and we provide you with the tools you need to organize your research and communicate efficiently with your collaborators </p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
                         <div class="embed-responsive-item youtube-loader" id="A3HV4T156TI"></div>
                     </div>
@@ -134,7 +134,7 @@
                     <p class="gs-header">Forks</p>
                     <p>Forking a project means you have created a copy of it into your dashboard, and can change that copy for your own purposes. You will be the only contributor to the forked project until you add others.</p>
                     <p>Forks will automatically reference the original project as a functional citation.  Over time, the network of forks trace the evolution of project materials.</p>
-                    <p>To fork a project, visit the project and click the button at the top right of the page. This will give you several options on how you can duplicate a project. Click "Fork" and a fork will be created.</p>
+                    <p>To fork a project, visit the project and click the button at the top right of the page. This will give you several options on how you can duplicate a project. Click "Fork" and a fork will be created. It is important to note that the fork will contain only public components, or those for which you are a contributor. Private components that you do not have access to will not be forked.</p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
                         <div class="embed-responsive-item youtube-loader" id="qW5_AycdsWU"></div>
                     </div>

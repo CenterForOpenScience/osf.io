@@ -24,15 +24,7 @@ CONFIGS = ['user', 'node']
 
 CATEGORIES = ['storage']
 
-INCLUDE_JS = {
-    'widget': ['jquery.githubRepoWidget.js', 'github-rubeus-cfg.js'],
-    'page': [
-        'hgrid-github.js',
-    ],
-    'files': [
-        'github-rubeus-cfg.js',
-    ]
-}
+INCLUDE_JS = {}
 
 INCLUDE_CSS = {
     'widget': ['github-rubeus.css'],

@@ -1,19 +1,16 @@
 /**
- * View model that controls the Github configuration on the user settings page.
- */
-;(function (global, factory) {
-    if (typeof define === 'function' && define.amd) {
-        define(['knockout', 'jquery', 'osfutils', 'language'], factory);
-    } else if (typeof $script === 'function') {
-        global.GithubUserConfig  = factory(ko, jQuery);
-        $script.done('githubUserConfig');
-    } else {
-        global.GithubUserConfig  = factory(ko, jQuery);
-    }
-}(this, function(ko, $) {
-    'use strict';
+* View model that controls the Github configuration on the user settings page.
+*/
+'use strict';
+var ko = require('knockout');
+require('knockout-punches');
+ko.punches.enableAll();
+var $ = require('jquery');
+var Raven = require('raven-js');
+var bootbox = require('bootbox');
 
-    var language = $.osf.Language.Addons.dropbox;
+var language = require('osfLanguage').Addons.github;
+var osfHelpers = require('osfHelpers');
 
     function ViewModel(url) {
         self.userHasAuth = ko.observable(false);
@@ -98,5 +95,5 @@
         self.viewModel = new ViewModel(url);
         $.osf.applyBindings(self.viewModel, '#githubAddonScope');
     }
-    return GithubUserConfig;
-}));
+
+    module.exports = GithubUserConfig;
