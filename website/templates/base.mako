@@ -1,11 +1,14 @@
 <% import json %>
+<% import website.settings %>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <title>OSF | ${self.title()}</title>
-    <meta name="google-site-verification" content="yQ1rPOQ6Uapvn9esS0Fue9IrWbuVviP40z3z_NB-ylU" />
+    % if settings.GOOGLE_SITE_VERIFICATION:
+        <meta name="google-site-verification" content="${settings.GOOGLE_SITE_VERIFICATION}" />
+    % endif
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="${self.description()}">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -95,44 +98,33 @@
 % endif
 
     <%include file="footer.mako"/>
-
-        %if use_cdn:
-##            <div id="fb-root"></div>
-##            <script>(function(d, s, id) {
-##              var js, fjs = d.getElementsByTagName(s)[0];
-##              if (d.getElementById(id)) {return;}
-##              js = d.createElement(s); js.id = id;
-##              js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
-##              fjs.parentNode.insertBefore(js, fjs);
-##            }(document, 'script', 'facebook-jssdk'));</script>
-
+        % if settings.PINGDOM_ID:
             <script>
-            var _prum = [['id', '526076f6abe53d9e35000000'],
-                         ['mark', 'firstbyte', (new Date()).getTime()]];
+            var _prum = [['id', '${settings.PINGDOM_ID}'],
+                            ['mark', 'firstbyte', (new Date()).getTime()]];
             (function() {
                 var s = document.getElementsByTagName('script')[0]
-                  , p = document.createElement('script');
+                    , p = document.createElement('script');
                 p.async = 'async';
                 p.src = '//rum-static.pingdom.net/prum.min.js';
                 s.parentNode.insertBefore(p, s);
             })();
             </script>
+        % endif
 
+        % if settings.GOOGLE_ANALYTICS_ID:
             <script>
-
             (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
             (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
             m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
             })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
-            ga('create', 'UA-26813616-1', 'auto', {'allowLinker': true});
+            ga('create', '${settings.GOOGLE_ANALYTICS_ID}', 'auto', {'allowLinker': true});
             ga('require', 'linker');
             ga('linker:autoLink', ['centerforopenscience.org'] );
             ga('send', 'pageview');
-
             </script>
-
-        %endif
+        % endif
 
         % if piwik_host:
             <script src="${ piwik_host }piwik.js" type="text/javascript"></script>
