@@ -93,11 +93,27 @@ class GithubProvider(core.BaseProvider):
         response = yield from self.make_request(
             'GET',
             self.build_repo_url('contents', path),
+            expects=(200, ),
+            throws=exceptions.MetadataError
         )
         data = yield from response.json()
         return [
             GithubMetadata(item).serialized()
             for item in data
+        ]
+
+    @asyncio.coroutine
+    def revisions(self, path, sha=None):
+        response = yield from self.make_request(
+            'GET',
+            self.build_repo_url('commits', path=path, sha=sha),
+            expects=(200, ),
+            throws=exceptions.RevisionsError
+        )
+
+        return [
+            GithubRevision(item).serialized()
+            for item in (yield from response.json())
         ]
 
 
@@ -132,3 +148,23 @@ class GithubMetadata(core.BaseMetadata):
         return {
             'sha': self.raw['sha']
         }
+
+
+# TODO dates!
+class GithubRevision(core.BaseRevision):
+
+    @property
+    def provider(self):
+        return 'github'
+
+    @property
+    def size(self):
+        return None
+
+    @property
+    def modified(self):
+        return self.raw['commit']['committer']['date']
+
+    @property
+    def revision(self):
+        return self.raw['sha']
