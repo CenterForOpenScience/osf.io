@@ -109,7 +109,8 @@ function resolveconfigOption(item, option, args) {
 function _fangornResolveToggle(item) {
     var toggleMinus = m('i.icon-minus', ' '),
         togglePlus = m('i.icon-plus', ' ');
-    if (item.kind === 'folder' && (item.children.length > 0 || item.data.addon)) {
+    // check if folder has children whether it's lazyloaded or not.
+    if (item.kind === 'folder') {
         if (item.open) {
             return toggleMinus;
         }

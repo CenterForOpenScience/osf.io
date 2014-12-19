@@ -39,7 +39,7 @@ var entry = {
         'treebeard',
         'osfHelpers',
         'knockout-punches',
-        'dropzone',     
+        'dropzone',
         'knockout-sortable',
         'fangorn',
         'dropzonePatch',

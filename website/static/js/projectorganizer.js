@@ -23,7 +23,7 @@ var copyMode = null;
 var projectOrganizer = {};
 
 /**
- * TODO: Fill description
+ * Bloodhound is a typeahead suggestion engine. Searches here for public projects
  * @type {Bloodhound}
  */
 projectOrganizer.publicProjects = new Bloodhound({
@@ -47,7 +47,7 @@ projectOrganizer.publicProjects = new Bloodhound({
 });
 
 /**
- * TODO : Fill description
+ * Bloodhound is a typeahead suggestion engine. Searches here for users projects
  * @type {Bloodhound}
  */
 projectOrganizer.myProjects = new Bloodhound({
@@ -78,13 +78,12 @@ projectOrganizer.myProjects = new Bloodhound({
  * @private
  */
 function _poTitleColumn(item) {
-    //  smart folders should be italicized.
     var css = item.data.isSmartFolder ? 'project-smart-folder smart-folder' : '';
     return m('span', { 'class' : css }, item.data.name);
 }
 
 /**
- *
+ * Links for going to project pages on the action column
  * @param event Click event
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
  * @param {Object} col Column options
@@ -96,7 +95,7 @@ function _gotoEvent(event, item, col) {
 }
 
 /**
- * Add description
+ * Watching for escape key press
  * @param {String} nodeID Unique ID of the node
  */
 function addFormKeyBindings(nodeID) {
@@ -380,6 +379,11 @@ function _showProjectDetails(event, item, col) {
             saveExpandState(theItem, function () {
                 var putAction = $osf.putJSON(url, postData);
                 putAction.done(function () {
+                    //var icon = $('.tb-row[data-id="' + item.id + '"]').find('.tb-toggle-icon'),
+                    //    iconTemplate = treebeard.options.resolveToggle.call(treebeard, item);
+                    //if (icon.get(0)) {
+                    //    m.render(icon.get(0), iconTemplate);
+                    //}
                     treebeard.updateFolder(null, item);
                     $('.project-details').hide();
                 }).fail($osf.handleJSONError);
@@ -648,13 +652,15 @@ function _poResolveIcon(item) {
  * @private
  */
 function _poResolveToggle(item) {
-    var toggleMinus = m('i.icon-minus', ' '),
-        togglePlus = m('i.icon-plus', ' '),
+    var toggleMinus = m('i.icon-minus'),
+        togglePlus = m('i.icon-plus'),
         childrenCount = item.data.childrenCount || item.children.length;
     if (item.kind === 'folder' && childrenCount > 0) {
         if (item.open) {
+            //console.log(item.data.name, "Toggle Minus:", toggleMinus);
             return toggleMinus;
         }
+        //console.log(item.data.name, "Toggle Plus:", togglePlus);
         return togglePlus;
     }
     return '';
@@ -711,9 +717,9 @@ function _poLoadOpenChildren() {
  * @private
  */
 function _poMultiselect(event, tree) {
+    console.log(this, tree);
     var tb = this,
         selectedRows = filterRowsNotInParent.call(this, this.multiselected),
-        multipleItems = false,
         someItemsAreFolders,
         pointerIds;
     if (selectedRows.length > 1) {
@@ -819,7 +825,7 @@ function filterRowsNotInParent(rows) {
  * @param ui jQuery UI draggable ui object
  * @private
  */
-function _poDragStart (event, ui) {
+function _poDragStart(event, ui) {
     var itemID = $(event.target).attr('data-id'),
         item = this.find(itemID);
     if (this.multiselected.length < 2) {
@@ -850,7 +856,7 @@ function _poOver(event, ui) {
     var items = this.multiselected.length === 0 ? [this.find(this.selected)] : this.multiselected,
         folder = this.find($(event.target).attr('data-id')),
         dragState = dragLogic.call(this, event, items, ui);
-    $('.tb-row').removeClass('tb-h-success po-hover');
+    $('.tb-row').removeClass('tb-h-success po-hover po-hover-multiselect');
     if (dragState !== 'forbidden') {
         $('.tb-row[data-id="' + folder.id + '"]').addClass('tb-h-success');
     } else {
@@ -872,7 +878,7 @@ $(document).keyup(function (e) {
 });
 
 /**
- * Sets the copy state based on which item is being dragged on what
+ * Sets the copy state based on which item is being dragged on which other item
  * @param {Object} event Browser drag event
  * @param {Array} items List of items being dragged at the time. Each item is a _item object
  * @param {Object} ui jQuery UI draggable drag ui object
@@ -931,7 +937,7 @@ function dragLogic(event, items, ui) {
 /**
  * Checks if the folder can accept the items dropped on it
  * @param {Array} items List of items being dragged at the time. Each item is a _item object
- * @param {Object} folder Folder information as _item object
+ * @param {Object} folder Folder information as _item object, the drop target
  * @returns {boolean} canDrop Whether drop can happen
  */
 function canAcceptDrop(items, folder) {
@@ -942,8 +948,6 @@ function canAcceptDrop(items, folder) {
         copyable,
         movable,
         canDrop;
-    // folder is the drop target.
-    // items is an array of things to go into the drop target.
     if (folder.data.isSmartFolder || !folder.data.isFolder) {
         return false;
     }
@@ -990,12 +994,13 @@ function canAcceptDrop(items, folder) {
  * @param {Object} folder Folder information as _item object
  */
 function dropLogic(event, items, folder) {
+    console.log("Droplogic : items, folder", items, folder);
     var tb = this,
         theFolderNodeID,
         getChildrenURL,
         folderChildren,
         sampleItem,
-        itemParentID,
+        //itemParentID,
         itemParent,
         itemParentNodeID,
         getAction;
@@ -1003,7 +1008,7 @@ function dropLogic(event, items, folder) {
         theFolderNodeID = folder.data.node_id;
         getChildrenURL = folder.data.apiURL + 'get_folder_pointers/';
         sampleItem = items[0];
-        itemParentID = sampleItem.parentID;
+        //itemParentID = sampleItem.parentID;
         itemParent = sampleItem.parent();
         itemParentNodeID = itemParent.data.node_id;
         if (itemParentNodeID !== theFolderNodeID) { // This shouldn't happen, but if it does, it's bad
@@ -1064,9 +1069,10 @@ function dropLogic(event, items, folder) {
                         postAction.fail(function (jqxhr, textStatus, errorThrown) {
                             $osf.growl('Error:', textStatus + '. ' + errorThrown);
                         });
-                    } else { // From:  if (itemsToMove.length > 0)
-                        tb.updateFolder(null, itemParent);
                     }
+                    // else { // From:  if (itemsToMove.length > 0)
+                    //    tb.updateFolder(null, itemParent);
+                    //}
                 }
             });
             getAction.fail(function (jqxhr, textStatus, errorThrown) {
@@ -1104,7 +1110,12 @@ function whichIsContainer(itemOne, itemTwo) {
     return null;
 }
 
-// OSF-specific Treebeard options common to all addons
+
+//
+/**
+ * OSF-specific Treebeard options common to all addons.
+ * For documentation visit: https://github.com/caneruguz/treebeard/wiki
+ */
 var tbOptions = {
     rowHeight : 30,         // user can override or get from .tb-row height
     showTotal : 15,         // Actually this is calculated with div height, not needed. NEEDS CHECKING
@@ -1135,15 +1146,12 @@ var tbOptions = {
     },
     onload : function () {
         var tb = this;
-        // reload the data with expand options
         _poLoadOpenChildren.call(tb);
     },
     createcheck : function (item, parent) {
-        window.console.log('createcheck', this, item, parent);
         return true;
     },
-    deletecheck : function (item) {  // When user attempts to delete a row, allows for checking permissions etc.
-        window.console.log('deletecheck', this, item);
+    deletecheck : function (item) {
         return true;
     },
     ontogglefolder : function (item, event) {
@@ -1182,7 +1190,6 @@ ProjectOrganizer.prototype = {
     init: function () {
         this._initGrid();
     },
-    // Create the Treebeard once all addons have been configured
     _initGrid: function () {
         this.grid = new Treebeard(this.options);
         return this.grid;
