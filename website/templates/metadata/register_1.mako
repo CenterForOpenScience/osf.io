@@ -11,7 +11,7 @@
                 <hr />
 
                 <p class="help-block">${language.BEFORE_REGISTRATION_INFO}</p>
-
+            % if not dev_mode:
                 <div class="form-group">
                     <label>
                         Type "register" if you are sure you want to continue
@@ -20,15 +20,22 @@
                         <input class="form-control" data-bind="value:$root.continueText, valueUpdate: 'afterkeydown'" />
                     </div>
                 </div>
+            % endif
 
             </div>
 
         % endif
 
         % if not registered:
+            % if dev_mode:
+                <button id="register-submit" class="btn btn-success">
+                Register Now
+            </button>
+            % else:
             <button id="register-submit" class="btn btn-success" data-bind="visible:$root.continueFlag, focus:$root.continueFlag">
                 Register Now
             </button>
+            % endif
         % endif
 
     </form>
