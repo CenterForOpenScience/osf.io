@@ -1,9 +1,9 @@
 import os
 
-from waterbutler.providers import core
+from waterbutler.core import metadata
 
 
-class S3FileMetadata(core.BaseMetadata):
+class S3FileMetadata(metadata.BaseMetadata):
 
     @property
     def provider(self):
@@ -36,7 +36,7 @@ class S3FileMetadata(core.BaseMetadata):
         }
 
 
-class S3FolderMetadata(core.BaseMetadata):
+class S3FolderMetadata(metadata.BaseMetadata):
 
     @property
     def provider(self):

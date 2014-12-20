@@ -1,3 +1,4 @@
 boto
 lxml==3.4.1
-git+https://github.com/icereval/waterbutler.git#egg=waterbutler
+# -e git+https://github.com/icereval/waterbutler-core.git#egg=waterbutler-core
+-e /Users/michael/Projects/cos/waterbutler-core

@@ -6,10 +6,10 @@ from tests.mocking import aiopretty
 import io
 import hashlib
 
-from waterbutler import streams
-from waterbutler.providers import exceptions
+from waterbutler.core import streams
+from waterbutler.core import exceptions
 
-from waterbutler_s3.provider import S3Provider
+from waterbutler.s3.providers import S3Provider
 
 
 @pytest.fixture

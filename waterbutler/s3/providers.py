@@ -5,20 +5,15 @@ import hashlib
 from lxml import objectify
 from boto.s3.connection import S3Connection
 
-import waterbutler.settings
-from waterbutler import streams
-from waterbutler.providers import core
-from waterbutler.providers import exceptions
+from waterbutler.core import streams
+from waterbutler.core import providers
+from waterbutler.core import exceptions
 
-from waterbutler_s3 import metadata
-from waterbutler_s3 import settings
-
-
-config = getattr(waterbutler.settings, 'S3_PROVIDER_CONFIG', {})
-TEMP_URL_SECS = config.get('TEMP_URL_SECS', settings.TEMP_URL_SECS)
+from waterbutler.s3 import metadata
+from waterbutler.s3 import settings
 
 
-class S3Provider(core.BaseProvider):
+class S3Provider(providers.BaseProvider):
     """Provider for the Amazon's S3
     """
 
@@ -49,7 +44,7 @@ class S3Provider(core.BaseProvider):
         source_path = '/' + os.path.join(self.settings['bucket'], source_options['path'])
         headers = {'x-amz-copy-source': source_path}
         url = dest_key.generate_url(
-            TEMP_URL_SECS,
+            settings.TEMP_URL_SECS,
             'PUT',
             headers=headers,
         )
@@ -76,7 +71,7 @@ class S3Provider(core.BaseProvider):
             raise exceptions.ProviderError('Path can not be empty', code=400)
 
         key = self.bucket.new_key(path)
-        url = key.generate_url(TEMP_URL_SECS, headers={'response-content-disposition': 'attachment'})
+        url = key.generate_url(settings.TEMP_URL_SECS, headers={'response-content-disposition': 'attachment'})
 
         if accept_url:
             return url
@@ -99,7 +94,7 @@ class S3Provider(core.BaseProvider):
         """
         stream.add_writer('md5', streams.HashStreamWriter(hashlib.md5))
         key = self.bucket.new_key(path)
-        url = key.generate_url(TEMP_URL_SECS, 'PUT')
+        url = key.generate_url(settings.TEMP_URL_SECS, 'PUT')
         resp = yield from self.make_request(
             'PUT', url,
             data=stream,
@@ -120,7 +115,7 @@ class S3Provider(core.BaseProvider):
         :rtype ResponseWrapper:
         """
         key = self.bucket.new_key(path)
-        url = key.generate_url(TEMP_URL_SECS, 'DELETE')
+        url = key.generate_url(settings.TEMP_URL_SECS, 'DELETE')
         yield from self.make_request(
             'DELETE',
             url,
@@ -135,7 +130,7 @@ class S3Provider(core.BaseProvider):
         :rtype dict:
         :rtype list:
         """
-        url = self.bucket.generate_url(TEMP_URL_SECS, 'GET')
+        url = self.bucket.generate_url(settings.TEMP_URL_SECS, 'GET')
         resp = yield from self.make_request(
             'GET',
             url,

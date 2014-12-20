@@ -38,5 +38,5 @@ def flake():
 
 @task
 def test():
-    cmd = 'py.test --cov-report term-missing --cov waterbutler_s3 tests'
+    cmd = 'py.test --cov-report term-missing --cov waterbutler tests'
     run(cmd, pty=True)
