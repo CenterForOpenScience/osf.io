@@ -1,5 +1,5 @@
 # git+https://github.com/icereval/waterbutler-s3.git#egg=waterbutler_dropbox
-git+https://github.com/icereval/waterbutler-s3.git#egg=waterbutler_s3
+git+https://github.com/icereval/waterbutler-s3.git#egg=waterbutler-s3
 
 # waterbutler_dropbox
 # waterbutler_figshare

@@ -5,7 +5,7 @@ import tornado.web
 from waterbutler import exceptions
 from waterbutler import settings
 from waterbutler.identity import get_identity
-from waterbutler.providers import core
+from waterbutler import core
 
 
 def list_or_value(value):

@@ -6,3 +6,4 @@ invoke
 lxml
 redis
 tornado
+-e git+https://github.com/icereval/waterbutler-core.git#egg=waterbutler-core
