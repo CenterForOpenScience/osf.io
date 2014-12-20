@@ -2,8 +2,6 @@ import sys
 
 from invoke import task, run
 
-from waterbutler import settings
-
 
 @task
 def install(upgrade=False, pip_cache=None, wheel_repo=None):
@@ -42,15 +40,3 @@ def flake():
 def test():
     cmd = 'py.test --cov-report term-missing --cov waterbutler_s3 tests'
     run(cmd, pty=True)
-
-
-@task
-def tornado(port=settings.PORT, address=settings.ADDRESS, debug=settings.DEBUG):
-    from waterbutler.server import serve
-    serve(port, address, debug)
-
-
-@task
-def celery():
-    from waterbutler.tasks import app
-    app.worker_main(['worker'])
