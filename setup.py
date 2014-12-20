@@ -7,7 +7,8 @@ install_reqs = parse_requirements('requirements.txt')
 requirements = [str(ir.req) for ir in install_reqs]
 
 setup(
-    name='waterbutler-core',
+    name='waterbutler.core',
+    namespace_packages=['waterbutler'],
     version='0.0.1',
     description='WaterButler Core Components',
     author='Center for Open Science',
