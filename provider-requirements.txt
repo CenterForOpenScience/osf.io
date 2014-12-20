@@ -1,0 +1,8 @@
+# git+https://github.com/icereval/waterbutler-s3.git#egg=waterbutler_dropbox
+git+https://github.com/icereval/waterbutler-s3.git#egg=waterbutler_s3
+
+# waterbutler_dropbox
+# waterbutler_figshare
+# waterbutler_github
+# waterbutler_osfstorage
+# waterbutler_s3

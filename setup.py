@@ -13,7 +13,6 @@ setup(
     author='Center for Open Science',
     author_email='contact@cos.io',
     url='https://github.com/CenterForOpenScience/waterbutler',
-    packages=find_packages(exclude=("tests*", )),
     package_dir={'waterbutler': 'waterbutler'},
     include_package_data=True,
     install_requires=requirements,

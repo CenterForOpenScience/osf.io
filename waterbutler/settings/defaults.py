@@ -57,3 +57,11 @@ GLACIER_VAULT = 'changeme'
 
 HMAC_SECRET = b'changeme'
 HMAC_ALGORITHM = hashlib.sha256
+
+# PROVIDERS = {
+#     'localfiles': 'waterbutler_localfiles',
+# }
+#
+# LOCALFILES_PROVIDER_CONFIG = {
+#     'PATH': '/tmp',
+# }
