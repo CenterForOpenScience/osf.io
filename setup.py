@@ -11,7 +11,7 @@ setup(
     description='WaterButler S3 Storage Provider',
     author='Center for Open Science',
     author_email='contact@cos.io',
-    url='https://github.com/CenterForOpenScience/waterbutler-s3',
+    url='https://github.com/icereval/waterbutler-s3',
     packages=find_packages(exclude=("tests*", )),
     package_dir={'waterbutler_s3': 'waterbutler_s3'},
     include_package_data=True,
