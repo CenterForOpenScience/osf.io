@@ -1,0 +1,5 @@
+decorator
+flake8
+pytest
+pytest-cov
+-r requirements.txt

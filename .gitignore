@@ -1,0 +1,10 @@
+# Created by .gitignore support plugin (hsz.mobi)
+
+.env
+.git
+.idea
+**/*.ipynb*
+**/*.pyc
+**/__pycache__
+local.py
+.coverage
