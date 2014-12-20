@@ -9,7 +9,7 @@ requirements = [str(ir.req) for ir in install_reqs]
 setup(
     name='waterbutler-core',
     version='0.0.1',
-    description='WaterButler Core',
+    description='WaterButler Core Components',
     author='Center for Open Science',
     author_email='contact@cos.io',
     url='https://github.com/CenterForOpenScience/waterbutler-core',

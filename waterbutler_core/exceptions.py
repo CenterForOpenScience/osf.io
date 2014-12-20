@@ -7,7 +7,9 @@ DEFAULT_ERROR_MSG = 'An error occurred while making a {response.method} request 
 class ProviderError(Exception):
 
     def __init__(self, message, code=400, log_message=None):
-        super().__init__(message, code=code, log_message=log_message)
+        self.message = message
+        self.code = code
+        self.log_message = log_message
 
 
 class CopyError(ProviderError):
