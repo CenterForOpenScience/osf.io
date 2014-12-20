@@ -7,8 +7,8 @@ import itertools
 import furl
 import aiohttp
 
-from waterbutler_core import exceptions
-from waterbutler_core import settings
+from waterbutler.core import exceptions
+from waterbutler.core import settings
 
 
 logger = logging.getLogger(__name__)

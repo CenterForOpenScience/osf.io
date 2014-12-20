@@ -5,7 +5,7 @@ import json
 import base64
 import collections
 
-from waterbutler_core import settings
+from waterbutler.core import settings
 
 
 # Written by @jmcarp originally
