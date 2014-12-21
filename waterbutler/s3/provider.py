@@ -6,14 +6,14 @@ from lxml import objectify
 from boto.s3.connection import S3Connection
 
 from waterbutler.core import streams
-from waterbutler.core import providers
+from waterbutler.core import provider
 from waterbutler.core import exceptions
 
 from waterbutler.s3 import metadata
 from waterbutler.s3 import settings
 
 
-class S3Provider(providers.BaseProvider):
+class S3Provider(provider.BaseProvider):
     """Provider for the Amazon's S3
     """
 
