@@ -13,7 +13,7 @@ setup(
     description='WaterButler Github Storage Provider',
     author='Center for Open Science',
     author_email='contact@cos.io',
-    url='https://github.com/CenterForOpenScience/waterbutler-s3',
+    url='https://github.com/CenterForOpenScience/waterbutler-github',
     packages=find_packages(exclude=("tests*", )),
     include_package_data=True,
     install_requires=requirements,
