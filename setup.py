@@ -25,4 +25,12 @@ setup(
         "Programming Language :: Python :: 3",
         'Programming Language :: Python :: 3.4',
     ],
+    provides=[
+        'waterbutler.providers',
+    ],
+    entry_points={
+        'waterbutler.providers': [
+            's3 = waterbutler.s3.provider:S3Provider',
+        ]
+    },
 )
