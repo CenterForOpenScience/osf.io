@@ -1,4 +1,4 @@
-from tests.mocking import aiopretty
+import aiohttpretty
 
 
 def pytest_configure(config):
@@ -11,11 +11,11 @@ def pytest_configure(config):
 def pytest_runtest_setup(item):
     marker = item.get_marker('aiopretty')
     if marker is not None:
-        aiopretty.clear()
-        aiopretty.activate()
+        aiohttpretty.clear()
+        aiohttpretty.activate()
 
 
 def pytest_runtest_teardown(item, nextitem):
     marker = item.get_marker('aiopretty')
     if marker is not None:
-        aiopretty.deactivate()
+        aiohttpretty.deactivate()
