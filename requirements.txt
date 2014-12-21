@@ -1,0 +1,3 @@
+boto
+lxml==3.4.1
+-e git+https://github.com/icereval/waterbutler-core.git#egg=waterbutler-core
