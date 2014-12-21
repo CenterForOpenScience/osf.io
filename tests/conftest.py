@@ -4,7 +4,7 @@ import aiohttpretty
 def pytest_configure(config):
     config.addinivalue_line(
         'markers',
-        'aiohttpretty: mark tests to activate aiopretty'
+        'aiohttpretty: mark tests to activate aiohttpretty'
     )
 
 
