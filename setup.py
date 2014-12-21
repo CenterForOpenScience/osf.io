@@ -8,7 +8,8 @@ requirements = [str(ir.req) for ir in install_reqs]
 
 
 setup(
-    name='waterbutler',
+    name='waterbutler-server',
+    namespace_packages=['waterbutler'],
     description='WaterButler Storage Server',
     author='Center for Open Science',
     author_email='contact@cos.io',

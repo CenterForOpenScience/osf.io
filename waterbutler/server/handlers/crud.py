@@ -3,13 +3,12 @@ import asyncio
 
 from tornado import web
 
-from waterbutler import settings
-from waterbutler.streams import RequestStreamReader
+from waterbutler.core.streams import RequestStreamReader
+
+from waterbutler.server import settings
 from waterbutler.server import utils
 from waterbutler.server.handlers import core
 
-
-loop = asyncio.get_event_loop()
 
 @web.stream_request_body
 class CRUDHandler(core.BaseHandler):

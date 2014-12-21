@@ -5,5 +5,7 @@ furl
 invoke
 lxml
 redis
+stevedore
 tornado
 -e git+https://github.com/icereval/waterbutler-core.git#egg=waterbutler-core
+-e git+https://github.com/icereval/waterbutler-s3.git#egg=waterbutler-s3
