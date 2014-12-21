@@ -1,6 +1,6 @@
-==============
-waterbutler-s3
-==============
+==================
+waterbutler-github
+==================
 
-.. image:: https://travis-ci.org/icereval/waterbutler-s3.svg?branch=master
-    :target: https://travis-ci.org/icereval/waterbutler-s3
+.. image:: https://travis-ci.org/icereval/waterbutler-github.svg?branch=master
+    :target: https://travis-ci.org/icereval/waterbutler-github
