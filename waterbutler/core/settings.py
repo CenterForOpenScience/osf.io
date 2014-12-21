@@ -8,7 +8,5 @@ except ImportError:
 config = CORE_PROVIDER_CONFIG
 
 
-PROVIDERS = config.get('PROVIDERS')
-
 HMAC_SECRET = config.get('HMAC_SECRET')
 HMAC_ALGORITHM = config.get('HMAC_ALGORITHM', hashlib.sha256)

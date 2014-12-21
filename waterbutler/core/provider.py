@@ -8,33 +8,9 @@ import furl
 import aiohttp
 
 from waterbutler.core import exceptions
-from waterbutler.core import settings
 
 
 logger = logging.getLogger(__name__)
-
-
-def get_provider(name):
-    """Return the provider *class* of the registed name
-    Raises a NotImplementedError if one is not found
-    :param str name: Name of the provider to find
-    :rtype type(BaseProvider):
-    """
-    try:
-        return settings.PROVIDERS[name]
-    except KeyError:
-        raise NotImplementedError('No provider for {}'.format(name))
-
-
-def make_provider(name, auth, credentials, settings):
-    """Fetches a provider registed under name and returns an instance of it
-    :param str name: Name of the provider
-    :param dict auth: User authorizing provider
-    :param dict credentials: Provider authentication credentials
-    :param dict settings: Provider settings
-    :rtype BaseProvider:
-    """
-    return get_provider(name)(auth, credentials, settings)
 
 
 def build_url(base, *segments, **query):
