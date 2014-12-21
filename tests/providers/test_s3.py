@@ -9,7 +9,7 @@ import hashlib
 from waterbutler.core import streams
 from waterbutler.core import exceptions
 
-from waterbutler.s3.providers import S3Provider
+from waterbutler.s3.provider import S3Provider
 
 
 @pytest.fixture
