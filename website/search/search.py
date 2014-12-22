@@ -19,9 +19,8 @@ def requires_search(func):
 
 
 @requires_search
-def search(query, index='website', search_type=None, raw=False):
-    return search_engine.search(query, index=index, search_type=search_type, raw=raw)
-
+def search(query, index='website', doc_type=None, raw=False):
+    return search_engine.search(query, index=index, doc_type=doc_type, raw=raw)
 
 @requires_search
 def update_node(node, index='website'):
@@ -38,12 +37,16 @@ def delete_all():
     search_engine.delete_all()
 
 @requires_search
+def delete_index(index):
+    search_engine.delete_index(index)
+
+@requires_search
 def create_index():
     search_engine.create_index()
 
 
 @requires_search
-def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
+def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
     result = search_engine.search_contributor(query=query, page=page, size=size,
                                               exclude=exclude, current_user=current_user)
     return result

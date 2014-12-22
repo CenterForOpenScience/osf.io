@@ -10,6 +10,7 @@
         <div class="panel panel-default">
             <ul class="nav nav-stacked nav-pills">
                 <li><a href="${ web_url_for('user_profile') }">Profile Information</a></li>
+                <li><a href="${ web_url_for('user_account') }">Account Settings</a></li>
                 <li><a href="#">Configure Add-ons</a></li>
                 <li><a href="${ web_url_for('user_apikeys') }">Configure API Keys</a></li>
             </ul>
@@ -117,7 +118,7 @@
             });
             request.fail(function() {
                 var msg = 'Sorry, we had trouble saving your settings. If this persists please contact <a href="mailto: support@osf.io">support@osf.io</a>';
-                bootbox.alert({title: 'Request failed', message: msg});
+                $.osf.growl('Request failed', msg);
             });
         }
 

@@ -125,13 +125,10 @@ class TestProjectViews(OsfTestCase):
     def setUp(self):
         super(TestProjectViews, self).setUp()
         ensure_schemas()
-        self.user1 = UserFactory.build()
-        # Add an API key for quicker authentication
-        api_key = ApiKeyFactory()
-        self.user1.api_keys.append(api_key)
+        self.user1 = AuthUserFactory()
         self.user1.save()
-        self.consolidate_auth1 = Auth(user=self.user1, api_key=api_key)
-        self.auth = ('test', api_key._primary_key)
+        self.consolidate_auth1 = Auth(user=self.user1)
+        self.auth = self.user1.auth
         self.user2 = UserFactory()
         # A project has 2 contributors
         self.project = ProjectFactory(
@@ -139,9 +136,7 @@ class TestProjectViews(OsfTestCase):
             description='Honey-baked',
             creator=self.user1
         )
-        self.project.add_contributor(self.user1)
-        self.project.add_contributor(self.user2)
-        self.project.api_keys.append(api_key)
+        self.project.add_contributor(self.user2, auth=Auth(self.user1))
         self.project.save()
 
     def test_edit_description(self):
@@ -701,6 +696,70 @@ class TestProjectViews(OsfTestCase):
         assert_equal(1, res.json['node']['fork_count'])
 
 
+class TestChildrenViews(OsfTestCase):
+
+    def setUp(self):
+        OsfTestCase.setUp(self)
+        self.user = AuthUserFactory()
+
+    def test_get_children(self):
+        project = ProjectFactory(creator=self.user)
+        child = NodeFactory(project=project, creator=self.user)
+
+        url = project.api_url_for('get_children')
+        res = self.app.get(url, auth=self.user.auth)
+
+        nodes = res.json['nodes']
+        assert_equal(len(nodes), 1)
+        assert_equal(nodes[0]['id'], child._primary_key)
+
+    def test_get_children_includes_pointers(self):
+        project = ProjectFactory(creator=self.user)
+        pointed = ProjectFactory()
+        project.add_pointer(pointed, Auth(self.user))
+        project.save()
+
+        url = project.api_url_for('get_children')
+        res = self.app.get(url, auth=self.user.auth)
+
+        nodes = res.json['nodes']
+        assert_equal(len(nodes), 1)
+        assert_equal(nodes[0]['title'], pointed.title)
+        pointer = Pointer.find_one(Q('node', 'eq', pointed))
+        assert_equal(nodes[0]['id'], pointer._primary_key)
+
+    def test_get_children_filter_for_permissions(self):
+        # self.user has admin access to this project
+        project = ProjectFactory(creator=self.user)
+
+        # self.user only has read access to this project, which project points
+        # to
+        read_only_pointed =  ProjectFactory()
+        read_only_creator = read_only_pointed.creator
+        read_only_pointed.add_contributor(self.user, auth=Auth(read_only_creator), permissions=['read'])
+        read_only_pointed.save()
+
+        # self.user only has read access to this project, which is a subproject
+        # of project
+        read_only = ProjectFactory()
+        read_only_pointed.add_contributor(self.user, auth=Auth(read_only_creator), permissions=['read'])
+        project.nodes.append(read_only)
+
+
+        # self.user adds a pointer to read_only
+        project.add_pointer(read_only_pointed, Auth(self.user))
+        project.save()
+
+        url = project.api_url_for('get_children')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['nodes']), 2)
+
+        url = project.api_url_for('get_children', permissions='write')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['nodes']), 0)
+
+
+
 class TestUserProfile(OsfTestCase):
 
     def setUp(self):
@@ -926,6 +985,101 @@ class TestUserProfile(OsfTestCase):
         url = api_url_for('unserialize_jobs')
         res = self.app.put_json(url, payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
+
+
+class TestUserAccount(OsfTestCase):
+
+    def setUp(self):
+        super(TestUserAccount, self).setUp()
+        self.user = AuthUserFactory()
+        self.user.set_password('password')
+        self.user.save()
+
+    @mock.patch('website.profile.views.push_status_message')
+    def test_password_change_valid(self, mock_push_status_message):
+        old_password = 'password'
+        new_password = 'Pa$$w0rd'
+        confirm_password = new_password
+        url = web_url_for('user_account_password')
+        post_data = {
+            'old_password': old_password,
+            'new_password': new_password,
+            'confirm_password': confirm_password,
+        }
+        res = self.app.post(url, post_data, auth=self.user.auth)
+        assert_true(302, res.status_code)
+        res = res.follow(auth=self.user.auth)
+        assert_true(200, res.status_code)
+        self.user.reload()
+        assert_true(self.user.check_password(new_password))
+        assert_true(mock_push_status_message.called)
+        assert_in('Password updated successfully', mock_push_status_message.mock_calls[0][1][0])
+
+    @mock.patch('website.profile.views.push_status_message')
+    def test_password_change_invalid(self, mock_push_status_message, old_password='', new_password='',
+                                     confirm_password='', error_message='Old password is invalid'):
+        url = web_url_for('user_account_password')
+        post_data = {
+            'old_password': old_password,
+            'new_password': new_password,
+            'confirm_password': confirm_password,
+        }
+        res = self.app.post(url, post_data, auth=self.user.auth)
+        assert_true(302, res.status_code)
+        res = res.follow(auth=self.user.auth)
+        assert_true(200, res.status_code)
+        self.user.reload()
+        assert_false(self.user.check_password(new_password))
+        assert_true(mock_push_status_message.called)
+        assert_in(error_message, mock_push_status_message.mock_calls[0][1][0])
+
+    def test_password_change_invalid_old_password(self):
+        self.test_password_change_invalid(
+            old_password='invalid old password',
+            new_password='new password',
+            confirm_password='new password',
+            error_message='Old password is invalid',
+        )
+
+    def test_password_change_invalid_confirm_password(self):
+        self.test_password_change_invalid(
+            old_password='password',
+            new_password='new password',
+            confirm_password='invalid confirm password',
+            error_message='Password does not match the confirmation',
+        )
+
+    def test_password_change_invalid_new_password_length(self):
+        self.test_password_change_invalid(
+            old_password='password',
+            new_password='12345',
+            confirm_password='12345',
+            error_message='Password should be at least 6 characters',
+        )
+
+    def test_password_change_invalid_confirm_password(self):
+        self.test_password_change_invalid(
+            old_password='password',
+            new_password='new password',
+            confirm_password='invalid confirm password',
+            error_message='Password does not match the confirmation',
+        )
+
+    def test_password_change_invalid_blank_password(self, old_password='', new_password='', confirm_password=''):
+        self.test_password_change_invalid(
+            old_password=old_password,
+            new_password=new_password,
+            confirm_password=confirm_password,
+            error_message='Passwords cannot be blank',
+        )
+
+    def test_password_change_invalid_blank_new_password(self):
+        for password in ('', '      '):
+            self.test_password_change_invalid_blank_password('password', password, 'new password')
+
+    def test_password_change_invalid_blank_confirm_password(self):
+        for password in ('', '      '):
+            self.test_password_change_invalid_blank_password('password', 'new password', password)
 
 
 class TestAddingContributorViews(OsfTestCase):
@@ -2229,12 +2383,12 @@ class TestComments(OsfTestCase):
         self.project.reload()
 
         res_comment = res.json['comment']
-        date_created = dt.datetime.strptime(str(res_comment.pop('dateCreated')), '%Y-%m-%dT%H:%M:%S.%f')
-        date_modified = dt.datetime.strptime(str(res_comment.pop('dateModified')), '%Y-%m-%dT%H:%M:%S.%f')
+        date_created = parse_date(str(res_comment.pop('dateCreated')))
+        date_modified = parse_date(str(res_comment.pop('dateModified')))
 
         serialized_comment = serialize_comment(self.project.commented[0], self.consolidated_auth)
-        date_created2 = dt.datetime.strptime(serialized_comment.pop('dateCreated'), '%Y-%m-%dT%H:%M:%S.%f')
-        date_modified2 = dt.datetime.strptime(serialized_comment.pop('dateModified'), '%Y-%m-%dT%H:%M:%S.%f')
+        date_created2 = parse_date(serialized_comment.pop('dateCreated'))
+        date_modified2 = parse_date(serialized_comment.pop('dateModified'))
 
         assert_datetime_equal(date_created, date_created2)
         assert_datetime_equal(date_modified, date_modified2)
@@ -2251,8 +2405,6 @@ class TestComments(OsfTestCase):
 
         self.project.reload()
 
-        # Note: Use `parse_date` rather than `strptime` to avoid very rare
-        # missing floating point values
         res_comment = res.json['comment']
         date_created = parse_date(res_comment.pop('dateCreated'))
         date_modified = parse_date(res_comment.pop('dateModified'))
@@ -2277,12 +2429,12 @@ class TestComments(OsfTestCase):
         self.project.reload()
 
         res_comment = res.json['comment']
-        date_created = dt.datetime.strptime(str(res_comment.pop('dateCreated')), '%Y-%m-%dT%H:%M:%S.%f')
-        date_modified = dt.datetime.strptime(str(res_comment.pop('dateModified')), '%Y-%m-%dT%H:%M:%S.%f')
+        date_created = parse_date(str(res_comment.pop('dateCreated')))
+        date_modified = parse_date(str(res_comment.pop('dateModified')))
 
         serialized_comment = serialize_comment(self.project.commented[0], self.consolidated_auth)
-        date_created2 = dt.datetime.strptime(serialized_comment.pop('dateCreated'), '%Y-%m-%dT%H:%M:%S.%f')
-        date_modified2 = dt.datetime.strptime(serialized_comment.pop('dateModified'), '%Y-%m-%dT%H:%M:%S.%f')
+        date_created2 = parse_date(serialized_comment.pop('dateCreated'))
+        date_modified2 = parse_date(serialized_comment.pop('dateModified'))
 
         assert_datetime_equal(date_created, date_created2)
         assert_datetime_equal(date_modified, date_modified2)
@@ -2610,6 +2762,16 @@ class TestComments(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.json.get('nUnread'), 0)
 
+    def test_n_unread_comments_updates_when_comment_reply(self):
+        comment = CommentFactory(node=self.project, user=self.project.creator)
+        reply = CommentFactory(node=self.project, user=self.user, target=comment)
+        self.project.reload()
+
+        url = self.project.api_url_for('list_comments')
+        res = self.app.get(url, auth=self.project.creator.auth)
+        assert_equal(res.json.get('nUnread'), 1)
+
+
     def test_n_unread_comments_updates_when_comment_is_edited(self):
         self.test_edit_comment()
         self.project.reload()
@@ -2675,8 +2837,8 @@ class TestSearchViews(OsfTestCase):
         result = res.json['users']
         pages = res.json['pages']
         page = res.json['page']
-        assert_equal(len(result), 10)
-        assert_equal(pages, 2)
+        assert_equal(len(result), 5)
+        assert_equal(pages, 3)
         assert_equal(page, 0)
 
     def test_search_pagination_default_page_1(self):
@@ -2685,8 +2847,17 @@ class TestSearchViews(OsfTestCase):
         assert_equal(res.status_code, 200)
         result = res.json['users']
         page = res.json['page']
-        assert_equal(len(result), 2)
+        assert_equal(len(result), 5)
         assert_equal(page, 1)
+
+    def test_search_pagination_default_page_2(self):
+        url = api_url_for('search_contributor')
+        res = self.app.get(url, {'query': 'fr', 'page': 2})
+        assert_equal(res.status_code, 200)
+        result = res.json['users']
+        page = res.json['page']
+        assert_equal(len(result), 2)
+        assert_equal(page, 2)
 
     def test_search_pagination_smaller_pages(self):
         url = api_url_for('search_contributor')
@@ -3271,6 +3442,40 @@ class TestUnconfirmedUserViews(OsfTestCase):
         url = web_url_for('profile_view_id', uid=user._id)
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
+
+
+class TestProfileNodeList(OsfTestCase):
+
+    def setUp(self):
+        OsfTestCase.setUp(self)
+        self.user = AuthUserFactory()
+
+        self.public = ProjectFactory(is_public=True)
+        self.public_component = NodeFactory(project=self.public, is_public=True)
+        self.private = ProjectFactory(is_public=False)
+        self.deleted = ProjectFactory(is_public=True, is_deleted=True)
+
+        for node in (self.public, self.public_component, self.private, self.deleted):
+            node.add_contributor(self.user, auth=Auth(node.creator))
+            node.save()
+
+    def test_get_public_projects(self):
+        url = api_url_for('get_public_projects', uid=self.user._id)
+        res = self.app.get(url)
+        node_ids = [each['id'] for each in res.json['nodes']]
+        assert_in(self.public._id, node_ids)
+        assert_not_in(self.private._id, node_ids)
+        assert_not_in(self.deleted._id, node_ids)
+        assert_not_in(self.public_component._id, node_ids)
+
+    def test_get_public_components(self):
+        url = api_url_for('get_public_components', uid=self.user._id)
+        res = self.app.get(url)
+        node_ids = [each['id'] for each in res.json['nodes']]
+        assert_in(self.public_component._id, node_ids)
+        assert_not_in(self.public._id, node_ids)
+        assert_not_in(self.private._id, node_ids)
+        assert_not_in(self.deleted._id, node_ids)
 
 
 if __name__ == '__main__':

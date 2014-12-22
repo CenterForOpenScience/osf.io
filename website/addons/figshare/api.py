@@ -19,9 +19,12 @@ from . import settings as figshare_settings
 from utils import file_to_hgrid, article_to_hgrid
 
 
+def _get_project_url(node_settings, project, *args):
+    return os.path.join(node_settings.api_url, 'projects', str(project), *args)
+
 class Figshare(object):
 
-    def __init__(self, client_token, client_secret, owner_token, owner_secret):
+    def __init__(self, client_token=None, client_secret=None, owner_token=None, owner_secret=None):
         # if no OAuth
         if owner_token is None:
             self.session = requests
@@ -134,18 +137,22 @@ class Figshare(object):
         return self._send(os.path.join(node_settings.api_url, 'projects'), data=data, method='post')
 
     def delete_project(self, node_settings, project):
-        return self._send(os.path.join(node_settings.api_url, 'projects', project), method='delete')
+        url = _get_project_url(node_settings, project)
+        return self._send(url, method='delete')
 
     def add_article_to_project(self, node_settings, project, article):
         data = json.dumps({"article_id": article})
-        return self._send(os.path.join(node_settings.api_url, 'projects', project, 'articles'), data=data, method='put')
+        url = _get_project_url(node_settings, project, 'articles')
+        return self._send(url, data=data, method='put')
 
     def remove_article_from_project(self, node_settings, project, article):
         data = json.dumps({"article_id": article})
-        return self._send(os.path.join(node_settings.api_url, 'projects', project, 'articles'), data=data, method='delete')
+        url = _get_project_url(node_settings, project, 'articles')
+        return self._send(url, data=data, method='delete')
 
     def get_project_collaborators(self, node_settings, project):
-        return self._send(os.path.join(node_settings.api_url, 'projects', project, 'collaborators'))
+        url = _get_project_url(node_settings, project, 'collaborators')
+        return self._send(url)
 
     # ARTICLE LEVEL API
     def articles(self, node_settings):

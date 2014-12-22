@@ -3,6 +3,7 @@
 import importlib
 
 from modularodm import storage
+from werkzeug.contrib.fixers import ProxyFix
 
 import framework
 from framework.flask import app, add_handlers
@@ -11,6 +12,7 @@ from framework.mongo import set_up_storage
 from framework.addons.utils import render_addon_capabilities
 from framework.sentry import sentry
 from framework.mongo import handlers as mongo_handlers
+from framework.tasks import handlers as task_handlers
 from framework.transactions import handlers as transaction_handlers
 
 import website.models
@@ -19,10 +21,16 @@ from website.addons.base import init_addon
 from website.project.model import ensure_schemas
 
 
-def init_addons(settings, routes=True):
+def init_addons(settings, routes=True, log_fp=None):
+    """Initialize each addon in settings.ADDONS_REQUESTED.
+
+    :param module settings: The settings module.
+    :param bool routes: Add each addon's routing rules to the URL map.
+    :param file log_fp: File pointer for the built logs file.
+    """
     ADDONS_AVAILABLE = []
     for addon_name in settings.ADDONS_REQUESTED:
-        addon = init_addon(app, addon_name, routes)
+        addon = init_addon(app, addon_name, routes=True, log_fp=log_fp)
         if addon:
             ADDONS_AVAILABLE.append(addon)
     settings.ADDONS_AVAILABLE = ADDONS_AVAILABLE
@@ -39,6 +47,7 @@ def attach_handlers(app, settings):
     """Add callback handlers to ``app`` in the correct order."""
     # Add callback handlers to application
     add_handlers(app, mongo_handlers.handlers)
+    add_handlers(app, task_handlers.handlers)
     if settings.USE_TOKU_MX:
         add_handlers(app, transaction_handlers.handlers)
 
@@ -80,10 +89,10 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
     with open(settings.BUILT_TEMPLATES, 'w') as build_fp:
         init_log_file(build_fp, settings)
 
-    try:
-        init_addons(settings, routes)
-    except AssertionError as error:  # Addon Route map has already been created
-        logger.error(error)
+        try:
+            init_addons(settings, routes, log_fp=build_fp)
+        except AssertionError as error:  # Addon Route map has already been created
+            logger.error(error)
 
     app.debug = settings.DEBUG_MODE
     if set_backends:
@@ -109,4 +118,12 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
 
     if set_backends:
         ensure_schemas()
+    apply_middlewares(app, settings)
     return app
+
+def apply_middlewares(flask_app, settings):
+    # Use ProxyFix to respect X-Forwarded-Proto header
+    # https://stackoverflow.com/questions/23347387/x-forwarded-proto-and-flask
+    if settings.LOAD_BALANCER:
+        flask_app.wsgi_app = ProxyFix(flask_app.wsgi_app)
+    return flask_app

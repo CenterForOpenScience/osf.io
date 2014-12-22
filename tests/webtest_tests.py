@@ -10,6 +10,8 @@ from nose.tools import *  # PEP8 asserts
 
 from modularodm import Q
 
+from framework.mongo.utils import to_mongo_key
+
 from framework.auth.core import User, Auth
 from tests.base import OsfTestCase, fake
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
@@ -65,18 +67,6 @@ class TestAnUnregisteredUser(OsfTestCase):
         res = form.submit().maybe_follow()
         # sees error message because email is already registered
         assert_in('has already been registered.', res)
-
-    def test_cant_see_new_project_form(self):
-        """Can't see new project form if not logged in.
-        """
-        res = self.app.get(web_url_for('project_new'))
-        assert_equal(res.status_code, 302)
-        res = res.follow(expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_in(
-            'You must log in to access this resource',
-            res,
-        )
 
     def test_cant_see_profile(self):
         """Can't see profile if not logged in.
@@ -287,12 +277,13 @@ class TestAUser(OsfTestCase):
 
     def test_wiki_page_name_non_ascii(self):
         project = ProjectFactory(creator=self.user)
-        non_ascii = 'WöRlÐé'
-        res = self.app.get('/{0}/wiki/{1}/'.format(
+        non_ascii = to_mongo_key('WöRlÐé')
+        self.app.get('/{0}/wiki/{1}/'.format(
             project._primary_key,
             non_ascii
-        ), auth=self.auth)
-        assert_in('No wiki content', res)
+        ), auth=self.auth, expect_errors=True)
+        project.update_node_wiki(non_ascii, 'new content', Auth(self.user))
+        assert_in(non_ascii, project.wiki_pages_current)
 
     def test_noncontributor_cannot_see_wiki_if_no_content(self):
         user2 = UserFactory()
@@ -302,6 +293,15 @@ class TestAUser(OsfTestCase):
         res = self.app.get(project.url).maybe_follow()
         # Should not see wiki widget (since non-contributor and no content)
         assert_not_in('No wiki content', res)
+
+    def test_wiki_does_not_exist(self):
+        project = ProjectFactory(creator=self.user)
+        res = self.app.get('/{0}/wiki/{1}/'.format(
+            project._primary_key,
+            'not a real page yet',
+        ), auth=self.auth, expect_errors=True)
+        assert_in('This wiki page does not currently exist.', res)
+        assert_equal(res.status_code, 404)
 
     def test_sees_own_profile(self):
         res = self.app.get('/profile/', auth=self.auth)
@@ -735,19 +735,6 @@ class TestShortUrls(OsfTestCase):
         with open(cache_file_path, 'w') as fp:
             fp.write('test content')
 
-    def test_file_url(self):
-        node_file = self.component.add_file(
-            self.consolidate_auth, 'test.txt',
-            'test content', 4, 'text/plain'
-        )
-        self._mock_rendered_file(self.component, node_file)
-        # Warm up to account for file rendering
-        _ = self._url_to_body(node_file.url(self.component))
-        assert_equal(
-            self._url_to_body(node_file.deep_url(self.component)),
-            self._url_to_body(node_file.url(self.component)),
-        )
-
     def test_wiki_url(self):
         assert_equal(
             self._url_to_body(self.wiki.deep_url),
@@ -1010,22 +997,18 @@ class TestConfirmingEmail(OsfTestCase):
         res = self.app.get(self.confirmation_url, expect_errors=True)
         assert_in('Link Expired', res)
 
-    def test_sees_flash_message_if_email_unconfirmed(self):
+    def test_flash_message_does_not_break_page_if_email_unconfirmed(self):
         # set a password for user
         self.user.set_password('bicycle')
         self.user.save()
         # Goes to log in page
         res = self.app.get('/account/').maybe_follow()
-        # Fills the form with incorrect password
-        form  = res.forms['signinForm']
+        # Fills the form with correct password
+        form = res.forms['signinForm']
         form['username'] = self.user.username
         form['password'] = 'bicycle'
         res = form.submit().maybe_follow()
         assert_in(language.UNCONFIRMED, res, 'shows flash message')
-        # clicks on resend link in flash message
-        res = res.click('Click here')
-        assert_equal(res.request.path, '/resend/', 'at resend page')
-
 
     @mock.patch('framework.auth.views.send_confirm_email')
     def test_resend_form(self, send_confirm_email):

@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
-
-import httplib as http
 import functools
+import httplib as http
 
 from furl import furl
 from flask import request
 
 from framework import status
+from framework.auth import Auth
 from framework.flask import redirect  # VOL-aware redirect
 from framework.exceptions import HTTPError
-from framework.auth import Auth, get_current_user, get_api_key
+from framework.auth.decorators import collect_auth
+
 from website.models import Node
 
 
@@ -117,20 +118,13 @@ def _must_be_contributor_factory(include_public):
             kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
             user = kwargs['auth'].user
 
-            if 'api_node' in kwargs:
-                api_node = kwargs['api_node']
-            else:
-                api_node = get_api_key()
-                kwargs['api_node'] = api_node
-
             key = request.args.get('view_only', '').strip('/')
             #if not login user check if the key is valid or the other privilege
 
             kwargs['auth'].private_key = key
             if not node.is_public or not include_public:
                 if key not in node.private_link_keys_active:
-                    if not check_can_access(node=node, user=user,
-                            api_node=api_node, key=key):
+                    if not check_can_access(node=node, user=user, key=key):
                         url = '/login/?next={0}'.format(request.path)
                         redirect_url = check_key_expired(key=key, node=node, url=url)
                         response = redirect(redirect_url)
@@ -161,13 +155,14 @@ def must_have_addon(addon_name, model):
     def wrapper(func):
 
         @functools.wraps(func)
+        @collect_auth
         def wrapped(*args, **kwargs):
-
             if model == 'node':
                 kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
                 owner = kwargs.get('node') or kwargs.get('project')
             elif model == 'user':
-                owner = get_current_user()
+                auth = kwargs.get('auth')
+                owner = auth.user if auth else None
                 if owner is None:
                     raise HTTPError(http.UNAUTHORIZED)
             else:
@@ -176,6 +171,7 @@ def must_have_addon(addon_name, model):
             addon = owner.get_addon(addon_name)
             if addon is None:
                 raise HTTPError(http.BAD_REQUEST)
+
             kwargs['{0}_addon'.format(model)] = addon
 
             return func(*args, **kwargs)
@@ -195,6 +191,7 @@ def must_be_addon_authorizer(addon_name):
     def wrapper(func):
 
         @functools.wraps(func)
+        @collect_auth
         def wrapped(*args, **kwargs):
 
             node_addon = kwargs.get('node_addon')
@@ -209,7 +206,8 @@ def must_be_addon_authorizer(addon_name):
             if not node_addon.user_settings:
                 raise HTTPError(http.BAD_REQUEST)
 
-            user = kwargs.get('user') or get_current_user()
+            auth = kwargs.get('auth')
+            user = kwargs.get('user') or (auth.user if auth else None)
 
             if node_addon.user_settings.owner != user:
                 raise HTTPError(http.FORBIDDEN)

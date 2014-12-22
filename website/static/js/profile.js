@@ -217,7 +217,7 @@
         // Warn on tab change if dirty
         $('body').on('show.bs.tab', function() {
             if (self.dirty()) {
-                bootbox.alert('There are unsaved changes to your settings. ' +
+                $.osf.growl('There are unsaved changes to your settings.',
                     'Please save or discard your changes before switching ' +
                     'tabs.');
                 return false;
@@ -301,13 +301,18 @@
                 callback: function(confirmed) {
                     if (confirmed) {
                         self.restoreOriginal();
+                        if ($.inArray('view', self.modes) !== -1) {
+                            self.mode('view');
+                        }
                     }
                 }
             });
+        } else {
+            if ($.inArray('view', self.modes) !== -1) {
+                self.mode('view');
+            }
         }
-        if ($.inArray('view', this.modes) !== -1) {
-            this.mode('view');
-        }
+
     };
 
     BaseViewModel.prototype.submit = function() {
@@ -687,7 +692,7 @@
             self.startMonth,
             self.startYear,
             self.endMonth,
-            self.endYear,
+            self.endYear
         ];
 
         var validated = ko.validatedObservable(self);
@@ -718,7 +723,7 @@
             self.startMonth,
             self.startYear,
             self.endMonth,
-            self.endYear,
+            self.endYear
         ];
 
         var validated = ko.validatedObservable(self);

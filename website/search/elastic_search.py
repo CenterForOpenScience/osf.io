@@ -6,10 +6,17 @@ import re
 import copy
 import math
 import logging
+import unicodedata
+
+import six
+
+from elasticsearch import (
+    Elasticsearch,
+    RequestError,
+    NotFoundError
+)
 
 from requests.exceptions import ConnectionError
-
-import pyelasticsearch
 
 from framework import sentry
 
@@ -17,6 +24,7 @@ from website import settings
 from website.filters import gravatar
 from website.models import User, Node
 from website.search import exceptions
+from website.search.util import build_query
 
 logger = logging.getLogger(__name__)
 
@@ -31,32 +39,36 @@ ALIASES = {
     'total': 'Total'
 }
 
+INDICES = ['website']
+
 try:
-    elastic = pyelasticsearch.ElasticSearch(
+    es = Elasticsearch(
         settings.ELASTIC_URI,
-        timeout=settings.ELASTIC_TIMEOUT
+        request_timeout=settings.ELASTIC_TIMEOUT
     )
-    logging.getLogger('pyelasticsearch').setLevel(logging.WARN)
+    logging.getLogger('elasticsearch').setLevel(logging.WARN)
+    logging.getLogger('elasticsearch.trace').setLevel(logging.WARN)
+    logging.getLogger('urllib3').setLevel(logging.WARN)
     logging.getLogger('requests').setLevel(logging.WARN)
-    elastic.health()
+    es.cluster.health(wait_for_status='yellow')
 except ConnectionError as e:
     sentry.log_exception()
     sentry.log_message("The SEARCH_ENGINE setting is set to 'elastic', but there "
             "was a problem starting the elasticsearch interface. Is "
             "elasticsearch running?")
-    elastic = None
+    es = None
 
 
 def requires_search(func):
     def wrapped(*args, **kwargs):
-        if elastic is not None:
+        if es is not None:
             try:
                 return func(*args, **kwargs)
             except ConnectionError:
                 raise exceptions.SearchUnavailableError('Could not connect to elasticsearch')
-            except pyelasticsearch.exceptions.ElasticHttpNotFoundError as e:
+            except NotFoundError as e:
                 raise exceptions.IndexNotFoundError(e.error)
-            except pyelasticsearch.exceptions.ElasticHttpError as e:
+            except RequestError as e:
                 if 'ParseException' in e.error:
                     raise exceptions.MalformedQueryError(e.error)
                 if 'MapperParsingException' in e.error:
@@ -70,20 +82,19 @@ def requires_search(func):
 
 @requires_search
 def get_counts(count_query, clean=True):
-    count_query['aggs'] = {
+    count_query['aggregations'] = {
         'counts': {
             'terms': {
                 'field': '_type',
             }
         }
     }
-    #pyelastic search is dumb
-    res = elastic.send_request('GET', ['_all', '_search'], body=count_query, query_params={'search_type': 'count'})
+
+    res = es.search(index='_all', doc_type=None, search_type='count', body=count_query)
 
     counts = {x['key']: x['doc_count'] for x in res['aggregations']['counts']['buckets'] if x['key'] in ALIASES.keys()}
 
     counts['total'] = sum([val for val in counts.values()])
-
     return counts
 
 
@@ -95,19 +106,31 @@ def get_tags(query, index):
         }
     }
 
-    results = elastic.search(query, index=index, doc_type='_all')
+    results = es.search(index=index, doc_type=None, body=query)
     tags = results['aggregations']['tag_cloud']['buckets']
 
     return tags
 
 
 @requires_search
-def search(query, index='website', search_type='_all', raw=False):
+def search(query, index='website', doc_type='_all', raw=False):
+    """Search for a query
+
+    :param query: The substring of the username/project name/tag to search for
+    :param index:
+    :param doc_type:
+
+    :return: List of dictionaries, each containing the results, counts, tags and typeAliases
+        results: All results returned by the query, that are within the index and search type
+        counts: A dictionary in which keys are types and values are counts for that type, e.g, count['total'] is the sum of the other counts
+        tags: A list of tags that are returned by the search query
+        typeAliases: the doc_types that exist in the search database
+    """
     tag_query = copy.deepcopy(query)
     count_query = copy.deepcopy(query)
 
     # Run the real query and get the results
-    raw_results = elastic.search(query, index=index, doc_type=search_type)
+    raw_results = es.search(index=index, doc_type=doc_type, body=query)
 
     if raw:
         return raw_results
@@ -207,6 +230,12 @@ def update_node(node, index='website'):
     if node.is_deleted or not node.is_public:
         delete_doc(elastic_document_id, node)
     else:
+        try:
+            normalized_title = six.u(node.title)
+        except TypeError:
+            normalized_title = node.title
+        normalized_title = unicodedata.normalize('NFKD', normalized_title).encode('ascii', 'ignore')
+
         elastic_document = {
             'id': elastic_document_id,
             'contributors': [
@@ -220,6 +249,7 @@ def update_node(node, index='website'):
                 and x.is_active()
             ],
             'title': node.title,
+            'normalized_title': normalized_title,
             'category': category,
             'public': node.is_public,
             'tags': [tag._id for tag in node.tags if tag],
@@ -238,44 +268,60 @@ def update_node(node, index='website'):
         ]:
             elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
 
-        try:
-            elastic.update(index, category, id=elastic_document_id, doc=elastic_document, upsert=elastic_document, refresh=True)
-        except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
-            elastic.index(index, category, doc=elastic_document, id=elastic_document_id, overwrite_existing=True, refresh=True)
+        es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
 
 def generate_social_links(social):
     social_links = {}
-    if 'github' in social and social['github']:
-        social_links['github'] = 'http://github.com/{}'.format(social['github'])
-    if 'impactStory' in social and social['impactStory']:
-        social_links['impactStory'] = 'https://impactstory.org/{}'.format(social['impactStory'])
-    if 'linkedIn' in social and social['linkedIn']:
-        social_links['linkedIn'] = 'https://www.linkedin.com/profile/view?id={}'.format(social['linkedIn'])
-    if 'orcid' in social and social['orcid']:
-        social_links['orcid'] = 'http://orcid.com/{}'.format(social['orcid']),
-    if 'personal' in social and social['personal']:
-        social_links['personal'] = social['personal']
-    if 'researcherId' in social and social['researcherId']:
-        social_links['researcherId'] = 'http://researcherid.com/rid/{}'.format(social['researcherId'])
-    if 'scholar' in social and social['scholar']:
-        social_links['scholar'] = 'http://scholar.google.com/citations?user={}'.format(social['scholar'])
-    if 'twitter' in social and social['twitter']:
-        social_links['twitter'] = 'http://twitter.com/{}'.format(social['twitter'])
+    if 'github' in social:
+        social_links['github'] = 'http://github.com/{}'.format(social['github']) if social['github'] else None
+    if 'impactStory' in social:
+        social_links['impactStory'] = 'https://impactstory.org/{}'.format(social['impactStory']) if social['impactStory'] else None
+    if 'linkedIn' in social:
+        social_links['linkedIn'] = 'https://www.linkedin.com/profile/view?id={}'.format(social['linkedIn']) if social['linkedIn'] else None
+    if 'orcid' in social:
+        social_links['orcid'] = 'http://orcid.com/{}'.format(social['orcid']) if social['orcid'] else None
+    if 'personal' in social:
+        social_links['personal'] = social['personal'] if social['personal'] else None
+    if 'researcherId' in social:
+        social_links['researcherId'] = 'http://researcherid.com/rid/{}'.format(social['researcherId']) if social['researcherId'] else None
+    if 'scholar' in social:
+        social_links['scholar'] = 'http://scholar.google.com/citations?user={}'.format(social['scholar']) if social['scholar'] else None
+    if 'twitter' in social:
+        social_links['twitter'] = 'http://twitter.com/{}'.format(social['twitter']) if social['twitter'] else None
     return social_links
 
 @requires_search
 def update_user(user):
     if not user.is_active():
         try:
-            elastic.delete('website', 'user', user._id, refresh=True)
-            logger.debug('User ' + user._id + ' successfully removed from the Elasticsearch index')
-        except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
-            pass  # Can't delete what's not there
+            es.delete(index='website', doc_type='user', id=user._id, refresh=True, ignore=[404])
+        except NotFoundError:
+            pass
         return
+
+    names = dict(
+        fullname=user.fullname,
+        given_name=user.given_name,
+        family_name=user.family_name,
+        middle_names=user.middle_names,
+        suffix=user.suffix
+    )
+
+    normalized_names = {}
+    for key, val in names.items():
+        if val is not None:
+            try:
+                val = six.u(val)
+            except TypeError:
+                pass  # This is fine, will only happen in 2.x if val is already unicode
+            normalized_names[key] = unicodedata.normalize('NFKD', val).encode('ascii', 'ignore')
 
     user_doc = {
         'id': user._id,
         'user': user.fullname,
+        'normalized_user': normalized_names['fullname'],
+        'normalized_names': normalized_names,
+        'names': names,
         'job': user.jobs[0]['institution'] if user.jobs else '',
         'job_title': user.jobs[0]['title'] if user.jobs else '',
         'school': user.schools[0]['institution'] if user.schools else '',
@@ -285,19 +331,18 @@ def update_user(user):
         'boost': 2,  # TODO(fabianvf): Probably should make this a constant or something
     }
 
-    try:
-        elastic.update('website', 'user', doc=user_doc, id=user._id, upsert=user_doc, refresh=True)
-    except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
-        elastic.index('website', 'user', id=user._id, doc=user_doc, upsert=user_doc, refresh=True)
+    es.index(index='website', doc_type='user', body=user_doc, id=user._id, refresh=True)
 
 
 @requires_search
 def delete_all():
-    for index in INDICES:
-        try:
-            elastic.delete_index(index)
-        except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
-            logger.warning("Index '{}' does not exist and was unable to be deleted".format(index))
+    for idx in INDICES:
+        delete_index(idx)
+
+
+@requires_search
+def delete_index(index):
+    es.indices.delete(index, ignore=[404])
 
 
 @requires_search
@@ -309,28 +354,22 @@ def create_index():
             'tags': {
                 'type': 'string',
                 'index': 'not_analyzed',
-            }
+            },
         }
     }
-    try:
-        elastic.create_index('website')
-        for type_ in ['project', 'component', 'registration', 'user']:
-            elastic.put_mapping('website', type_, mapping)
-    except pyelasticsearch.exceptions.IndexAlreadyExistsError:
-        pass  # No harm done
+    es.indices.create('website', ignore=[400])
+    for type_ in ['project', 'component', 'registration', 'user']:
+        es.indices.put_mapping(index='website', doc_type=type_, body=mapping, ignore=[400, 404])
 
 
 @requires_search
 def delete_doc(elastic_document_id, node, index='website'):
     category = 'registration' if node.is_registration else node.project_or_component
-    try:
-        elastic.delete(index, category, elastic_document_id, refresh=True)
-    except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
-        pass  # can't delete what doesn't exist
+    es.delete(index=index, doc_type=category, id=elastic_document_id, refresh=True, ignore=[404])
 
 
 @requires_search
-def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
+def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
     """Search for contributors to add to a project using elastic search. Request must
     include JSON data with a "query" field.
 
@@ -345,51 +384,15 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
 
     """
     start = (page * size)
-    query.replace(" ", "_")
-    query = re.sub(r'[\-\+]', '', query)
-    query = re.split(r'\s+', query)
-    bool_filter = {
-        'must': [],
-        'should': [],
-        'must_not': [],
-    }
-    if exclude is not None:
-        for excluded in exclude:
-            bool_filter['must_not'].append({
-                'term': {
-                    'id': excluded._id
-                }
-            })
+    items = re.split(r'[\s-]+', query)
+    query = ''
 
-    if len(query) > 1:
-        for item in query:
-            bool_filter['must'].append({
-                'prefix': {
-                    'user': item.lower()
-                }
-            })
-    else:
-        bool_filter['must'].append({
-            'prefix': {
-                'user': query[0].lower()
-            }
-        })
+    query = "  AND ".join('{}*~'.format(item) for item in items) + \
+            "".join(' NOT "{}"'.format(excluded) for excluded in exclude)
 
-    query = {
-        'query': {
-            'filtered': {
-                'filter': {
-                    'bool': bool_filter
-                }
-            }
-        },
-        'from': start,
-        'size': size,
-    }
-
-    results = elastic.search(query, index='website')
-    docs = [hit['_source'] for hit in results['hits']['hits']]
-    pages = math.ceil(results[u'hits'][u'total'] / size)
+    results = search(build_query(query, start=start, size=size), index='website', doc_type='user')
+    docs = results['results']
+    pages = math.ceil(results['counts'].get('user', 0) / size)
 
     users = []
     for doc in docs:
@@ -434,7 +437,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
     return \
         {
             'users': users,
-            'total': results[u'hits'][u'total'],
+            'total': results['counts']['total'],
             'pages': pages,
             'page': page,
         }
@@ -442,8 +445,6 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
 
 @requires_search
 def update_metadata(metadata):
-    index = "metadata"
     app_id = metadata.namespace
     data = metadata.to_json()
-    data['category'] = 'metadata'
-    elastic.update(index=index, doc_type=app_id, upsert=data, doc=data, id=metadata._id, refresh=True)
+    es.index(index='metadata', doc_type=app_id, body=data, id=metadata._id, refresh=True)

@@ -20,6 +20,8 @@
     /*
      * ViewModel for the project creation form.
      *
+     * Template: osf-project-creat-form in component/dashboard_templates.mako
+     *
      * Params:
      *  - data: Data to populate the template selection input
      */
@@ -27,15 +29,14 @@
         var self = this;
         self.params = params || {};
         self.minSearchLength = 2;
-        self.title = ko.observable('').extend({
-            maxLength: 200
-        });
-
+        self.title = ko.observable('');
         self.description = ko.observable();
         self.errorMessage = ko.observable('');
 
+        self.hasFocus = params.hasFocus;
+
         self.submitForm = function () {
-            if (self.title().trim() === ''){
+            if (self.title().trim() === '') {
                 self.errorMessage('This field is required.');
             } else {
                 self.createProject();
@@ -58,7 +59,7 @@
         };
 
         self.createFailure = function() {
-            bootbox.alert('Could not create a new project. Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
+            $.osf.growl('Could not create a new project.', 'Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
         };
 
         self.serialize = function() {
@@ -110,7 +111,7 @@
                 '/api/v1/search/node/',
                 {
                     includePublic: true,
-                    query: q,
+                    query: q
                 }
             ).done(function(data) {
                 var results = [];
@@ -165,13 +166,13 @@
         self.templates = self.loadNodes(params.data);
         $('#templates').select2({
             allowClear: true,
-            placeholder: 'Select a Project to Use as a Template',
+            placeholder: 'Select a project to use as a template',
             query: self.query
         });
     }
 
-    ko.components.register('project-create-form', {
+    ko.components.register('osf-project-create-form', {
         viewModel: ProjectCreatorViewModel,
-        template: {element: 'project-create-form'}
+        template: {element: 'osf-project-create-form'}
     });
 }));

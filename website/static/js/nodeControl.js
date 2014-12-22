@@ -13,12 +13,22 @@
 
     // Modal language
     var MESSAGES = {
-        makePublicWarning: 'Once a project is made public, there is no way to guarantee that ' +
+        makeProjectPublicWarning: 'Once a project is made public, there is no way to guarantee that ' +
                             'access to the data it contains can be completely prevented. Users ' +
                             'should assume that once a project is made public, it will always ' +
                             'be public. Are you absolutely sure you would like to continue?',
 
-        makePrivateWarning: 'Making a project private will prevent users from viewing it on this site, ' +
+        makeProjectPrivateWarning: 'Making a project private will prevent users from viewing it on this site, ' +
+                            'but will have no impact on external sites, including Google\'s cache. ' +
+                            'Would you like to continue?',
+
+        makeComponentPublicWarning: 'Once a component is made public, there is no way to guarantee that ' +
+                            'access to the data it contains can be completely prevented. Users ' +
+                            'should assume that one a component is made public, it will always ' +
+                            'be public. The rest of the project, including other components, ' +
+                            'will not be made public. Are you absolutely sure you would like to continue?',
+
+        makeComponentPrivateWarning: 'Making a component private will prevent users from viewing it on this site, ' +
                             'but will have no impact on external sites, including Google\'s cache. ' +
                             'Would you like to continue?'
     };
@@ -30,10 +40,18 @@
     };
     var PUBLIC = 'public';
     var PRIVATE = 'private';
+    var PROJECT = 'project';
+    var COMPONENT = 'component';
 
-    function setPermissions(permissions) {
+    function setPermissions(permissions, nodeType) {
 
-        var msgKey = permissions === PUBLIC ? 'makePublicWarning' : 'makePrivateWarning';
+        var msgKey;
+
+        if(permissions === PUBLIC && nodeType === PROJECT) { msgKey = 'makeProjectPublicWarning'; }
+        else if(permissions === PUBLIC && nodeType === COMPONENT) { msgKey = 'makeComponentPublicWarning'; }
+        else if(permissions === PRIVATE && nodeType === PROJECT) { msgKey = 'makeProjectPrivateWarning'; }
+        else { msgKey = 'makeComponentPrivateWarning'; }
+
         var urlKey = permissions === PUBLIC ? 'makePublic' : 'makePrivate';
         var message = MESSAGES[msgKey];
 
@@ -69,7 +87,7 @@
                         }
                     confirmModal(alerts + message);
                 }
-            )
+            );
         } else {
             confirmModal(message);
         }
@@ -89,18 +107,30 @@
         self.dateForked = new FormattableDate(data.node.forked_date);
         self.watchedCount = ko.observable(data.node.watched_count);
         self.userIsWatching = ko.observable(data.user.is_watching);
+        self.inDashboard = ko.observable(data.node.in_dashboard);
+        self.dashboard = data.user.dashboard_id;
         self.userCanEdit = data.user.can_edit;
         self.description = data.node.description;
         self.title = data.node.title;
         self.category = data.node.category;
         self.isRegistration = data.node.is_registration;
         self.user = data.user;
+        self.nodeIsPublic = data.node.is_public;
+        self.nodeType = data.node.node_type;
         // The button text to display (e.g. "Watch" if not watching)
         self.watchButtonDisplay = ko.computed(function() {
             return self.watchedCount().toString();
         });
         self.watchButtonAction = ko.computed(function() {
             return self.userIsWatching() ? 'Unwatch' : 'Watch';
+        });
+
+
+        self.canBeOrganized = ko.computed(function(){
+            if (self.user.username && (self.nodeIsPublic || self.user.is_contributor)) {
+                return true;
+            }
+            return false;
         });
 
         // Editable Title and Description
@@ -112,13 +142,13 @@
                 ajaxOptions: {
                     type: 'POST',
                     dataType: 'json',
-                    contentType: 'application/json',
+                    contentType: 'application/json'
                 },
                 params: function(params){
                     // Send JSON data
                     return JSON.stringify(params);
                 },
-                success: function(data){
+                success: function(){
                     document.location.reload(true);
                 },
                 error: $.osf.handleEditableError,
@@ -129,21 +159,58 @@
             $.fn.editable.defaults.mode = 'inline';
             $('#nodeTitleEditable').editable($.extend({}, editableOptions, {
                 name:  'title',
-                title: 'Edit Title'
+                title: 'Edit Title',
+                validate: function(value) {
+                    if($.trim(value) === '') {
+                        return 'Title cannot be blank.';
+                    }
+                }
             }));
             $('#nodeDescriptionEditable').editable($.extend({}, editableOptions, {
                 name:  'description',
                 title: 'Edit Description',
-                emptytext: "No description",
-                emptyclass: "text-muted"
+                emptytext: 'No description',
+                emptyclass: 'text-muted'
             }));
         }
+        /**
+         * Add project to the Project Organizer.
+         */
+        self.addToDashboard = function() {
+            self.inDashboard(true);
+            var jsonData = {
+                'toNodeID': self.dashboard,
+                'pointerID': self._id
+            };
+            $.osf.postJSON('/api/v1/pointer/', jsonData)
+                .fail(function(data) {
+                    self.inDashboard(false);
+                    $.osf.handleJSONError(data);
+            });
+        };
+        /**
+         * Remove project from the Project Organizer.
+         */
+        self.removeFromDashboard = function() {
+            self.inDashboard(false);
+            var deleteUrl = '/api/v1/folder/' + self.dashboard + '/pointer/' + self._id;
+            $.ajax({url: deleteUrl, type: 'DELETE'})
+                .fail(function() {
+                    self.inDashboard(true);
+                    $.osf.growl('Error', 'The project could not be removed', 'danger');
+            });
+        };
 
         /**
          * Toggle the watch status for this project.
          */
         self.toggleWatch = function() {
             // Send POST request to node's watch API url and update the watch count
+            if(self.userIsWatching()) {
+                self.watchedCount(self.watchedCount() - 1);
+            } else {
+                self.watchedCount(self.watchedCount() + 1);
+            }
             $.osf.postJSON(
                 self.apiUrl + 'togglewatch/',
                 {}
@@ -161,11 +228,11 @@
         };
 
         self.makePublic = function() {
-            return setPermissions(PUBLIC);
+            return setPermissions(PUBLIC, self.nodeType);
         };
 
         self.makePrivate = function() {
-            return setPermissions(PRIVATE);
+            return setPermissions(PRIVATE, self.nodeType);
         };
     };
 

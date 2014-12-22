@@ -283,8 +283,8 @@ def mailserver(port=1025):
 
 
 @task
-def flake():
-    run('flake8 .')
+def flake8():
+    run('flake8 .', echo=True)
 
 
 @task
@@ -328,14 +328,19 @@ def test_addons():
 
 
 @task
-def test():
+def test(all=False):
     """Alias of `invoke test_osf`.
     """
-    test_osf()
+    if all:
+        test_all()
+    else:
+        test_osf()
 
 
 @task
-def test_all():
+def test_all(flake=False):
+    if flake:
+        flake8()
     test_osf()
     test_addons()
 
@@ -528,6 +533,7 @@ def hotfix(name, finish=False, push=False):
         run('git flow hotfix finish {}'.format(next_patch_version), echo=True, pty=True)
     if push:
         run('git push origin master', echo=True)
+        run('git push --tags', echo=True)
         run('git push origin develop', echo=True)
 
 
@@ -633,7 +639,18 @@ def bundle_certs(domain, cert_path):
         for cert_file in cert_files
     )
     cmd = 'cat {certs} > {domain}.bundle.crt'.format(
-        certs=' '.join(certs),
+        certs=certs,
         domain=domain,
     )
+    run(cmd)
+
+
+@task
+def generate_self_signed(domain):
+    """Generate self-signed SSL key and certificate.
+    """
+    cmd = (
+        'openssl req -x509 -nodes -days 365 -newkey rsa:2048'
+        ' -keyout {0}.key -out {0}.crt'
+    ).format(domain)
     run(cmd)

@@ -9,9 +9,9 @@
         ">
 
         <h4 class="list-group-item-heading">
-            <span class="overflow" style="display:inline-block;">
+            <span class="component-overflow">
             % if not summary['primary']:
-              <i class="icon-hand-right" data-toggle="tooltip" title="Linked ${summary['node_type']}"></i>
+              <i class="icon icon-link" data-toggle="tooltip" title="Linked ${summary['node_type']}"></i>
             % endif
 
             % if not summary['is_public']:
@@ -50,32 +50,32 @@
         <!--Stacked bar to visualize user activity level against total activity level of a project -->
         <!--Length of the stacked bar is normalized over all projects -->
         % if not summary['anonymous']:
-            <div class="user-activity-meter">
-                <ul class="meter-wrapper">
-                    <li class="ua-meter" data-toggle="tooltip" title="${user_full_name} made ${summary['ua_count']} contributions" style="width:${summary['ua']}px;"></li>
-                    <li class="pa-meter" style="width:${summary['non_ua']}px;"></li>
-                    <li class="pa-meter-label">${summary['nlogs']} contributions</li>
-                </ul>
+            <div class="progress progress-user-activity">
+                % if summary['ua']:
+                    <div class="progress-bar progress-bar-success ${'last' if not summary['non_ua'] else ''}" style="width: ${summary['ua']}%"  data-toggle="tooltip" title="${user_full_name} made ${summary['ua_count']} contributions"></div>
+                % endif
+                % if summary['non_ua']:
+                    <div class="progress-bar progress-bar-info last" style="width: ${summary['non_ua']}%"></div>
+                % endif
             </div>
+            <span class="text-muted">${summary['nlogs']} contributions</span>
         % endif
-
         <div class="body hide" id="body-${summary['id']}" style="overflow:hidden;">
             <hr />
             Recent Activity
             <div id="logs-${summary['id']}" class="log-container" data-uri="${summary['api_url']}log/">
-                <dl class="dl-horizontal activity-log"
-                    data-bind="foreach: {data: logs, as: 'log'}">
+                <dl class="dl-horizontal activity-log" data-bind="foreach: {data: logs, as: 'log'}">
                     <dt><span class="date log-date" data-bind="text: log.date.local, tooltip: {title: log.date.utc}"></span></dt>
-                  <dd class="log-content">
-                    <span data-bind="if:log.anonymous">
-                        <span><em>A user</em></span>
-                    </span>
-                    <span data-bind="ifnot:log.anonymous">
-                        <a data-bind="text: log.userFullName || log.apiKey, attr: {href: log.userURL}"></a>
-                    </span>
-                    <!-- log actions are the same as their template name -->
-                    <span data-bind="template: {name: log.action, data: log}"></span>
-                  </dd>
+                    <dd class="log-content">
+                        <span data-bind="if:log.anonymous">
+                            <span><em>A user</em></span>
+                        </span>
+                        <span data-bind="ifnot:log.anonymous">
+                            <a data-bind="text: log.userFullName || log.apiKey, attr: {href: log.userURL}"></a>
+                        </span>
+                        <!-- log actions are the same as their template name -->
+                        <span data-bind="template: {name: log.action, data: log}"></span>
+                        </dd>
                 </dl><!-- end foreach logs -->
             </div>
          </div>

@@ -4,7 +4,7 @@
         define(['jquery', 'knockout', 'osfutils'], factory);
     } else {
         global.PrivateLinkManager  = factory(jQuery, ko);
-        $script.done("privateLinkManager");
+        $script.done('privateLinkManager');
     }
 }(this, function($, ko) {
 
@@ -14,6 +14,7 @@
 
         self.url = url;
         self.title = ko.observable('');
+        self.isPublic = ko.observable('');
         self.name = ko.observable(null);
         self.anonymous = ko.observable(false);
         self.pageTitle = 'Generate New Link to Share Project';
@@ -29,6 +30,7 @@
 
         function onFetchSuccess(response) {
             self.title(response.node.title);
+            self.isPublic(response.node.is_public);
             $.each(response['children'], function(idx, child) {
                 child['margin'] = NODE_OFFSET + child['indent'] * NODE_OFFSET + 'px';
             });
@@ -36,7 +38,7 @@
         }
 
         function onFetchError() {
-            bootbox.alert('Could not retrieve projects. Please refresh the page or ' +
+            $.osf.growl('Could not retrieve projects.', 'Please refresh the page or ' +
                     'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
                     'problem persists.');
         }
@@ -45,7 +47,7 @@
             $.ajax({
                 url: url,
                 type: 'GET',
-                dataType: 'json',
+                dataType: 'json'
             }).done(
                 onFetchSuccess
             ).fail(
@@ -86,7 +88,7 @@
             ).done(function() {
                 window.location.reload();
             }).fail(function() {
-                bootbox.alert('Failed to create a view-only Link.');
+                $.osf.growl('Error:','Failed to create a view-only link.');
                 self.disableSubmit(false);
                 self.submitText('Submit');
             });

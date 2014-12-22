@@ -158,7 +158,7 @@ class GuidFile(GuidStoredObject):
     redirect_mode = 'proxy'
 
     _id = fields.StringField(primary=True)
-    node = fields.ForeignField('node', index=True)
+    node = fields.ForeignField('node', required=True, index=True)
 
     _meta = {
         'abstract': True,
@@ -235,6 +235,11 @@ class AddonUserSettingsBase(AddonSettingsBase):
     def public_id(self):
         return None
 
+    @property
+    def has_auth(self):
+        """Whether the user has added credentials for this addon."""
+        return False
+
     def get_backref_key(self, schema, backref_name):
         return schema._name + '__' + backref_name
 
@@ -258,6 +263,7 @@ class AddonUserSettingsBase(AddonSettingsBase):
 
     def to_json(self, user):
         ret = super(AddonUserSettingsBase, self).to_json(user)
+        ret['has_auth'] = self.has_auth
         ret.update({
             'nodes': [
                 {
@@ -433,11 +439,15 @@ class AddonNodeSettingsBase(AddonSettingsBase):
 
 
 # TODO: No more magicks
-def init_addon(app, addon_name, routes=True):
-    """Load addon module and create configuration object.
+def init_addon(app, addon_name, log_fp=None, routes=True):
+    """Load addon module return its create configuration object.
+
+    If `log_fp` is provided, the addon's log templates will be appended
+    to the file.
 
     :param app: Flask app object
     :param addon_name: Name of addon directory
+    :param file log_fp: File pointer for the built logs file.
     :param bool routes: Add routes
     :return AddonConfig: AddonConfig configuration object if module found,
         else None
@@ -455,9 +465,8 @@ def init_addon(app, addon_name, routes=True):
     log_templates = os.path.join(
         addon_path, 'templates', 'log_templates.mako'
     )
-    if os.path.exists(log_templates):
-        with open(settings.BUILT_TEMPLATES, 'a') as fp:
-            fp.write(open(log_templates, 'r').read())
+    if os.path.exists(log_templates) and log_fp:
+        log_fp.write(open(log_templates, 'r').read())
 
     # Add routes
     if routes:
