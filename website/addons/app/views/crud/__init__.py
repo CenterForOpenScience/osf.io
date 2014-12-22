@@ -97,7 +97,7 @@ def query_app_json(node_addon, **kwargs):
     query = request.json
 
     try:
-        ret = search(query, index='metadata', search_type=node_addon.namespace, raw=True)
+        ret = search(query, index='metadata', doc_type=node_addon.namespace, raw=True)
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
     except IndexNotFoundError:
