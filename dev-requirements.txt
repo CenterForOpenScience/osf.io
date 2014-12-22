@@ -1,0 +1,6 @@
+decorator
+flake8
+pytest
+pytest-cov
+-e git+https://github.com/icereval/aiohttpretty.git#egg=aiohttpretty
+-r requirements.txt

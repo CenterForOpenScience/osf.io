@@ -1,0 +1,6 @@
+boto
+celery
+invoke
+stevedore
+-e git+https://github.com/icereval/waterbutler-core.git#egg=waterbutler-core
+-e git+https://github.com/icereval/waterbutler-cloudfiles.git#egg=waterbutler-cloudfiles
