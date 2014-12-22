@@ -11,6 +11,8 @@ from waterbutler.core import streams
 from waterbutler.core import exceptions
 
 from waterbutler.s3.provider import S3Provider
+from waterbutler.s3.metadata import S3FileMetadata
+from waterbutler.s3.metadata import S3FolderMetadata
 
 
 @pytest.fixture

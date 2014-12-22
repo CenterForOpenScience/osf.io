@@ -9,8 +9,9 @@ from waterbutler.core import streams
 from waterbutler.core import provider
 from waterbutler.core import exceptions
 
-from waterbutler.s3 import metadata
 from waterbutler.s3 import settings
+from waterbutler.s3.metadata import S3FileMetadata
+from waterbutler.s3.metadata import S3FolderMetadata
 
 
 class S3Provider(provider.BaseProvider):
@@ -142,13 +143,13 @@ class S3Provider(provider.BaseProvider):
         obj = objectify.fromstring(content)
 
         files = [
-            metadata.S3FileMetadata(item).serialized()
+            S3FileMetadata(item).serialized()
             for item in getattr(obj, 'Contents', [])
             if os.path.split(item.Key.text)[1]
         ]
 
         folders = [
-            metadata.S3FolderMetadata(item).serialized()
+            S3FolderMetadata(item).serialized()
             for item in getattr(obj, 'CommonPrefixes', [])
         ]
 
