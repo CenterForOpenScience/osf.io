@@ -18,12 +18,10 @@
                 % if 'admin' in user['permissions'] and not node['is_registration']:
                     <li><a href="#configureNode">Configure ${node['node_type'].capitalize()}</a></li>
                 % endif
-                % if 'admin' in user['permissions']:
+                % if 'admin' in user['permissions'] and not node['is_registration']:
                     <li><a href="#configureCommenting">Configure Commenting</a></li>
                 % endif
-                % if not node['is_registration']:
-                    <li><a href="#selectAddons">Select Add-ons</a></li>
-                % endif
+                  <li><a href="#selectAddons">Select Add-ons</a></li>
                 % if addon_enabled_settings:
                     <li><a href="#configureAddons">Configure Add-ons</a></li>
                 % endif
@@ -91,7 +89,7 @@
         % endif
 
         <div class="panel panel-default">
-            <span id="selectAddons" class="anchor"></span>
+            <span id="selectAddons"></span>
              <div class="panel-heading">
                  <h3 class="panel-title">Select Add-ons</h3>
              </div>
