@@ -26,7 +26,7 @@ from website.project.model import ensure_schemas
 from website.project.views.file import get_cache_path
 from website.addons.osffiles.views import get_cache_file
 from framework.render.tasks import ensure_path
-from website.util import api_url_for, web_url_for
+from website.util import web_url_for
 
 
 class TestDisabledUser(OsfTestCase):
@@ -366,6 +366,7 @@ class TestRegistrations(OsfTestCase):
         self.original = ProjectFactory(creator=self.user, is_public=True)
         # A registration
         self.project = RegistrationFactory(
+            creator=self.user,
             project=self.original,
             user=self.user,
         )
@@ -381,6 +382,15 @@ class TestRegistrations(OsfTestCase):
         # Settings is not in the project navigation bar
         subnav = res.html.select('#projectSubnav')[0]
         assert_in('Sharing', subnav.text)
+
+    # https://github.com/CenterForOpenScience/osf.io/issues/1424
+    def test_navbar_has_correct_links(self):
+        # Goes to project settings page
+        url = self.project.web_url_for('node_setting')
+        res = self.app.get(url, auth=self.auth)
+        # Correct links are in navbar
+        assert_in('Select Add-ons', res)
+        assert_not_in('Configure Commenting', res)
 
     def test_sees_registration_templates(self):
         # Browse to original project
