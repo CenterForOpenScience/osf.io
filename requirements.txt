@@ -2,9 +2,9 @@ aiohttp
 invoke
 stevedore
 tornado
--e git+https://github.com/icereval/waterbutler-core.git#egg=waterbutler-core
--e git+https://github.com/icereval/waterbutler-cloudfiles.git#egg=waterbutler-cloudfiles
--e git+https://github.com/icereval/waterbutler-dropbox.git#egg=waterbutler-dropbox
--e git+https://github.com/icereval/waterbutler-github.git#egg=waterbutler-github
--e git+https://github.com/icereval/waterbutler-osfstorage.git#egg=waterbutler-osfstorage
--e git+https://github.com/icereval/waterbutler-s3.git#egg=waterbutler-s3
+-e git+https://github.com/centerforopenscience/waterbutler-core.git#egg=waterbutler-core
+-e git+https://github.com/centerforopenscience/waterbutler-cloudfiles.git#egg=waterbutler-cloudfiles
+-e git+https://github.com/centerforopenscience/waterbutler-dropbox.git#egg=waterbutler-dropbox
+-e git+https://github.com/centerforopenscience/waterbutler-github.git#egg=waterbutler-github
+-e git+https://github.com/centerforopenscience/waterbutler-osfstorage.git#egg=waterbutler-osfstorage
+-e git+https://github.com/centerforopenscience/waterbutler-s3.git#egg=waterbutler-s3
