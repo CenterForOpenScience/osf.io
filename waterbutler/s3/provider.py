@@ -168,7 +168,7 @@ class S3Provider(provider.BaseProvider):
         :param str path: The path to a key
         :rtype list:
         """
-        url = self.bucket.generate_url(TEMP_URL_SECS, 'GET', query_parameters={'versions': ''})
+        url = self.bucket.generate_url(settings.TEMP_URL_SECS, 'GET', query_parameters={'versions': ''})
         resp = yield from self.make_request(
             'GET',
             url,

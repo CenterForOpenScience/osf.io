@@ -94,6 +94,18 @@ def folder_metadata():
 
 
 @pytest.fixture
+def folder_empty_metadata():
+    return b'''<?xml version="1.0" encoding="UTF-8"?>
+        <ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+            <Name>bucket</Name>
+            <Prefix/>
+            <Marker/>
+            <MaxKeys>1000</MaxKeys>
+            <IsTruncated>false</IsTruncated>
+        </ListBucketResult>'''
+
+
+@pytest.fixture
 def file_metadata():
     return b'''<?xml version="1.0" encoding="UTF-8"?>
         <ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
@@ -114,6 +126,59 @@ def file_metadata():
                 </Owner>
             </Contents>
         </ListBucketResult>'''
+
+
+@pytest.fixture
+def version_metadata():
+    return b'''<?xml version="1.0" encoding="UTF-8"?>
+
+    <ListVersionsResult xmlns="http://s3.amazonaws.com/doc/2006-03-01">
+        <Name>bucket</Name>
+        <Prefix>my</Prefix>
+        <KeyMarker/>
+        <VersionIdMarker/>
+        <MaxKeys>5</MaxKeys>
+        <IsTruncated>false</IsTruncated>
+        <Version>
+            <Key>my-image.jpg</Key>
+            <VersionId>3/L4kqtJl40Nr8X8gdRQBpUMLUo</VersionId>
+            <IsLatest>true</IsLatest>
+            <LastModified>2009-10-12T17:50:30.000Z</LastModified>
+            <ETag>&quot;fba9dede5f27731c9771645a39863328&quot;</ETag>
+            <Size>434234</Size>
+            <StorageClass>STANDARD</StorageClass>
+            <Owner>
+                <ID>75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a</ID>
+                <DisplayName>mtd@amazon.com</DisplayName>
+            </Owner>
+        </Version>
+        <Version>
+            <Key>my-image.jpg</Key>
+            <VersionId>QUpfdndhfd8438MNFDN93jdnJFkdmqnh893</VersionId>
+            <IsLatest>false</IsLatest>
+            <LastModified>2009-10-10T17:50:30.000Z</LastModified>
+            <ETag>&quot;9b2cf535f27731c974343645a3985328&quot;</ETag>
+            <Size>166434</Size>
+            <StorageClass>STANDARD</StorageClass>
+            <Owner>
+                <ID>75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a</ID>
+                <DisplayName>mtd@amazon.com</DisplayName>
+            </Owner>
+        </Version>
+        <Version>
+            <Key>my-image.jpg</Key>
+            <VersionId>UIORUnfndfhnw89493jJFJ</VersionId>
+            <IsLatest>false</IsLatest>
+            <LastModified>2009-10-11T12:50:30.000Z</LastModified>
+            <ETag>&quot;772cf535f27731c974343645a3985328&quot;</ETag>
+            <Size>64</Size>
+            <StorageClass>STANDARD</StorageClass>
+            <Owner>
+                <ID>75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a</ID>
+                <DisplayName>mtd@amazon.com</DisplayName>
+            </Owner>
+        </Version>
+    </ListVersionsResult>'''
 
 
 @async
@@ -183,6 +248,18 @@ def test_metadata_file_missing(provider):
         yield from provider.metadata(name)
 
 
+
+@async
+@pytest.mark.aiohttpretty
+def test_metadata_file_missing(provider, folder_empty_metadata):
+    name = 'notfound.txt'
+    url = provider.bucket.generate_url(100)
+    aiohttpretty.register_uri('GET', url, body=folder_empty_metadata)
+
+    with pytest.raises(exceptions.MetadataError):
+        yield from provider.metadata(name)
+
+
 @async
 @pytest.mark.aiohttpretty
 def test_upload(provider, file_content, file_stream, file_metadata):
@@ -246,3 +323,39 @@ def test_delete(provider):
     yield from provider.delete(path)
 
     assert aiohttpretty.has_call(method='DELETE', uri=url)
+
+
+@async
+@pytest.mark.aiohttpretty
+def test_version_metadata(provider, version_metadata):
+    path = 'my-image'
+    url = provider.bucket.generate_url(100, 'GET', query_parameters={'versions': ''})
+    aiohttpretty.register_uri('GET', url, status=200, body=version_metadata)
+
+    data = yield from provider.revisions(path)
+
+    assert isinstance(data, list)
+    assert len(data) == 3
+
+    for item in data:
+        assert 'size' in item
+        assert 'extra' in item
+        assert 'revision' in item
+
+    assert aiohttpretty.has_call(method='GET', uri=url)
+
+
+@async
+@pytest.mark.aiohttpretty
+def test_accepts_url(provider):
+    path = 'my-image'
+    url = provider.bucket.new_key(path).generate_url(100, 'GET')
+
+    ret_url = yield from provider.download(path, accept_url=True)
+
+    assert ret_url == url
+
+
+def test_equality(provider):
+    assert provider.can_intra_copy(provider)
+    assert provider.can_intra_move(provider)
