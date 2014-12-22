@@ -1,8 +1,10 @@
 aiohttp
-boto
-celery
-furl
 invoke
-lxml
-redis
+stevedore
 tornado
+-e git+https://github.com/centerforopenscience/waterbutler-core.git#egg=waterbutler-core
+-e git+https://github.com/centerforopenscience/waterbutler-cloudfiles.git#egg=waterbutler-cloudfiles
+-e git+https://github.com/centerforopenscience/waterbutler-dropbox.git#egg=waterbutler-dropbox
+-e git+https://github.com/centerforopenscience/waterbutler-github.git#egg=waterbutler-github
+-e git+https://github.com/centerforopenscience/waterbutler-osfstorage.git#egg=waterbutler-osfstorage
+-e git+https://github.com/centerforopenscience/waterbutler-s3.git#egg=waterbutler-s3

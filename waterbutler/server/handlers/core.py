@@ -2,10 +2,18 @@ import asyncio
 
 import tornado.web
 
-from waterbutler import exceptions
-from waterbutler import settings
-from waterbutler.identity import get_identity
-from waterbutler.providers import core
+from stevedore import driver
+
+from waterbutler.server import settings
+from waterbutler.server import exceptions
+from waterbutler.server.identity import get_identity
+
+
+CORS_ACCEPT_HEADERS = [
+    'Content-Type',
+    'Cache-Control',
+    'X-Requested-With',
+]
 
 
 def list_or_value(value):
@@ -17,11 +25,6 @@ def list_or_value(value):
         return value[0].decode('utf-8').lstrip('/')
     return [item.decode('utf-8') for item in value]
 
-CORS_ACCEPT_HEADERS = [
-    'Content-Type',
-    'Cache-Control',
-    'X-Requested-With',
-]
 
 class BaseHandler(tornado.web.RequestHandler):
 
@@ -44,12 +47,17 @@ class BaseHandler(tornado.web.RequestHandler):
 
         self.payload = yield from get_identity(settings.IDENTITY_METHOD, **self.arguments)
 
-        self.provider = core.make_provider(
-            self.arguments['provider'],
-            self.payload['auth'],
-            self.payload['credentials'],
-            self.payload['settings'],
+        self.manager = driver.DriverManager(
+            namespace='waterbutler.providers',
+            name=self.arguments['provider'],
+            invoke_on_load=True,
+            invoke_args=(
+                self.payload['auth'],
+                self.payload['credentials'],
+                self.payload['settings'],
+            ),
         )
+        self.provider = self.manager.driver
 
     def write_error(self, status_code, exc_info):
         etype, exc, _ = exc_info

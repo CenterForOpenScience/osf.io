@@ -1,11 +1,13 @@
+import asyncio
+
 from waterbutler.server import utils
 from waterbutler.server.handlers import core
 
 
-class MetadataHandler(core.BaseHandler):
+class RevisionHandler(core.BaseHandler):
 
     ACTION_MAP = {
-        'GET': 'metadata',
+        'GET': 'revisions',
     }
 
     @utils.coroutine
@@ -14,6 +16,10 @@ class MetadataHandler(core.BaseHandler):
 
     @utils.coroutine
     def get(self):
-        """List information about a file or folder"""
-        result = yield from self.provider.metadata(**self.arguments)
+        """List revisions of a file"""
+        result = self.provider.revisions(**self.arguments)
+
+        if asyncio.iscoroutine(result):
+            result = yield from result
+
         self.write({'data': result})

@@ -6,13 +6,15 @@ import tornado.web
 
 from waterbutler.server.handlers import crud
 from waterbutler.server.handlers import metadata
+from waterbutler.server.handlers import revisions
 
 
 def make_app(debug):
     app = tornado.web.Application(
         [
             (r'/file', crud.CRUDHandler),
-            (r'/data', metadata.MetadataHandler)
+            (r'/data', metadata.MetadataHandler),
+            (r'/revisions', revisions.RevisionHandler),
         ],
         debug=debug,
     )
