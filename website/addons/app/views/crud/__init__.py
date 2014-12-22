@@ -62,7 +62,7 @@ def query_app(node_addon, **kwargs):
     query = args_to_query(q, size, start)
 
     try:
-        ret = search(query, index='metadata', search_type=node_addon.namespace, raw=True)
+        ret = search(query, index='metadata', doc_type=node_addon.namespace, raw=True)
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
     except IndexNotFoundError:
