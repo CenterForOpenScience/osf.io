@@ -61,3 +61,29 @@ class S3FolderMetadata(metadata.BaseMetadata):
     @property
     def modified(self):
         return None
+
+
+# TODO dates!
+class S3Revision(metadata.BaseRevision):
+
+    @property
+    def provider(self):
+        return 's3'
+
+    @property
+    def size(self):
+        return int(self.raw.Size.text)
+
+    @property
+    def revision(self):
+        return self.raw.VersionId.text
+
+    @property
+    def modified(self):
+        return self.raw.LastModified.text
+
+    @property
+    def extra(self):
+        return {
+            'md5': self.raw.ETag.text.replace('"', '')
+        }
