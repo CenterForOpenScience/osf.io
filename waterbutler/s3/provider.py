@@ -10,6 +10,7 @@ from waterbutler.core import provider
 from waterbutler.core import exceptions
 
 from waterbutler.s3 import settings
+from waterbutler.s3.metadata import S3Revision
 from waterbutler.s3.metadata import S3FileMetadata
 from waterbutler.s3.metadata import S3FolderMetadata
 
@@ -160,3 +161,24 @@ class S3Provider(provider.BaseProvider):
             return files[0]
         except IndexError:
             raise exceptions.MetadataError(path, code=404)
+
+    @asyncio.coroutine
+    def revisions(self, path, **kwargs):
+        """Get past versions of the requested key
+        :param str path: The path to a key
+        :rtype list:
+        """
+        url = self.bucket.generate_url(TEMP_URL_SECS, 'GET', query_parameters={'versions': ''})
+        resp = yield from self.make_request(
+            'GET',
+            url,
+            params={'prefix': path, 'delimiter': '/'},
+            expects=(200, ),
+            throws=exceptions.MetadataError,
+        )
+        content = yield from resp.read_and_close()
+        obj = objectify.fromstring(content)
+        return [
+            S3Revision(item).serialized()
+            for item in getattr(obj, 'Version', [])
+        ]
