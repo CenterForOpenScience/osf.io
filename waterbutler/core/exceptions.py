@@ -1,3 +1,4 @@
+import json
 import asyncio
 
 
@@ -7,9 +8,17 @@ DEFAULT_ERROR_MSG = 'An error occurred while making a {response.method} request 
 class ProviderError(Exception):
 
     def __init__(self, message, code=400, log_message=None):
-        self.message = message
         self.code = code
         self.log_message = log_message
+        if isinstance(message, dict):
+            self.data = message
+            self.message = json.dumps(message)
+        else:
+            self.data = None
+            self.message = message
+
+    def __repr__(self):
+        return '<{}:{}>'.format(self.__class__.__name__, self.code)
 
 
 class CopyError(ProviderError):
