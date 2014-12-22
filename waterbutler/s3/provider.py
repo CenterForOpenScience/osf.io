@@ -154,7 +154,7 @@ class S3Provider(provider.BaseProvider):
         :rtype dict:
         :rtype list:
         """
-        if path.endswith('/'):
+        if not path or path.endswith('/'):
             return (yield from self._folder_metadata(path))
 
         return (yield from self._key_metadata(path))
