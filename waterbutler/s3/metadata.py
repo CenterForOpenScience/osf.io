@@ -3,6 +3,43 @@ import os
 from waterbutler.core import metadata
 
 
+class S3FileMetadataHeaders(metadata.BaseMetadata):
+
+    def __init__(self, path, headers):
+        self._path = path
+        super().__init__(headers)
+
+    @property
+    def provider(self):
+        return 's3'
+
+    @property
+    def kind(self):
+        return 'file'
+
+    @property
+    def name(self):
+        return os.path.split(self.path)[1]
+
+    @property
+    def path(self):
+        return self._path
+
+    @property
+    def size(self):
+        return self.raw['Content-Length']
+
+    @property
+    def modified(self):
+        return self.raw['LastModified']
+
+    @property
+    def extra(self):
+        return {
+            'md5': self.raw['ETag'].replace('"', '')
+        }
+
+
 class S3FileMetadata(metadata.BaseMetadata):
 
     @property
