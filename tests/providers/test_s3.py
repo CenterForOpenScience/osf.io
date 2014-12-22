@@ -107,25 +107,11 @@ def folder_empty_metadata():
 
 @pytest.fixture
 def file_metadata():
-    return b'''<?xml version="1.0" encoding="UTF-8"?>
-        <ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-            <Name>bucket</Name>
-            <Prefix/>
-            <Marker/>
-            <MaxKeys>1000</MaxKeys>
-            <IsTruncated>false</IsTruncated>
-            <Contents>
-                <Key>my-image.jpg</Key>
-                <LastModified>2009-10-12T17:50:30.000Z</LastModified>
-                <ETag>&quot;fba9dede5f27731c9771645a39863328&quot;</ETag>
-                <Size>434234</Size>
-                <StorageClass>STANDARD</StorageClass>
-                <Owner>
-                    <ID>75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a</ID>
-                    <DisplayName>mtd@amazon.com</DisplayName>
-                </Owner>
-            </Contents>
-        </ListBucketResult>'''
+    return {
+            'Content-Length': 9001,
+            'LastModified': 'SomeTime',
+            'ETag': '"fba9dede5f27731c9771645a39863328"'
+    }
 
 
 @pytest.fixture
@@ -215,7 +201,7 @@ def test_download_no_name(provider):
 def test_metadata_folder(provider, folder_metadata):
     url = provider.bucket.generate_url(100)
     aiohttpretty.register_uri('GET', url, body=folder_metadata, headers={'Content-Type': 'application/xml'})
-    result = yield from provider.metadata('')
+    result = yield from provider.metadata('/darp/')
 
     assert isinstance(result, list)
     assert len(result) == 3
@@ -226,14 +212,15 @@ def test_metadata_folder(provider, folder_metadata):
 @async
 @pytest.mark.aiohttpretty
 def test_metadata_file(provider, file_metadata):
-    name = 'my-image.jpg'
-    url = provider.bucket.generate_url(100)
-    aiohttpretty.register_uri('GET', url, body=file_metadata, headers={'Content-Type': 'application/xml'})
-    result = yield from provider.metadata(name)
+    path = '/Foo/Bar/my-image.jpg'
+    url = provider.bucket.new_key(path).generate_url(100, 'HEAD')
+    aiohttpretty.register_uri('HEAD', url, headers=file_metadata)
+    result = yield from provider.metadata(path)
 
     assert isinstance(result, dict)
 
-    assert result['name'] == name
+    assert result['path'] == path
+    assert result['name'] == 'my-image.jpg'
     assert result['extra']['md5'] == 'fba9dede5f27731c9771645a39863328'
 
 
@@ -241,20 +228,8 @@ def test_metadata_file(provider, file_metadata):
 @pytest.mark.aiohttpretty
 def test_metadata_file_missing(provider):
     name = 'notfound.txt'
-    url = provider.bucket.generate_url(100)
-    aiohttpretty.register_uri('GET', url, status=404, headers={'Content-Type': 'application/xml'})
-
-    with pytest.raises(exceptions.MetadataError):
-        yield from provider.metadata(name)
-
-
-
-@async
-@pytest.mark.aiohttpretty
-def test_metadata_file_missing(provider, folder_empty_metadata):
-    name = 'notfound.txt'
-    url = provider.bucket.generate_url(100)
-    aiohttpretty.register_uri('GET', url, body=folder_empty_metadata)
+    url = provider.bucket.new_key(name).generate_url(100, 'HEAD')
+    aiohttpretty.register_uri('HEAD', url, status=404)
 
     with pytest.raises(exceptions.MetadataError):
         yield from provider.metadata(name)
@@ -266,34 +241,36 @@ def test_upload(provider, file_content, file_stream, file_metadata):
     path = 'foobah'
     content_md5 = hashlib.md5(file_content).hexdigest()
     url = provider.bucket.new_key(path).generate_url(100, 'PUT')
+    metadata_url = provider.bucket.new_key(path).generate_url(100, 'HEAD')
+    aiohttpretty.register_uri('HEAD', metadata_url, headers=file_metadata)
     aiohttpretty.register_uri('PUT', url, status=200, headers={'ETag': '"{}"'.format(content_md5)})
-    metadata_url = provider.bucket.generate_url(100, 'GET')
-    aiohttpretty.register_uri('GET', metadata_url, body=file_metadata, headers={'Content-Type': 'application/xml'})
 
     resp = yield from provider.upload(file_stream, path)
 
     assert resp['kind'] == 'file'
     assert aiohttpretty.has_call(method='PUT', uri=url)
-    assert aiohttpretty.has_call(method='GET', uri=metadata_url)
+    assert aiohttpretty.has_call(method='HEAD', uri=metadata_url)
 
 
 @async
 @pytest.mark.aiohttpretty
 def test_copy(provider, file_metadata):
-    source_path = 'source'
     dest_path = 'dest'
+    source_path = 'source'
     headers = {'x-amz-copy-source': '/{}/{}'.format(provider.settings['bucket'], source_path)}
+
+    metadata_url = provider.bucket.new_key(dest_path).generate_url(100, 'HEAD')
     url = provider.bucket.new_key(dest_path).generate_url(100, 'PUT', headers=headers)
+
     aiohttpretty.register_uri('PUT', url, status=200)
-    metadata_url = provider.bucket.generate_url(100, 'GET')
-    aiohttpretty.register_uri('GET', metadata_url, body=file_metadata, headers={'Content-Type': 'application/xml'})
+    aiohttpretty.register_uri('HEAD', metadata_url, headers=file_metadata)
 
     resp = yield from provider.copy(provider, {'path': source_path}, {'path': dest_path})
 
     # TODO: matching url content for request
     assert resp['kind'] == 'file'
+    assert aiohttpretty.has_call(method='HEAD', uri=metadata_url)
     assert aiohttpretty.has_call(method='PUT', uri=url, headers=headers)
-    assert aiohttpretty.has_call(method='GET', uri=metadata_url)
 
 
 @async
@@ -302,15 +279,15 @@ def test_upload_update(provider, file_content, file_stream, file_metadata):
     path = 'foobah'
     content_md5 = hashlib.md5(file_content).hexdigest()
     url = provider.bucket.new_key(path).generate_url(100, 'PUT')
+    metadata_url = provider.bucket.new_key(path).generate_url(100, 'HEAD')
+    aiohttpretty.register_uri('HEAD', metadata_url, headers=file_metadata)
     aiohttpretty.register_uri('PUT', url, status=201, headers={'ETag': '"{}"'.format(content_md5)})
-    metadata_url = provider.bucket.generate_url(100, 'GET')
-    aiohttpretty.register_uri('GET', metadata_url, body=file_metadata, headers={'Content-Type': 'application/xml'})
 
     resp = yield from provider.upload(file_stream, path)
 
     assert resp['kind'] == 'file'
     assert aiohttpretty.has_call(method='PUT', uri=url)
-    assert aiohttpretty.has_call(method='GET', uri=metadata_url)
+    assert aiohttpretty.has_call(method='HEAD', uri=metadata_url)
 
 
 @async
