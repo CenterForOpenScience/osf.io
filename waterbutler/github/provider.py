@@ -7,8 +7,9 @@ from waterbutler.core import streams
 from waterbutler.core import provider
 from waterbutler.core import exceptions
 
-from waterbutler.github import metadata
 from waterbutler.github import settings
+from waterbutler.github.metadata import GithubMetadata
+from waterbutler.github.metadata import GithubRevision
 
 
 class GithubProvider(provider.BaseProvider):
@@ -70,7 +71,7 @@ class GithubProvider(provider.BaseProvider):
             throws=exceptions.UploadError,
         )
         data = yield from response.json()
-        return metadata.GithubMetadata(data['content']).serialized()
+        return GithubMetadata(data['content']).serialized()
 
     @asyncio.coroutine
     def delete(self, path, message, sha, branch=None):
@@ -100,7 +101,7 @@ class GithubProvider(provider.BaseProvider):
         )
         data = yield from response.json()
         return [
-            metadata.GithubMetadata(item).serialized()
+            GithubMetadata(item).serialized()
             for item in data
         ]
 
@@ -114,6 +115,6 @@ class GithubProvider(provider.BaseProvider):
         )
 
         return [
-            metadata.GithubRevision(item).serialized()
+            GithubRevision(item).serialized()
             for item in (yield from response.json())
         ]
