@@ -12,7 +12,7 @@ from framework.forms.utils import sanitize
 
 from website import settings
 from website.filters import gravatar
-from website.models import Guid, Comment
+from website.models import Guid, Comment, CommentPane
 from website.project.decorators import must_be_contributor_or_public
 from datetime import datetime
 from website.project.model import has_anonymous_link
@@ -27,7 +27,12 @@ def get_comment_pane(node, page_name):
     :return: The CommentPane object; By default, it returns the "overview" CommentPane
     """
     page_attr = COMMENT_PANE_NAME + str(page_name)
-    return getattr(node, page_attr, node.comment_pane_overview)
+    if not getattr(node, page_attr, None):
+        setattr(node, page_attr, CommentPane.create(node=node))
+    if not getattr(node, COMMENT_PANE_NAME + 'total', None):
+        setattr(node, COMMENT_PANE_NAME + 'total', CommentPane.create(node=node))
+    node.update_total_comments()
+    return getattr(node, page_attr)
 
 def resolve_target(node, page_name, guid):
 

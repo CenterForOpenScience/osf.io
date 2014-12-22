@@ -277,7 +277,6 @@ class CommentPane(StoredObject):
 
     # The key is also its primary key
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
-    node = fields.ForeignField('node', required=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -651,11 +650,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         project = kwargs.get('project')
         if project and project.category != 'project':
             raise ValueError('Parent must be a project.')
-        self.comment_pane_overview = kwargs.get('comment_pane_overview') or CommentPane.create(node=self)
-        self.comment_pane_files = kwargs.get('comment_pane_files') or CommentPane.create(node=self)
-        self.comment_pane_total = kwargs.get('comment_pane_total') or CommentPane.create(node=self)
-        #print("--------------------------------", getattr(self, 'comment_owner', None), "---------------------")
-        self.update_total_comments()
 
         if kwargs.get('_is_loaded', False):
             return
@@ -667,6 +661,11 @@ class Node(GuidStoredObject, AddonModelMixin):
             # Add default creator permissions
             for permission in CREATOR_PERMISSIONS:
                 self.add_permission(self.creator, permission, save=False)
+
+        #self.comment_pane_overview = kwargs.get('comment_pane_overview') or CommentPane()
+        #self.comment_pane_files = kwargs.get('comment_pane_files') or CommentPane()
+        #self.comment_pane_total = kwargs.get('comment_pane_total') or CommentPane()
+        #self.update_total_comments()
 
     def __repr__(self):
         return ('<Node(title={self.title!r}, category={self.category!r}) '
@@ -913,6 +912,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         return self.can_edit(auth)
 
     def update_total_comments(self):
+        print("........................",getattr(self, 'comment_owner', None), "............................")
         setattr(self.comment_pane_total, 'commented', getattr(self, 'comment_owner', self.comment_pane_overview))
 
     def save(self, *args, **kwargs):
