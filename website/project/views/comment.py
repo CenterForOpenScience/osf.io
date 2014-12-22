@@ -17,12 +17,22 @@ from website.project.decorators import must_be_contributor_or_public
 from datetime import datetime
 from website.project.model import has_anonymous_link
 
+COMMENT_PANE_NAME = 'comment_pane_'
 
-def resolve_target(node, pagename, guid):
+def get_comment_pane(node, page_name):
+    """
+    Get the current comment pane that the user is working on
+    :param node: Project
+    :param page_name: The page that contains the comment pane
+    :return: The CommentPane object; By default, it returns the "overview" CommentPane
+    """
+    page_attr = COMMENT_PANE_NAME + str(page_name)
+    return getattr(node, page_attr, node.comment_pane_overview)
+
+def resolve_target(node, page_name, guid):
 
     if not guid:
-        page_attr = 'comment_pane_' + str(pagename)
-        return getattr(node, page_attr, node.comment_pane_overview)
+        return get_comment_pane(node, page_name)
     target = Guid.load(guid)
     if target is None:
         raise HTTPError(http.BAD_REQUEST)
@@ -45,7 +55,7 @@ def comment_discussion(**kwargs):
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
     page_name = request.args.get('page')
-    target = getattr(node, 'comment_pane_' + str(page_name), node)
+    target = get_comment_pane(node, page_name)
     users = collect_discussion(target)
     anonymous = has_anonymous_link(node, auth)
     # Sort users by comment frequency
@@ -158,6 +168,7 @@ def add_comment(**kwargs):
         content=content,
     )
     comment.save()
+    node.update_total_comments()
 
     return {
         'comment': serialize_comment(comment, auth)

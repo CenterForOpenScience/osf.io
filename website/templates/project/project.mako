@@ -44,6 +44,7 @@
 
         % endif
 
+        <!-- Files -->
         <div class="addon-widget-container">
             <h3 class="addon-widget-header"><a href="${node['url']}files/">Files</a></h3>
             <div id="filetreeProgressBar" class="progress progress-striped active">
@@ -55,6 +56,32 @@
 
             <input role="search" class="form-control" placeholder="Search files..." type="text" id="fileSearch" autofocus>
             <div id="myGrid" class="filebrowser hgrid"></div>
+        </div>
+
+        <div id="comments-widget-container" class="addon-widget-container">
+            <h3 class="addon-widget-header">Recent comments</h3>
+            <div data-bind="foreach: comments">
+                <div class="comment-info">
+                    <form class="form-inline">
+                        <img data-bind="attr: {src: author.gravatarUrl}"/>
+                        <span data-bind="if: author.id">
+                            <a class="comment-author" data-bind="text: author.name, attr: {href: author.url}"></a>
+                        </span>
+                        <span data-bind="ifnot: author.id">
+                            <span class="comment-author" data-bind="text: author.name"></span>
+                        </span>
+                        <span class="comment-date pull-right">
+                            <span data-bind="template: {if: modified, afterRender: setupToolTips}">
+                                <a data-toggle="tooltip" data-bind="attr: {title: prettyDateModified()}">*</a>
+                            </span>
+                            <span data-bind="text: prettyDateCreated"></span>
+                        </span>
+                    </form>
+                </div>
+                <div data-bind="ifnot: editing">
+                    <span data-bind="text: content"></span>
+                </div>
+            </div>
         </div>
 
     </div>

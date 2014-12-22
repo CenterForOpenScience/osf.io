@@ -612,6 +612,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     comment_level = fields.StringField(default='private')
     comment_pane_overview = fields.ForeignField('commentpane', backref='project')
     comment_pane_files = fields.ForeignField('commentpane', backref='project')
+    comment_pane_total = fields.ForeignField('commentpane', backref='project')
 
     files_current = fields.DictionaryField()
     files_versions = fields.DictionaryField()
@@ -650,9 +651,12 @@ class Node(GuidStoredObject, AddonModelMixin):
         project = kwargs.get('project')
         if project and project.category != 'project':
             raise ValueError('Parent must be a project.')
-        if not kwargs.get('comment_pane_overview'):
-            self.comment_pane_overview = CommentPane.create(node=self)
-            self.comment_pane_files = CommentPane.create(node=self)
+        self.comment_pane_overview = kwargs.get('comment_pane_overview') or CommentPane.create(node=self)
+        self.comment_pane_files = kwargs.get('comment_pane_files') or CommentPane.create(node=self)
+        self.comment_pane_total = kwargs.get('comment_pane_total') or CommentPane.create(node=self)
+        #print("--------------------------------", getattr(self, 'comment_owner', None), "---------------------")
+        self.update_total_comments()
+
         if kwargs.get('_is_loaded', False):
             return
 
@@ -663,10 +667,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             # Add default creator permissions
             for permission in CREATOR_PERMISSIONS:
                 self.add_permission(self.creator, permission, save=False)
-
-        if not kwargs.get('comment_pane_overview'):
-            self.comment_pane_overview = CommentPane.create()
-            self.comment_pane_files = CommentPane.create()
 
     def __repr__(self):
         return ('<Node(title={self.title!r}, category={self.category!r}) '
@@ -911,6 +911,9 @@ class Node(GuidStoredObject, AddonModelMixin):
                 (auth.user and self.has_permission(auth.user, 'read'))
             )
         return self.can_edit(auth)
+
+    def update_total_comments(self):
+        setattr(self.comment_pane_total, 'commented', getattr(self, 'comment_owner', self.comment_pane_overview))
 
     def save(self, *args, **kwargs):
 
