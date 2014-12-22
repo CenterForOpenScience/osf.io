@@ -1,11 +1,7 @@
-# encoding: utf-8
-
 import hmac
 import json
 import base64
 import collections
-
-from waterbutler.core import settings
 
 
 # Written by @jmcarp originally
@@ -67,7 +63,3 @@ class Signer(object):
     def verify_payload(self, signature, payload):
         _, expected = self.sign_payload(payload)
         return signature == expected
-
-
-# default_signer = Signer(settings.DEFAULT_HMAC_KEY, settings.DEFAULT_HMAC_ALGORITHM)
-osf_signer = Signer(settings.HMAC_SECRET, settings.HMAC_ALGORITHM)
