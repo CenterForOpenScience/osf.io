@@ -2,7 +2,7 @@ import sys
 
 from invoke import task, run
 
-from waterbutler import settings
+from waterbutler.server import settings
 
 
 @task
@@ -45,7 +45,7 @@ def test():
 
 
 @task
-def tornado(port=settings.PORT, address=settings.ADDRESS, debug=settings.DEBUG):
+def server(port=settings.PORT, address=settings.ADDRESS, debug=settings.DEBUG):
     from waterbutler.server import serve
     serve(port, address, debug)
 

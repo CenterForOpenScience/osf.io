@@ -1,8 +1,11 @@
 decorator
 flake8
+furl
+ipdb
 ipython
 jinja2
 pytest
 pytest-cov
 pyzmq
+-e git+https://github.com/icereval/aiohttpretty.git#egg=aiohttpretty
 -r requirements.txt

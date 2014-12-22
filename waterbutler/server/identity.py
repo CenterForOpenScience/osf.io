@@ -2,8 +2,8 @@ import asyncio
 
 import aiohttp
 
-from waterbutler import settings
-from waterbutler import exceptions
+from waterbutler.server import exceptions
+from waterbutler.server import settings
 
 
 IDENTITY_METHODS = {}
