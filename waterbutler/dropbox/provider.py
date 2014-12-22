@@ -5,8 +5,9 @@ from waterbutler.core import streams
 from waterbutler.core import provider
 from waterbutler.core import exceptions
 
-from waterbutler.dropbox import metadata
 from waterbutler.dropbox import settings
+from waterbutler.dropbox.metadata import DropboxMetadata
+from waterbutler.dropbox.metadata import DropboxRevision
 
 
 class DropboxProvider(provider.BaseProvider):
@@ -71,7 +72,7 @@ class DropboxProvider(provider.BaseProvider):
                 throws=exceptions.IntraCopyError,
             )
         data = yield from resp.json()
-        return metadata.DropboxMetadata(data, self.folder).serialized()
+        return DropboxMetadata(data, self.folder).serialized()
 
     @asyncio.coroutine
     def intra_move(self, dest_provider, source_options, dest_options):
@@ -89,7 +90,7 @@ class DropboxProvider(provider.BaseProvider):
             throws=exceptions.IntraMoveError,
         )
         data = yield from resp.json()
-        return metadata.DropboxMetadata(data, self.folder).serialized()
+        return DropboxMetadata(data, self.folder).serialized()
 
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
@@ -112,7 +113,7 @@ class DropboxProvider(provider.BaseProvider):
             throws=exceptions.UploadError,
         )
         data = yield from resp.json()
-        return metadata.DropboxMetadata(data, self.folder).serialized()
+        return DropboxMetadata(data, self.folder).serialized()
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
@@ -137,11 +138,11 @@ class DropboxProvider(provider.BaseProvider):
 
         if data['is_dir']:
             return [
-                metadata.DropboxMetadata(item, self.folder).serialized()
+                DropboxMetadata(item, self.folder).serialized()
                 for item in data['contents']
             ]
 
-        return metadata.DropboxMetadata(data, self.folder).serialized()
+        return DropboxMetadata(data, self.folder).serialized()
 
     @asyncio.coroutine
     def revisions(self, path, **kwargs):
@@ -155,6 +156,6 @@ class DropboxProvider(provider.BaseProvider):
         data = yield from response.json()
 
         return [
-            metadata.DropboxRevision(item).serialized()
+            DropboxRevision(item).serialized()
             for item in data
         ]
