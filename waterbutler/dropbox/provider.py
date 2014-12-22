@@ -36,7 +36,7 @@ class DropboxProvider(provider.BaseProvider):
         return type(self) == type(dest_provider)
 
     def can_intra_move(self, dest_provider):
-        return self == dest_provider
+        return self.can_intra_copy(dest_provider)
 
     @asyncio.coroutine
     def intra_copy(self, dest_provider, source_options, dest_options):
