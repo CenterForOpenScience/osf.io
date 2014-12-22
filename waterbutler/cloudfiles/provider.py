@@ -12,8 +12,9 @@ from waterbutler.core import streams
 from waterbutler.core import provider
 from waterbutler.core import exceptions
 
-from waterbutler.cloudfiles import metadata
 from waterbutler.cloudfiles import settings
+from waterbutler.cloudfiles.metadata import CloudFilesFileMetadata
+from waterbutler.cloudfiles.metadata import CloudFilesFolderMetadata
 
 
 def ensure_connection(func):
@@ -237,5 +238,5 @@ class CloudFilesProvider(provider.BaseProvider):
 
     def _serialize_metadata(self, data):
         if data.get('subdir'):
-            return metadata.CloudFilesFolderMetadata(data).serialized()
-        return metadata.CloudFilesFileMetadata(data).serialized()
+            return CloudFilesFolderMetadata(data).serialized()
+        return CloudFilesFileMetadata(data).serialized()
