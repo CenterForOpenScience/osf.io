@@ -187,3 +187,12 @@ def test_delete(provider):
     yield from provider.delete(path)
 
     assert aiohttpretty.has_call(method='POST', uri=url, data=data)
+
+
+def test_can_intra_copy(provider):
+    assert provider.can_intra_copy(provider)
+
+
+
+def test_can_intra_move(provider):
+    assert provider.can_intra_move(provider)
