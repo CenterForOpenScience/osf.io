@@ -26,6 +26,16 @@ def list_or_value(value):
     return [item.decode('utf-8') for item in value]
 
 
+def make_provider(name, auth, credentials, settings):
+    manager = driver.DriverManager(
+        namespace='waterbutler.providers',
+        name=name,
+        invoke_on_load=True,
+        invoke_args=(auth, credentials, settings),
+    )
+    return manager.driver
+
+
 class BaseHandler(tornado.web.RequestHandler):
 
     ACTION_MAP = {}
@@ -47,17 +57,12 @@ class BaseHandler(tornado.web.RequestHandler):
 
         self.payload = yield from get_identity(settings.IDENTITY_METHOD, **self.arguments)
 
-        self.manager = driver.DriverManager(
-            namespace='waterbutler.providers',
-            name=self.arguments['provider'],
-            invoke_on_load=True,
-            invoke_args=(
-                self.payload['auth'],
-                self.payload['credentials'],
-                self.payload['settings'],
-            ),
+        self.provider = make_provider(
+            self.arguments['provider'],
+            self.payload['auth'],
+            self.payload['credentials'],
+            self.payload['settings'],
         )
-        self.provider = self.manager.driver
 
     def write_error(self, status_code, exc_info):
         etype, exc, _ = exc_info

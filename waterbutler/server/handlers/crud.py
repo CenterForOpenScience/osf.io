@@ -1,4 +1,5 @@
 import os
+import http
 import asyncio
 
 from tornado import web
@@ -8,6 +9,7 @@ from waterbutler.core.streams import RequestStreamReader
 from waterbutler.server import settings
 from waterbutler.server import utils
 from waterbutler.server.handlers import core
+from waterbutler.core import exceptions
 
 
 @web.stream_request_body
@@ -25,7 +27,6 @@ class CRUDHandler(core.BaseHandler):
         yield from super().prepare()
         self.prepare_stream()
 
-    # @asyncio.coroutine
     def prepare_stream(self):
         if self.request.method in self.STREAM_METHODS:
             self.stream = RequestStreamReader(self.request)
@@ -42,7 +43,10 @@ class CRUDHandler(core.BaseHandler):
     @utils.coroutine
     def get(self):
         """Download a file."""
-        result = yield from self.provider.download(accept_url=True, **self.arguments)
+        try:
+            result = yield from self.provider.download(accept_url=True, **self.arguments)
+        except exceptions.ProviderError as error:
+            raise web.HTTPError(status_code=error.code)
 
         if isinstance(result, str):
             return self.redirect(result)
@@ -72,11 +76,4 @@ class CRUDHandler(core.BaseHandler):
     def delete(self):
         """Delete a file."""
         yield from self.provider.delete(**self.arguments)
-        self.set_status(204)
-
-    def on_connection_close(self):
-        if self.request.method in self.STREAM_METHODS:
-            try:
-                self.stream.feed_eof()
-            except AttributeError:
-                pass
+        self.set_status(http.client.NO_CONTENT)

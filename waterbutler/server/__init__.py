@@ -10,7 +10,7 @@ from waterbutler.server.handlers import revisions
 
 
 def make_app(debug):
-    app = tornado.web.Application(
+    return tornado.web.Application(
         [
             (r'/file', crud.CRUDHandler),
             (r'/data', metadata.MetadataHandler),
@@ -18,7 +18,6 @@ def make_app(debug):
         ],
         debug=debug,
     )
-    return app
 
 
 def serve(port, address, debug):
