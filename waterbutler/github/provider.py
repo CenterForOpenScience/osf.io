@@ -74,7 +74,7 @@ class GithubProvider(provider.BaseProvider):
         return GithubMetadata(data['content']).serialized()
 
     @asyncio.coroutine
-    def delete(self, path, message, sha, branch=None):
+    def delete(self, path, message, sha, branch=None, **kwargs):
         data = {
             'message': message,
             'sha': sha,
@@ -92,7 +92,7 @@ class GithubProvider(provider.BaseProvider):
         )
 
     @asyncio.coroutine
-    def metadata(self, path, ref=None):
+    def metadata(self, path, ref=None, **kwargs):
         response = yield from self.make_request(
             'GET',
             self.build_repo_url('contents', path),
@@ -110,7 +110,7 @@ class GithubProvider(provider.BaseProvider):
             return GithubMetadata(data).serialized()
 
     @asyncio.coroutine
-    def revisions(self, path, sha=None):
+    def revisions(self, path, sha=None, **kwargs):
         response = yield from self.make_request(
             'GET',
             self.build_repo_url('commits', path=path, sha=sha),
