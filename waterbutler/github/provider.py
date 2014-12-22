@@ -100,10 +100,14 @@ class GithubProvider(provider.BaseProvider):
             throws=exceptions.MetadataError
         )
         data = yield from response.json()
-        return [
-            GithubMetadata(item).serialized()
-            for item in data
-        ]
+
+        if isinstance(data, list):
+            return [
+                GithubMetadata(item).serialized()
+                for item in data
+            ]
+        else:
+            return GithubMetadata(data).serialized()
 
     @asyncio.coroutine
     def revisions(self, path, sha=None):
