@@ -13,6 +13,7 @@ from waterbutler.s3 import settings
 from waterbutler.s3.metadata import S3Revision
 from waterbutler.s3.metadata import S3FileMetadata
 from waterbutler.s3.metadata import S3FolderMetadata
+from waterbutler.s3.metadata import S3FolderKeyMetadata
 from waterbutler.s3.metadata import S3FileMetadataHeaders
 
 
@@ -180,18 +181,18 @@ class S3Provider(provider.BaseProvider):
             expects=(200, ),
             throws=exceptions.MetadataError,
         )
-        content = yield from resp.read_and_close()
-        obj = objectify.fromstring(content)
+        contents = yield from resp.read_and_close()
+        obj = objectify.fromstring(contents)
 
-        files = [
-            S3FileMetadata(item).serialized()
-            for item in getattr(obj, 'Contents', [])
-            if os.path.split(item.Key.text)[1]
-        ]
-
-        folders = [
+        items = [
             S3FolderMetadata(item).serialized()
             for item in getattr(obj, 'CommonPrefixes', [])
         ]
 
-        return files + folders
+        for content in getattr(obj, 'Contents', []):
+            if content.Key.text.endswith('/'):
+                items.append(S3FolderKeyMetadata(content).serialized())
+            else:
+                items.append(S3FileMetadata(content).serialized())
+
+        return items

@@ -73,6 +73,33 @@ class S3FileMetadata(metadata.BaseMetadata):
         }
 
 
+class S3FolderKeyMetadata(metadata.BaseMetadata):
+
+    @property
+    def provider(self):
+        return 's3'
+
+    @property
+    def kind(self):
+        return 'folder'
+
+    @property
+    def name(self):
+        return self.raw.Key.text.split('/')[-2]
+
+    @property
+    def path(self):
+        return self.raw.Key.text
+
+    @property
+    def size(self):
+        return None
+
+    @property
+    def modified(self):
+        return None
+
+
 class S3FolderMetadata(metadata.BaseMetadata):
 
     @property
