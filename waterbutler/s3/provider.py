@@ -10,8 +10,11 @@ from waterbutler.core import provider
 from waterbutler.core import exceptions
 
 from waterbutler.s3 import settings
+from waterbutler.s3.metadata import S3Revision
 from waterbutler.s3.metadata import S3FileMetadata
 from waterbutler.s3.metadata import S3FolderMetadata
+from waterbutler.s3.metadata import S3FolderKeyMetadata
+from waterbutler.s3.metadata import S3FileMetadataHeaders
 
 
 class S3Provider(provider.BaseProvider):
@@ -125,13 +128,12 @@ class S3Provider(provider.BaseProvider):
         )
 
     @asyncio.coroutine
-    def metadata(self, path, **kwargs):
-        """Get Metadata about the requested file or folder
-        :param str path: The path to a key or folder
-        :rtype dict:
+    def revisions(self, path, **kwargs):
+        """Get past versions of the requested key
+        :param str path: The path to a key
         :rtype list:
         """
-        url = self.bucket.generate_url(settings.TEMP_URL_SECS, 'GET')
+        url = self.bucket.generate_url(settings.TEMP_URL_SECS, 'GET', query_parameters={'versions': ''})
         resp = yield from self.make_request(
             'GET',
             url,
@@ -141,22 +143,63 @@ class S3Provider(provider.BaseProvider):
         )
         content = yield from resp.read_and_close()
         obj = objectify.fromstring(content)
-
-        files = [
-            S3FileMetadata(item).serialized()
-            for item in getattr(obj, 'Contents', [])
-            if os.path.split(item.Key.text)[1]
+        return [
+            S3Revision(path, item).serialized()
+            for item in getattr(obj, 'Version', [])
         ]
 
-        folders = [
+    @asyncio.coroutine
+    def metadata(self, path, **kwargs):
+        """Get Metadata about the requested file or folder
+        :param str path: The path to a key or folder
+        :rtype dict:
+        :rtype list:
+        """
+        if not path:
+            raise exceptions.MetadataError('Must specify path')
+
+        if path.endswith('/'):
+            return (yield from self._folder_metadata(path))
+
+        return (yield from self._key_metadata(path))
+
+    @asyncio.coroutine
+    def _key_metadata(self, path):
+        url = self.bucket.new_key(path).generate_url(settings.TEMP_URL_SECS, 'HEAD')
+        resp = yield from self.make_request(
+            'HEAD',
+            url,
+            expects=(200, ),
+            throws=exceptions.MetadataError,
+        )
+        return S3FileMetadataHeaders(path, resp.headers).serialized()
+
+    @asyncio.coroutine
+    def _folder_metadata(self, path):
+        url = self.bucket.generate_url(settings.TEMP_URL_SECS, 'GET')
+        resp = yield from self.make_request(
+            'GET',
+            url,
+            params={'prefix': path, 'delimiter': '/'},
+            expects=(200, ),
+            throws=exceptions.MetadataError,
+        )
+        contents = yield from resp.read_and_close()
+        obj = objectify.fromstring(contents)
+
+        # TODO Better comment here
+        items = [
             S3FolderMetadata(item).serialized()
             for item in getattr(obj, 'CommonPrefixes', [])
         ]
 
-        if not path or path[-1] == '/':
-            return files + folders
+        for content in getattr(obj, 'Contents', []):
+            if content.Key.text == path:
+                continue
 
-        try:
-            return files[0]
-        except IndexError:
-            raise exceptions.MetadataError(path, code=404)
+            if content.Key.text.endswith('/'):
+                items.append(S3FolderKeyMetadata(content).serialized())
+            else:
+                items.append(S3FileMetadata(content).serialized())
+
+        return items
