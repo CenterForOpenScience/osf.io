@@ -1,15 +1,13 @@
 from waterbutler.core import metadata
 
-
-class GithubMetadata(metadata.BaseMetadata):
+class BaseGithubMetadata:
 
     @property
     def provider(self):
         return 'github'
 
-    @property
-    def kind(self):
-        return 'file' if self.raw['type'] == 'file' else 'folder'
+
+class GithubFileMetadata(BaseGithubMetadata, metadata.BaseFileMetadata):
 
     @property
     def name(self):
@@ -28,18 +26,29 @@ class GithubMetadata(metadata.BaseMetadata):
         return None
 
     @property
+    def content_type(self):
+        return None
+
+    @property
     def extra(self):
         return {
             'sha': self.raw['sha']
         }
 
 
-# TODO dates!
-class GithubRevision(metadata.BaseRevision):
+class GithubFolderMetadata(BaseGithubMetadata, metadata.BaseFolderMetadata):
 
     @property
-    def provider(self):
-        return 'github'
+    def name(self):
+        return self.raw['name']
+
+    @property
+    def path(self):
+        return self.raw['path']
+
+
+# TODO dates!
+class GithubRevision(BaseGithubMetadata, metadata.BaseFileRevisionMetadata):
 
     @property
     def size(self):

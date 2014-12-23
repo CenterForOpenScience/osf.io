@@ -13,8 +13,9 @@ from waterbutler.core import streams
 from waterbutler.core import exceptions
 
 from waterbutler.github.provider import GithubProvider
-from waterbutler.github.metadata import GithubMetadata
 from waterbutler.github.metadata import GithubRevision
+from waterbutler.github.metadata import GithubFileMetadata
+from waterbutler.github.metadata import GithubFolderMetadata
 
 
 @pytest.fixture
@@ -182,7 +183,15 @@ def test_metadata(provider, repo_contents):
     url = provider.build_repo_url('contents', path)
     aiohttpretty.register_json_uri('GET', url, body=repo_contents)
     result = yield from provider.metadata(path)
-    assert result == [GithubMetadata(item).serialized() for item in repo_contents]
+    ret = []
+
+    for item in repo_contents:
+        if item['type'] == 'folder':
+            ret.append(GithubFolderMetadata(item).serialized())
+        else:
+            ret.append(GithubFileMetadata(item).serialized())
+
+    assert result == ret
 
 
 @async

@@ -8,8 +8,9 @@ from waterbutler.core import provider
 from waterbutler.core import exceptions
 
 from waterbutler.github import settings
-from waterbutler.github.metadata import GithubMetadata
 from waterbutler.github.metadata import GithubRevision
+from waterbutler.github.metadata import GithubFileMetadata
+from waterbutler.github.metadata import GithubFolderMetadata
 
 
 class GithubProvider(provider.BaseProvider):
@@ -71,7 +72,7 @@ class GithubProvider(provider.BaseProvider):
             throws=exceptions.UploadError,
         )
         data = yield from response.json()
-        return GithubMetadata(data['content']).serialized()
+        return GithubFileMetadata(data['content']).serialized()
 
     @asyncio.coroutine
     def delete(self, path, message, sha, branch=None, **kwargs):
@@ -102,12 +103,15 @@ class GithubProvider(provider.BaseProvider):
         data = yield from response.json()
 
         if isinstance(data, list):
-            return [
-                GithubMetadata(item).serialized()
-                for item in data
-            ]
-        else:
-            return GithubMetadata(data).serialized()
+            ret = []
+            for item in data:
+                if item['type'] == 'folder':
+                    ret.append(GithubFolderMetadata(item).serialized())
+                else:
+                    ret.append(GithubFileMetadata(item).serialized())
+            return ret
+
+        return GithubFileMetadata(data).serialized()
 
     @asyncio.coroutine
     def revisions(self, path, sha=None, **kwargs):
