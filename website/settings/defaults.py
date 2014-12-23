@@ -205,3 +205,10 @@ DISK_SAVING_MODE = False
 
 # Add Contributors (most in common)
 MAX_MOST_IN_COMMON_LENGTH = 15
+
+# Google Analytics
+GOOGLE_ANALYTICS_ID = None
+GOOGLE_SITE_VERIFICATION = None
+
+# Pingdom
+PINGDOM_ID = None
