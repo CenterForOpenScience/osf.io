@@ -36,7 +36,7 @@ class BaseMetadata(metaclass=abc.ABCMeta):
         return {}
 
 
-class BaseFileMetadata(BaseMetadata, metaclass=abc.ABCMeta):
+class BaseFileMetadata(BaseMetadata):
 
     def serialized(self):
         return dict(super().serialized(), **{
@@ -62,7 +62,7 @@ class BaseFileMetadata(BaseMetadata, metaclass=abc.ABCMeta):
         pass
 
 
-class BaseFileRevisionMetadata(BaseFileMetadata, metaclass=abc.ABCMeta):
+class BaseFileRevisionMetadata(BaseFileMetadata):
 
     def serialized(self):
         return dict(super().serialized(), **{
@@ -74,7 +74,7 @@ class BaseFileRevisionMetadata(BaseFileMetadata, metaclass=abc.ABCMeta):
         pass
 
 
-class BaseFolderMetadata(BaseMetadata, metaclass=abc.ABCMeta):
+class BaseFolderMetadata(BaseMetadata):
 
     @property
     def kind(self):
