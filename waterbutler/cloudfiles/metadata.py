@@ -64,7 +64,7 @@ class CloudFilesFolderMetadata(BaseCloudFilesMetadata, metadata.BaseFolderMetada
 
     @property
     def name(self):
-        return self.raw['subdir'].rstrip('/').split('/')[-1]
+        return os.path.split(self.raw['subdir'].rstrip('/'))[1]
 
     @property
     def path(self):
