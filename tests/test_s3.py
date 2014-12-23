@@ -77,7 +77,7 @@ def folder_metadata():
                 </Owner>
             </Contents>
             <Contents>
-            <Key>my-third-image.jpg</Key>
+                <Key>my-third-image.jpg</Key>
                 <LastModified>2009-10-12T17:50:30.000Z</LastModified>
                 <ETag>&quot;1b2cf535f27731c974343645a3985328&quot;</ETag>
                 <Size>64994</Size>
@@ -297,11 +297,17 @@ def test_metadata_folder_self_listing(provider, contents_and_self):
 def test_just_a_folder_metadata_folder(provider, just_a_folder_metadata):
     url = provider.bucket.generate_url(100)
     aiohttpretty.register_uri('GET', url, body=just_a_folder_metadata, headers={'Content-Type': 'application/xml'})
-    result = yield from provider.metadata('')
+    result = yield from provider.metadata('/')
 
     assert isinstance(result, list)
     assert len(result) == 1
     assert result[0]['kind'] == 'folder'
+
+@async
+@pytest.mark.aiohttpretty
+def test_must_have_slash(provider, just_a_folder_metadata):
+    with pytest.raises(exceptions.MetadataError):
+        yield from provider.metadata('')
 
 
 @async

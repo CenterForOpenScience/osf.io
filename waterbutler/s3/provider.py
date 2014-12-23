@@ -155,7 +155,10 @@ class S3Provider(provider.BaseProvider):
         :rtype dict:
         :rtype list:
         """
-        if not path or path.endswith('/'):
+        if not path:
+            raise exceptions.MetadataError('Must specify path')
+
+        if path.endswith('/'):
             return (yield from self._folder_metadata(path))
 
         return (yield from self._key_metadata(path))
@@ -184,14 +187,14 @@ class S3Provider(provider.BaseProvider):
         contents = yield from resp.read_and_close()
         obj = objectify.fromstring(contents)
 
+        # TODO Better comment here
         items = [
             S3FolderMetadata(item).serialized()
             for item in getattr(obj, 'CommonPrefixes', [])
-            if item.Prefix.text
         ]
 
         for content in getattr(obj, 'Contents', []):
-            if not content.Key.text or content.Key.text == path:
+            if content.Key.text == path:
                 continue
 
             if content.Key.text.endswith('/'):
