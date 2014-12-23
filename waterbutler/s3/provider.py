@@ -191,7 +191,7 @@ class S3Provider(provider.BaseProvider):
         ]
 
         for content in getattr(obj, 'Contents', []):
-            if not content.Key.text:
+            if not content.Key.text or content.Key.text == path:
                 continue
 
             if content.Key.text.endswith('/'):
