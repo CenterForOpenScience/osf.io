@@ -72,7 +72,7 @@ class GithubProvider(provider.BaseProvider):
             throws=exceptions.UploadError,
         )
         data = yield from response.json()
-        return GithubFileMetadata(data['content']).serialized()
+        return GithubFileMetadata(data['content']).serialized(), (not existing)
 
     @asyncio.coroutine
     def delete(self, path, message, sha, branch=None, **kwargs):
