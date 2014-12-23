@@ -10,7 +10,7 @@ from waterbutler.core import streams
 from waterbutler.core import exceptions
 
 from waterbutler.dropbox.provider import DropboxProvider
-from waterbutler.dropbox.metadata import DropboxMetadata
+from waterbutler.dropbox.metadata import DropboxFileMetadata
 
 
 @pytest.fixture
@@ -169,7 +169,7 @@ def test_upload(provider, file_metadata, file_stream, settings):
     aiohttpretty.register_json_uri('PUT', url, status=200, body=file_metadata)
 
     metadata = yield from provider.upload(file_stream, path)
-    expected = DropboxMetadata(file_metadata, settings['folder']).serialized()
+    expected = DropboxFileMetadata(file_metadata).serialized()
     assert metadata == expected
 
     assert aiohttpretty.has_call(method='PUT', uri=url)

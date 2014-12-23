@@ -1,24 +1,16 @@
 import os
-import re
 
 from waterbutler.core import metadata
 
 
-class DropboxMetadata(metadata.BaseMetadata):
-
-    def __init__(self, data, root):
-        stripped = re.sub('^{}/?'.format(re.escape(root)), '', data['path'])
-        assert stripped != data['path'], 'Root folder not present in path'
-        data['path'] = stripped
-        super().__init__(data)
+class BaseDropboxMetadata:
 
     @property
     def provider(self):
         return 'dropbox'
 
-    @property
-    def kind(self):
-        return 'folder' if self.raw['is_dir'] else 'file'
+
+class DropboxFolderMetadata(BaseDropboxMetadata, metadata.BaseFolderMetadata):
 
     @property
     def name(self):
@@ -26,7 +18,18 @@ class DropboxMetadata(metadata.BaseMetadata):
 
     @property
     def path(self):
-        return self.raw['path']
+        return self.raw['path'].lstrip('/')
+
+
+class DropboxFileMetadata(BaseDropboxMetadata, metadata.BaseFileMetadata):
+
+    @property
+    def name(self):
+        return os.path.split(self.raw['path'])[1]
+
+    @property
+    def path(self):
+        return self.raw['path'].lstrip('/')
 
     @property
     def size(self):
@@ -36,13 +39,13 @@ class DropboxMetadata(metadata.BaseMetadata):
     def modified(self):
         return self.raw['modified']
 
+    @property
+    def content_type(self):
+        return self.raw['mime_type']
+
 
 # TODO dates!
-class DropboxRevision(metadata.BaseRevision):
-
-    @property
-    def provider(self):
-        return 'dropbox'
+class DropboxRevision(BaseDropboxMetadata, metadata.BaseFileRevisionMetadata):
 
     @property
     def size(self):
@@ -55,6 +58,10 @@ class DropboxRevision(metadata.BaseRevision):
     @property
     def revision(self):
         return self.raw['rev']
+
+    @property
+    def content_type(self):
+        return self.raw['mime_type']
 
     @property
     def extra(self):

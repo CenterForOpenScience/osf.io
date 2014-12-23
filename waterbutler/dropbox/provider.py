@@ -1,3 +1,4 @@
+import re
 import os
 import asyncio
 
@@ -11,6 +12,7 @@ from waterbutler.dropbox.metadata import DropboxFileMetadata
 from waterbutler.dropbox.metadata import DropboxFolderMetadata
 
 
+# TODO Test this and make sure .. doesn't work
 def guarded(func):
     def wrapped(self, path, *args, **kwargs):
         stripped = re.sub('^{}/?'.format(re.escape(self.folder)), '', path)
@@ -102,6 +104,7 @@ class DropboxProvider(provider.BaseProvider):
         data = yield from resp.json()
         return DropboxMetadata(data, self.folder).serialized()
 
+    @guarded
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
         resp = yield from self.make_request(
@@ -112,6 +115,7 @@ class DropboxProvider(provider.BaseProvider):
         )
         return streams.ResponseStreamReader(resp)
 
+    @guarded
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
         resp = yield from self.make_request(
@@ -123,8 +127,9 @@ class DropboxProvider(provider.BaseProvider):
             throws=exceptions.UploadError,
         )
         data = yield from resp.json()
-        return DropboxMetadata(data, self.folder).serialized()
+        return DropboxFileMetadata(data).serialized()
 
+    @guarded
     @asyncio.coroutine
     def delete(self, path, **kwargs):
         yield from self.make_request(
@@ -135,6 +140,7 @@ class DropboxProvider(provider.BaseProvider):
             throws=exceptions.DeleteError,
         )
 
+    @guarded
     @asyncio.coroutine
     def metadata(self, path, **kwargs):
         response = yield from self.make_request(
@@ -147,13 +153,17 @@ class DropboxProvider(provider.BaseProvider):
         data = yield from response.json()
 
         if data['is_dir']:
-            return [
-                DropboxMetadata(item, self.folder).serialized()
-                for item in data['contents']
-            ]
+            ret = []
+            for item in data['contents']:
+                if item['is_dir']:
+                    ret.append(DropboxFolderMetadata(item).serialized())
+                else:
+                    ret.append(DropboxFileMetadata(item).serialized())
+            return ret
 
-        return DropboxMetadata(data, self.folder).serialized()
+        return DropboxFileMetadata(data).serialized()
 
+    @guarded
     @asyncio.coroutine
     def revisions(self, path, **kwargs):
         response = yield from self.make_request(
