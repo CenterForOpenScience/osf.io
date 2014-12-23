@@ -116,34 +116,19 @@ def format_categories(tags_list):
 def elastic_to_rss(name, data, query, url, simple=True):
     count = len(data)
 
-    if simple:
-        items = [
-            pyrss.RSSItem(
-                guid=doc.get('id', {}).get('serviceID') or doc['_id'],
-                link=doc['id']['url'] if doc.get(
-                    'id') else doc['links'][0]['url'],
-                title=doc.get('title', 'No title provided'),
-                author=doc.get('source'),
-                description=doc.get('description'),
-                categories=doc.get('tags', 'No tags provided'),
-                pubDate=parse(doc.get('dateUpdated'))
-            )
-            for doc in data
-        ]
-    else:
-        items = [
-            pyrss.RSSItem(
-                guid=doc.get('id', {}).get('serviceID') or doc['_id'],
-                link=doc['id']['url'] if doc.get(
-                    'id') else doc['links'][0]['url'],
-                title=doc.get('title', 'No title provided'),
-                author=doc.get('source'),
-                description=json.dumps(doc, indent=4, sort_keys=True),
-                categories=doc.get('tags', 'No tags provided'),
-                pubDate=parse(doc.get('dateUpdated'))
-            )
-            for doc in data
-        ]
+    items = [
+        pyrss.RSSItem(
+            guid=doc.get('id', {}).get('serviceID') or doc['_id'],
+            link=doc['id']['url'] if doc.get(
+                'id') else doc['links'][0]['url'],
+            title=doc.get('title', 'No title provided'),
+            author=doc.get('source'),
+            description=doc.get('description') if simple else json.dumps(doc, indent=4, sort_keys=True),
+            categories=doc.get('tags', 'No tags provided'),
+            pubDate=parse(doc.get('dateUpdated'))
+        )
+        for doc in data
+    ]
 
     if query == '*':
         title_query = 'All'
