@@ -11,9 +11,7 @@ class BaseMetadata(metaclass=abc.ABCMeta):
             'provider': self.provider,
             'kind': self.kind,
             'name': self.name,
-            'size': self.size,
             'path': self.path,
-            'modified': self.modified,
             'extra': self.extra,
         }
 
@@ -33,35 +31,26 @@ class BaseMetadata(metaclass=abc.ABCMeta):
     def path(self):
         pass
 
-    @abc.abstractproperty
-    def modified(self):
-        pass
-
-    @abc.abstractproperty
-    def size(self):
-        pass
-
     @property
     def extra(self):
         return {}
 
 
-class BaseRevision(metaclass=abc.ABCMeta):
-
-    def __init__(self, raw):
-        self.raw = raw
+class BaseFileMetadata(BaseMetadata, metaclass=abc.ABCMeta):
 
     def serialized(self):
-        return {
-            'provider': self.provider,
-            'size': self.size,
+        return super().serialized().update({
+            'content_type': self.content_type,
             'modified': self.modified,
-            'revision': self.revision,
-            'extra': self.extra,
-        }
+            'size': self.size,
+        })
+
+    @property
+    def kind(self):
+        return 'file'
 
     @abc.abstractproperty
-    def provider(self):
+    def content_type(self):
         pass
 
     @abc.abstractproperty
@@ -71,11 +60,22 @@ class BaseRevision(metaclass=abc.ABCMeta):
     @abc.abstractproperty
     def size(self):
         pass
+
+
+class BaseFileRevisionMetadata(BaseFileMetadata, metaclass=abc.ABCMeta):
+
+    def serialized(self):
+        return super().serialized().update({
+            'revision': self.revision,
+        })
 
     @abc.abstractproperty
     def revision(self):
         pass
 
+
+class BaseFolderMetadata(BaseMetadata, metaclass=abc.ABCMeta):
+
     @property
-    def extra(self):
-        return {}
+    def kind(self):
+        return 'folder'
