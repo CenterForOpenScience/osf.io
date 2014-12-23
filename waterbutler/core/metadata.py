@@ -39,7 +39,7 @@ class BaseMetadata(metaclass=abc.ABCMeta):
 class BaseFileMetadata(BaseMetadata, metaclass=abc.ABCMeta):
 
     def serialized(self):
-        return super().serialized().update({
+        return dict(super().serialized(), **{
             'content_type': self.content_type,
             'modified': self.modified,
             'size': self.size,
@@ -65,7 +65,7 @@ class BaseFileMetadata(BaseMetadata, metaclass=abc.ABCMeta):
 class BaseFileRevisionMetadata(BaseFileMetadata, metaclass=abc.ABCMeta):
 
     def serialized(self):
-        return super().serialized().update({
+        return dict(super().serialized(), **{
             'revision': self.revision,
         })
 
