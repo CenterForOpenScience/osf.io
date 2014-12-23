@@ -118,6 +118,13 @@ class DropboxProvider(provider.BaseProvider):
     @guarded
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
+        try:
+            self.metadata(path)
+        except exceptions.MetadataError:
+            created = True
+        else:
+            created = False
+
         resp = yield from self.make_request(
             'PUT',
             self.build_content_url('files_put', 'auto', self.build_path(path)),
@@ -126,8 +133,9 @@ class DropboxProvider(provider.BaseProvider):
             expects=(200, ),
             throws=exceptions.UploadError,
         )
+
         data = yield from resp.json()
-        return DropboxFileMetadata(data).serialized()
+        return DropboxFileMetadata(data).serialized(), created
 
     @guarded
     @asyncio.coroutine
