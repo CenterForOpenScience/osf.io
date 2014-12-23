@@ -32,7 +32,6 @@ def ensure_connection(func):
 class CloudFilesProvider(provider.BaseProvider):
     """Provider for Rackspace CloudFiles
     """
-
     def __init__(self, auth, credentials, settings):
         super().__init__(auth, credentials, settings)
         self.token = None
@@ -42,6 +41,13 @@ class CloudFilesProvider(provider.BaseProvider):
         self.og_token = self.credentials['token']
         self.username = self.credentials['username']
         self.container = self.settings['container']
+
+    @property
+    def default_headers(self):
+        return {
+            'X-Auth-Token': self.token,
+            'Accept': 'application/json',
+        }
 
     def can_intra_copy(self, dest_provider):
         return self == dest_provider
@@ -63,8 +69,176 @@ class CloudFilesProvider(provider.BaseProvider):
         )
         return (yield from dest_provider.metadata(dest_options['path']))
 
+    @ensure_connection
+    def download(self, path, accept_url=False, **kwargs):
+        """Returns a ResponseStreamReader (Stream) for the specified path
+        :param str path: Path to the object you want to download
+        :param dict **kwargs: Additional arguments that are ignored
+        :rtype str:
+        :rtype ResponseStreamReader:
+        :raises: waterbutler.FileNotFoundError
+        """
+        path = self._format_path(path)
+        url = self._generate_url(path)
+
+        if accept_url:
+            return url
+
+        resp = yield from self.make_request(
+            'GET',
+            url,
+            expects=(200, ),
+            throws=exceptions.DownloadError,
+        )
+        return streams.ResponseStreamReader(resp)
+
+    @ensure_connection
+    def upload(self, stream, path, **kwargs):
+        """Uploads the given stream to S3
+        :param ResponseStreamReader stream: The stream to put to Cloudfiles
+        :param str path: The full path of the object to upload to/into
+        :rtype ResponseStreamReader:
+        """
+        path = self._format_path(path)
+        url = self._generate_url(path, 'PUT')
+
+        try:
+            yield from self.metadata(path, **kwargs)
+        except exceptions.MetadataError:
+            created = True
+        else:
+            created = False
+
+        yield from self.make_request(
+            'PUT',
+            url,
+            data=stream,
+            headers={'Content-Length': str(stream.size)},
+            expects=(200, 201),
+            throws=exceptions.UploadError,
+        )
+        return (yield from self.metadata(path)), created
+
+    @ensure_connection
+    def delete(self, path, **kwargs):
+        """Deletes the key at the specified path
+        :param str path: The path of the key to delete
+        :rtype ResponseStreamReader:
+        """
+        path = self._format_path(path)
+        yield from self.make_request(
+            'DELETE',
+            self.build_url(path),
+            expects=(204, ),
+            throws=exceptions.DeleteError,
+        )
+
+    @ensure_connection
+    def metadata(self, path, **kwargs):
+        """Get Metadata about the requested file or folder
+        :param str path: The path to a key or folder
+        :rtype dict:
+        :rtype list:
+        """
+        path = self._format_path(path)
+        if not path or path.endswith('/'):
+            return (yield from self._metadata_folder(path, **kwargs))
+        else:
+            return (yield from self._metadata_file(path, **kwargs))
+
+    def _metadata_file(self, path, **kwargs):
+        """Get Metadata about the requested file
+        :param str path: The path to a key
+        :rtype dict:
+        :rtype list:
+        """
+        url = furl.furl(self.build_url(path))
+        resp = yield from self.make_request(
+            'HEAD',
+            url.url,
+            expects=(200, ),
+            throws=exceptions.MetadataError,
+        )
+        return CloudFilesHeaderMetadata(resp.headers, path).serialized()
+
+    def _metadata_folder(self, path, **kwargs):
+        """Get Metadata about the requested folder
+        :param str path: The path to a folder
+        :rtype dict:
+        :rtype list:
+        """
+        url = furl.furl(self.build_url(''))
+        url.args.update({'prefix': path, 'delimiter': '/'})
+        resp = yield from self.make_request(
+            'GET',
+            url.url,
+            expects=(200, ),
+            throws=exceptions.MetadataError,
+        )
+
+        data = yield from resp.json()
+
+        if not data and path:
+            # check if a directory marker exists for an empty directory
+            metadata = yield from self._metadata_file(os.path.dirname(path), **kwargs)
+            if not metadata:
+                raise exceptions.MetadataError(
+                    'Could not retrieve folder {0}'.format(path),
+                    code=404,
+                )
+
+        # normalized metadata, remove extraneous directory markers
+        for item in data:
+            if 'subdir' in item:
+                for marker in data:
+                    if 'content_type' in marker and marker['content_type'] == 'application/directory':
+                        subdir_path = item['subdir'].rstrip('/')
+                        if marker['name'] == subdir_path:
+                            data.remove(marker)
+                            break
+
+        return [
+            self._serialize_folder_metadata(item)
+            for item in data
+        ]
+
+    def _serialize_folder_metadata(self, data):
+        if data.get('subdir'):
+            return CloudFilesFolderMetadata(data).serialized()
+        elif data['content_type'] == 'application/directory':
+            return CloudFilesFolderMetadata({'subdir': data['name'] + '/'}).serialized()
+        return CloudFilesFileMetadata(data).serialized()
+
+    def _format_path(self, path):
+        """Validates and converts a WaterButler specific path to a Provider specific path
+        :param str path: WaterButler specific path
+        :rtype str: Provider specific path
+        """
+        if not path or not path.startswith('/'):
+            raise exceptions.MetadataError('Invalid path \'{}\' specified'.format(path))
+
+        path = path.lstrip('/')
+        return path
+
     @asyncio.coroutine
-    def get_token(self):
+    def _ensure_connection(self):
+        """Defines token, endpoint and temp_url_key if they are not already defined
+        :raises ProviderError: If no temp url key is available
+        """
+        # Must have a temp url key for download and upload
+        # Currently You must have one for everything however
+        if not self.token or not self.endpoint or not self.temp_url_key:
+            data = yield from self._get_token()
+            self.token = data['access']['token']['id']
+            self.endpoint = self._extract_endpoint(data)
+            resp = yield from self.make_request('HEAD', self.endpoint, expects=(204, ))
+            try:
+                self.temp_url_key = resp.headers['X-Account-Meta-Temp-URL-Key'].encode()
+            except KeyError:
+                raise exceptions.ProviderError('No temp url key is available', code=503)
+
+    @asyncio.coroutine
+    def _get_token(self):
         """Fetchs an access token from cloudfiles for actual api requests
         Returns the entire json response from the tokens endpoint
         Notably containing our token and proper endpoint to send requests to
@@ -89,31 +263,7 @@ class CloudFilesProvider(provider.BaseProvider):
         data = yield from resp.json()
         return data
 
-    @asyncio.coroutine
-    def _ensure_connection(self):
-        """Defines token, endpoint and temp_url_key if they are not already defined
-        :raises ProviderError: If no temp url key is available
-        """
-        # Must have a temp url key for download and upload
-        # Currently You must have one for everything however
-        if not self.token or not self.endpoint or not self.temp_url_key:
-            data = yield from self.get_token()
-            self.token = data['access']['token']['id']
-            self.endpoint = self.extract_endpoint(data)
-            resp = yield from self.make_request('HEAD', self.endpoint, expects=(204, ))
-            try:
-                self.temp_url_key = resp.headers['X-Account-Meta-Temp-URL-Key'].encode()
-            except KeyError:
-                raise exceptions.ProviderError('No temp url key is available', code=503)
-
-    @property
-    def default_headers(self):
-        return {
-            'X-Auth-Token': self.token,
-            'Accept': 'application/json',
-        }
-
-    def extract_endpoint(self, data):
+    def _extract_endpoint(self, data):
         """Pulls the proper cloudfiles url from the return of tokens
         Very optimized.
         :param dict data: The json response from the token endpoint
@@ -125,7 +275,7 @@ class CloudFilesProvider(provider.BaseProvider):
                     if region['region'].lower() == self.region.lower():
                         return region['publicURL']
 
-    def build_url(self, path):
+    def _build_url(self, path):
         """Build the url for the specified object
         :param str path: The stream in question
         :rtype str:
@@ -135,7 +285,7 @@ class CloudFilesProvider(provider.BaseProvider):
         url.path.add(path)
         return url.url
 
-    def generate_url(self, path, method='GET', seconds=settings.TEMP_URL_SECS):
+    def _generate_url(self, path, method='GET', seconds=settings.TEMP_URL_SECS):
         """Build and sign a temp url for the specified stream
         :param str stream: The requested stream's path
         :param str method: The HTTP method used to access the returned url
@@ -154,134 +304,3 @@ class CloudFilesProvider(provider.BaseProvider):
             'temp_url_expires': expires,
         })
         return url.url
-
-    @ensure_connection
-    def download(self, path, accept_url=False, **kwargs):
-        """Returns a ResponseStreamReader (Stream) for the specified path
-        :param str path: Path to the object you want to download
-        :param dict **kwargs: Additional arguments that are ignored
-        :rtype str:
-        :rtype ResponseStreamReader:
-        :raises: waterbutler.FileNotFoundError
-        """
-        url = self.generate_url(path)
-
-        if accept_url:
-            return url
-
-        resp = yield from self.make_request(
-            'GET',
-            url,
-            expects=(200, ),
-            throws=exceptions.DownloadError,
-        )
-        return streams.ResponseStreamReader(resp)
-
-    @ensure_connection
-    def upload(self, stream, path, **kwargs):
-        """Uploads the given stream to S3
-        :param ResponseStreamReader stream: The stream to put to Cloudfiles
-        :param str path: The full path of the object to upload to/into
-        :rtype ResponseStreamReader:
-        """
-        url = self.generate_url(path, 'PUT')
-        yield from self.make_request(
-            'PUT',
-            url,
-            data=stream,
-            headers={'Content-Length': str(stream.size)},
-            expects=(200, 201),
-            throws=exceptions.UploadError,
-        )
-        return (yield from self.metadata(path))
-
-    @ensure_connection
-    def delete(self, path, **kwargs):
-        """Deletes the key at the specified path
-        :param str path: The path of the key to delete
-        :rtype ResponseStreamReader:
-        """
-        yield from self.make_request(
-            'DELETE',
-            self.build_url(path),
-            expects=(204, ),
-            throws=exceptions.DeleteError,
-        )
-
-    @ensure_connection
-    def metadata(self, path, **kwargs):
-        """Get Metadata about the requested file or folder
-        :param str path: The path to a key or folder
-        :rtype dict:
-        :rtype list:
-        """
-        if not path:
-            raise exceptions.MetadataError('Must specify path')
-
-        if path.endswith('/'):
-            return (yield from self._metadata_folder(path, **kwargs))
-        else:
-            return (yield from self._metadata_file(path, **kwargs))
-
-    def _metadata_folder(self, path, **kwargs):
-        """Get Metadata about the requested folder
-        :param str path: The path to a folder
-        :rtype dict:
-        :rtype list:
-        """
-        url = furl.furl(self.build_url(''))
-        url.args.update({'prefix': path, 'delimiter': '/'})
-        resp = yield from self.make_request(
-            'GET',
-            url.url,
-            expects=(200, ),
-            throws=exceptions.MetadataError,
-        )
-
-        data = yield from resp.json()
-
-        if not data and path != '/':
-            # check if a directory marker exists for an empty directory
-            metadata = yield from self._metadata_file(os.path.dirname(path), **kwargs)
-            if not metadata:
-                raise exceptions.MetadataError(
-                    'Could not retrieve folder {0}'.format(path),
-                    code=404,
-                )
-
-        # normalized metadata, remove extraneous directory markers
-        for item in data:
-            if 'subdir' in item:
-                for marker in data:
-                    if 'content_type' in marker and marker['content_type'] == 'application/directory':
-                        subdir_path = item['subdir'].rstrip('/')
-                        if marker['name'] == subdir_path:
-                            data.remove(marker)
-                            break
-
-        return [
-            self._serialize_folder_metadata(item)
-            for item in data
-        ]
-
-    def _metadata_file(self, path, **kwargs):
-        """Get Metadata about the requested file
-        :param str path: The path to a key
-        :rtype dict:
-        :rtype list:
-        """
-        url = furl.furl(self.build_url(path))
-        resp = yield from self.make_request(
-            'HEAD',
-            url.url,
-            expects=(200, ),
-            throws=exceptions.MetadataError,
-        )
-        return CloudFilesHeaderMetadata(resp.headers, path).serialized()
-
-    def _serialize_folder_metadata(self, data):
-        if data.get('subdir'):
-            return CloudFilesFolderMetadata(data).serialized()
-        elif data['content_type'] == 'application/directory':
-            return CloudFilesFolderMetadata({'subdir': data['name'] + '/'}).serialized()
-        return CloudFilesFileMetadata(data).serialized()

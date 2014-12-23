@@ -18,7 +18,7 @@ class CloudFilesFileMetadata(BaseCloudFilesMetadata, metadata.BaseFileMetadata):
 
     @property
     def path(self):
-        return self.raw['name']
+        return self.impute_slashes(self.raw['name'])
 
     @property
     def size(self):
@@ -45,7 +45,7 @@ class CloudFilesHeaderMetadata(BaseCloudFilesMetadata, metadata.BaseFileMetadata
 
     @property
     def path(self):
-        return self._path
+        return self.impute_slashes(self._path)
 
     @property
     def size(self):
@@ -68,4 +68,4 @@ class CloudFilesFolderMetadata(BaseCloudFilesMetadata, metadata.BaseFolderMetada
 
     @property
     def path(self):
-        return self.raw['subdir']
+        return self.impute_slashes(self.raw['subdir'])
