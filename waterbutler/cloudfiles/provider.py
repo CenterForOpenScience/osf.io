@@ -271,7 +271,7 @@ class CloudFilesProvider(provider.BaseProvider):
         resp = yield from self.make_request(
             'HEAD',
             url.url,
-            expects=(200, 204, ),
+            expects=(200, ),
             throws=exceptions.MetadataError,
         )
         return CloudFilesHeaderMetadata(resp.headers, path).serialized()
