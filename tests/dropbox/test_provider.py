@@ -166,12 +166,15 @@ def test_metadata_missing(provider):
 def test_upload(provider, file_metadata, file_stream, settings):
     path = 'phile'
     url = provider.build_content_url('files_put', 'auto', provider.build_path(path))
+    metadata_url = provider.build_url('metadata', 'auto', provider.build_path(path))
+
+    aiohttpretty.register_uri('GET', metadata_url, status=404)
     aiohttpretty.register_json_uri('PUT', url, status=200, body=file_metadata)
 
-    metadata = yield from provider.upload(file_stream, path)
+    metadata, created = yield from provider.upload(file_stream, path)
     expected = DropboxFileMetadata(file_metadata).serialized()
     assert metadata == expected
-
+    assert created == True
     assert aiohttpretty.has_call(method='PUT', uri=url)
 
 
