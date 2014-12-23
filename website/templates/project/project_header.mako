@@ -176,6 +176,7 @@
                             <li><a href="${node['url']}registrations/">Registrations</a></li>
                         % endif
                         <li><a href="${node['url']}forks/">Forks</a></li>
+                        <li><a href="${node['url']}discussions/">Discussions</a></li>
                         % if user['is_contributor']:
                             <li><a href="${node['url']}contributors/">Sharing</a></li>
                         % endif
