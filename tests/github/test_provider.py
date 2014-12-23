@@ -219,7 +219,7 @@ def test_upload_create(provider, upload_response, file_content, file_stream):
 def test_upload_update(provider, upload_response, file_content, file_stream):
     message = 'so hungry'
     sha = upload_response['content']['sha']
-    path = '/' + upload_response['content']['path']
+    path = upload_response['content']['path']
 
     upload_url = provider.build_repo_url('contents', path)
     metadata_url = provider.build_repo_url('contents', os.path.dirname(path))
