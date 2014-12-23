@@ -97,6 +97,12 @@ class S3Provider(provider.BaseProvider):
         :rtype ResponseWrapper:
         """
         stream.add_writer('md5', streams.HashStreamWriter(hashlib.md5))
+        try:
+            yield from self.metadata(path, **kwargs)
+        except exceptions.MetadataError:
+            created = True
+        else:
+            created = False
         key = self.bucket.new_key(path)
         url = key.generate_url(settings.TEMP_URL_SECS, 'PUT')
         resp = yield from self.make_request(
@@ -110,7 +116,7 @@ class S3Provider(provider.BaseProvider):
         # TODO: nice assertion error goes here
         assert resp.headers['ETag'].replace('"', '') == stream.writers['md5'].hexdigest
 
-        return (yield from self.metadata(path))
+        return (yield from self.metadata(path, **kwargs)), created
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):

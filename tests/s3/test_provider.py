@@ -343,12 +343,20 @@ def test_upload(provider, file_content, file_stream, file_metadata):
     content_md5 = hashlib.md5(file_content).hexdigest()
     url = provider.bucket.new_key(path).generate_url(100, 'PUT')
     metadata_url = provider.bucket.new_key(path).generate_url(100, 'HEAD')
-    aiohttpretty.register_uri('HEAD', metadata_url, headers=file_metadata)
-    aiohttpretty.register_uri('PUT', url, status=200, headers={'ETag': '"{}"'.format(content_md5)})
+    aiohttpretty.register_uri(
+        'HEAD',
+        metadata_url,
+        responses=[
+            {'status': 404},
+            {'headers': file_metadata},
+        ],
+    )
+    aiohttpretty.register_uri('PUT', url, status=200, headers={'ETag': '"{}"'.format(content_md5)}),
 
-    resp = yield from provider.upload(file_stream, path)
+    metadata, created = yield from provider.upload(file_stream, path)
 
-    assert resp['kind'] == 'file'
+    assert metadata['kind'] == 'file'
+    assert created
     assert aiohttpretty.has_call(method='PUT', uri=url)
     assert aiohttpretty.has_call(method='HEAD', uri=metadata_url)
 
@@ -384,9 +392,10 @@ def test_upload_update(provider, file_content, file_stream, file_metadata):
     aiohttpretty.register_uri('HEAD', metadata_url, headers=file_metadata)
     aiohttpretty.register_uri('PUT', url, status=201, headers={'ETag': '"{}"'.format(content_md5)})
 
-    resp = yield from provider.upload(file_stream, path)
+    metadata, created = yield from provider.upload(file_stream, path)
 
-    assert resp['kind'] == 'file'
+    assert metadata['kind'] == 'file'
+    assert not created
     assert aiohttpretty.has_call(method='PUT', uri=url)
     assert aiohttpretty.has_call(method='HEAD', uri=metadata_url)
 
