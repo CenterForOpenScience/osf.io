@@ -124,6 +124,7 @@ def query_app_rss(node_addon, **kwargs):
     size = request.args.get('size')
     start = request.args.get('from')
     query = args_to_query(q, size, start)
+    extended = request.args.get('extended')
 
     try:
         ret = search(query, doc_type=node_addon.namespace, index='metadata')
@@ -139,7 +140,10 @@ def query_app_rss(node_addon, **kwargs):
     name = node_addon.system_user.username
 
     rss_url = node.api_url_for('query_app_rss', _xml=True, _absolute=True)
-    return elastic_to_rss(name, ret['results'], q, rss_url)
+    if extended:
+        return elastic_to_rss(name, ret['results'], q, rss_url, extended=True)
+    else:
+        return elastic_to_rss(name, ret['results'], q, rss_url)
 
 
 # GET
@@ -165,7 +169,6 @@ def query_app_extended_rss(node_addon, **kwargs):
     name = node_addon.system_user.username
 
     rss_url = node.api_url_for('query_app_rss', _xml=True, _absolute=True)
-    return elastic_to_rss(name, ret['results'], q, rss_url, simple=False)
 
 
 # GET

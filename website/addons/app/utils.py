@@ -113,7 +113,7 @@ def format_categories(tags_list):
     return cat_list
 
 
-def elastic_to_rss(name, data, query, url, simple=True):
+def elastic_to_rss(name, data, query, url, extended=False):
     count = len(data)
 
     items = [
@@ -123,7 +123,7 @@ def elastic_to_rss(name, data, query, url, simple=True):
                 'id') else doc['links'][0]['url'],
             title=doc.get('title', 'No title provided'),
             author=doc.get('source'),
-            description=doc.get('description') if simple else json.dumps(doc, indent=4, sort_keys=True),
+            description=json.dumps(doc, indent=4, sort_keys=True) if extended else doc.get('description'),
             categories=doc.get('tags', 'No tags provided'),
             pubDate=parse(doc.get('dateUpdated'))
         )
