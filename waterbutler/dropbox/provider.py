@@ -119,7 +119,7 @@ class DropboxProvider(provider.BaseProvider):
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
         try:
-            self.metadata(path)
+            yield from self.metadata(path)
         except exceptions.MetadataError:
             created = True
         else:
