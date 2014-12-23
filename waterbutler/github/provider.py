@@ -64,6 +64,7 @@ class GithubProvider(provider.BaseProvider):
         )
         if existing:
             data['sha'] = existing['extra']['sha']
+
         response = yield from self.make_request(
             'PUT',
             self.build_repo_url('contents', path),

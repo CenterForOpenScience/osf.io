@@ -217,14 +217,18 @@ def test_upload_create(provider, upload_response, file_content, file_stream):
 @async
 @pytest.mark.aiohttpretty
 def test_upload_update(provider, upload_response, file_content, file_stream):
-    path = upload_response['content']['path']
-    sha = upload_response['content']['sha']
     message = 'so hungry'
-    metadata_url = provider.build_repo_url('contents', os.path.dirname(path))
-    aiohttpretty.register_json_uri('GET', metadata_url, body=[upload_response['content']])
+    sha = upload_response['content']['sha']
+    path = '/' + upload_response['content']['path']
+
     upload_url = provider.build_repo_url('contents', path)
+    metadata_url = provider.build_repo_url('contents', os.path.dirname(path))
+
     aiohttpretty.register_json_uri('PUT', upload_url, body=upload_response)
+    aiohttpretty.register_json_uri('GET', metadata_url, body=[upload_response['content']])
+
     yield from provider.upload(file_stream, path, message)
+
     expected_data = {
         'path': path,
         'message': message,
@@ -232,6 +236,7 @@ def test_upload_update(provider, upload_response, file_content, file_stream):
         'committer': provider.committer,
         'sha': sha,
     }
+
     assert aiohttpretty.has_call(method='GET', uri=metadata_url)
     assert aiohttpretty.has_call(method='PUT', uri=upload_url, data=json.dumps(expected_data))
 
