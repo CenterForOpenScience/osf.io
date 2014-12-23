@@ -4,8 +4,9 @@ import tornado.web
 
 from stevedore import driver
 
+from waterbutler.core import exceptions
+
 from waterbutler.server import settings
-from waterbutler.server import exceptions
 from waterbutler.server.identity import get_identity
 
 
@@ -66,8 +67,9 @@ class BaseHandler(tornado.web.RequestHandler):
 
     def write_error(self, status_code, exc_info):
         etype, exc, _ = exc_info
-        if etype is exceptions.WaterButlerError:
+        if issubclass(etype, exceptions.ProviderError):
             if exc.data:
+                self.set_status(exc.code)
                 self.finish(exc.data)
                 return
 
