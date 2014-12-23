@@ -96,16 +96,17 @@ class BaseHandler(tornado.web.RequestHandler):
             'action': action,
             'provider': self.arguments['provider'],
             'metadata': metadata,
-            'auth': self.auth,
+            'auth': self.payload['auth'],
             'time': time.time() + 60
         }
         message, signature = signer.sign_payload(payload)
         resp = aiohttp.request(
             'PUT',
-            self.callback_url,
+            self.payload['callback_url'],
             data=json.dumps({
-                'message': message,
+                'payload': message.decode(),
                 'signature': signature,
             }),
+            headers={'Content-Type': 'application/json'},
         )
         return resp

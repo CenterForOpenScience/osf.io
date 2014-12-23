@@ -17,5 +17,5 @@ CHUNK_SIZE = config.get('CHUNK_SIZE', 65536)  # 64KB
 IDENTITY_METHOD = config.get('IDENTITY_METHOD', 'rest')
 IDENTITY_API_URL = config.get('IDENTITY_API_URL', 'changeme')
 
-HMAC_SECRET = config.get('HMAC_SECRET', 'changeme')
+HMAC_SECRET = config.get('HMAC_SECRET', 'changeme').encode('utf-8')
 HMAC_ALGORITHM = hashlib.sha256
