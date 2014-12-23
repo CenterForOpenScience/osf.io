@@ -63,6 +63,7 @@ def args_to_query(query, start=0, size=250):
         'size': size,
     }
 
+
 def elastic_to_atom(name, data, query, url):
     if query == '*':
         title_query = 'All'
@@ -103,6 +104,7 @@ def format_contributors_for_atom(contributors_list):
 
     return formatted_names
 
+
 def format_categories(tags_list):
     cat_list = []
     for tag in tags_list:
@@ -110,16 +112,18 @@ def format_categories(tags_list):
 
     return cat_list
 
-def elastic_to_rss(name, data, query, url):
+
+def elastic_to_rss(name, data, query, url, extended=False):
     count = len(data)
 
     items = [
         pyrss.RSSItem(
             guid=doc.get('id', {}).get('serviceID') or doc['_id'],
-            link=doc['id']['url'] if doc.get('id') else doc['links'][0]['url'],
+            link=doc['id']['url'] if doc.get(
+                'id') else doc['links'][0]['url'],
             title=doc.get('title', 'No title provided'),
             author=doc.get('source'),
-            description=json.dumps(doc, indent=4, sort_keys=True),
+            description=json.dumps(doc, indent=4, sort_keys=True) if extended else doc.get('description'),
             categories=doc.get('tags', 'No tags provided'),
             pubDate=parse(doc.get('dateUpdated'))
         )
@@ -149,6 +153,7 @@ def elastic_to_rss(name, data, query, url):
 
     return f.getvalue()
 
+
 def elastic_to_resourcelist(name, data, q):
     ''' Returns a list of links to external resources
         resourceSync XML Document'''
@@ -165,6 +170,7 @@ def elastic_to_resourcelist(name, data, q):
             print("Warning: duplicate URL - not adding to ResourceList")
 
     return rl.as_xml()
+
 
 def elastic_to_changelist(name, data, q):
     ''' Returns a list of recently changed documents,
@@ -214,7 +220,8 @@ def generate_schema(schema):
                 elif len(value) == 1:
                     ret[key] = [TYPE_MAP[value[0]]]
                 else:
-                    raise InvalidSchemaError('Field {} contained a list with more than one value'.format(key))
+                    raise InvalidSchemaError(
+                        'Field {} contained a list with more than one value'.format(key))
             else:
                 ret[key] = TYPE_MAP[value]
     except KeyError as e:
