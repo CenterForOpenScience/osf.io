@@ -215,6 +215,9 @@ class CloudFilesProvider(provider.BaseProvider):
         :rtype dict:
         :rtype list:
         """
+        if not path:
+            raise exceptions.MetadataError('Must specify path')
+
         if path.endswith('/'):
             return (yield from self._metadata_folder(path, **kwargs))
         else:
