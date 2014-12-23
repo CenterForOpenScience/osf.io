@@ -11,16 +11,15 @@ class BaseMetadata(metaclass=abc.ABCMeta):
             'provider': self.provider,
             'kind': self.kind,
             'name': self.name,
-            'path': self.impute_slashes(self.path),
+            'path': self.path,
             'extra': self.extra,
         }
 
-    def impute_slashes(self, path):
+    def _impute_slashes(self, path):
         if not path.startswith('/'):
             path = '/' + path
         if self.kind == 'folder' and not path.endswith('/'):
             path += '/'
-
         return path
 
     @abc.abstractproperty
@@ -35,8 +34,12 @@ class BaseMetadata(metaclass=abc.ABCMeta):
     def name(self):
         pass
 
-    @abc.abstractproperty
+    @property
     def path(self):
+        return self._impute_slashes(self._path)
+
+    @abc.abstractproperty
+    def _path(self):
         pass
 
     @property
