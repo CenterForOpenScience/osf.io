@@ -112,9 +112,7 @@ def auth_json():
 #   level1/  (folder_root_level1)
 #   level1/level2/ (folder_root_level1_level2)
 #   level1/level2/file2.file - (file_root_level1_level2_file2_txt)
-#   subdir/ (folder_root_subdir)
-#   subdir/file1.txt (file_root_subdir_file2_txt)
-#   subdir_empty/ (folder_root_subdir_empty)
+#   level1_empty/ (folder_root_level1_empty)
 #   similar (file_similar)
 #   similar.name (file_similar_name)
 #   does_not_exist (404)
@@ -154,20 +152,10 @@ def folder_root():
             'bytes': 190
         },
         {
-            'last_modified': '2014-12-19T23:20:29.045170',
-            'content_type': 'application/directory',
-            'hash': 'd41d8cd98f00b204e9800998ecf8427e',
-            'name': 'subdir',
-            'bytes': 0
-        },
-        {
-            'subdir': 'subdir/'
-        },
-        {
             'last_modified': '2014-12-19T23:20:16.718860',
             'content_type': 'application/directory',
             'hash': 'd41d8cd98f00b204e9800998ecf8427e',
-            'name': 'subdir_empty',
+            'name': 'level1_empty',
             'bytes': 0
         }
     ]
@@ -218,35 +206,7 @@ def file_root_level1_level2_file2_txt():
 
 
 @pytest.fixture
-def folder_root_subdir():
-    return [
-        {
-            'name': 'subdir/file1.txt',
-            'content_type': 'application/x-www-form-urlencoded;charset=utf-8',
-            'last_modified': '2014-12-19T23:24:19.961720',
-            'bytes': 1365336,
-            'hash': 'ebc8cdd3f712fd39476fb921d43aca1a'
-        }
-    ]
-
-
-@pytest.fixture
-def file_root_subdir_file1_txt():
-    return aiohttp.multidict.CaseInsensitiveMultiDict([
-        ('ORIGIN', 'https://mycloud.rackspace.com'),
-        ('CONTENT-LENGTH', '34'),
-        ('ACCEPT-RANGES', 'bytes'),
-        ('LAST-MODIFIED', 'Mon, 22 Dec 2014 19:01:28 GMT'),
-        ('ETAG', '3acbf4bb8a1943cee2f3fe6af17b225b'),
-        ('X-TIMESTAMP', '1419274887.83208'),
-        ('CONTENT-TYPE', 'text/plain'),
-        ('X-TRANS-ID', 'tx5ea97cf4f4924f9193a69-0054987f9diad3'),
-        ('DATE', 'Mon, 22 Dec 2014 20:31:25 GMT')
-    ])
-
-
-@pytest.fixture
-def folder_root_subdir_empty():
+def folder_root_level1_empty():
     return aiohttp.multidict.CaseInsensitiveMultiDict([
         ('ORIGIN', 'https://mycloud.rackspace.com'),
         ('CONTENT-LENGTH', '0'),
@@ -399,7 +359,7 @@ def test_metadata_folder_root(connected_provider, folder_root):
     aiohttpretty.register_uri('GET', url.url, status=200, body=body)
     result = yield from connected_provider.metadata(path)
 
-    assert len(result) == 5
+    assert len(result) == 4
     assert result[0]['name'] == 'level1'
     assert result[0]['path'] == 'level1/'
     assert result[0]['kind'] == 'folder'
@@ -409,12 +369,9 @@ def test_metadata_folder_root(connected_provider, folder_root):
     assert result[2]['name'] == 'similar.file'
     assert result[2]['path'] == 'similar.file'
     assert result[2]['kind'] == 'file'
-    assert result[3]['name'] == 'subdir'
-    assert result[3]['path'] == 'subdir/'
+    assert result[3]['name'] == 'level1_empty'
+    assert result[3]['path'] == 'level1_empty/'
     assert result[3]['kind'] == 'folder'
-    assert result[4]['name'] == 'subdir_empty'
-    assert result[4]['path'] == 'subdir_empty/'
-    assert result[4]['kind'] == 'folder'
 
 
 @async
@@ -465,44 +422,14 @@ def test_metadata_file_root_level1_level2_file2_txt(connected_provider, file_roo
 
 @async
 @pytest.mark.aiohttpretty
-def test_metadata_folder_root_subdir(connected_provider, folder_root_subdir):
-    path = 'subdir/'
-    body = json.dumps(folder_root_subdir).encode('utf-8')
-    url = furl.furl(connected_provider.build_url(''))
-    url.args.update({'prefix': path, 'delimiter': '/'})
-    aiohttpretty.register_uri('GET', url.url, status=200, body=body)
-    result = yield from connected_provider.metadata(path)
-
-    assert len(result) == 1
-    assert result[0]['name'] == 'file1.txt'
-    assert result[0]['path'] == 'subdir/file1.txt'
-    assert result[0]['kind'] == 'file'
-
-
-@async
-@pytest.mark.aiohttpretty
-def test_metadata_file_root_subdir_file1_txt(connected_provider, file_root_subdir_file1_txt):
-    path = 'subdir/file1.txt'
-    url = furl.furl(connected_provider.build_url(path))
-    aiohttpretty.register_uri('HEAD', url.url, status=200, headers=file_root_subdir_file1_txt)
-    result = yield from connected_provider.metadata(path)
-
-    assert result['name'] == 'file1.txt'
-    assert result['path'] == 'subdir/file1.txt'
-    assert result['kind'] == 'file'
-    assert result['content_type'] == 'text/plain'
-
-
-@async
-@pytest.mark.aiohttpretty
-def test_metadata_folder_root_subdir_empty(connected_provider, folder_root_subdir_empty):
-    path = 'subdir_empty/'
+def test_metadata_folder_root_level1_empty(connected_provider, folder_root_level1_empty):
+    path = 'level1_empty/'
     folder_url = furl.furl(connected_provider.build_url(''))
     folder_url.args.update({'prefix': path, 'delimiter': '/'})
     folder_body = json.dumps([]).encode('utf-8')
     file_url = furl.furl(connected_provider.build_url(path.rstrip('/')))
     aiohttpretty.register_uri('GET', folder_url.url, status=200, body=folder_body)
-    aiohttpretty.register_uri('HEAD', file_url.url, status=200, headers=folder_root_subdir_empty)
+    aiohttpretty.register_uri('HEAD', file_url.url, status=200, headers=folder_root_level1_empty)
     result = yield from connected_provider.metadata(path)
 
     assert result == []
