@@ -336,6 +336,13 @@ def test_download_not_found(connected_provider):
 
 
 @async
+def test_metadata_invalid_root_path(connected_provider):
+    path = ''
+    with pytest.raises(exceptions.MetadataError):
+        yield from connected_provider.metadata(path)
+
+
+@async
 @pytest.mark.aiohttpretty
 def test_metadata_folder_root_empty(connected_provider, folder_root_empty):
     path = '/'
