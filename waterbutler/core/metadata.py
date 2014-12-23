@@ -11,9 +11,17 @@ class BaseMetadata(metaclass=abc.ABCMeta):
             'provider': self.provider,
             'kind': self.kind,
             'name': self.name,
-            'path': self.path,
+            'path': self.impute_slashes(self.path),
             'extra': self.extra,
         }
+
+    def impute_slashes(self, path):
+        if not path.startswith('/'):
+            path = '/' + path
+        if self.kind == 'folder' and not path.endswith('/'):
+            path += '/'
+
+        return path
 
     @abc.abstractproperty
     def provider(self):
@@ -40,7 +48,7 @@ class BaseFileMetadata(BaseMetadata, metaclass=abc.ABCMeta):
 
     def serialized(self):
         return dict(super().serialized(), **{
-            'content_type': self.content_type,
+            'contentType': self.content_type,
             'modified': self.modified,
             'size': self.size,
         })
