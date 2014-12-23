@@ -144,7 +144,7 @@ class S3Provider(provider.BaseProvider):
         content = yield from resp.read_and_close()
         obj = objectify.fromstring(content)
         return [
-            S3Revision(item).serialized()
+            S3Revision(path, item).serialized()
             for item in getattr(obj, 'Version', [])
         ]
 
@@ -187,9 +187,13 @@ class S3Provider(provider.BaseProvider):
         items = [
             S3FolderMetadata(item).serialized()
             for item in getattr(obj, 'CommonPrefixes', [])
+            if item.Prefix.text
         ]
 
         for content in getattr(obj, 'Contents', []):
+            if not content.Key.text:
+                continue
+
             if content.Key.text.endswith('/'):
                 items.append(S3FolderKeyMetadata(content).serialized())
             else:

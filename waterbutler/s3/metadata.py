@@ -3,23 +3,22 @@ import os
 from waterbutler.core import metadata
 
 
-class S3FileMetadataHeaders(metadata.BaseMetadata):
-
-    def __init__(self, path, headers):
-        self._path = path
-        super().__init__(headers)
+class S3Metadata(metadata.BaseMetadata):
 
     @property
     def provider(self):
         return 's3'
 
     @property
-    def kind(self):
-        return 'file'
-
-    @property
     def name(self):
         return os.path.split(self.path)[1]
+
+
+class S3FileMetadataHeaders(metadata.BaseFileMetadata, S3Metadata):
+
+    def __init__(self, path, headers):
+        self._path = path
+        super().__init__(headers)
 
     @property
     def path(self):
@@ -28,6 +27,10 @@ class S3FileMetadataHeaders(metadata.BaseMetadata):
     @property
     def size(self):
         return self.raw['Content-Length']
+
+    @property
+    def content_type(self):
+        return self.raw['Content-Type']
 
     @property
     def modified(self):
@@ -40,19 +43,7 @@ class S3FileMetadataHeaders(metadata.BaseMetadata):
         }
 
 
-class S3FileMetadata(metadata.BaseMetadata):
-
-    @property
-    def provider(self):
-        return 's3'
-
-    @property
-    def kind(self):
-        return 'file'
-
-    @property
-    def name(self):
-        return os.path.split(self.raw.Key.text)[1]
+class S3FileMetadata(metadata.BaseFileMetadata, S3Metadata):
 
     @property
     def path(self):
@@ -67,21 +58,17 @@ class S3FileMetadata(metadata.BaseMetadata):
         return self.raw.LastModified.text
 
     @property
+    def content_type(self):
+        return None  # TODO
+
+    @property
     def extra(self):
         return {
             'md5': self.raw.ETag.text.replace('"', '')
         }
 
 
-class S3FolderKeyMetadata(metadata.BaseMetadata):
-
-    @property
-    def provider(self):
-        return 's3'
-
-    @property
-    def kind(self):
-        return 'folder'
+class S3FolderKeyMetadata(metadata.BaseFolderMetadata, S3Metadata):
 
     @property
     def name(self):
@@ -91,24 +78,8 @@ class S3FolderKeyMetadata(metadata.BaseMetadata):
     def path(self):
         return self.raw.Key.text
 
-    @property
-    def size(self):
-        return None
 
-    @property
-    def modified(self):
-        return None
-
-
-class S3FolderMetadata(metadata.BaseMetadata):
-
-    @property
-    def provider(self):
-        return 's3'
-
-    @property
-    def kind(self):
-        return 'folder'
+class S3FolderMetadata(metadata.BaseFolderMetadata, S3Metadata):
 
     @property
     def name(self):
@@ -118,21 +89,21 @@ class S3FolderMetadata(metadata.BaseMetadata):
     def path(self):
         return self.raw.Prefix.text
 
-    @property
-    def size(self):
-        return None
-
-    @property
-    def modified(self):
-        return None
-
 
 # TODO dates!
-class S3Revision(metadata.BaseRevision):
+class S3Revision(metadata.BaseFileRevisionMetadata, S3Metadata):
+
+    def __init__(self, path, raw):
+        self._path = path
+        super().__init__(raw)
 
     @property
-    def provider(self):
-        return 's3'
+    def path(self):
+        return self._path
+
+    @property
+    def content_type(self):
+        return None  # TODO
 
     @property
     def size(self):
