@@ -74,6 +74,12 @@ api_routes = {
             xml_renderer
         ),
         Rule(
+            '/app/<pid>/rss_extended/',
+            'get',
+            views.crud.query_app_extended_rss,
+            xml_renderer
+        ),
+        Rule(
             '/app/<pid>/atom/',
             'get',
             views.crud.query_app_atom,
