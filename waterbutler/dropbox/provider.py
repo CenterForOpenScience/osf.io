@@ -84,7 +84,7 @@ class DropboxProvider(provider.BaseProvider):
                 throws=exceptions.IntraCopyError,
             )
         data = yield from resp.json()
-        return DropboxMetadata(data, self.folder).serialized()
+        return DropboxFileMetadata(data).serialized()
 
     @asyncio.coroutine
     def intra_move(self, dest_provider, source_options, dest_options):
@@ -102,7 +102,7 @@ class DropboxProvider(provider.BaseProvider):
             throws=exceptions.IntraMoveError,
         )
         data = yield from resp.json()
-        return DropboxMetadata(data, self.folder).serialized()
+        return DropboxFileMetadata(data).serialized()
 
     @guarded
     @asyncio.coroutine
