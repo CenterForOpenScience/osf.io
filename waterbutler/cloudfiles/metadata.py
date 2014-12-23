@@ -3,42 +3,14 @@ import os
 from waterbutler.core import metadata
 
 
-class CloudFilesHeaderMetadata(metadata.BaseFileMetadata):
-
-    def __init__(self, raw, path):
-        super().__init__(raw)
-        self._path = path
+class BaseCloudFilesMetadata(metadata.BaseMetadata):
 
     @property
     def provider(self):
         return 'cloudfiles'
 
-    @property
-    def name(self):
-        return os.path.split(self._path)[1]
 
-    @property
-    def path(self):
-        return self._path
-
-    @property
-    def size(self):
-        return int(self.raw['Content-Length'])
-
-    @property
-    def modified(self):
-        return self.raw['Last-Modified']
-
-    @property
-    def content_type(self):
-        return self.raw['Content-Type']
-
-
-class CloudFilesFileMetadata(metadata.BaseFileMetadata):
-
-    @property
-    def provider(self):
-        return 'cloudfiles'
+class CloudFilesFileMetadata(BaseCloudFilesMetadata, metadata.BaseFileMetadata):
 
     @property
     def name(self):
@@ -61,11 +33,34 @@ class CloudFilesFileMetadata(metadata.BaseFileMetadata):
         return self.raw['content_type']
 
 
-class CloudFilesFolderMetadata(metadata.BaseFolderMetadata):
+class CloudFilesHeaderMetadata(BaseCloudFilesMetadata, metadata.BaseFileMetadata):
+
+    def __init__(self, raw, path):
+        super().__init__(raw)
+        self._path = path
 
     @property
-    def provider(self):
-        return 'cloudfiles'
+    def name(self):
+        return os.path.split(self._path)[1]
+
+    @property
+    def path(self):
+        return self._path
+
+    @property
+    def size(self):
+        return int(self.raw['Content-Length'])
+
+    @property
+    def modified(self):
+        return self.raw['Last-Modified']
+
+    @property
+    def content_type(self):
+        return self.raw['Content-Type']
+
+
+class CloudFilesFolderMetadata(BaseCloudFilesMetadata, metadata.BaseFolderMetadata):
 
     @property
     def name(self):
