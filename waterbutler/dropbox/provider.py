@@ -6,8 +6,18 @@ from waterbutler.core import provider
 from waterbutler.core import exceptions
 
 from waterbutler.dropbox import settings
-from waterbutler.dropbox.metadata import DropboxMetadata
 from waterbutler.dropbox.metadata import DropboxRevision
+from waterbutler.dropbox.metadata import DropboxFileMetadata
+from waterbutler.dropbox.metadata import DropboxFolderMetadata
+
+
+def guarded(func):
+    def wrapped(self, path, *args, **kwargs):
+        stripped = re.sub('^{}/?'.format(re.escape(self.folder)), '', path)
+        if stripped == path:
+            raise exceptions.MetadataError('Root folder not present in path')
+        return func(self, path, *args, **kwargs)
+    return func
 
 
 class DropboxProvider(provider.BaseProvider):
