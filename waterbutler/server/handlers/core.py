@@ -1,9 +1,13 @@
+import json
+import time
 import asyncio
 
+import aiohttp
 import tornado.web
 
 from stevedore import driver
 
+from waterbutler.core import signing
 from waterbutler.core import exceptions
 
 from waterbutler.server import settings
@@ -35,6 +39,9 @@ def make_provider(name, auth, credentials, settings):
         invoke_args=(auth, credentials, settings),
     )
     return manager.driver
+
+
+signer = signing.Signer(settings.HMAC_SECRET, settings.HMAC_ALGORITHM)
 
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -82,3 +89,23 @@ class BaseHandler(tornado.web.RequestHandler):
         self.set_status(204)
         self.set_header('Access-Control-Allow-Methods', 'PUT, DELETE'),
         self.set_header('Access-Control-Allow-Headers', ', '.join(CORS_ACCEPT_HEADERS))
+
+    @asyncio.coroutine
+    def _send_hook(self, action, metadata):
+        payload = {
+            'action': action,
+            'provider': self.arguments['provider'],
+            'metadata': metadata,
+            'auth': self.auth,
+            'time': time.time() + 60
+        }
+        message, signature = signer.sign_payload(payload)
+        resp = aiohttp.request(
+            'PUT',
+            self.callback_url,
+            data=json.dumps({
+                'message': message,
+                'signature': signature,
+            }),
+        )
+        return resp

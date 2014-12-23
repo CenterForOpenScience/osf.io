@@ -30,7 +30,9 @@ class CRUDHandler(core.BaseHandler):
     def prepare_stream(self):
         if self.request.method in self.STREAM_METHODS:
             self.stream = RequestStreamReader(self.request)
-            self.uploader = asyncio.async(self.provider.upload(self.stream, **self.arguments))
+            self.uploader = asyncio.get_event_loop().create_task(
+                self.provider.upload(self.stream, **self.arguments)
+            )
         else:
             self.stream = None
 
@@ -69,11 +71,23 @@ class CRUDHandler(core.BaseHandler):
     def put(self):
         """Upload a file."""
         self.stream.feed_eof()
-        result = yield from self.uploader
-        self.write(result)
+        metadata, created = yield from self.uploader
+        self.write(metadata)
+        asyncio.get_event_loop().create_task(
+            self._send_hook(
+                'create' if created else 'update',
+                metadata,
+            )
+        )
 
     @utils.coroutine
     def delete(self):
         """Delete a file."""
         yield from self.provider.delete(**self.arguments)
         self.set_status(http.client.NO_CONTENT)
+        asyncio.get_event_loop().create_task(
+            self._send_hook(
+                'delete',
+                {'path': self.arguments['path']}
+            )
+        )
