@@ -692,6 +692,17 @@ def make_url_map(app):
             view_kwargs={'mode': 'page'},
         ),
 
+        ### Discussions ###
+
+        Rule(
+            [
+                '/project/<pid>/discussions/',
+                '/project/<pid>/node/<nid>/discussions/',
+            ],
+            'get',
+            project_views.comment.view_comments,
+            OsfWebRenderer('project/discussions.mako'),
+        ),
 
     ])
 

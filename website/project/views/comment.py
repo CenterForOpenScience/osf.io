@@ -16,8 +16,20 @@ from website.models import Guid, Comment, CommentPane
 from website.project.decorators import must_be_contributor_or_public
 from datetime import datetime
 from website.project.model import has_anonymous_link
+from website.project.views.node import _view_project
 
 COMMENT_PANE_NAME = 'comment_pane_'
+
+@must_be_contributor_or_public
+def view_comments(**kwargs):
+    """Collect file trees for all add-ons implementing HGrid views, then
+    format data as appropriate.
+    """
+    node = kwargs['node'] or kwargs['project']
+    auth = kwargs['auth']
+
+    serialized = _view_project(node, auth, primary=True)
+    return serialized
 
 def get_comment_pane(node, page_name):
     """
@@ -27,12 +39,14 @@ def get_comment_pane(node, page_name):
     :return: The CommentPane object; By default, it returns the "overview" CommentPane
     """
     page_attr = COMMENT_PANE_NAME + str(page_name)
-    if not getattr(node, page_attr, None):
-        setattr(node, page_attr, CommentPane.create(node=node))
+    comment_pane = getattr(node, page_attr, None)
+    if not comment_pane:
+        comment_pane = CommentPane.create(node=node)
+        setattr(node, page_attr, comment_pane)
     if not getattr(node, COMMENT_PANE_NAME + 'total', None):
         setattr(node, COMMENT_PANE_NAME + 'total', CommentPane.create(node=node))
     node.update_total_comments()
-    return getattr(node, page_attr)
+    return comment_pane
 
 def resolve_target(node, page_name, guid):
 
