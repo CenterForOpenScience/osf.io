@@ -15,6 +15,7 @@ from waterbutler.core import exceptions
 from waterbutler.cloudfiles import settings
 from waterbutler.cloudfiles.metadata import CloudFilesFileMetadata
 from waterbutler.cloudfiles.metadata import CloudFilesFolderMetadata
+from waterbutler.cloudfiles.metadata import CloudFilesHeaderMetadata
 
 
 def ensure_connection(func):
@@ -124,17 +125,17 @@ class CloudFilesProvider(provider.BaseProvider):
                     if region['region'].lower() == self.region.lower():
                         return region['publicURL']
 
-    def build_url(self, stream):
+    def build_url(self, path):
         """Build the url for the specified object
-        :param str stream: The stream in question
+        :param str path: The stream in question
         :rtype str:
         """
         url = furl.furl(self.endpoint)
         url.path.add(self.container)
-        url.path.add(stream)
+        url.path.add(path)
         return url.url
 
-    def generate_url(self, stream, method='GET', seconds=settings.TEMP_URL_SECS):
+    def generate_url(self, path, method='GET', seconds=settings.TEMP_URL_SECS):
         """Build and sign a temp url for the specified stream
         :param str stream: The requested stream's path
         :param str method: The HTTP method used to access the returned url
@@ -143,7 +144,7 @@ class CloudFilesProvider(provider.BaseProvider):
         """
         method = method.upper()
         expires = str(int(time.time() + seconds))
-        url = furl.furl(self.build_url(stream))
+        url = furl.furl(self.build_url(path))
 
         body = '\n'.join([method, expires, str(url.path)]).encode()
         signature = hmac.new(self.temp_url_key, body, hashlib.sha1).hexdigest()
@@ -214,29 +215,70 @@ class CloudFilesProvider(provider.BaseProvider):
         :rtype dict:
         :rtype list:
         """
+        if path.endswith('/'):
+            return (yield from self._metadata_folder(path, **kwargs))
+        else:
+            return (yield from self._metadata_file(path, **kwargs))
+
+    def _metadata_folder(self, path, **kwargs):
+        """Get Metadata about the requested folder
+        :param str path: The path to a folder
+        :rtype dict:
+        :rtype list:
+        """
         url = furl.furl(self.build_url(''))
         url.args.update({'prefix': path, 'delimiter': '/'})
         resp = yield from self.make_request(
             'GET',
             url.url,
-            expects=(200, 204),
+            expects=(200, ),
             throws=exceptions.MetadataError,
         )
 
         data = yield from resp.json()
 
-        if not data:
-            raise exceptions.MetadataError(
-                'Could not retrieve file or directory {0}'.format(path),
-                code=404,
-            )
+        if not data and path != '/':
+            # check if a directory marker exists for an empty directory
+            metadata = yield from self._metadata_file(os.path.dirname(path), **kwargs)
+            if not metadata:
+                raise exceptions.MetadataError(
+                    'Could not retrieve folder {0}'.format(path),
+                    code=404,
+                )
 
-        if path.endswith('/'):
-            return [self._serialize_metadata(item) for item in data]
-        if data:
-            return self._serialize_metadata(data[0])
+        # normalized metadata, remove extraneous directory markers
+        for item in data:
+            if 'subdir' in item:
+                for marker in data:
+                    if 'content_type' in marker and marker['content_type'] == 'application/directory':
+                        subdir_path = item['subdir'].rstrip('/')
+                        if marker['name'] == subdir_path:
+                            data.remove(marker)
+                            break
 
-    def _serialize_metadata(self, data):
+        return [
+            self._serialize_folder_metadata(item)
+            for item in data
+        ]
+
+    def _metadata_file(self, path, **kwargs):
+        """Get Metadata about the requested file
+        :param str path: The path to a key
+        :rtype dict:
+        :rtype list:
+        """
+        url = furl.furl(self.build_url(path))
+        resp = yield from self.make_request(
+            'HEAD',
+            url.url,
+            expects=(200, 204, ),
+            throws=exceptions.MetadataError,
+        )
+        return CloudFilesHeaderMetadata(resp.headers, path).serialized()
+
+    def _serialize_folder_metadata(self, data):
         if data.get('subdir'):
             return CloudFilesFolderMetadata(data).serialized()
+        elif data['content_type'] == 'application/directory':
+            return CloudFilesFolderMetadata({'subdir': data['name'] + '/'}).serialized()
         return CloudFilesFileMetadata(data).serialized()
