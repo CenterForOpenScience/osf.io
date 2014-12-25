@@ -57,12 +57,16 @@ class CloudFilesProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def intra_copy(self, dest_provider, source_options, dest_options):
-        url = dest_provider.build_url(dest_options['path'])
+        source_path = self.format_path(source_options['path'])
+        dest_path = self.format_path(dest_options['path'])
+        url = dest_provider.build_url(dest_path)
         yield from self.make_request(
             'PUT',
             url,
             headers={
-                'X-Copy-From': os.path.join(self.container, source_options['path'])
+                'X-Copy-From': self.format_path(
+                    os.path.join(self.container, source_path.lstrip('/'))  # ensure no left slash when joining paths
+                )
             },
             expects=(201, ),
             throws=exceptions.IntraCopyError,
@@ -78,8 +82,8 @@ class CloudFilesProvider(provider.BaseProvider):
         :rtype ResponseStreamReader:
         :raises: waterbutler.FileNotFoundError
         """
-        path = self._format_path(path)
-        url = self.generate_url(path)
+        provider_path = self.format_path(path)
+        url = self.generate_url(provider_path)
 
         if accept_url:
             return url
@@ -99,9 +103,6 @@ class CloudFilesProvider(provider.BaseProvider):
         :param str path: The full path of the object to upload to/into
         :rtype ResponseStreamReader:
         """
-        path = self._format_path(path)
-        url = self.generate_url(path, 'PUT')
-
         try:
             yield from self.metadata(path, **kwargs)
         except exceptions.MetadataError:
@@ -109,6 +110,8 @@ class CloudFilesProvider(provider.BaseProvider):
         else:
             created = False
 
+        provider_path = self.format_path(path)
+        url = self.generate_url(provider_path, 'PUT')
         yield from self.make_request(
             'PUT',
             url,
@@ -125,10 +128,10 @@ class CloudFilesProvider(provider.BaseProvider):
         :param str path: The path of the key to delete
         :rtype ResponseStreamReader:
         """
-        path = self._format_path(path)
+        provider_path = self.format_path(path)
         yield from self.make_request(
             'DELETE',
-            self.build_url(path),
+            self.build_url(provider_path),
             expects=(204, ),
             throws=exceptions.DeleteError,
         )
@@ -140,7 +143,6 @@ class CloudFilesProvider(provider.BaseProvider):
         :rtype dict:
         :rtype list:
         """
-        path = self._format_path(path)
         if not path or path.endswith('/'):
             return (yield from self._metadata_folder(path, **kwargs))
         else:
@@ -155,6 +157,13 @@ class CloudFilesProvider(provider.BaseProvider):
         url.path.add(self.container)
         url.path.add(path)
         return url.url
+
+    def format_path(self, path):
+        """Validates and converts a WaterButler specific path to a Provider specific path
+        :param str path: WaterButler specific path
+        :rtype str: Provider specific path
+        """
+        return super().format_path(path, prefix_slash=False, suffix_slash=True)
 
     def generate_url(self, path, method='GET', seconds=settings.TEMP_URL_SECS):
         """Build and sign a temp url for the specified stream
@@ -175,6 +184,61 @@ class CloudFilesProvider(provider.BaseProvider):
             'temp_url_expires': expires,
         })
         return url.url
+
+    @asyncio.coroutine
+    def _ensure_connection(self):
+        """Defines token, endpoint and temp_url_key if they are not already defined
+        :raises ProviderError: If no temp url key is available
+        """
+        # Must have a temp url key for download and upload
+        # Currently You must have one for everything however
+        if not self.token or not self.endpoint or not self.temp_url_key:
+            data = yield from self._get_token()
+            self.token = data['access']['token']['id']
+            self.endpoint = self._extract_endpoint(data)
+            resp = yield from self.make_request('HEAD', self.endpoint, expects=(204, ))
+            try:
+                self.temp_url_key = resp.headers['X-Account-Meta-Temp-URL-Key'].encode()
+            except KeyError:
+                raise exceptions.ProviderError('No temp url key is available', code=503)
+
+    def _extract_endpoint(self, data):
+        """Pulls the proper cloudfiles url from the return of tokens
+        Very optimized.
+        :param dict data: The json response from the token endpoint
+        :rtype str:
+        """
+        for service in reversed(data['access']['serviceCatalog']):
+            if service['name'].lower() == 'cloudfiles':
+                for region in service['endpoints']:
+                    if region['region'].lower() == self.region.lower():
+                        return region['publicURL']
+
+    @asyncio.coroutine
+    def _get_token(self):
+        """Fetchs an access token from cloudfiles for actual api requests
+        Returns the entire json response from the tokens endpoint
+        Notably containing our token and proper endpoint to send requests to
+        :rtype dict:
+        """
+        resp = yield from self.make_request(
+            'POST',
+            settings.AUTH_URL,
+            data=json.dumps({
+                'auth': {
+                    'RAX-KSKEY:apiKeyCredentials': {
+                        'username': self.username,
+                        'apiKey': self.og_token,
+                    }
+                }
+            }),
+            headers={
+                'Content-Type': 'application/json',
+            },
+            expects=(200, ),
+        )
+        data = yield from resp.json()
+        return data
 
     def _metadata_file(self, path, **kwargs):
         """Get Metadata about the requested file
@@ -197,8 +261,9 @@ class CloudFilesProvider(provider.BaseProvider):
         :rtype dict:
         :rtype list:
         """
+        provider_path = self.format_path(path)
         url = furl.furl(self.build_url(''))
-        url.args.update({'prefix': path, 'delimiter': '/'})
+        url.args.update({'prefix': provider_path, 'delimiter': '/'})
         resp = yield from self.make_request(
             'GET',
             url.url,
@@ -208,8 +273,8 @@ class CloudFilesProvider(provider.BaseProvider):
 
         data = yield from resp.json()
 
-        if not data and path:
-            # check if a directory marker exists for an empty directory
+        # no data and the provider path is not root, we are left with either a file or a directory marker
+        if not data and provider_path:
             metadata = yield from self._metadata_file(os.path.dirname(path), **kwargs)
             if not metadata:
                 raise exceptions.MetadataError(
@@ -238,69 +303,3 @@ class CloudFilesProvider(provider.BaseProvider):
         elif data['content_type'] == 'application/directory':
             return CloudFilesFolderMetadata({'subdir': data['name'] + '/'}).serialized()
         return CloudFilesFileMetadata(data).serialized()
-
-    def _format_path(self, path):
-        """Validates and converts a WaterButler specific path to a Provider specific path
-        :param str path: WaterButler specific path
-        :rtype str: Provider specific path
-        """
-        if not path or not path.startswith('/'):
-            raise exceptions.MetadataError('Invalid path \'{}\' specified'.format(path))
-
-        path = path.lstrip('/')
-        return path
-
-    @asyncio.coroutine
-    def _ensure_connection(self):
-        """Defines token, endpoint and temp_url_key if they are not already defined
-        :raises ProviderError: If no temp url key is available
-        """
-        # Must have a temp url key for download and upload
-        # Currently You must have one for everything however
-        if not self.token or not self.endpoint or not self.temp_url_key:
-            data = yield from self._get_token()
-            self.token = data['access']['token']['id']
-            self.endpoint = self._extract_endpoint(data)
-            resp = yield from self.make_request('HEAD', self.endpoint, expects=(204, ))
-            try:
-                self.temp_url_key = resp.headers['X-Account-Meta-Temp-URL-Key'].encode()
-            except KeyError:
-                raise exceptions.ProviderError('No temp url key is available', code=503)
-
-    @asyncio.coroutine
-    def _get_token(self):
-        """Fetchs an access token from cloudfiles for actual api requests
-        Returns the entire json response from the tokens endpoint
-        Notably containing our token and proper endpoint to send requests to
-        :rtype dict:
-        """
-        resp = yield from self.make_request(
-            'POST',
-            settings.AUTH_URL,
-            data=json.dumps({
-                'auth': {
-                    'RAX-KSKEY:apiKeyCredentials': {
-                        'username': self.username,
-                        'apiKey': self.og_token,
-                    }
-                }
-            }),
-            headers={
-                'Content-Type': 'application/json',
-            },
-            expects=(200, ),
-        )
-        data = yield from resp.json()
-        return data
-
-    def _extract_endpoint(self, data):
-        """Pulls the proper cloudfiles url from the return of tokens
-        Very optimized.
-        :param dict data: The json response from the token endpoint
-        :rtype str:
-        """
-        for service in reversed(data['access']['serviceCatalog']):
-            if service['name'].lower() == 'cloudfiles':
-                for region in service['endpoints']:
-                    if region['region'].lower() == self.region.lower():
-                        return region['publicURL']
