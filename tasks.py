@@ -42,4 +42,3 @@ def test(verbose=False):
     if verbose:
         cmd += ' -v'
     run(cmd, pty=True)
-
