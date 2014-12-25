@@ -45,7 +45,8 @@ class S3Provider(provider.BaseProvider):
         `dest_provider` must have read access to `source.bucket`.
         """
         dest_key = dest_provider.bucket.new_key(dest_options['path'])
-        source_path = '/' + os.path.join(self.settings['bucket'], source_options['path'])
+        # ensure no left slash when joining paths
+        source_path = '/' + os.path.join(self.settings['bucket'], source_options['path'].lstrip('/'))
         headers = {'x-amz-copy-source': source_path}
         url = dest_key.generate_url(
             settings.TEMP_URL_SECS,
