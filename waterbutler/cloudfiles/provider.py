@@ -79,7 +79,7 @@ class CloudFilesProvider(provider.BaseProvider):
         :raises: waterbutler.FileNotFoundError
         """
         path = self._format_path(path)
-        url = self._generate_url(path)
+        url = self.generate_url(path)
 
         if accept_url:
             return url
@@ -100,7 +100,7 @@ class CloudFilesProvider(provider.BaseProvider):
         :rtype ResponseStreamReader:
         """
         path = self._format_path(path)
-        url = self._generate_url(path, 'PUT')
+        url = self.generate_url(path, 'PUT')
 
         try:
             yield from self.metadata(path, **kwargs)
@@ -145,6 +145,36 @@ class CloudFilesProvider(provider.BaseProvider):
             return (yield from self._metadata_folder(path, **kwargs))
         else:
             return (yield from self._metadata_file(path, **kwargs))
+
+    def build_url(self, path):
+        """Build the url for the specified object
+        :param str path: The stream in question
+        :rtype str:
+        """
+        url = furl.furl(self.endpoint)
+        url.path.add(self.container)
+        url.path.add(path)
+        return url.url
+
+    def generate_url(self, path, method='GET', seconds=settings.TEMP_URL_SECS):
+        """Build and sign a temp url for the specified stream
+        :param str stream: The requested stream's path
+        :param str method: The HTTP method used to access the returned url
+        :param int seconds: Time for the url to live
+        :rtype str:
+        """
+        method = method.upper()
+        expires = str(int(time.time() + seconds))
+        url = furl.furl(self.build_url(path))
+
+        body = '\n'.join([method, expires, str(url.path)]).encode()
+        signature = hmac.new(self.temp_url_key, body, hashlib.sha1).hexdigest()
+
+        url.args.update({
+            'temp_url_sig': signature,
+            'temp_url_expires': expires,
+        })
+        return url.url
 
     def _metadata_file(self, path, **kwargs):
         """Get Metadata about the requested file
@@ -274,33 +304,3 @@ class CloudFilesProvider(provider.BaseProvider):
                 for region in service['endpoints']:
                     if region['region'].lower() == self.region.lower():
                         return region['publicURL']
-
-    def _build_url(self, path):
-        """Build the url for the specified object
-        :param str path: The stream in question
-        :rtype str:
-        """
-        url = furl.furl(self.endpoint)
-        url.path.add(self.container)
-        url.path.add(path)
-        return url.url
-
-    def _generate_url(self, path, method='GET', seconds=settings.TEMP_URL_SECS):
-        """Build and sign a temp url for the specified stream
-        :param str stream: The requested stream's path
-        :param str method: The HTTP method used to access the returned url
-        :param int seconds: Time for the url to live
-        :rtype str:
-        """
-        method = method.upper()
-        expires = str(int(time.time() + seconds))
-        url = furl.furl(self.build_url(path))
-
-        body = '\n'.join([method, expires, str(url.path)]).encode()
-        signature = hmac.new(self.temp_url_key, body, hashlib.sha1).hexdigest()
-
-        url.args.update({
-            'temp_url_sig': signature,
-            'temp_url_expires': expires,
-        })
-        return url.url

@@ -3,7 +3,9 @@ import pytest
 from unittest import mock
 from tests.utils import async
 
+import io
 import time
+import hashlib
 
 import furl
 import json
@@ -12,6 +14,7 @@ import aiohttp.multidict
 import aiohttpretty
 
 from waterbutler.core import exceptions
+from waterbutler.core import streams
 
 from waterbutler.cloudfiles import settings
 from waterbutler.cloudfiles.provider import CloudFilesProvider
@@ -104,6 +107,70 @@ def auth_json():
             }
         }
     }
+
+
+@pytest.fixture
+def token(auth_json):
+    return auth_json['access']['token']['id']
+
+
+@pytest.fixture
+def endpoint(auth_json):
+    return auth_json['access']['serviceCatalog'][0]['endpoints'][0]['publicURL']
+
+
+@pytest.fixture
+def temp_url_key():
+    return 'temporary beret'
+
+
+@pytest.fixture
+def mock_auth(auth_json):
+    aiohttpretty.register_json_uri(
+        'POST',
+        settings.AUTH_URL,
+        body=auth_json,
+    )
+
+
+@pytest.fixture
+def mock_temp_key(endpoint, temp_url_key):
+    aiohttpretty.register_uri(
+        'HEAD',
+        endpoint,
+        status=204,
+        headers={'X-Account-Meta-Temp-URL-Key': temp_url_key},
+    )
+
+
+@pytest.fixture
+def mock_time(monkeypatch):
+    mock_time = mock.Mock()
+    mock_time.return_value = 10
+    monkeypatch.setattr(time, 'time', mock_time)
+
+
+@pytest.fixture
+def connected_provider(provider, token, endpoint, temp_url_key, mock_time):
+    provider.token = token
+    provider.endpoint = endpoint
+    provider.temp_url_key = temp_url_key.encode()
+    return provider
+
+
+@pytest.fixture
+def file_content():
+    return b'sleepy'
+
+
+@pytest.fixture
+def file_like(file_content):
+    return io.BytesIO(file_content)
+
+
+@pytest.fixture
+def file_stream(file_like):
+    return streams.FileStreamReader(file_like)
 
 
 # Metadata Test Scenarios
@@ -250,61 +317,12 @@ def file_root_similar_name():
     ])
 
 
-@pytest.fixture
-def token(auth_json):
-    return auth_json['access']['token']['id']
-
-
-@pytest.fixture
-def endpoint(auth_json):
-    return auth_json['access']['serviceCatalog'][0]['endpoints'][0]['publicURL']
-
-
-@pytest.fixture
-def temp_url_key():
-    return 'temporary beret'
-
-
-@pytest.fixture
-def mock_auth(auth_json):
-    aiohttpretty.register_json_uri(
-        'POST',
-        settings.AUTH_URL,
-        body=auth_json,
-    )
-
-
-@pytest.fixture
-def mock_temp_key(endpoint, temp_url_key):
-    aiohttpretty.register_uri(
-        'HEAD',
-        endpoint,
-        status=204,
-        headers={'X-Account-Meta-Temp-URL-Key': temp_url_key},
-    )
-
-
-@pytest.fixture
-def mock_time(monkeypatch):
-    mock_time = mock.Mock()
-    mock_time.return_value = 10
-    monkeypatch.setattr(time, 'time', mock_time)
-
-
-@pytest.fixture
-def connected_provider(provider, token, endpoint, temp_url_key, mock_time):
-    provider.token = token
-    provider.endpoint = endpoint
-    provider.temp_url_key = temp_url_key.encode()
-    return provider
-
-
 @async
 @pytest.mark.aiohttpretty
 def test_download(connected_provider):
     path = '/lets-go-crazy'
     body = b'dearly-beloved'
-    url = connected_provider._generate_url(path)
+    url = connected_provider.generate_url(path)
     aiohttpretty.register_uri('GET', url, body=body)
     result = yield from connected_provider.download(path)
     content = yield from result.response.read()
@@ -316,7 +334,7 @@ def test_download(connected_provider):
 def test_download_accept_url(connected_provider):
     path = '/lets-go-crazy'
     body = b'dearly-beloved'
-    url = connected_provider._generate_url(path)
+    url = connected_provider.generate_url(path)
     result = yield from connected_provider.download(path, accept_url=True)
     assert result == url
     aiohttpretty.register_uri('GET', url, body=body)
@@ -329,10 +347,27 @@ def test_download_accept_url(connected_provider):
 @pytest.mark.aiohttpretty
 def test_download_not_found(connected_provider):
     path = '/lets-go-crazy'
-    url = connected_provider._generate_url(path)
+    url = connected_provider.generate_url(path)
     aiohttpretty.register_uri('GET', url, status=404)
     with pytest.raises(exceptions.DownloadError):
         yield from connected_provider.download(path)
+
+
+# @async
+# @pytest.mark.aiohttpretty
+# def test_upload(connected_provider, file_content, file_stream, file_metadata):
+#     path = 'foobah'
+#     content_md5 = hashlib.md5(file_content).hexdigest()
+#     url = provider.generate_url(path, 'PUT')
+    # metadata_url = provider.bucket.new_key(path).generate_url(100, 'HEAD')
+    # aiohttpretty.register_uri('HEAD', metadata_url, headers=file_metadata)
+    # aiohttpretty.register_uri('PUT', url, status=200, headers={'ETag': '"{}"'.format(content_md5)})
+
+    # resp = yield from provider.upload(file_stream, path)
+
+    # assert resp['kind'] == 'file'
+    # assert aiohttpretty.has_call(method='PUT', uri=url)
+    # assert aiohttpretty.has_call(method='HEAD', uri=metadata_url)
 
 
 @async
