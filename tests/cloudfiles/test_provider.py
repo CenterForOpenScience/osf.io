@@ -394,6 +394,17 @@ def test_upload(connected_provider, file_content, file_stream, file_metadata):
 
 
 @async
+@pytest.mark.aiohttpretty
+def test_delete(connected_provider):
+    path = '/delete.file'
+    url = connected_provider.build_url(path)
+    aiohttpretty.register_uri('DELETE', url, status=204)
+    yield from connected_provider.delete(path)
+
+    assert aiohttpretty.has_call(method='DELETE', uri=url)
+
+
+@async
 def test_metadata_invalid_root_path(connected_provider):
     path = ''
     with pytest.raises(ValueError):
