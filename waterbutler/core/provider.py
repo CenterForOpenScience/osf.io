@@ -61,6 +61,29 @@ class BaseProvider(metaclass=abc.ABCMeta):
             if value is not None
         }
 
+    def format_path(self, path, prefix_slash=True, suffix_slash=True):
+        """Validates and converts a WaterButler specific path to a Provider specific path.
+        :param str path: WaterButler specific path
+        :rtype str: Provider specific path
+        """
+        self.validate_path(path)
+
+        if not prefix_slash:
+            path = path.lstrip('/')
+        if not suffix_slash:
+            path = path.rstrip('/')
+
+        return path
+
+    def validate_path(self, path):
+        """Validates a WaterButler specific path, e.g. /folder/file.txt
+        :param str path: WaterButler path
+        """
+        if not path:
+            raise ValueError('Must specify path')
+        if not path.startswith('/'):
+            raise ValueError('Invalid path \'{}\' specified'.format(path))
+
     @asyncio.coroutine
     def make_request(self, *args, **kwargs):
         kwargs['headers'] = self.build_headers(**kwargs.get('headers', {}))
