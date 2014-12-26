@@ -335,7 +335,7 @@ def test_download(connected_provider):
     path = '/lets-go-crazy'
     provider_path = connected_provider.build_path(path)
     body = b'dearly-beloved'
-    url = connected_provider.generate_url(provider_path)
+    url = connected_provider.sign_url(provider_path)
     aiohttpretty.register_uri('GET', url, body=body)
     result = yield from connected_provider.download(path)
     content = yield from result.response.read()
@@ -348,7 +348,7 @@ def test_download_accept_url(connected_provider):
     path = '/lets-go-crazy'
     provider_path = connected_provider.build_path(path)
     body = b'dearly-beloved'
-    url = connected_provider.generate_url(provider_path)
+    url = connected_provider.sign_url(provider_path)
     result = yield from connected_provider.download(path, accept_url=True)
     assert result == url
     aiohttpretty.register_uri('GET', url, body=body)
@@ -362,7 +362,7 @@ def test_download_accept_url(connected_provider):
 def test_download_not_found(connected_provider):
     path = '/lets-go-crazy'
     provider_path = connected_provider.build_path(path)
-    url = connected_provider.generate_url(provider_path)
+    url = connected_provider.sign_url(provider_path)
     aiohttpretty.register_uri('GET', url, status=404)
     with pytest.raises(exceptions.DownloadError):
         yield from connected_provider.download(path)
@@ -375,7 +375,7 @@ def test_upload(connected_provider, file_content, file_stream, file_metadata):
     provider_path = connected_provider.build_path(path)
     content_md5 = hashlib.md5(file_content).hexdigest()
     metadata_url = connected_provider.build_url(provider_path)
-    url = connected_provider.generate_url(provider_path, 'PUT')
+    url = connected_provider.sign_url(provider_path, 'PUT')
     aiohttpretty.register_uri(
         'HEAD',
         metadata_url,

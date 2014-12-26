@@ -59,9 +59,7 @@ class CloudFilesProvider(provider.BaseProvider):
             'PUT',
             url,
             headers={
-                'X-Copy-From': self.build_path(
-                    os.path.join(self.container, source_path.lstrip('/'))  # ensure no left slash when joining paths
-                )
+                'X-Copy-From': os.path.join(self.container, source_path)
             },
             expects=(201, ),
             throws=exceptions.IntraCopyError,
@@ -79,7 +77,7 @@ class CloudFilesProvider(provider.BaseProvider):
         :raises: exceptions.DownloadError
         """
         provider_path = self.build_path(path)
-        url = self.generate_url(provider_path)
+        url = self.sign_url(provider_path)
 
         if accept_url:
             return url
@@ -108,7 +106,7 @@ class CloudFilesProvider(provider.BaseProvider):
             created = False
 
         provider_path = self.build_path(path)
-        url = self.generate_url(provider_path, 'PUT')
+        url = self.sign_url(provider_path, 'PUT')
         yield from self.make_request(
             'PUT',
             url,
@@ -127,32 +125,54 @@ class CloudFilesProvider(provider.BaseProvider):
         :rtype ResponseStreamReader:
         """
         provider_path = self.build_path(path)
-        yield from self.make_request(
-            'DELETE',
-            self.build_url(provider_path),
-            expects=(204, ),
-            throws=exceptions.DeleteError,
-        )
+
+        if path.endswith('/'):
+            metadata = yield from self.metadata(path, recursive=True)
+            delete_files = [
+                os.path.join('/', self.container, self.build_path(item['path'], suffix_slash=False))
+                for item in metadata
+            ]
+            delete_files.append(os.path.join('/', self.container, self.build_path(path, suffix_slash=False)))
+
+            url = furl.furl(self.build_url(''))
+            url.args.update({'bulk-delete': ''})
+            yield from self.make_request(
+                'DELETE',
+                url.url,
+                data='\n'.join(delete_files),
+                expects=(200, ),
+                throws=exceptions.DeleteError,
+                headers={
+                    'Content-Type': 'text/plain',
+                },
+            )
+        else:
+            yield from self.make_request(
+                'DELETE',
+                self.build_url(provider_path),
+                expects=(204, ),
+                throws=exceptions.DeleteError,
+            )
 
     @ensure_connection
     @asyncio.coroutine
-    def metadata(self, path, **kwargs):
+    def metadata(self, path, recursive=False, **kwargs):
         """Get Metadata about the requested file or folder
         :param str path: The path to a key or folder
         :rtype dict:
         :rtype list:
         """
         if not path or path.endswith('/'):
-            return (yield from self._metadata_folder(path, **kwargs))
+            return (yield from self._metadata_folder(path, recursive, **kwargs))
         else:
             return (yield from self._metadata_file(path, **kwargs))
 
-    def build_path(self, path):
+    def build_path(self, path, prefix_slash=False, suffix_slash=True):
         """Validates and converts a WaterButler specific path to a Provider specific path
         :param str path: WaterButler specific path
         :rtype str: Provider specific path
         """
-        return super().build_path(path, prefix_slash=False, suffix_slash=True)
+        return super().build_path(path, prefix_slash, suffix_slash)
 
     def build_url(self, path):
         """Build the url for the specified object
@@ -170,8 +190,8 @@ class CloudFilesProvider(provider.BaseProvider):
     def can_intra_move(self, dest_provider):
         return self.can_intra_copy(dest_provider)
 
-    def generate_url(self, path, method='GET', seconds=settings.TEMP_URL_SECS):
-        """Build and sign a temp url for the specified stream
+    def sign_url(self, path, method='GET', seconds=settings.TEMP_URL_SECS):
+        """Sign a temp url for the specified stream
         :param str stream: The requested stream's path
         :param str method: The HTTP method used to access the returned url
         :param int seconds: Time for the url to live
@@ -251,7 +271,8 @@ class CloudFilesProvider(provider.BaseProvider):
         :rtype dict:
         :rtype list:
         """
-        url = furl.furl(self.build_url(path))
+        provider_path = self.build_url(path)
+        url = furl.furl(provider_path)
         resp = yield from self.make_request(
             'HEAD',
             url.url,
@@ -267,7 +288,7 @@ class CloudFilesProvider(provider.BaseProvider):
 
         return CloudFilesHeaderMetadata(resp.headers, path).serialized()
 
-    def _metadata_folder(self, path, **kwargs):
+    def _metadata_folder(self, path, recursive=False, **kwargs):
         """Get Metadata about the requested folder
         :param str path: The path to a folder
         :rtype dict:
@@ -275,7 +296,9 @@ class CloudFilesProvider(provider.BaseProvider):
         """
         provider_path = self.build_path(path)
         url = furl.furl(self.build_url(''))
-        url.args.update({'prefix': provider_path, 'delimiter': '/'})
+        url.args.update({'prefix': provider_path})
+        if not recursive:
+            url.args.update({'delimiter': '/'})
         resp = yield from self.make_request(
             'GET',
             url.url,
