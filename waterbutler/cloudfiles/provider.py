@@ -163,7 +163,7 @@ class CloudFilesProvider(provider.BaseProvider):
         :rtype list:
         """
         if not path or path.endswith('/'):
-            return (yield from self._metadata_folder(path, recursive, **kwargs))
+            return (yield from self._metadata_folder(path, recursive=recursive, **kwargs))
         else:
             return (yield from self._metadata_file(path, **kwargs))
 
