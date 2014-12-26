@@ -569,3 +569,11 @@ def test_metadata_folder_does_not_exist(connected_provider):
     aiohttpretty.register_uri('HEAD', file_url.url, status=404)
     with pytest.raises(exceptions.MetadataError):
         yield from connected_provider.metadata(path)
+
+
+def test_can_intra_copy(connected_provider):
+    assert connected_provider.can_intra_copy(connected_provider)
+
+
+def test_can_intra_move(connected_provider):
+    assert connected_provider.can_intra_move(connected_provider)

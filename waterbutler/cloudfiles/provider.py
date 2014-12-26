@@ -165,10 +165,10 @@ class CloudFilesProvider(provider.BaseProvider):
         return url.url
 
     def can_intra_copy(self, dest_provider):
-        return self == dest_provider
+        return self is dest_provider
 
     def can_intra_move(self, dest_provider):
-        return self == dest_provider
+        return self.can_intra_copy(dest_provider)
 
     def generate_url(self, path, method='GET', seconds=settings.TEMP_URL_SECS):
         """Build and sign a temp url for the specified stream
