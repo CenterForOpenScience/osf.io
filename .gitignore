@@ -46,6 +46,7 @@ cover/
 # Assets
 ########
 .webassets-cache
+website/static/public/*
 website/static/public/css/*.css
 website/static/public/js/*.js
 website/static/vendor/node_modules/*
