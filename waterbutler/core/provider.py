@@ -61,7 +61,7 @@ class BaseProvider(metaclass=abc.ABCMeta):
             if value is not None
         }
 
-    def format_path(self, path, prefix_slash=True, suffix_slash=True):
+    def build_path(self, path, prefix_slash=True, suffix_slash=True):
         """Validates and converts a WaterButler specific path to a Provider specific path.
         :param str path: WaterButler specific path
         :rtype str: Provider specific path
