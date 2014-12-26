@@ -172,7 +172,7 @@ class CloudFilesProvider(provider.BaseProvider):
         :param str path: WaterButler specific path
         :rtype str: Provider specific path
         """
-        return super().build_path(path, prefix_slash, suffix_slash)
+        return super().build_path(path, prefix_slash=prefix_slash, suffix_slash=suffix_slash)
 
     def build_url(self, path):
         """Build the url for the specified object
