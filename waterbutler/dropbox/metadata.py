@@ -3,11 +3,19 @@ import os
 from waterbutler.core import metadata
 
 
-class BaseDropboxMetadata:
+class BaseDropboxMetadata(metadata.BaseMetadata):
+
+    def __init__(self, raw, folder):
+        super().__init__(raw)
+        self.folder = folder
 
     @property
     def provider(self):
         return 'dropbox'
+
+    def build_path(self, path):
+        path = path.lstrip(self.folder)
+        return super().build_path(path)
 
 
 class DropboxFolderMetadata(BaseDropboxMetadata, metadata.BaseFolderMetadata):
@@ -18,7 +26,7 @@ class DropboxFolderMetadata(BaseDropboxMetadata, metadata.BaseFolderMetadata):
 
     @property
     def path(self):
-        return self.raw['path'].lstrip('/')
+        return self.build_path(self.raw['path'])
 
 
 class DropboxFileMetadata(BaseDropboxMetadata, metadata.BaseFileMetadata):
@@ -29,7 +37,7 @@ class DropboxFileMetadata(BaseDropboxMetadata, metadata.BaseFileMetadata):
 
     @property
     def path(self):
-        return self.raw['path'].lstrip('/')
+        return self.build_path(self.raw['path'])
 
     @property
     def size(self):
