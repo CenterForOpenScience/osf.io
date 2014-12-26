@@ -96,10 +96,13 @@
             $handle.on('click', toggle);
 
             // Prevent comment pane from getting too big on resize
+            // todo only resize on mode
             $(window).on('resize', function() {
-                var maxWidth = getMaxWidth();
-                if ($pane.width() > maxWidth) {
-                    $toggleElm.width(maxWidth.toString() + 'px');
+                if (self.mode === 'pane') {
+                    var maxWidth = getMaxWidth();
+                    if ($pane.width() > maxWidth) {
+                        $toggleElm.width(maxWidth.toString() + 'px');
+                    }
                 }
             });
 

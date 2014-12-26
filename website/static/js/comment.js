@@ -276,7 +276,7 @@ CommentModel.prototype.edit = function() {
     }
 };
 
-CommentModel.prototype.autosizeText = function(elm) {
+CommentModel.prototype.autosizeText = function(elm) { // TODO only if comment is in pane= =
     $(elm).find('textarea').autosize().focus();
 };
 
@@ -496,7 +496,7 @@ var onOpen = function(pagename) {
 };
 
 var init = function(selector, mode, pageName, userName, canComment, hasChildren) {
-    console.log(mode);
+
     new CommentPane(selector, mode, {onOpen: onOpen(pageName)});
     var viewModel = new CommentListModel(userName, pageName, canComment, hasChildren);
     var $elm = $(selector);
