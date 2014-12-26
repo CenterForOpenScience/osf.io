@@ -15,7 +15,7 @@ class BaseMetadata(metaclass=abc.ABCMeta):
             'extra': self.extra,
         }
 
-    def impute_slashes(self, path):
+    def build_path(self, path):
         if not path.startswith('/'):
             path = '/' + path
         if self.kind == 'folder' and not path.endswith('/'):
