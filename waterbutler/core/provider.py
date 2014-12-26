@@ -83,6 +83,12 @@ class BaseProvider(metaclass=abc.ABCMeta):
             raise ValueError('Must specify path')
         if not path.startswith('/'):
             raise ValueError('Invalid path \'{}\' specified'.format(path))
+        # Do not allow path manipulation via shortcuts, e.g. '..'
+        absolute_path = os.path.abspath(path)
+        if path.endswith('/'):
+            absolute_path += '/'
+        if not path == absolute_path:
+            raise ValueError('Invalid path \'{}\' specified'.format(absolute_path))
 
     @asyncio.coroutine
     def make_request(self, *args, **kwargs):
