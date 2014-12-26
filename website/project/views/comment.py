@@ -137,7 +137,7 @@ def serialize_comments(record, auth, anonymous=False):
 
     return [
         serialize_comment(comment, auth, anonymous)
-        for comment in getattr(record, 'commented', [])
+        for comment in getattr(record, 'commented', []) or []
     ]
 
 
@@ -276,11 +276,13 @@ def undelete_comment(**kwargs):
 @must_be_contributor_or_public
 def update_comments_timestamp(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
-
+    print('................................',node,'.........................')
     if node.is_contributor(auth.user):
         auth.user.comments_viewed_timestamp[node._id] = datetime.utcnow()
+        print('................................is contributor.........................')
         auth.user.save()
         page = request.json.get('page')
+        print('................................',page,'.........................')
         list_comments(page=page, **kwargs)
         return {node._id: auth.user.comments_viewed_timestamp[node._id].isoformat()}
     else:
