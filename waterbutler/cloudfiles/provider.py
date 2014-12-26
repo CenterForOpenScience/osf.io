@@ -245,7 +245,7 @@ class CloudFilesProvider(provider.BaseProvider):
         data = yield from resp.json()
         return data
 
-    def _metadata_file(self, path, **kwargs):
+    def _metadata_file(self, path, is_folder=False, **kwargs):
         """Get Metadata about the requested file
         :param str path: The path to a key
         :rtype dict:
@@ -258,6 +258,13 @@ class CloudFilesProvider(provider.BaseProvider):
             expects=(200, ),
             throws=exceptions.MetadataError,
         )
+
+        if (resp.headers['Content-Type'] == 'application/directory' and not is_folder):
+            raise exceptions.MetadataError(
+                'Could not retrieve file \'{0}\''.format(path),
+                code=404,
+            )
+
         return CloudFilesHeaderMetadata(resp.headers, path).serialized()
 
     def _metadata_folder(self, path, **kwargs):
@@ -280,7 +287,7 @@ class CloudFilesProvider(provider.BaseProvider):
 
         # no data and the provider path is not root, we are left with either a file or a directory marker
         if not data and provider_path:
-            metadata = yield from self._metadata_file(os.path.dirname(path), **kwargs)
+            metadata = yield from self._metadata_file(os.path.dirname(path), is_folder=True, **kwargs)
             if not metadata:
                 raise exceptions.MetadataError(
                     'Could not retrieve folder \'{0}\''.format(path),

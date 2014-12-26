@@ -3,7 +3,7 @@ import os
 from waterbutler.core import metadata
 
 
-class BaseCloudFilesMetadata:
+class BaseCloudFilesMetadata(metadata.BaseMetadata):
 
     @property
     def provider(self):
