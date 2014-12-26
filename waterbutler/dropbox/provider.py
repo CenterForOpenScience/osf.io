@@ -125,14 +125,20 @@ class DropboxProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def metadata(self, path, **kwargs):
-        response = yield from self.make_request(
+        resp = yield from self.make_request(
             'GET',
             self.build_url('metadata', 'auto', self.build_path(path)),
             expects=(200, ),
             throws=exceptions.MetadataError
         )
 
-        data = yield from response.json()
+        data = yield from resp.json()
+
+        if data['is_dir'] and not path.endswith('/'):
+            raise exceptions.MetadataError(
+                'Could not retrieve folder \'{0}\''.format(path),
+                code=404,
+            )
 
         if data['is_dir']:
             ret = []

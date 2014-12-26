@@ -14,7 +14,8 @@ class BaseDropboxMetadata(metadata.BaseMetadata):
         return 'dropbox'
 
     def build_path(self, path):
-        path = path.lstrip(self.folder)
+        if path.startswith(self.folder):
+            path = path[len(self.folder):]
         return super().build_path(path)
 
 
