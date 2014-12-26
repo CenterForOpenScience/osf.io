@@ -109,103 +109,103 @@ def file_metadata():
     }
 
 
-@async
-@pytest.mark.aiohttpretty
-def test_download(provider):
-    path = '/triangles.txt'
-    url = provider._build_content_url('files', 'auto', provider.build_path(path))
-    aiohttpretty.register_uri('GET', url, body=b'better')
-    result = yield from provider.download(path)
-    content = yield from result.response.read()
+class TestCRUD:
 
-    assert content == b'better'
+    @async
+    @pytest.mark.aiohttpretty
+    def test_download(provider):
+        path = '/triangles.txt'
+        url = provider._build_content_url('files', 'auto', provider.build_path(path))
+        aiohttpretty.register_uri('GET', url, body=b'better')
+        result = yield from provider.download(path)
+        content = yield from result.response.read()
 
+        assert content == b'better'
 
-@async
-@pytest.mark.aiohttpretty
-def test_download_not_found(provider):
-    path = '/vectors.txt'
-    url = provider._build_content_url('files', 'auto', provider.build_path(path))
-    aiohttpretty.register_uri('GET', url, status=404)
+    @async
+    @pytest.mark.aiohttpretty
+    def test_download_not_found(provider):
+        path = '/vectors.txt'
+        url = provider._build_content_url('files', 'auto', provider.build_path(path))
+        aiohttpretty.register_uri('GET', url, status=404)
 
-    with pytest.raises(exceptions.DownloadError):
-        yield from provider.download(path)
+        with pytest.raises(exceptions.DownloadError):
+            yield from provider.download(path)
 
+    @async
+    @pytest.mark.aiohttpretty
+    def test_upload(self, provider, file_metadata, file_stream, settings):
+        path = '/phile'
+        url = provider._build_content_url('files_put', 'auto', provider.build_path(path))
+        metadata_url = provider.build_url('metadata', 'auto', provider.build_path(path))
+        aiohttpretty.register_uri('GET', metadata_url, status=404)
+        aiohttpretty.register_json_uri('PUT', url, status=200, body=file_metadata)
+        metadata, created = yield from provider.upload(file_stream, path)
+        expected = DropboxFileMetadata(file_metadata, provider.folder).serialized()
 
-@async
-@pytest.mark.aiohttpretty
-def test_metadata(provider, folder_metadata):
-    path = '/'
-    url = provider.build_url('metadata', 'auto', provider.build_path(path))
-    aiohttpretty.register_json_uri('GET', url, body=folder_metadata)
-    result = yield from provider.metadata(path)
+        assert metadata == expected
+        assert created == True
+        assert aiohttpretty.has_call(method='PUT', uri=url)
 
-    assert isinstance(result, list)
-    assert len(result) == 1
-    assert result[0]['kind'] == 'file'
-    assert result[0]['name'] == 'flower.jpg'
-    assert result[0]['path'] == '/flower.jpg'
+    @async
+    @pytest.mark.aiohttpretty
+    def test_delete_file(self, provider, file_metadata):
+        path = '/The past'
+        url = provider.build_url('fileops', 'delete')
+        data = {'root': 'auto', 'path': provider.build_path(path)}
+        file_url = provider.build_url('metadata', 'auto', provider.build_path(path))
+        aiohttpretty.register_json_uri('GET', file_url, body=file_metadata)
+        aiohttpretty.register_uri('POST', url, status=200)
+        yield from provider.delete(path)
 
-
-@async
-@pytest.mark.aiohttpretty
-def test_metadata_single(provider, file_metadata):
-    path = '/pfile'
-    url = provider.build_url('metadata', 'auto', provider.build_path(path))
-    aiohttpretty.register_json_uri('GET', url, body=file_metadata)
-    result = yield from provider.metadata(path)
-
-    assert isinstance(result, dict)
-    assert result['kind'] == 'file'
-    assert result['name'] == 'Getting_Started.pdf'
-    assert result['path'] == '/Getting_Started.pdf'
-
-
-@async
-@pytest.mark.aiohttpretty
-def test_metadata_missing(provider):
-    path = '/pfile'
-    url = provider.build_url('metadata', 'auto', provider.build_path(path))
-    aiohttpretty.register_uri('GET', url, status=404)
-
-    with pytest.raises(exceptions.MetadataError):
-        yield from provider.metadata(path)
+        assert aiohttpretty.has_call(method='GET', uri=file_url)
+        assert aiohttpretty.has_call(method='POST', uri=url, data=data)
 
 
-@async
-@pytest.mark.aiohttpretty
-def test_upload(provider, file_metadata, file_stream, settings):
-    path = '/phile'
-    url = provider._build_content_url('files_put', 'auto', provider.build_path(path))
-    metadata_url = provider.build_url('metadata', 'auto', provider.build_path(path))
-    aiohttpretty.register_uri('GET', metadata_url, status=404)
-    aiohttpretty.register_json_uri('PUT', url, status=200, body=file_metadata)
-    metadata, created = yield from provider.upload(file_stream, path)
-    expected = DropboxFileMetadata(file_metadata, provider.folder).serialized()
+class TestMetadata:
 
-    assert metadata == expected
-    assert created == True
-    assert aiohttpretty.has_call(method='PUT', uri=url)
+    @async
+    @pytest.mark.aiohttpretty
+    def test_metadata(self, provider, folder_metadata):
+        path = '/'
+        url = provider.build_url('metadata', 'auto', provider.build_path(path))
+        aiohttpretty.register_json_uri('GET', url, body=folder_metadata)
+        result = yield from provider.metadata(path)
+
+        assert isinstance(result, list)
+        assert len(result) == 1
+        assert result[0]['kind'] == 'file'
+        assert result[0]['name'] == 'flower.jpg'
+        assert result[0]['path'] == '/flower.jpg'
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_metadata_root_file(self, provider, file_metadata):
+        path = '/pfile'
+        url = provider.build_url('metadata', 'auto', provider.build_path(path))
+        aiohttpretty.register_json_uri('GET', url, body=file_metadata)
+        result = yield from provider.metadata(path)
+
+        assert isinstance(result, dict)
+        assert result['kind'] == 'file'
+        assert result['name'] == 'Getting_Started.pdf'
+        assert result['path'] == '/Getting_Started.pdf'
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_metadata_missing(self, provider):
+        path = '/pfile'
+        url = provider.build_url('metadata', 'auto', provider.build_path(path))
+        aiohttpretty.register_uri('GET', url, status=404)
+
+        with pytest.raises(exceptions.MetadataError):
+            yield from provider.metadata(path)
 
 
-@async
-@pytest.mark.aiohttpretty
-def test_delete(provider, file_metadata):
-    path = '/The past'
-    url = provider.build_url('fileops', 'delete')
-    data = {'root': 'auto', 'path': provider.build_path(path)}
-    file_url = provider.build_url('metadata', 'auto', provider.build_path(path))
-    aiohttpretty.register_json_uri('GET', file_url, body=file_metadata)
-    aiohttpretty.register_uri('POST', url, status=200)
-    yield from provider.delete(path)
+class TestOperations:
 
-    assert aiohttpretty.has_call(method='GET', uri=file_url)
-    assert aiohttpretty.has_call(method='POST', uri=url, data=data)
+    def test_can_intra_copy(provider):
+        assert provider.can_intra_copy(provider)
 
-
-def test_can_intra_copy(provider):
-    assert provider.can_intra_copy(provider)
-
-
-def test_can_intra_move(provider):
-    assert provider.can_intra_move(provider)
+    def test_can_intra_move(provider):
+        assert provider.can_intra_move(provider)
