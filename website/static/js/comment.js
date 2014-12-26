@@ -73,6 +73,7 @@ var BaseComment = function() {
     self.id = ko.observable();
 
     self.page = ''; // Default
+    self.mode = 'pane'; // Default
 
     self.errorMessage = ko.observable();
     self.editErrorMessage = ko.observable();
@@ -222,6 +223,9 @@ var CommentModel = function(data, $parent, $root) {
         return 'Modified ' + relativeDate(self.dateModified());
     });
 
+    self.page = $parent.page;
+    self.mode = $parent.mode;
+
     self.showChildren = ko.observable(false);
 
     self.hoverContent = ko.observable(false);
@@ -254,7 +258,7 @@ var CommentModel = function(data, $parent, $root) {
         return self.showChildren() ? 'icon-collapse-alt' : 'icon-expand-alt';
     });
     self.editHighlight = ko.computed(function() {
-        return self.canEdit() && self.hoverContent();
+        return self.canEdit() && self.hoverContent() && self.mode !== 'widget';
     });
     self.canReport = ko.computed(function() {
         return self.$root.canComment() && !self.canEdit();
@@ -269,14 +273,14 @@ var CommentModel = function(data, $parent, $root) {
 CommentModel.prototype = new BaseComment();
 
 CommentModel.prototype.edit = function() {
-    if (this.canEdit()) {
+    if (this.canEdit() && this.mode !== 'widget') {
         this._content = this.content();
         this.editing(true);
         this.$root.editors += 1;
     }
 };
 
-CommentModel.prototype.autosizeText = function(elm) { // TODO only if comment is in pane= =
+CommentModel.prototype.autosizeText = function(elm) {
     $(elm).find('textarea').autosize().focus();
 };
 
@@ -421,7 +425,7 @@ CommentModel.prototype.onSubmitSuccess = function() {
 /*
     *
     */
-var CommentListModel = function(userName, pageName, canComment, hasChildren) {
+var CommentListModel = function(userName, mode, pageName, canComment, hasChildren) {
 
     BaseComment.prototype.constructor.call(this);
 
@@ -439,6 +443,8 @@ var CommentListModel = function(userName, pageName, canComment, hasChildren) {
         }
     });
     self.page = pageName;
+    self.mode = mode;
+
     self.editors = 0;
     self.commented = ko.observable(false);
     self.userName = ko.observable(userName);
@@ -498,7 +504,7 @@ var onOpen = function(pagename) {
 var init = function(selector, mode, pageName, userName, canComment, hasChildren) {
 
     new CommentPane(selector, mode, {onOpen: onOpen(pageName)});
-    var viewModel = new CommentListModel(userName, pageName, canComment, hasChildren);
+    var viewModel = new CommentListModel(userName, mode, pageName, canComment, hasChildren);
     var $elm = $(selector);
     if (!$elm.length) {
         throw('No results found for selector');

@@ -59,9 +59,7 @@
                     <div class="comment-content">
 
                         <div data-bind="ifnot: editing">
-                            <span data-bind="if: hasChildren">
-                                <i data-bind="css: toggleIcon, click: toggle"></i>
-                            </span>
+                            <span data-bind="if: mode !== 'widget' && hasChildren()"><i data-bind="css: toggleIcon, click: toggle"></i></span>
                             <span data-bind="text: content, css: {'edit-comment': editHighlight}, event: {mouseenter: startHoverContent, mouseleave: stopHoverContent, click: edit}"></span>
                         </div>
 
@@ -89,16 +87,18 @@
                         <span>&nbsp;</span>
 
                         <!-- Action bar -->
-                        <div data-bind="ifnot: editing" class="comment-actions pull-right">
-                            <span data-bind="if: $root.canComment, click: showReply">
-                                <i class="icon-reply"></i>
-                            </span>
-                            <span data-bind="if: canReport, click: reportAbuse">
-                                <i class="icon-warning-sign"></i>
-                            </span>
-                            <span data-bind="if: canEdit, click: startDelete">
-                                <i class="icon-trash"></i>
-                            </span>
+                        <div data-bind="ifnot: mode === 'widget'" style="display: inline">
+                            <div data-bind="ifnot: editing" class="comment-actions pull-right">
+                                <span data-bind="if: $root.canComment, click: showReply">
+                                    <i class="icon-reply"></i>
+                                </span>
+                                <span data-bind="if: canReport, click: reportAbuse">
+                                    <i class="icon-warning-sign"></i>
+                                </span>
+                                <span data-bind="if: canEdit, click: startDelete">
+                                    <i class="icon-trash"></i>
+                                </span>
+                            </div>
 
                         </div>
 
@@ -134,8 +134,8 @@
                         <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
                     </div>
                     <div>
-                        <a class="btn btn-default btn-default" data-bind="click: submitReply, visible: replyNotEmpty, css: {disabled: submittingReply}"><i class="icon-check"></i> {{saveButtonText}}</a>
-                        <a class="btn btn-default btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"><i class="icon-undo"></i> Cancel</a>
+                        <a class="btn btn-default" data-bind="click: submitReply, visible: replyNotEmpty, css: {disabled: submittingReply}"><i class="icon-check"></i> {{saveButtonText}}</a>
+                        <a class="btn btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"><i class="icon-undo"></i> Cancel</a>
                         <span data-bind="text: replyErrorMessage" class="comment-error"></span>
                     </div>
                 </div>

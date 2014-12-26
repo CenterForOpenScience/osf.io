@@ -28,16 +28,20 @@
 </div>
 
 <%def name="newComment()">
-    <div data-bind="if: canComment" style="margin-top: 20px">
+    <div class='row' data-bind="if: canComment">
+        <button class="btn btn-link" data-bind="click: showReply">Add a comment</button>
+    </div>
+    <div data-bind="if: replying" style="margin-top: 20px">
         <form class="form">
             <div class="form-group">
                 <textarea class="form-control" placeholder="Add a comment"
                           data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
             </div>
-            <div data-bind="if: replyNotEmpty" class="form-inline">
-                <a class="btn btn-default btn-default" data-bind="click: submitReply, css: {disabled: submittingReply}"><i
+            <div>
+                <a class="btn btn-default"
+                   data-bind="click: submitReply, visible: replyNotEmpty, css: {disabled: submittingReply}"><i
                         class="icon-check"></i> {{saveButtonText}}</a>
-                <a class="btn btn-default btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"><i
+                <a class="btn btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"><i
                         class="icon-undo"></i> Cancel</a>
                 <span data-bind="text: replyErrorMessage" class="comment-error"></span>
             </div>
