@@ -7,7 +7,7 @@
 % endif
 
 <div class="col-sm-3">
-    <div class="panel panel-default">
+    <div class="panel panel-default"><!--TODO fix this on the screen -->
         <ul class="nav nav-stacked nav-pills">
             <li><a id="discussion-overview-btn" class="discussion-btn" href="#">Overview</a></li>
             <li><a id="discussion-files-btn" class="discussion-btn" href="#">Files</a></li>
@@ -17,39 +17,34 @@
 <div class="col-sm-9">
     <div id="discussion-overview" class="discussion">
         <h3>Overview</h3>
-        <div data-bind="if: canComment" style="margin-top: 20px">
-            <form class="form">
-                <div class="form-group">
-                    <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
-                </div>
-                <div data-bind="if: replyNotEmpty" class="form-inline">
-                    <a class="btn btn-default btn-default" data-bind="click: submitReply, css: {disabled: submittingReply}"><i class="icon-check"></i> {{saveButtonText}}</a>
-                    <a class="btn btn-default btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"><i class="icon-undo"></i> Cancel</a>
-                    <span data-bind="text: replyErrorMessage" class="comment-error"></span>
-                </div>
-                <div class="comment-error">{{errorMessage}}</div>
-            </form>
-        </div>
+        ${newComment()}
         <div data-bind="template: {name: 'commentTemplate', foreach: comments}"></div>
     </div>
     <div id="discussion-files" class="discussion" style="display: none">
         <h3>Files</h3>
-        <div data-bind="if: canComment" style="margin-top: 20px">
-            <form class="form">
-                <div class="form-group">
-                    <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
-                </div>
-                <div data-bind="if: replyNotEmpty" class="form-inline">
-                    <a class="btn btn-default btn-default" data-bind="click: submitReply, css: {disabled: submittingReply}"><i class="icon-check"></i> {{saveButtonText}}</a>
-                    <a class="btn btn-default btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"><i class="icon-undo"></i> Cancel</a>
-                    <span data-bind="text: replyErrorMessage" class="comment-error"></span>
-                </div>
-                <div class="comment-error">{{errorMessage}}</div>
-            </form>
-        </div>
+        ${newComment()}
         <div data-bind="template: {name: 'commentTemplate', foreach: comments}"></div>
     </div>
 </div>
+
+<%def name="newComment()">
+    <div data-bind="if: canComment" style="margin-top: 20px">
+        <form class="form">
+            <div class="form-group">
+                <textarea class="form-control" placeholder="Add a comment"
+                          data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
+            </div>
+            <div data-bind="if: replyNotEmpty" class="form-inline">
+                <a class="btn btn-default btn-default" data-bind="click: submitReply, css: {disabled: submittingReply}"><i
+                        class="icon-check"></i> {{saveButtonText}}</a>
+                <a class="btn btn-default btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"><i
+                        class="icon-undo"></i> Cancel</a>
+                <span data-bind="text: replyErrorMessage" class="comment-error"></span>
+            </div>
+            <div class="comment-error">{{errorMessage}}</div>
+        </form>
+    </div>
+</%def>
 
 <%def name="stylesheets()">
     ${parent.stylesheets()}

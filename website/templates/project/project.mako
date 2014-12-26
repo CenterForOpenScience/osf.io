@@ -60,7 +60,7 @@
         </div>
 
         <div id="comments-widget-container" class="addon-widget-container">
-            <h3 class="addon-widget-header">Recent comments</h3>
+            <h3 class="addon-widget-header"><a href="${node['url']}discussions/">Discussions</a></h3>
             <div data-bind="template: {name: 'commentTemplate', foreach: comments}"></div>
         </div>
 

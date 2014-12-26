@@ -495,8 +495,9 @@ var onOpen = function(pagename) {
     });
 };
 
-var init = function(selector, pageName, userName, canComment, hasChildren) {
-    new CommentPane(selector, {onOpen: onOpen(pageName)});
+var init = function(selector, mode, pageName, userName, canComment, hasChildren) {
+    console.log(mode);
+    new CommentPane(selector, mode, {onOpen: onOpen(pageName)});
     var viewModel = new CommentListModel(userName, pageName, canComment, hasChildren);
     var $elm = $(selector);
     if (!$elm.length) {
