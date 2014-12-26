@@ -113,7 +113,7 @@ class TestCRUD:
 
     @async
     @pytest.mark.aiohttpretty
-    def test_download(provider):
+    def test_download(self, provider):
         path = '/triangles.txt'
         url = provider._build_content_url('files', 'auto', provider.build_path(path))
         aiohttpretty.register_uri('GET', url, body=b'better')
@@ -124,7 +124,7 @@ class TestCRUD:
 
     @async
     @pytest.mark.aiohttpretty
-    def test_download_not_found(provider):
+    def test_download_not_found(self, provider):
         path = '/vectors.txt'
         url = provider._build_content_url('files', 'auto', provider.build_path(path))
         aiohttpretty.register_uri('GET', url, status=404)
@@ -204,8 +204,8 @@ class TestMetadata:
 
 class TestOperations:
 
-    def test_can_intra_copy(provider):
+    def test_can_intra_copy(self, provider):
         assert provider.can_intra_copy(provider)
 
-    def test_can_intra_move(provider):
+    def test_can_intra_move(self, provider):
         assert provider.can_intra_move(provider)
