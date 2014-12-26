@@ -333,7 +333,7 @@ def file_root_similar_name():
 @pytest.mark.aiohttpretty
 def test_download(connected_provider):
     path = '/lets-go-crazy'
-    provider_path = connected_provider.format_path(path)
+    provider_path = connected_provider.build_path(path)
     body = b'dearly-beloved'
     url = connected_provider.generate_url(provider_path)
     aiohttpretty.register_uri('GET', url, body=body)
@@ -346,7 +346,7 @@ def test_download(connected_provider):
 @pytest.mark.aiohttpretty
 def test_download_accept_url(connected_provider):
     path = '/lets-go-crazy'
-    provider_path = connected_provider.format_path(path)
+    provider_path = connected_provider.build_path(path)
     body = b'dearly-beloved'
     url = connected_provider.generate_url(provider_path)
     result = yield from connected_provider.download(path, accept_url=True)
@@ -361,7 +361,7 @@ def test_download_accept_url(connected_provider):
 @pytest.mark.aiohttpretty
 def test_download_not_found(connected_provider):
     path = '/lets-go-crazy'
-    provider_path = connected_provider.format_path(path)
+    provider_path = connected_provider.build_path(path)
     url = connected_provider.generate_url(provider_path)
     aiohttpretty.register_uri('GET', url, status=404)
     with pytest.raises(exceptions.DownloadError):
@@ -372,7 +372,7 @@ def test_download_not_found(connected_provider):
 @pytest.mark.aiohttpretty
 def test_upload(connected_provider, file_content, file_stream, file_metadata):
     path = '/foo.bar'
-    provider_path = connected_provider.format_path(path)
+    provider_path = connected_provider.build_path(path)
     content_md5 = hashlib.md5(file_content).hexdigest()
     metadata_url = connected_provider.build_url(provider_path)
     url = connected_provider.generate_url(provider_path, 'PUT')
@@ -415,7 +415,7 @@ def test_metadata_invalid_root_path(connected_provider):
 @pytest.mark.aiohttpretty
 def test_metadata_folder_root_empty(connected_provider, folder_root_empty):
     path = '/'
-    provider_path = connected_provider.format_path(path)
+    provider_path = connected_provider.build_path(path)
     body = json.dumps(folder_root_empty).encode('utf-8')
     url = furl.furl(connected_provider.build_url(provider_path))
     url.args.update({'prefix': provider_path, 'delimiter': '/'})
@@ -430,7 +430,7 @@ def test_metadata_folder_root_empty(connected_provider, folder_root_empty):
 @pytest.mark.aiohttpretty
 def test_metadata_folder_root(connected_provider, folder_root):
     path = '/'
-    provider_path = connected_provider.format_path(path)
+    provider_path = connected_provider.build_path(path)
     body = json.dumps(folder_root).encode('utf-8')
     url = furl.furl(connected_provider.build_url(''))
     url.args.update({'prefix': provider_path, 'delimiter': '/'})
@@ -456,7 +456,7 @@ def test_metadata_folder_root(connected_provider, folder_root):
 @pytest.mark.aiohttpretty
 def test_metadata_folder_root_level1(connected_provider, folder_root_level1):
     path = '/level1/'
-    provider_path = connected_provider.format_path(path)
+    provider_path = connected_provider.build_path(path)
     body = json.dumps(folder_root_level1).encode('utf-8')
     url = furl.furl(connected_provider.build_url(''))
     url.args.update({'prefix': provider_path, 'delimiter': '/'})
@@ -473,7 +473,7 @@ def test_metadata_folder_root_level1(connected_provider, folder_root_level1):
 @pytest.mark.aiohttpretty
 def test_metadata_folder_root_level1_level2(connected_provider, folder_root_level1_level2):
     path = '/level1/level2/'
-    provider_path = connected_provider.format_path(path)
+    provider_path = connected_provider.build_path(path)
     body = json.dumps(folder_root_level1_level2).encode('utf-8')
     url = furl.furl(connected_provider.build_url(''))
     url.args.update({'prefix': provider_path, 'delimiter': '/'})
@@ -490,7 +490,7 @@ def test_metadata_folder_root_level1_level2(connected_provider, folder_root_leve
 @pytest.mark.aiohttpretty
 def test_metadata_file_root_level1_level2_file2_txt(connected_provider, file_root_level1_level2_file2_txt):
     path = '/level1/level2/file2.txt'
-    provider_path = connected_provider.format_path(path)
+    provider_path = connected_provider.build_path(path)
     url = furl.furl(connected_provider.build_url(provider_path))
     aiohttpretty.register_uri('HEAD', url.url, status=200, headers=file_root_level1_level2_file2_txt)
     result = yield from connected_provider.metadata(path)
@@ -505,7 +505,7 @@ def test_metadata_file_root_level1_level2_file2_txt(connected_provider, file_roo
 @pytest.mark.aiohttpretty
 def test_metadata_folder_root_level1_empty(connected_provider, folder_root_level1_empty):
     path = '/level1_empty/'
-    provider_path = connected_provider.format_path(path)
+    provider_path = connected_provider.build_path(path)
     folder_url = furl.furl(connected_provider.build_url(''))
     folder_url.args.update({'prefix': provider_path, 'delimiter': '/'})
     folder_body = json.dumps([]).encode('utf-8')
@@ -521,7 +521,7 @@ def test_metadata_folder_root_level1_empty(connected_provider, folder_root_level
 @pytest.mark.aiohttpretty
 def test_metadata_file_root_similar(connected_provider, file_root_similar):
     path = '/similar'
-    provider_path = connected_provider.format_path(path)
+    provider_path = connected_provider.build_path(path)
     url = furl.furl(connected_provider.build_url(provider_path))
     aiohttpretty.register_uri('HEAD', url.url, status=200, headers=file_root_similar)
     result = yield from connected_provider.metadata(path)
@@ -535,7 +535,7 @@ def test_metadata_file_root_similar(connected_provider, file_root_similar):
 @pytest.mark.aiohttpretty
 def test_metadata_file_root_similar_name(connected_provider, file_root_similar_name):
     path = '/similar.file'
-    provider_path = connected_provider.format_path(path)
+    provider_path = connected_provider.build_path(path)
     url = furl.furl(connected_provider.build_url(provider_path))
     aiohttpretty.register_uri('HEAD', url.url, status=200, headers=file_root_similar_name)
     result = yield from connected_provider.metadata(path)
@@ -549,7 +549,7 @@ def test_metadata_file_root_similar_name(connected_provider, file_root_similar_n
 @pytest.mark.aiohttpretty
 def test_metadata_file_does_not_exist(connected_provider):
     path = '/does_not.exist'
-    provider_path = connected_provider.format_path(path)
+    provider_path = connected_provider.build_path(path)
     url = furl.furl(connected_provider.build_url(provider_path))
     aiohttpretty.register_uri('HEAD', url.url, status=404)
     with pytest.raises(exceptions.MetadataError):
@@ -560,7 +560,7 @@ def test_metadata_file_does_not_exist(connected_provider):
 @pytest.mark.aiohttpretty
 def test_metadata_folder_does_not_exist(connected_provider):
     path = '/does_not_exist/'
-    provider_path = connected_provider.format_path(path)
+    provider_path = connected_provider.build_path(path)
     folder_url = furl.furl(connected_provider.build_url(''))
     folder_url.args.update({'prefix': provider_path, 'delimiter': '/'})
     folder_body = json.dumps([]).encode('utf-8')

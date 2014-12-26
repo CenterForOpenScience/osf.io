@@ -52,14 +52,14 @@ class CloudFilesProvider(provider.BaseProvider):
     @ensure_connection
     @asyncio.coroutine
     def intra_copy(self, dest_provider, source_options, dest_options):
-        source_path = self.format_path(source_options['path'])
-        dest_path = self.format_path(dest_options['path'])
+        source_path = self.build_path(source_options['path'])
+        dest_path = self.build_path(dest_options['path'])
         url = dest_provider.build_url(dest_path)
         yield from self.make_request(
             'PUT',
             url,
             headers={
-                'X-Copy-From': self.format_path(
+                'X-Copy-From': self.build_path(
                     os.path.join(self.container, source_path.lstrip('/'))  # ensure no left slash when joining paths
                 )
             },
@@ -78,7 +78,7 @@ class CloudFilesProvider(provider.BaseProvider):
         :rtype ResponseStreamReader:
         :raises: exceptions.DownloadError
         """
-        provider_path = self.format_path(path)
+        provider_path = self.build_path(path)
         url = self.generate_url(provider_path)
 
         if accept_url:
@@ -107,7 +107,7 @@ class CloudFilesProvider(provider.BaseProvider):
         else:
             created = False
 
-        provider_path = self.format_path(path)
+        provider_path = self.build_path(path)
         url = self.generate_url(provider_path, 'PUT')
         yield from self.make_request(
             'PUT',
@@ -126,7 +126,7 @@ class CloudFilesProvider(provider.BaseProvider):
         :param str path: The path of the key to delete
         :rtype ResponseStreamReader:
         """
-        provider_path = self.format_path(path)
+        provider_path = self.build_path(path)
         yield from self.make_request(
             'DELETE',
             self.build_url(provider_path),
@@ -147,6 +147,13 @@ class CloudFilesProvider(provider.BaseProvider):
         else:
             return (yield from self._metadata_file(path, **kwargs))
 
+    def build_path(self, path):
+        """Validates and converts a WaterButler specific path to a Provider specific path
+        :param str path: WaterButler specific path
+        :rtype str: Provider specific path
+        """
+        return super().build_path(path, prefix_slash=False, suffix_slash=True)
+
     def build_url(self, path):
         """Build the url for the specified object
         :param str path: The stream in question
@@ -162,13 +169,6 @@ class CloudFilesProvider(provider.BaseProvider):
 
     def can_intra_move(self, dest_provider):
         return self == dest_provider
-
-    def format_path(self, path):
-        """Validates and converts a WaterButler specific path to a Provider specific path
-        :param str path: WaterButler specific path
-        :rtype str: Provider specific path
-        """
-        return super().format_path(path, prefix_slash=False, suffix_slash=True)
 
     def generate_url(self, path, method='GET', seconds=settings.TEMP_URL_SECS):
         """Build and sign a temp url for the specified stream
@@ -266,7 +266,7 @@ class CloudFilesProvider(provider.BaseProvider):
         :rtype dict:
         :rtype list:
         """
-        provider_path = self.format_path(path)
+        provider_path = self.build_path(path)
         url = furl.furl(self.build_url(''))
         url.args.update({'prefix': provider_path, 'delimiter': '/'})
         resp = yield from self.make_request(
