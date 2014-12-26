@@ -49,12 +49,7 @@ class CloudFilesProvider(provider.BaseProvider):
             'Accept': 'application/json',
         }
 
-    def can_intra_copy(self, dest_provider):
-        return self == dest_provider
-
-    def can_intra_move(self, dest_provider):
-        return self == dest_provider
-
+    @ensure_connection
     @asyncio.coroutine
     def intra_copy(self, dest_provider, source_options, dest_options):
         source_path = self.format_path(source_options['path'])
@@ -74,13 +69,14 @@ class CloudFilesProvider(provider.BaseProvider):
         return (yield from dest_provider.metadata(dest_options['path']))
 
     @ensure_connection
+    @asyncio.coroutine
     def download(self, path, accept_url=False, **kwargs):
         """Returns a ResponseStreamReader (Stream) for the specified path
         :param str path: Path to the object you want to download
         :param dict **kwargs: Additional arguments that are ignored
         :rtype str:
         :rtype ResponseStreamReader:
-        :raises: waterbutler.FileNotFoundError
+        :raises: exceptions.DownloadError
         """
         provider_path = self.format_path(path)
         url = self.generate_url(provider_path)
@@ -97,6 +93,7 @@ class CloudFilesProvider(provider.BaseProvider):
         return streams.ResponseStreamReader(resp)
 
     @ensure_connection
+    @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
         """Uploads the given stream to S3
         :param ResponseStreamReader stream: The stream to put to Cloudfiles
@@ -123,6 +120,7 @@ class CloudFilesProvider(provider.BaseProvider):
         return (yield from self.metadata(path)), created
 
     @ensure_connection
+    @asyncio.coroutine
     def delete(self, path, **kwargs):
         """Deletes the key at the specified path
         :param str path: The path of the key to delete
@@ -137,6 +135,7 @@ class CloudFilesProvider(provider.BaseProvider):
         )
 
     @ensure_connection
+    @asyncio.coroutine
     def metadata(self, path, **kwargs):
         """Get Metadata about the requested file or folder
         :param str path: The path to a key or folder
@@ -157,6 +156,12 @@ class CloudFilesProvider(provider.BaseProvider):
         url.path.add(self.container)
         url.path.add(path)
         return url.url
+
+    def can_intra_copy(self, dest_provider):
+        return self == dest_provider
+
+    def can_intra_move(self, dest_provider):
+        return self == dest_provider
 
     def format_path(self, path):
         """Validates and converts a WaterButler specific path to a Provider specific path
@@ -216,7 +221,7 @@ class CloudFilesProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def _get_token(self):
-        """Fetchs an access token from cloudfiles for actual api requests
+        """Fetches an access token from cloudfiles for actual api requests
         Returns the entire json response from the tokens endpoint
         Notably containing our token and proper endpoint to send requests to
         :rtype dict:
