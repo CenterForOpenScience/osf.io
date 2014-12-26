@@ -190,13 +190,16 @@ def test_upload(provider, file_metadata, file_stream, settings):
 
 @async
 @pytest.mark.aiohttpretty
-def test_delete(provider):
+def test_delete(provider, file_metadata):
     path = '/The past'
     url = provider.build_url('fileops', 'delete')
     data = {'root': 'auto', 'path': provider.build_path(path)}
+    file_url = provider.build_url('metadata', 'auto', provider.build_path(path))
+    aiohttpretty.register_json_uri('GET', file_url, body=file_metadata)
     aiohttpretty.register_uri('POST', url, status=200)
     yield from provider.delete(path)
 
+    assert aiohttpretty.has_call(method='GET', uri=file_url)
     assert aiohttpretty.has_call(method='POST', uri=url, data=data)
 
 

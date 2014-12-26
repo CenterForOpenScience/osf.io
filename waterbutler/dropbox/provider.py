@@ -115,6 +115,10 @@ class DropboxProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
+        if not path.endswith('/'):
+            # A metadata call will verify the path specified is not a folder.
+            yield from self.metadata(path)
+
         yield from self.make_request(
             'POST',
             self.build_url('fileops', 'delete'),
@@ -167,12 +171,12 @@ class DropboxProvider(provider.BaseProvider):
             for item in data
         ]
 
-    def build_path(self, path):
+    def build_path(self, path, prefix_slash=False, suffix_slash=True):
         """Validates and converts a WaterButler specific path to a Provider specific path
         :param str path: WaterButler specific path
         :rtype str: Provider specific path
         """
-        path = super().build_path(path, prefix_slash=False, suffix_slash=True)
+        path = super().build_path(path, prefix_slash=prefix_slash, suffix_slash=suffix_slash)
         path = os.path.join(self.folder, path)
         self._validate_full_path(path)
         return path
