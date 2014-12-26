@@ -157,121 +157,122 @@ class TestGithubHelpers:
         assert provider.committer == expected
 
 
-@async
-@pytest.mark.aiohttpretty
-def test_download(provider):
-    url = provider.build_repo_url('git', 'blobs', 'mysha')
-    aiohttpretty.register_uri('GET', url, body=b'delicious')
-    result = yield from provider.download('mysha')
-    content = yield from result.response.read()
-    assert content == b'delicious'
+class TestCRUD:
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_download(self, provider):
+        url = provider.build_repo_url('git', 'blobs', 'mysha')
+        aiohttpretty.register_uri('GET', url, body=b'delicious')
+        result = yield from provider.download('mysha')
+        content = yield from result.response.read()
+        assert content == b'delicious'
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_download_bad_status(self, provider):
+        url = provider.build_repo_url('git', 'blobs', 'mysha')
+        aiohttpretty.register_uri('GET', url, body=b'delicious', status=418)
+        with pytest.raises(exceptions.DownloadError):
+            yield from provider.download('mysha')
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_upload_create(self, provider, upload_response, file_content, file_stream):
+        message = 'so hungry'
+        path = upload_response['content']['path'][::-1]
+        metadata_url = provider.build_repo_url('contents', os.path.dirname(path))
+        aiohttpretty.register_json_uri('GET', metadata_url, body=[upload_response['content']], status=200)
+        upload_url = provider.build_repo_url('contents', path)
+        aiohttpretty.register_json_uri('PUT', upload_url, body=upload_response, status=201)
+        yield from provider.upload(file_stream, path, message)
+        expected_data = {
+            'path': path,
+            'message': message,
+            'content': base64.b64encode(file_content).decode('utf-8'),
+            'committer': provider.committer,
+        }
+        assert aiohttpretty.has_call(method='GET', uri=metadata_url)
+        assert aiohttpretty.has_call(method='PUT', uri=upload_url, data=json.dumps(expected_data))
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_upload_update(self, provider, upload_response, file_content, file_stream):
+        message = 'so hungry'
+        sha = upload_response['content']['sha']
+        path = upload_response['content']['path']
+
+        upload_url = provider.build_repo_url('contents', path)
+        metadata_url = provider.build_repo_url('contents', os.path.dirname(path))
+
+        aiohttpretty.register_json_uri('PUT', upload_url, body=upload_response)
+        aiohttpretty.register_json_uri('GET', metadata_url, body=[upload_response['content']])
+
+        yield from provider.upload(file_stream, path, message)
+
+        expected_data = {
+            'path': path,
+            'message': message,
+            'content': base64.b64encode(file_content).decode('utf-8'),
+            'committer': provider.committer,
+            'sha': sha,
+        }
+
+        assert aiohttpretty.has_call(method='GET', uri=metadata_url)
+        assert aiohttpretty.has_call(method='PUT', uri=upload_url, data=json.dumps(expected_data))
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_delete_with_branch(self, provider, repo_contents):
+        path = repo_contents[0]['path']
+        sha = repo_contents[0]['sha']
+        branch = 'master'
+        message = 'deleted'
+        url = provider.build_repo_url('contents', path)
+        aiohttpretty.register_json_uri('DELETE', url)
+        yield from provider.delete(path, message, sha, branch=branch)
+        expected_data = {
+            'message': message,
+            'sha': sha,
+            'committer': provider.committer,
+            'branch': branch,
+        }
+
+        assert aiohttpretty.has_call(method='DELETE', uri=url, data=json.dumps(expected_data))
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_delete_without_branch(self, provider, repo_contents):
+        path = repo_contents[0]['path']
+        sha = repo_contents[0]['sha']
+        message = 'deleted'
+        url = provider.build_repo_url('contents', path)
+        aiohttpretty.register_json_uri('DELETE', url)
+        yield from provider.delete(path, message, sha)
+        expected_data = {
+            'message': message,
+            'sha': sha,
+            'committer': provider.committer,
+        }
+
+        assert aiohttpretty.has_call(method='DELETE', uri=url, data=json.dumps(expected_data))
 
 
-@async
-@pytest.mark.aiohttpretty
-def test_download_bad_status(provider):
-    url = provider.build_repo_url('git', 'blobs', 'mysha')
-    aiohttpretty.register_uri('GET', url, body=b'delicious', status=418)
-    with pytest.raises(exceptions.DownloadError):
-        yield from provider.download('mysha')
+class TestMetadata:
 
+    @async
+    @pytest.mark.aiohttpretty
+    def test_metadata(self, provider, repo_contents):
+        path = 'snacks'
+        url = provider.build_repo_url('contents', path)
+        aiohttpretty.register_json_uri('GET', url, body=repo_contents)
+        result = yield from provider.metadata(path)
+        ret = []
 
-@async
-@pytest.mark.aiohttpretty
-def test_metadata(provider, repo_contents):
-    path = 'snacks'
-    url = provider.build_repo_url('contents', path)
-    aiohttpretty.register_json_uri('GET', url, body=repo_contents)
-    result = yield from provider.metadata(path)
-    ret = []
+        for item in repo_contents:
+            if item['type'] == 'folder':
+                ret.append(GithubFolderMetadata(item).serialized())
+            else:
+                ret.append(GithubFileMetadata(item).serialized())
 
-    for item in repo_contents:
-        if item['type'] == 'folder':
-            ret.append(GithubFolderMetadata(item).serialized())
-        else:
-            ret.append(GithubFileMetadata(item).serialized())
-
-    assert result == ret
-
-
-@async
-@pytest.mark.aiohttpretty
-def test_upload_create(provider, upload_response, file_content, file_stream):
-    message = 'so hungry'
-    path = upload_response['content']['path'][::-1]
-    metadata_url = provider.build_repo_url('contents', os.path.dirname(path))
-    aiohttpretty.register_json_uri('GET', metadata_url, body=[upload_response['content']], status=200)
-    upload_url = provider.build_repo_url('contents', path)
-    aiohttpretty.register_json_uri('PUT', upload_url, body=upload_response, status=201)
-    yield from provider.upload(file_stream, path, message)
-    expected_data = {
-        'path': path,
-        'message': message,
-        'content': base64.b64encode(file_content).decode('utf-8'),
-        'committer': provider.committer,
-    }
-    assert aiohttpretty.has_call(method='GET', uri=metadata_url)
-    assert aiohttpretty.has_call(method='PUT', uri=upload_url, data=json.dumps(expected_data))
-
-
-@async
-@pytest.mark.aiohttpretty
-def test_upload_update(provider, upload_response, file_content, file_stream):
-    message = 'so hungry'
-    sha = upload_response['content']['sha']
-    path = upload_response['content']['path']
-
-    upload_url = provider.build_repo_url('contents', path)
-    metadata_url = provider.build_repo_url('contents', os.path.dirname(path))
-
-    aiohttpretty.register_json_uri('PUT', upload_url, body=upload_response)
-    aiohttpretty.register_json_uri('GET', metadata_url, body=[upload_response['content']])
-
-    yield from provider.upload(file_stream, path, message)
-
-    expected_data = {
-        'path': path,
-        'message': message,
-        'content': base64.b64encode(file_content).decode('utf-8'),
-        'committer': provider.committer,
-        'sha': sha,
-    }
-
-    assert aiohttpretty.has_call(method='GET', uri=metadata_url)
-    assert aiohttpretty.has_call(method='PUT', uri=upload_url, data=json.dumps(expected_data))
-
-
-@async
-@pytest.mark.aiohttpretty
-def test_delete_with_branch(provider, repo_contents):
-    path = repo_contents[0]['path']
-    sha = repo_contents[0]['sha']
-    branch = 'master'
-    message = 'deleted'
-    url = provider.build_repo_url('contents', path)
-    aiohttpretty.register_json_uri('DELETE', url)
-    yield from provider.delete(path, message, sha, branch=branch)
-    expected_data = {
-        'message': message,
-        'sha': sha,
-        'committer': provider.committer,
-        'branch': branch,
-    }
-    assert aiohttpretty.has_call(method='DELETE', uri=url, data=json.dumps(expected_data))
-
-
-@async
-@pytest.mark.aiohttpretty
-def test_delete_without_branch(provider, repo_contents):
-    path = repo_contents[0]['path']
-    sha = repo_contents[0]['sha']
-    message = 'deleted'
-    url = provider.build_repo_url('contents', path)
-    aiohttpretty.register_json_uri('DELETE', url)
-    yield from provider.delete(path, message, sha)
-    expected_data = {
-        'message': message,
-        'sha': sha,
-        'committer': provider.committer,
-    }
-    assert aiohttpretty.has_call(method='DELETE', uri=url, data=json.dumps(expected_data))
+        assert result == ret
