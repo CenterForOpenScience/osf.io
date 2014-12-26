@@ -283,7 +283,7 @@ class CloudFilesProvider(provider.BaseProvider):
             metadata = yield from self._metadata_file(os.path.dirname(path), **kwargs)
             if not metadata:
                 raise exceptions.MetadataError(
-                    'Could not retrieve folder {0}'.format(path),
+                    'Could not retrieve folder \'{0}\''.format(path),
                     code=404,
                 )
 
