@@ -1,25 +1,29 @@
+import os
+
 from waterbutler.core import metadata
 
-class BaseGithubMetadata:
+
+class BaseGithubMetadata(metadata.BaseMetadata):
+
+    def __init__(self, raw, folder=None):
+        super().__init__(raw)
+        self.folder = folder
 
     @property
     def provider(self):
         return 'github'
 
+    def build_path(self, path):
+        if self.folder:
+            path = os.path.join(self.folder, path.lstrip('/'))
+        return super().build_path(path)
 
-class GithubFileMetadata(BaseGithubMetadata, metadata.BaseFileMetadata):
 
-    @property
-    def name(self):
-        return self.raw['name']
+class BaseGithubFileMetadata(BaseGithubMetadata, metadata.BaseFileMetadata):
 
     @property
     def path(self):
-        return self.raw['path']
-
-    @property
-    def size(self):
-        return self.raw['size']
+        return self.build_path(self.raw['path'])
 
     @property
     def modified(self):
@@ -36,15 +40,37 @@ class GithubFileMetadata(BaseGithubMetadata, metadata.BaseFileMetadata):
         }
 
 
-class GithubFolderMetadata(BaseGithubMetadata, metadata.BaseFolderMetadata):
+class GithubFileTreeMetadata(BaseGithubFileMetadata):
+
+    @property
+    def name(self):
+        return os.path.basename(self.raw['path'])
+
+    @property
+    def size(self):
+        return None
+
+
+class GithubFileContentMetadata(BaseGithubFileMetadata):
 
     @property
     def name(self):
         return self.raw['name']
 
     @property
-    def path(self):
+    def size(self):
+        return self.raw['size']
+
+
+class GithubFolderTreeMetadata(BaseGithubMetadata, metadata.BaseFolderMetadata):
+
+    @property
+    def name(self):
         return self.raw['path']
+
+    @property
+    def path(self):
+        return self.build_path(self.raw['path'])
 
 
 # TODO dates!
