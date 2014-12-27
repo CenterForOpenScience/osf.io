@@ -91,20 +91,19 @@ class GithubProvider(provider.BaseProvider):
     @asyncio.coroutine
     def delete(self, path, sha=None, message=None, branch=None, **kwargs):
         provider_path = self.build_path(path)
-        if not path.endswith('/') and not sha:
-            raise exceptions.DeleteError('Must pass parameter sha for deleting a single file')
+        if not sha:
+            sha = self._get_tree_sha(provider_path, ref=branch)
 
         message = message or 'File deleted on behalf of WaterButler'
         if path.endswith('/'):
             message = 'Folder deleted on behalf of WaterButler'
-            metadata = yield from self.metadata(path, ref=branch, recursive=True)
 
         data = {
             'message': message,
             'sha': sha,
             'committer': self.committer,
         }
-        if branch is not None:
+        if branch:
             data['branch'] = branch
         yield from self.make_request(
             'DELETE',
@@ -161,7 +160,7 @@ class GithubProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def _get_tree_sha(self, path, ref):
-        if path == '/':
+        if path == '':
             if self._is_sha(ref):
                 return ref
 
@@ -181,9 +180,9 @@ class GithubProvider(provider.BaseProvider):
 
         data = yield from resp.json()
 
+        item_path = path.rstrip('/')
         for item in data:
-            # TODO Check paths
-            if item['path'].strip('/') == path.strip('/'):
+            if item['path'] == item_path:
                 return item['sha']
         raise exceptions.MetadataError(
             'Could not retrieve folder \'{0}\''.format(path),
@@ -206,10 +205,10 @@ class GithubProvider(provider.BaseProvider):
         provider_path = self.build_path(path)
 
         if ref is None:
-            # get latest SHA of default branch
+            # get latest SHA of the default branch
             repo = yield from self._get_repo()
             ref = repo['default_branch']
-        sha = yield from self._get_tree_sha(path, ref)
+        sha = yield from self._get_tree_sha(provider_path, ref)
 
         url = furl.furl(self.build_repo_url('git/trees', sha))
         if recursive:

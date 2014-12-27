@@ -13,6 +13,12 @@ class BaseGithubMetadata(metadata.BaseMetadata):
     def provider(self):
         return 'github'
 
+    @property
+    def extra(self):
+        return {
+            'sha': self.raw['sha']
+        }
+
     def build_path(self, path):
         if self.folder:
             path = os.path.join(self.folder, path.lstrip('/'))
@@ -32,12 +38,6 @@ class BaseGithubFileMetadata(BaseGithubMetadata, metadata.BaseFileMetadata):
     @property
     def content_type(self):
         return None
-
-    @property
-    def extra(self):
-        return {
-            'sha': self.raw['sha']
-        }
 
 
 class GithubFileTreeMetadata(BaseGithubFileMetadata):
@@ -83,7 +83,3 @@ class GithubRevision(BaseGithubMetadata, metadata.BaseFileRevisionMetadata):
     @property
     def modified(self):
         return self.raw['commit']['committer']['date']
-
-    @property
-    def revision(self):
-        return self.raw['sha']
