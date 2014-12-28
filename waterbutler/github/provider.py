@@ -94,123 +94,10 @@ class GithubProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def delete(self, path, sha=None, message=None, branch=None, **kwargs):
-        provider_path = self.build_path(path)
-
         if path.endswith('/'):
-            if not branch:
-                repo = yield from self._fetch_repo()
-                branch = repo['default_branch']
-
-            branch_data = yield from self._fetch_branch(branch)
-            old_commit_sha = branch_data['commit']['sha']
-            old_commit_tree_sha = branch_data['commit']['commit']['tree']['sha']
-
-            # e.g. 'level1', 'level2', or ''
-            tree_paths = provider_path.rstrip('/').split('/')
-            trees = [{
-                'target': tree_paths[0],
-                'tree': [
-                    {
-                        'path': item['path'],
-                        'mode': item['mode'],
-                        'type': item['type'],
-                        'sha': item['sha'],
-                    }
-                    for item in (yield from self._fetch_tree(old_commit_tree_sha))['tree']
-                ]
-            }]
-            for idx, tree_path in enumerate(tree_paths[:-1]):
-                try:
-                    tree_sha = next(x for x in trees[-1]['tree'] if x['path'] == tree_path)['sha']
-                except StopIteration:
-                    raise exceptions.MetadataError(
-                        'Could not delete folder \'{0}\''.format(path),
-                        code=404,
-                    )
-                trees.append({
-                    'target': tree_paths[idx + 1],
-                    'tree': [
-                        {
-                            'path': item['path'],
-                            'mode': item['mode'],
-                            'type': item['type'],
-                            'sha': item['sha'],
-                        }
-                        for item in (yield from self._fetch_tree(tree_sha))['tree']
-                    ]
-                })
-
-            # The last tree's structure is rewritten w/o the target folder, all others
-            # in the hierarchy are simply updated to reflect this change.
-            tree = trees.pop()
-            if tree['target'] == '':
-                # Git Empty SHA
-                tree_sha = GIT_EMPTY_SHA
-            else:
-                # Delete the folder from the tree
-                for item in tree['tree']:
-                    if item['path'] == tree['target']:
-                        tree['tree'].remove(item)
-                        break
-                tree_data = yield from self._create_tree({'tree': tree['tree']})
-                tree_sha = tree_data['sha']
-                # Update parent tree(s)
-                for tree in reversed(trees):
-                    for item in tree['tree']:
-                        if item['path'] == tree['target']:
-                            item['sha'] = tree_sha
-                            break
-                    tree_data = yield from self._create_tree({'tree': tree['tree']})
-                    tree_sha = tree_data['sha']
-
-            # Create a new commit which references our top most tree change.
-            message = message or 'Folder deleted on behalf of WaterButler'
-            commit_resp = yield from self.make_request(
-                'POST',
-                self.build_repo_url('git', 'commits'),
-                headers={'Content-Type': 'application/json'},
-                data=json.dumps({
-                    'message': message,
-                    'tree': tree_sha,
-                    'parents': [
-                        old_commit_sha,
-                    ],
-                }),
-                expects=(201, ),
-                throws=exceptions.DeleteError,
-            )
-            commit_data = yield from commit_resp.json()
-            commit_sha = commit_data['sha']
-
-            # Update repository reference, point to the newly created commit.
-            ref_resp = yield from self.make_request(
-                'PATCH',
-                self.build_repo_url('git', 'refs', 'heads', branch),
-                headers={'Content-Type': 'application/json'},
-                data=json.dumps({
-                    'sha': commit_sha,
-                }),
-                expects=(200, ),
-                throws=exceptions.DeleteError,
-            )
-            yield from ref_resp.json()
+            yield from self._delete_folder(path, message, branch, **kwargs)
         else:
-            message = message or 'File deleted on behalf of WaterButler'
-            data = {
-                'message': message,
-                'sha': sha,
-                'committer': self.committer,
-            }
-            if branch:
-                data['branch'] = branch
-            yield from self.make_request(
-                'DELETE',
-                self.build_repo_url('contents', provider_path),
-                headers={'Content-Type': 'application/json'},
-                data=json.dumps(data),
-                expects=(200, ),
-                throws=exceptions.DeleteError,
-            )
+            yield from self._delete_file(path, sha, message, branch, **kwargs)
 
     @asyncio.coroutine
     def metadata(self, path, ref=None, recursive=False, **kwargs):
@@ -247,14 +134,131 @@ class GithubProvider(provider.BaseProvider):
         return super().build_path(path, prefix_slash=prefix_slash, suffix_slash=suffix_slash)
 
     @asyncio.coroutine
-    def _fetch_repo(self):
-        resp = yield from self.make_request(
-            'GET',
-            self.build_repo_url(),
+    def _delete_file(self, path, sha=None, message=None, branch=None, **kwargs):
+        provider_path = self.build_path(path)
+
+        if not sha:
+            data = yield from self._fetch_contents(provider_path, ref=branch)
+            sha = data['sha']
+
+        message = message or 'File deleted on behalf of WaterButler'
+        data = {
+            'message': message,
+            'sha': sha,
+            'committer': self.committer,
+        }
+        if branch:
+            data['branch'] = branch
+        yield from self.make_request(
+            'DELETE',
+            self.build_repo_url('contents', provider_path),
+            headers={'Content-Type': 'application/json'},
+            data=json.dumps(data),
             expects=(200, ),
-            throws=exceptions.MetadataError
+            throws=exceptions.DeleteError,
         )
-        return (yield from resp.json())
+
+    @asyncio.coroutine
+    def _delete_folder(self, path, message=None, branch=None, **kwargs):
+        provider_path = self.build_path(path)
+
+        if not branch:
+            repo = yield from self._fetch_repo()
+            branch = repo['default_branch']
+
+        branch_data = yield from self._fetch_branch(branch)
+        old_commit_sha = branch_data['commit']['sha']
+        old_commit_tree_sha = branch_data['commit']['commit']['tree']['sha']
+
+        # e.g. 'level1', 'level2', or ''
+        tree_paths = provider_path.rstrip('/').split('/')
+        trees = [{
+            'target': tree_paths[0],
+            'tree': [
+                {
+                    'path': item['path'],
+                    'mode': item['mode'],
+                    'type': item['type'],
+                    'sha': item['sha'],
+                }
+                for item in (yield from self._fetch_tree(old_commit_tree_sha))['tree']
+            ]
+        }]
+        for idx, tree_path in enumerate(tree_paths[:-1]):
+            try:
+                tree_sha = next(x for x in trees[-1]['tree'] if x['path'] == tree_path)['sha']
+            except StopIteration:
+                raise exceptions.MetadataError(
+                    'Could not delete folder \'{0}\''.format(path),
+                    code=404,
+                )
+            trees.append({
+                'target': tree_paths[idx + 1],
+                'tree': [
+                    {
+                        'path': item['path'],
+                        'mode': item['mode'],
+                        'type': item['type'],
+                        'sha': item['sha'],
+                    }
+                    for item in (yield from self._fetch_tree(tree_sha))['tree']
+                ]
+            })
+
+        # The last tree's structure is rewritten w/o the target folder, all others
+        # in the hierarchy are simply updated to reflect this change.
+        tree = trees.pop()
+        if tree['target'] == '':
+            # Git Empty SHA
+            tree_sha = GIT_EMPTY_SHA
+        else:
+            # Delete the folder from the tree
+            for item in tree['tree']:
+                if item['path'] == tree['target']:
+                    tree['tree'].remove(item)
+                    break
+            tree_data = yield from self._create_tree({'tree': tree['tree']})
+            tree_sha = tree_data['sha']
+            # Update parent tree(s)
+            for tree in reversed(trees):
+                for item in tree['tree']:
+                    if item['path'] == tree['target']:
+                        item['sha'] = tree_sha
+                        break
+                tree_data = yield from self._create_tree({'tree': tree['tree']})
+                tree_sha = tree_data['sha']
+
+        # Create a new commit which references our top most tree change.
+        message = message or 'Folder deleted on behalf of WaterButler'
+        commit_resp = yield from self.make_request(
+            'POST',
+            self.build_repo_url('git', 'commits'),
+            headers={'Content-Type': 'application/json'},
+            data=json.dumps({
+                'message': message,
+                'tree': tree_sha,
+                'parents': [
+                    old_commit_sha,
+                ],
+            }),
+            expects=(201, ),
+            throws=exceptions.DeleteError,
+        )
+        commit_data = yield from commit_resp.json()
+        commit_sha = commit_data['sha']
+
+        # Update repository reference, point to the newly created commit.
+        ref_resp = yield from self.make_request(
+            'PATCH',
+            self.build_repo_url('git', 'refs', 'heads', branch),
+            headers={'Content-Type': 'application/json'},
+            data=json.dumps({
+                'sha': commit_sha,
+            }),
+            expects=(200, ),
+            throws=exceptions.DeleteError,
+        )
+        yield from ref_resp.json()
 
     @asyncio.coroutine
     def _fetch_branch(self, branch):
@@ -272,6 +276,16 @@ class GithubProvider(provider.BaseProvider):
         resp = yield from self.make_request(
             'GET',
             url.url,
+            expects=(200, ),
+            throws=exceptions.MetadataError
+        )
+        return (yield from resp.json())
+
+    @asyncio.coroutine
+    def _fetch_repo(self):
+        resp = yield from self.make_request(
+            'GET',
+            self.build_repo_url(),
             expects=(200, ),
             throws=exceptions.MetadataError
         )
