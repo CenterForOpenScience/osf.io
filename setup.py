@@ -10,7 +10,7 @@ setup(
     name='waterbutler-github',
     namespace_packages=['waterbutler'],
     version='0.0.1',
-    description='WaterButler Github Storage Provider',
+    description='WaterButler GitHub Storage Provider',
     author='Center for Open Science',
     author_email='contact@cos.io',
     url='https://github.com/CenterForOpenScience/waterbutler-github',
@@ -30,7 +30,7 @@ setup(
     ],
     entry_points={
         'waterbutler.providers': [
-            'github = waterbutler.github.provider:GithubProvider',
+            'github = waterbutler.github.provider:GitHubProvider',
         ]
     },
 )

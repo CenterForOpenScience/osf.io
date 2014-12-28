@@ -12,11 +12,11 @@ import aiohttpretty
 from waterbutler.core import streams
 from waterbutler.core import exceptions
 
-from waterbutler.github.provider import GithubProvider
-from waterbutler.github.metadata import GithubRevision
-from waterbutler.github.metadata import GithubFileContentMetadata
-from waterbutler.github.metadata import GithubFileTreeMetadata
-from waterbutler.github.metadata import GithubFolderTreeMetadata
+from waterbutler.github.provider import GitHubProvider
+from waterbutler.github.metadata import GitHubRevision
+from waterbutler.github.metadata import GitHubFileContentMetadata
+from waterbutler.github.metadata import GitHubFileTreeMetadata
+from waterbutler.github.metadata import GitHubFolderTreeMetadata
 
 
 @pytest.fixture
@@ -42,7 +42,7 @@ def settings():
 
 @pytest.fixture
 def provider(auth, credentials, settings):
-    return GithubProvider(auth, credentials, settings)
+    return GitHubProvider(auth, credentials, settings)
 
 
 @pytest.fixture
@@ -345,7 +345,7 @@ def repo_metadata_root_file_txt():
     }
 
 
-class TestGithubHelpers:
+class TestHelpers:
 
     def test_build_repo_url(self, provider, settings):
         expected = provider.build_url('repos', settings['owner'], settings['repo'], 'contents')
@@ -471,7 +471,7 @@ class TestMetadata:
 
         result = yield from provider.metadata(path)
 
-        assert result == GithubFileContentMetadata(repo_metadata_root_file_txt).serialized()
+        assert result == GitHubFileContentMetadata(repo_metadata_root_file_txt).serialized()
 
     # TODO: Additional Tests
     # @async
@@ -499,9 +499,9 @@ class TestMetadata:
         ret = []
         for item in repo_metadata_root['tree']:
             if item['type'] == 'tree':
-                ret.append(GithubFolderTreeMetadata(item).serialized())
+                ret.append(GitHubFolderTreeMetadata(item).serialized())
             else:
-                ret.append(GithubFileTreeMetadata(item).serialized())
+                ret.append(GitHubFileTreeMetadata(item).serialized())
 
         assert result == ret
 

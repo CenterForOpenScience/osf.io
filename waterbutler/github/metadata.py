@@ -3,7 +3,7 @@ import os
 from waterbutler.core import metadata
 
 
-class BaseGithubMetadata(metadata.BaseMetadata):
+class BaseGitHubMetadata(metadata.BaseMetadata):
 
     def __init__(self, raw, folder=None):
         super().__init__(raw)
@@ -25,7 +25,7 @@ class BaseGithubMetadata(metadata.BaseMetadata):
         return super().build_path(path)
 
 
-class BaseGithubFileMetadata(BaseGithubMetadata, metadata.BaseFileMetadata):
+class BaseGitHubFileMetadata(BaseGitHubMetadata, metadata.BaseFileMetadata):
 
     @property
     def path(self):
@@ -40,14 +40,14 @@ class BaseGithubFileMetadata(BaseGithubMetadata, metadata.BaseFileMetadata):
         return None
 
 
-class BaseGithubFolderMetadata(BaseGithubMetadata, metadata.BaseFolderMetadata):
+class BaseGitHubFolderMetadata(BaseGitHubMetadata, metadata.BaseFolderMetadata):
 
     @property
     def path(self):
         return self.build_path(self.raw['path'])
 
 
-class GithubFileContentMetadata(BaseGithubFileMetadata):
+class GitHubFileContentMetadata(BaseGitHubFileMetadata):
 
     @property
     def name(self):
@@ -58,14 +58,14 @@ class GithubFileContentMetadata(BaseGithubFileMetadata):
         return self.raw['size']
 
 
-class GithubFolderContentMetadata(BaseGithubFolderMetadata):
+class GitHubFolderContentMetadata(BaseGitHubFolderMetadata):
 
     @property
     def name(self):
         return self.raw['name']
 
 
-class GithubFileTreeMetadata(BaseGithubFileMetadata):
+class GitHubFileTreeMetadata(BaseGitHubFileMetadata):
 
     @property
     def name(self):
@@ -76,7 +76,7 @@ class GithubFileTreeMetadata(BaseGithubFileMetadata):
         return None
 
 
-class GithubFolderTreeMetadata(BaseGithubFolderMetadata):
+class GitHubFolderTreeMetadata(BaseGitHubFolderMetadata):
 
     @property
     def name(self):
@@ -84,7 +84,7 @@ class GithubFolderTreeMetadata(BaseGithubFolderMetadata):
 
 
 # TODO dates!
-class GithubRevision(BaseGithubMetadata, metadata.BaseFileRevisionMetadata):
+class GitHubRevision(BaseGitHubMetadata, metadata.BaseFileRevisionMetadata):
 
     @property
     def size(self):
