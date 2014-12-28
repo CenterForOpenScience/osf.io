@@ -6,15 +6,18 @@ import io
 import os
 import json
 import base64
+import hashlib
 
 import aiohttpretty
 
 from waterbutler.core import streams
 from waterbutler.core import exceptions
 
+from waterbutler.github.provider import GitHubPath
 from waterbutler.github.provider import GitHubProvider
 from waterbutler.github.metadata import GitHubRevision
 from waterbutler.github.metadata import GitHubFileContentMetadata
+from waterbutler.github.metadata import GitHubFolderContentMetadata
 from waterbutler.github.metadata import GitHubFileTreeMetadata
 from waterbutler.github.metadata import GitHubFolderTreeMetadata
 
@@ -288,9 +291,60 @@ def branch_metadata():
         'name': 'master'
     }
 
+@pytest.fixture
+def content_repo_metadata_root():
+    return [
+        {
+            'path': 'file.txt',
+            'type': 'file',
+            'html_url': 'https://github.com/icereval/test/blob/master/file.txt',
+            'git_url': 'https://api.github.com/repos/icereval/test/git/blobs/e69de29bb2d1d6434b8b29ae775ad8c2e48c5391',
+            'url': 'https://api.github.com/repos/icereval/test/contents/file.txt?ref=master',
+            'sha': 'e69de29bb2d1d6434b8b29ae775ad8c2e48c5391',
+            '_links': {
+                'git': 'https://api.github.com/repos/icereval/test/git/blobs/e69de29bb2d1d6434b8b29ae775ad8c2e48c5391',
+                'self': 'https://api.github.com/repos/icereval/test/contents/file.txt?ref=master',
+                'html': 'https://github.com/icereval/test/blob/master/file.txt'
+            },
+            'name': 'file.txt',
+            'size': 0,
+            'download_url': 'https://raw.githubusercontent.com/icereval/test/master/file.txt'
+        }, {
+            'path': 'level1',
+            'type': 'dir',
+            'html_url': 'https://github.com/icereval/test/tree/master/level1',
+            'git_url': 'https://api.github.com/repos/icereval/test/git/trees/bc1087ebfe8354a684bf9f8b75517784143dde86',
+            'url': 'https://api.github.com/repos/icereval/test/contents/level1?ref=master',
+            'sha': 'bc1087ebfe8354a684bf9f8b75517784143dde86',
+            '_links': {
+                'git': 'https://api.github.com/repos/icereval/test/git/trees/bc1087ebfe8354a684bf9f8b75517784143dde86',
+                'self': 'https://api.github.com/repos/icereval/test/contents/level1?ref=master',
+                'html': 'https://github.com/icereval/test/tree/master/level1'
+            },
+            'name': 'level1',
+            'size': 0,
+            'download_url': None
+        }, {
+            'path': 'test.rst',
+            'type': 'file',
+            'html_url': 'https://github.com/icereval/test/blob/master/test.rst',
+            'git_url': 'https://api.github.com/repos/icereval/test/git/blobs/ca39bcbf849231525ce9e775935fcb18ed477b5a',
+            'url': 'https://api.github.com/repos/icereval/test/contents/test.rst?ref=master',
+            'sha': 'ca39bcbf849231525ce9e775935fcb18ed477b5a',
+            '_links': {
+                'git': 'https://api.github.com/repos/icereval/test/git/blobs/ca39bcbf849231525ce9e775935fcb18ed477b5a',
+                'self': 'https://api.github.com/repos/icereval/test/contents/test.rst?ref=master',
+                'html': 'https://github.com/icereval/test/blob/master/test.rst'
+            },
+            'name': 'test.rst',
+            'size': 190,
+            'download_url': 'https://raw.githubusercontent.com/icereval/test/master/test.rst'
+        }
+    ]
+
 
 @pytest.fixture
-def repo_metadata_root():
+def repo_tree_metadata_root():
     return {
         'tree': [
             {
@@ -324,7 +378,7 @@ def repo_metadata_root():
 
 
 @pytest.fixture
-def repo_metadata_root_file_txt():
+def content_repo_metadata_root_file_txt():
     return {
         '_links': {
             'git': 'https://api.github.com/repos/icereval/test/git/blobs/e69de29bb2d1d6434b8b29ae775ad8c2e48c5391',
@@ -363,20 +417,43 @@ class TestCRUD:
 
     @async
     @pytest.mark.aiohttpretty
-    def test_download(self, provider):
-        url = provider.build_repo_url('git', 'blobs', 'mysha')
+    def test_download_by_ref_sha(self, provider):
+        ref = hashlib.sha1().hexdigest()
+        url = provider.build_repo_url('git', 'blobs', ref)
         aiohttpretty.register_uri('GET', url, body=b'delicious')
-        result = yield from provider.download('/mysha')
+        result = yield from provider.download('', ref=ref)
+        content = yield from result.response.read()
+        assert content == b'delicious'
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_download_by_path(self, provider):
+        path = GitHubPath('/my.file')
+        url = provider.build_repo_url('contents', path.path)
+        aiohttpretty.register_uri('GET', url, body=b'delicious')
+        result = yield from provider.download(str(path))
+        content = yield from result.response.read()
+        assert content == b'delicious'
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_download_by_path_ref_branch(self, provider):
+        path = GitHubPath('/my.file')
+        ref = 'other_branch'
+        url = provider.build_repo_url('contents', path.path, ref=ref)
+        aiohttpretty.register_uri('GET', url, body=b'delicious')
+        result = yield from provider.download(str(path), ref=ref)
         content = yield from result.response.read()
         assert content == b'delicious'
 
     @async
     @pytest.mark.aiohttpretty
     def test_download_bad_status(self, provider):
-        url = provider.build_repo_url('git', 'blobs', 'mysha')
+        ref = hashlib.sha1().hexdigest()
+        url = provider.build_repo_url('git', 'blobs', ref)
         aiohttpretty.register_uri('GET', url, body=b'delicious', status=418)
         with pytest.raises(exceptions.DownloadError):
-            yield from provider.download('/mysha')
+            yield from provider.download('', ref=ref)
 
     # @async
     # @pytest.mark.aiohttpretty
@@ -464,14 +541,13 @@ class TestMetadata:
 
     @async
     @pytest.mark.aiohttpretty
-    def test_metadata_file(self, provider, repo_metadata_root_file_txt):
-        path = '/file.txt'
-        url = provider.build_repo_url('contents', provider.build_path(path))
-        aiohttpretty.register_json_uri('GET', url, body=repo_metadata_root_file_txt)
+    def test_metadata_file(self, provider, content_repo_metadata_root_file_txt):
+        path = GitHubPath('/file.txt')
+        url = provider.build_repo_url('contents', path.path)
+        aiohttpretty.register_json_uri('GET', url, body=content_repo_metadata_root_file_txt)
+        result = yield from provider.metadata(str(path))
 
-        result = yield from provider.metadata(path)
-
-        assert result == GitHubFileContentMetadata(repo_metadata_root_file_txt).serialized()
+        assert result == GitHubFileContentMetadata(content_repo_metadata_root_file_txt).serialized()
 
     # TODO: Additional Tests
     # @async
@@ -484,24 +560,18 @@ class TestMetadata:
 
     @async
     @pytest.mark.aiohttpretty
-    def test_metadata_folder_root(self, provider, repo_metadata, branch_metadata, repo_metadata_root):
-        path = '/'
-        repo = 'master'
-        repo_url = provider.build_repo_url()
-        branch_url = provider.build_repo_url('branches', repo)
-        url = provider.build_repo_url('git/trees', branch_metadata['commit']['sha'])
-        aiohttpretty.register_json_uri('GET', repo_url, body=repo_metadata)
-        aiohttpretty.register_json_uri('GET', branch_url, body=branch_metadata)
-        aiohttpretty.register_json_uri('GET', url, body=repo_metadata_root)
-
-        result = yield from provider.metadata(path)
+    def test_metadata_folder_root(self, provider, content_repo_metadata_root):
+        path = GitHubPath('/')
+        url = provider.build_repo_url('contents', path.path)
+        aiohttpretty.register_json_uri('GET', url, body=content_repo_metadata_root)
+        result = yield from provider.metadata(str(path))
 
         ret = []
-        for item in repo_metadata_root['tree']:
-            if item['type'] == 'tree':
-                ret.append(GitHubFolderTreeMetadata(item).serialized())
+        for item in content_repo_metadata_root:
+            if item['type'] == 'dir':
+                ret.append(GitHubFolderContentMetadata(item).serialized())
             else:
-                ret.append(GitHubFileTreeMetadata(item).serialized())
+                ret.append(GitHubFileContentMetadata(item).serialized())
 
         assert result == ret
 
