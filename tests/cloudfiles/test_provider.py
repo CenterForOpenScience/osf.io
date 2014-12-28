@@ -7,7 +7,6 @@ import io
 import time
 import hashlib
 
-import furl
 import json
 import aiohttp
 import aiohttp.multidict
