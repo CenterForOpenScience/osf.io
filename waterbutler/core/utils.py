@@ -53,6 +53,10 @@ class WaterButlerPath:
         return cls('/'.join(self._parts[:-1]) + '/', prefix=self._prefix, suffix=self._suffix)
 
     def _format_path(self, path):
+        """Formats the specified path per the class configuration prefix/suffix configuration.
+        :param str path: WaterButler specific path
+        :rtype str: Provider specific path
+        """
         # Display root as '/' if prefix or suffix are true
         if not path == '/' or not (self._prefix or self._suffix):
             if not self._prefix:
