@@ -40,15 +40,11 @@ class BaseGithubFileMetadata(BaseGithubMetadata, metadata.BaseFileMetadata):
         return None
 
 
-class GithubFileTreeMetadata(BaseGithubFileMetadata):
+class BaseGithubFolderMetadata(BaseGithubMetadata, metadata.BaseFolderMetadata):
 
     @property
-    def name(self):
-        return os.path.basename(self.raw['path'])
-
-    @property
-    def size(self):
-        return None
+    def path(self):
+        return self.build_path(self.raw['path'])
 
 
 class GithubFileContentMetadata(BaseGithubFileMetadata):
@@ -62,15 +58,29 @@ class GithubFileContentMetadata(BaseGithubFileMetadata):
         return self.raw['size']
 
 
-class GithubFolderTreeMetadata(BaseGithubMetadata, metadata.BaseFolderMetadata):
+class GithubFolderContentMetadata(BaseGithubFolderMetadata):
+
+    @property
+    def name(self):
+        return self.raw['name']
+
+
+class GithubFileTreeMetadata(BaseGithubFileMetadata):
+
+    @property
+    def name(self):
+        return os.path.basename(self.raw['path'])
+
+    @property
+    def size(self):
+        return None
+
+
+class GithubFolderTreeMetadata(BaseGithubFolderMetadata):
 
     @property
     def name(self):
         return self.raw['path']
-
-    @property
-    def path(self):
-        return self.build_path(self.raw['path'])
 
 
 # TODO dates!
