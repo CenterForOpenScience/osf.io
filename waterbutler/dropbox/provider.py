@@ -1,10 +1,10 @@
 import os
 import asyncio
 
-from waterbutler.core import exceptions
-from waterbutler.core import provider
-from waterbutler.core import streams
 from waterbutler.core import utils
+from waterbutler.core import streams
+from waterbutler.core import provider
+from waterbutler.core import exceptions
 
 from waterbutler.dropbox import settings
 from waterbutler.dropbox.metadata import DropboxRevision
