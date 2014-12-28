@@ -80,7 +80,7 @@ class GithubFolderTreeMetadata(BaseGithubFolderMetadata):
 
     @property
     def name(self):
-        return self.raw['path']
+        return os.path.basename(self.raw['path'])
 
 
 # TODO dates!

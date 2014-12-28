@@ -318,8 +318,6 @@ class GithubProvider(provider.BaseProvider):
         provider_path = self.build_path(path)
         parent_path = os.path.dirname(provider_path.rstrip('/'))
 
-        import pdb; pdb.set_trace()
-
         # if we have a sha or recursive lookup specified we'll need to perform
         # the operation using the git/trees api which requires a sha.
         if self._is_sha(ref) or recursive:
