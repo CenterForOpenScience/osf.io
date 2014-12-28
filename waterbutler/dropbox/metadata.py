@@ -7,15 +7,15 @@ class BaseDropboxMetadata(metadata.BaseMetadata):
 
     def __init__(self, raw, folder):
         super().__init__(raw)
-        self.folder = folder
+        self._folder = folder
 
     @property
     def provider(self):
         return 'dropbox'
 
     def build_path(self, path):
-        if path.startswith(self.folder):
-            path = path[len(self.folder):]
+        if path.startswith(self._folder):
+            path = path[len(self._folder):]
         return super().build_path(path)
 
 

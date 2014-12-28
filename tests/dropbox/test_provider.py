@@ -9,6 +9,7 @@ import aiohttpretty
 from waterbutler.core import streams
 from waterbutler.core import exceptions
 
+from waterbutler.dropbox.provider import DropboxPath
 from waterbutler.dropbox.provider import DropboxProvider
 from waterbutler.dropbox.metadata import DropboxFileMetadata
 
@@ -114,10 +115,10 @@ class TestCRUD:
     @async
     @pytest.mark.aiohttpretty
     def test_download(self, provider):
-        path = '/triangles.txt'
-        url = provider._build_content_url('files', 'auto', provider.build_path(path))
+        path = DropboxPath(provider.folder, '/triangles.txt')
+        url = provider._build_content_url('files', 'auto', path.full_path)
         aiohttpretty.register_uri('GET', url, body=b'better')
-        result = yield from provider.download(path)
+        result = yield from provider.download(str(path))
         content = yield from result.response.read()
 
         assert content == b'better'
@@ -125,22 +126,22 @@ class TestCRUD:
     @async
     @pytest.mark.aiohttpretty
     def test_download_not_found(self, provider):
-        path = '/vectors.txt'
-        url = provider._build_content_url('files', 'auto', provider.build_path(path))
+        path = DropboxPath(provider.folder, '/vectors.txt')
+        url = provider._build_content_url('files', 'auto', path.full_path)
         aiohttpretty.register_uri('GET', url, status=404)
 
         with pytest.raises(exceptions.DownloadError):
-            yield from provider.download(path)
+            yield from provider.download(str(path))
 
     @async
     @pytest.mark.aiohttpretty
     def test_upload(self, provider, file_metadata, file_stream, settings):
-        path = '/phile'
-        url = provider._build_content_url('files_put', 'auto', provider.build_path(path))
-        metadata_url = provider.build_url('metadata', 'auto', provider.build_path(path))
+        path = DropboxPath(provider.folder, '/phile')
+        url = provider._build_content_url('files_put', 'auto', path.full_path)
+        metadata_url = provider.build_url('metadata', 'auto', path.full_path)
         aiohttpretty.register_uri('GET', metadata_url, status=404)
         aiohttpretty.register_json_uri('PUT', url, status=200, body=file_metadata)
-        metadata, created = yield from provider.upload(file_stream, path)
+        metadata, created = yield from provider.upload(file_stream, str(path))
         expected = DropboxFileMetadata(file_metadata, provider.folder).serialized()
 
         assert metadata == expected
@@ -150,13 +151,13 @@ class TestCRUD:
     @async
     @pytest.mark.aiohttpretty
     def test_delete_file(self, provider, file_metadata):
-        path = '/The past'
+        path = DropboxPath(provider.folder, '/The past')
         url = provider.build_url('fileops', 'delete')
-        data = {'root': 'auto', 'path': provider.build_path(path)}
-        file_url = provider.build_url('metadata', 'auto', provider.build_path(path))
+        data = {'root': 'auto', 'path': path.full_path}
+        file_url = provider.build_url('metadata', 'auto', path.full_path)
         aiohttpretty.register_json_uri('GET', file_url, body=file_metadata)
         aiohttpretty.register_uri('POST', url, status=200)
-        yield from provider.delete(path)
+        yield from provider.delete(str(path))
 
         assert aiohttpretty.has_call(method='GET', uri=file_url)
         assert aiohttpretty.has_call(method='POST', uri=url, data=data)
@@ -167,10 +168,10 @@ class TestMetadata:
     @async
     @pytest.mark.aiohttpretty
     def test_metadata(self, provider, folder_metadata):
-        path = '/'
-        url = provider.build_url('metadata', 'auto', provider.build_path(path))
+        path = DropboxPath(provider.folder, '/')
+        url = provider.build_url('metadata', 'auto', path.full_path)
         aiohttpretty.register_json_uri('GET', url, body=folder_metadata)
-        result = yield from provider.metadata(path)
+        result = yield from provider.metadata(str(path))
 
         assert isinstance(result, list)
         assert len(result) == 1
@@ -181,10 +182,10 @@ class TestMetadata:
     @async
     @pytest.mark.aiohttpretty
     def test_metadata_root_file(self, provider, file_metadata):
-        path = '/pfile'
-        url = provider.build_url('metadata', 'auto', provider.build_path(path))
+        path = DropboxPath(provider.folder, '/pfile')
+        url = provider.build_url('metadata', 'auto', path.full_path)
         aiohttpretty.register_json_uri('GET', url, body=file_metadata)
-        result = yield from provider.metadata(path)
+        result = yield from provider.metadata(str(path))
 
         assert isinstance(result, dict)
         assert result['kind'] == 'file'
@@ -194,12 +195,12 @@ class TestMetadata:
     @async
     @pytest.mark.aiohttpretty
     def test_metadata_missing(self, provider):
-        path = '/pfile'
-        url = provider.build_url('metadata', 'auto', provider.build_path(path))
+        path = DropboxPath(provider.folder, '/pfile')
+        url = provider.build_url('metadata', 'auto', path.full_path)
         aiohttpretty.register_uri('GET', url, status=404)
 
         with pytest.raises(exceptions.MetadataError):
-            yield from provider.metadata(path)
+            yield from provider.metadata(str(path))
 
 
 class TestOperations:
