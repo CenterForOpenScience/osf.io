@@ -15,9 +15,9 @@ import aiohttpretty
 from waterbutler.core import exceptions
 from waterbutler.core import streams
 
-from waterbutler.cloudfiles import settings
-from waterbutler.cloudfiles.provider import CloudFilesPath
-from waterbutler.cloudfiles.provider import CloudFilesProvider
+from waterbutler.providers.cloudfiles import settings
+from waterbutler.providers.cloudfiles import CloudFilesProvider
+from waterbutler.providers.cloudfiles.provider import CloudFilesPath
 
 
 @pytest.fixture

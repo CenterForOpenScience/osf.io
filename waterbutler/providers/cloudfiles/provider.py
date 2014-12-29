@@ -13,10 +13,10 @@ from waterbutler.core import streams
 from waterbutler.core import provider
 from waterbutler.core import exceptions
 
-from waterbutler.cloudfiles import settings
-from waterbutler.cloudfiles.metadata import CloudFilesFileMetadata
-from waterbutler.cloudfiles.metadata import CloudFilesFolderMetadata
-from waterbutler.cloudfiles.metadata import CloudFilesHeaderMetadata
+from waterbutler.providers.cloudfiles import settings
+from waterbutler.providers.cloudfiles.metadata import CloudFilesFileMetadata
+from waterbutler.providers.cloudfiles.metadata import CloudFilesFolderMetadata
+from waterbutler.providers.cloudfiles.metadata import CloudFilesHeaderMetadata
 
 
 def ensure_connection(func):
