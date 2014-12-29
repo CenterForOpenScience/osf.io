@@ -85,7 +85,7 @@ def build_hgrid_urls(item, node):
     }
 
 
-def serialize_metadata_hgrid(item, node, permissions):
+def serialize_metadata_hgrid(item, node):
     """Build HGrid JSON for folder or file. Note: include node URLs for client-
     side URL creation for uploaded files.
 
@@ -94,14 +94,11 @@ def serialize_metadata_hgrid(item, node, permissions):
     :param dict permissions: Permissions data from `get_permissions`
     """
     return {
-        'addon': 'osfstorage',
         # Must escape names rendered by HGrid
         'path': markupsafe.escape(item.path),
         'name': markupsafe.escape(item.name),
         'ext': item.extension,
         rubeus.KIND: get_item_kind(item),
-        'urls': build_hgrid_urls(item, node),
-        'permissions': permissions,
         'nodeUrl': node.url,
         'nodeApiUrl': node.api_url,
         'downloads': item.get_download_count(),
