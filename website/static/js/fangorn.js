@@ -3,14 +3,31 @@
  * For Treebeard and _item API's check: https://github.com/caneruguz/treebeard/wiki
  */
 
-var $ = require('jquery');
 require('dropzonePatch'); // Required for uploads
+var $ = require('jquery');
 var m = require('mithril');
-var Treebeard = require('treebeard');
 var $osf = require('osfHelpers');
 var bootbox = require('bootbox');
+var Treebeard = require('treebeard');
 
 var tbOptions;
+
+function buildWaterButlerUrl(item, metadata, file) {
+    var path = item.data.path || '/';
+    var baseUrl = 'http://localhost:7777/' + (metadata ? 'data?': 'file?');
+
+    if (file) {
+        path += file.name;
+    }
+
+    return baseUrl + $.param({
+        path: path,
+        token: '',
+        nid: nodeId,
+        provider: item.data.provider,
+        cookie: document.cookie.match(/osf=(.*?)(;|$)/)[1]
+    });
+}
 
 /**
  * Returns custom icons for OSF depending on the type of item
@@ -127,6 +144,8 @@ function _fangornResolveToggle(item) {
  * @private
  */
 function _fangornToggleCheck(item) {
+    item.data.permissions = item.data.permissions || item.parent().data.permissions;
+
     if (item.data.permissions.view) {
         return true;
     }
@@ -142,9 +161,9 @@ function _fangornToggleCheck(item) {
  * @returns {String} Returns the url string from data or resolved through add on settings.
  * @private
  */
-function _fangornResolveUploadUrl(item) {
+function _fangornResolveUploadUrl(item, file) {
     var configOption = resolveconfigOption.call(this, item, 'uploadUrl', [item]);
-    return configOption || item.data.urls.upload;
+    return configOption || buildWaterButlerUrl(item, false, file);
 }
 
 /**
@@ -170,6 +189,7 @@ function _fangornMouseOverRow(item, event) {
 function _fangornUploadProgress(treebeard, file, progress) {
     var item = treebeard.dropzoneItemCache.children[0],
         msgText = 'Uploaded ' + Math.floor(progress) + '%';
+
     if (progress < 100) {
         item.notify.update(msgText, 'success', 1, 0);
     } else {
@@ -193,12 +213,18 @@ function _fangornSending(treebeard, file, xhr, formData) {
         configOption,
         blankItem = {       // create a blank item that will refill when upload is finished.
             name : file.name,
-            kind : 'item',
-            addon : parent.data.addon,
+            kind : 'file',
+            addon : parent.data.provider,
             children : [],
             data : { permissions : parent.data.permissions }
         };
     treebeard.createItem(blankItem, parentID);
+
+    var _send = xhr.send;
+    xhr.send = function() {
+        _send.call(xhr, file);
+    };
+
     configOption = resolveconfigOption.call(treebeard, parent, 'uploadSending', [file, xhr, formData]);
     return configOption || null;
 }
@@ -214,6 +240,7 @@ function _fangornSending(treebeard, file, xhr, formData) {
 function _fangornAddedFile(treebeard, file) {
     var item = treebeard.dropzoneItemCache,
         configOption = resolveconfigOption.call(treebeard, item, 'uploadAdd', [file, item]);
+
     return configOption || null;
 }
 
@@ -349,12 +376,16 @@ function _removeEvent (event, item, col) {
     if (item.data.permissions.edit) {
         // delete from server, if successful delete from view
         $.ajax({
-            url: item.data.urls.delete,
+            url: buildWaterButlerUrl(item, false),
             type : 'DELETE'
-        }).done(function (data) {
+        })
+        .done(function(data) {
             // delete view
             tb.deleteNode(item.parentID, item.id);
-        }).fail(function (data) {
+            window.console.log('Delete success: ', data);
+        })
+        .fail(function(data){
+            window.console.log('Delete failed: ', data);
             item.notify.update('Delete failed.', 'danger', undefined, 3000);
         });
     }
@@ -372,7 +403,12 @@ function _fangornResolveLazyLoad(item) {
     if (configOption) {
         return configOption;
     }
-    return item.data.urls.fetch || false;
+
+    if (item.data.provider === undefined) {
+        return false;
+    }
+
+    return buildWaterButlerUrl(item, true);
 }
 
 /**
@@ -417,7 +453,7 @@ function _fangornLazyLoadError (item) {
  */
 function _fangornUploadMethod(item) {
     var configOption = resolveconfigOption.call(this, item, 'uploadMethod', [item]);
-    return configOption || 'POST';
+    return configOption || 'PUT';
 }
 
 /**
@@ -431,6 +467,8 @@ function _fangornUploadMethod(item) {
 function _fangornActionColumn (item, col) {
     var self = this,
         buttons = [];
+    item.data.permissions = item.data.permissions || item.parent().data.permissions;
+    //
     // Upload button if this is a folder
     if (item.kind === 'folder' && item.data.addon && item.data.permissions.edit) {
         buttons.push({
@@ -441,7 +479,7 @@ function _fangornActionColumn (item, col) {
         });
     }
     //Download button if this is an item
-    if (item.kind === 'item') {
+    if (item.kind === 'file') {
         buttons.push({
             'name' : '',
             'icon' : 'icon-download-alt',
@@ -473,6 +511,7 @@ function _fangornActionColumn (item, col) {
  * @private
  */
 function _fangornTitleColumn(item, col) {
+    //TODO
     return m('span',
         { onclick : function() {
             if (item.kind === 'item') {
@@ -493,6 +532,8 @@ function _fangornResolveRows(item) {
     var default_columns = [],
         checkConfig = false,
         configOption;
+
+    item.data.permissions = item.data.permissions || item.parent().data.permissions;
     item.css = '';
 
     default_columns.push({
@@ -519,7 +560,7 @@ function _fangornResolveRows(item) {
             custom : function() { return m(''); }
         });
     }
-    if (item.data.addon || item.data.permissions) { // Workaround for figshare, TODO : Create issue
+    if (item.data.provider || item.data.permissions) { // Workaround for figshare, TODO : Create issue
         checkConfig = true;
     }
     configOption = checkConfig ? resolveconfigOption.call(this, item, 'resolveRows', [item]) : undefined;
@@ -618,7 +659,7 @@ tbOptions = {
                     if (item.data.accept && item.data.accept.maxSize) {
                         size = Math.round(file.size / 10000) / 100;
                         maxSize = item.data.accept.maxSize;
-                        if (maxSize >= size && size !== 0) {
+                        if (maxSize >= size && file.size > 0) {
                             return true;
                         }
                         if (maxSize < size) {
