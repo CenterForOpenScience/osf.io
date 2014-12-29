@@ -160,13 +160,9 @@ def github_hgrid_data(node_settings, auth, **kwargs):
         can_edit = check_permissions(
             node_settings, auth, connection, branch, sha, repo=repo,
         )
-        name_append = github_branch_widget(branches, owner=node_settings.user,
-            repo=node_settings.repo, branch=branch, sha=sha)
     else:
-
         ref = None
         can_edit = False
-        name_append = None
 
     name_tpl = '{user}/{repo}'.format(
         user=node_settings.user, repo=node_settings.repo
@@ -183,19 +179,13 @@ def github_hgrid_data(node_settings, auth, **kwargs):
         'zip': node_settings.owner.api_url + 'github/zipball/' + (ref or ''),
         'repo': github_repo_url(owner=node_settings.user, repo=node_settings.repo, branch=branch)
     }
-    buttons = [
-        rubeus.build_addon_button('<i class="icon-download-alt"></i>', 'githubDownloadZip', "Download Zip"),
-        rubeus.build_addon_button('<i class="icon-external-link"></i>', 'githubVisitRepo', "Visit Repository"),
-    ]
 
     return [rubeus.build_addon_root(
         node_settings,
         name_tpl,
         urls=urls,
         permissions=permissions,
-        extra=name_append,
         branches=[each.name for each in branches],
-        buttons=buttons,
     )]
 
 
