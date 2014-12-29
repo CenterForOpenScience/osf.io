@@ -521,7 +521,8 @@ class User(GuidStoredObject, AddonModelMixin):
         return {
             key: self.SOCIAL_FIELDS[key].format(val)
             for key, val in self.social.items()
-            if val
+            if val and
+            self.SOCIAL_FIELDS.get(key)
         }
 
     @property
