@@ -58,10 +58,10 @@ class WaterButlerPath:
         :param str path: WaterButler specific path
         :rtype str: Provider specific path
         """
-        # Display root as '/' if prefix or suffix are true
-        if not path == '/' or not (self._prefix or self._suffix):
-            if not self._prefix:
-                path = path.lstrip('/')
+        # Display root as '/' if prefix is true
+        if not self._prefix:
+            path = path.lstrip('/')
+        if path and path != '/':
             if not self._suffix:
                 path = path.rstrip('/')
         return path
