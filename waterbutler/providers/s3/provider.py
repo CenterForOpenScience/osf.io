@@ -11,12 +11,12 @@ from waterbutler.core import streams
 from waterbutler.core import provider
 from waterbutler.core import exceptions
 
-from waterbutler.s3 import settings
-from waterbutler.s3.metadata import S3Revision
-from waterbutler.s3.metadata import S3FileMetadata
-from waterbutler.s3.metadata import S3FolderMetadata
-from waterbutler.s3.metadata import S3FolderKeyMetadata
-from waterbutler.s3.metadata import S3FileMetadataHeaders
+from waterbutler.providers.s3 import settings
+from waterbutler.providers.s3.metadata import S3Revision
+from waterbutler.providers.s3.metadata import S3FileMetadata
+from waterbutler.providers.s3.metadata import S3FolderMetadata
+from waterbutler.providers.s3.metadata import S3FolderKeyMetadata
+from waterbutler.providers.s3.metadata import S3FileMetadataHeaders
 
 
 class S3Path(utils.WaterButlerPath):

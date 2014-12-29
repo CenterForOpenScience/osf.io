@@ -8,7 +8,7 @@ requirements = [str(ir.req) for ir in install_reqs]
 
 setup(
     name='waterbutler-s3',
-    namespace_packages=['waterbutler'],
+    namespace_packages=['waterbutler', 'waterbutler.providers'],
     version='0.0.1',
     description='WaterButler S3 Storage Provider',
     author='Center for Open Science',
@@ -30,7 +30,7 @@ setup(
     ],
     entry_points={
         'waterbutler.providers': [
-            's3 = waterbutler.s3.provider:S3Provider',
+            's3 = waterbutler.providers.s3:S3Provider',
         ]
     },
 )

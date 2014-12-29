@@ -10,10 +10,10 @@ import aiohttpretty
 from waterbutler.core import streams
 from waterbutler.core import exceptions
 
-from waterbutler.s3.provider import S3Path
-from waterbutler.s3.provider import S3Provider
-from waterbutler.s3.metadata import S3FileMetadata
-from waterbutler.s3.metadata import S3FolderMetadata
+from waterbutler.providers.s3 import S3Provider
+from waterbutler.providers.s3.provider import S3Path
+from waterbutler.providers.s3.metadata import S3FileMetadata
+from waterbutler.providers.s3.metadata import S3FolderMetadata
 
 
 @pytest.fixture

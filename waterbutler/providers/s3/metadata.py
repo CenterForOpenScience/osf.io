@@ -14,7 +14,7 @@ class S3Metadata(metadata.BaseMetadata):
         return os.path.split(self.path)[1]
 
 
-class S3FileMetadataHeaders(metadata.BaseFileMetadata, S3Metadata):
+class S3FileMetadataHeaders(S3Metadata, metadata.BaseFileMetadata):
 
     def __init__(self, path, headers):
         self._path = path
@@ -43,7 +43,7 @@ class S3FileMetadataHeaders(metadata.BaseFileMetadata, S3Metadata):
         }
 
 
-class S3FileMetadata(metadata.BaseFileMetadata, S3Metadata):
+class S3FileMetadata(S3Metadata, metadata.BaseFileMetadata):
 
     @property
     def path(self):
@@ -68,7 +68,7 @@ class S3FileMetadata(metadata.BaseFileMetadata, S3Metadata):
         }
 
 
-class S3FolderKeyMetadata(metadata.BaseFolderMetadata, S3Metadata):
+class S3FolderKeyMetadata(S3Metadata, metadata.BaseFolderMetadata):
 
     @property
     def name(self):
@@ -79,7 +79,7 @@ class S3FolderKeyMetadata(metadata.BaseFolderMetadata, S3Metadata):
         return self.raw.Key.text
 
 
-class S3FolderMetadata(metadata.BaseFolderMetadata, S3Metadata):
+class S3FolderMetadata(S3Metadata, metadata.BaseFolderMetadata):
 
     @property
     def name(self):
@@ -91,7 +91,7 @@ class S3FolderMetadata(metadata.BaseFolderMetadata, S3Metadata):
 
 
 # TODO dates!
-class S3Revision(metadata.BaseFileRevisionMetadata, S3Metadata):
+class S3Revision(S3Metadata, metadata.BaseFileRevisionMetadata):
 
     def __init__(self, path, raw):
         self._path = path
