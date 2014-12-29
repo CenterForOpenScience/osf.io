@@ -4,6 +4,7 @@ import hashlib
 
 from lxml import objectify
 from boto.s3.connection import S3Connection
+from boto.s3.connection import OrdinaryCallingFormat
 
 from waterbutler.core import streams
 from waterbutler.core import provider
@@ -30,7 +31,8 @@ class S3Provider(provider.BaseProvider):
         :param dict settings: Dict containing `bucket`
         """
         super().__init__(auth, credentials, settings)
-        self.connection = S3Connection(credentials['access_key'], credentials['secret_key'])
+        self.connection = S3Connection(credentials['access_key'],
+                credentials['secret_key'], calling_format=OrdinaryCallingFormat())
         self.bucket = self.connection.get_bucket(settings['bucket'], validate=False)
 
     def can_intra_copy(self, dest_provider):
