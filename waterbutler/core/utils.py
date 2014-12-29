@@ -5,7 +5,7 @@ class WaterButlerPath:
     """
     A standardized and validated immutable WaterButler path.
     """
-    def __init__(self, path, prefix=False, suffix=False):
+    def __init__(self, path, prefix=True, suffix=True):
         self._validate_path(path)
 
         self._orig_path = path
