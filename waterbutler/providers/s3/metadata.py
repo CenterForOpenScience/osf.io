@@ -22,7 +22,7 @@ class S3FileMetadataHeaders(S3Metadata, metadata.BaseFileMetadata):
 
     @property
     def path(self):
-        return self._path
+        return '/' + self._path
 
     @property
     def size(self):
@@ -47,7 +47,7 @@ class S3FileMetadata(S3Metadata, metadata.BaseFileMetadata):
 
     @property
     def path(self):
-        return self.raw.Key.text
+        return '/' + self.raw.Key.text
 
     @property
     def size(self):
@@ -76,7 +76,7 @@ class S3FolderKeyMetadata(S3Metadata, metadata.BaseFolderMetadata):
 
     @property
     def path(self):
-        return self.raw.Key.text
+        return '/' + self.raw.Key.text
 
 
 class S3FolderMetadata(S3Metadata, metadata.BaseFolderMetadata):
@@ -87,7 +87,7 @@ class S3FolderMetadata(S3Metadata, metadata.BaseFolderMetadata):
 
     @property
     def path(self):
-        return self.raw.Prefix.text
+        return '/' + self.raw.Prefix.text
 
 
 # TODO dates!
@@ -99,7 +99,7 @@ class S3Revision(S3Metadata, metadata.BaseFileRevisionMetadata):
 
     @property
     def path(self):
-        return self._path
+        return '/' + self._path
 
     @property
     def content_type(self):

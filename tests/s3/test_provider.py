@@ -367,7 +367,7 @@ class TestMetadata:
         result = yield from provider.metadata(str(path))
 
         assert isinstance(result, dict)
-        assert result['path'] == path.path
+        assert result['path'] == str(path)
         assert result['name'] == 'my-image.jpg'
         assert result['extra']['md5'] == 'fba9dede5f27731c9771645a39863328'
 
