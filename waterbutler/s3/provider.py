@@ -45,7 +45,8 @@ class S3Provider(provider.BaseProvider):
         `dest_provider` must have read access to `source.bucket`.
         """
         dest_key = dest_provider.bucket.new_key(dest_options['path'])
-        source_path = '/' + os.path.join(self.settings['bucket'], source_options['path'])
+        # ensure no left slash when joining paths
+        source_path = '/' + os.path.join(self.settings['bucket'], source_options['path'].lstrip('/'))
         headers = {'x-amz-copy-source': source_path}
         url = dest_key.generate_url(
             settings.TEMP_URL_SECS,
@@ -97,6 +98,12 @@ class S3Provider(provider.BaseProvider):
         :rtype ResponseWrapper:
         """
         stream.add_writer('md5', streams.HashStreamWriter(hashlib.md5))
+        try:
+            yield from self.metadata(path, **kwargs)
+        except exceptions.MetadataError:
+            created = True
+        else:
+            created = False
         key = self.bucket.new_key(path)
         url = key.generate_url(settings.TEMP_URL_SECS, 'PUT')
         resp = yield from self.make_request(
