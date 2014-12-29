@@ -9,12 +9,12 @@ from waterbutler.core import provider
 from waterbutler.core import exceptions
 from waterbutler.core import utils
 
-from waterbutler.github import settings
-from waterbutler.github.metadata import GitHubRevision
-from waterbutler.github.metadata import GitHubFileContentMetadata
-from waterbutler.github.metadata import GitHubFolderContentMetadata
-from waterbutler.github.metadata import GitHubFileTreeMetadata
-from waterbutler.github.metadata import GitHubFolderTreeMetadata
+from waterbutler.providers.github import settings
+from waterbutler.providers.github.metadata import GitHubRevision
+from waterbutler.providers.github.metadata import GitHubFileContentMetadata
+from waterbutler.providers.github.metadata import GitHubFolderContentMetadata
+from waterbutler.providers.github.metadata import GitHubFileTreeMetadata
+from waterbutler.providers.github.metadata import GitHubFolderTreeMetadata
 
 
 GIT_EMPTY_SHA = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'

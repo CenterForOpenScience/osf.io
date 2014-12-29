@@ -13,13 +13,13 @@ import aiohttpretty
 from waterbutler.core import streams
 from waterbutler.core import exceptions
 
-from waterbutler.github.provider import GitHubPath
-from waterbutler.github.provider import GitHubProvider
-from waterbutler.github.metadata import GitHubRevision
-from waterbutler.github.metadata import GitHubFileContentMetadata
-from waterbutler.github.metadata import GitHubFolderContentMetadata
-from waterbutler.github.metadata import GitHubFileTreeMetadata
-from waterbutler.github.metadata import GitHubFolderTreeMetadata
+from waterbutler.providers.github import GitHubProvider
+from waterbutler.providers.github.provider import GitHubPath
+from waterbutler.providers.github.metadata import GitHubRevision
+from waterbutler.providers.github.metadata import GitHubFileContentMetadata
+from waterbutler.providers.github.metadata import GitHubFolderContentMetadata
+from waterbutler.providers.github.metadata import GitHubFileTreeMetadata
+from waterbutler.providers.github.metadata import GitHubFolderTreeMetadata
 
 
 @pytest.fixture
