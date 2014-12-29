@@ -219,18 +219,18 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         return {'folder': self.folder}
 
     def create_waterbutler_log(self, auth, action, metadata):
-        cleaned_path = clean_path(metadata['path'])
+        cleaned_path = clean_path(os.path.join(self.folder, metadata['path']))
         self.owner.add_log(
             'dropbox_{0}'.format(action),
             auth=auth,
             params={
-                'project': self.owner.project_id,
+                'project': self.owner.parent_id,
                 'node': self.owner._id,
                 'path': cleaned_path,
                 'folder': self.folder,
                 'urls': {
-                    'view': self.node.web_url_for('dropbox_view_file', path=cleaned_path),
-                    'download': self.node.web_url_for('dropbox_download', path=cleaned_path),
+                    'view': self.owner.web_url_for('dropbox_view_file', path=cleaned_path),
+                    'download': self.owner.web_url_for('dropbox_download', path=cleaned_path),
                 },
             },
         )
