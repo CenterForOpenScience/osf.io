@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>QUnit Tests for Fangorn</title>
+    <link rel="stylesheet" href="http://code.jquery.com/qunit/qunit-1.15.0.css">
+    <link rel="stylesheet" href="../../../vendor/bower_components/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../../../vendor/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../../../vendor/bower_components/treebeard/dist/treebeard.css">
+</head>
+<body>
+    <div id="treeGrid"></div>
+    <div id="qunit"></div>
+    <div id="qunit-fixture"></div>
+    <script src="http://code.jquery.com/qunit/qunit-1.15.0.js"></script>
+
+    <script src="../../../vendor/knockout/knockout-3.0.0.min.js"></script>
+    <script src="../../../vendor/bower_components/jquery/dist/jquery.js"></script>
+    <script src="../../../vendor/bower_components/jquery-ui/jquery-ui.js"></script>
+    <script src="../../../vendor/bower_components/mithril/mithril.js"></script>
+    <script src="../../../vendor/bower_components/dropzone/downloads/dropzone.js"></script>
+    <!--<script src="../scripts/blanket.min.js"></script>-->
+    <script src="../../../vendor/knockout-mapping/knockout.mapping.js"></script>
+    <script src="../../../vendor/knockout-punches/knockout.punches.min.js"></script>
+    <script src="../../../vendor/knockout-validation/knockout.validation.min.js"></script>
+    <script src="../../../vendor/bower_components/jquery-mockjax/jquery.mockjax.js"></script>
+    <script src="../../../vendor/jquery-drag-drop/jquery.event.drag-2.2.js"></script>
+    <script src="../../../vendor/jquery-drag-drop/jquery.event.drop-2.2.js"></script>
+    <script src="../../../js/moment.min.js"></script>
+    <script src="../../../vendor/bower_components/hgrid/dist/hgrid.js"></script>
+    <script src="../../../js/typeahead.bundle.js"></script>
+    <script src="../../../vendor/bower_components/hgrid/plugins/hgrid-draggable/hgrid-draggable.js"></script>
+    <script src="../../../js/handlebars-v1.3.0.js"></script>
+
+    <script src="../../../vendor/bower_components/treebeard/dist/treebeard.js" data-cover></script>
+    <script src="/static/js/fangorn.js"></script>
+    <script src="/static/addons/github/github-fangorn-cfg.js"></script>
+    <script src="/static/addons/s3/s3-fangorn-cfg.js"></script>
+    <script src="test_fangorn.js"></script>
+    <script type="text/javascript">
+        var files = [{
+            id: 1,
+            name: 'My Documents',
+            kind: 'folder',
+            permissions: {
+                edit: true,
+                view: true
+            },
+            children: [{
+                id: 2,
+                name: 'mydoc.txt',
+                kind: 'item',
+                permissions: {
+                    edit: true,
+                    view: true
+                }
+            }]
+        }];
+
+        var fangornOpts = {
+                filesData : files,
+                divID: 'treeGrid'
+            };
+        var filebrowser = new Fangorn(fangornOpts);
+
+        //var tb = Treebeard.run({
+        //    filesData : files
+        //});
+    </script>
+</body>
+</html>

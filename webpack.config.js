@@ -35,13 +35,14 @@ var entry = {
         'bootstrap',
         'bootbox',
         'select2',
-        'hgrid',
+        'mithril',
+        'treebeard',
         'osfHelpers',
         'knockout-punches',
         'dropzone',
         'knockout-sortable',
+        'fangorn',
         'dropzonePatch',
-        'rubeus',
         'jquery.cookie'
     ]
 };
@@ -93,8 +94,8 @@ module.exports = {
             // Dropzone doesn't have a proper 'main' entry in its bower.json
             'dropzone': staticPath('vendor/bower_components/dropzone/downloads/dropzone.js'),
             // Also alias some internal libraries for easy access
+            'fangorn': staticPath('js/fangorn.js'),
             'dropzonePatch': staticPath('js/dropzonePatch.js'),
-            'rubeus': staticPath('js/rubeus.js'),
             'folderpicker': staticPath('js/folderPicker.js'),
             'osfHelpers': staticPath('js/osfHelpers.js'),
             'osfLanguage': staticPath('js/osfLanguage.js'),
@@ -126,7 +127,6 @@ module.exports = {
         'jquery': 'jQuery',
         'jquery-ui': 'jQuery.ui',
         'raven-js': 'Raven',
-        'hgrid': 'HGrid',
         'dropzone': 'Dropzone'
     }
 };

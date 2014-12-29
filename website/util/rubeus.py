@@ -434,16 +434,17 @@ class NodeFileCollector(object):
             else u'Private Component',
             'kind': FOLDER,
             'permissions': {
-                'edit': False,
+                'edit': self.can_edit,
                 'view': can_view,
             },
             'urls': {
-                'upload': os.path.join(node.api_url, 'osffiles') + '/',
+                'upload': None,
                 'fetch': None,
             },
             'children': children,
             'isPointer': not node.primary,
             'isSmartFolder': False,
+            'nodeID': node.resolve()._id,
         }
 
     def _collect_addons(self, node):

@@ -22,7 +22,7 @@
         <div class="project-organizer" id="projectOrganizerScope">
             <%include file="projectGridTemplates.html"/>
 
-            <div class="hgrid" id="project-grid"></div>
+            <div id="project-grid"></div>
             <span class='organizer-legend'><img alt="Folder" src="/static/img/hgrid/folder.png">Folder</span>
             <span class='organizer-legend'><img alt="Smart Folder" src="/static/img/hgrid/smart-folder.png">Smart Folder</span>
             <span class='organizer-legend'><img alt="Project" src="/static/img/hgrid/project.png">Project</span>
