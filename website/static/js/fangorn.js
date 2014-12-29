@@ -3,12 +3,12 @@
  * For Treebeard and _item API's check: https://github.com/caneruguz/treebeard/wiki
  */
 
-require('dropzonePatch'); // Required for uploads
 var $ = require('jquery');
+require('dropzonePatch'); // Required for uploads
 var m = require('mithril');
+var Treebeard = require('treebeard');
 var $osf = require('osfHelpers');
 var bootbox = require('bootbox');
-var Treebeard = require('treebeard');
 
 var tbOptions;
 
@@ -41,7 +41,7 @@ function _fangornResolveIcon(item) {
         pointerFolder = m('i.icon-hand-right', ' '),
         openFolder  = m('i.icon-folder-open-alt', ' '),
         closedFolder = m('i.icon-folder-close-alt', ' '),
-        configOption = item.data.addon ? resolveconfigOption.call(this, item, 'folderIcon', [item]) : undefined,
+        configOption = item.data.provider ? resolveconfigOption.call(this, item, 'folderIcon', [item]) : undefined,
         ext,
         extensions;
 
@@ -91,8 +91,8 @@ Fangorn.config = {};
  * @returns {*} Returns the configuration, can be string, number, array, or function;
  */
 function getconfig(item, key) {
-    if (item && item.data.addon && Fangorn.config[item.data.addon]) {
-        return Fangorn.config[item.data.addon][key];
+    if (item && item.data.provider && Fangorn.config[item.data.provider]) {
+        return Fangorn.config[item.data.provider][key];
     }
     return undefined;
 }
@@ -214,7 +214,7 @@ function _fangornSending(treebeard, file, xhr, formData) {
         blankItem = {       // create a blank item that will refill when upload is finished.
             name : file.name,
             kind : 'file',
-            addon : parent.data.provider,
+            provider : parent.data.provider,
             children : [],
             data : { permissions : parent.data.permissions }
         };
@@ -258,10 +258,8 @@ function _fangornDragOver(treebeard, event) {
         item = treebeard.find(itemID);
     $('.tb-row').removeClass(dropzoneHoverClass);
     if (itemID !== undefined) {
-        if (item.data.urls) {
-            if (item.data.urls.upload !== null && item.kind === 'folder') {
-                $(event.target).closest('.tb-row').addClass(dropzoneHoverClass);
-            }
+        if (item.data.provider && item.kind === 'folder') {
+            $(event.target).closest('.tb-row').addClass(dropzoneHoverClass);
         }
     }
 }
@@ -352,10 +350,10 @@ function _downloadEvent (event, item, col) {
     } catch (e) {
         window.event.cancelBubble = true;
     }
-    if (item.data.addon === 'osfstorage') {
+    if (item.data.provider === 'osfstorage') {
         item.data.downloads++;
     }
-    window.location = item.data.urls.download;
+    window.location = buildWaterButlerUrl(item, false);
 }
 
 /**
@@ -470,7 +468,7 @@ function _fangornActionColumn (item, col) {
     item.data.permissions = item.data.permissions || item.parent().data.permissions;
     //
     // Upload button if this is a folder
-    if (item.kind === 'folder' && item.data.addon && item.data.permissions.edit) {
+    if (item.kind === 'folder' && item.data.provider && item.data.permissions.edit) {
         buttons.push({
             'name' : '',
             'icon' : 'icon-upload-alt',
@@ -546,7 +544,7 @@ function _fangornResolveRows(item) {
         sortInclude : false,
         custom : _fangornActionColumn
     });
-    if (item.data.addon === 'osfstorage') {
+    if (item.data.provider === 'osfstorage') {
         default_columns.push({
             data : 'downloads',
             sortInclude : false,
@@ -653,7 +651,7 @@ tbOptions = {
         var size,
             maxSize,
             msgText;
-        if (item.data.addon && item.kind === 'folder') {
+        if (item.data.provider && item.kind === 'folder') {
             if (item.data.permissions.edit) {
                 if (!_fangornFileExists.call(treebeard, item, file)) {
                     if (item.data.accept && item.data.accept.maxSize) {
