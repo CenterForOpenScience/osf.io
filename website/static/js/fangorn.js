@@ -734,8 +734,7 @@ Fangorn.prototype = {
     _initGrid: function () {
         this.grid = new Treebeard(this.options);
         return this.grid;
-    }
-
+    },
 };
 
 module.exports = Fangorn;
