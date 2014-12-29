@@ -167,6 +167,10 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
     registration_data = fields.DictionaryField()
 
     @property
+    def display_name(self):
+        return '{0}: {1}'.format(self.config.full_name, self.folder)
+
+    @property
     def has_auth(self):
         """Whether an access token is associated with this node."""
         return bool(self.user_settings and self.user_settings.has_auth)
@@ -202,6 +206,34 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
             extra = {'folder': folder}
             nodelogger = DropboxNodeLogger(node=node, auth=auth)
             nodelogger.log(action="node_deauthorized", extra=extra, save=True)
+
+    def serialize_waterbutler_credentials(self):
+        if not self.has_auth:
+            # TODO Better exception handling
+            raise Exception
+        return {'token': self.user_settings.access_token}
+
+    def serialize_waterbutler_settings(self):
+        if not self.folder:
+            raise Exception
+        return {'folder': self.folder}
+
+    def create_waterbutler_log(self, auth, action, metadata):
+        cleaned_path = clean_path(metadata['path'])
+        self.owner.add_log(
+            'dropbox_{0}'.format(action),
+            auth=auth,
+            params={
+                'project': self.owner.project_id,
+                'node': self.owner._id,
+                'path': cleaned_path,
+                'folder': self.folder,
+                'urls': {
+                    'view': self.node.web_url_for('dropbox_view_file', path=cleaned_path),
+                    'download': self.node.web_url_for('dropbox_download', path=cleaned_path),
+                },
+            },
+        )
 
     def __repr__(self):
         return u'<DropboxNodeSettings(node_id={self.owner._primary_key!r})>'.format(self=self)
