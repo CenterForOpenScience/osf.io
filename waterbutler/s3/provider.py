@@ -110,7 +110,7 @@ class S3Provider(provider.BaseProvider):
         # TODO: nice assertion error goes here
         assert resp.headers['ETag'].replace('"', '') == stream.writers['md5'].hexdigest
 
-        return (yield from self.metadata(path))
+        return (yield from self.metadata(path)), True
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
@@ -157,6 +157,9 @@ class S3Provider(provider.BaseProvider):
         """
         if not path:
             raise exceptions.MetadataError('Must specify path')
+
+        if path == '/':
+            return (yield from self._folder_metadata(''))
 
         if path.endswith('/'):
             return (yield from self._folder_metadata(path))

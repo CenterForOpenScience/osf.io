@@ -34,7 +34,7 @@ class S3FileMetadataHeaders(metadata.BaseFileMetadata, S3Metadata):
 
     @property
     def modified(self):
-        return self.raw['LastModified']
+        return self.raw['Last-Modified']
 
     @property
     def extra(self):
