@@ -114,8 +114,9 @@ class CloudFilesProvider(provider.BaseProvider):
         else:
             created = False
 
+        stream.add_writer('md5', streams.HashStreamWriter(hashlib.md5))
         url = self.sign_url(path, 'PUT')
-        yield from self.make_request(
+        resp = yield from self.make_request(
             'PUT',
             url,
             data=stream,
@@ -123,6 +124,10 @@ class CloudFilesProvider(provider.BaseProvider):
             expects=(200, 201),
             throws=exceptions.UploadError,
         )
+        # md5 is returned as ETag header as long as server side encryption is not used.
+        # TODO: nice assertion error goes here
+        assert resp.headers['ETag'].replace('"', '') == stream.writers['md5'].hexdigest
+
         return (yield from self.metadata(str(path))), created
 
     @ensure_connection
