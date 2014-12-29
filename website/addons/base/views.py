@@ -155,6 +155,9 @@ def create_waterbutler_log(payload, **kwargs):
         metadata = payload['metadata']
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
+
+    metadata['path'] = metadata['path'].lstrip('/')
+
     user = User.load(auth['id'])
     if user is None:
         raise HTTPError(httplib.BAD_REQUEST)
