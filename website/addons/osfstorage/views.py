@@ -13,8 +13,8 @@ from framework.auth.decorators import must_be_signed
 
 from website.models import User
 from website.project.decorators import (
-    must_be_contributor, must_be_contributor_or_public,
-    must_have_permission, must_not_be_registration, must_have_addon,
+    must_be_contributor_or_public,
+    must_not_be_registration, must_have_addon,
 )
 from website.util import rubeus
 from website.project.utils import serialize_node
