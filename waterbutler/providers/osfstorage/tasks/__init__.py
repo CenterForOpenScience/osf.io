@@ -1,6 +1,6 @@
 from celery import Celery
 
-from waterbutler.osfstorage import settings
+from waterbutler.providers.osfstorage import settings
 
 
 app = Celery()

@@ -10,8 +10,8 @@ from celery.utils.log import get_task_logger
 
 from waterbutler.core import exceptions
 
-from waterbutler.osfstorage import settings
-from waterbutler.osfstorage.tasks import app
+from waterbutler.providers.osfstorage import settings
+from waterbutler.providers.osfstorage.tasks import app
 
 
 logger = get_task_logger(__name__)

@@ -8,7 +8,7 @@ requirements = [str(ir.req) for ir in install_reqs]
 
 setup(
     name='waterbutler-osfstorage',
-    namespace_packages=['waterbutler'],
+    namespace_packages=['waterbutler', 'waterbutler.providers'],
     version='0.0.1',
     description='WaterButler OSF Storage Provider',
     author='Center for Open Science',
@@ -30,7 +30,7 @@ setup(
     ],
     entry_points={
         'waterbutler.providers': [
-            'osfstorage = waterbutler.osfstorage.provider:OSFStorageProvider',
+            'osfstorage = waterbutler.providers.osfstorage:OSFStorageProvider',
         ]
     },
 )

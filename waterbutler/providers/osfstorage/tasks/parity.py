@@ -5,8 +5,8 @@ from stevedore import driver
 
 from waterbutler.core import streams
 
-from waterbutler.osfstorage import settings
-from waterbutler.osfstorage.tasks import utils
+from waterbutler.providers.osfstorage import settings
+from waterbutler.providers.osfstorage.tasks import utils
 
 
 def _get_provider():
