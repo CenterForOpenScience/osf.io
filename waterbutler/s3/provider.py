@@ -97,20 +97,21 @@ class S3Provider(provider.BaseProvider):
         :param str path: The full path of the key to upload to/into
         :rtype ResponseWrapper:
         """
-        stream.add_writer('md5', streams.HashStreamWriter(hashlib.md5))
         try:
             yield from self.metadata(path, **kwargs)
         except exceptions.MetadataError:
             created = True
         else:
             created = False
+
+        stream.add_writer('md5', streams.HashStreamWriter(hashlib.md5))
         key = self.bucket.new_key(path)
         url = key.generate_url(settings.TEMP_URL_SECS, 'PUT')
         resp = yield from self.make_request(
             'PUT', url,
             data=stream,
             headers={'Content-Length': str(stream.size)},
-            expects=(200, 201),
+            expects=(200, 201, ),
             throws=exceptions.UploadError,
         )
         # md5 is returned as ETag header as long as server side encryption is not used.
@@ -130,7 +131,7 @@ class S3Provider(provider.BaseProvider):
         yield from self.make_request(
             'DELETE',
             url,
-            expects=(200, 204),
+            expects=(200, 204, ),
             throws=exceptions.DeleteError,
         )
 
