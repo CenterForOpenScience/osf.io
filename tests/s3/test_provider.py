@@ -10,6 +10,7 @@ import aiohttpretty
 from waterbutler.core import streams
 from waterbutler.core import exceptions
 
+from waterbutler.s3.provider import S3Path
 from waterbutler.s3.provider import S3Provider
 from waterbutler.s3.metadata import S3FileMetadata
 from waterbutler.s3.metadata import S3FolderMetadata
@@ -241,10 +242,11 @@ class TestCRUD:
     @async
     @pytest.mark.aiohttpretty
     def test_download(self, provider):
-        url = provider.bucket.new_key('muhtriangle').generate_url(100)
+        path = S3Path('/muhtriangle')
+        url = provider.bucket.new_key(path.path).generate_url(100)
         aiohttpretty.register_uri('GET', url, body=b'delicious')
 
-        result = yield from provider.download('muhtriangle')
+        result = yield from provider.download(str(path))
         content = yield from result.response.read()
 
         assert content == b'delicious'
@@ -252,29 +254,32 @@ class TestCRUD:
     @async
     @pytest.mark.aiohttpretty
     def test_download_not_found(self, provider):
-        url = provider.bucket.new_key('muhtriangle').generate_url(100)
+        path = S3Path('/muhtriangle')
+        url = provider.bucket.new_key(path.path).generate_url(100)
         aiohttpretty.register_uri('GET', url, status=404)
 
         with pytest.raises(exceptions.DownloadError):
-            yield from provider.download('muhtriangle')
+            yield from provider.download(str(path))
 
     @async
     @pytest.mark.aiohttpretty
     def test_download_no_name(self, provider):
-        with pytest.raises(exceptions.ProviderError):
+        with pytest.raises(ValueError):
             yield from provider.download('')
+        with pytest.raises(exceptions.DownloadError):
+            yield from provider.download('/')
 
     @async
     @pytest.mark.aiohttpretty
     def test_upload_update(self, provider, file_content, file_stream, file_metadata):
-        path = 'foobah'
+        path = S3Path('/foobah')
         content_md5 = hashlib.md5(file_content).hexdigest()
-        url = provider.bucket.new_key(path).generate_url(100, 'PUT')
-        metadata_url = provider.bucket.new_key(path).generate_url(100, 'HEAD')
+        url = provider.bucket.new_key(path.path).generate_url(100, 'PUT')
+        metadata_url = provider.bucket.new_key(path.path).generate_url(100, 'HEAD')
         aiohttpretty.register_uri('HEAD', metadata_url, headers=file_metadata)
         aiohttpretty.register_uri('PUT', url, status=201, headers={'ETag': '"{}"'.format(content_md5)})
 
-        metadata, created = yield from provider.upload(file_stream, path)
+        metadata, created = yield from provider.upload(file_stream, str(path))
 
         assert metadata['kind'] == 'file'
         assert not created
@@ -284,21 +289,21 @@ class TestCRUD:
     @async
     @pytest.mark.aiohttpretty
     def test_delete(self, provider):
-        path = 'My Ex'
-        url = provider.bucket.new_key(path).generate_url(100, 'DELETE')
+        path = S3Path('/some-file')
+        url = provider.bucket.new_key(path.path).generate_url(100, 'DELETE')
         aiohttpretty.register_uri('DELETE', url, status=200)
 
-        yield from provider.delete(path)
+        yield from provider.delete(str(path))
 
         assert aiohttpretty.has_call(method='DELETE', uri=url)
 
     @async
     @pytest.mark.aiohttpretty
     def test_accepts_url(self, provider):
-        path = 'my-image'
-        url = provider.bucket.new_key(path).generate_url(100, 'GET')
+        path = S3Path('/my-image')
+        url = provider.bucket.new_key(path.path).generate_url(100, 'GET')
 
-        ret_url = yield from provider.download(path, accept_url=True)
+        ret_url = yield from provider.download(str(path), accept_url=True)
 
         assert ret_url == url
 
@@ -308,10 +313,11 @@ class TestMetadata:
     @async
     @pytest.mark.aiohttpretty
     def test_metadata_folder(self, provider, folder_metadata):
+        path = S3Path('/darp/')
         url = provider.bucket.generate_url(100)
         aiohttpretty.register_uri('GET', url, body=folder_metadata, headers={'Content-Type': 'application/xml'})
 
-        result = yield from provider.metadata('darp/')
+        result = yield from provider.metadata(str(path))
 
         assert isinstance(result, list)
         assert len(result) == 3
@@ -321,24 +327,25 @@ class TestMetadata:
     @async
     @pytest.mark.aiohttpretty
     def test_metadata_folder_self_listing(self, provider, contents_and_self):
-        path = 'thisfolder/'
+        path = S3Path('/thisfolder/')
         url = provider.bucket.generate_url(100)
         aiohttpretty.register_uri('GET', url, body=contents_and_self)
 
-        result = yield from provider.metadata(path)
+        result = yield from provider.metadata(str(path))
 
         assert isinstance(result, list)
         assert len(result) == 2
         for fobj in result:
-            assert fobj['name'] != path
+            assert fobj['name'] != path.path
 
     @async
     @pytest.mark.aiohttpretty
     def test_just_a_folder_metadata_folder(self, provider, just_a_folder_metadata):
+        path = S3Path('/')
         url = provider.bucket.generate_url(100)
         aiohttpretty.register_uri('GET', url, body=just_a_folder_metadata, headers={'Content-Type': 'application/xml'})
 
-        result = yield from provider.metadata('/')
+        result = yield from provider.metadata(str(path))
 
         assert isinstance(result, list)
         assert len(result) == 1
@@ -347,40 +354,40 @@ class TestMetadata:
     @async
     @pytest.mark.aiohttpretty
     def test_must_have_slash(self, provider, just_a_folder_metadata):
-        with pytest.raises(exceptions.MetadataError):
+        with pytest.raises(ValueError):
             yield from provider.metadata('')
 
     @async
     @pytest.mark.aiohttpretty
     def test_metadata_file(self, provider, file_metadata):
-        path = '/Foo/Bar/my-image.jpg'
-        url = provider.bucket.new_key(path).generate_url(100, 'HEAD')
+        path = S3Path('/Foo/Bar/my-image.jpg')
+        url = provider.bucket.new_key(path.path).generate_url(100, 'HEAD')
         aiohttpretty.register_uri('HEAD', url, headers=file_metadata)
 
-        result = yield from provider.metadata(path)
+        result = yield from provider.metadata(str(path))
 
         assert isinstance(result, dict)
-        assert result['path'] == path
+        assert result['path'] == path.path
         assert result['name'] == 'my-image.jpg'
         assert result['extra']['md5'] == 'fba9dede5f27731c9771645a39863328'
 
     @async
     @pytest.mark.aiohttpretty
     def test_metadata_file_missing(self, provider):
-        name = 'notfound.txt'
-        url = provider.bucket.new_key(name).generate_url(100, 'HEAD')
+        path = S3Path('/notfound.txt')
+        url = provider.bucket.new_key(path.path).generate_url(100, 'HEAD')
         aiohttpretty.register_uri('HEAD', url, status=404)
 
         with pytest.raises(exceptions.MetadataError):
-            yield from provider.metadata(name)
+            yield from provider.metadata(str(path))
 
     @async
     @pytest.mark.aiohttpretty
     def test_upload(self, provider, file_content, file_stream, file_metadata):
-        path = 'foobah'
+        path = S3Path('/foobah')
         content_md5 = hashlib.md5(file_content).hexdigest()
-        url = provider.bucket.new_key(path).generate_url(100, 'PUT')
-        metadata_url = provider.bucket.new_key(path).generate_url(100, 'HEAD')
+        url = provider.bucket.new_key(path.path).generate_url(100, 'PUT')
+        metadata_url = provider.bucket.new_key(path.path).generate_url(100, 'HEAD')
         aiohttpretty.register_uri(
             'HEAD',
             metadata_url,
@@ -391,7 +398,7 @@ class TestMetadata:
         )
         aiohttpretty.register_uri('PUT', url, status=200, headers={'ETag': '"{}"'.format(content_md5)}),
 
-        metadata, created = yield from provider.upload(file_stream, path)
+        metadata, created = yield from provider.upload(file_stream, str(path))
 
         assert metadata['kind'] == 'file'
         assert created
@@ -404,17 +411,17 @@ class TestOperations:
     @async
     @pytest.mark.aiohttpretty
     def test_copy(self, provider, file_metadata):
-        dest_path = 'dest'
-        source_path = 'source'
-        headers = {'x-amz-copy-source': '/{}/{}'.format(provider.settings['bucket'], source_path)}
+        dest_path = S3Path('/dest')
+        source_path = S3Path('/source')
+        headers = {'x-amz-copy-source': '/{}/{}'.format(provider.settings['bucket'], source_path.path)}
 
-        metadata_url = provider.bucket.new_key(dest_path).generate_url(100, 'HEAD')
-        url = provider.bucket.new_key(dest_path).generate_url(100, 'PUT', headers=headers)
+        metadata_url = provider.bucket.new_key(dest_path.path).generate_url(100, 'HEAD')
+        url = provider.bucket.new_key(dest_path.path).generate_url(100, 'PUT', headers=headers)
 
         aiohttpretty.register_uri('PUT', url, status=200)
         aiohttpretty.register_uri('HEAD', metadata_url, headers=file_metadata)
 
-        resp = yield from provider.copy(provider, {'path': source_path}, {'path': dest_path})
+        resp = yield from provider.copy(provider, {'path': str(source_path)}, {'path': str(dest_path)})
 
         # TODO: matching url content for request
         assert resp['kind'] == 'file'
@@ -424,11 +431,11 @@ class TestOperations:
     @async
     @pytest.mark.aiohttpretty
     def test_version_metadata(self, provider, version_metadata):
-        path = 'my-image'
+        path = S3Path('/my-image')
         url = provider.bucket.generate_url(100, 'GET', query_parameters={'versions': ''})
         aiohttpretty.register_uri('GET', url, status=200, body=version_metadata)
 
-        data = yield from provider.revisions(path)
+        data = yield from provider.revisions(str(path))
 
         assert isinstance(data, list)
         assert len(data) == 3
