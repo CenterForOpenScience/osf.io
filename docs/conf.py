@@ -4,7 +4,7 @@ import sys
 sys.path.insert(0, os.path.abspath(".."))
 import waterbutler
 import waterbutler.server
-import waterbutler.providers
+# import waterbutler.providers
 
 master_doc = "index"
 
