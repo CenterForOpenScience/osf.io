@@ -106,7 +106,7 @@ class GitHubProvider(provider.BaseProvider):
 
         resp = yield from self.make_request(
             'PUT',
-            self.build_repo_url('contents', path.path, branch=branch),
+            self.build_repo_url('contents', path.path),
             data=json.dumps(data),
             expects=(200, 201),
             throws=exceptions.UploadError,
