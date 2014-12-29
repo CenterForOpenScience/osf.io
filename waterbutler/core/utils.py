@@ -1,5 +1,6 @@
 import os
 
+
 class WaterButlerPath:
     """
     A standardized and validated immutable WaterButler path.
