@@ -1053,6 +1053,22 @@ def make_url_map(app):
         # Settings
 
         Rule(
+            '/files/auth/',
+            'get',
+            addon_views.get_auth,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/waterbutler/logs/',
+                '/project/<pid>/node/<nid>/waterbutler/logs/',
+            ],
+            'put',
+            addon_views.create_waterbutler_log,
+            json_renderer,
+        ),
+        Rule(
             '/settings/addons/',
             'post',
             profile_views.user_choose_addons,

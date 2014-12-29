@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
 
+import time
+import httplib
 import functools
 
 from flask import request
 
+from framework.auth import signing
 from framework.flask import redirect
+from framework.exceptions import HTTPError
+
 from .core import Auth
 
 
@@ -33,4 +38,30 @@ def must_be_logged_in(func):
         else:
             return redirect('/login/?next={0}'.format(request.path))
 
+    return wrapped
+
+
+def must_be_signed(func):
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        if request.method in ('GET', 'DELETE'):
+            data = request.args
+        else:
+            data = request.get_json()
+
+        try:
+            sig = data['signature']
+            payload = signing.unserialize_payload(data['payload'])
+            exp_time = payload['time']
+        except (KeyError, ValueError):
+            raise HTTPError(httplib.BAD_REQUEST)
+
+        if not signing.default_signer.verify_payload(sig, payload):
+            raise HTTPError(httplib.UNAUTHORIZED)
+
+        if time.time() > exp_time:
+            raise HTTPError(httplib.BAD_REQUEST)
+
+        kwargs['payload'] = payload
+        return func(*args, **kwargs)
     return wrapped
