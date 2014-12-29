@@ -550,12 +550,7 @@ class TestMetadata:
         assert result == GitHubFileContentMetadata(content_repo_metadata_root_file_txt).serialized()
 
     # TODO: Additional Tests
-    # @async
-    # @pytest.mark.aiohttpretty
     # def test_metadata_root_file_txt_branch(self, provider, repo_metadata, branch_metadata, repo_metadata_root):
-
-    # @async
-    # @pytest.mark.aiohttpretty
     # def test_metadata_root_file_txt_commit_sha(self, provider, repo_metadata, branch_metadata, repo_metadata_root):
 
     @async
@@ -576,14 +571,6 @@ class TestMetadata:
         assert result == ret
 
     # TODO: Additional Tests
-    # @async
-    # @pytest.mark.aiohttpretty
     # def test_metadata_non_root_folder(self, provider, repo_metadata, branch_metadata, repo_metadata_root):
-
-    # @async
-    # @pytest.mark.aiohttpretty
     # def test_metadata_non_root_folder_branch(self, provider, repo_metadata, branch_metadata, repo_metadata_root):
-
-    # @async
-    # @pytest.mark.aiohttpretty
     # def test_metadata_non_root_folder_commit_sha(self, provider, repo_metadata, branch_metadata, repo_metadata_root):

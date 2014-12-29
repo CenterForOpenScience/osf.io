@@ -21,7 +21,9 @@ GIT_EMPTY_SHA = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
 
 
 class GitHubPath(utils.WaterButlerPath):
-    pass
+
+    def __init__(self, path, prefix=False, suffix=False):
+        super().__init__(path, prefix=prefix, suffix=suffix)
 
 
 class GitHubProvider(provider.BaseProvider):
