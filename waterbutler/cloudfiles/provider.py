@@ -297,7 +297,7 @@ class CloudFilesProvider(provider.BaseProvider):
         :rtype list:
         """
         # prefix must be blank when searching the root of the container
-        query = {'prefix': '' if path.is_root else path.path}
+        query = {'prefix': path.path}
         if not recursive:
             query.update({'delimiter': '/'})
         resp = yield from self.make_request(

@@ -411,7 +411,7 @@ class TestMetadata:
     def test_metadata_folder_root_empty(self, connected_provider, folder_root_empty):
         path = CloudFilesPath('/')
         body = json.dumps(folder_root_empty).encode('utf-8')
-        url = connected_provider.build_url(path.path, prefix='' if path.is_root else path.path, delimiter='/')
+        url = connected_provider.build_url(path.path, prefix=path.path, delimiter='/')
         aiohttpretty.register_uri('GET', url, status=200, body=body)
         result = yield from connected_provider.metadata(str(path))
 
@@ -423,7 +423,7 @@ class TestMetadata:
     def test_metadata_folder_root(self, connected_provider, folder_root):
         path = CloudFilesPath('/')
         body = json.dumps(folder_root).encode('utf-8')
-        url = connected_provider.build_url('', prefix='' if path.is_root else path.path, delimiter='/')
+        url = connected_provider.build_url('', prefix=path.path, delimiter='/')
         aiohttpretty.register_uri('GET', url, status=200, body=body)
         result = yield from connected_provider.metadata(str(path))
 
@@ -446,7 +446,7 @@ class TestMetadata:
     def test_metadata_folder_root_level1(self, connected_provider, folder_root_level1):
         path = CloudFilesPath('/level1/')
         body = json.dumps(folder_root_level1).encode('utf-8')
-        url = connected_provider.build_url('', prefix='' if path.is_root else path.path, delimiter='/')
+        url = connected_provider.build_url('', prefix=path.path, delimiter='/')
         aiohttpretty.register_uri('GET', url, status=200, body=body)
         result = yield from connected_provider.metadata(str(path))
 
@@ -460,7 +460,7 @@ class TestMetadata:
     def test_metadata_folder_root_level1_level2(self, connected_provider, folder_root_level1_level2):
         path = CloudFilesPath('/level1/level2/')
         body = json.dumps(folder_root_level1_level2).encode('utf-8')
-        url = connected_provider.build_url('', prefix='' if path.is_root else path.path, delimiter='/')
+        url = connected_provider.build_url('', prefix=path.path, delimiter='/')
         aiohttpretty.register_uri('GET', url, status=200, body=body)
         result = yield from connected_provider.metadata(str(path))
 
@@ -486,7 +486,7 @@ class TestMetadata:
     @pytest.mark.aiohttpretty
     def test_metadata_folder_root_level1_empty(self, connected_provider, folder_root_level1_empty):
         path = CloudFilesPath('/level1_empty/')
-        folder_url = connected_provider.build_url('', prefix='' if path.is_root else path.path, delimiter='/')
+        folder_url = connected_provider.build_url('', prefix=path.path, delimiter='/')
         folder_body = json.dumps([]).encode('utf-8')
         file_url = connected_provider.build_url(path.path.rstrip('/'))
         aiohttpretty.register_uri('GET', folder_url, status=200, body=folder_body)
@@ -532,7 +532,7 @@ class TestMetadata:
     @pytest.mark.aiohttpretty
     def test_metadata_folder_does_not_exist(self, connected_provider):
         path = CloudFilesPath('/does_not_exist/')
-        folder_url = connected_provider.build_url('', prefix='' if path.is_root else path.path, delimiter='/')
+        folder_url = connected_provider.build_url('', prefix=path.path, delimiter='/')
         folder_body = json.dumps([]).encode('utf-8')
         file_url = connected_provider.build_url(path.path.rstrip('/'))
         aiohttpretty.register_uri('GET', folder_url, status=200, body=folder_body)
