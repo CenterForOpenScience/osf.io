@@ -1,7 +1,7 @@
 /**
  * Github FileBrowser configuration module.
  */
- var m = require('mithril'); 
+ var m = require('mithril');
 
 var Fangorn = require('fangorn');
 
@@ -15,7 +15,7 @@ var Fangorn = require('fangorn');
             event.stopPropagation();
             this.dropzone.hiddenFileInput.click();
             this.dropzoneItemCache = item;
-            this.updateFolder(null, item);  
+            this.updateFolder(null, item);
             console.log('Upload Event triggered', this, event,  item, col);
         }
 
@@ -80,7 +80,7 @@ var Fangorn = require('fangorn');
         } else if (item.kind === "item"){
             buttons.push({
                 'name' : '',
-                'icon' : 'icon-download-alt', 
+                'icon' : 'icon-download-alt',
                 'css' : 'btn btn-info btn-xs',
                 'onclick' : _downloadEvent
             },
@@ -93,12 +93,12 @@ var Fangorn = require('fangorn');
             }
             );
         }
-        return buttons.map(function(btn){ 
-            return m('span', { 'data-col' : item.id }, [ m('i', 
+        return buttons.map(function(btn){
+            return m('span', { 'data-col' : item.id }, [ m('i',
                 { 'class' : btn.css, style : btn.style, 'onclick' : function(event){ btn.onclick.call(self, event, item, col); } },
                 [ m('span', { 'class' : btn.icon}, btn.name) ])
             ]);
-        }); 
+        });
     }
 
     function changeBranch(item, branch){
@@ -113,12 +113,12 @@ var Fangorn = require('fangorn');
             // Update the item with the new branch data
             var icon = $('.tb-row[data-id="'+item.id+'"]').find('.tb-toggle-icon');
             m.render(icon.get(0), m('i.icon-refresh.icon-spin'));
-            item.data = response[0]; 
+            item.data = response[0];
             $.ajax({
                 type: 'get',
                 url: response[0].urls.fetch
             }).done(function(data){
-                item.children = []; 
+                item.children = [];
                 console.log("data", data);
                 tb.updateFolder(data, item);
                 tb.redraw();
@@ -135,7 +135,7 @@ var Fangorn = require('fangorn');
         var branchArray = [];
         if (item.data.branches){
             for (var i = 0; i < item.data.branches.length; i++){
-                var selected = item.data.branches[i] === 'master' ? 'selected' : ''; 
+                var selected = item.data.branches[i] === 'master' ? 'selected' : '';
                 branchArray.push(m("option", {selected : selected, value:item.data.branches[i]}, item.data.branches[i]));
             }
         }
@@ -156,13 +156,13 @@ var Fangorn = require('fangorn');
     }
 
     function _fangornColumns (item) {
-        var columns = []; 
+        var columns = [];
         columns.push({
                 data : 'name',
                 folderIcons : true,
                 filter: true,
                 custom : _fangornGithubTitle
-            }); 
+            });
 
       if(this.options.placement === 'project-files') {
         columns.push(
@@ -177,24 +177,14 @@ var Fangorn = require('fangorn');
                 css : ''
             });
         }
-        return columns; 
-    } 
-
-    function _fangornLazyLoad(item){
-        if (item.data.urls.fetch){
-            return item.data.urls.fetch;
-        }
-        if(item.urls.fetch) {
-            return item.urls.fetch;
-        }
-        return false;
+        return columns;
     }
 
     function _fangornFolderIcons(item){
         if(item.data.iconUrl){
             return m('img',{src:item.data.iconUrl, style:{width:"16px", height:"auto"}}, ' ');
         }
-        return undefined;            
+        return undefined;
     }
 
     function _fangornUploadComplete(item){
@@ -203,7 +193,7 @@ var Fangorn = require('fangorn');
         // item.open = false;
         // item.load = false;
         //this.toggleFolder(index, null);
-            
+
     }
 
     // Register configuration
@@ -211,7 +201,6 @@ var Fangorn = require('fangorn');
         // Handle changing the branch select
         folderIcon: _fangornFolderIcons,
         resolveRows: _fangornColumns,
-        lazyload: _fangornLazyLoad,
         onUploadComplete : _fangornUploadComplete
     };
 
