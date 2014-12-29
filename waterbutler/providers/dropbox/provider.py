@@ -6,10 +6,10 @@ from waterbutler.core import streams
 from waterbutler.core import provider
 from waterbutler.core import exceptions
 
-from waterbutler.dropbox import settings
-from waterbutler.dropbox.metadata import DropboxRevision
-from waterbutler.dropbox.metadata import DropboxFileMetadata
-from waterbutler.dropbox.metadata import DropboxFolderMetadata
+from waterbutler.providers.dropbox import settings
+from waterbutler.providers.dropbox.metadata import DropboxRevision
+from waterbutler.providers.dropbox.metadata import DropboxFileMetadata
+from waterbutler.providers.dropbox.metadata import DropboxFolderMetadata
 
 
 class DropboxPath(utils.WaterButlerPath):

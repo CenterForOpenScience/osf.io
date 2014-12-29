@@ -9,9 +9,9 @@ import aiohttpretty
 from waterbutler.core import streams
 from waterbutler.core import exceptions
 
-from waterbutler.dropbox.provider import DropboxPath
-from waterbutler.dropbox.provider import DropboxProvider
-from waterbutler.dropbox.metadata import DropboxFileMetadata
+from waterbutler.providers.dropbox import DropboxProvider
+from waterbutler.providers.dropbox.provider import DropboxPath
+from waterbutler.providers.dropbox.metadata import DropboxFileMetadata
 
 
 @pytest.fixture

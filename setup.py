@@ -8,7 +8,7 @@ requirements = [str(ir.req) for ir in install_reqs]
 
 setup(
     name='waterbutler-dropbox',
-    namespace_packages=['waterbutler'],
+    namespace_packages=['waterbutler', 'waterbutler.providers'],
     version='0.0.1',
     description='WaterButler Dropbox Storage Provider',
     author='Center for Open Science',
@@ -30,7 +30,7 @@ setup(
     ],
     entry_points={
         'waterbutler.providers': [
-            'dropbox = waterbutler.dropbox.provider:DropboxProvider',
+            'dropbox = waterbutler.providers.dropbox:DropboxProvider',
         ]
     },
 )
