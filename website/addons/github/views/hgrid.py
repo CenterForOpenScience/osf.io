@@ -3,7 +3,6 @@ import os
 import logging
 import httplib as http
 
-from mako.template import Template
 from flask import request
 
 from framework.exceptions import HTTPError
@@ -80,22 +79,6 @@ def to_hgrid(data, node_url, node_api_url=None, branch=None, sha=None,
             folders[key] = item
 
     return grid
-
-
-github_branch_template = Template('''
-    % if len(branches) > 1:
-            <select class="github-branch-select">
-                % for each in branches:
-                    <option value="${each}" ${"selected" if each == branch else ""}>${each}</option>
-                % endfor
-            </select>
-    % else:
-        <span>${branch}</span>
-    % endif
-    % if sha:
-        <a href="https://github.com/${owner}/${repo}/commit/${sha}" target="_blank" class="github-sha text-muted">${sha[:10]}</a>
-    % endif
-''')
 
 
 def github_branch_widget(branches, owner, repo, branch, sha):
