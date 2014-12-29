@@ -1,1 +1,1 @@
-from .provider import DropboxProvider
+from .provider import DropboxProvider  # noqa
