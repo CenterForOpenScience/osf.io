@@ -186,7 +186,7 @@ def serialize_file(idx, version, record, path, node):
         'rendered': rendered,
         'files_url': node.web_url_for('collect_file_trees'),
         'download_url': node.web_url_for('osf_storage_view_file', path=path, action='download'),
-        'delete_url': node.api_url_for('osf_storage_delete_file', path=path),
+        # 'delete_url': node.api_url_for('osf_storage_delete_file', path=path),
         'revisions_url': node.api_url_for(
             'osf_storage_get_revisions',
             path=path,
@@ -202,7 +202,7 @@ def serialize_file(idx, version, record, path, node):
 def download_file(path, node_addon, version_query):
     mode = request.args.get('mode')
     idx, version, record = get_version(path, node_addon, version_query)
-    url = utils.get_download_url(record, version)
+    url = utils.get_download_url(idx, version, record)
     if mode != 'render':
         update_analytics(node_addon.owner, path, idx)
     return redirect(url)

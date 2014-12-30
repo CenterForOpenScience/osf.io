@@ -12,10 +12,14 @@ import requests
 import markupsafe
 import simplejson
 
+from flask import request
+
 from modularodm import Q
 from cloudstorm import sign
 
 from framework.exceptions import HTTPError
+
+from website import settings as site_settings
 
 from website.util import rubeus
 from website.project.views.file import get_cache_content
@@ -119,11 +123,7 @@ def serialize_revision(node, record, version, index):
             'name': version.creator.fullname,
             'url': version.creator.url,
         },
-        'date': (
-            version.date_created.isoformat()
-            if not version.pending
-            else None
-        ),
+        'date': version.date_created.isoformat(),
         'downloads': record.get_download_count(version=index),
         'urls': {
             'view': node.web_url_for(
@@ -267,20 +267,18 @@ def get_download_url(version_idx, file_version, file_record):
     :param FileVersion file_version: Version to fetch
     :param FileRecord file_record: Root file object
     """
-    payload = {
-        'location': file_version.location,
-        'filename': get_filename(version_idx, file_version, file_record),
+    url = furl.furl(site_settings.WATERBUTLER_URL)
+
+    url.path.segments = ['file']
+    url.args = {
+        'token': '',
+        'provider': 'osfstorage',
+        'nid': file_record.node._id,
+        'cookie': request.cookies.get(site_settings.COOKIE_NAME),
+        'path': get_filename(version_idx, file_version, file_record),
     }
-    data = make_signed_request(
-        'POST',
-        urlparse.urljoin(
-            choose_upload_url(),
-            'urls/download/',
-        ),
-        signer=url_signer,
-        payload=payload,
-    )
-    return data['url']
+
+    return url.url
 
 
 def get_cache_filename(file_version):

@@ -73,7 +73,8 @@
             urls: {
                 files:'${files_url}',
                 download:'${download_url}',
-                delete:'${delete_url}',
+                delete: 'foo',
+                ## delete:'${delete_url}',
                 revisions:'${revisions_url}',
             }
         }
