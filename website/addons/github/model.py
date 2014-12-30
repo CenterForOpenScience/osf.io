@@ -271,6 +271,41 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             'repo': self.repo,
         }
 
+    def create_waterbutler_log(self, auth, action, metadata):
+        path = metadata['path']
+
+        if not metadata.get('extra'):
+            sha = None
+            urls = {}
+        else:
+            sha = metadata['extra']['commit']['sha']
+            urls = {
+                'view': '{0}?ref={1}'.format(
+                    self.owner.web_url_for('github_view_file', path=path),
+                    sha
+                ),
+                'download': '{0}?ref={1}'.format(
+                    self.owner.web_url_for('github_download_file', path=path),
+                    sha
+                )
+            }
+
+        self.owner.add_log(
+            'github_{0}'.format(action),
+            auth=auth,
+            params={
+                'project': self.owner.parent_id,
+                'node': self.owner._id,
+                'path': path,
+                'urls': urls,
+                'github': {
+                    'user': self.user,
+                    'repo': self.repo,
+                    'sha': sha,
+                },
+            },
+        )
+
     #############
     # Callbacks #
     #############
