@@ -126,17 +126,7 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
         return settings.WATERBUTLER_CREDENTIALS
 
     def create_waterbutler_log(self, auth, action, metadata):
-        # pass
-        self.owner.add_log(
-            'osf_storage_{0}'.format(action),
-            auth=auth,
-            params={
-                'project': self.owner.parent_id,
-                'node': self.owner._id,
-                'path': metadata['path'],
-                'urls': logs.build_log_urls(self.owner, metadata['path'])
-            }
-        )
+        pass
 
 
 class BaseFileObject(StoredObject):
