@@ -14,16 +14,12 @@ from waterbutler.figshare import metadata
 from waterbutler.figshare import utils as figshare_utils
 
 
-def padded_parts(path, count, method='right'):
+def padded_parts(path, count):
     parts = path.strip('/').split('/')
     if len(parts) > count:
         raise ValueError
     padding = [None] * (count - len(parts))
-    if method == 'right':
-        return parts + padding
-    if method == 'left':
-        return padding + parts
-    raise ValueError('Parameter "method" must be "right" or "left"')
+    return parts + padding
 
 
 class FigsharePath(utils.WaterButlerPath):
@@ -48,9 +44,9 @@ class FigsharePath(utils.WaterButlerPath):
 
 class FigshareProjectPath(FigsharePath):
 
-    def __init__(self, path, method='right', *args, **kwargs):
+    def __init__(self, path, *args, **kwargs):
         super().__init__(path, *args, **kwargs)
-        (self.article_id, self.file_id) = padded_parts(path, 2, method=method)
+        (self.article_id, self.file_id) = padded_parts(path, 2)
 
     @property
     def child(self):
