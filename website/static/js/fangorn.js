@@ -7,27 +7,10 @@ var $ = require('jquery');
 require('dropzonePatch'); // Required for uploads
 var m = require('mithril');
 var Treebeard = require('treebeard');
-var $osf = require('osfHelpers');
-var bootbox = require('bootbox');
+var waterbutler = require('waterbutler');
 
 var tbOptions;
 
-function buildWaterButlerUrl(item, metadata, file) {
-    var path = item.data.path || '/';
-    var baseUrl = 'http://localhost:7777/' + (metadata ? 'data?': 'file?');
-
-    if (file) {
-        path += file.name;
-    }
-
-    return baseUrl + $.param({
-        path: path,
-        token: '',
-        nid: nodeId,
-        provider: item.data.provider,
-        cookie: document.cookie.match(/osf=(.*?)(;|$)/)[1]
-    });
-}
 
 /**
  * Returns custom icons for OSF depending on the type of item
@@ -163,7 +146,7 @@ function _fangornToggleCheck(item) {
  */
 function _fangornResolveUploadUrl(item, file) {
     var configOption = resolveconfigOption.call(this, item, 'uploadUrl', [item, file]);
-    return configOption || buildWaterButlerUrl(item, false, file);
+    return configOption || waterbutler.buildFileUrl(item, file);
 }
 
 /**
@@ -353,7 +336,7 @@ function _downloadEvent (event, item, col) {
     if (item.data.provider === 'osfstorage') {
         item.data.downloads++;
     }
-    window.location = buildWaterButlerUrl(item, false);
+    window.location = waterbutler.buildFileUrl(item);
 }
 
 /**
@@ -374,7 +357,7 @@ function _removeEvent (event, item, col) {
     if (item.data.permissions.edit) {
         // delete from server, if successful delete from view
         $.ajax({
-            url: buildWaterButlerUrl(item, false),
+            url: waterbutler.buildFileUrl(item),
             type : 'DELETE'
         })
         .done(function(data) {
@@ -406,7 +389,7 @@ function _fangornResolveLazyLoad(item) {
         return false;
     }
 
-    return buildWaterButlerUrl(item, true);
+    return waterbutler.buildMetadataUrl(item);
 }
 
 /**

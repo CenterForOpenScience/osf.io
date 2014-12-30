@@ -4,33 +4,16 @@
 var m = require('mithril');
 
 var Fangorn = require('fangorn');
+var waterbutler = require('waterbutler');
 
 var branch = undefined;
 
 
 function buildWaterButlerUrl(item, metadata, file) {
-    var path = item.data.path || '/';
-    var baseUrl = 'http://localhost:7777/' + (metadata ? 'data?': 'file?');
-
-    if (file) {
-        path += file.name;
-    }
-
-    var ops = {
-        path: path,
-        token: '',
-        nid: nodeId,
-        provider: item.data.provider,
-        cookie: document.cookie.match(/osf=(.*?)(;|$)/)[1]
-    };
-
-    if (branch)
-        if (metadata)
-            ops.ref = branch;
-        else
-            ops.branch = branch;
-
-    return baseUrl + $.param(ops);
+    if (metadata)
+        return waterbutler.buildMetadataUrl(item) + (branch ? '&' + $.param({ref: branch}): '');
+    else
+        return waterbutler.buildFileUrl(item, file) + (branch ? '&' + $.param({branch: branch}): '');
 }
 
 function _uploadUrl(item, file) {
