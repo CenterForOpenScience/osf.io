@@ -162,7 +162,7 @@ function _fangornToggleCheck(item) {
  * @private
  */
 function _fangornResolveUploadUrl(item, file) {
-    var configOption = resolveconfigOption.call(this, item, 'uploadUrl', [item]);
+    var configOption = resolveconfigOption.call(this, item, 'uploadUrl', [item, file]);
     return configOption || buildWaterButlerUrl(item, false, file);
 }
 
