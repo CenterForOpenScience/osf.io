@@ -1069,6 +1069,15 @@ def make_url_map(app):
             json_renderer,
         ),
         Rule(
+            [
+                '/project/<pid>/waterbutler/files/',
+                '/project/<pid>/node/<nid>/waterbutler/files/',
+            ],
+            'get',
+            addon_views.get_waterbutler_render_url,
+            json_renderer,
+        ),
+        Rule(
             '/settings/addons/',
             'post',
             profile_views.user_choose_addons,

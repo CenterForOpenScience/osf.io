@@ -493,13 +493,16 @@ function _fangornActionColumn (item, col) {
  */
 function _fangornTitleColumn(item, col) {
     //TODO
-    return m('span',
-        { onclick : function() {
-            if (item.kind === 'item') {
-                window.location = item.data.urls.view;
+    return m('span',{
+        onclick : function() {
+            if (item.kind === 'file') {
+                window.location = nodeApiUrl + 'waterbutler/files/?' + $.param({
+                    provider: item.data.provider,
+                    path: item.data.path.substring(1)
+                });
             }
-        }},
-        item.data.name);
+        }
+    }, item.data.name);
 }
 
 /**

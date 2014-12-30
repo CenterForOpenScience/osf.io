@@ -4,6 +4,7 @@ import httplib
 
 import itsdangerous
 from flask import request
+from flask import redirect
 
 from framework.auth import Auth
 from framework.sessions import Session
@@ -171,3 +172,21 @@ def create_waterbutler_log(payload, **kwargs):
         raise HTTPError(httplib.BAD_REQUEST)
     auth = Auth(user=user)
     node_addon.create_waterbutler_log(auth, osf_action, metadata)
+
+
+@must_be_valid_project
+def get_waterbutler_render_url(**kwargs):
+    provider = request.args.get('provider')
+    node = kwargs.get('project') or kwargs['node']
+
+    node_addon = node.get_addon(provider)
+
+    if not node_addon:
+        raise HTTPError(httplib.BAD_REQUEST)
+
+    try:
+        url = node_addon.get_waterbutler_render_url(**request.args.to_dict())
+    except TypeError:
+        raise HTTPError(httplib.BAD_REQUEST)
+
+    return redirect(url)
