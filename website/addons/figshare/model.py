@@ -5,8 +5,9 @@ import os
 from modularodm import fields
 from framework.auth.decorators import Auth
 
-from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
 from website.addons.base import GuidFile
+from website.addons.base import exceptions
+from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
 
 from .api import Figshare
 from . import settings as figshare_settings
@@ -131,6 +132,27 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
 
         if save:
             self.save()
+
+    def serialize_waterbutler_credentials(self):
+        if not self.has_auth:
+            raise exceptions.AddonError('Cannot serialize credentials for unauthorized addon')
+        return {
+            'client_token': figshare_settings.CLIENT_ID,
+            'client_secret': figshare_settings.CLIENT_SECRET,
+            'owner_token': self.user_settings.oauth_access_token,
+            'owner_secret': self.user_settings.oauth_access_token_secret,
+        }
+
+    def serialize_waterbutler_settings(self):
+        if not self.figshare_type or not self.figshare_id:
+            raise exceptions.AddonError('Cannot serialize settings for unconfigured addon')
+        return {
+            'container_type': self.figshare_type,
+            'container_id': str(self.figshare_id),
+        }
+
+    def create_waterbutler_log(self, auth, action, metadata):
+        pass
 
     def delete(self, save=False):
         super(AddonFigShareNodeSettings, self).delete(save=False)
