@@ -15,7 +15,10 @@ def file_or_error(article, file_id):
 
 
 class MultiStream(asyncio.StreamReader):
-
+    """Concatenate a series of `StreamReader` objects into a single stream.
+    Reads from the current stream until exhausted, then continues to the next,
+    etc. Used to build streaming form data for Figshare uploads.
+    """
     def __init__(self, *streams):
         self._streams = streams
         self.streams = list(streams)
@@ -65,6 +68,11 @@ def make_boundary_streams(boundary, **options):
 
 
 def make_upload_data(stream, **options):
+    """Prepare upload form data stream for Figshare. Wraps input stream in form
+    data boundary streams.
+
+    :returns: Tuple of (<stream>, <boundary>, <size>)
+    """
     boundary = make_boundary()
     boundaries = make_boundary_streams(boundary, **options)
     outstream = MultiStream(
