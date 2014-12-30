@@ -92,9 +92,12 @@ class OSFStorageProvider(provider.BaseProvider):
         pending_name = str(uuid.uuid4())
         pending_path = os.path.join(settings.FILE_PATH_PENDING, pending_name)
 
+        pending_name = '/' + pending_name
+
         stream.add_writer('md5', streams.HashStreamWriter(hashlib.md5))
         stream.add_writer('sha1', streams.HashStreamWriter(hashlib.sha1))
         stream.add_writer('sha256', streams.HashStreamWriter(hashlib.sha256))
+
         with open(pending_path, 'wb') as file_pointer:
             stream.add_writer('file', file_pointer)
             provider = self.make_provider(self.settings)
@@ -102,12 +105,17 @@ class OSFStorageProvider(provider.BaseProvider):
 
         complete_name = stream.writers['sha256'].hexdigest
         complete_path = os.path.join(settings.FILE_PATH_COMPLETE, complete_name)
+
+        complete_name = '/' + complete_name
+
         metadata = yield from provider.move(
             provider,
             {'path': pending_name},
             {'path': complete_name},
         )
+
         os.rename(pending_path, complete_path)
+
         response = yield from self.make_signed_request(
             'POST',
             self.callback,
@@ -130,7 +138,10 @@ class OSFStorageProvider(provider.BaseProvider):
             }),
             headers={'Content-Type': 'application/json'},
         )
+
+        created = response.status == 201
         data = yield from response.json()
+
         if settings.RUN_PARITY:
             version_id = data['version_id']
             parity.main(
@@ -142,12 +153,14 @@ class OSFStorageProvider(provider.BaseProvider):
                 self.callback,
             )
 
-        name, path = os.path.split(path)
+        path, name = os.path.split(path)
+
         metadata.update({
             'name': name,
             'path': path
         })
-        return OsfStorageFileMetadata(metadata).serialized()
+
+        return OsfStorageFileMetadata(metadata).serialized(), created
 
     @asyncio.coroutine
     def delete(self, **kwargs):
