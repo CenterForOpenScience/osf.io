@@ -1,4 +1,5 @@
 import os
+import http
 import json
 import asyncio
 
@@ -111,7 +112,10 @@ class FigshareProjectProvider(BaseFigshareProvider):
                 if each['id'] == int(article_id)
             )
         except StopIteration:
-            raise exceptions.ProviderError
+            raise exceptions.ProviderError(
+                'Article {0} not found'.format(article_id),
+                code=http.client.NOT_FOUND,
+            )
 
     @asyncio.coroutine
     def _make_article_provider(self, article_id, safe=False):
@@ -122,7 +126,7 @@ class FigshareProjectProvider(BaseFigshareProvider):
         return FigshareArticleProvider(self.auth, self.credentials, settings, child=True)
 
     @asyncio.coroutine
-    def _get_project_metadata(self, contents=False):
+    def _get_project_metadata(self):
         response = yield from self.make_request(
             'GET',
             self.build_url('projects', self.project_id),
@@ -142,7 +146,7 @@ class FigshareProjectProvider(BaseFigshareProvider):
 
     @asyncio.coroutine
     def _get_article_metadata(self, article_id):
-        provider = yield from self._make_article_provider(article_id)
+        provider = yield from self._make_article_provider(article_id, safe=True)
         return (yield from provider.metadata(''))
 
     @asyncio.coroutine
@@ -175,8 +179,8 @@ class FigshareProjectProvider(BaseFigshareProvider):
 
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
-        figshare_path = FigshareProjectPath(path, method='left')
-        should_create = not figshare_path.article_id
+        figshare_path = FigshareProjectPath(path)
+        should_create = not figshare_path.file_id
         if should_create:
             article_json = yield from self._create_article(figshare_path.article_id)
             provider = yield from self._make_article_provider(article_json['article_id'], safe=True)

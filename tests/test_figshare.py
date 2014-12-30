@@ -3,16 +3,15 @@ import pytest
 from tests.utils import async
 
 import io
-import hashlib
+import json
 
 import aiohttpretty
 
 from waterbutler.core import streams
 from waterbutler.core import exceptions
 
-from waterbutler.s3.provider import S3Provider
-from waterbutler.s3.metadata import S3FileMetadata
-from waterbutler.s3.metadata import S3FolderMetadata
+from waterbutler.figshare import metadata
+from waterbutler.figshare import provider
 
 
 @pytest.fixture
@@ -26,19 +25,37 @@ def auth():
 @pytest.fixture
 def credentials():
     return {
-        'access_key': 'Dont dead',
-        'secret_key': 'open inside',
+        'client_token': 'freddie',
+        'client_secret': 'brian',
+        'owner_token': 'roger',
+        'owner_secret': 'john',
     }
 
 
 @pytest.fixture
-def settings():
-    return {'bucket': 'that kerning'}
+def project_settings():
+    return {
+        'container_type': 'project',
+        'container_id': 'night-at-the-opera',
+    }
 
 
 @pytest.fixture
-def provider(auth, credentials, settings):
-    return S3Provider(auth, credentials, settings)
+def article_settings():
+    return {
+        'container_type': 'article',
+        'container_id': 'death-on-two-legs',
+    }
+
+
+@pytest.fixture
+def project_provider(auth, credentials, project_settings):
+    return provider.make_figshare_provider(auth, credentials, project_settings)
+
+
+@pytest.fixture
+def article_provider(auth, credentials, article_settings):
+    return provider.make_figshare_provider(auth, credentials, article_settings)
 
 
 @pytest.fixture
@@ -56,318 +73,170 @@ def file_stream(file_like):
     return streams.FileStreamReader(file_like)
 
 
-@pytest.fixture
-def folder_metadata():
-    return b'''<?xml version="1.0" encoding="UTF-8"?>
-        <ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-            <Name>bucket</Name>
-            <Prefix/>
-            <Marker/>
-            <MaxKeys>1000</MaxKeys>
-            <IsTruncated>false</IsTruncated>
-            <Contents>
-                <Key>my-image.jpg</Key>
-                <LastModified>2009-10-12T17:50:30.000Z</LastModified>
-                <ETag>&quot;fba9dede5f27731c9771645a39863328&quot;</ETag>
-                <Size>434234</Size>
-                <StorageClass>STANDARD</StorageClass>
-                <Owner>
-                    <ID>75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a</ID>
-                    <DisplayName>mtd@amazon.com</DisplayName>
-                </Owner>
-            </Contents>
-            <Contents>
-            <Key>my-third-image.jpg</Key>
-                <LastModified>2009-10-12T17:50:30.000Z</LastModified>
-                <ETag>&quot;1b2cf535f27731c974343645a3985328&quot;</ETag>
-                <Size>64994</Size>
-                <StorageClass>STANDARD</StorageClass>
-                <Owner>
-                    <ID>75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a</ID>
-                    <DisplayName>mtd@amazon.com</DisplayName>
-                </Owner>
-            </Contents>
-            <CommonPrefixes>
-                <Prefix>photos/</Prefix>
-            </CommonPrefixes>
-        </ListBucketResult>'''
+class TestPolymorphism:
+
+    def test_project_provider(self, project_settings, project_provider):
+        assert isinstance(project_provider, provider.FigshareProjectProvider)
+        assert project_provider.project_id == project_settings['container_id']
+
+    def test_article_provider(self, article_settings, article_provider):
+        assert isinstance(article_provider, provider.FigshareArticleProvider)
+        assert article_provider.article_id == article_settings['container_id']
 
 
 @pytest.fixture
-def just_a_folder_metadata():
-    return b'''<?xml version="1.0" encoding="UTF-8"?>
-        <ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-            <Name>bucket</Name>
-            <Prefix/>
-            <Marker/>
-            <MaxKeys>1000</MaxKeys>
-            <IsTruncated>false</IsTruncated>
-            <Contents>
-                <Key>naptime/</Key>
-                <LastModified>2009-10-12T17:50:30.000Z</LastModified>
-                <ETag>&quot;fba9dede5f27731c9771645a39863328&quot;</ETag>
-                <Size>0</Size>
-                <StorageClass>STANDARD</StorageClass>
-                <Owner>
-                    <ID>75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a</ID>
-                    <DisplayName>mtd@amazon.com</DisplayName>
-                </Owner>
-            </Contents>
-        </ListBucketResult>'''
+def list_project_articles():
+    return [
+        {'id': 1832, 'title': 'bread.gif', 'description': 'food'},
+    ]
 
 
 @pytest.fixture
-def folder_empty_metadata():
-    return b'''<?xml version="1.0" encoding="UTF-8"?>
-        <ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-            <Name>bucket</Name>
-            <Prefix/>
-            <Marker/>
-            <MaxKeys>1000</MaxKeys>
-            <IsTruncated>false</IsTruncated>
-        </ListBucketResult>'''
-
-
-@pytest.fixture
-def file_metadata():
+def base_article_metadata():
     return {
-            'Content-Length': 9001,
-            'LastModified': 'SomeTime',
-            'ETag': '"fba9dede5f27731c9771645a39863328"'
+        'article_id': 1832,
+        'authors': [
+            {
+                'id': 24601,
+                'first_name': 'Jean',
+                'last_name': 'Valjean',
+                'full_name': 'Jean Valjean',
+            },
+        ],
+        'categories': [],
+        'defined_type': 'figure',
+        'description': 'food',
+        'description_nohtml': 'food',
+        'files': [
+            {
+                'id': 1853224,
+                'mime_type': 'image/gif',
+                'name': 'bread.gif',
+                'size': '60 KB',
+                'thumb': 'http://figshare.com/read/private/1853224/250_1853224.jpg',
+            },
+        ],
+        'links': [],
+        'master_publisher_id': 0,
+        'published_date': '16:19, Dec 23, 2014',
+        'status': 'Drafts',
+        'tags': [],
+        'title': '',
+        'total_size': '58.16 KB',
+        'version': 1,
     }
 
 
 @pytest.fixture
-def version_metadata():
-    return b'''<?xml version="1.0" encoding="UTF-8"?>
-
-    <ListVersionsResult xmlns="http://s3.amazonaws.com/doc/2006-03-01">
-        <Name>bucket</Name>
-        <Prefix>my</Prefix>
-        <KeyMarker/>
-        <VersionIdMarker/>
-        <MaxKeys>5</MaxKeys>
-        <IsTruncated>false</IsTruncated>
-        <Version>
-            <Key>my-image.jpg</Key>
-            <VersionId>3/L4kqtJl40Nr8X8gdRQBpUMLUo</VersionId>
-            <IsLatest>true</IsLatest>
-            <LastModified>2009-10-12T17:50:30.000Z</LastModified>
-            <ETag>&quot;fba9dede5f27731c9771645a39863328&quot;</ETag>
-            <Size>434234</Size>
-            <StorageClass>STANDARD</StorageClass>
-            <Owner>
-                <ID>75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a</ID>
-                <DisplayName>mtd@amazon.com</DisplayName>
-            </Owner>
-        </Version>
-        <Version>
-            <Key>my-image.jpg</Key>
-            <VersionId>QUpfdndhfd8438MNFDN93jdnJFkdmqnh893</VersionId>
-            <IsLatest>false</IsLatest>
-            <LastModified>2009-10-10T17:50:30.000Z</LastModified>
-            <ETag>&quot;9b2cf535f27731c974343645a3985328&quot;</ETag>
-            <Size>166434</Size>
-            <StorageClass>STANDARD</StorageClass>
-            <Owner>
-                <ID>75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a</ID>
-                <DisplayName>mtd@amazon.com</DisplayName>
-            </Owner>
-        </Version>
-        <Version>
-            <Key>my-image.jpg</Key>
-            <VersionId>UIORUnfndfhnw89493jJFJ</VersionId>
-            <IsLatest>false</IsLatest>
-            <LastModified>2009-10-11T12:50:30.000Z</LastModified>
-            <ETag>&quot;772cf535f27731c974343645a3985328&quot;</ETag>
-            <Size>64</Size>
-            <StorageClass>STANDARD</StorageClass>
-            <Owner>
-                <ID>75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a</ID>
-                <DisplayName>mtd@amazon.com</DisplayName>
-            </Owner>
-        </Version>
-    </ListVersionsResult>'''
+def article_metadata(base_article_metadata):
+    return {'items': [base_article_metadata]}
 
 
-@async
-@pytest.mark.aiohttpretty
-def test_download(provider):
-    url = provider.bucket.new_key('muhtriangle').generate_url(100)
-    aiohttpretty.register_uri('GET', url, body=b'delicious')
-
-    result = yield from provider.download('muhtriangle')
-    content = yield from result.response.read()
-
-    assert content == b'delicious'
-
-
-@async
-@pytest.mark.aiohttpretty
-def test_download_not_found(provider):
-    url = provider.bucket.new_key('muhtriangle').generate_url(100)
-    aiohttpretty.register_uri('GET', url, status=404)
-
-    with pytest.raises(exceptions.DownloadError):
-        yield from provider.download('muhtriangle')
+@pytest.fixture
+def upload_metadata():
+    return {
+        'extension': 'gif',
+        'id': 1857195,
+        'mime_type': 'image/gif',
+        'name': 'barricade.gif',
+        'size': '60 KB',
+    }
 
 
-@async
-@pytest.mark.aiohttpretty
-def test_download_no_name(provider):
-    with pytest.raises(exceptions.ProviderError):
-        yield from provider.download('')
+class TestMetadata:
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_project_contents(self, project_provider, list_project_articles, article_metadata):
+        list_articles_url = project_provider.build_url('projects', project_provider.project_id, 'articles')
+        article_metadata_url = project_provider.build_url('articles', str(list_project_articles[0]['id']))
+        aiohttpretty.register_json_uri('GET', list_articles_url, body=list_project_articles)
+        aiohttpretty.register_json_uri('GET', article_metadata_url, body=article_metadata)
+        result = yield from project_provider.metadata('/')
+        assert aiohttpretty.has_call(method='GET', uri=list_articles_url)
+        assert aiohttpretty.has_call(method='GET', uri=article_metadata_url)
+        article_provider = yield from project_provider._make_article_provider(list_project_articles[0]['id'], safe=True)
+        expected = [article_provider._serialize_item(article_metadata['items'][0])]
+        assert result == expected
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_project_article_contents(self, project_provider, list_project_articles, article_metadata):
+        list_articles_url = project_provider.build_url('projects', project_provider.project_id, 'articles')
+        article_metadata_url = project_provider.build_url('articles', str(list_project_articles[0]['id']))
+        aiohttpretty.register_json_uri('GET', list_articles_url, body=list_project_articles)
+        aiohttpretty.register_json_uri('GET', article_metadata_url, body=article_metadata)
+        article_id = list_project_articles[0]['id']
+        path = '/{0}/'.format(article_id)
+        result = yield from project_provider.metadata(path)
+        assert aiohttpretty.has_call(method='GET', uri=list_articles_url)
+        assert aiohttpretty.has_call(method='GET', uri=article_metadata_url)
+        article_provider = yield from project_provider._make_article_provider(list_project_articles[0]['id'], safe=True)
+        expected = [article_provider._serialize_item(article_metadata['items'][0]['files'][0])]
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_project_article_contents_not_in_project(self, project_provider, list_project_articles, article_metadata):
+        list_articles_url = project_provider.build_url('projects', project_provider.project_id, 'articles')
+        article_metadata_url = project_provider.build_url('articles', str(list_project_articles[0]['id']))
+        aiohttpretty.register_json_uri('GET', list_articles_url, body=[])
+        aiohttpretty.register_json_uri('GET', article_metadata_url, body=article_metadata)
+        article_id = list_project_articles[0]['id']
+        path = '/{0}/'.format(article_id)
+        with pytest.raises(exceptions.ProviderError) as exc:
+            yield from project_provider.metadata(path)
+        assert exc.value.code == 404
+        assert aiohttpretty.has_call(method='GET', uri=list_articles_url)
+        assert not aiohttpretty.has_call(method='GET', uri=article_metadata_url)
 
 
-@async
-@pytest.mark.aiohttpretty
-def test_metadata_folder(provider, folder_metadata):
-    url = provider.bucket.generate_url(100)
-    aiohttpretty.register_uri('GET', url, body=folder_metadata, headers={'Content-Type': 'application/xml'})
-    result = yield from provider.metadata('/darp/')
+class TestCRUD:
 
-    assert isinstance(result, list)
-    assert len(result) == 3
-    assert result[1]['name'] == 'my-image.jpg'
-    assert result[2]['extra']['md5'] == '1b2cf535f27731c974343645a3985328'
+    @async
+    @pytest.mark.aiohttpretty
+    def test_project_upload(self, project_provider, list_project_articles, base_article_metadata, upload_metadata, file_content, file_stream):
+        article_id = str(list_project_articles[0]['id'])
+        list_articles_url = project_provider.build_url('projects', project_provider.project_id, 'articles')
+        article_upload_url = project_provider.build_url('articles', article_id, 'files')
+        create_article_url = project_provider.build_url('articles')
+        add_article_url = project_provider.build_url('projects', project_provider.project_id, 'articles')
+        aiohttpretty.register_json_uri('GET', list_articles_url, body=list_project_articles)
+        aiohttpretty.register_json_uri('PUT', article_upload_url, body=upload_metadata)
+        aiohttpretty.register_json_uri('POST', create_article_url, body=base_article_metadata)
+        aiohttpretty.register_json_uri('PUT', add_article_url)
+        file_name = 'barricade.gif'
+        path = '/{0}'.format(file_name)
+        result = yield from project_provider.upload(file_stream, path)
+        expected = metadata.FigshareFileMetadata(upload_metadata, article_id).serialized()
+        assert aiohttpretty.has_call(
+            method='POST',
+            uri=create_article_url,
+            data=json.dumps({
+                'title': 'barricade.gif',
+                'defined_type': 'dataset',
+            })
+        )
+        assert aiohttpretty.has_call(method='PUT', uri=article_upload_url)
+        assert aiohttpretty.has_call(
+            method='PUT',
+            uri=add_article_url,
+            data=json.dumps({'article_id': int(article_id)})
+        )
+        assert result == expected
 
-
-@async
-@pytest.mark.aiohttpretty
-def test_just_a_folder_metadata_folder(provider, just_a_folder_metadata):
-    url = provider.bucket.generate_url(100)
-    aiohttpretty.register_uri('GET', url, body=just_a_folder_metadata, headers={'Content-Type': 'application/xml'})
-    result = yield from provider.metadata('')
-
-    assert isinstance(result, list)
-    assert len(result) == 1
-    assert result[0]['kind'] == 'folder'
-
-
-@async
-@pytest.mark.aiohttpretty
-def test_metadata_file(provider, file_metadata):
-    path = '/Foo/Bar/my-image.jpg'
-    url = provider.bucket.new_key(path).generate_url(100, 'HEAD')
-    aiohttpretty.register_uri('HEAD', url, headers=file_metadata)
-    result = yield from provider.metadata(path)
-
-    assert isinstance(result, dict)
-
-    assert result['path'] == path
-    assert result['name'] == 'my-image.jpg'
-    assert result['extra']['md5'] == 'fba9dede5f27731c9771645a39863328'
-
-
-@async
-@pytest.mark.aiohttpretty
-def test_metadata_file_missing(provider):
-    name = 'notfound.txt'
-    url = provider.bucket.new_key(name).generate_url(100, 'HEAD')
-    aiohttpretty.register_uri('HEAD', url, status=404)
-
-    with pytest.raises(exceptions.MetadataError):
-        yield from provider.metadata(name)
-
-
-@async
-@pytest.mark.aiohttpretty
-def test_upload(provider, file_content, file_stream, file_metadata):
-    path = 'foobah'
-    content_md5 = hashlib.md5(file_content).hexdigest()
-    url = provider.bucket.new_key(path).generate_url(100, 'PUT')
-    metadata_url = provider.bucket.new_key(path).generate_url(100, 'HEAD')
-    aiohttpretty.register_uri('HEAD', metadata_url, headers=file_metadata)
-    aiohttpretty.register_uri('PUT', url, status=200, headers={'ETag': '"{}"'.format(content_md5)})
-
-    resp = yield from provider.upload(file_stream, path)
-
-    assert resp['kind'] == 'file'
-    assert aiohttpretty.has_call(method='PUT', uri=url)
-    assert aiohttpretty.has_call(method='HEAD', uri=metadata_url)
-
-
-@async
-@pytest.mark.aiohttpretty
-def test_copy(provider, file_metadata):
-    dest_path = 'dest'
-    source_path = 'source'
-    headers = {'x-amz-copy-source': '/{}/{}'.format(provider.settings['bucket'], source_path)}
-
-    metadata_url = provider.bucket.new_key(dest_path).generate_url(100, 'HEAD')
-    url = provider.bucket.new_key(dest_path).generate_url(100, 'PUT', headers=headers)
-
-    aiohttpretty.register_uri('PUT', url, status=200)
-    aiohttpretty.register_uri('HEAD', metadata_url, headers=file_metadata)
-
-    resp = yield from provider.copy(provider, {'path': source_path}, {'path': dest_path})
-
-    # TODO: matching url content for request
-    assert resp['kind'] == 'file'
-    assert aiohttpretty.has_call(method='HEAD', uri=metadata_url)
-    assert aiohttpretty.has_call(method='PUT', uri=url, headers=headers)
-
-
-@async
-@pytest.mark.aiohttpretty
-def test_upload_update(provider, file_content, file_stream, file_metadata):
-    path = 'foobah'
-    content_md5 = hashlib.md5(file_content).hexdigest()
-    url = provider.bucket.new_key(path).generate_url(100, 'PUT')
-    metadata_url = provider.bucket.new_key(path).generate_url(100, 'HEAD')
-    aiohttpretty.register_uri('HEAD', metadata_url, headers=file_metadata)
-    aiohttpretty.register_uri('PUT', url, status=201, headers={'ETag': '"{}"'.format(content_md5)})
-
-    resp = yield from provider.upload(file_stream, path)
-
-    assert resp['kind'] == 'file'
-    assert aiohttpretty.has_call(method='PUT', uri=url)
-    assert aiohttpretty.has_call(method='HEAD', uri=metadata_url)
-
-
-@async
-@pytest.mark.aiohttpretty
-def test_delete(provider):
-    path = 'My Ex'
-    url = provider.bucket.new_key(path).generate_url(100, 'DELETE')
-    aiohttpretty.register_uri('DELETE', url, status=200)
-
-    yield from provider.delete(path)
-
-    assert aiohttpretty.has_call(method='DELETE', uri=url)
-
-
-@async
-@pytest.mark.aiohttpretty
-def test_version_metadata(provider, version_metadata):
-    path = 'my-image'
-    url = provider.bucket.generate_url(100, 'GET', query_parameters={'versions': ''})
-    aiohttpretty.register_uri('GET', url, status=200, body=version_metadata)
-
-    data = yield from provider.revisions(path)
-
-    assert isinstance(data, list)
-    assert len(data) == 3
-
-    for item in data:
-        assert 'size' in item
-        assert 'extra' in item
-        assert 'revision' in item
-
-    assert aiohttpretty.has_call(method='GET', uri=url)
-
-
-@async
-@pytest.mark.aiohttpretty
-def test_accepts_url(provider):
-    path = 'my-image'
-    url = provider.bucket.new_key(path).generate_url(100, 'GET')
-
-    ret_url = yield from provider.download(path, accept_url=True)
-
-    assert ret_url == url
-
-
-def test_equality(provider):
-    assert provider.can_intra_copy(provider)
-    assert provider.can_intra_move(provider)
+    @async
+    @pytest.mark.aiohttpretty
+    def test_project_article_upload(self, project_provider, list_project_articles, article_metadata, upload_metadata, file_content, file_stream):
+        article_id = str(list_project_articles[0]['id'])
+        list_articles_url = project_provider.build_url('projects', project_provider.project_id, 'articles')
+        article_metadata_url = project_provider.build_url('articles', article_id)
+        article_upload_url = project_provider.build_url('articles', article_id, 'files')
+        aiohttpretty.register_json_uri('GET', list_articles_url, body=list_project_articles)
+        aiohttpretty.register_json_uri('GET', article_metadata_url, body=article_metadata)
+        aiohttpretty.register_json_uri('PUT', article_upload_url, body=upload_metadata)
+        file_name = 'barricade.gif'
+        path = '/{0}/{1}'.format(article_id, file_name)
+        result = yield from project_provider.upload(file_stream, path)
+        expected = metadata.FigshareFileMetadata(upload_metadata, article_id).serialized()
+        assert aiohttpretty.has_call(method='PUT', uri=article_upload_url)
+        assert result == expected
