@@ -2,37 +2,41 @@ import os
 
 from waterbutler.core import metadata
 
-
-class OsfStorageMetadata(metadata.BaseMetadata):
-
-    def __init__(self, raw, path):
-        super().__init__(raw)
-        self._path = path
-
+class BaseOsfStorageMetadata:
     @property
     def provider(self):
         return 'osfstorage'
 
-    @property
-    def kind(self):
-        return self.raw['kind']
+
+class OsfStorageFileMetadata(BaseOsfStorageMetadata, metadata.BaseFileMetadata):
 
     @property
     def name(self):
-        return os.path.split(self.path)[1]
+        return self.raw['name']
 
     @property
     def path(self):
-        return self._path
+        return os.path.join(self.raw['path'], self.name)
 
     @property
     def modified(self):
-        return self.raw['modified']
+        return self.raw.get('modified')
 
     @property
     def size(self):
         return self.raw.get('size')
 
     @property
-    def extra(self):
-        return {}
+    def content_type(self):
+        return None
+
+
+class OsfStorageFolderMetadata(BaseOsfStorageMetadata, metadata.BaseFolderMetadata):
+
+    @property
+    def name(self):
+        return self.raw['name']
+
+    @property
+    def path(self):
+        return os.path.join(self.raw['path'], self.name)

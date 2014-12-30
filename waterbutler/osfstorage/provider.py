@@ -15,9 +15,10 @@ from waterbutler.core import streams
 import waterbutler.osfstorage
 
 from waterbutler.osfstorage import settings
-from waterbutler.osfstorage.metadata import OsfStorageMetadata
 from waterbutler.osfstorage.tasks import backup
 from waterbutler.osfstorage.tasks import parity
+from waterbutler.osfstorage.metadata import OsfStorageFileMetadata
+from waterbutler.osfstorage.metadata import OsfStorageFolderMetadata
 
 
 signer = signing.Signer(settings.HMAC_SECRET, settings.HMAC_ALGORITHM)
@@ -141,7 +142,13 @@ class OSFStorageProvider(provider.BaseProvider):
                 version_id,
                 self.callback,
             )
-        return OsfStorageMetadata(metadata, path).serialized()
+
+        name, path = os.path.split(path)
+        metadata.update({
+            'name': name,
+            'path': path
+        })
+        return OsfStorageFileMetadata(metadata).serialized()
 
     @asyncio.coroutine
     def delete(self, **kwargs):
@@ -155,11 +162,21 @@ class OSFStorageProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def metadata(self, **kwargs):
+        if kwargs['path'] == '/':
+            kwargs['path'] = ''
+
         resp = yield from self.make_signed_request(
             'GET',
             self.metadata_url,
             params=kwargs,
             expects=(200, )
         )
-        return (yield from resp.json())
-        # return [OsfStorageMetadata(x, kwargs['path']).serialized() for x in data]
+
+        ret = []
+        for item in (yield from resp.json()):
+            if item['kind'] == 'folder':
+                ret.append(OsfStorageFolderMetadata(item).serialized())
+            else:
+                ret.append(OsfStorageFileMetadata(item).serialized())
+
+        return ret
