@@ -170,6 +170,10 @@ class Comment(GuidStoredObject): # TODO add pane; backref declares new property?
     # }
     reports = fields.DictionaryField(validate=validate_comment_reports)
 
+    @property
+    def url(self):
+        return '{0}discussions/{1}/'.format(self.node.url, self._id)
+
     @classmethod
     def create(cls, auth, **kwargs):
 

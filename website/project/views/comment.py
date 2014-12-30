@@ -225,6 +225,18 @@ def n_unread_comments(node, user):
                         Q('date_created', 'gt', view_timestamp) &
                         Q('date_modified', 'gt', view_timestamp)).count()
 
+@must_be_contributor_or_public
+def view_comment(**kwargs):
+
+    auth = kwargs['auth']
+    node = kwargs['node'] or kwargs['project']
+    comment = kwargs_to_comment(kwargs, owner=True)
+    serialized = _view_project(node, auth, primary=True)
+    serialized_comment = serialize_comment(comment, auth)
+    serialized.update({
+        'comment': serialized_comment
+    })
+    return serialized
 
 @must_be_logged_in
 @must_be_contributor_or_public
@@ -276,13 +288,10 @@ def undelete_comment(**kwargs):
 @must_be_contributor_or_public
 def update_comments_timestamp(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    print('................................',node,'.........................')
     if node.is_contributor(auth.user):
         auth.user.comments_viewed_timestamp[node._id] = datetime.utcnow()
-        print('................................is contributor.........................')
         auth.user.save()
         page = request.json.get('page')
-        print('................................',page,'.........................')
         list_comments(page=page, **kwargs)
         return {node._id: auth.user.comments_viewed_timestamp[node._id].isoformat()}
     else:

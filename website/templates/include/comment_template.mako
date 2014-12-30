@@ -45,6 +45,7 @@
                         <span data-bind="ifnot: author.id">
                             <span class="comment-author" data-bind="text: author.name"></span>
                         </span>
+                        <span data-bind="text: id"></span>
                         <span class="comment-date pull-right">
                             <span data-bind="template: {if: modified, afterRender: setupToolTips}">
                                 <a data-toggle="tooltip" data-bind="attr: {title: prettyDateModified()}">*</a>

@@ -272,6 +272,16 @@ def make_url_map(app):
                 '/project/<pid>/comment/<cid>/',
                 '/project/<pid>/node/<nid>/comment/<cid>/',
             ],
+            'get',
+            project_views.comment.view_comment,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/comment/<cid>/',
+                '/project/<pid>/node/<nid>/comment/<cid>/',
+            ],
             'put',
             project_views.comment.edit_comment,
             json_renderer,
@@ -702,6 +712,16 @@ def make_url_map(app):
             'get',
             project_views.comment.view_comments,
             OsfWebRenderer('project/discussions.mako'),
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/discussions/<cid>/',
+                '/project/<pid>/node/<nid>/discussions/<cid>/',
+            ],
+            'get',
+            project_views.comment.view_comment,
+            OsfWebRenderer('project/discussion_thread.mako'),
         ),
 
     ])
