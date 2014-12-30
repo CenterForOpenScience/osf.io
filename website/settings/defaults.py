@@ -217,3 +217,4 @@ PINGDOM_ID = None
 
 DEFAULT_HMAC_SECRET = 'changeme'
 DEFAULT_HMAC_ALGORITHM = hashlib.sha256
+WATERBUTLER_URL = 'http://localhost:7777/'
