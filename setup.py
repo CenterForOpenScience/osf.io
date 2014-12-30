@@ -30,7 +30,7 @@ setup(
     ],
     entry_points={
         'waterbutler.providers': [
-            'figshare = waterbutler.figshare.provider:make_figshare_provider',
+            'figshare = waterbutler.providers.figshare:make_figshare_provider',
         ]
     },
 )

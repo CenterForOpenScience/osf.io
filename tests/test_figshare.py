@@ -10,8 +10,8 @@ import aiohttpretty
 from waterbutler.core import streams
 from waterbutler.core import exceptions
 
-from waterbutler.figshare import metadata
-from waterbutler.figshare import provider
+from waterbutler.providers.figshare import metadata
+from waterbutler.providers.figshare import provider
 
 
 @pytest.fixture

@@ -10,8 +10,8 @@ from waterbutler.core import utils
 from waterbutler.core import provider
 from waterbutler.core import exceptions
 
-from waterbutler.figshare import metadata
-from waterbutler.figshare import utils as figshare_utils
+from waterbutler.providers.figshare import metadata
+from waterbutler.providers.figshare import utils as figshare_utils
 
 
 def padded_parts(path, count):
