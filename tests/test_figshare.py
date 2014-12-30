@@ -318,3 +318,47 @@ class TestCRUD:
         result = yield from article_provider.download(path)
         content = yield from result.read()
         assert content == body
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_project_article_delete(self, project_provider, list_project_articles, article_metadata, file_metadata):
+        article_id = str(list_project_articles[0]['id'])
+        file_id = str(file_metadata['id'])
+        path = '/{0}/{1}'.format(article_id, file_id)
+        list_articles_url = project_provider.build_url('projects', project_provider.project_id, 'articles')
+        article_metadata_url = project_provider.build_url('articles', article_id)
+        article_delete_url = project_provider.build_url('articles', article_id, 'files', file_id)
+        aiohttpretty.register_json_uri('GET', list_articles_url, body=list_project_articles)
+        aiohttpretty.register_json_uri('GET', article_metadata_url, body=article_metadata)
+        aiohttpretty.register_uri('DELETE', article_delete_url)
+        result = yield from project_provider.delete(path)
+        assert result is None
+        assert aiohttpretty.has_call(method='DELETE', uri=article_delete_url)
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_project_delete(self, project_provider, list_project_articles, article_metadata):
+        article_id = str(list_project_articles[0]['id'])
+        path = '/{0}'.format(article_id)
+        list_articles_url = project_provider.build_url('projects', project_provider.project_id, 'articles')
+        article_metadata_url = project_provider.build_url('articles', article_id)
+        aiohttpretty.register_json_uri('GET', list_articles_url, body=list_project_articles)
+        aiohttpretty.register_json_uri('GET', article_metadata_url, body=article_metadata)
+        aiohttpretty.register_json_uri('DELETE', list_articles_url, body={'article_id': article_id})
+        result = yield from project_provider.delete(path)
+        assert result is None
+        assert aiohttpretty.has_call(method='DELETE', uri=list_articles_url)
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_article_delete(self, article_provider, article_metadata, file_metadata):
+        article_id = article_provider.article_id
+        file_id = str(file_metadata['id'])
+        path = '/{0}'.format(file_id)
+        article_metadata_url = article_provider.build_url('articles', article_id)
+        article_delete_url = article_provider.build_url('articles', article_id, 'files', file_id)
+        aiohttpretty.register_json_uri('GET', article_metadata_url, body=article_metadata)
+        aiohttpretty.register_uri('DELETE', article_delete_url)
+        result = yield from article_provider.delete(path)
+        assert result is None
+        assert aiohttpretty.has_call(method='DELETE', uri=article_delete_url)
