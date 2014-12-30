@@ -7,10 +7,10 @@ import hashlib
 
 from stevedore import driver
 
-from waterbutler.core import exceptions
-from waterbutler.core import provider
 from waterbutler.core import signing
 from waterbutler.core import streams
+from waterbutler.core import provider
+from waterbutler.core import exceptions
 
 from waterbutler.providers import osfstorage
 from waterbutler.providers.osfstorage import settings
@@ -23,6 +23,7 @@ signer = signing.Signer(settings.HMAC_SECRET, settings.HMAC_ALGORITHM)
 
 
 class OSFStorageProvider(provider.BaseProvider):
+    __version__ = '0.0.1'
 
     def __init__(self, auth, credentials, settings):
         super().__init__(auth, credentials, settings)
