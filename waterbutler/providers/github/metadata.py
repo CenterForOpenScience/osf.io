@@ -5,9 +5,10 @@ from waterbutler.core import metadata
 
 class BaseGitHubMetadata(metadata.BaseMetadata):
 
-    def __init__(self, raw, folder=None):
+    def __init__(self, raw, folder=None, **kwargs):
         super().__init__(raw)
         self.folder = folder
+        self.extras = kwargs
 
     @property
     def provider(self):
@@ -15,9 +16,11 @@ class BaseGitHubMetadata(metadata.BaseMetadata):
 
     @property
     def extra(self):
-        return {
+        ret = {
             'sha': self.raw['sha']
         }
+        ret.update(self.extras)
+        return ret
 
     def build_path(self, path):
         if self.folder:
