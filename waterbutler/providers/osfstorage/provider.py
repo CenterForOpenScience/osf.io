@@ -7,6 +7,7 @@ import hashlib
 
 from stevedore import driver
 
+from waterbutler.core import utils
 from waterbutler.core import signing
 from waterbutler.core import streams
 from waterbutler.core import provider
@@ -21,6 +22,10 @@ from waterbutler.providers.osfstorage.metadata import OsfStorageFolderMetadata
 
 signer = signing.Signer(settings.HMAC_SECRET, settings.HMAC_ALGORITHM)
 
+class OSFPath(utils.WaterButlerPath):
+
+    def __init__(self, path):
+        super().__init__('/' + path, prefix=True, suffix=True)
 
 class OSFStorageProvider(provider.BaseProvider):
     __version__ = '0.0.1'
@@ -83,8 +88,11 @@ class OSFStorageProvider(provider.BaseProvider):
             expects=(200, ),
             throws=exceptions.DownloadError,
         )
+
         data = yield from resp.json()
         provider = self.make_provider(data['settings'])
+        data['data']['path'] = OSFPath(data['data']['path']).path
+
         return (yield from provider.download(**data['data']))
 
     @asyncio.coroutine
@@ -92,7 +100,7 @@ class OSFStorageProvider(provider.BaseProvider):
         pending_name = str(uuid.uuid4())
         pending_path = os.path.join(settings.FILE_PATH_PENDING, pending_name)
 
-        pending_name = '/' + pending_name
+        pending_name = OSFPath(pending_name).path
 
         stream.add_writer('md5', streams.HashStreamWriter(hashlib.md5))
         stream.add_writer('sha1', streams.HashStreamWriter(hashlib.sha1))
@@ -106,7 +114,7 @@ class OSFStorageProvider(provider.BaseProvider):
         complete_name = stream.writers['sha256'].hexdigest
         complete_path = os.path.join(settings.FILE_PATH_COMPLETE, complete_name)
 
-        complete_name = '/' + complete_name
+        complete_name = OSFPath(complete_name).path
 
         metadata = yield from provider.move(
             provider,
