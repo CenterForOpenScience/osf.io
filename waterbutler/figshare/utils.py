@@ -1,3 +1,4 @@
+import http
 import uuid
 import asyncio
 
@@ -11,7 +12,10 @@ def file_or_error(article, file_id):
             if each['id'] == int(file_id)
         )
     except StopIteration:
-        raise exceptions.MetadataError
+        raise exceptions.MetadataError(
+            'Could not resolve file with ID {0}'.format(file_id),
+            code=http.client.NOT_FOUND,
+        )
 
 
 class MultiStream(asyncio.StreamReader):

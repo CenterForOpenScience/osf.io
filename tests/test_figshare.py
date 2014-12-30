@@ -92,7 +92,19 @@ def list_project_articles():
 
 
 @pytest.fixture
-def base_article_metadata():
+def file_metadata():
+    return {
+        'mime_type': 'text/plain',
+        'thumb': None,
+        'download_url': 'http://files.figshare.com/1848969/fantine.mp3',
+        'name': 'fantine.mp3',
+        'size': '42 KB',
+        'id': 1848969,
+    }
+
+
+@pytest.fixture
+def base_article_metadata(file_metadata):
     return {
         'article_id': 1832,
         'authors': [
@@ -107,15 +119,7 @@ def base_article_metadata():
         'defined_type': 'figure',
         'description': 'food',
         'description_nohtml': 'food',
-        'files': [
-            {
-                'id': 1853224,
-                'mime_type': 'image/gif',
-                'name': 'bread.gif',
-                'size': '60 KB',
-                'thumb': 'http://figshare.com/read/private/1853224/250_1853224.jpg',
-            },
-        ],
+        'files': [file_metadata],
         'links': [],
         'master_publisher_id': 0,
         'published_date': '16:19, Dec 23, 2014',
@@ -189,6 +193,20 @@ class TestMetadata:
         assert aiohttpretty.has_call(method='GET', uri=list_articles_url)
         assert not aiohttpretty.has_call(method='GET', uri=article_metadata_url)
 
+    @async
+    @pytest.mark.aiohttpretty
+    def test_project_article_file(self, project_provider, list_project_articles, article_metadata, file_metadata):
+        article_id = str(list_project_articles[0]['id'])
+        file_id = file_metadata['id']
+        path = '/{0}/{1}'.format(article_id, file_id)
+        list_articles_url = project_provider.build_url('projects', project_provider.project_id, 'articles')
+        article_metadata_url = project_provider.build_url('articles', article_id)
+        aiohttpretty.register_json_uri('GET', list_articles_url, body=list_project_articles)
+        aiohttpretty.register_json_uri('GET', article_metadata_url, body=article_metadata)
+        result = yield from project_provider.metadata(path)
+        expected = metadata.FigshareFileMetadata(file_metadata, article_id).serialized()
+        assert result == expected
+
 
 class TestCRUD:
 
@@ -240,3 +258,63 @@ class TestCRUD:
         expected = metadata.FigshareFileMetadata(upload_metadata, article_id).serialized()
         assert aiohttpretty.has_call(method='PUT', uri=article_upload_url)
         assert result == expected
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_project_article_download(self, project_provider, list_project_articles, article_metadata, file_metadata):
+        article_id = str(list_project_articles[0]['id'])
+        file_id = file_metadata['id']
+        path = '/{0}/{1}'.format(article_id, file_id)
+        body = b'castle on a cloud'
+        list_articles_url = project_provider.build_url('projects', project_provider.project_id, 'articles')
+        article_metadata_url = project_provider.build_url('articles', article_id)
+        download_url = file_metadata['download_url']
+        aiohttpretty.register_json_uri('GET', list_articles_url, body=list_project_articles)
+        aiohttpretty.register_json_uri('GET', article_metadata_url, body=article_metadata)
+        aiohttpretty.register_uri('GET', download_url, body=body)
+        result = yield from project_provider.download(path)
+        content = yield from result.read()
+        assert content == body
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_project_article_download_accept_url(self, project_provider, list_project_articles, article_metadata, file_metadata):
+        article_id = str(list_project_articles[0]['id'])
+        file_id = file_metadata['id']
+        path = '/{0}/{1}'.format(article_id, file_id)
+        list_articles_url = project_provider.build_url('projects', project_provider.project_id, 'articles')
+        article_metadata_url = project_provider.build_url('articles', article_id)
+        aiohttpretty.register_json_uri('GET', list_articles_url, body=list_project_articles)
+        aiohttpretty.register_json_uri('GET', article_metadata_url, body=article_metadata)
+        result = yield from project_provider.download(path, accept_url=True)
+        assert result == file_metadata['download_url']
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_project_article_download_not_found(self, project_provider, list_project_articles, article_metadata, file_metadata):
+        article_id = str(list_project_articles[0]['id'])
+        file_id = str(file_metadata['id'])[::-1]
+        path = '/{0}/{1}'.format(article_id, file_id)
+        body = b'castle on a cloud'
+        list_articles_url = project_provider.build_url('projects', project_provider.project_id, 'articles')
+        article_metadata_url = project_provider.build_url('articles', article_id)
+        aiohttpretty.register_json_uri('GET', list_articles_url, body=list_project_articles)
+        aiohttpretty.register_json_uri('GET', article_metadata_url, body=article_metadata)
+        with pytest.raises(exceptions.ProviderError) as exc:
+            yield from project_provider.download(path)
+        assert exc.value.code == 404
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_article_download(self, article_provider, article_metadata, file_metadata):
+        article_id = article_provider.article_id
+        file_id = file_metadata['id']
+        path = '/{0}'.format(file_id)
+        body = b'castle on a cloud'
+        article_metadata_url = article_provider.build_url('articles', article_id)
+        download_url = file_metadata['download_url']
+        aiohttpretty.register_json_uri('GET', article_metadata_url, body=article_metadata)
+        aiohttpretty.register_uri('GET', download_url, body=body)
+        result = yield from article_provider.download(path)
+        content = yield from result.read()
+        assert content == body
