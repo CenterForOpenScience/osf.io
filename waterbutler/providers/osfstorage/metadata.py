@@ -1,5 +1,3 @@
-import os
-
 from waterbutler.core import metadata
 
 class BaseOsfStorageMetadata:
@@ -16,7 +14,7 @@ class OsfStorageFileMetadata(BaseOsfStorageMetadata, metadata.BaseFileMetadata):
 
     @property
     def path(self):
-        return os.path.join(self.raw['path'], self.name)
+        return self.raw['path']
 
     @property
     def modified(self):
@@ -39,4 +37,4 @@ class OsfStorageFolderMetadata(BaseOsfStorageMetadata, metadata.BaseFolderMetada
 
     @property
     def path(self):
-        return os.path.join(self.raw['path'], self.name)
+        return self.raw['path']
