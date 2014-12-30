@@ -1,5 +1,6 @@
 flake8
-pytest
 pytest-cov
+decorator
+pytest
 -e git+https://github.com/centerforopenscience/aiohttpretty.git#egg=aiohttpretty
 -r requirements.txt
