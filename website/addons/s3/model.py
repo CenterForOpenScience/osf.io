@@ -152,33 +152,6 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         return self.user_settings and self.user_settings.has_auth
         #TODO Update callbacks
 
-    def after_register(self, node, registration, user, save=True):
-        """
-
-        :param Node node: Original node
-        :param Node registration: Registered node
-        :param User user: User creating registration
-        :param bool save: Save settings after callback
-        :return tuple: Tuple of cloned settings and alert message
-
-        """
-
-        clone, message = super(AddonS3NodeSettings, self).after_register(
-            node, registration, user, save=False
-        )
-
-        #enable_versioning(self)
-
-        if self.bucket and self.has_auth:
-            clone.user_settings = self.user_settings
-            clone.registration_data['bucket'] = self.bucket
-            clone.registration_data['keys'] = serialize_bucket(S3Wrapper.from_addon(self))
-
-        if save:
-            clone.save()
-
-        return clone, message
-
     def before_register(self, node, user):
         """
 
@@ -187,17 +160,13 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         :return str: Alert message
 
         """
+        category = node.project_or_component
         if self.user_settings and self.user_settings.has_auth:
             return (
-                'Registering {cat} "{title}" will copy the authentication for its '
-                'Amazon Simple Storage add-on to the registered {cat}. '
-                # 'As well as turning versioning on in your bucket,'
-                # 'which may result in larger charges from Amazon'
-            ).format(
-                cat=node.project_or_component,
-                title=node.title,
-                bucket_name=self.bucket,
-            )
+                u'The contents of S3 add-ons cannot be registered at this time; '
+                u'the S3 bucket linked to this {category} will not be included '
+                u'as part of this registration.'
+            ).format(**locals())
 
     def after_fork(self, node, fork, user, save=True):
         """
