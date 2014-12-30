@@ -25,9 +25,16 @@ function buildWaterButlerUrl(item, metadata, file) {
     };
 
     if (branch)
-        ops.ref = branch;
+        if (metadata)
+            ops.ref = branch;
+        else
+            ops.branch = branch;
 
     return baseUrl + $.param(ops);
+}
+
+function _uploadUrl(item, file) {
+    return buildWaterButlerUrl(item, false, file);
 }
 
 
@@ -78,52 +85,50 @@ function _fangornActionColumn (item, col){
 
     // Download Zip File
     if (item.kind === 'folder' && item.data.addonFullname) {
-        buttons.push(
-            {
+        if (item.data.permissions.edit) {
+            buttons.push({
                 'name' : '',
                 'icon' : 'icon-upload-alt',
                 'css' : 'fangorn-clickable btn btn-default btn-xs',
                 'onclick' : _uploadEvent
-            },
-            {
-                'name' : '',
-                'icon' : 'icon-download-alt',
-                'css' : 'fangorn-clickable btn btn-info btn-xs',
-                'onclick' : function(){window.location = item.data.urls.zip;}
-            },
-            {
-                'name' : '',
-                'icon' : 'icon-external-link',
-                'css' : 'btn btn-primary btn-xs',
-                'onclick' : function(){window.location = item.data.urls.repo;}//GO TO EXTERNAL PAGE
-            }
-        );
-    } else if (item.kind === 'folder' && !item.data.addonFullname){
-        buttons.push(
-            {
-                'name' : '',
-                'icon' : 'icon-upload-alt',
-                'css' : 'fangorn-clickable btn btn-default btn-xs',
-                'onclick' : _uploadEvent
-            }
-        );
-    } else if (item.kind === "item") {
-        buttons.push(
-            {
-                'name' : '',
-                'icon' : 'icon-download-alt',
-                'css' : 'btn btn-info btn-xs',
-                'onclick' : _downloadEvent
-            },
-            {
+            });
+        }
+
+        if (item.data.addonFullname) {
+            buttons.push(
+                {
+                    'name' : '',
+                    'icon' : 'icon-download-alt',
+                    'css' : 'fangorn-clickable btn btn-info btn-xs',
+                    'onclick' : function(){window.location = item.data.urls.zip;}
+                },
+                {
+                    'name' : '',
+                    'icon' : 'icon-external-link',
+                    'css' : 'btn btn-primary btn-xs',
+                    'onclick' : function(){window.location = item.data.urls.repo;}//GO TO EXTERNAL PAGE
+                }
+            );
+        }
+    } else if (item.kind === 'file') {
+        buttons.push({
+            'name' : '',
+            'icon' : 'icon-download-alt',
+            'css' : 'btn btn-info btn-xs',
+            'onclick' : _downloadEvent
+        });
+
+        if (item.data.permissions.edit) {
+            buttons.push({
                 'name' : '',
                 'icon' : 'icon-remove',
                 'css' : 'm-l-lg text-danger fg-hover-hide',
                 'style' : 'display:none',
                 'onclick' : _removeEvent
-            }
-        );
+            });
+        }
     }
+
     return buttons.map(function(btn){
         return m('span', { 'data-col' : item.id }, [
             m('i', {
@@ -210,6 +215,7 @@ function _fangornUploadComplete(item){
 // Register configuration
 Fangorn.config.github = {
     // Handle changing the branch select
+    uploadUrl: _uploadUrl,
     lazyload: _resolveLazyLoad,
     resolveRows: _fangornColumns,
     folderIcon: _fangornFolderIcons,
