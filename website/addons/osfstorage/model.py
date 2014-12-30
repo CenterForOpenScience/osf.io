@@ -125,6 +125,19 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
     def serialize_waterbutler_credentials(self):
         return settings.WATERBUTLER_CREDENTIALS
 
+    def create_waterbutler_log(self, auth, action, metadata):
+        # pass
+        self.owner.add_log(
+            'osf_storage_{0}'.format(action),
+            auth=auth,
+            params={
+                'project': self.owner.parent_id,
+                'node': self.owner._id,
+                'path': metadata['path'],
+                'urls': logs.build_log_urls(self.owner, metadata['path'])
+            }
+        )
+
 
 class BaseFileObject(StoredObject):
 
@@ -193,22 +206,25 @@ class BaseFileObject(StoredObject):
         :param bool touch: Handle expired records
         """
         obj = cls.find_by_path(path, node_settings, touch=touch)
+
         if obj:
-            return obj
+            return obj, False
+
         obj = cls(path=path, node_settings=node_settings)
         obj.save()
         # Ensure all intermediate paths
         if path:
             parent_path, _ = os.path.split(path)
             parent_class = cls.parent_class()
-            parent_obj = parent_class.get_or_create(parent_path, node_settings)
+            parent_obj, _ = parent_class.get_or_create(parent_path, node_settings)
             parent_obj.children.append(obj)
             parent_obj.save()
         else:
             assert node_settings.file_tree is None
             node_settings.file_tree = obj
             node_settings.save()
-        return obj
+
+        return obj, True
 
     def touch(self):
         """Check whether the current object is valid. By default, always return

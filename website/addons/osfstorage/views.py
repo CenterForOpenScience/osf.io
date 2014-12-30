@@ -97,12 +97,15 @@ def osf_storage_crud_prepare(node_addon, payload):
 @must_have_addon('osfstorage', 'node')
 def osf_storage_crud_hook_post(node_addon, payload, **kwargs):
     path, user, location, metadata = osf_storage_crud_prepare(node_addon, payload)
-    record = model.OsfStorageFileRecord.get_or_create(path, node_addon)
+    record, created = model.OsfStorageFileRecord.get_or_create(path, node_addon)
     version = record.create_version(user, location, metadata)
+
+    code = httplib.CREATED if created else httplib.OK
+
     return {
         'status': 'success',
         'version_id': version._id,
-    }
+    }, code
 
 
 @must_be_signed
