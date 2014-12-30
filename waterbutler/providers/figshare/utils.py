@@ -84,5 +84,5 @@ def make_upload_data(stream, **options):
         stream,
         boundaries[1][0],
     )
-    size = boundaries[0][1] + stream.size + boundaries[1][1]
+    size = boundaries[0][1] + int(stream.size) + boundaries[1][1]
     return outstream, boundary, size
