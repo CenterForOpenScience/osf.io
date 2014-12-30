@@ -4,6 +4,8 @@ import hashlib
 import logging
 import urllib
 
+import furl
+
 from modularodm import fields, Q
 from modularodm.exceptions import ModularOdmException
 
@@ -234,6 +236,15 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
                 },
             },
         )
+
+    def get_waterbutler_render_url(self, path, rev=None, **kwargs):
+        cleaned_path = clean_path(os.path.join(self.folder, path))
+        url = furl.furl(self.owner.web_url_for('dropbox_view_file', path=cleaned_path))
+
+        if rev:
+            url.args['rev'] = rev
+
+        return url.url
 
     def __repr__(self):
         return u'<DropboxNodeSettings(node_id={self.owner._primary_key!r})>'.format(self=self)
