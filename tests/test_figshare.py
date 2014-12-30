@@ -224,7 +224,7 @@ class TestCRUD:
         aiohttpretty.register_json_uri('PUT', add_article_url)
         file_name = 'barricade.gif'
         path = '/{0}'.format(file_name)
-        result = yield from project_provider.upload(file_stream, path)
+        result, created = yield from project_provider.upload(file_stream, path)
         expected = metadata.FigshareFileMetadata(upload_metadata, article_id).serialized()
         assert aiohttpretty.has_call(
             method='POST',
@@ -254,7 +254,7 @@ class TestCRUD:
         aiohttpretty.register_json_uri('PUT', article_upload_url, body=upload_metadata)
         file_name = 'barricade.gif'
         path = '/{0}/{1}'.format(article_id, file_name)
-        result = yield from project_provider.upload(file_stream, path)
+        result, created = yield from project_provider.upload(file_stream, path)
         expected = metadata.FigshareFileMetadata(upload_metadata, article_id).serialized()
         assert aiohttpretty.has_call(method='PUT', uri=article_upload_url)
         assert result == expected

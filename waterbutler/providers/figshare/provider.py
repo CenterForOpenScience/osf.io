@@ -283,7 +283,7 @@ class FigshareArticleProvider(BaseFigshareProvider):
         )
         data = yield from response.json()
         metadata_args = (self.article_id if self.child else None, )
-        return metadata.FigshareFileMetadata(data, *metadata_args).serialized()
+        return metadata.FigshareFileMetadata(data, *metadata_args).serialized(), True
 
     @asyncio.coroutine
     def metadata(self, path, **kwargs):
