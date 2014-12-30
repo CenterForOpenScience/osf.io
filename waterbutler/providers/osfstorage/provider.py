@@ -15,7 +15,8 @@ from waterbutler.core import exceptions
 from waterbutler.providers.osfstorage import settings
 from waterbutler.providers.osfstorage.tasks import backup
 from waterbutler.providers.osfstorage.tasks import parity
-from waterbutler.providers.osfstorage.metadata import OsfStorageMetadata
+from waterbutler.providers.osfstorage.metadata import OsfStorageFileMetadata
+from waterbutler.providers.osfstorage.metadata import OsfStorageFolderMetadata
 
 
 signer = signing.Signer(settings.HMAC_SECRET, settings.HMAC_ALGORITHM)
