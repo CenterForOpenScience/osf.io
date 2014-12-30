@@ -98,7 +98,7 @@ class GitHubProvider(provider.BaseProvider):
         # to the payload. This changes the call from a create to an update.
         tree = yield from self.metadata(str(path.parent), ref=branch)
         existing = next(
-            (each for each in tree if each['path'] == path.path),
+            (each for each in tree if each['path'] == str(path)),
             None
         )
         if existing:
