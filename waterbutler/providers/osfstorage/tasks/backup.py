@@ -5,8 +5,8 @@ import asyncio
 import aiohttp
 from boto.glacier.layer2 import Layer2
 
-from waterbutler.osfstorage import settings
-from waterbutler.osfstorage.tasks import utils
+from waterbutler.providers.osfstorage import settings
+from waterbutler.providers.osfstorage.tasks import utils
 
 
 def _get_layer2():

@@ -12,13 +12,11 @@ from waterbutler.core import provider
 from waterbutler.core import signing
 from waterbutler.core import streams
 
-import waterbutler.osfstorage
-
-from waterbutler.osfstorage import settings
-from waterbutler.osfstorage.tasks import backup
-from waterbutler.osfstorage.tasks import parity
-from waterbutler.osfstorage.metadata import OsfStorageFileMetadata
-from waterbutler.osfstorage.metadata import OsfStorageFolderMetadata
+from waterbutler.providers import osfstorage
+from waterbutler.providers.osfstorage import settings
+from waterbutler.providers.osfstorage.tasks import backup
+from waterbutler.providers.osfstorage.tasks import parity
+from waterbutler.providers.osfstorage.metadata import OsfStorageMetadata
 
 
 signer = signing.Signer(settings.HMAC_SECRET, settings.HMAC_ALGORITHM)
@@ -125,7 +123,7 @@ class OSFStorageProvider(provider.BaseProvider):
                     'host': os.uname()[1],
                     # TODO: Include additional information
                     'address': None,
-                    'version': waterbutler.osfstorage.__version__,
+                    'version': osfstorage.__version__,
                 },
                 'path': path,
             }),

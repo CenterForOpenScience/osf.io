@@ -3,6 +3,8 @@ language: python
 python:
   - "3.4"
 
+sudo: false
+
 cache:
   directories:
     - tmp/.pip-cache/
