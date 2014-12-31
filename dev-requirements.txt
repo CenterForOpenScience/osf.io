@@ -1,6 +1,5 @@
 decorator
 flake8
-furl
 ipdb
 ipython
 jinja2

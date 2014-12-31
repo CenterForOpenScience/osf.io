@@ -1,11 +1,8 @@
 aiohttp
+git+https://github.com/chrisseto/boto.git#egg=boto
+celery
+furl
 invoke
+lxml==3.4.1
 stevedore
 tornado
--e git+https://github.com/centerforopenscience/waterbutler-core.git#egg=waterbutler-core
--e git+https://github.com/centerforopenscience/waterbutler-cloudfiles.git#egg=waterbutler-cloudfiles
--e git+https://github.com/centerforopenscience/waterbutler-dropbox.git#egg=waterbutler-dropbox
--e git+https://github.com/centerforopenscience/waterbutler-github.git#egg=waterbutler-github
--e git+https://github.com/centerforopenscience/waterbutler-osfstorage.git#egg=waterbutler-osfstorage
--e git+https://github.com/centerforopenscience/waterbutler-s3.git#egg=waterbutler-s3
--e git+https://github.com/centerforopenscience/waterbutler-figshare#egg=waterbutler-figshare
