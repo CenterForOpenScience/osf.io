@@ -1,9 +1,9 @@
 try:
     from waterbutler.settings import OSFSTORAGE_PROVIDER_CONFIG
 except ImportError:
-    OSFSTORAGE_PROVIDER_CONFIG = {}
+    OSFSTORAGE_PROVIDER_CONFIG = None
 
-config = OSFSTORAGE_PROVIDER_CONFIG
+config = OSFSTORAGE_PROVIDER_CONFIG or {}
 
 
 import hashlib
