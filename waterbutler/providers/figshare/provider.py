@@ -64,12 +64,14 @@ class FigshareArticlePath(FigsharePath):
         (self.file_id, ) = padded_parts(path, 1)
 
 
-def make_figshare_provider(auth, credentials, settings):
-    if settings['container_type'] == 'project':
-        return FigshareProjectProvider(auth, credentials, {'project_id': settings['container_id']})
-    if settings['container_type'] == 'article':
-        return FigshareArticleProvider(auth, credentials, {'article_id': settings['container_id']})
-    raise exceptions.ProviderError('Invalid "container_type" {0}'.format(settings['container_type']))
+class FigshareProvider:
+
+    def __new__(cls, auth, credentials, settings):
+        if settings['container_type'] == 'project':
+            return FigshareProjectProvider(auth, credentials, {'project_id': settings['container_id']})
+        if settings['container_type'] == 'article':
+            return FigshareArticleProvider(auth, credentials, {'article_id': settings['container_id']})
+        raise exceptions.ProviderError('Invalid "container_type" {0}'.format(settings['container_type']))
 
 
 class BaseFigshareProvider(provider.BaseProvider):

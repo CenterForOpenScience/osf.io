@@ -1,1 +1,1 @@
-from .provider import make_figshare_provider  # noqa
+from .provider import FigshareProvider  # noqa

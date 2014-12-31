@@ -50,12 +50,12 @@ def article_settings():
 
 @pytest.fixture
 def project_provider(auth, credentials, project_settings):
-    return provider.make_figshare_provider(auth, credentials, project_settings)
+    return provider.FigshareProvider(auth, credentials, project_settings)
 
 
 @pytest.fixture
 def article_provider(auth, credentials, article_settings):
-    return provider.make_figshare_provider(auth, credentials, article_settings)
+    return provider.FigshareProvider(auth, credentials, article_settings)
 
 
 @pytest.fixture
