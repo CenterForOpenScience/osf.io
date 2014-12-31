@@ -2,9 +2,9 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath(".."))
-import waterbutler
-import waterbutler.server
-# import waterbutler.providers
+import waterbutler  # noqa
+import waterbutler.server  # noqa
+# import waterbutler.providers  # noqa
 
 master_doc = "index"
 
@@ -19,7 +19,7 @@ extensions = [
     "sphinx.ext.extlinks",
     "sphinx.ext.intersphinx",
     "sphinx.ext.viewcode",
-    ]
+]
 
 primary_domain = 'py'
 default_role = 'py:obj'
@@ -43,7 +43,7 @@ html_favicon = 'favicon.ico'
 
 latex_documents = [
     ('documentation', False),
-    ]
+]
 
 # HACK: sphinx has limited support for substitutions with the |version|
 # variable, but there doesn't appear to be any way to use this in a link
@@ -56,7 +56,7 @@ extlinks = {}
 
 intersphinx_mapping = {
     'python': ('http://python.readthedocs.org/en/latest/', None),
-    }
+}
 
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
