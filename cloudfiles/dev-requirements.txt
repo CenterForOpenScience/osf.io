@@ -1,0 +1,7 @@
+aiohttp
+decorator
+flake8
+pytest
+pytest-cov
+-e git+https://github.com/centerforopenscience/aiohttpretty.git#egg=aiohttpretty
+-r requirements.txt
