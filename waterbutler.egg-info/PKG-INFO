@@ -1,0 +1,16 @@
+Metadata-Version: 1.1
+Name: waterbutler
+Version: 0.0.0
+Summary: WaterButler Storage Server
+Home-page: https://github.com/CenterForOpenScience/waterbutler
+Author: Center for Open Science
+Author-email: contact@cos.io
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
+Classifier: Development Status :: 2 - Pre-Alpha
+Classifier: Intended Audience :: Developers
+Classifier: Natural Language :: English
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.4
+Provides: waterbutler.providers

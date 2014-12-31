@@ -18,7 +18,7 @@ setup(
     packages=find_packages(exclude=("tests*", )),
     package_dir={'waterbutler': 'waterbutler'},
     include_package_data=True,
-    install_requires=requirements,
+    # install_requires=requirements,
     zip_safe=False,
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
