@@ -8,8 +8,8 @@ requirements = [str(ir.req) for ir in install_reqs]
 
 
 setup(
-    name='waterbutler-server',
-    namespace_packages=['waterbutler'],
+    name='waterbutler',
+    namespace_packages=['waterbutler', 'waterbutler.providers'],
     description='WaterButler Storage Server',
     author='Center for Open Science',
     author_email='contact@cos.io',
@@ -26,4 +26,12 @@ setup(
         "Programming Language :: Python :: 3",
         'Programming Language :: Python :: 3.4',
     ],
+    provides=[
+        'waterbutler.providers',
+    ],
+    entry_points={
+        'waterbutler.providers': [
+            'cloudfiles = waterbutler.providers.cloudfiles:CloudFilesProvider',
+        ]
+    },
 )
