@@ -1,5 +1,5 @@
 import os
-import sys
+import json
 
 PROJECT_NAME = 'waterbutler'
 PROJECT_CONFIG_PATH = '~/.cos'
@@ -10,33 +10,12 @@ except KeyError:
     env = os.environ.get('ENV', 'test')
     config_path = '{}/{}-{}.json'.format(PROJECT_CONFIG_PATH, PROJECT_NAME, env)
 
+config_path = os.path.expanduser(config_path)
+if not os.path.exists(config_path):
+    raise Exception('Configuration file \'{}\' could not be found.'.format(config_path))
+with open(os.path.expanduser(config_path)) as fp:
+    config = json.load(fp)
 
-class _Settings:
-    import hashlib
-    DEFAULT = {
-        'PORT': 7777,
-        'ADDRESS': '127.0.0.1',
-        'DEBUG': True,
-        'HMAC_SECRET': 'changeme',
-        'HMAC_ALGORITHM': hashlib.sha256
-    }
 
-    def __init__(self, config_path):
-        import os
-        import json
-        import logging
-
-        if not os.path.exists(config_path):
-            self.local = {}
-            logger = logging.getLogger(__name__)
-            logger.warning('No local settings found, using defaults')
-        else:
-            self.local = json.loads(os.abspath('~/.waterbutler.json'))
-
-    def __getattr__(self, key):
-        try:
-            return self.local.get(key, self.DEFAULT[key])
-        except KeyError:
-            raise AttributeError('Not setting for {}'.format(key))
-
-sys.modules[__name__] = _Settings(config_path)
+OSFSTORAGE_PROVIDER_CONFIG = config.get('OSFSTORAGE_PROVIDER_CONFIG')
+SERVER_CONFIG = config.get('SERVER_CONFIG')
