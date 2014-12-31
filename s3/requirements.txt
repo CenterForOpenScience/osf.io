@@ -1,0 +1,4 @@
+invoke
+lxml==3.4.1
+git+https://github.com/chrisseto/boto.git#egg=boto
+-e git+https://github.com/centerforopenscience/waterbutler-core.git#egg=waterbutler-core
