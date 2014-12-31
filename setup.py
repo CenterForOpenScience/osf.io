@@ -33,6 +33,7 @@ setup(
         'waterbutler.providers': [
             'cloudfiles = waterbutler.providers.cloudfiles:CloudFilesProvider',
             'dropbox = waterbutler.providers.dropbox:DropboxProvider',
+            'github = waterbutler.providers.github:GitHubProvider',
         ]
     },
 )
