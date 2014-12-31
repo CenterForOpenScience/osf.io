@@ -27,6 +27,11 @@ waterbutler/providers/dropbox/__init__.py
 waterbutler/providers/dropbox/metadata.py
 waterbutler/providers/dropbox/provider.py
 waterbutler/providers/dropbox/settings.py
+waterbutler/providers/figshare/__init__.py
+waterbutler/providers/figshare/metadata.py
+waterbutler/providers/figshare/provider.py
+waterbutler/providers/figshare/settings.py
+waterbutler/providers/figshare/utils.py
 waterbutler/providers/github/__init__.py
 waterbutler/providers/github/metadata.py
 waterbutler/providers/github/provider.py

@@ -4,5 +4,6 @@ celery
 furl
 invoke
 lxml==3.4.1
+oauthlib
 stevedore
 tornado
