@@ -1,2 +1,0 @@
-invoke
--e git+https://github.com/centerforopenscience/waterbutler-core.git#egg=waterbutler-core

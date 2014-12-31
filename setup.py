@@ -32,6 +32,7 @@ setup(
     entry_points={
         'waterbutler.providers': [
             'cloudfiles = waterbutler.providers.cloudfiles:CloudFilesProvider',
+            'dropbox = waterbutler.providers.dropbox:DropboxProvider',
         ]
     },
 )
