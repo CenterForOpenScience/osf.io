@@ -1,11 +1,12 @@
 from setuptools import setup, find_packages
-from pip.req import parse_requirements
 
 
-# parse_requirements() returns generator of pip.req.InstallRequirement objects
-install_reqs = parse_requirements('requirements.txt')
-requirements = [str(ir.req) for ir in install_reqs]
+def parse_requirements(requirements):
+    with open(requirements) as f:
+        return [l.strip('\n') for l in f if l.strip('\n') and not l.startswith('#')]
 
+
+requirements = parse_requirements('requirements.txt')
 
 setup(
     name='waterbutler',
