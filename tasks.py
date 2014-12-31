@@ -2,8 +2,6 @@ import sys
 
 from invoke import task, run
 
-from waterbutler.server import settings
-
 
 @task
 def install(upgrade=False, pip_cache=None, wheel_repo=None):
@@ -47,8 +45,14 @@ def test(verbose=False):
 
 
 @task
-def server(port=settings.PORT, address=settings.ADDRESS, debug=settings.DEBUG):
+def server(port=None, address=None, debug=None):
+    from waterbutler.server import settings
     from waterbutler.server import serve
+
+    port = port or settings.PORT
+    address = address or settings.ADDRESS
+    debug = debug or settings.DEBUG
+
     serve(port, address, debug)
 
 
