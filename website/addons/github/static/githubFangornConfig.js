@@ -136,23 +136,37 @@ function _fangornGithubTitle (item, col)  {
     // this = treebeard
     var tb = this;
     var branchArray = [];
-    if (item.data.branches){
-        for (var i = 0; i < item.data.branches.length; i++){
-            var selected = item.data.branches[i] === 'master' ? 'selected' : '';
-            branchArray.push(m("option", {selected : selected, value:item.data.branches[i]}, item.data.branches[i]));
+    if (item.data.branches) {
+        branch = item.data.defaultBranch;
+        for (var i = 0; i < item.data.branches.length; i++) {
+            var selected = item.data.branches[i] === item.data.defaultBranch ? 'selected' : '';
+            branchArray.push(m('option', {selected : selected, value:item.data.branches[i]}, item.data.branches[i]));
         }
     }
 
-    if (item.data.addonFullname){
-        return m("span",[
-            m("github-name", item.data.name + ' '),
-            m("span",[
-                m("select[name=branch-selector]", { onchange: function(ev) { changeBranch.call(tb, item, ev.target.value ) } }, branchArray)
+    if (item.data.addonFullname) {
+        return m('span',[
+            m('github-name', item.data.name + ' '),
+            m('span',[
+                m('select[name=branch-selector]', { onchange: function(ev) { changeBranch.call(tb, item, ev.target.value ) } }, branchArray)
             ])
         ]);
     } else {
-        return m("span",[
-            m("github-name",{onclick: function(){window.location = item.data.urls.view}}, item.data.name)
+        return m('span',[
+            m('github-name', {
+                onclick: function() {
+                    var params = $.param(
+                        $.extend(
+                          {
+                              provider: item.data.provider,
+                              path: item.data.path.substring(1),
+                              branch: branch
+                          },
+                          item.data.extra || {}
+                        )
+                    );
+                    window.location = nodeApiUrl + 'waterbutler/files/?' + params;
+                }}, item.data.name)
         ]);
     }
 
@@ -185,7 +199,7 @@ function _fangornColumns (item) {
 
 function _fangornFolderIcons(item){
     if(item.data.iconUrl){
-        return m('img',{src:item.data.iconUrl, style:{width:"16px", height:"auto"}}, ' ');
+        return m('img',{src:item.data.iconUrl, style:{width:'16px', height:'auto'}}, ' ');
     }
     return undefined;
 }
@@ -204,4 +218,3 @@ Fangorn.config.github = {
     folderIcon: _fangornFolderIcons,
     onUploadComplete : _fangornUploadComplete,
 };
-

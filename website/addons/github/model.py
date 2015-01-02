@@ -306,6 +306,9 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             },
         )
 
+    def get_waterbutler_render_url(self, path, branch=None, **kwargs):
+        return self.owner.web_url_for('github_view_file', path=path, branch=branch)
+
     #############
     # Callbacks #
     #############

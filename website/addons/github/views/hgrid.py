@@ -169,6 +169,7 @@ def github_hgrid_data(node_settings, auth, **kwargs):
         urls=urls,
         permissions=permissions,
         branches=[each.name for each in branches],
+        defaultBranch=branch,
     )]
 
 
