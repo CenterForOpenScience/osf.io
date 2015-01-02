@@ -11,6 +11,7 @@ from framework.auth.utils import privacy_info_handle
 from framework.forms.utils import sanitize
 
 from website import settings
+from website.notifications.emails import notify
 from website.filters import gravatar
 from website.models import Guid, Comment
 from website.project.decorators import must_be_contributor_or_public
@@ -154,6 +155,12 @@ def add_comment(**kwargs):
         content=content,
     )
     comment.save()
+
+    notify(pid=node._id,
+           event="comments",
+           commenter=auth.user.fullname,
+           content=content,
+           title=node.title)
 
     return {
         'comment': serialize_comment(comment, auth)

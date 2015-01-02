@@ -128,3 +128,4 @@ CONFERENCE_FAILED = Mail(
     'conference_failed',
     subject='Open Science Framework Error: No files attached'
 )
+COMMENT_ADDED = Mail('comment_added', subject='${commenter} commented on ${title}.')
