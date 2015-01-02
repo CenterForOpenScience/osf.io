@@ -179,6 +179,11 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             },
         )
 
+    def get_waterbutler_render_url(self, **kwargs):
+        article_id = kwargs['articleId']
+        file_id = kwargs['fileId']
+        return self.owner.web_url_for('figshare_view_file', aid=article_id, fid=file_id)
+
     def delete(self, save=False):
         super(AddonFigShareNodeSettings, self).delete(save=False)
         self.deauthorize(add_log=False, save=save)

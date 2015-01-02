@@ -496,10 +496,16 @@ function _fangornTitleColumn(item, col) {
     return m('span',{
         onclick : function() {
             if (item.kind === 'file') {
-                window.location = nodeApiUrl + 'waterbutler/files/?' + $.param({
-                    provider: item.data.provider,
-                    path: item.data.path.substring(1)
-                });
+                var params = $.param(
+                    $.extend(
+                      {
+                          provider: item.data.provider,
+                          path: item.data.path.substring(1)
+                      },
+                      item.data.extra || {}
+                    )
+                );
+                window.location = nodeApiUrl + 'waterbutler/files/?' + params;
             }
         }
     }, item.data.name);
