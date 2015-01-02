@@ -526,9 +526,13 @@ function _fangornResolveRows(item) {
         filter : true,
         custom : _fangornTitleColumn
     });
+    var actionColumn = (
+        resolveconfigOption.call(this, item, 'resolveActionColumn', [item]) ||
+        _fangornActionColumn
+    );
     default_columns.push({
         sortInclude : false,
-        custom : _fangornActionColumn
+        custom : actionColumn
     });
     if (item.data.provider === 'osfstorage') {
         default_columns.push({
@@ -721,6 +725,12 @@ Fangorn.prototype = {
         this.grid = new Treebeard(this.options);
         return this.grid;
     },
+};
+
+Fangorn.ButtonEvents = {
+    _downloadEvent: _downloadEvent,
+    _uploadEvent: _uploadEvent,
+    _removeEvent: _removeEvent
 };
 
 module.exports = Fangorn;
