@@ -135,24 +135,24 @@ BaseComment.prototype.setupToolTips = function(elm) {
     });
 };
 
-BaseComment.prototype.fetch = function(cid) {
+BaseComment.prototype.fetch = function(thread) {
     var self = this;
     var deferred = $.Deferred();
     if (self._loaded) {
         deferred.resolve(self.comments());
     }
-    if (cid === undefined) {
-        cid = self.id();
+    if (thread !== undefined) {
+        return self.getThread(thread);
     }
     $.getJSON(
         nodeApiUrl + 'comments/',
         {
-            target: cid,
+            target: self.id(),
             page: self.page
         },
         function(response) {
             self.comments(
-                ko.utils.arrayMap(response.comments.reverse(), function(comment) {
+                ko.utils.arrayMap(response.comments.reverse(), function (comment) {
                     return new CommentModel(comment, self, self.$root);
                 })
             );
@@ -163,6 +163,24 @@ BaseComment.prototype.fetch = function(cid) {
     );
     return deferred;
 };
+
+BaseComment.prototype.getThread = function(thread_id) {
+    var self = this;
+    var deferred = $.Deferred();
+    if (self._loaded) {
+        deferred.resolve(self.comments());
+    }
+    $.getJSON(
+        nodeApiUrl + 'comment/' + thread_id + '/',
+        {},
+        function(response) {
+            self.comments(new CommentModel(response.comment, self, self.$root));
+            deferred.resolve(self.comments());
+            self._loaded = true;
+        }
+    );
+    return deferred;
+}
 
 BaseComment.prototype.submitReply = function() {
     var self = this;
@@ -428,7 +446,7 @@ CommentModel.prototype.onSubmitSuccess = function() {
 /*
     *
     */
-var CommentListModel = function(userName, mode, pageName, canComment, hasChildren, comment_id) {
+var CommentListModel = function(userName, mode, pageName, canComment, hasChildren, thread) {
 
     BaseComment.prototype.constructor.call(this);
 
@@ -455,7 +473,7 @@ var CommentListModel = function(userName, mode, pageName, canComment, hasChildre
     self.hasChildren = ko.observable(hasChildren);
     self.discussion = ko.observableArray();
 
-    self.fetch(comment_id);
+    self.fetch(thread);
     self.fetchDiscussion();
 
 };
@@ -504,10 +522,10 @@ var onOpen = function(pagename) {
     });
 };
 
-var init = function(selector, mode, pageName, userName, canComment, hasChildren, comment_id) {
+var init = function(selector, mode, pageName, userName, canComment, hasChildren, thread_id) {
 
     new CommentPane(selector, mode, {onOpen: onOpen(pageName)});
-    var viewModel = new CommentListModel(userName, mode, pageName, canComment, hasChildren, comment_id);
+    var viewModel = new CommentListModel(userName, mode, pageName, canComment, hasChildren, thread_id);
     var $elm = $(selector);
     if (!$elm.length) {
         throw('No results found for selector');

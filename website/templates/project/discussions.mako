@@ -9,24 +9,21 @@
 <div class="col-sm-3">
     <div class="panel panel-default"><!--TODO fix this on the screen -->
         <ul class="nav nav-stacked nav-pills">
-            <li><a id="discussion-overview-btn" class="discussion-btn" href="#">Overview</a></li>
+            <li><a id="discussion-overview-btn" class="discussion-btn" href="${node['url']}discussions/">Overview</a></li>
             <li><a id="discussion-files-btn" class="discussion-btn" href="#">Files</a></li>
         </ul>
     </div>
 </div>
 <div class="col-sm-9">
-    <div id="discussion-overview" class="discussion">
-        <h3>Overview</h3>
-        ${newComment()}
-        <div data-bind="template: {name: 'commentTemplate', foreach: comments}"></div>
+    <div class="discussion">
+        % if comment is UNDEFINED:
+            <h3>Overview</h3>
+            ${newComment()}
+        %else:
+            <h6>You are viewing a single comment's thread.</h6>
+        % endif
+        <div class="comment-list" data-bind="template: {name: 'commentTemplate', foreach: comments}"></div>
     </div>
-    <!--
-    <div id="discussion-files" class="discussion" style="display: none">
-        <h3>Files</h3>
-        ${newComment()}
-        <div data-bind="template: {name: 'commentTemplate', foreach: comments}"></div>
-    </div>
-    -->
 </div>
 
 <%def name="newComment()">

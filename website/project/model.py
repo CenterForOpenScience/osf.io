@@ -916,7 +916,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         return self.can_edit(auth)
 
     def update_total_comments(self):
-        print("........................",getattr(self, 'comment_owner', None), "............................")
         setattr(self.comment_pane_total, 'commented', getattr(self, 'comment_owner', self.comment_pane_overview))
 
     def save(self, *args, **kwargs):

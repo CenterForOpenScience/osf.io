@@ -37,19 +37,6 @@ def view_comments(**kwargs):
         })
     return serialized
 
-@must_be_contributor_or_public
-def view_comment_thread(**kwargs):
-
-    auth = kwargs['auth']
-    node = kwargs['node'] or kwargs['project']
-    comment = kwargs_to_comment(kwargs)
-    serialized = _view_project(node, auth, primary=True)
-    serialized_comment = serialize_comment(comment, auth)
-    serialized.update({
-        'comment': serialized_comment
-    })
-    return serialized
-
 def get_comment_pane(node, page_name):
     """
     Get the current comment pane that the user is working on
