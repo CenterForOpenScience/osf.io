@@ -33,6 +33,7 @@ from website.views import _render_nodes, find_dashboard
 from website.profile import utils
 from website.project import new_folder
 from website.util.sanitize import strip_html
+from website.notifications.model import Subscription
 
 
 logger = logging.getLogger(__name__)
@@ -328,7 +329,16 @@ def node_setting(**kwargs):
         'level': node.comment_level,
     }
 
+    rv['subscriptions_enabled'] = find_user_subscriptions(auth.user)
+    rv['subscriptions_available'] = settings.SUBSCRIPTIONS_AVAILABLE
+
     return rv
+
+
+def find_user_subscriptions(user):
+    subscriptions = Subscription.find(Q('types.email', 'contains', user.username))
+    return [subscription.event_name for subscription in subscriptions]
+
 
 def collect_node_config_js(addons):
     """Collect webpack bundles for each of the addons' node-cfg.js modules. Return

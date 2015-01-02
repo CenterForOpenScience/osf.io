@@ -21,6 +21,7 @@
                 % if 'admin' in user['permissions']:
                     <li><a href="#configureCommenting">Configure Commenting</a></li>
                 % endif
+                    <li><a href="#configureNotifications">Configure Notifications</a></li>
                 % if not node['is_registration']:
                     <li><a href="#selectAddons">Select Add-ons</a></li>
                 % endif
@@ -89,6 +90,45 @@
             </div>
 
         % endif
+
+        % if not node['is_registration']:
+        <div class="panel panel-default">
+                <span id="configureNotifications" class="anchor"></span>
+
+                <div class="panel-heading">
+                    <h3 class="panel-title">Configure Notifications</h3>
+                </div>
+
+                <div class="panel-body">
+
+                    <form id="notificationSettings">
+                        <h5>Receive email notifications about the following: </h5>
+                            % for subscription in subscriptions_available:
+                                <div>
+                                    <label>
+                                        <input
+                                            type="checkbox"
+                                            name="${subscription}"
+                                            ${'checked' if (subscription in subscriptions_enabled) else ''}
+                                        />
+                                        ${subscription}
+                                    </label>
+                                </div>
+                            % endfor
+                        <br />
+
+                        <button class="btn btn-success">Submit</button>
+
+                        <!-- Flashed Messages -->
+                        <div class="help-block">
+                            <p id="configureNotificationsMessage"></p>
+                        </div>
+                    </form>
+
+                </div>
+
+            </div>
+         % endif
 
         <div class="panel panel-default">
             <span id="selectAddons" class="anchor"></span>
