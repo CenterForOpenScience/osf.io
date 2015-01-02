@@ -10,9 +10,10 @@ class BaseFigshareMetadata:
 
 class FigshareFileMetadata(BaseFigshareMetadata, metadata.BaseMetadata):
 
-    def __init__(self, raw, article_id, child):
+    def __init__(self, raw, parent, child):
         super().__init__(raw)
-        self.article_id = article_id
+        self.parent = parent
+        self.article_id = parent['article_id']
         self.child = child
 
     @property
@@ -42,6 +43,7 @@ class FigshareFileMetadata(BaseFigshareMetadata, metadata.BaseMetadata):
         return {
             'fileId': self.raw['id'],
             'articleId': self.article_id,
+            'status': self.parent['status'].lower(),
             'downloadUrl': self.raw.get('download_url'),
         }
 

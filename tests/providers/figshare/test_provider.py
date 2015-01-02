@@ -160,7 +160,12 @@ class TestMetadata:
         assert aiohttpretty.has_call(method='GET', uri=list_articles_url)
         assert aiohttpretty.has_call(method='GET', uri=article_metadata_url)
         article_provider = yield from project_provider._make_article_provider(list_project_articles[0]['id'], safe=True)
-        expected = [article_provider._serialize_item(article_metadata['items'][0])]
+        expected = [
+            article_provider._serialize_item(
+                article_metadata['items'][0],
+                parent=article_metadata['items'][0],
+            ),
+        ]
         assert result == expected
 
     @async
@@ -176,7 +181,12 @@ class TestMetadata:
         assert aiohttpretty.has_call(method='GET', uri=list_articles_url)
         assert aiohttpretty.has_call(method='GET', uri=article_metadata_url)
         article_provider = yield from project_provider._make_article_provider(list_project_articles[0]['id'], safe=True)
-        expected = [article_provider._serialize_item(article_metadata['items'][0]['files'][0])]
+        expected = [
+            article_provider._serialize_item(
+                article_metadata['items'][0]['files'][0],
+                parent=article_metadata['items'][0],
+            ),
+        ]
 
     @async
     @pytest.mark.aiohttpretty
@@ -204,7 +214,7 @@ class TestMetadata:
         aiohttpretty.register_json_uri('GET', list_articles_url, body=list_project_articles)
         aiohttpretty.register_json_uri('GET', article_metadata_url, body=article_metadata)
         result = yield from project_provider.metadata(path)
-        expected = metadata.FigshareFileMetadata(file_metadata, article_id, True).serialized()
+        expected = metadata.FigshareFileMetadata(file_metadata, parent=article_metadata['items'][0], child=True).serialized()
         assert result == expected
 
 
@@ -212,20 +222,26 @@ class TestCRUD:
 
     @async
     @pytest.mark.aiohttpretty
-    def test_project_upload(self, project_provider, list_project_articles, base_article_metadata, upload_metadata, file_content, file_stream):
+    def test_project_upload(self, project_provider, list_project_articles, base_article_metadata, article_metadata, upload_metadata, file_content, file_stream):
         article_id = str(list_project_articles[0]['id'])
         list_articles_url = project_provider.build_url('projects', project_provider.project_id, 'articles')
+        article_metadata_url = project_provider.build_url('articles', article_id)
         article_upload_url = project_provider.build_url('articles', article_id, 'files')
         create_article_url = project_provider.build_url('articles')
         add_article_url = project_provider.build_url('projects', project_provider.project_id, 'articles')
         aiohttpretty.register_json_uri('GET', list_articles_url, body=list_project_articles)
+        aiohttpretty.register_json_uri('GET', article_metadata_url, body=article_metadata)
         aiohttpretty.register_json_uri('PUT', article_upload_url, body=upload_metadata)
         aiohttpretty.register_json_uri('POST', create_article_url, body=base_article_metadata)
         aiohttpretty.register_json_uri('PUT', add_article_url)
         file_name = 'barricade.gif'
         path = '/{0}'.format(file_name)
         result, created = yield from project_provider.upload(file_stream, path)
-        expected = metadata.FigshareFileMetadata(upload_metadata, article_id, True).serialized()
+        expected = metadata.FigshareFileMetadata(
+            upload_metadata,
+            parent=base_article_metadata,
+            child=True,
+        ).serialized()
         assert aiohttpretty.has_call(
             method='POST',
             uri=create_article_url,
@@ -255,7 +271,7 @@ class TestCRUD:
         file_name = 'barricade.gif'
         path = '/{0}/{1}'.format(article_id, file_name)
         result, created = yield from project_provider.upload(file_stream, path)
-        expected = metadata.FigshareFileMetadata(upload_metadata, article_id, True).serialized()
+        expected = metadata.FigshareFileMetadata(upload_metadata, parent=article_metadata['items'][0], child=True).serialized()
         assert aiohttpretty.has_call(method='PUT', uri=article_upload_url)
         assert result == expected
 

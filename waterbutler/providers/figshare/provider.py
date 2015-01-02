@@ -272,6 +272,7 @@ class FigshareArticleProvider(BaseFigshareProvider):
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
         figshare_path = FigshareArticlePath(path)
+        article_json = yield from self._get_article_json()
         stream, boundary, size = figshare_utils.make_upload_data(stream, name='filedata', filename=figshare_path.file_id)
         response = yield from self.make_request(
             'PUT',
@@ -284,8 +285,7 @@ class FigshareArticleProvider(BaseFigshareProvider):
             expects=(200, ),
         )
         data = yield from response.json()
-        metadata_args = (self.article_id, self.child)
-        return metadata.FigshareFileMetadata(data, *metadata_args).serialized(), True
+        return metadata.FigshareFileMetadata(data, parent=article_json, child=self.child).serialized(), True
 
     @asyncio.coroutine
     def metadata(self, path, **kwargs):
@@ -295,27 +295,26 @@ class FigshareArticleProvider(BaseFigshareProvider):
             file_json = figshare_utils.file_or_error(article_json, figshare_path.file_id)
             if file_json is None:
                 raise exceptions.MetadataError
-            metadata_args = (self.article_id, self.child)
-            return metadata.FigshareFileMetadata(file_json, *metadata_args).serialized()
+            return metadata.FigshareFileMetadata(file_json, parent=article_json, child=self.child).serialized()
         if figshare_path.is_dir:
             return [
-                self._serialize_item(item)
+                self._serialize_item(item, parent=article_json)
                 for item in article_json['files']
             ]
-        return self._serialize_item(article_json)
+        return self._serialize_item(article_json, parent=article_json)
 
-    def _serialize_item(self, item):
+    def _serialize_item(self, item, parent=None):
         defined_type = item.get('defined_type')
         files = item.get('files')
         if defined_type == 'fileset':
             metadata_class = metadata.FigshareArticleMetadata
-            metadata_args = ()
+            metadata_kwargs = {}
         elif defined_type and not files:
             metadata_class = metadata.FigshareArticleMetadata
-            metadata_args = ()
+            metadata_kwargs = {}
         else:
             metadata_class = metadata.FigshareFileMetadata
-            metadata_args = (self.article_id, self.child)
+            metadata_kwargs = {'parent': parent, 'child': self.child}
             if defined_type:
                 item = item['files'][0]
-        return metadata_class(item, *metadata_args).serialized()
+        return metadata_class(item, **metadata_kwargs).serialized()
