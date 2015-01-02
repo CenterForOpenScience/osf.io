@@ -13,11 +13,13 @@ def notify(pid, event, **context):
 def send_email(subscriber_emails, **context):
     for email in subscriber_emails:
         user = User.find_one(Q('username', 'eq', email))
-        mails.send_mail(
-            to_addr=email,
-            mail=mails.COMMENT_ADDED,
-            user=user,
-            name=user.fullname,
-            commenter=context.get('commenter'),
-            content=context.get('content'),
-            title=context.get('title'))
+
+        if context.get('commenter') != user.fullname:
+            mails.send_mail(
+                to_addr=email,
+                mail=mails.COMMENT_ADDED,
+                user=user,
+                name=user.fullname,
+                commenter=context.get('commenter'),
+                content=context.get('content'),
+                title=context.get('title'))
