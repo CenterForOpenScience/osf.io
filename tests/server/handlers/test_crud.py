@@ -77,27 +77,26 @@ class TestCrudHandler(utils.HandlerTestCase):
                 self.get_url('/file?provider=queenhub&path=freddie.png'),
             )
 
-    # TODO: broken upload test
-    # @mock.patch('waterbutler.server.handlers.core.make_provider')
-    # @testing.gen_test
-    # def test_upload(self, mock_make_provider):
-    #     data = b'stone cold crazy'
-    #     expected = {'path': 'roger.png'}
-    #     mock_provider = utils.mock_provider_method(mock_make_provider, 'upload', expected)
-    #     resp = yield self.http_client.fetch(
-    #         self.get_url('/file?provider=queenhub&path=roger.png'),
-    #         method='PUT',
-    #         body=data,
-    #     )
-    #     calls = mock_provider.upload.call_args_list
-    #     assert len(calls) == 1
-    #     args, kwargs = calls[0]
-    #     assert isinstance(args[0], streams.RequestStreamReader)
-    #     streamed = asyncio.new_event_loop().run_until_complete(args[0].read())
-    #     assert streamed == data
-    #     assert kwargs.get('action') == 'upload'
-    #     assert kwargs.get('path') == 'roger.png'
-    #     assert expected == json.loads(resp.body.decode())
+    @mock.patch('waterbutler.server.handlers.core.make_provider')
+    @testing.gen_test
+    def test_upload(self, mock_make_provider):
+        data = b'stone cold crazy'
+        expected = {'path': 'roger.png'}
+        mock_provider = utils.mock_provider_method(mock_make_provider, 'upload', (expected, True))
+        resp = yield self.http_client.fetch(
+            self.get_url('/file?provider=queenhub&path=roger.png'),
+            method='PUT',
+            body=data,
+        )
+        calls = mock_provider.upload.call_args_list
+        assert len(calls) == 1
+        args, kwargs = calls[0]
+        assert isinstance(args[0], streams.RequestStreamReader)
+        streamed = asyncio.new_event_loop().run_until_complete(args[0].read())
+        assert streamed == data
+        assert kwargs.get('action') == 'upload'
+        assert kwargs.get('path') == 'roger.png'
+        assert expected == json.loads(resp.body.decode())
 
     @mock.patch('waterbutler.server.handlers.core.make_provider')
     @testing.gen_test
