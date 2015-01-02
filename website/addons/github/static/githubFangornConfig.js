@@ -26,14 +26,6 @@ function _fangornActionColumn (item, col){
     var self = this;
     var buttons = [];
 
-    function _uploadEvent (event, item, col){
-        event.stopPropagation();
-        this.dropzone.hiddenFileInput.click();
-        this.dropzoneItemCache = item;
-        this.updateFolder(null, item);
-        console.log('Upload Event triggered', this, event,  item, col);
-    }
-
     function _removeEvent (event, item, col) {
         try {
             event.stopPropagation();
@@ -73,7 +65,7 @@ function _fangornActionColumn (item, col){
                 'name' : '',
                 'icon' : 'icon-upload-alt',
                 'css' : 'fangorn-clickable btn btn-default btn-xs',
-                'onclick' : _uploadEvent
+                'onclick' : Fangorn.ButtonEvents._uploadEvent
             });
         }
 
