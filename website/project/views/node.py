@@ -329,15 +329,21 @@ def node_setting(**kwargs):
         'level': node.comment_level,
     }
 
-    rv['subscriptions_enabled'] = find_user_subscriptions(auth.user)
+    rv['subscriptions_enabled'] = find_user_subscriptions(auth.user, node)
     rv['subscriptions_available'] = settings.SUBSCRIPTIONS_AVAILABLE
 
     return rv
 
 
-def find_user_subscriptions(user):
-    subscriptions = Subscription.find(Q('types.email', 'contains', user.username))
-    return [subscription.event_name for subscription in subscriptions]
+def find_user_subscriptions(user, node):
+    user_subscriptions = []
+
+    for subscription in settings.SUBSCRIPTIONS_AVAILABLE:
+        event_id = node._id + "_" + subscription
+        subscription = Subscription.find_one(Q('_id', 'eq', event_id))
+        if user.username in subscription.types['email']:
+            user_subscriptions.append(user.username)
+        return user_subscriptions
 
 
 def collect_node_config_js(addons):
