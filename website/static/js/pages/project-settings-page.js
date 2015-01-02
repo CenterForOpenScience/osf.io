@@ -35,6 +35,28 @@ $(document).ready(function() {
 
     });
 
+    // Submit for notifications preferences
+    $('#notificationSettings').on('submit', function() {
+        var $notificationsMsg = $('#configureNotificationsMessage');
+
+        var subscriptions = {};
+        $('#notificationSettings').find('input').each(function(idx, elm) {
+            var $elm = $(elm);
+            subscriptions[$elm.attr('name')] = $elm.is(':checked');
+
+        });
+
+        $osf.postJSON(
+            nodeApiUrl + 'subscribe/',
+            subscriptions
+        ).done(function() {
+            $notificationsMsg.addClass('text-success');
+            $notificationsMsg.text('Successfully updated notification preferences');
+            window.location.reload();
+        }).fail(function() {
+            bootbox.alert('Could not update notification preferences.')
+        });
+    });
 
     // Set up submission for addon selection form
     $('#selectAddonsForm').on('submit', function() {

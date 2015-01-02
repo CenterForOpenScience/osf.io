@@ -156,8 +156,9 @@ def add_comment(**kwargs):
     )
     comment.save()
 
+    # TODO: Filter out comments made by the user
     notify(pid=node._id,
-           event="comments",
+           event="Comments",
            commenter=auth.user.fullname,
            content=content,
            title=node.title)
