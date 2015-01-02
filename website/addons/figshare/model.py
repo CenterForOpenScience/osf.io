@@ -5,6 +5,7 @@ import os
 from modularodm import fields
 from framework.auth.decorators import Auth
 
+from website.models import NodeLog
 from website.addons.base import GuidFile
 from website.addons.base import exceptions
 from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
@@ -152,7 +153,31 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         }
 
     def create_waterbutler_log(self, auth, action, metadata):
-        pass
+        if action in [NodeLog.FILE_ADDED, NodeLog.FILE_UPDATED]:
+            name = metadata['name']
+            article_id = metadata['extra']['articleId']
+            file_id = metadata['extra']['fileId']
+            urls = {
+                'view': self.owner.web_url_for('figshare_view_file', aid=article_id, fid=file_id),
+                'download': self.owner.api_url_for('figshare_download_file', aid=article_id, fid=file_id),
+            }
+        elif action == NodeLog.FILE_REMOVED:
+            name = metadata['path']
+            urls = {}
+        self.owner.add_log(
+            'figshare_{0}'.format(action),
+            auth=auth,
+            params={
+                'project': self.owner.parent_id,
+                'node': self.owner._id,
+                'path': name,
+                'urls': urls,
+                'figshare': {
+                    'id': self.figshare_id,
+                    'type': self.figshare_type,
+                },
+            },
+        )
 
     def delete(self, save=False):
         super(AddonFigShareNodeSettings, self).delete(save=False)
