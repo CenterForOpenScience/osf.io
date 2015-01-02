@@ -204,7 +204,7 @@ class TestMetadata:
         aiohttpretty.register_json_uri('GET', list_articles_url, body=list_project_articles)
         aiohttpretty.register_json_uri('GET', article_metadata_url, body=article_metadata)
         result = yield from project_provider.metadata(path)
-        expected = metadata.FigshareFileMetadata(file_metadata, article_id).serialized()
+        expected = metadata.FigshareFileMetadata(file_metadata, article_id, True).serialized()
         assert result == expected
 
 
@@ -225,7 +225,7 @@ class TestCRUD:
         file_name = 'barricade.gif'
         path = '/{0}'.format(file_name)
         result, created = yield from project_provider.upload(file_stream, path)
-        expected = metadata.FigshareFileMetadata(upload_metadata, article_id).serialized()
+        expected = metadata.FigshareFileMetadata(upload_metadata, article_id, True).serialized()
         assert aiohttpretty.has_call(
             method='POST',
             uri=create_article_url,
@@ -255,7 +255,7 @@ class TestCRUD:
         file_name = 'barricade.gif'
         path = '/{0}/{1}'.format(article_id, file_name)
         result, created = yield from project_provider.upload(file_stream, path)
-        expected = metadata.FigshareFileMetadata(upload_metadata, article_id).serialized()
+        expected = metadata.FigshareFileMetadata(upload_metadata, article_id, True).serialized()
         assert aiohttpretty.has_call(method='PUT', uri=article_upload_url)
         assert result == expected
 

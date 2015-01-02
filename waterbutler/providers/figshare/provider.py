@@ -69,7 +69,7 @@ class FigshareProvider:
     def __new__(cls, auth, credentials, settings):
         if settings['container_type'] == 'project':
             return FigshareProjectProvider(auth, credentials, {'project_id': settings['container_id']})
-        if settings['container_type'] == 'article':
+        if settings['container_type'] in ['article', 'fileset']:
             return FigshareArticleProvider(auth, credentials, {'article_id': settings['container_id']})
         raise exceptions.ProviderError('Invalid "container_type" {0}'.format(settings['container_type']))
 
@@ -284,7 +284,7 @@ class FigshareArticleProvider(BaseFigshareProvider):
             expects=(200, ),
         )
         data = yield from response.json()
-        metadata_args = (self.article_id if self.child else None, )
+        metadata_args = (self.article_id, self.child)
         return metadata.FigshareFileMetadata(data, *metadata_args).serialized(), True
 
     @asyncio.coroutine
@@ -295,7 +295,7 @@ class FigshareArticleProvider(BaseFigshareProvider):
             file_json = figshare_utils.file_or_error(article_json, figshare_path.file_id)
             if file_json is None:
                 raise exceptions.MetadataError
-            metadata_args = (self.article_id if self.child else None, )
+            metadata_args = (self.article_id, self.child)
             return metadata.FigshareFileMetadata(file_json, *metadata_args).serialized()
         if figshare_path.is_dir:
             return [
@@ -315,7 +315,7 @@ class FigshareArticleProvider(BaseFigshareProvider):
             metadata_args = ()
         else:
             metadata_class = metadata.FigshareFileMetadata
-            metadata_args = (self.article_id if self.child else None, )
+            metadata_args = (self.article_id, self.child)
             if defined_type:
                 item = item['files'][0]
         return metadata_class(item, *metadata_args).serialized()

@@ -10,9 +10,10 @@ class BaseFigshareMetadata:
 
 class FigshareFileMetadata(BaseFigshareMetadata, metadata.BaseMetadata):
 
-    def __init__(self, raw, article_id):
+    def __init__(self, raw, article_id, child):
         super().__init__(raw)
         self.article_id = article_id
+        self.child = child
 
     @property
     def kind(self):
@@ -24,7 +25,7 @@ class FigshareFileMetadata(BaseFigshareMetadata, metadata.BaseMetadata):
 
     @property
     def path(self):
-        if self.article_id:
+        if self.child:
             return '/{0}/{1}'.format(self.article_id, self.raw['id'])
         return '/{0}'.format(self.raw['id'])
 
