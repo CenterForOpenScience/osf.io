@@ -156,17 +156,25 @@ def add_comment(**kwargs):
     )
     comment.save()
 
-    # TODO: Filter out comments made by the user
     notify(pid=node._id,
            event="Comments",
            commenter=auth.user.fullname,
            content=content,
+           parent_comment=is_reply(target),
            title=node.title)
 
     return {
         'comment': serialize_comment(comment, auth)
     }, http.CREATED
 
+
+def is_reply(target):
+    if isinstance(target, Comment):
+        return {
+            'commenter': target.user.fullname,
+            'content': target.content
+            }
+    return {}
 
 @must_be_contributor_or_public
 def list_comments(auth, **kwargs):

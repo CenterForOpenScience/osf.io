@@ -15,6 +15,7 @@ def send_email(subscriber_emails, **context):
         user = User.find_one(Q('username', 'eq', email))
 
         if context.get('commenter') != user.fullname:
+
             mails.send_mail(
                 to_addr=email,
                 mail=mails.COMMENT_ADDED,
@@ -22,4 +23,5 @@ def send_email(subscriber_emails, **context):
                 name=user.fullname,
                 commenter=context.get('commenter'),
                 content=context.get('content'),
+                parent_comment= context.get('parent_comment'),
                 title=context.get('title'))
