@@ -29,6 +29,25 @@ def view_comments(**kwargs):
     auth = kwargs['auth']
 
     serialized = _view_project(node, auth, primary=True)
+    if kwargs.get('cid'):
+        comment = kwargs_to_comment(kwargs)
+        serialized_comment = serialize_comment(comment, auth)
+        serialized.update({
+            'comment': serialized_comment
+        })
+    return serialized
+
+@must_be_contributor_or_public
+def view_comment_thread(**kwargs):
+
+    auth = kwargs['auth']
+    node = kwargs['node'] or kwargs['project']
+    comment = kwargs_to_comment(kwargs)
+    serialized = _view_project(node, auth, primary=True)
+    serialized_comment = serialize_comment(comment, auth)
+    serialized.update({
+        'comment': serialized_comment
+    })
     return serialized
 
 def get_comment_pane(node, page_name):
@@ -224,19 +243,6 @@ def n_unread_comments(node, user):
                         Q('user', 'ne', user) &
                         Q('date_created', 'gt', view_timestamp) &
                         Q('date_modified', 'gt', view_timestamp)).count()
-
-@must_be_contributor_or_public
-def view_comment(**kwargs):
-
-    auth = kwargs['auth']
-    node = kwargs['node'] or kwargs['project']
-    comment = kwargs_to_comment(kwargs, owner=True)
-    serialized = _view_project(node, auth, primary=True)
-    serialized_comment = serialize_comment(comment, auth)
-    serialized.update({
-        'comment': serialized_comment
-    })
-    return serialized
 
 @must_be_logged_in
 @must_be_contributor_or_public

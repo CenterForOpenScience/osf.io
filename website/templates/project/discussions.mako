@@ -20,11 +20,13 @@
         ${newComment()}
         <div data-bind="template: {name: 'commentTemplate', foreach: comments}"></div>
     </div>
+    <!--
     <div id="discussion-files" class="discussion" style="display: none">
         <h3>Files</h3>
         ${newComment()}
         <div data-bind="template: {name: 'commentTemplate', foreach: comments}"></div>
     </div>
+    -->
 </div>
 
 <%def name="newComment()">
@@ -58,6 +60,13 @@
 <% import json %>
 
 ${parent.javascript_bottom()}
+<script>
+        % if comment is UNDEFINED:
+            window.contextVars.comment = {};
+        %else:
+            window.contextVars.comment = ${json.dumps(comment)};
+        % endif
+</script>
 
 <script src="/static/public/js/discussions-page.js"></script>
 

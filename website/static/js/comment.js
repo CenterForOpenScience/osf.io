@@ -135,16 +135,19 @@ BaseComment.prototype.setupToolTips = function(elm) {
     });
 };
 
-BaseComment.prototype.fetch = function() {
+BaseComment.prototype.fetch = function(cid) {
     var self = this;
     var deferred = $.Deferred();
     if (self._loaded) {
         deferred.resolve(self.comments());
     }
+    if (cid === undefined) {
+        cid = self.id();
+    }
     $.getJSON(
         nodeApiUrl + 'comments/',
         {
-            target: self.id(),
+            target: cid,
             page: self.page
         },
         function(response) {
@@ -425,7 +428,7 @@ CommentModel.prototype.onSubmitSuccess = function() {
 /*
     *
     */
-var CommentListModel = function(userName, mode, pageName, canComment, hasChildren) {
+var CommentListModel = function(userName, mode, pageName, canComment, hasChildren, comment_id) {
 
     BaseComment.prototype.constructor.call(this);
 
@@ -452,7 +455,7 @@ var CommentListModel = function(userName, mode, pageName, canComment, hasChildre
     self.hasChildren = ko.observable(hasChildren);
     self.discussion = ko.observableArray();
 
-    self.fetch();
+    self.fetch(comment_id);
     self.fetchDiscussion();
 
 };
@@ -501,10 +504,10 @@ var onOpen = function(pagename) {
     });
 };
 
-var init = function(selector, mode, pageName, userName, canComment, hasChildren) {
+var init = function(selector, mode, pageName, userName, canComment, hasChildren, comment_id) {
 
     new CommentPane(selector, mode, {onOpen: onOpen(pageName)});
-    var viewModel = new CommentListModel(userName, mode, pageName, canComment, hasChildren);
+    var viewModel = new CommentListModel(userName, mode, pageName, canComment, hasChildren, comment_id);
     var $elm = $(selector);
     if (!$elm.length) {
         throw('No results found for selector');
