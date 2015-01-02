@@ -19,7 +19,7 @@ function _fangornActionColumn (item, col) {
         );
     }
 
-    if (item.kind === 'file' && item.data.extra.status === 'public') {
+    if (item.kind === 'file' && item.data.extra && item.data.extra.status === 'public') {
         buttons.push({
             'name' : '',
             'icon' : 'icon-download-alt',
@@ -28,7 +28,7 @@ function _fangornActionColumn (item, col) {
         });
     }
 
-    if (item.kind === 'file' && item.data.extra.status !== 'public') {
+    if (item.kind === 'file' && item.data.extra && item.data.extra.status !== 'public') {
         buttons.push({
             'name' : '',
             'icon' : 'icon-remove',
