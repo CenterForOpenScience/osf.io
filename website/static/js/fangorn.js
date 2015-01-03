@@ -554,10 +554,7 @@ function _fangornResolveRows(item) {
             custom : function() { return m(''); }
         });
     }
-    if (item.data.provider || item.data.permissions) { // Workaround for figshare, TODO : Create issue
-        checkConfig = true;
-    }
-    configOption = checkConfig ? resolveconfigOption.call(this, item, 'resolveRows', [item]) : undefined;
+    configOption = resolveconfigOption.call(this, item, 'resolveRows', [item]);
     return configOption || default_columns;
 }
 

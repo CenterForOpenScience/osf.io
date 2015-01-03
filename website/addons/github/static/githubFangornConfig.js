@@ -124,8 +124,7 @@ function _resolveLazyLoad(item) {
     return buildWaterButlerUrl(item, true);
 }
 
-function _fangornGithubTitle (item, col)  {
-    // this = treebeard
+function _fangornGithubTitle(item, col)  {
     var tb = this;
     var branchArray = [];
     if (item.data.branches) {
