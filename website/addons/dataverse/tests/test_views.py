@@ -403,7 +403,6 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         # Contributor can select between states, current state is correct
         res = self.app.get(url, auth=self.user.auth)
         assert_in('released', res.json[0]['urls']['fetch'])
-        assert_false(res.json[0]['permissions']['edit'])
         assert_true(res.json[0]['hasReleasedFiles'])
         assert_equal(res.json[0]['state'], 'released')
 
