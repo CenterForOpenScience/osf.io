@@ -568,7 +568,7 @@ function _loadTopLevelChildren() {
  * Check Treebeard API for more information
  */
 tbOptions = {
-    rowHeight : 35,         // user can override or get from .tb-row height
+    rowHeight : 30,         // user can override or get from .tb-row height
     showTotal : 15,         // Actually this is calculated with div height, not needed. NEEDS CHECKING
     paginate : false,       // Whether the applet starts with pagination or not.
     paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.

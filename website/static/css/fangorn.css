@@ -45,3 +45,8 @@ text-align: center;
 .tb-th {
 	line-height: normal;
 }
+
+.tb-td {
+    height: inherit;
+    padding-top: 6px;
+}
