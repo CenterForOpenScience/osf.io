@@ -157,7 +157,7 @@ def add_comment(**kwargs):
     comment.save()
 
     notify(pid=node._id,
-           event="Comments",
+           event="Comment_replies" if is_direct_reply(target, auth.user) else "Comment",
            commenter=auth.user.fullname,
            content=content,
            parent_comment=is_reply(target),
@@ -171,10 +171,14 @@ def add_comment(**kwargs):
 def is_reply(target):
     if isinstance(target, Comment):
         return {
-            'commenter': target.user.fullname,
             'content': target.content
             }
     return {}
+
+
+def is_direct_reply(target, user):
+    return isinstance(target, Comment) and target.user is user
+
 
 @must_be_contributor_or_public
 def list_comments(auth, **kwargs):
