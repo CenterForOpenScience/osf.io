@@ -100,7 +100,7 @@ class OSFStorageProvider(provider.BaseProvider):
         pending_name = str(uuid.uuid4())
         pending_path = os.path.join(settings.FILE_PATH_PENDING, pending_name)
 
-        pending_name = OSFPath(pending_name).path
+        pending_name = OSFPath('/' + pending_name).path
 
         stream.add_writer('md5', streams.HashStreamWriter(hashlib.md5))
         stream.add_writer('sha1', streams.HashStreamWriter(hashlib.sha1))
@@ -114,7 +114,7 @@ class OSFStorageProvider(provider.BaseProvider):
         complete_name = stream.writers['sha256'].hexdigest
         complete_path = os.path.join(settings.FILE_PATH_COMPLETE, complete_name)
 
-        complete_name = OSFPath(complete_name).path
+        complete_name = OSFPath('/' + complete_name).path
 
         metadata = yield from provider.move(
             provider,
