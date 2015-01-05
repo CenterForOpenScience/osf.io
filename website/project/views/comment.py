@@ -17,8 +17,7 @@ from website.project.decorators import must_be_contributor_or_public
 from datetime import datetime
 from website.project.model import has_anonymous_link
 from website.project.views.node import _view_project
-
-COMMENT_PANE_NAME = 'comment_pane_'
+#from website.addons.wiki.model import NodeWikiPage
 
 @must_be_contributor_or_public
 def view_comments(**kwargs):
@@ -38,10 +37,11 @@ def view_comments(**kwargs):
     return serialized
 
 
-def resolve_target(node, guid): #todo pass optional arguments such as files or nodewiki
-
+def resolve_target(node, page, guid): #todo pass optional arguments such as files or nodewiki;
     if not guid:
         return node
+    if page == 'wiki':
+        return node.get_wiki_page(guid)
     target = Guid.load(guid)
     if target is None:
         raise HTTPError(http.BAD_REQUEST)
@@ -157,9 +157,9 @@ def add_comment(**kwargs):
 
     if not node.can_comment(auth):
         raise HTTPError(http.FORBIDDEN)
-
+    page = request.json.get('page')
     guid = request.json.get('target')
-    target = resolve_target(node, guid)
+    target = resolve_target(node, page, guid)
 
     content = request.json.get('content').strip()
     content = sanitize(content)
@@ -187,8 +187,9 @@ def add_comment(**kwargs):
 def list_comments(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     anonymous = has_anonymous_link(node, auth)
+    page = request.args.get('page')
     guid = request.args.get('target')
-    target = resolve_target(node, guid)
+    target = resolve_target(node, page, guid)
     #end = request.args.get('loaded')
     #start = max(0, request.args.get('loaded') - request.args.get('size'))
     serialized_comments = serialize_comments(target, auth, anonymous)
@@ -262,7 +263,7 @@ def undelete_comment(**kwargs):
 
 @must_be_logged_in
 @must_be_contributor_or_public
-def update_comments_timestamp(auth, **kwargs):
+def update_comments_timestamp(auth, **kwargs): # TODO update timestamp for each comment pane, not just overview
     node = kwargs['node'] or kwargs['project']
     if node.is_contributor(auth.user):
         auth.user.comments_viewed_timestamp[node._id] = datetime.utcnow()

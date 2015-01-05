@@ -148,7 +148,7 @@ def validate_comment_reports(value, *args, **kwargs):
             )
 
 
-class Comment(GuidStoredObject): # TODO add pane; backref declares new property? Declare type here
+class Comment(GuidStoredObject):
 
     _id = fields.StringField(primary=True)
 

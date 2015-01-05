@@ -2,6 +2,11 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${node['title'] | n} Wiki</%def>
 
+% if user['can_comment'] or node['has_comments']:
+    <%include file="include/comment_pane_template.mako"/>
+    <%include file="include/comment_template.mako"/>
+% endif
+
 <div class="row">
     <div class="col-sm-3">
         <%include file="wiki/templates/nav.mako" />
@@ -19,3 +24,12 @@
         % endif
     </div>
 </div>
+<%def name="javascript_bottom()">
+<% import json %>
+${parent.javascript_bottom()}
+<script>
+    window.contextVars = window.contextVars || {};
+    window.contextVars.wikiName = "${wiki_name}";
+</script>
+<script src="/static/public/js/wiki-page.js"></script>
+</%def>

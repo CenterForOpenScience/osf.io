@@ -16,6 +16,7 @@ var entry = {
     'profile-page': staticPath('js/pages/profile-page.js'),
     'project-dashboard': staticPath('js/pages/project-dashboard-page.js'),
     'project-base-page': staticPath('js/pages/project-base-page.js'),
+    'wiki-page': staticPath('js/pages/wiki-page.js'),
     'wiki-edit-page': staticPath('js/pages/wiki-edit-page.js'),
     'files-page': staticPath('js/pages/files-page.js'),
     'profile-settings-page': staticPath('js/pages/profile-settings-page.js'),

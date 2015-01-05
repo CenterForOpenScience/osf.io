@@ -78,6 +78,7 @@ var BaseComment = function() {
     //self._loaded = false;
     self._loaded = -1;
     self.id = ko.observable();
+    self.page = null;
 
     self.mode = 'pane'; // Default
 
@@ -155,7 +156,8 @@ BaseComment.prototype.fetch = function(thread) {
     $.getJSON(
         nodeApiUrl + 'comments/',
         {
-            target: self.id(),
+            page: self.page,
+            target: self.id()
         },
         function(response) {
             self.comments(
@@ -203,6 +205,7 @@ BaseComment.prototype.submitReply = function() {
     osfHelpers.postJSON(
         nodeApiUrl + 'comment/',
         {
+            page: self.page,
             target: self.id(),
             content: self.replyContent(),
         }
@@ -452,7 +455,7 @@ CommentModel.prototype.onSubmitSuccess = function() {
 /*
     *
     */
-var CommentListModel = function(userName, mode, canComment, hasChildren, thread) {
+var CommentListModel = function(userName, host_page, host_name, mode, canComment, hasChildren, thread) {
 
     BaseComment.prototype.constructor.call(this);
 
@@ -470,6 +473,9 @@ var CommentListModel = function(userName, mode, canComment, hasChildren, thread)
     self.canComment = ko.observable(canComment);
     self.hasChildren = ko.observable(hasChildren);
     self.discussion = ko.observableArray();
+
+    self.page = host_page;
+    self.id = ko.observable(host_name);
 
     self.fetch(thread);
     self.fetchDiscussion();
@@ -516,10 +522,10 @@ var onOpen = function() {
     });
 };
 
-var init = function(selector, mode, userName, canComment, hasChildren, thread_id) {
+var init = function(selector, host_page, host_name, mode, userName, canComment, hasChildren, thread_id) {
 
     new CommentPane(selector, mode, {onOpen: onOpen()});
-    var viewModel = new CommentListModel(userName, mode, canComment, hasChildren, thread_id);
+    var viewModel = new CommentListModel(userName, host_page, host_name, mode, canComment, hasChildren, thread_id);
     var $elm = $(selector);
     if (!$elm.length) {
         throw('No results found for selector');

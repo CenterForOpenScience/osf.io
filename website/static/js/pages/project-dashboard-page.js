@@ -46,8 +46,9 @@ if ($comments.length) {
     var userName = window.contextVars.currentUser.name;
     var canComment = window.contextVars.currentUser.canComment;
     var hasChildren = window.contextVars.node.hasChildren;
-    Comment.init('.commentPane', 'pane', userName, canComment, hasChildren);
-    Comment.init('#comments-widget-container', 'widget', userName, canComment, hasChildren);
+    var node_id = window.contextVars.node._id;
+    Comment.init('.commentPane', 'node', node_id, 'pane', userName, canComment, hasChildren);
+    Comment.init('#comments-widget-container', 'node', node_id, 'widget', userName, canComment, hasChildren);
 }
 
 $(document).ready(function() {
