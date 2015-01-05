@@ -228,13 +228,6 @@ function _fangornFolderIcons(item){
 
 function _fangornLazyLoad(item) {
     return item.data.urls.fetch;
-    // if (item.data.urls.fetch) {
-    //     return item.data.urls.fetch;
-    // }
-    // if (item.urls.fetch) {
-    //     return item.urls.fetch;
-    // }
-    // return false;
 }
 
 Fangorn.config.dataverse = {
