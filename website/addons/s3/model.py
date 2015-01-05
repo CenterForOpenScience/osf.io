@@ -97,7 +97,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             self.save()
 
     def deauthorize(self, auth=None, log=True, save=False):
-        self.registration_data = None
+        self.registration_data = {}
         self.bucket = None
         self.user_settings = None
 
@@ -171,8 +171,10 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
 
         if self.bucket and self.has_auth:
             clone.user_settings = self.user_settings
-            clone.registration_data['bucket'] = self.bucket
-            clone.registration_data['keys'] = serialize_bucket(S3Wrapper.from_addon(self))
+            clone.registration_data = {
+                'bucket': self.bucket,
+                'keys': serialize_bucket(S3Wrapper.from_addon(self))
+            }
 
         if save:
             clone.save()
