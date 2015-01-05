@@ -1,10 +1,15 @@
 var $ = require('jquery');
+var $osf = require('osfHelpers');
 var settings = require('settings');
 
 
 function getCookie() {
     match = document.cookie.match(/osf=(.*?)(;|$)/);
     return match ? match[1] : null;
+}
+
+function getViewOnly() {
+  return $osf.urlParams().view_only;
 }
 
 function buildUrl(metadata, path, provider, file) {
@@ -20,7 +25,8 @@ function buildUrl(metadata, path, provider, file) {
         token: '',
         nid: nodeId,
         provider: provider,
-        cookie: getCookie()
+        cookie: getCookie(),
+        viewOnly: getViewOnly()
     });
 }
 
