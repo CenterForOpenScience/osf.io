@@ -7,7 +7,7 @@ var ko = require('knockout');
 var bootbox = require('bootbox');
 require('knockout-punches');
 var osfHelpers = require('osfHelpers');
-var language = require('osfLanguage');
+var language = require('osfLanguage').Addons.dataverse;
 
 ko.punches.enableAll();
 
