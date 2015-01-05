@@ -18,14 +18,14 @@ def notify(pid, event, **context):
         # TODO: handle this error
         except AttributeError:
             pass
-        send(subscribed_users, notification_type, **context)
+        send(subscribed_users, notification_type, event, **context)
 
 
-def send(subscribed_users, notification_type, **context):
-    notifications.get(notification_type)(subscribed_users, **context)
+def send(subscribed_users, notification_type, event, **context):
+    notifications.get(notification_type)(subscribed_users, event, **context)
 
 
-def email_transactional(subscribed_users, **context):
+def email_transactional(subscribed_users, event, **context):
     """
     :param subscribed_users:mod-odm User objects
     :param context: context variables for email template
@@ -37,7 +37,7 @@ def email_transactional(subscribed_users, **context):
 
             mails.send_mail(
                 to_addr=email,
-                mail=mails.COMMENT_ADDED,
+                mail=email_templates.get(event),
                 user=user,
                 name=user.fullname,
                 commenter=context.get('commenter'),
@@ -47,6 +47,10 @@ def email_transactional(subscribed_users, **context):
 
 notifications = {
     'email_transactional': email_transactional
+}
+
+email_templates = {
+    'Comments': mails.COMMENT_ADDED
 }
 
 
