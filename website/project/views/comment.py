@@ -12,7 +12,7 @@ from framework.forms.utils import sanitize
 
 from website import settings
 from website.filters import gravatar
-from website.models import Guid, Comment, CommentPane
+from website.models import Guid, Comment
 from website.project.decorators import must_be_contributor_or_public
 from datetime import datetime
 from website.project.model import has_anonymous_link
@@ -22,8 +22,8 @@ COMMENT_PANE_NAME = 'comment_pane_'
 
 @must_be_contributor_or_public
 def view_comments(**kwargs):
-    """Collect file trees for all add-ons implementing HGrid views, then
-    format data as appropriate.
+    """
+
     """
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
@@ -37,27 +37,11 @@ def view_comments(**kwargs):
         })
     return serialized
 
-def get_comment_pane(node, page_name):
-    """
-    Get the current comment pane that the user is working on
-    :param node: Project
-    :param page_name: The page that contains the comment pane
-    :return: The CommentPane object; By default, it returns the "overview" CommentPane
-    """
-    page_attr = COMMENT_PANE_NAME + str(page_name)
-    comment_pane = getattr(node, page_attr, None)
-    if not comment_pane:
-        comment_pane = CommentPane.create(node=node)
-        setattr(node, page_attr, comment_pane)
-    if not getattr(node, COMMENT_PANE_NAME + 'total', None):
-        setattr(node, COMMENT_PANE_NAME + 'total', CommentPane.create(node=node))
-    node.update_total_comments()
-    return comment_pane
 
-def resolve_target(node, page_name, guid):
+def resolve_target(node, guid): #todo pass optional arguments such as files or nodewiki
 
     if not guid:
-        return get_comment_pane(node, page_name)
+        return node
     target = Guid.load(guid)
     if target is None:
         raise HTTPError(http.BAD_REQUEST)
@@ -80,9 +64,7 @@ def comment_discussion(**kwargs):
 
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
-    page_name = request.args.get('page')
-    target = get_comment_pane(node, page_name)
-    users = collect_discussion(target)
+    users = collect_discussion(node)
     anonymous = has_anonymous_link(node, auth)
     # Sort users by comment frequency
     # TODO: Allow sorting by recency, combination of frequency and recency
@@ -169,7 +151,6 @@ def add_comment(**kwargs):
 
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
-    page = request.json.get('page')
 
     if not node.comment_level:
         raise HTTPError(http.BAD_REQUEST)
@@ -178,7 +159,7 @@ def add_comment(**kwargs):
         raise HTTPError(http.FORBIDDEN)
 
     guid = request.json.get('target')
-    target = resolve_target(node, page, guid)
+    target = resolve_target(node, guid)
 
     content = request.json.get('content').strip()
     content = sanitize(content)
@@ -195,7 +176,7 @@ def add_comment(**kwargs):
         content=content,
     )
     comment.save()
-    node.update_total_comments()
+    #node.update_total_comments()
 
     return {
         'comment': serialize_comment(comment, auth)
@@ -205,10 +186,9 @@ def add_comment(**kwargs):
 @must_be_contributor_or_public
 def list_comments(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    page = request.args.get('page')
     anonymous = has_anonymous_link(node, auth)
     guid = request.args.get('target')
-    target = resolve_target(node, page, guid)
+    target = resolve_target(node, guid)
     #end = request.args.get('loaded')
     #start = max(0, request.args.get('loaded') - request.args.get('size'))
     serialized_comments = serialize_comments(target, auth, anonymous)

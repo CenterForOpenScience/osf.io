@@ -79,7 +79,6 @@ var BaseComment = function() {
     self._loaded = -1;
     self.id = ko.observable();
 
-    self.page = ''; // Default
     self.mode = 'pane'; // Default
 
     self.errorMessage = ko.observable();
@@ -157,7 +156,6 @@ BaseComment.prototype.fetch = function(thread) {
         nodeApiUrl + 'comments/',
         {
             target: self.id(),
-            page: self.page
         },
         function(response) {
             self.comments(
@@ -207,7 +205,6 @@ BaseComment.prototype.submitReply = function() {
         {
             target: self.id(),
             content: self.replyContent(),
-            page: self.page
         }
     ).done(function(response) {
         self.cancelReply();
@@ -254,7 +251,6 @@ var CommentModel = function(data, $parent, $root) {
         return 'Modified ' + relativeDate(self.dateModified());
     });
 
-    self.page = $parent.page;
     self.mode = $parent.mode;
 
     self.showChildren = ko.observable(false);
@@ -456,7 +452,7 @@ CommentModel.prototype.onSubmitSuccess = function() {
 /*
     *
     */
-var CommentListModel = function(userName, mode, pageName, canComment, hasChildren, thread) {
+var CommentListModel = function(userName, mode, canComment, hasChildren, thread) {
 
     BaseComment.prototype.constructor.call(this);
 
@@ -465,15 +461,7 @@ var CommentListModel = function(userName, mode, pageName, canComment, hasChildre
     self.$root = self;
     self.MAXLENGTH = MAXLENGTH;
 
-    self.title = ko.computed(function(){
-        if (pageName === 'total' || pageName === 'overview') {
-            return '';
-        } else {
-            var modified = pageName.substring(0,1).toUpperCase() + pageName.substring(1) + ' ';
-            return modified;
-        }
-    });
-    self.page = pageName;
+    self.title = ko.observable("");
     self.mode = mode;
 
     self.editors = 0;
@@ -496,9 +484,7 @@ CommentListModel.prototype.fetchDiscussion = function() {
     var self = this;
     $.getJSON(
         nodeApiUrl + 'comments/discussion/',
-        {
-            page: self.page
-        },
+        {},
         function(response) {
             self.discussion(response.discussion);
         }
@@ -516,12 +502,10 @@ CommentListModel.prototype.initListeners = function() {
 };
 
 var timestampUrl = nodeApiUrl + 'comments/timestamps/';
-var onOpen = function(pagename) {
+var onOpen = function() {
     var request = osfHelpers.putJSON(
         timestampUrl,
-        {
-            page: pagename
-        }
+        {}
     );
     request.fail(function(xhr, textStatus, errorThrown) {
         Raven.captureMessage('Could not update comment timestamp', {
@@ -532,10 +516,10 @@ var onOpen = function(pagename) {
     });
 };
 
-var init = function(selector, mode, pageName, userName, canComment, hasChildren, thread_id) {
+var init = function(selector, mode, userName, canComment, hasChildren, thread_id) {
 
-    new CommentPane(selector, mode, {onOpen: onOpen(pageName)});
-    var viewModel = new CommentListModel(userName, mode, pageName, canComment, hasChildren, thread_id);
+    new CommentPane(selector, mode, {onOpen: onOpen()});
+    var viewModel = new CommentListModel(userName, mode, canComment, hasChildren, thread_id);
     var $elm = $(selector);
     if (!$elm.length) {
         throw('No results found for selector');

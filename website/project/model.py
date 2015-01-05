@@ -288,19 +288,6 @@ class Comment(GuidStoredObject): # TODO add pane; backref declares new property?
         if save:
             self.save()
 
-class CommentPane(StoredObject):
-
-    # The key is also its primary key
-    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
-    project = fields.ForeignField('node')
-
-    @classmethod
-    def create(cls, **kwargs):
-        commentpane = cls(**kwargs)
-        commentpane.project = kwargs.get('node');
-        commentpane.save()
-
-        return commentpane
 
 class ApiKey(StoredObject):
 
@@ -625,9 +612,6 @@ class Node(GuidStoredObject, AddonModelMixin):
     # One of 'public', 'private'
     # TODO: Add validator
     comment_level = fields.StringField(default='private')
-    comment_pane_overview = fields.ForeignField('commentpane', backref='project')
-    comment_pane_files = fields.ForeignField('commentpane', backref='project')
-    comment_pane_total = fields.ForeignField('commentpane', backref='project')
 
     files_current = fields.DictionaryField()
     files_versions = fields.DictionaryField()
@@ -923,7 +907,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         return self.can_edit(auth)
 
     def update_total_comments(self):
-        setattr(self.comment_pane_total, 'commented', getattr(self, 'comment_owner', self.comment_pane_overview))
+        return
+        #setattr(self.comment_pane_total, 'commented', getattr(self, 'comment_owner', self.comment_pane_overview))
 
     def save(self, *args, **kwargs):
 
