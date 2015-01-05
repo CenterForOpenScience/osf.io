@@ -146,7 +146,7 @@ function _fangornToggleCheck(item) {
  */
 function _fangornResolveUploadUrl(item, file) {
     var configOption = resolveconfigOption.call(this, item, 'uploadUrl', [item, file]);
-    return configOption || waterbutler.buildFileUrl(item, file);
+    return configOption || waterbutler.buildTreeBeardUpload(item, file);
 }
 
 /**
@@ -335,7 +335,7 @@ function _downloadEvent (event, item, col) {
     if (item.data.provider === 'osfstorage') {
         item.data.downloads++;
     }
-    window.location = waterbutler.buildFileUrl(item);
+    window.location = waterbutler.buildTreeBeardDownload(item);
 }
 
 /**
@@ -356,7 +356,7 @@ function _removeEvent (event, item, col) {
     if (item.data.permissions.edit) {
         // delete from server, if successful delete from view
         $.ajax({
-            url: waterbutler.buildFileUrl(item),
+            url: waterbutler.buildTreeBeardDelete(item),
             type : 'DELETE'
         })
         .done(function(data) {
@@ -388,7 +388,7 @@ function _fangornResolveLazyLoad(item) {
         return false;
     }
 
-    return waterbutler.buildMetadataUrl(item);
+    return waterbutler.buildTreeBeardMetadata(item);
 }
 
 /**
