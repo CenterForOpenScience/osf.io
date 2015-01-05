@@ -7,8 +7,8 @@ var $osf = require('osfHelpers');
 
 // Make sure ZeroClipboard finds the right flash file
 ZeroClipboard.config({
-    moviePath: '/static/vendor/bower_components/zeroclipboard/ZeroClipboard.swf'}
-);
+    swfPath: '/static/vendor/bower_components/zeroclipboard/dist/ZeroClipboard.swf'
+});
 
 var LINK_CUTOFF = 2;
 
