@@ -43,7 +43,10 @@ text-align: center;
     background: #F4F5DF;
 }
 .tb-th {
-	line-height: normal;
+	line-height: 14px;
+	background: url('/static/img/hgrid/header-columns-bg.gif');
+	padding: 3px 0px 7px 5px;
+font-size: 13px
 }
 
 .tb-td {
@@ -53,4 +56,10 @@ text-align: center;
 .tb-toggle-icon {
 	font-size: 10px;
 	width: 15px;
+}
+.tb-row-titles {
+	height: 25px;
+}
+#tb-tbody {
+	border-top : none;
 }

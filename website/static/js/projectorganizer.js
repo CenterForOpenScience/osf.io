@@ -1145,6 +1145,7 @@ var tbOptions = {
         over : _poOver
     },
     onload : function () {
+        console.log("Onload");
         var tb = this;
         _poLoadOpenChildren.call(tb);
     },
@@ -1176,7 +1177,6 @@ var tbOptions = {
  */
 function ProjectOrganizer(options) {
     this.options = $.extend({}, tbOptions, options);
-    console.log('Options', this.options);
     this.grid = null; // Set by _initGrid
     this.init();
 }
@@ -1192,6 +1192,7 @@ ProjectOrganizer.prototype = {
     },
     _initGrid: function () {
         this.grid = new Treebeard(this.options);
+        console.log("this.grid", this.grid.tbController.options.divID);
         return this.grid;
     }
 };

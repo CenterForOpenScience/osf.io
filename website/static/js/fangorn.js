@@ -524,6 +524,9 @@ function _fangornResolveRows(item) {
     var default_columns = [],
         checkConfig = false,
         configOption;
+    if(!item.data.permissions){
+        return;
+    }
 
     item.data.permissions = item.data.permissions || item.parent().data.permissions;
     item.css = '';
