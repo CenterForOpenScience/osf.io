@@ -87,6 +87,22 @@ permission_map = {
 }
 
 
+def check_access(node, user, action, key=None):
+    """Verify that user can perform requested action on resource. Raise appropriate
+    error code if action cannot proceed.
+    """
+    permission = permission_map.get(action, None)
+    if permission is None:
+        raise HTTPError(httplib.BAD_REQUEST)
+    if node.has_permission(user, permission):
+        return True
+    if permission == 'read':
+        if node.is_public or key in node.private_link_keys_active:
+            return True
+    code = httplib.FORBIDDEN if user else httplib.UNAUTHORIZED
+    raise HTTPError(code)
+
+
 def get_auth(**kwargs):
     try:
         action = request.args['action']
@@ -96,6 +112,8 @@ def get_auth(**kwargs):
         provider_name = request.args['provider']
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
+
+    view_only = request.args.get('viewOnly')
 
     user = get_user_from_cookie(cookie)
 
@@ -114,15 +132,7 @@ def get_auth(**kwargs):
     if not node:
         raise HTTPError(httplib.NOT_FOUND)
 
-    # TODO: Handle view-only links
-    try:
-        permission_required = permission_map[action]
-    except KeyError:
-        raise HTTPError(httplib.BAD_REQUEST)
-
-    if not node.has_permission(user, permission_required):
-        if permission_required != 'read' or not node.is_public:
-            raise HTTPError(httplib.BAD_REQUEST)
+    check_access(node, user, action, key=view_only)
 
     provider_settings = node.get_addon(provider_name)
     if not provider_settings:
