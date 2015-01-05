@@ -403,14 +403,12 @@ def make_url_map(app):
         Rule('/login/connected_tools/',
              'get',
              landing_page_views.connected_tools,
-             OsfWebRenderer('public/login_landing.mako')
-        ),
+             OsfWebRenderer('public/login_landing.mako')),
 
         Rule('/login/enriched_profile/',
              'get',
              landing_page_views.enriched_profile,
-             OsfWebRenderer('public/login_landing.mako')
-        ),
+             OsfWebRenderer('public/login_landing.mako')),
 
     ])
 
