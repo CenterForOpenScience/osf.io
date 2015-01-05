@@ -17,7 +17,7 @@ class BaseGitHubMetadata(metadata.BaseMetadata):
     @property
     def extra(self):
         ret = {
-            'sha': self.raw['sha']
+            'fileSha': self.raw['sha']
         }
         ret.update(self.extras)
         return ret
