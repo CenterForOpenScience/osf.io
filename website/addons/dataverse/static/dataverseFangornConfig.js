@@ -6,8 +6,8 @@ var Fangorn = require('fangorn');
 
 function refreshDataverseTree(grid, item, state) {
     var data = item.data || {};
-    data.state = state;
     var url = item.data.urls.state + '?' + $.param({state: state});
+    data.state = state;
     $.ajax({
         type: 'get',
         url: url,
@@ -110,14 +110,14 @@ function _fangornActionColumn (item, col) {
     }
 
     // Download Zip File
-    if (item.kind === 'folder' && item.data.addonFullname) {
+    if (item.kind === 'folder' && item.data.addonFullname && item.data.permissions.edit) {
         buttons.push({
             'name' : '',
             'icon' : 'icon-upload-alt',
             'css' : 'fangorn-clickable btn btn-default btn-xs',
             'onclick' : _uploadEvent
         });
-        if (item.data.permissions.edit) {
+        if (item.data.state === 'draft') {
             buttons.push({
                 'name' : ' Release Study',
                 'icon' : 'icon-globe',
@@ -135,21 +135,23 @@ function _fangornActionColumn (item, col) {
             }
         );
     } else if (item.kind === 'file') {
-        buttons.push(
-            // {
-            //     name : '',
-            //     icon : 'icon-download-alt',
-            //     css : 'btn btn-info btn-xs',
-            //     onclick: _downloadEvent
-            // },
-            {
+        if (item.data.state === 'released' || item.data.permissions.edit) {
+            buttons.push({
+                name : '',
+                icon : 'icon-download-alt',
+                css : 'btn btn-info btn-xs',
+                onclick: _downloadEvent
+            });
+        }
+        if (item.data.state === 'draft' || item.data.permissions.edit) {
+            buttons.push({
                 'name' : '',
                 'icon' : 'icon-remove',
                 'css' : 'm-l-lg text-danger fg-hover-hide',
                 'style' : 'display:none',
                 'onclick' : _removeEvent
-            }
-        );
+            });
+        }
     }
     return m('.btn-group', [
             buttons.map(function(btn){
@@ -164,20 +166,26 @@ function _fangornDataverseTitle(item, col) {
     if (item.data.addonFullname) {
         var contents = [m('dataverse-name', item.data.name + ' ')];
         if (item.data.hasReleasedFiles) {
-            var options = [
-                m('option', {selected: item.data.state === 'draft', value: 'draft'}, 'Draft'),
-                m('option', {selected: item.data.state === 'released', value: 'released'}, 'Released')
-            ];
-            contents.push(
-                m('span', [
-                    m('select', {
-                        class: 'dataverse-state-select',
-                        onchange: function(e) {
-                            refreshDataverseTree(tb, item, e.target.value);
-                        },
-                    }, options)
-                ])
-            );
+            if (item.data.permissions.edit) {
+                var options = [
+                    m('option', {selected: item.data.state === 'draft', value: 'draft'}, 'Draft'),
+                    m('option', {selected: item.data.state === 'released', value: 'released'}, 'Released')
+                ];
+                contents.push(
+                    m('span', [
+                        m('select', {
+                            class: 'dataverse-state-select',
+                            onchange: function(e) {
+                                refreshDataverseTree(tb, item, e.target.value);
+                            },
+                        }, options)
+                    ])
+                );
+            } else {
+                contents.push(
+                    m('span', '[Released]')
+                );
+            }
         }
         return m('span', contents);
     } else {

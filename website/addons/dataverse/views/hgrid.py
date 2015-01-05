@@ -47,7 +47,7 @@ def dataverse_hgrid_root(node_addon, auth, state=None, **kwargs):
         study_name = u'{0}...'.format(study_name[:20])
 
     permissions = {
-        'edit': node.can_edit(auth) and not node.is_registration and state == 'draft',
+        'edit': node.can_edit(auth) and not node.is_registration,
         'view': node.can_view(auth)
     }
 
