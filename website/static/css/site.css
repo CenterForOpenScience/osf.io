@@ -387,10 +387,15 @@ li.pointer {
 }
 
 /* Make wiki images responsive */
-.wiki img,
-.addon-widget-container img {
+.wiki img{
   vertical-align: middle;
   display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.addon-widget-container img {
+  vertical-align: middle;
   max-width: 100%;
   height: auto;
 }
@@ -1701,8 +1706,9 @@ div.pydocx-center{
 }
 
 #footerSlideIn div > a {
-    margin-right:5px;
-    white-space:nowrap;
+    margin-right: 5px;
+    white-space: nowrap;
+}
 
 /* Necessary to handle lots of text in tooltips */
 .tooltip-inner {

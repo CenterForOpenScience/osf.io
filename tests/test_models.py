@@ -78,23 +78,48 @@ class TestUserValidation(OsfTestCase):
             self.user.save()
 
     def test_validate_social_personal_empty(self):
-        self.user.social = {'personal_site': ''}
-        try:
-            self.user.save()
-        except:
-            assert 0
+        self.user.social = {'personal': ''}
+        self.user.save()
 
     def test_validate_social_valid(self):
-        self.user.social = {'personal_site': 'http://cos.io/'}
-        try:
-            self.user.save()
-        except:
-            assert 0
+        self.user.social = {'personal': 'http://cos.io/'}
+        self.user.save()
 
     def test_validate_social_personal_invalid(self):
-        self.user.social = {'personal_site': 'help computer'}
+        self.user.social = {'personal': 'help computer'}
         with assert_raises(ValidationError):
             self.user.save()
+
+    def test_empty_social_links(self):
+        assert_equal(self.user.social_links, {})
+        assert_equal(len(self.user.social_links), 0)
+
+    def test_personal_site_unchanged(self):
+        self.user.social = {'personal': 'http://cos.io/'}
+        self.user.save()
+        assert_equal(self.user.social_links['personal'], 'http://cos.io/')
+        assert_equal(len(self.user.social_links), 1)
+
+    def test_various_social_handles(self):
+        self.user.social = {
+            'personal': 'http://cos.io/',
+            'twitter': 'OSFramework',
+            'github': 'CenterForOpenScience'
+        }
+        self.user.save()
+        assert_equal(self.user.social_links, {
+            'personal': 'http://cos.io/',
+            'twitter': 'http://twitter.com/OSFramework',
+            'github': 'http://github.com/CenterForOpenScience'
+        })
+
+    def test_nonsocial_ignored(self):
+        self.user.social = {
+            'foo': 'bar',
+        }
+        self.user.save()
+        assert_equal(self.user.social_links, {})
+
 
     def test_validate_jobs_valid(self):
         self.user.jobs = [{
