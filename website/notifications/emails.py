@@ -1,19 +1,38 @@
 from modularodm import Q
 from model import Subscription
-from framework.auth.core import User
 from website import mails
+
+# __inti__
+# from ..methods.email import send_email_digest
+# from ..methods.text import send_text_message
 
 
 def notify(pid, event, **context):
     key = str(pid + '_' + event)
-    subscriber_emails = Subscription.find_one(Q('_id', 'eq', key)).types['email']
-    send_email(subscriber_emails, **context)
+
+    for notification_type in notifications.keys():
+        subscription = Subscription.find_one(Q('_id', 'eq', key))
+        subscribed_users = []
+        try:
+            subscribed_users = getattr(subscription, notification_type)
+        # TODO: handle this error
+        except AttributeError:
+            pass
+        send(subscribed_users, notification_type, **context)
 
 
-def send_email(subscriber_emails, **context):
-    for email in subscriber_emails:
-        user = User.find_one(Q('username', 'eq', email))
+def send(subscribed_users, notification_type, **context):
+    notifications.get(notification_type)(subscribed_users, **context)
 
+
+def email_transactional(subscribed_users, **context):
+    """
+    :param subscribed_users:mod-odm User objects
+    :param context: context variables for email template
+    :return:
+    """
+    for user in subscribed_users:
+        email = user.username
         if context.get('commenter') != user.fullname:
 
             mails.send_mail(
@@ -23,5 +42,11 @@ def send_email(subscriber_emails, **context):
                 name=user.fullname,
                 commenter=context.get('commenter'),
                 content=context.get('content'),
-                parent_comment= context.get('parent_comment'),
+                parent_comment=context.get('parent_comment'),
                 title=context.get('title'))
+
+notifications = {
+    'email_transactional': email_transactional
+}
+
+

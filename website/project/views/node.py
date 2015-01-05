@@ -336,14 +336,12 @@ def node_setting(**kwargs):
 
 
 def find_user_subscriptions(user, node):
-    user_subscriptions = []
-
-    for subscription in settings.SUBSCRIPTIONS_AVAILABLE:
-        event_id = node._id + "_" + subscription
-        subscription = Subscription.find_one(Q('_id', 'eq', event_id))
-        if user.username in subscription.types['email']:
-            user_subscriptions.append(user.username)
-        return user_subscriptions
+    node_subscriptions = []
+    user_subscriptions = getattr(user, 'email_transactional', [])
+    for subscription in user_subscriptions:
+        if subscription.node_id == node._id:
+            node_subscriptions.append(subscription.event_name)
+    return node_subscriptions
 
 
 def collect_node_config_js(addons):
