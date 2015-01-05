@@ -50,3 +50,7 @@ text-align: center;
     height: inherit;
     padding-top: 6px;
 }
+.tb-toggle-icon {
+	font-size: 10px;
+	width: 15px;
+}

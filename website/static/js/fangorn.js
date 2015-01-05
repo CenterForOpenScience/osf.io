@@ -111,6 +111,9 @@ function _fangornResolveToggle(item) {
         togglePlus = m('i.icon-plus', ' ');
     // check if folder has children whether it's lazyloaded or not.
     if (item.kind === 'folder') {
+        if(!item.data.permissions.view){
+            return '';
+        }
         if (item.open) {
             return toggleMinus;
         }
