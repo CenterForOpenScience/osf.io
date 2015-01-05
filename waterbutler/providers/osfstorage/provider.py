@@ -23,9 +23,8 @@ from waterbutler.providers.osfstorage.metadata import OsfStorageFolderMetadata
 signer = signing.Signer(settings.HMAC_SECRET, settings.HMAC_ALGORITHM)
 
 class OSFPath(utils.WaterButlerPath):
-
     def __init__(self, path):
-        super().__init__('/' + path, prefix=True, suffix=True)
+        super().__init__(path, prefix=True, suffix=True)
 
 class OSFStorageProvider(provider.BaseProvider):
     __version__ = '0.0.1'
@@ -80,6 +79,8 @@ class OSFStorageProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def download(self, **kwargs):
+        kwargs['path'] = OSFPath(kwargs['path']).path[1:]
+
         # osf storage metadata will return a virtual path within the provider
         resp = yield from self.make_signed_request(
             'GET',
@@ -91,8 +92,7 @@ class OSFStorageProvider(provider.BaseProvider):
 
         data = yield from resp.json()
         provider = self.make_provider(data['settings'])
-        data['data']['path'] = OSFPath(data['data']['path']).path
-
+        data['data']['path'] = '/' + data['data']['path']
         return (yield from provider.download(**data['data']))
 
     @asyncio.coroutine
@@ -161,7 +161,7 @@ class OSFStorageProvider(provider.BaseProvider):
                 self.callback,
             )
 
-        path, name = os.path.split(path)
+        _, name = os.path.split(path)
 
         metadata.update({
             'name': name,
@@ -173,6 +173,8 @@ class OSFStorageProvider(provider.BaseProvider):
     @asyncio.coroutine
     def delete(self, **kwargs):
         kwargs['auth'] = self.auth
+        kwargs['path'] = OSFPath(kwargs['path']).path[1:]
+
         yield from self.make_signed_request(
             'DELETE',
             self.callback,
