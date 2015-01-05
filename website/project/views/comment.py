@@ -67,10 +67,11 @@ def resolve_target(node, page_name, guid):
 def collect_discussion(target, users=None):
 
     users = users or collections.defaultdict(list)
-    for comment in getattr(target, 'commented', []):
-        if not comment.is_deleted:
-            users[comment.user].append(comment)
-        collect_discussion(comment, users=users)
+    if not getattr(target, 'commented', None) is None:
+        for comment in getattr(target, 'commented', []):
+            if not comment.is_deleted:
+                users[comment.user].append(comment)
+            collect_discussion(comment, users=users)
     return users
 
 # TODO get discussion from comment pane (in model)
@@ -139,7 +140,7 @@ def serialize_comment(comment, auth, anonymous=False):
     }
 
 
-def serialize_comments(record, auth, anonymous=False):
+def serialize_comments(record, auth, anonymous=False): #add paginator...?
 
     return [
         serialize_comment(comment, auth, anonymous)

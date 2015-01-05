@@ -150,6 +150,8 @@
 
         </ul>
 
+        <span data-bind="if: showChildren"><button class="btn btn-link">More...</button></span>
+
     </div>
 
 </script>

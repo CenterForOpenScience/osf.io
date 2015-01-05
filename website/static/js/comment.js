@@ -25,6 +25,12 @@ var ABUSE_CATEGORIES = {
     violence: 'Violence or harmful behavior'
 };
 
+var SIZE_PER_PAGE = {
+    page: 50,
+    pane: 20,
+    widget: 5
+}
+
 /*
     * Format UTC datetime relative to current datetime, ensuring that time
     * is in the past.
@@ -86,6 +92,8 @@ var BaseComment = function() {
 
     self.comments = ko.observableArray();
     self.unreadComments = ko.observable(0);
+
+    self.pageNumber = ko.observable(0);
 
     self.displayCount = ko.computed(function() {
         if (self.unreadComments() !== 0) {
