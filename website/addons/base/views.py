@@ -65,10 +65,13 @@ def check_file_guid(guid):
 def get_user_from_cookie(cookie):
     if not cookie:
         return None
-    token = itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie)
+    try:
+        token = itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie)
+    except itsdangerous.BadSignature:
+        raise HTTPError(httplib.UNAUTHORIZED)
     session = Session.load(token)
     if session is None:
-        return None
+        raise HTTPError(httplib.UNAUTHORIZED)
     return User.load(session.data['auth_user_id'])
 
 
@@ -103,6 +106,16 @@ def check_access(node, user, action, key=None):
     raise HTTPError(code)
 
 
+def make_auth(user):
+    if user is not None:
+        return {
+            'id': user._id,
+            'email': '{}@osf.io'.format(user._id),
+            'name': user.fullname,
+        }
+    return {}
+
+
 def get_auth(**kwargs):
     try:
         action = request.args['action']
@@ -116,15 +129,6 @@ def get_auth(**kwargs):
     view_only = request.args.get('viewOnly')
 
     user = get_user_from_cookie(cookie)
-
-    if user is not None:
-        auth = {
-            'id': user._id,
-            'email': '{}@osf.io'.format(user._id),
-            'name': user.fullname,
-        }
-    else:
-        auth = {}
 
     check_token(user, token)
 
@@ -142,7 +146,7 @@ def get_auth(**kwargs):
     settings = provider_settings.serialize_waterbutler_settings()
 
     return {
-        'auth': auth,
+        'auth': make_auth(user),
         'credentials': credentials,
         'settings': settings,
         'callback_url': node.api_url_for(
