@@ -75,7 +75,8 @@ var BaseComment = function() {
 
     self.abuseOptions = Object.keys(ABUSE_CATEGORIES);
 
-    self._loaded = false;
+    //self._loaded = false;
+    self._loaded = -1;
     self.id = ko.observable();
 
     self.page = ''; // Default
@@ -146,7 +147,7 @@ BaseComment.prototype.setupToolTips = function(elm) {
 BaseComment.prototype.fetch = function(thread) {
     var self = this;
     var deferred = $.Deferred();
-    if (self._loaded) {
+    if (self._loaded >= 0) {
         deferred.resolve(self.comments());
     }
     if (thread !== undefined) {
@@ -166,7 +167,7 @@ BaseComment.prototype.fetch = function(thread) {
             );
             self.unreadComments(response.nUnread);
             deferred.resolve(self.comments());
-            self._loaded = true;
+            self._loaded = self.comments().length - 1;
         }
     );
     return deferred;
@@ -175,7 +176,7 @@ BaseComment.prototype.fetch = function(thread) {
 BaseComment.prototype.getThread = function(thread_id) {
     var self = this;
     var deferred = $.Deferred();
-    if (self._loaded) {
+    if (self._loaded >= 0) {
         deferred.resolve(self.comments());
     }
     $.getJSON(
@@ -184,7 +185,7 @@ BaseComment.prototype.getThread = function(thread_id) {
         function(response) {
             self.comments(new CommentModel(response.comment, self, self.$root));
             deferred.resolve(self.comments());
-            self._loaded = true;
+            self._loaded = self.comments().length - 1;
         }
     );
     return deferred;
@@ -212,6 +213,7 @@ BaseComment.prototype.submitReply = function() {
         self.cancelReply();
         self.replyContent(null);
         self.comments.unshift(new CommentModel(response.comment, self, self.$root));
+        self._loaded += 1;
         if (!self.hasChildren()) {
             self.hasChildren(true);
         }
@@ -276,7 +278,7 @@ var CommentModel = function(data, $parent, $root) {
     );
 
     self.isVisible = ko.computed(function() {
-        return !self.isDeleted() && !self.isAbuse();
+        return !self.isDeleted() && !self.isHidden() && !self.isAbuse();
     });
 
     self.editNotEmpty = ko.computed(function() {
@@ -294,7 +296,7 @@ var CommentModel = function(data, $parent, $root) {
     });
 
     self.shouldShow = ko.computed(function() {
-        return !self.isDeleted() || self.hasChildren() || self.canEdit();
+        return (!self.isDeleted() && !self.isHidden()) || self.hasChildren() || self.canEdit();
     });
 
 };

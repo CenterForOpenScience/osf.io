@@ -4,15 +4,17 @@
 
         <div class="comment-body">
 
-            <div data-bind="if: isDeleted">
+            <div data-bind="if: isDeleted || isHidden">
                 <div>
                     <span data-bind="if: hasChildren">
                         <i data-bind="css: toggleIcon, click: toggle"></i>
                     </span>
-                    Comment deleted
+                    Comment deleted.
+                    <span data-bind="if: canEdit">
+                        <a data-bind="click: startUndelete">Restore</a>
+                    </span>
                 </div>
                 <div data-bind="if: canEdit">
-                    <a data-bind="click: startUndelete">Restore</a>
                     <div data-bind="if: undeleting">
                         <a class="btn btn-default btn-sm" data-bind="click: submitUndelete">Submit</a>
                         <a class="btn btn-default btn-sm" data-bind="click: cancelUndelete">Cancel</a>
@@ -25,9 +27,9 @@
                     <span data-bind="if: hasChildren">
                         <i data-bind="css: toggleIcon, click: toggle"></i>
                     </span>
-                    Comment reported
+                    Comment reported.
+                    <a data-bind="click: startUnreportAbuse">Not abuse</a>
                 </div>
-                <a data-bind="click: startUnreportAbuse">Not abuse</a>
                 <div data-bind="if: unreporting">
                     <a class="btn btn-primary btn-sm" data-bind="click: submitUnreportAbuse">Submit</a>
                     <a class="btn btn-default btn-sm" data-bind="click: cancelUnreportAbuse">Cancel</a>

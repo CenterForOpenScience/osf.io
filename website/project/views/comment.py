@@ -136,11 +136,12 @@ def serialize_comment(comment, auth, anonymous=False):
         'canEdit': comment.user == auth.user,
         'modified': comment.modified,
         'isDeleted': comment.is_deleted,
+        'isHidden': comment.is_hidden,
         'isAbuse': auth.user and auth.user._id in comment.reports,
     }
 
 
-def serialize_comments(record, auth, anonymous=False): #add paginator...?
+def serialize_comments(record, auth, anonymous=False):
 
     return [
         serialize_comment(comment, auth, anonymous)
@@ -202,13 +203,14 @@ def add_comment(**kwargs):
 
 
 @must_be_contributor_or_public
-def list_comments(auth, page=None, **kwargs):
+def list_comments(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    if not page:
-        page = request.args.get('page')
+    page = request.args.get('page')
     anonymous = has_anonymous_link(node, auth)
     guid = request.args.get('target')
     target = resolve_target(node, page, guid)
+    #end = request.args.get('loaded')
+    #start = max(0, request.args.get('loaded') - request.args.get('size'))
     serialized_comments = serialize_comments(target, auth, anonymous)
     n_unread = 0
 
@@ -285,8 +287,8 @@ def update_comments_timestamp(auth, **kwargs):
     if node.is_contributor(auth.user):
         auth.user.comments_viewed_timestamp[node._id] = datetime.utcnow()
         auth.user.save()
-        page = request.json.get('page')
-        list_comments(page=page, **kwargs)
+        #page = request.json.get('page')
+        #list_comments(page=page, **kwargs)
         return {node._id: auth.user.comments_viewed_timestamp[node._id].isoformat()}
     else:
         return {}

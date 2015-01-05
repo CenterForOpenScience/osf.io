@@ -161,6 +161,7 @@ class Comment(GuidStoredObject): # TODO add pane; backref declares new property?
     modified = fields.BooleanField()
 
     is_deleted = fields.BooleanField(default=False)
+    is_hidden = fields.BooleanField(default=False)
     content = fields.StringField()
 
     # Dictionary field mapping user IDs to dictionaries of report details:
@@ -245,6 +246,16 @@ class Comment(GuidStoredObject): # TODO add pane; backref declares new property?
         if save:
             self.save()
 
+    def hide(self, save=False):
+        self.is_hidden = True
+        if save:
+            self.save()
+
+    def show(self, save=False):
+        self.is_hidden = False
+        if save:
+            self.save()
+
     def report_abuse(self, user, save=False, **kwargs):
         """Report that a comment is abuse.
 
@@ -281,11 +292,12 @@ class CommentPane(StoredObject):
 
     # The key is also its primary key
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    project = fields.ForeignField('node')
 
     @classmethod
     def create(cls, **kwargs):
         commentpane = cls(**kwargs)
-
+        commentpane.project = kwargs.get('node');
         commentpane.save()
 
         return commentpane
@@ -665,11 +677,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             # Add default creator permissions
             for permission in CREATOR_PERMISSIONS:
                 self.add_permission(self.creator, permission, save=False)
-
-        #self.comment_pane_overview = kwargs.get('comment_pane_overview') or CommentPane()
-        #self.comment_pane_files = kwargs.get('comment_pane_files') or CommentPane()
-        #self.comment_pane_total = kwargs.get('comment_pane_total') or CommentPane()
-        #self.update_total_comments()
 
     def __repr__(self):
         return ('<Node(title={self.title!r}, category={self.category!r}) '
