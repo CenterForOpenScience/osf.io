@@ -138,6 +138,9 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             },
         )
 
+    def get_waterbutler_render_url(self, path, **kwargs):
+        return self.owner.web_url_for('s3_view', path=path)
+
     def to_json(self, user):
         rv = super(AddonS3NodeSettings, self).to_json(user)
 

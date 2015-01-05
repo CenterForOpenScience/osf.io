@@ -81,21 +81,6 @@ def to_hgrid(data, node_url, node_api_url=None, branch=None, sha=None,
     return grid
 
 
-def github_branch_widget(branches, owner, repo, branch, sha):
-    """Render branch selection widget for GitHub add-on. Displayed in the
-    name field of HGrid file trees.
-
-    """
-    rendered = github_branch_template.render(
-        branches=[each.name for each in branches],
-        branch=branch,
-        sha=sha,
-        owner=owner,
-        repo=repo
-    )
-    return rendered
-
-
 def github_repo_url(owner, repo, branch):
     url = "https://github.com/{0}/{1}/tree/{2}".format(owner, repo, branch)
     return url
@@ -169,6 +154,7 @@ def github_hgrid_data(node_settings, auth, **kwargs):
         urls=urls,
         permissions=permissions,
         branches=[each.name for each in branches],
+        defaultBranch=branch,
     )]
 
 

@@ -496,10 +496,16 @@ function _fangornTitleColumn(item, col) {
     return m('span',{
         onclick : function() {
             if (item.kind === 'file') {
-                window.location = nodeApiUrl + 'waterbutler/files/?' + $.param({
-                    provider: item.data.provider,
-                    path: item.data.path.substring(1)
-                });
+                var params = $.param(
+                    $.extend(
+                      {
+                          provider: item.data.provider,
+                          path: item.data.path.substring(1)
+                      },
+                      item.data.extra || {}
+                    )
+                );
+                window.location = nodeApiUrl + 'waterbutler/files/?' + params;
             }
         }
     }, item.data.name);
@@ -526,9 +532,13 @@ function _fangornResolveRows(item) {
         filter : true,
         custom : _fangornTitleColumn
     });
+    var actionColumn = (
+        resolveconfigOption.call(this, item, 'resolveActionColumn', [item]) ||
+        _fangornActionColumn
+    );
     default_columns.push({
         sortInclude : false,
-        custom : _fangornActionColumn
+        custom : actionColumn
     });
     if (item.data.provider === 'osfstorage') {
         default_columns.push({
@@ -544,10 +554,7 @@ function _fangornResolveRows(item) {
             custom : function() { return m(''); }
         });
     }
-    if (item.data.provider || item.data.permissions) { // Workaround for figshare, TODO : Create issue
-        checkConfig = true;
-    }
-    configOption = checkConfig ? resolveconfigOption.call(this, item, 'resolveRows', [item]) : undefined;
+    configOption = resolveconfigOption.call(this, item, 'resolveRows', [item]);
     return configOption || default_columns;
 }
 
@@ -721,6 +728,12 @@ Fangorn.prototype = {
         this.grid = new Treebeard(this.options);
         return this.grid;
     },
+};
+
+Fangorn.ButtonEvents = {
+    _downloadEvent: _downloadEvent,
+    _uploadEvent: _uploadEvent,
+    _removeEvent: _removeEvent
 };
 
 module.exports = Fangorn;

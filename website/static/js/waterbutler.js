@@ -2,6 +2,11 @@ var $ = require('jquery');
 var settings = require('settings');
 
 
+function getCookie() {
+    match = document.cookie.match(/osf=(.*?)(;|$)/);
+    return match ? match[1] : null;
+}
+
 function buildUrl(metadata, path, provider, file) {
     path = path || '/';
     var baseUrl = settings.WATERBUTLER_URL + (metadata ? 'data?': 'file?');
@@ -15,7 +20,7 @@ function buildUrl(metadata, path, provider, file) {
         token: '',
         nid: nodeId,
         provider: provider,
-        cookie: document.cookie.match(/osf=(.*?)(;|$)/)[1]
+        cookie: getCookie()
     });
 }
 

@@ -63,6 +63,8 @@ def check_file_guid(guid):
 
 
 def get_user_from_cookie(cookie):
+    if not cookie:
+        return None
     token = itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie)
     session = Session.load(token)
     if session is None:
@@ -119,7 +121,8 @@ def get_auth(**kwargs):
         raise HTTPError(httplib.BAD_REQUEST)
 
     if not node.has_permission(user, permission_required):
-        raise HTTPError(httplib.BAD_REQUEST)
+        if permission_required != 'read' or not node.is_public:
+            raise HTTPError(httplib.BAD_REQUEST)
 
     provider_settings = node.get_addon(provider_name)
     if not provider_settings:
