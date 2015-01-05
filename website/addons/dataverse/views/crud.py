@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import os  # noqa
+import os
 import datetime
 import logging
 import requests
@@ -172,6 +172,7 @@ def dataverse_view_file(node_addon, auth, **kwargs):
 
     if rendered is None:
         filename, content = scrape_dataverse(file_id)
+        _, ext = os.path.splitext(filename)
         download_url = node.api_url_for(
             'dataverse_download_file_proxy', path=file_id
         )
@@ -179,19 +180,21 @@ def dataverse_view_file(node_addon, auth, **kwargs):
             node_addon,
             cache_file_name,
             start_render=True,
-            remote_path=file_obj.file_id,
+            remote_path=file_obj.file_id + ext,  # Include extension for MFR
             file_content=content,
             download_url=download_url,
         )
     else:
         filename, _ = scrape_dataverse(file_id, name_only=True)
 
+    render_url = node.api_url_for('dataverse_get_rendered_file',
+                                path=file_id)
     rv = {
         'file_name': filename,
         'rendered': rendered,
+        'render_url': render_url,
         'urls': {
-            'render': node.api_url_for('dataverse_get_rendered_file',
-                                       path=file_id),
+            'render': render_url,
             'download': node.web_url_for('dataverse_download_file',
                                          path=file_id),
             'info': node.api_url_for('dataverse_get_file_info',
@@ -207,9 +210,13 @@ def dataverse_view_file(node_addon, auth, **kwargs):
 @must_not_be_registration
 @must_have_addon('dataverse', 'node')
 def dataverse_upload_file(node_addon, auth, **kwargs):
-
     node = node_addon.owner
     user_settings = node_addon.user_settings
+
+    try:
+        name = request.args['name']
+    except KeyError:
+        raise HTTPError(http.BAD_REQUEST)
 
     now = datetime.datetime.utcnow()
 
@@ -227,13 +234,12 @@ def dataverse_upload_file(node_addon, auth, **kwargs):
     dataverse = get_dataverse(connection, node_addon.dataverse_alias)
     study = get_study(dataverse, node_addon.study_hdl)
 
-    upload = request.files.get('file')
-    filename = secure_filename(upload.filename)
+    filename = secure_filename(name)
     action = 'file_uploaded'
     old_id = None
 
     # Fail if file is too small (Dataverse issue)
-    content = upload.read()
+    content = request.data
     if len(content) < 5:
         raise HTTPError(http.UNSUPPORTED_MEDIA_TYPE)
 
@@ -271,6 +277,7 @@ def dataverse_upload_file(node_addon, auth, **kwargs):
         'file_id': file.id,
         'old_id': old_id,
         'name': filename,
+        'path': filename,
         'size': [
             len(content),
             rubeus.format_filesize(len(content))

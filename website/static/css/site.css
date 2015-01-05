@@ -387,10 +387,15 @@ li.pointer {
 }
 
 /* Make wiki images responsive */
-.wiki img,
-.addon-widget-container img {
+.wiki img{
   vertical-align: middle;
   display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.addon-widget-container img {
+  vertical-align: middle;
   max-width: 100%;
   height: auto;
 }
@@ -433,8 +438,14 @@ h4 {
     padding-bottom: 10px;
 }
 
-.social img {
+.social-icons img {
+    padding: 0px 0px 0px 0px;
+    line-height: 14px;
+}
+
+.social-gravatar {
     padding: 0px 0px 10px 0px;
+    margin-top: 10px;
 }
 
 .social {
@@ -1078,9 +1089,6 @@ div.search-result  {
     font-size: 10pt;
 }
 
-.search-result img{
-    margin-top: 10px;
-}
 
 .search-results.search-result {
     overflow-x: hidden;
@@ -1698,6 +1706,12 @@ div.pydocx-center{
 }
 
 #footerSlideIn div > a {
-    margin-right:5px;
-    white-space:nowrap;
+    margin-right: 5px;
+    white-space: nowrap;
+}
+
+/* Necessary to handle lots of text in tooltips */
+.tooltip-inner {
+    overflow: hidden;
+    text-overflow: ellipsis;
 }

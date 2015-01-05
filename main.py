@@ -9,4 +9,6 @@ app = init_app('website.settings', set_backends=True, routes=True)
 if __name__ == '__main__':
     host = os.environ.get('OSF_HOST', None)
     port = os.environ.get('OSF_PORT', None)
+    if port:
+        port = int(port)
     app.run(host=host, port=port)

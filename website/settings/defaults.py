@@ -6,6 +6,8 @@ These settings can be overridden in local.py.
 
 import os
 import json
+import hashlib
+
 
 os_env = os.environ
 
@@ -205,3 +207,14 @@ DISK_SAVING_MODE = False
 
 # Add Contributors (most in common)
 MAX_MOST_IN_COMMON_LENGTH = 15
+
+# Google Analytics
+GOOGLE_ANALYTICS_ID = None
+GOOGLE_SITE_VERIFICATION = None
+
+# Pingdom
+PINGDOM_ID = None
+
+DEFAULT_HMAC_SECRET = 'changeme'
+DEFAULT_HMAC_ALGORITHM = hashlib.sha256
+WATERBUTLER_URL = 'http://localhost:7777/'

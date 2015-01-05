@@ -7,10 +7,10 @@ var $ = require('jquery');
 require('dropzonePatch'); // Required for uploads
 var m = require('mithril');
 var Treebeard = require('treebeard');
-var $osf = require('osfHelpers');
-var bootbox = require('bootbox');
+var waterbutler = require('waterbutler');
 
 var tbOptions;
+
 
 /**
  * Returns custom icons for OSF depending on the type of item
@@ -24,7 +24,7 @@ function _fangornResolveIcon(item) {
         pointerFolder = m('i.icon-hand-right', ' '),
         openFolder  = m('i.icon-folder-open-alt', ' '),
         closedFolder = m('i.icon-folder-close-alt', ' '),
-        configOption = item.data.addon ? resolveconfigOption.call(this, item, 'folderIcon', [item]) : undefined,
+        configOption = item.data.provider ? resolveconfigOption.call(this, item, 'folderIcon', [item]) : undefined,
         ext,
         extensions;
 
@@ -74,8 +74,8 @@ Fangorn.config = {};
  * @returns {*} Returns the configuration, can be string, number, array, or function;
  */
 function getconfig(item, key) {
-    if (item && item.data.addon && Fangorn.config[item.data.addon]) {
-        return Fangorn.config[item.data.addon][key];
+    if (item && item.data.provider && Fangorn.config[item.data.provider]) {
+        return Fangorn.config[item.data.provider][key];
     }
     return undefined;
 }
@@ -127,6 +127,8 @@ function _fangornResolveToggle(item) {
  * @private
  */
 function _fangornToggleCheck(item) {
+    item.data.permissions = item.data.permissions || item.parent().data.permissions;
+
     if (item.data.permissions.view) {
         return true;
     }
@@ -142,9 +144,9 @@ function _fangornToggleCheck(item) {
  * @returns {String} Returns the url string from data or resolved through add on settings.
  * @private
  */
-function _fangornResolveUploadUrl(item) {
-    var configOption = resolveconfigOption.call(this, item, 'uploadUrl', [item]);
-    return configOption || item.data.urls.upload;
+function _fangornResolveUploadUrl(item, file) {
+    var configOption = resolveconfigOption.call(this, item, 'uploadUrl', [item, file]);
+    return configOption || waterbutler.buildFileUrl(item, file);
 }
 
 /**
@@ -170,6 +172,7 @@ function _fangornMouseOverRow(item, event) {
 function _fangornUploadProgress(treebeard, file, progress) {
     var item = treebeard.dropzoneItemCache.children[0],
         msgText = 'Uploaded ' + Math.floor(progress) + '%';
+
     if (progress < 100) {
         item.notify.update(msgText, 'success', 1, 0);
     } else {
@@ -193,12 +196,18 @@ function _fangornSending(treebeard, file, xhr, formData) {
         configOption,
         blankItem = {       // create a blank item that will refill when upload is finished.
             name : file.name,
-            kind : 'item',
-            addon : parent.data.addon,
+            kind : 'file',
+            provider : parent.data.provider,
             children : [],
-            data : { permissions : parent.data.permissions }
+            data : {}
         };
     treebeard.createItem(blankItem, parentID);
+
+    var _send = xhr.send;
+    xhr.send = function() {
+        _send.call(xhr, file);
+    };
+
     configOption = resolveconfigOption.call(treebeard, parent, 'uploadSending', [file, xhr, formData]);
     return configOption || null;
 }
@@ -214,6 +223,7 @@ function _fangornSending(treebeard, file, xhr, formData) {
 function _fangornAddedFile(treebeard, file) {
     var item = treebeard.dropzoneItemCache,
         configOption = resolveconfigOption.call(treebeard, item, 'uploadAdd', [file, item]);
+
     return configOption || null;
 }
 
@@ -231,10 +241,8 @@ function _fangornDragOver(treebeard, event) {
         item = treebeard.find(itemID);
     $('.tb-row').removeClass(dropzoneHoverClass);
     if (itemID !== undefined) {
-        if (item.data.urls) {
-            if (item.data.urls.upload !== null && item.kind === 'folder') {
-                $(event.target).closest('.tb-row').addClass(dropzoneHoverClass);
-            }
+        if (item.data.provider && item.kind === 'folder') {
+            $(event.target).closest('.tb-row').addClass(dropzoneHoverClass);
         }
     }
 }
@@ -271,9 +279,8 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
     // Dataverse : Object, actionTaken : file_uploaded
     revisedItem = resolveconfigOption.call(treebeard, item.parent(), 'uploadSuccess', [file, item, response]);
     if (!revisedItem && response) {
-        if (response.actionTaken === 'file_added' || response.addon === 'dropbox' || response.addon === 'github' || response.addon === 'dataverse') { // Base OSF response
-            item.data = response;
-        }
+        item.data = response;
+        item.data.permissions = item.parent().data.permissions;
     }
     treebeard.redraw();
 }
@@ -325,10 +332,10 @@ function _downloadEvent (event, item, col) {
     } catch (e) {
         window.event.cancelBubble = true;
     }
-    if (item.data.addon === 'osfstorage') {
+    if (item.data.provider === 'osfstorage') {
         item.data.downloads++;
     }
-    window.location = item.data.urls.download;
+    window.location = waterbutler.buildFileUrl(item);
 }
 
 /**
@@ -349,12 +356,16 @@ function _removeEvent (event, item, col) {
     if (item.data.permissions.edit) {
         // delete from server, if successful delete from view
         $.ajax({
-            url: item.data.urls.delete,
+            url: waterbutler.buildFileUrl(item),
             type : 'DELETE'
-        }).done(function (data) {
+        })
+        .done(function(data) {
             // delete view
             tb.deleteNode(item.parentID, item.id);
-        }).fail(function (data) {
+            window.console.log('Delete success: ', data);
+        })
+        .fail(function(data){
+            window.console.log('Delete failed: ', data);
             item.notify.update('Delete failed.', 'danger', undefined, 3000);
         });
     }
@@ -372,7 +383,12 @@ function _fangornResolveLazyLoad(item) {
     if (configOption) {
         return configOption;
     }
-    return item.data.urls.fetch || false;
+
+    if (item.data.provider === undefined) {
+        return false;
+    }
+
+    return waterbutler.buildMetadataUrl(item);
 }
 
 /**
@@ -417,7 +433,7 @@ function _fangornLazyLoadError (item) {
  */
 function _fangornUploadMethod(item) {
     var configOption = resolveconfigOption.call(this, item, 'uploadMethod', [item]);
-    return configOption || 'POST';
+    return configOption || 'PUT';
 }
 
 /**
@@ -431,8 +447,10 @@ function _fangornUploadMethod(item) {
 function _fangornActionColumn (item, col) {
     var self = this,
         buttons = [];
+    item.data.permissions = item.data.permissions || item.parent().data.permissions;
+    //
     // Upload button if this is a folder
-    if (item.kind === 'folder' && item.data.addon && item.data.permissions.edit) {
+    if (item.kind === 'folder' && item.data.provider && item.data.permissions.edit) {
         buttons.push({
             'name' : '',
             'icon' : 'icon-upload-alt',
@@ -441,7 +459,7 @@ function _fangornActionColumn (item, col) {
         });
     }
     //Download button if this is an item
-    if (item.kind === 'item') {
+    if (item.kind === 'file') {
         buttons.push({
             'name' : '',
             'icon' : 'icon-download-alt',
@@ -473,13 +491,23 @@ function _fangornActionColumn (item, col) {
  * @private
  */
 function _fangornTitleColumn(item, col) {
-    return m('span',
-        { onclick : function() {
-            if (item.kind === 'item') {
-                window.location = item.data.urls.view;
+    //TODO
+    return m('span',{
+        onclick : function() {
+            if (item.kind === 'file') {
+                var params = $.param(
+                    $.extend(
+                      {
+                          provider: item.data.provider,
+                          path: item.data.path.substring(1)
+                      },
+                      item.data.extra || {}
+                    )
+                );
+                window.location = nodeApiUrl + 'waterbutler/files/?' + params;
             }
-        }},
-        item.data.name);
+        }
+    }, item.data.name);
 }
 
 /**
@@ -493,6 +521,8 @@ function _fangornResolveRows(item) {
     var default_columns = [],
         checkConfig = false,
         configOption;
+
+    item.data.permissions = item.data.permissions || item.parent().data.permissions;
     item.css = '';
 
     default_columns.push({
@@ -501,11 +531,15 @@ function _fangornResolveRows(item) {
         filter : true,
         custom : _fangornTitleColumn
     });
+    var actionColumn = (
+        resolveconfigOption.call(this, item, 'resolveActionColumn', [item]) ||
+        _fangornActionColumn
+    );
     default_columns.push({
         sortInclude : false,
-        custom : _fangornActionColumn
+        custom : actionColumn
     });
-    if (item.data.addon === 'osfstorage') {
+    if (item.data.provider === 'osfstorage') {
         default_columns.push({
             data : 'downloads',
             sortInclude : false,
@@ -519,10 +553,7 @@ function _fangornResolveRows(item) {
             custom : function() { return m(''); }
         });
     }
-    if (item.data.addon || item.data.permissions) { // Workaround for figshare, TODO : Create issue
-        checkConfig = true;
-    }
-    configOption = checkConfig ? resolveconfigOption.call(this, item, 'resolveRows', [item]) : undefined;
+    configOption = resolveconfigOption.call(this, item, 'resolveRows', [item]);
     return configOption || default_columns;
 }
 
@@ -612,13 +643,13 @@ tbOptions = {
         var size,
             maxSize,
             msgText;
-        if (item.data.addon && item.kind === 'folder') {
+        if (item.data.provider && item.kind === 'folder') {
             if (item.data.permissions.edit) {
                 if (!_fangornFileExists.call(treebeard, item, file)) {
                     if (item.data.accept && item.data.accept.maxSize) {
                         size = Math.round(file.size / 10000) / 100;
                         maxSize = item.data.accept.maxSize;
-                        if (maxSize >= size && size !== 0) {
+                        if (maxSize >= size && file.size > 0) {
                             return true;
                         }
                         if (maxSize < size) {
@@ -695,8 +726,13 @@ Fangorn.prototype = {
     _initGrid: function () {
         this.grid = new Treebeard(this.options);
         return this.grid;
-    }
+    },
+};
 
+Fangorn.ButtonEvents = {
+    _downloadEvent: _downloadEvent,
+    _uploadEvent: _uploadEvent,
+    _removeEvent: _removeEvent
 };
 
 module.exports = Fangorn;

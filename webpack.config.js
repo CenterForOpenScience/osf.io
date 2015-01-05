@@ -38,6 +38,8 @@ var entry = {
         'mithril',
         'treebeard',
         'osfHelpers',
+        'settings',
+        'waterbutler',
         'knockout-punches',
         'dropzone',
         'knockout-sortable',
@@ -94,6 +96,8 @@ module.exports = {
             // Dropzone doesn't have a proper 'main' entry in its bower.json
             'dropzone': staticPath('vendor/bower_components/dropzone/downloads/dropzone.js'),
             // Also alias some internal libraries for easy access
+            'waterbutler': staticPath('js/waterbutler.js'),
+            'settings': staticPath('js/settings.js'),
             'fangorn': staticPath('js/fangorn.js'),
             'dropzonePatch': staticPath('js/dropzonePatch.js'),
             'folderpicker': staticPath('js/folderPicker.js'),

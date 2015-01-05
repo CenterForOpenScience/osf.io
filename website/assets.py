@@ -25,7 +25,7 @@ css = Bundle(
         'css/site.css',
         'css/fangorn.css',
         'css/commentpane.css',
-        'vendor/animate/animate-tasteful.min.css',
+        'css/site.css',
         filters="cssmin"),
     output="public/css/common.css"
 )

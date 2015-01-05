@@ -140,19 +140,19 @@ var ProjectViewModel = function(data) {
     // Editable Title and Description
     if (self.userCanEdit) {
         var editableOptions = {
-            type:  'text',
-            pk:    self._id,
-            url:   self.apiUrl + 'edit/',
+            type: 'text',
+            pk: self._id,
+            url: self.apiUrl + 'edit/',
             ajaxOptions: {
                 type: 'POST',
                 dataType: 'json',
                 contentType: 'application/json'
             },
-            params: function(params){
+            params: function (params) {
                 // Send JSON data
                 return JSON.stringify(params);
             },
-            success: function(){
+            success: function () {
                 document.location.reload(true);
             },
             error: osfHelpers.handleEditableError,
@@ -162,49 +162,50 @@ var ProjectViewModel = function(data) {
         // TODO: Remove hardcoded selectors.
         $.fn.editable.defaults.mode = 'inline';
         $('#nodeTitleEditable').editable($.extend({}, editableOptions, {
-            name:  'title',
+            name: 'title',
             title: 'Edit Title',
-            validate: function(value) {
-                    if($.trim(value) === '') {
-                        return 'Title cannot be blank.';
-                    }
+            validate: function (value) {
+                if ($.trim(value) === '') {
+                    return 'Title cannot be blank.';
                 }
+            }
         }));
         $('#nodeDescriptionEditable').editable($.extend({}, editableOptions, {
-            name:  'description',
+            name: 'description',
             title: 'Edit Description',
             emptytext: 'No description',
             emptyclass: 'text-muted'
         }));
-        
-        /**
-         * Add project to the Project Organizer.
-         */
-        self.addToDashboard = function() {
-            self.inDashboard(true);
-            var jsonData = {
-                'toNodeID': self.dashboard,
-                'pointerID': self._id
-            };
-            osfHelpers.postJSON('/api/v1/pointer/', jsonData)
-                .fail(function(data) {
-                    self.inDashboard(false);
-                    osfHelpers.handleJSONError(data);
-            });
-        };
-        /**
-         * Remove project from the Project Organizer.
-         */
-        self.removeFromDashboard = function() {
-            self.inDashboard(false);
-            var deleteUrl = '/api/v1/folder/' + self.dashboard + '/pointer/' + self._id;
-            $.ajax({url: deleteUrl, type: 'DELETE'})
-                .fail(function() {
-                    self.inDashboard(true);
-                    osfHelpers.growl('Error', 'The project could not be removed', 'danger');
-            });
-        };
     }
+
+    /**
+     * Add project to the Project Organizer.
+     */
+    self.addToDashboard = function() {
+        self.inDashboard(true);
+        var jsonData = {
+            'toNodeID': self.dashboard,
+            'pointerID': self._id
+        };
+        osfHelpers.postJSON('/api/v1/pointer/', jsonData)
+            .fail(function(data) {
+                self.inDashboard(false);
+                osfHelpers.handleJSONError(data);
+        });
+    };
+    /**
+     * Remove project from the Project Organizer.
+     */
+    self.removeFromDashboard = function() {
+        self.inDashboard(false);
+        var deleteUrl = '/api/v1/folder/' + self.dashboard + '/pointer/' + self._id;
+        $.ajax({url: deleteUrl, type: 'DELETE'})
+            .fail(function() {
+                self.inDashboard(true);
+                osfHelpers.growl('Error', 'The project could not be removed', 'danger');
+        });
+    };
+
 
     /**
     * Toggle the watch status for this project.

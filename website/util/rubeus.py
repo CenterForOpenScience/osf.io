@@ -101,7 +101,7 @@ def build_addon_root(node_settings, name, permissions=None,
             'edit': node_settings.owner.can_edit(auth) and not node_settings.owner.is_registration
         }
     rv = {
-        'addon': node_settings.config.short_name,
+        'provider': node_settings.config.short_name,
         'addonFullname': node_settings.config.full_name,
         'name': name,
         'iconUrl': node_settings.config.icon_url,
