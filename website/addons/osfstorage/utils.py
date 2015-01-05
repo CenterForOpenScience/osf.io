@@ -252,9 +252,9 @@ def get_filename(version_idx, file_version, file_record):
     :param FileRecord file_record: Root file object
     """
     if version_idx == len(file_record.versions):
-        return file_record.name
+        return '/' + file_record.name
     name, ext = os.path.splitext(file_record.name)
-    return u'{name}-{date}{ext}'.format(
+    return u'/{name}-{date}{ext}'.format(
         name=name,
         date=file_version.date_created.isoformat(),
         ext=ext,
