@@ -48,7 +48,7 @@ if ($comments.length) {
     var hasChildren = window.contextVars.node.hasChildren;
     var node_id = window.contextVars.node._id;
     Comment.init('.commentPane', 'node', node_id, 'pane', userName, canComment, hasChildren);
-    Comment.init('#comments-widget-container', 'node', node_id, 'widget', userName, canComment, hasChildren);
+    Comment.init('#comments-widget-container', 'total', node_id, 'widget', userName, canComment, hasChildren);
 }
 
 $(document).ready(function() {

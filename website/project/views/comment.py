@@ -176,7 +176,6 @@ def add_comment(**kwargs):
         content=content,
     )
     comment.save()
-    #node.update_total_comments()
 
     return {
         'comment': serialize_comment(comment, auth)
@@ -189,17 +188,23 @@ def list_comments(auth, **kwargs):
     anonymous = has_anonymous_link(node, auth)
     page = request.args.get('page')
     guid = request.args.get('target')
-    target = resolve_target(node, page, guid)
     #end = request.args.get('loaded')
     #start = max(0, request.args.get('loaded') - request.args.get('size'))
-    serialized_comments = serialize_comments(target, auth, anonymous)
+    if page == 'total':
+        serialized_comments = [
+            serialize_comment(comment, auth, anonymous)
+            for comment in getattr(node, 'comment_owner', [])
+        ]
+    else:
+        target = resolve_target(node, page, guid)
+        serialized_comments = serialize_comments(target, auth, anonymous)
     n_unread = 0
 
     if node.is_contributor(auth.user):
         if auth.user.comments_viewed_timestamp is None:
             auth.user.comments_viewed_timestamp = {}
             auth.user.save()
-        n_unread = n_unread_comments(target, auth.user)
+        n_unread = n_unread_comments(node, auth.user)
     return {
         'comments': serialized_comments,
         'nUnread': n_unread

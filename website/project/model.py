@@ -906,10 +906,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             )
         return self.can_edit(auth)
 
-    def update_total_comments(self):
-        return
-        #setattr(self.comment_pane_total, 'commented', getattr(self, 'comment_owner', self.comment_pane_overview))
-
     def save(self, *args, **kwargs):
 
         update_piwik = kwargs.pop('update_piwik', True)
