@@ -25,7 +25,7 @@
                     "submit_string": "Create Account",
                     "field_name_prefix": "register_",
                     "submit_btn_class": "btn-success",
-                    "next_url": "${next}"
+                    "next_url": "${next_url}"
                 },
                 "replace": true
             }'></div>
@@ -39,11 +39,11 @@
                     "id": "signinForm",
                     "name": "signin",
                     "method_string": "POST",
-                    "action_string": "/login/?next=${next}",
+                    "action_string": "/login/?next=${next_url}",
                     "form_class": "form-stacked",
                     "submit_string": "Sign In",
                     "submit_btn_class": "btn-primary",
-                    "next_url": "${next}"
+                    "next_url": "${next_url}"
                 },
                 "replace": true
             }'></div>
