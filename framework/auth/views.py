@@ -116,7 +116,7 @@ def auth_login(auth, registration_form=None, forgot_password_form=None, **kwargs
             except exceptions.LoginNotAllowedError:
                 status.push_status_message(language.UNCONFIRMED, 'warning')
                 # Don't go anywhere
-                return {'next': ''}
+                return {'next_url': ''}
             except exceptions.PasswordIncorrectError:
                 status.push_status_message(language.LOGIN_FAILED)
             except exceptions.TwoFactorValidationError:
