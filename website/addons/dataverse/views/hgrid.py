@@ -58,16 +58,6 @@ def dataverse_hgrid_root(node_addon, auth, state=None, **kwargs):
         'release': node.api_url_for('dataverse_release_study'),
     }
 
-    # # Determine default state / selection permissions
-    # template_file = os.path.join(
-    #     BASE_PATH, 'addons/dataverse/templates/dataverse_state_template.mako'
-    # )
-    # dataverse_state_template = Template(filename=template_file)
-    # state_append = dataverse_state_template.render(
-    #     state=state,
-    #     has_released_files=bool(released_files),
-    #     authorized=authorized,
-    # )
     buttons = [rubeus.build_addon_button(
         '<i class="icon-globe"></i> Release Study',
         'releaseStudy')] if state == 'draft' else None
@@ -77,7 +67,6 @@ def dataverse_hgrid_root(node_addon, auth, state=None, **kwargs):
         study_name,
         urls=urls,
         permissions=permissions,
-        # extra=state_append,
         buttons=buttons,
         study=study_name,
         doi=study.doi,

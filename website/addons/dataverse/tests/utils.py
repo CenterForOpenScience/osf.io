@@ -142,6 +142,8 @@ mock_responses = {
                  u'delete': u'/api/v1/project/xxxxx/dataverse/file/54321/',
                  u'view': u'/project/xxxxx/dataverse/file/54321/'},
         u'permissions': {u'edit': False, u'view': True},
-        u'addon': u'dataverse'
+        u'addon': u'dataverse',
+        u'hasReleasedFiles': True,
+        u'state': 'released',
     }
 }
