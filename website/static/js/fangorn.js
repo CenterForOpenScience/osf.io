@@ -199,7 +199,7 @@ function _fangornSending(treebeard, file, xhr, formData) {
             kind : 'file',
             provider : parent.data.provider,
             children : [],
-            data : { permissions : parent.data.permissions }
+            data : {}
         };
     treebeard.createItem(blankItem, parentID);
 
@@ -279,9 +279,8 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
     // Dataverse : Object, actionTaken : file_uploaded
     revisedItem = resolveconfigOption.call(treebeard, item.parent(), 'uploadSuccess', [file, item, response]);
     if (!revisedItem && response) {
-        if (response.actionTaken === 'file_added' || response.addon === 'dropbox' || response.addon === 'github' || response.addon === 'dataverse') { // Base OSF response
-            item.data = response;
-        }
+        item.data = response;
+        item.data.permissions = item.parent().data.permissions;
     }
     treebeard.redraw();
 }
