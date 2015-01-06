@@ -98,6 +98,7 @@ def osf_storage_crud_prepare(node_addon, payload):
 def osf_storage_crud_hook_post(node_addon, payload, **kwargs):
     path, user, location, metadata = osf_storage_crud_prepare(node_addon, payload)
     record, created = model.OsfStorageFileRecord.get_or_create(path, node_addon)
+
     version = record.create_version(user, location, metadata)
 
     code = httplib.CREATED if created else httplib.OK
@@ -118,9 +119,12 @@ def osf_storage_crud_hook_put(node_addon, payload, **kwargs):
         raise HTTPError(httplib.BAD_REQUEST)
 
     version = model.OsfStorageFileVersion.load(version_id)
+
     if version is None:
         raise HTTPError(httplib.BAD_REQUEST)
+
     version.update_metadata(metadata)
+
     return {'status': 'success'}
 
 
@@ -167,10 +171,13 @@ def get_version(path, node_settings, version_str, throw=True):
     :return: Tuple of (<one-based version index>, <file version>, <file record>)
     """
     record = model.OsfStorageFileRecord.find_by_path(path, node_settings)
+
     if record is None:
         raise HTTPError(httplib.NOT_FOUND)
+
     if record.is_deleted:
         raise HTTPError(httplib.GONE)
+
     version_idx, file_version = get_version_helper(record, version_str)
     return version_idx, file_version, record
 
