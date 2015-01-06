@@ -1,6 +1,6 @@
 <span id="dropbox" class="anchor"></span>
 <p class="gs-header">Dropbox Add-on</p>
- <p>To link a Drobpox folder to a project/component, visit the project you want to add a Dropbox folder to. Then go to "Settings" in the grey navigation bar. Check "Dropbox" under "Select Add-ons" to enable the add-on. Read, then click "OK" on the pop-up, then submit.</p>
+ <p>To link a Dropbox folder to a project/component, visit the project you want to add a Dropbox folder to. Then go to "Settings" in the grey navigation bar. Check "Dropbox" under "Select Add-ons" to enable the add-on. Read, then click "OK" on the pop-up, then submit.</p>
 <p>Then, authenticate with Dropbox by clicking the "Authorize" button. Once you have said "OK" you can choose the folder you would like to add to your OSF project.</p>
 <div class="gs-video embed-responsive embed-responsive-16by9">
     <div class="embed-responsive-item youtube-loader" id="W12ijNBkOKE"></div>
@@ -12,8 +12,8 @@
 <div class="gs-video embed-responsive embed-responsive-16by9">
     <div class="embed-responsive-item youtube-loader" id="5OEy5LpfvMc"></div>
 </div>
-<p>After creating the access token for your user profile, visit the project you want to add a GitHub repository to. Click on the project name then go to "Settings" in the grey navigation bar. Select the Github add-on by clicking "OK" on the pop-up, then submitting. </p>
-<p>Authorize the Github repository by clicking the blue button. Once you have authorized GitHub then you need to either select a repository or create a new one.</p>
+<p>After creating the access token for your user profile, visit the project you want to add a GitHub repository to. Click on the project name then go to "Settings" in the grey navigation bar. Select the GitHub add-on by clicking "OK" on the pop-up, then submitting. </p>
+<p>Authorize the GitHub repository by clicking the blue button. Once you have authorized GitHub then you need to either select a repository or create a new one.</p>
 <span id="amazon" class="anchor"></span>
 <p class="gs-header">Amazon Simple Storage Service Add-on</p>
 <p>To link Amazon Simple Storage Service bucket to a project/component, visit your profile settings by clicking the gear in the top right of the page. Check "Amazon Simple Storage Service" under "Select Add-on."</p>
