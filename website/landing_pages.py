@@ -3,6 +3,8 @@ from flask import redirect
 from framework.auth import views as auth_views
 from framework.auth.decorators import collect_auth
 
+from website.util import web_url_for
+
 
 def connected_tools():
     return _landing_page(title='Connected Tools',
@@ -17,14 +19,14 @@ def enriched_profile():
 
 
 @collect_auth
-def _landing_page(*args, **kwargs):
-    if kwargs['auth'].logged_in:
-        return redirect(kwargs.get('redirect_to', '/'))
-    data = auth_views.auth_login(*args, **kwargs)
+def _landing_page(auth, title, content_path, redirect_to, **kwargs):
+    if auth.logged_in:
+        return redirect(kwargs.get('redirect_to', web_url_for('dashboard')))
+    data = auth_views.auth_login(**kwargs)
     try:
-        data[0]['title_text'] = kwargs.get('title')
-        data[0]['content_template_path'] = kwargs.get('content_path')
-        data[0]['next_url'] = kwargs.get("redirect_to")
+        data[0]['title_text'] = title
+        data[0]['content_template_path'] = content_path
+        data[0]['next_url'] = redirect_to
     except TypeError:
         pass
 
