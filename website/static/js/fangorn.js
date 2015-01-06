@@ -10,6 +10,7 @@ var waterbutler = require('waterbutler');
 
 var tbOptions;
 
+var tempCounter = 1;
 
 /**
  * Returns custom icons for OSF depending on the type of item
@@ -172,8 +173,19 @@ function _fangornMouseOverRow(item, event) {
  * @private
  */
 function _fangornUploadProgress(treebeard, file, progress) {
-    var item = treebeard.dropzoneItemCache.children[0],
+    var parent = treebeard.dropzoneItemCache,
+        item,
+        child,
         msgText = 'Uploaded ' + Math.floor(progress) + '%';
+    for(var i = 0; i < parent.children.length; i++) {
+        child = parent.children[i];
+        if(!child.data.tmpID){
+            continue;
+        }
+        if(child.data.tmpID === file.tmpID) {
+            item = child;
+        }
+    }
 
     if (progress < 100) {
         item.notify.update(msgText, 'success', 1, 0);
@@ -196,15 +208,18 @@ function _fangornSending(treebeard, file, xhr, formData) {
     var parentID = treebeard.dropzoneItemCache.id,
         parent = treebeard.dropzoneItemCache,
         configOption,
+        tmpID = tempCounter++;
         blankItem = {       // create a blank item that will refill when upload is finished.
             name : file.name,
             kind : 'file',
             provider : parent.data.provider,
             children : [],
-            data : {}
+            data : {},
+            tmpID : tmpID
         };
+        console.log("TempID", tmpID);
     treebeard.createItem(blankItem, parentID);
-
+    file.tmpID = tmpID;
     var _send = xhr.send;
     xhr.send = function() {
         _send.call(xhr, file);
@@ -274,8 +289,19 @@ function _fangornComplete(treebeard, file) {
  */
 function _fangornDropzoneSuccess(treebeard, file, response) {
     var item,
-        revisedItem;
-    item = treebeard.dropzoneItemCache.children[0];
+        revisedItem,
+        item,
+        child,
+        parent = treebeard.dropzoneItemCache;
+    for(var i = 0; i < parent.children.length; i++) {
+        child = parent.children[i];
+        if(!child.data.tmpID){
+            continue;
+        }
+        if(child.data.tmpID === file.tmpID) {
+            item = child;
+        }
+    }
     // RESPONSES
     // OSF : Object with actionTake : "file_added"
     // DROPBOX : Object; addon : 'dropbox'
@@ -298,8 +324,19 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
  * @private
  */
 function _fangornDropzoneError(treebeard, file, message) {
-    var item = treebeard.dropzoneItemCache.children[0],
+    var item,
+        child,
+        parent = treebeard.dropzoneItemCache,
         msgText = message.message_short || message;
+    for(var i = 0; i < parent.children.length; i++) {
+        child = parent.children[i];
+        if(!child.data.tmpID){
+            continue;
+        }
+        if(child.data.tmpID === file.tmpID) {
+            item = child;
+        }
+    }
     item.notify.type = 'danger';
     item.notify.message = msgText;
     item.notify.col = 1;
@@ -687,7 +724,7 @@ tbOptions = {
         clickable : '#treeGrid',
         addRemoveLinks: false,
         previewTemplate: '<div></div>',
-        parallelUploads: 1
+        parallelUploads: 10
     },
     resolveIcon : _fangornResolveIcon,
     resolveToggle : _fangornResolveToggle,
