@@ -21,7 +21,7 @@ def enriched_profile():
 @collect_auth
 def _landing_page(auth, title, content_path, redirect_to, **kwargs):
     if auth.logged_in:
-        return redirect(kwargs.get('redirect_to', web_url_for('dashboard')))
+        return redirect(kwargs.get('redirect_to', redirect_to))
     data = auth_views.auth_login(**kwargs)
     try:
         data[0]['title_text'] = title
