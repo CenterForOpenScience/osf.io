@@ -394,7 +394,7 @@ function _fangornResolveLazyLoad(item) {
     return waterbutler.buildMetadataUrl(item);
 }
 
-/**
+/** 
  * Checks if the file being uploaded exists by comparing name of existing children with file name
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
  * @param {Object} file File object that dropzone passes
@@ -402,17 +402,17 @@ function _fangornResolveLazyLoad(item) {
  * @returns {boolean}
  * @private
  */
-function _fangornFileExists(item, file) {
-    var i,
-        child;
-    for (i = 0; i < item.children.length; i++) {
-        child = item.children[i];
-        if (child.kind === 'item' && child.data.name === file.name) {
-            return true;
-        }
-    }
-    return false;
-}
+// function _fangornFileExists(item, file) {
+//     var i,
+//         child;
+//     for (i = 0; i < item.children.length; i++) {
+//         child = item.children[i];
+//         if (child.kind === 'file' && child.data.name === file.name) {
+//             return true;
+//         }
+//     }
+//     return false;
+// }
 
 /**
  * Handles errors in lazyload fetching of items, usually link is wrong
@@ -524,9 +524,9 @@ function _fangornResolveRows(item) {
     var default_columns = [],
         checkConfig = false,
         configOption;
-    if(!item.data.permissions){
-        return;
-    }
+    // if(!item.data.permissions){
+    //     return;
+    // }
 
     item.data.permissions = item.data.permissions || item.parent().data.permissions;
     item.css = '';
@@ -651,27 +651,23 @@ tbOptions = {
             msgText;
         if (item.data.provider && item.kind === 'folder') {
             if (item.data.permissions.edit) {
-                if (!_fangornFileExists.call(treebeard, item, file)) {
-                    if (item.data.accept && item.data.accept.maxSize) {
-                        size = Math.round(file.size / 10000) / 100;
-                        maxSize = item.data.accept.maxSize;
-                        if (maxSize >= size && file.size > 0) {
-                            return true;
-                        }
-                        if (maxSize < size) {
-                            msgText = 'One of the files is too large (' + size + ' MB). Max file size is ' + item.data.accept.maxSize + ' MB.';
-                            item.notify.update(msgText, 'warning', undefined, 3000);
-                        }
-                        if (size === 0) {
-                            msgText = 'Some files were ignored because they were empty.';
-                            item.notify.update(msgText, 'warning', undefined, 3000);
-                        }
-                        return false;
+                if (item.data.accept && item.data.accept.maxSize) {
+                    size = Math.round(file.size / 10000) / 100;
+                    maxSize = item.data.accept.maxSize;
+                    if (maxSize >= size && file.size > 0) {
+                        return true;
                     }
-                    return true;
+                    if (maxSize < size) {
+                        msgText = 'One of the files is too large (' + size + ' MB). Max file size is ' + item.data.accept.maxSize + ' MB.';
+                        item.notify.update(msgText, 'warning', undefined, 3000);
+                    }
+                    if (size === 0) {
+                        msgText = 'Some files were ignored because they were empty.';
+                        item.notify.update(msgText, 'warning', undefined, 3000);
+                    }
+                    return false;
                 }
-                msgText = 'File already exists.';
-                item.notify.update(msgText, 'warning', 1, 3000);
+                return true;
             } else {
                 msgText = 'You don\'t have permission to upload here';
                 item.notify.update(msgText, 'warning', 1, 3000, 'animated flipInX');
