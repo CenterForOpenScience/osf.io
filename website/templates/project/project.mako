@@ -59,10 +59,11 @@
             <div id="myGrid" class="filebrowser hgrid"></div>
         </div>
 
+        <!-- Discussions -->
         <div id="comments-widget-container" class="addon-widget-container">
             <h3 class="addon-widget-header"><a href="${node['url']}discussions/">Discussions</a></h3>
-            <div data-bind="template: {name: 'commentTemplate', foreach: comments}"></div>
-            <button class="btn btn-link pull-right">More...</button>
+            <div data-bind="template: {name: 'commentTemplate', foreach: recentComments}"></div>
+            <a class="pull-right" href="${node['url']}discussions/">See more in discussions page...</a>
         </div>
     </div>
 

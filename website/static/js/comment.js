@@ -25,12 +25,6 @@ var ABUSE_CATEGORIES = {
     violence: 'Violence or harmful behavior'
 };
 
-var SIZE_PER_PAGE = {
-    page: 50,
-    pane: 20,
-    widget: 5
-}
-
 /*
     * Format UTC datetime relative to current datetime, ensuring that time
     * is in the past.
@@ -472,11 +466,28 @@ var CommentListModel = function(userName, host_page, host_name, mode, canComment
     self.userName = ko.observable(userName);
     self.canComment = ko.observable(canComment);
     self.hasChildren = ko.observable(hasChildren);
+
     self.discussion_by_frequency = ko.observableArray();
     self.discussion_by_recency = ko.observableArray();
+    self.discussion = ko.observableArray();
 
     self.page = host_page;
     self.id = ko.observable(host_name);
+
+    self.recentComments = ko.computed(function(){
+        var comments = [];
+        for (var c in self.comments()) {
+            var comment = self.comments()[c];
+            if (comment.isVisible()) {
+                comments.push(comment);
+            }
+            if (comments.length == 5) {
+                break;
+            }
+        }
+        return comments;
+    });
+
 
     self.fetch(thread);
     self.fetchDiscussion();
@@ -498,9 +509,20 @@ CommentListModel.prototype.fetchDiscussion = function() {
         function(response) {
             self.discussion_by_frequency(response.discussion_by_frequency);
             self.discussion_by_recency(response.discussion_by_recency);
+            self.discussion(response.discussion_by_recency);
         }
     );
 };
+
+CommentListModel.prototype.showRecent = function() {
+    var self = this;
+    self.discussion(self.discussion_by_recency());
+}
+
+CommentListModel.prototype.showFrequent = function() {
+    var self = this;
+    self.discussion(self.discussion_by_frequency());
+}
 
 CommentListModel.prototype.initListeners = function() {
     var self = this;

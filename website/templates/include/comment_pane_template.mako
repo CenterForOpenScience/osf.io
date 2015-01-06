@@ -13,12 +13,19 @@
                <span data-bind="if: id().toLowerCase() != 'home' "><span data-bind="text: '- ' + id() + ' '"></span></span>
                 Discussion
             </span>
-            <span data-bind="foreach: {data: discussion_by_frequency, afterAdd: setupToolTips}" class="pull-right">
-                <a data-toggle="tooltip" data-bind="attr: {href: url, title: fullname}" data-placement="bottom">
-                    <img data-bind="attr: {src: gravatarUrl}"/>
-                </a>
-            </span>
         </h4>
+
+        <div data-bind="visible: discussion().length > 0">
+            Show <a data-bind="click: showRecent">recently commented users</a> or
+            <a data-bind="click: showFrequent">most frequently commented users</a>
+            <div style="padding-bottom: 10px">
+                <span class="pull-right" data-bind="foreach: {data: discussion, afterAdd: setupToolTips}">
+                    <a data-toggle="tooltip" data-bind="attr: {href: url, title: fullname}" data-placement="bottom">
+                        <img data-bind="attr: {src: gravatarUrl}"/>
+                    </a>
+                </span>
+            </div>
+        </div>
 
         <div data-bind="if: canComment" style="margin-top: 20px">
             <form class="form">

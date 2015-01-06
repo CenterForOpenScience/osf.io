@@ -7,31 +7,34 @@
 % endif
 
 <div class="col-sm-3">
-    <div class="panel panel-default">
-        <ul class="nav nav-pills nav-stacked">
-            <li role="presentation">
-                <a href="${node['url']}discussions/">Overview</a>
+    <div class="osf-sidenav hidden-print" role="complementary">
+        <ul class="nav bs-sidenav" style="margin: 0;">
+            <li>
+                <a href="${node['url']}discussions/"><h5>Overview</h5></a>
             </li>
-            <li role="presentation" class="dropdown">
-                <a class="dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-expanded="false">
-                    Wiki Pages <span class="caret"></span>
-                </a>
-                <ul class="dropdown-menu" role="menu" style="min-width: auto; width: 100%">
+            <hr style="margin-top: 5px"/>
+            <li>
+                <h4 style="margin-left: 15px">Wiki</h4>
+            </li>
+            % if len(wiki_pages_current) > 0:
+                % for page in wiki_pages_current:
                     <li>
-                        <a href="${node['url']}discussions/wiki/home">Home</a>
+                        <a href="${node['url']}discussions/wiki/${page}">${page}</a>
                     </li>
-                    % for page in wiki_pages_current:
-                        %if page != 'home':
-                            <li>
-                                <a href="${node['url']}discussions/wiki/${page}">${page}</a>
-                            </li>
-                        % endif
-                    %endfor
-                </ul>
+                %endfor
+            % else:
+                <li>
+                    <a style="color: #808080">Home (No wiki content)</a>
+                </li>
+            % endif
+            <hr/>
+            <li>
+                <h4 style="margin-left: 15px"">Files</h4>
             </li>
         </ul>
     </div>
 </div>
+
 <div class="col-sm-9">
     <div class="discussion">
         % if comment is UNDEFINED:
@@ -45,17 +48,15 @@
                 Overview
             % endif
             </h3>
-            <span data-bind="foreach: {data: discussion_by_frequency, afterAdd: setupToolTips}">
-                <a data-toggle="tooltip" data-bind="attr: {href: url, title: fullname}" data-placement="bottom">
-                    <img data-bind="attr: {src: gravatarUrl}"/>
-                </a>
-            </span>
-            <br>
-            <span data-bind="foreach: {data: discussion_by_recency, afterAdd: setupToolTips}">
-                <a data-toggle="tooltip" data-bind="attr: {href: url, title: fullname}" data-placement="bottom">
-                    <img data-bind="attr: {src: gravatarUrl}"/>
-                </a>
-            </span>
+            <div data-bind="visible: discussion().length > 0">
+                Show <a data-bind="click: showRecent">recently commented users</a> or
+                <a data-bind="click: showFrequent">most frequently commented users</a>
+                <span class="pull-right" data-bind="foreach: {data: discussion, afterAdd: setupToolTips}">
+                    <a data-toggle="tooltip" data-bind="attr: {href: url, title: fullname}" data-placement="bottom">
+                        <img data-bind="attr: {src: gravatarUrl}"/>
+                    </a>
+                </span>
+            </div>
             ${newComment()}
         %else:
             <h6>You are viewing a single comment's thread.</h6>
@@ -65,8 +66,15 @@
 </div>
 
 <%def name="newComment()">
-    <div class='row' data-bind="if: canComment">
-        <button class="btn btn-link" data-bind="click: showReply">Add a comment</button>
+    <div data-bind="if: canComment">
+        <span data-bind="if: discussion().length == 0">
+            There are currently no comments on this page yet. Would you like to <a data-bind="click: showReply">make the first one</a>?
+        </span>
+        <span data-bind="if: discussion().length > 0">
+            <a data-bind="click: showReply">
+                Add a comment
+            </a>
+        </span>
     </div>
     <div data-bind="if: replying" style="margin-top: 20px">
         <form class="form">
