@@ -150,10 +150,11 @@ class FigshareProjectProvider(BaseFigshareProvider):
     @asyncio.coroutine
     def _project_metadata_contents(self):
         articles_json = yield from self._list_articles()
-        return(yield from asyncio.gather(*[
+        contents = yield from asyncio.gather(*[
             self._get_article_metadata(each['id'])
             for each in articles_json
-        ]))
+        ])
+        return [each for each in contents if each]
 
     @asyncio.coroutine
     def _create_article(self, name):
@@ -297,10 +298,11 @@ class FigshareArticleProvider(BaseFigshareProvider):
                 raise exceptions.MetadataError
             return metadata.FigshareFileMetadata(file_json, parent=article_json, child=self.child).serialized()
         if figshare_path.is_dir:
-            return [
+            serialized = [
                 self._serialize_item(item, parent=article_json)
                 for item in article_json['files']
             ]
+            return [each for each in serialized if each]
         return self._serialize_item(article_json, parent=article_json)
 
     def _serialize_item(self, item, parent=None):
@@ -310,8 +312,8 @@ class FigshareArticleProvider(BaseFigshareProvider):
             metadata_class = metadata.FigshareArticleMetadata
             metadata_kwargs = {}
         elif defined_type and not files:
-            metadata_class = metadata.FigshareArticleMetadata
-            metadata_kwargs = {}
+            # Hide single-file articles with no contents
+            return None
         else:
             metadata_class = metadata.FigshareFileMetadata
             metadata_kwargs = {'parent': parent, 'child': self.child}
