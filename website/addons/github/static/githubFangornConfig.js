@@ -9,15 +9,8 @@ var waterbutler = require('waterbutler');
 var branch = undefined;
 
 
-function buildWaterButlerUrl(item, metadata, file) {
-    if (metadata)
-        return waterbutler.buildMetadataUrl(item) + (branch ? '&' + $.param({ref: branch}): '');
-    else
-        return waterbutler.buildFileUrl(item, file) + (branch ? '&' + $.param({branch: branch}): '');
-}
-
 function _uploadUrl(item, file) {
-    return buildWaterButlerUrl(item, false, file);
+    return waterbutler.buildTreeBeardUpload(item, file, {branch: branch});
 }
 
 
@@ -37,7 +30,7 @@ function _fangornActionColumn (item, col){
         if (item.data.permissions.edit) {
             // delete from server, if successful delete from view
             $.ajax({
-                url: buildWaterButlerUrl(item, false),
+                url: waterbutler.buildTreeBeardDelete(item, {branch: branch, sha: item.data.extra.fileSha}),
                 type : 'DELETE'
             })
             .done(function(data) {
@@ -55,7 +48,7 @@ function _fangornActionColumn (item, col){
     function _downloadEvent (event, item, col) {
         event.stopPropagation();
         console.log('Download Event triggered', this, event, item, col);
-        window.location = buildWaterButlerUrl(item, false);
+        window.location = waterbutler.buildTreeBeardDownload(item, {ref: item.data.extra.fileSha});
     }
 
     // Download Zip File
@@ -121,7 +114,7 @@ function changeBranch(item, ref){
 }
 
 function _resolveLazyLoad(item) {
-    return buildWaterButlerUrl(item, true);
+    return waterbutler.buildTreeBeardMetadata(item, {ref: branch});
 }
 
 function _fangornGithubTitle(item, col)  {
