@@ -56,8 +56,10 @@ def osf_storage_crud_hook_get(node_addon, payload, **kwargs):
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    version_idx = request.args.get('version')
-    _, version, record = get_version(path, node_addon, version_idx)
+    version_idx, version, record = get_version(path, node_addon, request.args.get('version'))
+
+    update_analytics(node_addon.owner, path, version_idx)
+
     return {
         'data': {
             'path': version.location_hash,
