@@ -708,6 +708,8 @@ def make_url_map(app):
             [
                 '/project/<pid>/discussions/',
                 '/project/<pid>/node/<nid>/discussions/',
+                '/project/<pid>/discussions/wiki/<wname>/',
+                '/project/<pid>/node/<nid>/discussions/wiki/<wname>/',
                 '/project/<pid>/discussions/<cid>/',
                 '/project/<pid>/node/<nid>/discussions/<cid>/',
             ],

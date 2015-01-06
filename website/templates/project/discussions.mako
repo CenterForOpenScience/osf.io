@@ -8,9 +8,20 @@
 
 <div class="col-sm-3">
     <div class="panel panel-default"><!--TODO fix this on the screen -->
-        <ul class="nav nav-stacked nav-pills">
+        <ul class="nav bs-sidenav" style="margin: 0;">
             <li><a id="discussion-overview-btn" class="discussion-btn" href="${node['url']}discussions/">Overview</a></li>
-            <li><a id="discussion-files-btn" class="discussion-btn" href="#">Files</a></li>
+
+        <h4 style="margin-left: 10px;" class="node-category">Wiki Pages</h4>
+            <li>
+                <a href="${node['url']}discussions/wiki/home">Home</a>
+            </li>
+            % for page in wiki_pages_current:
+                %if page != 'home':
+                    <li>
+                        <a href="${node['url']}discussions/wiki/${page}">${page}</a>
+                    </li>
+                % endif
+            %endfor
         </ul>
     </div>
 </div>
@@ -63,6 +74,9 @@ ${parent.javascript_bottom()}
         %else:
             window.contextVars.comment = ${json.dumps(comment)};
         % endif
+
+        window.contextVars.comment_target = '${comment_target}';
+        window.contextVars.comment_target_id = '${comment_target_id}';
 </script>
 
 <script src="/static/public/js/discussions-page.js"></script>

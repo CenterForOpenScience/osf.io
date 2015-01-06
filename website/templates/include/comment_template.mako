@@ -4,7 +4,7 @@
 
         <div class="comment-body">
 
-            <div data-bind="if: isDeleted || isHidden">
+            <div data-bind="if: isDeleted">
                 <div>
                     <span data-bind="if: hasChildren">
                         <i data-bind="css: toggleIcon, click: toggle"></i>
@@ -27,8 +27,7 @@
                     <span data-bind="if: hasChildren">
                         <i data-bind="css: toggleIcon, click: toggle"></i>
                     </span>
-                    Comment reported.
-                    <a data-bind="click: startUnreportAbuse">Not abuse</a>
+                    Comment reported. <a data-bind="click: startUnreportAbuse">Not abuse</a>
                 </div>
                 <div data-bind="if: unreporting">
                     <a class="btn btn-primary btn-sm" data-bind="click: submitUnreportAbuse">Submit</a>

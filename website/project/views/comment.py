@@ -20,7 +20,7 @@ from website.project.views.node import _view_project
 #from website.addons.wiki.model import NodeWikiPage
 
 @must_be_contributor_or_public
-def view_comments(**kwargs):
+def view_comments(**kwargs): #TODO add wiki
     """
 
     """
@@ -28,16 +28,33 @@ def view_comments(**kwargs):
     auth = kwargs['auth']
 
     serialized = _view_project(node, auth, primary=True)
+    serialized_wiki_pages = getattr(node, 'wiki_pages_current', [])
+    serialized.update({
+        'wiki_pages_current': serialized_wiki_pages
+    })
     if kwargs.get('cid'):
         comment = kwargs_to_comment(kwargs)
         serialized_comment = serialize_comment(comment, auth)
         serialized.update({
-            'comment': serialized_comment
+            'comment': serialized_comment,
+            'comment_target': 'node',
+            'comment_target_id': serialized['node']['id']
+        })
+    elif kwargs.get('wname'):
+        wiki_page = node.get_wiki_page(kwargs.get('wname'))
+        serialized.update({
+            'comment_target': 'wiki',
+            'comment_target_id': wiki_page.page_name
+        })
+    else:
+        serialized.update({
+            'comment_target': 'node',
+            'comment_target_id': serialized['node']['id']
         })
     return serialized
 
 
-def resolve_target(node, page, guid): #todo pass optional arguments such as files or nodewiki;
+def resolve_target(node, page, guid):
     if not guid:
         return node
     if page == 'wiki':

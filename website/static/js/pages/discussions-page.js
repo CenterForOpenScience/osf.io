@@ -6,9 +6,10 @@ var Comment = require('../comment.js');
 var userName = window.contextVars.currentUser.name;
 var canComment = window.contextVars.currentUser.canComment;
 var hasChildren = window.contextVars.node.hasChildren;
-var node_id = window.contextVars.node._id;
+var target = window.contextVars.comment_target;
+var target_id = window.contextVars.comment_target_id;
 var id = null;
 if (window.contextVars.comment) {
     id = window.contextVars.comment.id;
 }
-Comment.init('.discussion', 'page', 'node', node_id, userName, canComment, hasChildren, id);
+Comment.init('.discussion', target, target_id, 'page', userName, canComment, hasChildren, id);
