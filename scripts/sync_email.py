@@ -66,7 +66,12 @@ def serialize_user(user):
     """Return the formatted dict expected by the mailchimp batch subscribe endpoint.
     https://apidocs.mailchimp.com/api/2.0/lists/batch-subscribe.php
     """
-    return {'email': {'email': user.username}, 'email_type': 'html'}
+    return {'email': {'email': user.username},
+            'email_type': 'html',
+            'merge_vars': {
+                'fname': user.given_name,
+                'lname': user.family_name}
+            }
 
 
 def subscribe_users(users, dry=True):
@@ -118,7 +123,12 @@ class TestSyncEmail(OsfTestCase):
     def test_serialize_user(self):
         user = UserFactory()
         result = serialize_user(user)
-        assert_equal(result, {'email': {'email': user.username}, 'email_type': 'html'})
+        assert_equal(result, {'email': {'email': user.username},
+                              'email_type': 'html',
+                              'merge_vars': {
+                                  'fname': user.given_name,
+                                  'lname': user.family_name}
+                              })
 
     def test_get_users(self):
         users = list(get_users())
