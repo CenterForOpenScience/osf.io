@@ -29,19 +29,13 @@ oid_primary_key = fields.StringField(
 )
 
 
-def copy_file_tree_stable(tree, node_settings):
-    """Copy file tree, recursively creating stable copies of its children.
+def copy_file_tree(tree, node_settings):
+    """Recursively copy file tree.
 
     :param OsfStorageFileTree tree: Tree to copy
     :param node_settings: Root node settings record
     """
-    children = filter(
-        lambda item: item is not None,
-        map(
-            lambda child: copy_files_stable(child, node_settings),
-            tree.children
-        )
-    )
+    children = [copy_files(child, node_settings) for child in tree.children]
     clone = tree.clone()
     clone.children = children
     clone.node_settings = node_settings
@@ -49,33 +43,25 @@ def copy_file_tree_stable(tree, node_settings):
     return clone
 
 
-def copy_file_record_stable(record, node_settings):
-    """Copy stable versions of an `OsfStorageFileRecord`. Versions are copied
+def copy_file_record(record, node_settings):
+    """Copy versions of an `OsfStorageFileRecord`. Versions are copied
     by primary key and will not be duplicated in the database.
 
     :param OsfStorageFileRecord record: Record to copy
     :param node_settings: Root node settings record
-    :return: Cloned `OsfStorageFileRecord` if any stable versions were found,
-        else ``None``
     """
-    versions = [
-        version for version in record.versions
-        if not version.pending
-    ]
-    if versions:
-        clone = record.clone()
-        clone.versions = versions
-        clone.node_settings = node_settings
-        clone.save()
-        return clone
-    return None
+    clone = record.clone()
+    clone.versions = record.versions
+    clone.node_settings = node_settings
+    clone.save()
+    return clone
 
 
-def copy_files_stable(files, node_settings):
+def copy_files(files, node_settings):
     if isinstance(files, OsfStorageFileTree):
-        return copy_file_tree_stable(files, node_settings)
+        return copy_file_tree(files, node_settings)
     if isinstance(files, OsfStorageFileRecord):
-        return copy_file_record_stable(files, node_settings)
+        return copy_file_record(files, node_settings)
     raise TypeError('Input must be `OsfStorageFileTree` or `OsfStorageFileRecord`')
 
 
@@ -91,7 +77,7 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
         """
         dest.save()
         if self.file_tree:
-            dest.file_tree = copy_file_tree_stable(self.file_tree, dest)
+            dest.file_tree = copy_file_tree(self.file_tree, dest)
             dest.save()
 
     def after_fork(self, node, fork, user, save=True):
@@ -171,33 +157,30 @@ class BaseFileObject(StoredObject):
         raise NotImplementedError
 
     @classmethod
-    def find_by_path(cls, path, node_settings, touch=True):
+    def find_by_path(cls, path, node_settings):
         """Find a record by path and root settings record.
 
         :param str path: Path to file or directory
         :param node_settings: Root node settings record
-        :param bool touch: Handle expired records
         """
         try:
             obj = cls.find_one(
                 Q('path', 'eq', path) &
                 Q('node_settings', 'eq', node_settings._id)
             )
-            if touch:
-                obj.touch()
             return obj
         except (modm_errors.NoResultsFound, modm_errors.MultipleResultsFound):
             return None
 
     @classmethod
-    def get_or_create(cls, path, node_settings, touch=True):
+    def get_or_create(cls, path, node_settings):
         """Get or create a record by path and root settings record.
 
         :param str path: Path to file or directory
         :param node_settings: Root node settings record
-        :param bool touch: Handle expired records
+        :returns: Tuple of (record, created)
         """
-        obj = cls.find_by_path(path, node_settings, touch=touch)
+        obj = cls.find_by_path(path, node_settings)
 
         if obj:
             return obj, False
@@ -217,12 +200,6 @@ class BaseFileObject(StoredObject):
             node_settings.save()
 
         return obj, True
-
-    def touch(self):
-        """Check whether the current object is valid. By default, always return
-        `True`.
-        """
-        return True
 
     def get_download_count(self, version=None):
         """Return download count or `None` if this is not a file object (e.g. a
@@ -298,17 +275,6 @@ class OsfStorageFileRecord(BaseFileObject):
                 return
         raise errors.VersionNotFoundError
 
-    def remove_version(self, version):
-        if len(self.versions) == 1:
-            OsfStorageFileRecord.remove_one(self)
-            retained_self = False
-        else:
-            self.versions.remove(version)
-            self.save()
-            retained_self = True
-        OsfStorageFileVersion.remove_one(version)
-        return retained_self
-
     def log(self, auth, action, version=True):
         node_logger = logs.OsfStorageNodeLogger(
             auth=auth,
@@ -355,6 +321,13 @@ metadata_fields = {
 }
 
 
+LOCATION_KEYS = ['service', settings.WATERBUTLER_RESOURCE, 'object']
+def validate_location(value):
+    for key in LOCATION_KEYS:
+        if key not in value:
+            raise modm_errors.ValidationValueError
+
+
 class OsfStorageFileVersion(StoredObject):
 
     _id = oid_primary_key
@@ -370,7 +343,7 @@ class OsfStorageFileVersion(StoredObject):
     #     'worker_url': '127.0.0.1',
     #     'worker_host': 'upload-service-1',
     # }
-    location = fields.DictionaryField()
+    location = fields.DictionaryField(validate=validate_location)
 
     # Dictionary containing raw metadata from upload service response
     # {
@@ -387,14 +360,10 @@ class OsfStorageFileVersion(StoredObject):
 
     @property
     def location_hash(self):
-        # TODO: Throw error if object not present
-        return self.location['object'] if self.location else None
+        return self.location['object']
 
     def is_duplicate(self, other):
-        return (
-            bool(self.location_hash) and
-            self.location_hash == other.location_hash
-        )
+        return self.location_hash == other.location_hash
 
     def update_metadata(self, metadata):
         self.metadata.update(metadata)
@@ -405,22 +374,6 @@ class OsfStorageFileVersion(StoredObject):
                 raise errors.MissingFieldError
             setattr(self, key, parser(value))
         self.save()
-
-
-LOCATION_KEYS = ['service', settings.WATERBUTLER_RESOURCE, 'object']
-@OsfStorageFileVersion.subscribe('before_save')
-def validate_version_location(schema, instance):
-    for key in LOCATION_KEYS:
-        if key not in instance.location:
-            raise modm_errors.ValidationValueError
-
-
-# @OsfStorageFileVersion.subscribe('before_save')
-# def validate_version_dates(schema, instance):
-#     if not instance.date_resolved:
-#         raise modm_errors.ValidationValueError
-#     if instance.date_created > instance.date_resolved:
-#         raise modm_errors.ValidationValueError
 
 
 class OsfStorageGuidFile(GuidFile):

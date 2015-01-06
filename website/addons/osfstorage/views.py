@@ -285,7 +285,7 @@ def osf_storage_hgrid_contents(node_addon, payload, **kwargs):
     return [
         utils.serialize_metadata_hgrid(item, node)
         for item in list(file_tree.children)
-        if item.touch() and not item.is_deleted
+        if not item.is_deleted
     ]
 
 
