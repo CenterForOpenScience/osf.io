@@ -156,7 +156,7 @@ class GitHubProvider(provider.BaseProvider):
     @asyncio.coroutine
     def _delete_file(self, path, sha=None, message=None, branch=None, **kwargs):
         if not sha:
-            raise MetadataError('A sha is required for deleting')
+            raise exceptions.MetadataError('A sha is required for deleting')
 
         message = message or 'File deleted on behalf of WaterButler'
         data = {
