@@ -5,7 +5,6 @@
     "jquery-ui": "~1.10.4",
     "bootstrap": "~3.3.0",
     "requirejs": "~2.1.11",
-    "dropzone": "~3.10.2",
     "moment": "~2.7.0",
     "qunit": "~1.14.0",
     "sinon": "~1.10.2",
@@ -24,6 +23,7 @@
     "jquery-autosize": "~1.18.15",
     "x-editable": "~1.5.1",
     "slickgrid": "~2.1.0",
+    "dropzone": "https://github.com/enyo/dropzone.git#master",
     "treebeard": "https://github.com/caneruguz/treebeard.git#develop",
     "jquery.cookie": "~1.4.1"
   }

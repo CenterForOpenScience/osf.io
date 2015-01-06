@@ -65,10 +65,13 @@ def check_file_guid(guid):
 def get_user_from_cookie(cookie):
     if not cookie:
         return None
-    token = itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie)
+    try:
+        token = itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie)
+    except itsdangerous.BadSignature:
+        raise HTTPError(httplib.UNAUTHORIZED)
     session = Session.load(token)
     if session is None:
-        return None
+        raise HTTPError(httplib.UNAUTHORIZED)
     return User.load(session.data['auth_user_id'])
 
 
@@ -87,6 +90,32 @@ permission_map = {
 }
 
 
+def check_access(node, user, action, key=None):
+    """Verify that user can perform requested action on resource. Raise appropriate
+    error code if action cannot proceed.
+    """
+    permission = permission_map.get(action, None)
+    if permission is None:
+        raise HTTPError(httplib.BAD_REQUEST)
+    if node.has_permission(user, permission):
+        return True
+    if permission == 'read':
+        if node.is_public or key in node.private_link_keys_active:
+            return True
+    code = httplib.FORBIDDEN if user else httplib.UNAUTHORIZED
+    raise HTTPError(code)
+
+
+def make_auth(user):
+    if user is not None:
+        return {
+            'id': user._id,
+            'email': '{}@osf.io'.format(user._id),
+            'name': user.fullname,
+        }
+    return {}
+
+
 def get_auth(**kwargs):
     try:
         action = request.args['action']
@@ -97,16 +126,9 @@ def get_auth(**kwargs):
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    user = get_user_from_cookie(cookie)
+    view_only = request.args.get('viewOnly')
 
-    if user is not None:
-        auth = {
-            'id': user._id,
-            'email': '{}@osf.io'.format(user._id),
-            'name': user.fullname,
-        }
-    else:
-        auth = {}
+    user = get_user_from_cookie(cookie)
 
     check_token(user, token)
 
@@ -114,15 +136,7 @@ def get_auth(**kwargs):
     if not node:
         raise HTTPError(httplib.NOT_FOUND)
 
-    # TODO: Handle view-only links
-    try:
-        permission_required = permission_map[action]
-    except KeyError:
-        raise HTTPError(httplib.BAD_REQUEST)
-
-    if not node.has_permission(user, permission_required):
-        if permission_required != 'read' or not node.is_public:
-            raise HTTPError(httplib.BAD_REQUEST)
+    check_access(node, user, action, key=view_only)
 
     provider_settings = node.get_addon(provider_name)
     if not provider_settings:
@@ -132,7 +146,7 @@ def get_auth(**kwargs):
     settings = provider_settings.serialize_waterbutler_settings()
 
     return {
-        'auth': auth,
+        'auth': make_auth(user),
         'credentials': credentials,
         'settings': settings,
         'callback_url': node.api_url_for(

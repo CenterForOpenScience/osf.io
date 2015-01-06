@@ -59,7 +59,7 @@ function _fangornActionColumn (item, col){
     }
 
     // Download Zip File
-    if (item.kind === 'folder' && item.data.addonFullname) {
+    if (item.kind === 'folder') {
         if (item.data.permissions.edit) {
             buttons.push({
                 'name' : '',

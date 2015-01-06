@@ -6,7 +6,7 @@
 
     <ol class="breadcrumb">
         <li><a href="{{ urls.files }}" data-bind="html: node"></a></li>
-        <li class="active overflow" data-bind="html: path"></li>
+        <li class="active overflow" data-bind="html: path.substring(1)"></li>
     </ol>
 
     <a
@@ -70,11 +70,9 @@
         },
         node: {
             title: '${node['title'] | h}',
+            id: '${node['id']}',
             urls: {
                 files:'${files_url}',
-                download:'${download_url}',
-                delete: 'foo',
-                ## delete:'${delete_url}',
                 revisions:'${revisions_url}',
             }
         }

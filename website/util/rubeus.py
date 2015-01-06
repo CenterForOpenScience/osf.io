@@ -19,7 +19,7 @@ from website.settings import (
 
 
 FOLDER = 'folder'
-FILE = 'item'
+FILE = 'file'
 KIND = 'kind'
 
 # TODO: Validate the JSON schema, esp. for addons

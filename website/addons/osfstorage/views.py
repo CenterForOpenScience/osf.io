@@ -182,7 +182,7 @@ def serialize_file(idx, version, record, path, node):
     return {
         'file_name': record.name,
         'file_revision': 'Version {0}'.format(idx),
-        'file_path': record.path,
+        'file_path': '/' + record.path,
         'rendered': rendered,
         'files_url': node.web_url_for('collect_file_trees'),
         'download_url': node.web_url_for('osf_storage_view_file', path=path, action='download'),

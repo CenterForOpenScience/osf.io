@@ -4,7 +4,6 @@
  */
 
 var $ = require('jquery');
-require('dropzonePatch'); // Required for uploads
 var m = require('mithril');
 var Treebeard = require('treebeard');
 var waterbutler = require('waterbutler');
@@ -226,6 +225,9 @@ function _fangornSending(treebeard, file, xhr, formData) {
 function _fangornAddedFile(treebeard, file) {
     var item = treebeard.dropzoneItemCache,
         configOption = resolveconfigOption.call(treebeard, item, 'uploadAdd', [file, item]);
+
+    file.url = _fangornResolveUploadUrl(item, file);
+    file.method = _fangornUploadMethod(item);
 
     return configOption || null;
 }
@@ -681,7 +683,7 @@ tbOptions = {
     },
     onmouseoverrow : _fangornMouseOverRow,
     dropzone : {                                           // All dropzone options.
-        url: '/api/v1/project/',  // When users provide single URL for all uploads
+        url: function(files) {return files[0].url;},
         clickable : '#treeGrid',
         addRemoveLinks: false,
         previewTemplate: '<div></div>',
@@ -689,10 +691,11 @@ tbOptions = {
     },
     resolveIcon : _fangornResolveIcon,
     resolveToggle : _fangornResolveToggle,
-    resolveUploadUrl : _fangornResolveUploadUrl,
+    // Pass ``null`` to avoid overwriting Dropzone URL resolver
+    resolveUploadUrl: function() {return null;},
     resolveLazyloadUrl : _fangornResolveLazyLoad,
+    resolveUploadMethod: _fangornUploadMethod,
     lazyLoadError : _fangornLazyLoadError,
-    resolveUploadMethod :_fangornUploadMethod,
     dropzoneEvents : {
         uploadprogress : _fangornUploadProgress,
         sending : _fangornSending,

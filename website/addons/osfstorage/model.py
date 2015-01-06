@@ -128,6 +128,8 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
     def create_waterbutler_log(self, auth, action, metadata):
         pass
 
+    def get_waterbutler_render_url(self, path, **kwargs):
+        return self.owner.web_url_for('osf_storage_view_file', path=path)
 
 class BaseFileObject(StoredObject):
 

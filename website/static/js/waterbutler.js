@@ -1,4 +1,5 @@
 var $ = require('jquery');
+var $osf = require('osfHelpers');
 var settings = require('settings');
 
 
@@ -7,20 +8,28 @@ function getCookie() {
     return match ? match[1] : null;
 }
 
+function getViewOnly() {
+  return $osf.urlParams().view_only;
+}
+
 function buildUrl(metadata, path, provider, file) {
     path = path || '/';
+
+    var nid = window.nodeId || contextVars.node.id;
     var baseUrl = settings.WATERBUTLER_URL + (metadata ? 'data?': 'file?');
 
     if (file) {
         path += file.name;
     }
 
+
     return baseUrl + $.param({
-        path: path,
+        nid: nid,
         token: '',
-        nid: nodeId,
+        path: path,
         provider: provider,
-        cookie: getCookie()
+        cookie: getCookie(),
+        viewOnly: getViewOnly()
     });
 }
 
