@@ -7,28 +7,55 @@
 % endif
 
 <div class="col-sm-3">
-    <div class="panel panel-default"><!--TODO fix this on the screen -->
-        <ul class="nav bs-sidenav" style="margin: 0;">
-            <li><a id="discussion-overview-btn" class="discussion-btn" href="${node['url']}discussions/">Overview</a></li>
-
-        <h4 style="margin-left: 10px;" class="node-category">Wiki Pages</h4>
-            <li>
-                <a href="${node['url']}discussions/wiki/home">Home</a>
+    <div class="panel panel-default">
+        <ul class="nav nav-pills nav-stacked">
+            <li role="presentation">
+                <a href="${node['url']}discussions/">Overview</a>
             </li>
-            % for page in wiki_pages_current:
-                %if page != 'home':
+            <li role="presentation" class="dropdown">
+                <a class="dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-expanded="false">
+                    Wiki Pages <span class="caret"></span>
+                </a>
+                <ul class="dropdown-menu" role="menu" style="min-width: auto; width: 100%">
                     <li>
-                        <a href="${node['url']}discussions/wiki/${page}">${page}</a>
+                        <a href="${node['url']}discussions/wiki/home">Home</a>
                     </li>
-                % endif
-            %endfor
+                    % for page in wiki_pages_current:
+                        %if page != 'home':
+                            <li>
+                                <a href="${node['url']}discussions/wiki/${page}">${page}</a>
+                            </li>
+                        % endif
+                    %endfor
+                </ul>
+            </li>
         </ul>
     </div>
 </div>
 <div class="col-sm-9">
     <div class="discussion">
         % if comment is UNDEFINED:
-            <h3>Overview</h3>
+            <h3>
+            % if comment_target == 'wiki':
+                Wiki
+                %if comment_target_id.lower() != 'home':
+                    - ${comment_target_id}
+                % endif
+            % else:
+                Overview
+            % endif
+            </h3>
+            <span data-bind="foreach: {data: discussion_by_frequency, afterAdd: setupToolTips}">
+                <a data-toggle="tooltip" data-bind="attr: {href: url, title: fullname}" data-placement="bottom">
+                    <img data-bind="attr: {src: gravatarUrl}"/>
+                </a>
+            </span>
+            <br>
+            <span data-bind="foreach: {data: discussion_by_recency, afterAdd: setupToolTips}">
+                <a data-toggle="tooltip" data-bind="attr: {href: url, title: fullname}" data-placement="bottom">
+                    <img data-bind="attr: {src: gravatarUrl}"/>
+                </a>
+            </span>
             ${newComment()}
         %else:
             <h6>You are viewing a single comment's thread.</h6>

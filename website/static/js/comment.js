@@ -472,7 +472,8 @@ var CommentListModel = function(userName, host_page, host_name, mode, canComment
     self.userName = ko.observable(userName);
     self.canComment = ko.observable(canComment);
     self.hasChildren = ko.observable(hasChildren);
-    self.discussion = ko.observableArray();
+    self.discussion_by_frequency = ko.observableArray();
+    self.discussion_by_recency = ko.observableArray();
 
     self.page = host_page;
     self.id = ko.observable(host_name);
@@ -490,9 +491,13 @@ CommentListModel.prototype.fetchDiscussion = function() {
     var self = this;
     $.getJSON(
         nodeApiUrl + 'comments/discussion/',
-        {},
+        {
+            page: self.page,
+            target: self.id()
+        },
         function(response) {
-            self.discussion(response.discussion);
+            self.discussion_by_frequency(response.discussion_by_frequency);
+            self.discussion_by_recency(response.discussion_by_recency);
         }
     );
 };

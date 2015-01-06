@@ -17,10 +17,9 @@ from website.project.decorators import must_be_contributor_or_public
 from datetime import datetime
 from website.project.model import has_anonymous_link
 from website.project.views.node import _view_project
-#from website.addons.wiki.model import NodeWikiPage
 
 @must_be_contributor_or_public
-def view_comments(**kwargs): #TODO add wiki
+def view_comments(**kwargs):
     """
 
     """
@@ -42,6 +41,8 @@ def view_comments(**kwargs): #TODO add wiki
         })
     elif kwargs.get('wname'):
         wiki_page = node.get_wiki_page(kwargs.get('wname'))
+        if wiki_page is None:
+            raise HTTPError(http.NOT_FOUND)
         serialized.update({
             'comment_target': 'wiki',
             'comment_target_id': wiki_page.page_name
@@ -75,41 +76,69 @@ def collect_discussion(target, users=None):
             collect_discussion(comment, users=users)
     return users
 
-# TODO get discussion from comment pane (in model)
 @must_be_contributor_or_public
 def comment_discussion(**kwargs):
 
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
-    users = collect_discussion(node)
+
+    page = request.args.get('page')
+    guid = request.args.get('target')
+
+    if page == 'total':
+        users = collections.defaultdict(list)
+        for comment in getattr(node, 'comment_owner', []) or []:
+            if not comment.is_deleted:
+                users[comment.user].append(comment)
+            collect_discussion(comment, users=users)
+    else:
+        target = resolve_target(node, page, guid)
+        users = collect_discussion(target)
     anonymous = has_anonymous_link(node, auth)
-    # Sort users by comment frequency
-    # TODO: Allow sorting by recency, combination of frequency and recency
-    sorted_users = sorted(
+
+    sorted_users_frequency = sorted(
         users.keys(),
         key=lambda item: len(users[item]),
         reverse=True,
     )
 
-    return {
-        'discussion': [
-            {
-                'id': privacy_info_handle(user._id, anonymous),
-                'url': privacy_info_handle(user.url, anonymous),
-                'fullname': privacy_info_handle(user.fullname, anonymous, name=True),
-                'isContributor': node.is_contributor(user),
-                'gravatarUrl': privacy_info_handle(
-                    gravatar(
-                        user, use_ssl=True, size=settings.GRAVATAR_SIZE_DISCUSSION,
-                    ),
-                    anonymous
-                ),
+    def get_recency(item):
+        most_recent = users[item][0].date_created
+        for comment in users[item][1:]:
+            if comment.date_created > most_recent:
+                most_recent = comment.date_created
+        return most_recent
 
-            }
-            for user in sorted_users
+    sorted_users_recency = sorted(
+        users.keys(),
+        key=lambda item: get_recency(item),
+        reverse=True,
+    )
+
+    return {
+        'discussion_by_frequency': [
+            serialize_discussion(node, user, anonymous)
+            for user in sorted_users_frequency
+        ],
+        'discussion_by_recency': [
+            serialize_discussion(node, user, anonymous)
+            for user in sorted_users_recency
         ]
     }
 
+def serialize_discussion(node, user, anonymous=False):
+    return {
+        'id': privacy_info_handle(user._id, anonymous),
+        'url': privacy_info_handle(user.url, anonymous),
+        'fullname': privacy_info_handle(user.fullname, anonymous, name=True),
+        'isContributor': node.is_contributor(user),
+        'gravatarUrl': privacy_info_handle(
+            gravatar(
+                user, use_ssl=True, size=settings.GRAVATAR_SIZE_DISCUSSION,
+            ),
+            anonymous
+        )
+    }
 
 def serialize_comment(comment, auth, anonymous=False):
     return {

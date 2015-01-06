@@ -1,10 +1,6 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${node['title']} Files</%def>
 
-% if user['can_comment'] or node['has_comments']:
-    <%include file="include/comment_pane_template.mako"/>
-% endif
-
 <div class="row">
 <div class="col-md-8">
     <div class='help-block'>

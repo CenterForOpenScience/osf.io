@@ -8,8 +8,12 @@
 
     <div class="comments cp-sidebar">
         <h4>
-            <span>${node['title']} {{title}}Discussion</span>
-            <span data-bind="foreach: {data: discussion, afterAdd: setupToolTips}" class="pull-right">
+            <span data-bind="if: page=='node' ">${node['title']} {{title}}Discussion</span>
+            <span data-bind="if: page=='wiki' ">Wiki
+               <span data-bind="if: id().toLowerCase() != 'home' "><span data-bind="text: '- ' + id() + ' '"></span></span>
+                Discussion
+            </span>
+            <span data-bind="foreach: {data: discussion_by_frequency, afterAdd: setupToolTips}" class="pull-right">
                 <a data-toggle="tooltip" data-bind="attr: {href: url, title: fullname}" data-placement="bottom">
                     <img data-bind="attr: {src: gravatarUrl}"/>
                 </a>
