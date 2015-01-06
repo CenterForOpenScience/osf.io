@@ -44,7 +44,6 @@ var entry = {
         'dropzone',
         'knockout-sortable',
         'fangorn',
-        'dropzonePatch',
         'jquery.cookie'
     ]
 };
@@ -99,7 +98,6 @@ module.exports = {
             'waterbutler': staticPath('js/waterbutler.js'),
             'settings': staticPath('js/settings.js'),
             'fangorn': staticPath('js/fangorn.js'),
-            'dropzonePatch': staticPath('js/dropzonePatch.js'),
             'folderpicker': staticPath('js/folderPicker.js'),
             'osfHelpers': staticPath('js/osfHelpers.js'),
             'osfLanguage': staticPath('js/osfLanguage.js'),
