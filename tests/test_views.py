@@ -2367,7 +2367,13 @@ class TestConfigureMailingListViews(OsfTestCase):
         )
 
         # check that user is subscribed
-        mock_client.lists.subscribe.assert_called_with(id=list_id, email={'email': user.username}, double_optin=False, update_existing=True)
+        mock_client.lists.subscribe.assert_called_with(id=list_id,
+                                                       email={'email': user.username},
+                                                       merge_vars= {'fname': user.given_name,
+                                                                    'lname': user.family_name,
+                                                       },
+                                                       double_optin=False,
+                                                       update_existing=True)
 
     def test_get_mailchimp_get_endpoint_returns_200(self):
         url = api_url_for('mailchimp_get_endpoint')
