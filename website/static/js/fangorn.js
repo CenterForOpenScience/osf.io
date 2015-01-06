@@ -335,7 +335,7 @@ function _downloadEvent (event, item, col) {
         window.event.cancelBubble = true;
     }
     if (item.data.provider === 'osfstorage') {
-        item.data.downloads++;
+        item.data.extra.downloads++;
     }
     window.location = waterbutler.buildTreeBeardDownload(item);
 }
@@ -541,11 +541,12 @@ function _fangornResolveRows(item) {
         sortInclude : false,
         custom : actionColumn
     });
-    if (item.data.provider === 'osfstorage') {
+    if (item.data.provider === 'osfstorage' && item.data.kind === 'file') {
         default_columns.push({
             data : 'downloads',
             sortInclude : false,
-            filter : false
+            filter : false,
+            custom: function() { return item.data.extra.downloads.toString(); }
         });
     } else {
         default_columns.push({
