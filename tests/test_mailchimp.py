@@ -36,7 +36,12 @@ class TestMailChimpHelpers(OsfTestCase):
         mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
         list_id = mailchimp_utils.get_list_id_from_name(list_name)
         mailchimp_utils.subscribe(list_name, user)
-        mock_client.lists.subscribe.assert_called_with(id=list_id, email={'email': user.username}, double_optin=False, update_existing=True)
+        mock_client.lists.subscribe.assert_called_with(id=list_id,
+                                                       email={'email': user.username},
+                                                       merge_vars={'fname': user.given_name,
+                                                                   'lname': user.family_name},
+                                                       double_optin=False,
+                                                       update_existing=True)
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_unsubscribe_called_with_correct_arguments(self, mock_get_mailchimp_api):
