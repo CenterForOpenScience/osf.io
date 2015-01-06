@@ -30,6 +30,12 @@ class OsfStorageFileMetadata(BaseOsfStorageMetadata, metadata.BaseFileMetadata):
     def content_type(self):
         return None
 
+    @property
+    def extra(self):
+        return {
+            'downloads': self.raw['downloads']
+        }
+
 
 class OsfStorageFolderMetadata(BaseOsfStorageMetadata, metadata.BaseFolderMetadata):
 
