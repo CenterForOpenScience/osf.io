@@ -3,8 +3,6 @@ from flask import redirect
 from framework.auth import views as auth_views
 from framework.auth.decorators import collect_auth
 
-from website.util import web_url_for
-
 
 def connected_tools():
     return _landing_page(title='Connected Tools',
