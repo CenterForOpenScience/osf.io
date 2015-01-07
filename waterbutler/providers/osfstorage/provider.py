@@ -1,6 +1,5 @@
 import os
 import json
-import time
 import uuid
 import asyncio
 import hashlib
@@ -21,6 +20,9 @@ from waterbutler.providers.osfstorage.metadata import OsfStorageFolderMetadata
 
 
 signer = signing.Signer(settings.HMAC_SECRET, settings.HMAC_ALGORITHM)
+
+QUERY_METHODS = ('GET', 'DELETE')
+
 
 class OSFPath(utils.WaterButlerPath):
     def __init__(self, path):
@@ -57,24 +59,12 @@ class OSFStorageProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def make_signed_request(self, method, url, data=None, params=None, ttl=100, **kwargs):
-        exp_time = int(time.time() + ttl)
-
-        if method in ('GET', 'DELETE'):
-            params['time'] = exp_time
-            payload, signature = signer.sign_payload(params)
-            params = {
-                'payload': payload.decode(),
-                'signature': signature
-            }
+        if method.upper() in QUERY_METHODS:
+            signed = signing.sign_data(signer, params, ttl=ttl)
+            params = signed
         else:
-            data = json.loads(data)
-            data['time'] = exp_time
-            payload, signature = signer.sign_payload(data)
-            data = json.dumps({
-                'payload': payload.decode(),
-                'signature': signature
-            })
-
+            signed = signing.sign_data(signer, data, ttl=ttl)
+            data = signed
         return (yield from self.make_request(method, url, data=data, params=params, **kwargs))
 
     @asyncio.coroutine
