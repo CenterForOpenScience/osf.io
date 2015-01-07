@@ -55,7 +55,6 @@
                         <span data-bind="ifnot: author.id">
                             <span class="comment-author" data-bind="text: author.name"></span>
                         </span>
-                        <span data-bind="text: id"></span>
                         <span class="comment-date pull-right">
                             <span data-bind="template: {if: modified, afterRender: setupToolTips}">
                                 <a data-toggle="tooltip" data-bind="attr: {title: prettyDateModified()}">*</a>
@@ -71,7 +70,7 @@
 
                         <div data-bind="ifnot: editing">
                             <span data-bind="if: mode !== 'widget' && hasChildren()"><i data-bind="css: toggleIcon, click: toggle"></i></span>
-                            <span data-bind="text: content, css: {'edit-comment': editHighlight}, event: {mouseenter: startHoverContent, mouseleave: stopHoverContent, click: edit}"></span>
+                            <span class="overflow" data-bind="text: content, css: {'edit-comment': editHighlight}, event: {mouseenter: startHoverContent, mouseleave: stopHoverContent, click: edit}"></span>
                         </div>
 
                         <!--
@@ -99,15 +98,18 @@
 
                         <!-- Action bar -->
                         <div data-bind="ifnot: mode === 'widget'" style="display: inline">
-                            <div data-bind="ifnot: editing" class="comment-actions pull-right">
+                            <div data-bind="ifnot: editing, event: {mouseover: setupToolTips('i')}" class="comment-actions pull-right">
+                                <a data-bind="attr:{href: '${node['url']}discussions/'+id()}" style="color: #000000">
+                                    <i data-toggle="tooltip" data-placement="bottom" title="Link to comment" class="icon-link"></i>
+                                </a>
                                 <span data-bind="if: $root.canComment, click: showReply">
-                                    <i class="icon-reply"></i>
+                                    <i data-toggle="tooltip" data-placement="bottom" title="Reply" class="icon-reply"></i>
                                 </span>
                                 <span data-bind="if: canReport, click: reportAbuse">
-                                    <i class="icon-warning-sign"></i>
+                                    <i data-toggle="tooltip" data-placement="bottom" title="Report" class="icon-warning-sign"></i>
                                 </span>
                                 <span data-bind="if: canEdit, click: startDelete">
-                                    <i class="icon-trash"></i>
+                                    <i data-toggle="tooltip" data-placement="bottom" title="Delete" class="icon-trash"></i>
                                 </span>
                             </div>
 
