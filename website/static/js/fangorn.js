@@ -491,7 +491,6 @@ function _fangornActionColumn (item, col) {
  * @private
  */
 function _fangornTitleColumn(item, col) {
-    item.data.permissions = item.data.permissions || item.parent().data.permissions;
     return m('span',{
         onclick : function() {
             if (item.kind === 'file') {
@@ -517,6 +516,7 @@ function _fangornTitleColumn(item, col) {
  * @private
  */
 function _fangornResolveRows(item) {
+    item.data.permissions = item.data.permissions || item.parent().data.permissions;
     var default_columns = [],
         checkConfig = false,
         configOption;
