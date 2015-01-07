@@ -159,7 +159,7 @@ ${parent.javascript_bottom()}
     });
 </script>
 
-<script src="/static/public/js/project-dashboard.js"></script>
+<script src="/static/public/js/project-dashboard-page.js"></script>
 
 % for asset in addon_widget_js:
 <script src="${asset}"></script>
