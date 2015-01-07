@@ -277,7 +277,7 @@ class TestOsfStorageFileRecord(StorageTestCase):
         assert_equal(len(self.project.logs), nlogs + 1)
         assert_equal(
             self.project.logs[-1].action,
-            'osf_storage_{0}'.format(NodeLog.FILE_RESTORED),
+            'osf_storage_{0}'.format(NodeLog.FILE_ADDED),
         )
 
     def test_undelete_undeleted_record_raises_error(self):

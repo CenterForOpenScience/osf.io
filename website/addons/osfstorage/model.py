@@ -97,11 +97,11 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
     def serialize_waterbutler_settings(self):
         ret = {
             'callback': self.owner.api_url_for(
-                'osf_storage_crud_hook_get',
+                'osf_storage_update_metadata_hook',
                 _absolute=True,
             ),
             'metadata': self.owner.api_url_for(
-                'osf_storage_hgrid_contents',
+                'osf_storage_get_metadata_hook',
                 _absolute=True,
             ),
         }

@@ -261,24 +261,22 @@ def get_filename(version_idx, file_version, file_record):
     )
 
 
-def get_download_url(version_idx, file_version, file_record):
-    """Request signed download URL from upload service.
-
-    :param FileVersion file_version: Version to fetch
-    :param FileRecord file_record: Root file object
-    """
+def get_waterbutler_url(*path, **query):
     url = furl.furl(site_settings.WATERBUTLER_URL)
-
-    url.path.segments = ['file']
-    url.args = {
+    url.path.segments.extend(path)
+    url.args.update({
         'token': '',
         'provider': 'osfstorage',
-        'nid': file_record.node._id,
         'cookie': request.cookies.get(site_settings.COOKIE_NAME),
-        'path': get_filename(version_idx, file_version, file_record),
-    }
-
+    })
+    url.args.update(query)
     return url.url
+
+
+def get_waterbutler_download_url(version_idx, file_version, file_record):
+    nid = file_record.node._id
+    path = get_filename(version_idx, file_version, file_record)
+    return get_waterbutler_url('file', nid=nid, path=path)
 
 
 def get_cache_filename(file_version):
@@ -303,7 +301,7 @@ def render_file(version_idx, file_version, file_record):
     node_settings = file_obj.node.get_addon('osfstorage')
     rendered = get_cache_content(node_settings, cache_file_name)
     if rendered is None:
-        download_url = get_download_url(version_idx, file_version, file_record)
+        download_url = get_waterbutler_download_url(version_idx, file_version, file_record)
         file_response = requests.get(download_url)
         rendered = get_cache_content(
             node_settings,

@@ -221,7 +221,7 @@ class TestGetDownloadUrl(StorageTestCase):
     def test_get_download_url(self, mock_request):
         url = 'http://deacon.queen.com/'
         mock_request.return_value = {'url': url}
-        ret = utils.get_download_url(3, self.record.versions[-1], self.record)
+        ret = utils.get_waterbutler_download_url(3, self.record.versions[-1], self.record)
         request_url = urlparse.urljoin(
             utils.choose_upload_url(),
             'urls/download/',

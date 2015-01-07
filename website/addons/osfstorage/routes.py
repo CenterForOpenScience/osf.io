@@ -82,7 +82,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/osfstorage/files/<path:path>/',
             ],
             'get',
-            views.osf_storage_hgrid_contents,
+            views.osf_storage_get_metadata_hook,
             json_renderer,
         ),
 
@@ -102,7 +102,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/osfstorage/hooks/crud/',
             ],
             'get',
-            views.osf_storage_crud_hook_get,
+            views.osf_storage_download_file_hook,
             json_renderer,
         ),
 
@@ -112,7 +112,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/osfstorage/hooks/crud/',
             ],
             'put',
-            views.osf_storage_crud_hook_put,
+            views.osf_storage_update_metadata_hook,
             json_renderer,
         ),
         Rule(
@@ -131,7 +131,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/osfstorage/hooks/crud/',
             ],
             'post',
-            views.osf_storage_crud_hook_post,
+            views.osf_storage_upload_file_hook,
             json_renderer,
         ),
 

@@ -49,7 +49,7 @@ def get_record_or_404(path, node_addon):
 
 @must_be_signed
 @must_have_addon('osfstorage', 'node')
-def osf_storage_crud_hook_get(node_addon, payload, **kwargs):
+def osf_storage_download_file_hook(node_addon, payload, **kwargs):
     # TODO: Check HMAC signature
     try:
         path = payload['path']
@@ -71,7 +71,6 @@ def osf_storage_crud_hook_get(node_addon, payload, **kwargs):
 
 
 def osf_storage_crud_prepare(node_addon, payload):
-    # TODO: Verify HMAC signature
     try:
         auth = payload['auth']
         settings = payload['settings']
@@ -97,7 +96,7 @@ def osf_storage_crud_prepare(node_addon, payload):
 
 @must_be_signed
 @must_have_addon('osfstorage', 'node')
-def osf_storage_crud_hook_post(node_addon, payload, **kwargs):
+def osf_storage_upload_file_hook(node_addon, payload, **kwargs):
     path, user, location, metadata = osf_storage_crud_prepare(node_addon, payload)
     record, created = model.OsfStorageFileRecord.get_or_create(path, node_addon)
 
@@ -114,7 +113,7 @@ def osf_storage_crud_hook_post(node_addon, payload, **kwargs):
 
 @must_be_signed
 @must_have_addon('osfstorage', 'node')
-def osf_storage_crud_hook_put(node_addon, payload, **kwargs):
+def osf_storage_update_metadata_hook(node_addon, payload, **kwargs):
     try:
         version_id = payload['version_id']
         metadata = payload['metadata']
@@ -124,10 +123,32 @@ def osf_storage_crud_hook_put(node_addon, payload, **kwargs):
     version = model.OsfStorageFileVersion.load(version_id)
 
     if version is None:
-        raise HTTPError(httplib.BAD_REQUEST)
+        raise HTTPError(httplib.NOT_FOUND)
 
     version.update_metadata(metadata)
 
+    return {'status': 'success'}
+
+
+@must_be_signed
+@must_not_be_registration
+@must_have_addon('osfstorage', 'node')
+def osf_storage_crud_hook_delete(payload, node_addon, **kwargs):
+    file_record = model.OsfStorageFileRecord.find_by_path(payload.get('path'), node_addon)
+
+    if file_record is None:
+        raise HTTPError(httplib.NOT_FOUND)
+
+    try:
+        auth = Auth(User.load(payload['auth'].get('id')))
+        if not auth:
+            raise HTTPError(httplib.BAD_REQUEST)
+
+        file_record.delete(auth)
+    except errors.DeleteError:
+        raise HTTPError(httplib.NOT_FOUND)
+
+    file_record.save()
     return {'status': 'success'}
 
 
@@ -196,7 +217,6 @@ def serialize_file(idx, version, record, path, node):
         'rendered': rendered,
         'files_url': node.web_url_for('collect_file_trees'),
         'download_url': node.web_url_for('osf_storage_view_file', path=path, action='download'),
-        # 'delete_url': node.api_url_for('osf_storage_delete_file', path=path),
         'revisions_url': node.api_url_for(
             'osf_storage_get_revisions',
             path=path,
@@ -212,7 +232,7 @@ def serialize_file(idx, version, record, path, node):
 def download_file(path, node_addon, version_query):
     mode = request.args.get('mode')
     idx, version, record = get_version(path, node_addon, version_query)
-    url = utils.get_download_url(idx, version, record)
+    url = utils.get_waterbutler_download_url(idx, version, record)
     if mode != 'render':
         update_analytics(node_addon.owner, path, idx)
     return redirect(url)
@@ -261,30 +281,8 @@ def osf_storage_render_file(path, node_addon, **kwargs):
 
 
 @must_be_signed
-@must_not_be_registration
 @must_have_addon('osfstorage', 'node')
-def osf_storage_crud_hook_delete(payload, node_addon, **kwargs):
-    file_record = model.OsfStorageFileRecord.find_by_path(payload.get('path'), node_addon)
-
-    if file_record is None:
-        raise HTTPError(httplib.NOT_FOUND)
-
-    try:
-        auth = Auth(User.load(payload['auth'].get('id')))
-        if not auth:
-            raise HTTPError(httplib.BAD_REQUEST)
-
-        file_record.delete(auth)
-    except errors.DeleteError:
-        raise HTTPError(httplib.NOT_FOUND)
-
-    file_record.save()
-    return {'status': 'success'}
-
-
-@must_be_signed
-@must_have_addon('osfstorage', 'node')
-def osf_storage_hgrid_contents(node_addon, payload, **kwargs):
+def osf_storage_get_metadata_hook(node_addon, payload, **kwargs):
     path = payload.get('path', '')
     file_tree = model.OsfStorageFileTree.find_by_path(path, node_addon)
     if file_tree is None:
@@ -292,6 +290,7 @@ def osf_storage_hgrid_contents(node_addon, payload, **kwargs):
             return []
         raise HTTPError(httplib.NOT_FOUND)
     node = node_addon.owner
+    # TODO: Handle nested folders
     return [
         utils.serialize_metadata_hgrid(item, node)
         for item in list(file_tree.children)
