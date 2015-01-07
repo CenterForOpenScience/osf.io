@@ -234,6 +234,9 @@ def project_wiki_delete(auth, wname, **kwargs):
 
     if not wiki_page:
         raise HTTPError(http.NOT_FOUND)
+    comments = getattr(node.get_wiki_page(wiki_name, 1), 'commented', [])
+    for comment in comments:
+        comment.hide(save=True)
     node.delete_node_wiki(wiki_name, auth)
     return {}
 

@@ -177,7 +177,8 @@ BaseComment.prototype.getThread = function(thread_id) {
         nodeApiUrl + 'comment/' + thread_id + '/',
         {},
         function(response) {
-            self.comments(new CommentModel(response.comment, self, self.$root));
+            self.comments([]);
+            self.comments.push(new CommentModel(response.comment, self, self.$root));
             deferred.resolve(self.comments());
             self._loaded = self.comments().length - 1;
         }

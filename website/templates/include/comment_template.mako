@@ -22,6 +22,15 @@
                 </div>
             </div>
 
+            <div data-bind="if: isHidden">
+                <div>
+                    <span data-bind="if: hasChildren">
+                        <i data-bind="css: toggleIcon, click: toggle"></i>
+                    </span>
+                    Comment deleted.
+                </div>
+            </div>
+
             <div data-bind="if: isAbuse">
                 <div>
                     <span data-bind="if: hasChildren">

@@ -69,6 +69,15 @@
             <h6>You are viewing a single comment's thread.</h6>
         % endif
         <div class="comment-list" data-bind="template: {name: 'commentTemplate', foreach: comments}"></div>
+        % if not comment is UNDEFINED:
+            <div data-bind="if: comments().length == 1">
+                <span data-bind="foreach: comments">
+                    <span data-bind="ifnot: shouldShow">
+                        Comment deleted.
+                    </span>
+                </span>
+            </div>
+        % endif
     </div>
 </div>
 
