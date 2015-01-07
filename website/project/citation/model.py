@@ -5,7 +5,6 @@ from modularodm import fields
 from framework.mongo import StoredObject
 
 
-
 class CitationStyle(StoredObject):
 
     # Required Fields

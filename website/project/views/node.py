@@ -35,13 +35,6 @@ from website.profile import utils
 from website.project import new_folder
 from website.util.sanitize import strip_html
 
-import CitationParser
-from citeproc import formatter
-from flask import Flask, send_file
-import StringIO
-
-from .log import _get_logs
-
 logger = logging.getLogger(__name__)
 
 
@@ -905,51 +898,6 @@ def _get_user_activity(node, auth, rescale_ratio):
         non_ua = 0
 
     return ua_count, ua, non_ua
-
-# /cite/<style>
-
-@must_be_valid_project
-def human_format_citation(*args, **kwargs):
-
-    node = kwargs['node'] or kwargs['project']
-    style = kwargs.get('style')
-    if style is None:
-        raise HTTPError(http.BAD_REQUEST)
-
-    output = CitationParser.to_citation(
-        node.to_csl(),
-        style,
-        formatter.plain
-    )
-    return {'output': output}
-
-@must_be_valid_project
-def machine_format_citation(*args, **kwargs):
-
-    node = kwargs['node'] or kwargs['project']
-    utilname = kwargs.get('machine_style')
-    if utilname is None:
-        raise HTTPError(http.BAD_REQUEST)
-
-    output = CitationParser.to_machine_readable(
-        utilname,
-        node.to_csl()
-    )
-
-    bibutilsMap = {
-        'xml2bib':{'extension':'bibtex', 'mime':'application/x-bibtex'},
-        'xml2end':{'extension':'enw', 'mime':'application/x-endnote-refer'},
-        'xml2ris':{'extension':'ris', 'mime':'application/x-Research-Info-Systems'},
-        'xml2wordbib':{'extension':'xml', 'mime':'application/x-xml'},
-        'xml2isi':{'extension':'isi', 'mime':''},
-    }
-    strIO = StringIO.StringIO()
-    strIO.write('' + output)
-    strIO.seek(0)
-    return send_file(strIO,
-                     mimetype = bibutilsMap[utilname]['mime'],
-                     attachment_filename=node.title.replace(" ", "")+"." +bibutilsMap[utilname]['extension'],
-                     as_attachment=True)
 
 
 @must_be_valid_project

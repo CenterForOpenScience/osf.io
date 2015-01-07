@@ -28,8 +28,6 @@ from website.search import views as search_views
 from website.profile import views as profile_views
 from website.project import views as project_views
 from website.project.citation import views as citation_views
-from website.assets import env as assets_env
-from website.util import sanitize
 from website.addons.base import views as addon_views
 from website.discovery import views as discovery_views
 from website.conferences import views as conference_views

@@ -29,7 +29,6 @@ def render(node, style='apa'):
     return unicode(bibliography.bibliography()[0])
 
 
-
 def _node_to_csl_json(node):
     """Given a node, return a dict in CSL-JSON schema
 
