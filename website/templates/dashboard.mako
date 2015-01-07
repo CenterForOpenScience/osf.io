@@ -114,6 +114,6 @@
 
 <%def name="javascript_bottom()">
 
-<script src="/static/public/js/dashboard-page.js"></script>
+<script src=${"/static/public/js/dashboard-page.js" | webpack_asset}></script>
 
 </%def>

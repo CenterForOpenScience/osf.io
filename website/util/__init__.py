@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
+import os
 import re
+import json
 from flask import request, url_for
 
 from website import settings
@@ -68,3 +70,13 @@ def is_json_request():
     """Return True if the current request is a JSON/AJAX request."""
     content_type = request.content_type
     return content_type and ('application/json' in content_type)
+
+
+asset_paths = json.load(open('webpack-assets.json'))
+base_static_path = '/static/public/js/'
+def webpack_asset(path):
+    if settings.DEV_MODE:
+        return path
+    key = path.replace(base_static_path, '').replace('.js', '')
+    hash_path = asset_paths[key]
+    return os.path.join(base_static_path, hash_path)

@@ -7,6 +7,8 @@ var staticPath = function(dir) {
     return path.join(root, dir);
 };
 
+SaveAssetsJson = require('assets-webpack-plugin');
+
 module.exports = {
     // Split code chunks by page
     entry: entry,
@@ -14,10 +16,8 @@ module.exports = {
     output: {
         path: './website/static/public/js/',
         // publicPath: '/static/', // used to generate urls to e.g. images
-        filename: '[name].js'
+        filename: '[name].[chunkhash].js'
     },
-    watch: true,
-    devtool: 'source-map',
     resolve: {
         root: root,
         // Look for required files in bower and npm directories
@@ -65,7 +65,12 @@ module.exports = {
         // Slight hack to make sure that CommonJS is always used
         new webpack.DefinePlugin({
             'define.amd': false
-        })
+        }),
+        new webpack.optimize.DedupePlugin(),
+        new webpack.optimize.OccurenceOrderPlugin(),
+        new webpack.optimize.AggressiveMergingPlugin(),
+        new webpack.optimize.UglifyJsPlugin({exclude: /conference(\.\w+)?\.js$/}),
+        new SaveAssetsJson()
     ],
     externals: {
         // require("jquery") is external and available
