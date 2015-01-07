@@ -27,16 +27,18 @@ def view_comments(**kwargs):
     auth = kwargs['auth']
 
     serialized = _view_project(node, auth, primary=True)
-    serialized_wiki_pages = getattr(node, 'wiki_pages_current', [])
+    #serialized_wiki_pages = getattr(node, 'wiki_pages_current', [])
+    from website.addons.wiki.views import _get_wiki_pages_current
     serialized.update({
-        'wiki_pages_current': serialized_wiki_pages
+        'wiki_pages_current': _get_wiki_pages_current(node),
+        'wiki_home_content': node.get_wiki_page('home')
     })
     if kwargs.get('cid'):
         comment = kwargs_to_comment(kwargs)
         serialized_comment = serialize_comment(comment, auth)
         serialized.update({
             'comment': serialized_comment,
-            'comment_target': 'node',
+            'comment_target': serialized_comment['page'],
             'comment_target_id': serialized['node']['id']
         })
     elif kwargs.get('wname'):
@@ -58,10 +60,10 @@ def view_comments(**kwargs):
 def resolve_target(node, page, guid):
     if not guid:
         return node
-    if page == 'wiki':
-        return node.get_wiki_page(guid, 1)
     target = Guid.load(guid)
     if target is None:
+        if page == 'wiki':
+            return node.get_wiki_page(guid, 1)
         raise HTTPError(http.BAD_REQUEST)
     return target.referent
 
@@ -159,6 +161,8 @@ def serialize_comment(comment, auth, anonymous=False):
         },
         'dateCreated': comment.date_created.isoformat(),
         'dateModified': comment.date_modified.isoformat(),
+        'page': comment.page,
+        'rootId': comment.rootId,
         'content': comment.content,
         'hasChildren': bool(getattr(comment, 'commented', [])),
         'canEdit': comment.user == auth.user,
@@ -219,6 +223,7 @@ def add_comment(**kwargs):
         node=node,
         target=target,
         user=auth.user,
+        page=page,
         content=content,
     )
     comment.save()

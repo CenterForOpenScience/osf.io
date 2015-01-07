@@ -20,17 +20,20 @@
                         <li>
                             <h4 style="margin-left: 15px">Wiki</h4>
                         </li>
-                        % if len(wiki_pages_current) > 0:
-                            % for page in wiki_pages_current:
-                                <li>
-                                    <a href="${node['url']}discussions/wiki/${page}">${page}</a>
-                                </li>
-                            %endfor
-                        % else:
-                            <li>
+                        <li>
+                            % if wiki_home_content:
+                                <a href="${node['url']}discussions/wiki/home">Home</a>
+                            % else:
                                 <a style="color: #808080">Home (No wiki content)</a>
-                            </li>
-                        % endif
+                            % endif
+                        </li>
+                        % for page in wiki_pages_current:
+                            % if page['name'].lower() != 'home':
+                                <li>
+                                    <a href="${node['url']}discussions/wiki/${page['name']}">${page['name']}</a>
+                                </li>
+                            % endif
+                        %endfor
                     % endif
                 % endfor
             % endif
@@ -67,6 +70,7 @@
             ${newComment()}
         %else:
             <h6>You are viewing a single comment's thread.</h6>
+            <a data-bind="attr:{href: '${node['url']}'+rootUrl()}"><h6>&#8592; View the rest of the comments</h6></a>
         % endif
         <div class="comment-list" data-bind="template: {name: 'commentTemplate', foreach: comments}"></div>
         % if not comment is UNDEFINED:

@@ -72,8 +72,8 @@ var BaseComment = function() {
     //self._loaded = false;
     self._loaded = -1;
     self.id = ko.observable();
-    self.page = null;
 
+    self.page = 'node'; // Default
     self.mode = 'pane'; // Default
 
     self.errorMessage = ko.observable();
@@ -249,6 +249,7 @@ var CommentModel = function(data, $parent, $root) {
         return 'Modified ' + relativeDate(self.dateModified());
     });
 
+    self.page = $parent.page;
     self.mode = $parent.mode;
 
     self.showChildren = ko.observable(false);
@@ -293,6 +294,13 @@ var CommentModel = function(data, $parent, $root) {
         return (!self.isDeleted() && !self.isHidden()) || self.hasChildren() || self.canEdit();
     });
 
+    self.rootUrl = ko.computed(function(){
+        var url = 'discussions';
+        if (self.page === 'wiki') {
+            url = url + '/wiki/' + self.rootId();
+        }
+        return url;
+    });
 };
 
 CommentModel.prototype = new BaseComment();
@@ -474,6 +482,13 @@ var CommentListModel = function(userName, host_page, host_name, mode, canComment
 
     self.page = host_page;
     self.id = ko.observable(host_name);
+
+    self.rootUrl = ko.computed(function(){
+        if (self.comments().length == 0) {
+            return '';
+        }
+        return self.comments()[0].rootUrl();
+    });
 
     self.recentComments = ko.computed(function(){
         var comments = [];
