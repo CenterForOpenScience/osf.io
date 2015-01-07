@@ -1,5 +1,8 @@
-    $(document).ready(function() {
+var $ = require('jquery');
+var bootbox = require('bootbox');
+var $osf = require('osfHelpers');
 
+    $(document).ready(function() {
 
         $('#figshareAddKey').on('click', function() {
             if ($(this)[0].outerText == 'Authorize: Create Access Token')
@@ -66,7 +69,7 @@
 
         bootbox.prompt('Name your new file set', function(filesetName) {
             if (filesetName && filesetName.trim() != '') {
-                $.osf.postJSON(
+                $osf.postJSON(
                     nodeApiUrl + 'figshare/new/fileset/',
                     {name: filesetName}
                 ).done(function(response) {

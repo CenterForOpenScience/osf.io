@@ -1,51 +1,53 @@
 # -*- coding: utf-8 -*-
-from HTMLParser import HTMLParser
-from collections import OrderedDict
-import calendar
-import datetime
-import hashlib
-import logging
 import os
 import re
+import uuid
+import urllib
+import logging
+import hashlib
+import calendar
+import datetime
+import urlparse
 import subprocess
 import unicodedata
-import urllib
-import urlparse
-import uuid
+from HTMLParser import HTMLParser
+from collections import OrderedDict
 
 import pytz
+import blinker
 from flask import request
 from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
-import blinker
 
-from modularodm import fields, Q
+from modularodm import Q
+from modularodm import fields
 from modularodm.validators import MaxLengthValidator
-from modularodm.exceptions import ValidationValueError, ValidationTypeError
+from modularodm.exceptions import ValidationTypeError
+from modularodm.exceptions import ValidationValueError
 
 from framework import status
 from framework.mongo import ObjectId
-from framework.mongo.utils import to_mongo, to_mongo_key
-from framework.auth import get_user, User, Auth
-from framework.auth.utils import privacy_info_handle
-from framework.analytics import (
-    get_basic_counters, increment_user_activity_counters, piwik
-)
-from framework.exceptions import PermissionsError
 from framework.mongo import StoredObject
-from framework.guid.model import GuidStoredObject
 from framework.addons import AddonModelMixin
-
-
-from website.exceptions import NodeStateError
-from website.util.permissions import (
-    expand_permissions,
-    DEFAULT_CONTRIBUTOR_PERMISSIONS,
-    CREATOR_PERMISSIONS
+from framework.auth import get_user, User, Auth
+from framework.exceptions import PermissionsError
+from framework.guid.model import GuidStoredObject
+from framework.auth.utils import privacy_info_handle
+from framework.analytics import tasks as piwik_tasks
+from framework.mongo.utils import to_mongo, to_mongo_key
+from framework.analytics import (
+    get_basic_counters, increment_user_activity_counters
 )
+
+from website import language
+from website import settings
+from website.util import web_url_for
+from website.util import api_url_for
+from website.exceptions import NodeStateError
+from website.util.permissions import expand_permissions
+from website.util.permissions import CREATOR_PERMISSIONS
 from website.project.metadata.schemas import OSF_META_SCHEMAS
-from website import language, settings
-from website.util import web_url_for, api_url_for
+from website.util.permissions import DEFAULT_CONTRIBUTOR_PERMISSIONS
 
 html_parser = HTMLParser()
 
@@ -609,7 +611,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     tags = fields.ForeignField('tag', list=True, backref='tagged')
 
     # Tags for internal use
-    system_tags = fields.StringField(list=True, index=True)
+    system_tags = fields.StringField(list=True)
 
     nodes = fields.AbstractForeignField(list=True, backref='parent')
     forked_from = fields.ForeignField('node', backref='forked')
@@ -694,6 +696,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
 
     def can_view(self, auth):
+        if not auth and not self.is_public:
+            return False
+
         return self.is_public or auth.user \
             and self.has_permission(auth.user, 'read') \
             or auth.private_key in self.private_link_keys_active
@@ -888,6 +893,8 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     def save(self, *args, **kwargs):
 
+        update_piwik = kwargs.pop('update_piwik', True)
+
         self.adjust_permissions()
 
         first_save = not self._is_loaded
@@ -958,8 +965,8 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.update_search()
 
         # This method checks what has changed.
-        if settings.PIWIK_HOST:
-            piwik.update_node(self, saved_fields)
+        if settings.PIWIK_HOST and update_piwik:
+            piwik_tasks.update_node(self._id, saved_fields)
 
         # Return expected value for StoredObject::save
         return saved_fields
@@ -2722,13 +2729,6 @@ class WatchConfig(StoredObject):
         return '<WatchConfig(node="{self.node}")>'.format(self=self)
 
 
-class MailRecord(StoredObject):
-
-    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
-    data = fields.DictionaryField()
-    records = fields.AbstractForeignField(list=True, backref='created')
-
-
 class PrivateLink(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
@@ -2747,10 +2747,12 @@ class PrivateLink(StoredObject):
         return node_ids
 
     def node_scale(self, node):
-        if node.parent_id not in self.node_ids:
+        # node may be None if previous node's parent is deleted
+        if node is None or node.parent_id not in self.node_ids:
             return -40
         else:
-            return 20 + self.node_scale(node.parent_node)
+            offset = 20 if node.parent_node is not None else 0
+            return offset + self.node_scale(node.parent_node)
 
     def node_icon(self, node):
         if node.category == 'project':
@@ -2766,6 +2768,7 @@ class PrivateLink(StoredObject):
             "key": self.key,
             "name": self.name,
             "creator": {'fullname': self.creator.fullname, 'url': self.creator.profile_url},
-            "nodes": [{'title': x.title, 'url': x.url, 'scale': str(self.node_scale(x)) + 'px', 'imgUrl': self.node_icon(x)} for x in self.nodes],
+            "nodes": [{'title': x.title, 'url': x.url, 'scale': str(self.node_scale(x)) + 'px', 'imgUrl': self.node_icon(x)}
+                      for x in self.nodes if not x.is_deleted],
             "anonymous": self.anonymous
         }

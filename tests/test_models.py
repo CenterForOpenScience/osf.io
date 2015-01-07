@@ -19,6 +19,7 @@ from modularodm import Q
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
 from framework.auth import User, Auth
+from framework.auth.exceptions import ChangePasswordError
 from framework.auth.utils import impute_names_model
 from framework.bcrypt import check_password_hash
 from website import filters, language, settings
@@ -77,23 +78,48 @@ class TestUserValidation(OsfTestCase):
             self.user.save()
 
     def test_validate_social_personal_empty(self):
-        self.user.social = {'personal_site': ''}
-        try:
-            self.user.save()
-        except:
-            assert 0
+        self.user.social = {'personal': ''}
+        self.user.save()
 
     def test_validate_social_valid(self):
-        self.user.social = {'personal_site': 'http://cos.io/'}
-        try:
-            self.user.save()
-        except:
-            assert 0
+        self.user.social = {'personal': 'http://cos.io/'}
+        self.user.save()
 
     def test_validate_social_personal_invalid(self):
-        self.user.social = {'personal_site': 'help computer'}
+        self.user.social = {'personal': 'help computer'}
         with assert_raises(ValidationError):
             self.user.save()
+
+    def test_empty_social_links(self):
+        assert_equal(self.user.social_links, {})
+        assert_equal(len(self.user.social_links), 0)
+
+    def test_personal_site_unchanged(self):
+        self.user.social = {'personal': 'http://cos.io/'}
+        self.user.save()
+        assert_equal(self.user.social_links['personal'], 'http://cos.io/')
+        assert_equal(len(self.user.social_links), 1)
+
+    def test_various_social_handles(self):
+        self.user.social = {
+            'personal': 'http://cos.io/',
+            'twitter': 'OSFramework',
+            'github': 'CenterForOpenScience'
+        }
+        self.user.save()
+        assert_equal(self.user.social_links, {
+            'personal': 'http://cos.io/',
+            'twitter': 'http://twitter.com/OSFramework',
+            'github': 'http://github.com/CenterForOpenScience'
+        })
+
+    def test_nonsocial_ignored(self):
+        self.user.social = {
+            'foo': 'bar',
+        }
+        self.user.save()
+        assert_equal(self.user.social_links, {})
+
 
     def test_validate_jobs_valid(self):
         self.user.jobs = [{
@@ -171,7 +197,7 @@ class TestUser(OsfTestCase):
                  is_registered=False)
         u.set_password('killerqueen')
         u.save()
-        assert_false(u.is_active())
+        assert_false(u.is_active)
 
     def test_create_unregistered(self):
         name, email = fake.name(), fake.email()
@@ -208,12 +234,12 @@ class TestUser(OsfTestCase):
             is_registered=True,
         )
         u.save()
-        assert_false(u.is_active())
+        assert_false(u.is_active)
 
     def test_merged_user_is_not_active(self):
         master = UserFactory()
         dupe = UserFactory(merged_by=master)
-        assert_false(dupe.is_active())
+        assert_false(dupe.is_active)
 
     def test_cant_create_user_without_username(self):
         u = User()  # No username given
@@ -266,12 +292,21 @@ class TestUser(OsfTestCase):
 
     @mock.patch('website.security.random_string')
     def test_add_email_verification(self, random_string):
-        random_string.return_value = '12345'
+        token = fake.lexify('???????')
+        random_string.return_value = token
         u = UserFactory()
         assert_equal(len(u.email_verifications.keys()), 0)
         u.add_email_verification('foo@bar.com')
         assert_equal(len(u.email_verifications.keys()), 1)
-        assert_equal(u.email_verifications['12345']['email'], 'foo@bar.com')
+        assert_equal(u.email_verifications[token]['email'], 'foo@bar.com')
+
+    @mock.patch('website.security.random_string')
+    def test_add_email_verification_adds_expiration_date(self, random_string):
+        token = fake.lexify('???????')
+        random_string.return_value = token
+        u = UserFactory()
+        u.add_email_verification(u.username)
+        assert_is_instance(u.email_verifications[token]['expiration'], datetime.datetime)
 
     @mock.patch('website.security.random_string')
     def test_get_confirmation_token(self, random_string):
@@ -327,6 +362,9 @@ class TestUser(OsfTestCase):
         assert_false(u.verify_confirmation_token('badtoken'))
         valid_token = u.get_confirmation_token('foo@bar.com')
         assert_true(u.verify_confirmation_token(valid_token))
+        manual_expiration=datetime.datetime.utcnow()-datetime.timedelta(0,10)
+        u._set_email_token_expiration(valid_token, expiration=manual_expiration)
+        assert_false(u.verify_confirmation_token(valid_token))
 
     def test_factory(self):
         # Clear users
@@ -386,6 +424,65 @@ class TestUser(OsfTestCase):
         assert_true(user.check_password('ghostrider'))
         assert_false(user.check_password('ghostride'))
 
+    def test_change_password(self):
+        old_password = 'password'
+        new_password = 'new password'
+        confirm_password = new_password
+        self.user.set_password(old_password)
+        self.user.save()
+        self.user.change_password(old_password, new_password, confirm_password)
+        assert_true(self.user.check_password(new_password))
+
+    def test_change_password_invalid(self, old_password=None, new_password=None, confirm_password=None,
+                                     error_message='Old password is invalid'):
+        self.user.set_password('password')
+        self.user.save()
+        with assert_raises(ChangePasswordError) as error:
+            self.user.change_password(old_password, new_password, confirm_password)
+            self.user.save()
+        assert_in(error_message, error.exception.message)
+        assert_false(self.user.check_password(new_password))
+
+    def test_change_password_invalid_old_password(self):
+        self.test_change_password_invalid(
+            'invalid old password',
+            'new password',
+            'new password',
+            'Old password is invalid',
+        )
+
+    def test_change_password_invalid_new_password_length(self):
+        self.test_change_password_invalid(
+            'password',
+            '12345',
+            '12345',
+            'Password should be at least six characters',
+        )
+
+    def test_change_password_invalid_confirm_password(self):
+        self.test_change_password_invalid(
+            'password',
+            'new password',
+            'invalid confirm password',
+            'Password does not match the confirmation',
+        )
+
+    def test_change_password_invalid_blank_password(self, old_password='', new_password='', confirm_password=''):
+        self.test_change_password_invalid(
+            old_password,
+            new_password,
+            confirm_password,
+            'Passwords cannot be blank',
+        )
+
+    def test_change_password_invalid_blank_new_password(self):
+        for password in (None, '', '      '):
+            self.test_change_password_invalid_blank_password('password', password, 'new password')
+
+    def test_change_password_invalid_blank_confirm_password(self):
+        for password in (None, '', '      '):
+            self.test_change_password_invalid_blank_password('password', 'new password', password)
+
     def test_url(self):
         assert_equal(
             self.user.url,
@@ -422,7 +519,7 @@ class TestUser(OsfTestCase):
         assert_equal(d['registered'], user.is_registered)
         assert_equal(d['absolute_url'], user.absolute_url)
         assert_equal(d['date_registered'], user.date_registered.strftime('%Y-%m-%d'))
-        assert_equal(d['active'], user.is_active())
+        assert_equal(d['active'], user.is_active)
 
     def test_serialize_user_full(self):
         master = UserFactory()
@@ -558,6 +655,36 @@ class TestUserParse(unittest.TestCase):
         parsed = impute_names_model('John van der Slice')
         assert_equal(parsed['given_name'], 'John')
         assert_equal(parsed['family_name'], 'van der Slice')
+
+
+class TestDisablingUsers(OsfTestCase):
+    def setUp(self):
+        super(TestDisablingUsers, self).setUp()
+        self.user = UserFactory()
+
+    def test_user_enabled_by_default(self):
+        assert_false(self.user.is_disabled)
+
+    def test_disabled_user(self):
+        """Ensure disabling a user sets date_disabled"""
+        self.user.is_disabled = True
+        self.user.save()
+
+        assert_true(isinstance(self.user.date_disabled, datetime.datetime))
+        assert_true(self.user.is_disabled)
+        assert_false(self.user.is_active)
+
+    def test_reenabled_user(self):
+        """Ensure restoring a disabled user unsets date_disabled"""
+        self.user.is_disabled = True
+        self.user.save()
+
+        self.user.is_disabled = False
+        self.user.save()
+
+        assert_is_none(self.user.date_disabled)
+        assert_false(self.user.is_disabled)
+        assert_true(self.user.is_active)
 
 
 class TestMergingUsers(OsfTestCase):
@@ -3105,6 +3232,69 @@ class TestComments(OsfTestCase):
         self.comment.reports[self.comment.user._id] = {'foo': 'bar'}
         with assert_raises(ValidationValueError):
             self.comment.save()
+
+class TestPrivateLink(OsfTestCase):
+
+    def test_node_scale(self):
+        link = PrivateLinkFactory()
+        project = ProjectFactory()
+        comp = NodeFactory(project=project)
+        link.nodes.append(project)
+        link.save()
+        assert_equal(link.node_scale(project), -40)
+        assert_equal(link.node_scale(comp), -20)
+
+    # Regression test for https://sentry.osf.io/osf/production/group/1119/
+    def test_to_json_nodes_with_deleted_parent(self):
+        link = PrivateLinkFactory()
+        project = ProjectFactory(is_deleted=True)
+        node = NodeFactory(project=project)
+        link.nodes.extend([project, node])
+        link.save()
+        result = link.to_json()
+        # result doesn't include deleted parent
+        assert_equal(len(result['nodes']), 1)
+
+    # Regression test for https://sentry.osf.io/osf/production/group/1119/
+    def test_node_scale_with_deleted_parent(self):
+        link = PrivateLinkFactory()
+        project = ProjectFactory(is_deleted=True)
+        node = NodeFactory(project=project)
+        link.nodes.extend([project, node])
+        link.save()
+        assert_equal(link.node_scale(node), -40)
+
+
+class TestPrivateLink(OsfTestCase):
+
+    def test_node_scale(self):
+        link = PrivateLinkFactory()
+        project = ProjectFactory()
+        comp = NodeFactory(project=project)
+        link.nodes.append(project)
+        link.save()
+        assert_equal(link.node_scale(project), -40)
+        assert_equal(link.node_scale(comp), -20)
+
+    # Regression test for https://sentry.osf.io/osf/production/group/1119/
+    def test_to_json_nodes_with_deleted_parent(self):
+        link = PrivateLinkFactory()
+        project = ProjectFactory(is_deleted=True)
+        node = NodeFactory(project=project)
+        link.nodes.extend([project, node])
+        link.save()
+        result = link.to_json()
+        # result doesn't include deleted parent
+        assert_equal(len(result['nodes']), 1)
+
+    # Regression test for https://sentry.osf.io/osf/production/group/1119/
+    def test_node_scale_with_deleted_parent(self):
+        link = PrivateLinkFactory()
+        project = ProjectFactory(is_deleted=True)
+        node = NodeFactory(project=project)
+        link.nodes.extend([project, node])
+        link.save()
+        assert_equal(link.node_scale(node), -40)
 
 
 if __name__ == '__main__':

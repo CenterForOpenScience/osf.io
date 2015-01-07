@@ -77,6 +77,24 @@ class TestUserUpdate(SearchTestCase):
         docs_current = query_user(user.fullname)['results']
         assert_equal(len(docs_current), 1)
 
+    def test_disabled_user(self):
+        """Test that disabled users are not in search index"""
+
+        user = UserFactory(fullname='Bettie Page')
+        user.save()
+
+        # Ensure user is in search index
+        assert_equal(len(query_user(user.fullname)['results']), 1)
+
+        # Disable the user
+        user.is_disabled = True
+        user.save()
+
+        # Ensure user is not in search index
+        assert_equal(len(query_user(user.fullname)['results']), 0)
+
+
+
     def test_merged_user(self):
         user = UserFactory(fullname='Annie Lennox')
         merged_user = UserFactory(fullname='Lisa Stansfield')
@@ -121,6 +139,19 @@ class TestUserUpdate(SearchTestCase):
 
         docs = query_user(institution)['results']
         assert_equal(len(docs), 1)
+
+
+    def test_name_fields(self):
+        names = ['Bill Nye', 'William', 'the science guy', 'Sanford', 'the Great']
+        user = UserFactory(fullname=names[0])
+        user.given_name = names[1]
+        user.middle_names = names[2]
+        user.family_name = names[3]
+        user.suffix = names[4]
+        user.save()
+        docs = [query_user(name)['results'] for name in names]
+        assert_equal(sum(map(len, docs)), len(docs))  # 1 result each
+        assert_true(all([user._id == doc[0]['id'] for doc in docs]))
 
 
 @requires_search
@@ -254,17 +285,18 @@ class TestPublicNodes(SearchTestCase):
         searching for wiki text.
 
         """
-        wiki_content = 'Hammer to fall'
-
-        docs = query(wiki_content)['results']
-        assert_equal(len(docs), 0)
-
-        self.project.update_node_wiki(
-            'home', wiki_content, self.consolidate_auth,
-        )
-
-        docs = query(wiki_content)['results']
-        assert_equal(len(docs), 1)
+        wiki_content = {
+            'home': 'Hammer to fall',
+            'swag': '#YOLO'
+        }
+        for key, value in wiki_content.items():
+            docs = query(value)['results']
+            assert_equal(len(docs), 0)
+            self.project.update_node_wiki(
+                key, value, self.consolidate_auth,
+            )
+            docs = query(value)['results']
+            assert_equal(len(docs), 1)
 
     def test_clear_wiki(self):
         """Add wiki text to page, then delete, then verify that project is not

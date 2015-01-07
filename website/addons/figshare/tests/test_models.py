@@ -138,8 +138,13 @@ class TestCallbacks(OsfTestCase):
         assert_false(message)
 
     def test_after_remove_contributor_authenticator(self):
-        self.node_settings.after_remove_contributor(
+        msg = self.node_settings.after_remove_contributor(
             self.project, self.project.creator
+        )
+
+        assert_in(
+                self.project.project_or_component,
+                msg
         )
         assert_equal(
             self.node_settings.user_settings,
