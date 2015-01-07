@@ -284,17 +284,21 @@ def sync_data_from_mailchimp(**kwargs):
         action = r.values['type']
         list_name = mailchimp_utils.get_list_name_from_id(list_id=r.values['data[list_id]'])
         username = r.values['data[email]']
+
+        try:
+            user = User.find_one(Q('username', 'eq', username))
+        except NoResultsFound:
+            sentry.log_exception()
+            sentry.log_message("A user with this username does not exist.")
+            raise HTTPError(404, data=dict(message_short='User not found',
+                                        message_long='A user with this username does not exist'))
         if action == 'unsubscribe':
-            try:
-                user = User.find_one(Q('username', 'eq', username))
-            except NoResultsFound:
-                sentry.log_exception()
-                sentry.log_message("A user with this username does not exist.")
-                raise HTTPError(404, data=dict(message_short='User not found',
-                                            message_long='A user with this username does not exist'))
-            else:
-                user.mailing_lists[list_name] = False
-                user.save()
+            user.mailing_lists[list_name] = False
+            user.save()
+
+        elif action == 'subscribe':
+            user.mailing_lists[list_name] = True
+            user.save()
 
     else:
         # TODO: get tests to pass with sentry logging

@@ -2383,7 +2383,7 @@ class TestConfigureMailingListViews(OsfTestCase):
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_mailchimp_webhook_subscribe_action_does_not_change_user(self, mock_get_mailchimp_api):
         """ Test that 'subscribe' actions sent to the OSF via mailchimp
-            webhooks do not cause any database changes.
+            webhooks update the OSF database.
         """
         list_id = '12345'
         list_name = 'OSF General'
@@ -2396,8 +2396,7 @@ class TestConfigureMailingListViews(OsfTestCase):
         user.mailing_lists = {'OSF General': False}
         user.save()
 
-        # user subscribes and webhook sends request (when configured
-        # to update on changes made through the API)
+        # user subscribes and webhook sends request to OSF
         data = {'type': 'subscribe',
                 'data[list_id]': list_id,
                 'data[email]': user.username
@@ -2408,9 +2407,9 @@ class TestConfigureMailingListViews(OsfTestCase):
                             content_type="application/x-www-form-urlencoded",
                             auth=user.auth)
 
-        # user field does not change
+        # user field is updated on the OSF
         user.reload()
-        assert_false(user.mailing_lists[list_name])
+        assert_true(user.mailing_lists[list_name])
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_mailchimp_webhook_profile_action_does_not_change_user(self, mock_get_mailchimp_api):
