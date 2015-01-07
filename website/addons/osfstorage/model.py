@@ -252,13 +252,18 @@ class OsfStorageFileRecord(BaseFileObject):
         return indices, versions, more
 
     def create_version(self, creator, location, metadata=None):
-        version = OsfStorageFileVersion(creator=creator, location=location)
         latest_version = self.get_version()
+        version = OsfStorageFileVersion(creator=creator, location=location)
+
         if latest_version and latest_version.is_duplicate(version):
+            if self.is_deleted:
+                self.undelete(Auth(creator))
             return latest_version
-        version.save()
+
         if metadata:
             version.update_metadata(metadata)
+
+        version.save()
         self.versions.append(version)
         self.is_deleted = False
         self.save()
@@ -298,7 +303,7 @@ class OsfStorageFileRecord(BaseFileObject):
         self.is_deleted = False
         self.save()
         if log:
-            self.log(auth, NodeLog.FILE_RESTORED)
+            self.log(auth, NodeLog.FILE_ADDED)
 
     def get_download_count(self, version=None):
         """
