@@ -159,7 +159,7 @@ var isEmail = function(value) {
   */
 var urlParams = function(str) {
     return (str || document.location.search).replace(/(^\?)/,'').split('&')
-        .map(function(n){return n = n.split('='),this[n[0]] = decodeURIComponent(n[1]).replace(/\+/g, ' '),this;}.bind({}))[0];
+        .map(function(n){return n = n.split('='),this[n[0]] = decodeURIComponent(n[1].replace(/\+/g, ' ')),this;}.bind({}))[0];
 };
 
 ///////////
