@@ -126,7 +126,6 @@ function _fangornResolveToggle(item) {
  * @private
  */
 function _fangornToggleCheck(item) {
-    item.data.permissions = item.data.permissions || item.parent().data.permissions;
 
     if (item.data.permissions.view) {
         return true;
@@ -449,7 +448,6 @@ function _fangornUploadMethod(item) {
 function _fangornActionColumn (item, col) {
     var self = this,
         buttons = [];
-    item.data.permissions = item.data.permissions || item.parent().data.permissions;
     //
     // Upload button if this is a folder
     if (item.kind === 'folder' && item.data.provider && item.data.permissions.edit) {
@@ -493,17 +491,16 @@ function _fangornActionColumn (item, col) {
  * @private
  */
 function _fangornTitleColumn(item, col) {
-    //TODO
+    item.data.permissions = item.data.permissions || item.parent().data.permissions;
     return m('span',{
         onclick : function() {
             if (item.kind === 'file') {
                 var params = $.param(
-                    $.extend(
-                      {
-                          provider: item.data.provider,
-                          path: item.data.path.substring(1)
-                      },
-                      item.data.extra || {}
+                    $.extend({
+                        provider: item.data.provider,
+                        path: item.data.path.substring(1)
+                    },
+                        item.data.extra || {}
                     )
                 );
                 window.location = nodeApiUrl + 'waterbutler/files/?' + params;
@@ -524,7 +521,6 @@ function _fangornResolveRows(item) {
         checkConfig = false,
         configOption;
 
-    item.data.permissions = item.data.permissions || item.parent().data.permissions;
     item.css = '';
 
     default_columns.push({
@@ -546,7 +542,7 @@ function _fangornResolveRows(item) {
             data : 'downloads',
             sortInclude : false,
             filter : false,
-            custom: function() { return item.data.extra.downloads.toString(); }
+            custom: function() { return item.data.extra ? item.data.extra.downloads.toString() : ''; }
         });
     } else {
         default_columns.push({

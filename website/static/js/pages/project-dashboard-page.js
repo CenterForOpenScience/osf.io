@@ -36,19 +36,28 @@ if ($comments.length) {
 
 $(document).ready(function() {
 
-    function _fangornTitleColumn (item, col) {
-        return m('span', 
-            { onclick : function(){ 
-                if (item.kind === 'item') {
-                    window.location = item.data.urls.view;                    
-                } 
-            }}, 
-            item.data.name);
+    function _fangornTitleColumn(item, col) {
+        item.data.permissions = item.data.permissions || item.parent().data.permissions;
+        return m('span',{
+            onclick : function() {
+                if (item.kind === 'file') {
+                    var params = $.param(
+                        $.extend(
+                        {
+                            provider: item.data.provider,
+                            path: item.data.path.substring(1)
+                        },
+                        item.data.extra || {}
+                        )
+                    );
+                    window.location = nodeApiUrl + 'waterbutler/files/?' + params;
+                }
+            }
+        }, item.data.name);
     }
-
-    // Treebeard Files view 
+    // Treebeard Files view
     $.ajax({
-      url:  nodeApiUrl + 'files/grid/'
+        url:  nodeApiUrl + 'files/grid/'
     })
     .done(function( data ) {
         console.log("data", data);
@@ -58,7 +67,7 @@ $(document).ready(function() {
             uploads : false,
             showFilter : true,
             filterStyle : { 'float' : 'left', width : '100%'},
-            columnTitles : function(){ 
+            columnTitles : function(){
                 return [
                     {
                     title: 'Name',
@@ -66,11 +75,11 @@ $(document).ready(function() {
                     sort : false,
                     sortType : 'text'
                     }
-                ]; 
+                ];
                 },
-            resolveRows : function(){ 
+            resolveRows : function(){
                 return  [{
-                    data : 'name',  
+                    data : 'name',
                     folderIcons : true,
                     filter : true,
                     custom : _fangornTitleColumn
