@@ -3,7 +3,7 @@
 <%def name="title()">${node['title'] | n} Wiki</%def>
 
 % if user['can_comment'] or node['has_comments']:
-    % if page and wiki_content:
+    % if page:
         <%include file="include/comment_pane_template.mako"/>
         <%include file="include/comment_template.mako"/>
     %endif
