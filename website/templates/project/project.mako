@@ -146,7 +146,10 @@
 <%def name="stylesheets()">
     ${parent.stylesheets()}
     % for style in addon_widget_css:
-        <link rel="stylesheet" href="${style}" />
+    <link rel="stylesheet" href="${style}" />
+    % endfor
+    % for stylesheet in tree_css:
+    <link rel='stylesheet' href='${stylesheet}' type='text/css' />
     % endfor
 </%def>
 
@@ -154,6 +157,10 @@
 <% import json %>
 
 ${parent.javascript_bottom()}
+
+% for script in tree_js:
+<script type="text/javascript" src="${script}"></script>
+% endfor
 
 <script type="text/javascript">
     // Hack to allow mako variables to be accessed to JS modules
