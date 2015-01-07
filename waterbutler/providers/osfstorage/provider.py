@@ -63,8 +63,8 @@ class OSFStorageProvider(provider.BaseProvider):
             signed = signing.sign_data(signer, params, ttl=ttl)
             params = signed
         else:
-            signed = signing.sign_data(signer, data, ttl=ttl)
-            data = signed
+            signed = signing.sign_data(signer, json.loads(data), ttl=ttl)
+            data = json.dumps(signed)
         return (yield from self.make_request(method, url, data=data, params=params, **kwargs))
 
     @asyncio.coroutine
