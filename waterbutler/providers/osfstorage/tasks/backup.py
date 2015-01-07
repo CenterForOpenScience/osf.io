@@ -5,8 +5,12 @@ import asyncio
 import aiohttp
 from boto.glacier.layer2 import Layer2
 
+from waterbutler.core import signing
 from waterbutler.providers.osfstorage import settings
 from waterbutler.providers.osfstorage.tasks import utils
+
+
+signer = signing.Signer(settings.HMAC_SECRET, settings.HMAC_ALGORITHM)
 
 
 def _get_layer2():
@@ -38,13 +42,17 @@ def _push_file_archive(self, local_path, version_id, callback_url):
 @utils.task
 def _push_archive_complete(self, version_id, callback_url, metadata):
     with utils.RetryHook(self):
+        data = signing.sign_data(
+            signer,
+            {
+                'version_id': version_id,
+                'metadata': metadata,
+            },
+        )
         future = aiohttp.request(
             'PUT',
             callback_url,
-            data=json.dumps({
-                'version_id': version_id,
-                'metadata': metadata,
-            }),
+            data=json.dumps(data),
             headers={'Content-Type': 'application/json'},
         )
         loop = asyncio.get_event_loop()

@@ -1,5 +1,6 @@
 import hmac
 import json
+import time
 import base64
 import collections
 
@@ -63,3 +64,13 @@ class Signer(object):
     def verify_payload(self, signature, payload):
         _, expected = self.sign_payload(payload)
         return signature == expected
+
+
+def sign_data(signer, data, ttl=100):
+    target = {'time': int(time.time() + ttl)}
+    target.update(data)
+    payload, signature = signer.sign_payload(target)
+    return {
+        'payload': payload.decode(),
+        'signature': signature,
+    }
