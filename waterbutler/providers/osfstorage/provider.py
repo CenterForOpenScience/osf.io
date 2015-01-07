@@ -167,7 +167,8 @@ class OSFStorageProvider(provider.BaseProvider):
 
         metadata.update({
             'name': name,
-            'path': path
+            'path': path,
+            'downloads': data['downloads']
         })
 
         return OsfStorageFileMetadata(metadata).serialized(), created
