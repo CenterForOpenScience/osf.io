@@ -128,16 +128,3 @@ class TestBackUpTask:
             'vault': 'ThreePoint',
             'archive': 3
         })
-
-    # def test_creates_upload_futures(self, monkeypatch):
-    #     paths = range(10)
-    #     upload_parity = mock.Mock()
-    #     monkeypatch.setattr(parity.asyncio, 'async', mock.Mock())
-    #     monkeypatch.setattr(parity, '_upload_parity', upload_parity)
-    #     monkeypatch.setattr(parity.asyncio, 'get_event_loop', mock.Mock())
-    #     monkeypatch.setattr(parity.utils, 'create_parity_files', lambda *_, **__: paths)
-
-    #     parity._parity_create_files('Triangles')
-
-    #     for num in reversed(range(10)):
-    #         upload_parity.assert_any_call(num)

@@ -161,10 +161,10 @@ def test_upload(monkeypatch, provider_and_mock, file_stream):
     mock_move = asyncio.Future()
     provider, inner_provider = provider_and_mock
     basepath = 'waterbutler.providers.osfstorage.provider.{}'
-    aiohttpretty.register_json_uri('POST', 'https://waterbutler.io', status=200, body={})
+    aiohttpretty.register_json_uri('POST', 'https://waterbutler.io', status=200, body={'downloads': 10})
 
 
-    mock_move.set_result({'downloads': 10})
+    mock_move.set_result({})
     inner_provider.move.return_value = mock_move
     monkeypatch.setattr(basepath.format('os.rename'), lambda *_: None)
     monkeypatch.setattr(basepath.format('settings.RUN_PARITY'), False)
@@ -189,10 +189,10 @@ def test_upload_and_tasks(monkeypatch, provider_and_mock, file_stream):
     mock_move = asyncio.Future()
     provider, inner_provider = provider_and_mock
     basepath = 'waterbutler.providers.osfstorage.provider.{}'
-    aiohttpretty.register_json_uri('POST', 'https://waterbutler.io', status=201, body={'version_id': 42})
+    aiohttpretty.register_json_uri('POST', 'https://waterbutler.io', status=201, body={'version_id': 42, 'downloads': 30})
 
 
-    mock_move.set_result({'downloads': 30})
+    mock_move.set_result({})
     inner_provider.move.return_value = mock_move
     monkeypatch.setattr(basepath.format('backup.main'), mock_backup)
     monkeypatch.setattr(basepath.format('parity.main'), mock_parity)
