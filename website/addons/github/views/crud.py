@@ -186,8 +186,14 @@ def github_view_file(auth, **kwargs):
             _, data, size = connection.file(
                 node_settings.user, node_settings.repo, path, ref=sha,
             )
+
+            if data is None:
+                # The file was deleted in this commit
+                rendered = 'This file does not exist at this commit.'
+
         except TooBigError:
             rendered = 'File too large to download.'
+
         if rendered is None:
             # Skip if too large to be rendered.
             if github_settings.MAX_RENDER_SIZE is not None and size > github_settings.MAX_RENDER_SIZE:
