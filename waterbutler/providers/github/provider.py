@@ -102,7 +102,7 @@ class GitHubProvider(provider.BaseProvider):
             None
         )
         if existing:
-            data['sha'] = existing['extra']['sha']
+            data['sha'] = existing['extra']['fileSha']
 
         resp = yield from self.make_request(
             'PUT',
@@ -156,8 +156,7 @@ class GitHubProvider(provider.BaseProvider):
     @asyncio.coroutine
     def _delete_file(self, path, sha=None, message=None, branch=None, **kwargs):
         if not sha:
-            data = yield from self._fetch_contents(path, ref=branch)
-            sha = data['sha']
+            raise exceptions.MetadataError('A sha is required for deleting')
 
         message = message or 'File deleted on behalf of WaterButler'
         data = {
