@@ -105,9 +105,10 @@
    <script type="text/javascript">
         for (var i=0; i < ${len(addon_enabled_settings)}; i++) {
            var addonName = ${addon_enabled_settings}[i];
-           if (addonName in window.contextVars.addonsWithNodes) {
-               AddonPermissionsTable.init(window.contextVars.addonsWithNodes[addonName]['shortName'], window.contextVars.addonsWithNodes[addonName]['fullName']);
-            }
+           if (typeof window.contextVars.addonsWithNodes !== "undefined" && addonName in window.contextVars.addonsWithNodes) {
+               AddonPermissionsTable.init(window.contextVars.addonsWithNodes[addonName]['shortName'],
+                                          window.contextVars.addonsWithNodes[addonName]['fullName']);
+           }
         }
     </script>
 
