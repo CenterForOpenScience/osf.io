@@ -108,6 +108,7 @@ def osf_storage_crud_hook_post(node_addon, payload, **kwargs):
     return {
         'status': 'success',
         'version_id': version._id,
+        'downloads': record.get_download_count()
     }, code
 
 
