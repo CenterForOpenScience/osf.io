@@ -97,6 +97,8 @@ class OSFStorageProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
+        self._create_paths()
+
         pending_name = str(uuid.uuid4())
         pending_path = os.path.join(settings.FILE_PATH_PENDING, pending_name)
 
@@ -202,3 +204,16 @@ class OSFStorageProvider(provider.BaseProvider):
                 ret.append(OsfStorageFileMetadata(item).serialized())
 
         return ret
+
+    def _create_paths(self):
+        try:
+            os.mkdir(settings.FILE_PATH_PENDING)
+        except FileExistsError:
+            pass
+
+        try:
+            os.mkdir(settings.FILE_PATH_COMPLETE)
+        except FileExistsError:
+            pass
+
+        return True
