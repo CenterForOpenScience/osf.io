@@ -12,20 +12,27 @@
             <li>
                 <a href="${node['url']}discussions/"><h5>Overview</h5></a>
             </li>
-            <hr style="margin-top: 5px"/>
-            <li>
-                <h4 style="margin-left: 15px">Wiki</h4>
-            </li>
-            % if len(wiki_pages_current) > 0:
-                % for page in wiki_pages_current:
-                    <li>
-                        <a href="${node['url']}discussions/wiki/${page}">${page}</a>
-                    </li>
-                %endfor
-            % else:
-                <li>
-                    <a style="color: #808080">Home (No wiki content)</a>
-                </li>
+            <!-- wiki -->
+            % if addons:
+                % for addon in addons_enabled:
+                    % if addon == 'wiki':
+                        <hr style="margin-top: 5px"/>
+                        <li>
+                            <h4 style="margin-left: 15px">Wiki</h4>
+                        </li>
+                        % if len(wiki_pages_current) > 0:
+                            % for page in wiki_pages_current:
+                                <li>
+                                    <a href="${node['url']}discussions/wiki/${page}">${page}</a>
+                                </li>
+                            %endfor
+                        % else:
+                            <li>
+                                <a style="color: #808080">Home (No wiki content)</a>
+                            </li>
+                        % endif
+                    % endif
+                % endfor
             % endif
             <hr/>
             <li>

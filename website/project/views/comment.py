@@ -59,7 +59,7 @@ def resolve_target(node, page, guid):
     if not guid:
         return node
     if page == 'wiki':
-        return node.get_wiki_page(guid)
+        return node.get_wiki_page(guid, 1)
     target = Guid.load(guid)
     if target is None:
         raise HTTPError(http.BAD_REQUEST)
