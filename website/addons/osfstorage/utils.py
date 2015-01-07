@@ -60,35 +60,6 @@ def get_item_kind(item):
     raise TypeError('Value must be instance of `FileTree` or `FileRecord`')
 
 
-def build_hgrid_urls(item, node):
-    if isinstance(item, model.OsfStorageFileTree):
-        return {
-            'upload': node.api_url_for(
-                'osf_storage_request_upload_url',
-                path=item.path,
-            ),
-            'fetch': node.api_url_for(
-                'osf_storage_hgrid_contents',
-                path=item.path,
-            ),
-        }
-    return {
-        'view': node.web_url_for(
-            'osf_storage_view_file',
-            path=item.path,
-        ),
-        'download': node.web_url_for(
-            'osf_storage_view_file',
-            path=item.path,
-            action='download',
-        ),
-        'delete': node.api_url_for(
-            'osf_storage_delete_file',
-            path=item.path,
-        ),
-    }
-
-
 def serialize_metadata_hgrid(item, node):
     """Build HGrid JSON for folder or file. Note: include node URLs for client-
     side URL creation for uploaded files.
@@ -158,37 +129,6 @@ SIGNED_REQUEST_ERROR = HTTPError(
 )
 
 
-def make_signed_request(method, url, signer, payload):
-    """Make a signed request to the upload service.
-
-    :param str method: HTTP method
-    :param str url: URL to send to
-    :param Signer signer: Signed URL signer
-    :param dict payload: Data to send
-    :raise: `HTTPError` if request fails
-    """
-    signature, body = sign.build_hook_body(signer, payload)
-    try:
-        resp = requests.request(
-            method,
-            url,
-            data=body,
-            headers={
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-                settings.SIGNATURE_HEADER_KEY: signature,
-            },
-            **settings.SIGNED_REQUEST_KWARGS
-        )
-    except requests.exceptions.RequestException as error:
-        logger.exception(error)
-        raise SIGNED_REQUEST_ERROR
-    try:
-        return resp.json()
-    except (TypeError, ValueError, simplejson.JSONDecodeError):
-        raise SIGNED_REQUEST_ERROR
-
-
 def patch_url(url, **kwargs):
     parsed = furl.furl(url)
     for key, value in kwargs.iteritems():
@@ -213,35 +153,6 @@ def build_callback_urls(node, path):
         'pingUrl': ensure_domain(ping_url),
         'archiveUrl': ensure_domain(archive_url),
     }
-
-
-def get_upload_url(node, user, size, content_type, file_path):
-    """Request signed upload URL from upload service.
-
-    :param Node node: Root node
-    :param User user: User uploading file
-    :param int size: Expected file size
-    :param str content_type: Expected file content type
-    :param str file_path: Expected file path
-    """
-    payload = {
-        'size': size,
-        'type': content_type,
-        'path': file_path,
-        'extra': {'user': user._id},
-    }
-    urls = build_callback_urls(node, file_path)
-    payload.update(urls)
-    data = make_signed_request(
-        'post',
-        urlparse.urljoin(
-            choose_upload_url(),
-            'urls/upload/',
-        ),
-        signer=url_signer,
-        payload=payload,
-    )
-    return data['url']
 
 
 def get_filename(version_idx, file_version, file_record):
