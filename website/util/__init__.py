@@ -3,12 +3,15 @@
 import os
 import re
 import json
+import logging
 from flask import request, url_for
 
 from website import settings
 
 # Keep me: Makes rubeus importable from website.util
 from . import rubeus  # noqa
+
+logger = logging.getLogger(__name__)
 
 
 guid_url_node_pattern = re.compile('^/project/[a-zA-Z0-9]{5,}/node(?=/[a-zA-Z0-9]{5,})')
@@ -72,7 +75,17 @@ def is_json_request():
     return content_type and ('application/json' in content_type)
 
 
-asset_paths = json.load(open('webpack-assets.json'))
+def load_asset_paths():
+    if settings.DEV_MODE:
+        return {}
+    try:
+        return json.load(open('webpack-assets.json'))
+    except IOError:
+        logger.error('No "webpack-assets.json" file found. You may need to run webpack.')
+        raise
+
+
+asset_paths = load_asset_paths()
 base_static_path = '/static/public/js/'
 def webpack_asset(path):
     if settings.DEV_MODE:
