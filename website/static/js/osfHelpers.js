@@ -184,6 +184,23 @@ var trackPiwik = function(host, siteId, cvars, useCookies) {
     } catch(err) { return false; }
     return true;
 };
+
+//////////////////
+// Data binders //
+//////////////////
+
+/**
+ * Tooltip data binder. The value accessor should be an object containing
+ * parameters for the tooltip.
+ * Example:
+ * <span data-bind="tooltip: {title: 'Tooltip text here'}"></span>
+ */
+ko.bindingHandlers.tooltip = {
+    init: function(elem, valueAccessor) {
+        $(elem).tooltip(valueAccessor());
+    }
+};
+
 /**
   * A thin wrapper around ko.applyBindings that ensures that a view model
   * is bound to the expected element. Also shows the element if it was
