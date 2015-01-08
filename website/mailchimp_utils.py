@@ -27,7 +27,12 @@ def subscribe(list_name, user_id):
     user = User.load(user_id)
     m = get_mailchimp_api()
     list_id = get_list_id_from_name(list_name=list_name)
-    m.lists.subscribe(id=list_id, email={'email': user.username}, double_optin=False, update_existing=True)
+    m.lists.subscribe(id=list_id,
+                      email={'email': user.username},
+                      merge_vars={'fname': user.given_name,
+                                  'lname': user.family_name},
+                      double_optin=False,
+                      update_existing=True)
 
     # Update mailing_list user field
     if user.mailing_lists is None:
