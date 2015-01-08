@@ -8,7 +8,7 @@ except ImportError:
 config = SERVER_CONFIG or {}
 
 
-ADDRESS = config.get('ADDRESS', '127.0.0.1')
+ADDRESS = config.get('ADDRESS', '0.0.0.0')
 PORT = config.get('PORT', 7777)
 DEBUG = config.get('DEBUG', True)
 
