@@ -68,8 +68,7 @@
         var init = function(){
             // Bind drag & drop handlers
             $bar.on('mousedown', function () {
-                makeAllElementsUnselectable(); // todo pass param to comment pane and specify width...
-                console.log(self.mode);
+                makeAllElementsUnselectable();
                 if (self.mode === 'pane') {
                     $(document).on('mousemove', function (event) {
                         var bodyWidth = $(document.body).width();

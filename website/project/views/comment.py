@@ -177,7 +177,7 @@ def serialize_comments(record, auth, anonymous=False):
 
     return [
         serialize_comment(comment, auth, anonymous)
-        for comment in getattr(record, 'commented', []) or []
+        for comment in getattr(record, 'commented', [])
     ]
 
 

@@ -87,10 +87,10 @@
 
 <%def name="newComment()">
     <div data-bind="if: canComment">
-        <span data-bind="if: discussion().length == 0">
+        <span data-bind="ifnot: commented()">
             There are currently no comments on this page yet. Would you like to <a data-bind="click: showReply">make the first one</a>?
         </span>
-        <span data-bind="if: discussion().length > 0">
+        <span data-bind="if: commented">
             <a data-bind="click: showReply">
                 Add a comment
             </a>

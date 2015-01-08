@@ -46,7 +46,7 @@ if ($comments.length) {
     var userName = window.contextVars.currentUser.name;
     var canComment = window.contextVars.currentUser.canComment;
     var hasChildren = window.contextVars.node.hasChildren;
-    var node_id = window.contextVars.node._id;
+    var node_id = window.contextVars.node.id;
     Comment.init('.commentPane', 'node', node_id, 'pane', userName, canComment, hasChildren);
     Comment.init('#comments-widget-container', 'total', node_id, 'widget', userName, canComment, hasChildren);
 }

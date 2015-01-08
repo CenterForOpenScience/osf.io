@@ -73,7 +73,7 @@ var BaseComment = function() {
     self._loaded = -1;
     self.id = ko.observable();
 
-    self.page = 'node'; // Default
+    self.page = ko.observable('node'); // Default
     self.mode = 'pane'; // Default
 
     self.errorMessage = ko.observable();
@@ -150,7 +150,7 @@ BaseComment.prototype.fetch = function(thread) {
     $.getJSON(
         nodeApiUrl + 'comments/',
         {
-            page: self.page,
+            page: self.page(),
             target: self.id()
         },
         function(response) {
@@ -200,7 +200,7 @@ BaseComment.prototype.submitReply = function() {
     osfHelpers.postJSON(
         nodeApiUrl + 'comment/',
         {
-            page: self.page,
+            page: self.page(),
             target: self.id(),
             content: self.replyContent(),
         }
@@ -217,7 +217,6 @@ BaseComment.prototype.submitReply = function() {
         // TODO: This can lead to unnecessary API calls; fix this
         if (!self.$root.commented()) {
             self.$root.fetchDiscussion();
-            self.$root.commented(true);
         }
         self.onSubmitSuccess(response);
     }).fail(function() {
@@ -249,7 +248,6 @@ var CommentModel = function(data, $parent, $root) {
         return 'Modified ' + relativeDate(self.dateModified());
     });
 
-    self.page = $parent.page;
     self.mode = $parent.mode;
 
     self.showChildren = ko.observable(false);
@@ -296,7 +294,7 @@ var CommentModel = function(data, $parent, $root) {
 
     self.rootUrl = ko.computed(function(){
         var url = 'discussions';
-        if (self.page === 'wiki') {
+        if (self.page() === 'wiki') {
             url = url + '/wiki/' + self.rootId();
         }
         return url;
@@ -471,7 +469,6 @@ var CommentListModel = function(userName, host_page, host_name, mode, canComment
     self.mode = mode;
 
     self.editors = 0;
-    self.commented = ko.observable(false);
     self.userName = ko.observable(userName);
     self.canComment = ko.observable(canComment);
     self.hasChildren = ko.observable(hasChildren);
@@ -480,9 +477,12 @@ var CommentListModel = function(userName, host_page, host_name, mode, canComment
     self.discussion_by_recency = ko.observableArray();
     self.discussion = ko.observableArray();
 
-    self.page = host_page;
+    self.page(host_page);
     self.id = ko.observable(host_name);
 
+    self.commented = ko.computed(function(){
+        return self.comments().length > 0;
+    });
     self.rootUrl = ko.computed(function(){
         if (self.comments().length == 0) {
             return '';
@@ -497,7 +497,7 @@ var CommentListModel = function(userName, host_page, host_name, mode, canComment
             if (comment.isVisible()) {
                 comments.push(comment);
             }
-            if (comments.length == 5) {
+            if (comments.length == 105) {
                 break;
             }
         }
@@ -519,7 +519,7 @@ CommentListModel.prototype.fetchDiscussion = function() {
     $.getJSON(
         nodeApiUrl + 'comments/discussion/',
         {
-            page: self.page,
+            page: self.page(),
             target: self.id()
         },
         function(response) {
