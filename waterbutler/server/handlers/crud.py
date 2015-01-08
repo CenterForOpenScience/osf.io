@@ -73,7 +73,7 @@ class CRUDHandler(core.BaseHandler):
         self.stream.feed_eof()
         metadata, created = yield from self.uploader
         self.write(metadata)
-        asyncio.get_event_loop().create_task(
+        asyncio.async(
             self._send_hook(
                 'create' if created else 'update',
                 metadata,
@@ -85,7 +85,7 @@ class CRUDHandler(core.BaseHandler):
         """Delete a file."""
         yield from self.provider.delete(**self.arguments)
         self.set_status(http.client.NO_CONTENT)
-        asyncio.get_event_loop().create_task(
+        asyncio.async(
             self._send_hook(
                 'delete',
                 {'path': self.arguments['path']}
