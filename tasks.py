@@ -13,22 +13,22 @@ def install(upgrade=False, pip_cache=None, wheel_repo=None):
         cmd += ' --download-cache={}'.format(pip_cache)
 
     if wheel_repo:
-        run('pip install wheel', pty=True)
+        run('pip install wheel', pty=False)
         # current python version, expected git branch name
         ver = '.'.join([str(i) for i in sys.version_info[0:2]])
         folder = 'wheelhouse-{}'.format(ver)
         name = 'wheelhouse-{}.zip'.format(ver)
         url = '{}/archive/{}.zip'.format(wheel_repo, ver)
         # download and extract the wheelhouse github repository archive
-        run('curl -o {} -L {}'.format(name, url), pty=True)
-        run('unzip {}'.format(name), pty=True)
+        run('curl -o {} -L {}'.format(name, url), pty=False)
+        run('unzip {}'.format(name), pty=False)
         # run pip install w/ the wheelhouse folder specified
-        run('{} --use-wheel --find-links={}'.format(cmd, folder), pty=True)
+        run('{} --use-wheel --find-links={}'.format(cmd, folder), pty=False)
         # cleanup wheelhouse folder and archive file
-        run('rm -rf {}'.format(folder), pty=True)
-        run('rm -f {}'.format(name), pty=True)
+        run('rm -rf {}'.format(folder), pty=False)
+        run('rm -f {}'.format(name), pty=False)
     else:
-        run(cmd, pty=True)
+        run(cmd, pty=False)
 
 
 @task
@@ -41,7 +41,7 @@ def test(verbose=False):
     cmd = 'py.test --cov-report term-missing --cov waterbutler tests'
     if verbose:
         cmd += ' -v'
-    run(cmd, pty=True)
+    run(cmd, pty=False)
 
 
 @task
