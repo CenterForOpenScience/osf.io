@@ -50,7 +50,6 @@ def get_record_or_404(path, node_addon):
 @must_be_signed
 @must_have_addon('osfstorage', 'node')
 def osf_storage_download_file_hook(node_addon, payload, **kwargs):
-    # TODO: Check HMAC signature
     try:
         path = payload['path']
     except KeyError:
@@ -107,7 +106,6 @@ def osf_storage_upload_file_hook(node_addon, payload, **kwargs):
     return {
         'status': 'success',
         'version_id': version._id,
-        'downloads': record.get_download_count()
     }, code
 
 

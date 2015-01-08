@@ -4,13 +4,11 @@
 import os
 import httplib
 import logging
-import urlparse
 import itertools
 
 import furl
 import requests
 import markupsafe
-import simplejson
 
 from flask import request
 

@@ -19,6 +19,7 @@ import markupsafe
 from framework.auth import signing
 
 from website import settings
+from website.addons.base.views import make_auth
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import views
@@ -84,12 +85,82 @@ class TestGetMetadataHook(HookTestCase):
         assert_equal(res.status_code, 404)
 
 
+class TestUploadFileHook(HookTestCase):
+
+    def setUp(self):
+        super(TestUploadFileHook, self).setUp()
+        self.path = 'fresh/pízza.png'
+        self.record, _ = model.OsfStorageFileRecord.get_or_create(self.path, self.node_settings)
+        self.auth = make_auth(self.user)
+
+    def send_upload_hook(self, payload=None, **kwargs):
+        return self.send_hook(
+            'osf_storage_upload_file_hook',
+            payload=payload or self.payload,
+            method='post_json',
+            **kwargs
+        )
+
+    def make_payload(self, **kwargs):
+        payload = {
+            'auth': self.auth,
+            'path': self.path,
+            'hashes': {},
+            'worker': '',
+            'settings': {storage_settings.WATERBUTLER_RESOURCE: 'osf'},
+            'metadata': {'provider': 'osfstorage', 'service': 'cloud', 'name': 'file'},
+        }
+        payload.update(kwargs)
+        return payload
+
+    def test_upload_create(self):
+        path = 'slightly-mad'
+        res = self.send_upload_hook(self.make_payload(path=path))
+        self.record.reload()
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['status'], 'success')
+        version = model.OsfStorageFileVersion.load(res.json['version_id'])
+        assert_is_not(version, None)
+        assert_not_in(version, self.record.versions)
+        record = model.OsfStorageFileRecord.find_by_path(path, self.node_settings)
+        assert_in(version, record.versions)
+
+    def test_upload_update(self):
+        delta = Delta(lambda: len(self.record.versions), lambda value: value + 1)
+        with AssertDeltas(delta):
+            res = self.send_upload_hook(self.make_payload())
+            self.record.reload()
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['status'], 'success')
+        version = model.OsfStorageFileVersion.load(res.json['version_id'])
+        assert_is_not(version, None)
+        assert_in(version, self.record.versions)
+
+    def test_upload_duplicate(self):
+        location = {
+            'service': 'cloud',
+            storage_settings.WATERBUTLER_RESOURCE: 'osf',
+            'object': 'file',
+        }
+        version = self.record.create_version(self.user, location)
+        with AssertDeltas(Delta(lambda: len(self.record.versions))):
+            res = self.send_upload_hook(self.make_payload())
+            self.record.reload()
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['status'], 'success')
+        version = model.OsfStorageFileVersion.load(res.json['version_id'])
+        assert_is_not(version, None)
+        assert_in(version, self.record.versions)
+
+    # def test_upload_update_deleted(self):
+    #     pass
+
+
 class TestUpdateMetadataHook(HookTestCase):
 
     def setUp(self):
         super(TestUpdateMetadataHook, self).setUp()
         self.path = 'greasy/pízza.png'
-        self.size = 1024
         self.record, _ = model.OsfStorageFileRecord.get_or_create(self.path, self.node_settings)
         self.version = factories.FileVersionFactory()
         self.record.versions = [self.version]
@@ -268,7 +339,7 @@ class TestDownloadFile(StorageTestCase):
                 lambda value: value + 1
             ),
         ]
-        with AssertDeltas(deltas):
+        with AssertDeltas(*deltas):
             res = self.download_file(self.path)
         assert_equal(res.status_code, 302)
         assert_equal(res.location, mock_get_url.return_value)
@@ -291,7 +362,7 @@ class TestDownloadFile(StorageTestCase):
                 lambda value: value
             ),
         ]
-        with AssertDeltas(deltas):
+        with AssertDeltas(*deltas):
             res = self.app.get(
                 self.project.web_url_for(
                     'osf_storage_view_file',
@@ -318,7 +389,7 @@ class TestDownloadFile(StorageTestCase):
                 lambda value: value + 1
             ),
         ]
-        with AssertDeltas(deltas):
+        with AssertDeltas(*deltas):
             res = self.download_file(path=self.path, version=3)
         assert_equal(res.status_code, 302)
         assert_equal(res.location, mock_get_url.return_value)
@@ -337,7 +408,7 @@ class TestDownloadFile(StorageTestCase):
                 lambda value: value
             ),
         ]
-        with AssertDeltas(deltas):
+        with AssertDeltas(*deltas):
             res = self.download_file(
                 path=self.path, version=3,
                 expect_errors=True,
