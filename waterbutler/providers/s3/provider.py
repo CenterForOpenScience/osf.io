@@ -2,7 +2,8 @@ import os
 import asyncio
 import hashlib
 
-from lxml import objectify
+import xmltodict
+
 from boto.s3.connection import S3Connection
 from boto.s3.connection import OrdinaryCallingFormat
 
@@ -165,10 +166,10 @@ class S3Provider(provider.BaseProvider):
             throws=exceptions.MetadataError,
         )
         content = yield from resp.read_and_close()
-        obj = objectify.fromstring(content)
+        obj = xmltodict.parse(content)['ListVersionsResult']
         return [
             S3Revision(path.path, item).serialized()
-            for item in getattr(obj, 'Version', [])
+            for item in obj.get('Version', [])
         ]
 
     @asyncio.coroutine
@@ -207,19 +208,28 @@ class S3Provider(provider.BaseProvider):
             throws=exceptions.MetadataError,
         )
         contents = yield from resp.read_and_close()
-        obj = objectify.fromstring(contents)
 
-        # TODO Better comment here
+        parsed = xmltodict.parse(contents)['ListBucketResult']
+
+        contents = parsed.get('Contents', [])
+        prefixes = parsed.get('CommonPrefixes', [])
+
+        if isinstance(contents, dict):
+            contents = [contents]
+
+        if isinstance(prefixes, dict):
+            prefixes = [prefixes]
+
         items = [
             S3FolderMetadata(item).serialized()
-            for item in getattr(obj, 'CommonPrefixes', [])
+            for item in prefixes
         ]
 
-        for content in getattr(obj, 'Contents', []):
-            if content.Key.text == path.path:
+        for content in contents:
+            if content['Key'] == path.path:
                 continue
 
-            if content.Key.text.endswith('/'):
+            if content['Key'].endswith('/'):
                 items.append(S3FolderKeyMetadata(content).serialized())
             else:
                 items.append(S3FileMetadata(content).serialized())

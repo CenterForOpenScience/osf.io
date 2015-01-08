@@ -3,7 +3,7 @@ git+https://github.com/chrisseto/boto.git#egg=boto
 celery
 furl
 invoke
-lxml==3.4.1
 oauthlib
 stevedore
 tornado
+xmltodict

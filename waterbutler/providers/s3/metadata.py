@@ -47,15 +47,15 @@ class S3FileMetadata(S3Metadata, metadata.BaseFileMetadata):
 
     @property
     def path(self):
-        return '/' + self.raw.Key.text
+        return '/' + self.raw['Key']
 
     @property
     def size(self):
-        return self.raw.Size.text
+        return int(self.raw['Size'])
 
     @property
     def modified(self):
-        return self.raw.LastModified.text
+        return self.raw['LastModified']
 
     @property
     def content_type(self):
@@ -64,7 +64,7 @@ class S3FileMetadata(S3Metadata, metadata.BaseFileMetadata):
     @property
     def extra(self):
         return {
-            'md5': self.raw.ETag.text.replace('"', '')
+            'md5': self.raw['ETag'].replace('"', '')
         }
 
 
@@ -72,22 +72,22 @@ class S3FolderKeyMetadata(S3Metadata, metadata.BaseFolderMetadata):
 
     @property
     def name(self):
-        return self.raw.Key.text.split('/')[-2]
+        return self.raw['Key'].split('/')[-2]
 
     @property
     def path(self):
-        return '/' + self.raw.Key.text
+        return '/' + self.raw['Key']
 
 
 class S3FolderMetadata(S3Metadata, metadata.BaseFolderMetadata):
 
     @property
     def name(self):
-        return self.raw.Prefix.text.split('/')[-2]
+        return self.raw['Prefix'].split('/')[-2]
 
     @property
     def path(self):
-        return '/' + self.raw.Prefix.text
+        return '/' + self.raw['Prefix']
 
 
 # TODO dates!
@@ -107,18 +107,18 @@ class S3Revision(S3Metadata, metadata.BaseFileRevisionMetadata):
 
     @property
     def size(self):
-        return int(self.raw.Size.text)
+        return int(self.raw['Size'])
 
     @property
     def revision(self):
-        return self.raw.VersionId.text
+        return self.raw['VersionId']
 
     @property
     def modified(self):
-        return self.raw.LastModified.text
+        return self.raw['LastModified']
 
     @property
     def extra(self):
         return {
-            'md5': self.raw.ETag.text.replace('"', '')
+            'md5': self.raw['ETag'].replace('"', '')
         }
