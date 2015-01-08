@@ -47,6 +47,6 @@
     window.contextVars.node.children = ${[str(each) for each in children_ids]};
     window.contextVars.regTemplate = ${json.dumps(template_name or '')};
     window.contextVars.regSchema = ${schema};
-    window.contextVars.regPayload = ${json.dumps(payload)};
+    window.contextVars.regPayload = $.parseJSON(${json.dumps(payload)});
     window.contextVars.registered = ${json.dumps(int(registered))};
 </script>
