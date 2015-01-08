@@ -30,7 +30,7 @@
     <span id="profileFullname" class="h1 overflow ">${profile["fullname"]}</span>
         <span class="edit-profile-settings">
         % if user['is_profile']:
-            <a href="/settings/">Edit this profile</a></span>
+            <a href="/settings/">Edit your profile</a></span>
         % endif
     </div>
 </div><!-- end-page-header -->
