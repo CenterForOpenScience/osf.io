@@ -299,6 +299,15 @@ var CommentModel = function(data, $parent, $root) {
         }
         return url;
     });
+
+    self.parentUrl = ko.computed(function(){
+        var url = 'discussions/';
+        if (self.targetId() === self.rootId()) {
+            return self.rootUrl();
+        }
+        return url + self.targetId();
+    });
+
 };
 
 CommentModel.prototype = new BaseComment();
@@ -490,6 +499,13 @@ var CommentListModel = function(userName, host_page, host_name, mode, canComment
         return self.comments()[0].rootUrl();
     });
 
+    self.parentUrl = ko.computed(function() {
+        if (self.comments().length == 0) {
+            return '';
+        }
+        return self.comments()[0].parentUrl();
+    });
+
     self.recentComments = ko.computed(function(){
         var comments = [];
         for (var c in self.comments()) {
@@ -497,7 +513,7 @@ var CommentListModel = function(userName, host_page, host_name, mode, canComment
             if (comment.isVisible()) {
                 comments.push(comment);
             }
-            if (comments.length == 105) {
+            if (comments.length == 5) {
                 break;
             }
         }

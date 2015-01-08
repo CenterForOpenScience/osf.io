@@ -30,7 +30,12 @@
         <div data-bind="if: canComment" style="margin-top: 20px">
             <form class="form">
                 <div class="form-group">
-                    <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
+                    <span data-bind="if:commented">
+                        <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
+                    </span>
+                    <span data-bind="ifnot:commented">
+                        <textarea class="form-control" placeholder="Add the first comment on this page!" data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
+                    </span>
                 </div>
                 <div data-bind="if: replyNotEmpty" class="form-inline">
                     <a class="btn btn-default btn-default" data-bind="click: submitReply, css: {disabled: submittingReply}"><i class="icon-check"></i> {{saveButtonText}}</a>

@@ -10,13 +10,14 @@
     <div class="osf-sidenav hidden-print" role="complementary">
         <ul class="nav bs-sidenav" style="margin: 0;">
             <li>
-                <a href="${node['url']}discussions/"><h5>Overview</h5></a>
+                <a href="${node['url']}discussions/">Overview</a>
             </li>
+
             <!-- wiki -->
             % if addons:
                 % for addon in addons_enabled:
                     % if addon == 'wiki':
-                        <hr style="margin-top: 5px"/>
+                        <hr/>
                         <li>
                             <h4 style="margin-left: 15px">Wiki</h4>
                         </li>
@@ -37,6 +38,8 @@
                     % endif
                 % endfor
             % endif
+
+            <!-- files -->
             <hr/>
             <li>
                 <h4 style="margin-left: 15px"">Files</h4>
@@ -48,6 +51,8 @@
 <div class="col-sm-9">
     <div class="discussion">
         % if comment is UNDEFINED:
+
+            <!-- All comments for Overview, Files and Wiki -->
             <h3>
             % if comment_target == 'wiki':
                 Wiki
@@ -68,9 +73,13 @@
                 </span>
             </div>
             ${newComment()}
+
         %else:
-            <h6>You are viewing a single comment's thread.</h6>
-            <a data-bind="attr:{href: '${node['url']}'+rootUrl()}"><h6>&#8592; View the rest of the comments</h6></a>
+
+            <!-- Comment thread page -->
+            <h6>You are viewing a single comment's thread.
+            <a data-bind="attr:{href: '${node['url']}'+rootUrl()}">View the rest of the comments</a></h6>
+            <a data-bind="attr:{href: '${node['url']}'+parentUrl()}"><h6><i class="icon-caret-up"></i> Parent comment</h6></a>
         % endif
         <div class="comment-list" data-bind="template: {name: 'commentTemplate', foreach: comments}"></div>
         % if not comment is UNDEFINED:
@@ -85,6 +94,7 @@
     </div>
 </div>
 
+<!-- Template for making a new comment -->
 <%def name="newComment()">
     <div data-bind="if: canComment">
         <span data-bind="ifnot: commented()">

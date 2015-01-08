@@ -51,6 +51,10 @@ if ($comments.length) {
     Comment.init('#comments-widget-container', 'total', node_id, 'widget', userName, canComment, hasChildren);
 }
 
+openCommentPane = function(){
+    $('.cp-handle').click();
+}
+
 $(document).ready(function() {
 
     // Tooltips

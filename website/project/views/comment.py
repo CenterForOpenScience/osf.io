@@ -27,7 +27,6 @@ def view_comments(**kwargs):
     auth = kwargs['auth']
 
     serialized = _view_project(node, auth, primary=True)
-    #serialized_wiki_pages = getattr(node, 'wiki_pages_current', [])
     from website.addons.wiki.views import _get_wiki_pages_current
     serialized.update({
         'wiki_pages_current': _get_wiki_pages_current(node),
@@ -162,7 +161,8 @@ def serialize_comment(comment, auth, anonymous=False):
         'dateCreated': comment.date_created.isoformat(),
         'dateModified': comment.date_modified.isoformat(),
         'page': comment.page,
-        'rootId': comment.rootId,
+        'targetId': getattr(comment.target, 'page_name', comment.target._id),
+        'rootId': comment.rootId or comment.node._id,
         'content': comment.content,
         'hasChildren': bool(getattr(comment, 'commented', [])),
         'canEdit': comment.user == auth.user,

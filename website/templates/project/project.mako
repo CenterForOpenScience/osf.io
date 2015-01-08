@@ -62,8 +62,13 @@
         <!-- Discussions -->
         <div id="comments-widget-container" class="addon-widget-container">
             <h3 class="addon-widget-header"><a href="${node['url']}discussions/">Discussions</a></h3>
-            <div data-bind="template: {name: 'commentTemplate', foreach: recentComments}"></div>
-            <a class="pull-right" href="${node['url']}discussions/">See more in discussions page...</a>
+            <div data-bind="ifnot: commented">
+                <span>There are no comments in this project yet. Open the <a onclick="openCommentPane()">comment pane</a> on the right and make the first one!</span>
+            </div>
+            <!-- ko if: commented -->
+                <div data-bind="template: {name: 'commentTemplate', foreach: recentComments}"></div>
+                <a class="pull-right" href="${node['url']}discussions/">See more in discussions page...</a>
+            <!-- /ko -->
         </div>
     </div>
 
