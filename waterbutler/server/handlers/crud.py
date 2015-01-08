@@ -30,7 +30,7 @@ class CRUDHandler(core.BaseHandler):
     def prepare_stream(self):
         if self.request.method in self.STREAM_METHODS:
             self.stream = RequestStreamReader(self.request)
-            self.uploader = asyncio.get_event_loop().create_task(
+            self.uploader = asyncio.async(
                 self.provider.upload(self.stream, **self.arguments)
             )
         else:
