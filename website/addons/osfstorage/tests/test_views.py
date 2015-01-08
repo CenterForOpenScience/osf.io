@@ -119,6 +119,7 @@ class TestUploadFileHook(HookTestCase):
         self.record.reload()
         assert_equal(res.status_code, 201)
         assert_equal(res.json['status'], 'success')
+        assert_equal(res.json['downloads'], self.record.get_download_count())
         version = model.OsfStorageFileVersion.load(res.json['version_id'])
         assert_is_not(version, None)
         assert_not_in(version, self.record.versions)
