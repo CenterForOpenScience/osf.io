@@ -4,13 +4,12 @@ import asyncio
 
 import aiohttp
 import tornado.web
+from tornado.options import options
 
 from stevedore import driver
 
 from waterbutler.core import signing
 from waterbutler.core import exceptions
-
-from waterbutler.server import settings
 from waterbutler.server.identity import get_identity
 
 
@@ -41,7 +40,7 @@ def make_provider(name, auth, credentials, settings):
     return manager.driver
 
 
-signer = signing.Signer(settings.HMAC_SECRET, settings.HMAC_ALGORITHM)
+signer = signing.Signer(options.hmac_secret, options.hmac_algorithm)
 
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -63,7 +62,7 @@ class BaseHandler(tornado.web.RequestHandler):
         except KeyError:
             return
 
-        self.payload = yield from get_identity(settings.IDENTITY_METHOD, **self.arguments)
+        self.payload = yield from get_identity(options.identity_method, **self.arguments)
 
         self.provider = make_provider(
             self.arguments['provider'],
