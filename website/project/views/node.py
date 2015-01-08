@@ -16,6 +16,7 @@ from framework.mongo.utils import from_mongo
 
 from website import language
 
+from website.util import rubeus
 from website.exceptions import NodeStateError
 from website.project import clean_template_name, new_node, new_private_link
 from website.project.decorators import (
@@ -397,17 +398,18 @@ def configure_comments(**kwargs):
 @must_be_contributor_or_public
 def view_project(**kwargs):
     auth = kwargs['auth']
-    node_to_use = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
     primary = '/api/v1' not in request.path
-    rv = _view_project(node_to_use, auth, primary=primary)
-    rv['addon_capabilities'] = settings.ADDON_CAPABILITIES
+    ret = _view_project(node, auth, primary=primary)
+    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
     # Collect the URIs to the static assets for addons that have widgets
-    rv['addon_widget_js'] = list(collect_addon_js(
-        node_to_use,
+    ret['addon_widget_js'] = list(collect_addon_js(
+        node,
         filename='widget-cfg.js',
         config_entry='widget'
     ))
-    return rv
+    ret.update(rubeus.collect_addon_assets(node))
+    return ret
 
 
 # Expand/Collapse
