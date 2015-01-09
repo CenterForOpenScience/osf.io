@@ -2,14 +2,18 @@
  * Controls the actions in the project header (make public/private, watch button,
  * forking, etc.)
  */
-(function (global, factory) {
-    if (typeof define === 'function' && define.amd) {
-        define(['jquery', 'knockout', 'bootstrap', 'editable', 'osfutils'], factory);
-    } else {
-        global.NodeControl = factory(jQuery, global.ko);
-    }
-}(this, function($, ko) {
     'use strict';
+
+var $ = require('jquery');
+var ko = require('knockout');
+var bootbox = require('bootbox');
+require('bootstrap-editable');
+require('knockout-punches');
+ko.punches.enableAll();
+
+$.ajaxSetup({ cache: false });
+var osfHelpers = require('osfHelpers');
+var NodeActions = require('./project.js');
 
     // Modal language
     var MESSAGES = {
@@ -47,7 +51,7 @@
 
         var msgKey;
 
-        if(permissions === PUBLIC && nodeType === PROJECT) { msgKey = 'makeProjectPublicWarning'; }
+    if (permissions === PUBLIC && nodeType === PROJECT) { msgKey = 'makeProjectPublicWarning'; }
         else if(permissions === PUBLIC && nodeType === COMPONENT) { msgKey = 'makeComponentPublicWarning'; }
         else if(permissions === PRIVATE && nodeType === PROJECT) { msgKey = 'makeProjectPrivateWarning'; }
         else { msgKey = 'makeComponentPrivateWarning'; }
@@ -61,13 +65,13 @@
                 message: message,
                 callback: function(result) {
                     if (result) {
-                        $.osf.postJSON(
+                    osfHelpers.postJSON(
                             URLS[urlKey],
                             {permissions: permissions}
                         ).done(function() {
                             window.location.reload();
                         }).fail(
-                            $.osf.handleJSONError
+                        osfHelpers.handleJSONError
                         );
                     }
                 }
@@ -91,7 +95,6 @@
         } else {
             confirmModal(message);
         }
-
     }
 
     /**
@@ -102,9 +105,9 @@
         var self = this;
         self._id = data.node.id;
         self.apiUrl = data.node.api_url;
-        self.dateCreated = new FormattableDate(data.node.date_created);
-        self.dateModified = new FormattableDate(data.node.date_modified);
-        self.dateForked = new FormattableDate(data.node.forked_date);
+    self.dateCreated = new osfHelpers.FormattableDate(data.node.date_created);
+    self.dateModified = new osfHelpers.FormattableDate(data.node.date_modified);
+    self.dateForked = new osfHelpers.FormattableDate(data.node.forked_date);
         self.watchedCount = ko.observable(data.node.watched_count);
         self.userIsWatching = ko.observable(data.user.is_watching);
         self.inDashboard = ko.observable(data.node.in_dashboard);
@@ -136,33 +139,33 @@
         // Editable Title and Description
         if (self.userCanEdit) {
             var editableOptions = {
-                type:  'text',
-                pk:    self._id,
-                url:   self.apiUrl + 'edit/',
+            type: 'text',
+            pk: self._id,
+            url: self.apiUrl + 'edit/',
                 toggle: 'manual',
                 ajaxOptions: {
                     type: 'POST',
                     dataType: 'json',
                     contentType: 'application/json'
                 },
-                params: function(params){
+            params: function (params) {
                     // Send JSON data
                     return JSON.stringify(params);
                 },
-                success: function(){
+            success: function () {
                     document.location.reload(true);
                 },
-                error: $.osf.handleEditableError,
+            error: osfHelpers.handleEditableError,
                 placement: 'bottom'
             };
 
             // TODO: Remove hardcoded selectors.
             $.fn.editable.defaults.mode = 'inline';
             $('#nodeTitleEditable').editable($.extend({}, editableOptions, {
-                name:  'title',
+            name: 'title',
                 title: 'Edit Title',
-                validate: function(value) {
-                    if($.trim(value) === '') {
+            validate: function (value) {
+                if ($.trim(value) === '') {
                         return 'Title cannot be blank.';
                     }
                 }
@@ -172,7 +175,7 @@
                 $('#nodeTitleEditable').editable('toggle');
             });
             $('#nodeDescriptionEditable').editable($.extend({}, editableOptions, {
-                name:  'description',
+            name: 'description',
                 title: 'Edit Description',
                 emptytext: 'No description',
                 emptyclass: 'text-muted',
@@ -183,6 +186,7 @@
                 $('#nodeDescriptionEditable').editable('toggle');
             });
         }
+
         /**
          * Add project to the Project Organizer.
          */
@@ -192,10 +196,10 @@
                 'toNodeID': self.dashboard,
                 'pointerID': self._id
             };
-            $.osf.postJSON('/api/v1/pointer/', jsonData)
+        osfHelpers.postJSON('/api/v1/pointer/', jsonData)
                 .fail(function(data) {
                     self.inDashboard(false);
-                    $.osf.handleJSONError(data);
+                osfHelpers.handleJSONError(data);
             });
         };
         /**
@@ -207,9 +211,10 @@
             $.ajax({url: deleteUrl, type: 'DELETE'})
                 .fail(function() {
                     self.inDashboard(true);
-                    $.osf.growl('Error', 'The project could not be removed', 'danger');
+                osfHelpers.growl('Error', 'The project could not be removed', 'danger');
             });
         };
+
 
         /**
          * Toggle the watch status for this project.
@@ -221,7 +226,7 @@
             } else {
                 self.watchedCount(self.watchedCount() + 1);
             }
-            $.osf.postJSON(
+        osfHelpers.postJSON(
                 self.apiUrl + 'togglewatch/',
                 {}
             ).done(function(data) {
@@ -229,12 +234,8 @@
                 self.userIsWatching(data.watched);
                 self.watchedCount(data.watchCount);
             }).fail(
-                $.osf.handleJSONError
+            osfHelpers.handleJSONError
             );
-        };
-
-        self.forkNode = function() {
-            NodeActions.forkNode();
         };
 
         self.makePublic = function() {
@@ -244,7 +245,11 @@
         self.makePrivate = function() {
             return setPermissions(PRIVATE, self.nodeType);
         };
+
+    self.forkNode = function() {
+        NodeActions.forkNode();
     };
+};
 
     ////////////////
     // Public API //
@@ -269,6 +274,4 @@
         ko.applyBindings(self.viewModel, self.$element[0]);
     };
 
-    return NodeControl;
-
-}));
+module.exports = NodeControl;

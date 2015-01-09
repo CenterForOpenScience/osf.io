@@ -46,8 +46,7 @@ cover/
 # Assets
 ########
 .webassets-cache
-website/static/public/css/*.css
-website/static/public/js/*.js
+website/static/public/*
 website/static/vendor/node_modules/*
 website/static/vendor/bower_components/
 node_modules

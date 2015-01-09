@@ -16,7 +16,7 @@
 % if node['anonymous'] and user['is_contributor']:
     <div class="alert alert-info">This ${node['node_type']} is being viewed through an anonymized, view-only link. If you want to view it as a contributor, click <a class="alert-link" href="${node['redirect_url']}">here</a>.</div>
 % endif
-% if node['link'] and not node['is_public'] and not user['can_edit']:
+% if node['link'] and not node['is_public'] and not user['is_contributor']:
     <div class="alert alert-info">This ${node['node_type']} is being viewed through a private, view-only link. Anyone with the link can view this project. Keep the link safe.</div>
 % endif
 % if disk_saving_mode:

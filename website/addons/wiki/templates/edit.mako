@@ -31,12 +31,15 @@
     </div><!-- end row -->
 </div><!-- end wiki -->
 
+
+<%def name="javascript_bottom()">
+${parent.javascript_bottom()}
+<script>
+    window.contextVars = window.contextVars || {};
+    window.contextVars.wiki = {urls: {content: '${urls['api']['content']}'}};
+</script>
 <script src="/static/vendor/pagedown/Markdown.Converter.js"></script>
 <script src="/static/vendor/pagedown/Markdown.Sanitizer.js"></script>
 <script src="/static/vendor/pagedown/Markdown.Editor.js"></script>
-
-<script>
-    $script('/static/addons/wiki/WikiEditor.js', function() {
-        WikiEditor('.wiki', '${urls['api']['content']}');
-    });
-</script>
+<script src="/static/public/js/wiki-edit-page.js"></script>
+</%def>

@@ -21,10 +21,11 @@ CONFIGS = ['user', 'node']
 
 CATEGORIES = ['storage']
 
+# TODO: Deprecate in favor of webpack/CommonJS bundles
 INCLUDE_JS = {
     'widget': [],
     'page': [],
-    'files': ['dropboxRubeusCfg.js']
+    'files': []
 }
 
 INCLUDE_CSS = {

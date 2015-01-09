@@ -19,7 +19,7 @@ from framework.bcrypt import generate_password_hash, check_password_hash
 from framework import analytics
 from framework.guid.model import GuidStoredObject
 from framework.addons import AddonModelMixin
-from framework.auth import utils
+from framework.auth import utils, signals
 from framework.auth.exceptions import ChangePasswordError
 from framework.exceptions import PermissionsError
 
@@ -71,7 +71,7 @@ def validate_personal_site(value):
 
 
 def validate_social(value):
-    validate_personal_site(value.get('personal_site'))
+    validate_personal_site(value.get('personal'))
 
 def _get_current_user():
     uid = session._get_current_object() and session.data.get('auth_user_id')
@@ -165,9 +165,21 @@ class User(GuidStoredObject, AddonModelMixin):
         'family_name',
         'suffix',
         'merged_by',
+        'date_disabled',
         'jobs',
         'schools',
         'social',
+    }
+
+    SOCIAL_FIELDS = {
+        'orcid': 'http://orcid.com/{}',
+        'github': 'http://github.com/{}',
+        'scholar': 'http://scholar.google.com/citation?user={}',
+        'twitter': 'http://twitter.com/{}',
+        'personal': '{}',
+        'linkedIn': 'https://www.linkedin.com/profile/view?id={}',
+        'impactStory': 'https://impactstory.org/{}',
+        'researcherId': 'http://researcherid.com/rid/{}',
     }
 
     _id = fields.StringField(primary=True)
@@ -209,10 +221,18 @@ class User(GuidStoredObject, AddonModelMixin):
     emails = fields.StringField(list=True)
     # Email verification tokens
     # Format: {
-    #   <token> : {'email': <email address>}
+    #   <token> : {'email': <email address>,
+    #              'expiration': <datetime>}
     # }
-    # TODO: add timestamp to allow for timed expiration?
     email_verifications = fields.DictionaryField()
+
+    # Format: {
+    #   'list1': True,
+    #   'list2: False,
+    #    ...
+    # }
+    mailing_lists = fields.DictionaryField()
+
     aka = fields.StringField(list=True)
     date_registered = fields.DateTimeField(auto_now_add=dt.datetime.utcnow)
     # Watched nodes are stored via a list of WatchConfigs
@@ -269,6 +289,9 @@ class User(GuidStoredObject, AddonModelMixin):
     date_last_login = fields.DateTimeField()
 
     date_confirmed = fields.DateTimeField()
+
+    # When the user was disabled.
+    date_disabled = fields.DateTimeField()
 
     # Format: {
     #   'node_id': 'timestamp'
@@ -347,6 +370,10 @@ class User(GuidStoredObject, AddonModelMixin):
         self.date_confirmed = dt.datetime.utcnow()
         self.update_search()
         self.update_search_nodes()
+
+        # Emit signal that a user has confirmed
+        signals.user_confirmed.send(self)
+
         return self
 
     def add_unclaimed_record(self, node, referrer, given_name, email=None):
@@ -388,13 +415,17 @@ class User(GuidStoredObject, AddonModelMixin):
                 return unclaimed_data['name']
         return self.fullname
 
+    @property
     def is_active(self):
         """Returns True if the user is active. The user must have activated
         their account, must not be deleted, suspended, etc.
+
+        :return: bool
         """
         return (self.is_registered and
                 self.password is not None and
                 not self.is_merged and
+                not self.is_disabled and
                 self.is_confirmed())
 
     def get_unclaimed_record(self, project_id):
@@ -426,17 +457,17 @@ class User(GuidStoredObject, AddonModelMixin):
                     .format(**locals())
 
     def set_password(self, raw_password):
-        '''Set the password for this user to the hash of ``raw_password``.'''
+        """Set the password for this user to the hash of ``raw_password``."""
         self.password = generate_password_hash(raw_password)
 
     def check_password(self, raw_password):
-        '''Return a boolean of whether ``raw_password`` was correct.'''
+        """Return a boolean of whether ``raw_password`` was correct."""
         if not self.password or not raw_password:
             return False
         return check_password_hash(self.password, raw_password)
 
     def change_password(self, raw_old_password, raw_new_password, raw_confirm_password):
-        '''Change the password for this user to the hash of ``raw_new_password``.'''
+        """Change the password for this user to the hash of ``raw_new_password``."""
         raw_old_password = (raw_old_password or '').strip()
         raw_new_password = (raw_new_password or '').strip()
         raw_confirm_password = (raw_confirm_password or '').strip()
@@ -459,10 +490,23 @@ class User(GuidStoredObject, AddonModelMixin):
             raise ChangePasswordError(issues)
         self.set_password(raw_new_password)
 
+    def _set_email_token_expiration(self, token, expiration=None):
+        """Set the expiration date for given email token.
+
+        :param str token: The email token to set the expiration for.
+        :param datetime expiration: Datetime at which to expire the token. If ``None``,
+            `datetime.datetime.utcnow()` is used.
+        """
+        expiration = expiration or dt.datetime.utcnow() + dt.timedelta(1)
+        self.email_verifications[token]['expiration'] = expiration
+        return expiration
+
     def add_email_verification(self, email):
         """Add an email verification token for a given email."""
         token = generate_confirm_token()
+
         self.email_verifications[token] = {'email': email.lower()}
+        self._set_email_token_expiration(token)
         return token
 
     def get_confirmation_token(self, email):
@@ -486,8 +530,11 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def verify_confirmation_token(self, token):
         """Return whether or not a confirmation token is valid for this user.
+        :rtype: bool
         """
-        return token in self.email_verifications.keys()
+        if token in self.email_verifications.keys():
+            return self.email_verifications.get(token)['expiration'] > dt.datetime.utcnow()
+        return False
 
     def verify_claim_token(self, token, project_id):
         """Return whether or not a claim token is valid for this user for
@@ -532,6 +579,15 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def is_confirmed(self):
         return bool(self.date_confirmed)
+
+    @property
+    def social_links(self):
+        return {
+            key: self.SOCIAL_FIELDS[key].format(val)
+            for key, val in self.social.items()
+            if val and
+            self.SOCIAL_FIELDS.get(key)
+        }
 
     @property
     def biblio_name(self):
@@ -596,6 +652,24 @@ class User(GuidStoredObject, AddonModelMixin):
     def get_activity_points(self, db=None):
         db = db or framework.mongo.database
         return analytics.get_total_activity_count(self._primary_key, db=db)
+
+    @property
+    def is_disabled(self):
+        """Whether or not this account has been disabled.
+
+        Abstracts ``User.date_disabled``.
+
+        :return: bool
+        """
+        return self.date_disabled is not None
+
+    @is_disabled.setter
+    def is_disabled(self, val):
+        """Set whether or not this account has been disabled."""
+        if val:
+            self.date_disabled = dt.datetime.utcnow()
+        else:
+            self.date_disabled = None
 
     @property
     def is_merged(self):

@@ -322,27 +322,30 @@ class TestSerializingNodeWithAddon(OsfTestCase):
 
     def test_collect_js_recursive(self):
         self.project.get_addons.return_value[0].config.include_js = {'files': ['foo.js']}
+        self.project.get_addons.return_value[0].config.short_name = 'dropbox'
         node = NodeFactory(project=self.project)
         mock_node_addon = mock.Mock()
         mock_node_addon.config.include_js = {'files': ['bar.js', 'baz.js']}
+        mock_node_addon.config.short_name = 'dropbox'
         node.get_addons = mock.Mock()
         node.get_addons.return_value = [mock_node_addon]
-        assert_equal(
-            rubeus.collect_addon_js(self.project),
-            {'foo.js', 'bar.js', 'baz.js'}
-        )
+        result = rubeus.collect_addon_js(self.project)
+        assert_in('foo.js', result)
+        assert_in('bar.js', result)
+        assert_in('baz.js', result)
 
     def test_collect_js_unique(self):
         self.project.get_addons.return_value[0].config.include_js = {'files': ['foo.js']}
+        self.project.get_addons.return_value[0].config.short_name = 'dropbox'
         node = NodeFactory(project=self.project)
         mock_node_addon = mock.Mock()
         mock_node_addon.config.include_js = {'files': ['foo.js', 'baz.js']}
+        mock_node_addon.config.short_name = 'dropbox'
         node.get_addons = mock.Mock()
         node.get_addons.return_value = [mock_node_addon]
-        assert_equal(
-            rubeus.collect_addon_js(self.project),
-            {'foo.js', 'baz.js'}
-        )
+        result = rubeus.collect_addon_js(self.project)
+        assert_in('foo.js', result)
+        assert_in('baz.js', result)
 
 
 class TestSerializingEmptyDashboard(OsfTestCase):

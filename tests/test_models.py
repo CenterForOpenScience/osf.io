@@ -78,23 +78,48 @@ class TestUserValidation(OsfTestCase):
             self.user.save()
 
     def test_validate_social_personal_empty(self):
-        self.user.social = {'personal_site': ''}
-        try:
-            self.user.save()
-        except:
-            assert 0
+        self.user.social = {'personal': ''}
+        self.user.save()
 
     def test_validate_social_valid(self):
-        self.user.social = {'personal_site': 'http://cos.io/'}
-        try:
-            self.user.save()
-        except:
-            assert 0
+        self.user.social = {'personal': 'http://cos.io/'}
+        self.user.save()
 
     def test_validate_social_personal_invalid(self):
-        self.user.social = {'personal_site': 'help computer'}
+        self.user.social = {'personal': 'help computer'}
         with assert_raises(ValidationError):
             self.user.save()
+
+    def test_empty_social_links(self):
+        assert_equal(self.user.social_links, {})
+        assert_equal(len(self.user.social_links), 0)
+
+    def test_personal_site_unchanged(self):
+        self.user.social = {'personal': 'http://cos.io/'}
+        self.user.save()
+        assert_equal(self.user.social_links['personal'], 'http://cos.io/')
+        assert_equal(len(self.user.social_links), 1)
+
+    def test_various_social_handles(self):
+        self.user.social = {
+            'personal': 'http://cos.io/',
+            'twitter': 'OSFramework',
+            'github': 'CenterForOpenScience'
+        }
+        self.user.save()
+        assert_equal(self.user.social_links, {
+            'personal': 'http://cos.io/',
+            'twitter': 'http://twitter.com/OSFramework',
+            'github': 'http://github.com/CenterForOpenScience'
+        })
+
+    def test_nonsocial_ignored(self):
+        self.user.social = {
+            'foo': 'bar',
+        }
+        self.user.save()
+        assert_equal(self.user.social_links, {})
+
 
     def test_validate_jobs_valid(self):
         self.user.jobs = [{
@@ -172,7 +197,7 @@ class TestUser(OsfTestCase):
                  is_registered=False)
         u.set_password('killerqueen')
         u.save()
-        assert_false(u.is_active())
+        assert_false(u.is_active)
 
     def test_create_unregistered(self):
         name, email = fake.name(), fake.email()
@@ -209,12 +234,12 @@ class TestUser(OsfTestCase):
             is_registered=True,
         )
         u.save()
-        assert_false(u.is_active())
+        assert_false(u.is_active)
 
     def test_merged_user_is_not_active(self):
         master = UserFactory()
         dupe = UserFactory(merged_by=master)
-        assert_false(dupe.is_active())
+        assert_false(dupe.is_active)
 
     def test_cant_create_user_without_username(self):
         u = User()  # No username given
@@ -267,12 +292,21 @@ class TestUser(OsfTestCase):
 
     @mock.patch('website.security.random_string')
     def test_add_email_verification(self, random_string):
-        random_string.return_value = '12345'
+        token = fake.lexify('???????')
+        random_string.return_value = token
         u = UserFactory()
         assert_equal(len(u.email_verifications.keys()), 0)
         u.add_email_verification('foo@bar.com')
         assert_equal(len(u.email_verifications.keys()), 1)
-        assert_equal(u.email_verifications['12345']['email'], 'foo@bar.com')
+        assert_equal(u.email_verifications[token]['email'], 'foo@bar.com')
+
+    @mock.patch('website.security.random_string')
+    def test_add_email_verification_adds_expiration_date(self, random_string):
+        token = fake.lexify('???????')
+        random_string.return_value = token
+        u = UserFactory()
+        u.add_email_verification(u.username)
+        assert_is_instance(u.email_verifications[token]['expiration'], datetime.datetime)
 
     @mock.patch('website.security.random_string')
     def test_get_confirmation_token(self, random_string):
@@ -328,6 +362,9 @@ class TestUser(OsfTestCase):
         assert_false(u.verify_confirmation_token('badtoken'))
         valid_token = u.get_confirmation_token('foo@bar.com')
         assert_true(u.verify_confirmation_token(valid_token))
+        manual_expiration=datetime.datetime.utcnow()-datetime.timedelta(0,10)
+        u._set_email_token_expiration(valid_token, expiration=manual_expiration)
+        assert_false(u.verify_confirmation_token(valid_token))
 
     def test_factory(self):
         # Clear users
@@ -482,7 +519,7 @@ class TestUser(OsfTestCase):
         assert_equal(d['registered'], user.is_registered)
         assert_equal(d['absolute_url'], user.absolute_url)
         assert_equal(d['date_registered'], user.date_registered.strftime('%Y-%m-%d'))
-        assert_equal(d['active'], user.is_active())
+        assert_equal(d['active'], user.is_active)
 
     def test_serialize_user_full(self):
         master = UserFactory()
@@ -618,6 +655,36 @@ class TestUserParse(unittest.TestCase):
         parsed = impute_names_model('John van der Slice')
         assert_equal(parsed['given_name'], 'John')
         assert_equal(parsed['family_name'], 'van der Slice')
+
+
+class TestDisablingUsers(OsfTestCase):
+    def setUp(self):
+        super(TestDisablingUsers, self).setUp()
+        self.user = UserFactory()
+
+    def test_user_enabled_by_default(self):
+        assert_false(self.user.is_disabled)
+
+    def test_disabled_user(self):
+        """Ensure disabling a user sets date_disabled"""
+        self.user.is_disabled = True
+        self.user.save()
+
+        assert_true(isinstance(self.user.date_disabled, datetime.datetime))
+        assert_true(self.user.is_disabled)
+        assert_false(self.user.is_active)
+
+    def test_reenabled_user(self):
+        """Ensure restoring a disabled user unsets date_disabled"""
+        self.user.is_disabled = True
+        self.user.save()
+
+        self.user.is_disabled = False
+        self.user.save()
+
+        assert_is_none(self.user.date_disabled)
+        assert_false(self.user.is_disabled)
+        assert_true(self.user.is_active)
 
 
 class TestMergingUsers(OsfTestCase):

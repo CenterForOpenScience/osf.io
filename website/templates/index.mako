@@ -109,14 +109,5 @@
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
-
-    <script type="text/javascript">
-        $script(['/static/js/signUp.js']);
-        $script.ready('signUp', function() {
-            var signUp = new SignUp(
-                '#signUpScope',
-                '${api_url_for('register_user')}'
-            );
-        });
-    </script>
+    <script src="/static/public/js/home-page.js"></script>
 </%def>

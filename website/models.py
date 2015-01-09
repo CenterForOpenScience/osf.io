@@ -9,9 +9,9 @@ from framework.sessions.model import Session
 from website.project.model import (
     ApiKey, Node, NodeLog,
     Tag, WatchConfig, MetaSchema, Pointer,
-    MailRecord, Comment, PrivateLink, MetaData,
+    Comment, PrivateLink, MetaData,
 )
-from website.conferences.model import Conference
+from website.conferences.model import Conference, MailRecord
 
 # All models
 MODELS = (
