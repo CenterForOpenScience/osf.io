@@ -117,6 +117,7 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
     def get_waterbutler_render_url(self, path, **kwargs):
         return self.owner.web_url_for('osf_storage_view_file', path=path)
 
+
 class BaseFileObject(StoredObject):
 
     path = fields.StringField(required=True, index=True)
