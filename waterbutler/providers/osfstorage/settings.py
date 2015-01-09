@@ -6,9 +6,6 @@ except ImportError:
 config = OSFSTORAGE_PROVIDER_CONFIG or {}
 
 
-import hashlib
-
-
 FILE_PATH_PENDING = config.get('FILE_PATH_PENDING', '/tmp/pending')
 FILE_PATH_COMPLETE = config.get('FILE_PATH_COMPLETE', '/tmp/complete')
 
@@ -42,19 +39,8 @@ PARITY_RETRY_BACKOFF = config.get('PARITY_RETRY_BACKOFF', 2)
 PARITY_RETRY_WARN_IDX = config.get('PARITY_RETRY_WARN_IDX', None)
 
 # Parity options
-RUN_TASKS = config.get('RUN_TASKS', False)
 PARITY_CONTAINER_NAME = config.get('PARITY_CONTAINER_NAME', None)
 PARITY_REDUNDANCY = config.get('PARITY_REDUNDANCY', 5)
 PARITY_PROVIDER_NAME = config.get('PARITY_PROVIDER_NAME', 'cloudfiles')
 PARITY_PROVIDER_CREDENTIALS = config.get('PARITY_PROVIDER_CREDENTIALS', {})
 PARITY_PROVIDER_SETTINGS = config.get('PARITY_PROVIDER_SETTINGS', {})
-
-# Backup options
-# TODO: rename keys to 'backup_' and generalize with dynamic provider
-AWS_ACCESS_KEY = config.get('AWS_ACCESS_KEY', 'changeme')
-AWS_SECRET_KEY = config.get('AWS_SECRET_KEY', 'changeme')
-GLACIER_VAULT = config.get('GLACIER_VAULT', 'changeme')
-
-# HMAC options
-HMAC_SECRET = config.get('HMAC_SECRET', b'changeme')
-HMAC_ALGORITHM = config.get('HMAC_ALGORITHM', hashlib.sha256)

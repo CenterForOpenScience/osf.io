@@ -4,6 +4,8 @@ import uuid
 import asyncio
 import hashlib
 
+from tornado.options import options
+
 from waterbutler.core import utils
 from waterbutler.core import signing
 from waterbutler.core import streams
@@ -16,8 +18,6 @@ from waterbutler.providers.osfstorage.tasks import parity
 from waterbutler.providers.osfstorage.metadata import OsfStorageFileMetadata
 from waterbutler.providers.osfstorage.metadata import OsfStorageFolderMetadata
 
-
-signer = signing.Signer(settings.HMAC_SECRET, settings.HMAC_ALGORITHM)
 
 QUERY_METHODS = ('GET', 'DELETE')
 
@@ -57,6 +57,7 @@ class OSFStorageProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def make_signed_request(self, method, url, data=None, params=None, ttl=100, **kwargs):
+        signer = signing.Signer(options.hmac_secret, options.hmac_algorithm)
         if method.upper() in QUERY_METHODS:
             signed = signing.sign_data(signer, params, ttl=ttl)
             params = signed
@@ -140,7 +141,7 @@ class OSFStorageProvider(provider.BaseProvider):
         created = response.status == 201
         data = yield from response.json()
 
-        if settings.RUN_TASKS:
+        if options.run_tasks:
             version_id = data['version_id']
             parity.main(
                 complete_path,
@@ -153,6 +154,7 @@ class OSFStorageProvider(provider.BaseProvider):
                 self.callback,
                 self.archive_credentials,
                 self.archive_settings,
+                options.as_dict(),
             )
 
         _, name = os.path.split(path)

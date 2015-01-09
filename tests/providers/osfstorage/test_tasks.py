@@ -7,6 +7,8 @@ import pytest
 
 from tests.utils import async
 
+from tornado.options import options
+
 from waterbutler.providers.osfstorage.tasks import backup
 from waterbutler.providers.osfstorage.tasks import parity
 from waterbutler.providers.osfstorage import settings as osf_settings
@@ -112,9 +114,9 @@ class TestBackUpTask:
         task = mock.Mock()
         monkeypatch.setattr(backup, '_push_file_archive', task)
 
-        backup.main('The Best', 0, None, {}, {})
+        backup.main('The Best', 0, None, {}, {}, options.as_dict())
 
-        task.delay.assert_called_once_with('The Best', 0, None, {}, {})
+        task.delay.assert_called_once_with('The Best', 0, None, {}, {}, options.as_dict())
 
     def test_tries_upload(self, monkeypatch):
         mock_vault = mock.Mock()
@@ -122,9 +124,11 @@ class TestBackUpTask:
         mock_vault.upload_archive.return_value = 3
         mock_get_vault = mock.Mock()
         mock_get_vault.return_value = mock_vault
+        mock_complete = mock.Mock()
         monkeypatch.setattr(backup, 'get_vault', mock_get_vault)
+        monkeypatch.setattr(backup, '_push_archive_complete', mock_complete)
 
-        backup._push_file_archive('Triangles', None, None, {}, {})
+        backup._push_file_archive('Triangles', None, None, {}, {}, options.as_dict())
 
         mock_vault.upload_archive.assert_called_once_with('Triangles', description='Triangles')
 
@@ -138,9 +142,14 @@ class TestBackUpTask:
         monkeypatch.setattr(backup, 'get_vault', mock_get_vault)
         monkeypatch.setattr(backup, '_push_archive_complete', mock_complete)
 
-        backup._push_file_archive('Triangles', 0, None, credentials, settings)
+        backup._push_file_archive('Triangles', 0, None, credentials, settings, options.as_dict())
 
-        mock_complete.delay.assert_called_once_with(0, None, {
-            'vault': 'ThreePoint',
-            'archive': 3
-        })
+        mock_complete.delay.assert_called_once_with(
+            0,
+            None,
+            {
+                'vault': 'ThreePoint',
+                'archive': 3
+            },
+            options.as_dict(),
+        )

@@ -3,10 +3,10 @@ import http
 import asyncio
 
 from tornado import web
+from tornado.options import options
 
 from waterbutler.core.streams import RequestStreamReader
 
-from waterbutler.server import settings
 from waterbutler.server import utils
 from waterbutler.server.handlers import core
 from waterbutler.core import exceptions
@@ -61,7 +61,7 @@ class CRUDHandler(core.BaseHandler):
         self.set_header('Content-Disposition', 'attachment; filename=' + file_name)
 
         while True:
-            chunk = yield from result.read(settings.CHUNK_SIZE)
+            chunk = yield from result.read(options.chunk_size)
             if not chunk:
                 break
             self.write(chunk)
@@ -73,7 +73,7 @@ class CRUDHandler(core.BaseHandler):
         self.stream.feed_eof()
         metadata, created = yield from self.uploader
         self.write(metadata)
-        asyncio.get_event_loop().create_task(
+        asyncio.async(
             self._send_hook(
                 'create' if created else 'update',
                 metadata,
@@ -85,7 +85,7 @@ class CRUDHandler(core.BaseHandler):
         """Delete a file."""
         yield from self.provider.delete(**self.arguments)
         self.set_status(http.client.NO_CONTENT)
-        asyncio.get_event_loop().create_task(
+        asyncio.async(
             self._send_hook(
                 'delete',
                 {'path': self.arguments['path']}

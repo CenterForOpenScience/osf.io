@@ -8,6 +8,8 @@ import aiohttpretty
 
 from tests.utils import async
 
+from tornado.options import options
+
 from waterbutler.core import streams
 from waterbutler.core import exceptions
 from waterbutler.providers.osfstorage import OSFStorageProvider
@@ -175,7 +177,7 @@ def test_upload(monkeypatch, provider_and_mock, file_stream):
     mock_move.set_result({})
     inner_provider.move.return_value = mock_move
     monkeypatch.setattr(basepath.format('os.rename'), lambda *_: None)
-    monkeypatch.setattr(basepath.format('settings.RUN_TASKS'), False)
+    monkeypatch.setattr(basepath.format('options.run_tasks'), False)
     monkeypatch.setattr(basepath.format('uuid.uuid4'), lambda: 'uniquepath')
 
     res, created = yield from provider.upload(file_stream, '/foopath')
@@ -204,7 +206,7 @@ def test_upload_and_tasks(monkeypatch, provider_and_mock, file_stream, credentia
     inner_provider.move.return_value = mock_move
     monkeypatch.setattr(basepath.format('backup.main'), mock_backup)
     monkeypatch.setattr(basepath.format('parity.main'), mock_parity)
-    monkeypatch.setattr(basepath.format('settings.RUN_TASKS'), True)
+    monkeypatch.setattr(basepath.format('options.run_tasks'), True)
     monkeypatch.setattr(basepath.format('os.rename'), lambda *_: None)
     monkeypatch.setattr(basepath.format('uuid.uuid4'), lambda: 'uniquepath')
 
@@ -218,7 +220,7 @@ def test_upload_and_tasks(monkeypatch, provider_and_mock, file_stream, credentia
     inner_provider.upload.assert_called_once_with(file_stream, '/uniquepath')
     complete_path = os.path.join(FILE_PATH_COMPLETE, file_stream.writers['sha256'].hexdigest)
     mock_parity.assert_called_once_with(complete_path, credentials['parity'], settings['parity'])
-    mock_backup.assert_called_once_with(complete_path, 42, 'https://waterbutler.io', credentials['archive'], settings['parity'])
+    mock_backup.assert_called_once_with(complete_path, 42, 'https://waterbutler.io', credentials['archive'], settings['parity'], options.as_dict())
     inner_provider.move.assert_called_once_with(inner_provider, {'path': '/uniquepath'}, {'path': '/' + file_stream.writers['sha256'].hexdigest})
 
 

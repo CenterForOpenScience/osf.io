@@ -7,11 +7,7 @@ import aiohttp
 from boto.glacier.layer2 import Layer2
 
 from waterbutler.core import signing
-from waterbutler.providers.osfstorage import settings
 from waterbutler.providers.osfstorage.tasks import utils
-
-
-signer = signing.Signer(settings.HMAC_SECRET, settings.HMAC_ALGORITHM)
 
 
 def get_vault(credentials, settings):
@@ -23,7 +19,8 @@ def get_vault(credentials, settings):
 
 
 @utils.task
-def _push_file_archive(self, local_path, version_id, callback_url, credentials, settings):
+def _push_file_archive(self, local_path, version_id, callback_url,
+                       credentials, settings, options):
     _, name = os.path.split(local_path)
     with utils.RetryUpload(self):
         vault = get_vault(credentials, settings)
@@ -32,11 +29,12 @@ def _push_file_archive(self, local_path, version_id, callback_url, credentials, 
         'vault': vault.name,
         'archive': glacier_id,
     }
-    _push_archive_complete.delay(version_id, callback_url, metadata)
+    _push_archive_complete.delay(version_id, callback_url, metadata, options)
 
 
 @utils.task
-def _push_archive_complete(self, version_id, callback_url, metadata):
+def _push_archive_complete(self, version_id, callback_url, metadata, options):
+    signer = signing.Signer(options['hmac_secret'], options['hmac_algorithm'])
     with utils.RetryHook(self):
         data = signing.sign_data(
             signer,
@@ -57,5 +55,5 @@ def _push_archive_complete(self, version_id, callback_url, metadata):
             raise Exception
 
 
-def main(local_path, version_id, callback_url, credentials, settings):
-    return _push_file_archive.delay(local_path, version_id, callback_url, credentials, settings)
+def main(local_path, version_id, callback_url, credentials, settings, options):
+    return _push_file_archive.delay(local_path, version_id, callback_url, credentials, settings, options)
