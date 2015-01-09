@@ -100,7 +100,7 @@ def build_addon_root(node_settings, name, permissions=None,
             'view': node_settings.owner.can_view(auth),
             'edit': node_settings.owner.can_edit(auth) and not node_settings.owner.is_registration
         }
-    rv = {
+    ret = {
         'provider': node_settings.config.short_name,
         'addonFullname': node_settings.config.full_name,
         'name': name,
@@ -117,8 +117,8 @@ def build_addon_root(node_settings, name, permissions=None,
         'urls': urls,
         'isPointer': False,
     }
-    rv.update(kwargs)
-    return rv
+    ret.update(kwargs)
+    return ret
 
 
 def build_addon_button(text, action, title=""):
@@ -434,7 +434,7 @@ class NodeFileCollector(object):
             else u'Private Component',
             'kind': FOLDER,
             'permissions': {
-                'edit': self.can_edit,
+                'edit': node.can_edit(self.auth) and not node.is_registration,
                 'view': can_view,
             },
             'urls': {
