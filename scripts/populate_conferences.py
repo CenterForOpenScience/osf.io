@@ -97,6 +97,26 @@ MEETING_DATA = {
     #     'logo_url': None,
     #     'active': False,
     # },
+    'aps2015': {
+        'name': 'APS 2015',
+        'info_url': 'http://www.psychologicalscience.org/index.php/convention',
+        'logo_url': 'http://www.psychologicalscience.org/images/APS_2015_Banner_990x157.jpg',
+        'active': True,
+        'admins': [
+            'KatyCain526@gmail.com',
+        ],
+        'public_projects': True,
+    },
+    'icps2015': {
+        'name': 'ICPS 2015',
+        'info_url': 'http://icps.psychologicalscience.org/',
+        'logo_url': 'http://icps.psychologicalscience.org/wp-content/themes/deepblue/images/ICPS_Website-header_990px.jpg',
+        'active': True,
+        'admins': [
+            'KatyCain526@gmail.com',
+        ],
+        'public_projects': True,
+    },
 }
 
 
