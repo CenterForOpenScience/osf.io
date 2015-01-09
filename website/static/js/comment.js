@@ -568,10 +568,7 @@ CommentListModel.prototype.initListeners = function() {
 
 var timestampUrl = nodeApiUrl + 'comments/timestamps/';
 var onOpen = function() {
-    var request = osfHelpers.putJSON(
-        timestampUrl,
-        {}
-    );
+    var request = osfHelpers.putJSON(timestampUrl);
     request.fail(function(xhr, textStatus, errorThrown) {
         Raven.captureMessage('Could not update comment timestamp', {
             url: timestampUrl,
@@ -583,7 +580,7 @@ var onOpen = function() {
 
 var init = function(selector, host_page, host_name, mode, userName, canComment, hasChildren, thread_id) {
 
-    new CommentPane(selector, mode, {onOpen: onOpen()});
+    new CommentPane(selector, mode, {onOpen: onOpen});
     var viewModel = new CommentListModel(userName, host_page, host_name, mode, canComment, hasChildren, thread_id);
     var $elm = $(selector);
     if (!$elm.length) {

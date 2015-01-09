@@ -16,7 +16,7 @@ from website.models import Guid, Comment
 from website.project.decorators import must_be_contributor_or_public
 from datetime import datetime
 from website.project.model import has_anonymous_link
-from website.project.views.node import _view_project
+from website.project.views.node import _view_project, n_unread_comments
 
 @must_be_contributor_or_public
 def view_comments(**kwargs):
@@ -52,6 +52,10 @@ def view_comments(**kwargs):
         serialized.update({
             'comment_target': 'node',
             'comment_target_id': serialized['node']['id']
+        })
+        _update_comments_timestamp(auth, node)
+        serialized['user'].update({
+            'unread_comments': n_unread_comments(node, 'node', auth.user)
         })
     return serialized
 
@@ -91,7 +95,6 @@ def comment_discussion(**kwargs):
         for comment in getattr(node, 'comment_owner', []) or []:
             if not comment.is_deleted:
                 users[comment.user].append(comment)
-            collect_discussion(comment, users=users)
     else:
         target = resolve_target(node, page, guid)
         users = collect_discussion(target)
@@ -160,7 +163,7 @@ def serialize_comment(comment, auth, anonymous=False):
         },
         'dateCreated': comment.date_created.isoformat(),
         'dateModified': comment.date_modified.isoformat(),
-        'page': comment.page,
+        'page': comment.page or 'node',
         'targetId': getattr(comment.target, 'page_name', comment.target._id),
         'rootId': comment.rootId or comment.node._id,
         'content': comment.content,
@@ -255,21 +258,11 @@ def list_comments(auth, **kwargs):
         if auth.user.comments_viewed_timestamp is None:
             auth.user.comments_viewed_timestamp = {}
             auth.user.save()
-        n_unread = n_unread_comments(node, auth.user)
+        n_unread = n_unread_comments(node, page, auth.user)
     return {
         'comments': serialized_comments,
         'nUnread': n_unread
     }
-
-
-def n_unread_comments(node, user):
-    """Return the number of unread comments on a node for a user."""
-    default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
-    view_timestamp = user.comments_viewed_timestamp.get(node._id, default_timestamp)
-    return Comment.find(Q('node', 'eq', node) &
-                        Q('user', 'ne', user) &
-                        Q('date_created', 'gt', view_timestamp) &
-                        Q('date_modified', 'gt', view_timestamp)).count()
 
 @must_be_logged_in
 @must_be_contributor_or_public
@@ -317,18 +310,20 @@ def undelete_comment(**kwargs):
     return {}
 
 
-@must_be_logged_in
-@must_be_contributor_or_public
-def update_comments_timestamp(auth, **kwargs): # TODO update timestamp for each comment pane, not just overview
-    node = kwargs['node'] or kwargs['project']
+def _update_comments_timestamp(auth, node):
     if node.is_contributor(auth.user):
         auth.user.comments_viewed_timestamp[node._id] = datetime.utcnow()
         auth.user.save()
-        #page = request.json.get('page')
-        #list_comments(page=page, **kwargs)
         return {node._id: auth.user.comments_viewed_timestamp[node._id].isoformat()}
     else:
         return {}
+
+
+@must_be_logged_in
+@must_be_contributor_or_public
+def update_comments_timestamp(auth, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    return _update_comments_timestamp(auth, node)
 
 
 @must_be_logged_in

@@ -338,6 +338,11 @@ li.pointer {
 .comment-date {
     color: #999999;
 }
+
+.comment-actions a:hover {
+    text-decoration: none !important;
+}
+
 .edit-comment {
     background-color: #F3F3F3;
     cursor: pointer;

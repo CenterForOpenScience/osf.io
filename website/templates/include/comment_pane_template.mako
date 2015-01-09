@@ -15,7 +15,7 @@
             </span>
         </h4>
 
-        <div data-bind="visible: discussion().length > 0">
+        <div data-bind="if: commented">
             Show <a data-bind="click: showRecent">recently commented users</a> or
             <a data-bind="click: showFrequent">most frequently commented users</a>
             <div style="padding-bottom: 10px">

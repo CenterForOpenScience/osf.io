@@ -55,6 +55,19 @@
                         <span data-bind="ifnot: author.id">
                             <span class="comment-author" data-bind="text: author.name"></span>
                         </span>
+                        <span data-bind="if: mode === 'widget'">
+                            <a class="comment-author" data-bind="attr: {href: '${node['url']}discussions/'+id()}">
+                                <span data-bind="if: page()==='node'">
+                                        (Overview)
+                                </span>
+                                <span data-bind="if: page()==='wiki'">
+                                    <span data-bind="if: rootId().toLowerCase()==='home'">(Wiki)</span>
+                                    <span data-bind="ifnot: rootId().toLowerCase()==='home'">
+                                        <span data-bind="text: '(Wiki - ' + rootId() + ')'"></span>
+                                    </span>
+                                </span>
+                            </a>
+                        </span>
                         <span class="comment-date pull-right">
                             <span data-bind="template: {if: modified, afterRender: setupToolTips}">
                                 <a data-toggle="tooltip" data-bind="attr: {title: prettyDateModified()}">*</a>
@@ -112,13 +125,12 @@
                                     <i data-toggle="tooltip" data-placement="bottom" title="Delete" class="icon-trash"></i>
                                 </span>
                             </div>
-
                         </div>
 
                     </div>
 
                     <div class="comment-report" data-bind="if: reporting">
-                        <form class="form-inline">
+                        <form class="form-inline" data-bind="submit: submitAbuse">
                             <select class="form-control" data-bind="options: abuseOptions, optionsText: abuseLabel, value: abuseCategory"></select>
                             <input class="form-control" data-bind="value: abuseText" placeholder="Describe abuse" />
                         </form>

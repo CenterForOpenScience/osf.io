@@ -154,7 +154,13 @@
                 </div>
                 <div class="collapse navbar-collapse project-nav">
                     <ul class="nav navbar-nav">
-                        <li><a href="${node['url']}">Overview</a></li>
+                        <li>
+                            <a href="${node['url']}">Overview
+                                % if user['unread_comments'] > 0:
+                                    <span class="badge">${user['unread_comments']}</span>
+                                % endif
+                            </a>
+                        </li>
                         <li><a href="${node['url']}files/">Files</a></li>
                         <!-- Add-on tabs -->
                         % for addon in addons_enabled:

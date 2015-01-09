@@ -28,12 +28,13 @@ from website.project.decorators import (
 from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, get_pointer_parent
 from website.project.forms import NewNodeForm
-from website.models import Node, Pointer, WatchConfig, PrivateLink
+from website.models import Node, Pointer, WatchConfig, PrivateLink, Comment
 from website import settings
 from website.views import _render_nodes, find_dashboard
 from website.profile import utils
 from website.project import new_folder
 from website.util.sanitize import strip_html
+from datetime import datetime
 
 
 logger = logging.getLogger(__name__)
@@ -799,7 +800,8 @@ def _view_project(node, auth, primary=False):
             'fullname': user.fullname if user else '',
             'can_comment': node.can_comment(auth),
             'show_wiki_widget': _should_show_wiki_widget(node, user),
-            'dashboard_id': dashboard_id,
+            'dashboard_id': dashboard_id,  # todo add unread comments on each page
+            'unread_comments': n_unread_comments(node, 'node', user)
         },
         'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
@@ -839,6 +841,23 @@ def _get_children(node, auth, indent=0):
             children.extend(_get_children(child, auth, indent + 1))
 
     return children
+
+# TODO pass in root id...
+def n_unread_comments(node, page, user):
+    """Return the number of unread comments on a node for a user."""
+    default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
+    view_timestamp = user.comments_viewed_timestamp.get(node._id, default_timestamp)
+    if page == 'total':
+        return Comment.find(Q('node', 'eq', node) &
+                            Q('user', 'ne', user) &
+                            Q('date_created', 'gt', view_timestamp) &
+                            Q('date_modified', 'gt', view_timestamp)).count()
+    # todo compare root id
+    return Comment.find(Q('node', 'eq', node) &
+                        Q('user', 'ne', user) &
+                        Q('date_created', 'gt', view_timestamp) &
+                        Q('date_modified', 'gt', view_timestamp) &
+                        Q('page', 'eq', page)).count()
 
 
 @must_be_valid_project  # returns project
