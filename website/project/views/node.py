@@ -339,7 +339,7 @@ def find_user_subscriptions(user, node):
     node_subscriptions = []
     user_subscriptions = getattr(user, 'email_transactional', [])
     for subscription in user_subscriptions:
-        if subscription.node_id == node._id:
+        if subscription.object_id == node._id or user._id:
             node_subscriptions.append(subscription.event_name)
     return node_subscriptions
 
