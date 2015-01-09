@@ -58,5 +58,5 @@ def server(port=None, address=None, debug=None):
 
 @task
 def celery():
-    from waterbutler.tasks import app
+    from waterbutler.providers.osfstorage.tasks import app
     app.worker_main(['worker'])

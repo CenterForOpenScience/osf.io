@@ -1,4 +1,5 @@
 import os
+import asyncio
 import functools
 from unittest import mock
 
@@ -6,65 +7,78 @@ import pytest
 
 from tests.utils import async
 
-from waterbutler.providers.osfstorage import settings
 from waterbutler.providers.osfstorage.tasks import backup
 from waterbutler.providers.osfstorage.tasks import parity
+from waterbutler.providers.osfstorage import settings as osf_settings
 
-EMPTYFUNC = lambda *_, **__: None
+
+@pytest.fixture
+def credentials():
+    return {
+    }
+
+
+@pytest.fixture
+def settings():
+    return {
+        'storage': {
+            'provider': 'cloud',
+            'container': 'butt',
+        },
+    }
 
 
 class TestParityTask:
 
-    def test_main_delays(self, monkeypatch):
+    def test_main_delays(self, monkeypatch, credentials, settings):
         task = mock.Mock()
         monkeypatch.setattr(parity, '_parity_create_files', task)
 
-        parity.main('The Best')
+        parity.main('The Best', credentials, settings)
 
-        task.delay.assert_called_once_with('The Best')
+        task.delay.assert_called_once_with('The Best', credentials, settings)
 
-    def test_calls_create_parity(self, monkeypatch):
-        create_parity = mock.Mock(return_value=[])
-        monkeypatch.setattr(parity.asyncio, 'get_event_loop', mock.Mock())
-        monkeypatch.setattr(parity.utils, 'create_parity_files', create_parity)
-
-        parity._parity_create_files('Triangles')
-
-        create_parity.assert_called_once_with(
-            os.path.join(settings.FILE_PATH_COMPLETE, 'Triangles'),
-            redundancy=settings.PARITY_REDUNDANCY
-        )
-
-    def test_creates_upload_futures(self, monkeypatch):
+    def test_creates_upload_futures(self, monkeypatch, credentials, settings):
         paths = range(10)
-        upload_parity = mock.Mock()
-        monkeypatch.setattr(parity.asyncio, 'async', mock.Mock())
-        monkeypatch.setattr(parity, '_upload_parity', upload_parity)
-        monkeypatch.setattr(parity.asyncio, 'get_event_loop', mock.Mock())
-        monkeypatch.setattr(parity.utils, 'create_parity_files', lambda *_, **__: paths)
+        future = asyncio.Future()
+        future.set_result(None)
+        mock_upload_parity = mock.Mock()
+        mock_upload_parity.return_value = future
+        mock_create_parity = mock.Mock(return_value=paths)
+        monkeypatch.setattr(parity, '_upload_parity', mock_upload_parity)
+        monkeypatch.setattr(parity.utils, 'create_parity_files', mock_create_parity)
 
-        parity._parity_create_files('Triangles')
+        parity._parity_create_files('Triangles', credentials, settings)
 
+        mock_create_parity.assert_called_once_with(
+            os.path.join(osf_settings.FILE_PATH_COMPLETE, 'Triangles'),
+            redundancy=osf_settings.PARITY_REDUNDANCY,
+        )
         for num in reversed(range(10)):
-            upload_parity.assert_any_call(num)
+            mock_upload_parity.assert_any_call(num, credentials, settings)
 
     @async
     def test_uploads(self, monkeypatch, tmpdir):
-        provider_mock = mock.MagicMock()
+        mock_provider = mock.MagicMock()
         tempfile = tmpdir.join('test.file')
         stream = parity.streams.FileStreamReader(tempfile)
         monkeypatch.setattr(parity.streams, 'FileStreamReader', lambda x: stream)
-        monkeypatch.setattr(parity.provider_proxy, 'get', lambda: provider_mock)
+        mock_make_provider = mock.Mock()
+        mock_make_provider.return_value = mock_provider
+        monkeypatch.setattr(parity, 'make_provider', mock_make_provider)
 
 
         tempfile.write('foo')
         path = tempfile.strpath
 
-        yield from parity._upload_parity(path)
+        yield from parity._upload_parity(path, {}, {})
 
-        assert provider_mock.upload.called
+        assert mock_provider.upload.called
 
-        provider_mock.upload.assert_called_once_with(stream, path=os.path.split(path)[1])
+        mock_provider.upload.assert_called_once_with(
+            stream,
+            path='/' + os.path.split(path)[1],
+        )
 
 
     # @pytest.mark.skip
@@ -98,31 +112,33 @@ class TestBackUpTask:
         task = mock.Mock()
         monkeypatch.setattr(backup, '_push_file_archive', task)
 
-        backup.main('The Best', 0, None)
+        backup.main('The Best', 0, None, {}, {})
 
-        task.delay.assert_called_once_with('The Best', 0, None)
+        task.delay.assert_called_once_with('The Best', 0, None, {}, {})
 
     def test_tries_upload(self, monkeypatch):
         mock_vault = mock.Mock()
         mock_vault.name = 'ThreePoint'
         mock_vault.upload_archive.return_value = 3
-        monkeypatch.setattr(backup.vault_proxy, '_result', mock_vault)
-        monkeypatch.setattr(backup, '_push_archive_complete', mock.Mock())
+        mock_get_vault = mock.Mock()
+        mock_get_vault.return_value = mock_vault
+        monkeypatch.setattr(backup, 'get_vault', mock_get_vault)
 
-        backup._push_file_archive('Triangles', None, None)
+        backup._push_file_archive('Triangles', None, None, {}, {})
 
         mock_vault.upload_archive.assert_called_once_with('Triangles', description='Triangles')
 
-
-    def test_calls_complete(self, monkeypatch):
+    def test_calls_complete(self, monkeypatch, credentials, settings):
         mock_vault = mock.Mock()
         mock_complete = mock.Mock()
         mock_vault.name = 'ThreePoint'
         mock_vault.upload_archive.return_value = 3
-        monkeypatch.setattr(backup.vault_proxy, '_result', mock_vault)
+        mock_get_vault = mock.Mock()
+        mock_get_vault.return_value = mock_vault
+        monkeypatch.setattr(backup, 'get_vault', mock_get_vault)
         monkeypatch.setattr(backup, '_push_archive_complete', mock_complete)
 
-        backup._push_file_archive('Triangles', 0, None)
+        backup._push_file_archive('Triangles', 0, None, credentials, settings)
 
         mock_complete.delay.assert_called_once_with(0, None, {
             'vault': 'ThreePoint',

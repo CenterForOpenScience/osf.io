@@ -1,4 +1,5 @@
 import os
+import http
 import json
 import asyncio
 
@@ -13,24 +14,19 @@ from waterbutler.providers.osfstorage.tasks import utils
 signer = signing.Signer(settings.HMAC_SECRET, settings.HMAC_ALGORITHM)
 
 
-def _get_layer2():
-    return Layer2(
-        aws_access_key_id=settings.AWS_ACCESS_KEY,
-        aws_secret_access_key=settings.AWS_SECRET_KEY,
+def get_vault(credentials, settings):
+    layer2 = Layer2(
+        aws_access_key_id=credentials['access_key'],
+        aws_secret_access_key=credentials['secret_key'],
     )
-layer2_proxy = utils.LazyContainer(_get_layer2)
-
-
-def _get_glacier_vault():
-    return layer2_proxy.get().create_vault(settings.GLACIER_VAULT)
-vault_proxy = utils.LazyContainer(_get_glacier_vault)
+    return layer2.get_vault(settings['vault'])
 
 
 @utils.task
-def _push_file_archive(self, local_path, version_id, callback_url):
+def _push_file_archive(self, local_path, version_id, callback_url, credentials, settings):
     _, name = os.path.split(local_path)
     with utils.RetryUpload(self):
-        vault = vault_proxy.get()
+        vault = get_vault(credentials, settings)
         glacier_id = vault.upload_archive(local_path, description=name)
     metadata = {
         'vault': vault.name,
@@ -57,9 +53,9 @@ def _push_archive_complete(self, version_id, callback_url, metadata):
         )
         loop = asyncio.get_event_loop()
         response = loop.run_until_complete(future)
-        if response.status != 200:
+        if response.status != http.client.OK:
             raise Exception
 
 
-def main(local_path, version_id, callback_url):
-    return _push_file_archive.delay(local_path, version_id, callback_url)
+def main(local_path, version_id, callback_url, credentials, settings):
+    return _push_file_archive.delay(local_path, version_id, callback_url, credentials, settings)

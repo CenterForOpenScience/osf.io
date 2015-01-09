@@ -1,51 +1,41 @@
 import os
 import asyncio
 
-from stevedore import driver
-
 from waterbutler.core import streams
+from waterbutler.core.utils import make_provider
 
-from waterbutler.providers.osfstorage import settings
 from waterbutler.providers.osfstorage.tasks import utils
-
-
-def _get_provider():
-    manager = driver.DriverManager(
-        namespace='waterbutler.providers',
-        name=settings.PARITY_PROVIDER_NAME,
-        invoke_on_load=True,
-        invoke_args=(
-            {},
-            settings.PARITY_PROVIDER_CREDENTIALS,
-            settings.PARITY_PROVIDER_SETTINGS,
-        ),
-    )
-    return manager.driver
-provider_proxy = utils.LazyContainer(_get_provider)
+from waterbutler.providers.osfstorage import settings as osf_settings
 
 
 @utils.task
-def _parity_create_files(self, name):
-    path = os.path.join(settings.FILE_PATH_COMPLETE, name)
+def _parity_create_files(self, name, credentials, settings):
+    path = os.path.join(osf_settings.FILE_PATH_COMPLETE, name)
     loop = asyncio.get_event_loop()
     with utils.RetryUpload(self):
         parity_paths = utils.create_parity_files(
             path,
-            redundancy=settings.PARITY_REDUNDANCY,
+            redundancy=osf_settings.PARITY_REDUNDANCY,
         )
-        futures = [asyncio.async(_upload_parity(each)) for each in parity_paths]
-        loop.run_until_complete(asyncio.wait(futures))
+        futures = [asyncio.async(_upload_parity(each, credentials, settings)) for each in parity_paths]
+        results, _ = loop.run_until_complete(asyncio.wait(futures, return_when=asyncio.FIRST_EXCEPTION))
+        # Errors are not raised in `wait`; explicitly check results for errors
+        # and raise if any found
+        for each in results:
+            error = each.exception()
+            if error:
+                raise error
 
 
 @asyncio.coroutine
-def _upload_parity(path):
+def _upload_parity(path, credentials, settings):
     _, name = os.path.split(path)
-    provider = provider_proxy.get()
+    provider_name = settings.get('provider')
+    provider = make_provider(provider_name, {}, credentials, settings)
     with open(path, 'rb') as file_pointer:
         stream = streams.FileStreamReader(file_pointer)
-        yield from provider.upload(stream, path=name)
-    # os.remove(path)
+        yield from provider.upload(stream, path='/' + name)
 
 
-def main(name):
-    return _parity_create_files.delay(name)
+def main(name, credentials, settings):
+    return _parity_create_files.delay(name, credentials, settings)

@@ -32,7 +32,7 @@ class TestCrudHandler(utils.HandlerTestCase):
         super().tearDown()
         self.identity_patcher.stop()
 
-    @mock.patch('waterbutler.server.handlers.core.make_provider')
+    @mock.patch('waterbutler.core.utils.make_provider')
     @testing.gen_test
     def test_download_redirect(self, mock_make_provider):
         redirect_url = 'http://queen.com/freddie.png'
@@ -49,7 +49,7 @@ class TestCrudHandler(utils.HandlerTestCase):
         args, kwargs = calls[0]
         assert kwargs.get('action') == 'download'
 
-    @mock.patch('waterbutler.server.handlers.core.make_provider')
+    @mock.patch('waterbutler.core.utils.make_provider')
     @testing.gen_test
     def test_download_stream(self, mock_make_provider):
         stream = asyncio.StreamReader()
@@ -68,7 +68,7 @@ class TestCrudHandler(utils.HandlerTestCase):
         args, kwargs = calls[0]
         assert kwargs.get('action') == 'download'
 
-    @mock.patch('waterbutler.server.handlers.core.make_provider')
+    @mock.patch('waterbutler.core.utils.make_provider')
     @testing.gen_test
     def test_download_not_found(self, mock_make_provider):
         utils.mock_provider_method(mock_make_provider, 'download', side_effect=exceptions.DownloadError('missing'))
@@ -77,7 +77,7 @@ class TestCrudHandler(utils.HandlerTestCase):
                 self.get_url('/file?provider=queenhub&path=freddie.png'),
             )
 
-    @mock.patch('waterbutler.server.handlers.core.make_provider')
+    @mock.patch('waterbutler.core.utils.make_provider')
     @testing.gen_test
     def test_upload(self, mock_make_provider):
         data = b'stone cold crazy'
@@ -98,7 +98,7 @@ class TestCrudHandler(utils.HandlerTestCase):
         assert kwargs.get('path') == 'roger.png'
         assert expected == json.loads(resp.body.decode())
 
-    @mock.patch('waterbutler.server.handlers.core.make_provider')
+    @mock.patch('waterbutler.core.utils.make_provider')
     @testing.gen_test
     def test_delete(self, mock_make_provider):
         mock_provider = utils.mock_provider_method(mock_make_provider, 'delete', '')

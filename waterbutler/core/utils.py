@@ -1,5 +1,17 @@
 import os
 
+from stevedore import driver
+
+
+def make_provider(name, auth, credentials, settings):
+    manager = driver.DriverManager(
+        namespace='waterbutler.providers',
+        name=name,
+        invoke_on_load=True,
+        invoke_args=(auth, credentials, settings),
+    )
+    return manager.driver
+
 
 class WaterButlerPath:
     """

@@ -15,8 +15,8 @@ FILE_PATH_COMPLETE = config.get('FILE_PATH_COMPLETE', '/tmp/complete')
 BROKER_URL = config.get('BROKER_URL', 'amqp://')
 CELERY_RESULT_BACKEND = config.get('CELERY_RESULT_BACKEND', 'redis://')
 CELERY_IMPORTS = config.get('CELERY_IMPORTS', (
-    'waterbutler.tasks.parity',
-    'waterbutler.tasks.backup',
+    'waterbutler.providers.osfstorage.tasks.parity',
+    'waterbutler.providers.osfstorage.tasks.backup',
 ))
 CELERY_DISABLE_RATE_LIMITS = config.get('CELERY_DISABLE_RATE_LIMITS', True)
 CELERY_TASK_RESULT_EXPIRES = config.get('CELERY_TASK_RESULT_EXPIRES', 60)
@@ -42,7 +42,7 @@ PARITY_RETRY_BACKOFF = config.get('PARITY_RETRY_BACKOFF', 2)
 PARITY_RETRY_WARN_IDX = config.get('PARITY_RETRY_WARN_IDX', None)
 
 # Parity options
-RUN_PARITY = config.get('RUN_PARITY', False)
+RUN_TASKS = config.get('RUN_TASKS', False)
 PARITY_CONTAINER_NAME = config.get('PARITY_CONTAINER_NAME', None)
 PARITY_REDUNDANCY = config.get('PARITY_REDUNDANCY', 5)
 PARITY_PROVIDER_NAME = config.get('PARITY_PROVIDER_NAME', 'cloudfiles')

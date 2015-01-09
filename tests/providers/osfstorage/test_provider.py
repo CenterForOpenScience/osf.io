@@ -40,8 +40,12 @@ def auth():
 @pytest.fixture
 def credentials():
     return {
-        'access_key': 'Dont dead',
-        'secret_key': 'open inside',
+        'storage': {
+            'access_key': 'Dont dead',
+            'secret_key': 'open inside',
+        },
+        'archive': {},
+        'parity': {},
     }
 
 
@@ -49,9 +53,13 @@ def credentials():
 def settings():
     return {
         'justa': 'setting',
-        'provider': 'mock',
         'callback': 'https://waterbutler.io',
         'metadata': 'https://waterbutler.io/metadata',
+        'storage': {
+            'provider': 'mock',
+        },
+        'archive': {},
+        'parity': {},
     }
 
 
@@ -167,7 +175,7 @@ def test_upload(monkeypatch, provider_and_mock, file_stream):
     mock_move.set_result({})
     inner_provider.move.return_value = mock_move
     monkeypatch.setattr(basepath.format('os.rename'), lambda *_: None)
-    monkeypatch.setattr(basepath.format('settings.RUN_PARITY'), False)
+    monkeypatch.setattr(basepath.format('settings.RUN_TASKS'), False)
     monkeypatch.setattr(basepath.format('uuid.uuid4'), lambda: 'uniquepath')
 
     res, created = yield from provider.upload(file_stream, '/foopath')
@@ -183,7 +191,7 @@ def test_upload(monkeypatch, provider_and_mock, file_stream):
 
 @async
 @pytest.mark.aiohttpretty
-def test_upload_and_tasks(monkeypatch, provider_and_mock, file_stream):
+def test_upload_and_tasks(monkeypatch, provider_and_mock, file_stream, credentials, settings):
     mock_parity = mock.Mock()
     mock_backup = mock.Mock()
     mock_move = asyncio.Future()
@@ -196,7 +204,7 @@ def test_upload_and_tasks(monkeypatch, provider_and_mock, file_stream):
     inner_provider.move.return_value = mock_move
     monkeypatch.setattr(basepath.format('backup.main'), mock_backup)
     monkeypatch.setattr(basepath.format('parity.main'), mock_parity)
-    monkeypatch.setattr(basepath.format('settings.RUN_PARITY'), True)
+    monkeypatch.setattr(basepath.format('settings.RUN_TASKS'), True)
     monkeypatch.setattr(basepath.format('os.rename'), lambda *_: None)
     monkeypatch.setattr(basepath.format('uuid.uuid4'), lambda: 'uniquepath')
 
@@ -208,8 +216,9 @@ def test_upload_and_tasks(monkeypatch, provider_and_mock, file_stream):
     assert res['extra']['downloads'] == 30
 
     inner_provider.upload.assert_called_once_with(file_stream, '/uniquepath')
-    mock_parity.assert_called_once_with(os.path.join(FILE_PATH_COMPLETE, file_stream.writers['sha256'].hexdigest))
-    mock_backup.assert_called_once_with(os.path.join(FILE_PATH_COMPLETE, file_stream.writers['sha256'].hexdigest), 42, 'https://waterbutler.io')
+    complete_path = os.path.join(FILE_PATH_COMPLETE, file_stream.writers['sha256'].hexdigest)
+    mock_parity.assert_called_once_with(complete_path, credentials['parity'], settings['parity'])
+    mock_backup.assert_called_once_with(complete_path, 42, 'https://waterbutler.io', credentials['archive'], settings['parity'])
     inner_provider.move.assert_called_once_with(inner_provider, {'path': '/uniquepath'}, {'path': '/' + file_stream.writers['sha256'].hexdigest})
 
 

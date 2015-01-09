@@ -33,7 +33,7 @@ class TestRevisionHandler(utils.HandlerTestCase):
         super().tearDown()
         self.identity_patcher.stop()
 
-    @mock.patch('waterbutler.server.handlers.core.make_provider')
+    @mock.patch('waterbutler.core.utils.make_provider')
     @testing.gen_test
     def test_get_coro(self, mock_make_provider):
         expected = {
@@ -48,7 +48,7 @@ class TestRevisionHandler(utils.HandlerTestCase):
         )
         assert expected == json.loads(resp.body.decode())
 
-    @mock.patch('waterbutler.server.handlers.core.make_provider')
+    @mock.patch('waterbutler.core.utils.make_provider')
     @testing.gen_test
     def test_get_not_coro(self, mock_make_provider):
         expected = {

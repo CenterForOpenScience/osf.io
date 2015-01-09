@@ -35,20 +35,6 @@ def ensure_paths():
         ensure_path(path)
 
 
-class LazyContainer(object):
-    """Lazy container; defers computation of its contents until first call to
-    `get`. Used to simplify mocking of storage backend objects.
-    """
-    def __init__(self, getter):
-        self._result = None
-        self.getter = getter
-
-    def get(self):
-        if self._result is None:
-            self._result = self.getter()
-        return self._result
-
-
 def create_parity_files(file_path, redundancy=5):
     """
     :raise: `ParchiveError` if creation of parity files fails

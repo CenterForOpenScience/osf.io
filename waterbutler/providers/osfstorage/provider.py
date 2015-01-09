@@ -4,8 +4,6 @@ import uuid
 import asyncio
 import hashlib
 
-from stevedore import driver
-
 from waterbutler.core import utils
 from waterbutler.core import signing
 from waterbutler.core import streams
@@ -28,14 +26,19 @@ class OSFPath(utils.WaterButlerPath):
     def __init__(self, path):
         super().__init__(path, prefix=True, suffix=True)
 
+
 class OSFStorageProvider(provider.BaseProvider):
     __version__ = '0.0.1'
 
     def __init__(self, auth, credentials, settings):
         super().__init__(auth, credentials, settings)
-        self.callback = settings.pop('callback')
-        self.metadata_url = settings.pop('metadata')
-        self.provider_name = settings.pop('provider')
+        self.callback = settings.get('callback')
+        self.metadata_url = settings.get('metadata')
+        self.provider_name = settings['storage'].get('provider')
+        self.parity_credentials = credentials.get('parity')
+        self.parity_settings = settings.get('parity')
+        self.archive_credentials = credentials.get('archive')
+        self.archive_settings = settings.get('archive')
 
     def make_provider(self, settings):
         """Requests on different files may need to use different providers,
@@ -45,17 +48,12 @@ class OSFStorageProvider(provider.BaseProvider):
 
         :param dict settings: Overridden settings
         """
-        manager = driver.DriverManager(
-            namespace='waterbutler.providers',
-            name=self.provider_name,
-            invoke_on_load=True,
-            invoke_args=(
-                self.auth,
-                self.credentials,
-                settings,
-            ),
+        return utils.make_provider(
+            self.provider_name,
+            self.auth,
+            self.credentials['storage'],
+            self.settings['storage'],
         )
-        return manager.driver
 
     @asyncio.coroutine
     def make_signed_request(self, method, url, data=None, params=None, ttl=100, **kwargs):
@@ -121,7 +119,7 @@ class OSFStorageProvider(provider.BaseProvider):
             self.callback,
             data=json.dumps({
                 'auth': self.auth,
-                'settings': self.settings,
+                'settings': self.settings['storage'],
                 'metadata': metadata,
                 'hashes': {
                     'md5': stream.writers['md5'].hexdigest,
@@ -142,15 +140,19 @@ class OSFStorageProvider(provider.BaseProvider):
         created = response.status == 201
         data = yield from response.json()
 
-        if settings.RUN_PARITY:
+        if settings.RUN_TASKS:
             version_id = data['version_id']
             parity.main(
                 complete_path,
+                self.parity_credentials,
+                self.parity_settings,
             )
             backup.main(
                 complete_path,
                 version_id,
                 self.callback,
+                self.archive_credentials,
+                self.archive_settings,
             )
 
         _, name = os.path.split(path)

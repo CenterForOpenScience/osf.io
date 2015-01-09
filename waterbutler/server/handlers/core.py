@@ -5,8 +5,7 @@ import asyncio
 import aiohttp
 import tornado.web
 
-from stevedore import driver
-
+from waterbutler.core import utils
 from waterbutler.core import signing
 from waterbutler.core import exceptions
 
@@ -29,16 +28,6 @@ def list_or_value(value):
         # Remove leading slashes as they break things
         return value[0].decode('utf-8')
     return [item.decode('utf-8') for item in value]
-
-
-def make_provider(name, auth, credentials, settings):
-    manager = driver.DriverManager(
-        namespace='waterbutler.providers',
-        name=name,
-        invoke_on_load=True,
-        invoke_args=(auth, credentials, settings),
-    )
-    return manager.driver
 
 
 signer = signing.Signer(settings.HMAC_SECRET, settings.HMAC_ALGORITHM)
@@ -65,7 +54,7 @@ class BaseHandler(tornado.web.RequestHandler):
 
         self.payload = yield from get_identity(settings.IDENTITY_METHOD, **self.arguments)
 
-        self.provider = make_provider(
+        self.provider = utils.make_provider(
             self.arguments['provider'],
             self.payload['auth'],
             self.payload['credentials'],
