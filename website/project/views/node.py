@@ -801,7 +801,11 @@ def _view_project(node, auth, primary=False):
             'can_comment': node.can_comment(auth),
             'show_wiki_widget': _should_show_wiki_widget(node, user),
             'dashboard_id': dashboard_id,  # todo add unread comments on each page
-            'unread_comments': n_unread_comments(node, 'node', user)
+            'unread_comments': {
+                'total': n_unread_comments(node, user, 'total'),
+                'node': n_unread_comments(node, user, 'node'),
+                'wiki': n_unread_comments(node, user, 'wiki')
+            }
         },
         'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
@@ -842,22 +846,44 @@ def _get_children(node, auth, indent=0):
 
     return children
 
-# TODO pass in root id...
-def n_unread_comments(node, page, user):
+
+def n_unread_comments(node, user, page, rootid=None):
     """Return the number of unread comments on a node for a user."""
+    if page != 'node' and rootid is None:
+        return n_unread_total(node, user, page)
+
     default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
     view_timestamp = user.comments_viewed_timestamp.get(node._id, default_timestamp)
-    if page == 'total':
-        return Comment.find(Q('node', 'eq', node) &
-                            Q('user', 'ne', user) &
-                            Q('date_created', 'gt', view_timestamp) &
-                            Q('date_modified', 'gt', view_timestamp)).count()
-    # todo compare root id
+    if not isinstance(view_timestamp, datetime):
+        view_timestamp = view_timestamp.get(page, default_timestamp)
+    if not page=='node' or not isinstance(view_timestamp, datetime):
+        view_timestamp = view_timestamp.get(rootid, default_timestamp)
     return Comment.find(Q('node', 'eq', node) &
                         Q('user', 'ne', user) &
                         Q('date_created', 'gt', view_timestamp) &
                         Q('date_modified', 'gt', view_timestamp) &
-                        Q('page', 'eq', page)).count()
+                        Q('page', 'eq', page) &
+                        Q('rootId', 'eq', rootid)).count()
+
+
+def n_unread_total(node, user, page):
+    default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
+    view_timestamp = user.comments_viewed_timestamp.get(node._id, default_timestamp)
+    if page != 'total':
+        if not isinstance(view_timestamp, datetime):
+            view_timestamp = view_timestamp.get(page, default_timestamp)
+        if not isinstance(view_timestamp, datetime):
+            n_unread = 0
+            for key in view_timestamp:
+                n_unread += n_unread_comments(node, user, page, key)
+            return n_unread
+        return Comment.find(Q('node', 'eq', node) &
+                            Q('user', 'ne', user) &
+                            Q('date_created', 'gt', view_timestamp) &
+                            Q('date_modified', 'gt', view_timestamp) &
+                            Q('page', 'eq', page)).count()
+    return n_unread_comments(node, user, 'node', node._id) + n_unread_total(node, user, 'wiki')
+
 
 
 @must_be_valid_project  # returns project

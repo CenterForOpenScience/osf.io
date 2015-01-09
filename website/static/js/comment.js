@@ -151,7 +151,8 @@ BaseComment.prototype.fetch = function(thread) {
         nodeApiUrl + 'comments/',
         {
             page: self.page(),
-            target: self.id()
+            target: self.id(),
+            rootId: self.rootId()
         },
         function(response) {
             self.comments(
@@ -488,6 +489,7 @@ var CommentListModel = function(userName, host_page, host_name, mode, canComment
 
     self.page(host_page);
     self.id = ko.observable(host_name);
+    self.rootId = ko.observable(host_name);
 
     self.commented = ko.computed(function(){
         return self.comments().length > 0;
@@ -567,8 +569,14 @@ CommentListModel.prototype.initListeners = function() {
 };
 
 var timestampUrl = nodeApiUrl + 'comments/timestamps/';
-var onOpen = function() {
-    var request = osfHelpers.putJSON(timestampUrl);
+var onOpen = function(host_page, host_name) {
+    var request = osfHelpers.putJSON(
+        timestampUrl,
+        {
+            page: host_page,
+            rootId: host_name
+        }
+    );
     request.fail(function(xhr, textStatus, errorThrown) {
         Raven.captureMessage('Could not update comment timestamp', {
             url: timestampUrl,
@@ -580,7 +588,7 @@ var onOpen = function() {
 
 var init = function(selector, host_page, host_name, mode, userName, canComment, hasChildren, thread_id) {
 
-    new CommentPane(selector, mode, {onOpen: onOpen});
+    new CommentPane(selector, host_page, host_name, mode, {onOpen: onOpen});
     var viewModel = new CommentListModel(userName, host_page, host_name, mode, canComment, hasChildren, thread_id);
     var $elm = $(selector);
     if (!$elm.length) {

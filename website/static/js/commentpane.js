@@ -14,7 +14,7 @@
     /*
        mode: 'widget', 'pane' or 'page'
      */
-    var CommentPane = CommentPane || function(selector, mode, options) {
+    var CommentPane = CommentPane || function(selector, host_page, host_name, mode, options) {
         var self = this;
 
         var $pane = $(selector);
@@ -24,6 +24,8 @@
         var $toggleElm = $.merge($pane, $sidebar);
 
         self.mode = mode;
+        self.page = host_page;
+        self.host_name = host_name;
 
         options = $.extend({}, defaults, options);
         if (options.maxWidthProp < options.toggleWidth) {
@@ -57,7 +59,7 @@
             } else {
                 var bodyWidth = $(document.body).width();
                 width = options.toggleWidth * bodyWidth;
-                options.onOpen.call(self);
+                options.onOpen.call(self, self.page, self.host_name);
             }
             $toggleElm.animate(
                 {width: width},

@@ -10,7 +10,11 @@
     <div class="osf-sidenav hidden-print" role="complementary">
         <ul class="nav bs-sidenav" style="margin: 0;">
             <li>
-                <a href="${node['url']}discussions/">Overview</a>
+                <a href="${node['url']}discussions/">Overview
+                    % if overview_unread > 0:
+                        <span class="badge pull-right">${overview_unread}</span>
+                    % endif
+                </a>
             </li>
 
             <!-- wiki -->
@@ -23,7 +27,12 @@
                         </li>
                         <li>
                             % if wiki_home_content:
-                                <a href="${node['url']}discussions/wiki/home">Home</a>
+                                <a href="${node['url']}discussions/wiki/home">
+                                    Home
+                                    % if wiki_home_unread > 0:
+                                        <span class="badge pull-right">${wiki_home_unread}</span>
+                                    % endif
+                                </a>
                             % else:
                                 <a style="color: #808080">Home (No wiki content)</a>
                             % endif
@@ -31,7 +40,12 @@
                         % for page in wiki_pages_current:
                             % if page['name'].lower() != 'home':
                                 <li>
-                                    <a href="${node['url']}discussions/wiki/${page['name']}">${page['name']}</a>
+                                    <a href="${node['url']}discussions/wiki/${page['name']}">
+                                        ${page['name']}
+                                        % if page['unread'] > 0:
+                                            <span class="badge pull-right">${page['unread']}</span>
+                                        % endif
+                                    </a>
                                 </li>
                             % endif
                         %endfor

@@ -26,19 +26,14 @@ def view_comments(**kwargs):
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
 
-    serialized = _view_project(node, auth, primary=True)
-    from website.addons.wiki.views import _get_wiki_pages_current
-    serialized.update({
-        'wiki_pages_current': _get_wiki_pages_current(node),
-        'wiki_home_content': node.get_wiki_page('home')
-    })
+    serialized = {}
     if kwargs.get('cid'):
         comment = kwargs_to_comment(kwargs)
         serialized_comment = serialize_comment(comment, auth)
         serialized.update({
             'comment': serialized_comment,
             'comment_target': serialized_comment['page'],
-            'comment_target_id': serialized['node']['id']
+            'comment_target_id': comment.rootId
         })
     elif kwargs.get('wname'):
         wiki_page = node.get_wiki_page(kwargs.get('wname'))
@@ -48,15 +43,28 @@ def view_comments(**kwargs):
             'comment_target': 'wiki',
             'comment_target_id': wiki_page.page_name
         })
+        _update_comments_timestamp(auth, node, page='wiki', rootid= wiki_page.page_name)
     else:
         serialized.update({
             'comment_target': 'node',
-            'comment_target_id': serialized['node']['id']
+            'comment_target_id': node._id
         })
-        _update_comments_timestamp(auth, node)
-        serialized['user'].update({
-            'unread_comments': n_unread_comments(node, 'node', auth.user)
-        })
+        _update_comments_timestamp(auth, node, page='node')
+
+    from website.addons.wiki.views import _get_wiki_pages_current
+    serialized.update({
+        'overview_unread': n_unread_comments(node, auth.user, 'node', node._id),
+        'wiki_pages_current': [
+            {
+                'name': page['name'],
+                'unread': n_unread_comments(node, auth.user, 'wiki', page['name'])
+            }
+            for page in _get_wiki_pages_current(node)
+        ],
+        'wiki_home_content': node.get_wiki_page('home'),
+        'wiki_home_unread': 0 if not node.get_wiki_page('home') else n_unread_comments(node, auth.user, 'wiki', 'home')
+    })
+    serialized.update(_view_project(node, auth, primary=True))
     return serialized
 
 
@@ -242,6 +250,7 @@ def list_comments(auth, **kwargs):
     anonymous = has_anonymous_link(node, auth)
     page = request.args.get('page')
     guid = request.args.get('target')
+    rootid = request.args.get('rootId')
     #end = request.args.get('loaded')
     #start = max(0, request.args.get('loaded') - request.args.get('size'))
     if page == 'total':
@@ -258,7 +267,7 @@ def list_comments(auth, **kwargs):
         if auth.user.comments_viewed_timestamp is None:
             auth.user.comments_viewed_timestamp = {}
             auth.user.save()
-        n_unread = n_unread_comments(node, page, auth.user)
+        n_unread = n_unread_comments(node, auth.user, page, rootid)
     return {
         'comments': serialized_comments,
         'nUnread': n_unread
@@ -310,11 +319,29 @@ def undelete_comment(**kwargs):
     return {}
 
 
-def _update_comments_timestamp(auth, node):
-    if node.is_contributor(auth.user):
-        auth.user.comments_viewed_timestamp[node._id] = datetime.utcnow()
+def _update_comments_timestamp(auth, node, page='node', rootid=None):
+    if node.is_contributor(auth.user) and page != 'total':
+        if not auth.user.comments_viewed_timestamp.get(node._id, None):
+            auth.user.comments_viewed_timestamp[node._id] = dict()
+        if auth.user.comments_viewed_timestamp.get(node._id, None) and \
+                isinstance(auth.user.comments_viewed_timestamp[node._id], datetime):
+            overview_timestamp = auth.user.comments_viewed_timestamp[node._id]
+            auth.user.comments_viewed_timestamp[node._id] = dict()
+            auth.user.comments_viewed_timestamp[node._id]['node'] = overview_timestamp
+        timestamps = auth.user.comments_viewed_timestamp[node._id]
+
+        # update node or wiki timestamp
+        if page == 'node':
+            timestamps['node'] = datetime.utcnow()
+            auth.user.save()
+            return {node._id: auth.user.comments_viewed_timestamp[node._id]['node'].isoformat()}
+        if rootid == None:
+            return {}
+        if not timestamps.get(page, None):
+            timestamps[page] = dict()
+        timestamps[page][rootid] = datetime.utcnow()
         auth.user.save()
-        return {node._id: auth.user.comments_viewed_timestamp[node._id].isoformat()}
+        return {node._id: auth.user.comments_viewed_timestamp[node._id][page][rootid].isoformat()}
     else:
         return {}
 
@@ -323,7 +350,9 @@ def _update_comments_timestamp(auth, node):
 @must_be_contributor_or_public
 def update_comments_timestamp(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    return _update_comments_timestamp(auth, node)
+    page = request.json.get('page')
+    rootid = request.json.get('rootId')
+    return _update_comments_timestamp(auth, node, page, rootid)
 
 
 @must_be_logged_in

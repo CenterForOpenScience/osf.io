@@ -294,7 +294,12 @@ class User(GuidStoredObject, AddonModelMixin):
     date_disabled = fields.DateTimeField()
 
     # Format: {
-    #   'node_id': 'timestamp'
+    #   'node_id': {
+    #     'node': 'timestamp',
+    #     'wiki': {
+    #        'wiki_name': 'timestamp'
+    #     }
+    #   }
     # }
     comments_viewed_timestamp = fields.DictionaryField()
 
