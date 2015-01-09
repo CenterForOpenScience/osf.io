@@ -15,19 +15,24 @@ def subscribe(auth, **kwargs):
 
     for notification_type in notification_types:
         for event in subscriptions:
-            event_id = pid + "_" + event
+            if event == 'Comment_replies':
+                category = user._id
+            else:
+                category = pid
+
+            event_id = category + "_" + event
 
             if subscriptions[event]:
                 # Create subscription or find existing
                 try:
                     s = Subscription(_id=event_id)
-                    s.node_id = pid
+                    s.object_id = category
                     s.event_name = event
                     s.save()
 
                 except KeyExistsException:
                     s = Subscription.find_one(Q('_id', 'eq', event_id))
-                    s.node_id = pid
+                    s.object_id = category
                     s.event_name = event
                     s.save()
 
@@ -43,8 +48,9 @@ def subscribe(auth, **kwargs):
             else:
                 try:
                     s = Subscription.find_one(Q('_id', 'eq', event_id))
-                    getattr(s, notification_type).remove(user)
-                    s.save()
+                    if user in getattr(s, notification_type):
+                        getattr(s, notification_type).remove(user)
+                        s.save()
                 except NoResultsFound:
                     pass
 
