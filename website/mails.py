@@ -129,4 +129,4 @@ CONFERENCE_FAILED = Mail(
     subject='Open Science Framework Error: No files attached'
 )
 COMMENT_ADDED = Mail('comment_added', subject='${commenter} commented on "${title}".')
-COMMENT_REPLIES = Mail('comment_replies', subject='${commenter} replied to your comment on "${title})".')
+COMMENT_REPLIES = Mail('comment_replies', subject='${commenter} replied to your comment on "${title}".')

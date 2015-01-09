@@ -156,11 +156,11 @@ def add_comment(**kwargs):
     )
     comment.save()
 
-    notify(pid=node._id,
-           event="Comment_replies" if is_direct_reply(target, auth.user) else "Comment",
+    notify(uid=target.user._id if is_reply(target) else node._id,
+           event="Comment_replies" if is_reply(target) else "Comments",
            commenter=auth.user.fullname,
            content=content,
-           parent_comment=is_reply(target),
+           parent_comment=target.content if is_reply(target) else "",
            title=node.title)
 
     return {
@@ -169,15 +169,7 @@ def add_comment(**kwargs):
 
 
 def is_reply(target):
-    if isinstance(target, Comment):
-        return {
-            'content': target.content
-            }
-    return {}
-
-
-def is_direct_reply(target, user):
-    return isinstance(target, Comment) and target.user is user
+    return isinstance(target, Comment)
 
 
 @must_be_contributor_or_public

@@ -1,4 +1,5 @@
 from modularodm import Q
+from modularodm.exceptions import NoResultsFound
 from model import Subscription
 from website import mails
 
@@ -7,11 +8,14 @@ from website import mails
 # from ..methods.text import send_text_message
 
 
-def notify(pid, event, **context):
-    key = str(pid + '_' + event)
+def notify(uid, event, **context):
+    key = str(uid + '_' + event)
 
     for notification_type in notifications.keys():
-        subscription = Subscription.find_one(Q('_id', 'eq', key))
+        try:
+            subscription = Subscription.find_one(Q('_id', 'eq', key))
+        except NoResultsFound:
+            return
         subscribed_users = []
         try:
             subscribed_users = getattr(subscription, notification_type)
@@ -34,7 +38,6 @@ def email_transactional(subscribed_users, event, **context):
     for user in subscribed_users:
         email = user.username
         if context.get('commenter') != user.fullname:
-
             mails.send_mail(
                 to_addr=email,
                 mail=email_templates.get(event),
@@ -50,7 +53,8 @@ notifications = {
 }
 
 email_templates = {
-    'Comments': mails.COMMENT_ADDED
+    'Comments': mails.COMMENT_ADDED,
+    'Comment_replies': mails.COMMENT_REPLIES,
 }
 
 

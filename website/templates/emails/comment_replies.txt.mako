@@ -1,7 +1,7 @@
 Hello ${name},
 
-    ${commenter} replied to your comment ${parent_comment['content']} on your project "${title}":
+    ${commenter} replied to your comment "${parent_comment['content']}" on your project "${title}":
 
-    "${content}"
+        "${content}"
 
     From the Open Science Framework
