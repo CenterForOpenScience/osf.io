@@ -24,7 +24,7 @@
 % endif
 <div id="projectScope">
     <header class="subhead" id="overview">
-        <div class="row">
+        <div id="titleRow" class="row">
             <div class="col-sm-7 col-md-8 cite-container">
                 % if parent_node['id']:
                     % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
@@ -37,12 +37,11 @@
                         </h1>
                     % endif
                 % endif
-                <h1 class="node-title">
-                    <a href="${node['url']}"><span id="nodeTitleEditable" class="overflow">${node['title']}</span></a>
-                    <a id="nodeTitleEditControl">
-                        <i class="icon-pencil" title="Edit the title"></i>
-                    </a>
-                </h1>
+                <div class="node-title">
+                    <span class="h1"><a href="${node['url']}"><span id="nodeTitleEditable" class="overflow">${node['title']}</span></a></span>
+                    <button id="nodeTitleEditControl" class="nodeEditableControl btn btn-xs">
+                        <i class="icon icon-pencil" style="font-size: 11px;"></i> Edit</button>
+                </div>
             </div>
             <div class="col-sm-5 col-md-4">
                 <div class="btn-toolbar node-control pull-right">
@@ -147,13 +146,10 @@
                 % if parent_node['id']:
                     Category: <span class="node-category">${node['category']}</span>
                 % elif node['description'] or 'write' in user['permissions']:
-                    <span id="description">Description:
-                        <a id="nodeDescriptionEditControl">
-                            <i class="icon-pencil" title="Edit the description"></i>
-                        </a>
-                    </span>
+                    <span id="description">Description:</span>
                     <span id="nodeDescriptionEditable" class="node-description overflow">${node['description']}</span>
-
+                    <button id="nodeDescriptionEditControl" class="nodeEditableControl btn btn-xs">
+                        <i class="icon icon-pencil" style="font-size: 11px;"></i> Edit</button>
                 % endif
             </div>
         </div>

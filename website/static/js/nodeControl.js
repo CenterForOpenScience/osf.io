@@ -162,10 +162,10 @@ var NodeActions = require('./project.js');
             // TODO: Remove hardcoded selectors.
             $.fn.editable.defaults.mode = 'inline';
             $('#nodeTitleEditable').editable($.extend({}, editableOptions, {
-            name: 'title',
+                name: 'title',
                 title: 'Edit Title',
-            validate: function (value) {
-                if ($.trim(value) === '') {
+                validate: function (value) {
+                    if ($.trim(value) === '') {
                         return 'Title cannot be blank.';
                     }
                 }
@@ -174,8 +174,16 @@ var NodeActions = require('./project.js');
                 e.stopPropagation();
                 $('#nodeTitleEditable').editable('toggle');
             });
+            $('#titleRow').bind('DOMSubtreeModified', function() {
+                if($('#nodeTitleEditable').is(':visible')){
+                    $('#nodeTitleEditControl').show();
+                }  else {
+                    $('#nodeTitleEditControl').hide();
+                }
+            });
+
             $('#nodeDescriptionEditable').editable($.extend({}, editableOptions, {
-            name: 'description',
+                name: 'description',
                 title: 'Edit Description',
                 emptytext: 'No description',
                 emptyclass: 'text-muted',
@@ -184,6 +192,13 @@ var NodeActions = require('./project.js');
             $('#nodeDescriptionEditControl').click(function(e){
                 e.stopPropagation();
                 $('#nodeDescriptionEditable').editable('toggle');
+            });
+            $('#descriptionRow').bind('DOMSubtreeModified', function() {
+                if($('#nodeDescriptionEditable').is(':visible')){
+                    $('#nodeDescriptionEditControl').show();
+                }  else {
+                    $('#nodeDescriptionEditControl').hide();
+                }
             });
         }
 

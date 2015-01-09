@@ -870,6 +870,23 @@ h1.node-title, h1.node-parent-title {
   background-color:#F3F3F3;
 }
 
+#nodeDescriptionEditable:hover{
+    background-color: transparent;
+}
+
+#nodeDescriptionEditable{
+    cursor: default !important;
+}
+
+#nodeTitleEditControl {
+    margin-left: 5px;
+}
+
+.nodeEditableControl{
+    background-color: #eee;
+    color: #999898;
+}
+
 .editable-error-block  {
     font-size: 16px;
     max-width: 100%;
