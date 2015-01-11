@@ -4,6 +4,7 @@ celery
 furl
 invoke
 oauthlib
+redis
 stevedore
 tornado
 xmltodict
