@@ -11,7 +11,7 @@ except ImportError:
 config = TASKS_CONFIG or {}
 
 
-BROKER_URL = config.get('BROKER_URL', 'amqp://guest:guest@{}:{}//'.format(
+BROKER_URL = config.get('BROKER_URL', 'amqp://{}:{}//'.format(
     os.environ.get('RABBITMQ_PORT_5672_TCP_ADDR', ''),
     os.environ.get('RABBITMQ_PORT_5672_TCP_PORT', ''),
 ))
