@@ -38,6 +38,10 @@ setup(
             'github = waterbutler.providers.github:GitHubProvider',
             'osfstorage = waterbutler.providers.osfstorage:OSFStorageProvider',
             's3 = waterbutler.providers.s3:S3Provider',
+        ],
+        'waterbutler.providers.tasks': [
+            'osfstorage_parity = waterbutler.providers.osfstorage.tasks.parity',
+            'osfstorage_backup = waterbutler.providers.osfstorage.tasks.backup',
         ]
     },
 )

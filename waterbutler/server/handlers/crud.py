@@ -3,11 +3,11 @@ import http
 import asyncio
 
 from tornado import web
-from tornado.options import options
 
 from waterbutler.core.streams import RequestStreamReader
 
 from waterbutler.server import utils
+from waterbutler.server import settings
 from waterbutler.server.handlers import core
 from waterbutler.core import exceptions
 
@@ -61,7 +61,7 @@ class CRUDHandler(core.BaseHandler):
         self.set_header('Content-Disposition', 'attachment; filename=' + file_name)
 
         while True:
-            chunk = yield from result.read(options.chunk_size)
+            chunk = yield from result.read(settings.CHUNK_SIZE)
             if not chunk:
                 break
             self.write(chunk)

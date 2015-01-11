@@ -1,3 +1,5 @@
+import hashlib
+
 try:
     from waterbutler.settings import OSFSTORAGE_PROVIDER_CONFIG
 except ImportError:
@@ -9,15 +11,10 @@ config = OSFSTORAGE_PROVIDER_CONFIG or {}
 FILE_PATH_PENDING = config.get('FILE_PATH_PENDING', '/tmp/pending')
 FILE_PATH_COMPLETE = config.get('FILE_PATH_COMPLETE', '/tmp/complete')
 
-BROKER_URL = config.get('BROKER_URL', 'amqp://')
-CELERY_RESULT_BACKEND = config.get('CELERY_RESULT_BACKEND', 'redis://')
-CELERY_IMPORTS = config.get('CELERY_IMPORTS', (
-    'waterbutler.providers.osfstorage.tasks.parity',
-    'waterbutler.providers.osfstorage.tasks.backup',
-))
-CELERY_DISABLE_RATE_LIMITS = config.get('CELERY_DISABLE_RATE_LIMITS', True)
-CELERY_TASK_RESULT_EXPIRES = config.get('CELERY_TASK_RESULT_EXPIRES', 60)
-# CELERY_ALWAYS_EAGER = config.get('CELERY_ALWAYS_EAGER', True)
+RUN_TASKS = config.get('RUN_TASKS', True)
+
+HMAC_ALGORITHM = getattr(hashlib, config.get('HMAC_ALGORITHM', 'sha256'))
+HMAC_SECRET = config.get('HMAC_SECRET', 'changeme').encode('utf-8')
 
 # Retry options
 UPLOAD_RETRY_ATTEMPTS = config.get('UPLOAD_RETRY_ATTEMPTS', 1)

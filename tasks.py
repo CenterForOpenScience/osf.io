@@ -28,12 +28,12 @@ def install(upgrade=False, pip_cache=None, wheel_repo=None):
         run('rm -rf {}'.format(folder), pty=False)
         run('rm -f {}'.format(name), pty=False)
     else:
-        run(cmd, pty=False)
+        run(cmd, pty=True)
 
 
 @task
 def flake():
-    run('flake8 .')
+    run('flake8 .', pty=True)
 
 
 @task
@@ -41,10 +41,26 @@ def test(verbose=False):
     cmd = 'py.test --cov-report term-missing --cov waterbutler tests'
     if verbose:
         cmd += ' -v'
-    run(cmd, pty=False)
+    run(cmd, pty=True)
 
 
 @task
 def celery():
-    from waterbutler.providers.osfstorage.tasks import app
+    from waterbutler.tasks import app
     app.worker_main(['worker'])
+
+
+@task
+def rabbitmq():
+    run('rabbitmq-server', pty=True)
+
+
+@task
+def redis():
+    run('redis-server', pty=True)
+
+
+@task
+def server():
+    from waterbutler.server import serve
+    serve()

@@ -21,7 +21,3 @@ if not os.path.exists(config_path):
 else:
     with open(os.path.expanduser(config_path)) as fp:
         config = json.load(fp)
-
-
-OSFSTORAGE_PROVIDER_CONFIG = config.get('OSFSTORAGE_PROVIDER_CONFIG')
-SERVER_CONFIG = config.get('SERVER_CONFIG')

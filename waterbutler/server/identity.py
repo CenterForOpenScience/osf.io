@@ -2,9 +2,8 @@ import asyncio
 
 import aiohttp
 
-from tornado.options import options
-
 from waterbutler.server import exceptions
+from waterbutler.server import settings
 
 
 IDENTITY_METHODS = {}
@@ -33,7 +32,7 @@ def get_identity(name, **kwargs):
 def fetch_rest_identity(**params):
     response = yield from aiohttp.request(
         'get',
-        options.identity_api_url,
+        settings.IDENTITY_API_URL,
         params=params,
         headers={'Content-Type': 'application/json'},
     )

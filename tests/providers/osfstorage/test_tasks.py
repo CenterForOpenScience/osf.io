@@ -7,8 +7,7 @@ import pytest
 
 from tests.utils import async
 
-from tornado.options import options
-
+from waterbutler.providers.osfstorage import settings
 from waterbutler.providers.osfstorage.tasks import backup
 from waterbutler.providers.osfstorage.tasks import parity
 from waterbutler.providers.osfstorage import settings as osf_settings
@@ -114,9 +113,9 @@ class TestBackUpTask:
         task = mock.Mock()
         monkeypatch.setattr(backup, '_push_file_archive', task)
 
-        backup.main('The Best', 0, None, {}, {}, options.as_dict())
+        backup.main('The Best', 0, None, {}, {})
 
-        task.delay.assert_called_once_with('The Best', 0, None, {}, {}, options.as_dict())
+        task.delay.assert_called_once_with('The Best', 0, None, {}, {})
 
     def test_tries_upload(self, monkeypatch):
         mock_vault = mock.Mock()
@@ -128,7 +127,7 @@ class TestBackUpTask:
         monkeypatch.setattr(backup, 'get_vault', mock_get_vault)
         monkeypatch.setattr(backup, '_push_archive_complete', mock_complete)
 
-        backup._push_file_archive('Triangles', None, None, {}, {}, options.as_dict())
+        backup._push_file_archive('Triangles', None, None, {}, {})
 
         mock_vault.upload_archive.assert_called_once_with('Triangles', description='Triangles')
 
@@ -142,7 +141,7 @@ class TestBackUpTask:
         monkeypatch.setattr(backup, 'get_vault', mock_get_vault)
         monkeypatch.setattr(backup, '_push_archive_complete', mock_complete)
 
-        backup._push_file_archive('Triangles', 0, None, credentials, settings, options.as_dict())
+        backup._push_file_archive('Triangles', 0, None, credentials, settings)
 
         mock_complete.delay.assert_called_once_with(
             0,
@@ -151,5 +150,4 @@ class TestBackUpTask:
                 'vault': 'ThreePoint',
                 'archive': 3
             },
-            options.as_dict(),
         )

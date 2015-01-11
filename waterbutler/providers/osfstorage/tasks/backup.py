@@ -7,6 +7,7 @@ import aiohttp
 from boto.glacier.layer2 import Layer2
 
 from waterbutler.core import signing
+from waterbutler.providers.osfstorage import settings
 from waterbutler.providers.osfstorage.tasks import utils
 
 
@@ -20,7 +21,7 @@ def get_vault(credentials, settings):
 
 @utils.task
 def _push_file_archive(self, local_path, version_id, callback_url,
-                       credentials, settings, options):
+                       credentials, settings):
     _, name = os.path.split(local_path)
     with utils.RetryUpload(self):
         vault = get_vault(credentials, settings)
@@ -29,12 +30,12 @@ def _push_file_archive(self, local_path, version_id, callback_url,
         'vault': vault.name,
         'archive': glacier_id,
     }
-    _push_archive_complete.delay(version_id, callback_url, metadata, options)
+    _push_archive_complete.delay(version_id, callback_url, metadata)
 
 
 @utils.task
-def _push_archive_complete(self, version_id, callback_url, metadata, options):
-    signer = signing.Signer(options['hmac_secret'], options['hmac_algorithm'])
+def _push_archive_complete(self, version_id, callback_url, metadata):
+    signer = signing.Signer(settings.HMAC_SECRET, settings.HMAC_ALGORITHM)
     with utils.RetryHook(self):
         data = signing.sign_data(
             signer,
@@ -55,5 +56,5 @@ def _push_archive_complete(self, version_id, callback_url, metadata, options):
             raise Exception
 
 
-def main(local_path, version_id, callback_url, credentials, settings, options):
-    return _push_file_archive.delay(local_path, version_id, callback_url, credentials, settings, options)
+def main(local_path, version_id, callback_url, credentials, settings):
+    return _push_file_archive.delay(local_path, version_id, callback_url, credentials, settings)
