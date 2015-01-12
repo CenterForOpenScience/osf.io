@@ -11,7 +11,7 @@ def subscribe(auth, **kwargs):
     user = auth.user
     pid = kwargs.get('pid')
     subscriptions = request.json
-    notification_types = ['email_transactional']
+    notification_types = ['email_transactional', 'email_digest']
 
     for notification_type in notification_types:
         for event in subscriptions:
