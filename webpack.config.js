@@ -27,7 +27,6 @@ var entry = {
     'project-settings-page': staticPath('js/pages/project-settings-page.js'),
     'search-page': staticPath('js/pages/search-page.js'),
     'user-addon-cfg-page': staticPath('js/pages/user-addon-cfg-page.js'),
-    'addon-permissions': staticPath('js/addon-permissions.js'),
     // Commons chunk
     'vendor': [
         'knockout',
@@ -100,7 +99,8 @@ module.exports = {
             'osfLanguage': staticPath('js/osfLanguage.js'),
             'addons': path.join(__dirname, 'website', 'addons'),
             'addonHelper': staticPath('js/addonHelper.js'),
-            'koHelpers': staticPath('js/koHelpers.js')
+            'koHelpers': staticPath('js/koHelpers.js'),
+            'addon-permissions': staticPath('js/addon-permissions.js')
         }
     },
     plugins: [
