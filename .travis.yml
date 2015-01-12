@@ -25,6 +25,7 @@ install:
     - travis_retry invoke addon_requirements
     - npm install -g bower
     - bower install
+    - inv webpack --develop
 
 before_script:
     - flake8 .
