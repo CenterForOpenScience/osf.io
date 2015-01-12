@@ -7,7 +7,7 @@
       <a href="${node['url']}register" class="btn btn-default" type="button">New Registration</a>
     % endif
   </div>
-  <h2>Registrations</h2>
+  <h2 class="text-300">Registrations</h2>
 </div>
 
 % if node["registration_count"]:

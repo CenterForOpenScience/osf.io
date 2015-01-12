@@ -1,4 +1,4 @@
-<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+<nav class="navbar osf-navbar navbar-fixed-top" role="navigation">
     <div class="container">
         <div class="navbar-header">
             <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
@@ -52,13 +52,13 @@
                 </li>
                 <li>
                     <a href="${web_url_for('user_profile')}">
-                        <span rel="tooltip" title="Settings" class="icon-cog hidden-xs"></span>
+                        <span rel="tooltip" title="Settings" class="icon-cog hidden-xs icon-lg"></span>
                         <span class="visible-xs">Settings</span>
                     </a>
                 </li>
                 <li>
                     <a href="${web_url_for('auth_logout')}">
-                        <span rel="tooltip" title="Log&nbsp;out" class="icon-signout hidden-xs"></span>
+                        <span rel="tooltip" title="Log&nbsp;out" class="icon-signout hidden-xs icon-lg"></span>
                         <span class="visible-xs">Log out</span>
                     </a>
                 </li>

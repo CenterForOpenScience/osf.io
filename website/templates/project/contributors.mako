@@ -4,10 +4,12 @@
 <%include file="project/modal_generate_private_link.mako"/>
 <%include file="project/modal_add_contributor.mako"/>
 
+<div class="page-header">
+  <h2 class="text-300">Contributors</h2>
+</div>
+
 <div class="row">
     <div class="col-md-12">
-
-        <h2>Contributors</h2>
             % if 'admin' in user['permissions']:
                 <p>Drag and drop contributors to change listing order.</p>
             % endif
