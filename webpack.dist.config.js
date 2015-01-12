@@ -7,7 +7,7 @@ var staticPath = function(dir) {
     return path.join(root, dir);
 };
 
-SaveAssetsJson = require('assets-webpack-plugin');
+var SaveAssetsJson = require('assets-webpack-plugin');
 
 module.exports = {
     // Split code chunks by page
