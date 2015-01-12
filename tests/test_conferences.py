@@ -156,8 +156,7 @@ class TestProvisionNode(ContextTestCase):
         data.update(kwargs.pop('data', {}))
         return super(TestProvisionNode, self).make_context(data=data, **kwargs)
 
-    @mock.patch('website.conferences.utils.upload_attachments')
-    def test_provision(self, mock_upload):
+    def test_provision(self):
         with self.make_context():
             msg = message.ConferenceMessage()
             utils.provision_node(self.conference, msg, self.node, self.user)
@@ -167,10 +166,8 @@ class TestProvisionNode(ContextTestCase):
         assert_in(self.conference.endpoint, self.node.system_tags)
         assert_in(self.conference.endpoint, self.node.tags)
         assert_not_in('spam', self.node.system_tags)
-        mock_upload.assert_called_with(self.user, self.node, msg.attachments)
 
-    @mock.patch('website.conferences.utils.upload_attachments')
-    def test_provision_private(self, mock_upload):
+    def test_provision_private(self):
         self.conference.public_projects = False
         self.conference.save()
         with self.make_context():
@@ -180,10 +177,8 @@ class TestProvisionNode(ContextTestCase):
         assert_in(self.conference.admins[0], self.node.contributors)
         assert_in('emailed', self.node.system_tags)
         assert_not_in('spam', self.node.system_tags)
-        mock_upload.assert_called_with(self.user, self.node, msg.attachments)
 
-    @mock.patch('website.conferences.utils.upload_attachments')
-    def test_provision_spam(self, mock_upload):
+    def test_provision_spam(self):
         with self.make_context(data={'X-Mailgun-Sscore': message.SSCORE_MAX_VALUE + 1}):
             msg = message.ConferenceMessage()
             utils.provision_node(self.conference, msg, self.node, self.user)
@@ -191,7 +186,6 @@ class TestProvisionNode(ContextTestCase):
         assert_in(self.conference.admins[0], self.node.contributors)
         assert_in('emailed', self.node.system_tags)
         assert_in('spam', self.node.system_tags)
-        mock_upload.assert_called_with(self.user, self.node, msg.attachments)
 
     @mock.patch('website.conferences.utils.requests.put')
     @mock.patch('website.addons.osfstorage.utils.get_waterbutler_upload_url')

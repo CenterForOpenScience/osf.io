@@ -82,8 +82,6 @@ def provision_node(conference, message, node, user):
     if message.is_spam:
         node.system_tags.append('spam')
 
-    upload_attachments(user, node, message.attachments)
-
     node.save()
 
 
