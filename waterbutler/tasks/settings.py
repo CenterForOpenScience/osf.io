@@ -2,13 +2,12 @@ import os
 
 from stevedore import extension
 
-
 try:
-    from waterbutler.settings import TASKS_CONFIG
+    from waterbutler import settings
 except ImportError:
-    TASKS_CONFIG = None
+    settings = {}
 
-config = TASKS_CONFIG or {}
+config = settings.get('TASKS_CONFIG', {})
 
 
 BROKER_URL = config.get('BROKER_URL', 'amqp://{}:{}//'.format(

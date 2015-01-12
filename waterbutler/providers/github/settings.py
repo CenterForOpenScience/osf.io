@@ -1,9 +1,9 @@
 try:
-    from waterbutler.settings import GITHUB_PROVIDER_CONFIG
+    from waterbutler import settings
 except ImportError:
-    GITHUB_PROVIDER_CONFIG = None
+    settings = {}
 
-config = GITHUB_PROVIDER_CONFIG or {}
+config = settings.get('GITHUB_PROVIDER_CONFIG', {})
 
 
 BASE_URL = config.get('BASE_URL', 'https://api.github.com/')

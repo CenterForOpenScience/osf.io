@@ -1,11 +1,11 @@
 import hashlib
 
 try:
-    from waterbutler.settings import OSFSTORAGE_PROVIDER_CONFIG
+    from waterbutler import settings
 except ImportError:
-    OSFSTORAGE_PROVIDER_CONFIG = None
+    settings = {}
 
-config = OSFSTORAGE_PROVIDER_CONFIG or {}
+config = settings.get('OSFSTORAGE_PROVIDER_CONFIG', {})
 
 
 FILE_PATH_PENDING = config.get('FILE_PATH_PENDING', '/tmp/pending')

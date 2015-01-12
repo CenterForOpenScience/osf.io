@@ -1,6 +1,6 @@
 try:
-    from waterbutler.settings import FIGSHARE_PROVIDER_CONFIG
+    from waterbutler import settings
 except ImportError:
-    S3_PROVIDER_CONFIG = {}
+    settings = {}
 
-config = FIGSHARE_PROVIDER_CONFIG or {}
+config = settings.get('FIGSHARE_PROVIDER_CONFIG', {})
