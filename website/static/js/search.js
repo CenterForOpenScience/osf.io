@@ -178,6 +178,7 @@ var ViewModel = function(params) {
     };
 
     self.submit = function() {
+        $('#searchBar').blur().focus();
         self.searchStarted(false);
         self.totalResults(0);
         self.currentPage(1);

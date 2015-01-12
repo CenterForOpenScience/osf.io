@@ -95,33 +95,18 @@ class TestCallbacks(OsfTestCase):
         drop_list = self.node_settings.to_json(self.project.creator)['bucket_list']
         assert_true('Atticus' in drop_list)
 
-    @mock.patch('website.addons.s3.model.serialize_bucket')
-    @mock.patch('website.addons.s3.model.S3Wrapper.from_addon')
-    def test_registration(self, mock_wrapper, mock_bucket):
-        mock_wrapper.return_value = None
-        mock_bucket.return_value = {'Not None': 'None'}
-        fork = ProjectFactory()
-        clone, message = self.node_settings.after_register(
-            self.project, fork, self.project.creator,
-        )
-        assert_true(clone.is_registration)
-
     def test_after_remove_contributor(self):
         self.node_settings.after_remove_contributor(
             self.project, self.project.creator
         )
         assert_equal(self.node_settings.user_settings, None)
 
-    @mock.patch('website.addons.s3.model.serialize_bucket')
-    @mock.patch('website.addons.s3.model.S3Wrapper.from_addon')
-    def test_registration_settings(self, mock_wrapper, mock_bucket):
-        mock_wrapper.return_value = None
-        mock_bucket.return_value = {'Not None': 'None'}
-        fork = ProjectFactory()
+    def test_registration_settings(self):
+        registration = ProjectFactory()
         clone, message = self.node_settings.after_register(
-            self.project, fork, self.project.creator,
+            self.project, registration, self.project.creator,
         )
-        assert_true(clone.user_settings)
+        assert_false(clone.user_settings)
 
     def test_before_register_no_settings(self):
         self.node_settings.user_settings = None
@@ -143,30 +128,6 @@ class TestCallbacks(OsfTestCase):
         self.node_settings.reload()
         assert_true(self.node_settings.user_settings is None)
         assert_true(self.node_settings.bucket is None)
-
-    @mock.patch('website.addons.s3.model.serialize_bucket')
-    @mock.patch('website.addons.s3.model.S3Wrapper.from_addon')
-    def test_after_register_registration_data_none(self, mock_wrapper, mock_bucket):
-        fork = ProjectFactory()
-        mock_wrapper.return_value = None
-        mock_bucket.return_value = {'Not None': 'None'}
-
-        self.node_settings.registration_data = None
-
-        clone, message = self.node_settings.after_register(
-            self.project, fork, self.project.creator,
-        )
-
-        assert_true(isinstance(clone.registration_data, dict))
-
-    @mock.patch('website.addons.s3.model.serialize_bucket')
-    @mock.patch('website.addons.s3.model.S3Wrapper.from_addon')
-    def test_register_and_deauth(self, mock_wrapper, mock_bucket):
-        fork = ProjectFactory()
-        mock_wrapper.return_value = None
-        mock_bucket.return_value = {'Not None': 'None'}
-
-        self.node_settings.deauthorize()
 
     def test_registration_data_and_deauth(self):
         self.node_settings.deauthorize()
