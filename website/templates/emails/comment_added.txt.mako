@@ -1,7 +1,1 @@
-Hello ${name},
-
-    ${commenter} commented on your project "${title}":
-
-        "${content}"
-
-    From the Open Science Framework
+${context_vars['commenter']} commented on your project "${context_vars['title']}": "${context_vars['content']}"
