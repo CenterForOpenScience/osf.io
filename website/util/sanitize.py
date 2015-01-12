@@ -3,7 +3,9 @@ import bleach
 
 #Thank you Lyndsy
 def strip_html(unclean):
-    """Sanitize a string, removing (as opposed to escaping) HTML tags
+    """Sanitize a string, removing (as opposed to escaping) HTML tags.
+    Note that this will also encode strings with HTML entities
+        - e.g.: "This & That" will return "This &amp; That"
 
     :param unclean: A string to be stripped of HTML tags
 
@@ -11,18 +13,6 @@ def strip_html(unclean):
     :rtype: str
     """
     return bleach.clean(unclean, strip=True, tags=[], attributes=[], styles=[])
-
-
-def clean_tag(data):
-    """Format as a valid Tag
-
-    :param data: A string to be cleaned
-
-    :return: cleaned string
-    :rtype: str
-    """
-    #TODO: make this a method of Tag?
-    return escape_html(data).replace('"', '&quot;').replace("'", '')
 
 
 def escape_html(data):

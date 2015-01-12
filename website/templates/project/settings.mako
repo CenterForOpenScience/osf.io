@@ -153,7 +153,7 @@
                     <div class="panel-body">
 
                     % for node_settings_dict in addon_enabled_settings or []:
-                        ${render_node_settings(node_settings_dict)}
+                        ${render_node_settings(node_settings_dict) | n}
 
                             % if not loop.last:
                                 <hr />
@@ -174,11 +174,11 @@
        template_name = "{name}/templates/{name}_node_settings.mako".format(name=data['addon_short_name'])
        tpl = context.lookup.get_template(template_name).render(**data)
     %>
-    ${tpl}
+    ${tpl | n}
 </%def>
 
 % for name, capabilities in addon_capabilities.iteritems():
-    <script id="capabilities-${name}" type="text/html">${capabilities}</script>
+    <script id="capabilities-${name}" type="text/html">${capabilities | n}</script>
 % endfor
 
 <%def name="javascript_bottom()">

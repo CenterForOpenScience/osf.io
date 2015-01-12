@@ -2,16 +2,16 @@
     % if id:
         id="${id}"
     % endif
-    name="${name}" method="${method_string}" ${"action=\""+action_string+"\"" if action_string else ""} class="${form_class}">
+    name="${name}" method="${method_string}" ${"action=\""+action_string+"\"" if action_string else "" | n} class="${form_class}">
     <fieldset>
         % for field in form:
             <div class="form-group">
-                ${field['label']}
+                ${field['label'] | n}
                 <span class="help-block">${ field['description'] }</span>
                 % if html_replacements and (field['id'] in html_replacements):
-                    ${html_replacements[field['id']]}
+                    ${html_replacements[field['id']] | n}
                 % else:
-                    ${field['html']}
+                    ${field['html'] | n}
                 % endif
             </div>
         % endfor

@@ -12,7 +12,6 @@ from tests.factories import (
     AuthUserFactory, NodeWikiFactory,
 )
 
-from framework.forms.utils import sanitize
 from website import settings
 from website.addons.wiki.views import _serialize_wiki_toc, _get_wiki_web_urls, _get_wiki_api_urls
 from website.addons.wiki.model import NodeWikiPage, render_content

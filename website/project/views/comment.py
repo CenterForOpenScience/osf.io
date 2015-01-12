@@ -8,7 +8,6 @@ from modularodm import Q
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
 from framework.auth.utils import privacy_info_handle
-from framework.forms.utils import sanitize
 
 from website import settings
 from website.filters import gravatar
@@ -140,7 +139,6 @@ def add_comment(**kwargs):
     target = resolve_target(node, guid)
 
     content = request.json.get('content').strip()
-    content = sanitize(content)
     if not content:
         raise HTTPError(http.BAD_REQUEST)
     if len(content) > settings.COMMENT_MAXLENGTH:
@@ -199,7 +197,6 @@ def edit_comment(**kwargs):
     comment = kwargs_to_comment(kwargs, owner=True)
 
     content = request.json.get('content').strip()
-    content = sanitize(content)
     if not content:
         raise HTTPError(http.BAD_REQUEST)
     if len(content) > settings.COMMENT_MAXLENGTH:

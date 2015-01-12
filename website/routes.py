@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import httplib as http
+import json
 import os
 
 from flask import send_from_directory
@@ -58,8 +59,8 @@ def get_globals():
         'web_url_for': util.web_url_for,
         'api_url_for': util.api_url_for,
         'sanitize': sanitize,
-        'js_str': lambda x: x.replace("'", r"\'").replace('"', r'\"')
-
+        'js_str': lambda x: x.replace("'", r"\'").replace('"', r'\"'),
+        'json': lambda x: json.dumps(x),
     }
 
 

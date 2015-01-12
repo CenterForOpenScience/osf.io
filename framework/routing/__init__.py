@@ -22,13 +22,18 @@ from website import settings
 
 logger = logging.getLogger(__name__)
 
+MAKO_DEFAULT_FILTERS = [
+    'h',  # Escape HTML entities by default
+]
+
 TEMPLATE_DIR = settings.TEMPLATES_PATH
 _tpl_lookup = TemplateLookup(
     directories=[
         TEMPLATE_DIR,
         os.path.join(settings.BASE_PATH, 'addons/'),
     ],
-    module_directory='/tmp/mako_modules'
+    module_directory='/tmp/mako_modules',
+    default_filters=MAKO_DEFAULT_FILTERS,
 )
 REDIRECT_CODES = [
     http.MOVED_PERMANENTLY,
@@ -193,6 +198,7 @@ def render_mako_string(tpldir, tplname, data):
             lookup=_tpl_lookup,
             input_encoding='utf-8',
             output_encoding='utf-8',
+            default_filters=MAKO_DEFAULT_FILTERS
         )
     # Don't cache in debug mode
     if not app.debug:

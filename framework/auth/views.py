@@ -16,8 +16,14 @@ from framework.exceptions import HTTPError
 from framework.sessions import set_previous_url
 from framework.auth import (login, logout, get_user, DuplicateEmailError)
 from framework.auth.decorators import collect_auth, must_be_logged_in
-from framework.auth.forms import (SignInForm, MergeAccountForm, RegistrationForm,
-        ResetPasswordForm, ForgotPasswordForm, ResendConfirmationForm)
+from framework.auth.forms import (
+    ForgotPasswordForm,
+    MergeAccountForm,
+    RegistrationForm,
+    ResendConfirmationForm,
+    ResetPasswordForm,
+    SignInForm,
+)
 
 import website.settings
 from website import mails
@@ -34,9 +40,11 @@ def reset_password(**kwargs):
 
     user_obj = get_user(verification_key=verification_key)
     if not user_obj:
-        error_data = {'message_short': 'Invalid url.',
+        error_data = {
+            'message_short': 'Invalid url.',
             'message_long': 'The verification key in the URL is invalid or '
-            'has expired.'}
+                            'has expired.',
+        }
         raise HTTPError(400, data=error_data)
 
     if request.method == 'POST' and form.validate():
@@ -76,7 +84,9 @@ def forgot_password():
             )
             status.push_status_message('Reset email sent to {0}'.format(email))
         else:
-            status.push_status_message('Email {email} not found'.format(email=email))
+            status.push_status_message(
+                'Email {email} not found'.format(email=email)
+            )
 
     forms.push_errors_to_status(form.errors)
     return auth_login(forgot_password_form=form)
@@ -88,7 +98,10 @@ def forgot_password():
 
 # TODO: Rewrite async
 @collect_auth
-def auth_login(auth, registration_form=None, forgot_password_form=None, **kwargs):
+def auth_login(auth,
+               registration_form=None,
+               forgot_password_form=None,
+               **kwargs):
     """If GET request, show login page. If POST, attempt to log user in if
     login form passsed; else send forgot password email.
 
@@ -114,7 +127,11 @@ def auth_login(auth, registration_form=None, forgot_password_form=None, **kwargs
             except exceptions.LoginDisabledError:
                 status.push_status_message(language.DISABLED, 'error')
             except exceptions.LoginNotAllowedError:
-                status.push_status_message(language.UNCONFIRMED, 'warning')
+                status.push_status_message(
+                    message=language.UNCONFIRMED,
+                    kind='warning',
+                    safe=True,
+                )
                 # Don't go anywhere
                 return {'next_url': ''}
             except exceptions.PasswordIncorrectError:
@@ -171,7 +188,11 @@ def confirm_email_get(**kwargs):
             user.save()
 
             # Go to settings page
-            status.push_status_message(language.WELCOME_MESSAGE, 'success')
+            status.push_status_message(
+                message=language.WELCOME_MESSAGE,
+                kind='success',
+                safe=True,
+            )
             response = redirect('/settings/')
 
             return framework.auth.authenticate(user, response=response)
@@ -191,8 +212,8 @@ def send_confirm_email(user, email):
     """
     confirmation_url = user.get_confirmation_url(email, external=True)
     mails.send_mail(email, mails.CONFIRM_EMAIL, 'plain',
-        user=user,
-        confirmation_url=confirmation_url)
+                    user=user,
+                    confirmation_url=confirmation_url)
 
 
 def register_user(**kwargs):
@@ -261,7 +282,9 @@ def auth_register_post():
         if user:
             if website.settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
                 send_confirm_email(user, email=user.username)
-                message = language.REGISTRATION_SUCCESS.format(email=user.username)
+                message = language.REGISTRATION_SUCCESS.format(
+                    email=user.username
+                )
                 status.push_status_message(message, 'success')
                 return auth_login(registration_form=form)
             else:
@@ -287,7 +310,7 @@ def resend_confirmation():
                 status_message = 'Email has already been confirmed.'
                 type_ = 'warning'
             else:
-                status_message = 'Resent email to <em>{0}</em>'.format(clean_email)
+                status_message = 'Resent email to {0}'.format(clean_email)
                 type_ = 'success'
             status.push_status_message(status_message, type_)
         else:
@@ -307,9 +330,9 @@ def merge_user_get(**kwargs):
 def merge_user_post(auth, **kwargs):
     '''View for merging an account. Takes either JSON or form data.
 
-    Request data should include a "merged_username" and "merged_password" properties
-    for the account to be merged in.
-    '''
+    Request data should include a "merged_username" and "merged_password"
+    properties for the account to be merged in.
+     '''
     master = auth.user
     if request.json:
         merged_username = request.json.get("merged_username")
@@ -321,25 +344,29 @@ def merge_user_post(auth, **kwargs):
             return merge_user_get(**kwargs)
         master_password = form.user_password.data
         if not master.check_password(master_password):
-            status.push_status_message("Could not authenticate. Please check your username and password.")
+            status.push_status_message("Could not authenticate. Please check "
+                                       "your username and password.")
             return merge_user_get(**kwargs)
         merged_username = form.merged_username.data
         merged_password = form.merged_password.data
     try:
         merged_user = User.find_one(Q("username", "eq", merged_username))
     except NoResultsFound:
-        status.push_status_message("Could not find that user. Please check the username and password.")
+        status.push_status_message("Could not find that user. Please check the "
+                                   "username and password.")
         return merge_user_get(**kwargs)
     if master and merged_user:
         if merged_user.check_password(merged_password):
             master.merge_user(merged_user)
             master.save()
             if request.form:
-                status.push_status_message("Successfully merged {0} with this account".format(merged_username))
+                status.push_status_message("Successfully merged {0} with this "
+                                           "account".format(merged_username))
                 return redirect("/settings/")
             return {"status": "success"}
         else:
-            status.push_status_message("Could not find that user. Please check the username and password.")
+            status.push_status_message("Could not find that user. Please check "
+                                       "the username and password.")
             return merge_user_get(**kwargs)
     else:
         raise HTTPError(http.BAD_REQUEST)

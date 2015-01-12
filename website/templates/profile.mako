@@ -14,7 +14,7 @@
                 url:   '/api/v1/profile/${profile["id"]}/edit/',
                 title: 'Edit Full Name',
                 placement: 'bottom',
-                value: '${profile["fullname"] | js_str}',
+                value: '${profile["fullname"] | n, js_str}',
                 success: function(data) {
                     // Also change the display name in the user info table
                     $(".fullname").text(data['name']);
