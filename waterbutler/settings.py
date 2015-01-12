@@ -17,7 +17,11 @@ except KeyError:
 config = {}
 config_path = os.path.expanduser(config_path)
 if not os.path.exists(config_path):
-    logging.warn('No \'{}\' configuration file found'.format(config_path))
+    logging.warning('No \'{}\' configuration file found'.format(config_path))
 else:
     with open(os.path.expanduser(config_path)) as fp:
         config = json.load(fp)
+
+
+def get(key, default):
+    return config.get(key, default)
