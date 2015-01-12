@@ -1,11 +1,11 @@
 import hashlib
 
 try:
-    from waterbutler.settings import SERVER_CONFIG
+    from waterbutler import settings
 except ImportError:
-    SERVER_CONFIG = None
+    settings = {}
 
-config = SERVER_CONFIG or {}
+config = settings.get('SERVER_CONFIG', {})
 
 
 ADDRESS = config.get('ADDRESS', '127.0.0.1')
