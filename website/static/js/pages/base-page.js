@@ -6,6 +6,8 @@
 
 var $ = require('jquery');
 require('jquery.cookie');
+var NavbarControl = require('../navbarControl.js');
+
 
 var $osf = require('osfHelpers');
 
@@ -42,3 +44,5 @@ if ($(sliderSelector).length > 0 &&
         $.inArray(window.location.pathname, NO_FOOTER_PATHS) === -1) {
     $osf.applyBindings(new SlideInViewModel(), sliderSelector);
 }
+
+new NavbarControl('.osf-nav-wrapper');

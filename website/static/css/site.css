@@ -1792,6 +1792,7 @@ margin-bottom: 0;
 }
 .addon-widget-body {
     padding: 15px;
+    background-color: white;
 }
 .addon-widget-body .list-group-item {
     border: none;
@@ -1811,4 +1812,27 @@ font-weight: 300;
 }
 .text-300 {
     font-weight: 300;
+}
+.osf-search {
+    padding: 15px 0;
+background: #CADBFF;
+margin-top: -20px;
+}
+.osf-search-input {
+    background: none;
+border: none;
+box-shadow: none;
+border-bottom: 1px dotted #FFF;
+border-radius: 0;
+padding: 15px 0;
+font-size: 20px;
+color: #FFF;
+font-weight: 300;
+}
+.osf-search-input:focus {
+    outline : 0 !important;
+    box-shadow: none;
+}
+.osf-search-btn {
+    color: white;
 }
