@@ -130,3 +130,4 @@ CONFERENCE_FAILED = Mail(
 )
 COMMENT_ADDED = Mail('comment_added', subject='${commenter} commented on "${title}".')
 COMMENT_REPLIES = Mail('comment_replies', subject='${commenter} replied to your comment on "${title}".')
+DIGEST = Mail('digest', subject='OSF Email Digest')
