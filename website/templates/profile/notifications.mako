@@ -2,7 +2,6 @@
 <%def name="title()">Notifications</%def>
 <%def name="content()">
 <% import json %>
-<% import website %>
 <h2 class="page-header">Notifications</h2>
 
 <div class="row">
@@ -51,6 +50,7 @@
 </%def>
 
 <%def name="javascript()">
+    <% import website %>
     <script type="text/javascript">
         ${parent.javascript()}
         window.contextVars = $.extend({}, window.contextVars, {'mailingList': '${website.settings.MAILCHIMP_GENERAL_LIST}'});
