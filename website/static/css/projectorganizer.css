@@ -375,3 +375,8 @@ h3.category {
 .po-hover {
     background : #F4F5DF;
 }
+
+.tb-td {
+    height: inherit;
+    padding-top: 4px;
+}

@@ -10,6 +10,7 @@ var waterbutler = require('waterbutler');
 
 var tbOptions;
 
+var tempCounter = 1;
 
 /**
  * Returns custom icons for OSF depending on the type of item
@@ -110,6 +111,9 @@ function _fangornResolveToggle(item) {
         togglePlus = m('i.icon-plus', ' ');
     // check if folder has children whether it's lazyloaded or not.
     if (item.kind === 'folder') {
+        if(!item.data.permissions.view){
+            return '';
+        }
         if (item.open) {
             return toggleMinus;
         }
@@ -168,8 +172,19 @@ function _fangornMouseOverRow(item, event) {
  * @private
  */
 function _fangornUploadProgress(treebeard, file, progress) {
-    var item = treebeard.dropzoneItemCache.children[0],
+    var parent = treebeard.dropzoneItemCache,
+        item,
+        child,
         msgText = 'Uploaded ' + Math.floor(progress) + '%';
+    for(var i = 0; i < parent.children.length; i++) {
+        child = parent.children[i];
+        if(!child.data.tmpID){
+            continue;
+        }
+        if(child.data.tmpID === file.tmpID) {
+            item = child;
+        }
+    }
 
     if (progress < 100) {
         item.notify.update(msgText, 'success', 1, 0);
@@ -192,15 +207,18 @@ function _fangornSending(treebeard, file, xhr, formData) {
     var parentID = treebeard.dropzoneItemCache.id,
         parent = treebeard.dropzoneItemCache,
         configOption,
+        tmpID = tempCounter++;
         blankItem = {       // create a blank item that will refill when upload is finished.
             name : file.name,
             kind : 'file',
             provider : parent.data.provider,
             children : [],
-            data : {}
+            data : {},
+            tmpID : tmpID
         };
+        console.log("TempID", tmpID);
     treebeard.createItem(blankItem, parentID);
-
+    file.tmpID = tmpID;
     var _send = xhr.send;
     xhr.send = function() {
         _send.call(xhr, file);
@@ -270,8 +288,19 @@ function _fangornComplete(treebeard, file) {
  */
 function _fangornDropzoneSuccess(treebeard, file, response) {
     var item,
-        revisedItem;
-    item = treebeard.dropzoneItemCache.children[0];
+        revisedItem,
+        item,
+        child,
+        parent = treebeard.dropzoneItemCache;
+    for(var i = 0; i < parent.children.length; i++) {
+        child = parent.children[i];
+        if(!child.data.tmpID){
+            continue;
+        }
+        if(child.data.tmpID === file.tmpID) {
+            item = child;
+        }
+    }
     // RESPONSES
     // OSF : Object with actionTake : "file_added"
     // DROPBOX : Object; addon : 'dropbox'
@@ -294,8 +323,19 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
  * @private
  */
 function _fangornDropzoneError(treebeard, file, message) {
-    var item = treebeard.dropzoneItemCache.children[0],
+    var item,
+        child,
+        parent = treebeard.dropzoneItemCache,
         msgText = message.message_short || message;
+    for(var i = 0; i < parent.children.length; i++) {
+        child = parent.children[i];
+        if(!child.data.tmpID){
+            continue;
+        }
+        if(child.data.tmpID === file.tmpID) {
+            item = child;
+        }
+    }
     item.notify.type = 'danger';
     item.notify.message = msgText;
     item.notify.col = 1;
@@ -392,7 +432,7 @@ function _fangornResolveLazyLoad(item) {
     return waterbutler.buildTreeBeardMetadata(item);
 }
 
-/**
+/** 
  * Checks if the file being uploaded exists by comparing name of existing children with file name
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
  * @param {Object} file File object that dropzone passes
@@ -400,17 +440,17 @@ function _fangornResolveLazyLoad(item) {
  * @returns {boolean}
  * @private
  */
-function _fangornFileExists(item, file) {
-    var i,
-        child;
-    for (i = 0; i < item.children.length; i++) {
-        child = item.children[i];
-        if (child.kind === 'item' && child.data.name === file.name) {
-            return true;
-        }
-    }
-    return false;
-}
+// function _fangornFileExists(item, file) {
+//     var i,
+//         child;
+//     for (i = 0; i < item.children.length; i++) {
+//         child = item.children[i];
+//         if (child.kind === 'file' && child.data.name === file.name) {
+//             return true;
+//         }
+//     }
+//     return false;
+// }
 
 /**
  * Handles errors in lazyload fetching of items, usually link is wrong
@@ -520,6 +560,9 @@ function _fangornResolveRows(item) {
     var default_columns = [],
         checkConfig = false,
         configOption;
+    // if(!item.data.permissions){
+    //     return;
+    // }
 
     item.css = '';
 
@@ -598,7 +641,7 @@ function _loadTopLevelChildren() {
  * Check Treebeard API for more information
  */
 tbOptions = {
-    rowHeight : 35,         // user can override or get from .tb-row height
+    rowHeight : 30,         // user can override or get from .tb-row height
     showTotal : 15,         // Actually this is calculated with div height, not needed. NEEDS CHECKING
     paginate : false,       // Whether the applet starts with pagination or not.
     paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.
@@ -644,27 +687,23 @@ tbOptions = {
             msgText;
         if (item.data.provider && item.kind === 'folder') {
             if (item.data.permissions.edit) {
-                if (!_fangornFileExists.call(treebeard, item, file)) {
-                    if (item.data.accept && item.data.accept.maxSize) {
-                        size = Math.round(file.size / 10000) / 100;
-                        maxSize = item.data.accept.maxSize;
-                        if (maxSize >= size && file.size > 0) {
-                            return true;
-                        }
-                        if (maxSize < size) {
-                            msgText = 'One of the files is too large (' + size + ' MB). Max file size is ' + item.data.accept.maxSize + ' MB.';
-                            item.notify.update(msgText, 'warning', undefined, 3000);
-                        }
-                        if (size === 0) {
-                            msgText = 'Some files were ignored because they were empty.';
-                            item.notify.update(msgText, 'warning', undefined, 3000);
-                        }
-                        return false;
+                if (item.data.accept && item.data.accept.maxSize) {
+                    size = Math.round(file.size / 10000) / 100;
+                    maxSize = item.data.accept.maxSize;
+                    if (maxSize >= size && file.size > 0) {
+                        return true;
                     }
-                    return true;
+                    if (maxSize < size) {
+                        msgText = 'One of the files is too large (' + size + ' MB). Max file size is ' + item.data.accept.maxSize + ' MB.';
+                        item.notify.update(msgText, 'warning', undefined, 3000);
+                    }
+                    if (size === 0) {
+                        msgText = 'Some files were ignored because they were empty.';
+                        item.notify.update(msgText, 'warning', undefined, 3000);
+                    }
+                    return false;
                 }
-                msgText = 'File already exists.';
-                item.notify.update(msgText, 'warning', 1, 3000);
+                return true;
             } else {
                 msgText = 'You don\'t have permission to upload here';
                 item.notify.update(msgText, 'warning', 1, 3000, 'animated flipInX');
@@ -682,7 +721,7 @@ tbOptions = {
         clickable : '#treeGrid',
         addRemoveLinks: false,
         previewTemplate: '<div></div>',
-        parallelUploads: 1
+        parallelUploads: 10
     },
     resolveIcon : _fangornResolveIcon,
     resolveToggle : _fangornResolveToggle,

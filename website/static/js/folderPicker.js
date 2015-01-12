@@ -191,7 +191,8 @@
         lazyLoadOnLoad : _treebeardLazyLoadOnLoad,
         // Disable uploads
         uploads: false,
-        showFilter : false
+        showFilter : false,
+        resizeColumns : false
     };
 
     function FolderPicker(selector, opts) {
