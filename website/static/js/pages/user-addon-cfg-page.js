@@ -1,6 +1,7 @@
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var osfHelpers = require('osfHelpers');
+var AddonPermissionsTable = require('addon-permissions');
 
 // Set up submission for addon selection form
 var checkedOnLoad = $("#selectAddonsForm input:checked");
@@ -49,3 +50,12 @@ $('#selectAddonsForm').on('submit', function() {
     }
     return false;
 });
+
+addonEnabledSettings = window.contextVars.addonEnabledSettings;
+for (var i=0; i < addonEnabledSettings.length; i++) {
+       var addonName = addonEnabledSettings[i];
+       if (typeof window.contextVars.addonsWithNodes !== "undefined" && addonName in window.contextVars.addonsWithNodes) {
+           AddonPermissionsTable.init(window.contextVars.addonsWithNodes[addonName]['shortName'],
+                                      window.contextVars.addonsWithNodes[addonName]['fullName']);
+   }
+}
