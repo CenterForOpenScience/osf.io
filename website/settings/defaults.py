@@ -51,7 +51,7 @@ COOKIE_NAME = 'osf'
 SECRET_KEY = 'CHANGEME'
 
 # May set these to True in local.py for development
-DEV_MODE = True
+DEV_MODE = False
 DEBUG_MODE = False
 
 
