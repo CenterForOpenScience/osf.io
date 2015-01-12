@@ -5,7 +5,7 @@
 */
 'use strict';
 var Handlebars = require('handlebars');
-var Dropzone = require('../vendor/bower_components/dropzone/downloads/dropzone.js');
+var Dropzone = require('dropzonePatch');
 var Raven = require('raven-js');
 var ko = require('knockout');
 var $ = require('jquery');
