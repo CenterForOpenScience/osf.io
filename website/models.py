@@ -12,14 +12,14 @@ from website.project.model import (
     MailRecord, Comment, PrivateLink, MetaData,
 )
 from website.conferences.model import Conference
-from website.notifications.model import Subscription
+from website.notifications.model import Subscription, DigestNotification
 
 # All models
 MODELS = (
     User, ApiKey, Node, NodeLog,
     Tag, WatchConfig, Session, Guid, MetaSchema, Pointer,
     MailRecord, Comment, PrivateLink, MetaData, Conference,
-    Subscription
+    Subscription, DigestNotification
 )
 
 GUID_MODELS = (User, Node, Comment, MetaData)

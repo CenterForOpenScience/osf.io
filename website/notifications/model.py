@@ -1,5 +1,5 @@
 from modularodm import fields
-from framework.mongo import StoredObject
+from framework.mongo import StoredObject, ObjectId
 
 
 class Subscription(StoredObject):
@@ -9,3 +9,12 @@ class Subscription(StoredObject):
 
     # Notification types
     email_transactional = fields.ForeignField('user', list=True, backref='email_transactional')
+    email_digest = fields.ForeignField('user', list=True, backref='email_digest')
+
+
+class DigestNotification(StoredObject):
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    user_id = fields.StringField()
+    timestamp = fields.DateTimeField()
+    event = fields.StringField()
+    context = fields.DictionaryField()
