@@ -66,7 +66,7 @@ def node_register_template_page(auth, **kwargs):
         payload = node.registered_meta.get(to_mongo(template_name))
         payload = json.loads(payload)
         payload = unprocess_payload(payload)
-        payload = json.dumps(payload)
+
         if node.registered_schema:
             meta_schema = node.registered_schema
         else:
