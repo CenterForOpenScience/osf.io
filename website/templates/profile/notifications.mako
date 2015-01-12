@@ -52,11 +52,13 @@
 
 <%def name="javascript()">
     <script type="text/javascript">
+        ${parent.javascript()}
         window.contextVars = $.extend({}, window.contextVars, {'notificationsSelector': '#selectLists',
                                                                 'mailingList': '${website.settings.MAILCHIMP_GENERAL_LIST}'});
     </script>
 </%def>
 
 <%def name="javascript_bottom()">
+    ${parent.javascript_bottom()}
     <script src="/static/public/js/notifications-config-page.js"></script>
 </%def>
