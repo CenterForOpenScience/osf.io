@@ -30,7 +30,7 @@
                             <input type="checkbox"
                                    data-bind="checked: subscribed"/>
                             <label data-bind="text: list"></label>
-                            <p class="text-muted" style="padding-left: 15px">Receive general notifications</p>
+                            <p class="text-muted" style="padding-left: 15px">Receive general notifications about the OSF every 2-3 weeks.</p>
                         </div>
                         <div class="padded">
                         <button
