@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import httplib
+import functools
 
 import itsdangerous
 from flask import request
@@ -116,6 +117,22 @@ def make_auth(user):
     return {}
 
 
+def restrict_addrs(*addrs):
+    def wrapper(func):
+        @functools.wraps(func)
+        def wrapped(*args, **kwargs):
+            remote = request.remote_addr
+            if remote not in addrs:
+                raise HTTPError(httplib.FORBIDDEN)
+            return func(*args, **kwargs)
+        return wrapped
+    return wrapper
+
+
+restrict_waterbutler = restrict_addrs(*settings.WATERBUTLER_ADDRS)
+
+
+@restrict_waterbutler
 def get_auth(**kwargs):
     try:
         action = request.args['action']
@@ -164,6 +181,7 @@ LOG_ACTION_MAP = {
 
 
 @must_be_signed
+@restrict_waterbutler
 @must_be_valid_project
 def create_waterbutler_log(payload, **kwargs):
     try:

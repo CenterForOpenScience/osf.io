@@ -72,8 +72,9 @@
             title: '${node['title'] | h}',
             id: '${node['id']}',
             urls: {
-                files:'${files_url}',
-                revisions:'${revisions_url}',
+                files: '${files_url}',
+                revisions: '${revisions_url}',
+                download: '${download_url}'
             }
         }
     });
