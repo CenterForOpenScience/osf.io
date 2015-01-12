@@ -9,8 +9,7 @@ import itertools
 import furl
 import requests
 import markupsafe
-
-from flask import request
+import itsdangerous
 
 from modularodm import Q
 from cloudstorm import sign
@@ -20,6 +19,7 @@ from framework.exceptions import HTTPError
 from website import settings as site_settings
 
 from website.util import rubeus
+from website.models import Session
 from website.project.views.file import get_cache_content
 
 from website.addons.osfstorage import model
@@ -170,22 +170,45 @@ def get_filename(version_idx, file_version, file_record):
     )
 
 
-def get_waterbutler_url(*path, **query):
+def get_cookie_for_user(user):
+    sessions = Session.find(
+        Q('data.auth_user_id', 'eq', user._id)
+    ).sort(
+        '-date_modified'
+    )
+    if sessions:
+        session = sessions[0]
+    else:
+        session = Session(data={
+            'auth_user_id': user._id,
+            'auth_user_username': user.username,
+            'auth_user_fullname': user.fullname,
+        })
+        session.save()
+    signer = itsdangerous.Signer(site_settings.SECRET_KEY)
+    return signer.sign(session._id)
+
+
+def get_waterbutler_url(user, *path, **query):
     url = furl.furl(site_settings.WATERBUTLER_URL)
     url.path.segments.extend(path)
     url.args.update({
         'token': '',
         'provider': 'osfstorage',
-        'cookie': request.cookies.get(site_settings.COOKIE_NAME),
+        'cookie': get_cookie_for_user(user),
     })
     url.args.update(query)
     return url.url
 
 
-def get_waterbutler_download_url(version_idx, file_version, file_record):
+def get_waterbutler_download_url(user, version_idx, file_version, file_record):
     nid = file_record.node._id
     path = get_filename(version_idx, file_version, file_record)
-    return get_waterbutler_url('file', nid=nid, path=path)
+    return get_waterbutler_url(user, 'file', nid=nid, path=path)
+
+
+def get_waterbutler_upload_url(user, node, path):
+    return get_waterbutler_url(user, 'file', node._id, path=path)
 
 
 def get_cache_filename(file_version):

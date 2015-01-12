@@ -5,7 +5,7 @@ import mock
 import unittest
 from nose.tools import *  # noqa
 
-from tests.factories import ProjectFactory
+from tests.factories import AuthUserFactory, ProjectFactory
 
 import datetime
 import urlparse
@@ -17,12 +17,15 @@ from cloudstorm import sign
 
 from framework.exceptions import HTTPError
 
+from website.models import Session
 from website.addons.osfstorage.tests import factories
-from website.addons.osfstorage.tests.utils import StorageTestCase
-
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import settings
+
+from website.addons.osfstorage.tests.utils import (
+    StorageTestCase, Delta, AssertDeltas
+)
 
 
 class TestHGridUtils(StorageTestCase):
@@ -78,6 +81,18 @@ class TestHGridUtils(StorageTestCase):
     def test_get_item_kind_invalid(self):
         with assert_raises(TypeError):
             utils.get_item_kind('pizza')
+
+
+class TestGetCookie(StorageTestCase):
+
+    def test_get_cookie(self):
+        user = AuthUserFactory()
+        create_delta = Delta(lambda: Session.find().count(), lambda value: value + 1)
+        with AssertDeltas(create_delta):
+            cookie = utils.get_cookie_for_user(user)
+        get_delta = Delta(lambda: Session.find().count())
+        with AssertDeltas(get_delta):
+            cookie = utils.get_cookie_for_user(user)
 
 
 class TestGetDownloadUrl(StorageTestCase):

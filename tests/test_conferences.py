@@ -194,43 +194,37 @@ class TestProvisionNode(ContextTestCase):
         mock_upload.assert_called_with(self.user, self.node, msg.attachments)
 
     @mock.patch('website.conferences.utils.requests.put')
-    @mock.patch('website.addons.osfstorage.utils.get_upload_url')
+    @mock.patch('website.addons.osfstorage.utils.get_waterbutler_upload_url')
     def test_upload(self, mock_get_url, mock_put):
         mock_get_url.return_value = 'http://queen.com/'
         self.attachment.filename = 'hammer-to-fall'
         self.attachment.content_type = 'application/json'
         utils.upload_attachment(self.user, self.node, self.attachment)
         mock_get_url.assert_called_with(
-            self.node,
             self.user,
-            len(self.content),
-            self.attachment.content_type,
-            self.attachment.filename,
+            self.node,
+            path=self.attachment.filename,
         )
         mock_put.assert_called_with(
             mock_get_url.return_value,
             data=self.content,
-            headers={'Content-Type': self.attachment.content_type},
         )
 
     @mock.patch('website.conferences.utils.requests.put')
-    @mock.patch('website.addons.osfstorage.utils.get_upload_url')
+    @mock.patch('website.addons.osfstorage.utils.get_waterbutler_upload_url')
     def test_upload_no_file_name(self, mock_get_url, mock_put):
         mock_get_url.return_value = 'http://queen.com/'
         self.attachment.filename = ''
         self.attachment.content_type = 'application/json'
         utils.upload_attachment(self.user, self.node, self.attachment)
         mock_get_url.assert_called_with(
-            self.node,
             self.user,
-            len(self.content),
-            self.attachment.content_type,
-            settings.MISSING_FILE_NAME,
+            self.node,
+            path=settings.MISSING_FILE_NAME,
         )
         mock_put.assert_called_with(
             mock_get_url.return_value,
             data=self.content,
-            headers={'Content-Type': self.attachment.content_type},
         )
 
 
