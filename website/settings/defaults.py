@@ -6,7 +6,6 @@ These settings can be overridden in local.py.
 
 import os
 import json
-import hashlib
 
 
 os_env = os.environ
@@ -24,7 +23,6 @@ STATIC_URL_PATH = "/static"
 ROOT = os.path.join(BASE_PATH, '..')
 
 LOAD_BALANCER = False
-PROXY_ADDRS = []
 
 LOG_PATH = os.path.join(APP_PATH, 'logs')
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
@@ -215,8 +213,3 @@ GOOGLE_SITE_VERIFICATION = None
 
 # Pingdom
 PINGDOM_ID = None
-
-DEFAULT_HMAC_SECRET = 'changeme'
-DEFAULT_HMAC_ALGORITHM = hashlib.sha256
-WATERBUTLER_URL = 'http://localhost:7777'
-WATERBUTLER_ADDRS = ['127.0.0.1']
