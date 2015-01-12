@@ -1,7 +1,10 @@
+import datetime
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from model import Subscription
+from model import DigestNotification
 from website import mails
+
 
 # __inti__
 # from ..methods.email import send_email_digest
@@ -48,13 +51,25 @@ def email_transactional(subscribed_users, event, **context):
                 parent_comment=context.get('parent_comment'),
                 title=context.get('title'))
 
+
+def email_digest(subscribed_users, event, **context):
+    for user in subscribed_users:
+        if context.get('commenter') != user.fullname:
+            digest = DigestNotification(timestamp=datetime.datetime.utcnow(),
+                                        event=event,
+                                        user_id=user._id,
+                                        context=context)
+            digest.save()
+
+
 notifications = {
-    'email_transactional': email_transactional
+    'email_transactional': email_transactional,
+    'email_digest': email_digest
 }
 
 email_templates = {
     'Comments': mails.COMMENT_ADDED,
-    'Comment_replies': mails.COMMENT_REPLIES,
+    'Comment_replies': mails.COMMENT_REPLIES
 }
 
 
