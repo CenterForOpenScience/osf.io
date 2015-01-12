@@ -58,6 +58,11 @@
 
 </%def>
 
+<%def name="stylesheets()">
+    ${parent.stylesheets()}
+    <link rel="stylesheet" href="/static/vendor/bower_components/hgrid/dist/hgrid.min.css" />
+</%def>
+
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
     <script type="text/javascript">

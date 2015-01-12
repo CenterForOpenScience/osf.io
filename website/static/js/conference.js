@@ -1,5 +1,8 @@
 var $ = require('jquery');
-var Slick = window.Slick;
+require('../vendor/bower_components/slickgrid/lib/jquery.event.drag-2.2.js');
+require('../vendor/bower_components/slickgrid/slick.core.js');
+require('../vendor/bower_components/slickgrid/slick.grid.js');
+require('../vendor/bower_components/slickgrid/slick.dataview.js');
 
 function titleFormatter(row, cell, value, columnDef, dataContext) {
     return '<a target="_blank" href="' + dataContext.nodeUrl + '">' +
