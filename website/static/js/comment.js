@@ -295,8 +295,8 @@ var CommentModel = function(data, $parent, $root) {
 
     self.rootUrl = ko.computed(function(){
         var url = 'discussions';
-        if (self.page() === 'wiki') {
-            url = url + '/wiki/' + self.rootId();
+        if (self.page() !== 'node') {
+            url = url + '/' + self.page() + '/' + self.rootId();
         }
         return url;
     });

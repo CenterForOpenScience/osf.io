@@ -213,6 +213,7 @@ def github_view_file(auth, **kwargs):
             'id': node._id,
             'title': node.title
         },
+        'file_id': guid._id,
         'file_name': file_name,
         'files_page_url': node.web_url_for('collect_file_trees'),
         'current_sha': current_sha,

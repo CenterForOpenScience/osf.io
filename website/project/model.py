@@ -186,8 +186,8 @@ class Comment(GuidStoredObject):
             comment.rootId = comment.target.rootId
         elif isinstance(comment.target, NodeWikiPage):
             comment.rootId = comment.target.page_name
-        else: # overview comments
-            comment.rootId = comment.node._id
+        else:
+            comment.rootId = comment.target._id
         comment.save()
 
         comment.node.add_log(
