@@ -129,30 +129,6 @@ class TestCallbacks(OsfTestCase):
         assert_true(self.node_settings.user_settings is None)
         assert_true(self.node_settings.bucket is None)
 
-    @mock.patch('website.addons.s3.model.serialize_bucket')
-    @mock.patch('website.addons.s3.model.S3Wrapper.from_addon')
-    def test_after_register_registration_data_none(self, mock_wrapper, mock_bucket):
-        fork = ProjectFactory()
-        mock_wrapper.return_value = None
-        mock_bucket.return_value = {'Not None': 'None'}
-
-        self.node_settings.registration_data = None
-
-        clone, message = self.node_settings.after_register(
-            self.project, fork, self.project.creator,
-        )
-
-        assert_true(isinstance(clone.registration_data, dict))
-
-    @mock.patch('website.addons.s3.model.serialize_bucket')
-    @mock.patch('website.addons.s3.model.S3Wrapper.from_addon')
-    def test_register_and_deauth(self, mock_wrapper, mock_bucket):
-        fork = ProjectFactory()
-        mock_wrapper.return_value = None
-        mock_bucket.return_value = {'Not None': 'None'}
-
-        self.node_settings.deauthorize()
-
     def test_registration_data_and_deauth(self):
         self.node_settings.deauthorize()
         assert_false(self.node_settings.registration_data is None)
