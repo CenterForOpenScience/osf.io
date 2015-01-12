@@ -478,7 +478,9 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         if self.user_settings and self.user_settings.has_auth:
             return (
                 u'Registering {cat} "{title}" will copy the authentication for its '
-                'GitHub add-on to the registered {cat}.'
+                u'GitHub add-on to the registered {cat}. The registered {cat} '
+                u'will only display changes prior to the current state of the '
+                u'GitHub repository.'
             ).format(
                 cat=node.project_or_component,
                 title=node.title,
