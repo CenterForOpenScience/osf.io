@@ -107,7 +107,7 @@ var externals = {
 
 var plugins = [
     // Bundle common code between modules
-    new webpack.optimize.CommonsChunkPlugin('vendor', 'vendor.bundle.js'),
+    new webpack.optimize.CommonsChunkPlugin('vendor', 'vendor.[hash].js'),
     // Bower support
     new webpack.ResolverPlugin(
         new webpack.ResolverPlugin.DirectoryDescriptionFilePlugin('bower.json', ['main'])
@@ -123,9 +123,17 @@ var plugins = [
     }),
 ];
 
+
+var output = {
+    path: './website/static/public/js/',
+    // publicPath: '/static/', // used to generate urls to e.g. images
+    filename: '[name].[chunkhash].js'
+};
+
 module.exports = {
     entry: entry,
     resolve: resolve,
     externals: externals,
-    plugins: plugins
+    plugins: plugins,
+    output: output
 };

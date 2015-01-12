@@ -8,12 +8,8 @@ module.exports = {
     entry: common.entry,
     resolve: common.resolve,
     externals: common.externals,
+    output: common.output,
     debug: true,
-    output: {
-        path: './website/static/public/js/',
-        // publicPath: '/static/', // used to generate urls to e.g. images
-        filename: '[name].[chunkhash].js'
-    },
     plugins: common.plugins.concat([
         new webpack.optimize.DedupePlugin(),
         new webpack.optimize.OccurenceOrderPlugin(),

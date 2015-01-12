@@ -5,12 +5,8 @@ module.exports = {
     entry: common.entry,
     resolve: common.resolve,
     externals: common.externals,
+    output: common.output,
     debug: true,
-    output: {
-        path: './website/static/public/js/',
-        // publicPath: '/static/', // used to generate urls to e.g. images
-        filename: '[name].js'
-    },
     watch: true,
     devtool: 'source-map',
     plugins: common.plugins
