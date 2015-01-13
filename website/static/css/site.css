@@ -1735,7 +1735,7 @@ div.pydocx-center{
 padding-top: 12px;
 padding-bottom: 12px;
 }
-.osf-navbar a:hover, .osf-navbar li > a:hover {
+.osf-navbar a:hover, .osf-navbar li > a:hover, .osf-navbar li.active{
     background: rgba(187, 187, 187, 0.2);
 }
 
@@ -1759,6 +1759,7 @@ min-height:40px;
 .osf-project-navbar li.active, .osf-project-navbar li:hover{
     background-color: #E0E0E0;
 }
+
 .icon-lg {
     font-size: 18px;
 }
@@ -1792,7 +1793,6 @@ margin-bottom: 0;
 }
 .addon-widget-body {
     padding: 15px;
-    background-color: white;
 }
 .addon-widget-body .list-group-item {
     border: none;
@@ -1813,26 +1813,4 @@ font-weight: 300;
 .text-300 {
     font-weight: 300;
 }
-.osf-search {
-    padding: 15px 0;
-background: #CADBFF;
-margin-top: -20px;
-}
-.osf-search-input {
-    background: none;
-border: none;
-box-shadow: none;
-border-bottom: 1px dotted #FFF;
-border-radius: 0;
-padding: 15px 0;
-font-size: 20px;
-color: #FFF;
-font-weight: 300;
-}
-.osf-search-input:focus {
-    outline : 0 !important;
-    box-shadow: none;
-}
-.osf-search-btn {
-    color: white;
-}
+
