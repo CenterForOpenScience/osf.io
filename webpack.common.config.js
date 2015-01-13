@@ -92,7 +92,8 @@ var resolve = {
         'osfLanguage': staticPath('js/osfLanguage.js'),
         'addons': path.join(__dirname, 'website', 'addons'),
         'addonHelper': staticPath('js/addonHelper.js'),
-        'koHelpers': staticPath('js/koHelpers.js')
+        'koHelpers': staticPath('js/koHelpers.js'),
+        'addon-permissions': staticPath('js/addon-permissions.js')
     }
 };
 
