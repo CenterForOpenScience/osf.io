@@ -147,11 +147,6 @@ wss.on('connection', function(client) {
 
 });
 
-// Get list of docs/users as JSON
-app.get('/users', function getUsers(req, res, next) {
-    res.send(docs);
-});
-
 // Lock a document
 app.post('/lock/:id', function lockDoc(req, res, next) {
     locked[req.params.id] = true;
