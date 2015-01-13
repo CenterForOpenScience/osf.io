@@ -2,13 +2,16 @@ import asyncio
 
 import tornado.web
 import tornado.platform.asyncio
+from raven.contrib.tornado import AsyncSentryClient
+
 
 def make_app(debug):
+    from waterbutler import settings
     from waterbutler.server.handlers import crud
     from waterbutler.server.handlers import metadata
     from waterbutler.server.handlers import revisions
 
-    return tornado.web.Application(
+    app = tornado.web.Application(
         [
             (r'/file', crud.CRUDHandler),
             (r'/data', metadata.MetadataHandler),
@@ -16,6 +19,8 @@ def make_app(debug):
         ],
         debug=debug,
     )
+    app.sentry_client = AsyncSentryClient(settings.get('SENTRY_DSN', None))
+    return app
 
 
 def serve():

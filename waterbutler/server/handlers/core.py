@@ -4,6 +4,7 @@ import asyncio
 
 import aiohttp
 import tornado.web
+from raven.contrib.tornado import SentryMixin
 
 from waterbutler.core import utils
 from waterbutler.core import signing
@@ -32,7 +33,7 @@ def list_or_value(value):
 signer = signing.Signer(settings.HMAC_SECRET, settings.HMAC_ALGORITHM)
 
 
-class BaseHandler(tornado.web.RequestHandler):
+class BaseHandler(tornado.web.RequestHandler, SentryMixin):
 
     ACTION_MAP = {}
 
