@@ -55,28 +55,28 @@ def email_transactional(subscribed_users, event, **context):
 def email_digest(subscribed_users, event, **context):
     for user in subscribed_users:
         if context.get('commenter') != user.fullname:
+            message = build_content_from_template(event, **context)
+
             digest = DigestNotification(timestamp=datetime.datetime.utcnow(),
                                         event=event,
                                         user_id=user._id,
-                                        context=context)
+                                        context=message)
             digest.save()
+
+    send_digest()
 
 
 def send_digest():
     grouped_digests = group_digest_notifications_by_user()
 
     for group in grouped_digests:
-        messages = []
-        for notification in group['messageContexts']:
-            item = build_content_from_template(group['event'], notification)
-            messages.append(item)
-
         try:
             user = User.find_one(Q('_id', 'eq', group['user_id']))
         except NoResultsFound:
             # ignore for now, but raise error here
             user = None
 
+        messages = group['messageContexts']
         if user and messages:
             mails.send_mail(
                 to_addr=user.username,
@@ -89,18 +89,17 @@ def group_digest_notifications_by_user():
     return db['digestnotification'].group(
         key={'user_id': 1},
         condition={'timestamp': {'$lt': datetime.datetime.utcnow(), '$gte': datetime.datetime.utcnow()-datetime.timedelta(hours=24)}},
-        initial={'messageContexts': [], 'event': ''},
+        initial={'messageContexts': []},
         reduce=Code("""function(curr, result) {
                             result.messageContexts.push(curr.context);
-                            result.event = curr.event
                     };
                     """))
 
 
-def build_content_from_template(event, context_vars):
+def build_content_from_template(event, **context):
     for key in email_templates.keys():
         if key == event:
-            return email_templates[event].text(context_vars=context_vars)
+            return email_templates[event].text(context_vars=context)
 
 
 notifications = {
