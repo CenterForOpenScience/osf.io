@@ -6,7 +6,7 @@
                     % if has_page:
                        <a href="${node['url']}${short_name}/" class="btn">  <i class="icon icon-external-link"></i> </a>
                    % endif
-                       <span class="btn">  <i class="icon icon-angle-up"></i> </span>
+                       <a href="#" class="btn project-toggle">  <i class="icon icon-angle-up"></i> </a>
 
                 </div>
             </div>

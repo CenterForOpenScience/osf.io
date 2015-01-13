@@ -412,9 +412,9 @@ img.hg-addon-icon {
     font-weight: bold;
 }
 
-.citation-list {
+/*.citation-list {
     display: none;
-}
+}*/
 
 .citation-text {
     text-indent: -3em;
@@ -1740,7 +1740,7 @@ padding-bottom: 12px;
 }
 
 #projectScope {
-    margin-bottom: 40px;
+    margin-top: 40px;
 }
 
 .osf-project-navbar {
@@ -1750,7 +1750,7 @@ left: 0;
 top: 50px;
 background: #EEE;
 z-index: 99;
-box-shadow: 0 0 5px 0px #C7C7C7;
+box-shadow:0 0 9px -1px #838383;
 border-radius: 0;
 border: none;
 min-height:40px;
@@ -1814,3 +1814,13 @@ font-weight: 300;
     font-weight: 300;
 }
 
+.osf-navbar-logo {
+    float: left;
+margin-right: 8px;
+margin-top: -7px;
+}
+
+#projectSubnav .navbar-collapse {
+    padding-left: 0; 
+    padding-right: 0;
+}
