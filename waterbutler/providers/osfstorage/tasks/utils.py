@@ -8,7 +8,7 @@ import subprocess
 
 from celery.utils.log import get_task_logger
 
-from waterbutler.tasks import app
+from waterbutler.tasks import app, client
 from waterbutler.core import exceptions
 
 from waterbutler.providers.osfstorage import settings
@@ -98,10 +98,10 @@ def get_countdown(attempt, init_delay, max_delay, backoff):
     return min(init_delay * multiplier, max_delay)
 
 
-# def capture_retry_message(task):
-#     if not client:
-#         return
-#     client.captureException(extra=vars(task.request))
+def capture_retry_message(task):
+    if not client:
+        return
+    client.captureException(extra=vars(task.request))
 
 
 @contextlib.contextmanager
@@ -110,8 +110,8 @@ def RetryTask(task, attempts, init_delay, max_delay, backoff, warn_idx, error_ty
         yield
     except error_types as exc_value:
         try_count = task.request.retries
-        # if warn_idx is not None and try_count >= warn_idx:
-        #     capture_retry_message(task)
+        if warn_idx is not None and try_count >= warn_idx:
+            capture_retry_message(task)
         countdown = get_countdown(try_count, init_delay, max_delay, backoff)
         task.max_retries = attempts
         raise task.retry(exc=exc_value, countdown=countdown)

@@ -1,5 +1,6 @@
 aiohttp
 git+https://github.com/chrisseto/boto.git#egg=boto
+git+https://github.com/jmcarp/raven-python
 celery
 furl
 invoke
