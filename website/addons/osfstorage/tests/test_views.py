@@ -6,6 +6,7 @@ from nose.tools import *  # noqa
 
 import datetime
 
+from framework.auth.core import Auth
 from website.addons.osfstorage.tests.utils import (
     StorageTestCase, Delta, AssertDeltas
 )
@@ -17,6 +18,7 @@ import furl
 import markupsafe
 
 from website import settings
+from website.util import rubeus
 
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
@@ -63,6 +65,25 @@ class TestHGridViews(StorageTestCase):
                 }
             )
         )
+
+    def test_osf_storage_root(self):
+        auth = Auth(self.project.creator)
+        result = views.osf_storage_root(self.node_settings, auth=auth)
+        node = self.project
+        expected = rubeus.build_addon_root(
+            node_settings=self.node_settings,
+            name='',
+            permissions=auth,
+            urls={
+                'upload': node.api_url_for('osf_storage_request_upload_url'),
+                'fetch': node.api_url_for('osf_storage_hgrid_contents'),
+            },
+            user=auth.user,
+            nodeUrl=node.url,
+            nodeApiUrl=node.api_url,
+        )
+        root = result[0]
+        assert_equal(root, expected)
 
     @mock.patch('website.addons.osfstorage.model.time.time')
     def test_hgrid_contents_pending_one_version_not_expired(self, mock_time):

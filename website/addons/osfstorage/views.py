@@ -434,6 +434,7 @@ def osf_storage_root(node_settings, auth, **kwargs):
             'upload': node.api_url_for('osf_storage_request_upload_url'),
             'fetch': node.api_url_for('osf_storage_hgrid_contents'),
         },
+        user=auth.user,
         nodeUrl=node.url,
         nodeApiUrl=node.api_url,
     )
