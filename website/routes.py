@@ -497,6 +497,31 @@ def make_url_map(app):
         Rule('/user/<uid>/<pid>/claim/email/', 'post',
              project_views.contributor.claim_user_post, json_renderer),
 
+        Rule(
+            [
+                '/profile/gravatar/',
+                '/users/gravatar/',
+                '/profile/gravatar/<size>',
+                '/users/gravatar/<size>',
+            ],
+            'get',
+            profile_views.current_user_gravatar,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/profile/<uid>/gravatar/',
+                '/users/<uid>/gravatar/',
+                '/profile/<uid>/gravatar/<size>',
+                '/users/<uid>/gravatar/<size>',
+            ],
+            'get',
+            profile_views.get_gravatar,
+            json_renderer,
+        ),
+
+
         # Rules for user profile configuration
         Rule('/settings/names/', 'get', profile_views.serialize_names, json_renderer),
         Rule('/settings/names/', 'put', profile_views.unserialize_names, json_renderer),
