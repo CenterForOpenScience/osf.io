@@ -4,7 +4,7 @@ var osfHelpers = require('osfHelpers');
 var AddonPermissionsTable = require('addon-permissions');
 
 // Set up submission for addon selection form
-var checkedOnLoad = $("#selectAddonsForm input:checked");
+var checkedOnLoad = $('#selectAddonsForm input:checked');
 
 // TODO: Refactor into a View Model
 $('#selectAddonsForm').on('submit', function() {
@@ -15,7 +15,7 @@ $('#selectAddonsForm').on('submit', function() {
         formData[$elm.attr('name')] = $elm.is(':checked');
     });
 
-    var unchecked = checkedOnLoad.filter($("#selectAddonsForm input:not(:checked)"));
+    var unchecked = checkedOnLoad.filter($('#selectAddonsForm input:not(:checked)'));
 
     var submit = function() {
         var request = osfHelpers.postJSON('/api/v1/settings/addons/', formData);
@@ -51,11 +51,11 @@ $('#selectAddonsForm').on('submit', function() {
     return false;
 });
 
-addonEnabledSettings = window.contextVars.addonEnabledSettings;
+var addonEnabledSettings = window.contextVars.addonEnabledSettings;
 for (var i=0; i < addonEnabledSettings.length; i++) {
        var addonName = addonEnabledSettings[i];
-       if (typeof window.contextVars.addonsWithNodes !== "undefined" && addonName in window.contextVars.addonsWithNodes) {
-           AddonPermissionsTable.init(window.contextVars.addonsWithNodes[addonName]['shortName'],
-                                      window.contextVars.addonsWithNodes[addonName]['fullName']);
+       if (typeof window.contextVars.addonsWithNodes !== 'undefined' && addonName in window.contextVars.addonsWithNodes) {
+           AddonPermissionsTable.init(window.contextVars.addonsWithNodes[addonName].shortName,
+                                      window.contextVars.addonsWithNodes[addonName].fullName);
    }
 }
