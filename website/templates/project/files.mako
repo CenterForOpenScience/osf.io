@@ -37,7 +37,7 @@ ${parent.stylesheets()}
 <%def name="javascript_bottom()">
 ${parent.javascript_bottom()}
 % for script in tree_js:
-<script type="text/javascript" src="${script}"></script>
+<script type="text/javascript" src="${script | webpack_asset}"></script>
 % endfor
-<script src="/static/public/js/files-page.js"></script>
+<script src=${"/static/public/js/files-page.js" | webpack_asset}></script>
 </%def>

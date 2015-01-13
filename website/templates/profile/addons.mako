@@ -91,15 +91,18 @@
 
 </%def>
 
-<%def name="javascript()">
-    <script src="/static/public/js/addon-permissions.js"></script>
-</%def>
 
 <%def name="javascript_bottom()">
+    <% import json %>
     ${parent.javascript_bottom()}
-    <script src="/static/public/js/user-addon-cfg-page.js"></script>
+
+   <script type="text/javascript">
+        window.contextVars = $.extend({}, window.contextVars, {'addonEnabledSettings': ${json.dumps(addon_enabled_settings)}});
+    </script>
+    <script src="${"/static/public/js/user-addon-cfg-page.js" | webpack_asset}"></script>
+
     ## Webpack bundles
     % for js_asset in addon_js:
-      <script src="${js_asset}"></script>
+      <script src="${js_asset | webpack_asset}"></script>
     % endfor
 </%def>

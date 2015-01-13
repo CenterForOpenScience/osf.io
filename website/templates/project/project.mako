@@ -314,7 +314,7 @@
 ${parent.javascript_bottom()}
 
 % for script in tree_js:
-<script type="text/javascript" src="${script}"></script>
+<script type="text/javascript" src="${script | webpack_asset}"></script>
 % endfor
 
 <script type="text/javascript">
@@ -334,10 +334,10 @@ ${parent.javascript_bottom()}
     });
 </script>
 
-<script src="/static/public/js/project-dashboard.js"></script>
+<script src="${"/static/public/js/project-dashboard.js" | webpack_asset}"></script>
 
 % for asset in addon_widget_js:
-<script src="${asset}"></script>
+<script src="${asset | webpack_asset}"></script>
 % endfor
 
 </%def>
