@@ -1,7 +1,7 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${node['title']} Registrations</%def>
 
-<div class="page-header">
+<div class="page-header  visible-xs">
   <div class="pull-right">
       % if 'admin' in user['permissions'] and node['node_type'] == 'project' and not disk_saving_mode:
       <a href="${node['url']}register" class="btn btn-default" type="button">New Registration</a>

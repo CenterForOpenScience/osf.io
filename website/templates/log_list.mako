@@ -14,7 +14,7 @@
     %endif
         id="logScope">
 
-<div class="components addon-widget-container">
+    <div class="components">
         <div class="addon-widget-header clearfix"> 
             <h4>Recent Activity </h4>
             <div class="pull-right">

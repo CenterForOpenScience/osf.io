@@ -11,7 +11,7 @@
 ##        }
 ##    }'></div>
 
-<div class="page-header">
+<div class="page-header visible-xs">
   <h2 class="text-300">Settings</h2>
 </div>
 
@@ -33,7 +33,7 @@
         </div><!-- end sidebar -->
     </div>
 
-    <div class="col-sm-9 col-md-7">
+    <div class="col-sm-9">
 
         % if 'admin' in user['permissions'] and not node['is_registration']:
 

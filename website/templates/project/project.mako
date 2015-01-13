@@ -152,7 +152,7 @@
 
 <div class="row">
 
-    <div class="col-sm-6">
+    <div class="col-sm-6 osf-dash-col">
 
         % if addons:
 
@@ -204,7 +204,7 @@
         </div>
     </div>
 
-    <div class="col-sm-6">
+    <div class="col-sm-6 osf-dash-col">
 
         <!-- Citations -->
         % if not node['anonymous']:
@@ -250,9 +250,8 @@
 
         %endif
 
-        <hr />
 
-        <div class="logs">
+        <div class="logs addon-widget-container">
             <%include file="log_list.mako"/>
         </div>
 

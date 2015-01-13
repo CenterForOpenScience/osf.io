@@ -3,7 +3,7 @@
     is_project = node['node_type'] == 'project'
 %>
 
-<div id="projectHeader" >
+<div id="projectScope" >
     <header class="subhead" id="overview">
         <nav id="projectSubnav" class="navbar osf-project-navbar" role="navigation">
             <div class="container">
@@ -21,7 +21,7 @@
                 </div>
                 <div class="collapse navbar-collapse project-nav">
                     <ul class="nav navbar-nav">
-                        <li><a href="${node['url']}" style="font-weight:300; font-size:20px"><i class="icon icon-chevron-left"> </i>  ${node['title'] | n}  </a></li>
+                        <li><a href="${node['url']}" style="font-weight:300; font-size:20px"> ${node['title'] | n}  </a></li>
                         <li><a href="${node['url']}files/">Files</a></li>
                         <!-- Add-on tabs -->
                         % for addon in addons_enabled:
@@ -77,20 +77,4 @@
 % endif
 
 
-    <script>
-        ## TODO: Take this out of the mako file. This was a quick fix and likely not to live for very long, but it's not
-        ## the proper way to do it.
-        $(function () {
-            var path = window.location.pathname;
-
-            $(".project-nav a").each(function () {
-                var href = $(this).attr('href');
-                if (path === href ||
-                   (path.indexOf('files') > -1 && href.indexOf('files') > -1) ||
-                   (path.indexOf('wiki') > -1 && href.indexOf('wiki') > -1)) {
-                    $(this).closest('li').addClass('active');
-                }
-            });
-        });
-    </script>
 </div>
