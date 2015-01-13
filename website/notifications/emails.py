@@ -46,12 +46,10 @@ def email_transactional(subscribed_users, event, **context):
             mails.send_mail(
                 to_addr=email,
                 mail=email_templates.get(event),
-                user=user,
                 name=user.fullname,
                 commenter=context.get('commenter'),
-                content=context.get('content'),
-                parent_comment=context.get('parent_comment'),
-                title=context.get('title'))
+                title=context.get('title'),
+                context_vars=context)
 
 
 def email_digest(subscribed_users, event, **context):
@@ -89,11 +87,12 @@ def send_digest():
 
 def group_digest_notifications_by_user():
     return db['digestnotification'].group(
-        key={'user_id': 1, 'event': 1},
+        key={'user_id': 1},
         condition={'timestamp': {'$lt': datetime.datetime.utcnow(), '$gte': datetime.datetime.utcnow()-datetime.timedelta(hours=24)}},
-        initial={'messageContexts': [], 'timestamp': None},
+        initial={'messageContexts': [], 'event': ''},
         reduce=Code("""function(curr, result) {
                             result.messageContexts.push(curr.context);
+                            result.event = curr.event
                     };
                     """))
 
