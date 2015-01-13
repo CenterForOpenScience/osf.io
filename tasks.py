@@ -672,7 +672,7 @@ def webpack(clean=False, watch=False, develop=False):
         args += ['--progress']
     if watch:
         args += ['--watch']
-    config_file = 'webpack.config.js' if develop else 'webpack.prod.config.js'
+    config_file = 'webpack.dev.config.js' if develop else 'webpack.prod.config.js'
     args += ['--config {0}'.format(config_file)]
     command = ' '.join(args)
     run(command, echo=True)

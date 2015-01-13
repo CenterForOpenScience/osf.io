@@ -85,7 +85,7 @@ def load_asset_paths():
 
 asset_paths = load_asset_paths()
 base_static_path = '/static/public/js/'
-def webpack_asset(path):
+def webpack_asset(path, asset_paths=asset_paths):
     """Mako filter that resolves a human-readable asset path to its name on disk
     (which may include the hash of the file).
     """
