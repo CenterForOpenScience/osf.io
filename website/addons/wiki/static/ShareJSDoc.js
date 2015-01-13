@@ -9,6 +9,7 @@ var ShareJSDoc = function(viewModel, url, metadata) {
     editor.getSession().setUseWrapMode(true);   // Wraps text
     editor.renderer.setShowGutter(false);       // Hides line number
     editor.setShowPrintMargin(false);           // Hides print margin
+    editor.commands.removeCommand('showSettingsMenu');  // Disable settings menu
     editor.setReadOnly(true); // Read only until initialized
 
     // Configure connection
