@@ -23,8 +23,8 @@ var ShareJSDoc = function(viewModel, url, metadata) {
         if (!doc.type) {
             doc.create('text');
             viewModel.fetchData(function(response) {
-                editor.setValue(response.wiki_content);
                 doc.attachAce(editor);
+                editor.setValue(response.wiki_content);
                 editor.setReadOnly(false);
             });
         } else {

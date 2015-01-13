@@ -61,7 +61,7 @@
                         </a>
                     <button id="revert-button"
                             class="btn btn-primary"
-                            data-bind="click: revertChanges, enable: changed"
+                            data-bind="click: loadPublished, enable: changed"
                             data-toggle="tooltip"
                             data-placement="top"
                             title="Clicking this button will revert the current draft to the last published version of this wiki."

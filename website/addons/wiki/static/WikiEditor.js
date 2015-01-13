@@ -86,7 +86,7 @@ function ViewModel(url) {
         });
     };
 
-    self.revertChanges = function() {
+    self.loadPublished = function() {
         self.fetchData(function() {
             self.currentText(self.publishedText());
         });
