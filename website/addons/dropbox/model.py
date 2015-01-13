@@ -208,17 +208,20 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
 
     ##### Callback overrides #####
 
-    # def before_register_message(self, node, user):
-    #     """Return warning text to display if user auth will be copied to a
-    #     registration.
-    #     """
-    #     category, title = node.project_or_component, node.title
-    #     if self.user_settings and self.user_settings.has_auth:
-    #         return (u'Registering {category} "{title}" will copy Dropbox add-on '
-    #                 'authentication to the registered {category}.').format(**locals())
-    #
-    # # backwards compatibility
-    # before_register = before_register_message
+    def before_register_message(self, node, user):
+        """Return warning text to display if user auth will be copied to a
+        registration.
+        """
+        category = node.project_or_component
+        if self.user_settings and self.user_settings.has_auth:
+            return (
+                u'The contents of Dropbox add-ons cannot be registered at this time; '
+                u'the Dropbox folder linked to this {category} will not be included '
+                u'as part of this registration.'
+            ).format(**locals())
+
+    # backwards compatibility
+    before_register = before_register_message
 
     def before_fork_message(self, node, user):
         """Return warning text to display if user auth will be copied to a

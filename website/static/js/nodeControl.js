@@ -111,6 +111,7 @@ var ProjectViewModel = function(data) {
     self.dateForked = new osfHelpers.FormattableDate(data.node.forked_date);
     self.watchedCount = ko.observable(data.node.watched_count);
     self.userIsWatching = ko.observable(data.user.is_watching);
+    self.dateRegistered = new osfHelpers.FormattableDate(data.node.registered_date);
     self.inDashboard = ko.observable(data.node.in_dashboard);
     self.dashboard = data.user.dashboard_id;
     self.userCanEdit = data.user.can_edit;
@@ -128,15 +129,15 @@ var ProjectViewModel = function(data) {
     self.watchButtonAction = ko.computed(function() {
         return self.userIsWatching() ? 'Unwatch' : 'Watch';
     });
-    
-    
+
+
     self.canBeOrganized = ko.computed(function(){
             if (self.user.username && (self.nodeIsPublic || self.user.is_contributor)) {
                 return true;
             }
             return false;
         });
-    
+
     // Editable Title and Description
     if (self.userCanEdit) {
         var editableOptions = {
