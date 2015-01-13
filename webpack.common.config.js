@@ -2,6 +2,8 @@ var webpack = require('webpack');
 var path = require('path');
 var fs = require('fs');
 
+var SaveAssetsJson = require('assets-webpack-plugin');
+
 var addons = require('./addons.json');
 var root = path.join(__dirname, 'website', 'static');
 /** Return the absolute path given a path relative to ./website/static */
@@ -122,6 +124,7 @@ var plugins = [
     new webpack.DefinePlugin({
         'define.amd': false
     }),
+    new SaveAssetsJson()
 ];
 
 

@@ -1,8 +1,6 @@
 var webpack = require('webpack');
 var common = require('./webpack.common.config.js');
 
-var SaveAssetsJson = require('assets-webpack-plugin');
-
 module.exports = {
     // Split code chunks by page
     entry: common.entry,
@@ -14,7 +12,6 @@ module.exports = {
         new webpack.optimize.DedupePlugin(),
         new webpack.optimize.OccurenceOrderPlugin(),
         new webpack.optimize.AggressiveMergingPlugin(),
-        new webpack.optimize.UglifyJsPlugin({exclude: /conference(\.\w+)?\.js$/}),
-        new SaveAssetsJson()
-    ]),
+        new webpack.optimize.UglifyJsPlugin({exclude: /conference(\.\w+)?\.js$/})
+    ])
 };
