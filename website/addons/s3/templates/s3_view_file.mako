@@ -53,13 +53,19 @@
 
         </table>
     </div>
-    <script>
-        $script(['/static/js/deleteFile.js'], function() {
-            var urls = {
-                'delete_url': '${delete_url}',
-                'files_page_url': '${files_page_url}'
-            };
-            var deleteFile = new DeleteFile('#s3Scope', urls);
+    <script type="text/javascript">
+        window.contextVars = $.extend(true, {}, window.contextVars, {
+            node: {
+                urls: {
+                    delete_url: '${delete_url}',
+                    files_page_url: '${files_page_url}'
+                    }
+            }
         });
     </script>
+</%def>
+
+<%def name="javascript_bottom()">
+${parent.javascript_bottom()}
+<script src="/static/public/js/s3/file-detail.js"></script>
 </%def>

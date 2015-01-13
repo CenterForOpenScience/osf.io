@@ -35,21 +35,5 @@ ${parent.javascript_bottom()}
 % for script in tree_js:
 <script type="text/javascript" src="${script}"></script>
 % endfor
-<script>
-// Don't show dropped content if user drags outside grid
-window.ondragover = function(e) { e.preventDefault(); };
-window.ondrop = function(e) { e.preventDefault(); };
-
-$script.ready(['rubeus'], function() {
-    var rubeusOpts = {
-        data: nodeApiUrl + 'files/grid/',
-        searchInput: '#fileSearch'
-    };
-    % if disk_saving_mode:
-    rubeusOpts.uploads = false;
-    % endif
-    var filebrowser = new Rubeus('#myGrid', rubeusOpts);
-});
-
-</script>
+<script src="/static/public/js/files-page.js"></script>
 </%def>

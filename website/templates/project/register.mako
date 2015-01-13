@@ -4,9 +4,7 @@
 <legend class="text-center">Register</legend>
 
 % if schema:
-
     <%include file="metadata/register_${str(metadata_version)}.mako" />
-
 % else:
 
     <form role="form">
@@ -35,3 +33,10 @@
     </script>
 
 % endif
+
+<%def name="javascript_bottom()">
+  ${parent.javascript_bottom()}
+  % if schema:
+    <script src="/static/public/js/register_${str(metadata_version)}-page.js"></script>
+  % endif
+</%def>

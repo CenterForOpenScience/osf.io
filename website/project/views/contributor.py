@@ -1,34 +1,35 @@
 # -*- coding: utf-8 -*-
-
 import time
-import httplib as http
 import itertools
-
+import httplib as http
 from collections import Counter
+
 from flask import request
 from modularodm.exceptions import ValidationValueError
 
-from framework.auth import User, get_user, get_current_user, authenticate
-from framework.flask import redirect  # VOL-aware redirect
-from framework import status
-from framework.auth.decorators import collect_auth, must_be_logged_in
-from framework.exceptions import HTTPError
 from framework import forms
-from framework.auth.signals import user_registered
-from framework.auth.forms import SetEmailAndPasswordForm, PasswordForm
+from framework import status
+from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
+from framework.auth import authenticate
+from framework.auth import User, get_user
+from framework.exceptions import HTTPError
+from framework.auth.signals import user_registered
+from framework.auth.decorators import collect_auth, must_be_logged_in
+from framework.auth.forms import PasswordForm, SetEmailAndPasswordForm
 
-from website import mails, language, settings
-from website.project.model import unreg_contributor_added, has_anonymous_link
+from website import mails
+from website import language
+from website import settings
 from website.models import Node
 from website.profile import utils
+from website.project.model import has_anonymous_link
 from website.util import web_url_for, is_json_request
+from website.project.model import unreg_contributor_added
 from website.util.permissions import expand_permissions, ADMIN
+from website.project.decorators import (must_have_permission, must_be_valid_project,
+        must_not_be_registration, must_be_contributor_or_public, must_be_contributor)
 
-from website.project.decorators import (
-    must_not_be_registration, must_be_valid_project, must_be_contributor,
-    must_be_contributor_or_public, must_have_permission,
-)
 
 @collect_auth
 @must_be_valid_project
@@ -154,7 +155,7 @@ def get_most_in_common_contributors(auth, **kwargs):
         if contrib_id not in node_contrib_ids)
 
     active_contribs = itertools.ifilter(
-        lambda c: User.load(c[0]).is_active(),
+        lambda c: User.load(c[0]).is_active,
         contrib_counts.most_common()
     )
 
@@ -163,7 +164,7 @@ def get_most_in_common_contributors(auth, **kwargs):
     contrib_objs = [(User.load(_id), count) for _id, count in limited]
 
     contribs = [
-        utils.add_contributor_json(most_contrib, get_current_user())
+        utils.add_contributor_json(most_contrib, auth.user)
         for most_contrib, count in sorted(contrib_objs, key=lambda t: (-t[1], t[0].fullname))
     ]
     return {'contributors': contribs}
@@ -184,7 +185,7 @@ def get_recently_added_contributors(auth, **kwargs):
 
     # only include active contributors
     active_contribs = itertools.ifilter(
-        lambda c: c.is_active() and c._id not in node.contributors,
+        lambda c: c.is_active and c._id not in node.contributors,
         auth.user.recently_added
     )
 
@@ -192,7 +193,7 @@ def get_recently_added_contributors(auth, **kwargs):
     limited_contribs = itertools.islice(active_contribs, max_results)
 
     contribs = [
-        utils.add_contributor_json(contrib, get_current_user())
+        utils.add_contributor_json(contrib, auth.user)
         for contrib in limited_contribs
     ]
     return {'contributors': contribs}
@@ -516,15 +517,17 @@ def verify_claim_token(user, token, pid):
     return True
 
 
+@collect_auth
 @must_be_valid_project
-def claim_user_registered(**kwargs):
+def claim_user_registered(auth, **kwargs):
     """View that prompts user to enter their password in order to claim
     contributorship on a project.
 
     A user must be logged in.
     """
+    current_user = auth.user
     node = kwargs['node'] or kwargs['project']
-    current_user = get_current_user()
+
     sign_out_url = web_url_for('auth_login', logout=True, next=request.path)
     if not current_user:
         response = redirect(sign_out_url)
@@ -553,7 +556,7 @@ def claim_user_registered(**kwargs):
                 node.replace_contributor(old=unreg_user, new=current_user)
                 node.save()
                 status.push_status_message(
-                    'Success. You are now a contributor to this project.',
+                    'You are now a contributor to this project.',
                     'success')
                 return redirect(node.url)
             else:
@@ -592,7 +595,8 @@ def replace_unclaimed_user_with_registered(user):
             'Successfully claimed contributor.', 'success')
 
 
-def claim_user_form(**kwargs):
+@collect_auth
+def claim_user_form(auth, **kwargs):
     """View for rendering the set password page for a claimed user.
 
     Must have ``token`` as a querystring argument.
@@ -603,7 +607,7 @@ def claim_user_form(**kwargs):
     token = request.form.get('token') or request.args.get('token')
 
     # If user is logged in, redirect to 're-enter password' page
-    if get_current_user():
+    if auth.logged_in:
         return redirect(web_url_for('claim_user_registered',
             uid=uid, pid=pid, token=token))
 
@@ -695,7 +699,6 @@ def claim_user_post(**kwargs):
         else:
             send_claim_email(email, user, node, notify=True)
     # TODO(sloria): Too many assumptions about the request data. Just use
-    # get_current_user?
     elif 'claimerId' in reqdata:  # User is logged in and confirmed identity
         claimer_id = reqdata['claimerId']
         claimer = User.load(claimer_id)

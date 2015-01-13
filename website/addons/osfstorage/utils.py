@@ -123,8 +123,8 @@ def serialize_revision(node, record, version, index):
             'url': version.creator.url,
         },
         'date': (
-            version.date_modified.isoformat()
-            if version.date_modified
+            version.date_created.isoformat()
+            if not version.pending
             else None
         ),
         'downloads': record.get_download_count(version=index),
@@ -208,11 +208,13 @@ def build_callback_urls(node, path):
     finish_url = node.api_url_for('osf_storage_upload_finish_hook', path=path)
     cached_url = node.api_url_for('osf_storage_upload_cached_hook', path=path)
     ping_url = node.api_url_for('osf_storage_upload_ping_hook', path=path)
+    archive_url = node.api_url_for('osf_storage_upload_archived_hook', path=path)
     return {
         'startUrl': ensure_domain(start_url),
         'finishUrl': ensure_domain(finish_url),
         'cachedUrl': ensure_domain(cached_url),
         'pingUrl': ensure_domain(ping_url),
+        'archiveUrl': ensure_domain(archive_url),
     }
 
 
@@ -257,7 +259,7 @@ def get_filename(version_idx, file_version, file_record):
     name, ext = os.path.splitext(file_record.name)
     return u'{name}-{date}{ext}'.format(
         name=name,
-        date=file_version.date_modified.isoformat(),
+        date=file_version.date_created.isoformat(),
         ext=ext,
     )
 
@@ -312,6 +314,7 @@ def render_file(version_idx, file_version, file_record):
             node_settings,
             cache_file_name,
             start_render=True,
+            remote_path=file_obj.path,
             file_content=file_response.content,
             download_url=file_obj.get_download_path(version_idx),
         )

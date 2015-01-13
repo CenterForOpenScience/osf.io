@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 import httplib as http
+import os
 
 from flask import request
 from modularodm import Q
@@ -15,6 +16,7 @@ from framework.mongo.utils import from_mongo
 
 from website import language
 
+from website.util import rubeus
 from website.exceptions import NodeStateError
 from website.project import clean_template_name, new_node, new_private_link
 from website.project.decorators import (
@@ -23,11 +25,12 @@ from website.project.decorators import (
     must_have_permission,
     must_not_be_registration,
 )
+from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, get_pointer_parent
 from website.project.forms import NewNodeForm
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
-from website.views import _render_nodes
+from website.views import _render_nodes, find_dashboard
 from website.profile import utils
 from website.project import new_folder
 from website.util.sanitize import strip_html
@@ -153,6 +156,7 @@ def folder_new_post(auth, nid, **kwargs):
 
 def rename_folder(**kwargs):
     pass
+
 
 @collect_auth
 def add_folder(**kwargs):
@@ -319,11 +323,38 @@ def node_setting(**kwargs):
     rv['addon_enabled_settings'] = addon_enabled_settings
     rv['addon_capabilities'] = settings.ADDON_CAPABILITIES
 
+    rv['addon_js'] = collect_node_config_js(node.get_addons())
+
     rv['comments'] = {
         'level': node.comment_level,
     }
 
     return rv
+
+def collect_node_config_js(addons):
+    """Collect webpack bundles for each of the addons' node-cfg.js modules. Return
+    the URLs for each of the JS modules to be included on the node addons config page.
+
+    :param list addons: List of node's addon config records.
+    """
+    js_modules = []
+    for addon in addons:
+
+        file_path = os.path.join('static',
+                                 'public',
+                                 'js',
+                                 addon.config.short_name,
+                                 'node-cfg.js')
+        js_file = os.path.join(
+            settings.BASE_PATH,
+            file_path,
+        )
+        if os.path.exists(js_file):
+            js_path = os.path.join(
+                '/', file_path
+            )
+            js_modules.append(js_path)
+    return js_modules
 
 
 @must_have_permission('write')
@@ -367,19 +398,28 @@ def configure_comments(**kwargs):
 @must_be_contributor_or_public
 def view_project(**kwargs):
     auth = kwargs['auth']
-    node_to_use = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
     primary = '/api/v1' not in request.path
-    rv = _view_project(node_to_use, auth, primary=primary)
-    rv['addon_capabilities'] = settings.ADDON_CAPABILITIES
-    return rv
+    ret = _view_project(node, auth, primary=primary)
+    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
+    # Collect the URIs to the static assets for addons that have widgets
+    ret['addon_widget_js'] = list(collect_addon_js(
+        node,
+        filename='widget-cfg.js',
+        config_entry='widget'
+    ))
+    ret.update(rubeus.collect_addon_assets(node))
+    return ret
 
-#### Expand/Collapse
+
+# Expand/Collapse
 @must_be_valid_project
 @must_be_contributor_or_public
 def expand(auth, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     node_to_use.expand(user=auth.user)
     return {}, 200, None
+
 
 @must_be_valid_project
 @must_be_contributor_or_public
@@ -388,8 +428,8 @@ def collapse(auth, **kwargs):
     node_to_use.collapse(user=auth.user)
     return {}, 200, None
 
-# Reorder components
 
+# Reorder components
 @must_be_valid_project
 @must_not_be_registration
 @must_have_permission('write')
@@ -590,7 +630,7 @@ def component_remove(**kwargs):
         'url': redirect_url,
     }
 
-#@must_be_valid_project  # injects project
+
 @must_have_permission('admin')
 @must_not_be_registration
 def delete_folder(auth, **kwargs):
@@ -665,6 +705,13 @@ def _view_project(node, auth, primary=False):
     user = auth.user
 
     parent = node.parent_node
+    if user:
+        dashboard = find_dashboard(user)
+        dashboard_id = dashboard._id
+        in_dashboard = dashboard.pointing_at(node._primary_key) is not None
+    else:
+        in_dashboard = False
+        dashboard_id = ''
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     anonymous = has_anonymous_link(node, auth)
     widgets, configs, js, css = _render_addon(node)
@@ -688,6 +735,7 @@ def _view_project(node, auth, primary=False):
             'absolute_url': node.absolute_url,
             'redirect_url': redirect_url,
             'display_absolute_url': node.display_absolute_url,
+            'in_dashboard': in_dashboard,
             'citations': {
                 'apa': node.citation_apa,
                 'mla': node.citation_mla,
@@ -751,6 +799,7 @@ def _view_project(node, auth, primary=False):
             'fullname': user.fullname if user else '',
             'can_comment': node.can_comment(auth),
             'show_wiki_widget': _should_show_wiki_widget(node, user),
+            'dashboard_id': dashboard_id,
         },
         'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
@@ -929,15 +978,15 @@ def get_children(auth, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     if request.args.get('permissions'):
         perm = request.args['permissions'].lower().strip()
-        nodes = [node for node in node_to_use.nodes
-                if perm in node.get_permissions(user) and not node.is_deleted]
+        nodes = [node for node in node_to_use.nodes if perm in node.get_permissions(user) and not node.is_deleted]
     else:
         nodes = [
             node
             for node in node_to_use.nodes
             if not node.is_deleted
         ]
-    return _render_nodes(nodes)
+    return _render_nodes(nodes, auth)
+
 
 @must_be_contributor_or_public
 def get_folder_pointers(**kwargs):
@@ -949,6 +998,7 @@ def get_folder_pointers(**kwargs):
         for node in node_to_use.nodes
         if node is not None and not node.is_deleted and not node.primary
     ]
+
 
 @must_be_contributor_or_public
 def get_forks(**kwargs):
@@ -990,8 +1040,8 @@ def project_generate_private_link_post(auth, **kwargs):
 
     if anonymous and has_public_node:
         status.push_status_message(
-            "Anonymized view-only links <b>DO NOT</b> "
-            "anonymize contributors of public project or component."
+            'Anonymized view-only links <b>DO NOT</b> '
+            'anonymize contributors of public project or component.'
         )
 
     return new_link
@@ -1084,6 +1134,7 @@ def _add_pointers(node, pointers, auth):
     if added:
         node.save()
 
+
 @collect_auth
 def move_pointers(auth):
     """Move pointer from one node to another node.
@@ -1124,6 +1175,7 @@ def move_pointers(auth):
 
     return {}, 200, None
 
+
 @collect_auth
 def add_pointer(auth):
     """Add a single pointer to a node using only JSON parameters
@@ -1142,6 +1194,7 @@ def add_pointer(auth):
         _add_pointers(to_node, [pointer], auth)
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
+
 
 @must_have_permission('write')
 @must_not_be_registration
@@ -1195,6 +1248,7 @@ def remove_pointer(**kwargs):
 
     node.save()
 
+
 @must_be_valid_project  # injects project
 @must_have_permission('write')
 @must_not_be_registration
@@ -1222,6 +1276,7 @@ def remove_pointer_from_folder(pointer_id, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     node.save()
+
 
 @must_be_valid_project  # injects project
 @must_have_permission('write')

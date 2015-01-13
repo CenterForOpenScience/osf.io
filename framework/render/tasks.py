@@ -82,19 +82,11 @@ def _build_rendered_html(file_path, cache_dir, cache_file_name, download_url):
 
 
 def build_rendered_html(file_path, cache_dir, cache_file_name, download_url):
-    """Public wrapper for the rendering task. Override the default Celery ID
-    generation, passing the unique cached path as the `task_id`, to permit
-    checking whether the requested file is already being rendered.
+    """Public wrapper for the rendering task.
     """
     args = (file_path, cache_dir, cache_file_name, download_url)
     if settings.USE_CELERY:
-        # Call task asynchronously
-        task_id = '{0}/{1}'.format(cache_dir, cache_file_name)
-        # Enqueue task if it hasn't already been sent to Rabbit ("PENDING"
-        # means not published to message queue)
-        result = app.AsyncResult(task_id)
-        if result.status == 'PENDING':
-            _build_rendered_html.apply_async(args, task_id=task_id)
+        _build_rendered_html.apply_async(args)
     else:
         # Call task synchronously
         _build_rendered_html(*args)

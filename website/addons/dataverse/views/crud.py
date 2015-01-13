@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import os  # noqa
+import os
 import datetime
 import logging
 import requests
@@ -172,6 +172,7 @@ def dataverse_view_file(node_addon, auth, **kwargs):
 
     if rendered is None:
         filename, content = scrape_dataverse(file_id)
+        _, ext = os.path.splitext(filename)
         download_url = node.api_url_for(
             'dataverse_download_file_proxy', path=file_id
         )
@@ -179,8 +180,9 @@ def dataverse_view_file(node_addon, auth, **kwargs):
             node_addon,
             cache_file_name,
             start_render=True,
+            remote_path=file_obj.file_id + ext,
             file_content=content,
-            download_path=download_url,
+            download_url=download_url,
         )
     else:
         filename, _ = scrape_dataverse(file_id, name_only=True)

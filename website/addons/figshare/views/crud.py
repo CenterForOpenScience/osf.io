@@ -358,6 +358,7 @@ def figshare_view_file(*args, **kwargs):
                 node_settings,
                 cache_file_name,
                 start_render=True,
+                remote_path=filename,
                 file_content=filedata,
                 download_url=download_url,
             )

@@ -59,11 +59,10 @@
 </%def>
 
 <%def name="javascript_bottom()">
+    ${parent.javascript_bottom()}
     <script type="text/javascript">
-        var data = ${data};
-        $script('/static/js/conference.js');
-        $script.ready('conference', function() {
-            new Meeting(data);
-        })
+        window.contextVars = window.contextVars || {};
+        window.contextVars.meetingData = ${data};
     </script>
+    <script src="/static/public/js/conference-page.js"></script>
 </%def>

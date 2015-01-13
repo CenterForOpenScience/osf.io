@@ -1,5 +1,3 @@
-
-
 <div id="dataverseScope" class="scripted">
 
     <h4 class="addon-title">
@@ -144,17 +142,5 @@
                 </button>
             </div>
         </div>
-
-
     </div>
-
 </div>
-
-<script>
-    $script(['/static/addons/dataverse/dataverseNodeConfig.js'], function() {
-        // Endpoint for Dataverse user settings
-        var url = '${node["api_url"] + "dataverse/config/"}';
-        // Start up the DataverseConfig manager
-        var dataverse = new DataverseNodeConfig('#dataverseScope', url);
-    });
-</script>
