@@ -1777,7 +1777,7 @@ min-height:40px;
     margin-bottom: 20px;
 }
 .addon-widget-header {
-    padding: 6px 10px;
+    padding: 0 10px;
     border-bottom: 1px solid #ddd;
     background-color: #efefef;
 }

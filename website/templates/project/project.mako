@@ -236,9 +236,18 @@
 
 
         %if node['tags'] or 'write' in user['permissions']:
-            <div class="tags">
-                <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node['tags']]) if node['tags'] else ''}" />
+         <div class="tags addon-widget-container">
+            <div class="addon-widget-header clearfix"> 
+                <h4>Tags </h4>
+                <div class="pull-right">
+                  <a href="#" class="btn citation-toggle"><i class="icon icon-angle-down"></i></a>
+                </div>
             </div>
+            <div class="addon-widget-body">
+                <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node['tags']]) if node['tags'] else ''}" />
+            </div> 
+        </div>
+
         %endif
 
         <hr />
@@ -258,8 +267,8 @@
             <h4>Components </h4>
             <div class="pull-right">
               % if 'write' in user['permissions'] and not node['is_registration']:
-                    <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
-                    <a class="btn btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
+                    <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
+                    <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
                 % endif
               <span class="btn">  <i class="icon icon-angle-up"></i> </span>
 
