@@ -182,7 +182,7 @@
 
         self.submit = function() {
             //Forces the query value to update in IE
-            $('#searchBar').blur().focus();
+            $('#searchPageFullBar').blur().focus();
 
             self.searchStarted(false);
             self.totalResults(0);

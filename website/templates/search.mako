@@ -9,7 +9,7 @@
         <div class="row">
             <div class="col-md-12">
                 <form class="input-group" data-bind="submit: submit">
-                    <input name="searchBar" type="text" class="form-control" placeholder="Search" data-bind="value: query, hasFocus: true">
+                    <input id="searchPageFullBar" type="text" class="form-control" placeholder="Search" data-bind="value: query, hasFocus: true">
                     <span class="input-group-btn">
                         <button type=button class="btn btn-default" data-bind="click: help"><i class="icon-question"></i></button>
                         <button type=button class="btn btn-default" data-bind="click: submit"><i class="icon-search"></i></button>
