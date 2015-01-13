@@ -92,7 +92,7 @@ MEETING_DATA = {
     },
     'spsp2015': {
         'name': 'SPSP 2015',
-        'info_url': 'http://spspmeeting.org/2015/General-Info.aspx',
+        'info_url': None,
         'logo_url': 'http://spspmeeting.org/CMSPages/SPSPimages/spsp2015banner.jpg',
         'active': True,
         'admins': [
@@ -102,7 +102,7 @@ MEETING_DATA = {
     },
     'aps2015': {
         'name': 'APS 2015',
-        'info_url': 'http://www.psychologicalscience.org/index.php/convention',
+        'info_url': None,
         'logo_url': 'http://www.psychologicalscience.org/images/APS_2015_Banner_990x157.jpg',
         'active': True,
         'admins': [
@@ -112,10 +112,21 @@ MEETING_DATA = {
     },
     'icps2015': {
         'name': 'ICPS 2015',
-        'info_url': 'http://icps.psychologicalscience.org/',
+        'info_url': None,
         'logo_url': 'http://icps.psychologicalscience.org/wp-content/themes/deepblue/images/ICPS_Website-header_990px.jpg',
         'active': True,
         'admins': [
+            'KatyCain526@gmail.com',
+        ],
+        'public_projects': True,
+    },
+    'mpa2015': {
+        'name': 'MPA 2015',
+        'info_url': None,
+        'logo_url': 'http://www.midwesternpsych.org/resources/Pictures/MPA%20logo.jpg',
+        'active': True,
+        'admins': [
+            'mpa@kent.edu',
             'KatyCain526@gmail.com',
         ],
         'public_projects': True,
