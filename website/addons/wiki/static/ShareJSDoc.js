@@ -89,3 +89,5 @@ var ShareJSDoc = function(viewModel, url, metadata) {
     doc.subscribe();
 
 };
+
+module.exports = ShareJSDoc;

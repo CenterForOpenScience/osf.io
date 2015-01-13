@@ -40,7 +40,7 @@ def serialize_user(user, node=None, full=False):
             user, use_ssl=True,
             size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
         ),
-        'active': user.is_active(),
+        'active': user.is_active,
     }
     if node is not None:
         rv.update({
@@ -113,7 +113,7 @@ def add_contributor_json(user, current_user=None):
         'education': education,
         'n_projects_in_common': n_projects_in_common,
         'registered': user.is_registered,
-        'active': user.is_active(),
+        'active': user.is_active,
         'gravatar_url': gravatar(
             user, use_ssl=True,
             size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR

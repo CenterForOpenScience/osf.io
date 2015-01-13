@@ -24,13 +24,14 @@
             var gravatar = $('#profile-gravatar');
         });
     % endif
-    $script(['/static/addons/badges/bake-badges.js'], 'bakery');
-    $script(['/static/addons/badges/badge-popover.js'], 'display');
-    $script(['/static/js/logFeed.js']);
+##    TODO: Make the following modules CommonJS-compatible:
+##    $script(['/static/addons/badges/bake-badges.js'], 'bakery');
+##    $script(['/static/addons/badges/badge-popover.js'], 'display');
 </script>
 % if user['is_profile']:
     <%include file="profile/modal_change_avatar.mako"/>
 % endif
+<script src="/static/public/js/profile-page.js"></script>
 
 </%def>
 
@@ -187,25 +188,24 @@
 <%include file="include/profile/social.mako" />
 <%include file="include/profile/jobs.mako" />
 <%include file="include/profile/schools.mako" />
-
 <script type="text/javascript">
+  (function() {
+      var socialUrls = {
+          crud: '${ api_url_for('serialize_social', uid=profile['id']) }'
+      };
+      var jobsUrls = {
+          crud: '${ api_url_for('serialize_jobs', uid=profile['id']) }'
+      };
+      var schoolsUrls = {
+          crud: '${ api_url_for('serialize_schools', uid=profile['id']) }'
+      };
 
-    $script(['/static/js/profile.js']);
-    $script.ready('profile', function() {
-        var socialUrls = {
-            crud: '${ api_url_for('serialize_social', uid=profile['id']) }'
-        };
-        var jobsUrls = {
-            crud: '${ api_url_for('serialize_jobs', uid=profile['id']) }'
-        };
-        var schoolsUrls = {
-            crud: '${ api_url_for('serialize_schools', uid=profile['id']) }'
-        };
-        var social = new profile.Social('#social', socialUrls, ['edit', 'view']);
-        var jobs = new profile.Jobs('#jobs', jobsUrls, ['edit', 'view']);
-        var schools = new profile.Schools('#schools', schoolsUrls, ['edit', 'view']);
-    });
-
+      window.contextVars = $.extend(true, {}, window.contextVars, {
+          socialUrls: socialUrls,
+          jobsUrls: jobsUrls,
+          schoolsUrls: schoolsUrls
+      });
+  })();
 </script>
 
 </%def>

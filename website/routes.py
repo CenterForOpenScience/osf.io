@@ -21,6 +21,7 @@ from website import util
 from website import settings
 from website import language
 from website.util import sanitize
+from website import landing_pages as landing_page_views
 from website import views as website_views
 from website.assets import env as assets_env
 from website.search import views as search_views
@@ -50,9 +51,7 @@ def get_globals():
         'dev_mode': settings.DEV_MODE,
         'allow_login': settings.ALLOW_LOGIN,
         'status': status.pop_status_messages(),
-        'js_all': assets_env['js'].urls(),
         'css_all': assets_env['css'].urls(),
-        'js_bottom': assets_env['js_bottom'].urls(),
         'domain': settings.DOMAIN,
         'disk_saving_mode': settings.DISK_SAVING_MODE,
         'language': language,
@@ -74,11 +73,27 @@ class OsfWebRenderer(WebRenderer):
 notemplate = OsfWebRenderer('', render_mako_string)
 
 
+# Static files (robots.txt, etc.)
+
 def favicon():
     return send_from_directory(
         settings.STATIC_FOLDER,
         'favicon.ico',
         mimetype='image/vnd.microsoft.icon'
+    )
+
+def robots():
+    """Serves the robots.txt file."""
+    # Allow local robots.txt
+    if os.path.exists(os.path.join(settings.STATIC_FOLDER,
+                                   'robots.local.txt')):
+        robots_file = 'robots.local.txt'
+    else:
+        robots_file = 'robots.txt'
+    return send_from_directory(
+        settings.STATIC_FOLDER,
+        robots_file,
+        mimetype='text/plain'
     )
 
 
@@ -129,8 +144,10 @@ def make_url_map(app):
 
     ])
 
+    # Static files
     process_rules(app, [
         Rule('/favicon.ico', 'get', favicon, json_renderer),
+        Rule('/robots.txt', 'get', robots, json_renderer),
     ])
 
     ### Base ###
@@ -381,6 +398,16 @@ def make_url_map(app):
             '/midas/', '/summit/', '/accountbeta/', '/decline/'
         ], 'get', auth_views.auth_registerbeta, OsfWebRenderer('', render_mako_string)),
 
+        Rule('/login/connected_tools/',
+             'get',
+             landing_page_views.connected_tools,
+             OsfWebRenderer('public/login_landing.mako')),
+
+        Rule('/login/enriched_profile/',
+             'get',
+             landing_page_views.enriched_profile,
+             OsfWebRenderer('public/login_landing.mako')),
+
     ])
 
     ### Profile ###
@@ -416,10 +443,31 @@ def make_url_map(app):
         ),
 
         Rule(
+            '/settings/account/',
+            'get',
+            profile_views.user_account,
+            OsfWebRenderer('profile/account.mako'),
+        ),
+
+        Rule(
+            '/settings/account/password',
+            'post',
+            profile_views.user_account_password,
+            OsfWebRenderer('profile/account.mako'),
+        ),
+
+        Rule(
             '/settings/addons/',
             'get',
             profile_views.user_addons,
             OsfWebRenderer('profile/addons.mako'),
+        ),
+
+        Rule(
+            '/settings/notifications/',
+            'get',
+            profile_views.user_notifications,
+            OsfWebRenderer('profile/notifications.mako'),
         ),
 
     ])
@@ -668,6 +716,9 @@ def make_url_map(app):
             conference_views.meeting_hook,
             json_renderer,
         ),
+        Rule('/mailchimp/hooks/', 'get', profile_views.mailchimp_get_endpoint, json_renderer),
+
+        Rule('/mailchimp/hooks/', 'post', profile_views.sync_data_from_mailchimp, json_renderer),
 
         # Create project, used by projectCreator.js
         Rule('/project/new/', 'post', project_views.node.project_new_post, json_renderer),
@@ -1023,6 +1074,20 @@ def make_url_map(app):
             '/settings/addons/',
             'post',
             profile_views.user_choose_addons,
+            json_renderer,
+        ),
+
+        Rule(
+            '/settings/notifications/',
+            'get',
+            profile_views.user_notifications,
+            json_renderer,
+        ),
+
+        Rule(
+            '/settings/notifications/',
+            'post',
+            profile_views.user_choose_mailing_lists,
             json_renderer,
         ),
 

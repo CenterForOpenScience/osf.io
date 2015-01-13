@@ -95,6 +95,8 @@
   </div>
 </div>
 
+<%def name="javascript_bottom()">
+${parent.javascript_bottom()}
 <script src="/static/vendor/bower_components/ace-builds/src-noconflict/ace.js"></script>
 <script src="/static/vendor/pagedown-ace/Markdown.Converter.js"></script>
 <script src="/static/vendor/pagedown-ace/Markdown.Sanitizer.js"></script>
@@ -110,35 +112,24 @@
 <script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/md5.js"></script>
 
 <script>
-
-    // Toggle tooltips
-    $(function () {
-        $('[data-toggle="tooltip"]').tooltip();
-    });
-
-    $script(['/static/addons/wiki/WikiEditor.js', '/static/addons/wiki/ShareJSDoc.js'], function() {
-        var url = '${urls['api']['content']}';
-
-        // Generate gravatar URL
-        var baseGravatarUrl = 'http://secure.gravatar.com/avatar/';
-        var hash = CryptoJS.MD5('${user_name}'.toLowerCase().trim());
-        var params = '?d=identicon&size=32';
-        var gravatarUrl = baseGravatarUrl + hash + params;
-
-        // Grab user metadata to pass to shareJS
-        var metadata = {
+    window.contextVars = window.contextVars || {};
+    window.contextVars.wiki = {
+        urls: {content: '${urls['api']['content']}'},
+        metadata: {
             registration: true,
             docId: '${sharejs_uuid}',
             userId: '${user_id}',
             userName: '${user_full_name}',
             userUrl: '${user_url}',
-            userGravatar: gravatarUrl,
             sharejsHost: '${sharejs_host}',
             sharejsPort: '${sharejs_port}'
-        };
+        }
+    };
 
-        var wikiEditor = new WikiEditor('.wiki', url);
-        var shareJSDoc = new ShareJSDoc(wikiEditor.viewModel, url, metadata);
+    // Toggle tooltips
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip();
     });
-
 </script>
+<script src="/static/public/js/wiki-edit-page.js"></script>
+</%def>

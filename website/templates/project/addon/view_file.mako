@@ -39,12 +39,13 @@
 
 <%def name="file_versions()"></%def>
 
-<%def name="javascript()">
+<%def name="javascript_bottom()">
+  ${parent.javascript_bottom()}
     % if rendered is None:
         <script type="text/javascript">
-            $script(['/static/js/filerenderer.js'], function() {
-                FileRenderer.start('${render_url}', '#fileRendered');
-            });
+            window.contextVars = window.contextVars || {};
+            window.contextVars.renderURL = '${render_url}';
         </script>
+        <script src="/static/public/js/view-file-page.js"></script>
     % endif
 </%def>

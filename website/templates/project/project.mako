@@ -138,137 +138,43 @@
 <%def name="stylesheets()">
     ${parent.stylesheets()}
     % for style in addon_widget_css:
-        <link rel="stylesheet" href="${style}" />
+    <link rel="stylesheet" href="${style}" />
+    % endfor
+    % for stylesheet in tree_css:
+    <link rel='stylesheet' href='${stylesheet}' type='text/css' />
     % endfor
 </%def>
 
 <%def name="javascript_bottom()">
+<% import json %>
+
 ${parent.javascript_bottom()}
 
-% for script in addon_widget_js:
-    <script type="text/javascript" src="${script}"></script>
+% for script in tree_js:
+<script type="text/javascript" src="${script}"></script>
 % endfor
 
 <script type="text/javascript">
-    $script(['/static/js/logFeed.js'], 'logFeed');
+    // Hack to allow mako variables to be accessed to JS modules
 
-    $('body').on('nodeLoad', function(event, data) {
-       $script.ready('logFeed', function() {
-           var logFeed = new LogFeed('#logScope', nodeApiUrl + 'log/');
-       });
+    window.contextVars = $.extend(true, {}, window.contextVars, {
+        currentUser: {
+            name: '${user_full_name | js_str}',
+            canComment: ${json.dumps(user['can_comment'])},
+            canEdit: ${json.dumps(user['can_edit'])}
+        },
+        node: {
+            hasChildren: ${json.dumps(node['has_children'])},
+            isRegistration: ${json.dumps(node['is_registration'])},
+            tags: ${json.dumps(node['tags'])}
+        }
     });
-
-    ##  NOTE: pointers.js is loaded in project_base.mako
-    $script.ready('pointers', function() {
-       var pointerManager = new Pointers.PointerManager('#addPointer', contextVars.node.title);
-    });
-
-
-    var $comments = $('#comments');
-    var userName = '${user_full_name | js_str}';
-    var canComment = ${'true' if user['can_comment'] else 'false'};
-    var hasChildren = ${'true' if node['has_children'] else 'false'};
-
-    if ($comments.length) {
-
-        $script(['/static/js/commentpane.js', '/static/js/comment.js'], 'comments');
-
-        $script.ready('comments', function () {
-            var timestampUrl = nodeApiUrl + 'comments/timestamps/';
-            var onOpen = function() {
-                var request = $.osf.putJSON(timestampUrl);
-                request.fail(function(xhr, textStatus, errorThrown) {
-                    Raven.captureMessage('Could not update comment timestamp', {
-                        url: timestampUrl,
-                        textStatus: textStatus,
-                        errorThrown: errorThrown
-                    });
-                });
-            }
-            var commentPane = new CommentPane('#commentPane', {onOpen: onOpen});
-            Comment.init('#commentPane', userName, canComment, hasChildren);
-        });
-    }
-
 </script>
 
-## Todo: Move to project.js
-<script>
+<script src="/static/public/js/project-dashboard.js"></script>
 
-    $(document).ready(function() {
-
-        // Tooltips
-        $('[data-toggle="tooltip"]').tooltip();
-
-        // Tag input
-        $('#node-tags').tagsInput({
-            width: "100%",
-            interactive: ${'true' if user["can_edit"] else 'false'},
-            maxChars: 128,
-            onAddTag: function(tag){
-                var url = "${node['api_url']}" + "addtag/" + tag + "/";
-                var request = $.ajax({
-                    url: url,
-                    type: "POST",
-                    contentType: "application/json"
-                });
-                request.fail(function(xhr, textStatus, error) {
-                    Raven.captureMessage('Failed to add tag', {
-                        tag: tag, url: url, textStatus: textStatus, error: error
-                    });
-                })
-            },
-            onRemoveTag: function(tag){
-                var url = "${node['api_url']}" + "removetag/" + tag + "/";
-                var request = $.ajax({
-                    url: url,
-                    type: "POST",
-                    contentType: "application/json"
-                });
-                request.fail(function(xhr, textStatus, error) {
-                    Raven.captureMessage('Failed to remove tag', {
-                        tag: tag, url: url, textStatus: textStatus, error: error
-                    });
-                })
-            }
-        });
-
-        // Limit the maximum length that you can type when adding a tag
-        $('#node-tags_tag').attr("maxlength", "128");
-
-        // Remove delete UI if not contributor
-        % if 'write' not in user['permissions'] or node['is_registration']:
-            $('a[title="Removing tag"]').remove();
-            $('span.tag span').each(function(idx, elm) {
-                $(elm).text($(elm).text().replace(/\s*$/, ''))
-            });
-        % endif
-
-        %if node['is_registration'] and not node['tags']:
-            $('div.tags').remove();
-        %endif
-
-    });
-    $script.ready(['rubeus'], function() {
-        // Since we don't have an Buttons/Status column, we append status messages to the
-        // name column
-        Rubeus.Col.DashboardName = $.extend({}, Rubeus.Col.Name);
-        Rubeus.Col.DashboardName.itemView = function(item) {
-            return Rubeus.Col.Name.itemView(item) + '&nbsp;<span data-status></span>';
-        };
-        var rubeusOpts = {
-            data: nodeApiUrl + 'files/grid/',
-            columns: [Rubeus.Col.DashboardName],
-            width: "100%",
-            height: 600,
-            progBar: '#filetreeProgressBar',
-            searchInput: '#fileSearch'
-        };
-        % if disk_saving_mode:
-          rubeusOpts.uploads = false;
-        % endif
-        var filebrowser = new Rubeus('#myGrid', rubeusOpts);
-    })
-</script>
+% for asset in addon_widget_js:
+<script src="${asset}"></script>
+% endfor
 
 </%def>

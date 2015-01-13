@@ -55,10 +55,18 @@
 
     % endif
 </div>
-    <script>
-        $script(["/static/addons/dataverse/dataverseViewFile.js"], function() {
-            var url = '${urls['info']}';
-            var dataverseFileTable = new DataverseFileTable('#dataverseScope', url);
+    <script type="text/javascript">
+        window.contextVars = $.extend(true, {}, window.contextVars, {
+            node: {
+                urls: {
+                    info: '${urls['info']}'
+                    }
+            }
         });
     </script>
+</%def>
+
+<%def name="javascript_bottom()">
+${parent.javascript_bottom()}
+<script src="/static/public/js/dataverse/file-detail.js"></script>
 </%def>
