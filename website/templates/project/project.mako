@@ -171,10 +171,10 @@ ${parent.javascript_bottom()}
     });
 </script>
 
-<script src=${"/static/public/js/project-dashboard.js" | webpack_asset}></script>
+<script src="${"/static/public/js/project-dashboard.js" | webpack_asset}"></script>
 
 % for asset in addon_widget_js:
-<script src="${asset}"></script>
+<script src="${asset | webpack_asset}"></script>
 % endfor
 
 </%def>
