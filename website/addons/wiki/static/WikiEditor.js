@@ -11,10 +11,12 @@ var Raven = require('raven-js');
 require('bootstrap-editable');
 
 var editor;
+var preview;
 
 ko.bindingHandlers.ace = {
     init: function(element, valueAccessor) {
         editor = ace.edit(element.id);
+        preview = $('#' + element.id + '-preview');
 
         // Updates the view model based on changes to the editor
         editor.getSession().on('change', function () {
@@ -106,9 +108,14 @@ function ViewModel(url) {
 function WikiEditor(selector, url) {
     this.viewModel = new ViewModel(url);
     $.osf.applyBindings(this.viewModel, selector);
-    var converter1 = Markdown.getSanitizingConverter();
-    var editor1 = new Markdown.Editor(converter1);
-    editor1.run(editor);
+    var mdConverter = Markdown.getSanitizingConverter();
+    var mdEditor = new Markdown.Editor(mdConverter);
+    mdEditor.run(editor);
+
+    // The automatic converter has an issue with automatic page scrolling
+    editor.getSession().on('change', function () {
+        preview.html(mdConverter.makeHtml(editor.getValue()));
+    });
 }
 
 module.exports = WikiEditor;
