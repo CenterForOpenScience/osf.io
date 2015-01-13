@@ -564,6 +564,20 @@ class TestFinishHook(HookTestCase):
 
 class TestUploadFile(StorageTestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        super(TestUploadFile, cls).setUpClass()
+        cls._original_max_size = settings.ADDONS_AVAILABLE_DICT['osfstorage'].max_file_size
+        cls._original_high_max_size = settings.ADDONS_AVAILABLE_DICT['osfstorage'].high_max_file_size
+        settings.ADDONS_AVAILABLE_DICT['osfstorage'].high_max_file_size = 2 * 1024 ** 2
+        settings.ADDONS_AVAILABLE_DICT['osfstorage'].max_file_size = 1024 ** 2
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestUploadFile, cls).tearDownClass()
+        settings.ADDONS_AVAILABLE_DICT['osfstorage'].max_file_size = cls._original_max_size
+        settings.ADDONS_AVAILABLE_DICT['osfstorage'].high_max_file_size = cls._original_high_max_size
+
     def setUp(self):
         super(TestUploadFile, self).setUp()
         self.name = u'red-specíal.png'
@@ -621,6 +635,30 @@ class TestUploadFile(StorageTestCase):
         res = self.request_upload_url(
             self.name, size, self.content_type, path='instruments',
             expect_errors=True,
+        )
+        assert_equal(res.status_code, 400)
+
+    @mock.patch('website.addons.osfstorage.utils.get_upload_url')
+    def test_request_upload_url_too_large_with_high_upload_limit(self, mock_get_url):
+        mock_get_url.return_value = 'http://brian.queen.com/'
+        max_size = settings.ADDONS_AVAILABLE_DICT['osfstorage'].max_file_size
+
+        # User has high upload limit
+        self.project.creator.system_tags.append('high_upload_limit')
+        self.project.creator.save()
+
+        size = max_size * 1024 ** 2 + 1
+        res = self.request_upload_url(
+            self.name, size, self.content_type, path='instruments'
+        )
+        assert_equal(res.status_code, 200)
+
+        high_max_size = settings.ADDONS_AVAILABLE_DICT['osfstorage'].high_max_file_size
+
+        size = high_max_size * 1024 ** 2 + 1
+        res = self.request_upload_url(
+            self.name, size, self.content_type, path='instruments2',
+            expect_errors=True
         )
         assert_equal(res.status_code, 400)
 

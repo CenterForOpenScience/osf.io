@@ -30,6 +30,7 @@ from website.addons.osfstorage import settings as osf_storage_settings
 logger = logging.getLogger(__name__)
 
 MEGABYTE = 1024 * 1024
+GIGABYTE = MEGABYTE * 1024
 
 
 @must_be_contributor
@@ -55,7 +56,7 @@ def osf_storage_request_upload_url(auth, node_addon, **kwargs):
             },
         )
     if size > (node_addon.config.max_file_size * MEGABYTE):
-        raise HTTPError(
+        err = HTTPError(
             httplib.BAD_REQUEST,
             data={
                 'message_short': 'File too large.',
@@ -63,6 +64,14 @@ def osf_storage_request_upload_url(auth, node_addon, **kwargs):
                 'the maximum file size limit.',
             },
         )
+        # Certain users may have the 'high_upload_limit' system tag.
+        # These users have a higher upload limit, determined by the
+        # high_max_file_size config value
+        if 'high_upload_limit' in user.system_tags:
+            if size > node_addon.config.high_max_file_size * MEGABYTE:
+                raise err
+        else:
+            raise err
     file_path = os.path.join(path, name)
     return utils.get_upload_url(node, user, size, content_type, file_path)
 
