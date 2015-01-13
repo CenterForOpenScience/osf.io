@@ -2,7 +2,6 @@
 <%def name="title()">Notifications</%def>
 <%def name="content()">
 <% import json %>
-<% import website%>
 <h2 class="page-header">Notifications</h2>
 
 <div class="row">
@@ -48,13 +47,17 @@
             </div>
     </div>
 </div>
+</%def>
 
-<script type="text/javascript">
+<%def name="javascript()">
+    <% import website %>
+    ${parent.javascript()}
+    <script type="text/javascript">
+        window.contextVars = $.extend({}, window.contextVars, {'mailingList': '${website.settings.MAILCHIMP_GENERAL_LIST}'});
+    </script>
+</%def>
 
-    $script(['/static/js/notificationsConfig.js']);
-    $script.ready('NotificationsConfig', function() {
-        var notifications = new NotificationsConfig('#selectLists', '${website.settings.MAILCHIMP_GENERAL_LIST}');
-    });
-</script>
-
+<%def name="javascript_bottom()">
+    ${parent.javascript_bottom()}
+    <script src="/static/public/js/notifications-config-page.js"></script>
 </%def>
