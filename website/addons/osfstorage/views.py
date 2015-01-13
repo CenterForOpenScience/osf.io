@@ -30,7 +30,6 @@ from website.addons.osfstorage import settings as osf_storage_settings
 logger = logging.getLogger(__name__)
 
 MEGABYTE = 1024 * 1024
-GIGABYTE = MEGABYTE * 1024
 
 
 @must_be_contributor
