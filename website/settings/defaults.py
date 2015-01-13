@@ -7,6 +7,7 @@ These settings can be overridden in local.py.
 import os
 import json
 
+
 os_env = os.environ
 
 def parent_dir(path):
