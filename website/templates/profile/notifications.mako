@@ -51,8 +51,8 @@
 
 <%def name="javascript()">
     <% import website %>
+    ${parent.javascript()}
     <script type="text/javascript">
-        ${parent.javascript()}
         window.contextVars = $.extend({}, window.contextVars, {'mailingList': '${website.settings.MAILCHIMP_GENERAL_LIST}'});
     </script>
 </%def>
