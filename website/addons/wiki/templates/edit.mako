@@ -112,6 +112,12 @@ ${parent.javascript_bottom()}
 <script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/md5.js"></script>
 
 <script>
+    // Generate gravatar URL
+    var baseGravatarUrl = 'http://secure.gravatar.com/avatar/';
+    var hash = CryptoJS.MD5('${user_name}'.toLowerCase().trim());
+    var params = '?d=identicon&size=32';
+    var gravatar = baseGravatarUrl + hash + params;
+
     window.contextVars = window.contextVars || {};
     window.contextVars.wiki = {
         urls: {content: '${urls['api']['content']}'},
@@ -122,7 +128,8 @@ ${parent.javascript_bottom()}
             userName: '${user_full_name}',
             userUrl: '${user_url}',
             sharejsHost: '${sharejs_host}',
-            sharejsPort: '${sharejs_port}'
+            sharejsPort: '${sharejs_port}',
+            gravatarUrl: gravatar
         }
     };
 
