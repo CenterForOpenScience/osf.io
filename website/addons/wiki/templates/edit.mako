@@ -2,15 +2,6 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${node['title'] | n} Wiki (Edit)</%def>
 
-<style type="text/css" media="screen">
-    #editor {
-        position: relative;
-        height: 300px;
-        border: solid;
-        border-width: 1px;
-    }
-</style>
-
 <div class="wiki">
     <div class="row">
         <div class="col-sm-3">
@@ -40,7 +31,7 @@
                             </ul>
                         </div>
                     </div>
-                    <div id="editor" class="wmd-input"
+                    <div id="editor" class="wmd-input wiki-editor"
                          data-bind="ace: currentText">Loading. . .</div>
                     <!-- Invisible textarea for form submission -->
                     <textarea name="content" style="visibility: hidden" data-bind="value: currentText"></textarea>

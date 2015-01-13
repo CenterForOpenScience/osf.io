@@ -386,6 +386,14 @@ li.pointer {
     margin-top: 0;
 }
 
+/* Style for Ace wiki editor */
+.wiki-editor {
+    position: relative;
+    height: 300px;
+    border: solid;
+    border-width: 1px;
+}
+
 /* Make wiki images responsive */
 .wiki img{
   vertical-align: middle;
