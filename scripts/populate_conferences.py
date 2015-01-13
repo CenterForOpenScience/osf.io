@@ -122,7 +122,7 @@ MEETING_DATA = {
     },
     'mpa2015': {
         'name': 'MPA 2015',
-        'info_url': 'http://www.midwesternpsych.org/page-1265162',
+        'info_url': None,
         'logo_url': 'http://www.midwesternpsych.org/resources/Pictures/MPA%20logo.jpg',
         'active': True,
         'admins': [
