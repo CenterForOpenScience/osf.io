@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import logging.config
 
 
 PROJECT_NAME = 'waterbutler'
@@ -25,3 +26,8 @@ else:
 
 def get(key, default):
     return config.get(key, default)
+
+
+logging_config = get('LOGGING', None)
+if logging_config:
+    logging.config.dictConfig(logging_config)
