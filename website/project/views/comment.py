@@ -157,7 +157,7 @@ def add_comment(**kwargs):
     comment.save()
 
     notify(uid=target.user._id if is_reply(target) else node._id,
-           event="Comment_replies" if is_reply(target) else "Comments",
+           event="comment_replies" if is_reply(target) else "comments",
            commenter=auth.user.fullname,
            content=content,
            parent_comment=target.content if is_reply(target) else "",
