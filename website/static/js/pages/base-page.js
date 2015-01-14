@@ -6,6 +6,7 @@
 
 var $ = require('jquery');
 require('jquery.cookie');
+require('../crossOrigin.js');
 
 var $osf = require('osfHelpers');
 

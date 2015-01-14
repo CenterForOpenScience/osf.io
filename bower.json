@@ -26,6 +26,8 @@
     "dropzone": "https://github.com/enyo/dropzone.git#master",
     "treebeard": "https://github.com/caneruguz/treebeard.git#develop",
     "jquery.cookie": "~1.4.1",
-    "hgrid": "~0.2.10"
+    "hgrid": "~0.2.10",
+    "uri.js": "~1.14.1",
+    "xhook": "~1.3.0"
   }
 }
