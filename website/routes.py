@@ -42,6 +42,7 @@ def get_globals():
         'user_full_name': user.fullname if user else '',
         'user_id': user._primary_key if user else '',
         'user_url': user.url if user else '',
+        'user_gravatar': profile_views.current_user_gravatar()['gravatar_url'] if user else '',
         'user_api_url': user.api_url if user else '',
         'display_name': get_display_name(user.fullname) if user else '',
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
@@ -58,7 +59,7 @@ def get_globals():
         'web_url_for': util.web_url_for,
         'api_url_for': util.api_url_for,
         'sanitize': sanitize,
-        'js_str': lambda x: x.replace("'", r"\'").replace('"', r'\"')
+        'js_str': lambda x: x.replace("'", r"\'").replace('"', r'\"'),
 
     }
 
