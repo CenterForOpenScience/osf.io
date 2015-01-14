@@ -82,6 +82,7 @@ def favicon():
         mimetype='image/vnd.microsoft.icon'
     )
 
+
 def robots():
     """Serves the robots.txt file."""
     # Allow local robots.txt
@@ -97,7 +98,7 @@ def robots():
     )
 
 
-def goodbye(**kwargs):
+def goodbye():
     # Redirect to dashboard if logged in
     if _get_current_user():
         return redirect(util.web_url_for('dashboard'))
@@ -116,6 +117,8 @@ def make_url_map(app):
         Rule('/<path:_>', ['get', 'post'], HTTPError(http.NOT_FOUND),
              OsfWebRenderer('', render_mako_string)),
         Rule('/api/v1/<path:_>', ['get', 'post'],
+             HTTPError(http.NOT_FOUND), json_renderer),
+        Rule('/api/v1a/<path:_>', ['get', 'post'],
              HTTPError(http.NOT_FOUND), json_renderer),
     ])
 
@@ -156,7 +159,7 @@ def make_url_map(app):
 
         Rule('/dashboard/', 'get', website_views.dashboard, OsfWebRenderer('dashboard.mako')),
         Rule('/reproducibility/', 'get',
-            website_views.reproducibility, OsfWebRenderer('', render_mako_string)),
+             website_views.reproducibility, OsfWebRenderer('', render_mako_string)),
 
         Rule('/about/', 'get', {}, OsfWebRenderer('public/pages/about.mako')),
         Rule('/howosfworks/', 'get', {}, OsfWebRenderer('public/pages/howosfworks.mako')),
@@ -344,7 +347,7 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule('/explore/activity/', 'get', discovery_views.activity,
-            OsfWebRenderer('public/pages/active_nodes.mako')),
+             OsfWebRenderer('public/pages/active_nodes.mako')),
 
     ])
 
@@ -378,21 +381,21 @@ def make_url_map(app):
 
         # TODO: Remove `auth_register_post`
         Rule('/register/', 'post', auth_views.auth_register_post,
-            OsfWebRenderer('public/login.mako')),
+             OsfWebRenderer('public/login.mako')),
         Rule('/api/v1/register/', 'post', auth_views.register_user, json_renderer),
 
         Rule(['/login/', '/account/'], 'get',
-            auth_views.auth_login, OsfWebRenderer('public/login.mako')),
+             auth_views.auth_login, OsfWebRenderer('public/login.mako')),
         Rule('/login/', 'post', auth_views.auth_login,
-            OsfWebRenderer('public/login.mako'), endpoint_suffix='__post'),
+             OsfWebRenderer('public/login.mako'), endpoint_suffix='__post'),
         Rule('/login/first/', 'get', auth_views.auth_login,
-            OsfWebRenderer('public/login.mako'),
-            endpoint_suffix='__first', view_kwargs={'first': True}),
+             OsfWebRenderer('public/login.mako'),
+             endpoint_suffix='__first', view_kwargs={'first': True}),
 
         Rule('/logout/', 'get', auth_views.auth_logout, notemplate),
 
         Rule('/forgotpassword/', 'post', auth_views.forgot_password,
-            OsfWebRenderer('public/login.mako')),
+             OsfWebRenderer('public/login.mako')),
 
         Rule([
             '/midas/', '/summit/', '/accountbeta/', '/decline/'
@@ -417,22 +420,22 @@ def make_url_map(app):
     process_rules(app, [
         Rule('/profile/', 'get', profile_views.profile_view, OsfWebRenderer('profile.mako')),
         Rule('/profile/<uid>/', 'get', profile_views.profile_view_id,
-            OsfWebRenderer('profile.mako')),
+             OsfWebRenderer('profile.mako')),
         Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history,
-            OsfWebRenderer('profile/key_history.mako')),
+             OsfWebRenderer('profile/key_history.mako')),
         Rule('/addons/', 'get', profile_views.profile_addons,
-            OsfWebRenderer('profile/addons.mako')),
+             OsfWebRenderer('profile/addons.mako')),
         Rule(["/user/merge/"], 'get', auth_views.merge_user_get,
-            OsfWebRenderer("merge_accounts.mako")),
+             OsfWebRenderer("merge_accounts.mako")),
         Rule(["/user/merge/"], 'post', auth_views.merge_user_post,
-            OsfWebRenderer("merge_accounts.mako")),
+             OsfWebRenderer("merge_accounts.mako")),
         # Route for claiming and setting email and password.
         # Verification token must be querystring argument
         Rule(['/user/<uid>/<pid>/claim/'], ['get', 'post'],
-            project_views.contributor.claim_user_form, OsfWebRenderer('claim_account.mako')),
+             project_views.contributor.claim_user_form, OsfWebRenderer('claim_account.mako')),
         Rule(['/user/<uid>/<pid>/claim/verify/<token>/'], ['get', 'post'],
-            project_views.contributor.claim_user_registered,
-            OsfWebRenderer('claim_account_registered.mako')),
+             project_views.contributor.claim_user_registered,
+             OsfWebRenderer('claim_account_registered.mako')),
 
 
         Rule(
@@ -482,9 +485,9 @@ def make_url_map(app):
         # Used by profile.html
         Rule('/profile/<uid>/edit/', 'post', profile_views.edit_profile, json_renderer),
         Rule('/profile/<uid>/public_projects/', 'get',
-            profile_views.get_public_projects, json_renderer),
+             profile_views.get_public_projects, json_renderer),
         Rule('/profile/<uid>/public_components/', 'get',
-            profile_views.get_public_components, json_renderer),
+             profile_views.get_public_components, json_renderer),
 
         Rule('/settings/keys/', 'get', profile_views.get_keys, json_renderer),
         Rule('/settings/create_key/', 'post', profile_views.create_user_key, json_renderer),
@@ -492,9 +495,30 @@ def make_url_map(app):
         Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history, json_renderer),
 
         Rule('/profile/<user_id>/summary/', 'get',
-            profile_views.get_profile_summary, json_renderer),
+             profile_views.get_profile_summary, json_renderer),
         Rule('/user/<uid>/<pid>/claim/email/', 'post',
-            project_views.contributor.claim_user_post, json_renderer),
+             project_views.contributor.claim_user_post, json_renderer),
+
+        Rule(
+            [
+                '/profile/gravatar/',
+                '/profile/gravatar/<size>',
+            ],
+            'get',
+            profile_views.current_user_gravatar,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/profile/<uid>/gravatar/',
+                '/profile/<uid>/gravatar/<size>',
+            ],
+            'get',
+            profile_views.get_gravatar,
+            json_renderer,
+        ),
+
 
         # Rules for user profile configuration
         Rule('/settings/names/', 'get', profile_views.serialize_names, json_renderer),
@@ -607,7 +631,7 @@ def make_url_map(app):
 
         # Create a new subproject/component
         Rule('/project/<pid>/newnode/', 'post', project_views.node.project_new_node,
-            OsfWebRenderer('', render_mako_string)),
+             OsfWebRenderer('', render_mako_string)),
 
         Rule([
             '/project/<pid>/key_history/<kid>/',
@@ -618,10 +642,10 @@ def make_url_map(app):
         # Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako')),
 
         Rule('/folder/<nid>', 'get', project_views.node.folder_new,
-            OsfWebRenderer('project/new_folder.mako')),
+             OsfWebRenderer('project/new_folder.mako')),
         Rule('/api/v1/folder/<nid>', 'post', project_views.node.folder_new_post, json_renderer),
         Rule('/project/new/<pid>/beforeTemplate/', 'get',
-            project_views.node.project_before_template, json_renderer),
+             project_views.node.project_before_template, json_renderer),
 
         Rule(
             [
@@ -929,7 +953,7 @@ def make_url_map(app):
 
         # Reorder components
         Rule('/project/<pid>/reorder_components/', 'post',
-                project_views.node.project_reorder_components, json_renderer),
+             project_views.node.project_reorder_components, json_renderer),
 
         # Edit node
         Rule([
@@ -1122,6 +1146,29 @@ def make_url_map(app):
             json_renderer
         ),
     ], prefix='/api/v1')
+
+    process_rules(app, [
+        Rule(
+            [
+                '/users/gravatar/',
+                '/users/gravatar/<size>',
+            ],
+            'get',
+            profile_views.current_user_gravatar,
+            json_renderer, endpoint_suffix='__dord',
+
+        ),
+
+        Rule(
+            [
+                '/users/<uid>/gravatar/',
+                '/users/<uid>/gravatar/<size>',
+            ],
+            'get',
+            profile_views.get_gravatar,
+            json_renderer, endpoint_suffix='__dord',
+        ),
+    ], prefix='/api/v1a')
 
     # Set up static routing for addons
     # NOTE: We use nginx to serve static addon assets in production
