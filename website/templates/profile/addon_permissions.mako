@@ -27,7 +27,16 @@
             <i style="display: none;" id="${addon_short_name}-less" class="icon-double-angle-up icon-large collapse-button"></i>
         </div>
     %endif
-    <script>
-        AddonPermissionsTable.init("${addon_short_name}", "${addon_full_name}");
-    </script>
+        <script>
+            window.contextVars = $.extend(true, {}, window.contextVars, {
+                        'addonsWithNodes': {
+                            "${addon_short_name}": {
+                               'shortName': "${addon_short_name}",
+                               'fullName': "${addon_full_name}"
+                        }
+                    }
+                });
+        </script>
 % endif
+
+
