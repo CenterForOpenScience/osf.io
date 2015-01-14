@@ -495,7 +495,8 @@ class User(GuidStoredObject, AddonModelMixin):
 
         :param str token: The email token to set the expiration for.
         :param datetime expiration: Datetime at which to expire the token. If ``None``, the
-            token will expire after ``settings.EMAIL_TOKEN_EXPIRATION`` hours.
+            token will expire after ``settings.EMAIL_TOKEN_EXPIRATION`` hours. This is only
+            used for testing purposes.
         """
         expiration = expiration or (dt.datetime.utcnow() + dt.timedelta(hours=settings.EMAIL_TOKEN_EXPIRATION))
         self.email_verifications[token]['expiration'] = expiration
@@ -509,16 +510,24 @@ class User(GuidStoredObject, AddonModelMixin):
         self._set_email_token_expiration(token, expiration=expiration)
         return token
 
-    def get_confirmation_token(self, email):
+    def get_confirmation_token(self, email, force=False):
         """Return the confirmation token for a given email.
 
-        :raises: ExpiredTokenError if trying to access a token that is expired.
-        :raises: KeyError if there no token for the email
+        :param str email: Email to get the token for.
+        :param bool force: If an expired token exists for the given email, generate a new
+            token and return that token.
+
+        :raises: ExpiredTokenError if trying to access a token that is expired and force=False.
+        :raises: KeyError if there no token for the email.
         """
         for token, info in self.email_verifications.items():
             if info['email'].lower() == email.lower():
                 if info['expiration'] < dt.datetime.utcnow():
-                    raise ExpiredTokenError('Token for email "{0}" is expired'.format(email))
+                    if not force:
+                        raise ExpiredTokenError('Token for email "{0}" is expired'.format(email))
+                    else:
+                        new_token = self.add_email_verification(email)
+                        return new_token
                 return token
         raise KeyError('No confirmation token for email "{0}"'.format(email))
 

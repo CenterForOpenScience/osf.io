@@ -307,16 +307,32 @@ class TestUser(OsfTestCase):
         assert_equal(u.get_confirmation_token('fOo@bar.com'), '12345')
 
     @mock.patch('website.security.random_string')
-    def test_get_confirmation_token_when_token_is_expired(self, random_string):
+    def test_get_confirmation_token_when_token_is_expired_raises_error(self, random_string):
         random_string.return_value = '12345'
         u = UserFactory()
-
         # Make sure token is already expired
         expiration = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
         u.add_email_verification('foo@bar.com', expiration=expiration)
 
         with assert_raises(ExpiredTokenError):
             u.get_confirmation_token('foo@bar.com')
+
+    @mock.patch('website.security.random_string')
+    def test_get_confirmation_token_when_token_is_expired_force(self, random_string):
+        random_string.return_value = '12345'
+        u = UserFactory()
+        # Make sure token is already expired
+        expiration = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
+        u.add_email_verification('foo@bar.com', expiration=expiration)
+
+        # sanity check
+        with assert_raises(ExpiredTokenError):
+            u.get_confirmation_token('foo@bar.com')
+
+        random_string.return_value = '54321'
+
+        token = u.get_confirmation_token('foo@bar.com', force=True)
+        assert_equal(token, '54321')
 
     @mock.patch('website.security.random_string')
     def test_get_confirmation_url(self, random_string):
