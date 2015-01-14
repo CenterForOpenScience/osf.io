@@ -13,6 +13,8 @@ profile editing.
 - Email confirmation tokens expire after 24 hours.
 - Lots of refactoring to the conference email submission service.
 - Various minor UI fixes.
+- Developers: Update stale requirements: celery, bleach, furl,
+elasticsearch.py.
 
 0.22.0 (2014-12-17)
 ===================
