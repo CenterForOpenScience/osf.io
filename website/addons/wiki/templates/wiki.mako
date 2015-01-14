@@ -19,3 +19,8 @@
         % endif
     </div>
 </div>
+
+<%def name="javascript_bottom()">
+${parent.javascript_bottom()}
+<script src="${'/static/public/js/wiki-view-page.js' | webpack_asset}"></script>
+</%def>
