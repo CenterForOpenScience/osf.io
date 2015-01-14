@@ -4,13 +4,6 @@ from modularodm.exceptions import NoResultsFound
 from model import Subscription
 from model import DigestNotification
 from website import mails
-from framework.auth.core import User
-from framework.mongo import database as db
-from bson.code import Code
-
-# __inti__
-# from ..methods.email import send_email_digest
-# from ..methods.text import send_text_message
 
 
 def notify(uid, event, **context):
@@ -62,38 +55,6 @@ def email_digest(subscribed_users, event, **context):
                                         user_id=user._id,
                                         context=message)
             digest.save()
-
-    send_digest()
-
-
-def send_digest():
-    grouped_digests = group_digest_notifications_by_user()
-
-    for group in grouped_digests:
-        try:
-            user = User.find_one(Q('_id', 'eq', group['user_id']))
-        except NoResultsFound:
-            # ignore for now, but raise error here
-            user = None
-
-        messages = group['messageContexts']
-        if user and messages:
-            mails.send_mail(
-                to_addr=user.username,
-                mail=email_templates.get('Digest'),
-                name=user.fullname,
-                content=messages)
-
-
-def group_digest_notifications_by_user():
-    return db['digestnotification'].group(
-        key={'user_id': 1},
-        condition={'timestamp': {'$lt': datetime.datetime.utcnow(), '$gte': datetime.datetime.utcnow()-datetime.timedelta(hours=24)}},
-        initial={'messageContexts': []},
-        reduce=Code("""function(curr, result) {
-                            result.messageContexts.push(curr.context);
-                    };
-                    """))
 
 
 def build_content_from_template(event, **context):
