@@ -46,7 +46,7 @@
     <a href="#changeAvatarModal" data-toggle="modal">
         % if user['is_profile']:
             <img id='profile-gravatar' src="${profile['gravatar_url']}"
-                rel="tooltip" title="click to change avatar"/>
+                    rel="tooltip" title="Click to change avatar"/>
         % else:
              <img id='profile-gravatar' src="${profile['gravatar_url']}"/>
         % endif

@@ -13,6 +13,8 @@ var $osf = require('osfHelpers');
 // can be used
 $osf.applyBindings({}, '#navbarScope');
 
+$('[rel="tooltip"]').tooltip();
+
 // If there isn't a user logged in, show the footer slide-in
 var sliderSelector = '#footerSlideIn';
 var SlideInViewModel = function (){
