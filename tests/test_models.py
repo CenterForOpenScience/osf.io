@@ -306,9 +306,7 @@ class TestUser(OsfTestCase):
         assert_equal(u.get_confirmation_token('foo@bar.com'), '12345')
         assert_equal(u.get_confirmation_token('fOo@bar.com'), '12345')
 
-    @mock.patch('website.security.random_string')
-    def test_get_confirmation_token_when_token_is_expired_raises_error(self, random_string):
-        random_string.return_value = '12345'
+    def test_get_confirmation_token_when_token_is_expired_raises_error(self):
         u = UserFactory()
         # Make sure token is already expired
         expiration = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
@@ -341,6 +339,33 @@ class TestUser(OsfTestCase):
         u.add_email_verification('foo@bar.com')
         assert_equal(u.get_confirmation_url('foo@bar.com'),
                 '{0}confirm/{1}/{2}/'.format(settings.DOMAIN, u._primary_key, 'abcde'))
+
+    def test_get_confirmation_url_when_token_is_expired_raises_error(self):
+        u = UserFactory()
+        # Make sure token is already expired
+        expiration = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
+        u.add_email_verification('foo@bar.com', expiration=expiration)
+
+        with assert_raises(ExpiredTokenError):
+            u.get_confirmation_url('foo@bar.com')
+
+    @mock.patch('website.security.random_string')
+    def test_get_confirmation_url_when_token_is_expired_force(self, random_string):
+        random_string.return_value = '12345'
+        u = UserFactory()
+        # Make sure token is already expired
+        expiration = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
+        u.add_email_verification('foo@bar.com', expiration=expiration)
+
+        # sanity check
+        with assert_raises(ExpiredTokenError):
+            u.get_confirmation_token('foo@bar.com')
+
+        random_string.return_value = '54321'
+
+        url = u.get_confirmation_url('foo@bar.com', force=True)
+        expected = '{0}confirm/{1}/{2}/'.format(settings.DOMAIN, u._primary_key, '54321')
+        assert_equal(url, expected)
 
     def test_confirm_primary_email(self):
         u = UserFactory.build(username='foo@bar.com')

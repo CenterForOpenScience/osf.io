@@ -531,14 +531,14 @@ class User(GuidStoredObject, AddonModelMixin):
                 return token
         raise KeyError('No confirmation token for email "{0}"'.format(email))
 
-    def get_confirmation_url(self, email, external=True):
+    def get_confirmation_url(self, email, external=True, force=False):
         """Return the confirmation url for a given email.
 
         :raises: ExpiredTokenError if trying to access a token that is expired.
         :raises: KeyError if there is no token for the email.
         """
         base = settings.DOMAIN if external else '/'
-        token = self.get_confirmation_token(email)
+        token = self.get_confirmation_token(email, force=force)
         return "{0}confirm/{1}/{2}/".format(base, self._primary_key, token)
 
     def verify_confirmation_token(self, token):
