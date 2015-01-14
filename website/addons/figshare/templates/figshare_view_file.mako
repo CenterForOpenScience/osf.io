@@ -84,5 +84,5 @@ $('#figsharePublishArticle').on('click', function(){
 
 <%def name="javascript_bottom()">
 ${parent.javascript_bottom()}
-<script src="/static/public/js/figshare/file-detail.js"></script>
+<script src=${"/static/public/js/figshare/file-detail.js" | webpack_asset}></script>
 </%def>

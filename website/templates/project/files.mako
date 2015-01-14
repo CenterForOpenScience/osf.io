@@ -1,6 +1,10 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${node['title']} Files</%def>
 
+<div class="page-header  visible-xs">
+  <h2 class="text-300">Files</h2>
+</div>
+
 <div class="row">
 <div class="col-md-8">
     <div class='help-block'>
@@ -33,7 +37,7 @@ ${parent.stylesheets()}
 <%def name="javascript_bottom()">
 ${parent.javascript_bottom()}
 % for script in tree_js:
-<script type="text/javascript" src="${script}"></script>
+<script type="text/javascript" src="${script | webpack_asset}"></script>
 % endfor
-<script src="/static/public/js/files-page.js"></script>
+<script src=${"/static/public/js/files-page.js" | webpack_asset}></script>
 </%def>

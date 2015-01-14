@@ -266,11 +266,41 @@ $(document).ready(function() {
         window.location = '/search/?q=(tags:' + $(e.target).text().toString().trim()+ ')';
     });
 
-    $('.citation-toggle').on('click', function() {
-        $(this).closest('.citations').find('.citation-list').slideToggle();
+    $('.project-toggle').on('click', function() {
+        var widget = $(this).closest('.addon-widget-container');
+        var up = $(this).find('.icon-angle-up');
+        var down = $(this).find('.icon-angle-down');
+        console.log(up, down);
+        if(up.length > 0) {
+            up.removeClass('icon-angle-up').addClass('icon-angle-down');
+        }
+        if(down.length > 0) {
+            down.removeClass('icon-angle-down').addClass('icon-angle-up');            
+        }
+
+        widget.find('.addon-widget-body').slideToggle();
         return false;
     });
 
+    $( ".osf-dash-col" ).sortable({
+      connectWith: ".osf-dash-col",
+      handle: ".addon-widget-header",
+      cancel: ".pull-right",
+      placeholder: "osf-dash-portlet ui-corner-all"
+    });
+
+    // Adds active class to current menu item 
+    $(function () {
+        var path = window.location.pathname;
+        $(".project-nav a").each(function () {
+            var href = $(this).attr('href');
+            if (path === href ||
+               (path.indexOf('files') > -1 && href.indexOf('files') > -1) ||
+               (path.indexOf('wiki') > -1 && href.indexOf('wiki') > -1)) {
+                $(this).closest('li').addClass('active');
+            }
+        });
+    });
 });
 
 window.NodeActions = NodeActions;

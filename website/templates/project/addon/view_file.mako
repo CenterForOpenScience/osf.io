@@ -1,6 +1,15 @@
 <%inherit file="../project_base.mako"/>
 <%def name="title()">${file_name}</%def>
 
+    <div class="page-header overflow">
+        <h2>
+            ${file_name | h}
+            % if file_revision:
+                <small>&nbsp;${file_revision | h}</small>
+            % endif
+        </h2>
+    </div>
+
 <div id="file-container" class="row">
 
     <div class="col-md-8">
@@ -16,16 +25,6 @@
 
 <%def name="file_contents()">
 
-    <section>
-        <div class="page-header overflow">
-            <h2>
-                ${file_name | h}
-                % if file_revision:
-                    <small>&nbsp;${file_revision | h}</small>
-                % endif
-            </h2>
-        </div>
-    </section>
 
     <div id="fileRendered" class="mfr mfr-file">
         % if rendered is not None:
@@ -46,6 +45,6 @@
             window.contextVars = window.contextVars || {};
             window.contextVars.renderURL = '${render_url}';
         </script>
-        <script src="/static/public/js/view-file-page.js"></script>
+        <script src=${"/static/public/js/view-file-page.js" | webpack_asset}></script>
     % endif
 </%def>

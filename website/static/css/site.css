@@ -412,9 +412,9 @@ img.hg-addon-icon {
     font-weight: bold;
 }
 
-.citation-list {
+/*.citation-list {
     display: none;
-}
+}*/
 
 .citation-text {
     text-indent: -3em;
@@ -1718,47 +1718,96 @@ div.pydocx-center{
 
 
 
+
 /* Revision changes for ui - experimental, should not be in production */
 
+
+/* Main Navbar */
 .osf-navbar {
     background-color: #214762;
     box-shadow: 0 0 3px #AEADAD;
+    min-height: 40px;
 }
 
 .osf-navbar a {
     color: #FFF;
 }
-.osf-project-navbar li>a {
-padding-top: 12px;
-padding-bottom: 12px;
-}
-.osf-navbar a:hover, .osf-navbar li > a:hover, .osf-navbar li.active{
+
+.osf-navbar .nav .open>a, .osf-navbar .nav .open>a:hover, .osf-navbar .nav .open>a:focus, .osf-navbar a:hover, .osf-navbar li > a:hover, .osf-navbar li.active{
     background: rgba(187, 187, 187, 0.2);
 }
+.osf-navbar .navbar-nav>li>a {
+    padding-top: 9px;
+    padding-bottom: 6px;
+    line-height: 24px;
+}
+.navbar-brand {
+    height: 42px;
+    line-height: 15px;
+    }
 
-#projectScope {
-    margin-bottom: 40px;
+.navbar-form {
+    margin-top: 5px;
+    margin-bottom: 2px;
 }
 
-.osf-project-navbar {
-position: fixed;
-width: 100%;
-left: 0;
-top: 50px;
-background: #EEE;
-z-index: 99;
-box-shadow: 0 0 5px 0px #C7C7C7;
-border-radius: 0;
-border: none;
-min-height:40px;
+.navbar-toggle .icon-bar {
+    background-color: white;
 }
 
-.osf-project-navbar li.active, .osf-project-navbar li:hover{
-    background-color: #E0E0E0;
+.navbar-mid>li>a{
+    padding-bottom: 8px !important;
 }
 
 .icon-lg {
-    font-size: 18px;
+    font-size: 20px;
+    line-height: 26px;
+}
+
+.osf-navbar-logo {
+    float: left;
+    margin-right: 8px;
+    margin-top: -7px;
+}
+
+.osf-gravatar > img {
+    border: 1px solid #CDCDCD;
+    border-radius: 13px;
+    margin-right: 5px;
+}
+
+
+/* Project pages navigation */
+
+.osf-project-navbar {
+    position: fixed;
+    width: 100%;
+    left: 0;
+    top: 43px;
+    background: #EEE;
+    z-index: 99;
+    box-shadow:0 0 9px -1px #838383;
+    border-radius: 0;
+    border: none;
+    min-height:45px;
+}
+
+.osf-project-navbar li>a {
+    padding-top: 19px;
+    padding-bottom: 16px;
+    font-size: 16px;
+}
+
+.osf-project-navbar li.active, .osf-project-navbar li:hover{
+    background-color: #337AB7;
+}
+
+.osf-project-navbar .navbar-nav li>a:hover {
+    background-color: #DADADA;
+}
+
+.osf-project-navbar li.active a {
+    color: white;
 }
 
 .m-v-lg {
@@ -1770,6 +1819,10 @@ min-height:40px;
     padding-bottom: 20px;
 }
 
+
+/* Project Dashboard */
+
+
 .addon-widget-container {
     border:1px solid #ddd;
     margin-bottom: 20px;
@@ -1780,18 +1833,21 @@ min-height:40px;
     background-color: #efefef;
 }
 .addon-widget-header .btn {
-    padding-left: 5px;
-    padding-right: 5px;
+    padding-left: 7px;
+    padding-right: 7px;
+    margin-top: 2px;
 }
 .addon-widget-header h4 {
-display: inline-block;
-float: left;
-margin-bottom: 0;
+    display: inline-block;
+    float: left;
+    margin-bottom: 0;
+
 }
 .addon-widget-body {
     padding: 15px;
+    background-color: white;
 }
-.addon-widget-body .list-group-item {z
+.addon-widget-body .list-group-item {
     border: none;
     border-bottom: 1px dotted #999;;
 }
@@ -1834,3 +1890,61 @@ font-weight: 300;
 .osf-search-btn {
     color: white;
 }
+#projectSubnav .navbar-collapse {
+    padding-left: 0; 
+    padding-right: 0;
+}
+
+.osf-dash-portlet {
+    background-color: #eee;
+    width: 100%;
+    height: 40px;
+    margin-bottom: 20px;
+    border: 2px dashed #ddd;
+}
+
+.page-header.visible-xs {
+    margin: 0;
+}
+
+
+@media (min-width: 768px) {
+    .osf-navbar .navbar-nav>li>a, .osf-project-navbar li>a {
+        padding-left: 7px;
+        padding-right: 7px;    
+    }
+    .navbar .search-query {
+    width: 190px;
+    }
+}
+
+@media (max-width: 767px) {
+    .navbar .search-query {
+        width: 100%;
+    }
+    .navbar-nav .open .dropdown-menu>li>a {
+        color: #FFF;
+        }
+
+}
+
+@media (min-width: 992px) {
+    .osf-navbar .navbar-nav>li>a, .osf-project-navbar li>a {
+        padding-left: 10px;
+        padding-right: 10px;    
+    }
+    .navbar .search-query {
+        width: 360px;
+    }
+}
+@media (min-width: 1200px) {
+    .osf-navbar .navbar-nav>li>a, .osf-project-navbar li>a {
+        padding-left: 15px;
+        padding-right: 15px;    
+    }
+    .navbar .search-query {
+    width: 270px;
+    }
+}
+
+
