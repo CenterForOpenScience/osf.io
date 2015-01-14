@@ -77,7 +77,7 @@ def is_json_request():
 
 def load_asset_paths():
     try:
-        return json.load(open('webpack-assets.json'))
+        return json.load(open(settings.ASSET_HASH_PATH))
     except IOError:
         logger.error('No "webpack-assets.json" file found. You may need to run webpack.')
         raise
