@@ -118,6 +118,8 @@ def make_url_map(app):
              OsfWebRenderer('', render_mako_string)),
         Rule('/api/v1/<path:_>', ['get', 'post'],
              HTTPError(http.NOT_FOUND), json_renderer),
+        Rule('/api/v1a/<path:_>', ['get', 'post'],
+             HTTPError(http.NOT_FOUND), json_renderer),
     ])
 
     ### GUID ###
@@ -500,9 +502,7 @@ def make_url_map(app):
         Rule(
             [
                 '/profile/gravatar/',
-                '/users/gravatar/',
                 '/profile/gravatar/<size>',
-                '/users/gravatar/<size>',
             ],
             'get',
             profile_views.current_user_gravatar,
@@ -512,9 +512,7 @@ def make_url_map(app):
         Rule(
             [
                 '/profile/<uid>/gravatar/',
-                '/users/<uid>/gravatar/',
                 '/profile/<uid>/gravatar/<size>',
-                '/users/<uid>/gravatar/<size>',
             ],
             'get',
             profile_views.get_gravatar,
@@ -1148,6 +1146,29 @@ def make_url_map(app):
             json_renderer
         ),
     ], prefix='/api/v1')
+
+    process_rules(app, [
+        Rule(
+            [
+                '/users/gravatar/',
+                '/users/gravatar/<size>',
+            ],
+            'get',
+            profile_views.current_user_gravatar,
+            json_renderer, endpoint_suffix='__dord',
+
+        ),
+
+        Rule(
+            [
+                '/users/<uid>/gravatar/',
+                '/users/<uid>/gravatar/<size>',
+            ],
+            'get',
+            profile_views.get_gravatar,
+            json_renderer, endpoint_suffix='__dord',
+        ),
+    ], prefix='/api/v1a')
 
     # Set up static routing for addons
     # NOTE: We use nginx to serve static addon assets in production
