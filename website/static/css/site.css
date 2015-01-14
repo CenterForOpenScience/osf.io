@@ -1746,7 +1746,7 @@ div.pydocx-center{
 .navbar-brand {
     height: 42px;
     line-height: 15px;
-    }
+}
 
 .navbar-form {
     margin-top: 5px;
@@ -1901,19 +1901,6 @@ div.pydocx-center{
 }
 
 
-@media (min-width: 768px) {
-    .osf-navbar .navbar-nav>li>a, .osf-project-navbar li>a {
-        padding-left: 7px;
-        padding-right: 7px;    
-    }
-    .navbar .search-query {
-    width: 190px;
-    }
-    .osf-project-navbar a.project-title {
-        max-width: 190px;
-    }
-}
-
 @media (max-width: 767px) {
     .navbar .search-query {
         width: 100%;
@@ -1930,6 +1917,24 @@ div.pydocx-center{
     .project-nav {
         overflow: hidden;
     }
+}
+
+@media (min-width: 768px) {
+    .osf-navbar .navbar-nav>li>a, .osf-project-navbar li>a {
+        padding-left: 7px;
+        padding-right: 7px;    
+    }
+    .navbar .search-query {
+    width: 190px;
+    }
+    .osf-project-navbar a.project-title {
+        max-width: 190px;
+    }
+    .navbar-brand {
+        margin-left: 0 !important;
+        padding-left: 0;
+    }
+
 }
 
 @media (min-width: 992px) {
