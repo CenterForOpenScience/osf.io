@@ -9,7 +9,6 @@ var $osf = require('osfHelpers');
 require('bootstrap-editable');
 
 var ctx = window.contextVars;  // mako context variables
-console.log(ctx);
 
 // Apply an empty ViewModel to the #wikiName element so that
 // we can use the tooltip binding handler. =/
