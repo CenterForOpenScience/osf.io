@@ -36,19 +36,27 @@ $(document).ready(function() {
     });
 
     // Submit for notifications preferences
-    $('#notificationSettings').on('submit', function() {
+    var $notificationsSettings = $('#notificationSettings');
+
+    $notificationsSettings.on('submit', function() {
         var $notificationsMsg = $('#configureNotificationsMessage');
 
         var subscriptions = {};
-        $('#notificationSettings').find('input').each(function(idx, elm) {
+        $notificationsSettings.find('.subscriptions').find('input').each(function(idx, elm) {
             var $elm = $(elm);
             subscriptions[$elm.attr('name')] = $elm.is(':checked');
+        });
 
+        var notificationTypes = {};
+        $notificationsSettings.find('.notificationTypes').find('input').each(function(idx, elm) {
+            var $elm = $(elm);
+            notificationTypes[$elm.attr('name')] = $elm.is(':checked');
         });
 
         $osf.postJSON(
             nodeApiUrl + 'subscribe/',
-            subscriptions
+            {'subscriptions': subscriptions,
+              'notificationTypes': notificationTypes}
         ).done(function() {
             $notificationsMsg.addClass('text-success');
             $notificationsMsg.text('Successfully updated notification preferences');

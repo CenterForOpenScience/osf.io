@@ -329,20 +329,41 @@ def node_setting(**kwargs):
         'level': node.comment_level,
     }
 
-    rv['subscriptions_enabled'] = find_user_subscriptions(auth.user, node)
+    rv['subscriptions_enabled'] = find_node_subscriptions_and_notifications(auth.user, node)['node_subscriptions']
     rv['subscriptions_available'] = settings.SUBSCRIPTIONS_AVAILABLE
+
+    rv['notification_types_enabled'] = find_node_subscriptions_and_notifications(auth.user, node)['node_notification_types']
+    rv['notification_types'] = settings.NOTIFICATION_TYPES
 
     return rv
 
 
-def find_user_subscriptions(user, node):
+def find_node_subscriptions_and_notifications(user, node):
     node_subscriptions = []
-    user_subscriptions = getattr(user, 'email_transactional', [])
-    for subscription in user_subscriptions:
-        if subscription.object_id == node._id or user._id:
-            node_subscriptions.append(subscription.event_name)
-    return node_subscriptions
+    user_notification_types = get_user_notification_types(user)
+    node_notification_types = []
 
+    for notification_type in user_notification_types:
+        for subscription in getattr(user, notification_type, []):
+            if subscription:
+                if subscription.object_id == node._id:
+                    if subscription.event_name not in node_subscriptions:
+                        node_subscriptions.append(subscription.event_name)
+                    if notification_type not in node_notification_types:
+                        node_notification_types.append(notification_type)
+
+    return {
+        'node_subscriptions': node_subscriptions,
+        'node_notification_types': node_notification_types
+    }
+
+
+def get_user_notification_types(user):
+    user_notification_types = []
+    for notification_type in settings.NOTIFICATION_TYPES:
+        if getattr(user, notification_type, []) and None not in getattr(user, notification_type, []):
+            user_notification_types.append(notification_type)
+    return user_notification_types
 
 def collect_node_config_js(addons):
     """Collect webpack bundles for each of the addons' node-cfg.js modules. Return

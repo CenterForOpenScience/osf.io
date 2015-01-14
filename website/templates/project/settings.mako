@@ -103,8 +103,8 @@
 
                     <form id="notificationSettings">
                         <h5>Receive email notifications about the following: </h5>
+                            <div class="subscriptions" style="padding-left: 15px">
                             % for subscription in subscriptions_available:
-                                <div style="padding-left: 15px">
                                     <label style="font-weight: normal">
                                         <input
                                             type="checkbox"
@@ -113,8 +113,23 @@
                                         />
                                         ${subscriptions_available[subscription]}
                                     </label>
-                                </div>
+                                    <br />
                             % endfor
+                            </div>
+                        <h5>How would you like to receive notifications? </h5>
+                            <div class="notificationTypes" style="padding-left: 15px">
+                            % for notification_type in notification_types:
+                                    <label style="font-weight: normal">
+                                        <input
+                                            type="checkbox"
+                                            name="${notification_type}"
+                                            ${'checked' if (notification_type in notification_types_enabled) else ''}
+                                        />
+                                        ${notification_types[notification_type]}
+                                    </label>
+                                    <br />
+                            % endfor
+                            </div>
 
                         <br />
 
