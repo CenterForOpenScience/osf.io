@@ -1715,3 +1715,122 @@ div.pydocx-center{
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+
+
+/* Revision changes for ui - experimental, should not be in production */
+
+.osf-navbar {
+    background-color: #214762;
+    box-shadow: 0 0 3px #AEADAD;
+}
+
+.osf-navbar a {
+    color: #FFF;
+}
+.osf-project-navbar li>a {
+padding-top: 12px;
+padding-bottom: 12px;
+}
+.osf-navbar a:hover, .osf-navbar li > a:hover, .osf-navbar li.active{
+    background: rgba(187, 187, 187, 0.2);
+}
+
+#projectScope {
+    margin-bottom: 40px;
+}
+
+.osf-project-navbar {
+position: fixed;
+width: 100%;
+left: 0;
+top: 50px;
+background: #EEE;
+z-index: 99;
+box-shadow: 0 0 5px 0px #C7C7C7;
+border-radius: 0;
+border: none;
+min-height:40px;
+}
+
+.osf-project-navbar li.active, .osf-project-navbar li:hover{
+    background-color: #E0E0E0;
+}
+
+.icon-lg {
+    font-size: 18px;
+}
+
+.m-v-lg {
+    margin: 20px 0 20px 0;
+}
+
+.padder-lg-v {
+    padding-top:20px;
+    padding-bottom: 20px;
+}
+
+.addon-widget-container {
+    border:1px solid #ddd;
+    margin-bottom: 20px;
+}
+.addon-widget-header {
+    padding: 0 10px;
+    border-bottom: 1px solid #ddd;
+    background-color: #efefef;
+}
+.addon-widget-header .btn {
+    padding-left: 5px;
+    padding-right: 5px;
+}
+.addon-widget-header h4 {
+display: inline-block;
+float: left;
+margin-bottom: 0;
+}
+.addon-widget-body {
+    padding: 15px;
+}
+.addon-widget-body .list-group-item {z
+    border: none;
+    border-bottom: 1px dotted #999;;
+}
+.hgrid {
+    border: 1px solid #E4E4E4;
+    margin-top: 10px;
+}
+.node-title {
+    line-height: 50px;
+border-bottom: none;
+margin-top: 0.3em;
+font-size: 43px;
+font-weight: 300;
+
+}
+.text-300 {
+    font-weight: 300;
+}
+
+.osf-search {
+    padding: 15px 0;
+background: #CADBFF;
+margin-top: -20px;
+}
+.osf-search-input {
+    background: none;
+border: none;
+box-shadow: none;
+border-bottom: 1px dotted #FFF;
+border-radius: 0;
+padding: 15px 0;
+font-size: 20px;
+color: #FFF;
+font-weight: 300;
+}
+.osf-search-input:focus {
+    outline : 0 !important;
+    box-shadow: none;
+}
+.osf-search-btn {
+    color: white;
+}

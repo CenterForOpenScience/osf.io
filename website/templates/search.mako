@@ -5,14 +5,7 @@
     <div id="searchControls" class="scripted">
         <div class="row">
             <div class="col-md-12">
-                <form class="input-group" data-bind="submit: submit">
-                    <input name="searchBar" type="text" class="form-control" placeholder="Search" data-bind="value: query, hasFocus: true">
-                    <span class="input-group-btn">
-                        <button type=button class="btn btn-default" data-bind="click: help"><i class="icon-question"></i></button>
-                        <button type=button class="btn btn-default" data-bind="click: submit"><i class="icon-search"></i></button>
-                    </span>
-                </form>
-                <br />
+
 
                 <div class="row">
                     <!-- ko if: categories().length > 0-->
@@ -56,7 +49,7 @@
                                     </span>
                                     <!-- /ko -->
                                 </span>
-                            </div>
+                            </div>Z
                         </div>
                         <br />
                         <!-- /ko -->
