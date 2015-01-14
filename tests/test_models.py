@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 '''Unit tests for models and their factories.'''
-import os
-import subprocess
-import shutil
 import mock
 import unittest
 from nose.tools import *  # noqa (PEP8 asserts)
@@ -13,13 +10,12 @@ import urlparse
 from dateutil import parser
 
 from modularodm.exceptions import ValidationError, ValidationValueError, ValidationTypeError
-from modularodm import Q
 
 
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
 from framework.auth import User, Auth
-from framework.auth.exceptions import ChangePasswordError
+from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
 from framework.auth.utils import impute_names_model
 from framework.bcrypt import check_password_hash
 from website import filters, language, settings
@@ -30,14 +26,8 @@ from website.project.model import (
     get_pointer_parent,
 )
 from website.addons.osffiles.model import NodeFile
-from website.addons.osffiles.exceptions import FileNotModified
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.util import web_url_for, api_url_for
-from website.addons.osffiles.exceptions import (
-    InvalidVersionError,
-    VersionNotFoundError,
-    FileNotFoundError,
-)
 from website.addons.wiki.exceptions import (
     NameEmptyError,
     NameInvalidError,
@@ -315,6 +305,18 @@ class TestUser(OsfTestCase):
         u.add_email_verification('foo@bar.com')
         assert_equal(u.get_confirmation_token('foo@bar.com'), '12345')
         assert_equal(u.get_confirmation_token('fOo@bar.com'), '12345')
+
+    @mock.patch('website.security.random_string')
+    def test_get_confirmation_token_when_token_is_expired(self, random_string):
+        random_string.return_value = '12345'
+        u = UserFactory()
+
+        # Make sure token is already expired
+        expiration = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
+        u.add_email_verification('foo@bar.com', expiration=expiration)
+
+        with assert_raises(ExpiredTokenError):
+            u.get_confirmation_token('foo@bar.com')
 
     @mock.patch('website.security.random_string')
     def test_get_confirmation_url(self, random_string):
