@@ -12,7 +12,7 @@
 % endif
 <div class="row">
     <div class="col-sm-7">
-        <div class="project-details"></div>
+        <div class="project-details animated slideInLeft"></div>
         <div class="page-header">
             <div class="pull-right"><a class="btn btn-default" href="/folder/${dashboard_id}" id = "${dashboard_id}">New Folder</a></div>
             <h3>Projects</h3>

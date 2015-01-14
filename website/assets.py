@@ -26,6 +26,7 @@ css = Bundle(
         'css/fangorn.css',
         'css/commentpane.css',
         'css/site.css',
+        'css/animate.css',
         filters="cssmin"),
     output="public/css/common.css"
 )
