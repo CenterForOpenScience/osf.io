@@ -494,10 +494,10 @@ class User(GuidStoredObject, AddonModelMixin):
         """Set the expiration date for given email token.
 
         :param str token: The email token to set the expiration for.
-        :param datetime expiration: Datetime at which to expire the token. If ``None``,
-            `datetime.datetime.utcnow()` is used.
+        :param datetime expiration: Datetime at which to expire the token. If ``None``, the
+            token will expire after ``settings.EMAIL_TOKEN_EXPIRATION`` hours.
         """
-        expiration = expiration or dt.datetime.utcnow() + dt.timedelta(1)
+        expiration = expiration or (dt.datetime.utcnow() + dt.timedelta(hours=settings.EMAIL_TOKEN_EXPIRATION))
         self.email_verifications[token]['expiration'] = expiration
         return expiration
 
