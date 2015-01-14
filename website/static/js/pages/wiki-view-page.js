@@ -16,7 +16,7 @@ console.log(ctx);
 $osf.applyBindings({}, '#wikiName');
 
 
-$(document).ready(function() {
+if (ctx.canEditPageName) {
     // Initialize editable wiki page name
     var $pageName = $('#pageName');
     $.fn.editable.defaults.mode = 'inline';
@@ -57,4 +57,4 @@ $(document).ready(function() {
             }
         }
     });
-});
+}
