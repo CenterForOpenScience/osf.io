@@ -38,12 +38,13 @@
                 </li><!-- end dropdown -->
             </ul><!-- end nav navbar-nav -->
             <ul class="nav navbar-nav navbar-right">
+                <!-- ko ifnot: onSearchPage -->
                 <li data-bind="click : toggleSearch, css: searchCSS">
                     <a class="" >
                         <span rel="tooltip" title="Search OSF" class="icon-search icon-lg" ></span>
                     </a>
-                    <span data-bind="text: onSearchPage"></span>
                 </li>
+                <!-- /ko -->
                 % if user_name and display_name:
                 <li>
                     <a class="hidden-lg hidden-xs" href="/profile/">
@@ -72,7 +73,8 @@
         </div><!-- end navbar-collapse -->
     </div><!-- end container-->
 </nav>
+    <!-- ko ifnot: onSearchPage -->
         <%include file='./search_bar.mako' />
-
+    <!-- /ko -->
 </div>
 

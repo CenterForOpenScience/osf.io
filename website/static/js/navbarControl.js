@@ -11,16 +11,16 @@ var NavbarViewModel = function() {
 
     self.showSearch = ko.observable(false);
     self.searchCSS = ko.observable('');
+    self.query = ko.observable('');
 
     self.onSearchPage = ko.computed(function() {
         var path = window.location.pathname;
         var indexOfSearch = path.indexOf('search');
-        console.log('Index: ' + indexOfSearch);
-        return indexOfSearch === 0;
+        return indexOfSearch === 1;
     });
 
 
-    this.toggleSearch = function(){
+    self.toggleSearch = function(){
         if(self.showSearch()){
             self.showSearch(false);
             self.searchCSS('');            
@@ -28,8 +28,13 @@ var NavbarViewModel = function() {
             self.showSearch(true);
             self.searchCSS('active');            
 
-        }         
-        console.log('Show search: ' + self.showSearch());
+        }
+    };
+
+    self.submit = function() {
+       if(self.query() !== ''){
+           window.location.href = '/search/?q=' + self.query();
+       }
     };
 
 };
