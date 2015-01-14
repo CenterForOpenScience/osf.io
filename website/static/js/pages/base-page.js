@@ -1,5 +1,5 @@
 /**
- * JS module included on eveery page of the OSF. Site-wide initialization
+ * JS module included on every page of the OSF. Site-wide initialization
  * code goes here.
  */
 'use strict';
@@ -8,6 +8,10 @@ var $ = require('jquery');
 require('jquery.cookie');
 
 var $osf = require('osfHelpers');
+
+// Apply an empty view-model to the navbar, just so the tooltip bindingHandler
+// can be used
+$osf.applyBindings({}, '#navbarScope');
 
 // If there isn't a user logged in, show the footer slide-in
 var sliderSelector = '#footerSlideIn';
