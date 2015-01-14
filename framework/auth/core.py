@@ -20,7 +20,7 @@ from framework import analytics
 from framework.guid.model import GuidStoredObject
 from framework.addons import AddonModelMixin
 from framework.auth import utils, signals
-from framework.auth.exceptions import ChangePasswordError
+from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
 from framework.exceptions import PermissionsError
 
 from website import settings, filters, security
@@ -494,38 +494,51 @@ class User(GuidStoredObject, AddonModelMixin):
         """Set the expiration date for given email token.
 
         :param str token: The email token to set the expiration for.
-        :param datetime expiration: Datetime at which to expire the token. If ``None``,
-            `datetime.datetime.utcnow()` is used.
+        :param datetime expiration: Datetime at which to expire the token. If ``None``, the
+            token will expire after ``settings.EMAIL_TOKEN_EXPIRATION`` hours. This is only
+            used for testing purposes.
         """
-        expiration = expiration or dt.datetime.utcnow() + dt.timedelta(1)
+        expiration = expiration or (dt.datetime.utcnow() + dt.timedelta(hours=settings.EMAIL_TOKEN_EXPIRATION))
         self.email_verifications[token]['expiration'] = expiration
         return expiration
 
-    def add_email_verification(self, email):
+    def add_email_verification(self, email, expiration=None):
         """Add an email verification token for a given email."""
         token = generate_confirm_token()
 
         self.email_verifications[token] = {'email': email.lower()}
-        self._set_email_token_expiration(token)
+        self._set_email_token_expiration(token, expiration=expiration)
         return token
 
-    def get_confirmation_token(self, email):
+    def get_confirmation_token(self, email, force=False):
         """Return the confirmation token for a given email.
 
-        :raises: KeyError if there no token for the email
+        :param str email: Email to get the token for.
+        :param bool force: If an expired token exists for the given email, generate a new
+            token and return that token.
+
+        :raises: ExpiredTokenError if trying to access a token that is expired and force=False.
+        :raises: KeyError if there no token for the email.
         """
         for token, info in self.email_verifications.items():
             if info['email'].lower() == email.lower():
+                if info['expiration'] < dt.datetime.utcnow():
+                    if not force:
+                        raise ExpiredTokenError('Token for email "{0}" is expired'.format(email))
+                    else:
+                        new_token = self.add_email_verification(email)
+                        return new_token
                 return token
-        raise KeyError('No confirmation token for email {0!r}'.format(email))
+        raise KeyError('No confirmation token for email "{0}"'.format(email))
 
-    def get_confirmation_url(self, email, external=True):
+    def get_confirmation_url(self, email, external=True, force=False):
         """Return the confirmation url for a given email.
 
+        :raises: ExpiredTokenError if trying to access a token that is expired.
         :raises: KeyError if there is no token for the email.
         """
         base = settings.DOMAIN if external else '/'
-        token = self.get_confirmation_token(email)
+        token = self.get_confirmation_token(email, force=force)
         return "{0}confirm/{1}/{2}/".format(base, self._primary_key, token)
 
     def verify_confirmation_token(self, token):

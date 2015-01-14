@@ -22,6 +22,9 @@ STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = "/static"
 ROOT = os.path.join(BASE_PATH, '..')
 
+# Hours before email confirmation tokens expire
+EMAIL_TOKEN_EXPIRATION = 24
+
 LOAD_BALANCER = False
 
 LOG_PATH = os.path.join(APP_PATH, 'logs')

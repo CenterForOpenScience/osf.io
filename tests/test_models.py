@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 '''Unit tests for models and their factories.'''
-import os
-import subprocess
-import shutil
 import mock
 import unittest
 from nose.tools import *  # noqa (PEP8 asserts)
@@ -13,13 +10,12 @@ import urlparse
 from dateutil import parser
 
 from modularodm.exceptions import ValidationError, ValidationValueError, ValidationTypeError
-from modularodm import Q
 
 
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
 from framework.auth import User, Auth
-from framework.auth.exceptions import ChangePasswordError
+from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
 from framework.auth.utils import impute_names_model
 from framework.bcrypt import check_password_hash
 from website import filters, language, settings
@@ -30,14 +26,8 @@ from website.project.model import (
     get_pointer_parent,
 )
 from website.addons.osffiles.model import NodeFile
-from website.addons.osffiles.exceptions import FileNotModified
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.util import web_url_for, api_url_for
-from website.addons.osffiles.exceptions import (
-    InvalidVersionError,
-    VersionNotFoundError,
-    FileNotFoundError,
-)
 from website.addons.wiki.exceptions import (
     NameEmptyError,
     NameInvalidError,
@@ -316,6 +306,32 @@ class TestUser(OsfTestCase):
         assert_equal(u.get_confirmation_token('foo@bar.com'), '12345')
         assert_equal(u.get_confirmation_token('fOo@bar.com'), '12345')
 
+    def test_get_confirmation_token_when_token_is_expired_raises_error(self):
+        u = UserFactory()
+        # Make sure token is already expired
+        expiration = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
+        u.add_email_verification('foo@bar.com', expiration=expiration)
+
+        with assert_raises(ExpiredTokenError):
+            u.get_confirmation_token('foo@bar.com')
+
+    @mock.patch('website.security.random_string')
+    def test_get_confirmation_token_when_token_is_expired_force(self, random_string):
+        random_string.return_value = '12345'
+        u = UserFactory()
+        # Make sure token is already expired
+        expiration = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
+        u.add_email_verification('foo@bar.com', expiration=expiration)
+
+        # sanity check
+        with assert_raises(ExpiredTokenError):
+            u.get_confirmation_token('foo@bar.com')
+
+        random_string.return_value = '54321'
+
+        token = u.get_confirmation_token('foo@bar.com', force=True)
+        assert_equal(token, '54321')
+
     @mock.patch('website.security.random_string')
     def test_get_confirmation_url(self, random_string):
         random_string.return_value = 'abcde'
@@ -323,6 +339,33 @@ class TestUser(OsfTestCase):
         u.add_email_verification('foo@bar.com')
         assert_equal(u.get_confirmation_url('foo@bar.com'),
                 '{0}confirm/{1}/{2}/'.format(settings.DOMAIN, u._primary_key, 'abcde'))
+
+    def test_get_confirmation_url_when_token_is_expired_raises_error(self):
+        u = UserFactory()
+        # Make sure token is already expired
+        expiration = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
+        u.add_email_verification('foo@bar.com', expiration=expiration)
+
+        with assert_raises(ExpiredTokenError):
+            u.get_confirmation_url('foo@bar.com')
+
+    @mock.patch('website.security.random_string')
+    def test_get_confirmation_url_when_token_is_expired_force(self, random_string):
+        random_string.return_value = '12345'
+        u = UserFactory()
+        # Make sure token is already expired
+        expiration = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
+        u.add_email_verification('foo@bar.com', expiration=expiration)
+
+        # sanity check
+        with assert_raises(ExpiredTokenError):
+            u.get_confirmation_token('foo@bar.com')
+
+        random_string.return_value = '54321'
+
+        url = u.get_confirmation_url('foo@bar.com', force=True)
+        expected = '{0}confirm/{1}/{2}/'.format(settings.DOMAIN, u._primary_key, '54321')
+        assert_equal(url, expected)
 
     def test_confirm_primary_email(self):
         u = UserFactory.build(username='foo@bar.com')
@@ -362,7 +405,7 @@ class TestUser(OsfTestCase):
         assert_false(u.verify_confirmation_token('badtoken'))
         valid_token = u.get_confirmation_token('foo@bar.com')
         assert_true(u.verify_confirmation_token(valid_token))
-        manual_expiration=datetime.datetime.utcnow()-datetime.timedelta(0,10)
+        manual_expiration = datetime.datetime.utcnow() - datetime.timedelta(0, 10)
         u._set_email_token_expiration(valid_token, expiration=manual_expiration)
         assert_false(u.verify_confirmation_token(valid_token))
 
