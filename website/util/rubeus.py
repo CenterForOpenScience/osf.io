@@ -11,6 +11,7 @@ import hurry
 from modularodm import Q
 
 from framework.auth.decorators import Auth
+from website import settings
 from website.settings import (
     ALL_MY_APPS_ID, ALL_MY_PROJECTS_ID, ALL_MY_REGISTRATIONS_ID,
     ALL_MY_APPS_NAME, ALL_MY_PROJECTS_NAME, ALL_MY_REGISTRATIONS_NAME
@@ -67,7 +68,8 @@ def to_project_root(node, auth, **data):
 
 
 def build_addon_root(node_settings, name, permissions=None,
-                     urls=None, extra=None, buttons=None, **kwargs):
+                     urls=None, extra=None, buttons=None, user=None,
+                     **kwargs):
     """Builds the root or "dummy" folder for an addon.
 
     :param addonNodeSettingsBase node_settings: Addon settings
@@ -99,6 +101,11 @@ def build_addon_root(node_settings, name, permissions=None,
             'view': node_settings.owner.can_view(auth),
             'edit': node_settings.owner.can_edit(auth) and not node_settings.owner.is_registration
         }
+
+    max_size = node_settings.config.max_file_size
+    if user and 'high_upload_limit' in user.system_tags:
+        max_size = node_settings.config.high_max_file_size
+
     rv = {
         'addon': node_settings.config.short_name,
         'addonFullname': node_settings.config.full_name,
@@ -110,7 +117,7 @@ def build_addon_root(node_settings, name, permissions=None,
         'isAddonRoot': True,
         'permissions': permissions,
         'accept': {
-            'maxSize': node_settings.config.max_file_size,
+            'maxSize': max_size,
             'acceptedFiles': node_settings.config.accept_extensions,
         },
         'urls': urls,
@@ -484,7 +491,7 @@ def collect_addon_assets(node):
 
 
 # TODO: Abstract static collectors
-def collect_addon_js(node, visited=None):
+def collect_addon_js(node, visited=None, filename='files.js', config_entry='files'):
     """Collect JavaScript includes for all add-ons implementing HGrid views.
 
     :return list: List of JavaScript include paths
@@ -495,7 +502,20 @@ def collect_addon_js(node, visited=None):
     visited.append(node._id)
     js = set()
     for addon in node.get_addons():
-        js = js.union(addon.config.include_js.get('files', []))
+        # JS modules configured in each addon's __init__ file
+        js = js.union(addon.config.include_js.get(config_entry, []))
+        # Webpack bundle
+        file_path = os.path.join('static',
+                                 'public',
+                                 'js',
+                                 addon.config.short_name,
+                                 filename)
+        js_file = os.path.join(
+            settings.BASE_PATH, file_path
+        )
+        if os.path.exists(js_file):
+            js_path = os.path.join('/', file_path)
+            js.add(js_path)
     for each in node.nodes:
         if each._id not in visited:
             visited.append(each._id)

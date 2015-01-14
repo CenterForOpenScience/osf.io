@@ -11,6 +11,7 @@ httplib2==0.9
 hurry.filesize==0.9
 itsdangerous==0.24
 lxml==3.4.1
+mailchimp==2.0.9
 nameparser==0.3.3
 py-bcrypt==0.4
 pymongo==2.5.1

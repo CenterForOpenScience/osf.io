@@ -33,7 +33,7 @@ class AddonConfig(object):
                  added_default=None, added_mandatory=None,
                  node_settings_model=None, user_settings_model=None, include_js=None, include_css=None,
                  widget_help=None, views=None, configs=None, models=None,
-                 has_hgrid_files=False, get_hgrid_data=None, max_file_size=None,
+                 has_hgrid_files=False, get_hgrid_data=None, max_file_size=None, high_max_file_size=None,
                  accept_extensions=True,
                  **kwargs):
 
@@ -70,6 +70,7 @@ class AddonConfig(object):
         # WARNING: get_hgrid_data can return None if the addon is added but has no credentials.
         self.get_hgrid_data = get_hgrid_data  # if has_hgrid_files and not get_hgrid_data rubeus.make_dummy()
         self.max_file_size = max_file_size
+        self.high_max_file_size = high_max_file_size
         self.accept_extensions = accept_extensions
 
         # Build template lookup
@@ -439,7 +440,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
 
 
 # TODO: No more magicks
-def init_addon(app, addon_name, log_fp=None, routes=True):
+def init_addon(app, addon_name, routes=True):
     """Load addon module return its create configuration object.
 
     If `log_fp` is provided, the addon's log templates will be appended
@@ -453,20 +454,12 @@ def init_addon(app, addon_name, log_fp=None, routes=True):
         else None
 
     """
-    addon_path = os.path.join('website', 'addons', addon_name)
     import_path = 'website.addons.{0}'.format(addon_name)
 
     # Import addon module
     addon_module = importlib.import_module(import_path)
 
     data = vars(addon_module)
-
-    # Append add-on log templates to main log templates
-    log_templates = os.path.join(
-        addon_path, 'templates', 'log_templates.mako'
-    )
-    if os.path.exists(log_templates) and log_fp:
-        log_fp.write(open(log_templates, 'r').read())
 
     # Add routes
     if routes:

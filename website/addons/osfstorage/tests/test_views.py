@@ -6,6 +6,7 @@ from nose.tools import *  # noqa
 
 import datetime
 
+from framework.auth.core import Auth
 from website.addons.osfstorage.tests.utils import (
     StorageTestCase, Delta, AssertDeltas
 )
@@ -17,6 +18,7 @@ import furl
 import markupsafe
 
 from website import settings
+from website.util import rubeus
 
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
@@ -63,6 +65,25 @@ class TestHGridViews(StorageTestCase):
                 }
             )
         )
+
+    def test_osf_storage_root(self):
+        auth = Auth(self.project.creator)
+        result = views.osf_storage_root(self.node_settings, auth=auth)
+        node = self.project
+        expected = rubeus.build_addon_root(
+            node_settings=self.node_settings,
+            name='',
+            permissions=auth,
+            urls={
+                'upload': node.api_url_for('osf_storage_request_upload_url'),
+                'fetch': node.api_url_for('osf_storage_hgrid_contents'),
+            },
+            user=auth.user,
+            nodeUrl=node.url,
+            nodeApiUrl=node.api_url,
+        )
+        root = result[0]
+        assert_equal(root, expected)
 
     @mock.patch('website.addons.osfstorage.model.time.time')
     def test_hgrid_contents_pending_one_version_not_expired(self, mock_time):
@@ -564,6 +585,20 @@ class TestFinishHook(HookTestCase):
 
 class TestUploadFile(StorageTestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        super(TestUploadFile, cls).setUpClass()
+        cls._original_max_size = settings.ADDONS_AVAILABLE_DICT['osfstorage'].max_file_size
+        cls._original_high_max_size = settings.ADDONS_AVAILABLE_DICT['osfstorage'].high_max_file_size
+        settings.ADDONS_AVAILABLE_DICT['osfstorage'].high_max_file_size = 2 * 1024 ** 2
+        settings.ADDONS_AVAILABLE_DICT['osfstorage'].max_file_size = 1024 ** 2
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestUploadFile, cls).tearDownClass()
+        settings.ADDONS_AVAILABLE_DICT['osfstorage'].max_file_size = cls._original_max_size
+        settings.ADDONS_AVAILABLE_DICT['osfstorage'].high_max_file_size = cls._original_high_max_size
+
     def setUp(self):
         super(TestUploadFile, self).setUp()
         self.name = u'red-specíal.png'
@@ -621,6 +656,30 @@ class TestUploadFile(StorageTestCase):
         res = self.request_upload_url(
             self.name, size, self.content_type, path='instruments',
             expect_errors=True,
+        )
+        assert_equal(res.status_code, 400)
+
+    @mock.patch('website.addons.osfstorage.utils.get_upload_url')
+    def test_request_upload_url_too_large_with_high_upload_limit(self, mock_get_url):
+        mock_get_url.return_value = 'http://brian.queen.com/'
+        max_size = settings.ADDONS_AVAILABLE_DICT['osfstorage'].max_file_size
+
+        # User has high upload limit
+        self.project.creator.system_tags.append('high_upload_limit')
+        self.project.creator.save()
+
+        size = max_size * 1024 ** 2 + 1
+        res = self.request_upload_url(
+            self.name, size, self.content_type, path='instruments'
+        )
+        assert_equal(res.status_code, 200)
+
+        high_max_size = settings.ADDONS_AVAILABLE_DICT['osfstorage'].high_max_file_size
+
+        size = high_max_size * 1024 ** 2 + 1
+        res = self.request_upload_url(
+            self.name, size, self.content_type, path='instruments2',
+            expect_errors=True
         )
         assert_equal(res.status_code, 400)
 

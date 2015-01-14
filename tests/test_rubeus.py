@@ -89,6 +89,42 @@ class TestRubeus(OsfTestCase):
             rv
         )
 
+    def test_build_addon_root_has_correct_upload_limits(self):
+        self.node_settings.config.max_file_size = 10
+        self.node_settings.config.high_max_file_size = 20
+
+        node = self.project
+        user = self.project.creator
+        auth = Auth(user)
+        permissions = {
+            'view': node.can_view(auth),
+            'edit': node.can_edit(auth) and not node.is_registration,
+        }
+
+        result = rubeus.build_addon_root(
+            self.node_settings,
+            self.node_settings.bucket,
+            permissions=permissions,
+            user=user
+        )
+
+        assert_equal(result['accept']['maxSize'], self.node_settings.config.max_file_size)
+
+        # user now has elevated upload limit
+        user.system_tags.append('high_upload_limit')
+        user.save()
+
+        result = rubeus.build_addon_root(
+            self.node_settings,
+            self.node_settings.bucket,
+            permissions=permissions,
+            user=user
+        )
+        assert_equal(
+            result['accept']['maxSize'],
+            self.node_settings.config.high_max_file_size
+        )
+
     def test_hgrid_dummy_fail(self):
         node_settings = self.node_settings
         node = self.project
@@ -322,27 +358,30 @@ class TestSerializingNodeWithAddon(OsfTestCase):
 
     def test_collect_js_recursive(self):
         self.project.get_addons.return_value[0].config.include_js = {'files': ['foo.js']}
+        self.project.get_addons.return_value[0].config.short_name = 'dropbox'
         node = NodeFactory(project=self.project)
         mock_node_addon = mock.Mock()
         mock_node_addon.config.include_js = {'files': ['bar.js', 'baz.js']}
+        mock_node_addon.config.short_name = 'dropbox'
         node.get_addons = mock.Mock()
         node.get_addons.return_value = [mock_node_addon]
-        assert_equal(
-            rubeus.collect_addon_js(self.project),
-            {'foo.js', 'bar.js', 'baz.js'}
-        )
+        result = rubeus.collect_addon_js(self.project)
+        assert_in('foo.js', result)
+        assert_in('bar.js', result)
+        assert_in('baz.js', result)
 
     def test_collect_js_unique(self):
         self.project.get_addons.return_value[0].config.include_js = {'files': ['foo.js']}
+        self.project.get_addons.return_value[0].config.short_name = 'dropbox'
         node = NodeFactory(project=self.project)
         mock_node_addon = mock.Mock()
         mock_node_addon.config.include_js = {'files': ['foo.js', 'baz.js']}
+        mock_node_addon.config.short_name = 'dropbox'
         node.get_addons = mock.Mock()
         node.get_addons.return_value = [mock_node_addon]
-        assert_equal(
-            rubeus.collect_addon_js(self.project),
-            {'foo.js', 'baz.js'}
-        )
+        result = rubeus.collect_addon_js(self.project)
+        assert_in('foo.js', result)
+        assert_in('baz.js', result)
 
 
 class TestSerializingEmptyDashboard(OsfTestCase):

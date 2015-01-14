@@ -1,0 +1,13 @@
+{
+    "addons": [
+        "dataverse",
+        "dropbox",
+        "figshare",
+        "forward",
+        "github",
+        "osfstorage",
+        "s3",
+        "twofactor",
+        "wiki"
+    ]
+}

@@ -1,3 +1,7 @@
+var $osf = require('osfHelpers');
+var $ = require('jquery');
+var bootbox = require('bootbox');
+
 var GithubConfigHelper = (function() {
 
     var updateHidden = function(val) {
@@ -21,15 +25,16 @@ var GithubConfigHelper = (function() {
         bootbox.prompt('Name your new repo', function(repoName) {
 
             // Return if cancelled
-            if (repoName === null)
+            if (repoName === null) {
                 return;
+            }
 
             if (repoName === '') {
                 displayError('Your repo must have a name');
                 return;
             }
 
-            $.osf.postJSON(
+            $osf.postJSON(
                 '/api/v1/github/repo/create/',
                 {name: repoName}
             ).done(function(response) {
@@ -57,13 +62,13 @@ var GithubConfigHelper = (function() {
         });
 
         $('#githubImportToken').on('click', function() {
-            $.osf.postJSON(
+            $osf.postJSON(
                 nodeApiUrl + 'github/user_auth/',
                 {}
             ).done(function() {
                 window.location.reload();
             }).fail(
-                $.osf.handleJSONError
+                $osf.handleJSONError
             );
         });
 
@@ -83,7 +88,7 @@ var GithubConfigHelper = (function() {
                     }).done(function() {
                         window.location.reload();
                     }).fail(
-                        $.osf.handleJSONError
+                        $osf.handleJSONError
                     );
                     }
                 }
@@ -99,3 +104,5 @@ var GithubConfigHelper = (function() {
     });
 
 })();
+
+module.exports = GithubConfigHelper;
