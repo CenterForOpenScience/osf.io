@@ -84,5 +84,5 @@
 
 <%def name="javascript_bottom()">
 ${parent.javascript_bottom()}
-<script src="/static/public/js/osfstorage/file-detail.js"></script>
+<script src=${"/static/public/js/osfstorage/file-detail.js" | webpack_asset}></script>
 </%def>

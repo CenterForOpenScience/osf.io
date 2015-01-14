@@ -51,6 +51,6 @@
             window.contextVars = window.contextVars || {};
             window.contextVars.renderURL = '${render_url}';
         </script>
-        <script src="/static/public/js/view-file-page.js"></script>
+        <script src=${"/static/public/js/view-file-page.js" | webpack_asset}></script>
     % endif
 </%def>
