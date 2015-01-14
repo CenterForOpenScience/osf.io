@@ -4,6 +4,7 @@ from modularodm.exceptions import NoResultsFound
 from model import Subscription
 from model import DigestNotification
 from website import mails
+from mako.lookup import Template
 
 
 def notify(uid, event, **context):
@@ -33,34 +34,30 @@ def email_transactional(subscribed_users, event, **context):
     :param context: context variables for email template
     :return:
     """
+    subject = Template(email_templates[event]['subject']).render(**context)
+    message = Template(email_templates[event]['message']).render(**context)
+
     for user in subscribed_users:
         email = user.username
         if context.get('commenter') != user.fullname:
             mails.send_mail(
                 to_addr=email,
-                mail=email_templates.get(event),
+                mail=mails.TRANSACTIONAL,
                 name=user.fullname,
-                commenter=context.get('commenter'),
-                title=context.get('title'),
-                context_vars=context)
+                subject=subject,
+                content=message)
 
 
 def email_digest(subscribed_users, event, **context):
+    message = Template(email_templates[event]['message']).render(**context)
+
     for user in subscribed_users:
         if context.get('commenter') != user.fullname:
-            message = build_content_from_template(event, **context)
-
             digest = DigestNotification(timestamp=datetime.datetime.utcnow(),
                                         event=event,
                                         user_id=user._id,
                                         context=message)
             digest.save()
-
-
-def build_content_from_template(event, **context):
-    for key in email_templates.keys():
-        if key == event:
-            return email_templates[event].text(context_vars=context)
 
 
 notifications = {
@@ -69,9 +66,14 @@ notifications = {
 }
 
 email_templates = {
-    'Comments': mails.COMMENT_ADDED,
-    'Comment_replies': mails.COMMENT_REPLIES,
-    'Digest': mails.DIGEST
+    'Comments': {
+        'subject': '${commenter} commented on "${title}".',
+        'message': '${commenter} commented on your project "${title}": "${content}"'
+    },
+    'Comment_replies': {
+        'subject': '${commenter} replied to your comment on "${title}".',
+        'message': '${commenter} replied to your comment "${parent_comment}" on your project "${title}": "${content}"'
+    }
 }
 
 
