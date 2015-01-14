@@ -1,6 +1,7 @@
 
 var $ = require('jquery');
 var ko = require('knockout');
+var bootbox = require('bootbox');
 
 /**
     * The NavbarViewModel, for OSF wide navigation.
@@ -31,9 +32,26 @@ var NavbarViewModel = function() {
         }
     };
 
+    self.help = function() {
+        bootbox.dialog({
+            title: 'Search help',
+            message: '<h4>Queries</h4>'+
+                '<p>Search uses the <a href="http://extensions.xwiki.org/xwiki/bin/view/Extension/Search+Application+Query+Syntax">Lucene search syntax</a>. ' +
+                'This gives you many options, but can be very simple as well. ' +
+                'Examples of valid searches include:' +
+                '<ul><li><a href="/search/?q=repro*">repro*</a></li>' +
+                '<li><a href="/search/?q=brian+AND+title%3Amany">brian AND title:many</a></li>' +
+                '<li><a href="/search/?q=tags%3A%28psychology%29">tags:(psychology)</a></li></ul>' +
+                '</p>'
+        });
+    };
+
+
     self.submit = function() {
        if(self.query() !== ''){
            window.location.href = '/search/?q=' + self.query();
+       } else {
+           console.log('Query' + self.query());
        }
     };
 
