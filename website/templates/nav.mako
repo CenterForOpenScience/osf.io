@@ -42,8 +42,8 @@
                     <a class="" >
                         <span rel="tooltip" title="Search OSF" class="icon-search icon-lg" ></span>
                     </a>
+                    <span data-bind="text: onSearchPage"></span>
                 </li>
-
                 % if user_name and display_name:
                 <li>
                     <a class="hidden-lg hidden-xs" href="/profile/">
@@ -72,22 +72,7 @@
         </div><!-- end navbar-collapse -->
     </div><!-- end container-->
 </nav>
+        <%include file='./search_bar.mako' />
 
-<div class="osf-search" data-bind="visible: showSearch">
-    <div class="container">
-        <div class="row">
-            <div class="col-md-12">
-                <form class="input-group" data-bind="submit: submit">
-                    <input name="searchBar" type="text" class="osf-search-input form-control" placeholder="Search" >
-                    <span class="input-group-btn">
-                        
-                        <span type=button class="btn osf-search-btn" data-bind="click: submit"><i class="icon-circle-arrow-right icon-lg"></i></span>
-                        <span type=button class="btn osf-search-btn" data-bind="click: help"><i class="icon-question icon-lg"></i></span>
-                    </span>
-                </form>
-            </div>
-        </div>  
-    </div>     
-</div>
 </div>
 

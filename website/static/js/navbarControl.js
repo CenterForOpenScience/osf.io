@@ -6,11 +6,18 @@ var ko = require('knockout');
     * The NavbarViewModel, for OSF wide navigation.
     * @param {Object} ... 
     */
-var NavbarViewModel = function(data) {
+var NavbarViewModel = function() {
     var self = this;
 
-    this.showSearch = ko.observable(false);
-    self.searchCSS = ko.observable(''); 
+    self.showSearch = ko.observable(false);
+    self.searchCSS = ko.observable('');
+
+    self.onSearchPage = ko.computed(function() {
+        var path = window.location.pathname;
+        var indexOfSearch = path.indexOf('search');
+        console.log('Index: ' + indexOfSearch);
+        return indexOfSearch === 0;
+    });
 
 
     this.toggleSearch = function(){
@@ -22,7 +29,7 @@ var NavbarViewModel = function(data) {
             self.searchCSS('active');            
 
         }         
-        console.log(self.showSearch());
+        console.log('Show search: ' + self.showSearch());
     };
 
 };

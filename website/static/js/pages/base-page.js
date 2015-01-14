@@ -6,7 +6,7 @@
 
 var $ = require('jquery');
 require('jquery.cookie');
-var NavbarControl = require('../navbarControl.js');
+var NavbarControl = require('navbar-control');
 var $osf = require('osfHelpers');
 
 // If there isn't a user logged in, show the footer slide-in

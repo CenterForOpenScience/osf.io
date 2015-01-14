@@ -3,6 +3,7 @@
 <%def name="content()">
     <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
     <div id="searchControls" class="scripted">
+        <%include file='./search_bar.mako' />
         <div class="row">
             <div class="col-md-12">
                 <div class="row">
@@ -47,7 +48,7 @@
                                     </span>
                                     <!-- /ko -->
                                 </span>
-                            </div>Z
+                            </div>
                         </div>
                         <br />
                         <!-- /ko -->

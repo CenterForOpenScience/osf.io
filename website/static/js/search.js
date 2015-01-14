@@ -74,7 +74,12 @@ var ViewModel = function(params) {
     self.resultsPerPage = ko.observable(10);
     self.categories = ko.observableArray([]);
     self.searchStarted = ko.observable(false);
+    self.showSearch = ko.observable(true);
+    self.searchCSS = ko.observable('active');
 
+    // Maintain compatibility with hiding search bar elsewhere on the site
+    self.toggleSearch = function() {
+    };
 
     self.totalCount = ko.computed(function() {
         if (self.categories().length === 0 || self.categories()[0] === undefined) {
