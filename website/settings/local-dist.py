@@ -26,6 +26,9 @@ MAIL_SERVER = 'localhost:1025'  # For local testing
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = 'CHANGEME'
 
+# Mailchimp email subscriptions
+ENABLE_EMAIL_SUBSCRIPTIONS = False
+
 # Session
 COOKIE_NAME = 'osf'
 SECRET_KEY = "CHANGEME"
