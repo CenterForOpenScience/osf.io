@@ -7,13 +7,13 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand visible-lg" href="/"><img src="/static/img/cos-white2.png" class="osf-navbar-logo" width="36" alt="COS logo"/> Open Science Framework <span class="brand-version"> BETA</span></a>
-            <a class="navbar-brand hidden-lg hidden-xs" href="/"><img src="/static/img/cos-white2.png" class="osf-navbar-logo" width="36" alt="COS logo"/> OSF</a>
-            <a class="navbar-brand visible-xs" href="/"><img src="/static/img/cos-white2.png" class="osf-navbar-logo" width="36" alt="COS logo"/> Open Science Framework</a>
+            <a class="navbar-brand visible-lg" href="/"><img src="/static/img/cos-white2.png" class="osf-navbar-logo" width="27" alt="COS logo"/> Open Science Framework <span class="brand-version"> BETA</span></a>
+            <a class="navbar-brand hidden-lg hidden-xs" href="/"><img src="/static/img/cos-white2.png" class="osf-navbar-logo" width="27" alt="COS logo"/> OSF</a>
+            <a class="navbar-brand visible-xs" href="/"><img src="/static/img/cos-white2.png" class="osf-navbar-logo" width="27" alt="COS logo"/> Open Science Framework</a>
 
         </div><!-- end navbar-header -->
         <div class="collapse navbar-collapse navbar-ex1-collapse">
-            <ul class="nav navbar-nav">
+            <ul class="nav navbar-nav navbar-mid">
                 <li class="visible-xs"><a href="/">Home</a></li>
                 % if user_name:
                 <li><a href="${web_url_for('dashboard')}">My Dashboard</a></li>
@@ -48,10 +48,10 @@
                 % if user_name and display_name:
                 <li>
                     <a class="hidden-lg hidden-xs" href="/profile/">
-                        <span rel="tooltip" title="${user_name}" class="osf-gravatar"></span>
+                        <span rel="tooltip" title="${user_name}" class="osf-gravatar"><img src="${user_gravatar}" alt="User gravatar"/> </span>
                     </a>
                     <a class="visible-lg visible-xs" href="/profile/">
-                        <span rel="tooltip" title="${user_name}"><span class="osf-gravatar"> </span> ${display_name}</span>
+                        <span rel="tooltip" title="${user_name}"><span class="osf-gravatar"> <img src="${user_gravatar}" alt="User gravatar"/> </span> ${display_name}</span>
                     </a>
                 </li>
                 <li>

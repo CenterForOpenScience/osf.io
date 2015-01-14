@@ -56,6 +56,12 @@
     </header>
 
 
+    <style type="text/css">
+    .watermarked {
+        padding-top: 55px;
+    }
+    </style>
+
 % if node['is_registration']:
     <div class="alert alert-info">This ${node['node_type']} is a registration of <a class="alert-link" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been frozen and cannot be edited.
     </div>
