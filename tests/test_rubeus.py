@@ -89,6 +89,42 @@ class TestRubeus(OsfTestCase):
             rv
         )
 
+    def test_build_addon_root_has_correct_upload_limits(self):
+        self.node_settings.config.max_file_size = 10
+        self.node_settings.config.high_max_file_size = 20
+
+        node = self.project
+        user = self.project.creator
+        auth = Auth(user)
+        permissions = {
+            'view': node.can_view(auth),
+            'edit': node.can_edit(auth) and not node.is_registration,
+        }
+
+        result = rubeus.build_addon_root(
+            self.node_settings,
+            self.node_settings.bucket,
+            permissions=permissions,
+            user=user
+        )
+
+        assert_equal(result['accept']['maxSize'], self.node_settings.config.max_file_size)
+
+        # user now has elevated upload limit
+        user.system_tags.append('high_upload_limit')
+        user.save()
+
+        result = rubeus.build_addon_root(
+            self.node_settings,
+            self.node_settings.bucket,
+            permissions=permissions,
+            user=user
+        )
+        assert_equal(
+            result['accept']['maxSize'],
+            self.node_settings.config.high_max_file_size
+        )
+
     def test_hgrid_dummy_fail(self):
         node_settings = self.node_settings
         node = self.project
