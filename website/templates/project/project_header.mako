@@ -21,7 +21,7 @@
                 </div>
                 <div class="collapse navbar-collapse project-nav">
                     <ul class="nav navbar-nav">
-                        <li><a href="${node['url']}" style="font-weight:300; font-size:20px"> ${node['title'] | n}  </a></li>
+                        <li><a href="${node['url']}"  class="project-title"> ${node['title'] | n}  </a></li>
                         <li><a href="${node['url']}files/">Files</a></li>
                         <!-- Add-on tabs -->
                         % for addon in addons_enabled:

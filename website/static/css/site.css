@@ -808,7 +808,7 @@ li.node p.date{
 /***********/
 
 h1.node-title, h1.node-parent-title {
-  line-height: 36px;
+  line-height: 50px;
   border-bottom: none;
   margin-top: 0.3em;
 }
@@ -1753,6 +1753,11 @@ div.pydocx-center{
     margin-bottom: 2px;
 }
 
+.navbar-toggle {
+    margin-top: 5px;
+    margin-bottom: 3px;
+}
+
 .navbar-toggle .icon-bar {
     background-color: white;
 }
@@ -1795,24 +1800,33 @@ div.pydocx-center{
 }
 
 .osf-project-navbar li>a {
-    padding-top: 19px;
+    padding-top: 16px;
     padding-bottom: 16px;
     font-size: 16px;
 }
 
-.osf-project-navbar li.active, .osf-project-navbar li:hover{
-    background-color: #337AB7;
-}
+
 
 .osf-project-navbar .navbar-nav li>a:hover {
     background-color: #DADADA;
 }
 
+.osf-project-navbar li.active, .osf-project-navbar li.active a:hover, .osf-project-navbar li:hover{
+    background-color: #337AB7;
+}
+
+
 .osf-project-navbar li.active a {
     color: white;
 }
 
-
+.osf-project-navbar a.project-title {
+    font-weight: 300;
+    font-size: 24px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
 
 .m-v-lg {
     margin: 20px 0 20px 0;
@@ -1860,11 +1874,10 @@ div.pydocx-center{
 }
 .node-title {
     line-height: 50px;
-border-bottom: none;
-margin-top: 0.3em;
-font-size: 43px;
-font-weight: 300;
-
+    border-bottom: none;
+    margin-top: 0.3em;
+    font-size: 43px;
+    font-weight: 300;
 }
 .text-300 {
     font-weight: 300;
@@ -1896,6 +1909,9 @@ font-weight: 300;
     .navbar .search-query {
     width: 190px;
     }
+    .osf-project-navbar a.project-title {
+        max-width: 190px;
+    }
 }
 
 @media (max-width: 767px) {
@@ -1904,8 +1920,16 @@ font-weight: 300;
     }
     .navbar-nav .open .dropdown-menu>li>a {
         color: #FFF;
-        }
-
+    }
+    .osf-project-navbar li>a {
+        padding-left: 30px;
+        padding-right: 30px;
+    }   
+    .osf-project-navbar a.project-title {
+    }
+    .project-nav {
+        overflow: hidden;
+    }
 }
 
 @media (min-width: 992px) {
@@ -1916,6 +1940,9 @@ font-weight: 300;
     .navbar .search-query {
         width: 360px;
     }
+    .osf-project-navbar a.project-title {
+        max-width: 300px;
+    }
 }
 @media (min-width: 1200px) {
     .osf-navbar .navbar-nav>li>a, .osf-project-navbar li>a {
@@ -1924,6 +1951,9 @@ font-weight: 300;
     }
     .navbar .search-query {
     width: 270px;
+    }
+    .osf-project-navbar a.project-title {
+        max-width: 400px;
     }
 }
 

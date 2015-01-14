@@ -266,21 +266,7 @@ $(document).ready(function() {
         window.location = '/search/?q=(tags:' + $(e.target).text().toString().trim()+ ')';
     });
 
-    $('.project-toggle').on('click', function() {
-        var widget = $(this).closest('.addon-widget-container');
-        var up = $(this).find('.icon-angle-up');
-        var down = $(this).find('.icon-angle-down');
-        console.log(up, down);
-        if(up.length > 0) {
-            up.removeClass('icon-angle-up').addClass('icon-angle-down');
-        }
-        if(down.length > 0) {
-            down.removeClass('icon-angle-down').addClass('icon-angle-up');            
-        }
 
-        widget.find('.addon-widget-body').slideToggle();
-        return false;
-    });
 
     $( ".osf-dash-col" ).sortable({
       connectWith: ".osf-dash-col",
