@@ -1740,6 +1740,10 @@ font-size: 16px;
     background: rgba(187, 187, 187, 0.2);
 }
 
+.osf-navbar .navbar-nav>li>a {
+    padding-top: 12px;
+padding-bottom: 12px;
+}
 
 .osf-project-navbar {
 position: fixed;
@@ -1766,7 +1770,8 @@ min-height:55px;
     color: white;
 }
 .icon-lg {
-    font-size: 18px;
+font-size: 20px;
+line-height: 26px;
 }
 
 .m-v-lg {
@@ -1845,4 +1850,30 @@ margin-top: -7px;
 }
 .page-header.visible-xs {
     margin: 0;
+}
+.osf-gravatar > img {
+border: 1px solid #CDCDCD;
+border-radius: 13px;
+margin-right: 5px;
+}
+
+
+@media (min-width: 768px) {
+    .osf-navbar .navbar-nav>li>a, .osf-project-navbar li>a {
+        padding-left: 7px;
+        padding-right: 7px;    
+    }
+}
+
+@media (min-width: 992px) {
+    .osf-navbar .navbar-nav>li>a, .osf-project-navbar li>a {
+        padding-left: 10px;
+        padding-right: 10px;    
+    }
+}
+@media (min-width: 1200px) {
+    .osf-navbar .navbar-nav>li>a, .osf-project-navbar li>a {
+        padding-left: 15px;
+        padding-right: 15px;    
+    }
 }

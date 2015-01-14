@@ -42,3 +42,15 @@ if ($(sliderSelector).length > 0 &&
         $.inArray(window.location.pathname, NO_FOOTER_PATHS) === -1) {
     $osf.applyBindings(new SlideInViewModel(), sliderSelector);
 }
+$(document).ready(function(){
+    $.ajax({
+      type: 'GET',
+      url: '/api/v1/users/gravatar/25'
+    })
+      .done(function( data ) {
+        window.contextVars.gravatarUrl = data.gravatar_url; 
+        $('.osf-gravatar').html('<img src="' + data.gravatar_url + '" alt="User gravatar image" />');
+      });    
+})
+
+
