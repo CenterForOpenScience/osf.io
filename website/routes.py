@@ -274,7 +274,7 @@ def make_url_map(app):
                 '/project/<pid>/node/<nid>/comment/<cid>/',
             ],
             'get',
-            project_views.comment.view_comments,
+            project_views.comment.view_comments_single,
             json_renderer,
         ),
 
@@ -719,13 +719,49 @@ def make_url_map(app):
             [
                 '/project/<pid>/discussions/',
                 '/project/<pid>/node/<nid>/discussions/',
-                '/project/<pid>/discussions/wiki/<wname>/',
-                '/project/<pid>/node/<nid>/discussions/wiki/<wname>/',
+            ],
+            'get',
+            project_views.comment.view_comments_project,
+            OsfWebRenderer('project/discussions.mako'),
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/discussions/overview/',
+                '/project/<pid>/node/<nid>/discussions/overview/',
+            ],
+            'get',
+            project_views.comment.view_comments_overview,
+            OsfWebRenderer('project/discussions.mako'),
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/discussions/files/',
+                '/project/<pid>/node/<nid>/discussions/files',
+            ],
+            'get',
+            project_views.comment.view_comments_files,
+            OsfWebRenderer('project/discussions.mako'),
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/discussions/wiki/',
+                '/project/<pid>/node/<nid>/discussions/wiki',
+            ],
+            'get',
+            project_views.comment.view_comments_wiki,
+            OsfWebRenderer('project/discussions.mako'),
+        ),
+
+        Rule(
+            [
                 '/project/<pid>/discussions/<cid>/',
                 '/project/<pid>/node/<nid>/discussions/<cid>/',
             ],
             'get',
-            project_views.comment.view_comments,
+            project_views.comment.view_comments_single,
             OsfWebRenderer('project/discussions.mako'),
         ),
 

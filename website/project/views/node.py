@@ -800,11 +800,12 @@ def _view_project(node, auth, primary=False):
             'fullname': user.fullname if user else '',
             'can_comment': node.can_comment(auth),
             'show_wiki_widget': _should_show_wiki_widget(node, user),
-            'dashboard_id': dashboard_id,  # todo add unread comments on each page
+            'dashboard_id': dashboard_id,
             'unread_comments': {
                 'total': n_unread_comments(node, user, 'total'),
                 'node': n_unread_comments(node, user, 'node'),
-                'wiki': n_unread_comments(node, user, 'wiki')
+                'wiki': n_unread_comments(node, user, 'wiki'),
+                'files': n_unread_comments(node, user, 'files')
             }
         },
         'badges': _get_badge(user),
@@ -849,7 +850,7 @@ def _get_children(node, auth, indent=0):
 
 def n_unread_comments(node, user, page, rootid=None):
     """Return the number of unread comments on a node for a user."""
-    if rootid is None:
+    if rootid is None or rootid == 'None':
         return n_unread_total(node, user, page)
 
     default_timestamp = datetime(1970, 1, 1, 12, 0, 0)

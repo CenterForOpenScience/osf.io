@@ -18,6 +18,7 @@ var nodeApiUrl = window.contextVars.node.urls.api;
 
 // Maximum length for comments, in characters
 var MAXLENGTH = 500;
+var MAXLEVEL = 5;
 
 var ABUSE_CATEGORIES = {
     spam: 'Spam or advertising',
@@ -66,11 +67,11 @@ var exclusifyGroup = function() {
 var BaseComment = function() {
 
     var self = this;
+    self.MAXLEVEL = MAXLEVEL;
 
     self.abuseOptions = Object.keys(ABUSE_CATEGORIES);
 
-    //self._loaded = false;
-    self._loaded = -1;
+    self._loaded = false;
     self.id = ko.observable();
 
     self.page = ko.observable('node'); // Default
@@ -89,6 +90,8 @@ var BaseComment = function() {
     self.unreadComments = ko.observable(0);
 
     self.pageNumber = ko.observable(0);
+
+    self.level = -1;
 
     self.displayCount = ko.computed(function() {
         if (self.unreadComments() !== 0) {
@@ -141,7 +144,7 @@ BaseComment.prototype.setupToolTips = function(elm) {
 BaseComment.prototype.fetch = function(thread) {
     var self = this;
     var deferred = $.Deferred();
-    if (self._loaded >= 0) {
+    if (self._loaded) {
         deferred.resolve(self.comments());
     }
     if (thread !== undefined) {
@@ -162,7 +165,7 @@ BaseComment.prototype.fetch = function(thread) {
             );
             self.unreadComments(response.nUnread);
             deferred.resolve(self.comments());
-            self._loaded = self.comments().length - 1;
+            self._loaded = true;
         }
     );
     return deferred;
@@ -171,7 +174,7 @@ BaseComment.prototype.fetch = function(thread) {
 BaseComment.prototype.getThread = function(thread_id) {
     var self = this;
     var deferred = $.Deferred();
-    if (self._loaded >= 0) {
+    if (self._loaded) {
         deferred.resolve(self.comments());
     }
     $.getJSON(
@@ -181,7 +184,7 @@ BaseComment.prototype.getThread = function(thread_id) {
             self.comments([]);
             self.comments.push(new CommentModel(response.comment, self, self.$root));
             deferred.resolve(self.comments());
-            self._loaded = self.comments().length - 1;
+            self._loaded = true;
         }
     );
     return deferred;
@@ -209,7 +212,6 @@ BaseComment.prototype.submitReply = function() {
         self.cancelReply();
         self.replyContent(null);
         self.comments.unshift(new CommentModel(response.comment, self, self.$root));
-        self._loaded += 1;
         if (!self.hasChildren()) {
             self.hasChildren(true);
         }
@@ -250,6 +252,8 @@ var CommentModel = function(data, $parent, $root) {
     });
 
     self.mode = $parent.mode;
+
+    self.level = $parent.level + 1;
 
     self.showChildren = ko.observable(false);
 
@@ -292,6 +296,10 @@ var CommentModel = function(data, $parent, $root) {
     self.shouldShow = ko.computed(function() {
         return (!self.isDeleted() && !self.isHidden()) || self.hasChildren() || self.canEdit();
     });
+
+    self.shouldShowChildren = ko.computed(function() {
+        return self.level < MAXLEVEL;
+    })
 
     self.rootUrl = ko.computed(function(){
         var url = 'discussions';

@@ -161,7 +161,13 @@
                                 % endif
                             </a>
                         </li>
-                        <li><a href="${node['url']}files/">Files</a></li>
+                        <li>
+                            <a href="${node['url']}files/">Files
+                                % if user['unread_comments']['files'] > 0:
+                                    <span class="badge">${user['unread_comments']['files']}</span>
+                                % endif
+                            </a>
+                        </li>
                         <!-- Add-on tabs -->
                         % for addon in addons_enabled:
                             % if addons[addon]['has_page']:

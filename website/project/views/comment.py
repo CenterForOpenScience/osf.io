@@ -18,54 +18,92 @@ from datetime import datetime
 from website.project.model import has_anonymous_link
 from website.project.views.node import _view_project, n_unread_comments
 
+
 @must_be_contributor_or_public
-def view_comments(**kwargs):
+def view_comments_project(**kwargs):
     """
 
     """
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
 
-    serialized = {}
-    if kwargs.get('cid'):
-        comment = kwargs_to_comment(kwargs)
-        serialized_comment = serialize_comment(comment, auth)
-        serialized.update({
-            'comment': serialized_comment,
-            'comment_target': serialized_comment['page'],
-            'comment_target_id': comment.rootId
-        })
-    elif kwargs.get('wname'):
-        wiki_page = node.get_wiki_page(kwargs.get('wname'))
-        if wiki_page is None:
-            raise HTTPError(http.NOT_FOUND)
-        serialized.update({
-            'comment_target': 'wiki',
-            'comment_target_id': wiki_page.page_name
-        })
-        _update_comments_timestamp(auth, node, page='wiki', rootid= wiki_page.page_name)
-    else:
-        serialized.update({
-            'comment_target': 'node',
-            'comment_target_id': node._id
-        })
-        _update_comments_timestamp(auth, node, page='node')
+    ret = {
+        'comment_target': 'total',
+        'comment_target_id': None
+    }
+    _update_comments_timestamp(auth, node, page='node')
+    _update_comments_timestamp(auth, node, page='wiki')
+    _update_comments_timestamp(auth, node, page='files')
+    ret.update(_view_project(node, auth, primary=True))
+    return ret
 
-    from website.addons.wiki.views import _get_wiki_pages_current
-    serialized.update({
-        'overview_unread': n_unread_comments(node, auth.user, 'node', node._id),
-        'wiki_pages_current': [
-            {
-                'name': page['name'],
-                'unread': n_unread_comments(node, auth.user, 'wiki', page['name'])
-            }
-            for page in _get_wiki_pages_current(node)
-        ],
-        'wiki_home_content': node.get_wiki_page('home'),
-        'wiki_home_unread': 0 if not node.get_wiki_page('home') else n_unread_comments(node, auth.user, 'wiki', 'home')
-    })
-    serialized.update(_view_project(node, auth, primary=True))
-    return serialized
+
+@must_be_contributor_or_public
+def view_comments_overview(**kwargs):
+    """
+
+    """
+    node = kwargs['node'] or kwargs['project']
+    auth = kwargs['auth']
+
+    ret = {
+        'comment_target': 'node',
+        'comment_target_id': node._id
+    }
+    _update_comments_timestamp(auth, node, page='node', rootid=node._id)
+    ret.update(_view_project(node, auth, primary=True))
+    return ret
+
+@must_be_contributor_or_public
+def view_comments_files(**kwargs):
+    """
+
+    """
+    node = kwargs['node'] or kwargs['project']
+    auth = kwargs['auth']
+
+    ret = {
+        'comment_target': 'files',
+        'comment_target_id': None
+    }
+    _update_comments_timestamp(auth, node, page='files')
+    ret.update(_view_project(node, auth, primary=True))
+    return ret
+
+
+@must_be_contributor_or_public
+def view_comments_wiki(**kwargs):
+    """
+
+    """
+    node = kwargs['node'] or kwargs['project']
+    auth = kwargs['auth']
+
+    ret = {
+        'comment_target': 'wiki',
+        'comment_target_id': None
+    }
+    _update_comments_timestamp(auth, node, page='wiki')
+    ret.update(_view_project(node, auth, primary=True))
+    return ret
+
+
+@must_be_contributor_or_public
+def view_comments_single(**kwargs):
+    """
+
+    """
+    node = kwargs['node'] or kwargs['project']
+    auth = kwargs['auth']
+    comment = kwargs_to_comment(kwargs)
+    serialized_comment = serialize_comment(comment, auth)
+    ret = {
+        'comment': serialized_comment,
+        'comment_target': serialized_comment['page'],
+        'comment_target_id': comment.rootId
+    }
+    ret.update(_view_project(node, auth, primary=True))
+    return ret
 
 
 def resolve_target(node, page, guid):
@@ -101,7 +139,14 @@ def comment_discussion(**kwargs):
     if page == 'total':
         users = collections.defaultdict(list)
         for comment in getattr(node, 'comment_owner', []) or []:
-            if not comment.is_deleted:
+            if not comment.is_deleted or not comment.is_hidden:
+                users[comment.user].append(comment)
+    elif guid is None or guid=='None':
+        users = collections.defaultdict(list)
+        comments = Comment.find(Q('node', 'eq', node) & Q('page', 'eq', page)).get_keys()
+        for cid in comments:
+            comment = Comment.load(cid)
+            if not comment.is_deleted or not comment.is_hidden:
                 users[comment.user].append(comment)
     else:
         target = resolve_target(node, page, guid)
@@ -251,13 +296,16 @@ def list_comments(auth, **kwargs):
     page = request.args.get('page')
     guid = request.args.get('target')
     rootid = request.args.get('rootId')
-    #end = request.args.get('loaded')
-    #start = max(0, request.args.get('loaded') - request.args.get('size'))
-    if page == 'total':
+
+    if page == 'total' and rootid == 'None':
+        serialized_comments = list_total_comments(node, auth, 'total')
+    elif page == 'total':
         serialized_comments = [
             serialize_comment(comment, auth, anonymous)
             for comment in getattr(node, 'comment_owner', [])
         ]
+    elif rootid == 'None':
+        serialized_comments = list_total_comments(node, auth, page)
     else:
         target = resolve_target(node, page, guid)
         serialized_comments = serialize_comments(target, auth, anonymous)
@@ -268,10 +316,32 @@ def list_comments(auth, **kwargs):
             auth.user.comments_viewed_timestamp = {}
             auth.user.save()
         n_unread = n_unread_comments(node, auth.user, page, rootid)
+
     return {
         'comments': serialized_comments,
         'nUnread': n_unread
     }
+
+def list_total_comments(node, auth, page):
+    if page == 'total':
+        comments = Comment.find(Q('node', 'eq', node)).get_keys()
+    else:
+        comments = Comment.find(Q('node', 'eq', node) & Q('page', 'eq', page)).get_keys()
+    serialized_comments = []
+    for cid in comments:
+        cmt = Comment.load(cid)
+        if not isinstance(cmt.target, Comment):
+            serialized_comments.append(cmt)
+    serialized_comments = [
+        serialize_comment(comment, auth)
+        for comment in serialized_comments
+    ]
+    serialized_comments = sorted(
+        serialized_comments,
+        key=lambda item: item.get('dateCreated'),
+        reverse=False,
+    )
+    return serialized_comments
 
 @must_be_logged_in
 @must_be_contributor_or_public
@@ -330,15 +400,19 @@ def _update_comments_timestamp(auth, node, page='node', rootid=None):
             auth.user.comments_viewed_timestamp[node._id]['node'] = overview_timestamp
         timestamps = auth.user.comments_viewed_timestamp[node._id]
 
-        # update node or wiki timestamp
+        # update node/wiki/files timestamp
         if page == 'node':
             timestamps['node'] = datetime.utcnow()
             auth.user.save()
             return {node._id: auth.user.comments_viewed_timestamp[node._id]['node'].isoformat()}
-        if rootid == None:
-            return {}
         if not timestamps.get(page, None):
             timestamps[page] = dict()
+
+        # if updating timestamp on the files/wiki total page...
+        if rootid is None or rootid == 'None':
+            for id in timestamps[page]:
+                ret = _update_comments_timestamp(auth, node, page, id)
+            return ret
         timestamps[page][rootid] = datetime.utcnow()
         auth.user.save()
         return {node._id: auth.user.comments_viewed_timestamp[node._id][page][rootid].isoformat()}

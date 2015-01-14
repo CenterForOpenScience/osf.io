@@ -6,7 +6,7 @@
 
             <div data-bind="if: isDeleted">
                 <div>
-                    <span data-bind="if: hasChildren">
+                    <span data-bind="if: hasChildren() && shouldShowChildren()">
                         <i data-bind="css: toggleIcon, click: toggle"></i>
                     </span>
                     Comment deleted.
@@ -24,7 +24,7 @@
 
             <div data-bind="if: isHidden">
                 <div>
-                    <span data-bind="if: hasChildren">
+                    <span data-bind="if: hasChildren() && shouldShowChildren()">
                         <i data-bind="css: toggleIcon, click: toggle"></i>
                     </span>
                     Comment deleted.
@@ -33,7 +33,7 @@
 
             <div data-bind="if: isAbuse">
                 <div>
-                    <span data-bind="if: hasChildren">
+                    <span data-bind="if: hasChildren() && shouldShowChildren()">
                         <i data-bind="css: toggleIcon, click: toggle"></i>
                     </span>
                     Comment reported. <a data-bind="click: startUnreportAbuse">Not abuse</a>
@@ -55,7 +55,7 @@
                         <span data-bind="ifnot: author.id">
                             <span class="comment-author" data-bind="text: author.name"></span>
                         </span>
-                        <span data-bind="if: mode === 'widget'">
+                        <span data-bind="if: mode !== 'pane'">
                             <a class="comment-author" data-bind="attr: {href: '${node['url']}discussions/'+id()}">
                                 <span data-bind="if: page()==='node'">
                                         (Overview)
@@ -65,6 +65,9 @@
                                     <span data-bind="ifnot: rootId().toLowerCase()==='home'">
                                         <span data-bind="text: '(Wiki - ' + rootId() + ')'"></span>
                                     </span>
+                                </span>
+                                <span data-bind="if: page()==='files'">
+                                    (Files)
                                 </span>
                             </a>
                         </span>
@@ -82,7 +85,7 @@
                     <div class="comment-content">
 
                         <div data-bind="ifnot: editing">
-                            <span data-bind="if: mode !== 'widget' && hasChildren()"><i data-bind="css: toggleIcon, click: toggle"></i></span>
+                            <span data-bind="if: mode !== 'widget' && hasChildren() && shouldShowChildren()"><i data-bind="css: toggleIcon, click: toggle"></i></span>
                             <span class="overflow" data-bind="text: content, css: {'edit-comment': editHighlight}, event: {mouseenter: startHoverContent, mouseleave: stopHoverContent, click: edit}"></span>
                         </div>
 
@@ -167,12 +170,16 @@
 
             <!-- /ko -->
 
-            <!-- ko if: showChildren -->
+            <!-- ko if: showChildren() && shouldShowChildren() -->
                 <!-- ko template: {name:  'commentTemplate', foreach: comments} -->
                 <!-- /ko -->
             <!-- /ko -->
 
         </ul>
+
+        <div data-bind="ifnot: shouldShowChildren">
+            <a data-bind="attr: {href: '${node['url']}discussions/'+id()}">Continue this thread &#8594;</a>
+        </div>
 
     </div>
 

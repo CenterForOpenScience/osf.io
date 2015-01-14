@@ -9,54 +9,44 @@
 <div class="col-sm-3">
     <div class="osf-sidenav hidden-print" role="complementary">
         <ul class="nav bs-sidenav" style="margin: 0;">
+            <!-- Total -->
             <li>
-                <a href="${node['url']}discussions/">Overview
-                    % if overview_unread > 0:
-                        <span class="badge pull-right">${overview_unread}</span>
+                <a href="${node['url']}discussions/">Total
+                    % if user['unread_comments']['total'] > 0:
+                        <span class="badge pull-right">${user['unread_comments']['total']}</span>
+                    % endif
+                </a>
+            </li>
+
+            <!-- Overview -->
+            <li>
+                <a href="${node['url']}discussions/overview">Overview
+                    % if user['unread_comments']['node'] > 0:
+                        <span class="badge pull-right">${user['unread_comments']['node']}</span>
                     % endif
                 </a>
             </li>
 
             <!-- wiki -->
             % if addons:
-                % for addon in addons_enabled:
-                    % if addon == 'wiki':
-                        <hr/>
-                        <li>
-                            <h4 style="margin-left: 15px">Wiki</h4>
-                        </li>
-                        <li>
-                            % if wiki_home_content:
-                                <a href="${node['url']}discussions/wiki/home">
-                                    Home
-                                    % if wiki_home_unread > 0:
-                                        <span class="badge pull-right">${wiki_home_unread}</span>
-                                    % endif
-                                </a>
-                            % else:
-                                <a style="color: #808080">Home (No wiki content)</a>
+                % if 'wiki' in addons_enabled:
+                    <li>
+                        <a href="${node['url']}discussions/wiki">Wiki
+                            % if user['unread_comments']['wiki'] > 0:
+                                <span class="badge pull-right">${user['unread_comments']['wiki']}</span>
                             % endif
-                        </li>
-                        % for page in wiki_pages_current:
-                            % if page['name'].lower() != 'home':
-                                <li>
-                                    <a href="${node['url']}discussions/wiki/${page['name']}">
-                                        ${page['name']}
-                                        % if page['unread'] > 0:
-                                            <span class="badge pull-right">${page['unread']}</span>
-                                        % endif
-                                    </a>
-                                </li>
-                            % endif
-                        %endfor
-                    % endif
-                % endfor
+                        </a>
+                    </li>
+                % endif
             % endif
 
             <!-- files -->
-            <hr/>
             <li>
-                <h4 style="margin-left: 15px"">Files</h4>
+                <a href="${node['url']}discussions/files">Files
+                    % if user['unread_comments']['files'] > 0:
+                        <span class="badge pull-right">${user['unread_comments']['files']}</span>
+                    % endif
+                </a>
             </li>
         </ul>
     </div>
@@ -68,13 +58,10 @@
 
             <!-- All comments for Overview, Files and Wiki -->
             <h3>
-            % if comment_target == 'wiki':
-                Wiki
-                %if comment_target_id.lower() != 'home':
-                    - ${comment_target_id}
-                % endif
-            % else:
+            % if comment_target == 'node':
                 Overview
+            % else:
+                ${comment_target.title()}
             % endif
             </h3>
             <div data-bind="visible: discussion().length > 0">
@@ -86,7 +73,6 @@
                     </a>
                 </span>
             </div>
-            ${newComment()}
 
         %else:
 
@@ -107,37 +93,6 @@
         % endif
     </div>
 </div>
-
-<!-- Template for making a new comment -->
-<%def name="newComment()">
-    <div data-bind="if: canComment">
-        <span data-bind="ifnot: commented()">
-            There are currently no comments on this page yet. Would you like to <a data-bind="click: showReply">make the first one</a>?
-        </span>
-        <span data-bind="if: commented">
-            <a data-bind="click: showReply">
-                Add a comment
-            </a>
-        </span>
-    </div>
-    <div data-bind="if: replying" style="margin-top: 20px">
-        <form class="form">
-            <div class="form-group">
-                <textarea class="form-control" placeholder="Add a comment"
-                          data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
-            </div>
-            <div>
-                <a class="btn btn-default"
-                   data-bind="click: submitReply, visible: replyNotEmpty, css: {disabled: submittingReply}"><i
-                        class="icon-check"></i> {{saveButtonText}}</a>
-                <a class="btn btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"><i
-                        class="icon-undo"></i> Cancel</a>
-                <span data-bind="text: replyErrorMessage" class="comment-error"></span>
-            </div>
-            <div class="comment-error">{{errorMessage}}</div>
-        </form>
-    </div>
-</%def>
 
 <%def name="stylesheets()">
     ${parent.stylesheets()}
