@@ -1870,10 +1870,16 @@ margin-right: 5px;
         padding-left: 10px;
         padding-right: 10px;    
     }
+    .navbar .search-query {
+        width: 360px;
+    }
 }
 @media (min-width: 1200px) {
     .osf-navbar .navbar-nav>li>a, .osf-project-navbar li>a {
         padding-left: 15px;
         padding-right: 15px;    
+    }
+.navbar .search-query {
+    width: 270px;
     }
 }
