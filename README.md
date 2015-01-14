@@ -326,14 +326,14 @@ $ npm install -g webpack
 ```bash
 # Make sure dependencies are up to date
 $ bower install && npm install
-# Run webpack in watch mode
-$ inv pack -w
+# Run webpack in debug mode and watch for changes
+$ inv pack -dw
 ```
 
-The above commands can be run in one step with:
+**The above commands can be run in one step with**:
 
 ```bash
-$ inv assets -w
+$ inv assets -dw
 ```
 
 ## Setting up addons

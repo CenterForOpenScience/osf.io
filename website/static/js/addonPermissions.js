@@ -59,4 +59,4 @@ var AddonPermissionsTable = {
 
 // Needs to be in the global scope because AddonPermissionsTable
 // is initialized in addon_permissions.mako
-module.exports = window.AddonPermissionsTable = AddonPermissionsTable;
+module.exports = AddonPermissionsTable;
