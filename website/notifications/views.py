@@ -15,7 +15,7 @@ def subscribe(auth, **kwargs):
 
     for notification_type in notification_types:
         for event in subscriptions:
-            if event == 'Comment_replies':
+            if event == 'comment_replies':
                 category = user._id
             else:
                 category = pid

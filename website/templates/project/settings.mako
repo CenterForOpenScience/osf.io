@@ -104,17 +104,18 @@
                     <form id="notificationSettings">
                         <h5>Receive email notifications about the following: </h5>
                             % for subscription in subscriptions_available:
-                                <div>
-                                    <label>
+                                <div style="padding-left: 15px">
+                                    <label style="font-weight: normal">
                                         <input
                                             type="checkbox"
                                             name="${subscription}"
                                             ${'checked' if (subscription in subscriptions_enabled) else ''}
                                         />
-                                        ${subscription}
+                                        ${subscriptions_available[subscription]}
                                     </label>
                                 </div>
                             % endfor
+
                         <br />
 
                         <button class="btn btn-success">Submit</button>
