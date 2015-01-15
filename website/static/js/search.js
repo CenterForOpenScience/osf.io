@@ -75,6 +75,7 @@ var ViewModel = function(params) {
     self.categories = ko.observableArray([]);
     self.searchStarted = ko.observable(false);
     self.showSearch = true;
+    self.showClose = false;
     self.searchCSS = ko.observable('active');
 
     // Maintain compatibility with hiding search bar elsewhere on the site

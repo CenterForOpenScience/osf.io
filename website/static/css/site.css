@@ -1775,6 +1775,13 @@ div.pydocx-center{
     margin-top: -7px;
 }
 
+.osf-navbar .navbar-nav>li>a.btn {
+    padding-top: 4px;
+    padding-bottom: 3px;
+    margin-top: 4px;
+    margin-left: 8px;
+}
+
 .osf-gravatar > img {
     border: 1px solid #CDCDCD;
     border-radius: 13px;
@@ -1882,29 +1889,7 @@ div.pydocx-center{
     font-weight: 300;
 }
 
-.osf-search {
-    padding: 15px 0;
-background: #b8ecc0;
-margin-top: -30px;
-}
-.osf-search-input {
-    background: none;
-    border: none;
-    box-shadow: none;
-    border-bottom: 1px dotted #FFF;
-    border-radius: 0;
-    padding: 15px 0;
-    font-size: 20px;
-    color: #FFF;
-    font-weight: 300;
-}
-.osf-search-input:focus {
-    outline : 0 !important;
-    box-shadow: none;
-}
-.osf-search-btn {
-    color: white;
-}
+
 #projectSubnav .navbar-collapse {
     padding-left: 0; 
     padding-right: 0;
@@ -1982,6 +1967,62 @@ margin-top: -30px;
     .osf-project-navbar a.project-title {
         max-width: 400px;
     }
+}
+
+/* Search bar */
+.osf-search {
+    padding: 10px 0;
+    background: #B8ECC0;
+    margin-top: -30px;
+    position: fixed;
+    width: 100%;
+    box-shadow: 0 0 9px -2px #464545;
+    z-index: 11;
+    left: 0;
+}
+.osf-search-input {
+    background: none;
+    border: none;
+    box-shadow: none;
+    border-bottom: 1px dotted #FFF;
+    border-radius: 0;
+    padding: 15px 0;
+    font-size: 20px;
+    color: #214762;
+    font-weight: 300;
+}
+.osf-search-input:focus {
+    outline : 0 !important;
+    box-shadow: none;
+    border-bottom: 1px dotted #FFF;
+}
+.osf-search-btn {
+    color: #214762;
+    background: rgba(0, 0, 0, 0);
+}
+
+.osf-search-btn:hover {
+    color: #738EA2;
+}
+
+
+#searchPageFullBar::-webkit-input-placeholder {
+   color: #738EA2;
+}
+
+#searchPageFullBar:-moz-placeholder { /* Firefox 18- */
+   color: #738EA2;  
+}
+
+#searchPageFullBar::-moz-placeholder {  /* Firefox 19+ */
+   color: #738EA2;  
+}
+
+#searchPageFullBar:-ms-input-placeholder {  
+   color: #738EA2;  
+}
+#searchControls>.row {
+    padding-top: 60px;
 }
 
 

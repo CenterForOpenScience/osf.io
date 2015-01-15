@@ -67,7 +67,9 @@
                     </a>
                 </li>
                 % elif allow_login:
-                <a class="btn btn-primary navbar-btn" href="${web_url_for('auth_login')}">Create an Account or Sign-In</a>
+                <li>
+                    <a class="btn btn-primary" href="${web_url_for('auth_login')}">Create an Account or Sign-In</a>
+                </li>
                 % endif
             </ul><!-- end nav navbar-nav navbar-right -->
         </div><!-- end navbar-collapse -->
