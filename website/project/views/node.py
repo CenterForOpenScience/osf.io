@@ -1018,9 +1018,10 @@ def get_forks(**kwargs):
 
 @must_be_contributor_or_public
 def get_registrations(**kwargs):
+    auth = kwargs['auth']
     node_to_use = kwargs['node'] or kwargs['project']
     registrations = node_to_use.node__registrations
-    return _render_nodes(registrations)
+    return _render_nodes(registrations, auth)
 
 
 @must_be_valid_project  # returns project
