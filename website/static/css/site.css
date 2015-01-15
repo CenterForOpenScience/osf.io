@@ -1977,7 +1977,7 @@ div.pydocx-center{
     position: fixed;
     width: 100%;
     box-shadow: 0 0 9px -2px #464545;
-    z-index: 11;
+    z-index: 111;
     left: 0;
 }
 .osf-search-input {
