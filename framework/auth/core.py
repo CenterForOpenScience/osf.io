@@ -76,7 +76,7 @@ def validate_year(item):
         except ValueError:
             raise ValidationValueError('Please enter a valid year.')
         else:
-            if len(item) == 4:
+            if len(item) != 4:
                 raise ValidationValueError('Please enter a valid year.')
 
 
