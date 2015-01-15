@@ -5,14 +5,15 @@ import httplib as http
 from flask import request
 
 from framework.auth.decorators import must_be_logged_in
+from framework.auth.core import _get_current_user
 from framework.exceptions import HTTPError
 
-from website.project.decorators import must_have_permission
+from website.project.decorators import must_have_permission, must_be_valid_project
 from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 
 from ..api import GitHub
-
+from website.util import web_url_for
 
 @must_be_logged_in
 def github_set_user_config(**kwargs):
@@ -108,3 +109,51 @@ def github_set_privacy(**kwargs):
     connection = GitHub.from_settings(github.user_settings)
 
     connection.set_privacy(github.user, github.repo, private)
+
+@must_be_valid_project
+@must_have_addon('github', 'node')
+def github_config_get(node_addon, **kwargs):
+    """API that returns the serialized node settings."""
+    user = _get_current_user()
+    return {
+        'result': serialize_settings(node_addon, user),
+    }, http.OK
+
+
+def serialize_settings(node_settings, current_user, client=None):
+    """View helper that returns a dictionary representation of a
+    GithubNodeSettings record. Provides the return value for the
+    github config endpoints.
+    """
+    user_settings = node_settings.user_settings
+    user_is_owner = user_settings is not None and (
+        user_settings.owner._primary_key == current_user._primary_key
+    )
+    current_user_settings = current_user.get_addon('github')
+    result = {
+        'nodeHasAuth': node_settings.has_auth,
+        'userIsOwner': user_is_owner,
+        'userHasAuth': current_user_settings is not None and current_user_settings.has_auth,
+        'urls': serialize_urls(node_settings),
+    }
+    if node_settings.has_auth:
+
+        # Add owner's profile URL
+        result['urls']['owner'] = web_url_for('profile_view_id',
+            uid=user_settings.owner.fullname)
+        result['ownerName'] = user_settings.owner.fullname
+        result['repoUser'] = node_settings.user or ''
+        result['repoName'] = node_settings.repo or ''
+    return result
+
+def serialize_urls(node_settings):
+    node = node_settings.owner
+    urls = {
+        'config': node.api_url_for('github_set_config'),
+        'deauthorize': node.api_url_for('github_oauth_deauthorize_node'),
+        'auth': node.api_url_for('github_oauth_start'),
+        'importAuth': node.api_url_for('github_import_user_auth'),
+        'repos': node.api_url_for('github_repositories_get')
+
+    }
+    return urls

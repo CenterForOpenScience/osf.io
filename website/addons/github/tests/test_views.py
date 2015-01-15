@@ -15,6 +15,8 @@ import datetime
 from github3.git import Commit
 from github3.repos.branch import Branch
 from github3.repos.contents import Contents
+from github3.repos import Repository
+
 
 from framework.exceptions import HTTPError
 from framework.auth import Auth
@@ -22,9 +24,10 @@ from framework.auth import Auth
 from website.util import web_url_for, api_url_for
 from website.addons.github.tests.utils import create_mock_github
 from website.addons.github import views, api, utils
-from website.addons.github.model import GithubGuidFile
+from website.addons.github.model import GithubGuidFile, AddonGitHubOauthSettings
 from website.addons.github.utils import MESSAGES, check_permissions
 from website.addons.github.exceptions import TooBigError
+from website.addons.github.views.config import serialize_settings
 
 # TODO: Test remaining CRUD methods
 # TODO: Test exception handling
@@ -44,6 +47,8 @@ class TestCRUD(OsfTestCase):
         self.node_settings.user = self.github.repo.return_value.owner.login
         self.node_settings.repo = self.github.repo.return_value.name
         self.node_settings.save()
+        self.github = create_mock_github(user='fred', private=False)
+        github_mock = self.github
 
     @mock.patch('website.addons.github.views.crud.build_github_urls')
     @mock.patch('website.addons.github.api.GitHub.create_file')
@@ -1107,3 +1112,219 @@ class TestAuthViews(OsfTestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+class TestConfigViews(OsfTestCase):
+
+    def setUp(self):
+        super(TestConfigViews, self).setUp()
+
+        self.project = ProjectFactory()
+        self.user = self.project.creator
+        self.consolidated_auth = Auth(user=self.user)
+        self.project.add_addon('github', auth=self.consolidated_auth)
+        self.node_settings = self.project.get_addon('github')
+        self.user.add_addon('github')
+        self.github = create_mock_github(user='fred', private=False)
+        self.user_settings = self.user.get_addon('github')
+        self.oauth_settings = AddonGitHubOauthSettings(github_user_id='fred')
+        self.oauth_settings.save()
+        self.user_settings.oauth_settings = self.oauth_settings
+        self.user_settings.save()
+        self.node_settings.user_settings = self.user_settings
+        self.node_settings.user = 'Queen'
+        # self.node_settings.repo = 'Sheer-Heart-Attack'
+        self.node_settings.save()
+
+
+    def test_github_user_config_get_is_authorized(self):
+        url = api_url_for('github_user_config_get')
+        self.user_settings.oauth_access_token = 'faketoken'
+        self.user_settings.save()
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code,200)
+        # The Json Result
+        result = res.json['result']
+        assert_true(result['userHasAuth'])
+
+    def test_github_user_config_get_is_not_authorized(self):
+        url = api_url_for('github_user_config_get')
+        self.user_settings.save()
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code,200)
+        # The Json Result
+        result = res.json['result']
+        assert_false(result['userHasAuth'])
+
+    def test_github_user_config_get_returns_correct_urls(self):
+        url = api_url_for('github_user_config_get')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        # The JSONified URLs result
+        urls = res.json['result']['urls']
+        assert_equal(urls['delete'], api_url_for('github_oauth_delete_user'))
+        assert_equal(urls['create'], api_url_for('github_oauth_start__user'))
+
+    def test_github_serialize_settings_helper_returns_correct_urls(self):
+        result = serialize_settings(self.node_settings, self.user)
+        urls = result['urls']
+        assert_equal(urls['config'], self.project.api_url_for('github_set_config'))
+        assert_equal(urls['deauthorize'], self.project.api_url_for('github_oauth_deauthorize_node'))
+        assert_equal(urls['auth'], self.project.api_url_for('github_oauth_start'))
+        assert_equal(urls['importAuth'], self.project.api_url_for('github_import_user_auth'))
+        assert_equal(urls['repos'], self.project.api_url_for('github_repositories_get'))
+
+    def test_github_serialize_settings_helper_returns_correct_auth_info(self):
+        self.user_settings.oauth_access_token = 'faketoken'
+        self.user_settings.save()
+        self.node_settings.user_settings = self.user_settings
+        self.node_settings.save()
+        result = serialize_settings(self.node_settings, self.user)
+        assert_equal(result['nodeHasAuth'], self.node_settings.has_auth)
+        assert_true(result['userIsOwner'])
+        assert_true(result['userHasAuth'])
+
+    def test_github_serialize_settings_for_user_no_auth(self):
+        no_addon_user = AuthUserFactory()
+        result = serialize_settings(self.node_settings, no_addon_user)
+        assert_false(result['userIsOwner'])
+        assert_false(result['userHasAuth'])
+
+
+    @mock.patch('website.addons.github.views.config.GitHub.from_settings')
+    def test_github_repositories_get_returns_correct_repo_info_single_repo(self, mock_from_settings):
+        self.user_settings.oauth_access_token = 'faketoken'
+        self.user_settings.save()
+        self.node_settings.user_settings
+        self.node_settings.save()
+        github_mock = self.github
+        mock_from_settings.return_value = github_mock
+        github_mock.repos.return_value = [
+            Repository.from_json({
+                    "id": 1296269,
+                    "owner": {
+                      "login": "octocat",
+                      "id": 1,
+                      "url": "https://api.github.com/users/octocat",
+                      "repos_url": "https://api.github.com/users/octocat/repos",
+                    },
+                    "name": "Hello-World",
+                    "full_name": "octocat/Hello-World",
+                    "permissions": {
+                      "push": False,
+                    }
+        })
+        ]
+        url = self.project.api_url_for('github_repositories_get')
+        result = self.app.get(url, auth=self.user.auth)
+        assert_equal([repoUser['user'] for repoUser in result.json], ['octocat'])
+        assert_equal([repoName['repo'] for repoName in result.json], ['Hello-World'])
+
+
+
+    @mock.patch('website.addons.github.views.config.GitHub.from_settings')
+    def test_github_repositories_get_returns_correct_repo_info_multiple_repo(self, mock_from_settings):
+        self.user_settings.oauth_access_token = 'faketoken'
+        self.user_settings.save()
+        self.node_settings.user_settings
+        self.node_settings.save()
+        github_mock = self.github
+        mock_from_settings.return_value = github_mock
+        github_mock.repos.return_value = [
+            Repository.from_json({
+                    "id": 1296269,
+                    "owner": {
+                      "login": "octocat",
+                      "id": 1,
+                      "url": "https://api.github.com/users/octocat",
+                      "repos_url": "https://api.github.com/users/octocat/repos",
+                    },
+                    "name": "Hello-World",
+                    "full_name": "octocat/Hello-World",
+                    "permissions": {
+                      "push": False,
+                    }
+            }),
+            Repository.from_json({
+                    "id": 1294269,
+                    "owner": {
+                      "login": "mock",
+                      "id": 1,
+                      "url": "https://api.github.com/users/octocat",
+                      "repos_url": "https://api.github.com/users/octocat/repos",
+                    },
+                    "name": "mock-Repo",
+                    "full_name": "octocat/Hello-World",
+                    "permissions": {
+                      "push": False,
+                    }
+            })
+
+        ]
+        url = self.project.api_url_for('github_repositories_get')
+        result = self.app.get(url, auth=self.user.auth)
+        assert_equal([repoUser['user'] for repoUser in result.json], ['octocat', 'mock'])
+        assert_equal([repoName['repo'] for repoName in result.json], ['Hello-World', 'mock-Repo'])
+
+
+
+    @mock.patch('website.addons.github.views.config.GitHub.from_settings')
+    def test_github_repositories_get_returns_correct_repo_info_no_repo(self, mock_from_settings):
+        self.user_settings.oauth_access_token = 'faketoken'
+        self.user_settings.save()
+        self.node_settings.user_settings
+        self.node_settings.save()
+        github_mock = self.github
+        github_mock.repos.return_value = []
+        mock_from_settings.return_value = github_mock
+        url = self.project.api_url_for('github_repositories_get')
+        result = self.app.get(url, auth=self.user.auth)
+        assert_equal([repoUser['user'] for repoUser in result.json], [])
+        assert_equal([repoName['repo'] for repoName in result.json], [])
+
+
+    @mock.patch('website.addons.github.views.config.GitHub.from_settings')
+    def test_github_create_repo_creates_correct_repo(self, mock_from_settings):
+        self.user_settings.oauth_access_token = 'faketoken'
+        self.user_settings.save()
+        self.node_settings.user_settings
+        self.node_settings.save()
+        repo_name = 'Hello-World'
+        github_mock = self.github
+        mock_from_settings.return_value = github_mock
+        # github_mock.assert_called_with(repo_name);
+        url = self.project.api_url_for('github_create_repo')
+        result = self.app.post_json(url, {'name':repo_name}, auth=self.user.auth)
+        assert_equal(result.json['user'], 'octocat')
+        assert_equal(result.json['repo'], repo_name)
+
+
+    @mock.patch('website.addons.github.views.config.GitHub.from_settings')
+    def test_github_create_repo_does_not_creates_repo_for_blank_request(self, mock_from_settings):
+        self.user_settings.oauth_access_token = 'faketoken'
+        self.user_settings.save()
+        self.node_settings.user_settings
+        self.node_settings.save()
+        repo_name = ''
+        github_mock = self.github
+        mock_from_settings.return_value = github_mock
+        url = self.project.api_url_for('github_create_repo')
+        result = self.app.post_json(url, {'name':repo_name}, auth=self.user.auth, expect_errors = True)
+        assert_equal(result.status_code, 400)
+
+
+    @mock.patch('website.addons.github.model.AddonGitHubNodeSettings.add_hook')
+    @mock.patch('website.addons.github.views.config.GitHub.from_settings')
+    def test_github_config_get(self, mock_from_settings, mock_add_hook):
+        github_mock = self.github
+        mock_from_settings.return_value = github_mock
+        github_mock = self.github
+        self.user_settings.oauth_access_token = 'faketoken'
+        self.user_settings.save()
+        url = self.project.api_url_for('github_config_get')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        result = res.json['result']
+        assert_equal(result['ownerName'], self.user_settings.owner.fullname)
+        assert_equal(result['urls']['config'],
+            api_url_for('github_set_config', pid=self.project._primary_key))
+

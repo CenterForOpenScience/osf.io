@@ -7,6 +7,7 @@ from flask import request
 
 from framework.flask import redirect  # VOL-aware redirect
 from framework.auth.decorators import must_be_logged_in
+from framework.auth.core import _get_current_user
 from framework.exceptions import HTTPError
 
 from website import models
@@ -14,10 +15,12 @@ from website.project.decorators import (
     must_have_permission, must_not_be_registration, must_have_addon
 )
 from website.util import web_url_for
+from website.util import api_url_for
 
 from ..api import GitHub
 from ..auth import oauth_start_url, oauth_get_token
 from ..model import AddonGitHubOauthSettings
+from ..views.config import serialize_settings
 
 
 def get_profile_view(user_settings):
@@ -29,9 +32,13 @@ def get_profile_view(user_settings):
 @must_have_permission('write')
 @must_have_addon('github', 'user')
 @must_have_addon('github', 'node')
-def github_add_user_auth(user_addon, node_addon, **kwargs):
+def github_import_user_auth(user_addon, node_addon, **kwargs):
+    user = _get_current_user()
     node_addon.authorize(user_addon, save=True)
-    return {}
+    return {
+        'result': serialize_settings(node_addon, user),
+        'message': 'Successfully imported access token from profile.',
+    }, http.OK
 
 
 @must_be_logged_in
@@ -147,3 +154,21 @@ def github_oauth_delete_user(auth, user_addon, **kwargs):
 def github_oauth_deauthorize_node(auth, node_addon, **kwargs):
     node_addon.deauthorize(auth=auth, save=True)
     return {}
+
+
+@must_be_logged_in
+@must_have_addon('github', 'user')
+def github_user_config_get(user_addon, auth, **kwargs):
+    """View for getting a JSON representation of the logged-in user's
+    Github user settings.
+    """
+    urls = {
+        'create': api_url_for('github_oauth_start__user'),
+        'delete': api_url_for('github_oauth_delete_user')
+    }
+    return {
+        'result': {
+            'userHasAuth': user_addon.has_auth,
+            'urls': urls,
+        },
+    }, http.OK

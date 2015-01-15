@@ -242,7 +242,6 @@ class GitHub(object):
             http://developer.github.com/v3/repos/hooks/#json-http
 
         """
-
         return self.repo(user, repo).create_hook(name, config, events, active)
 
     def delete_hook(self, user, repo, _id):

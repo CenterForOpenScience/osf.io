@@ -34,7 +34,7 @@
 
                     <select class="form-control" id="s3_bucket" name="s3_bucket"
                         ${'' if user_has_auth and user_is_owner and not is_registration else 'disabled'}>
-                        <option value="">-----</option>
+                        <option value="">Select your Bucket</option>
                         % for bucket_name in bucket_list or []:
                             <option value="${bucket_name}" ${'selected' if bucket_name == bucket else ''}>
                                 ${bucket_name}
@@ -45,16 +45,19 @@
                 </div>
 
                 % if user_has_auth and user_is_owner and not is_registration:
-                    <div class="col-md-6">
-                        <a class="btn btn-default" id="newBucket">Create Bucket</a>
-
-                        <button class="btn btn-primary addon-settings-submit pull-right">
+                      <div >
+                        <span> or </span>
+                        <a class="btn btn-link" id="newBucket">Create Bucket</a>
+                    </div>
+                    <div class ="col-md-12" hidden="true" style="padding-top: 20px; padding-left: 0" id="showSubmit">
+                         <h4 class="col-md-6" id="bucketInDisplay"></h4>
+                        <button class=" btn btn-primary addon-settings-submit pull-right" id="submit">
                             Submit
                         </button>
+                         <input type="button" value="Cancel" class="btn btn-default pull-right" id="cancel">
                     </div>
                 % endif
 
-            </div>
 
         </div> <!-- End form group -->
 

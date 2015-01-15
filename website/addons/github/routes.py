@@ -10,6 +10,14 @@ settings_routes = {
 
         # Configuration
         Rule(
+            '/settings/github/',
+            'get',
+            views.auth.github_user_config_get,
+            json_renderer,
+
+        ),
+
+        Rule(
             [
                 '/project/<pid>/github/settings/',
                 '/project/<pid>/node/<nid>/github/settings/',
@@ -102,8 +110,8 @@ settings_routes = {
                 '/project/<pid>/github/user_auth/',
                 '/project/<pid>/node/<nid>/github/user_auth/',
             ],
-            'post',
-            views.auth.github_add_user_auth,
+            'put',
+            views.auth.github_import_user_auth,
             json_renderer,
         ),
         Rule(
@@ -137,9 +145,27 @@ api_routes = {
     'rules': [
 
         Rule(
+            [
+                '/project/<pid>/github/config/',
+                '/project/<pid>/node/<nid>/github/config/',
+            ],
+            'get',
+            views.config.github_config_get,
+            json_renderer
+        ),
+
+        Rule(
             '/github/repo/create/',
             'post',
             views.repos.github_create_repo,
+            json_renderer,
+        ),
+
+
+        Rule(
+            '/project/<pid>/github/repo/repositories/',
+            'get',
+            views.repos.github_repositories_get,
             json_renderer,
         ),
 

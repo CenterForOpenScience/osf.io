@@ -47,8 +47,8 @@ var AddonHelper = (function() {
                 message += 'Settings not updated.'
             }
             msgElm.text(message)
-                .removeClass('text-success').addClass('text-danger')
-                .fadeOut(100).fadeIn();
+                    .removeClass('text-success').addClass('text-danger')
+                    .fadeOut(100).fadeIn();
         });
 
         return false;

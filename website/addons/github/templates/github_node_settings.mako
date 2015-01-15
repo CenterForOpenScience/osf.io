@@ -1,78 +1,61 @@
-<form role="form" id="addonSettings${addon_short_name.capitalize()}" data-addon="${addon_short_name}">
 
-    <div>
+    <div id="githubScope" class="scripted">
         <h4 class="addon-title">
             GitHub
             <small class="authorized-by">
-                % if node_has_auth:
-                        authorized by
-                        <a href="${auth_osf_url}" target="_blank">
-                            ${auth_osf_name}
-                        </a>
-                    % if not is_registration:
-                        <a id="githubRemoveToken" class="text-danger pull-right addon-auth" >Deauthorize</a>
-                    % endif
-                % else:
-                    % if user_has_auth:
-                        <a id="githubImportToken" class="text-primary pull-right addon-auth">
-                            Import Access Token
-                        </a>
-                    % else:
-                        <a id="githubCreateToken" class="text-primary pull-right addon-auth">
-                            Create Access Token
-                        </a>
-                    % endif
+                <span data-bind="if: nodeHasAuth">
+                authorized by <a data-bind="attr.href: urls().owner">
+                    {{ownerName}}
+                </a>
+                % if not is_registration:
+                    <a data-bind="click: deauthorize"
+                        class="text-danger pull-right addon-auth">Deauthorize</a>
                 % endif
+                </span>
+
+                 <!-- Import Access Token Button -->
+                <span data-bind="if: showImport">
+                    <a data-bind="click: importAuth" href="#" class="text-primary pull-right addon-auth">
+                        Import Access Token
+                    </a>
+                </span>
+
+                <!-- Oauth Start Button -->
+                <span data-bind="if: showTokenCreateButton">
+                    <a data-bind="attr.href: urls().auth" class="text-primary pull-right addon-auth">
+                        Create Access Token
+                    </a>
+                </span>
+
             </small>
         </h4>
-    </div>
 
-    % if node_has_auth:
 
-        <input type="hidden" id="githubUser" name="github_user" value="${github_user}" />
-        <input type="hidden" id="githubRepo" name="github_repo" value="${github_repo}" />
-
-        <p> <strong>Current Repo:</strong></p>
-
-        <div class="row">
-
-            <div class="col-md-6">
-                <select id="githubSelectRepo" class="form-control" ${'disabled' if not is_owner or is_registration else ''}>
-                    <option>-----</option>
-                        % if is_owner:
-                            % for repo_name in repo_names:
-                                <option value="${repo_name}" ${'selected' if repo_name == github_repo_full_name else ''}>${repo_name}</option>
-                            % endfor
-                        % else:
-                            <option selected>${github_repo_full_name}</option>
-                        % endif
-                </select>
+            <div class="github-settings"  data-bind = "if:showSettings">
+                <form id=addonSettings  data-bind = submit:submitSettings >
+                    <div class="row">
+                        <div class="col-md-6" id="displayRepositories">
+                            <select class="form-control col-md-6"
+                                    data-bind=" options:displayRepos,
+                                                optionsCaption:'Select your repository',
+                                               value:SelectedRepository"></select>
+                        </div>
+                        <div class="col-md-6">
+                            <span> or </span>
+                            <button data-bind="click:createRepo" class="btn btn-link">Create Repo</button>
+                        </div>
+                    </div>
+                    <div class="row" style="padding-top: 20px" data-bind="visible:SelectedRepository() && SelectedRepository()!=repoFullName()  ">
+                        <h4 class="col-md-8">Connect "<span data-bind="text:SelectedRepository()"></span>"?</h4>
+                        <div class="col-md-4">
+                            <input type="submit" class="btn btn-primary pull-right" value="Submit">
+                            <button class="btn btn-default pull-right" data-bind="click:cancel">Cancel</button>
+                        </div>
+                    </div>
+                </form>
             </div>
 
-            % if is_owner and not is_registration:
-                <div class="col-md-6">
-                    <a id="githubCreateRepo" class="btn btn-default">Create Repo</a>
+        <div class="addon-settings-message"  style="padding-top: 10px;" data-bind ="html:displayMessage, attr.class:displayMessageClass"></div>
 
-                    <button class="btn btn-primary addon-settings-submit pull-right">
-                        Submit
-                    </button>
-                </div>
+    </div><!-- End of githubScope-->
 
-
-            % endif
-
-        </div>
-
-    % endif
-
-    ${self.on_submit()}
-
-    <div class="addon-settings-message" style="display: none; padding-top: 10px;"></div>
-
-</form>
-
-<%def name="on_submit()">
-    <script type="text/javascript">
-        window.contextVars = $.extend({}, window.contextVars, {'githubSettingsSelector': '#addonSettings${addon_short_name.capitalize()}'});
-    </script>
-</%def>
