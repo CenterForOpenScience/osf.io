@@ -1,7 +1,7 @@
 from celery import Celery
 
-from waterbutler import settings
 from waterbutler.tasks import settings as tasks_settings
+from waterbutler import settings
 
 from raven import Client
 from raven.contrib.celery import register_signal
