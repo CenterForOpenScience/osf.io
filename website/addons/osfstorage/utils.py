@@ -4,14 +4,13 @@
 import os
 import httplib
 import logging
-import itertools
 
 import furl
 import requests
 import markupsafe
 import itsdangerous
-
 from modularodm import Q
+from flask import request
 from cloudstorm import sign
 
 from framework.exceptions import HTTPError
@@ -110,11 +109,6 @@ def serialize_revision(node, record, version, index):
     }
 
 
-chooser = itertools.cycle(settings.UPLOAD_SERVICE_URLS)
-def choose_upload_url():
-    return next(chooser)
-
-
 SIGNED_REQUEST_ERROR = HTTPError(
     httplib.SERVICE_UNAVAILABLE,
     data={
@@ -192,16 +186,21 @@ def get_cookie_for_user(user):
 def get_waterbutler_url(user, *path, **query):
     url = furl.furl(site_settings.WATERBUTLER_URL)
     url.path.segments.extend(path)
+    cookie = (
+        get_cookie_for_user(user)
+        if user
+        else request.cookies.get(site_settings.COOKIE_NAME)
+    )
     url.args.update({
         'token': '',
         'provider': 'osfstorage',
-        'cookie': get_cookie_for_user(user),
+        'cookie': cookie,
     })
     url.args.update(query)
     return url.url
 
 
-def get_waterbutler_download_url(user, version_idx, file_version, file_record):
+def get_waterbutler_download_url(version_idx, file_version, file_record, user=None):
     nid = file_record.node._id
     path = get_filename(version_idx, file_version, file_record)
     return get_waterbutler_url(user, 'file', nid=nid, path=path)
