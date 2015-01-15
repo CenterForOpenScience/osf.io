@@ -1743,7 +1743,8 @@ div.pydocx-center{
 }
 .navbar-brand {
     height: 42px;
-    line-height: 15px;
+    line-height: 14px;
+    padding:13px 15px;
 }
 
 .navbar-form {
