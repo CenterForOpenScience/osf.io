@@ -63,15 +63,18 @@ def validate_history_item(item):
             int(startYear)
         except ValueError:
             raise ValidationValueError('Please enter a valid year.')
+        else:
+            if int(startYear)/10000 != 0:
+                raise ValidationValueError('Please enter a valid year.')
 
     if endYear:
         try:
             int(endYear)
         except ValueError:
             raise ValidationValueError('Please enter a valid year.')
-
-    if int(startYear)/10000 == 0 or int(endYear)/10000 == 0:
-            raise ValidationValueError('Please enter a valid year.')
+        else:
+            if int(startYear)/10000 != 0:
+                raise ValidationValueError('Please enter a valid year.')
 
     if startYear and endYear:
         if endYear < startYear:

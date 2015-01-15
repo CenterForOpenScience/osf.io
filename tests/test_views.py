@@ -920,16 +920,16 @@ class TestUserProfile(OsfTestCase):
             'department': 'a department',
             'degree': 'a degree',
             'startMonth': 1,
-            'startYear': 2001,
+            'startYear': '2001',
             'endMonth': 5,
-            'endYear': 2001,
+            'endYear': '2001',
             'ongoing': False,
         }, {
             'institution': 'another institution',
             'department': None,
             'degree': None,
             'startMonth': 5,
-            'startYear': 2001,
+            'startYear': '2001',
             'endMonth': None,
             'endYear': None,
             'ongoing': True,
@@ -954,9 +954,9 @@ class TestUserProfile(OsfTestCase):
                 'department': fake.catch_phrase(),
                 'title': fake.bs(),
                 'startMonth': 5,
-                'startYear': 2013,
+                'startYear': '2013',
                 'endMonth': 3,
-                'endYear': 2014,
+                'endYear': '2014',
                 'ongoing': False,
             }
         ]
@@ -975,9 +975,9 @@ class TestUserProfile(OsfTestCase):
                 'department': fake.catch_phrase(),
                 'degree': fake.bs(),
                 'startMonth': 5,
-                'startYear': 2013,
+                'startYear': '2013',
                 'endMonth': 3,
-                'endYear': 2014,
+                'endYear': '2014',
                 'ongoing': False,
             }
         ]
@@ -997,9 +997,9 @@ class TestUserProfile(OsfTestCase):
                 'department': fake.catch_phrase(),
                 'title': fake.bs(),
                 'startMonth': 5,
-                'startYear': 2013,
+                'startYear': '2013',
                 'endMonth': 3,
-                'endYear': 2014,
+                'endYear': '2014',
                 'ongoing': False,
             }
         ]
