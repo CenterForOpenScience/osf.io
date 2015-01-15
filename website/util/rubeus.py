@@ -1,4 +1,6 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
+# encoding: utf-8
+
 """Contains helper functions for generating correctly
 formatted hgrid list/folders.
 """
@@ -9,8 +11,11 @@ import hurry
 from modularodm import Q
 
 from framework.auth.decorators import Auth
-from website.settings import ALL_MY_PROJECTS_ID, ALL_MY_REGISTRATIONS_ID, \
-    ALL_MY_PROJECTS_NAME, ALL_MY_REGISTRATIONS_NAME
+from website import settings
+from website.settings import (
+    ALL_MY_PROJECTS_ID, ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_NAME,
+    ALL_MY_REGISTRATIONS_NAME
+)
 
 
 FOLDER = 'folder'
@@ -63,7 +68,8 @@ def to_project_root(node, auth, **data):
 
 
 def build_addon_root(node_settings, name, permissions=None,
-                     urls=None, extra=None, buttons=None, **kwargs):
+                     urls=None, extra=None, buttons=None, user=None,
+                     **kwargs):
     """Builds the root or "dummy" folder for an addon.
 
     :param addonNodeSettingsBase node_settings: Addon settings
@@ -95,6 +101,11 @@ def build_addon_root(node_settings, name, permissions=None,
             'view': node_settings.owner.can_view(auth),
             'edit': node_settings.owner.can_edit(auth) and not node_settings.owner.is_registration
         }
+
+    max_size = node_settings.config.max_file_size
+    if user and 'high_upload_limit' in user.system_tags:
+        max_size = node_settings.config.high_max_file_size
+
     rv = {
         'addon': node_settings.config.short_name,
         'addonFullname': node_settings.config.full_name,
@@ -106,8 +117,8 @@ def build_addon_root(node_settings, name, permissions=None,
         'isAddonRoot': True,
         'permissions': permissions,
         'accept': {
-            'maxSize': node_settings.config.max_file_size,
-            'acceptedFiles': node_settings.config.accept_extensions
+            'maxSize': max_size,
+            'acceptedFiles': node_settings.config.accept_extensions,
         },
         'urls': urls,
         'isPointer': False,
@@ -264,12 +275,11 @@ class NodeProjectCollector(object):
         contributors = []
         for contributor in node.contributors:
             if contributor._id in node.visible_contributor_ids:
-                contributor_name = \
-                    [
-                        contributor.family_name,
-                        contributor.given_name,
-                        contributor.fullname,
-                    ]
+                contributor_name = [
+                    contributor.family_name,
+                    contributor.given_name,
+                    contributor.fullname,
+                ]
                 contributors.append({
                     'name': next(name for name in contributor_name if name),
                     'url': contributor.url,
@@ -419,7 +429,6 @@ class NodeFileCollector(object):
         """
         visited = visited or []
         visited.append(node.resolve()._id)
-        can_edit = node.can_edit(auth=self.auth) and not node.is_registration
         can_view = node.can_view(auth=self.auth)
         if can_view:
             children = self._collect_addons(node) + self._collect_components(node, visited)
@@ -431,7 +440,7 @@ class NodeFileCollector(object):
             else u'Private Component',
             'kind': FOLDER,
             'permissions': {
-                'edit': can_edit,
+                'edit': False,
                 'view': can_view,
             },
             'urls': {
@@ -467,7 +476,7 @@ def collect_addon_assets(node):
 
 
 # TODO: Abstract static collectors
-def collect_addon_js(node, visited=None):
+def collect_addon_js(node, visited=None, filename='files.js', config_entry='files'):
     """Collect JavaScript includes for all add-ons implementing HGrid views.
 
     :return list: List of JavaScript include paths
@@ -478,7 +487,20 @@ def collect_addon_js(node, visited=None):
     visited.append(node._id)
     js = set()
     for addon in node.get_addons():
-        js = js.union(addon.config.include_js.get('files', []))
+        # JS modules configured in each addon's __init__ file
+        js = js.union(addon.config.include_js.get(config_entry, []))
+        # Webpack bundle
+        file_path = os.path.join('static',
+                                 'public',
+                                 'js',
+                                 addon.config.short_name,
+                                 filename)
+        js_file = os.path.join(
+            settings.BASE_PATH, file_path
+        )
+        if os.path.exists(js_file):
+            js_path = os.path.join('/', file_path)
+            js.add(js_path)
     for each in node.nodes:
         if each._id not in visited:
             visited.append(each._id)

@@ -1,77 +1,67 @@
 # -*- coding: utf-8 -*-
-
 import time
-import bleach
 import logging
-from urllib2 import HTTPError
+import functools
+import httplib as http
+
+import bleach
 
 from flask import request
+
 from modularodm import Q
 
-from framework import status
-from framework.auth.core import get_current_user
+from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
 
+from website.models import Node
+from website.models import User
+from website.search import exceptions
 import website.search.search as search
-from website.models import User, Node
+from framework.exceptions import HTTPError
+from website.search.util import build_query
 from website.project.views.contributor import get_node_contributors_abbrev
-import httplib as http
 
 logger = logging.getLogger(__name__)
 
 
-def search_search():
+def handle_search_errors(func):
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except exceptions.MalformedQueryError:
+            raise HTTPError(http.BAD_REQUEST, data={
+                'message_short': 'Bad search query',
+                'message_long': ('Please check our help (the question mark beside the search box) for more information '
+                                 'on advanced search queries.'),
+            })
+        except exceptions.SearchUnavailableError:
+            raise HTTPError(http.SERVICE_UNAVAILABLE, data={
+                'message_short': 'Search unavailable',
+                'message_long': ('Our search service is currently unavailable, if the issue persists, '
+                'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.'),
+            })
+    return wrapped
+
+
+@handle_search_errors
+def search_search(**kwargs):
+    _type = kwargs.get('type', None)
+
     tick = time.time()
-    ERROR_RETURN = {
-        'results': [],
-        'tags': [],
-        'query': '',
-    }
-    # search results are automatically paginated. on the pages that are
-    # not the first page, we pass the page number along with the url
-    start = request.args.get('pagination', 0)
-    try:
-        start = int(start)
-    except (TypeError, ValueError):
-        logger.error(u'Invalid pagination value: {0}'.format(start))
-        start = 0
-    query = request.args.get('q')
-    # if there is not a query, tell our users to enter a search
-    query = bleach.clean(query, tags=[], strip=True)
-    if query == '':
-        status.push_status_message('No search query', 'info')
-        return ERROR_RETURN
+    results = {}
 
-    # if the search does not work,
-    # post an error message to the user, otherwise,
-    # the document, highlight,
-    # and spellcheck suggestions are returned to us
-    try:
-        results_search, tags, counts = search.search(query, start)
-    except HTTPError:
-        status.push_status_message('Malformed query. Please try again')
-        return ERROR_RETURN
-    except TypeError:
-        status.push_status_message('There was a problem querying the search database. Please try again later.')
-        return ERROR_RETURN
+    if request.method == 'POST':
+        results = search.search(request.get_json(), doc_type=_type)
+    elif request.method == 'GET':
+        q = request.args.get('q', '*')
+        # TODO Match javascript params?
+        start = request.args.get('from', '0')
+        size = request.args.get('size', '10')
+        results = search.search(build_query(q, start, size), doc_type=_type)
 
-    # with our highlights and search result 'documents' we build the search
-    # results so that it is easier for us to display
-    # Whether or not the user is searching for users
-    searching_users = query.startswith("user:")
-    total = counts if not isinstance(counts, dict) else counts['total']
-    return {
-        'highlight': [],
-        'results': results_search,
-        'total': total,
-        'query': query,
-        'spellcheck': [],
-        'current_page': start,
-        'time': round(time.time() - tick, 2),
-        'tags': tags,
-        'searching_users': searching_users,
-        'counts': counts
-    }
+    results['time'] = round(time.time() - tick, 2)
+    return results
 
 
 def conditionally_add_query_item(query, item, condition):
@@ -94,6 +84,7 @@ def conditionally_add_query_item(query, item, condition):
 
     raise HTTPError(http.BAD_REQUEST)
 
+
 @must_be_logged_in
 def search_projects_by_title(**kwargs):
     """ Search for nodes by title. Can pass in arguments from the URL to modify the search
@@ -109,7 +100,7 @@ def search_projects_by_title(**kwargs):
     :return: a list of dictionaries of projects
 
     """
-    #TODO(fabianvf): At some point, it would be nice to do this with elastic search
+    # TODO(fabianvf): At some point, it would be nice to do this with elastic search
     user = kwargs['auth'].user
 
     term = request.args.get('term', '')
@@ -124,7 +115,7 @@ def search_projects_by_title(**kwargs):
 
     matching_title = (
         Q('title', 'icontains', term) &  # search term (case insensitive)
-        Q('category', 'eq', category)   # is a project
+        Q('category', 'eq', category)  # is a project
     )
 
     matching_title = conditionally_add_query_item(matching_title, 'is_deleted', is_deleted)
@@ -188,11 +179,13 @@ def process_project_search_results(results, **kwargs):
     return out
 
 
-def search_contributor():
+@collect_auth
+def search_contributor(auth):
+    user = auth.user if auth else None
     nid = request.args.get('excludeNode')
-    exclude = Node.load(nid).contributors if nid else list()
+    exclude = Node.load(nid).contributors if nid else []
     query = bleach.clean(request.args.get('query', ''), tags=[], strip=True)
     page = int(bleach.clean(request.args.get('page', '0'), tags=[], strip=True))
-    size = int(bleach.clean(request.args.get('size', '10'), tags=[], strip=True))
+    size = int(bleach.clean(request.args.get('size', '5'), tags=[], strip=True))
     return search.search_contributor(query=query, page=page, size=size,
-                                     exclude=exclude, current_user=get_current_user())
+                                     exclude=exclude, current_user=user)

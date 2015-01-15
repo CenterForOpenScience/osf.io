@@ -16,12 +16,11 @@
     within a laboratory or across laboratories. OSF also facilitates transparency of
     laboratory research and provides a network design that details and credits
     individual contributions for all aspects of the research process. To see how
-    it works, watch our <a href="http://youtu.be/c6lCJFSnMcg">3-minute
-        introduction video</a>, read the <a
+    it works, watch our short <a
             href="/getting-started">Getting
-        Started</a> page, or see the <a
+        Started</a> videos, see the <a
             href="/4znZP/wiki/home">OSF
-        Features </a>page.</p>
+        Features </a>page,</p> or see how other scientists <a href="/svje2/">use the OSF.</a>
 
 <h3>How can I use the OSF?</h3><p>OSF membership is open and free, so you can
     just register and get started!</p>
@@ -60,13 +59,12 @@
     improved further. We will offer encryption soon, and we will partner with
     data storage services that offer strong security features.</p>
 
-<h3>How does OSF store and back up files that I upload to the site?</h3><p>The
-    OSF purchases server space from <a href="https://www.linode.com/">Linode</a>,
-    a web hosting and cloud computing provider based in New Jersey. Linode
-    offers strong security standards and deals with cyberattacks in a prompt and
-    professional manner. OSF maintains several backup schemes, including
-    off-site backups and automated backups performed by our host every day,
-    week, and fortnight.
+<h3>How does OSF store and back up files that I upload to the site?</h3>
+    <p>The OSF stores files with <a href="http://www.rackspace.com/">Rackspace</a>
+    via an open source sponsorship, and has backups on 
+    <a href="http://aws.amazon.com/glacier/">Amazon's Glacier platform</a>. 
+    OSF maintains several backup schemes, including off-site backups and 
+    automated backups performed by our host every day, week, and fortnight.</p>
 
 <h3>What is coming to the OSF?</h3>
 
@@ -79,8 +77,8 @@
     or follow the COS <a
             href="https://github.com/centerforopenscience">GitHub</a> page.</p>
 <h3>How can I help develop the OSF?</h3><p>If you are a developer, email the <a
-        href="mailto:faq-developer@openscienceframework.org">dev team</a> for
+        href="mailto:contact@osf.io">dev team</a> for
     more information. If you want to comment on how to make the OSF more useful
     for managing your workflow, send comments <a
-            href="mailto:contact@openscienceframework.org">here</a>.</p>
+            href="mailto:contact@osf.io">here</a>.</p>
 </%def>

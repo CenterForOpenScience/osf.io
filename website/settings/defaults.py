@@ -5,6 +5,8 @@ These settings can be overridden in local.py.
 """
 
 import os
+import json
+
 
 os_env = os.environ
 
@@ -14,10 +16,16 @@ def parent_dir(path):
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 BASE_PATH = parent_dir(HERE)  # website/ directory
+APP_PATH = parent_dir(BASE_PATH)
 ADDON_PATH = os.path.join(BASE_PATH, 'addons')
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = "/static"
+ASSET_HASH_PATH = os.path.join(APP_PATH, 'webpack-assets.json')
+ROOT = os.path.join(BASE_PATH, '..')
 
+LOAD_BALANCER = False
+
+LOG_PATH = os.path.join(APP_PATH, 'logs')
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 ANALYTICS_PATH = os.path.join(BASE_PATH, 'analytics')
 
@@ -34,7 +42,7 @@ ALLOW_REGISTRATION = True
 ALLOW_LOGIN = True
 
 SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
-ELASTIC_URI = 'http://localhost:9200'
+ELASTIC_URI = 'localhost:9200'
 ELASTIC_TIMEOUT = 10
 # Sessions
 # TODO: Override SECRET_KEY in local.py in production
@@ -46,6 +54,9 @@ DEV_MODE = False
 DEBUG_MODE = False
 
 
+# TODO: Remove after migration to OSF Storage
+COPY_GIT_REPOS = False
+
 # External services
 USE_CDN_FOR_CLIENT_LIBS = True
 
@@ -55,12 +66,19 @@ MAIL_SERVER = 'smtp.sendgrid.net'
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = ''  # Set this in local.py
 
+# Mailchimp
+MAILCHIMP_API_KEY = None
+MAILCHIMP_WEBHOOK_SECRET_KEY = 'CHANGEME'  # OSF secret key to ensure webhook is secure
+ENABLE_EMAIL_SUBSCRIPTIONS = True
+MAILCHIMP_GENERAL_LIST = 'Open Science Framework General'
+
 # TODO: Override in local.py
 MAILGUN_API_KEY = None
 
 # TODO: Override in local.py in production
 UPLOADS_PATH = os.path.join(BASE_PATH, 'uploads')
 MFR_CACHE_PATH = os.path.join(BASE_PATH, 'mfrcache')
+MFR_TEMP_PATH = os.path.join(BASE_PATH, 'mfrtemp')
 
 # Use Celery for file rendering
 USE_CELERY = True
@@ -135,25 +153,19 @@ CELERY_RESULT_BACKEND = 'amqp://'
 
 # Modules to import when celery launches
 CELERY_IMPORTS = (
-    'framework.email.tasks',
     'framework.tasks',
-    'framework.render.tasks'
+    'framework.tasks.signals',
+    'framework.email.tasks',
+    'framework.render.tasks',
+    'framework.analytics.tasks',
+    'website.mailchimp_utils',
 )
 
 # Add-ons
 
-ADDONS_REQUESTED = [
-    # 'badges',
-    'dataverse',
-    'dropbox',
-    'figshare',
-    'forward',
-    'github',
-    'osffiles',
-    's3',
-    'twofactor',
-    'wiki',
-]
+# Load addons from addons.json
+with open(os.path.join(ROOT, 'addons.json')) as fp:
+    ADDONS_REQUESTED = json.load(fp)['addons']
 
 ADDON_CATEGORIES = [
     'documentation',
@@ -192,3 +204,13 @@ ALL_MY_REGISTRATIONS_NAME = 'All my registrations'
 # FOR EMERGENCIES ONLY: Setting this to True will disable forks, registrations,
 # and uploads in order to save disk space.
 DISK_SAVING_MODE = False
+
+# Add Contributors (most in common)
+MAX_MOST_IN_COMMON_LENGTH = 15
+
+# Google Analytics
+GOOGLE_ANALYTICS_ID = None
+GOOGLE_SITE_VERIFICATION = None
+
+# Pingdom
+PINGDOM_ID = None

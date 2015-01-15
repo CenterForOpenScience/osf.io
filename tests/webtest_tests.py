@@ -10,6 +10,8 @@ from nose.tools import *  # PEP8 asserts
 
 from modularodm import Q
 
+from framework.mongo.utils import to_mongo_key
+
 from framework.auth.core import User, Auth
 from tests.base import OsfTestCase, fake
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
@@ -24,7 +26,22 @@ from website.project.model import ensure_schemas
 from website.project.views.file import get_cache_path
 from website.addons.osffiles.views import get_cache_file
 from framework.render.tasks import ensure_path
-from website.util import api_url_for, web_url_for
+from website.util import web_url_for
+
+
+class TestDisabledUser(OsfTestCase):
+
+    def setUp(self):
+        super(TestDisabledUser, self).setUp()
+        self.user = UserFactory()
+        self.user.set_password('Korben Dallas')
+        self.user.is_disabled = True
+        self.user.save()
+
+    def test_profile_disabled(self):
+        """Disabled user profiles return 401 (GONE)"""
+        res = self.app.get(self.user.url, expect_errors=True)
+        assert_equal(res.status_code, 410)
 
 
 class TestAnUnregisteredUser(OsfTestCase):
@@ -275,12 +292,13 @@ class TestAUser(OsfTestCase):
 
     def test_wiki_page_name_non_ascii(self):
         project = ProjectFactory(creator=self.user)
-        non_ascii = 'WöRlÐé'
-        res = self.app.get('/{0}/wiki/{1}/'.format(
+        non_ascii = to_mongo_key('WöRlÐé')
+        self.app.get('/{0}/wiki/{1}/'.format(
             project._primary_key,
             non_ascii
-        ), auth=self.auth)
-        assert_in('No wiki content', res)
+        ), auth=self.auth, expect_errors=True)
+        project.update_node_wiki(non_ascii, 'new content', Auth(self.user))
+        assert_in(non_ascii, project.wiki_pages_current)
 
     def test_noncontributor_cannot_see_wiki_if_no_content(self):
         user2 = UserFactory()
@@ -290,6 +308,15 @@ class TestAUser(OsfTestCase):
         res = self.app.get(project.url).maybe_follow()
         # Should not see wiki widget (since non-contributor and no content)
         assert_not_in('No wiki content', res)
+
+    def test_wiki_does_not_exist(self):
+        project = ProjectFactory(creator=self.user)
+        res = self.app.get('/{0}/wiki/{1}/'.format(
+            project._primary_key,
+            'not a real page yet',
+        ), auth=self.auth, expect_errors=True)
+        assert_in('This wiki page does not currently exist.', res)
+        assert_equal(res.status_code, 404)
 
     def test_sees_own_profile(self):
         res = self.app.get('/profile/', auth=self.auth)
@@ -303,6 +330,26 @@ class TestAUser(OsfTestCase):
         td1 = res.html.find('td', text=re.compile(r'Public(.*?)Profile'))
         td2 = td1.find_next_sibling('td')
         assert_equal(td2.text, user2.display_absolute_url)
+
+    # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1320
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_can_reset_password(self, mock_send_mail):
+        # A registered user
+        user = UserFactory()
+        # goes to the login page
+        url = web_url_for('auth_login')
+        res = self.app.get(url)
+        # and fills out forgot password form
+        form = res.forms['forgotPassword']
+        form['forgot_password-email'] = user.username
+        # submits
+        res = form.submit()
+        # mail was sent
+        mock_send_mail.assert_called
+        # gets 200 response
+        assert_equal(res.status_code, 200)
+        # URL is /forgotpassword
+        assert_equal(res.request.path, web_url_for('forgot_password'))
 
 
 class TestRegistrations(OsfTestCase):
@@ -319,6 +366,7 @@ class TestRegistrations(OsfTestCase):
         self.original = ProjectFactory(creator=self.user, is_public=True)
         # A registration
         self.project = RegistrationFactory(
+            creator=self.user,
             project=self.original,
             user=self.user,
         )
@@ -334,6 +382,15 @@ class TestRegistrations(OsfTestCase):
         # Settings is not in the project navigation bar
         subnav = res.html.select('#projectSubnav')[0]
         assert_in('Sharing', subnav.text)
+
+    # https://github.com/CenterForOpenScience/osf.io/issues/1424
+    def test_navbar_has_correct_links(self):
+        # Goes to project settings page
+        url = self.project.web_url_for('node_setting')
+        res = self.app.get(url, auth=self.auth)
+        # Correct links are in navbar
+        assert_in('Select Add-ons', res)
+        assert_not_in('Configure Commenting', res)
 
     def test_sees_registration_templates(self):
         # Browse to original project
@@ -490,6 +547,38 @@ class TestPrivateLinkView(OsfTestCase):
         res = self.app.get(self.project_url, {'view_only': self.link.key})
         assert_not_in('Citation:', res)
 
+    def test_no_warning_for_read_only_user_with_valid_link(self):
+        link2 = PrivateLinkFactory(anonymous=False)
+        link2.nodes.append(self.project)
+        link2.save()
+        self.project.add_contributor(
+            self.user,
+            permissions=['read'],
+            save=True,
+        )
+        res = self.app.get(self.project_url, {'view_only': link2.key},
+                           auth=self.user.auth)
+        assert_not_in(
+            "is being viewed through a private, view-only link. "
+            "Anyone with the link can view this project. Keep "
+            "the link safe.",
+            res.body
+        )
+
+    def test_no_warning_for_read_only_user_with_invalid_link(self):
+        self.project.add_contributor(
+            self.user,
+            permissions=['read'],
+            save=True,
+        )
+        res = self.app.get(self.project_url, {'view_only': "not_valid"},
+                           auth=self.user.auth)
+        assert_not_in(
+            "is being viewed through a private, view-only link. "
+            "Anyone with the link can view this project. Keep "
+            "the link safe.",
+            res.body
+        )
 
 class TestMergingAccounts(OsfTestCase):
 
@@ -627,6 +716,7 @@ class TestSearching(OsfTestCase):
         self.user.save()
         self.auth = ('test', api_key._primary_key)
 
+    @unittest.skip(reason='¯\_(ツ)_/¯ knockout.')
     def test_a_user_from_home_page(self):
         user = UserFactory()
         # Goes to home page
@@ -638,6 +728,7 @@ class TestSearching(OsfTestCase):
         # The username shows as a search result
         assert_in(user.fullname, res)
 
+    @unittest.skip(reason='¯\_(ツ)_/¯ knockout.')
     def test_a_public_project_from_home_page(self):
         project = ProjectFactory(title='Foobar Project', is_public=True)
         # Searches a part of the name
@@ -649,6 +740,7 @@ class TestSearching(OsfTestCase):
         # A link to the project is shown as a result
         assert_in('Foobar Project', res)
 
+    @unittest.skip(reason='¯\_(ツ)_/¯ knockout.')
     def test_a_public_component_from_home_page(self):
         component = NodeFactory(title='Foobar Component', is_public=True)
         # Searches a part of the name
@@ -719,19 +811,6 @@ class TestShortUrls(OsfTestCase):
         ensure_path(cache_dir)
         with open(cache_file_path, 'w') as fp:
             fp.write('test content')
-
-    def test_file_url(self):
-        node_file = self.component.add_file(
-            self.consolidate_auth, 'test.txt',
-            'test content', 4, 'text/plain'
-        )
-        self._mock_rendered_file(self.component, node_file)
-        # Warm up to account for file rendering
-        _ = self._url_to_body(node_file.url(self.component))
-        assert_equal(
-            self._url_to_body(node_file.deep_url(self.component)),
-            self._url_to_body(node_file.url(self.component)),
-        )
 
     def test_wiki_url(self):
         assert_equal(
@@ -995,22 +1074,18 @@ class TestConfirmingEmail(OsfTestCase):
         res = self.app.get(self.confirmation_url, expect_errors=True)
         assert_in('Link Expired', res)
 
-    def test_sees_flash_message_if_email_unconfirmed(self):
+    def test_flash_message_does_not_break_page_if_email_unconfirmed(self):
         # set a password for user
         self.user.set_password('bicycle')
         self.user.save()
         # Goes to log in page
         res = self.app.get('/account/').maybe_follow()
-        # Fills the form with incorrect password
-        form  = res.forms['signinForm']
+        # Fills the form with correct password
+        form = res.forms['signinForm']
         form['username'] = self.user.username
         form['password'] = 'bicycle'
         res = form.submit().maybe_follow()
         assert_in(language.UNCONFIRMED, res, 'shows flash message')
-        # clicks on resend link in flash message
-        res = res.click('Click here')
-        assert_equal(res.request.path, '/resend/', 'at resend page')
-
 
     @mock.patch('framework.auth.views.send_confirm_email')
     def test_resend_form(self, send_confirm_email):

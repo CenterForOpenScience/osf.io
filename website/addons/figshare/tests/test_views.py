@@ -185,7 +185,7 @@ class TestUtils(OsfTestCase):
     @mock.patch('website.addons.figshare.api.Figshare.project')
     def test_project_to_hgrid(self, *args, **kwargs):
         project = figshare_mock.project.return_value
-        hgrid = utils.project_to_hgrid(self.project, project, True)
+        hgrid = utils.project_to_hgrid(self.project, project, self.user, True)
 
         assert_equals(len(hgrid), len(project['articles']))
         folders_in_project = len(
@@ -312,6 +312,28 @@ class TestViewsCrud(OsfTestCase):
         url = '/api/v1/project/{0}/figshare/new/project/'.format(self.project._id)
         rv = self.app.post_json(url, {'project': ''}, auth=self.user.auth, expect_errors=True)
         assert_equal(rv.status_int, http.BAD_REQUEST)
+
+    @mock.patch('website.addons.figshare.api.Figshare.from_settings')
+    def test_view_file_returns_urls(self, mock_fig):
+        mock_fig.return_value = self.figshare
+        aid = '564'
+        file_id = '1348803'
+        delete_url = self.project.api_url + 'figshare/article/{aid}/file/{fid}/'.format(aid=aid, fid=file_id)
+        files_page_url = self.project.web_url_for('collect_file_trees')
+
+        url = self.project.web_url_for(
+            'figshare_view_file', aid=aid, fid=file_id
+        )
+        self.app.auth = self.user.auth
+        resp = self.app.get(url, auth=self.app.auth).maybe_follow(auth=self.app.auth)
+
+        assert_equal(resp.status_int, http.OK)
+        assert_in(self.project._id, resp.body)
+        assert_in(self.project.title, resp.body)
+        assert_in(self.project.title, resp.body)
+        assert_in(delete_url, resp.body)
+        assert_in(files_page_url, resp.body)
+
 
     # TODO Fix me, not logged in?
     @mock.patch('website.addons.figshare.api.Figshare.from_settings')

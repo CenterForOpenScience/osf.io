@@ -2,25 +2,23 @@
 <%def name="title()">${file_name}</%def>
 
 <%def name="file_versions()">
-    <div id='s3Scope'>
-    <div id="deletingAlert" class="alert alert-warning fade">
-                    Deleting your file…
-                </div>
+    <div id='s3Scope' class="scripted">
 
+        <div class="alert alert-warning" data-bind="visible: deleting">
+            Deleting your file…
+        </div>
 
             <p>
-                <span id="downloadButtonScope">
-                    <a data-bind="attr: {href: downloadURL}"
-                        class="btn btn-success btn-md"
-                        >Download <i class="icon-download-alt" ></i>
-                    </a>
-                </span>
+                % if download_url:
+                    <!--download button-->
+                    <a class="btn btn-success btn-md" href="${download_url}">
+                        Download <i class="icon-download-alt"></i></a>
+                % endif
                 % if user['can_edit'] and 'write' in user['permissions']:
-                    <span id="deleteButtonScope" class='scripted'>
-                        <a href="#" data-bind="visible: api_url, click: deleteFile" class="btn btn-danger btn-md" >
-                            Delete <i class="icon-trash"></i>
-                        </a>
-                    </span>
+                    <!--delete button-->
+                    <a href="#" data-bind="visible: api_url, click: deleteFile" class="btn btn-danger btn-md" >
+                        Delete <i class="icon-trash"></i>
+                    </a>
             </p>
         % endif
 
@@ -55,18 +53,19 @@
 
         </table>
     </div>
-    <script>
-        $script(['/static/js/deleteFile.js'], function() {
-            var delete_url = '${delete_url}';
-            var url = '${info_url}';
-            var deleteFile = new DeleteFile('#deleteButtonScope', url, delete_url);
+    <script type="text/javascript">
+        window.contextVars = $.extend(true, {}, window.contextVars, {
+            node: {
+                urls: {
+                    delete_url: '${delete_url}',
+                    files_page_url: '${files_page_url}'
+                    }
+            }
         });
     </script>
-    <script>
-        $script(['/static/js/downloadFile.js'], function() {
-            var download_url = '${download_url}';
-            var url = '${info_url}';
-            var downloadFile = new DownloadFile('#downloadButtonScope', url, download_url);
-        });
-    </script>
+</%def>
+
+<%def name="javascript_bottom()">
+${parent.javascript_bottom()}
+<script src=${"/static/public/js/s3/file-detail.js" | webpack_asset}></script>
 </%def>

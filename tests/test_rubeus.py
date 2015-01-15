@@ -1,4 +1,6 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
+# encoding: utf-8
+
 import os
 from types import NoneType
 from xmlrpclib import DateTime
@@ -85,6 +87,42 @@ class TestRubeus(OsfTestCase):
                 node_settings, node_settings.bucket, permissions=permissions
             ),
             rv
+        )
+
+    def test_build_addon_root_has_correct_upload_limits(self):
+        self.node_settings.config.max_file_size = 10
+        self.node_settings.config.high_max_file_size = 20
+
+        node = self.project
+        user = self.project.creator
+        auth = Auth(user)
+        permissions = {
+            'view': node.can_view(auth),
+            'edit': node.can_edit(auth) and not node.is_registration,
+        }
+
+        result = rubeus.build_addon_root(
+            self.node_settings,
+            self.node_settings.bucket,
+            permissions=permissions,
+            user=user
+        )
+
+        assert_equal(result['accept']['maxSize'], self.node_settings.config.max_file_size)
+
+        # user now has elevated upload limit
+        user.system_tags.append('high_upload_limit')
+        user.save()
+
+        result = rubeus.build_addon_root(
+            self.node_settings,
+            self.node_settings.bucket,
+            permissions=permissions,
+            user=user
+        )
+        assert_equal(
+            result['accept']['maxSize'],
+            self.node_settings.config.high_max_file_size
         )
 
     def test_hgrid_dummy_fail(self):
@@ -238,10 +276,6 @@ class TestRubeus(OsfTestCase):
         assert_true(ret['isPointer'])
 
 
-
-
-
-
 # TODO: Make this more reusable across test modules
 mock_addon = mock.Mock()
 serialized = {
@@ -273,26 +307,24 @@ class TestSerializingNodeWithAddon(OsfTestCase):
         assert_equal(ret, [serialized])
 
     def test_sort_by_name(self):
-        files = \
-            [
-                {'name': 'F.png'},
-                {'name': 'd.png'},
-                {'name': 'B.png'},
-                {'name': 'a.png'},
-                {'name': 'c.png'},
-                {'name': 'e.png'},
-                {'name': 'g.png'},
-            ]
-        sorted_files = \
-            [
-                {'name': 'a.png'},
-                {'name': 'B.png'},
-                {'name': 'c.png'},
-                {'name': 'd.png'},
-                {'name': 'e.png'},
-                {'name': 'F.png'},
-                {'name': 'g.png'},
-            ]
+        files = [
+            {'name': 'F.png'},
+            {'name': 'd.png'},
+            {'name': 'B.png'},
+            {'name': 'a.png'},
+            {'name': 'c.png'},
+            {'name': 'e.png'},
+            {'name': 'g.png'},
+        ]
+        sorted_files = [
+            {'name': 'a.png'},
+            {'name': 'B.png'},
+            {'name': 'c.png'},
+            {'name': 'd.png'},
+            {'name': 'e.png'},
+            {'name': 'F.png'},
+            {'name': 'g.png'},
+        ]
         ret = sort_by_name(files)
         for index, value in enumerate(ret):
             assert_equal(value['name'], sorted_files[index]['name'])
@@ -313,7 +345,7 @@ class TestSerializingNodeWithAddon(OsfTestCase):
         assert_equal(ret['name'], 'Project: {0}'.format(self.project.title))
         assert_equal(ret['permissions'], {
             'view': True,
-            'edit': True
+            'edit': False,
         })
         assert_equal(
             ret['urls'],
@@ -326,27 +358,30 @@ class TestSerializingNodeWithAddon(OsfTestCase):
 
     def test_collect_js_recursive(self):
         self.project.get_addons.return_value[0].config.include_js = {'files': ['foo.js']}
+        self.project.get_addons.return_value[0].config.short_name = 'dropbox'
         node = NodeFactory(project=self.project)
         mock_node_addon = mock.Mock()
         mock_node_addon.config.include_js = {'files': ['bar.js', 'baz.js']}
+        mock_node_addon.config.short_name = 'dropbox'
         node.get_addons = mock.Mock()
         node.get_addons.return_value = [mock_node_addon]
-        assert_equal(
-            rubeus.collect_addon_js(self.project),
-            {'foo.js', 'bar.js', 'baz.js'}
-        )
+        result = rubeus.collect_addon_js(self.project)
+        assert_in('foo.js', result)
+        assert_in('bar.js', result)
+        assert_in('baz.js', result)
 
     def test_collect_js_unique(self):
         self.project.get_addons.return_value[0].config.include_js = {'files': ['foo.js']}
+        self.project.get_addons.return_value[0].config.short_name = 'dropbox'
         node = NodeFactory(project=self.project)
         mock_node_addon = mock.Mock()
         mock_node_addon.config.include_js = {'files': ['foo.js', 'baz.js']}
+        mock_node_addon.config.short_name = 'dropbox'
         node.get_addons = mock.Mock()
         node.get_addons.return_value = [mock_node_addon]
-        assert_equal(
-            rubeus.collect_addon_js(self.project),
-            {'foo.js', 'baz.js'}
-        )
+        result = rubeus.collect_addon_js(self.project)
+        assert_in('foo.js', result)
+        assert_in('baz.js', result)
 
 
 class TestSerializingEmptyDashboard(OsfTestCase):
@@ -462,10 +497,8 @@ class TestSmartFolderViews(OsfTestCase):
         self.user = self.dash.creator
         self.auth = AuthFactory(user=self.user)
 
-    @mock.patch('website.project.decorators.get_api_key')
     @mock.patch('website.project.decorators.Auth.from_kwargs')
-    def test_adding_project_to_dashboard_increases_json_size_by_one(self, mock_from_kwargs, mock_get_api_key):
-        mock_get_api_key.return_value = 'api_keys_lol'
+    def test_adding_project_to_dashboard_increases_json_size_by_one(self, mock_from_kwargs):
         mock_from_kwargs.return_value = Auth(user=self.user)
 
         with app.test_request_context():
@@ -482,10 +515,8 @@ class TestSmartFolderViews(OsfTestCase):
         assert_equal(len(res.json[u'data']), init_len + 1)
 
 
-    @mock.patch('website.project.decorators.get_api_key')
     @mock.patch('website.project.decorators.Auth.from_kwargs')
-    def test_adding_registration_to_dashboard_increases_json_size_by_one(self, mock_from_kwargs, mock_get_api_key):
-        mock_get_api_key.return_value = 'api_keys_lol'
+    def test_adding_registration_to_dashboard_increases_json_size_by_one(self, mock_from_kwargs):
         mock_from_kwargs.return_value = Auth(user=self.user)
 
         with app.test_request_context():

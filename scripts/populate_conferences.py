@@ -65,7 +65,7 @@ MEETING_DATA = {
         'info_url': None,
         'logo_url': 'https://science.nrao.edu/science/meetings/2014/'
                     'filamentary-structure/images/filaments2014_660x178.png',
-        'active': True,
+        'active': False,
         'admins': [
             'lvonschi@nrao.edu',
             'sara.d.bowman@gmail.com',
@@ -82,20 +82,55 @@ MEETING_DATA = {
             'conferences',
             'bitss.jpg',
         ),
-        'active': True,
+        'active': False,
         'admins': [
             'gkroll@berkeley.edu',
             'andrew@cos.io',
+            'awais@berkeley.edu',
         ],
         'public_projects': True,
     },
-    # TODO: Uncomment on 2015/02/01
-    # 'spsp2015': {
-    #     'name': 'SPSP 2015',
-    #     'info_url': None,
-    #     'logo_url': None,
-    #     'active': False,
-    # },
+    'spsp2015': {
+        'name': 'SPSP 2015',
+        'info_url': None,
+        'logo_url': 'http://spspmeeting.org/CMSPages/SPSPimages/spsp2015banner.jpg',
+        'active': True,
+        'admins': [
+            'meetings@spsp.org',
+            'andrew@cos.io',
+        ],
+    },
+    'aps2015': {
+        'name': 'APS 2015',
+        'info_url': None,
+        'logo_url': 'http://www.psychologicalscience.org/images/APS_2015_Banner_990x157.jpg',
+        'active': True,
+        'admins': [
+            'KatyCain526@gmail.com',
+        ],
+        'public_projects': True,
+    },
+    'icps2015': {
+        'name': 'ICPS 2015',
+        'info_url': None,
+        'logo_url': 'http://icps.psychologicalscience.org/wp-content/themes/deepblue/images/ICPS_Website-header_990px.jpg',
+        'active': True,
+        'admins': [
+            'KatyCain526@gmail.com',
+        ],
+        'public_projects': True,
+    },
+    'mpa2015': {
+        'name': 'MPA 2015',
+        'info_url': None,
+        'logo_url': 'http://www.midwesternpsych.org/resources/Pictures/MPA%20logo.jpg',
+        'active': True,
+        'admins': [
+            'mpa@kent.edu',
+            'KatyCain526@gmail.com',
+        ],
+        'public_projects': True,
+    },
 }
 
 
@@ -109,13 +144,18 @@ def populate_conferences():
                 admin_objs.append(user)
             except ModularOdmException:
                 raise RuntimeError('Username {0!r} is not registered.'.format(email))
+        conf = Conference(
+            endpoint=meeting, admins=admin_objs, **attrs
+        )
         try:
-            conf = Conference(
-                endpoint=meeting, admins=admin_objs, **attrs
-            )
             conf.save()
         except ModularOdmException:
-            print('{0} Conference already exists. Skipping...'.format(meeting))
+            print('{0} Conference already exists. Updating existing record...'.format(meeting))
+            conf = Conference.find_one(Q('endpoint', 'eq', meeting))
+            for key, value in attrs.items():
+                setattr(conf, key, value)
+            conf.admins = admin_objs
+            conf.save()
 
 
 if __name__ == '__main__':

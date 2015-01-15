@@ -1,7 +1,4 @@
 ## Template for the "Dropbox" section in the "Configure Add-ons" panel
-
-
-
 <div id='dropboxAddonScope' class='addon-settings scripted'>
 
     <h4 class="addon-title">
@@ -26,16 +23,5 @@
     <div class="help-block">
         <p data-bind="html: message, attr: {class: messageClass}"></p>
     </div>
-</div>
 
 <%include file="profile/addon_permissions.mako" />
-
-<script>
-    $script(['/static/addons/dropbox/dropboxUserConfig.js'], function() {
-        // Endpoint for dropbox user settings
-        var url = '/api/v1/settings/dropbox/';
-        // Start up the Dropbox Config manager
-        var dropbox = new DropboxUserConfig('#dropboxAddonScope', url);
-    });
-</script>
-

@@ -1,25 +1,35 @@
 # -*- coding: utf-8 -*-
 
-import operator
+import os
 import logging
+import operator
 import httplib as http
+
 from dateutil.parser import parse as parse_date
 
 from flask import request
-from modularodm.exceptions import ValidationError
+from modularodm.exceptions import ValidationError, NoResultsFound
+from modularodm import Q
 
-from framework.auth.decorators import collect_auth, must_be_logged_in
-from framework.flask import redirect  # VOL-aware redirect
-from framework.exceptions import HTTPError
-from framework.auth import get_current_user
+from framework import sentry
 from framework.auth import utils as auth_utils
+from framework.auth.decorators import collect_auth
+from framework.auth.decorators import must_be_logged_in
+from framework.auth.exceptions import ChangePasswordError
+from framework.exceptions import HTTPError
+from framework.flask import redirect  # VOL-aware redirect
+from framework.status import push_status_message
 
-from website.models import ApiKey, User
-from website.views import _render_nodes
 from website import settings
-from website.profile import utils as profile_utils
+from website import mailchimp_utils
+from website.models import User
+from website.models import ApiKey
+from website.views import _render_nodes
+from website.util import web_url_for
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
+from website.profile import utils as profile_utils
+
 
 logger = logging.getLogger(__name__)
 
@@ -56,15 +66,12 @@ def date_or_none(date):
         return None
 
 
-def _profile_view(uid=None):
+def _profile_view(profile, is_profile):
     # TODO: Fix circular import
     from website.addons.badges.util import get_sorted_user_badges
 
-    user = get_current_user()
-    profile = User.load(uid) if uid else user
-
-    if not (uid or user):
-        return redirect('/login/?next={0}'.format(request.path))
+    if profile and profile.is_disabled:
+        raise HTTPError(http.GONE)
 
     if 'badges' in settings.ADDONS_REQUESTED:
         badge_assertions = get_sorted_user_badges(profile),
@@ -82,7 +89,7 @@ def _profile_view(uid=None):
             'assertions': badge_assertions,
             'badges': badges,
             'user': {
-                'is_profile': user == profile,
+                'is_profile': is_profile,
                 'can_edit': None,  # necessary for rendering nodes
                 'permissions': [],  # necessary for rendering nodes
             },
@@ -98,12 +105,16 @@ def _get_user_created_badges(user):
     return []
 
 
-def profile_view():
-    return _profile_view()
+@must_be_logged_in
+def profile_view(auth):
+    return _profile_view(auth.user, True)
 
 
-def profile_view_id(uid):
-    return _profile_view(uid)
+@collect_auth
+def profile_view_id(uid, auth):
+    user = User.load(uid)
+    is_profile = auth and auth.user == user
+    return _profile_view(user, is_profile)
 
 
 @must_be_logged_in
@@ -135,6 +146,33 @@ def user_profile(auth, **kwargs):
         'user_api_url': user.api_url,
     }
 
+
+@must_be_logged_in
+def user_account(auth, **kwargs):
+    user = auth.user
+    return {
+        'user_id': user._id,
+    }
+
+
+@must_be_logged_in
+def user_account_password(auth, **kwargs):
+    user = auth.user
+    old_password = request.form.get('old_password', None)
+    new_password = request.form.get('new_password', None)
+    confirm_password = request.form.get('confirm_password', None)
+
+    try:
+        user.change_password(old_password, new_password, confirm_password)
+        user.save()
+    except ChangePasswordError as error:
+        push_status_message('<br />'.join(error.messages) + '.', kind='warning')
+    else:
+        push_status_message('Password updated successfully.', kind='info')
+
+    return redirect(web_url_for('user_account'))
+
+
 @must_be_logged_in
 def user_addons(auth, **kwargs):
 
@@ -164,8 +202,42 @@ def user_addons(auth, **kwargs):
     out['addons_available'].sort(key=operator.attrgetter("full_name"), reverse=False)
     out['addons_enabled'] = addons_enabled
     out['addon_enabled_settings'] = addon_enabled_settings
+    out['addon_js'] = collect_user_config_js(user.get_addons())
     return out
 
+@must_be_logged_in
+def user_notifications(auth, **kwargs):
+    """Get subscribe data from user"""
+    if not settings.ENABLE_EMAIL_SUBSCRIPTIONS:
+        raise HTTPError(http.BAD_REQUEST)
+    return {
+        'mailing_lists': auth.user.mailing_lists
+    }
+
+def collect_user_config_js(addons):
+    """Collect webpack bundles for each of the addons' user-cfg.js modules. Return
+    the URLs for each of the JS modules to be included on the user addons config page.
+
+    :param list addons: List of user's addon config records.
+    """
+    js_modules = []
+    for addon in addons:
+
+        file_path = os.path.join('static',
+                                 'public',
+                                 'js',
+                                 addon.config.short_name,
+                                 'user-cfg.js')
+        js_file = os.path.join(
+            settings.BASE_PATH,
+            file_path,
+        )
+        if os.path.exists(js_file):
+            js_path = os.path.join(
+                '/', file_path
+            )
+            js_modules.append(js_path)
+    return js_modules
 
 @must_be_logged_in
 def profile_addons(**kwargs):
@@ -181,6 +253,86 @@ def user_choose_addons(**kwargs):
     json_data = escape_html(request.get_json())
     auth.user.config_addons(json_data, auth)
 
+@must_be_logged_in
+def user_choose_mailing_lists(auth, **kwargs):
+    """ Update mailing list subscription on user model and in mailchimp
+
+        Example input:
+        {
+            "Open Science Framework General": true,
+            ...
+        }
+
+    """
+    user = auth.user
+    json_data = escape_html(request.get_json())
+    if json_data:
+        for list_name, subscribe in json_data.items():
+            update_subscription(user, list_name, subscribe)
+    else:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_long="Must provide a dictionary of the format {'mailing list name': Boolean}")
+        )
+
+    user.save()
+    return {'message': 'Successfully updated mailing lists', 'result': user.mailing_lists}, 200
+
+
+def update_subscription(user, list_name, subscription):
+    """ Update mailing list subscription in mailchimp.
+
+    :param obj user: current user
+    :param str list_name: mailing list
+    :param boolean subscription: true if user is subscribed
+    """
+    if subscription:
+        mailchimp_utils.subscribe_mailchimp(list_name, user._id)
+    else:
+        try:
+            mailchimp_utils.unsubscribe_mailchimp(list_name, user._id)
+        except mailchimp_utils.mailchimp.ListNotSubscribedError:
+            raise HTTPError(http.BAD_REQUEST,
+                data=dict(message_short="ListNotSubscribedError",
+                        message_long="The user is already unsubscribed from this mailing list.",
+                        error_type="not_subscribed")
+            )
+
+
+def mailchimp_get_endpoint(**kwargs):
+    """Endpoint that the mailchimp webhook hits to check that the OSF is responding"""
+    return {}, http.OK
+
+
+def sync_data_from_mailchimp(**kwargs):
+    """Endpoint that the mailchimp webhook sends its data to"""
+    key = request.args.get('key')
+
+    if key == settings.MAILCHIMP_WEBHOOK_SECRET_KEY:
+        r = request
+        action = r.values['type']
+        list_name = mailchimp_utils.get_list_name_from_id(list_id=r.values['data[list_id]'])
+        username = r.values['data[email]']
+
+        try:
+            user = User.find_one(Q('username', 'eq', username))
+        except NoResultsFound:
+            sentry.log_exception()
+            sentry.log_message("A user with this username does not exist.")
+            raise HTTPError(404, data=dict(message_short='User not found',
+                                        message_long='A user with this username does not exist'))
+        if action == 'unsubscribe':
+            user.mailing_lists[list_name] = False
+            user.save()
+
+        elif action == 'subscribe':
+            user.mailing_lists[list_name] = True
+            user.save()
+
+    else:
+        # TODO: get tests to pass with sentry logging
+        # sentry.log_exception()
+        # sentry.log_message("Unauthorized request to the OSF.")
+        raise HTTPError(http.UNAUTHORIZED)
 
 @must_be_logged_in
 def get_keys(**kwargs):
@@ -387,14 +539,8 @@ def unserialize_social(auth, **kwargs):
     user = auth.user
     json_data = escape_html(request.get_json())
 
-    user.social['personal'] = json_data.get('personal')
-    user.social['orcid'] = json_data.get('orcid')
-    user.social['researcherId'] = json_data.get('researcherId')
-    user.social['twitter'] = json_data.get('twitter')
-    user.social['github'] = json_data.get('github')
-    user.social['scholar'] = json_data.get('scholar')
-    user.social['impactStory'] = json_data.get('impactStory')
-    user.social['linkedIn'] = json_data.get('linkedIn')
+    for soc in user.SOCIAL_FIELDS.keys():
+        user.social[soc] = json_data.get(soc)
 
     try:
         user.save()

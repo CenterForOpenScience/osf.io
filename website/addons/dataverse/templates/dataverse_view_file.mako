@@ -3,11 +3,28 @@
 <%def name="title()">${file_name}</%def>
 
 <%def name="file_versions()">
+<div class="scripted" id="dataverseScope">
+
+    <div class="alert alert-warning" data-bind="visible: deleting">
+        Deleting your file…
+    </div>
+
+    <ol class="breadcrumb">
+         <li class="active overflow"><a data-bind="attr: {href: files_url}">{{nodeTitle}}</a></li>
+         <li>Dataverse</li>
+         <li class="active overflow">{{filename}}</li>
+    </ol>
+
+     <p>
+         <a data-bind="attr: {href: download_url}" class="btn btn-success btn-md">Download <i class="icon-download-alt"></i></a>
+        % if user['can_edit']:
+            <button data-bind="click: deleteFile" class="btn btn-danger btn-md">Delete <i class="icon-trash"></i></button>
+        % endif
+     </p>
+
 
     % if not node['anonymous']:
-        <div class="scripted" id="dataverseScope">
             <table class="table table-striped" id="file-version-history">
-
                 <thead>
                 <tr>
                     <th>Dataverse</th>
@@ -27,8 +44,8 @@
                                 {{study}}</a>
                         </td>
                         <td>
-                            <a href="{{download_url}}" class="btn btn-primary btn-sm">
-                               Download <i class="icon-download-alt"></i>
+                            <a data-bind="attr: {href: download_url}" class="btn btn-primary btn-sm">
+                                <i class="icon-download-alt"></i>
                             </a>
                         </td>
                     </tr>
@@ -36,13 +53,20 @@
 
             </table>
 
-        </div>
     % endif
-
-    <script>
-        $script(["/static/addons/dataverse/dataverseViewFile.js"], function() {
-            var url = '${info_url}';
-            var dataverseFileTable = new DataverseFileTable('#dataverseScope', url);
+</div>
+    <script type="text/javascript">
+        window.contextVars = $.extend(true, {}, window.contextVars, {
+            node: {
+                urls: {
+                    info: '${urls['info']}'
+                    }
+            }
         });
     </script>
+</%def>
+
+<%def name="javascript_bottom()">
+${parent.javascript_bottom()}
+<script src=${"/static/public/js/dataverse/file-detail.js" | webpack_asset}></script>
 </%def>

@@ -77,7 +77,7 @@
         <div class="col-sm-4 hpFeature">
             <img id="archive" src="/static/img/filedrawer.gif"><br>
             <div class="hpSubHeadTwo">ARCHIVING</div>
-            <p>and management of research and collaborations</p>
+            <p>and managing collaborations</p>
             <div class="hpFeatureInfo">Spend more time doing your research and less time keeping track of it. No more lost data from crashed drives, disappearing collaborators, or failing memories.</div>
         </div>
         <div class="col-sm-4 hpFeature">
@@ -109,14 +109,5 @@
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
-
-    <script type="text/javascript">
-        $script(['/static/js/signUp.js']);
-        $script.ready('signUp', function() {
-            var signUp = new SignUp(
-                '#signUpScope',
-                '${api_url_for('register_user')}'
-            );
-        });
-    </script>
+    <script src=${"/static/public/js/home-page.js" | webpack_asset}></script>
 </%def>

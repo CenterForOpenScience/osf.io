@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
+import os
 import importlib
 
 from modularodm import storage
+from werkzeug.contrib.fixers import ProxyFix
 
 import framework
 from framework.flask import app, add_handlers
@@ -11,6 +13,7 @@ from framework.mongo import set_up_storage
 from framework.addons.utils import render_addon_capabilities
 from framework.sentry import sentry
 from framework.mongo import handlers as mongo_handlers
+from framework.tasks import handlers as task_handlers
 from framework.transactions import handlers as transaction_handlers
 
 import website.models
@@ -20,18 +23,23 @@ from website.project.model import ensure_schemas
 
 
 def init_addons(settings, routes=True):
-    ADDONS_AVAILABLE = []
+    """Initialize each addon in settings.ADDONS_REQUESTED.
+
+    :param module settings: The settings module.
+    :param bool routes: Add each addon's routing rules to the URL map.
+    """
+    settings.ADDONS_AVAILABLE = getattr(settings, 'ADDONS_AVAILABLE', [])
+    settings.ADDONS_AVAILABLE_DICT = getattr(settings, 'ADDONS_AVAILABLE_DICT', {})
     for addon_name in settings.ADDONS_REQUESTED:
-        addon = init_addon(app, addon_name, routes)
+        try:
+            addon = init_addon(app, addon_name, routes=routes)
+        except AssertionError as error:
+            logger.exception(error)
+            continue
         if addon:
-            ADDONS_AVAILABLE.append(addon)
-    settings.ADDONS_AVAILABLE = ADDONS_AVAILABLE
-
-    settings.ADDONS_AVAILABLE_DICT = {
-        addon.short_name: addon
-        for addon in settings.ADDONS_AVAILABLE
-    }
-
+            if addon not in settings.ADDONS_AVAILABLE:
+                settings.ADDONS_AVAILABLE.append(addon)
+            settings.ADDONS_AVAILABLE_DICT[addon.short_name] = addon
     settings.ADDON_CAPABILITIES = render_addon_capabilities(settings.ADDONS_AVAILABLE)
 
 
@@ -39,6 +47,7 @@ def attach_handlers(app, settings):
     """Add callback handlers to ``app`` in the correct order."""
     # Add callback handlers to application
     add_handlers(app, mongo_handlers.handlers)
+    add_handlers(app, task_handlers.handlers)
     if settings.USE_TOKU_MX:
         add_handlers(app, transaction_handlers.handlers)
 
@@ -52,16 +61,28 @@ def attach_handlers(app, settings):
     add_handlers(app, {'before_request': framework.sessions.before_request})
     return app
 
-def init_log_file(build_fp, settings):
+
+def build_addon_log_templates(build_fp, settings):
+    for addon in settings.ADDONS_REQUESTED:
+        log_path = os.path.join(settings.ADDON_PATH, addon, 'templates', 'log_templates.mako')
+        try:
+            with open(log_path) as addon_fp:
+                build_fp.write(addon_fp.read())
+        except IOError:
+            pass
+
+
+def build_log_templates(settings):
     """Write header and core templates to the built log templates file."""
-    build_fp.write('## Built templates file. DO NOT MODIFY.\n')
-    with open(settings.CORE_TEMPLATES) as core_fp:
-        # Exclude comments in core templates mako file
-        content = '\n'.join([line.rstrip() for line in
-            core_fp.readlines() if not line.strip().startswith('##')])
-        build_fp.write(content)
-    build_fp.write('\n')
-    return None
+    with open(settings.BUILT_TEMPLATES, 'w') as build_fp:
+        build_fp.write('## Built templates file. DO NOT MODIFY.\n')
+        with open(settings.CORE_TEMPLATES) as core_fp:
+            # Exclude comments in core templates mako file
+            content = '\n'.join([line.rstrip() for line in
+                core_fp.readlines() if not line.strip().startswith('##')])
+            build_fp.write(content)
+        build_fp.write('\n')
+        build_addon_log_templates(build_fp, settings)
 
 
 def init_app(settings_module='website.settings', set_backends=True, routes=True):
@@ -77,13 +98,8 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
     # The settings module
     settings = importlib.import_module(settings_module)
 
-    with open(settings.BUILT_TEMPLATES, 'w') as build_fp:
-        init_log_file(build_fp, settings)
-
-    try:
-        init_addons(settings, routes)
-    except AssertionError as error:  # Addon Route map has already been created
-        logger.error(error)
+    build_log_templates(settings)
+    init_addons(settings, routes)
 
     app.debug = settings.DEBUG_MODE
     if set_backends:
@@ -109,4 +125,13 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
 
     if set_backends:
         ensure_schemas()
+    apply_middlewares(app, settings)
     return app
+
+
+def apply_middlewares(flask_app, settings):
+    # Use ProxyFix to respect X-Forwarded-Proto header
+    # https://stackoverflow.com/questions/23347387/x-forwarded-proto-and-flask
+    if settings.LOAD_BALANCER:
+        flask_app.wsgi_app = ProxyFix(flask_app.wsgi_app)
+    return flask_app
