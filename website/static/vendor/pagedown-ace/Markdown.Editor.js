@@ -118,6 +118,14 @@
     var imageDefaultText = "http://";
     var linkDefaultText = "http://";
 
+    var focusNoScroll = function(element) {
+        var x = window.scrollX;
+        var y = window.scrollY;
+        element.focus();
+        window.scrollTo(x, y);
+        return element;
+    };
+
     // -------------------------------------------------------------------
     //  END OF YOUR CHANGES
     // -------------------------------------------------------------------
@@ -810,7 +818,7 @@
                 return new Range(posStart.row, posStart.column, posEnd.row, posEnd.column);
             })(inputArea.session.doc.indexToPosition(stateObj.start), inputArea.session.doc.indexToPosition(stateObj.end)));
             inputArea.renderer.scrollToY(stateObj.scrollTop);
-            inputArea.focus();
+            focusNoScroll(inputArea);
             
             /*benweet
             if (!util.isVisible(inputArea)) {
@@ -1121,30 +1129,30 @@
 
         var pushPreviewHtml = function (text) {
 
-            var emptyTop = position.getTop(panels.input) - getDocScrollTop();
+//            var emptyTop = position.getTop(panels.input) - getDocScrollTop();
 
             if (panels.preview) {
                 previewSet(text);
                 previewRefreshCallback();
             }
 
-            setPanelScrollTops();
-
-            if (isFirstTimeFilled) {
-                isFirstTimeFilled = false;
-                return;
-            }
-
-            var fullTop = position.getTop(panels.input) - getDocScrollTop();
-
-            if (uaSniffed.isIE) {
-                setTimeout(function () {
-                    window.scrollBy(0, fullTop - emptyTop);
-                }, 0);
-            }
-            else {
-                window.scrollBy(0, fullTop - emptyTop);
-            }
+//            setPanelScrollTops();
+//
+//            if (isFirstTimeFilled) {
+//                isFirstTimeFilled = false;
+//                return;
+//            }
+//
+//            var fullTop = position.getTop(panels.input) - getDocScrollTop();
+//
+//            if (uaSniffed.isIE) {
+//                setTimeout(function () {
+//                    window.scrollBy(0, fullTop - emptyTop);
+//                }, 0);
+//            }
+//            else {
+//                window.scrollBy(0, fullTop - emptyTop);
+//            }
         };
 
         var init = function () {
@@ -1357,7 +1365,7 @@
                 range.select();
             }
 
-            input.focus();
+            focusNoScroll(input);
         }, 0);
     };
 
@@ -1498,7 +1506,7 @@
         // Perform the button's action.
         function doClick(button) {
 
-            inputBox.focus();
+            focusNoScroll(inputBox);
             var linkOrImage = button.id == "wmd-link-button" || button.id == "wmd-image-button";
 
             if (button.textOp) {
@@ -1534,7 +1542,7 @@
                 // create dialogs and require the function pointers.
                 var fixupInputArea = function () {
 
-                    inputBox.focus();
+                    focusNoScroll(inputBox);
 
                     if (chunks) {
                         state.setChunks(chunks);

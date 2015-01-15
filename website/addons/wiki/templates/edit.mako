@@ -67,8 +67,7 @@
                            onclick=$(window).off('beforeunload')>
                 </div>
                 <p class="help-block">Preview</p>
-                <!-- Avoid using id "wmd-preview" to prevent automatic rendering -->
-                <div id="editor-preview" class="wmd-panel wmd-preview"></div>
+                <div id="wmd-preview" class="wmd-panel wmd-preview"></div>
             </form>
         </div>
     </div><!-- end row -->
