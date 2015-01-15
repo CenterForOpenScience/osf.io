@@ -103,15 +103,15 @@
             <div class="padded">
 
                 <button
-                        type="submit"
-                        class="btn btn-primary"
-                    >Submit</button>
-
-                <button
                         type="button"
                         class="btn btn-default"
                         data-bind="click: cancel"
                     >Cancel</button>
+
+                <button
+                        type="submit"
+                        class="btn btn-primary"
+                    >Submit</button>
 
             </div>
 
