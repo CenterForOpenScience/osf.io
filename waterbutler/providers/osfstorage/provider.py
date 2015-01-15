@@ -1,6 +1,7 @@
 import os
 import json
 import uuid
+import shutil
 import asyncio
 import hashlib
 
@@ -111,7 +112,9 @@ class OSFStorageProvider(provider.BaseProvider):
             {'path': complete_name},
         )
 
-        os.rename(pending_path, complete_path)
+        # Due to cross volume movement in unix we leverage shutil.move which properly handles this case.
+        # http://bytes.com/topic/python/answers/41652-errno-18-invalid-cross-device-link-using-os-rename#post157964
+        shutil.move(pending_path, complete_path)
 
         response = yield from self.make_signed_request(
             'POST',
