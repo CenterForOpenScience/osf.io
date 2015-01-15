@@ -2255,7 +2255,6 @@ class TestAuthViews(OsfTestCase):
         assert_equal(unclaimed_user.unclaimed_records, {})
         assert_equal(len(unclaimed_user.email_verifications.keys()), 0)
 
-
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_resend_confirmation_post_sends_confirm_email(self, send_mail):
         # Make sure user has a confirmation token for their primary email
@@ -2265,6 +2264,23 @@ class TestAuthViews(OsfTestCase):
         assert_true(send_mail.called)
         assert_true(send_mail.called_with(
             to_addr=self.user.username
+        ))
+
+    # see: https://github.com/CenterForOpenScience/osf.io/issues/1492
+    @mock.patch('website.security.random_string')
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_resend_confirmation_post_regenerates_token(self, send_mail, random_string):
+        expiration = dt.datetime.utcnow() - dt.timedelta(seconds=1)
+        random_string.return_value = '12345'
+        self.user.add_email_verification(self.user.username, expiration=expiration)
+        self.user.save()
+
+        self.app.post('/resend/', {'email': self.user.username})
+        confirm_url = self.user.get_confirmation_url(self.user.username, force=True)
+        assert_true(send_mail.called)
+        assert_true(send_mail.called_with(
+            to_addr=self.user.username,
+            confirmation_url=confirm_url
         ))
 
     @mock.patch('framework.auth.views.mails.send_mail')

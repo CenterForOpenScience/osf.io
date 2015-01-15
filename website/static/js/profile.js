@@ -199,8 +199,9 @@ var BaseViewModel = function(urls, modes) {
     self.urls = urls;
     self.modes = modes || ['view'];
     self.viewable = $.inArray('view', modes) >= 0;
-    self.editable = ko.observable(false);
-    self.mode = ko.observable(self.viewable ? 'view' : 'edit');
+    self.editAllowed = $.inArray('edit', self.modes) >= 0;
+    self.editable = ko.observable(self.editAllowed);
+    self.mode = ko.observable(self.editable() ? 'edit' : 'view');
 
     self.original = ko.observable();
     self.tracked = [];  // Define for each view model that inherits
@@ -286,7 +287,7 @@ BaseViewModel.prototype.fetch = function() {
 };
 
 BaseViewModel.prototype.edit = function() {
-    if (this.editable()) {
+    if (this.editable() && this.editAllowed) {
         this.mode('edit');
     }
 };
@@ -651,7 +652,11 @@ ListViewModel.prototype.removeContent = function(content) {
 
 ListViewModel.prototype.unserialize = function(data) {
     var self = this;
-    self.editable(data.editable);
+    if(self.editAllowed) {
+        self.editable(data.editable);
+    } else {
+        self.editable(false);
+    }
     self.contents(ko.utils.arrayMap(data.contents || [], function (each) {
         return new self.ContentModel(self).unserialize(each);
     }));
