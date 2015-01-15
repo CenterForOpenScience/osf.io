@@ -25,11 +25,12 @@ var ShareJSDoc = function(viewModel, url, metadata) {
             doc.create('text');
             viewModel.fetchData(function(response) {
                 doc.attachAce(editor);
-                editor.setValue(response.wiki_content);
+                editor.setValue(response.wiki_content, -1);
                 editor.setReadOnly(false);
             });
         } else {
             doc.attachAce(editor);
+            editor.gotoLine(0,0);
             editor.setReadOnly(false);
         }
 

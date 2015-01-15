@@ -27,7 +27,7 @@ ko.bindingHandlers.ace = {
 
         // Updates the editor based on changes to the view model
         if (!editor.getReadOnly() && value !== undefined && content !== value) {
-            editor.setValue(value);
+            editor.setValue(value, -1);
         }
     }
 };
