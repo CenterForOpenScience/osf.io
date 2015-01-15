@@ -15,6 +15,7 @@ var osfHelpers = require('osfHelpers');
 var CommentPane = require('./commentpane.js');
 
 var nodeApiUrl = window.contextVars.node.urls.api;
+var nodeUrl = '/' + window.contextVars.node.id + '/';
 
 // Maximum length for comments, in characters
 var MAXLENGTH = 500;
@@ -304,7 +305,7 @@ var CommentModel = function(data, $parent, $root) {
     self.rootUrl = ko.computed(function(){
         var url = 'discussions';
         if (self.page() !== 'node') {
-            url = url + '/' + self.page() + '/' + self.rootId();
+            url = url + '/' + self.page();
         }
         return url;
     });
@@ -315,6 +316,16 @@ var CommentModel = function(data, $parent, $root) {
             return self.rootUrl();
         }
         return url + self.targetId();
+    });
+
+    self.targetUrl = ko.computed(function(){
+        if (self.page() == 'node') {
+            return nodeUrl;
+        } else if (self.page() == 'wiki') {
+            return nodeUrl + self.page() + '/' + self.rootId();
+        } else if (self.page() == 'files') {
+            return '/' + self.rootId() + '/';
+        }
     });
 
 };

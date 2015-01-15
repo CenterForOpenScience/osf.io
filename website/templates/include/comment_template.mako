@@ -56,7 +56,7 @@
                             <span class="comment-author" data-bind="text: author.name"></span>
                         </span>
                         <span data-bind="if: mode !== 'pane'">
-                            <a class="comment-author" data-bind="attr: {href: '${node['url']}discussions/'+id()}">
+                            <a class="comment-author" data-bind="attr: {href: targetUrl()}">
                                 <span data-bind="if: page()==='node'">
                                         (Overview)
                                 </span>
