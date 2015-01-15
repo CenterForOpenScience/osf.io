@@ -818,6 +818,23 @@ class TestUserProfile(OsfTestCase):
             assert_equal(self.user.social[key], value)
         assert_true(self.user.social['researcherId'] is None)
 
+    def test_unserialize_social_validation_failure(self):
+        url = api_url_for('unserialize_social')
+        # personal URL is invalid
+        payload = {
+            'personal': 'http://invalidurl',
+            'twitter': 'howtopizza',
+            'github': 'frozenpizzacode',
+        }
+        res = self.app.put_json(
+            url,
+            payload,
+            auth=self.user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['message_long'], 'Invalid personal URL.')
+
     def test_serialize_social_editable(self):
         self.user.social['twitter'] = 'howtopizza'
         self.user.save()
