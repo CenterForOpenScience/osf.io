@@ -27,7 +27,8 @@ var NavbarViewModel = function() {
             self.searchCSS('');            
         } else {
             self.showSearch(true);
-            self.searchCSS('active');            
+            self.searchCSS('active');
+            $('#searchPageFullBar').focus();
 
         }
     };
