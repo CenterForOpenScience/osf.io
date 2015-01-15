@@ -189,7 +189,7 @@ def send_confirm_email(user, email):
     :raises: KeyError if user does not have a confirmation token for the given
         email.
     """
-    confirmation_url = user.get_confirmation_url(email, external=True)
+    confirmation_url = user.get_confirmation_url(email, external=True, force=True)
     mails.send_mail(email, mails.CONFIRM_EMAIL, 'plain',
         user=user,
         confirmation_url=confirmation_url)

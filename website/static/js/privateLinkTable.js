@@ -77,7 +77,6 @@ function LinkViewModel(data, $root) {
 
     self.collapse = "Collapse";
     self.name = ko.observable(data.name);
-    self.linkName = "Link Name";
     self.readonly = "readonly";
     self.selectText = "this.setSelectionRange(0, this.value.length);";
 

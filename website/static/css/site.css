@@ -671,7 +671,6 @@ h4 {
 /* Profile gravatar
 -------------------------------------------------- */
 #profile-gravatar{
-    float:left;
     margin-right:.5em;
     width:70px;
     height:70px;
@@ -1657,6 +1656,24 @@ div.pydocx-center{
 
 .profile-badge-list span {
   display: block;
+}
+
+span.edit-profile-settings {
+    display: block;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+}
+
+div.profile-fullname{
+    display: block;
+    position: relative;
+    bottom: 0;
+}
+
+span#profileFullname{
+    position: absolute;
+    bottom: 0;
 }
 
 .scripted {display: none;}
