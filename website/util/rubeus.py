@@ -10,8 +10,8 @@ import datetime
 import hurry
 from modularodm import Q
 
+from website.util import paths
 from framework.auth.decorators import Auth
-from website.util.webpack import webpack_asset
 from website.settings import (
     ALL_MY_PROJECTS_ID, ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_NAME,
     ALL_MY_REGISTRATIONS_NAME
@@ -490,11 +490,9 @@ def collect_addon_js(node, visited=None, filename='files.js', config_entry='file
         # JS modules configured in each addon's __init__ file
         js = js.union(addon.config.include_js.get(config_entry, []))
         # Webpack bundle
-        try:
-            js_path = webpack_asset(os.path.join(addon.config.short_name, filename))
+        js_path = paths.resolve_addon_path(addon.config, filename)
+        if js_path:
             js.add(js_path)
-        except KeyError:
-            pass
     for each in node.nodes:
         if each._id not in visited:
             visited.append(each._id)

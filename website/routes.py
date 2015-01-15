@@ -20,7 +20,7 @@ from framework.auth.core import _get_current_user
 from website import util
 from website import settings
 from website import language
-from website.util import webpack
+from website.util import paths
 from website.util import sanitize
 from website import landing_pages as landing_page_views
 from website import views as website_views
@@ -60,7 +60,7 @@ def get_globals():
         'api_url_for': util.api_url_for,
         'sanitize': sanitize,
         'js_str': lambda x: x.replace("'", r"\'").replace('"', r'\"'),
-        'webpack_asset': webpack.webpack_asset,
+        'webpack_asset': paths.webpack_asset,
     }
 
 

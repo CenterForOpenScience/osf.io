@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
 import httplib as http
-import os
 
 from flask import request
 from modularodm import Q
@@ -16,8 +15,8 @@ from framework.mongo.utils import from_mongo
 
 from website import language
 
+from website.util import paths
 from website.util import rubeus
-from website.util.webpack import webpack_asset
 from website.exceptions import NodeStateError
 from website.project import clean_template_name, new_node, new_private_link
 from website.project.decorators import (
@@ -340,11 +339,9 @@ def collect_node_config_js(addons):
     """
     js_modules = []
     for addon in addons:
-        try:
-            js_path = webpack_asset(os.path.join(addon.config.short_name, 'node-cfg.js'))
+        js_path = paths.resolve_addon_path(addon.config, 'node-cfg.js')
+        if js_path:
             js_modules.append(js_path)
-        except KeyError:
-            pass
     return js_modules
 
 
