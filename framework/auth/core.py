@@ -527,6 +527,7 @@ class User(GuidStoredObject, AddonModelMixin):
                         raise ExpiredTokenError('Token for email "{0}" is expired'.format(email))
                     else:
                         new_token = self.add_email_verification(email)
+                        self.save()
                         return new_token
                 return token
         raise KeyError('No confirmation token for email "{0}"'.format(email))
