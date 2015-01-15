@@ -58,23 +58,8 @@ def validate_history_item(item):
     endMonth = item.get('endMonth')
     endYear = item.get('endYear')
 
-    if startYear:
-        try:
-            int(startYear)
-        except ValueError:
-            raise ValidationValueError('Please enter a valid year.')
-        else:
-            if int(startYear)/10000 != 0:
-                raise ValidationValueError('Please enter a valid year.')
-
-    if endYear:
-        try:
-            int(endYear)
-        except ValueError:
-            raise ValidationValueError('Please enter a valid year.')
-        else:
-            if int(startYear)/10000 != 0:
-                raise ValidationValueError('Please enter a valid year.')
+    validate_year(startYear)
+    validate_year(endYear)
 
     if startYear and endYear:
         if endYear < startYear:
@@ -82,6 +67,18 @@ def validate_history_item(item):
         elif endYear == startYear:
             if endMonth and startMonth and endMonth < startMonth:
                 raise ValidationValueError('End date must be later than start date.')
+
+
+def validate_year(item):
+    if item:
+        try:
+            int(item)
+        except ValueError:
+            raise ValidationValueError('Please enter a valid year.')
+        else:
+            if len(item) == 4:
+                raise ValidationValueError('Please enter a valid year.')
+
 
 validate_url = URLValidator()
 def validate_personal_site(value):
