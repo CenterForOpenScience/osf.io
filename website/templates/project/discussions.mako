@@ -64,7 +64,7 @@
                 ${comment_target.title()}
             % endif
             </h3>
-            <div data-bind="visible: discussion().length > 0">
+            <div data-bind="if: discussion().length > 0">
                 Show <a data-bind="click: showRecent">recently commented users</a> or
                 <a data-bind="click: showFrequent">most frequently commented users</a>
                 <span class="pull-right" data-bind="foreach: {data: discussion, afterAdd: setupToolTips}">
@@ -72,6 +72,18 @@
                         <img data-bind="attr: {src: gravatarUrl}"/>
                     </a>
                 </span>
+            </div>
+            <div data-bind="if: discussion().length == 0" style="padding-top: 20px;">
+                % if comment_target == 'total':
+                    There are no comments on this project yet! Go to the
+                    <a href="${node['url']}">Overview page,</a> open the comment pane and make a first one!
+                % elif comment_target == 'node':
+                    There are no comments on the Overview page yet! Go to the
+                    <a href="${node['url']}">Overview page,</a> open the comment pane and make a first one!
+                % else:
+                    There are no comments on the ${comment_target.title()} page yet! Go to the
+                    <a href="${node['url']}${comment_target}">${comment_target.title()} page,</a> open the comment pane and make a first one!
+                % endif
             </div>
 
         %else:
@@ -113,6 +125,6 @@ ${parent.javascript_bottom()}
         window.contextVars.comment_target_id = '${comment_target_id}';
 </script>
 
-<script src="/static/public/js/discussions-page.js"></script>
+<script src=${"/static/public/js/discussions-page.js" | webpack_asset}></script>
 
 </%def>

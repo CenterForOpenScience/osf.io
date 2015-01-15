@@ -863,6 +863,8 @@ def n_unread_comments(node, user, page, rootid=None):
                         Q('user', 'ne', user) &
                         Q('date_created', 'gt', view_timestamp) &
                         Q('date_modified', 'gt', view_timestamp) &
+                        Q('is_deleted', 'eq', False) &
+                        Q('is_hidden', 'eq', False) &
                         Q('page', 'eq', page) &
                         Q('rootId', 'eq', rootid)).count()
 
@@ -882,6 +884,8 @@ def n_unread_total(node, user, page):
                             Q('user', 'ne', user) &
                             Q('date_created', 'gt', view_timestamp) &
                             Q('date_modified', 'gt', view_timestamp) &
+                            Q('is_deleted', 'eq', False) &
+                            Q('is_hidden', 'eq', False) &
                             Q('page', 'eq', page)).count()
     return n_unread_comments(node, user, 'node', node._id) + n_unread_total(node, user, 'wiki') + \
         n_unread_total(node, user, 'files')

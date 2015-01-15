@@ -324,9 +324,11 @@ def list_comments(auth, **kwargs):
 
 def list_total_comments(node, auth, page):
     if page == 'total':
-        comments = Comment.find(Q('node', 'eq', node)).get_keys()
+        comments = Comment.find(Q('node', 'eq', node) & Q('is_hidden', 'eq', False)).get_keys()
     else:
-        comments = Comment.find(Q('node', 'eq', node) & Q('page', 'eq', page)).get_keys()
+        comments = Comment.find(Q('node', 'eq', node) &
+                                Q('page', 'eq', page) &
+                                Q('is_hidden', 'eq', False)).get_keys()
     serialized_comments = []
     for cid in comments:
         cmt = Comment.load(cid)
@@ -410,6 +412,7 @@ def _update_comments_timestamp(auth, node, page='node', rootid=None):
 
         # if updating timestamp on the files/wiki total page...
         if rootid is None or rootid == 'None':
+            ret = {}
             for id in timestamps[page]:
                 ret = _update_comments_timestamp(auth, node, page, id)
             return ret

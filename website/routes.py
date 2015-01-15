@@ -738,7 +738,7 @@ def make_url_map(app):
         Rule(
             [
                 '/project/<pid>/discussions/files/',
-                '/project/<pid>/node/<nid>/discussions/files',
+                '/project/<pid>/node/<nid>/discussions/files/',
             ],
             'get',
             project_views.comment.view_comments_files,
@@ -748,7 +748,7 @@ def make_url_map(app):
         Rule(
             [
                 '/project/<pid>/discussions/wiki/',
-                '/project/<pid>/node/<nid>/discussions/wiki',
+                '/project/<pid>/node/<nid>/discussions/wiki/',
             ],
             'get',
             project_views.comment.view_comments_wiki,

@@ -33,5 +33,5 @@ ${parent.javascript_bottom()}
     window.contextVars = window.contextVars || {};
     window.contextVars.wikiName = "${wiki_name}";
 </script>
-<script src="/static/public/js/wiki-page.js"></script>
+<script src=${"/static/public/js/wiki-page.js" | webpack_asset}></script>
 </%def>
