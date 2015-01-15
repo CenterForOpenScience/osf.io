@@ -11,14 +11,18 @@ from bleach.callbacks import nofollow
 import markdown
 from markdown.extensions import codehilite, fenced_code, wikilinks
 from modularodm import fields
-import requests
 
 from framework.forms.utils import sanitize
 from framework.guid.model import GuidStoredObject
 from framework.mongo.utils import to_mongo_key
 from website import settings
 from website.addons.base import AddonNodeSettingsBase
-from website.addons.wiki.utils import get_sharejs_uuid, share_db, generate_private_uuid
+from website.addons.wiki.utils import (
+    get_sharejs_uuid,
+    share_db,
+    generate_private_uuid,
+    broadcast_to_sharejs,
+)
 
 from .exceptions import (
     NameEmptyError,
@@ -144,13 +148,7 @@ class NodeWikiPage(GuidStoredObject):
         db = share_db()
         old_sharejs_uuid = get_sharejs_uuid(node, self.page_name)
 
-        lock_url = 'http://{host}:{port}/{action}/{id}'.format(
-            host=settings.SHAREJS_HOST,
-            port=settings.SHAREJS_PORT,
-            action='lock',
-            id=old_sharejs_uuid
-        )
-        requests.post(lock_url)
+        broadcast_to_sharejs('lock', old_sharejs_uuid)
 
         generate_private_uuid(node, self.page_name)
         new_sharejs_uuid = get_sharejs_uuid(node, self.page_name)
@@ -169,13 +167,7 @@ class NodeWikiPage(GuidStoredObject):
             db['docs_ops'].insert(ops_items)
             db['docs_ops'].remove({'name': old_sharejs_uuid})
 
-        unlock_url = 'http://{host}:{port}/{action}/{id}'.format(
-            host=settings.SHAREJS_HOST,
-            port=settings.SHAREJS_PORT,
-            action='unlock',
-            id=old_sharejs_uuid
-        )
-        requests.post(unlock_url)
+        broadcast_to_sharejs('unlock', old_sharejs_uuid)
 
         if save:
             self.save()

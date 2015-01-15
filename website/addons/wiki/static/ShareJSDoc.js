@@ -85,6 +85,12 @@ var ShareJSDoc = function(viewModel, url, metadata) {
             setTimeout(function() {
                 window.location.replace(data.redirect);
             }, 3000);
+        } else if (data.type === 'delete') {
+            editor.setReadOnly(true);
+            $('#delete-modal').on('hide.bs.modal', function() {
+                window.location.replace(data.redirect);
+            });
+            $('#delete-modal').modal();
         } else {
             onmessage(message);
         }

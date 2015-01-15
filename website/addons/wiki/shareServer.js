@@ -161,13 +161,22 @@ app.post('/unlock/:id', function lockDoc(req, res, next) {
     res.send(req.params.id + " was unlocked.");
 });
 
-// Redirect a document
+// Redirect from a document
 app.post('/redirect/:id/:redirect', function lockDoc(req, res, next) {
     wss.broadcast(req.params.id, JSON.stringify({
         type: 'redirect',
         redirect: req.params.redirect
     }));
     res.send(req.params.id + " was redirected to " + req.params.redirect);
+});
+
+// Redirect from a deleted document
+app.post('/delete/:id/:redirect', function lockDoc(req, res, next) {
+    wss.broadcast(req.params.id, JSON.stringify({
+        type: 'delete',
+        redirect: req.params.redirect
+    }));
+    res.send(req.params.id + " was deleted and redirected to " + req.params.redirect);
 });
 
 server.listen(port, function() {
