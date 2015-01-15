@@ -6,7 +6,7 @@
 
 var $ = require('jquery');
 require('jquery.cookie');
-
+var NavbarControl = require('navbar-control');
 var $osf = require('osfHelpers');
 
 // If there isn't a user logged in, show the footer slide-in
@@ -43,6 +43,7 @@ if ($(sliderSelector).length > 0 &&
     $osf.applyBindings(new SlideInViewModel(), sliderSelector);
 }
 
+
     $('body').on('click', '.project-toggle', function() {
         var widget = $(this).closest('.addon-widget-container');
         var up = $(this).find('.icon-angle-up');
@@ -57,3 +58,5 @@ if ($(sliderSelector).length > 0 &&
         widget.find('.addon-widget-body').slideToggle();
         return false;
     });
+
+new NavbarControl('.osf-nav-wrapper');

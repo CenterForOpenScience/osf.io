@@ -94,7 +94,8 @@ var resolve = {
         'addons': path.join(__dirname, 'website', 'addons'),
         'addonHelper': staticPath('js/addonHelper.js'),
         'koHelpers': staticPath('js/koHelpers.js'),
-        'addonPermissions': staticPath('js/addonPermissions.js')
+        'addonPermissions': staticPath('js/addonPermissions.js'),
+        'navbar-control': staticPath('js/navbarControl.js')
     }
 };
 

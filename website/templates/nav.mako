@@ -1,3 +1,4 @@
+<div class="osf-nav-wrapper">
 <nav class="navbar osf-navbar navbar-fixed-top" role="navigation">
     <div class="container">
         <div class="navbar-header">
@@ -36,15 +37,14 @@
                     </ul><!-- end dropdown-menu -->
                 </li><!-- end dropdown -->
             </ul><!-- end nav navbar-nav -->
-
-            <!-- Search bar -->
-            <form id="searchBar" class="navbar-form navbar-left" action="/search/" method="get" role="search">
-                <div class="form-group">
-                    <input type="text" class="form-control search-query" placeholder="Search the OSF" name="q">
-                </div>
-            </form>
-
             <ul class="nav navbar-nav navbar-right">
+                <!-- ko ifnot: onSearchPage -->
+                <li data-bind="click : toggleSearch, css: searchCSS">
+                    <a class="" >
+                        <span rel="tooltip" title="Search OSF" class="icon-search icon-lg" ></span>
+                    </a>
+                </li>
+                <!-- /ko -->
                 % if user_name and display_name:
                 <li>
                     <a class="hidden-lg hidden-xs" href="/profile/">
@@ -73,4 +73,8 @@
         </div><!-- end navbar-collapse -->
     </div><!-- end container-->
 </nav>
+    <!-- ko ifnot: onSearchPage -->
+        <%include file='./search_bar.mako' />
+    <!-- /ko -->
+</div>
 
