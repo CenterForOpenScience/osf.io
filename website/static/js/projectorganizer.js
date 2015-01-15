@@ -137,6 +137,10 @@ function createProjectDetailHTMLFromTemplate(theItem) {
     addFormKeyBindings(theItem.node_id);
 }
 
+function createBlankProjectDetail() {
+    $('.project-details').html('<i class="text-muted text-center"> Select a row to view further actions. </i>');
+}
+
 /**
  * Saves the expand state of a folder so that it can be loaded based on that state
  * @param {Object} item Node data
@@ -293,7 +297,7 @@ function _showProjectDetails(event, item, col) {
             }).fail($osf.handleJSONError);
         });
         $('#close-' + theItem.node_id).click(function () {
-            $('.project-details').hide();
+            createBlankProjectDetail();
             return false;
         });
         $('#add-link-' + theItem.node_id).click(function () {
@@ -316,7 +320,7 @@ function _showProjectDetails(event, item, col) {
                     tb.updateFolder(null, item);
                 });
             });
-            $('.project-details').hide();
+            createBlankProjectDetail();
             return false;
         });
         $('#remove-link-' + theItem.node_id).click(function () {
@@ -329,8 +333,8 @@ function _showProjectDetails(event, item, col) {
                 });
             deleteAction.done(function () {
                 treebeard.updateFolder(null, theParentNode);
-                $('.project-details').hide();
-
+                createBlankProjectDetail();
+                
             });
         });
         $('#delete-folder-' + theItem.node_id).click(function () {
@@ -349,7 +353,7 @@ function _showProjectDetails(event, item, col) {
                             });
                         deleteAction.done(function () {
                             treebeard.updateFolder(null, item.parent());
-                            $('.project-details').hide();
+                            createBlankProjectDetail();
                         });
                     }
                 }
@@ -385,7 +389,7 @@ function _showProjectDetails(event, item, col) {
                     //    m.render(icon.get(0), iconTemplate);
                     //}
                     treebeard.updateFolder(null, item);
-                    $('.project-details').hide();
+                    createBlankProjectDetail();
                 }).fail($osf.handleJSONError);
 
             });
@@ -396,7 +400,7 @@ function _showProjectDetails(event, item, col) {
             $('#afc-' + theItem.node_id).hide();
             $('#findNode' + theItem.node_id).hide();
             $('#nc-' + theItem.node_id).hide();
-            $('#rnc-' + theItem.node_id).show();
+            $('#rnc-' + theItem.node_id).css({'display':'inline-block', 'width' : '100%'});
         });
         $('#rename-node-input' + theItem.node_id).bind('keyup', function () {
             var contents = $.trim($(this).val());
@@ -416,7 +420,7 @@ function _showProjectDetails(event, item, col) {
             postAction = $osf.postJSON(url, postData);
             postAction.done(function () {
                 treebeard.updateFolder(null, theParentNode);
-                $('.project-details').hide();
+                createBlankProjectDetail();
             }).fail($osf.handleJSONError);
             return false;
         });
@@ -434,7 +438,7 @@ function _showProjectDetails(event, item, col) {
             $('#findNode' + theItem.node_id).show();
         });
     } else {
-        $('.project-details').hide();
+        createBlankProjectDetail();
     }
 }
 
@@ -746,19 +750,22 @@ function _poMultiselect(event, tree) {
             $('.project-details').show();
             $('#remove-links-multiple').click(function () {
                 deleteMultiplePointersFromFolder.call(tb, pointerIds, theParentNode);
-                $('.project-details').hide();
+                createBlankProjectDetail();
             });
             $('#close-multi-select').click(function () {
-                $('.project-details').hide();
+                createBlankProjectDetail();
                 return false;
             });
         } else {
-            $('.project-details').hide();
+            createBlankProjectDetail();
         }
     } else {
-        $('.project-details').hide();
+        createBlankProjectDetail();
+
     }
 }
+
+
 
 /**
  * Deletes pointers based on their ids from the folder specified
@@ -830,7 +837,7 @@ function _poDragStart(event, ui) {
     if (this.multiselected.length < 2) {
         this.multiselected = [item];
     }
-    $('.project-details').hide();
+    createBlankProjectDetail();
 }
 
 /**

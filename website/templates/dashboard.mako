@@ -20,7 +20,7 @@
         <div class="project-organizer" id="projectOrganizerScope">
             <%include file="projectGridTemplates.html"/>
             <div class="project-details"> 
-                <i class="text-muted"> Select a row to view further actions. </i>
+                <i class="text-muted text-center"> Select a row to view further actions. </i>
             </div>    
 
 

@@ -200,11 +200,13 @@ span.rename-container{
 
 div.project-details span.title {
     display: inline;
+    overflow-x: hidden;
+    padding: 7px;
+    line-height: 29px;
+    font-size: 15px;
+    overflow-x: hidden;
 }
 
-div.project-detail-content {
-    padding:9px 14px;
-}
 
 .project-action-icons img {
     margin-right: 4px;
@@ -223,10 +225,6 @@ div.contributors {
     overflow-x: hidden;
 }
 
-div.project-details span.title {
-    overflow-x: hidden;
-}
-
 .organize-project-controls {
     z-index: 11;
 }
@@ -234,9 +232,7 @@ div.project-details span.title {
 div.organize-project-controls {
     display: block;
     position: relative;
-    width: 100%;
     bottom: 0;
-    margin-top: 10px;
 }
 
 .organize-project-controls .organizeBtn.btn.btn-default {
