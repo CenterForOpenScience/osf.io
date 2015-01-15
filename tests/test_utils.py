@@ -7,7 +7,8 @@ from nose.tools import *  # noqa (PEP8 asserts)
 from framework.routing import Rule, json_renderer
 from framework.utils import secure_filename
 from website.routes import process_rules, OsfWebRenderer
-from website.util import web_url_for, api_url_for, is_json_request, webpack_asset
+from website.util import web_url_for, api_url_for, is_json_request
+from website.util import paths
 from website.util.mimetype import get_mimetype
 
 try:
@@ -211,9 +212,9 @@ class TestWebpackFilter(unittest.TestCase):
         self.asset_paths = {'assets': 'assets.07123e.js'}
 
     def test_resolve_asset(self):
-        asset = webpack_asset('assets.js', self.asset_paths)
+        asset = paths.webpack_asset('assets.js', self.asset_paths)
         assert_equal(asset, '/static/public/js/assets.07123e.js')
 
     def test_resolve_asset_not_found(self):
         with assert_raises(KeyError):
-            webpack_asset('bundle.js', self.asset_paths)
+            paths.webpack_asset('bundle.js', self.asset_paths)
