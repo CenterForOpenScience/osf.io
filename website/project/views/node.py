@@ -17,6 +17,7 @@ from framework.mongo.utils import from_mongo
 from website import language
 
 from website.util import rubeus
+from website.util.webpack import webpack_asset
 from website.exceptions import NodeStateError
 from website.project import clean_template_name, new_node, new_private_link
 from website.project.decorators import (
@@ -339,27 +340,11 @@ def collect_node_config_js(addons):
     """
     js_modules = []
     for addon in addons:
-        # Path to source file
-        source_path = os.path.join(
-            settings.BASE_PATH,
-            'addons',
-            addon.config.short_name,
-            'static',
-            'node-cfg.js'
-        )
-        # Path to built file
-        file_path = os.path.join(
-            'static',
-            'public',
-            'js',
-            addon.config.short_name,
-            'node-cfg.js'
-        )
-        if os.path.exists(source_path):
-            js_path = os.path.join(
-                '/', file_path
-            )
+        try:
+            js_path = webpack_asset(os.path.join(addon.config.short_name, 'node-cfg.js'))
             js_modules.append(js_path)
+        except KeyError:
+            pass
     return js_modules
 
 
