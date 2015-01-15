@@ -12,7 +12,6 @@
 % endif
 <div class="row">
     <div class="col-sm-7">
-        <div class="project-details animated slideInLeft"></div>
         <div class="page-header">
             <h3>Projects</h3>
         </div><!-- end .page-header -->
@@ -20,6 +19,10 @@
 
         <div class="project-organizer" id="projectOrganizerScope">
             <%include file="projectGridTemplates.html"/>
+            <div class="project-details"> 
+                <i class="text-muted"> Select a row to view further actions. </i>
+            </div>    
+
 
             <div id="project-grid"></div>
             <span class='organizer-legend'><img alt="Folder" src="/static/img/hgrid/folder.png">Folder</span>

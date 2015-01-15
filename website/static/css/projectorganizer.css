@@ -199,20 +199,7 @@ span.rename-container{
 }
 
 div.project-details span.title {
-    padding: 8px 14px;
-    margin: 0;
-    font-size: 14px;
-    font-weight: 400;
-    line-height: 18px;
-    background-color: #f7f7f7;
-    border-bottom: 1px solid #ebebeb;
-    border-radius: 5px 5px 0 0;
-    width: 100%;
-    display: block;
-    -webkit-margin-before: 0em;
-    -webkit-margin-after: 0em;
-    -webkit-margin-start: 0px;
-    -webkit-margin-end: 0px;
+    display: inline;
 }
 
 div.project-detail-content {
@@ -225,25 +212,11 @@ div.project-detail-content {
 }
 
 div.project-details {
-    width: 450px;
-    float: right;
-    margin-left: 35%;
-    margin-top: 130px;
-    position: fixed;
-    z-index: 999;
-    display: none;
-    overflow: visible;
-
-    padding: 1px;
-    text-align: left;
-    white-space: normal;
-    background-color: #fff;
-    -webkit-background-clip: padding-box;
-    background-clip: padding-box;
-    border-radius: 6px;
-    -webkit-box-shadow: 0 0px 15px -2px #000;
-    box-shadow: 0 0px 15px -2px #000;
-
+    display: inline-block;
+    width: 100%;
+    background-color: #EEE;
+    padding: 7px;
+    margin-bottom: 10px;
 }
 
 div.contributors {
@@ -283,6 +256,10 @@ input.typeahead{
 .organize-project-controls span.twitter-typeahead {
     width: 100%;
 
+}
+
+.project-detail-box {
+    width : 100%;
 }
 
 /* Typeahead scaffolding */
@@ -380,3 +357,34 @@ h3.category {
     height: inherit;
     padding-top: 4px;
 }
+
+/* Project Toolbar New Additions and Changes */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

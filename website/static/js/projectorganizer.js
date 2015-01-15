@@ -433,7 +433,6 @@ function _showProjectDetails(event, item, col) {
             $('#rnc-' + theItem.node_id).hide();
             $('#findNode' + theItem.node_id).show();
         });
-        $('.project-details').toggle();
     } else {
         $('.project-details').hide();
     }
