@@ -14,7 +14,6 @@
     <div class="col-sm-7">
         <div class="project-details animated slideInLeft"></div>
         <div class="page-header">
-            <div class="pull-right"><a class="btn btn-default" href="/folder/${dashboard_id}" id = "${dashboard_id}">New Folder</a></div>
             <h3>Projects</h3>
         </div><!-- end .page-header -->
         <link rel="stylesheet" href="/static/css/projectorganizer.css">
