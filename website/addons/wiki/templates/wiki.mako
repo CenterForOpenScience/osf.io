@@ -30,8 +30,26 @@
 <% import json %>
 ${parent.javascript_bottom()}
 <script>
+    // Update contextVars with Mako variables.
     window.contextVars = window.contextVars || {};
-    window.contextVars.wikiName = "${wiki_name}";
+    var canEditPageName = ${json.dumps(
+        all([
+            'write' in user['permissions'],
+            not is_edit,
+            wiki_id,
+            wiki_name != 'home',
+            not node['is_registration']
+        ])
+    )};
+    window.contextVars = $.extend(true, {}, window.contextVars, {
+        wikiName: "${wiki_name}",
+        canEditPageName: canEditPageName,
+        urls: {
+            wikiRename: "${urls['api']['rename']}",
+            wikiBase: "${urls['web']['base']}"
+        }
+    })
 </script>
-<script src=${"/static/public/js/wiki-page.js" | webpack_asset}></script>
+
+<script src="${'/static/public/js/wiki-view-page.js' | webpack_asset}"></script>
 </%def>

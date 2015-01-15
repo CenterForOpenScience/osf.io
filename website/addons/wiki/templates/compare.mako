@@ -39,5 +39,5 @@
             $('#pageName').append('<h5 style="margin-top:5px"><span>Version: </span>${compare_version}</h5>');
         }
     </script>
-    <script src=${"/static/public/js/wiki-page.js" | webpack_asset}></script>
+    <script src=${"/static/public/js/wiki-view-page.js" | webpack_asset}></script>
 </%def>
