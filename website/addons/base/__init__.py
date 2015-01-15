@@ -33,7 +33,7 @@ class AddonConfig(object):
                  added_default=None, added_mandatory=None,
                  node_settings_model=None, user_settings_model=None, include_js=None, include_css=None,
                  widget_help=None, views=None, configs=None, models=None,
-                 has_hgrid_files=False, get_hgrid_data=None, max_file_size=None,
+                 has_hgrid_files=False, get_hgrid_data=None, max_file_size=None, high_max_file_size=None,
                  accept_extensions=True,
                  **kwargs):
 
@@ -70,6 +70,7 @@ class AddonConfig(object):
         # WARNING: get_hgrid_data can return None if the addon is added but has no credentials.
         self.get_hgrid_data = get_hgrid_data  # if has_hgrid_files and not get_hgrid_data rubeus.make_dummy()
         self.max_file_size = max_file_size
+        self.high_max_file_size = high_max_file_size
         self.accept_extensions = accept_extensions
 
         # Build template lookup

@@ -68,7 +68,8 @@ def to_project_root(node, auth, **data):
 
 
 def build_addon_root(node_settings, name, permissions=None,
-                     urls=None, extra=None, buttons=None, **kwargs):
+                     urls=None, extra=None, buttons=None, user=None,
+                     **kwargs):
     """Builds the root or "dummy" folder for an addon.
 
     :param addonNodeSettingsBase node_settings: Addon settings
@@ -100,6 +101,11 @@ def build_addon_root(node_settings, name, permissions=None,
             'view': node_settings.owner.can_view(auth),
             'edit': node_settings.owner.can_edit(auth) and not node_settings.owner.is_registration
         }
+
+    max_size = node_settings.config.max_file_size
+    if user and 'high_upload_limit' in user.system_tags:
+        max_size = node_settings.config.high_max_file_size
+
     ret = {
         'provider': node_settings.config.short_name,
         'addonFullname': node_settings.config.full_name,
@@ -111,7 +117,7 @@ def build_addon_root(node_settings, name, permissions=None,
         'isAddonRoot': True,
         'permissions': permissions,
         'accept': {
-            'maxSize': node_settings.config.max_file_size,
+            'maxSize': max_size,
             'acceptedFiles': node_settings.config.accept_extensions,
         },
         'urls': urls,

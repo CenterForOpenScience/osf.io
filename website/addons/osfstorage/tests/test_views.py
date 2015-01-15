@@ -6,6 +6,7 @@ from nose.tools import *  # noqa
 
 import datetime
 
+from framework.auth.core import Auth
 from website.addons.osfstorage.tests.utils import (
     StorageTestCase, Delta, AssertDeltas
 )
@@ -17,6 +18,8 @@ import furl
 import markupsafe
 
 from framework.auth import signing
+from website import settings
+from website.util import rubeus
 
 from website import settings
 from website.addons.base.views import make_auth
@@ -68,6 +71,21 @@ class TestGetMetadataHook(HookTestCase):
                 self.project,
             )
         )
+
+    def test_osf_storage_root(self):
+        auth = Auth(self.project.creator)
+        result = views.osf_storage_root(self.node_settings, auth=auth)
+        node = self.project
+        expected = rubeus.build_addon_root(
+            node_settings=self.node_settings,
+            name='',
+            permissions=auth,
+            user=auth.user,
+            nodeUrl=node.url,
+            nodeApiUrl=node.api_url,
+        )
+        root = result[0]
+        assert_equal(root, expected)
 
     def test_hgrid_contents_tree_not_found_root_path(self):
         res = self.send_hook(

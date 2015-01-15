@@ -9,6 +9,7 @@ import json
 import hashlib
 
 
+
 os_env = os.environ
 
 def parent_dir(path):
@@ -70,7 +71,7 @@ MAIL_PASSWORD = ''  # Set this in local.py
 # Mailchimp
 MAILCHIMP_API_KEY = None
 MAILCHIMP_WEBHOOK_SECRET_KEY = 'CHANGEME'  # OSF secret key to ensure webhook is secure
-ENABLE_EMAIL_SUBSCRIPTIONS = False
+ENABLE_EMAIL_SUBSCRIPTIONS = True
 MAILCHIMP_GENERAL_LIST = 'Open Science Framework General'
 
 # TODO: Override in local.py

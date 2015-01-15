@@ -140,18 +140,20 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
     ##### Callback overrides #####
 
     # Note: Registering Dataverse content is disabled for now
-    # def before_register_message(self, node, user):
-    #     """Return warning text to display if user auth will be copied to a
-    #     registration.
-    #     """
-    #     category, title = node.project_or_component, node.title
-    #     if self.user_settings and self.user_settings.has_auth:
-    #         return ('Registering {category} "{title}" will copy Dataverse '
-    #                 'add-on authentication to the registered {category}.'
-    #                 .format(**locals()))
-    #
-    # # backwards compatibility
-    # before_register = before_register_message
+    def before_register_message(self, node, user):
+        """Return warning text to display if user auth will be copied to a
+        registration.
+        """
+        category = node.project_or_component
+        if self.user_settings and self.user_settings.has_auth:
+            return (
+                u'The contents of Dataverse add-ons cannot be registered at this time; '
+                u'the Dataverse study linked to this {category} will not be included '
+                u'as part of this registration.'
+            ).format(**locals())
+
+    # backwards compatibility
+    before_register = before_register_message
 
     def before_fork_message(self, node, user):
         """Return warning text to display if user auth will be copied to a

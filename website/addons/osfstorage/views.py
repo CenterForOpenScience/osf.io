@@ -28,8 +28,6 @@ from website.addons.osfstorage import settings as osf_storage_settings
 
 logger = logging.getLogger(__name__)
 
-MEGABYTE = 1024 * 1024
-
 
 def make_error(code, message_short=None, message_long=None):
     data = {}
@@ -306,6 +304,7 @@ def osf_storage_root(node_settings, auth, **kwargs):
         node_settings=node_settings,
         name='',
         permissions=auth,
+        user=auth.user,
         nodeUrl=node.url,
         nodeApiUrl=node.api_url,
     )
