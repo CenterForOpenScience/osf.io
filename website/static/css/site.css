@@ -1869,19 +1869,19 @@ font-weight: 300;
 
 .osf-search {
     padding: 15px 0;
-background: #CADBFF;
+background: #b8ecc0;
 margin-top: -30px;
 }
 .osf-search-input {
     background: none;
-border: none;
-box-shadow: none;
-border-bottom: 1px dotted #FFF;
-border-radius: 0;
-padding: 15px 0;
-font-size: 20px;
-color: #FFF;
-font-weight: 300;
+    border: none;
+    box-shadow: none;
+    border-bottom: 1px dotted #FFF;
+    border-radius: 0;
+    padding: 15px 0;
+    font-size: 20px;
+    color: #FFF;
+    font-weight: 300;
 }
 .osf-search-input:focus {
     outline : 0 !important;
