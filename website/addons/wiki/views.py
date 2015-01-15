@@ -3,9 +3,11 @@
 import difflib
 import httplib as http
 import logging
+import urllib
 
 from bs4 import BeautifulSoup
 from flask import request
+import requests
 
 from framework.mongo.utils import to_mongo_key
 from framework.exceptions import HTTPError
@@ -419,6 +421,20 @@ def project_wiki_rename(auth, wname, **kwargs):
         raise WIKI_PAGE_CONFLICT_ERROR
     except PageNotFoundError:
         raise WIKI_PAGE_NOT_FOUND_ERROR
+    else:
+        sharejs_uuid = get_sharejs_uuid(node, new_wiki_name)
+        redirect_url = urllib.quote(
+            node.web_url_for('project_wiki_edit', wname=new_wiki_name, _guid=True),
+            safe='',
+        )
+        url = 'http://{host}:{port}/{action}/{id}/{redirect}'.format(
+            host=settings.SHAREJS_HOST,
+            port=settings.SHAREJS_PORT,
+            action='redirect',
+            id=sharejs_uuid,
+            redirect=redirect_url,
+        )
+        requests.post(url)
 
 
 @must_be_valid_project  # returns project

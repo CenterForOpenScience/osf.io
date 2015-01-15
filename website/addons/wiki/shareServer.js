@@ -154,11 +154,20 @@ app.post('/lock/:id', function lockDoc(req, res, next) {
     res.send(req.params.id + " was locked.");
 });
 
-// Lock a document
+// Unlock a document
 app.post('/unlock/:id', function lockDoc(req, res, next) {
     delete locked[req.params.id];
     wss.broadcast(req.params.id, JSON.stringify({type: 'unlock'}));
     res.send(req.params.id + " was unlocked.");
+});
+
+// Redirect a document
+app.post('/redirect/:id/:redirect', function lockDoc(req, res, next) {
+    wss.broadcast(req.params.id, JSON.stringify({
+        type: 'redirect',
+        redirect: req.params.redirect
+    }));
+    res.send(req.params.id + " was redirected to " + req.params.redirect);
 });
 
 server.listen(port, function() {

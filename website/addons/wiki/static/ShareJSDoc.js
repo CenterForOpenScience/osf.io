@@ -69,13 +69,22 @@ var ShareJSDoc = function(viewModel, url, metadata) {
             viewModel.publishedText(data.content);
         } else if (data.type === 'lock') {
             editor.setReadOnly(true);
-            $('#refresh-modal').modal({
+            $('#permissions-modal').modal({
                 backdrop: 'static',
                 keyboard: false
             });
         } else if (data.type === 'unlock') {
             // TODO: Wait a certain number of seconds so they can read it?
-            location.reload();
+            window.location.reload();
+        } else if (data.type === 'redirect') {
+            editor.setReadOnly(true);
+            $('#rename-modal').modal({
+                backdrop: 'static',
+                keyboard: false
+            });
+            setTimeout(function() {
+                window.location.replace(data.redirect);
+            }, 3000);
         } else {
             onmessage(message);
         }
