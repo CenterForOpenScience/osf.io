@@ -46,7 +46,7 @@ def test(verbose=False):
 
 @task
 def celery():
-    from waterbutler.tasks import app
+    from waterbutler.tasks.celery import app
     app.worker_main(['worker'])
 
 

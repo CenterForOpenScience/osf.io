@@ -6,6 +6,7 @@ from waterbutler.tasks import settings as tasks_settings
 from raven import Client
 from raven.contrib.celery import register_signal
 
+
 app = Celery()
 app.config_from_object(tasks_settings)
 
