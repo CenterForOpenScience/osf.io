@@ -1,6 +1,7 @@
 {
     "addons": [
         "dataverse",
+        "app",
         "dropbox",
         "figshare",
         "forward",
