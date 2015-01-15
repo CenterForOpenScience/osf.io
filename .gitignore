@@ -65,6 +65,7 @@ website/settings/uploads/*
 website/uploads/*
 website/mfrcache/*
 website/gpg/*
+webpack-assets.json
 
 # Built log templates
 website/templates/_log_templates.mako

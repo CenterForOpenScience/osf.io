@@ -116,7 +116,7 @@ def auth_login(auth, registration_form=None, forgot_password_form=None, **kwargs
             except exceptions.LoginNotAllowedError:
                 status.push_status_message(language.UNCONFIRMED, 'warning')
                 # Don't go anywhere
-                return {'next': ''}
+                return {'next_url': ''}
             except exceptions.PasswordIncorrectError:
                 status.push_status_message(language.LOGIN_FAILED)
             except exceptions.TwoFactorValidationError:
@@ -144,7 +144,7 @@ def auth_login(auth, registration_form=None, forgot_password_form=None, **kwargs
         # Don't raise error if user is being logged out
         if not request.args.get('logout'):
             code = http.UNAUTHORIZED
-    return {'next': next_url}, code
+    return {'next_url': next_url}, code
 
 
 def auth_logout():

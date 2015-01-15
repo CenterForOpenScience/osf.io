@@ -37,6 +37,6 @@
 <%def name="javascript_bottom()">
   ${parent.javascript_bottom()}
   % if schema:
-    <script src="/static/public/js/register_${str(metadata_version)}-page.js"></script>
+    <script src=${"/static/public/js/register_${str(metadata_version)}-page.js" | webpack_asset}></script>
   % endif
 </%def>

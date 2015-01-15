@@ -26,6 +26,7 @@ install:
     - travis_retry mfr -r install all
     - npm install -g bower
     - bower install
+    - inv webpack
 
 before_script:
     - flake8 .

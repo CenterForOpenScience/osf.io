@@ -138,7 +138,10 @@
 <%def name="stylesheets()">
     ${parent.stylesheets()}
     % for style in addon_widget_css:
-        <link rel="stylesheet" href="${style}" />
+    <link rel="stylesheet" href="${style}" />
+    % endfor
+    % for stylesheet in tree_css:
+    <link rel='stylesheet' href='${stylesheet}' type='text/css' />
     % endfor
 </%def>
 
@@ -146,6 +149,10 @@
 <% import json %>
 
 ${parent.javascript_bottom()}
+
+% for script in tree_js:
+<script type="text/javascript" src="${script | webpack_asset}"></script>
+% endfor
 
 <script type="text/javascript">
     // Hack to allow mako variables to be accessed to JS modules
@@ -164,10 +171,10 @@ ${parent.javascript_bottom()}
     });
 </script>
 
-<script src="/static/public/js/project-dashboard.js"></script>
+<script src="${"/static/public/js/project-dashboard.js" | webpack_asset}"></script>
 
 % for asset in addon_widget_js:
-<script src="${asset}"></script>
+<script src="${asset | webpack_asset}"></script>
 % endfor
 
 </%def>

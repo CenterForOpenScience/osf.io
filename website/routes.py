@@ -21,6 +21,7 @@ from website import util
 from website import settings
 from website import language
 from website.util import sanitize
+from website import landing_pages as landing_page_views
 from website import views as website_views
 from website.assets import env as assets_env
 from website.search import views as search_views
@@ -57,8 +58,8 @@ def get_globals():
         'web_url_for': util.web_url_for,
         'api_url_for': util.api_url_for,
         'sanitize': sanitize,
-        'js_str': lambda x: x.replace("'", r"\'").replace('"', r'\"')
-
+        'js_str': lambda x: x.replace("'", r"\'").replace('"', r'\"'),
+        'webpack_asset': util.webpack_asset,
     }
 
 
@@ -396,6 +397,16 @@ def make_url_map(app):
         Rule([
             '/midas/', '/summit/', '/accountbeta/', '/decline/'
         ], 'get', auth_views.auth_registerbeta, OsfWebRenderer('', render_mako_string)),
+
+        Rule('/login/connected_tools/',
+             'get',
+             landing_page_views.connected_tools,
+             OsfWebRenderer('public/login_landing.mako')),
+
+        Rule('/login/enriched_profile/',
+             'get',
+             landing_page_views.enriched_profile,
+             OsfWebRenderer('public/login_landing.mako')),
 
     ])
 
