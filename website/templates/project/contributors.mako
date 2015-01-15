@@ -225,6 +225,6 @@
       window.contextVars.contributors = ${json.dumps(contributors)};
 
     </script>
-    <script src="/static/public/js/sharing-page.js"></script>
+    <script src=${"/static/public/js/sharing-page.js" | webpack_asset}></script>
 
 </%def>

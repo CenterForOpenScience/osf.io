@@ -188,7 +188,7 @@
       window.contextVars.node = window.contextVars.node || {};
       window.contextVars.node.nodeType = '${node['node_type']}';
     </script>
-    <script type="text/javascript" src="/static/public/js/project-settings-page.js"></script>
+    <script type="text/javascript" src=${"/static/public/js/project-settings-page.js" | webpack_asset}></script>
     % for js_asset in addon_js:
       <script src="${js_asset}"></script>
     % endfor

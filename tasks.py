@@ -672,28 +672,30 @@ def clean_assets():
 
 
 @task(aliases=['pack'])
-def webpack(clean=False, watch=False, production=False):
+def webpack(clean=False, watch=False, develop=False):
     """Build static assets with webpack."""
     if clean:
         clean_assets()
     args = ['webpack']
-    if settings.DEBUG_MODE and not production:
+    if settings.DEBUG_MODE and develop:
         args += ['--colors']
     else:
-        args += ['-p', '--progress']
+        args += ['--progress']
     if watch:
         args += ['--watch']
+    config_file = 'webpack.dev.config.js' if develop else 'webpack.prod.config.js'
+    args += ['--config {0}'.format(config_file)]
     command = ' '.join(args)
     run(command, echo=True)
 
 @task()
-def assets(production=False, watch=False):
+def assets(develop=False, watch=False):
     """Install and build static assets."""
     run('npm install', echo=True)
     bower_install()
     # Always set clean=False to prevent possible mistakes
     # on prod
-    webpack(clean=False, watch=watch, production=production)
+    webpack(clean=False, watch=watch, develop=develop)
 
 @task
 def generate_self_signed(domain):

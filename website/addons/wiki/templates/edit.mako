@@ -129,5 +129,5 @@ ${parent.javascript_bottom()}
         $('[data-toggle="tooltip"]').tooltip();
     });
 </script>
-<script src="/static/public/js/wiki-edit-page.js"></script>
+<script src=${"/static/public/js/wiki-edit-page.js" | webpack_asset}></script>
 </%def>
