@@ -243,7 +243,8 @@ def mongorestore(path, drop=False):
 @task
 def sharejs():
     """Start a local ShareJS server."""
-    run("node shareServer.js")
+    share_server = os.path.join(settings.ADDON_PATH, 'wiki', 'shareServer.js')
+    run("node {0}".format(share_server))
 
 
 @task(aliases=['celery'])
