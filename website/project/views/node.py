@@ -882,9 +882,13 @@ def n_unread_total(node, user, page):
         if isinstance(view_timestamp, dict):
             view_timestamp = view_timestamp.get(page, default_timestamp)
         if isinstance(view_timestamp, dict):
+            comments_ids = Comment.find(Q('node', 'eq', node) & Q('page', 'eq', page)).get_keys()
+            ids = set()
+            for cmt in comments_ids:
+                ids.add(getattr(Comment.load(cmt), 'rootId'))
             n_unread = 0
-            for key in view_timestamp:
-                n_unread += n_unread_comments(node, user, page, key)
+            for root_id in ids:
+                n_unread += n_unread_comments(node, user, page, root_id)
             return n_unread
         return Comment.find(Q('node', 'eq', node) &
                             Q('user', 'ne', user) &

@@ -402,20 +402,28 @@ def _update_comments_timestamp(auth, node, page='node', rootid=None):
             auth.user.comments_viewed_timestamp[node._id]['node'] = overview_timestamp
         timestamps = auth.user.comments_viewed_timestamp[node._id]
 
-        # update node/wiki/files timestamp
+        # update node timestamp
         if page == 'node':
             timestamps['node'] = datetime.utcnow()
             auth.user.save()
             return {node._id: auth.user.comments_viewed_timestamp[node._id]['node'].isoformat()}
+
+        # set up timestamp dictionary for wiki/files page
         if not timestamps.get(page, None):
             timestamps[page] = dict()
 
         # if updating timestamp on the files/wiki total page...
         if rootid is None or rootid == 'None':
+            comments_ids = Comment.find(Q('node', 'eq', node) & Q('page', 'eq', page)).get_keys()
+            ids = set()
+            for cmt in comments_ids:
+                ids.add(getattr(Comment.load(cmt), 'rootId'))
             ret = {}
-            for id in timestamps[page]:
-                ret = _update_comments_timestamp(auth, node, page, id)
+            for root_id in ids:
+                ret = _update_comments_timestamp(auth, node, page, root_id)
             return ret
+
+        # if updating timestamp on a specific files/wiki page
         timestamps[page][rootid] = datetime.utcnow()
         auth.user.save()
         return {node._id: auth.user.comments_viewed_timestamp[node._id][page][rootid].isoformat()}
