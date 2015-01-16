@@ -41,3 +41,13 @@ class PasswordIncorrectError(AuthError):
 class TwoFactorValidationError(AuthError):
     """Raised in case an incorrect two-factor code is provided by the user."""
     pass
+
+
+class InvalidTokenError(FrameworkError):
+    """Raised if an email confirmation token is invalid."""
+    pass
+
+
+class ExpiredTokenError(InvalidTokenError):
+    """Raised if trying to retrieve an expired token."""
+    pass

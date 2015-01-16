@@ -10,6 +10,7 @@ import datetime
 import hurry
 from modularodm import Q
 
+from website.util import paths
 from framework.auth.decorators import Auth
 from website.settings import (
     ALL_MY_PROJECTS_ID, ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_NAME,
@@ -475,7 +476,7 @@ def collect_addon_assets(node):
 
 
 # TODO: Abstract static collectors
-def collect_addon_js(node, visited=None):
+def collect_addon_js(node, visited=None, filename='files.js', config_entry='files'):
     """Collect JavaScript includes for all add-ons implementing HGrid views.
 
     :return list: List of JavaScript include paths
@@ -486,7 +487,12 @@ def collect_addon_js(node, visited=None):
     visited.append(node._id)
     js = set()
     for addon in node.get_addons():
-        js = js.union(addon.config.include_js.get('files', []))
+        # JS modules configured in each addon's __init__ file
+        js = js.union(addon.config.include_js.get(config_entry, []))
+        # Webpack bundle
+        js_path = paths.resolve_addon_path(addon.config, filename)
+        if js_path:
+            js.add(js_path)
     for each in node.nodes:
         if each._id not in visited:
             visited.append(each._id)
@@ -497,8 +503,8 @@ def collect_addon_js(node, visited=None):
 def collect_addon_css(node, visited=None):
     """Collect CSS includes for all addons-ons implementing Hgrid views.
 
-    :return list: List of CSS include paths
-
+    :return: List of CSS include paths
+    :rtype: list
     """
     visited = visited or []
     visited.append(node._id)

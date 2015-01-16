@@ -611,7 +611,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     tags = fields.ForeignField('tag', list=True, backref='tagged')
 
     # Tags for internal use
-    system_tags = fields.StringField(list=True, index=True)
+    system_tags = fields.StringField(list=True)
 
     nodes = fields.AbstractForeignField(list=True, backref='parent')
     forked_from = fields.ForeignField('node', backref='forked')
@@ -2712,13 +2712,6 @@ class WatchConfig(StoredObject):
 
     def __repr__(self):
         return '<WatchConfig(node="{self.node}")>'.format(self=self)
-
-
-class MailRecord(StoredObject):
-
-    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
-    data = fields.DictionaryField()
-    records = fields.AbstractForeignField(list=True, backref='created')
 
 
 class PrivateLink(StoredObject):

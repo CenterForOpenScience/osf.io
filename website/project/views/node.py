@@ -15,6 +15,8 @@ from framework.mongo.utils import from_mongo
 
 from website import language
 
+from website.util import paths
+from website.util import rubeus
 from website.exceptions import NodeStateError
 from website.project import clean_template_name, new_node, new_private_link
 from website.project.decorators import (
@@ -23,6 +25,7 @@ from website.project.decorators import (
     must_have_permission,
     must_not_be_registration,
 )
+from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, get_pointer_parent
 from website.project.forms import NewNodeForm
 from website.models import Node, Pointer, WatchConfig, PrivateLink
@@ -320,11 +323,26 @@ def node_setting(**kwargs):
     rv['addon_enabled_settings'] = addon_enabled_settings
     rv['addon_capabilities'] = settings.ADDON_CAPABILITIES
 
+    rv['addon_js'] = collect_node_config_js(node.get_addons())
+
     rv['comments'] = {
         'level': node.comment_level,
     }
 
     return rv
+
+def collect_node_config_js(addons):
+    """Collect webpack bundles for each of the addons' node-cfg.js modules. Return
+    the URLs for each of the JS modules to be included on the node addons config page.
+
+    :param list addons: List of node's addon config records.
+    """
+    js_modules = []
+    for addon in addons:
+        js_path = paths.resolve_addon_path(addon.config, 'node-cfg.js')
+        if js_path:
+            js_modules.append(js_path)
+    return js_modules
 
 
 @must_have_permission('write')
@@ -368,11 +386,18 @@ def configure_comments(**kwargs):
 @must_be_contributor_or_public
 def view_project(**kwargs):
     auth = kwargs['auth']
-    node_to_use = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
     primary = '/api/v1' not in request.path
-    rv = _view_project(node_to_use, auth, primary=primary)
-    rv['addon_capabilities'] = settings.ADDON_CAPABILITIES
-    return rv
+    ret = _view_project(node, auth, primary=primary)
+    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
+    # Collect the URIs to the static assets for addons that have widgets
+    ret['addon_widget_js'] = list(collect_addon_js(
+        node,
+        filename='widget-cfg.js',
+        config_entry='widget'
+    ))
+    ret.update(rubeus.collect_addon_assets(node))
+    return ret
 
 
 # Expand/Collapse

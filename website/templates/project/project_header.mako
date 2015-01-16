@@ -88,8 +88,9 @@
                             <i class="icon-eye-open"></i>
                             <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
                         </a>
-                        <a rel="tooltip" title="Duplicate"
+                        <a title="Duplicate"
                             class="btn btn-default${ '' if is_project else ' disabled'}" href="#"
+                            data-bind="tooltip: {title: 'Duplicate', placement: 'bottom'}"
                             data-toggle="modal" data-target="#duplicateModal">
                             <span class="glyphicon glyphicon-share"></span>&nbsp; ${ node['templated_count'] + node['fork_count'] + node['points'] }
                         </a>
@@ -122,6 +123,10 @@
                     <br />Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
                     <span data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"></span>
                 % endif
+                % if node['is_registration']:
+                    <br />Registration Date:
+                    <span data-bind="text: dateRegistered.local, tooltip: {title: dateRegistered.utc}" class="date node-registered-date"></span>
+                % endif
                 % if node['is_registration'] and node['registered_meta']:
                     <br />Registration Supplement:
                     % for meta in node['registered_meta']:
@@ -135,7 +140,12 @@
                 % if parent_node['id']:
                     <br />Category: <span class="node-category">${node['category']}</span>
                 % elif node['description'] or 'write' in user['permissions']:
-                    <br /><span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
+                    <br /><span id="description">Description:</span>
+                    % if node['is_registration']:
+                        <span class="node-description overflow${'' if node['description'] else ' text-muted'}" data-type="textarea">${node['description'] or "No description"}</span>
+                    % else:
+                        <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
+                    % endif
                 % endif
             </div>
         </div>

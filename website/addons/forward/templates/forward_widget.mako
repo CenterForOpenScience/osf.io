@@ -32,11 +32,3 @@
     </div>
 
 </div>
-
-<script>
-    $script(['/static/addons/forward/forwardWidget.js']);
-    $script.ready('forwardWidget', function() {
-        var url = '${node['api_url'] + 'forward/config/'}';
-        var forward = new ForwardWidget('#forwardScope', url);
-    });
-</script>

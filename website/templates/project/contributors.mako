@@ -95,11 +95,11 @@
                     <tr>
                         <td class="col-sm-3">
                             <div>
-                                <span class="link-name overflow-block" data-bind="text: name, tooltip: {title: linkName}" style="width: 200px"></span>
+                                <span class="link-name overflow-block" data-bind="text: name, tooltip: {title: 'Link name'}" style="width: 200px"></span>
                             </div>
                             <div class="btn-group">
-                            <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="Click to copy the link"
-                                    data-bind="attr: {data-clipboard-text: linkUrl}" >
+                            <button class="btn btn-default btn-mini copy-button" data-trigger="manual"
+                                    data-bind="attr: {data-clipboard-text: linkUrl}, tooltip: {title: 'Click to copy'}" >
                                 <span class="icon-copy" ></span>
                             </button>
                                 <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}"  />
@@ -177,7 +177,7 @@
                     <!-- Note: Prevent clickBubble so that removing a
                      contributor does not immediately un-remove her. -->
                     <a
-                            data-bind="click: remove, clickBubble: false, tooltip: {title: removeContributor}"
+                            data-bind="click: remove, clickBubble: false, tooltip: {title: 'Remove contributor'}"
                         >
                                 <i class="icon-remove text-danger no-sort"></i>
                     </a>
@@ -190,9 +190,7 @@
             <!-- ko ifnot: $parent.canEdit -->
                 <!-- ko if: canRemove -->
                     <a
-                            data-bind="click: removeSelf"
-                            rel="tooltip"
-                            title="Remove contributor"
+                            data-bind="click: removeSelf, tooltip: {title: 'Remove contributor'}"
                         >
                         <i class="icon-remove text-danger no-sort"></i>
                     </a>
@@ -219,46 +217,12 @@
     <% import json %>
 
     <script type="text/javascript">
-
-    $script(['/static/js/contribAdder.js'], 'contribAdder');
-
-    $('body').on('nodeLoad', function(event, data) {
-        // If user is a contributor, initialize the contributor modal
-        // controller
-        if (data.user.can_edit) {
-            $script.ready('contribAdder', function() {
-                var contribAdder = new ContribAdder(
-                    '#addContributors',
-                    data.node.title,
-                    data.parent_node.id,
-                    data.parent_node.title
-                );
-            });
-        }
-        });
-
-    $script(['/static/js/contribManager.js'], function() {
-        var contributors = ${json.dumps(contributors)};
-        var user = ${json.dumps(user)};
-        var isRegistration = ${json.dumps(node['is_registration'])};
-        var manager = new ContribManager('#manageContributors', contributors, user, isRegistration);
-    });
-
-    % if 'admin' in user['permissions']:
-        $script(['/static/js/privateLinkManager.js',
-                 '/static/js/privateLinkTable.js']);
-
-        $script.ready(['privateLinkManager', 'privateLinkTable'], function () {
-            // Controls the modal
-            var configUrl = nodeApiUrl + 'get_editable_children/';
-            var privateLinkManager = new PrivateLinkManager('#addPrivateLink', configUrl);
-
-            var tableUrl = nodeApiUrl + 'private_link/';
-            var privateLinkTable = new PrivateLinkTable('#linkScope', tableUrl);
-        });
-
-        $("#privateLinkTable").on('click', ".link-url", function(e) { e.target.select() });
-    % endif
+      window.contextVars = window.contextVars || {};
+      window.contextVars.user = ${json.dumps(user)};
+      window.contextVars.isRegistration = ${json.dumps(node['is_registration'])};
+      window.contextVars.contributors = ${json.dumps(contributors)};
 
     </script>
+    <script src=${"/static/public/js/sharing-page.js" | webpack_asset}></script>
+
 </%def>

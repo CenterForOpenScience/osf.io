@@ -20,6 +20,7 @@ from framework.auth.core import _get_current_user
 from website import util
 from website import settings
 from website import language
+from website.util import paths
 from website.util import sanitize
 from website import landing_pages as landing_page_views
 from website import views as website_views
@@ -51,17 +52,15 @@ def get_globals():
         'dev_mode': settings.DEV_MODE,
         'allow_login': settings.ALLOW_LOGIN,
         'status': status.pop_status_messages(),
-        'js_all': assets_env['js'].urls(),
         'css_all': assets_env['css'].urls(),
-        'js_bottom': assets_env['js_bottom'].urls(),
         'domain': settings.DOMAIN,
         'disk_saving_mode': settings.DISK_SAVING_MODE,
         'language': language,
         'web_url_for': util.web_url_for,
         'api_url_for': util.api_url_for,
         'sanitize': sanitize,
-        'js_str': lambda x: x.replace("'", r"\'").replace('"', r'\"')
-
+        'js_str': lambda x: x.replace("'", r"\'").replace('"', r'\"'),
+        'webpack_asset': paths.webpack_asset,
     }
 
 

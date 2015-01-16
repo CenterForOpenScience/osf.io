@@ -17,6 +17,8 @@ from website import settings
 
 logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+
 def get_bin_path():
     """Get parent path of current python binary.
     """
@@ -646,6 +648,43 @@ def bundle_certs(domain, cert_path):
     )
     run(cmd)
 
+@task
+def clean_assets():
+    """Remove built JS files."""
+    build_path = os.path.join(HERE,
+                              'website',
+                              'static',
+                              'public',
+                              'js',
+                              '*')
+    run('rm -rf {0}'.format(build_path), echo=True)
+
+
+@task(aliases=['pack'])
+def webpack(clean=False, watch=False, develop=False):
+    """Build static assets with webpack."""
+    if clean:
+        clean_assets()
+    args = ['webpack']
+    if settings.DEBUG_MODE and develop:
+        args += ['--colors']
+    else:
+        args += ['--progress']
+    if watch:
+        args += ['--watch']
+    config_file = 'webpack.dev.config.js' if develop else 'webpack.prod.config.js'
+    args += ['--config {0}'.format(config_file)]
+    command = ' '.join(args)
+    run(command, echo=True)
+
+@task()
+def assets(develop=False, watch=False):
+    """Install and build static assets."""
+    run('npm install', echo=True)
+    bower_install()
+    # Always set clean=False to prevent possible mistakes
+    # on prod
+    webpack(clean=False, watch=watch, develop=develop)
 
 @task
 def generate_self_signed(domain):
@@ -656,10 +695,3 @@ def generate_self_signed(domain):
         ' -keyout {0}.key -out {0}.crt'
     ).format(domain)
     run(cmd)
-
-
-# NOTE: This just does a `bower install` for now. This will
-# eventually include webpack when it is merged
-@task
-def assets():
-    bower_install()

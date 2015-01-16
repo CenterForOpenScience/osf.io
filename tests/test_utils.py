@@ -7,8 +7,9 @@ from nose.tools import *  # noqa (PEP8 asserts)
 from framework.routing import Rule, json_renderer
 from framework.utils import secure_filename
 from website.routes import process_rules, OsfWebRenderer
-from website.util import web_url_for, api_url_for, is_json_request
+from website.util import paths
 from website.util.mimetype import get_mimetype
+from website.util import web_url_for, api_url_for, is_json_request
 
 try:
     import magic
@@ -203,3 +204,17 @@ class TestFrameworkUtils(unittest.TestCase):
             'i_contain_cool_umlauts.txt',
             secure_filename(u'i contain cool \xfcml\xe4uts.txt')
         )
+
+
+class TestWebpackFilter(unittest.TestCase):
+
+    def setUp(self):
+        self.asset_paths = {'assets': 'assets.07123e.js'}
+
+    def test_resolve_asset(self):
+        asset = paths.webpack_asset('assets.js', self.asset_paths)
+        assert_equal(asset, '/static/public/js/assets.07123e.js')
+
+    def test_resolve_asset_not_found(self):
+        with assert_raises(KeyError):
+            paths.webpack_asset('bundle.js', self.asset_paths)

@@ -20,8 +20,8 @@
                 "submit_btn_class": "btn-success"
             },
             "replace": true
-        }'>
+            }'>
+            </div>
     </div>
 </div>
-
 </%def>
