@@ -969,7 +969,7 @@ def get_summary(**kwargs):
 
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
-    rescale_ratio = kwargs.get('rescale_ratio')
+    rescale_ratio = kwargs.get('rescale_ratio') or float(request.args.get('rescale_ratio'))
     primary = kwargs.get('primary')
     link_id = kwargs.get('link_id')
 
@@ -1007,8 +1007,7 @@ def get_folder_pointers(**kwargs):
 
 
 @must_be_contributor_or_public
-def get_forks(**kwargs):
-    auth = kwargs['auth']
+def get_forks(auth, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     forks = node_to_use.node__forked.find(
         Q('is_deleted', 'eq', False) &
@@ -1018,8 +1017,7 @@ def get_forks(**kwargs):
 
 
 @must_be_contributor_or_public
-def get_registrations(**kwargs):
-    auth = kwargs['auth']
+def get_registrations(auth, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     registrations = node_to_use.node__registrations
     return _render_nodes(registrations, auth)
