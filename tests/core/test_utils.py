@@ -50,9 +50,9 @@ class TestAsyncRetry:
         mock_func = mock.Mock(side_effect=Exception())
         retryable = utils.async_retry(8, 0)(mock_func)
 
-        coro = yield from retryable()
+        retryable()
 
-        yield from asyncio.sleep(2)
+        yield from asyncio.sleep(.1)
 
         assert mock_func.call_count == 9
 
@@ -89,6 +89,6 @@ class TestAsyncRetry:
         retryable()
         retryable()
 
-        yield from asyncio.sleep(2)
+        yield from asyncio.sleep(.1)
 
         assert mock_func.call_count == 18
