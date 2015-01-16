@@ -11,7 +11,11 @@
         <ul class="nav bs-sidenav" style="margin: 0;">
             <!-- Total -->
             <li>
-                <a href="${node['url']}discussions/">Total</a>
+                <a href="${node['url']}discussions/">Total
+                    % if user['unread_comments']['total'] > 0:
+                        <span class="badge pull-right">${user['unread_comments']['total']}</span>
+                    % endif
+                </a>
             </li>
 
             <!-- Overview -->

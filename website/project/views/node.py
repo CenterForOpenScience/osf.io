@@ -854,17 +854,17 @@ def _get_children(node, auth, indent=0):
     return children
 
 
-def n_unread_comments(node, user, page, rootid=None):
+def n_unread_comments(node, user, page, root_id=None):
     """Return the number of unread comments on a node for a user."""
-    if rootid is None or rootid == 'None':
+    if root_id is None or root_id == 'None' or page == 'node':
         return n_unread_total(node, user, page)
 
     default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
     view_timestamp = user.comments_viewed_timestamp.get(node._id, default_timestamp)
     if isinstance(view_timestamp, dict):
         view_timestamp = view_timestamp.get(page, default_timestamp)
-    if not page=='node' and isinstance(view_timestamp, dict):
-        view_timestamp = view_timestamp.get(rootid, default_timestamp)
+    if not page == 'node' and isinstance(view_timestamp, dict):
+        view_timestamp = view_timestamp.get(root_id, default_timestamp)
     return Comment.find(Q('node', 'eq', node) &
                         Q('user', 'ne', user) &
                         Q('date_created', 'gt', view_timestamp) &
@@ -872,7 +872,7 @@ def n_unread_comments(node, user, page, rootid=None):
                         Q('is_deleted', 'eq', False) &
                         Q('is_hidden', 'eq', False) &
                         Q('page', 'eq', page) &
-                        Q('rootId', 'eq', rootid)).count()
+                        Q('root_id', 'eq', root_id)).count()
 
 
 def n_unread_total(node, user, page):
@@ -881,15 +881,20 @@ def n_unread_total(node, user, page):
     if page != 'total':
         if isinstance(view_timestamp, dict):
             view_timestamp = view_timestamp.get(page, default_timestamp)
+        # files/wiki
         if isinstance(view_timestamp, dict):
-            comments_ids = Comment.find(Q('node', 'eq', node) & Q('page', 'eq', page)).get_keys()
+            comments_ids = Comment.find(Q('node', 'eq', node) &
+                                        Q('page', 'eq', page) &
+                                        Q('is_deleted', 'eq', False) &
+                                        Q('is_hidden', 'eq', False)).get_keys()
             ids = set()
             for cmt in comments_ids:
-                ids.add(getattr(Comment.load(cmt), 'rootId'))
+                ids.add(getattr(Comment.load(cmt), 'root_id'))
             n_unread = 0
             for root_id in ids:
                 n_unread += n_unread_comments(node, user, page, root_id)
             return n_unread
+        # mostly node
         return Comment.find(Q('node', 'eq', node) &
                             Q('user', 'ne', user) &
                             Q('date_created', 'gt', view_timestamp) &
@@ -897,7 +902,7 @@ def n_unread_total(node, user, page):
                             Q('is_deleted', 'eq', False) &
                             Q('is_hidden', 'eq', False) &
                             Q('page', 'eq', page)).count()
-    return n_unread_comments(node, user, 'node', node._id) + n_unread_total(node, user, 'wiki') + \
+    return n_unread_total(node, user, 'node') + n_unread_total(node, user, 'wiki') + \
         n_unread_total(node, user, 'files')
 
 

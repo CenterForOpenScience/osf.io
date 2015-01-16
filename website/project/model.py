@@ -164,7 +164,7 @@ class Comment(GuidStoredObject):
     is_hidden = fields.BooleanField(default=False)
     page = fields.StringField()
     content = fields.StringField()
-    rootId = fields.StringField(default='')
+    root_id = fields.StringField(default='')
 
     # Dictionary field mapping user IDs to dictionaries of report details:
     # {
@@ -183,11 +183,11 @@ class Comment(GuidStoredObject):
         comment = cls(**kwargs)
         from website.addons.wiki.model import NodeWikiPage
         if isinstance(comment.target, Comment):
-            comment.rootId = comment.target.rootId
+            comment.root_id = comment.target.root_id
         elif isinstance(comment.target, NodeWikiPage):
-            comment.rootId = comment.target.page_name
+            comment.root_id = comment.target.page_name
         else:
-            comment.rootId = comment.target._id
+            comment.root_id = comment.target._id
         comment.save()
 
         comment.node.add_log(
@@ -266,7 +266,7 @@ class Comment(GuidStoredObject):
             self.save()
 
     def change_root_id(self, new_root_id, save=False):
-        self.rootId = new_root_id
+        self.root_id = new_root_id
         if save:
             self.save()
 

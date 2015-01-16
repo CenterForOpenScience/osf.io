@@ -50,7 +50,7 @@ def view_comments_overview(**kwargs):
         'comment_target': 'node',
         'comment_target_id': node._id
     }
-    _update_comments_timestamp(auth, node, page='node', rootid=node._id)
+    _update_comments_timestamp(auth, node, page='node', root_id=node._id)
     ret.update(_view_project(node, auth, primary=True))
     return ret
 
@@ -100,7 +100,7 @@ def view_comments_single(**kwargs):
     ret = {
         'comment': serialized_comment,
         'comment_target': serialized_comment['page'],
-        'comment_target_id': comment.rootId
+        'comment_target_id': comment.root_id
     }
     ret.update(_view_project(node, auth, primary=True))
     return ret
@@ -143,7 +143,10 @@ def comment_discussion(**kwargs):
                 users[comment.user].append(comment)
     elif guid is None or guid=='None':
         users = collections.defaultdict(list)
-        comments = Comment.find(Q('node', 'eq', node) & Q('page', 'eq', page)).get_keys()
+        comments = Comment.find(Q('node', 'eq', node) &
+                                Q('page', 'eq', page) &
+                                Q('is_deleted', 'ne', True) &
+                                Q('is_hidden', 'ne', True)).get_keys()
         for cid in comments:
             comment = Comment.load(cid)
             if not comment.is_deleted or not comment.is_hidden:
@@ -218,7 +221,7 @@ def serialize_comment(comment, auth, anonymous=False):
         'dateModified': comment.date_modified.isoformat(),
         'page': comment.page or 'node',
         'targetId': getattr(comment.target, 'page_name', comment.target._id),
-        'rootId': comment.rootId or comment.node._id,
+        'rootId': comment.root_id or comment.node._id,
         'content': comment.content,
         'hasChildren': bool(getattr(comment, 'commented', [])),
         'canEdit': comment.user == auth.user,
@@ -295,16 +298,16 @@ def list_comments(auth, **kwargs):
     anonymous = has_anonymous_link(node, auth)
     page = request.args.get('page')
     guid = request.args.get('target')
-    rootid = request.args.get('rootId')
+    root_id = request.args.get('rootId')
 
-    if page == 'total' and rootid == 'None':
+    if page == 'total' and root_id == 'None':
         serialized_comments = list_total_comments(node, auth, 'total')
     elif page == 'total':
         serialized_comments = [
             serialize_comment(comment, auth, anonymous)
             for comment in getattr(node, 'comment_owner', [])
         ]
-    elif rootid == 'None':
+    elif root_id == 'None':
         serialized_comments = list_total_comments(node, auth, page)
     else:
         target = resolve_target(node, page, guid)
@@ -315,7 +318,7 @@ def list_comments(auth, **kwargs):
         if auth.user.comments_viewed_timestamp is None:
             auth.user.comments_viewed_timestamp = {}
             auth.user.save()
-        n_unread = n_unread_comments(node, auth.user, page, rootid)
+        n_unread = n_unread_comments(node, auth.user, page, root_id)
 
     return {
         'comments': serialized_comments,
@@ -391,7 +394,7 @@ def undelete_comment(**kwargs):
     return {}
 
 
-def _update_comments_timestamp(auth, node, page='node', rootid=None):
+def _update_comments_timestamp(auth, node, page='node', root_id=None):
     if node.is_contributor(auth.user) and page != 'total':
         if not auth.user.comments_viewed_timestamp.get(node._id, None):
             auth.user.comments_viewed_timestamp[node._id] = dict()
@@ -413,20 +416,20 @@ def _update_comments_timestamp(auth, node, page='node', rootid=None):
             timestamps[page] = dict()
 
         # if updating timestamp on the files/wiki total page...
-        if rootid is None or rootid == 'None':
+        if root_id is None or root_id == 'None':
             comments_ids = Comment.find(Q('node', 'eq', node) & Q('page', 'eq', page)).get_keys()
             ids = set()
             for cmt in comments_ids:
-                ids.add(getattr(Comment.load(cmt), 'rootId'))
+                ids.add(getattr(Comment.load(cmt), 'root_id'))
             ret = {}
-            for root_id in ids:
-                ret = _update_comments_timestamp(auth, node, page, root_id)
+            for rootid in ids:
+                ret = _update_comments_timestamp(auth, node, page, rootid)
             return ret
 
         # if updating timestamp on a specific files/wiki page
-        timestamps[page][rootid] = datetime.utcnow()
+        timestamps[page][root_id] = datetime.utcnow()
         auth.user.save()
-        return {node._id: auth.user.comments_viewed_timestamp[node._id][page][rootid].isoformat()}
+        return {node._id: auth.user.comments_viewed_timestamp[node._id][page][root_id].isoformat()}
     else:
         return {}
 
@@ -436,8 +439,8 @@ def _update_comments_timestamp(auth, node, page='node', rootid=None):
 def update_comments_timestamp(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     page = request.json.get('page')
-    rootid = request.json.get('rootId')
-    return _update_comments_timestamp(auth, node, page, rootid)
+    root_id = request.json.get('rootId')
+    return _update_comments_timestamp(auth, node, page, root_id)
 
 
 @must_be_logged_in

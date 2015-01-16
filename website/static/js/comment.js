@@ -494,7 +494,6 @@ var CommentListModel = function(userName, host_page, host_name, mode, canComment
     self.$root = self;
     self.MAXLENGTH = MAXLENGTH;
 
-    self.title = ko.observable("");
     self.mode = mode;
 
     self.editors = 0;
