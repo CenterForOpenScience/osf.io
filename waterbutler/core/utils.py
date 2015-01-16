@@ -1,6 +1,12 @@
 import os
+import asyncio
+import logging
+import functools
 
 from stevedore import driver
+
+
+logger = logging.getLogger(__name__)
 
 
 def make_provider(name, auth, credentials, settings):
@@ -94,3 +100,39 @@ class WaterButlerPath:
             absolute_path += '/'
         if not path == absolute_path:
             raise ValueError('Invalid path \'{}\' specified'.format(absolute_path))
+
+def as_task(func):
+    if not asyncio.iscoroutinefunction(func):
+        func = asyncio.coroutine(func)
+
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        return asyncio.async(func(*args, **kwargs))
+
+    return wrapped
+
+
+def async_retry(retries=5, backoff=1, exceptions=(Exception, )):
+
+    def _async_retry(func):
+
+        @as_task
+        @functools.wraps(func)
+        def wrapped(retried, *args, **kwargs):
+            try:
+                return (yield from asyncio.coroutine(func)(*args, **kwargs))
+            except exceptions as e:
+                if retried < retries:
+                    wait_time = backoff * retried
+                    logger.warning('Task {0} failed, {1} / {2} retries. Waiting {3} seconds before retying'.format(func, retries, retried, wait_time))
+
+                    yield from asyncio.sleep(wait_time)
+                    return wrapped(retried + 1, *args, **kwargs)
+                else:
+                    # TODO log errors to raven
+                    logger.error('Task {0} failed with exception {1}'.format(func, e))
+                    raise e
+
+        return functools.wraps(func)(functools.partial(wrapped, 0))
+
+    return _async_retry
