@@ -82,6 +82,10 @@ class CRUDHandler(core.BaseHandler):
     @utils.coroutine
     def delete(self):
         """Delete a file."""
+        # TODO: Current release does not allow deletion of directories (needs authorization code)
+        if self.arguments.get('path', '').endswith('/'):
+            raise web.HTTPError('Deletion of directories is currently not supported', status_code=400)
+
         yield from self.provider.delete(**self.arguments)
         self.set_status(http.client.NO_CONTENT)
 
