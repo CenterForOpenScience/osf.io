@@ -186,7 +186,6 @@ span.project-details {
 
 span.add-link-warning {
     color: #808080;
-    margin-left: 5px;
 }
 
 div.add-folder-container {
@@ -233,6 +232,8 @@ div.organize-project-controls {
     display: block;
     position: relative;
     bottom: 0;
+    width: 100%;
+    text-align: right;
 }
 
 .organize-project-controls .organizeBtn.btn.btn-default {
@@ -244,18 +245,10 @@ div.organize-project-controls {
 
 /* Typeahead autocomplete box */
 
-input.typeahead{
-    width: 100%;
-    margin-bottom: 5px;
-}
+
 
 .organize-project-controls span.twitter-typeahead {
     width: 100%;
-
-}
-
-.project-detail-box {
-    width : 100%;
 }
 
 /* Typeahead scaffolding */
@@ -274,12 +267,15 @@ input.typeahead{
 .tt-query {
     width: 100%;
     height: 30px;
-    font-size: 18px;
+    font-size: 16px;
     border: 1px solid rgb(204, 204, 204);
     -webkit-border-radius: 4px;
     -moz-border-radius: 4px;
     border-radius: 4px;
     outline: none;
+}
+input.typeahead.tt-input { 
+height: 32px ;
 }
 
 .typeahead {
@@ -356,7 +352,9 @@ h3.category {
 
 /* Project Toolbar New Additions and Changes */
 
-
+.po-placeholder {
+    line-height: 30px; 
+}
 
 
 

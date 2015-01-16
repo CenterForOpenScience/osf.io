@@ -27,6 +27,7 @@ css = Bundle(
         'css/commentpane.css',
         'css/site.css',
         'css/animate.css',
+        'css/bootstrap-xl.css',
         filters="cssmin"),
     output="public/css/common.css"
 )

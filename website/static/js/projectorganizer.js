@@ -117,19 +117,9 @@ function createProjectDetailHTMLFromTemplate(theItem) {
         detailTemplateContext,
         displayHTML;
     detailTemplateSource = $('#project-detail-template').html();
-    Handlebars.registerHelper('commalist', function (items, options) {
-        var out = '',
-            i,
-            l;
-        for (i = 0, l = items.length; i < l; i++) {
-            out = out + options.fn(items[i]) + (i !== (l - 1) ? ', ' : '');
-        }
-        return out;
-    });
     detailTemplate = Handlebars.compile(detailTemplateSource);
     detailTemplateContext = {
         theItem: theItem,
-        multipleContributors: theItem.contributors.length > 1,
         parentIsSmartFolder: theItem.parentIsSmartFolder
     };
     displayHTML = detailTemplate(detailTemplateContext);
@@ -137,8 +127,9 @@ function createProjectDetailHTMLFromTemplate(theItem) {
     addFormKeyBindings(theItem.node_id);
 }
 
-function createBlankProjectDetail() {
-    $('.project-details').html('<i class="text-muted text-center"> Select a row to view further actions. </i>');
+function createBlankProjectDetail(message) {
+    var text = message || 'Select a row to view further actions.';
+    $('.project-details').html('<i class="text-muted text-center po-placeholder"> ' + text + ' </i>');
 }
 
 /**
@@ -334,7 +325,7 @@ function _showProjectDetails(event, item, col) {
             deleteAction.done(function () {
                 treebeard.updateFolder(null, theParentNode);
                 createBlankProjectDetail();
-                
+
             });
         });
         $('#delete-folder-' + theItem.node_id).click(function () {
@@ -438,7 +429,7 @@ function _showProjectDetails(event, item, col) {
             $('#findNode' + theItem.node_id).show();
         });
     } else {
-        createBlankProjectDetail();
+        createBlankProjectDetail('Smart folders don\'t have any actions.');
     }
 }
 
@@ -454,12 +445,6 @@ function _poActionColumn(item, col) {
         buttons = [],
         url = item.data.urls.fetch;
     if (!item.data.isSmartFolder) {
-        buttons.push({
-            'name' : '',
-            'icon' : 'icon-info',
-            'css' : 'project-organizer-iconinfo fangorn-clickable btn btn-default btn-xs',
-            'onclick' : _showProjectDetails
-        });
         if (url !== null) {
             buttons.push({
                 'name' : '',
@@ -722,7 +707,7 @@ function _poLoadOpenChildren() {
 function _poMultiselect(event, tree) {
     console.log(this, tree);
     var tb = this,
-        selectedRows = filterRowsNotInParent.call(this, this.multiselected),
+        selectedRows = filterRowsNotInParent.call(tb, tb.multiselected),
         someItemsAreFolders,
         pointerIds;
     if (selectedRows.length > 1) {
@@ -760,7 +745,7 @@ function _poMultiselect(event, tree) {
             createBlankProjectDetail();
         }
     } else {
-        createBlankProjectDetail();
+        _showProjectDetails.call(tb, event, tb.multiselected[0]);
 
     }
 }
@@ -1154,6 +1139,8 @@ var tbOptions = {
         console.log("Onload");
         var tb = this;
         _poLoadOpenChildren.call(tb);
+        $('.tb-row').first().trigger('click');
+
     },
     createcheck : function (item, parent) {
         return true;
