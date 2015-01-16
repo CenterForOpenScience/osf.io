@@ -490,7 +490,7 @@
         );
         self.researcherId = extendLink(
             ko.observable().extend({cleanup: cleanByRule(socialRules.researcherId)}),
-            self, 'researcherId', 'http://researcherId.com/'
+            self, 'researcherId', 'http://researcherId.com/rid/'
         );
         self.twitter = extendLink(
             ko.observable().extend({cleanup: cleanByRule(socialRules.twitter)}),
