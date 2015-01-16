@@ -969,7 +969,9 @@ def get_summary(**kwargs):
 
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
-    rescale_ratio = kwargs.get('rescale_ratio') or float(request.args.get('rescale_ratio'))
+    rescale_ratio = kwargs.get('rescale_ratio')
+    if rescale_ratio is None and request.args.get('rescale_ratio'):
+        rescale_ratio = float(request.args.get('rescale_ratio'))
     primary = kwargs.get('primary')
     link_id = kwargs.get('link_id')
 
