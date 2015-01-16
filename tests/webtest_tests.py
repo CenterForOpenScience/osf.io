@@ -6,7 +6,7 @@ import os
 import re
 import mock
 
-from nose.tools import *  # PEP8 asserts
+from nose.tools import *  # noqa (PEP8 asserts)
 
 from modularodm import Q
 
@@ -21,6 +21,7 @@ from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
                              PrivateLinkFactory)
 from tests.test_features import requires_piwik
 from website import settings, language
+from website.security import random_string
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.model import ensure_schemas
 from website.project.views.file import get_cache_path
@@ -1233,7 +1234,6 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         form['password'] = 'killerqueen'
         res = form.submit(auth=reg_user.auth).follow(auth=reg_user.auth)
 
-
         self.project.reload()
         self.user.reload()
         # user is now a contributor to the project
@@ -1259,10 +1259,50 @@ class TestExplorePublicActivity(OsfTestCase):
         res = self.app.get(url)
 
         assert_in(str(self.project.title), res)
-        assert_in(str(self.project.date_created.date()),res)
+        assert_in(str(self.project.date_created.date()), res)
         assert_in(str(self.registration.title), res)
         assert_in(str(self.registration.registered_date.date()), res)
         assert_not_in(str(self.private_project.title), res)
+
+
+class TestForgotAndResetPasswordViews(OsfTestCase):
+
+    def setUp(self):
+        super(TestForgotAndResetPasswordViews, self).setUp()
+        self.user = AuthUserFactory()
+        self.key = random_string(20)
+        # manually set verifification key
+        self.user.verification_key = self.key
+        self.user.save()
+
+        self.url = web_url_for('reset_password', verification_key=self.key)
+
+    def test_reset_password_view_returns_200(self):
+        res = self.app.get(self.url)
+        assert_equal(res.status_code, 200)
+
+    def test_can_reset_password_if_form_success(self):
+        res = self.app.get(self.url)
+        form = res.forms['resetPasswordForm']
+        form['password'] = 'newpassword'
+        form['password2'] = 'newpassword'
+        res = form.submit()
+
+        # password was updated
+        self.user.reload()
+        assert_true(self.user.check_password('newpassword'))
+
+    def test_reset_password_logs_out_user(self):
+        another_user = AuthUserFactory()
+        # visits reset password link while another user is logged in
+        res = self.app.get(self.url, auth=another_user.auth)
+        assert_equal(res.status_code, 200)
+        # We check if another_user is logged in by checking if
+        # their full name appears on the page (it should be in the navbar).
+        # Yes, this is brittle.
+        assert_not_in(another_user.fullname, res)
+        # make sure the form is on the page
+        assert_true(res.forms['resetPasswordForm'])
 
 
 if __name__ == '__main__':

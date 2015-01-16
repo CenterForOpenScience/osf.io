@@ -128,6 +128,13 @@
 
         % if piwik_host:
             <script src="${ piwik_host }piwik.js" type="text/javascript"></script>
+        % endif
+
+        <script src="/static/vendor/bower_components/dropzone/downloads/dropzone.min.js"></script>
+        <script src="/static/vendor/bower_components/hgrid/dist/hgrid.js"></script>
+        <script src="${"/static/public/js/vendor.js" | webpack_asset}"></script>
+
+        % if piwik_host:
             <% is_public = node.get('is_public', 'ERROR') if node else True %>
             <script type="text/javascript">
 
@@ -151,8 +158,6 @@
             </script>
         % endif
 
-        <script src="/static/vendor/bower_components/dropzone/downloads/dropzone.min.js"></script>
-        <script src="${"/static/public/js/vendor.js" | webpack_asset}"></script>
         <script src="${"/static/public/js/base-page.js" | webpack_asset}"></script>
         ${self.javascript_bottom()}
     </body>

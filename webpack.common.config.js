@@ -11,6 +11,10 @@ var staticPath = function(dir) {
     return path.join(root, dir);
 };
 
+/**
+ * Each JS module for a page on the OSF is webpack entry point. These are built
+ * to website/static/public/
+ */
 var entry = {
     'base-page': staticPath('js/pages/base-page.js'),
     'home-page': staticPath('js/pages/home-page.js'),
@@ -19,6 +23,7 @@ var entry = {
     'project-dashboard': staticPath('js/pages/project-dashboard-page.js'),
     'project-base-page': staticPath('js/pages/project-base-page.js'),
     'wiki-edit-page': staticPath('js/pages/wiki-edit-page.js'),
+    'wiki-view-page': staticPath('js/pages/wiki-view-page.js'),
     'files-page': staticPath('js/pages/files-page.js'),
     'profile-settings-page': staticPath('js/pages/profile-settings-page.js'),
     'register_1-page': staticPath('js/pages/register_1-page.js'),
