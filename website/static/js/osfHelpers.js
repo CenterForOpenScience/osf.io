@@ -173,7 +173,7 @@ var trackPiwik = function(host, siteId, cvars, useCookies) {
     cvars = Array.isArray(cvars) ? cvars : [];
     useCookies = typeof(useCookies) !== 'undefined' ? useCookies : false;
     try {
-        var piwikTracker = Piwik.getTracker(host + 'piwik.php', siteId);
+        var piwikTracker = window.Piwik.getTracker(host + 'piwik.php', siteId);
         piwikTracker.enableLinkTracking(true);
         for(var i=0; i<cvars.length;i++)
         {
