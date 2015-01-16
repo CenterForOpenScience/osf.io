@@ -17,4 +17,4 @@ class DigestNotification(StoredObject):
     user_id = fields.StringField()
     timestamp = fields.DateTimeField()
     event = fields.StringField()
-    context = fields.StringField()
+    message = fields.StringField()

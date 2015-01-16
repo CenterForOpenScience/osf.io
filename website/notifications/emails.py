@@ -45,7 +45,7 @@ def email_transactional(subscribed_users, event, **context):
                 mail=mails.TRANSACTIONAL,
                 name=user.fullname,
                 subject=subject,
-                content=message)
+                message=message)
 
 
 def email_digest(subscribed_users, event, **context):
@@ -56,7 +56,7 @@ def email_digest(subscribed_users, event, **context):
             digest = DigestNotification(timestamp=datetime.datetime.utcnow(),
                                         event=event,
                                         user_id=user._id,
-                                        context=message)
+                                        message=message)
             digest.save()
 
 
@@ -68,11 +68,11 @@ notifications = {
 email_templates = {
     'comments': {
         'subject': '${commenter} commented on "${title}".',
-        'message': '${commenter} commented on your project "${title}": "${content}"'
+        'message': '${commenter} commented on your project "${title}": "${message}"'
     },
     'comment_replies': {
         'subject': '${commenter} replied to your comment on "${title}".',
-        'message': '${commenter} replied to your comment "${parent_comment}" on your project "${title}": "${content}"'
+        'message': '${commenter} replied to your comment "${parent_comment}" on your project "${title}": "${message}"'
     }
 }
 

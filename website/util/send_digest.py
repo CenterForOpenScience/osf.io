@@ -25,12 +25,13 @@ def send_digest(grouped_digests):
             user = None
 
         messages = group['messageContexts']
+
         if user and messages:
             mails.send_mail(
                 to_addr=user.username,
                 mail=mails.DIGEST,
                 name=user.fullname,
-                content=messages)
+                message=messages)
 
     db.digestnotification.remove({'timestamp': {'$lt': datetime.datetime.utcnow(),
                                                 '$gte': datetime.datetime.utcnow()-datetime.timedelta(hours=24)}})
@@ -46,7 +47,6 @@ def group_digest_notifications_by_user():
                             result.messageContexts.push(curr.context);
                     };
                     """))
-
 
 if __name__ == '__main__':
     main()
