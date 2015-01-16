@@ -165,6 +165,7 @@ class Comment(GuidStoredObject):
     page = fields.StringField()
     content = fields.StringField()
     root_id = fields.StringField(default='')
+    root_title = fields.StringField(default='')
 
     # Dictionary field mapping user IDs to dictionaries of report details:
     # {
@@ -267,6 +268,8 @@ class Comment(GuidStoredObject):
 
     def change_root_id(self, new_root_id, save=False):
         self.root_id = new_root_id
+        if self.page == 'wiki':
+            self.root_title = new_root_id
         if save:
             self.save()
 

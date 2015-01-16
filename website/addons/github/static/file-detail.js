@@ -11,5 +11,6 @@ if ($comments.length) {
     var canComment = window.contextVars.currentUser.canComment;
     var hasChildren = window.contextVars.node.hasChildren;
     var id = window.contextVars.file_id;
-    Comment.init('.commentPane', 'files', id, 'pane', userName, canComment, hasChildren);
+    var name = window.contextVars.file_name;
+    Comment.init('.commentPane', 'files', id, name, 'pane', userName, canComment, hasChildren);
 }

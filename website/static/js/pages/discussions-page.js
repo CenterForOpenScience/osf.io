@@ -13,4 +13,4 @@ var id = null;
 if (window.contextVars.comment) {
     id = window.contextVars.comment.id;
 }
-Comment.init('.discussion', target, target_id, 'page', userName, canComment, hasChildren, id);
+Comment.init('.discussion', target, target_id, '', 'page', userName, canComment, hasChildren, id);

@@ -77,6 +77,7 @@ var BaseComment = function() {
 
     self.page = ko.observable('node'); // Default
     self.mode = 'pane'; // Default
+    self.title = ko.observable(''); // Default
 
     self.errorMessage = ko.observable();
     self.editErrorMessage = ko.observable();
@@ -208,6 +209,7 @@ BaseComment.prototype.submitReply = function() {
             page: self.page(),
             target: self.id(),
             content: self.replyContent(),
+            title: self.title()
         }
     ).done(function(response) {
         self.cancelReply();
@@ -223,6 +225,9 @@ BaseComment.prototype.submitReply = function() {
             self.$root.fetchDiscussion();
         }
         self.onSubmitSuccess(response);
+        if (self.level >= MAXLEVEL) {
+            window.location.href = nodeUrl + 'discussions/' + self.id();
+        }
     }).fail(function() {
         self.cancelReply();
         self.errorMessage('Could not submit comment');
@@ -304,7 +309,9 @@ var CommentModel = function(data, $parent, $root) {
 
     self.rootUrl = ko.computed(function(){
         var url = 'discussions';
-        if (self.page() !== 'node') {
+        if (self.page() == 'node') {
+            url = url + '/overview';
+        } else {
             url = url + '/' + self.page();
         }
         return url;
@@ -327,6 +334,10 @@ var CommentModel = function(data, $parent, $root) {
             return '/' + self.rootId() + '/';
         }
     });
+
+    if (self.mode == 'page' && self.level < MAXLEVEL) {
+        self.toggle();
+    }
 
 };
 
@@ -485,7 +496,7 @@ CommentModel.prototype.onSubmitSuccess = function() {
 /*
     *
     */
-var CommentListModel = function(userName, host_page, host_name, mode, canComment, hasChildren, thread) {
+var CommentListModel = function(userName, host_page, host_name, title, mode, canComment, hasChildren, thread) {
 
     BaseComment.prototype.constructor.call(this);
 
@@ -508,6 +519,7 @@ var CommentListModel = function(userName, host_page, host_name, mode, canComment
     self.page(host_page);
     self.id = ko.observable(host_name);
     self.rootId = ko.observable(host_name);
+    self.title(title);
 
     self.commented = ko.computed(function(){
         return self.comments().length > 0;
@@ -604,10 +616,10 @@ var onOpen = function(host_page, host_name) {
     });
 };
 
-var init = function(selector, host_page, host_name, mode, userName, canComment, hasChildren, thread_id) {
+var init = function(selector, host_page, host_name, title, mode, userName, canComment, hasChildren, thread_id) {
 
     new CommentPane(selector, host_page, host_name, mode, {onOpen: onOpen});
-    var viewModel = new CommentListModel(userName, host_page, host_name, mode, canComment, hasChildren, thread_id);
+    var viewModel = new CommentListModel(userName, host_page, host_name, title, mode, canComment, hasChildren, thread_id);
     var $elm = $(selector);
     if (!$elm.length) {
         throw('No results found for selector');

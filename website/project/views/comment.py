@@ -222,6 +222,7 @@ def serialize_comment(comment, auth, anonymous=False):
         'page': comment.page or 'node',
         'targetId': getattr(comment.target, 'page_name', comment.target._id),
         'rootId': comment.root_id or comment.node._id,
+        'title': comment.root_title,
         'content': comment.content,
         'hasChildren': bool(getattr(comment, 'commented', [])),
         'canEdit': comment.user == auth.user,
@@ -268,6 +269,7 @@ def add_comment(**kwargs):
         raise HTTPError(http.FORBIDDEN)
     page = request.json.get('page')
     guid = request.json.get('target')
+    title = request.json.get('title')
     target = resolve_target(node, page, guid)
 
     content = request.json.get('content').strip()
@@ -284,6 +286,7 @@ def add_comment(**kwargs):
         user=auth.user,
         page=page,
         content=content,
+        root_title=title,
     )
     comment.save()
 
@@ -422,8 +425,8 @@ def _update_comments_timestamp(auth, node, page='node', root_id=None):
             for cmt in comments_ids:
                 ids.add(getattr(Comment.load(cmt), 'root_id'))
             ret = {}
-            for rootid in ids:
-                ret = _update_comments_timestamp(auth, node, page, rootid)
+            for rid in ids:
+                ret = _update_comments_timestamp(auth, node, page, rid)
             return ret
 
         # if updating timestamp on a specific files/wiki page

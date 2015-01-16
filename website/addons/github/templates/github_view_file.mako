@@ -83,7 +83,8 @@
                 files_page_url: '${files_page_url}'
                 }
         },
-        file_id: '${file_id}'
+        file_id: '${file_id}',
+        file_name: '${file_name}'
     });
 </script>
 </%def>

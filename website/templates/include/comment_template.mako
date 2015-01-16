@@ -61,13 +61,13 @@
                                         (Overview)
                                 </span>
                                 <span data-bind="if: page()==='wiki'">
-                                    <span data-bind="if: rootId().toLowerCase()==='home'">(Wiki)</span>
-                                    <span data-bind="ifnot: rootId().toLowerCase()==='home'">
-                                        <span data-bind="text: '(Wiki - ' + rootId() + ')'"></span>
+                                    <span data-bind="if: title().toLowerCase()==='home'">(Wiki)</span>
+                                    <span data-bind="ifnot: title().toLowerCase()==='home'">
+                                        <span data-bind="text: '(Wiki - ' + title() + ')'"></span>
                                     </span>
                                 </span>
                                 <span data-bind="if: page()==='files'">
-                                    (Files)
+                                    (Files - <span data-bind="text: title"></span>)
                                 </span>
                             </a>
                         </span>

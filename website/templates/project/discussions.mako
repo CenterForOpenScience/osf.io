@@ -90,7 +90,7 @@
 
             <!-- Comment thread page -->
             <h6>You are viewing a single comment's thread.
-            <a data-bind="attr:{href: '${node['url']}'+rootUrl()}">View the rest of the comments</a></h6>
+            <a data-bind="attr:{href: '${node['url']}'+rootUrl()}">View the rest of the comments in this section</a></h6>
             <a data-bind="attr:{href: '${node['url']}'+parentUrl()}"><h6><i class="icon-caret-up"></i> Parent comment</h6></a>
         % endif
         <div class="comment-list" data-bind="template: {name: 'commentTemplate', foreach: comments}"></div>
