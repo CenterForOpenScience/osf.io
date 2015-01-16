@@ -557,8 +557,10 @@ def unserialize_social(auth, **kwargs):
 
     try:
         user.save()
-    except ValidationError:
-        raise HTTPError(http.BAD_REQUEST)
+    except ValidationError as exc:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_long=exc.args[0]
+        ))
 
 
 def unserialize_job(job):

@@ -27,8 +27,10 @@ from website.models import User
 from website.util import web_url_for
 
 
-def reset_password(**kwargs):
-
+@collect_auth
+def reset_password(auth, **kwargs):
+    if auth.logged_in:
+        logout()
     verification_key = kwargs['verification_key']
     form = ResetPasswordForm(request.form)
 
@@ -52,7 +54,6 @@ def reset_password(**kwargs):
     }
 
 
-# TODO: Rewrite async
 def forgot_password():
     form = ForgotPasswordForm(request.form, prefix='forgot_password')
 
@@ -189,7 +190,7 @@ def send_confirm_email(user, email):
     :raises: KeyError if user does not have a confirmation token for the given
         email.
     """
-    confirmation_url = user.get_confirmation_url(email, external=True)
+    confirmation_url = user.get_confirmation_url(email, external=True, force=True)
     mails.send_mail(email, mails.CONFIRM_EMAIL, 'plain',
         user=user,
         confirmation_url=confirmation_url)

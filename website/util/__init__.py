@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import os
 import re
-import json
 import logging
 from flask import request, url_for
 
@@ -76,22 +74,3 @@ def is_json_request():
     """Return True if the current request is a JSON/AJAX request."""
     content_type = request.content_type
     return content_type and ('application/json' in content_type)
-
-
-def load_asset_paths():
-    try:
-        return json.load(open('webpack-assets.json'))
-    except IOError:
-        logger.error('No "webpack-assets.json" file found. You may need to run webpack.')
-        raise
-
-
-asset_paths = load_asset_paths()
-base_static_path = '/static/public/js/'
-def webpack_asset(path, asset_paths=asset_paths):
-    """Mako filter that resolves a human-readable asset path to its name on disk
-    (which may include the hash of the file).
-    """
-    key = path.replace(base_static_path, '').replace('.js', '')
-    hash_path = asset_paths[key]
-    return os.path.join(base_static_path, hash_path)
