@@ -102,6 +102,7 @@ def add_poster_by_email(conference, message):
         conf_view_url=web_url_for(
             'conference_results',
             meeting=message.conference_name,
+            _absolute=True,
         ),
         fullname=message.sender_display,
         user_created=user_created,

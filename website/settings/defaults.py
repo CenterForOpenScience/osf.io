@@ -25,6 +25,9 @@ STATIC_URL_PATH = '/static'
 ASSET_HASH_PATH = os.path.join(APP_PATH, 'webpack-assets.json')
 ROOT = os.path.join(BASE_PATH, '..')
 
+# Hours before email confirmation tokens expire
+EMAIL_TOKEN_EXPIRATION = 24
+
 LOAD_BALANCER = False
 PROXY_ADDRS = []
 

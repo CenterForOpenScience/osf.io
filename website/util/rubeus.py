@@ -503,8 +503,8 @@ def collect_addon_js(node, visited=None, filename='files.js', config_entry='file
 def collect_addon_css(node, visited=None):
     """Collect CSS includes for all addons-ons implementing Hgrid views.
 
-    :return list: List of CSS include paths
-
+    :return: List of CSS include paths
+    :rtype: list
     """
     visited = visited or []
     visited.append(node._id)

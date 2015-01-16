@@ -147,7 +147,6 @@ class TestContributorViews(OsfTestCase):
         recent = [c for c in self.user.recently_added if c.is_active]
         assert_equal(len(res.json['contributors']), len(recent))
 
-
     def test_get_recently_added_contributors_with_limit(self):
         project = ProjectFactory(creator=self.user)
         for _ in range(5):
