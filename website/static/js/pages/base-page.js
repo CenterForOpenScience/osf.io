@@ -13,7 +13,7 @@ var $osf = require('osfHelpers');
 
 // Apply an empty view-model to the navbar, just so the tooltip bindingHandler
 // can be used
-$osf.applyBindings({}, '#navbarScope');
+// $osf.applyBindings({}, '#navbarScope');
 
 $('[rel="tooltip"]').tooltip();
 
@@ -52,19 +52,20 @@ if ($(sliderSelector).length > 0 &&
 }
 
 
-    $('body').on('click', '.project-toggle', function() {
-        var widget = $(this).closest('.addon-widget-container');
-        var up = $(this).find('.icon-angle-up');
-        var down = $(this).find('.icon-angle-down');
-        if(up.length > 0) {
-            up.removeClass('icon-angle-up').addClass('icon-angle-down');
-        }
-        if(down.length > 0) {
-            down.removeClass('icon-angle-down').addClass('icon-angle-up');            
-        }
+$(document).on('click', '.project-toggle', function() {
+    console.log("hey");
+    var widget = $(this).closest('.addon-widget-container');
+    var up = $(this).find('.icon-angle-up');
+    var down = $(this).find('.icon-angle-down');
+    if(up.length > 0) {
+        up.removeClass('icon-angle-up').addClass('icon-angle-down');
+    }
+    if(down.length > 0) {
+        down.removeClass('icon-angle-down').addClass('icon-angle-up');            
+    }
 
-        widget.find('.addon-widget-body').slideToggle();
-        return false;
-    });
+    widget.find('.addon-widget-body').slideToggle();
+    return false;
+});
 
 new NavbarControl('.osf-nav-wrapper');

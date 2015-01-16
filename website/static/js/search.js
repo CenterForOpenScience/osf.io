@@ -77,6 +77,7 @@ var ViewModel = function(params) {
     self.showSearch = true;
     self.showClose = false;
     self.searchCSS = ko.observable('active');
+    self.onSearchPage = true; 
 
     // Maintain compatibility with hiding search bar elsewhere on the site
     self.toggleSearch = function() {

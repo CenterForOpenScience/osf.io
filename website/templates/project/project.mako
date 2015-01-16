@@ -188,11 +188,14 @@
                 <div class="pull-right">
                    <a href="${node['url']}files/" class="btn"> <i class="icon icon-external-link"></i> </a>
                   <a href="#" class="btn project-toggle">  <i class="icon icon-angle-up"></i> </a>
-</div>
-            <div id="treeGrid">
-<div class="fangorn-loading"> <i class="icon-spinner fangorn-spin"></i> <p class="m-t-sm fg-load-message"> Loading files...  </p> </div>
-
-
+                </div>
+            </div>
+            <div class="addon-widget-body">
+                <div id="treeGrid">
+                    <div class="fangorn-loading"> 
+                        <i class="icon-spinner fangorn-spin"></i> <p class="m-t-sm fg-load-message"> Loading files...  </p> 
+                    </div>
+                </div>
             </div>
         </div>
     </div>

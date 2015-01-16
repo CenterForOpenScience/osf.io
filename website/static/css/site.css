@@ -1874,6 +1874,7 @@ span#profileFullname{
     padding: 0 10px;
     border-bottom: 1px solid #ddd;
     background-color: #efefef;
+    width: 100%;
 }
 .addon-widget-header .btn {
     padding-left: 7px;
