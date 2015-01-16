@@ -14,30 +14,60 @@ from modularodm import Q
 import datetime as dt
 
 logger = logging.getLogger(__name__)
+INFO_MSG = 'Migrating user'
 
 def do_migration(records):
     for user in records:
+        log_info(user)
         user.date_confirmed = user.date_last_login
         if not user.is_registered:
             user.is_registered = True
-        logger.info('Finished migrating user {0}'.format(user._id))
+        user.save()
+    logger.info('Migrated {0} users'.format(len(records)))
+        
 
 def get_targets():
     return User.find(Q('date_confirmed', 'eq', None) & Q('date_last_login', 'ne', None))
 
+
+def log_info(user):
+    logger.info('{0}- {1}: date_confirmed={2}, \
+date_last_login={3}, is_registered={4}'.format(
+                INFO_MSG,
+                user._id, 
+                user.date_confirmed, 
+                user.date_last_login, 
+                user.is_registered))
+
+
 def main():
     init_app(routes=False)  # Sets the storage backends on all models
     if 'dry' in sys.argv:
-        for user in get_targets():
-            print(user)
+        INFO_MSG = '[dry] ' + INFO_MSG 
+        user_list = get_targets()
+        for user in user_list:
+            log_info(user)
+        logger.info('[dry] Migrated {0} users'.format(len(user_list)))
     else:
         do_migration(get_targets())
 
 class TestMigrateNodeCategories(OsfTestCase):
 
     def test_get_targets(self):
-        test = User.find(Q('date_confirmed', 'ne', None) & Q('date_last_login', 'ne', None))
-        assert test is not None
+        today = dt.datetime.utcnow()
+        user1 = UserFactory.build(date_confirmed=today, date_last_login=today)
+        user2 = UserFactory.build(date_confirmed=None, date_last_login=today)
+        user1.save()
+        user2.save()
+
+        user_list = get_targets()
+        assert user_list is not None
+        assert len(user_list) is 1
+
+        user1.date_confirmed = None
+        user1.save()
+        user_list = get_targets()
+        assert len(user_list) is 2
 
     def test_do_migration(self):
         today = dt.datetime.utcnow()
@@ -56,5 +86,6 @@ class TestMigrateNodeCategories(OsfTestCase):
 
 
 if __name__ == '__main__':
-    script_utils.add_file_logger(logger, __file__)
+    if 'dry' not in sys.argv:
+        script_utils.add_file_logger(logger, __file__)
     main()
