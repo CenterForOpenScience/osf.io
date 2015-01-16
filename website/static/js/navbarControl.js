@@ -52,8 +52,6 @@ var NavbarViewModel = function() {
         $('#searchPageFullBar').blur().focus();
        if(self.query() !== ''){
            window.location.href = '/search/?q=' + self.query();
-       } else {
-           console.log('Query' + self.query());
        }
     };
 
