@@ -128,16 +128,16 @@ def async_retry(retries=5, backoff=1, exceptions=(Exception, ), raven=client):
 
         @as_task
         @functools.wraps(func)
-        def wrapped(retried, *args, **kwargs):
+        def wrapped(*args, __retries=0, **kwargs):
             try:
                 return (yield from asyncio.coroutine(func)(*args, **kwargs))
             except exceptions as e:
-                if retried < retries:
-                    wait_time = backoff * retried
-                    logger.warning('Task {0} failed, {1} / {2} retries. Waiting {3} seconds before retying'.format(func, retries, retried, wait_time))
+                if __retries < retries:
+                    wait_time = backoff * __retries
+                    logger.warning('Task {0} failed, {1} / {2} retries. Waiting {3} seconds before retrying'.format(func, __retries, retries, wait_time))
 
                     yield from asyncio.sleep(wait_time)
-                    return wrapped(retried + 1, *args, **kwargs)
+                    return wrapped(*args, __retries=__retries + 1, **kwargs)
                 else:
                     # Logs before all things
                     logger.error('Task {0} failed with exception {1}'.format(func, e))
@@ -151,6 +151,6 @@ def async_retry(retries=5, backoff=1, exceptions=(Exception, ), raven=client):
 
         # Retries must be 0 to start with
         # functools partials dont preserve docstrings
-        return functools.wraps(func)(functools.partial(wrapped, 0))
+        return wrapped
 
     return _async_retry

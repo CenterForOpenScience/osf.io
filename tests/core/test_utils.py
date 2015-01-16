@@ -64,3 +64,31 @@ class TestAsyncRetry:
         retryable = utils.async_retry(8, 0)(mytest)
 
         assert retryable.__doc__ == '''This is a docstring'''
+
+    @async
+    def test_kwargs_work(self):
+        def mytest(mack, *args, **kwargs):
+            mack()
+            assert args == ('test', 'Foo')
+            assert kwargs == {'test': 'Foo', 'baz': 'bam'}
+            return True
+
+        retryable = utils.async_retry(8, 0)(mytest)
+        merk = mock.Mock(side_effect=[Exception(''), 5])
+
+        fut = retryable(merk, 'test', 'Foo', test='Foo', baz='bam')
+        assert (yield from (yield from fut))
+
+        assert merk.call_count == 2
+
+    @async
+    def test_all_retry(self):
+        mock_func = mock.Mock(side_effect=Exception())
+        retryable = utils.async_retry(8, 0)(mock_func)
+
+        retryable()
+        retryable()
+
+        yield from asyncio.sleep(2)
+
+        assert mock_func.call_count == 18
