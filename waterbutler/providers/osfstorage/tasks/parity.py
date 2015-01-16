@@ -2,6 +2,7 @@ import os
 import asyncio
 
 from waterbutler.core import streams
+from waterbutler.core.utils import async_retry
 from waterbutler.core.utils import make_provider
 
 from waterbutler.providers.osfstorage.tasks import utils
@@ -37,5 +38,6 @@ def _upload_parity(path, credentials, settings):
         yield from provider.upload(stream, path='/' + name)
 
 
+@async_retry(retries=5, backoff=5)
 def main(name, credentials, settings):
     return _parity_create_files.delay(name, credentials, settings)

@@ -35,7 +35,8 @@ class TestParityTask:
         task = mock.Mock()
         monkeypatch.setattr(parity, '_parity_create_files', task)
 
-        parity.main('The Best', credentials, settings)
+        fut = parity.main('The Best', credentials, settings)
+        loop = asyncio.get_event_loop().run_until_complete(fut)
 
         task.delay.assert_called_once_with('The Best', credentials, settings)
 
@@ -68,7 +69,6 @@ class TestParityTask:
         mock_make_provider.return_value = mock_provider
         monkeypatch.setattr(parity, 'make_provider', mock_make_provider)
 
-
         tempfile.write('foo')
         path = tempfile.strpath
 
@@ -82,38 +82,14 @@ class TestParityTask:
         )
 
 
-    # @pytest.mark.skip
-    # def test_retries_upload(self, monkeypatch):
-    #     old = parity._parity_create_files
-    #     new_parity = mock.Mock(side_effect=old)
-    #     create_parity = mock.Mock(side_effect=NotImplementedError)
-
-    #     monkeypatch.setattr(parity, '_parity_create_files', new_parity)
-    #     monkeypatch.setattr(parity.asyncio, 'get_event_loop', mock.Mock())
-    #     monkeypatch.setattr(parity.utils, 'create_parity_files', create_parity)
-    #     monkeypatch.setattr(parity.utils, 'RetryUpload',
-    #         functools.partial(
-    #             parity.utils.RetryTask,
-    #             attempts=10,
-    #             init_delay=0,
-    #             max_delay=0,
-    #             backoff=0,
-    #             warn_idx=settings.UPLOAD_RETRY_WARN_IDX,
-    #             error_types=(Exception,),
-    #         )
-    #     )
-
-    #     with pytest.raises(NotImplementedError):
-    #         parity._parity_create_files.delay('Triangles')
-
-
 class TestBackUpTask:
 
     def test_main_delays(self, monkeypatch):
         task = mock.Mock()
         monkeypatch.setattr(backup, '_push_file_archive', task)
 
-        backup.main('The Best', 0, None, {}, {})
+        fut = backup.main('The Best', 0, None, {}, {})
+        asyncio.get_event_loop().run_until_complete(fut)
 
         task.delay.assert_called_once_with('The Best', 0, None, {}, {})
 

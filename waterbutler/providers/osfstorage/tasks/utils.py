@@ -8,9 +8,8 @@ import subprocess
 
 from celery.utils.log import get_task_logger
 
-from waterbutler.tasks import app, client
 from waterbutler.core import exceptions
-
+from waterbutler.tasks.celery import app, client
 from waterbutler.providers.osfstorage import settings
 
 

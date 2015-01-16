@@ -7,6 +7,7 @@ import aiohttp
 from boto.glacier.layer2 import Layer2
 
 from waterbutler.core import signing
+from waterbutler.core.utils import async_retry
 from waterbutler.providers.osfstorage import settings
 from waterbutler.providers.osfstorage.tasks import utils
 
@@ -56,5 +57,6 @@ def _push_archive_complete(self, version_id, callback_url, metadata):
             raise Exception
 
 
+@async_retry(retries=5, backoff=5)
 def main(local_path, version_id, callback_url, credentials, settings):
     return _push_file_archive.delay(local_path, version_id, callback_url, credentials, settings)
