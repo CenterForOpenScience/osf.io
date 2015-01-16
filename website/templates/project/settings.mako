@@ -102,34 +102,40 @@
                 <div class="panel-body">
 
                     <form id="notificationSettings">
-                        <h5>Receive email notifications about the following: </h5>
-                            <div class="subscriptions" style="padding-left: 15px">
-                            % for subscription in subscriptions_available:
-                                    <label style="font-weight: normal">
-                                        <input
-                                            type="checkbox"
-                                            name="${subscription}"
-                                            ${'checked' if (subscription in subscriptions_enabled) else ''}
-                                        />
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>Notifications </h5>
+                                % for subscription in subscriptions_available:
+                                <label style="font-weight:normal; padding-right: 50px">
                                         ${subscriptions_available[subscription]}
-                                    </label>
-                                    <br />
-                            % endfor
+                                </label>
                             </div>
-                        <h5>How would you like to receive notifications? </h5>
-                            <div class="notificationTypes" style="padding-left: 15px">
-                            % for notification_type in notification_types:
-                                    <label style="font-weight: normal">
-                                        <input
-                                            type="checkbox"
-                                            name="${notification_type}"
-                                            ${'checked' if (notification_type in notification_types_enabled) else ''}
-                                        />
-                                        ${notification_types[notification_type]}
+                            <div class="col-md-3">
+                                <h5>Email </h5>
+                                <div class="radio">
+                                    <label>
+                                        <input type="radio"
+                                               id="email_transactional"
+                                               name=${subscriptions_available[subscription]}
+                                               ${'checked' if "email_transactional" in notification_types_enabled else ""}>
                                     </label>
-                                    <br />
-                            % endfor
+                                </div>
                             </div>
+                            <div class="col-md-3">
+                                <h5>Daily Email Digest</h5>
+                                <div class="radio">
+                                    <label>
+                                        <input type="radio"
+                                               id="email_digest"
+                                               name=${subscriptions_available[subscription]}
+                                           ${'checked' if "email_digest" in notification_types_enabled else ""}>
+                                    </label>
+                                </div>
+                            </div>
+                            </br>
+                                % endfor
+                        </div>
 
                         <br />
 

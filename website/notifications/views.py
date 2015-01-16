@@ -10,17 +10,7 @@ from modularodm.storage.mongostorage import KeyExistsException
 def subscribe(auth, **kwargs):
     user = auth.user
     pid = kwargs.get('pid')
-    subscriptions = request.json['subscriptions']
-    notification_types = request.json['notificationTypes']
-
-    for notification_type in notification_types:
-        if not notification_types[notification_type]:
-            node_subscriptions = Subscription.find(Q('object_id', 'eq', pid))
-            for s in node_subscriptions:
-                if notification_type in s._fields:
-                    if user in getattr(s, notification_type):
-                        getattr(s, notification_type).remove(user)
-                        s.save()
+    subscriptions = request.json
 
     for event in subscriptions:
         if event == 'comment_replies':
@@ -30,39 +20,37 @@ def subscribe(auth, **kwargs):
 
         event_id = category + "_" + event
 
-        if subscriptions[event]:
-            # Create subscription or find existing
-            try:
-                s = Subscription(_id=event_id)
-                s.object_id = category
-                s.event_name = event
-                s.save()
+        # Create subscription or find existing
+        for notification_type in subscriptions[event]:
+            if subscriptions[event][notification_type]:
+                try:
+                    s = Subscription(_id=event_id)
+                    s.object_id = category
+                    s.event_name = event
+                    s.save()
 
-            except KeyExistsException:
-                s = Subscription.find_one(Q('_id', 'eq', event_id))
-                s.object_id = category
-                s.event_name = event
-                s.save()
+                except KeyExistsException:
+                    s = Subscription.find_one(Q('_id', 'eq', event_id))
+                    s.object_id = category
+                    s.event_name = event
+                    s.save()
 
-            # Add user to list of subscribers
-            for notification_type in notification_types:
-                if notification_types[notification_type]:
-                    if notification_type not in s._fields:
-                        setattr(s, notification_type, [])
-                        s.save()
+                # Add user to list of subscribers
+                if notification_type not in s._fields:
+                    setattr(s, notification_type, [])
+                    s.save()
 
-                    if user not in getattr(s, notification_type):
-                        getattr(s, notification_type).append(user)
-                        s.save()
+                if user not in getattr(s, notification_type):
+                    getattr(s, notification_type).append(user)
+                    s.save()
 
-        else:
-            try:
-                s = Subscription.find_one(Q('_id', 'eq', event_id))
-                for notification_type in notification_types:
+            else:
+                try:
+                    s = Subscription.find_one(Q('_id', 'eq', event_id))
                     if user in getattr(s, notification_type):
                         getattr(s, notification_type).remove(user)
                         s.save()
-            except NoResultsFound:
-                pass
+                except NoResultsFound:
+                    pass
 
     return {}
