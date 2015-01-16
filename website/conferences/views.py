@@ -70,6 +70,7 @@ def add_poster_by_email(conference, message):
         set_password_url = web_url_for(
             'reset_password',
             verification_key=user.verification_key,
+            _absolute=True,
         )
     else:
         set_password_url = None
@@ -96,6 +97,7 @@ def add_poster_by_email(conference, message):
         conf_view_url=web_url_for(
             'conference_results',
             meeting=message.conference_name,
+            _absolute=True,
         ),
         fullname=message.sender_display,
         user_created=user_created,
