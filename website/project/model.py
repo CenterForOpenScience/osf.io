@@ -265,6 +265,11 @@ class Comment(GuidStoredObject):
         if save:
             self.save()
 
+    def change_root_id(self, new_root_id, save=False):
+        self.rootId = new_root_id
+        if save:
+            self.save()
+
     def report_abuse(self, user, save=False, **kwargs):
         """Report that a comment is abuse.
 

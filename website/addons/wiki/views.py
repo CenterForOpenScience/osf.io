@@ -316,6 +316,9 @@ def project_wiki_edit_post(auth, wname, **kwargs):
         # update_node_wiki will create a new wiki page because a page
         node.update_node_wiki(wiki_name, form_wiki_content, auth)
         ret = {'status': 'success'}
+    comments = getattr(node.get_wiki_page(wiki_name, 1), 'commented', [])
+    for comment in comments:
+        comment.show(save=True)
     return ret, http.FOUND, None, redirect_url
 
 
@@ -410,6 +413,16 @@ def project_wiki_rename(auth, wname, **kwargs):
         raise WIKI_PAGE_CONFLICT_ERROR
     except PageNotFoundError:
         raise WIKI_PAGE_NOT_FOUND_ERROR
+    if auth.user.comments_viewed_timestamp.get(node._id, None) and \
+        auth.user.comments_viewed_timestamp[node._id].get('wiki', None) and \
+        auth.user.comments_viewed_timestamp[node._id]['wiki'].get(wiki_name, None):
+        auth.user.comments_viewed_timestamp[node._id]['wiki'][new_wiki_name] = \
+            auth.user.comments_viewed_timestamp[node._id]['wiki'][wiki_name]
+        auth.user.save()
+    comments = getattr(node.get_wiki_page(new_wiki_name, 1), 'commented', [])
+    for comment in comments:
+        comment.change_root_id(new_wiki_name, save=True)
+
 
 
 @must_be_valid_project  # returns project
