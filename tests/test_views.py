@@ -10,7 +10,6 @@ import httplib as http
 
 from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
-from werkzeug.wrappers import Response
 
 from modularodm import Q
 from dateutil.parser import parse as parse_date
@@ -1077,14 +1076,6 @@ class TestUserAccount(OsfTestCase):
             new_password='12345',
             confirm_password='12345',
             error_message='Password should be at least six characters',
-        )
-
-    def test_password_change_invalid_confirm_password(self):
-        self.test_password_change_invalid(
-            old_password='password',
-            new_password='new password',
-            confirm_password='invalid confirm password',
-            error_message='Password does not match the confirmation',
         )
 
     def test_password_change_invalid_blank_password(self, old_password='', new_password='', confirm_password=''):
