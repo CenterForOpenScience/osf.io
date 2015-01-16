@@ -73,11 +73,10 @@ class CRUDHandler(core.BaseHandler):
         self.stream.feed_eof()
         metadata, created = yield from self.uploader
         self.write(metadata)
-        asyncio.async(
-            self._send_hook(
-                'create' if created else 'update',
-                metadata,
-            )
+
+        self._send_hook(
+            'create' if created else 'update',
+            metadata,
         )
 
     @utils.coroutine
@@ -85,9 +84,8 @@ class CRUDHandler(core.BaseHandler):
         """Delete a file."""
         yield from self.provider.delete(**self.arguments)
         self.set_status(http.client.NO_CONTENT)
-        asyncio.async(
-            self._send_hook(
-                'delete',
-                {'path': self.arguments['path']}
-            )
+
+        self._send_hook(
+            'delete',
+            {'path': self.arguments['path']}
         )

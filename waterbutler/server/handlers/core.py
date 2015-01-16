@@ -84,7 +84,7 @@ class BaseHandler(tornado.web.RequestHandler, SentryMixin):
         self.set_header('Access-Control-Allow-Methods', 'PUT, DELETE'),
         self.set_header('Access-Control-Allow-Headers', ', '.join(CORS_ACCEPT_HEADERS))
 
-    @asyncio.coroutine
+    @utils.async_retry(retries=5, backoff=5)
     def _send_hook(self, action, metadata):
         payload = {
             'action': action,
