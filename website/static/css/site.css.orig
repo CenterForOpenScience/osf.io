@@ -1735,6 +1735,15 @@ span#profileFullname{
     text-overflow: ellipsis;
 }
 
+<<<<<<< HEAD
+.editableControl {
+    background-color: #eee;
+    color: #999898;
+}
+.dker {
+    background-color: #DDD;
+}
+=======
 
 
 
@@ -2045,11 +2054,5 @@ span#profileFullname{
     padding-top: 60px;
 }
 
-.editableControl {
-    background-color: #eee;
-    color: #999898;
-}
-.dker {
-    background-color: #DDD;
-}
 
+>>>>>>> 1a6ff252d12bce3a45d1dd4b1ea82b96564be87b

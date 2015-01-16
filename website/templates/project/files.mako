@@ -1,6 +1,10 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${node['title']} Files</%def>
 
+<div class="page-header  visible-xs">
+  <h2 class="text-300">Files</h2>
+</div>
+
 <div class="row">
 <div class="col-md-12">
     <div class='help-block'>

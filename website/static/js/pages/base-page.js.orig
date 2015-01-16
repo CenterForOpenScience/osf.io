@@ -6,9 +6,12 @@
 
 var $ = require('jquery');
 require('jquery.cookie');
+<<<<<<< HEAD
 require('../crossOrigin.js');
 
+=======
 var NavbarControl = require('navbar-control');
+>>>>>>> 1a6ff252d12bce3a45d1dd4b1ea82b96564be87b
 var $osf = require('osfHelpers');
 
 // Apply an empty view-model to the navbar, just so the tooltip bindingHandler

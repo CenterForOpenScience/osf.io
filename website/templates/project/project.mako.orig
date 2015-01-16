@@ -183,17 +183,32 @@
         % endif
 
         <div class="addon-widget-container">
+<<<<<<< HEAD
+            <h3 class="addon-widget-header"><a href="${node['url']}files/">Files</a></h3>
+        
+            <div id="treeGrid">
+                <div class="fangorn-loading"> <i class="icon-spinner fangorn-spin"></i> <p class="m-t-sm fg-load-message"> Loading files...  </p> </div>
+            </div>
+=======
             <div class="addon-widget-header clearfix"> 
                 <h4>Files</h4>
                 <div class="pull-right">
                    <a href="${node['url']}files/" class="btn"> <i class="icon icon-external-link"></i> </a>
                   <a href="#" class="btn project-toggle">  <i class="icon icon-angle-up"></i> </a>
-</div>
-            <div id="treeGrid">
-<div class="fangorn-loading"> <i class="icon-spinner fangorn-spin"></i> <p class="m-t-sm fg-load-message"> Loading files...  </p> </div>
 
-
+                </div>
             </div>
+            <div class="addon-widget-body">
+                <div id="filetreeProgressBar" class="progress progress-striped active">
+                    <div class="progress-bar"  role="progressbar" aria-valuenow="100"
+                        aria-valuemin="0" aria-valuemax="100" style="width: 100%">
+                        <span class="sr-only">Loading</span>
+                    </div>
+                </div>
+                <input role="search" class="form-control" placeholder="Search files..." type="text" id="fileSearch" autofocus>
+                <div id="myGrid" class="filebrowser hgrid"></div>
+            </div> 
+>>>>>>> 1a6ff252d12bce3a45d1dd4b1ea82b96564be87b
         </div>
     </div>
 
