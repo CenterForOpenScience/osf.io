@@ -263,9 +263,11 @@ BaseViewModel.prototype.handleSuccess = function() {
     }
 };
 
-BaseViewModel.prototype.handleError = function() {
+BaseViewModel.prototype.handleError = function(response) {
+    var defaultMsg = 'Could not update settings';
+    var msg = response.responseJSON.message_long || defaultMsg;
     this.changeMessage(
-        'Could not update settings',
+        msg,
         'text-danger',
         5000
     );
@@ -492,7 +494,7 @@ var SocialViewModel = function(urls, modes) {
     );
     self.researcherId = extendLink(
         ko.observable().extend({cleanup: cleanByRule(socialRules.researcherId)}),
-        self, 'researcherId', 'http://researcherId.com/'
+        self, 'researcherId', 'http://researcherId.com/rid/'
     );
     self.twitter = extendLink(
         ko.observable().extend({cleanup: cleanByRule(socialRules.twitter)}),
