@@ -130,7 +130,6 @@ function _fangornResolveToggle(item) {
  * @private
  */
 function _fangornToggleCheck(item) {
-    item.data.permissions = item.data.permissions || item.parent().data.permissions;
 
     if (item.data.permissions.view) {
         return true;
@@ -375,7 +374,7 @@ function _downloadEvent (event, item, col) {
         window.event.cancelBubble = true;
     }
     if (item.data.provider === 'osfstorage') {
-        item.data.downloads++;
+        item.data.extra.downloads++;
     }
     window.location = waterbutler.buildTreeBeardDownload(item);
 }
@@ -489,7 +488,6 @@ function _fangornUploadMethod(item) {
 function _fangornActionColumn (item, col) {
     var self = this,
         buttons = [];
-    item.data.permissions = item.data.permissions || item.parent().data.permissions;
     //
     // Upload button if this is a folder
     if (item.kind === 'folder' && item.data.provider && item.data.permissions.edit) {
@@ -533,17 +531,15 @@ function _fangornActionColumn (item, col) {
  * @private
  */
 function _fangornTitleColumn(item, col) {
-    //TODO
     return m('span',{
         onclick : function() {
             if (item.kind === 'file') {
                 var params = $.param(
-                    $.extend(
-                      {
-                          provider: item.data.provider,
-                          path: item.data.path.substring(1)
-                      },
-                      item.data.extra || {}
+                    $.extend({
+                        provider: item.data.provider,
+                        path: item.data.path.substring(1)
+                    },
+                        item.data.extra || {}
                     )
                 );
                 window.location = nodeApiUrl + 'waterbutler/files/?' + params;
@@ -560,6 +556,7 @@ function _fangornTitleColumn(item, col) {
  * @private
  */
 function _fangornResolveRows(item) {
+    item.data.permissions = item.data.permissions || item.parent().data.permissions;
     var default_columns = [],
         checkConfig = false,
         configOption;
@@ -567,7 +564,6 @@ function _fangornResolveRows(item) {
     //     return;
     // }
 
-    item.data.permissions = item.data.permissions || item.parent().data.permissions;
     item.css = '';
 
     default_columns.push({
@@ -584,11 +580,12 @@ function _fangornResolveRows(item) {
         sortInclude : false,
         custom : actionColumn
     });
-    if (item.data.provider === 'osfstorage') {
+    if (item.data.provider === 'osfstorage' && item.data.kind === 'file') {
         default_columns.push({
             data : 'downloads',
             sortInclude : false,
-            filter : false
+            filter : false,
+            custom: function() { return item.data.extra ? item.data.extra.downloads.toString() : ''; }
         });
     } else {
         default_columns.push({

@@ -72,8 +72,9 @@
             title: '${node['title'] | h}',
             id: '${node['id']}',
             urls: {
-                files:'${files_url}',
-                revisions:'${revisions_url}',
+                files: '${files_url}',
+                revisions: '${revisions_url}',
+                download: '${download_url}'
             }
         }
     });
@@ -83,5 +84,5 @@
 
 <%def name="javascript_bottom()">
 ${parent.javascript_bottom()}
-<script src="/static/public/js/osfstorage/file-detail.js"></script>
+<script src=${"/static/public/js/osfstorage/file-detail.js" | webpack_asset}></script>
 </%def>

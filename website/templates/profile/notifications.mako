@@ -2,7 +2,6 @@
 <%def name="title()">Notifications</%def>
 <%def name="content()">
 <% import json %>
-<% import website%>
 <h2 class="page-header">Notifications</h2>
 
 <div class="row">
@@ -30,7 +29,7 @@
                             <input type="checkbox"
                                    data-bind="checked: subscribed"/>
                             <label data-bind="text: list"></label>
-                            <p class="text-muted" style="padding-left: 15px">Receive general notifications</p>
+                            <p class="text-muted" style="padding-left: 15px">Receive general notifications about the OSF every 2-3 weeks.</p>
                         </div>
                         <div class="padded">
                         <button
@@ -48,13 +47,17 @@
             </div>
     </div>
 </div>
+</%def>
 
-<script type="text/javascript">
+<%def name="javascript()">
+    <% import website %>
+    ${parent.javascript()}
+    <script type="text/javascript">
+        window.contextVars = $.extend({}, window.contextVars, {'mailingList': '${website.settings.MAILCHIMP_GENERAL_LIST}'});
+    </script>
+</%def>
 
-    $script(['/static/js/notificationsConfig.js']);
-    $script.ready('NotificationsConfig', function() {
-        var notifications = new NotificationsConfig('#selectLists', '${website.settings.MAILCHIMP_GENERAL_LIST}');
-    });
-</script>
-
+<%def name="javascript_bottom()">
+    ${parent.javascript_bottom()}
+    <script src="${"/static/public/js/notifications-config-page.js" | webpack_asset}"></script>
 </%def>

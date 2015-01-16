@@ -10,11 +10,12 @@ import datetime
 from dateutil.relativedelta import relativedelta
 
 from website.addons.osfstorage import model
+from website.addons.osfstorage import settings
 
 
 generic_location = {
     'service': 'cloud',
-    'container': 'container',
+    settings.WATERBUTLER_RESOURCE: 'resource',
     'object': '1615307',
 }
 
@@ -22,13 +23,8 @@ generic_location = {
 class FileVersionFactory(ModularOdmFactory):
     FACTORY_FOR = model.OsfStorageFileVersion
 
-    signature = '06d80e'
     creator = SubFactory(AuthUserFactory)
-    date_created = LazyAttribute(lambda v: datetime.datetime.utcnow())
-    date_resolved = LazyAttribute(lambda v: v.date_created + relativedelta(seconds=10))
-    date_modified = LazyAttribute(lambda v: v.date_created + relativedelta(seconds=5))
     date_modified = datetime.datetime.utcnow()
-    status = model.status_map['COMPLETE']
     location = generic_location
 
     @post_generation

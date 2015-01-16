@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
 import httplib as http
-import os
 
 from flask import request
 from modularodm import Q
@@ -16,6 +15,8 @@ from framework.mongo.utils import from_mongo
 
 from website import language
 
+from website.util import paths
+from website.util import rubeus
 from website.exceptions import NodeStateError
 from website.project import clean_template_name, new_node, new_private_link
 from website.project.decorators import (
@@ -338,20 +339,8 @@ def collect_node_config_js(addons):
     """
     js_modules = []
     for addon in addons:
-
-        file_path = os.path.join('static',
-                                 'public',
-                                 'js',
-                                 addon.config.short_name,
-                                 'node-cfg.js')
-        js_file = os.path.join(
-            settings.BASE_PATH,
-            file_path,
-        )
-        if os.path.exists(js_file):
-            js_path = os.path.join(
-                '/', file_path
-            )
+        js_path = paths.resolve_addon_path(addon.config, 'node-cfg.js')
+        if js_path:
             js_modules.append(js_path)
     return js_modules
 
@@ -397,17 +386,18 @@ def configure_comments(**kwargs):
 @must_be_contributor_or_public
 def view_project(**kwargs):
     auth = kwargs['auth']
-    node_to_use = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
     primary = '/api/v1' not in request.path
-    rv = _view_project(node_to_use, auth, primary=primary)
-    rv['addon_capabilities'] = settings.ADDON_CAPABILITIES
+    ret = _view_project(node, auth, primary=primary)
+    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
     # Collect the URIs to the static assets for addons that have widgets
-    rv['addon_widget_js'] = list(collect_addon_js(
-        node_to_use,
+    ret['addon_widget_js'] = list(collect_addon_js(
+        node,
         filename='widget-cfg.js',
         config_entry='widget'
     ))
-    return rv
+    ret.update(rubeus.collect_addon_assets(node))
+    return ret
 
 
 # Expand/Collapse

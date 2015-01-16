@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import webtest
 import unittest
 from nose.tools import *
 
@@ -51,10 +52,23 @@ class TestAddonConfig(unittest.TestCase):
         )
 
 
+class SetEnvironMiddleware(object):
+
+    def __init__(self, app, **kwargs):
+        self.app = app
+        self.kwargs = kwargs
+
+    def __call__(self, environ, start_response):
+        environ.update(self.kwargs)
+        return self.app(environ, start_response)
+
+
 class TestAddonAuth(OsfTestCase):
 
     def setUp(self):
         super(TestAddonAuth, self).setUp()
+        self.flask_app = SetEnvironMiddleware(self.app.app, REMOTE_ADDR='127.0.0.1')
+        self.test_app = webtest.TestApp(self.flask_app)
         self.user = AuthUserFactory()
         self.auth_obj = Auth(user=self.user)
         self.node = ProjectFactory(creator=self.user)
@@ -91,7 +105,7 @@ class TestAddonAuth(OsfTestCase):
 
     def test_auth_download(self):
         url = self.build_url()
-        res = self.app.get(url)
+        res = self.test_app.get(url)
         assert_equal(res.json['auth'], views.make_auth(self.user))
         assert_equal(res.json['credentials'], self.node_addon.serialize_waterbutler_credentials())
         assert_equal(res.json['settings'], self.node_addon.serialize_waterbutler_settings())
@@ -102,18 +116,25 @@ class TestAddonAuth(OsfTestCase):
 
     def test_auth_missing_args(self):
         url = self.build_url(cookie=None)
-        res = self.app.get(url, expect_errors=True)
+        res = self.test_app.get(url, expect_errors=True)
         assert_equal(res.status_code, 400)
 
     def test_auth_bad_cookie(self):
         url = self.build_url(cookie=self.cookie[::-1])
-        res = self.app.get(url, expect_errors=True)
+        res = self.test_app.get(url, expect_errors=True)
         assert_equal(res.status_code, 401)
 
     def test_auth_missing_addon(self):
         url = self.build_url(provider='queenhub')
-        res = self.app.get(url, expect_errors=True)
+        res = self.test_app.get(url, expect_errors=True)
         assert_equal(res.status_code, 400)
+
+    def test_auth_bad_ip(self):
+        flask_app = SetEnvironMiddleware(self.app.app, REMOTE_ADDR='192.168.1.1')
+        test_app = webtest.TestApp(flask_app)
+        url = self.build_url()
+        res = test_app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
 
 class TestCheckAuth(OsfTestCase):
