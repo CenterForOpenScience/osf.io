@@ -3,10 +3,20 @@ import asyncio
 import logging
 import functools
 
+from raven import Client
 from stevedore import driver
+
+from waterbutler import settings
 
 
 logger = logging.getLogger(__name__)
+
+sentry_dns = settings.get('SENTRY_DSN', None)
+
+if sentry_dns:
+    client = Client(sentry_dns)
+else:
+    client = None
 
 
 def make_provider(name, auth, credentials, settings):
@@ -112,7 +122,7 @@ def as_task(func):
     return wrapped
 
 
-def async_retry(retries=5, backoff=1, exceptions=(Exception, )):
+def async_retry(retries=5, backoff=1, exceptions=(Exception, ), raven=client):
 
     def _async_retry(func):
 
@@ -129,10 +139,18 @@ def async_retry(retries=5, backoff=1, exceptions=(Exception, )):
                     yield from asyncio.sleep(wait_time)
                     return wrapped(retried + 1, *args, **kwargs)
                 else:
-                    # TODO log errors to raven
+                    # Logs before all things
                     logger.error('Task {0} failed with exception {1}'.format(func, e))
+
+                    if raven:
+                        # Only log if a raven client exists
+                        client.logException(e)
+
+                    # If anything happens to be listening
                     raise e
 
+        # Retries must be 0 to start with
+        # functools partials dont preserve docstrings
         return functools.wraps(func)(functools.partial(wrapped, 0))
 
     return _async_retry
