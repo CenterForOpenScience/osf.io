@@ -9,6 +9,7 @@
                 "uri": "/api/v1/forms/reset_password/",
                 "kwargs": {
                     "name": "resetpassword",
+                    "id": "resetPasswordForm",
                     "method_string": "POST",
                     "action_string": "/resetpassword/${verification_key}/",
                     "form_class": "form-stacked",
