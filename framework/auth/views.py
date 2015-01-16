@@ -27,8 +27,10 @@ from website.models import User
 from website.util import web_url_for
 
 
-def reset_password(**kwargs):
-
+@collect_auth
+def reset_password(auth, **kwargs):
+    if auth.logged_in:
+        logout()
     verification_key = kwargs['verification_key']
     form = ResetPasswordForm(request.form)
 
@@ -52,7 +54,6 @@ def reset_password(**kwargs):
     }
 
 
-# TODO: Rewrite async
 def forgot_password():
     form = ForgotPasswordForm(request.form, prefix='forgot_password')
 

@@ -10,7 +10,7 @@ import bson
 
 from modularodm import fields, Q
 from modularodm.validators import URLValidator
-from modularodm.exceptions import ValidationValueError
+from modularodm.exceptions import ValidationError, ValidationValueError
 
 import framework
 from framework.sessions import session
@@ -67,7 +67,11 @@ def validate_history_item(item):
 validate_url = URLValidator()
 def validate_personal_site(value):
     if value:
-        validate_url(value)
+        try:
+            validate_url(value)
+        except ValidationError:
+            # Reraise with a better message
+            raise ValidationError('Invalid personal URL.')
 
 
 def validate_social(value):

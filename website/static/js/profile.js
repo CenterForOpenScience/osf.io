@@ -263,9 +263,11 @@ BaseViewModel.prototype.handleSuccess = function() {
     }
 };
 
-BaseViewModel.prototype.handleError = function() {
+BaseViewModel.prototype.handleError = function(response) {
+    var defaultMsg = 'Could not update settings';
+    var msg = response.responseJSON.message_long || defaultMsg;
     this.changeMessage(
-        'Could not update settings',
+        msg,
         'text-danger',
         5000
     );
