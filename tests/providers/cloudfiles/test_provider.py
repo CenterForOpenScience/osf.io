@@ -175,7 +175,7 @@ def file_stream(file_like):
 
 @pytest.fixture
 def file_metadata():
-    return aiohttp.multidict.CaseInsensitiveMultiDict([
+    return aiohttp.multidict.CIMultiDict([
         ('LAST-MODIFIED', 'Thu, 25 Dec 2014 02:54:35 GMT'),
         ('CONTENT-LENGTH', '0'),
         ('ETAG', 'edfa12d00b779b4b37b81fe5b61b2b3f'),
@@ -271,7 +271,7 @@ def folder_root_level1_level2():
 
 @pytest.fixture
 def file_root_level1_level2_file2_txt():
-    return aiohttp.multidict.CaseInsensitiveMultiDict([
+    return aiohttp.multidict.CIMultiDict([
         ('ORIGIN', 'https://mycloud.rackspace.com'),
         ('CONTENT-LENGTH', '216945'),
         ('ACCEPT-RANGES', 'bytes'),
@@ -286,7 +286,7 @@ def file_root_level1_level2_file2_txt():
 
 @pytest.fixture
 def folder_root_level1_empty():
-    return aiohttp.multidict.CaseInsensitiveMultiDict([
+    return aiohttp.multidict.CIMultiDict([
         ('ORIGIN', 'https://mycloud.rackspace.com'),
         ('CONTENT-LENGTH', '0'),
         ('ACCEPT-RANGES', 'bytes'),
@@ -301,7 +301,7 @@ def folder_root_level1_empty():
 
 @pytest.fixture
 def file_root_similar():
-    return aiohttp.multidict.CaseInsensitiveMultiDict([
+    return aiohttp.multidict.CIMultiDict([
         ('ORIGIN', 'https://mycloud.rackspace.com'),
         ('CONTENT-LENGTH', '190'),
         ('ACCEPT-RANGES', 'bytes'),
@@ -316,7 +316,7 @@ def file_root_similar():
 
 @pytest.fixture
 def file_root_similar_name():
-    return aiohttp.multidict.CaseInsensitiveMultiDict([
+    return aiohttp.multidict.CIMultiDict([
         ('ORIGIN', 'https://mycloud.rackspace.com'),
         ('CONTENT-LENGTH', '190'),
         ('ACCEPT-RANGES', 'bytes'),
