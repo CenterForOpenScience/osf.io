@@ -55,3 +55,8 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
 @requires_search
 def update_metadata(metadata):
     search_engine.update_metadata(metadata)
+
+
+@requires_search
+def get_mapping(index, _type):
+    return search_engine.get_mapping(index, _type)

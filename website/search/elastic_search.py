@@ -429,3 +429,10 @@ def update_metadata(metadata):
     app_id = metadata.namespace
     data = metadata.to_json()
     es.index(index='metadata', doc_type=app_id, body=data, id=metadata._id, refresh=True)
+
+
+@requires_search
+def get_mapping(index, _type):
+    mappings = es.indices.get_mapping(index=index)[index]['mappings'][_type]['properties']
+    mappings = {key: val['type'] for key, val in mappings.items()}
+    return mappings
