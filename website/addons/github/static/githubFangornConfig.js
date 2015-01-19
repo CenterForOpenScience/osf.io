@@ -121,7 +121,7 @@ function _fangornGithubTitle(item, col)  {
     var tb = this;
     var branchArray = [];
     if (item.data.branches) {
-        branch = item.data.defaultBranch;
+        branch = branch || item.data.defaultBranch;
         for (var i = 0; i < item.data.branches.length; i++) {
             var selected = item.data.branches[i] === item.data.defaultBranch ? 'selected' : '';
             branchArray.push(m('option', {selected : selected, value:item.data.branches[i]}, item.data.branches[i]));
