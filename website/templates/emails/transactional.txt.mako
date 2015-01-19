@@ -1,5 +1,5 @@
 Hello ${name},
 
-    ${content}
+    ${message}
 
 From the Open Science Framework

@@ -68,11 +68,11 @@ notifications = {
 email_templates = {
     'comments': {
         'subject': '${commenter} commented on "${title}".',
-        'message': '${commenter} commented on your project "${title}": "${message}"'
+        'message': '${commenter} commented on your project "${title}": "${content}"'
     },
     'comment_replies': {
         'subject': '${commenter} replied to your comment on "${title}".',
-        'message': '${commenter} replied to your comment "${parent_comment}" on your project "${title}": "${message}"'
+        'message': '${commenter} replied to your comment "${parent_comment}" on your project "${title}": "${content}"'
     }
 }
 
