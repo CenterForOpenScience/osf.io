@@ -267,13 +267,13 @@ $(document).ready(function() {
     });
 
 
-
-    $( ".osf-dash-col" ).sortable({
-      connectWith: ".osf-dash-col",
-      handle: ".addon-widget-header",
-      cancel: ".pull-right",
-      placeholder: "osf-dash-portlet ui-corner-all"
-    });
+    // Portlet feature for the dashboard, to be implemented in later versions. 
+    // $( ".osf-dash-col" ).sortable({
+    //   connectWith: ".osf-dash-col",
+    //   handle: ".addon-widget-header",
+    //   cancel: ".pull-right",
+    //   placeholder: "osf-dash-portlet ui-corner-all"
+    // });
 
     // Adds active class to current menu item 
     $(function () {
