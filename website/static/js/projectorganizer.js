@@ -457,7 +457,7 @@ function _poActionColumn(item, col) {
     // Build the template for icons
     return buttons.map(function (btn) {
         return m('span', { 'data-col' : item.id }, [ m('i',
-            { 'class' : btn.css, 'style' : btn.style, 'onclick' : function (event) { btn.onclick.call(self, event, item, col); } },
+            { 'class' : btn.css, 'style' : btn.style, 'onclick' : function (event) {  btn.onclick.call(self, event, item, col); } },
             [ m('span', { 'class' : btn.icon}, btn.name) ])
             ]);
     });

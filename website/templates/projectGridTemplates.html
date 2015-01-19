@@ -1,6 +1,6 @@
 <script id="project-detail-template" type="text/x-handlebars-template">
     <div class="row" id="ptd-{{ theItem.node_id }}">
-        <div class="col-xs-4">
+        <div class="col-sm-4">
             <span class = "title">
                 <span class = "name-container" id="nc-{{theItem.node_id}}">
                       {{#if theItem.isFolder}}{{{ theItem.name }}}{{/if}}
@@ -11,7 +11,11 @@
                             <i class="icon icon-pencil" style="font-size: 11px;"></i> Edit</button>
                       {{/if}}{{/unless}}{{/unless}}
                 </span>
-                <span class="rename-container" id="rnc-{{theItem.node_id}}">
+                
+            </span>
+        </div>
+        <div class="col-sm-8">
+            <span class="rename-container" id="rnc-{{theItem.node_id}}">
                     <form action="">
                           <fieldset class="project-detail-fields">
                             <div class="row">
@@ -26,9 +30,7 @@
                           </fieldset>
                     </form>
                 </span>
-            </span>
-        </div>
-        <div class="col-xs-8">
+
             {{#if theItem.isFolder}}
                 <div class = "organize-project-controls pull-right">
                     <div id = "buttons{{theItem.node_id}}">

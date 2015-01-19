@@ -11,10 +11,11 @@
     <div class="alert alert-info"><strong>NOTICE: </strong>Forks, registrations, and uploads will be temporarily disabled while the OSF undergoes a hardware upgrade. These features will return shortly. Thank you for your patience.</div>
 % endif
 <div class="row">
-    <div class="col-sm-7 col-xlg-6">
-        <div class="page-header">
+    <div class="col-sm-7">
+        <div>
             <h3>Projects</h3>
-        </div><!-- end .page-header -->
+            <hr />
+        </div><!-- end div -->
         <link rel="stylesheet" href="/static/css/projectorganizer.css">
 
         <div class="project-organizer" id="projectOrganizerScope">
