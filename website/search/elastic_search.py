@@ -67,7 +67,7 @@ def requires_search(func):
             except ConnectionError:
                 raise exceptions.SearchUnavailableError('Could not connect to elasticsearch')
             except NotFoundError as e:
-                raise exceptions.IndexNotFoundError(e.error)
+                raise exceptions.IndexNotFoundError(e)
             except RequestError as e:
                 if 'ParseException' in e.error:
                     raise exceptions.MalformedQueryError(e.error)
@@ -437,5 +437,5 @@ def get_mapping(index, _type):
         mappings = es.indices.get_mapping(index=index)[index]['mappings'][_type]['properties']
         mappings = {key: val['type'] for key, val in mappings.items()}
         return mappings
-    except KeyError:
-        raise NotFoundError
+    except KeyError as e:
+        raise exceptions.IndexNotFoundError(e.message)
