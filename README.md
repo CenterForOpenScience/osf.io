@@ -2,6 +2,14 @@
 
 [![Build Status](https://travis-ci.org/CenterForOpenScience/waterbutler.svg?branch=develop)](https://travis-ci.org/CenterForOpenScience/waterbutler)
 
+### osf startup commands
+*(requires two instances of osf in order to render files)*
+
+```bash
+invoke server --port 5001
+invoke server
+```
+
 
 ### startup commands
 
