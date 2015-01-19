@@ -64,9 +64,10 @@ $(document).ready(function() {
         var fangornOpts = {
             divID: 'treeGrid',
             filesData: data.data,
-            uploads : false,
+            uploads : true,
             showFilter : true,
             filterStyle : { 'float' : 'left', width : '100%'},
+            placement: 'dashboard',
             columnTitles : function(){
                 return [
                     {

@@ -175,7 +175,8 @@ function _fangornUploadProgress(treebeard, file, progress) {
     var parent = treebeard.dropzoneItemCache,
         item,
         child,
-        msgText = 'Uploaded ' + Math.floor(progress) + '%';
+        column,
+        msgText = '';
     for(var i = 0; i < parent.children.length; i++) {
         child = parent.children[i];
         if(!child.data.tmpID){
@@ -186,10 +187,18 @@ function _fangornUploadProgress(treebeard, file, progress) {
         }
     }
 
-    if (progress < 100) {
-        item.notify.update(msgText, 'success', 1, 0);
+    if(treebeard.options.placement === 'dashboard'){
+        column = null;
+        msgText += file.name + '  : ';
     } else {
-        item.notify.update(msgText, 'success', 1, 2000);
+        column = 1;
+    }
+    msgText  += 'Uploaded ' + Math.floor(progress) + '%'
+
+    if (progress < 100) {
+        item.notify.update(msgText, 'success', column, 0);
+    } else {
+        item.notify.update(msgText, 'success', column, 2000);
     }
 }
 
@@ -259,6 +268,7 @@ function _fangornDragOver(treebeard, event) {
         itemID =  parseInt(closestTarget.attr('data-id')),
         item = treebeard.find(itemID);
     $('.tb-row').removeClass(dropzoneHoverClass);
+    console.log(closestTarget.attr('data-id'));
     if (itemID !== undefined) {
         if (item.data.provider && item.kind === 'folder') {
             closestTarget.addClass(dropzoneHoverClass);
