@@ -4,6 +4,7 @@ from modularodm.exceptions import NoResultsFound
 from model import Subscription
 from model import DigestNotification
 from website import mails
+from website.models import Node
 from mako.lookup import Template
 
 
@@ -21,14 +22,14 @@ def notify(uid, event, **context):
         # TODO: handle this error
         except AttributeError:
             pass
-        send(subscribed_users, notification_type, event, **context)
+        send(subscribed_users, notification_type, uid, event, **context)
 
 
-def send(subscribed_users, notification_type, event, **context):
-    notifications.get(notification_type)(subscribed_users, event, **context)
+def send(subscribed_users, notification_type, uid, event, **context):
+    notifications.get(notification_type)(subscribed_users, uid, event, **context)
 
 
-def email_transactional(subscribed_users, event, **context):
+def email_transactional(subscribed_users, uid, event, **context):
     """
     :param subscribed_users:mod-odm User objects
     :param context: context variables for email template
@@ -48,16 +49,34 @@ def email_transactional(subscribed_users, event, **context):
                 message=message)
 
 
-def email_digest(subscribed_users, event, **context):
+def email_digest(subscribed_users, uid, event, **context):
     message = Template(email_templates[event]['message']).render(**context)
+
+    try:
+        node = Node.find_one(Q('_id', 'eq', uid))
+        nodes = get_node_lineage(node)
+    except NoResultsFound:
+        nodes = []
 
     for user in subscribed_users:
         if context.get('commenter') != user.fullname:
             digest = DigestNotification(timestamp=datetime.datetime.utcnow(),
                                         event=event,
                                         user_id=user._id,
-                                        message=message)
+                                        message=message,
+                                        node_lineage=nodes.reverse())
             digest.save()
+
+
+node_lineage = []
+def get_node_lineage(node):
+    if node is not None:
+        node_lineage.append(node._id)
+    if node.node__parent is not None:
+        for n in node.node__parent:
+            get_node_lineage(n)
+
+    return node_lineage
 
 
 notifications = {
