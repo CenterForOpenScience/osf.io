@@ -11,7 +11,7 @@ config = settings.get('OSFSTORAGE_PROVIDER_CONFIG', {})
 FILE_PATH_PENDING = config.get('FILE_PATH_PENDING', '/tmp/pending')
 FILE_PATH_COMPLETE = config.get('FILE_PATH_COMPLETE', '/tmp/complete')
 
-RUN_TASKS = config.get('RUN_TASKS', True)
+RUN_TASKS = config.get('RUN_TASKS', False)
 
 HMAC_ALGORITHM = getattr(hashlib, config.get('HMAC_ALGORITHM', 'sha256'))
 HMAC_SECRET = config.get('HMAC_SECRET', 'changeme').encode('utf-8')
