@@ -117,24 +117,19 @@ function createProjectDetailHTMLFromTemplate(theItem) {
         detailTemplateContext,
         displayHTML;
     detailTemplateSource = $('#project-detail-template').html();
-    Handlebars.registerHelper('commalist', function (items, options) {
-        var out = '',
-            i,
-            l;
-        for (i = 0, l = items.length; i < l; i++) {
-            out = out + options.fn(items[i]) + (i !== (l - 1) ? ', ' : '');
-        }
-        return out;
-    });
     detailTemplate = Handlebars.compile(detailTemplateSource);
     detailTemplateContext = {
         theItem: theItem,
-        multipleContributors: theItem.contributors.length > 1,
         parentIsSmartFolder: theItem.parentIsSmartFolder
     };
     displayHTML = detailTemplate(detailTemplateContext);
     $('.project-details').html(displayHTML);
     addFormKeyBindings(theItem.node_id);
+}
+
+function createBlankProjectDetail(message) {
+    var text = message || 'Select a row to view further actions.';
+    $('.project-details').html('<i class="text-muted text-center po-placeholder"> ' + text + ' </i>');
 }
 
 /**
@@ -293,7 +288,7 @@ function _showProjectDetails(event, item, col) {
             }).fail($osf.handleJSONError);
         });
         $('#close-' + theItem.node_id).click(function () {
-            $('.project-details').hide();
+            createBlankProjectDetail();
             return false;
         });
         $('#add-link-' + theItem.node_id).click(function () {
@@ -316,7 +311,7 @@ function _showProjectDetails(event, item, col) {
                     tb.updateFolder(null, item);
                 });
             });
-            $('.project-details').hide();
+            createBlankProjectDetail();
             return false;
         });
         $('#remove-link-' + theItem.node_id).click(function () {
@@ -329,7 +324,7 @@ function _showProjectDetails(event, item, col) {
                 });
             deleteAction.done(function () {
                 treebeard.updateFolder(null, theParentNode);
-                $('.project-details').hide();
+                createBlankProjectDetail();
 
             });
         });
@@ -349,7 +344,7 @@ function _showProjectDetails(event, item, col) {
                             });
                         deleteAction.done(function () {
                             treebeard.updateFolder(null, item.parent());
-                            $('.project-details').hide();
+                            createBlankProjectDetail();
                         });
                     }
                 }
@@ -385,7 +380,7 @@ function _showProjectDetails(event, item, col) {
                     //    m.render(icon.get(0), iconTemplate);
                     //}
                     treebeard.updateFolder(null, item);
-                    $('.project-details').hide();
+                    createBlankProjectDetail();
                 }).fail($osf.handleJSONError);
 
             });
@@ -396,7 +391,7 @@ function _showProjectDetails(event, item, col) {
             $('#afc-' + theItem.node_id).hide();
             $('#findNode' + theItem.node_id).hide();
             $('#nc-' + theItem.node_id).hide();
-            $('#rnc-' + theItem.node_id).show();
+            $('#rnc-' + theItem.node_id).css({'display':'inline-block', 'width' : '100%'});
         });
         $('#rename-node-input' + theItem.node_id).bind('keyup', function () {
             var contents = $.trim($(this).val());
@@ -416,7 +411,7 @@ function _showProjectDetails(event, item, col) {
             postAction = $osf.postJSON(url, postData);
             postAction.done(function () {
                 treebeard.updateFolder(null, theParentNode);
-                $('.project-details').hide();
+                createBlankProjectDetail();
             }).fail($osf.handleJSONError);
             return false;
         });
@@ -433,9 +428,8 @@ function _showProjectDetails(event, item, col) {
             $('#rnc-' + theItem.node_id).hide();
             $('#findNode' + theItem.node_id).show();
         });
-        $('.project-details').toggle();
     } else {
-        $('.project-details').hide();
+        createBlankProjectDetail('Smart folders don\'t have any actions.');
     }
 }
 
@@ -451,12 +445,6 @@ function _poActionColumn(item, col) {
         buttons = [],
         url = item.data.urls.fetch;
     if (!item.data.isSmartFolder) {
-        buttons.push({
-            'name' : '',
-            'icon' : 'icon-info',
-            'css' : 'project-organizer-iconinfo fangorn-clickable btn btn-default btn-xs',
-            'onclick' : _showProjectDetails
-        });
         if (url !== null) {
             buttons.push({
                 'name' : '',
@@ -469,7 +457,7 @@ function _poActionColumn(item, col) {
     // Build the template for icons
     return buttons.map(function (btn) {
         return m('span', { 'data-col' : item.id }, [ m('i',
-            { 'class' : btn.css, 'style' : btn.style, 'onclick' : function (event) { btn.onclick.call(self, event, item, col); } },
+            { 'class' : btn.css, 'style' : btn.style, 'onclick' : function (event) {  btn.onclick.call(self, event, item, col); } },
             [ m('span', { 'class' : btn.icon}, btn.name) ])
             ]);
     });
@@ -719,7 +707,7 @@ function _poLoadOpenChildren() {
 function _poMultiselect(event, tree) {
     console.log(this, tree);
     var tb = this,
-        selectedRows = filterRowsNotInParent.call(this, this.multiselected),
+        selectedRows = filterRowsNotInParent.call(tb, tb.multiselected),
         someItemsAreFolders,
         pointerIds;
     if (selectedRows.length > 1) {
@@ -747,19 +735,22 @@ function _poMultiselect(event, tree) {
             $('.project-details').show();
             $('#remove-links-multiple').click(function () {
                 deleteMultiplePointersFromFolder.call(tb, pointerIds, theParentNode);
-                $('.project-details').hide();
+                createBlankProjectDetail();
             });
             $('#close-multi-select').click(function () {
-                $('.project-details').hide();
+                createBlankProjectDetail();
                 return false;
             });
         } else {
-            $('.project-details').hide();
+            createBlankProjectDetail();
         }
     } else {
-        $('.project-details').hide();
+        _showProjectDetails.call(tb, event, tb.multiselected[0]);
+
     }
 }
+
+
 
 /**
  * Deletes pointers based on their ids from the folder specified
@@ -831,7 +822,7 @@ function _poDragStart(event, ui) {
     if (this.multiselected.length < 2) {
         this.multiselected = [item];
     }
-    $('.project-details').hide();
+    createBlankProjectDetail();
 }
 
 /**
@@ -1148,6 +1139,8 @@ var tbOptions = {
         console.log("Onload");
         var tb = this;
         _poLoadOpenChildren.call(tb);
+        $('.tb-row').first().trigger('click');
+
     },
     createcheck : function (item, parent) {
         return true;

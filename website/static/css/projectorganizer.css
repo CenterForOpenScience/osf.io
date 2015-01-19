@@ -186,7 +186,6 @@ span.project-details {
 
 span.add-link-warning {
     color: #808080;
-    margin-left: 5px;
 }
 
 div.add-folder-container {
@@ -199,25 +198,14 @@ span.rename-container{
 }
 
 div.project-details span.title {
-    padding: 8px 14px;
-    margin: 0;
-    font-size: 14px;
-    font-weight: 400;
-    line-height: 18px;
-    background-color: #f7f7f7;
-    border-bottom: 1px solid #ebebeb;
-    border-radius: 5px 5px 0 0;
-    width: 100%;
-    display: block;
-    -webkit-margin-before: 0em;
-    -webkit-margin-after: 0em;
-    -webkit-margin-start: 0px;
-    -webkit-margin-end: 0px;
+    display: inline;
+    overflow-x: hidden;
+    padding: 7px;
+    line-height: 29px;
+    font-size: 15px;
+    overflow-x: hidden;
 }
 
-div.project-detail-content {
-    padding:9px 14px;
-}
 
 .project-action-icons img {
     margin-right: 4px;
@@ -225,32 +213,14 @@ div.project-detail-content {
 }
 
 div.project-details {
-    width: 450px;
-    float: right;
-    margin-left: 35%;
-    margin-top: 130px;
-    position: fixed;
-    z-index: 999;
-    display: none;
-    overflow: visible;
-
-    padding: 1px;
-    text-align: left;
-    white-space: normal;
-    background-color: #fff;
-    -webkit-background-clip: padding-box;
-    background-clip: padding-box;
-    border-radius: 6px;
-    -webkit-box-shadow: 0 0px 15px -2px #000;
-    box-shadow: 0 0px 15px -2px #000;
-
+    display: inline-block;
+    width: 100%;
+    background-color: #EEE;
+    padding: 7px;
+    margin-bottom: 10px;
 }
 
 div.contributors {
-    overflow-x: hidden;
-}
-
-div.project-details span.title {
     overflow-x: hidden;
 }
 
@@ -261,9 +231,9 @@ div.project-details span.title {
 div.organize-project-controls {
     display: block;
     position: relative;
-    width: 100%;
     bottom: 0;
-    margin-top: 10px;
+    width: 100%;
+    text-align: right;
 }
 
 .organize-project-controls .organizeBtn.btn.btn-default {
@@ -275,14 +245,10 @@ div.organize-project-controls {
 
 /* Typeahead autocomplete box */
 
-input.typeahead{
-    width: 100%;
-    margin-bottom: 5px;
-}
+
 
 .organize-project-controls span.twitter-typeahead {
     width: 100%;
-
 }
 
 /* Typeahead scaffolding */
@@ -301,12 +267,15 @@ input.typeahead{
 .tt-query {
     width: 100%;
     height: 30px;
-    font-size: 18px;
+    font-size: 16px;
     border: 1px solid rgb(204, 204, 204);
     -webkit-border-radius: 4px;
     -moz-border-radius: 4px;
     border-radius: 4px;
     outline: none;
+}
+input.typeahead.tt-input { 
+height: 32px ;
 }
 
 .typeahead {
@@ -380,3 +349,36 @@ h3.category {
     height: inherit;
     padding-top: 4px;
 }
+
+/* Project Toolbar New Additions and Changes */
+
+.po-placeholder {
+    line-height: 30px; 
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -2,6 +2,10 @@
 <%def name="title()">${node['title']} Files</%def>
 <link rel="stylesheet" href="/static/vendor/bower_components/jquery-ui/themes/base/minified/jquery.ui.resizable.min.css">
 
+<div class="page-header  visible-xs">
+  <h2 class="text-300">Files</h2>
+</div>
+
 <div class="row">
 <div class="col-md-12">
     <div class='help-block'>

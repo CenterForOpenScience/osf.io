@@ -12,15 +12,17 @@
 % endif
 <div class="row">
     <div class="col-sm-7">
-        <div class="project-details"></div>
-        <div class="page-header">
-            <div class="pull-right"><a class="btn btn-default" href="/folder/${dashboard_id}" id = "${dashboard_id}">New Folder</a></div>
+        <div>
             <h3>Projects</h3>
-        </div><!-- end .page-header -->
+            <hr />
+        </div><!-- end div -->
         <link rel="stylesheet" href="/static/css/projectorganizer.css">
 
         <div class="project-organizer" id="projectOrganizerScope">
             <%include file="projectGridTemplates.html"/>
+            <div class="project-details"> 
+            </div>    
+
 
             <div id="project-grid"></div>
             <span class='organizer-legend'><img alt="Folder" src="/static/img/hgrid/folder.png">Folder</span>

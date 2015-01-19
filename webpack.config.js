@@ -103,7 +103,8 @@ module.exports = {
             'osfLanguage': staticPath('js/osfLanguage.js'),
             'addons': path.join(__dirname, 'website', 'addons'),
             'addonHelper': staticPath('js/addonHelper.js'),
-            'koHelpers': staticPath('js/koHelpers.js')
+            'koHelpers': staticPath('js/koHelpers.js'),
+            'navbar-control' : staticPath('js/navbarControl.js')
         }
     },
     plugins: [
