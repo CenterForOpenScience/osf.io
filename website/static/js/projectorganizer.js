@@ -608,12 +608,14 @@ function _poResolveIcon(item) {
         }
         return template;
     }
-    if (item.data.isFolder) {
-        return returnView('folder');
-    }
     if (item.data.isSmartFolder) {
         return returnView('smartFolder');
     }
+    
+    if (item.data.isFolder) {
+        return returnView('folder');
+    }
+
     if (item.data.isProject) {
         return returnView('project');
     }
