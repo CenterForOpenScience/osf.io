@@ -117,7 +117,7 @@
                                     <label>
                                         <input type="radio"
                                                id="email_transactional"
-                                               name=${subscriptions_available[subscription]}
+                                               name=${subscription}
                                                ${'checked' if "email_transactional" in notification_types_enabled else ""}>
                                     </label>
                                 </div>
@@ -128,7 +128,7 @@
                                     <label>
                                         <input type="radio"
                                                id="email_digest"
-                                               name=${subscriptions_available[subscription]}
+                                               name=${subscription}
                                            ${'checked' if "email_digest" in notification_types_enabled else ""}>
                                     </label>
                                 </div>
