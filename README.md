@@ -25,7 +25,7 @@ invoke server
 vim ~/.cos/waterbutler-test.json
 ```
 
-#### waterbutler-test.json
+waterbutler-test.json, e.g.
 
 ```json
 {
