@@ -433,6 +433,9 @@ def update_metadata(metadata):
 
 @requires_search
 def get_mapping(index, _type):
-    mappings = es.indices.get_mapping(index=index)[index]['mappings'][_type]['properties']
-    mappings = {key: val['type'] for key, val in mappings.items()}
-    return mappings
+    try:
+        mappings = es.indices.get_mapping(index=index)[index]['mappings'][_type]['properties']
+        mappings = {key: val['type'] for key, val in mappings.items()}
+        return mappings
+    except KeyError:
+        raise NotFoundError
