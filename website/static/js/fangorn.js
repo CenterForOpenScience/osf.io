@@ -403,8 +403,12 @@ function _removeEvent (event, item, col) {
         window.event.cancelBubble = true;
     }
     var tb = this;
-    item.notify.update('Deleting...', 'deleting', undefined, 3000);
-    if (item.data.permissions.edit) {
+
+    function cancelDelete () {
+        this.modal.dismiss();
+    }
+    function runDelete () {
+        var tb = this;
         // delete from server, if successful delete from view
         $.ajax({
             url: waterbutler.buildTreeBeardDelete(item),
@@ -414,11 +418,28 @@ function _removeEvent (event, item, col) {
             // delete view
             tb.deleteNode(item.parentID, item.id);
             window.console.log('Delete success: ', data);
+            tb.modal.dismiss();
         })
         .fail(function(data){
+            tb.modal.dismiss();
             window.console.log('Delete failed: ', data);
             item.notify.update('Delete failed.', 'danger', undefined, 3000);
         });
+    }
+
+
+    if (item.data.permissions.edit) {
+        var mithrilContent = m('div', [
+                m('h3', 'Delete "' + item.data.name+ '"?'),
+                m('p', 'This action is irreversable.')
+            ]); 
+        var mithrilButtons = m('div', [
+                m('button', { 'class' : 'btn btn-default m-r-md', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
+                m('button', { 'class' : 'btn btn-success', onclick : function() { runDelete.call(tb); }  }, 'OK')
+            ]); 
+        tb.modal.update(mithrilContent, mithrilButtons);
+    } else {
+        item.notify.update('You don\'t have permission to delete this file.', 'info', undefined, 3000);
     }
 }
 
