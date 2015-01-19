@@ -16,6 +16,7 @@ var staticPath = function(dir) {
  * to website/static/public/
  */
 var entry = {
+    'apikey-page': staticPath('js/pages/apikey-page.js'),
     'base-page': staticPath('js/pages/base-page.js'),
     'home-page': staticPath('js/pages/home-page.js'),
     'dashboard-page': staticPath('js/pages/dashboard-page.js'),
