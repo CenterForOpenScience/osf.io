@@ -41,28 +41,28 @@
                 <!-- ko ifnot: onSearchPage -->
                 <li data-bind="click : toggleSearch, css: searchCSS">
                     <a class="" >
-                        <span rel="tooltip" title="Search OSF" class="icon-search icon-lg" ></span>
+                        <span rel="tooltip" data-placement="bottom" title="Search OSF" class="icon-search icon-lg" ></span>
                     </a>
                 </li>
                 <!-- /ko -->
                 % if user_name and display_name:
                 <li>
                     <a class="hidden-lg hidden-xs" href="/profile/">
-                        <span rel="tooltip" title="${user_name}" class="osf-gravatar"><img src="${user_gravatar}" alt="User gravatar"/> </span>
+                        <span rel="tooltip" data-placement="bottom" title="${user_name}" class="osf-gravatar"><img src="${user_gravatar}" alt="User gravatar"/> </span>
                     </a>
                     <a class="visible-lg visible-xs" href="/profile/">
-                        <span rel="tooltip" title="${user_name}"><span class="osf-gravatar"> <img src="${user_gravatar}" alt="User gravatar"/> </span> ${display_name}</span>
+                        <span rel="tooltip" data-placement="bottom" title="${user_name}"><span class="osf-gravatar"> <img src="${user_gravatar}" alt="User gravatar"/> </span> ${display_name}</span>
                     </a>
                 </li>
                 <li>
                     <a href="${web_url_for('user_profile')}">
-                        <span rel="tooltip" title="Settings" class="icon-cog hidden-xs icon-lg"></span>
+                        <span rel="tooltip" data-placement="bottom" title="Settings" class="icon-cog hidden-xs icon-lg"></span>
                         <span class="visible-xs">Settings</span>
                     </a>
                 </li>
                 <li>
                     <a href="${web_url_for('auth_logout')}">
-                        <span rel="tooltip" title="Log&nbsp;out" class="icon-signout hidden-xs icon-lg"></span>
+                        <span rel="tooltip" data-placement="bottom" title="Log&nbsp;out" class="icon-signout hidden-xs icon-lg"></span>
                         <span class="visible-xs">Log out</span>
                     </a>
                 </li>
