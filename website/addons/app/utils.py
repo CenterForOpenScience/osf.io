@@ -9,6 +9,8 @@ from datetime import datetime
 from datetime import timedelta
 from cStringIO import StringIO
 
+import pytz
+
 from dateutil.parser import parse
 
 import PyRSS2Gen as pyrss
@@ -78,13 +80,18 @@ def elastic_to_atom(name, data, query, url):
                     author="COS")
 
     for doc in data:
+        try:
+            updated = pytz.utc.localize(parse(doc.get('dateUpdated')))
+        except ValueError:
+            updated = parse(doc.get('dateUpdated'))
+
         feed.add(
             title=doc.get('title', 'No title provided'),
             content=json.dumps(doc, indent=4, sort_keys=True),
             content_type='json',
             summary=doc.get('description', 'No summary'),
             id=doc.get('id', {}).get('serviceID') or doc['_id'],
-            updated=parse(doc.get('dateUpdated')),
+            updated=updated,
             link=doc['id']['url'] if doc.get('id') else doc['links'][0]['url'],
             author=format_contributors_for_atom(doc['contributors']),
             categories=format_categories(doc.get('tags')),

@@ -296,6 +296,14 @@ var ViewModel = function(params) {
             return self.search(true);
         }
     };
+    //
+    //Temporary work around/fix
+    self.claim = function(mid) {
+        claimURL = self.appURL + 'metadata/' + mid + '/promote/';
+        $.osf.postJSON(claimURL, {category: 'project'}).success(function(data) {
+            window.location = data.url;
+        });
+    };
 
     //Load state from History JS
     self.loadState = function() {

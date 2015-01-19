@@ -18,6 +18,7 @@ from framework.mongo import StoredObject, ObjectId
 
 class Metadata(StoredObject):
     data = fields.DictionaryField()
+    default_sort = fields.StringField(default=None)
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     app = fields.ForeignField('appnodesettings', backref='owner', required=True)
 
@@ -69,6 +70,46 @@ class Metadata(StoredObject):
                 self['attached'].get('cmids', [])
             ]
         return []
+
+    def build_query(self, query, start=0, size=250, sort=None):
+        try:
+            size = abs(int(size))
+        except (ValueError, TypeError):
+            size = 250
+
+        try:
+            start = abs(int(start))
+        except (ValueError, TypeError):
+            start = 0
+
+        if size > 1000:
+            size = 1000
+
+        full_query = {
+            'query': {
+                'query_string': {
+                    'default_field': '_all',
+                    'query': query,
+                    'analyze_wildcard': True,
+                    'lenient': True,
+                }
+            },
+            'from': start,
+            'size': size,
+        }
+
+        sort = sort or self.default_sort
+
+        if sort:
+            full_query['sort'] = [
+                {
+                    sort: {
+                        'order': 'desc'
+                    }
+                }
+            ]
+
+        return full_query
 
     def __getitem__(self, key):
         return self.data[key]

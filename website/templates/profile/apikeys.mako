@@ -51,9 +51,11 @@
 
 </div>
 
-<script type="text/javascript">
-    $script('/static/js/apiKeyManager.js', function() {
-        ApiKeyView('#apiKey', '${api_url_for('get_keys')}');
-    });
-</script>
+
 </%def>
+
+<%def name="javascript_bottom()">
+  <script src=${"/static/public/js/apikey-page.js" | webpack_asset}></script>
+  ${parent.javascript_bottom()}
+</%def>
+

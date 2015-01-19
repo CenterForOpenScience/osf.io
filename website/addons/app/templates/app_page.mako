@@ -40,8 +40,8 @@
     </div>
 </div>
 
-<script>
-    $script(['/static/addons/app/appPage.js', '/static/vendor/jsonlint/formatter.js'], function() {
-        ApplicationView('#application', '${api_url_for('query_app', pid=node['id'])}');
-    });
-</script>
+<%def name="javascript_bottom()">
+${parent.javascript_bottom()}
+<script src=${"/static/public/js/app/page.js" | webpack_asset}></script>
+</%def>
+## <script src=${"/static/public/vendor/jsonlint/formatter.js" | webpack_asset}></script>

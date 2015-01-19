@@ -22,7 +22,7 @@ from website.project.decorators import must_have_permission
 from website.project.decorators import must_be_contributor_or_public
 
 from website.addons.app.model import Metadata
-from website.addons.app.utils import args_to_query
+# from website.addons.app.utils import args_to_query
 from website.addons.app.utils import elastic_to_rss
 from website.addons.app.utils import elastic_to_atom
 from website.addons.app.utils import elastic_to_changelist
@@ -59,11 +59,11 @@ def query_app(node_addon, **kwargs):
     start = request.args.get('from')
     return_raw = request.args.get('raw') is not None
 
-    query = args_to_query(q, size, start)
+    query = node_addon.build_query(q, size, start)
 
     try:
         ret = search.search(query, index='metadata', doc_type=node_addon.namespace, raw=True)
-    except MalformedQueryError:
+    except MalformedQueryError as e:
         raise HTTPError(http.BAD_REQUEST)
     except IndexNotFoundError:
         # TODO Deal with correct empty raw output
@@ -130,9 +130,8 @@ def query_app_rss(node_addon, **kwargs):
     q = request.args.get('q', '*')
     size = request.args.get('size')
     start = request.args.get('from')
-    query = args_to_query(q, size, start)
+    query = node_addon.build_query(q, size, start)
     extended = request.args.get('extended')
-
     try:
         ret = search.search(query, doc_type=node_addon.namespace, index='metadata')
     except MalformedQueryError:
@@ -160,10 +159,10 @@ def query_app_atom(node_addon, **kwargs):
     q = request.args.get('q', '*')
     size = request.args.get('size')
     start = request.args.get('from')
-    query = args_to_query(q, size, start)
+    query = node_addon.build_query(q, size, start)
 
     try:
-        ret = search.search(query, search_type=node_addon.namespace, index='metadata')
+        ret = search.search(query, doc_type=node_addon.namespace, index='metadata')
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
     except IndexNotFoundError:
@@ -178,6 +177,7 @@ def query_app_atom(node_addon, **kwargs):
     atom_url = node.api_url_for('query_app_atom', _xml=True, _absolute=True)
     return elastic_to_atom(name, ret['results'], q, atom_url)
 
+
 # GET
 @must_be_contributor_or_public
 @must_have_addon('app', 'node')
@@ -189,10 +189,10 @@ def query_app_resourcelist(node_addon, **kwargs):
 
     q += ' NOT isResource:True'
 
-    query = args_to_query(q, start, size)
+    query = node_addon.build_query(q, start, size)
 
     try:
-        ret = search.search(query, search_type=node_addon.namespace, index='metadata')
+        ret = search(query, search.search_type=node_addon.namespace, index='metadata')
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
     except IndexNotFoundError:
@@ -214,10 +214,10 @@ def query_app_changelist(node_addon, **kwargs):
 
     q += ' NOT isResource:True'
 
-    query = args_to_query(q, start, size)
+    query = node_addon.build_query(q, start, size)
 
     try:
-        ret = search.search(query, search_type=node_addon.namespace, index='metadata')
+        ret = search.search(query, doc_type=node_addon.namespace, index='metadata')
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
     except IndexNotFoundError:
@@ -313,7 +313,7 @@ def get_project_metadata(node_addon, guid, **kwargs):
     }
 
     try:
-        rets = search.search(query, search_type=node_addon.namespace, index='metadata')
+        rets = search.search(query, doc_type=node_addon.namespace, index='metadata')
     except IndexNotFoundError:
         return {}
 

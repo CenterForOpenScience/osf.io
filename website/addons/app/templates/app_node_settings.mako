@@ -36,9 +36,3 @@
     </div>
 
 </div>
-
-<script>
-    $script('/static/addons/app/appNodeConfig.js', function() {
-        AppNodeConfig('#appScope', '${'/api/v1/app/' + node['id'] + '/routes/'}');
-    });
-</script>
