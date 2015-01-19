@@ -256,12 +256,12 @@ function _fangornAddedFile(treebeard, file) {
 function _fangornDragOver(treebeard, event) {
     var dropzoneHoverClass = "fangorn-dz-hover",
         closestTarget = $(event.target).closest('.tb-row'),
-        itemID =  closestTarget.context.dataset.id,
+        itemID =  parseInt(closestTarget.attr('data-id')),
         item = treebeard.find(itemID);
     $('.tb-row').removeClass(dropzoneHoverClass);
     if (itemID !== undefined) {
         if (item.data.provider && item.kind === 'folder') {
-            $(event.target).closest('.tb-row').addClass(dropzoneHoverClass);
+            closestTarget.addClass(dropzoneHoverClass);
         }
     }
 }
