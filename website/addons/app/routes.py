@@ -97,6 +97,12 @@ api_routes = {
             views.crud.query_app_capabilitylist,
             xml_renderer
         ),
+        Rule(
+            '/app/<pid>/mapping/',
+            'get',
+            views.crud.get_mapping,
+            json_renderer
+        ),
     ],
     'prefix': '/api/v1'
 }
