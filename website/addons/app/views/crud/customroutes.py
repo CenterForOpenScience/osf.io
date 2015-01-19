@@ -41,9 +41,9 @@ def resolve_route(node_addon, route, **kwargs):
     except KeyError:
         raise HTTPError(http.NOT_FOUND)
 
-    q = args_to_query(route, size, start)
+    q = node_addon.build_query(route, size, start)
 
-    return search(q, _type=node_addon.namespace, index='metadata')
+    return search(q, doc_type=node_addon.namespace, index='metadata')
 
 
 # GET
@@ -59,7 +59,7 @@ def resolve_route_rss(node_addon, route, **kwargs):
     except KeyError:
         raise HTTPError(http.NOT_FOUND)
 
-    q = args_to_query(query, size, start)
+    q = node_addon.build_query(query, size, start)
 
     ret = search(q, _type=node_addon.namespace, index='metadata')
 

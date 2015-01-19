@@ -22,7 +22,7 @@ from website.project.decorators import must_have_permission
 from website.project.decorators import must_be_contributor_or_public
 
 from website.addons.app.model import Metadata
-from website.addons.app.utils import args_to_query
+# from website.addons.app.utils import args_to_query
 from website.addons.app.utils import elastic_to_rss
 from website.addons.app.utils import elastic_to_atom
 from website.addons.app.utils import elastic_to_changelist
@@ -59,11 +59,11 @@ def query_app(node_addon, **kwargs):
     start = request.args.get('from')
     return_raw = request.args.get('raw') is not None
 
-    query = args_to_query(q, size, start)
+    query = node_addon.build_query(q, size, start)
 
     try:
         ret = search(query, index='metadata', doc_type=node_addon.namespace, raw=True)
-    except MalformedQueryError:
+    except MalformedQueryError as e:
         raise HTTPError(http.BAD_REQUEST)
     except IndexNotFoundError:
         # TODO Deal with correct empty raw output
@@ -123,7 +123,7 @@ def query_app_rss(node_addon, **kwargs):
     q = request.args.get('q', '*')
     size = request.args.get('size')
     start = request.args.get('from')
-    query = args_to_query(q, size, start)
+    query = node_addon.build_query(q, size, start)
     extended = request.args.get('extended')
 
     try:
@@ -153,7 +153,7 @@ def query_app_atom(node_addon, **kwargs):
     q = request.args.get('q', '*')
     size = request.args.get('size')
     start = request.args.get('from')
-    query = args_to_query(q, size, start)
+    query = node_addon.build_query(q, size, start)
 
     try:
         ret = search(query, search_type=node_addon.namespace, index='metadata')
@@ -182,7 +182,7 @@ def query_app_resourcelist(node_addon, **kwargs):
 
     q += ' NOT isResource:True'
 
-    query = args_to_query(q, start, size)
+    query = node_addon.build_query(q, start, size)
 
     try:
         ret = search(query, search_type=node_addon.namespace, index='metadata')
@@ -207,7 +207,7 @@ def query_app_changelist(node_addon, **kwargs):
 
     q += ' NOT isResource:True'
 
-    query = args_to_query(q, start, size)
+    query = node_addon.build_query(q, start, size)
 
     try:
         ret = search(query, search_type=node_addon.namespace, index='metadata')
