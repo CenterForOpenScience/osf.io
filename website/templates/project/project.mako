@@ -187,7 +187,6 @@
                 <h4>Files</h4>
                 <div class="pull-right">
                    <a href="${node['url']}files/" class="btn"> <i class="icon icon-external-link"></i> </a>
-                  <a href="#" class="btn project-toggle">  <i class="icon icon-angle-up"></i> </a>
                 </div>
             </div>
             <div class="addon-widget-body">
@@ -236,7 +235,6 @@
             <div class="addon-widget-header clearfix"> 
                 <h4>Tags </h4>
                 <div class="pull-right">
-                  <a href="#" class="btn project-toggle"><i class="icon icon-angle-up"></i></a>
                 </div>
             </div>
             <div class="addon-widget-body">
@@ -263,7 +261,6 @@
                     <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
                     <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
                 % endif
-              <a href="#" class="btn project-toggle">  <i class="icon icon-angle-up"></i> </a>
 
             </div>
         </div>

@@ -17,7 +17,6 @@
             <div class="addon-widget-header clearfix"> 
                 <h4>Recent Activity </h4>
                 <div class="pull-right">
-                      <a href="#" class="btn project-toggle">  <i class="icon icon-angle-up"></i> </a>
                 </div>
             </div>
             <div class="addon-widget-body">
