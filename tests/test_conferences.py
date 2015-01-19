@@ -3,12 +3,13 @@
 import mock
 from nose.tools import *  # noqa (PEP8 asserts)
 
-from modularodm import Q
-from modularodm.exceptions import ValidationError
-
 import hmac
 import hashlib
 from StringIO import StringIO
+
+import furl
+from modularodm import Q
+from modularodm.exceptions import ValidationError
 
 from framework.auth.core import Auth
 
@@ -22,6 +23,12 @@ from website.util import api_url_for, web_url_for
 from tests.base import OsfTestCase, fake
 from tests.factories import ModularOdmFactory, FakerAttribute, ProjectFactory, UserFactory
 from factory import Sequence, post_generation
+
+
+def assert_absolute(url):
+    parsed_domain = furl.furl(settings.DOMAIN)
+    parsed_url = furl.furl(url)
+    assert_equal(parsed_domain.host, parsed_url.host)
 
 
 class ConferenceFactory(ModularOdmFactory):
@@ -409,8 +416,9 @@ class TestConferenceModel(OsfTestCase):
 
 class TestConferenceIntegration(ContextTestCase):
 
+    @mock.patch('website.conferences.views.send_mail')
     @mock.patch('website.conferences.utils.upload_attachments')
-    def test_integration(self, mock_upload):
+    def test_integration(self, mock_upload, mock_send_mail):
         fullname = 'John Deacon'
         username = 'deacon@queen.com'
         title = 'good songs'
@@ -450,3 +458,10 @@ class TestConferenceIntegration(ContextTestCase):
         assert_equal(nodes.count(), 1)
         node = nodes[0]
         assert_equal(node.get_wiki_page('home').content, body)
+        assert_true(mock_send_mail.called)
+        call_args, call_kwargs = mock_send_mail.call_args
+        assert_absolute(call_kwargs['conf_view_url'])
+        assert_absolute(call_kwargs['set_password_url'])
+        assert_absolute(call_kwargs['profile_url'])
+        assert_absolute(call_kwargs['file_url'])
+        assert_absolute(call_kwargs['node_url'])

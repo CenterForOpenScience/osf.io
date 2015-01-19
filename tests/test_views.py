@@ -10,7 +10,6 @@ import httplib as http
 
 from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
-from werkzeug.wrappers import Response
 
 from modularodm import Q
 from dateutil.parser import parse as parse_date
@@ -818,6 +817,23 @@ class TestUserProfile(OsfTestCase):
             assert_equal(self.user.social[key], value)
         assert_true(self.user.social['researcherId'] is None)
 
+    def test_unserialize_social_validation_failure(self):
+        url = api_url_for('unserialize_social')
+        # personal URL is invalid
+        payload = {
+            'personal': 'http://invalidurl',
+            'twitter': 'howtopizza',
+            'github': 'frozenpizzacode',
+        }
+        res = self.app.put_json(
+            url,
+            payload,
+            auth=self.user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['message_long'], 'Invalid personal URL.')
+
     def test_serialize_social_editable(self):
         self.user.social['twitter'] = 'howtopizza'
         self.user.save()
@@ -1077,14 +1093,6 @@ class TestUserAccount(OsfTestCase):
             new_password='12345',
             confirm_password='12345',
             error_message='Password should be at least six characters',
-        )
-
-    def test_password_change_invalid_confirm_password(self):
-        self.test_password_change_invalid(
-            old_password='password',
-            new_password='new password',
-            confirm_password='invalid confirm password',
-            error_message='Password does not match the confirmation',
         )
 
     def test_password_change_invalid_blank_password(self, old_password='', new_password='', confirm_password=''):
@@ -2255,7 +2263,6 @@ class TestAuthViews(OsfTestCase):
         assert_equal(unclaimed_user.unclaimed_records, {})
         assert_equal(len(unclaimed_user.email_verifications.keys()), 0)
 
-
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_resend_confirmation_post_sends_confirm_email(self, send_mail):
         # Make sure user has a confirmation token for their primary email
@@ -2265,6 +2272,23 @@ class TestAuthViews(OsfTestCase):
         assert_true(send_mail.called)
         assert_true(send_mail.called_with(
             to_addr=self.user.username
+        ))
+
+    # see: https://github.com/CenterForOpenScience/osf.io/issues/1492
+    @mock.patch('website.security.random_string')
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_resend_confirmation_post_regenerates_token(self, send_mail, random_string):
+        expiration = dt.datetime.utcnow() - dt.timedelta(seconds=1)
+        random_string.return_value = '12345'
+        self.user.add_email_verification(self.user.username, expiration=expiration)
+        self.user.save()
+
+        self.app.post('/resend/', {'email': self.user.username})
+        confirm_url = self.user.get_confirmation_url(self.user.username, force=True)
+        assert_true(send_mail.called)
+        assert_true(send_mail.called_with(
+            to_addr=self.user.username,
+            confirmation_url=confirm_url
         ))
 
     @mock.patch('framework.auth.views.mails.send_mail')
