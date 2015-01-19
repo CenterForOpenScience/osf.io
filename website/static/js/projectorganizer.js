@@ -1141,6 +1141,11 @@ var tbOptions = {
         _poLoadOpenChildren.call(tb);
         $('.tb-row').first().trigger('click');
 
+        $('.gridWrapper').on('mouseout', function(){ 
+            $('.tb-row').removeClass('po-hover');
+        }) 
+
+
     },
     createcheck : function (item, parent) {
         return true;
