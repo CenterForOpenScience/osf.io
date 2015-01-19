@@ -62,5 +62,5 @@ def redis():
 
 @task
 def server():
-    from waterbutler.server import serve
+    from waterbutler.server.app import serve
     serve()

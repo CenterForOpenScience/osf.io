@@ -1,15 +1,8 @@
-from tornado import testing
-
-import pytest
-
 import json
 import asyncio
 from unittest import mock
 
 from tornado import testing
-from tornado import httpclient
-
-from waterbutler.core import exceptions
 
 from tests import utils
 

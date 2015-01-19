@@ -6,7 +6,7 @@ from decorator import decorator
 from tornado import testing
 from tornado.platform.asyncio import AsyncIOMainLoop
 
-from waterbutler import server
+from waterbutler.server.app import make_app
 
 
 @decorator
@@ -18,7 +18,7 @@ def async(func, *args, **kwargs):
 class HandlerTestCase(testing.AsyncHTTPTestCase):
 
     def get_app(self):
-        return server.make_app(debug=False)
+        return make_app(debug=False)
 
     def get_new_ioloop(self):
         return AsyncIOMainLoop()
