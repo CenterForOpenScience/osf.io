@@ -129,7 +129,7 @@ function createProjectDetailHTMLFromTemplate(theItem) {
 
 function createBlankProjectDetail(message) {
     var text = message || 'Select a row to view further actions.';
-    $('.project-details').html('<i class="text-muted text-center po-placeholder"> ' + text + ' </i>');
+    $('.project-details').html('<div class="row"> <div class="col-xs-12"> <i class="text-muted text-center po-placeholder"> ' + text + ' </i> </div> </div>');
 }
 
 /**
@@ -611,11 +611,9 @@ function _poResolveIcon(item) {
     if (item.data.isSmartFolder) {
         return returnView('smartFolder');
     }
-    
     if (item.data.isFolder) {
         return returnView('folder');
     }
-
     if (item.data.isProject) {
         return returnView('project');
     }
