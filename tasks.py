@@ -43,7 +43,7 @@ def server(host=None, port=5000, debug=True):
     """Run the app server."""
     from website.app import init_app
     app = init_app(set_backends=True, routes=True)
-    app.run(host=host, port=port, debug=debug)
+    app.run(host=host, port=port, debug=debug, extra_files=[settings.ASSET_HASH_PATH])
 
 
 SHELL_BANNER = """
