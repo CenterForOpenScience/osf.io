@@ -12,9 +12,9 @@ from framework.flask import app
 from framework.guid.model import Guid
 from framework.exceptions import HTTPError
 
+from website.search import search
 from website.project import Node
 from website.project import new_node
-from website.search.search import search
 from website.project.decorators import must_have_addon
 from website.search.exceptions import IndexNotFoundError
 from website.search.exceptions import MalformedQueryError
@@ -62,7 +62,7 @@ def query_app(node_addon, **kwargs):
     query = node_addon.build_query(q, size, start)
 
     try:
-        ret = search(query, index='metadata', doc_type=node_addon.namespace, raw=True)
+        ret = search.search(query, index='metadata', doc_type=node_addon.namespace, raw=True)
     except MalformedQueryError as e:
         raise HTTPError(http.BAD_REQUEST)
     except IndexNotFoundError:
@@ -79,6 +79,13 @@ def query_app(node_addon, **kwargs):
         'count': ret['hits']['total'],
         'results': [hit['_source'] for hit in ret['hits']['hits']]
     }
+
+# GET
+@must_be_contributor_or_public
+@must_have_addon('app', 'node')
+def get_mapping(node_addon, *args, **kwargs):
+    return search.get_mapping('metadata', node_addon.namespace)
+
 
 # POST
 @must_be_contributor_or_public
@@ -97,7 +104,7 @@ def query_app_json(node_addon, **kwargs):
     query = request.json
 
     try:
-        ret = search(query, index='metadata', doc_type=node_addon.namespace, raw=True)
+        ret = search.search(query, index='metadata', doc_type=node_addon.namespace, raw=True)
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
     except IndexNotFoundError:
@@ -126,7 +133,7 @@ def query_app_rss(node_addon, **kwargs):
     query = node_addon.build_query(q, size, start)
     extended = request.args.get('extended')
     try:
-        ret = search(query, doc_type=node_addon.namespace, index='metadata')
+        ret = search.search(query, doc_type=node_addon.namespace, index='metadata')
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
     except IndexNotFoundError:
@@ -155,7 +162,7 @@ def query_app_atom(node_addon, **kwargs):
     query = node_addon.build_query(q, size, start)
 
     try:
-        ret = search(query, doc_type=node_addon.namespace, index='metadata')
+        ret = search.search(query, doc_type=node_addon.namespace, index='metadata')
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
     except IndexNotFoundError:
@@ -185,7 +192,7 @@ def query_app_resourcelist(node_addon, **kwargs):
     query = node_addon.build_query(q, start, size)
 
     try:
-        ret = search(query, doc_type=node_addon.namespace, index='metadata')
+        ret = search(query, search.search_type=node_addon.namespace, index='metadata')
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
     except IndexNotFoundError:
@@ -210,7 +217,7 @@ def query_app_changelist(node_addon, **kwargs):
     query = node_addon.build_query(q, start, size)
 
     try:
-        ret = search(query, doc_type=node_addon.namespace, index='metadata')
+        ret = search.search(query, doc_type=node_addon.namespace, index='metadata')
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
     except IndexNotFoundError:
@@ -306,7 +313,7 @@ def get_project_metadata(node_addon, guid, **kwargs):
     }
 
     try:
-        rets = search(query, doc_type=node_addon.namespace, index='metadata')
+        rets = search.search(query, doc_type=node_addon.namespace, index='metadata')
     except IndexNotFoundError:
         return {}
 
