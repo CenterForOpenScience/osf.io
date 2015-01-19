@@ -10,13 +10,14 @@ from modularodm.storage.mongostorage import KeyExistsException
 def subscribe(auth, **kwargs):
     user = auth.user
     pid = kwargs.get('pid')
+    nid = kwargs.get('nid')
     subscriptions = request.json
 
     for event in subscriptions:
         if event == 'comment_replies':
             category = user._id
         else:
-            category = pid
+            category = nid if nid else pid
 
         event_id = category + "_" + event
 
