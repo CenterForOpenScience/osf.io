@@ -12,7 +12,8 @@ from framework.exceptions import HTTPError
 from website import settings
 from website.models import Node
 from website.util import web_url_for
-from website.mails import send_mail, CONFERENCE_SUBMITTED, CONFERENCE_FAILED
+from website.mails import send_mail
+from website.mails import CONFERENCE_SUBMITTED, CONFERENCE_INACTIVE, CONFERENCE_FAILED
 
 from website.conferences import utils
 from website.conferences.message import ConferenceMessage, ConferenceError
@@ -34,9 +35,18 @@ def meeting_hook():
         raise HTTPError(httplib.NOT_ACCEPTABLE)
 
     try:
-        conference = Conference.get_by_endpoint(message.conference_name)
+        conference = Conference.get_by_endpoint(message.conference_name, active=False)
     except ConferenceError as error:
         logger.error(error)
+        raise HTTPError(httplib.NOT_ACCEPTABLE)
+
+    if not conference.active:
+        send_mail(
+            message.sender_email,
+            CONFERENCE_INACTIVE,
+            fullname=message.sender_display,
+            presentations_url=web_url_for('conference_view', _absolute=True),
+        )
         raise HTTPError(httplib.NOT_ACCEPTABLE)
 
     add_poster_by_email(conference=conference, message=message)
