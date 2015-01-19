@@ -1,4 +1,7 @@
 var AppNodeConfig = require('./appNodeConfig.js');
+var appUrl = window.contextVars.node.urls.api.replace('project', 'app');
 
-var url = window.contextVars.node.urls.api.replace('project', 'app') + 'routes/';
-new AppNodeConfig('#appScope', url);
+var routingUrl = appUrl + 'routes/';
+var mappingUrl = appUrl + 'sorting/';
+
+new AppNodeConfig('#appScope', routingUrl, mappingUrl);

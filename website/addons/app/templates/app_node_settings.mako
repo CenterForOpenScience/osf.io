@@ -33,6 +33,14 @@
     <!-- Flashed Messages -->
     <div class="help-block">
         <p data-bind="html: message"></p>
+      </div>
+
+    <div class="row" id="sortingBlock" data-bind="visible: isSortable">
+      <div class="col-md-12">
+        <h4>Default Sorting</h4>
+        <input id="sorts"></input>
+        <button class="btn btn-md btn-success" data-bind="click: setDefaultSearch">Submit</button>
+      </div>
     </div>
 
 </div>
