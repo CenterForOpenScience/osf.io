@@ -83,13 +83,14 @@ class GitHubProvider(provider.BaseProvider):
         path = GitHubPath(path)
 
         content = yield from stream.read()
-        encoded = base64.b64encode(content)
+        content = base64.b64encode(content)
+        content = content.decode('utf-8')
         message = message or 'File uploaded on behalf of WaterButler'
 
         data = {
             'path': path.path,
             'message': message,
-            'content': encoded.decode('utf-8'),
+            'content': content,
             'committer': self.committer,
         }
         if branch is not None:
