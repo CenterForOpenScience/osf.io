@@ -33,12 +33,12 @@ vim ~/.cos/waterbutler-test.json
     "HMAC_SECRET": "changeme"
   },
   "SERVER_CONFIG": {
-    "ADDRESS": "0.0.0.0",
+    "ADDRESS": "127.0.0.1",
     "PORT": 7777,
     "DEBUG": true,
     "HMAC_KEY": "changeme",
     "IDENTITY_METHOD": "rest",
-    "IDENTITY_API_URL": "http://127.0.0.1:5000/api/v1/files/auth/"
+    "IDENTITY_API_URL": "http://127.0.0.1:5001/api/v1/files/auth/"
   },
   "LOGGING": {
      "version": 1,
@@ -54,10 +54,6 @@ vim ~/.cos/waterbutler-test.json
          "level": "INFO",
          "formatter": "console"
        },
-       "syslog": {
-         "class": "logging.handlers.SysLogHandler",
-         "level": "INFO"
-       }
     },
     "loggers": {
       "": {
