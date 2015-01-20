@@ -640,16 +640,16 @@ function _fangornColumnTitles () {
     var columns = [];
     columns.push({
         title: 'Name',
-        width : '50%',
+        width : '65%',
         sort : true,
         sortType : 'text'
     }, {
         title : 'Actions',
-        width : '25%',
+        width : '20%',
         sort : false
     }, {
         title : 'Downloads',
-        width : '25%',
+        width : '15%',
         sort : false
     });
     return columns;
