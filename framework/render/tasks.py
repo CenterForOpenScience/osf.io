@@ -11,11 +11,8 @@ from website.language import ERROR_PREFIX
 
 logger = logging.getLogger(__name__)
 
-try:
-    import mfr
-    from mfr.exceptions import MFRError
-except ImportError:
-    logger.warn('Unable to import mfr')
+import mfr
+from mfr.exceptions import MFRError
 
 CUSTOM_ERROR_MESSAGES = {}
 
