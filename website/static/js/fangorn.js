@@ -321,6 +321,9 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
     if (!revisedItem && response) {
         item.data = response;
         item.data.permissions = item.parent().data.permissions;
+        if (item.data.kind === 'folder') {
+            item.data.accept = item.parent().data.accept;
+        }
     }
     treebeard.redraw();
 }
@@ -588,13 +591,15 @@ function _fangornTitleColumn(item, col) {
  * @private
  */
 function _fangornResolveRows(item) {
-    var default_columns = [],
-        checkConfig = false,
-        configOption;
-        item.css = '';
+    var default_columns = [];
+    var configOption;
+    item.css = '';
 
-    if(!item.data.permissions && item.parentID) {
-        item.data.permissions = item.parent().data.permissions;
+    if (item.parentID) {
+        item.data.permissions = item.data.permissions || item.parent().data.permissions;
+        if (item.data.kind === 'folder') {
+            item.data.accept = item.data.accept || item.parent().data.accept;
+        }
     }
 
     default_columns.push({
@@ -713,26 +718,21 @@ tbOptions = {
         return true;
     },
     addcheck : function (treebeard, item, file) {
-        var size,
-            maxSize,
-            msgText;
+        var size;
+        var maxSize;
+        var displaySize;
+        var msgText;
         if (item.data.provider && item.kind === 'folder') {
             if (item.data.permissions.edit) {
                 if (item.data.accept && item.data.accept.maxSize) {
-                    size = Math.round(file.size / 10000) / 100;
+                    size = file.size / 1000000;
                     maxSize = item.data.accept.maxSize;
-                    if (maxSize >= size && file.size > 0) {
-                        return true;
-                    }
-                    if (maxSize < size) {
-                        msgText = 'One of the files is too large (' + size + ' MB). Max file size is ' + item.data.accept.maxSize + ' MB.';
+                    if (size > maxSize) {
+                        displaySize = Math.round(file.size / 10000) / 100;
+                        msgText = 'One of the files is too large (' + displaySize + ' MB). Max file size is ' + item.data.accept.maxSize + ' MB.';
                         item.notify.update(msgText, 'warning', undefined, 3000);
+                        return false;
                     }
-                    if (size === 0) {
-                        msgText = 'Some files were ignored because they were empty.';
-                        item.notify.update(msgText, 'warning', undefined, 3000);
-                    }
-                    return false;
                 }
                 return true;
             } else {
@@ -740,7 +740,6 @@ tbOptions = {
                 item.notify.update(msgText, 'warning', 1, 3000, 'animated flipInX');
             }
         }
-
         return false;
     },
     onselectrow : function (item) {
