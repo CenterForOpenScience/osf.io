@@ -22,18 +22,18 @@
             <div class="col-sm-6 col-md-7 cite-container">
                 % if parent_node['id']:
                     % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
-                        <h1 class="node-parent-title">
-                            <a href="${parent_node['url']}">${parent_node['title']}</a>&nbsp;/
-                        </h1>
+                        <h2 class="node-parent-title">
+                            <a href="${parent_node['url']}">${parent_node['title']}</a> <i class="icon icon-level-down icon-dark-lg"> </i>
+                        </h2>
                     % else:
-                        <h1 class="node-parent-title unavailable">
+                        <h2 class="node-parent-title unavailable">
                             <span>Private Project</span>&nbsp;/
-                        </h1>
+                        </h2>
                     % endif
                 % endif
-                <h1 class="node-title">
+                <h2 class="node-title">
                     <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
-                </h1>
+                </h2>
             </div>
             <div class="col-sm-6 col-md-5">
                 <div class="btn-toolbar node-control pull-right">

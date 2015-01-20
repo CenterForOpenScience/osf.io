@@ -15,7 +15,7 @@ from framework.auth.core import Auth
 
 from website import settings
 from website.models import User, Node
-from website.conferences.views import _render_conference_node
+from website.conferences import views
 from website.conferences.model import Conference
 from website.conferences import utils, message
 from website.util import api_url_for, web_url_for
@@ -29,6 +29,14 @@ def assert_absolute(url):
     parsed_domain = furl.furl(settings.DOMAIN)
     parsed_url = furl.furl(url)
     assert_equal(parsed_domain.host, parsed_url.host)
+
+
+def assert_equal_urls(first, second):
+    parsed_first = furl.furl(first)
+    parsed_first.port = None
+    parsed_second = furl.furl(second)
+    parsed_second.port = None
+    assert_equal(parsed_first, parsed_second)
 
 
 class ConferenceFactory(ModularOdmFactory):
@@ -465,3 +473,44 @@ class TestConferenceIntegration(ContextTestCase):
         assert_absolute(call_kwargs['profile_url'])
         assert_absolute(call_kwargs['file_url'])
         assert_absolute(call_kwargs['node_url'])
+
+    @mock.patch('website.conferences.views.send_mail')
+    def test_integration_inactive(self, mock_send_mail):
+        conference = ConferenceFactory(active=False)
+        fullname = 'John Deacon'
+        username = 'deacon@queen.com'
+        title = 'good songs'
+        body = 'dragon on my back'
+        content = 'dragon attack'
+        recipient = '{0}{1}-poster@osf.io'.format(
+            'test-' if settings.DEV_MODE else '',
+            conference.endpoint,
+        )
+        res = self.app.post(
+            api_url_for('meeting_hook'),
+            {
+                'X-Mailgun-Sscore': 0,
+                'timestamp': '123',
+                'token': 'secret',
+                'signature': hmac.new(
+                    key=settings.MAILGUN_API_KEY,
+                    msg='{}{}'.format('123', 'secret'),
+                    digestmod=hashlib.sha256,
+                ).hexdigest(),
+                'attachment-count': '1',
+                'X-Mailgun-Sscore': 0,
+                'from': '{0} <{1}>'.format(fullname, username),
+                'recipient': recipient,
+                'subject': title,
+                'stripped-text': body,
+            },
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 406)
+        call_args, call_kwargs = mock_send_mail.call_args
+        assert_equal(call_args, (username, views.CONFERENCE_INACTIVE))
+        assert_equal(call_kwargs['fullname'], fullname)
+        assert_equal_urls(
+            call_kwargs['presentations_url'],
+            web_url_for('conference_view', _absolute=True),
+        )
