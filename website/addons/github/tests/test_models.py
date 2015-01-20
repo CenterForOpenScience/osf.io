@@ -201,46 +201,6 @@ class TestCallbacks(OsfTestCase):
             None,
         )
 
-    @mock.patch('website.addons.github.api.GitHub.branches')
-    def test_after_register(self, mock_branches):
-        mock_branches.return_value = mock_github.branches.return_value
-        registration = ProjectFactory()
-        clone, message = self.node_settings.after_register(
-            self.project, registration, self.project.creator,
-        )
-        mock_branches.assert_called_with(
-            self.node_settings.user,
-            self.node_settings.repo,
-        )
-        assert_equal(
-            self.node_settings.user,
-            clone.user,
-        )
-        assert_equal(
-            self.node_settings.repo,
-            clone.repo,
-        )
-        assert_equal(
-            clone.registration_data,
-            {'branches': [
-                branch.to_json()
-                for branch in mock_github.branches.return_value
-            ]},
-        )
-        assert_equal(
-            clone.user_settings,
-            self.node_settings.user_settings
-        )
-
-    @mock.patch('website.addons.github.api.GitHub.branches')
-    def test_after_register_not_found(self, mock_branches):
-        mock_branches.side_effect = NotFoundError
-        registration = ProjectFactory()
-        clone, message = self.node_settings.after_register(
-            self.project, registration, self.project.creator,
-        )
-        assert_false(clone.registration_data)
-
     def test_after_delete(self):
         self.project.remove_node(Auth(user=self.project.creator))
         # Ensure that changes to node settings have been saved
