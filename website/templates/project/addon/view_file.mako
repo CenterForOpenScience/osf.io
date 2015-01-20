@@ -1,13 +1,14 @@
 <%inherit file="../project_base.mako"/>
 <%def name="title()">${file_name}</%def>
 
-    <div class="page-header overflow">
+    <div>
         <h2>
             ${file_name | h}
             % if file_revision:
                 <small>&nbsp;${file_revision | h}</small>
             % endif
         </h2>
+        <hr />
     </div>
 
 <div id="file-container" class="row">
