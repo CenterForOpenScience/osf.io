@@ -54,7 +54,7 @@ RevisionsViewModel.prototype.delete = function() {
     var self = this;
     $.ajax({
         type: 'DELETE',
-        url: waterbutler.buildFileUrlFromPath(self.path, 'osfstorage')
+        url: waterbutler.buildDeleteUrl(self.path, 'osfstorage')
     }).done(function() {
         window.location = self.urls.files;
     }).fail(function() {
