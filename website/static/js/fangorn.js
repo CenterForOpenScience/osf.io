@@ -269,7 +269,7 @@ function _fangornDragOver(treebeard, event) {
         item = treebeard.find(itemID);
     $('.tb-row').removeClass(dropzoneHoverClass).removeClass(treebeard.options.hoverClass);
     console.log(closestTarget.attr('data-id'));
-    if (itemID !== undefined) {
+    if (item !== undefined) {
         if (item.data.provider && item.kind === 'folder') {
             closestTarget.addClass(dropzoneHoverClass);
         }
@@ -587,15 +587,14 @@ function _fangornTitleColumn(item, col) {
  * @private
  */
 function _fangornResolveRows(item) {
-    item.data.permissions = item.data.permissions || item.parent().data.permissions;
     var default_columns = [],
         checkConfig = false,
         configOption;
-    // if(!item.data.permissions){
-    //     return;
-    // }
+        item.css = '';
 
-    item.css = '';
+    if(!item.data.permissions && item.parentID) {
+        item.data.permissions = item.parent().data.permissions;
+    }
 
     default_columns.push({
         data : 'name',  // Data field name
