@@ -8,7 +8,7 @@
 - Huboard: https://huboard.com/CenterForOpenScience/osf.io#/
 - Docs: http://cosdev.rtfd.org/
 
-> ## Help
+## Help
 
 Solutions to many common issues may be found at the [OSF Developer Docs](http://cosdev.rtfd.org/).
 
