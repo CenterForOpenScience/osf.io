@@ -17,10 +17,9 @@ class ExternalAccount(StoredObject):
     _id = fields.StringField(default=lambda: str(ObjectId()))
 
     state = fields.StringField()
-    request_token = fields.StringField()
-    request_token_secret = fields.StringField()
-    access_token = fields.StringField()
-    access_token_secret = fields.StringField()
+    temporary = fields.BooleanField(required=True, default=True)
+    oauth_key = fields.StringField()
+    oauth_secret = fields.StringField()
     refresh_token = fields.StringField()
 
     scopes = fields.StringField(list=True, default=lambda: list())
@@ -81,7 +80,7 @@ class ExternalProvider(object):
             url, state = session.authorization_url(self.auth_url_base)
 
             # save state token to the account instance to be available in callback
-            self.account.state = state
+            self.account.oauth_key = state
 
         elif self._oauth_version == OAUTH1:
             # get a request token
@@ -92,11 +91,12 @@ class ExternalProvider(object):
 
             response = session.fetch_request_token(self.request_token_url)
 
-            self.account.request_token = response.get('oauth_token')
-            self.account.request_token_secret = response.get('oauth_token_secret')
+            self.account.oauth_key = response.get('oauth_token')
+            self.account.oauth_secret = response.get('oauth_token_secret')
 
             url = session.authorization_url(self.auth_url_base)
 
+        self.account.temporary = True
         self.account.save()
 
         return url
@@ -135,7 +135,8 @@ class ExternalProvider(object):
             if self.account is None:
                 self.account = ExternalAccount.find_one(
                     Q('provider', 'eq', self.short_name) &
-                    Q('request_token', 'eq', request_token)
+                    Q('oauth_key', 'eq', request_token) &
+                    Q('temporary', 'eq', True)
                 )
 
             # TODO: Verify account matches the token provided
@@ -145,16 +146,14 @@ class ExternalProvider(object):
             session = OAuth1Session(
                 client_key=self.client_id,
                 client_secret=self.client_secret,
-                resource_owner_key=self.account.request_token,
-                resource_owner_secret=self.account.request_token_secret,
+                resource_owner_key=self.account.oauth_key,
+                resource_owner_secret=self.account.oauth_secret,
                 verifier=request.args.get('oauth_verifier')
             )
 
             response = session.fetch_access_token(self.access_token_url)
 
-            # Clear temp credentials
-            self.account.request_token = None
-            self.account.request_token_secret = None
+            # TODO: See if the format of the response is in the spec
 
         elif self._oauth_version == 2:
             session = OAuth2Session(
@@ -167,7 +166,8 @@ class ExternalProvider(object):
             if self.account is None:
                 self.account = ExternalAccount.find_one(
                     Q('provider', 'eq', self.short_name) &
-                    Q('state', 'eq', state)
+                    Q('oauth_key', 'eq', state) &
+                    Q('temporary', 'eq', True)
                 )
 
             response = session.fetch_token(
@@ -176,10 +176,8 @@ class ExternalProvider(object):
                 code=code,
             )
 
-            # Clear the state on the account
-            self.account.state = None
-
         self.handle_callback(response)
+        self.account.temporary = False
         self.account.save()
 
     def handle_callback(self):
@@ -200,8 +198,8 @@ class Zotero(ExternalProvider):
 
     def handle_callback(self, data):
         self.account.provider_id = data['userID']
-        self.account.access_token = data['oauth_token']
-        self.account.access_token_secret = data['oauth_token_secret']
+        self.account.oauth_key = data['oauth_token']
+        self.account.oauth_secret = data['oauth_token_secret']
 
 
 class Orcid(ExternalProvider):
@@ -216,7 +214,7 @@ class Orcid(ExternalProvider):
     default_scopes = ['/authenticate']
 
     def handle_callback(self, data):
-        self.account.access_token = data['access_token']
+        self.account.oauth_key = data['access_token']
         self.account.provider_id = data['orcid']
 
 
@@ -231,7 +229,7 @@ class Github(ExternalProvider):
     callback_url = 'https://github.com/login/oauth/access_token'
 
     def handle_callback(self, data):
-        self.account.access_token = data['access_token']
+        self.account.oauth_key = data['access_token']
         self.account.scopes = data['scope']
 
 
@@ -248,6 +246,6 @@ class Mendeley(ExternalProvider):
 
     def handle_callback(self, data):
         self.account.refresh_token = data['refresh_token']
-        self.account.access_token = data['access_token']
+        self.account.oauth_key = data['access_token']
         self.account.scopes = data['scope']
         # handle expiration
