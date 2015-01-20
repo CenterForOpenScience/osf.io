@@ -74,6 +74,7 @@ def add_poster_by_email(conference, message):
             set_password_url = web_url_for(
                 'reset_password',
                 verification_key=user.verification_key,
+                _absolute=True,
             )
         else:
             set_password_url = None
@@ -128,6 +129,7 @@ def _render_conference_node(node, idx):
             'osf_storage_view_file',
             path=record.path,
             action='download',
+            _absolute=True,
         )
     except StopIteration:
         download_url = ''
