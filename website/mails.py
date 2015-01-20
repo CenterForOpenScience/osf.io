@@ -122,9 +122,13 @@ PENDING_VERIFICATION_REGISTERED = Mail('pending_registered', subject='Received r
 
 CONFERENCE_SUBMITTED = Mail(
     'conference_submitted',
-    subject='Project created on Open Science Framework'
+    subject='Project created on Open Science Framework',
+)
+CONFERENCE_INACTIVE = Mail(
+    'conference_inactive',
+    subject='Open Science Framework Error: Conference inactive',
 )
 CONFERENCE_FAILED = Mail(
     'conference_failed',
-    subject='Open Science Framework Error: No files attached'
+    subject='Open Science Framework Error: No files attached',
 )

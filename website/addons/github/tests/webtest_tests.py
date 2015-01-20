@@ -71,7 +71,9 @@ class TestGitHubFileView(OsfTestCase):
     @mock.patch('website.addons.github.api.GitHub.commits')
     @mock.patch('website.addons.github.api.GitHub.file')
     @mock.patch('website.addons.github.api.GitHub.repo')
-    def test_file_view(self, mock_repo, mock_file, mock_commits):
+    @mock.patch('website.addons.github.api.GitHub.contents')
+    def test_file_view(self, mock_contents, mock_repo, mock_file, mock_commits):
+        mock_contents.return_value = None
         mock_commits.return_value = [Commit.from_json({
             "url": "https://api.github.com/repos/octocat/Hello-World/commits/6dcb09b5b57875f334f61aebed695e2e4193db5e",
             "sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e",
@@ -119,7 +121,9 @@ class TestGitHubFileView(OsfTestCase):
     @mock.patch('website.addons.github.api.GitHub.commits')
     @mock.patch('website.addons.github.api.GitHub.file')
     @mock.patch('website.addons.github.api.GitHub.repo')
-    def test_file_view_deleted(self, mock_repo, mock_file, mock_commits):
+    @mock.patch('website.addons.github.api.GitHub.contents')
+    def test_file_view_deleted(self, mock_contents, mock_repo, mock_file, mock_commits):
+        mock_contents.return_value = None
         mock_commits.return_value = [Commit.from_json({
             "url": "https://api.github.com/repos/octocat/Hello-World/commits/6dcb09b5b57875f334f61aebed695e2e4193db5e",
             "sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e",
@@ -164,7 +168,9 @@ class TestGitHubFileView(OsfTestCase):
     @mock.patch('website.addons.github.api.GitHub.commits')
     @mock.patch('website.addons.github.api.GitHub.file')
     @mock.patch('website.addons.github.api.GitHub.repo')
-    def test_file_view_with_anonymous_link(self, mock_repo, mock_file, mock_commits):
+    @mock.patch('website.addons.github.api.GitHub.contents')
+    def test_file_view_with_anonymous_link(self, mock_contents, mock_repo, mock_file, mock_commits):
+        mock_contents.return_value = None
         mock_commits.return_value = [Commit.from_json({
             "url": "https://api.github.com/repos/octocat/Hello-World/commits/6dcb09b5b57875f334f61aebed695e2e4193db5e",
             "sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e",
