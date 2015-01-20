@@ -1,7 +1,7 @@
 from flask import redirect
 from flask import request
 
-from .models import get_service
+from .utils import get_service
 
 
 def oauth_connect(service_name):

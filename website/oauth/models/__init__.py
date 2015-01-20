@@ -1,3 +1,6 @@
+import abc
+import logging
+
 from flask import request
 from modularodm import fields
 from modularodm import Q
@@ -7,7 +10,11 @@ from requests_oauthlib import OAuth2Session
 from framework.mongo import ObjectId
 from framework.mongo import StoredObject
 from website import settings
+from website.oauth.utils import PROVIDER_LOOKUP
 from website.util import api_url_for
+
+
+logger = logging.getLogger(__name__)
 
 OAUTH1 = 1
 OAUTH2 = 2
@@ -31,14 +38,12 @@ class ExternalAccount(StoredObject):
     provider_id = fields.StringField()
 
 
-def get_service(name):
-    """Given a service name, return the provider class"""
-    lookup = {
-        'zotero': Zotero,
-        'orcid': Orcid,
-        'mendeley': Mendeley,
-    }
-    return lookup[name]()
+class ExternalProviderMeta(abc.ABCMeta):
+
+    def __init__(cls, name, bases, dct):
+        super(ExternalProviderMeta, cls).__init__(name, bases, dct)
+        if not isinstance(cls.short_name, abc.abstractproperty):
+            PROVIDER_LOOKUP[cls.short_name] = cls
 
 
 class ExternalProvider(object):
@@ -46,10 +51,12 @@ class ExternalProvider(object):
 
     """
 
+    __metaclass__ = ExternalProviderMeta
+
     account = None
     _oauth_version = OAUTH2
 
-    @property
+    @abc.abstractproperty
     def auth_url_base(self):
         """The base URL to begin the OAuth dance"""
         raise NotImplementedError
@@ -101,29 +108,29 @@ class ExternalProvider(object):
 
         return url
 
-    @property
+    @abc.abstractproperty
     def callback_url(self):
         """The provider URL to exchange the code for a token"""
         raise NotImplementedError()
 
-    @property
+    @abc.abstractproperty
     def client_id(self):
         """OAuth Client ID. a/k/a: Application ID"""
         raise NotImplementedError()
 
-    @property
+    @abc.abstractproperty
     def client_secret(self):
         """OAuth Client Secret. a/k/a: Application Secret, Application Key"""
         raise NotImplementedError()
 
     default_scopes = list()
 
-    @property
+    @abc.abstractproperty
     def name(self):
         """Human-readable name of the service. e.g.: ORCiD, GitHub"""
         raise NotImplementedError()
 
-    @property
+    @abc.abstractproperty
     def short_name(self):
         """Name of the service to be used internally. e.g.: orcid, github"""
         raise NotImplementedError()
@@ -151,7 +158,7 @@ class ExternalProvider(object):
                 verifier=request.args.get('oauth_verifier')
             )
 
-            response = session.fetch_access_token(self.access_token_url)
+            response = session.fetch_access_token(self.callback_url)
 
             # TODO: See if the format of the response is in the spec
 
@@ -180,6 +187,7 @@ class ExternalProvider(object):
         self.account.temporary = False
         self.account.save()
 
+    @abc.abstractmethod
     def handle_callback(self):
         raise NotImplementedError()
 
@@ -194,7 +202,7 @@ class Zotero(ExternalProvider):
     _oauth_version = OAUTH1
     auth_url_base = 'https://www.zotero.org/oauth/authorize'
     request_token_url = 'https://www.zotero.org/oauth/request'
-    access_token_url = 'https://www.zotero.org/oauth/access'
+    callback_url = 'https://www.zotero.org/oauth/access'
 
     def handle_callback(self, data):
         self.account.provider_id = data['userID']
