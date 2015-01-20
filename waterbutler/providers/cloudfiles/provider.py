@@ -43,7 +43,7 @@ class CloudFilesProvider(provider.BaseProvider):
         super().__init__(auth, credentials, settings)
         self.token = None
         self.endpoint = None
-        self.temp_url_key = None
+        self.temp_url_key = credentials.get('temp_key', '').encode()
         self.region = self.credentials['region']
         self.og_token = self.credentials['token']
         self.username = self.credentials['username']
@@ -61,7 +61,7 @@ class CloudFilesProvider(provider.BaseProvider):
     def intra_copy(self, dest_provider, source_options, dest_options):
         source_path = CloudFilesPath(source_options['path'])
         dest_path = CloudFilesPath(dest_options['path'])
-        url = dest_provider.build_url(dest_path)
+        url = dest_provider.build_url(dest_path.path)
         yield from self.make_request(
             'PUT',
             url,
@@ -221,10 +221,11 @@ class CloudFilesProvider(provider.BaseProvider):
         """
         # Must have a temp url key for download and upload
         # Currently You must have one for everything however
-        if not self.token or not self.endpoint or not self.temp_url_key:
+        if not self.token or not self.endpoint:
             data = yield from self._get_token()
             self.token = data['access']['token']['id']
             self.endpoint = self._extract_endpoint(data)
+        if not self.temp_url_key:
             resp = yield from self.make_request('HEAD', self.endpoint, expects=(204, ))
             try:
                 self.temp_url_key = resp.headers['X-Account-Meta-Temp-URL-Key'].encode()
