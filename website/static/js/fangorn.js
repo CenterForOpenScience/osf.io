@@ -409,6 +409,7 @@ function _removeEvent (event, item, col) {
     }
     function runDelete () {
         var tb = this;
+        $('.tb-modal-footer .btn-success').html('<i> Deleting...</i>').attr('disabled', 'disabled');
         // delete from server, if successful delete from view
         $.ajax({
             url: waterbutler.buildTreeBeardDelete(item),
