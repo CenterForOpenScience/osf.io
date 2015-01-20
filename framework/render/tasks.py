@@ -17,8 +17,6 @@ try:
 except ImportError:
     logger.warn('Unable to import mfr')
 
-config = {}
-
 CUSTOM_ERROR_MESSAGES = {}
 
 # Unable to render. Download the file to view it.
