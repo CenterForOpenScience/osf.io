@@ -1,1 +1,1 @@
-from . import crud, web  # noqa
+from . import crud, config, web  # noqa

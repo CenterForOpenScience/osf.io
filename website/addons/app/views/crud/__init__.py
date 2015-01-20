@@ -84,7 +84,10 @@ def query_app(node_addon, **kwargs):
 @must_be_contributor_or_public
 @must_have_addon('app', 'node')
 def get_mapping(node_addon, *args, **kwargs):
-    return search.get_mapping('metadata', node_addon.namespace)
+    try:
+        return search.get_mapping('metadata', node_addon.namespace)
+    except IndexNotFoundError:
+        return {}
 
 
 # POST
@@ -192,7 +195,7 @@ def query_app_resourcelist(node_addon, **kwargs):
     query = node_addon.build_query(q, start, size)
 
     try:
-        ret = search(query, search.search_type=node_addon.namespace, index='metadata')
+        ret = search.search(query, doc_type=node_addon.namespace, index='metadata')
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
     except IndexNotFoundError:
