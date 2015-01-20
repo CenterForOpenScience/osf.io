@@ -15,7 +15,7 @@ from website.project.decorators import must_be_contributor_or_public
 @must_have_addon('app', 'node')
 def app_get_default_sort_key(node_addon, **kwargs):
     return {
-        'keys': node_addon.mapping.keys(),
+        'keys': sorted(node_addon.mapping.keys()),
         'selected': node_addon.default_sort,
     }
 
@@ -25,14 +25,14 @@ def app_get_default_sort_key(node_addon, **kwargs):
 @must_have_addon('app', 'node')
 def app_set_default_sort_key(node_addon, **kwargs):
     sort_key = request.get_json().get('key')
-
     # Allow having no default sort key
     if not sort_key:
         # None is prefable to empty string
         node_addon.default_sort = None
-        node_addon.save()
-        return
+    else:
+        if sort_key not in node_addon.mapping.keys():
+            raise HTTPError(http.BAD_REQUEST)
 
-    if sort_key not in node_addon.mapping.keys():
-        raise HTTPError(http.BAD_REQUEST)
+        node_addon.default_sort = sort_key
 
+    node_addon.save()

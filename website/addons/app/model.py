@@ -160,7 +160,7 @@ class AppNodeSettings(AddonNodeSettingsBase):
     @property
     def mapping(self):
         try:
-            return search.get_mapping('metadata', self.namespace)
+            return search.get_mapping('metadata', self.namespace, flatten=True)
         except IndexNotFoundError:
             return {}
 
