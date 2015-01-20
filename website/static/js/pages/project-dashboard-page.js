@@ -1,3 +1,4 @@
+
 /** Initialization code for the project dashboard. */
 
 var $ = require('jquery');
@@ -12,6 +13,8 @@ var pointers = require('../pointers.js');
 var Comment = require('../comment.js');
 var Raven = require('raven-js');
 
+var NodeControl = require('../nodeControl.js');
+
 
 var nodeApiUrl = window.contextVars.node.urls.api;
 
@@ -22,6 +25,15 @@ new pointers.PointerManager('#addPointer', window.contextVars.node.title);
 // Listen for the nodeLoad event (prevents multiple requests for data)
 $('body').on('nodeLoad', function() {
     new LogFeed('#logScope', nodeApiUrl + 'log/');
+});
+
+var node = window.contextVars.node;
+
+// Get project data from the server and initiate KO modules
+$.getJSON(node.urls.api, function(data) {
+    // Initialize nodeControl 
+    new NodeControl('#projectScope', data);
+    $('body').trigger('nodeLoad', data);
 });
 
 
