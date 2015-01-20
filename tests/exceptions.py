@@ -1,6 +1,4 @@
 class UnmockedError(Exception):
-    def __init__(self):
-        super(Exception, self).__init__(
-            'No mocking exists, and real connections are '
-            'not allowed.'
-        )
+    def __init__(self, message='No requests mocking exists, \
+real connections are not allowed.'):
+        super(UnmockedError, self).__init__(message)

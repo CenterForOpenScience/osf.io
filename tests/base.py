@@ -149,15 +149,15 @@ class UploadTestCase(unittest.TestCase):
         settings.UPLOADS_PATH = cls._old_uploads_path
 
 
-class MockTestCase(unittest.TestCase):
+class MockRequestTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        super(MockTestCase, cls).setUpClass()
+        super(MockRequestTestCase, cls).setUpClass()
         mock.patch('requests.Session.send', side_effect=UnmockedError).start()
 
 
-class OsfTestCase(DbTestCase, AppTestCase, UploadTestCase, MockTestCase):
+class OsfTestCase(DbTestCase, AppTestCase, UploadTestCase, MockRequestTestCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
     application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
