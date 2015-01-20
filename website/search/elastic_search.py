@@ -24,7 +24,7 @@ from website import settings
 from website.filters import gravatar
 from website.models import User, Node
 from website.search import exceptions
-from website.search.util import build_query
+from website.search.util import build_query, flatten
 
 logger = logging.getLogger(__name__)
 
@@ -434,8 +434,8 @@ def update_metadata(metadata):
 @requires_search
 def get_mapping(index, _type):
     try:
-        mappings = es.indices.get_mapping(index=index)[index]['mappings'][_type]['properties']
-        mappings = {key: val['type'] for key, val in mappings.items()}
+        mappings = es.indices.get_mapping(index=index)[index]['mappings'][_type]
+        mappings = flatten(mappings['properties'])
         return mappings
     except KeyError as e:
         raise exceptions.IndexNotFoundError(e.message)

@@ -15,3 +15,14 @@ def build_query_string(q):
             'lenient': True  # TODO, may not want to do this
         }
     }
+
+def flatten(running, parents=(), seperator='.'):
+    ret = {}
+    for key, value in running.items():
+        path = seperator.join(parents + (key, ))
+
+        if value.get('type'):
+            ret[path] = value['type']
+        else:
+            ret[path] = flatten(value['properties'], parents + (key, ), seperator=seperator)
+    return ret
