@@ -267,7 +267,7 @@ function _fangornDragOver(treebeard, event) {
         closestTarget = $(event.target).closest('.tb-row'),
         itemID =  parseInt(closestTarget.attr('data-id')),
         item = treebeard.find(itemID);
-    $('.tb-row').removeClass(dropzoneHoverClass);
+    $('.tb-row').removeClass(dropzoneHoverClass).removeClass(treebeard.options.hoverClass);
     console.log(closestTarget.attr('data-id'));
     if (itemID !== undefined) {
         if (item.data.provider && item.kind === 'folder') {
