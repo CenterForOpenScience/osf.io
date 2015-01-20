@@ -3,7 +3,7 @@
     is_project = node['node_type'] == 'project'
 %>
 
-<div id="projectScope" >
+<div id="projectBanner" >
     <header class="subhead" id="overview">
         <nav id="projectSubnav" class="navbar osf-project-navbar" role="navigation">
             <div class="container">
