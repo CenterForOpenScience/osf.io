@@ -131,6 +131,17 @@ MEETING_DATA = {
         ],
         'public_projects': True,
     },
+    'NCCC2015': {
+        'name': '2015 NC Cognition Conference',
+        'info_url': None,
+        'logo_url': None,
+        'active': True,
+        'admins': [
+            'aoverman@elon.edu',
+            'KatyCain526@gmail.com',
+        ],
+        'public_projects': True,
+    },
 }
 
 
