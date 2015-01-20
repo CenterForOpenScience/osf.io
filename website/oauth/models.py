@@ -26,7 +26,7 @@ class ExternalAccount(StoredObject):
 
 def get_service(name):
     """Given a service name, return the provider class"""
-    return Orcid()
+    return Mendeley()
 
 
 class ExternalProvider(object):
@@ -99,7 +99,12 @@ class ExternalProvider(object):
         raise NotImplementedError()
 
     def auth_callback(self, code, state, account=None):
-        session = OAuth2Session(self.client_id)
+        session = OAuth2Session(
+            self.client_id,
+            redirect_uri=api_url_for('oauth_callback',
+                                     service_name=self.short_name,
+                                     _absolute=True),
+        )
 
         if self.account is None:
             self.account = ExternalAccount.find_one(
@@ -135,3 +140,50 @@ class Orcid(ExternalProvider):
     def handle_callback(self, data):
         self.account.access_token = data['access_token']
         self.account.provider_id = data['orcid']
+
+
+class Github(ExternalProvider):
+    name = 'GitHub'
+    short_name = 'github'
+
+    client_id = settings.GITHUB_CLIENT_ID
+    client_secret = settings.GITHUB_CLIENT_SECRET
+
+    auth_url_base = 'https://github.com/login/oauth/authorize'
+    callback_url = 'https://github.com/login/oauth/access_token'
+
+    def handle_callback(self, data):
+        self.account.access_token = data['access_token']
+        self.account.scopes = data['scope']
+
+
+class Zotero(ExternalProvider):
+    name = "Zotero"
+    short_name = "zotero"
+
+    client_id = settings.ZOTERO_CLIENT_ID
+    client_secret = settings.ZOTERO_CLIENT_SECRET
+
+    auth_url_base = 'https://www.zotero.org/oauth/request'
+    callback_url = 'https://www.zotero.org/oauth/access'
+
+    def handle_callbaxk(self, data):
+        raise Exception(repr(data))
+
+
+class Mendeley(ExternalProvider):
+    name = "Mendeley"
+    short_name = "mendeley"
+
+    client_id = settings.MENDELEY_CLIENT_ID
+    client_secret = settings.MENDELEY_CLIENT_SECRET
+
+    auth_url_base = 'https://api.mendeley.com/oauth/authorize'
+    callback_url = 'https://api.mendeley.com/oauth/token'
+    default_scopes = ['all']
+
+    def handle_callback(self, data):
+        self.account.refresh_token = data['refresh_token']
+        self.account.access_token = data['access_token']
+        self.account.scopes = data['scope']
+        # handle expiration
