@@ -4,6 +4,7 @@ require('select2');
 
 require('knockout-punches');
 var ko = require('knockout');
+var GrowlBox = require('../../../static/js/growlBox.js');
 var $osf = require('osfHelpers');
 
 
@@ -26,6 +27,7 @@ var ViewModel = function(url, mappingUrl) {
         var request = $osf.postJSON(self.mappingUrl, {
             key: $('#sorts').select2('val')
         });
+        new GrowlBox('Success', 'Default search updated.', 'success');
         //TODO Callback
     };
 
@@ -87,7 +89,7 @@ var ViewModel = function(url, mappingUrl) {
     }
 
     function onFetchError(xhr, textstatus, error) {
-        self.message('Could not fetch settings.');
+        new GrowlBox('Error', 'Unable to fetch settings.');
     }
 
     function fetch() {
