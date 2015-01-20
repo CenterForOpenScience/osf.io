@@ -123,8 +123,8 @@ ${parent.javascript_bottom()}
 <script src="/static/vendor/pagedown-ace/Markdown.Editor.js"></script>
 
 <!-- Necessary for ShareJS communication -->
-<script src="http://${sharejs_host}:${sharejs_port}/text.js"></script>
-<script src="http://${sharejs_host}:${sharejs_port}/share.js"></script>
+<script src="//${sharejs_host}:${sharejs_port}/text.js"></script>
+<script src="//${sharejs_host}:${sharejs_port}/share.js"></script>
 <script src="/static/addons/wiki/ace.js"></script>
 <script src="/static/addons/wiki/ReconnectingWebSocket.js"></script>
 

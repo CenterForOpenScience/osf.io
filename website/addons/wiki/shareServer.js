@@ -1,9 +1,23 @@
-// Configuration options
-// TODO: Can these be grabbed from python settings?
-var port = 7007;
-var dbHost = 'localhost';
-var dbPort = 27017;
-var dbName = 'sharejs';
+// Load config file
+var fs = require('fs');
+var config = {};
+var configFile = process.env.HOME + '/.cos/sharejs.json';
+fs.exists(configFile, function(exists) {
+    if (exists) config = require(configFile);
+});
+
+// Server Options
+var serverConfig = config.server || {};
+var port = serverConfig.port || 7007;
+var ssl = serverConfig.ssl || false;
+var sslKey = serverConfig.sslKey || "website/addons/wiki/sharejs.key";
+var sslCert = serverConfig.sslCert || "website/addons/wiki/sharejs.crt";
+
+// Mongo options
+var dbConfig = config.db || {};
+var dbHost = dbConfig.host || "localhost";
+var dbPort = dbConfig.port || 27017;
+var dbName = dbConfig.name || "sharejs";
 
 // Library imports
 var sharejs = require('share');
@@ -11,7 +25,7 @@ var livedb = require('livedb');
 var Duplex = require('stream').Duplex;
 var WebSocketServer = require('ws').Server;
 var express = require('express');
-var http = require('http');
+var http = (ssl) ? require('https') : require('http');
 
 // Server setup
 var mongo = require('livedb-mongo')(
@@ -21,7 +35,12 @@ var mongo = require('livedb-mongo')(
 var backend = livedb.client(mongo);
 var share = sharejs.server.createClient({backend: backend});
 var app = express();
-var server = http.createServer(app);
+var server = (ssl)
+    ? http.createServer({
+       key: fs.readFileSync(sslKey),
+       cert: fs.readFileSync(sslCert)
+    }, app)
+    : http.createServer(app);
 var wss = new WebSocketServer({ server: server});
 
 // Local variables
@@ -29,7 +48,7 @@ var docs = {};  // TODO: Should this be stored in mongo?
 var locked = {};
 
 // Allow CORS
-app.all('*', function(req, res, next) {
+app.use(function(req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     next();
