@@ -9,3 +9,7 @@
 local.py
 .coverage
 *.egg-info/
+
+src/
+env/
+env/
