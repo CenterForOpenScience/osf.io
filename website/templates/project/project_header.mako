@@ -21,6 +21,13 @@
                 </div>
                 <div class="collapse navbar-collapse project-nav">
                     <ul class="nav navbar-nav">
+                    % if parent_node['id']:
+                        % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
+                            <li><a href="${parent_node['url']}"> <i class="icon icon-level-down rotate-180"></i>  </a></li>
+                        % else:
+                            <li><a href="#"> <i class="icon icon-level-up text-muted"></i>  </a></li>
+                        % endif
+                    % endif
                         <li><a href="${node['url']}"  class="project-title"> ${node['title'] | n}  </a></li>
                         <li><a href="${node['url']}files/">Files</a></li>
                         <!-- Add-on tabs -->

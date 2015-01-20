@@ -1821,13 +1821,13 @@ span#profileFullname{
     box-shadow:0 0 9px -1px #838383;
     border-radius: 0;
     border: none;
-    min-height:45px;
+    min-height:40px;
 }
 
 .osf-project-navbar li>a {
-    padding-top: 16px;
-    padding-bottom: 16px;
-    font-size: 16px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    font-size: 15px;
 }
 
 
@@ -1847,7 +1847,7 @@ span#profileFullname{
 
 .osf-project-navbar a.project-title {
     font-weight: 300;
-    font-size: 24px;
+    font-size: 20px;
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow: hidden;
@@ -1900,10 +1900,10 @@ span#profileFullname{
     margin-top: 10px;
 }
 .node-title {
-    line-height: 50px;
+    line-height: 44px;
     border-bottom: none;
     margin-top: 0.3em;
-    font-size: 43px;
+    font-size: 36px;
     font-weight: 300;
 }
 .text-300 {
@@ -2054,3 +2054,25 @@ span#profileFullname{
     background-color: #DDD;
 }
 
+.osf-project-navbar .project-nav .icon {
+    font-size: 18px;
+}
+
+.osf-project-navbar .project-nav .icon.rotate-180 {
+    display: block;
+}
+
+.node-parent-title {
+    font-weight: 300;
+    margin-top: 0;
+    font-size: 22px;
+}
+.rotate-180 {
+    -ms-transform: rotate(180deg);
+    -webkit-transform: rotate(180deg);
+    transform: rotate(180deg);
+}
+.icon-dark-lg {
+    font-size: 18px;
+    color: #555;
+}
