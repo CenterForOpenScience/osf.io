@@ -356,8 +356,19 @@ h3.category {
     line-height: 30px; 
 }
 
+#project-grid {
+    margin-bottom: 5px;
+}
 
+.organizer-legend {
+    font-size: 13px;
+    padding-left: 4px;
+}
 
+.organizer-legend img {
+    vertical-align: bottom;
+    margin-right: 4px;
+}
 
 
 
