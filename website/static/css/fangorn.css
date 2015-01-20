@@ -62,4 +62,5 @@ font-size: 13px
 }
 #tb-tbody {
 	border-top : none;
+	border: 1px solid #EBEBEB;
 }
