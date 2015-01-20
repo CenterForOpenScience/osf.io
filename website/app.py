@@ -1,26 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
 import importlib
 
 from modularodm import storage
 from werkzeug.contrib.fixers import ProxyFix
 
-import mfr
-from mfr.exceptions import ConfigurationError
-import mfr_audio
-import mfr_code_pygments
-import mfr_docx
-import mfr_image
-import mfr_ipynb
-import mfr_movie
-import mfr_pdb
-import mfr_pdf
-import mfr_rst
-import mfr_tabular
-
 import framework
+from framework.render.core import init_mfr
 from framework.flask import app, add_handlers
 from framework.logging import logger
 from framework.mongo import set_up_storage
@@ -99,7 +86,7 @@ def build_log_templates(settings):
         build_addon_log_templates(build_fp, settings)
 
 
-def init_app(settings_module='website.settings', set_backends=True, routes=True):
+def init_app(settings_module='website.settings', set_backends=True, routes=True, mfr=False):
     """Initializes the OSF. A sort of pseudo-app factory that allows you to
     bind settings, set up routing, and set storage backends, but only acts on
     a single app instance (rather than creating multiple instances).
@@ -115,40 +102,13 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
     build_log_templates(settings)
     init_addons(settings, routes)
 
-    try:
-        # Available file handlers
-        HANDLERS = [
-            mfr_audio.Handler,
-            mfr_image.Handler,
-            mfr_movie.Handler,
-            mfr_pdb.Handler,
-            mfr_pdf.Handler,
-            mfr_rst.Handler,
-            mfr_tabular.Handler,
-            # Add additional handlers here
-        ]
-
-        if sys.version[0:3] > '2.6':
-            HANDLERS.append(mfr_ipynb.Handler)
-
-        if sys.version[0:3] < '3.3':
-            HANDLERS.append(mfr_docx.Handler)
-            HANDLERS.append(mfr_code_pygments.Handler)
-
-        mfr.register_filehandlers(HANDLERS)
-
-        # Update mfr config with static path and url
-        mfr.config.update({
-            # Base URL for static files
-            'ASSETS_URL': os.path.join(app.static_url_path, 'mfr'),
-            # Where to save static files
-            'ASSETS_FOLDER': os.path.join(app.static_folder, 'mfr'),
-        })
-        mfr.collect_static(dest=mfr.config['ASSETS_FOLDER'])
-    except ConfigurationError as error:
-        logger.error(error)
-
     app.debug = settings.DEBUG_MODE
+
+
+    if mfr:
+        init_mfr(app)
+
+
     if set_backends:
         logger.debug('Setting storage backends')
         set_up_storage(
