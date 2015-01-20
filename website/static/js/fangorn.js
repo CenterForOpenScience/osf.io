@@ -175,7 +175,8 @@ function _fangornUploadProgress(treebeard, file, progress) {
     var parent = treebeard.dropzoneItemCache,
         item,
         child,
-        msgText = 'Uploaded ' + Math.floor(progress) + '%';
+        column,
+        msgText = '';
     for(var i = 0; i < parent.children.length; i++) {
         child = parent.children[i];
         if(!child.data.tmpID){
@@ -186,10 +187,18 @@ function _fangornUploadProgress(treebeard, file, progress) {
         }
     }
 
-    if (progress < 100) {
-        item.notify.update(msgText, 'success', 1, 0);
+    if(treebeard.options.placement === 'dashboard'){
+        column = null;
+        msgText += file.name + '  : ';
     } else {
-        item.notify.update(msgText, 'success', 1, 2000);
+        column = 1;
+    }
+    msgText  += 'Uploaded ' + Math.floor(progress) + '%'
+
+    if (progress < 100) {
+        item.notify.update(msgText, 'success', column, 0);
+    } else {
+        item.notify.update(msgText, 'success', column, 2000);
     }
 }
 
@@ -256,12 +265,13 @@ function _fangornAddedFile(treebeard, file) {
 function _fangornDragOver(treebeard, event) {
     var dropzoneHoverClass = "fangorn-dz-hover",
         closestTarget = $(event.target).closest('.tb-row'),
-        itemID =  closestTarget.context.dataset.id,
+        itemID =  parseInt(closestTarget.attr('data-id')),
         item = treebeard.find(itemID);
-    $('.tb-row').removeClass(dropzoneHoverClass);
-    if (itemID !== undefined) {
+    $('.tb-row').removeClass(dropzoneHoverClass).removeClass(treebeard.options.hoverClass);
+    console.log(closestTarget.attr('data-id'));
+    if (item !== undefined) {
         if (item.data.provider && item.kind === 'folder') {
-            $(event.target).closest('.tb-row').addClass(dropzoneHoverClass);
+            closestTarget.addClass(dropzoneHoverClass);
         }
     }
 }
@@ -393,8 +403,13 @@ function _removeEvent (event, item, col) {
         window.event.cancelBubble = true;
     }
     var tb = this;
-    item.notify.update('Deleting...', 'deleting', undefined, 3000);
-    if (item.data.permissions.edit) {
+
+    function cancelDelete () {
+        this.modal.dismiss();
+    }
+    function runDelete () {
+        var tb = this;
+        $('.tb-modal-footer .btn-success').html('<i> Deleting...</i>').attr('disabled', 'disabled');
         // delete from server, if successful delete from view
         $.ajax({
             url: waterbutler.buildTreeBeardDelete(item),
@@ -404,11 +419,28 @@ function _removeEvent (event, item, col) {
             // delete view
             tb.deleteNode(item.parentID, item.id);
             window.console.log('Delete success: ', data);
+            tb.modal.dismiss();
         })
         .fail(function(data){
+            tb.modal.dismiss();
             window.console.log('Delete failed: ', data);
             item.notify.update('Delete failed.', 'danger', undefined, 3000);
         });
+    }
+
+
+    if (item.data.permissions.edit) {
+        var mithrilContent = m('div', [
+                m('h3', 'Delete "' + item.data.name+ '"?'),
+                m('p', 'This action is irreversable.')
+            ]); 
+        var mithrilButtons = m('div', [
+                m('button', { 'class' : 'btn btn-default m-r-md', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
+                m('button', { 'class' : 'btn btn-success', onclick : function() { runDelete.call(tb); }  }, 'OK')
+            ]); 
+        tb.modal.update(mithrilContent, mithrilButtons);
+    } else {
+        item.notify.update('You don\'t have permission to delete this file.', 'info', undefined, 3000);
     }
 }
 
@@ -556,15 +588,14 @@ function _fangornTitleColumn(item, col) {
  * @private
  */
 function _fangornResolveRows(item) {
-    item.data.permissions = item.data.permissions || item.parent().data.permissions;
     var default_columns = [],
         checkConfig = false,
         configOption;
-    // if(!item.data.permissions){
-    //     return;
-    // }
+        item.css = '';
 
-    item.css = '';
+    if(!item.data.permissions && item.parentID) {
+        item.data.permissions = item.parent().data.permissions;
+    }
 
     default_columns.push({
         data : 'name',  // Data field name
@@ -609,16 +640,16 @@ function _fangornColumnTitles () {
     var columns = [];
     columns.push({
         title: 'Name',
-        width : '50%',
+        width : '65%',
         sort : true,
         sortType : 'text'
     }, {
         title : 'Actions',
-        width : '25%',
+        width : '20%',
         sort : false
     }, {
         title : 'Downloads',
-        width : '25%',
+        width : '15%',
         sort : false
     });
     return columns;
