@@ -192,7 +192,7 @@ def query_app_resourcelist(node_addon, **kwargs):
     query = node_addon.build_query(q, start, size)
 
     try:
-        ret = search(query, search.search_type=node_addon.namespace, index='metadata')
+        ret = search.search(query, doc_type=node_addon.namespace, index='metadata')
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
     except IndexNotFoundError:
