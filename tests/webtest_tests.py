@@ -371,26 +371,12 @@ class TestRegistrations(OsfTestCase):
             user=self.user,
         )
 
-    def test_cant_be_deleted(self):
-        # Goes to project's page
-        res = self.app.get(self.project.url + 'settings/', auth=self.auth).maybe_follow()
-        assert_not_in('Delete project', res)
-
     def test_can_see_contributor(self):
         # Goes to project's page
         res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
         # Settings is not in the project navigation bar
         subnav = res.html.select('#projectSubnav')[0]
         assert_in('Sharing', subnav.text)
-
-    # https://github.com/CenterForOpenScience/osf.io/issues/1424
-    def test_navbar_has_correct_links(self):
-        # Goes to project settings page
-        url = self.project.web_url_for('node_setting')
-        res = self.app.get(url, auth=self.auth)
-        # Correct links are in navbar
-        assert_in('Select Add-ons', res)
-        assert_not_in('Configure Commenting', res)
 
     def test_sees_registration_templates(self):
         # Browse to original project
@@ -431,6 +417,13 @@ class TestRegistrations(OsfTestCase):
         # Settings is not in the project navigation bar
         subnav = res.html.select('#projectSubnav')[0]
         assert_not_in('Registrations', subnav.text)
+
+    def test_settings_nav_not_seen(self):
+        # Goes to project's page
+        res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
+        # Settings is not in the project navigation bar
+        subnav = res.html.select('#projectSubnav')[0]
+        assert_not_in('Settings', subnav.text)
 
 
 class TestComponents(OsfTestCase):
