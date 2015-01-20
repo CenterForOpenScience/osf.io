@@ -47,16 +47,14 @@ def _build_rendered_html(file_path, cache_dir, cache_file_name, download_url):
         with codecs.open(cache_file_path, 'w', 'utf-8') as write_file_pointer:
             # Render file
             try:
-                rendered = mfr.render(file_pointer, src=download_url)
-                result = _build_html(rendered)
+                render_result = mfr.render(file_pointer, src=download_url)
             except MFRError as err:
-                result = render_mfr_error(err).format(download_path=download_url)
-
-            # Close read pointer
-            #file_pointer.close()
+                rendered = render_mfr_error(err).format(download_path=download_url)
+            else:
+                rendered = _build_html(render_result)
 
             # Cache rendered content
-            write_file_pointer.write(result)
+            write_file_pointer.write(rendered)
 
     os.remove(file_path)
     return True
