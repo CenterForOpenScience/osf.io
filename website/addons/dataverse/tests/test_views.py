@@ -647,7 +647,8 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
     @mock.patch('website.addons.dataverse.views.crud.scrape_dataverse')
     @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
     @mock.patch('website.addons.dataverse.views.crud.get_files')
-    def test_dataverse_get_file_info_returns_filename_and_links(self, mock_get_files, mock_connection, mock_scrape):
+    @mock.patch('website.addons.dataverse.views.crud.fail_if_private')
+    def test_dataverse_get_file_info_returns_filename_and_links(self, mock_fail_if_private, mock_get_files, mock_connection, mock_scrape):
         mock_connection.return_value = create_mock_connection()
         mock_get_files.return_value = [create_mock_draft_file('foo')]
         mock_scrape.return_value = ('filename', 'content')
