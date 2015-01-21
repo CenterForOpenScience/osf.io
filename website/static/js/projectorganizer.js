@@ -1084,9 +1084,12 @@ function dropLogic(event, items, folder) {
                                 } else {
                                     tb.updateFolder(null, outerFolder);
                                 }
-                            } else {
-                                tb.updateFolder(null, folder);
                             }
+                            // } else {
+                            //     tb.updateFolder(null, folder);
+                            // }
+                            tb.updateFolder(null, folder);
+
                         });
                         postAction.fail(function (jqxhr, textStatus, errorThrown) {
                             $osf.growl('Error:', textStatus + '. ' + errorThrown);
