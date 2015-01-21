@@ -54,7 +54,8 @@ def email_digest(subscribed_users, uid, event, **context):
 
     try:
         node = Node.find_one(Q('_id', 'eq', uid))
-        nodes = get_node_lineage(node)
+        nodes = get_node_lineage(node, [])
+        nodes.reverse()
     except NoResultsFound:
         nodes = []
 
@@ -64,20 +65,18 @@ def email_digest(subscribed_users, uid, event, **context):
                                         event=event,
                                         user_id=user._id,
                                         message=message,
-                                        node_lineage=nodes.reverse())
+                                        node_lineage=nodes if nodes else [])
             digest.save()
 
 
-node_lineage = []
-def get_node_lineage(node):
+def get_node_lineage(node, node_lineage):
     if node is not None:
         node_lineage.append(node._id)
-    if node.node__parent is not None:
+    if node.node__parent != []:
         for n in node.node__parent:
-            get_node_lineage(n)
+            get_node_lineage(n, node_lineage)
 
     return node_lineage
-
 
 notifications = {
     'email_transactional': email_transactional,

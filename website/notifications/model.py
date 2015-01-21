@@ -18,4 +18,4 @@ class DigestNotification(StoredObject):
     timestamp = fields.DateTimeField()
     event = fields.StringField()
     message = fields.StringField()
-    node_lineage = fields.ForeignField('node', list=True)
+    node_lineage = fields.StringField(list=True)
