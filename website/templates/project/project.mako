@@ -5,17 +5,6 @@
     is_project = node['node_type'] == 'project'
 %>
 
-% if node['is_registration']:
-    <div class="alert alert-info">This ${node['node_type']} is a registration of <a class="alert-link" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been frozen and cannot be edited.
-    </div>
-    <style type="text/css">
-    .watermarked {
-        background-image:url('/static/img/read-only.png');
-        background-repeat:repeat;
-    }
-    </style>
-% endif
-
 <div id="projectScope">
     <header class="subhead" id="overview">
         <div class="row">
