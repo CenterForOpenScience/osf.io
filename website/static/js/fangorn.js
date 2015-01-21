@@ -750,6 +750,7 @@ tbOptions = {
     onselectrow : function (item) {
         window.console.log('Row: ', item);
     },
+    filterPlaceholder : "Search",
     onmouseoverrow : _fangornMouseOverRow,
     dropzone : {                                           // All dropzone options.
         url: function(files) {return files[0].url;},
