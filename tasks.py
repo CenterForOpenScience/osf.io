@@ -42,7 +42,7 @@ except Failure:
 def server(host=None, port=5000, debug=True):
     """Run the app server."""
     from website.app import init_app
-    app = init_app(set_backends=True, routes=True)
+    app = init_app(set_backends=True, routes=True, mfr=True)
     app.run(host=host, port=port, debug=debug, extra_files=[settings.ASSET_HASH_PATH])
 
 
@@ -298,7 +298,6 @@ def requirements(all=False, download_cache=None):
     run(bin_prefix(cmd), echo=True)
     if all:
         addon_requirements(download_cache=download_cache)
-        mfr_requirements()
 
 
 @task
@@ -363,17 +362,6 @@ def addon_requirements(download_cache=None):
             except IOError:
                 pass
     print('Finished')
-
-
-@task
-def mfr_requirements(download_cache=None):
-    """Install modular file renderer requirements"""
-    print('Installing mfr requirements')
-    cmd = 'pip install --upgrade -r mfr/requirements.txt'
-    if download_cache:
-        cmd += ' --download-cache {0}'.format(download_cache)
-    run(bin_prefix(cmd), echo=True)
-
 
 @task
 def encryption(owner=None):
