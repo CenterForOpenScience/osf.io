@@ -63,7 +63,7 @@ def query_app(node_addon, **kwargs):
 
     try:
         ret = search.search(query, index='metadata', doc_type=node_addon.namespace, raw=True)
-    except MalformedQueryError as e:
+    except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
     except IndexNotFoundError:
         # TODO Deal with correct empty raw output

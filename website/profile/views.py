@@ -76,7 +76,6 @@ def _profile_view(profile, is_profile):
         # System users dont get a profile page
         raise HTTPError(http.BAD_REQUEST)
 
-
     if 'badges' in settings.ADDONS_REQUESTED:
         badge_assertions = get_sorted_user_badges(profile),
         badges = _get_user_created_badges(profile)

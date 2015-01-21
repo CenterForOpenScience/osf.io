@@ -12,7 +12,6 @@ from website.project.decorators import must_have_addon
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_be_contributor_or_public
 
-from website.addons.app.utils import args_to_query
 from website.addons.app.utils import elastic_to_rss
 
 
