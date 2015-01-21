@@ -1,7 +1,8 @@
-var $ = require('jQuery');
+var $ = require('jquery');
 require('knockout-punches');
 var ko = require('knockout');
 var $osf = require('osfHelpers');
+var bootbox = require('bootbox');
 
 
 // Enable knockout punches
