@@ -59,7 +59,7 @@ def query_app(node_addon, **kwargs):
     start = request.args.get('from')
     return_raw = request.args.get('raw') is not None
 
-    query = node_addon.build_query(q, size, start)
+    query = node_addon.build_query(q, size=size, start=start)
 
     try:
         ret = search.search(query, index='metadata', doc_type=node_addon.namespace, raw=True)
@@ -130,7 +130,7 @@ def query_app_rss(node_addon, **kwargs):
     q = request.args.get('q', '*')
     size = request.args.get('size')
     start = request.args.get('from')
-    query = node_addon.build_query(q, size, start)
+    query = node_addon.build_query(q, size=size, start=start)
     extended = request.args.get('extended')
     try:
         ret = search.search(query, doc_type=node_addon.namespace, index='metadata')
@@ -159,7 +159,7 @@ def query_app_atom(node_addon, **kwargs):
     q = request.args.get('q', '*')
     size = request.args.get('size')
     start = request.args.get('from')
-    query = node_addon.build_query(q, size, start)
+    query = node_addon.build_query(q, size=size, start=start)
 
     try:
         ret = search.search(query, doc_type=node_addon.namespace, index='metadata')
@@ -189,7 +189,7 @@ def query_app_resourcelist(node_addon, **kwargs):
 
     q += ' NOT isResource:True'
 
-    query = node_addon.build_query(q, start, size)
+    query = node_addon.build_query(q, start=start, size=size)
 
     try:
         ret = search.search(query, doc_type=node_addon.namespace, index='metadata')
@@ -214,7 +214,7 @@ def query_app_changelist(node_addon, **kwargs):
 
     q += ' NOT isResource:True'
 
-    query = node_addon.build_query(q, start, size)
+    query = node_addon.build_query(q, start=start, size=size)
 
     try:
         ret = search.search(query, doc_type=node_addon.namespace, index='metadata')
