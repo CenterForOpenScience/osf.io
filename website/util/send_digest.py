@@ -1,19 +1,22 @@
 """Script for sending OSF email digests to subscribed users and removing the records once sent."""
 
 import datetime
+
 from bson.code import Code
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
+
 from framework.auth.core import User
 from framework.mongo import database as db
 from website import mails
 from website.app import init_app
+from website.notifications.utils import NotificationsDict
 
 
 def main():
     init_app(routes=False)
     grouped_digests = group_digest_notifications_by_user()
-    send_digest(grouped_digests)
+    print send_digest(grouped_digests)
 
 
 def send_digest(grouped_digests):
@@ -24,17 +27,25 @@ def send_digest(grouped_digests):
             # ignore for now, but raise error here
             user = None
 
-        messages = group['messageContexts']
+        info = group['info']
+        sorted_messages = group_messages(info)
 
-        if user and messages:
+        if user and sorted_messages:
             mails.send_mail(
                 to_addr=user.username,
                 mail=mails.DIGEST,
                 name=user.fullname,
-                message=messages)
+                message=sorted_messages)
 
     db.digestnotification.remove({'timestamp': {'$lt': datetime.datetime.utcnow(),
                                                 '$gte': datetime.datetime.utcnow()-datetime.timedelta(hours=24)}})
+
+
+def group_messages(notifications):
+    d = NotificationsDict()
+    for n in notifications:
+        d.add_message(n['node_lineage'], n['message'])
+    return d
 
 
 def group_digest_notifications_by_user():
@@ -42,11 +53,16 @@ def group_digest_notifications_by_user():
         key={'user_id': 1},
         condition={'timestamp': {'$lt': datetime.datetime.utcnow(),
                                  '$gte': datetime.datetime.utcnow()-datetime.timedelta(hours=24)}},
-        initial={'messageContexts': []},
+        initial={'info': []},
         reduce=Code("""function(curr, result) {
-                            result.messageContexts.push(curr.context);
+                            info = {
+                                'message': curr.message,
+                                'node_lineage': curr.node_lineage
+                            }
+                            result.info.push(info);
                     };
                     """))
+
 
 if __name__ == '__main__':
     main()
