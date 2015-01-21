@@ -53,7 +53,6 @@ if ($(sliderSelector).length > 0 &&
 
 
 $(document).on('click', '.project-toggle', function() {
-    console.log("hey");
     var widget = $(this).closest('.addon-widget-container');
     var up = $(this).find('.icon-angle-up');
     var down = $(this).find('.icon-angle-down');
