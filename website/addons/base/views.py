@@ -76,11 +76,6 @@ def get_user_from_cookie(cookie):
     return User.load(session.data['auth_user_id'])
 
 
-# TODO: Implement me
-def check_token(user, token):
-    pass
-
-
 permission_map = {
     'metadata': 'read',
     'download': 'read',
@@ -137,7 +132,6 @@ def get_auth(**kwargs):
     try:
         action = request.args['action']
         cookie = request.args['cookie']
-        token = request.args['token']
         node_id = request.args['nid']
         provider_name = request.args['provider']
     except KeyError:
@@ -146,8 +140,6 @@ def get_auth(**kwargs):
     view_only = request.args.get('viewOnly')
 
     user = get_user_from_cookie(cookie)
-
-    check_token(user, token)
 
     node = Node.load(node_id)
     if not node:

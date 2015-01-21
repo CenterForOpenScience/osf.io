@@ -10,6 +10,7 @@ from framework.flask import redirect
 from framework.exceptions import HTTPError
 from framework.analytics import update_counter
 from framework.auth.decorators import must_be_signed
+from framework.transactions.handlers import no_auto_transaction
 
 from website.models import User
 from website.project.decorators import (
@@ -92,6 +93,7 @@ def osf_storage_crud_prepare(node_addon, payload):
 
 
 @must_be_signed
+@no_auto_transaction
 @must_have_addon('osfstorage', 'node')
 def osf_storage_upload_file_hook(node_addon, payload, **kwargs):
     path, user, location, metadata = osf_storage_crud_prepare(node_addon, payload)

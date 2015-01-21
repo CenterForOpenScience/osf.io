@@ -8,6 +8,7 @@ import furl
 
 from modularodm import fields, Q
 from modularodm import exceptions as modm_errors
+from modularodm.storage.base import KeyExistsException
 
 from framework.auth import Auth
 from framework.mongo import StoredObject
@@ -67,7 +68,15 @@ def copy_files(files, node_settings):
 
 class OsfStorageNodeSettings(AddonNodeSettingsBase):
 
-    file_tree = fields.ForeignField('OsfStorageFileTree')
+    @property
+    def file_tree(self):
+        try:
+            return OsfStorageFileTree.find_one(
+                Q('path', 'eq', '') &
+                Q('node_settings', 'eq', self)
+            )
+        except modm_errors.NoResultsFound:
+            return None
 
     def copy_contents_to(self, dest):
         """Copy file tree and contents to destination. Note: destination must be
@@ -77,8 +86,7 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
         """
         dest.save()
         if self.file_tree:
-            dest.file_tree = copy_file_tree(self.file_tree, dest)
-            dest.save()
+            copy_file_tree(self.file_tree, dest)
 
     def after_fork(self, node, fork, user, save=True):
         clone, message = super(OsfStorageNodeSettings, self).after_fork(
@@ -170,7 +178,7 @@ class BaseFileObject(StoredObject):
                 Q('node_settings', 'eq', node_settings._id)
             )
             return obj
-        except (modm_errors.NoResultsFound, modm_errors.MultipleResultsFound):
+        except modm_errors.NoResultsFound:
             return None
 
     @classmethod
@@ -181,13 +189,14 @@ class BaseFileObject(StoredObject):
         :param node_settings: Root node settings record
         :returns: Tuple of (record, created)
         """
-        obj = cls.find_by_path(path, node_settings)
-
-        if obj:
+        try:
+            obj = cls(path=path, node_settings=node_settings)
+            obj.save()
+        except KeyExistsException:
+            obj = cls.find_by_path(path, node_settings)
+            assert obj is not None
             return obj, False
 
-        obj = cls(path=path, node_settings=node_settings)
-        obj.save()
         # Ensure all intermediate paths
         if path:
             parent_path, _ = os.path.split(path)
@@ -195,10 +204,6 @@ class BaseFileObject(StoredObject):
             parent_obj, _ = parent_class.get_or_create(parent_path, node_settings)
             parent_obj.children.append(obj)
             parent_obj.save()
-        else:
-            assert node_settings.file_tree is None
-            node_settings.file_tree = obj
-            node_settings.save()
 
         return obj, True
 

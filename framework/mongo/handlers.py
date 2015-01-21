@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import logging
+
+import pymongo
 from flask import g
-from pymongo import MongoClient
 from werkzeug.local import LocalProxy
 
 from website import settings
@@ -15,7 +16,7 @@ def get_mongo_client():
     """Create MongoDB client and authenticate database.
     """
     mongo_uri = 'mongodb://localhost:{port}'.format(port=settings.DB_PORT)
-    client = MongoClient(mongo_uri)
+    client = pymongo.MongoClient(mongo_uri)
 
     db = client[settings.DB_NAME]
 
@@ -72,6 +73,40 @@ client = LocalProxy(_get_current_client)
 database = LocalProxy(_get_current_database)
 
 
+class Index(object):
+    def __init__(self, *args, **kwargs):
+        self.args = args
+        self.kwargs = kwargs
+
+
+INDICES = {
+    'osfstoragefiletree': [
+        Index(
+            [
+                ('path', pymongo.ASCENDING),
+                ('node_settings', pymongo.ASCENDING),
+            ],
+            unique=True,
+        )
+    ],
+    'osfstoragefilerecord': [
+        Index(
+            [
+                ('path', pymongo.ASCENDING),
+                ('node_settings', pymongo.ASCENDING),
+            ],
+            unique=True,
+        )
+    ],
+}
+
+
+def ensure_indices():
+    for collection, indices in INDICES.iteritems():
+        for index in indices:
+            database[collection].ensure_index(*index.args, **index.kwargs)
+
+
 def set_up_storage(schemas, storage_class, prefix='', addons=None, **kwargs):
     '''Setup the storage backend for each schema in ``schemas``.
     note::
@@ -103,3 +138,4 @@ def set_up_storage(schemas, storage_class, prefix='', addons=None, **kwargs):
                 **kwargs
             )
         )
+    ensure_indices()
