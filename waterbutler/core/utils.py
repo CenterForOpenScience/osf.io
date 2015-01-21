@@ -3,7 +3,9 @@ import asyncio
 import logging
 import functools
 
-from raven import Client
+import aiohttp
+
+from raven.contrib.tornado import AsyncSentryClient
 from stevedore import driver
 
 from waterbutler import settings
@@ -13,8 +15,22 @@ logger = logging.getLogger(__name__)
 
 sentry_dns = settings.get('SENTRY_DSN', None)
 
+
+class AioSentryClient(AsyncSentryClient):
+
+    def send_remote(self, url, data, headers=None, callback=None):
+        headers = headers or {}
+        if not self.state.should_try():
+            message = self._get_log_message(data)
+            self.error_logger.error(message)
+            return
+
+        future = aiohttp.request('POST', url, data=data, headers=headers)
+        asyncio.async(future)
+
+
 if sentry_dns:
-    client = Client(sentry_dns)
+    client = AioSentryClient(sentry_dns)
 else:
     client = None
 
@@ -144,7 +160,7 @@ def async_retry(retries=5, backoff=1, exceptions=(Exception, ), raven=client):
 
                     if raven:
                         # Only log if a raven client exists
-                        client.logException(e)
+                        client.captureException()
 
                     # If anything happens to be listening
                     raise e

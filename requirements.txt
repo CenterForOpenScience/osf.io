@@ -4,7 +4,6 @@ git+https://github.com/jmcarp/raven-python
 celery
 furl
 invoke
-newrelic
 oauthlib
 redis
 stevedore
