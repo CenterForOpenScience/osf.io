@@ -1,4 +1,5 @@
 var $ = require('jQuery');
+var jsl = require('jsonlint');
 require('knockout-punches');
 var ko = require('knockout');
 var $osf = require('osfHelpers');
@@ -68,7 +69,7 @@ function ApplicationView(selector, url) {
     // Initialization code
     var self = this;
     self.viewModel = new ViewModel(url);
-    $.osf.applyBindings(self.viewModel, selector);
+    $osf.applyBindings(self.viewModel, selector);
 }
 
 module.exports = ApplicationView;
