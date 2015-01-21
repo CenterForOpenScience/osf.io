@@ -218,14 +218,17 @@ function _fangornSending(treebeard, file, xhr, formData) {
         configOption,
         tmpID = tempCounter++;
         blankItem = {       // create a blank item that will refill when upload is finished.
-            name : file.name,
-            kind : 'file',
-            provider : parent.data.provider,
-            children : [],
-            data : {},
-            tmpID : tmpID
+            name: file.name,
+            kind: 'file',
+            provider: parent.data.provider,
+            children: [],
+            permissions: {
+                view: false,
+                edit: false
+            },
+            tmpID: tmpID
         };
-        console.log("TempID", tmpID);
+        console.log('TempID', tmpID);
     treebeard.createItem(blankItem, parentID);
     file.tmpID = tmpID;
     var _send = xhr.send;
@@ -435,12 +438,12 @@ function _removeEvent (event, item, col) {
     if (item.data.permissions.edit) {
         var mithrilContent = m('div', [
                 m('h3', 'Delete "' + item.data.name+ '"?'),
-                m('p', 'This action is irreversable.')
-            ]); 
+                m('p', 'This action is irreversible.')
+            ]);
         var mithrilButtons = m('div', [
                 m('button', { 'class' : 'btn btn-default m-r-md', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
                 m('button', { 'class' : 'btn btn-success', onclick : function() { runDelete.call(tb); }  }, 'OK')
-            ]); 
+            ]);
         tb.modal.update(mithrilContent, mithrilButtons);
     } else {
         item.notify.update('You don\'t have permission to delete this file.', 'info', undefined, 3000);
@@ -467,7 +470,7 @@ function _fangornResolveLazyLoad(item) {
     return waterbutler.buildTreeBeardMetadata(item);
 }
 
-/** 
+/**
  * Checks if the file being uploaded exists by comparing name of existing children with file name
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
  * @param {Object} file File object that dropzone passes
@@ -527,10 +530,10 @@ function _fangornActionColumn (item, col) {
     // Upload button if this is a folder
     if (item.kind === 'folder' && item.data.provider && item.data.permissions.edit) {
         buttons.push({
-            'name' : '',
-            'icon' : 'icon-upload-alt',
-            'css' : 'fangorn-clickable btn btn-default btn-xs',
-            'onclick' : _uploadEvent
+            name: '',
+            icon: 'icon-upload-alt',
+            css: 'fangorn-clickable btn btn-default btn-xs',
+            onclick: _uploadEvent
         });
     }
     //Download button if this is an item
@@ -567,8 +570,8 @@ function _fangornActionColumn (item, col) {
  */
 function _fangornTitleColumn(item, col) {
     return m('span',{
-        onclick : function() {
-            if (item.kind === 'file') {
+        onclick: function() {
+            if (item.kind === 'file' && item.data.permissions.view) {
                 var params = $.param(
                     $.extend({
                         provider: item.data.provider,
