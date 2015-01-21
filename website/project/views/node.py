@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
 import httplib as http
-import os
 
 from flask import request
 from modularodm import Q
@@ -16,6 +15,8 @@ from framework.mongo.utils import from_mongo
 
 from website import language
 
+from website.util import paths
+from website.util import rubeus
 from website.exceptions import NodeStateError
 from website.project import clean_template_name, new_node, new_private_link
 from website.project.decorators import (
@@ -292,16 +293,15 @@ def node_forks(**kwargs):
 
 
 @must_be_valid_project
+@must_not_be_registration
 @must_have_permission('write')
-def node_setting(**kwargs):
-
-    auth = kwargs['auth']
+def node_setting(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
 
     if not node.can_edit(auth):
         raise HTTPError(http.FORBIDDEN)
 
-    rv = _view_project(node, auth, primary=True)
+    ret = _view_project(node, auth, primary=True)
 
     addons_enabled = []
     addon_enabled_settings = []
@@ -312,30 +312,30 @@ def node_setting(**kwargs):
         if 'node' in addon.config.configs:
             addon_enabled_settings.append(addon.to_json(auth.user))
 
-    rv['addon_categories'] = settings.ADDON_CATEGORIES
-    rv['addons_available'] = [
+    ret['addon_categories'] = settings.ADDON_CATEGORIES
+    ret['addons_available'] = [
         addon
         for addon in settings.ADDONS_AVAILABLE
         if 'node' in addon.owners
         and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node']
     ]
-    rv['addons_enabled'] = addons_enabled
-    rv['addon_enabled_settings'] = addon_enabled_settings
-    rv['addon_capabilities'] = settings.ADDON_CAPABILITIES
+    ret['addons_enabled'] = addons_enabled
+    ret['addon_enabled_settings'] = addon_enabled_settings
+    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
 
-    rv['addon_js'] = collect_node_config_js(node.get_addons())
+    ret['addon_js'] = collect_node_config_js(node.get_addons())
 
-    rv['comments'] = {
+    ret['comments'] = {
         'level': node.comment_level,
     }
 
-    rv['subscriptions_enabled'] = find_node_subscriptions_and_notifications(auth.user, node)['node_subscriptions']
-    rv['subscriptions_available'] = settings.SUBSCRIPTIONS_AVAILABLE
+    ret['subscriptions_enabled'] = find_node_subscriptions_and_notifications(auth.user, node)['node_subscriptions']
+    ret['subscriptions_available'] = settings.SUBSCRIPTIONS_AVAILABLE
 
-    rv['notification_types_enabled'] = find_node_subscriptions_and_notifications(auth.user, node)['node_notification_types']
-    rv['notification_types'] = settings.NOTIFICATION_TYPES
+    ret['notification_types_enabled'] = find_node_subscriptions_and_notifications(auth.user, node)['node_notification_types']
+    ret['notification_types'] = settings.NOTIFICATION_TYPES
 
-    return rv
+    return ret
 
 
 def find_node_subscriptions_and_notifications(user, node):
@@ -373,20 +373,8 @@ def collect_node_config_js(addons):
     """
     js_modules = []
     for addon in addons:
-
-        file_path = os.path.join('static',
-                                 'public',
-                                 'js',
-                                 addon.config.short_name,
-                                 'node-cfg.js')
-        js_file = os.path.join(
-            settings.BASE_PATH,
-            file_path,
-        )
-        if os.path.exists(js_file):
-            js_path = os.path.join(
-                '/', file_path
-            )
+        js_path = paths.resolve_addon_path(addon.config, 'node-cfg.js')
+        if js_path:
             js_modules.append(js_path)
     return js_modules
 
@@ -432,17 +420,18 @@ def configure_comments(**kwargs):
 @must_be_contributor_or_public
 def view_project(**kwargs):
     auth = kwargs['auth']
-    node_to_use = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
     primary = '/api/v1' not in request.path
-    rv = _view_project(node_to_use, auth, primary=primary)
-    rv['addon_capabilities'] = settings.ADDON_CAPABILITIES
+    ret = _view_project(node, auth, primary=primary)
+    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
     # Collect the URIs to the static assets for addons that have widgets
-    rv['addon_widget_js'] = list(collect_addon_js(
-        node_to_use,
+    ret['addon_widget_js'] = list(collect_addon_js(
+        node,
         filename='widget-cfg.js',
         config_entry='widget'
     ))
-    return rv
+    ret.update(rubeus.collect_addon_assets(node))
+    return ret
 
 
 # Expand/Collapse

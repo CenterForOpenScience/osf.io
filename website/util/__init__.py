@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 
 import re
+import logging
 from flask import request, url_for
 
 from website import settings
 
 # Keep me: Makes rubeus importable from website.util
 from . import rubeus  # noqa
+
+logger = logging.getLogger(__name__)
 
 
 guid_url_node_pattern = re.compile('^/project/[a-zA-Z0-9]{5,}/node(?=/[a-zA-Z0-9]{5,})')

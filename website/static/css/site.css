@@ -387,10 +387,15 @@ li.pointer {
 }
 
 /* Make wiki images responsive */
-.wiki img,
-.addon-widget-container img {
+.wiki img{
   vertical-align: middle;
   display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.addon-widget-container img {
+  vertical-align: middle;
   max-width: 100%;
   height: auto;
 }
@@ -657,9 +662,10 @@ h4 {
 
 /* Profile gravatar
 -------------------------------------------------- */
-#profile-gravatar{
-    float:left;
+.profile-avatar{
     margin-right:.5em;
+}
+#profile-gravatar{
     width:70px;
     height:70px;
 }
@@ -1646,6 +1652,24 @@ div.pydocx-center{
   display: block;
 }
 
+span.edit-profile-settings {
+    display: block;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+}
+
+div.profile-fullname{
+    display: block;
+    position: relative;
+    bottom: 0;
+}
+
+span#profileFullname{
+    position: absolute;
+    bottom: 0;
+}
+
 .scripted {display: none;}
 
 .pointer {cursor: pointer;}
@@ -1701,8 +1725,9 @@ div.pydocx-center{
 }
 
 #footerSlideIn div > a {
-    margin-right:5px;
-    white-space:nowrap;
+    margin-right: 5px;
+    white-space: nowrap;
+}
 
 /* Necessary to handle lots of text in tooltips */
 .tooltip-inner {

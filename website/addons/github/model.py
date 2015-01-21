@@ -473,50 +473,14 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         :param Node node:
         :param User user:
         :return str: Alert message
-
         """
+        category = node.project_or_component
         if self.user_settings and self.user_settings.has_auth:
             return (
-                u'Registering {cat} "{title}" will copy the authentication for its '
-                'GitHub add-on to the registered {cat}.'
-            ).format(
-                cat=node.project_or_component,
-                title=node.title,
-            )
-
-    def after_register(self, node, registration, user, save=True):
-        """
-
-        :param Node node: Original node
-        :param Node registration: Registered node
-        :param User user: User creating registration
-        :param bool save: Save settings after callback
-        :return tuple: Tuple of cloned settings and alert message
-
-        """
-        clone, message = super(AddonGitHubNodeSettings, self).after_register(
-            node, registration, user, save=False
-        )
-
-        # Copy foreign fields from current add-on
-        clone.user_settings = self.user_settings
-
-        # Store current branch data
-        if self.user and self.repo:
-            connect = GitHub.from_settings(self.user_settings)
-            try:
-                branches = [
-                    branch.to_json()
-                    for branch in connect.branches(self.user, self.repo)
-                ]
-                clone.registration_data['branches'] = branches
-            except ApiError:
-                pass
-
-        if save:
-            clone.save()
-
-        return clone, message
+                u'The contents of GitHub add-ons cannot be registered at this time; '
+                u'the GitHub repository linked to this {category} will not be included '
+                u'as part of this registration.'
+            ).format(**locals())
 
     def before_make_public(self, node):
         try:

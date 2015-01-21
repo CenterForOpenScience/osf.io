@@ -76,7 +76,7 @@
         window.contextVars = window.contextVars || {};
         window.contextVars.meetingData = ${data};
     </script>
-    <script src="/static/public/js/conference-page.js"></script>
+    <script src=${"/static/public/js/conference-page.js" | webpack_asset}></script>
 </body>
 
 </html>

@@ -7,6 +7,7 @@ These settings can be overridden in local.py.
 import os
 import json
 
+
 os_env = os.environ
 
 def parent_dir(path):
@@ -19,7 +20,11 @@ APP_PATH = parent_dir(BASE_PATH)
 ADDON_PATH = os.path.join(BASE_PATH, 'addons')
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = "/static"
+ASSET_HASH_PATH = os.path.join(APP_PATH, 'webpack-assets.json')
 ROOT = os.path.join(BASE_PATH, '..')
+
+# Hours before email confirmation tokens expire
+EMAIL_TOKEN_EXPIRATION = 24
 
 LOAD_BALANCER = False
 
@@ -67,7 +72,7 @@ MAIL_PASSWORD = ''  # Set this in local.py
 # Mailchimp
 MAILCHIMP_API_KEY = None
 MAILCHIMP_WEBHOOK_SECRET_KEY = 'CHANGEME'  # OSF secret key to ensure webhook is secure
-ENABLE_EMAIL_SUBSCRIPTIONS = False
+ENABLE_EMAIL_SUBSCRIPTIONS = True
 MAILCHIMP_GENERAL_LIST = 'Open Science Framework General'
 
 # TODO: Override in local.py
@@ -205,3 +210,10 @@ DISK_SAVING_MODE = False
 
 # Add Contributors (most in common)
 MAX_MOST_IN_COMMON_LENGTH = 15
+
+# Google Analytics
+GOOGLE_ANALYTICS_ID = None
+GOOGLE_SITE_VERIFICATION = None
+
+# Pingdom
+PINGDOM_ID = None

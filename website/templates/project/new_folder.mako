@@ -31,6 +31,6 @@ ${parent.javascript_bottom()}
     window.contextVars = window.contextVars || {};
     window.contextVars.nodeID = '${node_id}';
 </script>
-<script src="/static/public/js/new-folder-page.js"></script>
+<script src=${"/static/public/js/new-folder-page.js" | webpack_asset}></script>
 </%def>
 

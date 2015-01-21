@@ -42,8 +42,8 @@ except Failure:
 def server(host=None, port=5000, debug=True):
     """Run the app server."""
     from website.app import init_app
-    app = init_app(set_backends=True, routes=True)
-    app.run(host=host, port=port, debug=debug)
+    app = init_app(set_backends=True, routes=True, mfr=True)
+    app.run(host=host, port=port, debug=debug, extra_files=[settings.ASSET_HASH_PATH])
 
 
 SHELL_BANNER = """
@@ -298,7 +298,6 @@ def requirements(all=False, download_cache=None):
     run(bin_prefix(cmd), echo=True)
     if all:
         addon_requirements(download_cache=download_cache)
-        mfr_requirements()
 
 
 @task
@@ -363,17 +362,6 @@ def addon_requirements(download_cache=None):
             except IOError:
                 pass
     print('Finished')
-
-
-@task
-def mfr_requirements(download_cache=None):
-    """Install modular file renderer requirements"""
-    print('Installing mfr requirements')
-    cmd = 'pip install --upgrade -r mfr/requirements.txt'
-    if download_cache:
-        cmd += ' --download-cache {0}'.format(download_cache)
-    run(bin_prefix(cmd), echo=True)
-
 
 @task
 def encryption(owner=None):
@@ -661,27 +649,30 @@ def clean_assets():
 
 
 @task(aliases=['pack'])
-def webpack(clean=False, watch=False, production=False):
+def webpack(clean=False, watch=False, develop=False):
     """Build static assets with webpack."""
     if clean:
         clean_assets()
     args = ['webpack']
-    if settings.DEBUG_MODE and not production:
+    if settings.DEBUG_MODE and develop:
         args += ['--colors']
     else:
-        args += ['-p', '--progress']
+        args += ['--progress']
     if watch:
         args += ['--watch']
+    config_file = 'webpack.dev.config.js' if develop else 'webpack.prod.config.js'
+    args += ['--config {0}'.format(config_file)]
     command = ' '.join(args)
     run(command, echo=True)
 
 @task()
-def assets(production=False, watch=False):
+def assets(develop=False, watch=False):
     """Install and build static assets."""
+    run('npm install', echo=True)
     bower_install()
     # Always set clean=False to prevent possible mistakes
     # on prod
-    webpack(clean=False, watch=watch, production=production)
+    webpack(clean=False, watch=watch, develop=develop)
 
 @task
 def generate_self_signed(domain):

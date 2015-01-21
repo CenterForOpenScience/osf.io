@@ -10,7 +10,6 @@ import httplib as http
 
 from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
-from werkzeug.wrappers import Response
 
 from modularodm import Q
 from dateutil.parser import parse as parse_date
@@ -818,6 +817,23 @@ class TestUserProfile(OsfTestCase):
             assert_equal(self.user.social[key], value)
         assert_true(self.user.social['researcherId'] is None)
 
+    def test_unserialize_social_validation_failure(self):
+        url = api_url_for('unserialize_social')
+        # personal URL is invalid
+        payload = {
+            'personal': 'http://invalidurl',
+            'twitter': 'howtopizza',
+            'github': 'frozenpizzacode',
+        }
+        res = self.app.put_json(
+            url,
+            payload,
+            auth=self.user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['message_long'], 'Invalid personal URL.')
+
     def test_serialize_social_editable(self):
         self.user.social['twitter'] = 'howtopizza'
         self.user.save()
@@ -1077,14 +1093,6 @@ class TestUserAccount(OsfTestCase):
             new_password='12345',
             confirm_password='12345',
             error_message='Password should be at least six characters',
-        )
-
-    def test_password_change_invalid_confirm_password(self):
-        self.test_password_change_invalid(
-            old_password='password',
-            new_password='new password',
-            confirm_password='invalid confirm password',
-            error_message='Password does not match the confirmation',
         )
 
     def test_password_change_invalid_blank_password(self, old_password='', new_password='', confirm_password=''):
@@ -2255,7 +2263,6 @@ class TestAuthViews(OsfTestCase):
         assert_equal(unclaimed_user.unclaimed_records, {})
         assert_equal(len(unclaimed_user.email_verifications.keys()), 0)
 
-
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_resend_confirmation_post_sends_confirm_email(self, send_mail):
         # Make sure user has a confirmation token for their primary email
@@ -2265,6 +2272,23 @@ class TestAuthViews(OsfTestCase):
         assert_true(send_mail.called)
         assert_true(send_mail.called_with(
             to_addr=self.user.username
+        ))
+
+    # see: https://github.com/CenterForOpenScience/osf.io/issues/1492
+    @mock.patch('website.security.random_string')
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_resend_confirmation_post_regenerates_token(self, send_mail, random_string):
+        expiration = dt.datetime.utcnow() - dt.timedelta(seconds=1)
+        random_string.return_value = '12345'
+        self.user.add_email_verification(self.user.username, expiration=expiration)
+        self.user.save()
+
+        self.app.post('/resend/', {'email': self.user.username})
+        confirm_url = self.user.get_confirmation_url(self.user.username, force=True)
+        assert_true(send_mail.called)
+        assert_true(send_mail.called_with(
+            to_addr=self.user.username,
+            confirmation_url=confirm_url
         ))
 
     @mock.patch('framework.auth.views.mails.send_mail')
@@ -2367,7 +2391,13 @@ class TestConfigureMailingListViews(OsfTestCase):
         )
 
         # check that user is subscribed
-        mock_client.lists.subscribe.assert_called_with(id=list_id, email={'email': user.username}, double_optin=False, update_existing=True)
+        mock_client.lists.subscribe.assert_called_with(id=list_id,
+                                                       email={'email': user.username},
+                                                       merge_vars= {'fname': user.given_name,
+                                                                    'lname': user.family_name,
+                                                       },
+                                                       double_optin=False,
+                                                       update_existing=True)
 
     def test_get_mailchimp_get_endpoint_returns_200(self):
         url = api_url_for('mailchimp_get_endpoint')
@@ -2377,7 +2407,7 @@ class TestConfigureMailingListViews(OsfTestCase):
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_mailchimp_webhook_subscribe_action_does_not_change_user(self, mock_get_mailchimp_api):
         """ Test that 'subscribe' actions sent to the OSF via mailchimp
-            webhooks do not cause any database changes.
+            webhooks update the OSF database.
         """
         list_id = '12345'
         list_name = 'OSF General'
@@ -2390,8 +2420,7 @@ class TestConfigureMailingListViews(OsfTestCase):
         user.mailing_lists = {'OSF General': False}
         user.save()
 
-        # user subscribes and webhook sends request (when configured
-        # to update on changes made through the API)
+        # user subscribes and webhook sends request to OSF
         data = {'type': 'subscribe',
                 'data[list_id]': list_id,
                 'data[email]': user.username
@@ -2402,9 +2431,9 @@ class TestConfigureMailingListViews(OsfTestCase):
                             content_type="application/x-www-form-urlencoded",
                             auth=user.auth)
 
-        # user field does not change
+        # user field is updated on the OSF
         user.reload()
-        assert_false(user.mailing_lists[list_name])
+        assert_true(user.mailing_lists[list_name])
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_mailchimp_webhook_profile_action_does_not_change_user(self, mock_get_mailchimp_api):

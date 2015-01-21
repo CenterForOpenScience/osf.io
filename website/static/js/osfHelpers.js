@@ -5,6 +5,9 @@ require('jquery-blockui');
 var Raven = require('raven-js');
 var moment = require('moment');
 
+// TODO: For some reason, this require is necessary for custom ko validators to work
+// Why?!
+require('koHelpers');
 
 var GrowlBox = require('./growlBox.js');
 
@@ -170,7 +173,7 @@ var trackPiwik = function(host, siteId, cvars, useCookies) {
     cvars = Array.isArray(cvars) ? cvars : [];
     useCookies = typeof(useCookies) !== 'undefined' ? useCookies : false;
     try {
-        var piwikTracker = Piwik.getTracker(host + 'piwik.php', siteId);
+        var piwikTracker = window.Piwik.getTracker(host + 'piwik.php', siteId);
         piwikTracker.enableLinkTracking(true);
         for(var i=0; i<cvars.length;i++)
         {
@@ -184,6 +187,23 @@ var trackPiwik = function(host, siteId, cvars, useCookies) {
     } catch(err) { return false; }
     return true;
 };
+
+//////////////////
+// Data binders //
+//////////////////
+
+/**
+ * Tooltip data binder. The value accessor should be an object containing
+ * parameters for the tooltip.
+ * Example:
+ * <span data-bind="tooltip: {title: 'Tooltip text here'}"></span>
+ */
+ko.bindingHandlers.tooltip = {
+    init: function(elem, valueAccessor) {
+        $(elem).tooltip(valueAccessor());
+    }
+};
+
 /**
   * A thin wrapper around ko.applyBindings that ensures that a view model
   * is bound to the expected element. Also shows the element if it was

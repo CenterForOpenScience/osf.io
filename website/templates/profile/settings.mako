@@ -42,7 +42,7 @@
                 <li><a href="#schools" data-toggle="tab">Education</a></li>
             </ul>
 
-            <div class="tab-content">
+            <div class="tab-content" id="containDrag">
 
                 <div class="tab-pane active" id="names">
                     <div data-bind="template: {name: 'profileName'}"></div>
@@ -102,5 +102,5 @@
         crud: '${ api_url_for('serialize_schools') }'
     };
 </script>
-<script src="/static/public/js/profile-settings-page.js"></script>
+<script src=${"/static/public/js/profile-settings-page.js" | webpack_asset}></script>
 </%def>

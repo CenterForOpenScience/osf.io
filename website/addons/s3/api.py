@@ -50,10 +50,7 @@ class S3Wrapper(object):
     def from_addon(cls, s3):
         if s3 is None or s3.user_settings is None:
             return None
-        if not s3.is_registration:
-            return cls(S3Connection(s3.user_settings.access_key, s3.user_settings.secret_key), s3.bucket)
-        else:
-            return RegistrationWrapper(s3)
+        return cls(S3Connection(s3.user_settings.access_key, s3.user_settings.secret_key), s3.bucket)
 
     @classmethod
     def bucket_exist(cls, s3, bucketName):
@@ -143,51 +140,6 @@ class S3Wrapper(object):
 
     def does_key_exist(self, key_name):
         return self.bucket.get_key(key_name) is not None
-
-
-# TODO Add null checks etc
-class RegistrationWrapper(S3Wrapper):
-
-    def __init__(self, node_settings):
-        if node_settings.user_settings:
-            connection = S3Connection(
-                node_settings.user_settings.access_key,
-                node_settings.user_settings.secret_key,
-            )
-        else:
-            connection = S3Connection()
-        super(RegistrationWrapper, self).__init__(connection, node_settings.bucket)
-        self.registration_data = node_settings.registration_data
-
-    def get_wrapped_keys_in_dir(self, directory=None):
-        return [
-            S3Key(x)
-            for x in self.bucket.list_versions(delimiter='/', prefix=directory)
-            if isinstance(x, Key) and x.key != directory
-            and self.is_right_version(x)
-        ]
-
-    def get_wrapped_directories_in_dir(self, directory=None):
-        return [S3Key(x) for x in self.bucket.list_versions(prefix=directory) if self._directory_check(x, directory)]
-
-    def _directory_check(self, to_check, against):
-        return isinstance(to_check, Key) and to_check.key.endswith('/') and to_check.key != against and self.is_right_version(to_check)
-
-    def is_right_version(self, key):
-        return [x for x in self.registration_data['keys'] if x['version_id'] == key.version_id and x['path'] == key.key]
-
-    def get_file_versions(self, key_name):
-        to_cut = [x for x in self.bucket.list_versions(
-            prefix=key_name) if isinstance(x, Key)]
-        return to_cut[self._get_index_of(self._get_proper_version(key_name), to_cut):]
-
-    def _get_proper_version(self, key_name):
-        vid = [x['version_id']
-               for x in self.registration_data['keys'] if x['path'] == key_name][0]
-        return self.bucket.get_key(key_name, version_id=vid)
-
-    def _get_index_of(self, version, to_cut):
-        return to_cut.index([x for x in to_cut if x.version_id == version.version_id][0])
 
 
 # TODO Extend me and you bucket.setkeyclass

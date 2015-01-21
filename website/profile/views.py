@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import os
 import logging
 import operator
 import httplib as http
@@ -25,7 +24,7 @@ from website import mailchimp_utils
 from website.models import User
 from website.models import ApiKey
 from website.views import _render_nodes
-from website.util import web_url_for
+from website.util import web_url_for, paths
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
 from website.profile import utils as profile_utils
@@ -222,20 +221,8 @@ def collect_user_config_js(addons):
     """
     js_modules = []
     for addon in addons:
-
-        file_path = os.path.join('static',
-                                 'public',
-                                 'js',
-                                 addon.config.short_name,
-                                 'user-cfg.js')
-        js_file = os.path.join(
-            settings.BASE_PATH,
-            file_path,
-        )
-        if os.path.exists(js_file):
-            js_path = os.path.join(
-                '/', file_path
-            )
+        js_path = paths.resolve_addon_path(addon.config, 'user-cfg.js')
+        if js_path:
             js_modules.append(js_path)
     return js_modules
 
@@ -312,17 +299,21 @@ def sync_data_from_mailchimp(**kwargs):
         action = r.values['type']
         list_name = mailchimp_utils.get_list_name_from_id(list_id=r.values['data[list_id]'])
         username = r.values['data[email]']
+
+        try:
+            user = User.find_one(Q('username', 'eq', username))
+        except NoResultsFound:
+            sentry.log_exception()
+            sentry.log_message("A user with this username does not exist.")
+            raise HTTPError(404, data=dict(message_short='User not found',
+                                        message_long='A user with this username does not exist'))
         if action == 'unsubscribe':
-            try:
-                user = User.find_one(Q('username', 'eq', username))
-            except NoResultsFound:
-                sentry.log_exception()
-                sentry.log_message("A user with this username does not exist.")
-                raise HTTPError(404, data=dict(message_short='User not found',
-                                            message_long='A user with this username does not exist'))
-            else:
-                user.mailing_lists[list_name] = False
-                user.save()
+            user.mailing_lists[list_name] = False
+            user.save()
+
+        elif action == 'subscribe':
+            user.mailing_lists[list_name] = True
+            user.save()
 
     else:
         # TODO: get tests to pass with sentry logging
@@ -535,19 +526,15 @@ def unserialize_social(auth, **kwargs):
     user = auth.user
     json_data = escape_html(request.get_json())
 
-    user.social['personal'] = json_data.get('personal')
-    user.social['orcid'] = json_data.get('orcid')
-    user.social['researcherId'] = json_data.get('researcherId')
-    user.social['twitter'] = json_data.get('twitter')
-    user.social['github'] = json_data.get('github')
-    user.social['scholar'] = json_data.get('scholar')
-    user.social['impactStory'] = json_data.get('impactStory')
-    user.social['linkedIn'] = json_data.get('linkedIn')
+    for soc in user.SOCIAL_FIELDS.keys():
+        user.social[soc] = json_data.get(soc)
 
     try:
         user.save()
-    except ValidationError:
-        raise HTTPError(http.BAD_REQUEST)
+    except ValidationError as exc:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_long=exc.args[0]
+        ))
 
 
 def unserialize_job(job):

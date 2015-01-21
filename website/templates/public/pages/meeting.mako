@@ -10,7 +10,7 @@
         <br /><br />
     % endif
 
-    % if meeting['info_url']:
+    % if meeting['active'] and meeting['info_url']:
         <div><a href="${ meeting['info_url'] }" target="_blank">Add your poster or talk</a></div>
     % else:
         <div><a href="#submit">Add your poster or talk</a></div>
@@ -64,5 +64,5 @@
         window.contextVars = window.contextVars || {};
         window.contextVars.meetingData = ${data};
     </script>
-    <script src="/static/public/js/conference-page.js"></script>
+    <script src=${"/static/public/js/conference-page.js" | webpack_asset}></script>
 </%def>
