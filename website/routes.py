@@ -471,7 +471,7 @@ def make_url_map(app):
             'get',
             profile_views.user_notifications,
             OsfWebRenderer('profile/notifications.mako'),
-        ),    
+        ),
 
         Rule(
             '/settings/api/',

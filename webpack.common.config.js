@@ -87,6 +87,7 @@ var resolve = {
         'jquery-tagsinput': staticPath('vendor/bower_components/jquery.tagsinput/jquery.tagsinput.js'),
         'jquery.cookie': staticPath('vendor/bower_components/jquery.cookie/jquery.cookie.js'),
         'history': staticPath('vendor/bower_components/history.js/scripts/bundled/html4+html5/jquery.history.js'),
+        'jsonlint': staticPath('vendor/jsonlint/formatter.js'),
         // Needed for knockout-sortable
         'jquery.ui.sortable': staticPath('vendor/bower_components/jquery-ui/ui/jquery.ui.sortable.js'),
         // Dropzone doesn't have a proper 'main' entry in its bower.json

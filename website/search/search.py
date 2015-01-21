@@ -58,5 +58,5 @@ def update_metadata(metadata):
 
 
 @requires_search
-def get_mapping(index, _type):
-    return search_engine.get_mapping(index, _type)
+def get_mapping(index, _type, flatten=False):
+    return search_engine.get_mapping(index, _type, flatten=flatten)

@@ -82,3 +82,5 @@ jsl.format = (function () {
     return { "formatJson": formatJson };
 
 }());
+
+module.exports = jsl;

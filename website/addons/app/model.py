@@ -5,15 +5,16 @@ import copy
 
 from modularodm import fields
 
-from website.project import Node
-from website.addons.app.utils import lint
-from website.search.search import update_metadata
-from website.addons.app.utils import generate_schema
-from website.addons.base import AddonNodeSettingsBase
-from website.addons.app.settings import SYSTEM_USERS_UNCRACKABLE_PASSWORD
-
 from framework.auth import User
 from framework.mongo import StoredObject, ObjectId
+
+from website.project import Node
+from website.search import search
+from website.addons.app.utils import lint
+from website.addons.app.utils import generate_schema
+from website.addons.base import AddonNodeSettingsBase
+from website.search.exceptions import IndexNotFoundError
+from website.addons.app.settings import SYSTEM_USERS_UNCRACKABLE_PASSWORD
 
 
 class Metadata(StoredObject):
@@ -70,7 +71,6 @@ class Metadata(StoredObject):
             ]
         return []
 
-
     def __getitem__(self, key):
         return self.data[key]
 
@@ -89,10 +89,12 @@ class Metadata(StoredObject):
     def update(self, val):
         return self._merge_dicts(self.data, val)
 
-    def save(self):
+    def save(self, update=True):
         self.data = self.app.lint(self.data)
 
-        update_metadata(self)
+        if update:
+            search.update_metadata(self)
+
         super(Metadata, self).save()
 
     def to_json(self):
@@ -154,6 +156,13 @@ class AppNodeSettings(AddonNodeSettingsBase):
     @property
     def all_data(self):
         return self.metadata__owner
+
+    @property
+    def mapping(self):
+        try:
+            return search.get_mapping('metadata', self.namespace, flatten=True)
+        except IndexNotFoundError:
+            return {}
 
     def lint(self, data):
         if self.schema:

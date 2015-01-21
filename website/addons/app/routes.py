@@ -103,6 +103,18 @@ api_routes = {
             views.crud.get_mapping,
             json_renderer
         ),
+        Rule(
+            '/app/<pid>/sorting/',
+            'get',
+            views.config.app_get_default_sort_key,
+            json_renderer
+        ),
+        Rule(
+            '/app/<pid>/sorting/',
+            'post',
+            views.config.app_set_default_sort_key,
+            json_renderer
+        ),
     ],
     'prefix': '/api/v1'
 }
