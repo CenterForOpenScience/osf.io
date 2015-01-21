@@ -10,13 +10,13 @@ from modularodm import fields, Q
 from modularodm.exceptions import ModularOdmException
 
 from framework.auth import Auth
+from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
 from website.addons.dropbox.client import get_node_addon_client
 from website.addons.dropbox.utils import clean_path, DropboxNodeLogger
 
 logger = logging.getLogger(__name__)
-debug = logger.debug
 
 
 class DropboxFile(GuidFile):
@@ -211,13 +211,12 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
 
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
-            # TODO Better exception handling
-            raise Exception
+            raise exceptions.AddonError('Cannot serialize credentials for Dropbox addon')
         return {'token': self.user_settings.access_token}
 
     def serialize_waterbutler_settings(self):
         if not self.folder:
-            raise Exception
+            raise exceptions.AddonError('Cannot serialize settings for Dropbox addon')
         return {'folder': self.folder}
 
     def create_waterbutler_log(self, auth, action, metadata):

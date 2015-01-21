@@ -104,10 +104,8 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
 
     app.debug = settings.DEBUG_MODE
 
-
     if mfr:
         init_mfr(app)
-
 
     if set_backends:
         logger.debug('Setting storage backends')
