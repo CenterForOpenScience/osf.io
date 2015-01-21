@@ -621,6 +621,9 @@ function _poResolveIcon(item) {
     if (item.data.isFolder) {
         return returnView('folder');
     }
+    if(item.data.isPointer && !item.parent().data.isFolder){
+        return returnView('link');
+    }
     if (item.data.isProject) {
         return returnView('project');
     }
