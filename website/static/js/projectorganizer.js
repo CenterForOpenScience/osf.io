@@ -480,14 +480,21 @@ function _poContributors(item) {
     if (!item.data.contributors) {
         return '';
     }
+
     return item.data.contributors.map(function (person, index, arr) {
+        var comma;
+        if(index === 0) {
+            comma = '';
+        } else {
+            comma = ', ';
+        }
         if (index > 2) {
             return;
         }
         if (index === 2) {
             return m('span', ' + ' + (arr.length - 2));
         }
-        return m('span', person.name + ', ');
+        return m('span', comma + person.name );
     });
 }
 
