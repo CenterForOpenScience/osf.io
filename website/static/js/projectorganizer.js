@@ -132,6 +132,13 @@ function createBlankProjectDetail(message) {
     $('.project-details').html('<div class="row"> <div class="col-xs-12"> <i class="text-muted text-center po-placeholder"> ' + text + ' </i> </div> </div>');
 }
 
+function triggerClickOnItem(item) {
+    var row = $('.tb-row[data-id="'+ item.id+'"');
+    if(row.hasClass(this.options.hoverClassMultiselect)){
+        row.trigger('click');
+    }
+}
+
 /**
  * Saves the expand state of a folder so that it can be loaded based on that state
  * @param {Object} item Node data
@@ -311,7 +318,7 @@ function _showProjectDetails(event, item, col) {
                     tb.updateFolder(null, item);
                 });
             });
-            createBlankProjectDetail();
+            triggerClickOnItem.call(treebeard, item);    
             return false;
         });
         $('#remove-link-' + theItem.node_id).click(function () {
@@ -380,7 +387,7 @@ function _showProjectDetails(event, item, col) {
                     //    m.render(icon.get(0), iconTemplate);
                     //}
                     treebeard.updateFolder(null, item);
-                    createBlankProjectDetail();
+                    triggerClickOnItem.call(treebeard, item);    
                 }).fail($osf.handleJSONError);
 
             });
@@ -411,7 +418,7 @@ function _showProjectDetails(event, item, col) {
             postAction = $osf.postJSON(url, postData);
             postAction.done(function () {
                 treebeard.updateFolder(null, theParentNode);
-                createBlankProjectDetail();
+                triggerClickOnItem.call(treebeard, item);    
             }).fail($osf.handleJSONError);
             return false;
         });
@@ -613,6 +620,9 @@ function _poResolveIcon(item) {
     }
     if (item.data.isFolder) {
         return returnView('folder');
+    }
+    if(item.data.isPointer && !item.parent().data.isFolder){
+        return returnView('link');
     }
     if (item.data.isProject) {
         return returnView('project');
@@ -1160,6 +1170,7 @@ var tbOptions = {
         if (!item.open) {
             item.load = false;
         }
+
     },
     onmultiselect : _poMultiselect,
     resolveIcon : _poResolveIcon,
