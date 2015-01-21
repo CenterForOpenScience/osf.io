@@ -257,3 +257,17 @@ class Mendeley(ExternalProvider):
         self.account.oauth_key = data['access_token']
         self.account.scopes = data['scope']
         # handle expiration
+
+
+class Linkedin(ExternalProvider):
+    name = "LinkedIn"
+    short_name = "linkedin"
+
+    client_id = settings.LINKEDIN_CLIENT_ID
+    client_secret = settings.LINKEDIN_CLIENT_SECRET
+
+    auth_url_base = 'https://www.linkedin.com/uas/oauth2/authorization'
+    callback_url = 'https://www.linkedin.com/uas/oauth2/accessToken'
+
+    def handle_callback(self, data):
+        self.account.oauth_key = data['access_token']
