@@ -722,28 +722,42 @@ function _poMultiselect(event, tree) {
                                   !thisItem.permissions.movable;
             pointerIds.push(thisItem.node_id);
         });
-        if (!someItemsAreFolders) {
-            var multiItemDetailTemplateSource = $('#project-detail-multi-item-template').html(),
+        if(!selectedRows[0].parent().data.isFolder){
+            var multiItemDetailTemplateSource = $('#project-detail-multi-item-no-action').html(),
                 detailTemplate = Handlebars.compile(multiItemDetailTemplateSource),
                 detailTemplateContext = {
-                    multipleItems: true,
                     itemsCount: selectedRows.length
                 },
                 theParentNode = selectedRows[0].parent(),
                 displayHTML = detailTemplate(detailTemplateContext);
             $('.project-details').html(displayHTML);
             $('.project-details').show();
-            $('#remove-links-multiple').click(function () {
-                deleteMultiplePointersFromFolder.call(tb, pointerIds, theParentNode);
-                createBlankProjectDetail();
-            });
-            $('#close-multi-select').click(function () {
-                createBlankProjectDetail();
-                return false;
-            });
         } else {
-            createBlankProjectDetail();
+            if (!someItemsAreFolders) {
+                console.log("some items are folders", someItemsAreFolders);   
+                var multiItemDetailTemplateSource = $('#project-detail-multi-item-template').html(),
+                    detailTemplate = Handlebars.compile(multiItemDetailTemplateSource),
+                    detailTemplateContext = {
+                        multipleItems: true,
+                        itemsCount: selectedRows.length
+                    },
+                    theParentNode = selectedRows[0].parent(),
+                    displayHTML = detailTemplate(detailTemplateContext);
+                $('.project-details').html(displayHTML);
+                $('.project-details').show();
+                $('#remove-links-multiple').click(function () {
+                    deleteMultiplePointersFromFolder.call(tb, pointerIds, theParentNode);
+                    createBlankProjectDetail();
+                });
+                $('#close-multi-select').click(function () {
+                    createBlankProjectDetail();
+                    return false;
+                });
+            } else {
+                createBlankProjectDetail();
+            }
         }
+        
     } else {
         _showProjectDetails.call(tb, event, tb.multiselected[0]);
 
