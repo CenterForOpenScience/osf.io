@@ -79,6 +79,7 @@
     }
     </style>
 % endif
+
 % if node['anonymous'] and user['is_contributor']:
     <div class="alert alert-info">This ${node['node_type']} is being viewed through an anonymized, view-only link. If you want to view it as a contributor, click <a class="alert-link" href="${node['redirect_url']}">here</a>.</div>
 % endif
