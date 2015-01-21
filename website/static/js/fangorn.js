@@ -373,7 +373,9 @@ function _uploadEvent(event, item, col) {
     }
     this.dropzone.hiddenFileInput.click();
     this.dropzoneItemCache = item;
-    this.updateFolder(null, item);
+    if(!item.open){
+        this.updateFolder(null, item);        
+    }
 }
 
 /**
