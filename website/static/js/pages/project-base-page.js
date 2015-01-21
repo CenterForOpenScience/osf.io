@@ -24,14 +24,21 @@ if (node.isPublic && node.piwikSiteID) {
 function replaceAnchorScroll (buffer){
 	buffer = buffer || 100;
 	$(document).on('click', 'a[href^="#"]', function(event){
-		event.preventDefault();
-		// get location of the target
-		var target = $(this).attr('href'),
-		    offset = $(target).offset(); 
-		$(window).scrollTop(offset.top-buffer);
+		if(!$(this).attr('data-model') && $(this).attr('href') !== "#") {
+			event.preventDefault();
+			// get location of the target
+			var target = $(this).attr('href'),
+			    offset = $(target).offset(); 
+			$(window).scrollTop(offset.top-buffer);			
+		}
 	});
 }
 
 $(document).ready(function(){
 	replaceAnchorScroll();
+});
+
+
+$.getJSON(node.urls.api, function(data) {
+    $('body').trigger('nodeLoad', data);
 });

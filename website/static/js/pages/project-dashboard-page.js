@@ -25,6 +25,7 @@ new pointers.PointerManager('#addPointer', window.contextVars.node.title);
 // Listen for the nodeLoad event (prevents multiple requests for data)
 $('body').on('nodeLoad', function() {
     new LogFeed('#logScope', nodeApiUrl + 'log/');
+    new NodeControl('#projectScope', data); 
 });
 
 var node = window.contextVars.node;
@@ -32,7 +33,6 @@ var node = window.contextVars.node;
 // Get project data from the server and initiate KO modules
 $.getJSON(node.urls.api, function(data) {
     // Initialize nodeControl 
-    new NodeControl('#projectScope', data);
     $('body').trigger('nodeLoad', data);
 });
 
