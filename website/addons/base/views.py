@@ -212,7 +212,7 @@ def create_waterbutler_log(payload, **kwargs):
 @must_be_valid_project
 def get_waterbutler_render_url(**kwargs):
     provider = request.args.get('provider')
-    node = kwargs.get('project') or kwargs['node']
+    node = kwargs.get('node') or kwargs['project']
 
     node_addon = node.get_addon(provider)
 
