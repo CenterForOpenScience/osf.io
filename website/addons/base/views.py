@@ -20,10 +20,8 @@ from website.project.decorators import must_be_valid_project
 
 @decorators.must_have_permission('write')
 @decorators.must_not_be_registration
-def disable_addon(**kwargs):
-
+def disable_addon(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
 
     addon_name = kwargs.get('addon')
     if addon_name is None:
@@ -74,11 +72,6 @@ def get_user_from_cookie(cookie):
     if session is None:
         raise HTTPError(httplib.UNAUTHORIZED)
     return User.load(session.data['auth_user_id'])
-
-
-# TODO: Implement me
-def check_token(user, token):
-    pass
 
 
 permission_map = {
@@ -137,7 +130,6 @@ def get_auth(**kwargs):
     try:
         action = request.args['action']
         cookie = request.args['cookie']
-        token = request.args['token']
         node_id = request.args['nid']
         provider_name = request.args['provider']
     except KeyError:
@@ -146,8 +138,6 @@ def get_auth(**kwargs):
     view_only = request.args.get('viewOnly')
 
     user = get_user_from_cookie(cookie)
-
-    check_token(user, token)
 
     node = Node.load(node_id)
     if not node:
@@ -207,6 +197,8 @@ def create_waterbutler_log(payload, **kwargs):
         raise HTTPError(httplib.BAD_REQUEST)
     auth = Auth(user=user)
     node_addon.create_waterbutler_log(auth, osf_action, metadata)
+
+    return {'status': 'success'}
 
 
 @must_be_valid_project

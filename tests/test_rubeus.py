@@ -77,6 +77,9 @@ class TestRubeus(OsfTestCase):
             'isAddonRoot': True,
             'extra': None,
             'buttons': None,
+            'nodeId': node._id,
+            'nodeUrl': node.url,
+            'nodeApiUrl': node.api_url,
         }
         permissions = {
             'view': node.can_view(user),
@@ -151,6 +154,9 @@ class TestRubeus(OsfTestCase):
                 'acceptedFiles': node_settings.config.accept_extensions
             },
             'isAddonRoot': True,
+            'nodeId': node._id,
+            'nodeUrl': node.url,
+            'nodeApiUrl': node.api_url,
         }
         permissions = {
             'view': node.can_view(user),
@@ -184,6 +190,9 @@ class TestRubeus(OsfTestCase):
             'isAddonRoot': True,
             'extra': None,
             'buttons': None,
+            'nodeId': node._id,
+            'nodeUrl': node.url,
+            'nodeApiUrl': node.api_url,
         }
         permissions = {
             'view': node.can_view(user),
@@ -227,6 +236,9 @@ class TestRubeus(OsfTestCase):
             'isAddonRoot': True,
             'extra': None,
             'buttons': None,
+            'nodeId': node._id,
+            'nodeUrl': node.url,
+            'nodeApiUrl': node.api_url,
         }
         permissions = {
             'view': node.can_view(user),
