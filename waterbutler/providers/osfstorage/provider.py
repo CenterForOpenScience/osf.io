@@ -118,11 +118,16 @@ class OSFStorageProvider(provider.BaseProvider):
         complete_name = OSFPath('/' + complete_name).path
 
         begin = time.time()
-        metadata = yield from provider.move(
-            provider,
-            {'path': pending_name},
-            {'path': complete_name},
-        )
+        try:
+            metadata = yield from provider.metadata(complete_name)
+        except exceptions.ProviderError:
+            metadata = yield from provider.move(
+                provider,
+                {'path': pending_name},
+                {'path': complete_name},
+            )
+        else:
+            yield from provider.delete(pending_name)
         logger.info('[{}] ({}) PROVIDER.MOVE({}, {})'.format(
             time.time() - begin,
             self.__class__.__name__,
