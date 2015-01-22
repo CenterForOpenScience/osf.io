@@ -22,6 +22,11 @@ var copyMode = null;
 // Initialize projectOrganizer object (separate from the ProjectOrganizer constructor at the end)
 var projectOrganizer = {};
 
+// Templates load once
+var detailTemplateSource = $('#project-detail-template').html();
+var multiItemDetailTemplateSource = $('#project-detail-multi-item-no-action').html();
+var multiItemDetailTemplateSourceNoAction = $('#project-detail-multi-item-template').html();
+
 /**
  * Bloodhound is a typeahead suggestion engine. Searches here for public projects
  * @type {Bloodhound}
@@ -112,11 +117,10 @@ function addFormKeyBindings(nodeID) {
  * @param {Object} theItem Only the item.data portion of A Treebeard _item object for the row involved.
  */
 function createProjectDetailHTMLFromTemplate(theItem) {
-    var detailTemplateSource,
-        detailTemplate,
+    var detailTemplate,
         detailTemplateContext,
         displayHTML;
-    detailTemplateSource = $('#project-detail-template').html();
+    
     detailTemplate = Handlebars.compile(detailTemplateSource);
     detailTemplateContext = {
         theItem: theItem,
@@ -740,8 +744,7 @@ function _poMultiselect(event, tree) {
             pointerIds.push(thisItem.node_id);
         });
         if(!selectedRows[0].parent().data.isFolder){
-            var multiItemDetailTemplateSource = $('#project-detail-multi-item-no-action').html(),
-                detailTemplate = Handlebars.compile(multiItemDetailTemplateSource),
+            var detailTemplate = Handlebars.compile(multiItemDetailTemplateSource),
                 detailTemplateContext = {
                     itemsCount: selectedRows.length
                 },
@@ -752,8 +755,7 @@ function _poMultiselect(event, tree) {
         } else {
             if (!someItemsAreFolders) {
                 console.log("some items are folders", someItemsAreFolders);   
-                var multiItemDetailTemplateSource = $('#project-detail-multi-item-template').html(),
-                    detailTemplate = Handlebars.compile(multiItemDetailTemplateSource),
+                var detailTemplate = Handlebars.compile(multiItemDetailTemplateSourceNoAction),
                     detailTemplateContext = {
                         multipleItems: true,
                         itemsCount: selectedRows.length
