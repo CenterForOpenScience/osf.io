@@ -55,7 +55,8 @@ def osf_storage_download_file_hook(node_addon, payload, **kwargs):
 
     version_idx, version, record = get_version(path, node_addon, request.args.get('version'))
 
-    update_analytics(node_addon.owner, path, version_idx)
+    if payload.get('mode') != 'render':
+        update_analytics(node_addon.owner, path, version_idx)
 
     return {
         'data': {
@@ -213,7 +214,7 @@ def serialize_file(idx, version, record, path, node):
         'file_path': '/' + record.path,
         'rendered': rendered,
         'files_url': node.web_url_for('collect_file_trees'),
-        'download_url': node.web_url_for('osf_storage_view_file', path=path, action='download'),
+        'download_url': node.web_url_for('osf_storage_view_file', path=path, action='download', mode='render'),
         'revisions_url': node.api_url_for(
             'osf_storage_get_revisions',
             path=path,
@@ -229,9 +230,7 @@ def serialize_file(idx, version, record, path, node):
 def download_file(path, node_addon, version_query):
     mode = request.args.get('mode')
     idx, version, record = get_version(path, node_addon, version_query)
-    url = utils.get_waterbutler_download_url(idx, version, record)
-    if mode != 'render':
-        update_analytics(node_addon.owner, path, idx)
+    url = utils.get_waterbutler_download_url(idx, version, record, mode=mode)
     return redirect(url)
 
 
