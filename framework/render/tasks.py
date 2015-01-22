@@ -17,6 +17,13 @@ logger = logging.getLogger(__name__)
 # Ensure all filehandlers are registered. This MUST happen here so that
 # the handlers are registered when celery imports this module
 mfr.register_filehandlers(ALL_HANDLERS)
+# Update mfr config with static path and url
+mfr.config.update({
+    # Base URL for static files
+    'ASSETS_URL': os.path.join(settings.STATIC_URL_PATH, 'mfr'),
+    # Where to save static files
+    'ASSETS_FOLDER': os.path.join(settings.STATIC_FOLDER, 'mfr'),
+})
 
 CUSTOM_ERROR_MESSAGES = {}
 
