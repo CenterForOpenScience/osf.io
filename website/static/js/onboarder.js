@@ -4,6 +4,7 @@
 * the viewmodels for each of the individual onboarding widgets.
 */
 'use strict';
+var waterbutler = require('waterbutler');
 var Handlebars = require('handlebars');
 var Raven = require('raven-js');
 var ko = require('knockout');
@@ -95,7 +96,6 @@ function serializeNode(node) {
             web: node.url,
             api: node.api_url,
             register: node.url + 'register/',
-            upload: node.api_url + 'osfstorage/files/',
             files: node.url + 'files/',
             children: node.api_url + 'get_children/?permissions=write'
         }
@@ -438,7 +438,11 @@ function OBUploaderViewModel(params) {
         self.target(selected);
         self.clearMessages();
         self.showProgress(true);
-        self.dropzone.options.url = selected.urls.upload;
+        self.dropzone.options.url = function(files) {
+            //Files is always an array but we only support uploading a single file at once
+            var file = files[0]
+            return waterbutler.buildUploadUrl('/', 'osfstorage', selected.id, file);
+        };
         self.dropzone.processQueue(); // Tell Dropzone to process all queued files.
     };
     self.clearMessages = function() {
@@ -481,6 +485,14 @@ function OBUploaderViewModel(params) {
 
     var dropzoneOpts = {
 
+        sending: function(file, xhr) {
+            //Hack to remove webkitheaders
+            var _send = xhr.send;
+            xhr.send = function() {
+                _send.call(xhr, file);
+            };
+        },
+
         url: '/', // specified per upload
         autoProcessQueue: false,
         createImageThumbnails: false,
@@ -510,6 +522,11 @@ function OBUploaderViewModel(params) {
                     self.enableUpload(true);
                     dropzone.removeAllFiles(true);
                 }
+
+                if(message.message) {
+                    message = JSON.parse(message.message);
+                }
+
                 // Use OSF-provided error message if possible
                 // Otherwise, use dropzone's message
                 var msg = message.message_long || message;
@@ -546,10 +563,6 @@ function OBUploaderViewModel(params) {
                     self.filename(fileName);
                 }
                 self.enableUpload(false);
-                // Attach route to fetch signed URL
-                file.signedUrlFrom = function() {
-                    return self.target().urls.upload;
-                };
             });
         }
     };

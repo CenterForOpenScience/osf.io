@@ -13,10 +13,7 @@ function getViewOnly() {
 }
 
 function getDefaultOptions(path, provider) {
-    var nid = window.nodeId || contextVars.node.id;
-
     return {
-        nid: nid,
         token: '',
         path: path,
         provider: provider,
@@ -25,28 +22,28 @@ function getDefaultOptions(path, provider) {
     };
 }
 
-function buildUrl(suffix, path, provider, options) {
+function buildUrl(suffix, path, provider, nid, options) {
     path = path || '/';
     var baseUrl = settings.WATERBUTLER_URL + suffix;
 
-    return baseUrl + $.param($.extend(getDefaultOptions(path, provider), options));
+    return baseUrl + $.param($.extend(getDefaultOptions(path, provider), {nid: nid}, options));
 }
 
 var buildCrudUrl = buildUrl.bind(this, 'file?');
 var buildMetadataUrl = buildUrl.bind(this, 'data?');
 
 
-function buildUploadUrl(path, provider, file, options) {
+function buildUploadUrl(path, provider, nid, file, options) {
     path = (path || '/') + file.name;
-    return buildUrl('file?', path, provider, options);
+    return buildUrl('file?', path, provider, nid, options);
 }
 
 function buildFromTreebeard(suffix, item, options) {
-    return buildUrl(suffix, item.data.path, item.data.provider, options);
+    return buildUrl(suffix, item.data.path, item.data.provider, item.data.nodeId, options);
 }
 
 function buildFromTreebeardFile(item, file, options) {
-    return buildUploadUrl(item.data.path, item.data.provider, file, options);
+    return buildUploadUrl(item.data.path, item.data.provider, item.data.nodeId, file, options);
 }
 
 module.exports = {
@@ -57,5 +54,5 @@ module.exports = {
     buildTreeBeardUpload: buildFromTreebeardFile,
     buildTreeBeardDelete: buildFromTreebeard.bind(this, 'file?'),
     buildTreeBeardDownload: buildFromTreebeard.bind(this, 'file?'),
-    buildTreeBeardMetadata: buildFromTreebeard.bind(this, 'data?'),
+    buildTreeBeardMetadata: buildFromTreebeard.bind(this, 'data?')
 };
