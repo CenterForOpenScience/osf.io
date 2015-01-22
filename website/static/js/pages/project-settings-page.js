@@ -43,13 +43,16 @@ $(document).ready(function() {
 
         var payload = {};
 
-        $notificationSettings.find('input').each(function(idx, elm) {
-            var $elm = $(elm);
-            if (payload[$elm.attr('name').toLowerCase()] === undefined) {
-                payload[$elm.attr('name').toLowerCase()] = {};
-            }
-            payload[$elm.attr('name').toLowerCase()][$elm.attr('id')] = $elm.is(':checked');
-        });
+        $notificationSettings.find('.form-control').find('option').each(function(idx, elm) {
+	            var event = $notificationSettings.find('.form-control').attr('name');
+                var $elm = $(elm);
+                    if (payload[event.toLowerCase()] === undefined) {
+                        payload[event.toLowerCase()] = {};
+                    }
+                    if ($elm.attr('value') !== 'none') {
+                        payload[event.toLowerCase()][$elm.attr('value')] = $elm.is(':selected');
+                    }
+	        });
 
         $osf.postJSON(
             nodeApiUrl + 'subscribe/',

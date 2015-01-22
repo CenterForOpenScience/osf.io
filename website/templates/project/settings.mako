@@ -100,49 +100,43 @@
                 <div class="panel-body">
 
                     <form id="notificationSettings">
-
-                        <div class="row">
+                    <div class="row">
                             <div class="col-md-6">
                                 <h5>Notifications </h5>
-                                % for subscription in subscriptions_available:
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Notification Type</h5>
+                            </div>
+                    </div>
+                    </br>
+
+                    % for subscription in subscriptions_available:
+                        <div class="row">
+                            <div class="col-md-6">
+
                                 <label style="font-weight:normal; padding-right: 50px">
                                         ${subscriptions_available[subscription]}
                                 </label>
                             </div>
-                            <div class="col-md-3">
-                                <h5>Email </h5>
-                                <div class="radio">
-                                    <label>
-                                        <input type="radio"
-                                               id="email_transactional"
-                                               name=${subscription}
-                                               ${'checked' if "email_transactional" in notification_types_enabled else ""}>
-                                    </label>
-                                </div>
+                            <div class="col-md-6">
+                                <select class="form-control" name="${subscription}">
+                                    <option value="none" ${'selected' if 'email_transactional' not in notification_types_enabled and 'email_digest' not in notification_types_enabled else ''}>None</option>
+                                    <option value="email_transactional" ${'selected' if 'email_transactional' in notification_types_enabled else ''}>Email</option>
+                                    <option value="email_digest" ${'selected' if 'email_digest' in notification_types_enabled else ''}>Daily Email Digest</option>
+                                </select>
                             </div>
-                            <div class="col-md-3">
-                                <h5>Daily Email Digest</h5>
-                                <div class="radio">
-                                    <label>
-                                        <input type="radio"
-                                               id="email_digest"
-                                               name=${subscription}
-                                           ${'checked' if "email_digest" in notification_types_enabled else ""}>
-                                    </label>
-                                </div>
-                            </div>
-                            </br>
-                                % endfor
                         </div>
+                        </br>
+                    % endfor
 
-                        <br />
+                    <br />
 
-                        <button class="btn btn-success">Submit</button>
+                    <button class="btn btn-success">Submit</button>
 
-                        <!-- Flashed Messages -->
-                        <div class="help-block">
-                            <p id="configureNotificationsMessage"></p>
-                        </div>
+                    <!-- Flashed Messages -->
+                    <div class="help-block">
+                        <p id="configureNotificationsMessage"></p>
+                    </div>
                     </form>
 
                 </div>
