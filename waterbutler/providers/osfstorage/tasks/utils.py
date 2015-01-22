@@ -60,13 +60,24 @@ def create_parity_files(file_path, redundancy=5):
         ]
 
 
+def sanitize_request(request):
+    """Return dictionary of request attributes, excluding args and kwargs. Used
+    to ensure that potentially sensitive values aren't logged or sent to Sentry.
+    """
+    return {
+        key: value
+        for key, value in vars(request).items()
+        if key not in ['args', 'kwargs']
+    }
+
+
 def _log_task(func):
     """Decorator to add standardized logging to Celery tasks. Decorated tasks
     must also be decorated with `bind=True` so that `self` is available.
     """
     @functools.wraps(func)
     def wrapped(self, *args, **kwargs):
-        logger.info(vars(self.request))
+        logger.info(sanitize_request(self.request))
         return func(self, *args, **kwargs)
     return wrapped
 
@@ -100,7 +111,7 @@ def get_countdown(attempt, init_delay, max_delay, backoff):
 def capture_retry_message(task):
     if not client:
         return
-    client.captureException(extra=vars(task.request))
+    client.captureException(extra=sanitize_request(task.request))
 
 
 @contextlib.contextmanager
