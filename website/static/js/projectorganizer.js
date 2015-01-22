@@ -133,7 +133,7 @@ function createBlankProjectDetail(message) {
 }
 
 function triggerClickOnItem(item) {
-    var row = $('.tb-row[data-id="'+ item.id+'"');
+    var row = $('.tb-row[data-id="'+ item.id+'"]');
     if(row.hasClass(this.options.hoverClassMultiselect)){
         row.trigger('click');
     }
