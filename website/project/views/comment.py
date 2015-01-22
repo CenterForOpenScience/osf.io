@@ -161,7 +161,8 @@ def add_comment(**kwargs):
            commenter=auth.user.fullname,
            content=content,
            parent_comment=target.content if is_reply(target) else "",
-           title=node.title)
+           title=node.title,
+           url=node.absolute_url)
 
     return {
         'comment': serialize_comment(comment, auth)
