@@ -632,17 +632,21 @@ function _poResolveIcon(item) {
         return returnView('link');
     }
     if (item.data.isProject) {
-        return returnView('project');
+        if (item.data.isRegistration) {
+            return returnView('registration');
+        } else {
+            return returnView('project');
+        }
     }
-    if (item.data.isRegistration) {
-        return returnView('registration');
-    }
+
     if (item.data.isComponent) {
-        return returnView('component');
+        if (item.data.isRegistration) {
+            return returnView('registeredComponent');
+        }else {
+            return returnView('component');
+        }
     }
-    if (item.data.isRegistration && item.data.isComponent) {
-        return returnView('registeredComponent');
-    }
+
     if (item.data.isPointer) {
         return returnView('link');
     }
