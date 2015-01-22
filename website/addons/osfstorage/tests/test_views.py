@@ -188,7 +188,6 @@ class TestUpdateMetadataHook(HookTestCase):
             'metadata': {'archive': 'glacier'},
             'version_id': self.version._id,
         }
-        _, self.signature = utils.webhook_signer.sign_payload(self.payload)
 
     def send_metadata_hook(self, payload=None, **kwargs):
         return self.send_hook(

@@ -1,19 +1,11 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-import mock
-import unittest
 from nose.tools import *  # noqa
 
-from tests.factories import AuthUserFactory, ProjectFactory
+from tests.factories import AuthUserFactory
 
-import datetime
-import urlparse
-
-import requests
 import markupsafe
-import simplejson
-from cloudstorm import sign
 
 from framework import sessions
 from framework.flask import request
@@ -23,7 +15,6 @@ from website.addons.osfstorage.tests import factories
 from website.addons.osfstorage import model
 from website.addons.osfstorage import views
 from website.addons.osfstorage import utils
-from website.addons.osfstorage import settings
 
 from website.addons.osfstorage.tests.utils import (
     StorageTestCase, Delta, AssertDeltas
@@ -89,10 +80,10 @@ class TestGetCookie(StorageTestCase):
         user = AuthUserFactory()
         create_delta = Delta(lambda: Session.find().count(), lambda value: value + 1)
         with AssertDeltas(create_delta):
-            cookie = utils.get_cookie_for_user(user)
+            utils.get_cookie_for_user(user)
         get_delta = Delta(lambda: Session.find().count())
         with AssertDeltas(get_delta):
-            cookie = utils.get_cookie_for_user(user)
+            utils.get_cookie_for_user(user)
 
 
 class TestGetDownloadUrl(StorageTestCase):

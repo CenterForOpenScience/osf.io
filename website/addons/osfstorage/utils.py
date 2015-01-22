@@ -11,7 +11,6 @@ import markupsafe
 import itsdangerous
 from modularodm import Q
 from flask import request
-from cloudstorm import sign
 
 from framework.exceptions import HTTPError
 
@@ -26,15 +25,6 @@ from website.addons.osfstorage import settings
 
 
 logger = logging.getLogger(__name__)
-
-url_signer = sign.Signer(
-    settings.URLS_HMAC_SECRET,
-    settings.URLS_HMAC_DIGEST,
-)
-webhook_signer = sign.Signer(
-    settings.WEBHOOK_HMAC_SECRET,
-    settings.WEBHOOK_HMAC_DIGEST,
-)
 
 
 def get_permissions(auth, node):
