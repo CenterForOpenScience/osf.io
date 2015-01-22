@@ -21,7 +21,7 @@ var tempCounter = 1;
  */
 function _fangornResolveIcon(item) {
     var privateFolder = m('img', { src : '/static/img/hgrid/fatcowicons/folder_delete.png' }),
-        pointerFolder = m('i.icon-hand-right', ' '),
+        pointerFolder = m('i.icon-link', ' '),
         openFolder  = m('i.icon-folder-open-alt', ' '),
         closedFolder = m('i.icon-folder-close-alt', ' '),
         configOption = item.data.provider ? resolveconfigOption.call(this, item, 'folderIcon', [item]) : undefined,
@@ -701,6 +701,35 @@ function _loadTopLevelChildren() {
 }
 
 /**
+ * Expand major addons on load
+ * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
+ * @this Treebeard.controller
+ * @private
+ */
+function expandStateLoad(item) {
+    var tb = this,
+        i;
+        console.log(item);
+    if (item.children.length > 0 && item.depth === 1) {
+        for (i = 0; i < item.children.length; i++) {
+            console.log(item.children[i].data);
+            // if (item.children[i].data.isAddonRoot || item.children[i].data.addonFullName === 'OSF Storage' ) {
+                tb.updateFolder(null, item.children[i]);
+            // }
+        }
+    }
+    if (item.children.length > 0 && item.depth === 2) {
+        for (i = 0; i < item.children.length; i++) {
+            console.log(item.children[i].data);
+            if (item.children[i].data.isAddonRoot || item.children[i].data.addonFullName === 'OSF Storage' ) {
+                tb.updateFolder(null, item.children[i]);
+            }
+        }
+    }
+}
+
+
+/**
  * OSF-specific Treebeard options common to all addons.
  * Check Treebeard API for more information
  */
@@ -790,6 +819,7 @@ tbOptions = {
     resolveUploadMethod: _fangornUploadMethod,
     lazyLoadError : _fangornLazyLoadError,
     lazyLoadOnLoad : _fangornLazyLoadOnLoad,
+    ontogglefolder : expandStateLoad,
     dropzoneEvents : {
         uploadprogress : _fangornUploadProgress,
         sending : _fangornSending,
