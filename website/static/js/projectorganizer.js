@@ -421,7 +421,8 @@ function _showProjectDetails(event, item, col) {
                 };
             postAction = $osf.postJSON(url, postData);
             postAction.done(function () {
-                treebeard.updateFolder(null, theParentNode);
+                treebeard.updateFolder(null, treebeard.find(1));
+                // Also update every
             }).fail($osf.handleJSONError);
             return false;
         });
