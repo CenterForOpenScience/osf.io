@@ -24,9 +24,9 @@ install:
     - travis_retry invoke requirements
     - travis_retry invoke addon_requirements
     - travis_retry mfr -r install all
-    - npm install
-    - npm install -g bower
-    - bower install
+    - travis_retry npm install
+    - travis_retry npm install -g bower
+    - travis_retry bower install
     - inv webpack
 
 before_script:

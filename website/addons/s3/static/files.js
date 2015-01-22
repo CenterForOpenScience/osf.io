@@ -1,1 +1,1 @@
-require('./s3-rubeus-cfg.js');
+require('./s3FangornConfig.js');

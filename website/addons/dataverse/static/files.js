@@ -1,1 +1,1 @@
-require('./dataverseRubeusCfg.js');
+require('./dataverseFangornConfig.js');

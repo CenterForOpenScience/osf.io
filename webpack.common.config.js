@@ -42,13 +42,12 @@ var entry = {
         'bootstrap',
         'bootbox',
         'select2',
-        'hgrid',
         'osfHelpers',
         'knockout-punches',
         'dropzone',
         'knockout-sortable',
-        'dropzonePatch',
         'rubeus',
+        'treebeard',
         'jquery.cookie'
     ]
 };
@@ -91,15 +90,18 @@ var resolve = {
         // Dropzone doesn't have a proper 'main' entry in its bower.json
         'dropzone': staticPath('vendor/bower_components/dropzone/downloads/dropzone.js'),
         // Also alias some internal libraries for easy access
-        'dropzonePatch': staticPath('js/dropzonePatch.js'),
         'rubeus': staticPath('js/rubeus.js'),
+        'fangorn': staticPath('js/fangorn.js'),
+        'waterbutler': staticPath('js/waterbutler.js'),
+        'settings': staticPath('js/settings.js'),
         'folderpicker': staticPath('js/folderPicker.js'),
         'osfHelpers': staticPath('js/osfHelpers.js'),
         'osfLanguage': staticPath('js/osfLanguage.js'),
         'addons': path.join(__dirname, 'website', 'addons'),
         'addonHelper': staticPath('js/addonHelper.js'),
         'koHelpers': staticPath('js/koHelpers.js'),
-        'addonPermissions': staticPath('js/addonPermissions.js')
+        'addonPermissions': staticPath('js/addonPermissions.js'),
+        'navbar-control': staticPath('js/navbarControl.js')
     }
 };
 
@@ -109,7 +111,6 @@ var externals = {
     'jquery': 'jQuery',
     'jquery-ui': 'jQuery.ui',
     'raven-js': 'Raven',
-    'hgrid': 'HGrid',
     'dropzone': 'Dropzone'
 };
 
