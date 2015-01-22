@@ -67,6 +67,7 @@ class BaseHandler(tornado.web.RequestHandler, SentryMixin):
         )
 
     def write_error(self, status_code, exc_info):
+        self.captureException(exc_info)
         etype, exc, _ = exc_info
         if issubclass(etype, exceptions.ProviderError):
             if exc.data:
