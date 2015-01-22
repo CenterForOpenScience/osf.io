@@ -6,11 +6,9 @@ var m = require('mithril');
 var Fangorn = require('fangorn');
 var waterbutler = require('waterbutler');
 
-var branch = undefined;
-
 
 function _uploadUrl(item, file) {
-    return waterbutler.buildTreeBeardUpload(item, file, {branch: branch});
+    return waterbutler.buildTreeBeardUpload(item, file, {branch: item.data.branch});
 }
 
 
@@ -35,7 +33,7 @@ function _fangornActionColumn (item, col){
             $('.tb-modal-footer .btn-success').html('<i> Deleting...</i>').attr('disabled', 'disabled');
             // delete from server, if successful delete from view
             $.ajax({
-                url: waterbutler.buildTreeBeardDelete(item, {branch: branch, sha: item.data.extra.fileSha}),
+                url: waterbutler.buildTreeBeardDelete(item, {branch: item.data.branch, sha: item.data.extra.fileSha}),
                 type : 'DELETE'
             })
             .done(function(data) {
@@ -130,19 +128,25 @@ function _fangornActionColumn (item, col){
 }
 
 function changeBranch(item, ref){
-    branch = ref;
+    item.data.branch = ref;
     this.updateFolder(null, item);
 }
 
 function _resolveLazyLoad(item) {
-    return waterbutler.buildTreeBeardMetadata(item, {ref: branch});
+    return waterbutler.buildTreeBeardMetadata(item, {ref: item.data.branch});
+}
+
+function _fangornLazyLoadOnLoad (tree) {
+    tree.children.forEach(function(item) {
+        Fangorn.Utils.inheritFromParent(item, tree, ['branch']);
+    });
 }
 
 function _fangornGithubTitle(item, col)  {
     var tb = this;
     var branchArray = [];
     if (item.data.branches) {
-        branch = branch || item.data.defaultBranch;
+        item.data.branch = item.data.branch || item.data.defaultBranch;
         for (var i = 0; i < item.data.branches.length; i++) {
             var selected = item.data.branches[i] === item.data.defaultBranch ? 'selected' : '';
             branchArray.push(m('option', {selected : selected, value:item.data.branches[i]}, item.data.branches[i]));
@@ -165,12 +169,12 @@ function _fangornGithubTitle(item, col)  {
                           {
                               provider: item.data.provider,
                               path: item.data.path.substring(1),
-                              branch: branch
+                              branch: item.data.branch
                           },
                           item.data.extra || {}
                         )
                     );
-                    window.location = nodeApiUrl + 'waterbutler/files/?' + params;
+                    window.location = item.data.nodeApiUrl + 'waterbutler/files/?' + params;
                 }}, item.data.name)
         ]);
     }
@@ -214,6 +218,12 @@ function _fangornUploadComplete(item){
     var index = this.returnIndex(item.id);
 }
 
+function _fangornUploadSuccess(file, item, response) {
+    if (response) {
+        response.branch = item.parent().data.branch;
+    }
+}
+
 // Register configuration
 Fangorn.config.github = {
     // Handle changing the branch select
@@ -221,5 +231,7 @@ Fangorn.config.github = {
     lazyload: _resolveLazyLoad,
     resolveRows: _fangornColumns,
     folderIcon: _fangornFolderIcons,
-    onUploadComplete : _fangornUploadComplete,
+    onUploadComplete: _fangornUploadComplete,
+    lazyLoadOnLoad: _fangornLazyLoadOnLoad,
+    uploadSuccess: _fangornUploadSuccess
 };
