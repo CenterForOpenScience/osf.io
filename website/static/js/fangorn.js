@@ -12,8 +12,6 @@ var tbOptions;
 
 var tempCounter = 1;
 
-var uploadInProgress = false;
-
 /**
  * Returns custom icons for OSF depending on the type of item
  * @param {Object} item A Treebeard _item object. Node information is inside item.data
@@ -212,11 +210,11 @@ function _fangornUploadProgress(treebeard, file, progress) {
     msgText  += 'Uploaded ' + Math.floor(progress) + '%';
 
     if (progress < 100) {
-        uploadInProgress = true;
+        treebeard.options.uploadInProgress = true;
         item.notify.update(msgText, 'success', column, 0);
     } else {
         item.notify.update(msgText, 'success', column, 2000);
-        uploadInProgress = false; 
+        treebeard.options.uploadInProgress = false; 
     }
 }
 
@@ -231,7 +229,7 @@ function _fangornUploadProgress(treebeard, file, progress) {
  * @private
  */
 function _fangornSending(treebeard, file, xhr, formData) {
-    uploadInProgress = true;
+    treebeard.options.uploadInProgress = true;
 
     var parentID = treebeard.dropzoneItemCache.id,
         parent = treebeard.dropzoneItemCache,
@@ -318,7 +316,7 @@ function _fangornComplete(treebeard, file) {
  * @private
  */
 function _fangornDropzoneSuccess(treebeard, file, response) {
-    uploadInProgress = false; 
+    treebeard.options.uploadInProgress = false; 
     var item,
         revisedItem,
         child,
@@ -371,7 +369,7 @@ function _fangornDropzoneError(treebeard, file, message) {
     item.notify.message = msgText;
     item.notify.col = 1;
     item.notify.selfDestruct(treebeard, item);
-    uploadInProgress = false; 
+    treebeard.options.uploadInProgress = false; 
 }
 
 /**
@@ -734,7 +732,7 @@ tbOptions = {
         });
 
         window.onbeforeunload = function(e) {
-            if(uploadInProgress){
+            if(tb.options.uploadInProgress){
               return 'You have pending uploads, if you leave this page they may not complete.';                
             }
         };
@@ -804,7 +802,8 @@ tbOptions = {
         error : _fangornDropzoneError,
         dragover : _fangornDragOver,
         addedfile : _fangornAddedFile
-    }
+    },
+    uploadInProgress : false
 };
 
 /**
