@@ -209,9 +209,10 @@ function _fangornUploadProgress(treebeard, file, progress) {
     } else {
         column = 1;
     }
-    msgText  += 'Uploaded ' + Math.floor(progress) + '%'
+    msgText  += 'Uploaded ' + Math.floor(progress) + '%';
 
     if (progress < 100) {
+        uploadInProgress = true;
         item.notify.update(msgText, 'success', column, 0);
     } else {
         item.notify.update(msgText, 'success', column, 2000);
