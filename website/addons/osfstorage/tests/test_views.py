@@ -348,49 +348,34 @@ class TestDownloadFile(StorageTestCase):
     @mock.patch('website.addons.osfstorage.utils.get_waterbutler_download_url')
     def test_download(self, mock_get_url):
         mock_get_url.return_value = 'http://freddie.queen.com/'
-        deltas = [
-            Delta(
-                lambda: self.record.get_download_count(),
-                lambda value: value + 1
-            ),
-            Delta(
-                lambda: self.record.get_download_count(len(self.record.versions)),
-                lambda value: value + 1
-            ),
-        ]
-        with AssertDeltas(*deltas):
-            res = self.download_file(self.path)
+        res = self.download_file(self.path)
         assert_equal(res.status_code, 302)
         assert_equal(res.location, mock_get_url.return_value)
         mock_get_url.assert_called_with(
             len(self.record.versions),
             self.version,
             self.record,
+            mode=None,
         )
 
     @mock.patch('website.addons.osfstorage.utils.get_waterbutler_download_url')
     def test_download_render_mode(self, mock_get_url):
         mock_get_url.return_value = 'http://freddie.queen.com/'
-        deltas = [
-            Delta(
-                lambda: self.record.get_download_count(),
-                lambda value: value
+        self.app.get(
+            self.project.web_url_for(
+                'osf_storage_view_file',
+                path=self.path,
+                action='download',
+                mode='render',
             ),
-            Delta(
-                lambda: self.record.get_download_count(len(self.record.versions)),
-                lambda value: value
-            ),
-        ]
-        with AssertDeltas(*deltas):
-            res = self.app.get(
-                self.project.web_url_for(
-                    'osf_storage_view_file',
-                    path=self.path,
-                    action='download',
-                    mode='render',
-                ),
-                auth=self.project.creator.auth,
-            )
+            auth=self.project.creator.auth,
+        )
+        mock_get_url.assert_called_with(
+            len(self.record.versions),
+            self.version,
+            self.record,
+            mode='render',
+        )
 
     @mock.patch('website.addons.osfstorage.utils.get_waterbutler_download_url')
     def test_download_by_version_latest(self, mock_get_url):
@@ -398,40 +383,18 @@ class TestDownloadFile(StorageTestCase):
         versions = [factories.FileVersionFactory() for _ in range(3)]
         self.record.versions.extend(versions)
         self.record.save()
-        deltas = [
-            Delta(
-                lambda: self.record.get_download_count(),
-                lambda value: value + 1
-            ),
-            Delta(
-                lambda: self.record.get_download_count(3),
-                lambda value: value + 1
-            ),
-        ]
-        with AssertDeltas(*deltas):
-            res = self.download_file(path=self.path, version=3)
+        res = self.download_file(path=self.path, version=3)
         assert_equal(res.status_code, 302)
         assert_equal(res.location, mock_get_url.return_value)
-        mock_get_url.assert_called_with(3, versions[1], self.record)
+        mock_get_url.assert_called_with(3, versions[1], self.record, mode=None)
 
     @mock.patch('website.addons.osfstorage.utils.get_waterbutler_download_url')
     def test_download_invalid_version(self, mock_get_url):
         mock_get_url.return_value = 'http://freddie.queen.com/'
-        deltas = [
-            Delta(
-                lambda: self.record.get_download_count(),
-                lambda value: value
-            ),
-            Delta(
-                lambda: self.record.get_download_count(3),
-                lambda value: value
-            ),
-        ]
-        with AssertDeltas(*deltas):
-            res = self.download_file(
-                path=self.path, version=3,
-                expect_errors=True,
-            )
+        res = self.download_file(
+            path=self.path, version=3,
+            expect_errors=True,
+        )
         assert_equal(res.status_code, 404)
         assert_false(mock_get_url.called)
 

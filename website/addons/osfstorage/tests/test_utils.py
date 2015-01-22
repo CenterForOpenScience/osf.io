@@ -15,11 +15,13 @@ import markupsafe
 import simplejson
 from cloudstorm import sign
 
-from framework.exceptions import HTTPError
+from framework import sessions
+from framework.flask import request
 
 from website.models import Session
 from website.addons.osfstorage.tests import factories
 from website.addons.osfstorage import model
+from website.addons.osfstorage import views
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import settings
 
@@ -35,7 +37,6 @@ class TestHGridUtils(StorageTestCase):
             path='god/save/the/queen',
             node_settings=self.project.get_addon('osfstorage'),
         )
-        permissions = {'edit': False, 'view': True}
         serialized = utils.serialize_metadata_hgrid(
             file_tree,
             self.project,
@@ -50,7 +51,6 @@ class TestHGridUtils(StorageTestCase):
             path='kind/of/<strong>magic.mp3',
             node_settings=self.project.get_addon('osfstorage'),
         )
-        permissions = {'edit': False, 'view': True}
         serialized = utils.serialize_metadata_hgrid(
             file_record,
             self.project,
@@ -127,28 +127,17 @@ class TestSerializeRevision(StorageTestCase):
         self.path = 'kind/of/magic.mp3'
         self.record, _ = model.OsfStorageFileRecord.get_or_create(self.path, self.node_settings)
         self.versions = [
-             factories.FileVersionFactory(creator=self.user)
+            factories.FileVersionFactory(creator=self.user)
             for _ in range(3)
         ]
         self.record.versions = self.versions
         self.record.save()
 
-    @mock.patch('website.addons.osfstorage.utils.get_waterbutler_download_url')
-    def download_version(self, version, mock_get_url):
-        self.app.get(
-            self.project.web_url_for(
-                'osf_storage_view_file',
-                path=self.path,
-                action='download',
-                version=version,
-            ),
-            auth=self.user.auth,
-        )
-
     def test_serialize_revision(self):
-        self.download_version(1)
-        self.download_version(1)
-        self.download_version(3)
+        sessions.sessions[request._get_current_object()] = Session()
+        views.update_analytics(self.project, self.path, 1)
+        views.update_analytics(self.project, self.path, 1)
+        views.update_analytics(self.project, self.path, 3)
         expected = {
             'index': 1,
             'user': {

@@ -200,14 +200,14 @@ def get_waterbutler_url(user, *path, **query):
     return url.url
 
 
-def get_waterbutler_download_url(version_idx, file_version, file_record, user=None):
+def get_waterbutler_download_url(version_idx, file_version, file_record, user=None, **query):
     nid = file_record.node._id
     path = get_filename(version_idx, file_version, file_record)
-    return get_waterbutler_url(user, 'file', nid=nid, path=path)
+    return get_waterbutler_url(user, 'file', nid=nid, path=path, **query)
 
 
-def get_waterbutler_upload_url(user, node, path):
-    return get_waterbutler_url(user, 'file', nid=node._id, path=path)
+def get_waterbutler_upload_url(user, node, path, **query):
+    return get_waterbutler_url(user, 'file', nid=node._id, path=path, **query)
 
 
 def get_cache_filename(file_version):
