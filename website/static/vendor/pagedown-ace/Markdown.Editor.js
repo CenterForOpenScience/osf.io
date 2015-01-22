@@ -208,7 +208,7 @@
             }
             */
 
-            var useragent = typeof require !== 'undefined' ? require('ace/lib/useragent') : ace.require('ace/lib/useragent');
+            var useragent = ace.require('ace/lib/useragent');
             var getKey = function (identifier) {
                 var keyStroke = keyStrokes[identifier][useragent.isMac ? "mac" : "win"];
                 var orIndex = keyStroke.indexOf('|');
@@ -792,7 +792,7 @@
             }
             */
 
-            var Range = typeof require !== 'undefined' ? require('ace/range').Range : ace.require('ace/range').Range;
+            var Range = ace.require('ace/range').Range;
             (function(range) {
                 stateObj.before = inputArea.session.getTextRange(new Range(0,0,range.start.row, range.start.column));
                 stateObj.selection = inputArea.session.getTextRange();
@@ -813,7 +813,7 @@
         // operation.
         this.setInputAreaSelection = function () {
 
-            var Range = typeof require !== 'undefined' ? require('ace/range').Range : ace.require('ace/range').Range;
+            var Range = ace.require('ace/range').Range;
             inputArea.selection.setSelectionRange((function(posStart, posEnd) {
                 return new Range(posStart.row, posStart.column, posEnd.row, posEnd.column);
             })(inputArea.session.doc.indexToPosition(stateObj.start), inputArea.session.doc.indexToPosition(stateObj.end)));
@@ -925,7 +925,7 @@
                 endIndex++;
             }
             
-            var Range = typeof require !== 'undefined' ? require('ace/range').Range : ace.require('ace/range').Range;
+            var Range = ace.require('ace/range').Range;
             var range = (function(posStart, posEnd) {
                 return new Range(posStart.row, posStart.column, posEnd.row, posEnd.column);
             })(inputArea.session.doc.indexToPosition(startIndex), inputArea.session.doc.indexToPosition(stateObj.length - endIndex));

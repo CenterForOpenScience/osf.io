@@ -3,12 +3,14 @@
 * leaving the page with unsaved changes.
 */
 'use strict';
-// TODO: Use commonjs+webpack to load pagedown modules
 var ko = require('knockout');
 var $ = require('jquery');
 var $osf = require('osfHelpers');
 var Raven = require('raven-js');
 require('bootstrap-editable');
+var Markdown = require('pagedown-ace-converter');
+Markdown.getSanitizingConverter = require('pagedown-ace-sanitizer').getSanitizingConverter;
+require('imports?Markdown=pagedown-ace-converter!pagedown-ace-editor');
 
 var editor;
 

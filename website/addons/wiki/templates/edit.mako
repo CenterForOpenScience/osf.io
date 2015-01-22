@@ -117,30 +117,11 @@
 
 <%def name="javascript_bottom()">
 ${parent.javascript_bottom()}
-<script src="/static/vendor/bower_components/ace-builds/src-noconflict/ace.js"></script>
-<script src="/static/vendor/pagedown-ace/Markdown.Converter.js"></script>
-<script src="/static/vendor/pagedown-ace/Markdown.Sanitizer.js"></script>
-<script src="/static/vendor/pagedown-ace/Markdown.Editor.js"></script>
-
-<!-- Necessary for ShareJS communication -->
-<script src="//${sharejs_host}:${sharejs_port}/text.js"></script>
-<script src="//${sharejs_host}:${sharejs_port}/share.js"></script>
-<script src="/static/addons/wiki/ace.js"></script>
-<script src="/static/addons/wiki/ReconnectingWebSocket.js"></script>
-
-<!-- MD5 Hashing to generate gravatar -->
-<script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/md5.js"></script>
-
 <script>
-    // Generate gravatar URL
-    var baseGravatarUrl = 'http://secure.gravatar.com/avatar/';
-    var hash = CryptoJS.MD5('${user_name}'.toLowerCase().trim());
-    var params = '?d=identicon&size=32';
-    var gravatar = baseGravatarUrl + hash + params;
-
     window.contextVars = window.contextVars || {};
     window.contextVars.wiki = {
         urls: {content: '${urls['api']['content']}'},
+        email: '${user_name}',
         metadata: {
             registration: true,
             docId: '${sharejs_uuid}',
@@ -148,15 +129,11 @@ ${parent.javascript_bottom()}
             userName: '${user_full_name}',
             userUrl: '${user_url}',
             sharejsHost: '${sharejs_host}',
-            sharejsPort: '${sharejs_port}',
-            gravatarUrl: gravatar
+            sharejsPort: '${sharejs_port}'
         }
     };
-
-    // Toggle tooltips
-    $(function () {
-        $('[data-toggle="tooltip"]').tooltip();
-    });
 </script>
+<script src="//${sharejs_host}:${sharejs_port}/text.js"></script>
+<script src="//${sharejs_host}:${sharejs_port}/share.js"></script>
 <script src=${"/static/public/js/wiki-edit-page.js" | webpack_asset}></script>
 </%def>

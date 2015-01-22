@@ -1,3 +1,5 @@
+var ReconnectingWebSocket = require('addons/wiki/static/ReconnectingWebSocket.js');
+
 var activeUsers = [];
 
 var ShareJSDoc = function(viewModel, url, metadata) {
