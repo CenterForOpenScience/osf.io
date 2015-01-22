@@ -45,8 +45,64 @@
                     <div data-bind="html: message, attr: {class: messageClass}"></div>
             </div><!--view model scope ends -->
             </div>
+        <div class="panel panel-default">
+            <div class="panel-heading"><h3 class="panel-title">Configure Notification Preferences</h3></div>
+            <div class="panel-body">
+                <div class="form">
+                    <h3>Project Notifications</h3>
+                    </br>
+                        <div class="col-md-6">Notifications</div>
+                        <div class="col-md-3">Emails</div>
+                        <div class="col-md-3">Email Digest</div>
+                        ${format_subscriptions(user_subscriptions['node_subscriptions']['children'])}
+                </div>
+                <div class="padded">
+                    <button class="btn btn-success">Submit</button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+</%def>
+
+<%def name="format_subscriptions(d_to_use, indent=0)">
+    <% from website.models import Node %>
+    %for node_id in d_to_use.keys():
+        <a href=""><b>${Node.load(node_id).title}</b></a>
+        </br>
+        % for subscription in subscriptions_available:
+            <div class="col-md-6">
+                    <label style="font-weight:normal; padding-right: 50px">
+                            ${subscriptions_available[subscription]}
+                    </label>
+                </div>
+                <div class="col-md-3">
+                    <div class="radio">
+                        <label>
+                            <input type="radio"
+                                   id="email_transactional"
+                                   name=${subscription}
+                                   ${'checked' if 'email_transactional' in user_subscriptions['node_subscriptions']['children'][node_id]['subscriptions'][subscription] else ''}>
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="radio">
+                        <label>
+                            <input type="radio"
+                                   id="email_digest"
+                                   name=${subscription}
+                                  ${'checked' if 'email_digest' in user_subscriptions['node_subscriptions']['children'][node_id]['subscriptions'][subscription] else ''}>
+                        </label>
+                    </div>
+                </div>
+
+        % endfor
+        %if d_to_use[node_id]['children'] != {}:
+            ${format_subscriptions(d_to_use[node_id]['children'], indent+1)}
+        %endif
+    %endfor
+
 </%def>
 
 <%def name="javascript()">
