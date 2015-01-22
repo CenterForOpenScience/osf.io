@@ -102,4 +102,9 @@ class CRUDHandler(core.BaseHandler):
         )
 
     def on_finish(self):
-        logger.info('Full request, {} ({}), took {} seconds'.format(self.request.uri, self.request.method, time.time() - self.begin))
+        logger.info('[{}] ({}) Finish request, {} ({})'.format(
+            time.time() - self.begin,
+            self.__class__.__name__,
+            self.request.uri,
+            self.request.method,
+        ))

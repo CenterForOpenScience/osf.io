@@ -41,7 +41,10 @@ def fetch_rest_identity(**params):
         params=params,
         headers={'Content-Type': 'application/json'},
     )
-    logger.info('Took {} seconds to fetch Identity from OSF'.format(time.time() - begin))
+    logger.info('[{}] ({}) Fetch Identity from OSF'.format(
+        time.time() - begin,
+        __name__,
+    ))
 
     # TOOD Handle Errors nicely
     if response.status != 200:

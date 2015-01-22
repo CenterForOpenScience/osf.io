@@ -69,11 +69,11 @@ class BaseProvider(metaclass=abc.ABCMeta):
         expects = kwargs.pop('expects', None)
         throws = kwargs.pop('throws', exceptions.ProviderError)
         response = yield from aiohttp.request(*args, **kwargs)
-        logger.info('Request made by {} to {} ({}) took {} seconds.'.format(
+        logger.info('[{}] ({}) Request made to {} ({})'.format(
+            time.time() - begin,
             self.__class__.__name__,
             args[1],
             args[0],
-            time.time() - begin
         ))
         if expects and response.status not in expects:
             raise (yield from exceptions.exception_from_response(response, error=throws, **kwargs))
