@@ -100,8 +100,8 @@ class CloudFilesProvider(provider.BaseProvider):
     @ensure_connection
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
-        """Uploads the given stream to S3
-        :param ResponseStreamReader stream: The stream to put to Cloudfiles
+        """Uploads the given stream to CloudFiles
+        :param ResponseStreamReader stream: The stream to put to CloudFiles
         :param str path: The full path of the object to upload to/into
         :rtype ResponseStreamReader:
         """
