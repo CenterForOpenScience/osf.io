@@ -23,7 +23,6 @@
                 % endif
                     <li><a href="#configureNotifications">Configure Notifications</a></li>
                     <li><a href="#selectAddons">Select Add-ons</a></li>
-                % endif
                 % if addon_enabled_settings:
                     <li><a href="#configureAddons">Configure Add-ons</a></li>
                 % endif
