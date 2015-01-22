@@ -3,6 +3,7 @@
 import logging
 import operator
 import httplib as http
+import json
 
 from dateutil.parser import parse as parse_date
 
@@ -28,7 +29,8 @@ from website.util import web_url_for, paths
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
 from website.profile import utils as profile_utils
-
+from website import settings
+from website.notifications.utils import SubscriptionsDict
 
 logger = logging.getLogger(__name__)
 
@@ -210,8 +212,25 @@ def user_notifications(auth, **kwargs):
     if not settings.ENABLE_EMAIL_SUBSCRIPTIONS:
         raise HTTPError(http.BAD_REQUEST)
     return {
-        'mailing_lists': auth.user.mailing_lists
+        'mailing_lists': auth.user.mailing_lists,
+        'user_subscriptions': find_user_subscriptions(auth.user),
+        'subscriptions_available': settings.SUBSCRIPTIONS_AVAILABLE
     }
+
+
+def find_user_subscriptions(user):
+    subscriptions = SubscriptionsDict()
+
+    for notification_type in settings.NOTIFICATION_TYPES:
+        if getattr(user, notification_type, []):
+            for subscription in getattr(user, notification_type, []):
+                if subscription and subscription.object_id not in subscriptions:
+                        if subscription.node_lineage: #can be removed after development
+                            subscriptions.add_subscription(subscription.node_lineage, subscription)
+    return {
+        'node_subscriptions': subscriptions
+    }
+
 
 def collect_user_config_js(addons):
     """Collect webpack bundles for each of the addons' user-cfg.js modules. Return
