@@ -132,8 +132,12 @@ function createBlankProjectDetail(message) {
     $('.project-details').html('<div class="row"> <div class="col-xs-12"> <i class="text-muted text-center po-placeholder"> ' + text + ' </i> </div> </div>');
 }
 
-function triggerClickOnItem(item) {
+function triggerClickOnItem(item, force) {
     var row = $('.tb-row[data-id="'+ item.id+'"');
+    if (force){
+        row.trigger('click');        
+    }
+
     if(row.hasClass(this.options.hoverClassMultiselect)){
         row.trigger('click');
     }
@@ -418,7 +422,6 @@ function _showProjectDetails(event, item, col) {
             postAction = $osf.postJSON(url, postData);
             postAction.done(function () {
                 treebeard.updateFolder(null, theParentNode);
-                triggerClickOnItem.call(treebeard, item);    
             }).fail($osf.handleJSONError);
             return false;
         });
@@ -679,7 +682,7 @@ function _poResolveToggle(item) {
  * @private
  */
 function _poResolveLazyLoad(item) {
-    console.log("tree", item);
+
     return '/api/v1/dashboard/' + item.data.node_id;
 }
 
@@ -697,8 +700,14 @@ function expandStateLoad(item) {
             if (item.children[i].data.expand) {
                 tb.updateFolder(null, item.children[i]);
             }
+            console.log(tb.multiselected[0].data.node_id, item.children[i].data.node_id);
+            if(tb.multiselected[0] && item.children[i].data.node_id === tb.multiselected[0].data.node_id) {
+                triggerClickOnItem.call(tb, item.children[i], true);            
+            }
         }
     }
+
+
 }
 
 /**
@@ -722,7 +731,7 @@ function _poLoadOpenChildren() {
  * @private
  */
 function _poMultiselect(event, tree) {
-    console.log(this, tree);
+    console.log(tree);
     var tb = this,
         selectedRows = filterRowsNotInParent.call(tb, tb.multiselected),
         someItemsAreFolders,
@@ -777,7 +786,6 @@ function _poMultiselect(event, tree) {
         
     } else {
         _showProjectDetails.call(tb, event, tb.multiselected[0]);
-
     }
 }
 

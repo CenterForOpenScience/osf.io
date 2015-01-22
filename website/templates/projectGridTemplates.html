@@ -104,6 +104,22 @@
                     </span>
                     
                 </span>
+                <span class="rename-container" id="rnc-{{theItem.node_id}}">
+                        <form action="">
+                              <fieldset class="project-detail-fields">
+                                <div class="row">
+                                    <div class="col-xs-8">
+                                        <input class="typeahead" id="rename-node-input{{theItem.node_id}}" type="text" value="{{{theItem.name}}}" autofocus>
+                                    </div>
+                                    <div class="col-xs-4">
+                                        <input type="submit" class = "rename-node-btn btn btn-sm btn-default submit-button-{{ theItem.node_id }}" id="rename-node-button{{theItem.node_id}}" disabled="disabled" value="Rename">
+                                        <input type="reset" class = "btn btn-sm btn-default cancel-button-{{ theItem.node_id }}" value="Cancel">
+                                    </div>                    
+                                </div>
+                              </fieldset>
+                        </form>
+                    </span>
+                    
             </div>
         {{/unless}}
        
