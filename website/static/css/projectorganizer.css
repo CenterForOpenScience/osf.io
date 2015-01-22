@@ -297,6 +297,8 @@ height: 32px ;
 */
 .tt-hint {
     color: #999;
+    padding-top: 9px;
+    padding-left: 13px;
 }
 h3.category {
     font-size: 18px;
