@@ -39,7 +39,6 @@ ALIASES = {
     'total': 'Total'
 }
 
-INDICES = ['website']
 
 try:
     es = Elasticsearch(
@@ -90,7 +89,7 @@ def get_counts(count_query, clean=True):
         }
     }
 
-    res = es.search(index='_all', doc_type=None, search_type='count', body=count_query)
+    res = es.search(index=INDICES, doc_type=None, search_type='count', body=count_query)
 
     counts = {x['key']: x['doc_count'] for x in res['aggregations']['counts']['buckets'] if x['key'] in ALIASES.keys()}
 
