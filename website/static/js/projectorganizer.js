@@ -1026,7 +1026,7 @@ function dropLogic(event, items, folder) {
         itemParent,
         itemParentNodeID,
         getAction;
-    if (typeof folder !== 'undefined' && folder !== null) {
+    if (typeof folder !== 'undefined' && folder !== null && folder.data.isFolder) {
         theFolderNodeID = folder.data.node_id;
         getChildrenURL = folder.data.apiURL + 'get_folder_pointers/';
         sampleItem = items[0];
