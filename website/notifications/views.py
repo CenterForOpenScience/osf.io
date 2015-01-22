@@ -4,7 +4,8 @@ from flask import request
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from modularodm.storage.mongostorage import KeyExistsException
-
+from website.notifications.emails import get_node_lineage
+from website.models import Node
 
 @must_be_logged_in
 def subscribe(auth, **kwargs):
@@ -14,10 +15,13 @@ def subscribe(auth, **kwargs):
     subscriptions = request.json
 
     for event in subscriptions:
+        node_lineage = []
         if event == 'comment_replies':
             category = user._id
         else:
             category = nid if nid else pid
+            node_lineage = get_node_lineage(Node.load(category), [])
+            node_lineage.reverse()
 
         event_id = category + "_" + event
 
@@ -28,12 +32,14 @@ def subscribe(auth, **kwargs):
                     s = Subscription(_id=event_id)
                     s.object_id = category
                     s.event_name = event
+                    s.node_lineage = node_lineage
                     s.save()
 
                 except KeyExistsException:
                     s = Subscription.find_one(Q('_id', 'eq', event_id))
                     s.object_id = category
                     s.event_name = event
+                    s.node_lineage = node_lineage
                     s.save()
 
                 # Add user to list of subscribers
