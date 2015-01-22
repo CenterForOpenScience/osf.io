@@ -7,9 +7,12 @@ from nose.tools import *
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
 
+import time
+
 import furl
 import itsdangerous
 
+from framework.auth import signing
 from framework.auth.core import Auth
 from framework.exceptions import HTTPError
 from framework.sessions.model import Session
@@ -96,7 +99,6 @@ class TestAddonAuth(OsfTestCase):
         options = dict(
             action='download',
             cookie=self.cookie,
-            token='',
             nid=self.node._id,
             provider=self.node_addon.config.short_name,
         )
@@ -135,6 +137,126 @@ class TestAddonAuth(OsfTestCase):
         url = self.build_url()
         res = test_app.get(url, expect_errors=True)
         assert_equal(res.status_code, 403)
+
+
+class TestAddonLogs(OsfTestCase):
+
+    def setUp(self):
+        super(TestAddonLogs, self).setUp()
+        self.flask_app = SetEnvironMiddleware(self.app.app, REMOTE_ADDR='127.0.0.1')
+        self.test_app = webtest.TestApp(self.flask_app)
+        self.user = AuthUserFactory()
+        self.auth_obj = Auth(user=self.user)
+        self.node = ProjectFactory(creator=self.user)
+        self.session = Session(data={'auth_user_id': self.user._id})
+        self.session.save()
+        self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id)
+        self.configure_addon()
+
+    def configure_addon(self):
+        self.user.add_addon('github')
+        self.user_addon = self.user.get_addon('github')
+        self.oauth_settings = AddonGitHubOauthSettings(github_user_id='john')
+        self.oauth_settings.save()
+        self.user_addon.oauth_settings = self.oauth_settings
+        self.user_addon.oauth_access_token = 'secret'
+        self.user_addon.save()
+        self.node.add_addon('github', self.auth_obj)
+        self.node_addon = self.node.get_addon('github')
+        self.node_addon.user = 'john'
+        self.node_addon.repo = 'youre-my-best-friend'
+        self.node_addon.user_settings = self.user_addon
+        self.node_addon.save()
+
+    def build_payload(self, metadata, **kwargs):
+        options = dict(
+            auth={'id': self.user._id},
+            action='create',
+            provider=self.node_addon.config.short_name,
+            metadata=metadata,
+            time=time.time() + 1000,
+        )
+        options.update(kwargs)
+        options = {
+            key: value
+            for key, value in options.iteritems()
+            if value is not None
+        }
+        message, signature = signing.default_signer.sign_payload(options)
+        return {
+            'payload': message,
+            'signature': signature,
+        }
+
+    def test_add_log(self):
+        path = 'pizza'
+        url = self.node.api_url_for('create_waterbutler_log')
+        payload = self.build_payload(metadata={'path': path})
+        nlogs = len(self.node.logs)
+        self.test_app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+        self.node.reload()
+        assert_equal(len(self.node.logs), nlogs + 1)
+
+    def test_add_log_missing_args(self):
+        path = 'pizza'
+        url = self.node.api_url_for('create_waterbutler_log')
+        payload = self.build_payload(metadata={'path': path}, auth=None)
+        nlogs = len(self.node.logs)
+        res = self.test_app.put_json(
+            url,
+            payload,
+            headers={'Content-Type': 'application/json'},
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 400)
+        self.node.reload()
+        assert_equal(len(self.node.logs), nlogs)
+
+    def test_add_log_no_user(self):
+        path = 'pizza'
+        url = self.node.api_url_for('create_waterbutler_log')
+        payload = self.build_payload(metadata={'path': path}, auth={'id': None})
+        nlogs = len(self.node.logs)
+        res = self.test_app.put_json(
+            url,
+            payload,
+            headers={'Content-Type': 'application/json'},
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 400)
+        self.node.reload()
+        assert_equal(len(self.node.logs), nlogs)
+
+    def test_add_log_no_addon(self):
+        path = 'pizza'
+        node = ProjectFactory(creator=self.user)
+        url = node.api_url_for('create_waterbutler_log')
+        payload = self.build_payload(metadata={'path': path})
+        nlogs = len(node.logs)
+        res = self.test_app.put_json(
+            url,
+            payload,
+            headers={'Content-Type': 'application/json'},
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 400)
+        self.node.reload()
+        assert_equal(len(node.logs), nlogs)
+
+    def test_add_log_bad_action(self):
+        path = 'pizza'
+        url = self.node.api_url_for('create_waterbutler_log')
+        payload = self.build_payload(metadata={'path': path}, action='dance')
+        nlogs = len(self.node.logs)
+        res = self.test_app.put_json(
+            url,
+            payload,
+            headers={'Content-Type': 'application/json'},
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 400)
+        self.node.reload()
+        assert_equal(len(self.node.logs), nlogs)
 
 
 class TestCheckAuth(OsfTestCase):
