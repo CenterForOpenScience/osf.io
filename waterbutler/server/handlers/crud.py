@@ -1,6 +1,8 @@
 import os
 import http
+import time
 import asyncio
+import logging
 
 from tornado import web
 
@@ -10,6 +12,9 @@ from waterbutler.server import utils
 from waterbutler.server import settings
 from waterbutler.server.handlers import core
 from waterbutler.core import exceptions
+
+
+logger = logging.getLogger(__name__)
 
 
 @web.stream_request_body
@@ -24,6 +29,8 @@ class CRUDHandler(core.BaseHandler):
 
     @utils.coroutine
     def prepare(self):
+        self.begin = time.time()
+
         yield from super().prepare()
         self.prepare_stream()
 
@@ -93,3 +100,6 @@ class CRUDHandler(core.BaseHandler):
             'delete',
             {'path': self.arguments['path']}
         )
+
+    def on_finish(self):
+        logger.info('Full request, {} ({}), took {} seconds'.format(self.request.uri, self.request.method, time.time() - self.begin))
