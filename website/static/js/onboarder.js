@@ -96,7 +96,6 @@ function serializeNode(node) {
             web: node.url,
             api: node.api_url,
             register: node.url + 'register/',
-            upload: node.api_url + 'osfstorage/files/',
             files: node.url + 'files/',
             children: node.api_url + 'get_children/?permissions=write'
         }
@@ -439,8 +438,10 @@ function OBUploaderViewModel(params) {
         self.target(selected);
         self.clearMessages();
         self.showProgress(true);
-        self.dropzone.options.url = function(file) {
-            return waterbutler.buildUploadUrl('/', 'osfstorage', file, {nid: selected.id});
+        self.dropzone.options.url = function(files) {
+            //Files is always an array but we only support uploading a single file at once
+            var file = files[0]
+            return waterbutler.buildUploadUrl('/', 'osfstorage', selected.id, file);
         };
         self.dropzone.processQueue(); // Tell Dropzone to process all queued files.
     };
@@ -483,6 +484,14 @@ function OBUploaderViewModel(params) {
 
 
     var dropzoneOpts = {
+
+        sending: function(file, xhr) {
+            //Hack to remove webkitheaders
+            var _send = xhr.send;
+            xhr.send = function() {
+                _send.call(xhr, file);
+            };
+        },
 
         url: '/', // specified per upload
         autoProcessQueue: false,
