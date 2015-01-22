@@ -121,6 +121,9 @@ def build_addon_root(node_settings, name, permissions=None,
         },
         'urls': urls,
         'isPointer': False,
+        'nodeId': node_settings.owner._id,
+        'nodeUrl': node_settings.owner.url,
+        'nodeApiUrl': node_settings.owner.api_url,
     }
     ret.update(kwargs)
     return ret

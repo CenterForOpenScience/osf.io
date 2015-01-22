@@ -41,26 +41,6 @@ if ($comments.length) {
 }
 
 $(document).ready(function() {
-
-    function _fangornTitleColumn(item, col) {
-        item.data.permissions = item.data.permissions || item.parent().data.permissions;
-        return m('span',{
-            onclick : function() {
-                if (item.kind === 'file') {
-                    var params = $.param(
-                        $.extend(
-                        {
-                            provider: item.data.provider,
-                            path: item.data.path.substring(1)
-                        },
-                        item.data.extra || {}
-                        )
-                    );
-                    window.location = nodeApiUrl + 'waterbutler/files/?' + params;
-                }
-            }
-        }, item.data.name);
-    }
     // Treebeard Files view
     $.ajax({
         url:  nodeApiUrl + 'files/grid/'
@@ -86,10 +66,10 @@ $(document).ready(function() {
                 },
             resolveRows : function(){
                 return  [{
-                    data : 'name',
-                    folderIcons : true,
-                    filter : true,
-                    custom : _fangornTitleColumn
+                    data: 'name',
+                    folderIcons: true,
+                    filter: true,
+                    custom: Fangorn.DefaultColumns._fangornTitleColumn
                 }];
                 },
         };

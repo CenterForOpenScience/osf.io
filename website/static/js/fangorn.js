@@ -100,6 +100,20 @@ function resolveconfigOption(item, option, args) {
 }
 
 /**
+ * Inherits a list of data fields from one item (parent) to another.
+ * @param {Object} item A Treebeard _item object. Node information is inside item.data
+ * @param {Object} parent A Treebeard _item object. Node information is inside item.data
+ * @this Treebeard.controller
+ */
+var inheritedFields = ['nodeId', 'nodeUrl', 'nodeApiUrl', 'permissions', 'provider', 'accept'];
+function inheritFromParent(item, parent, fields) {
+    fields = fields || inheritedFields;
+    fields.forEach(function(field) {
+        item.data[field] = item.data[field] || parent.data[field];
+    });
+}
+
+/**
  * Returns custom folder toggle icons for OSF
  * @param {Object} item A Treebeard _item object. Node information is inside item.data
  * @this Treebeard.controller
@@ -302,7 +316,6 @@ function _fangornComplete(treebeard, file) {
 function _fangornDropzoneSuccess(treebeard, file, response) {
     var item,
         revisedItem,
-        item,
         child,
         parent = treebeard.dropzoneItemCache;
     for(var i = 0; i < parent.children.length; i++) {
@@ -323,10 +336,7 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
     revisedItem = resolveconfigOption.call(treebeard, item.parent(), 'uploadSuccess', [file, item, response]);
     if (!revisedItem && response) {
         item.data = response;
-        item.data.permissions = item.parent().data.permissions;
-        if (item.data.kind === 'folder') {
-            item.data.accept = item.parent().data.accept;
-        }
+        inheritFromParent(item, item.parent());
     }
     treebeard.redraw();
 }
@@ -374,7 +384,7 @@ function _uploadEvent(event, item, col) {
     this.dropzone.hiddenFileInput.click();
     this.dropzoneItemCache = item;
     if(!item.open){
-        this.updateFolder(null, item);        
+        this.updateFolder(null, item);
     }
 }
 
@@ -506,6 +516,19 @@ function _fangornLazyLoadError (item) {
 }
 
 /**
+ * Called when new object data has arrived to be loaded.
+ * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
+ * @this Treebeard.controller
+ * @private
+ */
+function _fangornLazyLoadOnLoad (tree) {
+    tree.children.forEach(function(item) {
+        inheritFromParent(item, tree);
+    });
+    resolveconfigOption.call(this, tree, 'lazyLoadOnLoad', [tree]);
+}
+
+/**
  * Changes the upload method based on what the add ons need. Default is POST, S3 needs PUT
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
  * @this Treebeard.controller
@@ -582,7 +605,7 @@ function _fangornTitleColumn(item, col) {
                         item.data.extra || {}
                     )
                 );
-                window.location = nodeApiUrl + 'waterbutler/files/?' + params;
+                window.location = item.data.nodeApiUrl + 'waterbutler/files/?' + params;
             }
         }
     }, item.data.name);
@@ -766,6 +789,7 @@ tbOptions = {
     resolveLazyloadUrl : _fangornResolveLazyLoad,
     resolveUploadMethod: _fangornUploadMethod,
     lazyLoadError : _fangornLazyLoadError,
+    lazyLoadOnLoad : _fangornLazyLoadOnLoad,
     dropzoneEvents : {
         uploadprogress : _fangornUploadProgress,
         sending : _fangornSending,
@@ -801,13 +825,21 @@ Fangorn.prototype = {
     _initGrid: function () {
         this.grid = new Treebeard(this.options);
         return this.grid;
-    },
+    }
 };
 
 Fangorn.ButtonEvents = {
     _downloadEvent: _downloadEvent,
     _uploadEvent: _uploadEvent,
     _removeEvent: _removeEvent
+};
+
+Fangorn.DefaultColumns = {
+    _fangornTitleColumn: _fangornTitleColumn
+};
+
+Fangorn.Utils = {
+    inheritFromParent: inheritFromParent
 };
 
 module.exports = Fangorn;
