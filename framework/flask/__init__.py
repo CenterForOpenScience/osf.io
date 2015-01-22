@@ -13,8 +13,8 @@ from website import settings
 # Create app
 app = Flask(
     __name__,
-    static_folder=os.path.abspath("website/static"),
-    static_url_path="/static",
+    static_folder=settings.STATIC_FOLDER,
+    static_url_path=settings.STATIC_URL_PATH,
 )
 
 # Pull debug mode from settings
