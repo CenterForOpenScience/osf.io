@@ -29,7 +29,11 @@ def serve():
     tornado.platform.asyncio.AsyncIOMainLoop().install()
 
     app = make_app(server_settings.DEBUG)
-    app.listen(server_settings.PORT, server_settings.ADDRESS)
+    app.listen(
+        server_settings.PORT,
+        address=server_settings.ADDRESS,
+        max_buffer_size=server_settings.MAX_BUFFER_SIZE,
+    )
 
     asyncio.get_event_loop().set_debug(server_settings.DEBUG)
     asyncio.get_event_loop().run_forever()

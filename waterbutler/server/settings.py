@@ -13,6 +13,7 @@ PORT = config.get('PORT', 7777)
 DEBUG = config.get('DEBUG', True)
 
 CHUNK_SIZE = config.get('CHUNK_SIZE', 65536)  # 64KB
+MAX_BUFFER_SIZE = config.get('MAX_BUFFER_SIZE', 1024 * 1024 * 200)  # 100MB
 
 IDENTITY_METHOD = config.get('IDENTITY_METHOD', 'rest')
 IDENTITY_API_URL = config.get('IDENTITY_API_URL', 'http://127.0.0.1:5001/api/v1/files/auth/')
