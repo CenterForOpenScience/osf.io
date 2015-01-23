@@ -2008,7 +2008,7 @@ span#profileFullname{
     box-shadow: none;
     border-bottom: 1px dotted #FFF;
     border-radius: 0;
-    padding: 15px 0;
+    padding: 0 0;
     font-size: 20px;
     color: #214762;
     font-weight: 300;
