@@ -2,9 +2,9 @@ import asyncio
 
 import tornado.web
 import tornado.platform.asyncio
-from raven.contrib.tornado import AsyncSentryClient
 
 from waterbutler import settings
+from waterbutler.core.utils import AioSentryClient
 from waterbutler.server.handlers import crud
 from waterbutler.server.handlers import metadata
 from waterbutler.server.handlers import revisions
@@ -21,7 +21,7 @@ def make_app(debug):
         ],
         debug=debug,
     )
-    app.sentry_client = AsyncSentryClient(settings.get('SENTRY_DSN', None))
+    app.sentry_client = AioSentryClient(settings.get('SENTRY_DSN', None))
     return app
 
 
@@ -29,7 +29,11 @@ def serve():
     tornado.platform.asyncio.AsyncIOMainLoop().install()
 
     app = make_app(server_settings.DEBUG)
-    app.listen(server_settings.PORT, server_settings.ADDRESS)
+    app.listen(
+        server_settings.PORT,
+        address=server_settings.ADDRESS,
+        max_buffer_size=server_settings.MAX_BUFFER_SIZE,
+    )
 
     asyncio.get_event_loop().set_debug(server_settings.DEBUG)
     asyncio.get_event_loop().run_forever()

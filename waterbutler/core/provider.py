@@ -1,5 +1,6 @@
 import os
 import abc
+import time
 import asyncio
 import logging
 import itertools
@@ -63,10 +64,17 @@ class BaseProvider(metaclass=abc.ABCMeta):
 
     @asyncio.coroutine
     def make_request(self, *args, **kwargs):
+        begin = time.time()
         kwargs['headers'] = self.build_headers(**kwargs.get('headers', {}))
         expects = kwargs.pop('expects', None)
         throws = kwargs.pop('throws', exceptions.ProviderError)
         response = yield from aiohttp.request(*args, **kwargs)
+        logger.info('[{}] ({}) Request made to {} ({})'.format(
+            time.time() - begin,
+            self.__class__.__name__,
+            args[1],
+            args[0],
+        ))
         if expects and response.status not in expects:
             raise (yield from exceptions.exception_from_response(response, error=throws, **kwargs))
         return response

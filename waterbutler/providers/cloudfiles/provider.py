@@ -43,11 +43,12 @@ class CloudFilesProvider(provider.BaseProvider):
         super().__init__(auth, credentials, settings)
         self.token = None
         self.endpoint = None
-        self.temp_url_key = None
+        self.temp_url_key = credentials.get('temp_key', '').encode()
         self.region = self.credentials['region']
         self.og_token = self.credentials['token']
         self.username = self.credentials['username']
         self.container = self.settings['container']
+        self.use_public = self.settings.get('use_public', True)
 
     @property
     def default_headers(self):
@@ -61,7 +62,7 @@ class CloudFilesProvider(provider.BaseProvider):
     def intra_copy(self, dest_provider, source_options, dest_options):
         source_path = CloudFilesPath(source_options['path'])
         dest_path = CloudFilesPath(dest_options['path'])
-        url = dest_provider.build_url(dest_path)
+        url = dest_provider.build_url(dest_path.path)
         yield from self.make_request(
             'PUT',
             url,
@@ -99,20 +100,23 @@ class CloudFilesProvider(provider.BaseProvider):
 
     @ensure_connection
     @asyncio.coroutine
-    def upload(self, stream, path, **kwargs):
-        """Uploads the given stream to S3
-        :param ResponseStreamReader stream: The stream to put to Cloudfiles
+    def upload(self, stream, path, check_created=True, fetch_metadata=True, **kwargs):
+        """Uploads the given stream to CloudFiles
+        :param ResponseStreamReader stream: The stream to put to CloudFiles
         :param str path: The full path of the object to upload to/into
         :rtype ResponseStreamReader:
         """
         path = CloudFilesPath(path)
 
-        try:
-            yield from self.metadata(str(path), **kwargs)
-        except exceptions.MetadataError:
-            created = True
+        if check_created:
+            try:
+                yield from self.metadata(str(path), **kwargs)
+            except exceptions.MetadataError:
+                created = True
+            else:
+                created = False
         else:
-            created = False
+            created = None
 
         stream.add_writer('md5', streams.HashStreamWriter(hashlib.md5))
         url = self.sign_url(path, 'PUT')
@@ -128,7 +132,12 @@ class CloudFilesProvider(provider.BaseProvider):
         # TODO: nice assertion error goes here
         assert resp.headers['ETag'].replace('"', '') == stream.writers['md5'].hexdigest
 
-        return (yield from self.metadata(str(path))), created
+        if fetch_metadata:
+            metadata = yield from self.metadata(str(path))
+        else:
+            metadata = None
+
+        return metadata, created
 
     @ensure_connection
     @asyncio.coroutine
@@ -221,10 +230,11 @@ class CloudFilesProvider(provider.BaseProvider):
         """
         # Must have a temp url key for download and upload
         # Currently You must have one for everything however
-        if not self.token or not self.endpoint or not self.temp_url_key:
+        if not self.token or not self.endpoint:
             data = yield from self._get_token()
             self.token = data['access']['token']['id']
             self.endpoint = self._extract_endpoint(data)
+        if not self.temp_url_key:
             resp = yield from self.make_request('HEAD', self.endpoint, expects=(204, ))
             try:
                 self.temp_url_key = resp.headers['X-Account-Meta-Temp-URL-Key'].encode()
@@ -237,11 +247,12 @@ class CloudFilesProvider(provider.BaseProvider):
         :param dict data: The json response from the token endpoint
         :rtype str:
         """
+        serviceUrl = 'publicURL' if self.use_public else 'internalURL'
         for service in reversed(data['access']['serviceCatalog']):
             if service['name'].lower() == 'cloudfiles':
                 for region in service['endpoints']:
                     if region['region'].lower() == self.region.lower():
-                        return region['publicURL']
+                        return region[serviceUrl]
 
     @asyncio.coroutine
     def _get_token(self):
