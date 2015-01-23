@@ -48,6 +48,7 @@ class CloudFilesProvider(provider.BaseProvider):
         self.og_token = self.credentials['token']
         self.username = self.credentials['username']
         self.container = self.settings['container']
+        self.use_public = self.settings.get('use_public', True)
 
     @property
     def default_headers(self):
@@ -238,11 +239,12 @@ class CloudFilesProvider(provider.BaseProvider):
         :param dict data: The json response from the token endpoint
         :rtype str:
         """
+        serviceUrl = 'publicURL' if self.use_public else 'internalURL'
         for service in reversed(data['access']['serviceCatalog']):
             if service['name'].lower() == 'cloudfiles':
                 for region in service['endpoints']:
                     if region['region'].lower() == self.region.lower():
-                        return region['publicURL']
+                        return region[serviceUrl]
 
     @asyncio.coroutine
     def _get_token(self):
