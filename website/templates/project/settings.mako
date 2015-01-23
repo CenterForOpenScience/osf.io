@@ -108,12 +108,10 @@
                                 <h5>Notification Type</h5>
                             </div>
                     </div>
-                    </br>
 
                     % for subscription in subscriptions_available:
                         <div class="row">
                             <div class="col-md-6">
-
                                 <label style="font-weight:normal; padding-right: 50px">
                                         ${subscriptions_available[subscription]}
                                 </label>
@@ -121,12 +119,15 @@
                             <div class="col-md-6">
                                 <select class="form-control" name="${subscription}">
                                     <option value="none" ${'selected' if 'email_transactional' not in notification_types_enabled and 'email_digest' not in notification_types_enabled else ''}>None</option>
-                                    <option value="email_transactional" ${'selected' if 'email_transactional' in notification_types_enabled else ''}>Email</option>
-                                    <option value="email_digest" ${'selected' if 'email_digest' in notification_types_enabled else ''}>Daily Email Digest</option>
+                                    <option value="email_transactional" ${'selected' if 'email_transactional' in notification_types_enabled else ''}>
+                                        Receive emails immediately
+                                    </option>
+                                    <option value="email_digest" ${'selected' if 'email_digest' in notification_types_enabled else ''}>
+                                        Receive in a daily email digest
+                                    </option>
                                 </select>
                             </div>
                         </div>
-                        </br>
                     % endfor
 
                     <br />
