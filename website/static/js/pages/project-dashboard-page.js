@@ -64,7 +64,19 @@ $(document).ready(function() {
                     }
                 ];
                 },
-            resolveRows : function(){
+            resolveRows : function(item){
+                
+                if(item.data.tmpID){
+                    return [ 
+                        {
+                            data : 'name',  // Data field name
+                            folderIcons : true,
+                            filter : true,
+                            custom : function(){ return m('span.text-muted', 'Uploading ' + item.data.name + '...'); }
+                        }
+                    ];
+                }
+
                 return  [{
                     data: 'name',
                     folderIcons: true,
