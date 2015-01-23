@@ -186,8 +186,9 @@ function _fangornMouseOverRow(item, event) {
  * @private
  */
 function _fangornUploadProgress(treebeard, file, progress) {
-    var parent = treebeard.dropzoneItemCache,
-        item,
+    var parent = file.treebeardParent;
+
+    var item,
         child,
         column,
         msgText = '';
@@ -227,8 +228,8 @@ function _fangornUploadProgress(treebeard, file, progress) {
  * @private
  */
 function _fangornSending(treebeard, file, xhr, formData) {
-    var parentID = treebeard.dropzoneItemCache.id,
-        parent = treebeard.dropzoneItemCache,
+    var parent = file.treebeardParent;
+    var parentID = parent.id,
         configOption,
         tmpID = tempCounter++;
         blankItem = {       // create a blank item that will refill when upload is finished.
@@ -263,8 +264,8 @@ function _fangornSending(treebeard, file, xhr, formData) {
  * @private
  */
 function _fangornAddedFile(treebeard, file) {
-    var item = treebeard.dropzoneItemCache,
-        configOption = resolveconfigOption.call(treebeard, item, 'uploadAdd', [file, item]);
+    var item = file.treebeardParent;
+    var configOption = resolveconfigOption.call(treebeard, item, 'uploadAdd', [file, item]);
 
     file.url = _fangornResolveUploadUrl(item, file);
     file.method = _fangornUploadMethod(item);
@@ -301,7 +302,7 @@ function _fangornDragOver(treebeard, event) {
  * @private
  */
 function _fangornComplete(treebeard, file) {
-    var item = treebeard.dropzoneItemCache;
+    var item = file.treebeardParent;
     resolveconfigOption.call(treebeard, item, 'onUploadComplete', [item]);
 }
 
@@ -314,10 +315,10 @@ function _fangornComplete(treebeard, file) {
  * @private
  */
 function _fangornDropzoneSuccess(treebeard, file, response) {
+    var parent = file.treebeardParent;
     var item,
         revisedItem,
-        child,
-        parent = treebeard.dropzoneItemCache;
+        child;
     for(var i = 0; i < parent.children.length; i++) {
         child = parent.children[i];
         if(!child.data.tmpID){
@@ -349,9 +350,9 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
  * @private
  */
 function _fangornDropzoneError(treebeard, file, message) {
+    var parent = file.treebeardParent;
     var item,
         child,
-        parent = treebeard.dropzoneItemCache,
         msgText = message.message_short || message;
     for(var i = 0; i < parent.children.length; i++) {
         child = parent.children[i];
@@ -381,8 +382,8 @@ function _uploadEvent(event, item, col) {
     } catch (e) {
         window.event.cancelBubble = true;
     }
-    this.dropzone.hiddenFileInput.click();
     this.dropzoneItemCache = item;
+    this.dropzone.hiddenFileInput.click();
     if(!item.open){
         this.updateFolder(null, item);
     }
