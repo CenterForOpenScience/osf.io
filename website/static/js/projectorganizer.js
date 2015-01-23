@@ -24,7 +24,10 @@ var projectOrganizer = {};
 
 // Templates load once
 var detailTemplateSource = $('#project-detail-template').html();
+var detailTemplate = Handlebars.compile(detailTemplateSource);
+
 var multiItemDetailTemplateSource = $('#project-detail-multi-item-no-action').html();
+var multiItemDetailTemplate = Handlebars.compile(multiItemDetailTemplateSource);
 var multiItemDetailTemplateSourceNoAction = $('#project-detail-multi-item-template').html();
 
 /**
@@ -117,16 +120,11 @@ function addFormKeyBindings(nodeID) {
  * @param {Object} theItem Only the item.data portion of A Treebeard _item object for the row involved.
  */
 function createProjectDetailHTMLFromTemplate(theItem) {
-    var detailTemplate,
-        detailTemplateContext,
-        displayHTML;
-    
-    detailTemplate = Handlebars.compile(detailTemplateSource);
-    detailTemplateContext = {
+    var detailTemplateContext = {
         theItem: theItem,
         parentIsSmartFolder: theItem.parentIsSmartFolder
     };
-    displayHTML = detailTemplate(detailTemplateContext);
+    var displayHTML = detailTemplate(detailTemplateContext);
     $('.project-details').html(displayHTML);
     addFormKeyBindings(theItem.node_id);
 }
@@ -743,25 +741,24 @@ function _poMultiselect(event, tree) {
                                   !thisItem.permissions.movable;
             pointerIds.push(thisItem.node_id);
         });
+        var detailTemplateContext;
         if(!selectedRows[0].parent().data.isFolder){
-            var detailTemplate = Handlebars.compile(multiItemDetailTemplateSource),
-                detailTemplateContext = {
-                    itemsCount: selectedRows.length
-                },
-                theParentNode = selectedRows[0].parent(),
-                displayHTML = detailTemplate(detailTemplateContext);
+            detailTemplateContext = {
+                itemsCount: selectedRows.length
+            };
+            var theParentNode = selectedRows[0].parent();
+            var displayHTML = multiItemDetailTemplate(detailTemplateContext);
             $('.project-details').html(displayHTML);
             $('.project-details').show();
         } else {
             if (!someItemsAreFolders) {
                 console.log("some items are folders", someItemsAreFolders);   
-                var detailTemplate = Handlebars.compile(multiItemDetailTemplateSourceNoAction),
-                    detailTemplateContext = {
-                        multipleItems: true,
-                        itemsCount: selectedRows.length
-                    },
-                    theParentNode = selectedRows[0].parent(),
-                    displayHTML = detailTemplate(detailTemplateContext);
+                detailTemplateContext = {
+                    multipleItems: true,
+                    itemsCount: selectedRows.length
+                };
+                var theParentNode = selectedRows[0].parent();
+                var displayHTML = multiItemDetailTemplate(detailTemplateContext);
                 $('.project-details').html(displayHTML);
                 $('.project-details').show();
                 $('#remove-links-multiple').click(function () {
