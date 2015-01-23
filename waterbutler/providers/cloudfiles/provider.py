@@ -100,7 +100,7 @@ class CloudFilesProvider(provider.BaseProvider):
 
     @ensure_connection
     @asyncio.coroutine
-    def upload(self, stream, path, **kwargs):
+    def upload(self, stream, path, check_created=True, fetch_metadata=True, **kwargs):
         """Uploads the given stream to CloudFiles
         :param ResponseStreamReader stream: The stream to put to CloudFiles
         :param str path: The full path of the object to upload to/into
@@ -108,12 +108,15 @@ class CloudFilesProvider(provider.BaseProvider):
         """
         path = CloudFilesPath(path)
 
-        try:
-            yield from self.metadata(str(path), **kwargs)
-        except exceptions.MetadataError:
-            created = True
+        if check_created:
+            try:
+                yield from self.metadata(str(path), **kwargs)
+            except exceptions.MetadataError:
+                created = True
+            else:
+                created = False
         else:
-            created = False
+            created = None
 
         stream.add_writer('md5', streams.HashStreamWriter(hashlib.md5))
         url = self.sign_url(path, 'PUT')
@@ -129,7 +132,12 @@ class CloudFilesProvider(provider.BaseProvider):
         # TODO: nice assertion error goes here
         assert resp.headers['ETag'].replace('"', '') == stream.writers['md5'].hexdigest
 
-        return (yield from self.metadata(str(path))), created
+        if fetch_metadata:
+            metadata = yield from self.metadata(str(path))
+        else:
+            metadata = None
+
+        return metadata, created
 
     @ensure_connection
     @asyncio.coroutine

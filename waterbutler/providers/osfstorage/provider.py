@@ -105,7 +105,7 @@ class OSFStorageProvider(provider.BaseProvider):
         with open(pending_path, 'wb') as file_pointer:
             stream.add_writer('file', file_pointer)
             provider = self.make_provider(self.settings)
-            yield from provider.upload(stream, pending_name, **kwargs)
+            yield from provider.upload(stream, pending_name, check_created=False, fetch_metadata=False, **kwargs)
         logger.info('[{}] ({}) PROVIDER.UPLOAD({})'.format(
             time.time() - begin,
             self.__class__.__name__,

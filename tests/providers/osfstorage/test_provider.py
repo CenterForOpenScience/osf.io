@@ -185,7 +185,7 @@ def test_upload_new(monkeypatch, provider_and_mock, file_stream):
     assert res['provider'] == 'osfstorage'
     assert res['extra']['downloads'] == 10
 
-    inner_provider.upload.assert_called_once_with(file_stream, '/uniquepath')
+    inner_provider.upload.assert_called_once_with(file_stream, '/uniquepath', check_created=False, fetch_metadata=False)
     inner_provider.metadata.assert_called_once_with('/' + file_stream.writers['sha256'].hexdigest)
     inner_provider.delete.assert_called_once_with('/uniquepath')
 
@@ -212,7 +212,7 @@ def test_upload_existing(monkeypatch, provider_and_mock, file_stream):
     assert res['provider'] == 'osfstorage'
     assert res['extra']['downloads'] == 10
 
-    inner_provider.upload.assert_called_once_with(file_stream, '/uniquepath')
+    inner_provider.upload.assert_called_once_with(file_stream, '/uniquepath', check_created=False, fetch_metadata=False)
     inner_provider.metadata.assert_called_once_with('/' + file_stream.writers['sha256'].hexdigest)
     inner_provider.move.assert_called_once_with(inner_provider, {'path': '/uniquepath'}, {'path': '/' + file_stream.writers['sha256'].hexdigest})
 
@@ -244,7 +244,7 @@ def test_upload_and_tasks(monkeypatch, provider_and_mock, file_stream, credentia
     assert res['provider'] == 'osfstorage'
     assert res['extra']['downloads'] == 30
 
-    inner_provider.upload.assert_called_once_with(file_stream, '/uniquepath')
+    inner_provider.upload.assert_called_once_with(file_stream, '/uniquepath', check_created=False, fetch_metadata=False)
     complete_path = os.path.join(FILE_PATH_COMPLETE, file_stream.writers['sha256'].hexdigest)
     mock_parity.assert_called_once_with(complete_path, credentials['parity'], settings['parity'])
     mock_backup.assert_called_once_with(complete_path, 42, 'https://waterbutler.io', credentials['archive'], settings['parity'])
