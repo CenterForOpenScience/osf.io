@@ -705,6 +705,7 @@ function expandStateLoad(item) {
             }
         }
     }
+    _cleanupMithril();
 }
 
 /**
@@ -1141,6 +1142,15 @@ function whichIsContainer(itemOne, itemTwo) {
     return null;
 }
 
+function _cleanupMithril() {
+    // Clean up Mithril related redraw issues
+    $('.tb-toggle-icon').each(function(){
+        var children = $(this).children('i'); 
+        if (children.length > 1) {
+            children.last().remove();
+        }
+    });
+}
 
 //
 /**
@@ -1200,13 +1210,7 @@ var tbOptions = {
             item.load = false;
         }
         $('[data-toggle="tooltip"]').tooltip();
-        // Clean up Mithril related redraw issues
-        $('.tb-toggle-icon').each(function(){
-            var children = $(this).children('i'); 
-            if (children.length > 1) {
-                children.last().remove();
-            }
-        });
+        _cleanupMithril(); 
 
     },
     onscrollcomplete : function(){
