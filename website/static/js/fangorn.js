@@ -338,6 +338,16 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
         item.data = response;
         inheritFromParent(item, item.parent());
     }
+    // Check and remove duplicates
+    if(parent.children.length  > 0 ) {
+        for (var j = 0; j < parent.children.length; j++){
+            var o = parent.children[j]; 
+            if(o.data.name === item.data.name && o.id !== item.id){
+                o.removeSelf(); 
+            }
+        }
+    }
+
     treebeard.redraw();
 }
 
