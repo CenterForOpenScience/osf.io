@@ -155,7 +155,7 @@
                 }
                 tb.options.folderArray = folderArray;
             }
-
+            console.log(tb.treeData);
             for (var i = 0; i < tb.treeData.children.length; i++) {
                 if (tb.treeData.children[i].data.addon !== 'figshare' && tb.treeData.children[i].data.name === folderArray[0]) {
                     tb.updateFolder(null, tb.treeData.children[i]);
@@ -168,6 +168,7 @@
 
     function _treebeardLazyLoadOnLoad  (item) {
         var tb = this; 
+
         for (var i = 0; i < item.children.length; i++) {
             if (item.children[i].data.addon === 'figshare'){
                 return;
@@ -187,12 +188,13 @@
         resolveIcon : _treebeardResolveIcon,
         togglecheck : _treebeardToggleCheck,
         resolveToggle : _treebeardResolveToggle,
-        onload : _treebeardOnload,
+        ondataload : _treebeardOnload,
         lazyLoadOnLoad : _treebeardLazyLoadOnLoad,
         // Disable uploads
         uploads: false,
         showFilter : false,
-        resizeColumns : false
+        resizeColumns : false,
+        rowHeight : 35
     };
 
     function FolderPicker(selector, opts) {
