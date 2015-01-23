@@ -22,6 +22,14 @@ var copyMode = null;
 // Initialize projectOrganizer object (separate from the ProjectOrganizer constructor at the end)
 var projectOrganizer = {};
 
+// Templates load once
+var detailTemplateSource = $('#project-detail-template').html();
+var detailTemplate = Handlebars.compile(detailTemplateSource);
+
+var multiItemDetailTemplateSource = $('#project-detail-multi-item-no-action').html();
+var multiItemDetailTemplate = Handlebars.compile(multiItemDetailTemplateSource);
+var multiItemDetailTemplateSourceNoAction = $('#project-detail-multi-item-template').html();
+
 /**
  * Bloodhound is a typeahead suggestion engine. Searches here for public projects
  * @type {Bloodhound}
@@ -112,17 +120,11 @@ function addFormKeyBindings(nodeID) {
  * @param {Object} theItem Only the item.data portion of A Treebeard _item object for the row involved.
  */
 function createProjectDetailHTMLFromTemplate(theItem) {
-    var detailTemplateSource,
-        detailTemplate,
-        detailTemplateContext,
-        displayHTML;
-    detailTemplateSource = $('#project-detail-template').html();
-    detailTemplate = Handlebars.compile(detailTemplateSource);
-    detailTemplateContext = {
+    var detailTemplateContext = {
         theItem: theItem,
         parentIsSmartFolder: theItem.parentIsSmartFolder
     };
-    displayHTML = detailTemplate(detailTemplateContext);
+    var displayHTML = detailTemplate(detailTemplateContext);
     $('.project-details').html(displayHTML);
     addFormKeyBindings(theItem.node_id);
 }
@@ -132,8 +134,12 @@ function createBlankProjectDetail(message) {
     $('.project-details').html('<div class="row"> <div class="col-xs-12"> <i class="text-muted text-center po-placeholder"> ' + text + ' </i> </div> </div>');
 }
 
-function triggerClickOnItem(item) {
-    var row = $('.tb-row[data-id="'+ item.id+'"');
+function triggerClickOnItem(item, force) {
+    var row = $('.tb-row[data-id="'+ item.id+'"]');
+    if (force){
+        row.trigger('click');
+    }
+
     if(row.hasClass(this.options.hoverClassMultiselect)){
         row.trigger('click');
     }
@@ -318,7 +324,7 @@ function _showProjectDetails(event, item, col) {
                     tb.updateFolder(null, item);
                 });
             });
-            triggerClickOnItem.call(treebeard, item);    
+            triggerClickOnItem.call(treebeard, item);
             return false;
         });
         $('#remove-link-' + theItem.node_id).click(function () {
@@ -387,7 +393,7 @@ function _showProjectDetails(event, item, col) {
                     //    m.render(icon.get(0), iconTemplate);
                     //}
                     treebeard.updateFolder(null, item);
-                    triggerClickOnItem.call(treebeard, item);    
+                    triggerClickOnItem.call(treebeard, item);
                 }).fail($osf.handleJSONError);
 
             });
@@ -417,8 +423,8 @@ function _showProjectDetails(event, item, col) {
                 };
             postAction = $osf.postJSON(url, postData);
             postAction.done(function () {
-                treebeard.updateFolder(null, theParentNode);
-                triggerClickOnItem.call(treebeard, item);    
+                treebeard.updateFolder(null, treebeard.find(1));
+                // Also update every
             }).fail($osf.handleJSONError);
             return false;
         });
@@ -632,17 +638,21 @@ function _poResolveIcon(item) {
         return returnView('link');
     }
     if (item.data.isProject) {
-        return returnView('project');
+        if (item.data.isRegistration) {
+            return returnView('registration');
+        } else {
+            return returnView('project');
+        }
     }
-    if (item.data.isRegistration) {
-        return returnView('registration');
-    }
+
     if (item.data.isComponent) {
-        return returnView('component');
+        if (item.data.isRegistration) {
+            return returnView('registeredComponent');
+        }else {
+            return returnView('component');
+        }
     }
-    if (item.data.isRegistration && item.data.isComponent) {
-        return returnView('registeredComponent');
-    }
+
     if (item.data.isPointer) {
         return returnView('link');
     }
@@ -662,10 +672,8 @@ function _poResolveToggle(item) {
         childrenCount = item.data.childrenCount || item.children.length;
     if (item.kind === 'folder' && childrenCount > 0) {
         if (item.open) {
-            //console.log(item.data.name, "Toggle Minus:", toggleMinus);
             return toggleMinus;
         }
-        //console.log(item.data.name, "Toggle Plus:", togglePlus);
         return togglePlus;
     }
     return '';
@@ -679,7 +687,7 @@ function _poResolveToggle(item) {
  * @private
  */
 function _poResolveLazyLoad(item) {
-    console.log("tree", item);
+
     return '/api/v1/dashboard/' + item.data.node_id;
 }
 
@@ -697,8 +705,13 @@ function expandStateLoad(item) {
             if (item.children[i].data.expand) {
                 tb.updateFolder(null, item.children[i]);
             }
+            if(tb.multiselected[0] && item.children[i].data.node_id === tb.multiselected[0].data.node_id) {
+                triggerClickOnItem.call(tb, item.children[i], true);
+            }
         }
     }
+
+
 }
 
 /**
@@ -722,7 +735,6 @@ function _poLoadOpenChildren() {
  * @private
  */
 function _poMultiselect(event, tree) {
-    console.log(this, tree);
     var tb = this,
         selectedRows = filterRowsNotInParent.call(tb, tb.multiselected),
         someItemsAreFolders,
@@ -739,27 +751,23 @@ function _poMultiselect(event, tree) {
                                   !thisItem.permissions.movable;
             pointerIds.push(thisItem.node_id);
         });
+        var detailTemplateContext;
         if(!selectedRows[0].parent().data.isFolder){
-            var multiItemDetailTemplateSource = $('#project-detail-multi-item-no-action').html(),
-                detailTemplate = Handlebars.compile(multiItemDetailTemplateSource),
-                detailTemplateContext = {
-                    itemsCount: selectedRows.length
-                },
-                theParentNode = selectedRows[0].parent(),
-                displayHTML = detailTemplate(detailTemplateContext);
+            detailTemplateContext = {
+                itemsCount: selectedRows.length
+            };
+            var theParentNode = selectedRows[0].parent();
+            var displayHTML = multiItemDetailTemplate(detailTemplateContext);
             $('.project-details').html(displayHTML);
             $('.project-details').show();
         } else {
             if (!someItemsAreFolders) {
-                console.log("some items are folders", someItemsAreFolders);   
-                var multiItemDetailTemplateSource = $('#project-detail-multi-item-template').html(),
-                    detailTemplate = Handlebars.compile(multiItemDetailTemplateSource),
-                    detailTemplateContext = {
-                        multipleItems: true,
-                        itemsCount: selectedRows.length
-                    },
-                    theParentNode = selectedRows[0].parent(),
-                    displayHTML = detailTemplate(detailTemplateContext);
+                detailTemplateContext = {
+                    multipleItems: true,
+                    itemsCount: selectedRows.length
+                };
+                var theParentNode = selectedRows[0].parent();
+                var displayHTML = multiItemDetailTemplate(detailTemplateContext);
                 $('.project-details').html(displayHTML);
                 $('.project-details').show();
                 $('#remove-links-multiple').click(function () {
@@ -774,10 +782,9 @@ function _poMultiselect(event, tree) {
                 createBlankProjectDetail();
             }
         }
-        
+
     } else {
         _showProjectDetails.call(tb, event, tb.multiselected[0]);
-
     }
 }
 
@@ -1016,7 +1023,6 @@ function canAcceptDrop(items, folder) {
  * @param {Object} folder Folder information as _item object
  */
 function dropLogic(event, items, folder) {
-    console.log("Droplogic : items, folder", items, folder);
     var tb = this,
         theFolderNodeID,
         getChildrenURL,
@@ -1026,7 +1032,7 @@ function dropLogic(event, items, folder) {
         itemParent,
         itemParentNodeID,
         getAction;
-    if (typeof folder !== 'undefined' && folder !== null) {
+    if (typeof folder !== 'undefined' && folder !== null && folder.data.isFolder) {
         theFolderNodeID = folder.data.node_id;
         getChildrenURL = folder.data.apiURL + 'get_folder_pointers/';
         sampleItem = items[0];
@@ -1170,14 +1176,13 @@ var tbOptions = {
         over : _poOver
     },
     onload : function () {
-        console.log("Onload");
         var tb = this;
         _poLoadOpenChildren.call(tb);
         $('.tb-row').first().trigger('click');
 
-        $('.gridWrapper').on('mouseout', function(){ 
+        $('.gridWrapper').on('mouseout', function(){
             $('.tb-row').removeClass('po-hover');
-        }) 
+        });
 
 
     },
@@ -1225,7 +1230,6 @@ ProjectOrganizer.prototype = {
     },
     _initGrid: function () {
         this.grid = new Treebeard(this.options);
-        console.log("this.grid", this.grid.tbController.options.divID);
         return this.grid;
     }
 };

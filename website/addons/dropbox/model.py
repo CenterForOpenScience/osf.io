@@ -211,12 +211,12 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
 
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
-            raise exceptions.AddonError('Cannot serialize credentials for Dropbox addon')
+            raise exceptions.AddonError('Addon is not authorized')
         return {'token': self.user_settings.access_token}
 
     def serialize_waterbutler_settings(self):
         if not self.folder:
-            raise exceptions.AddonError('Cannot serialize settings for Dropbox addon')
+            raise exceptions.AddonError('Folder is not configured')
         return {'folder': self.folder}
 
     def create_waterbutler_log(self, auth, action, metadata):

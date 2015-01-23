@@ -1,10 +1,13 @@
+# -*- coding: utf-8 -*-
+
 import os
 
-from boto.exception import BotoServerError
 from modularodm import fields
+from boto.exception import BotoServerError
 
 from framework.auth.core import Auth
 
+from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 from website.addons.s3.utils import get_bucket_drop_down, remove_osf_user, build_urls
 
@@ -113,7 +116,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
 
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
-            raise Exception
+            raise exceptions.AddonError('Cannot serialize credentials for S3 addon')
         return {
             'access_key': self.user_settings.access_key,
             'secret_key': self.user_settings.secret_key,
@@ -121,7 +124,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
 
     def serialize_waterbutler_settings(self):
         if not self.bucket:
-            raise Exception
+            raise exceptions.AddonError('Cannot serialize settings for S3 addon')
         return {'bucket': self.bucket}
 
     def create_waterbutler_log(self, auth, action, metadata):
