@@ -62,6 +62,7 @@ def get_globals():
         'sanitize': sanitize,
         'js_str': lambda x: x.replace("'", r"\'").replace('"', r'\"'),
         'webpack_asset': paths.webpack_asset,
+        'waterbutler_url': settings.WATERBUTLER_URL
     }
 
 
