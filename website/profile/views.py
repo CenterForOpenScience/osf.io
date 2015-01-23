@@ -72,7 +72,7 @@ def _profile_view(profile, is_profile):
     if profile and profile.is_disabled:
         raise HTTPError(http.GONE)
 
-    if profile.is_system_user:
+    if profile and profile.is_system_user:
         # System users dont get a profile page
         raise HTTPError(http.BAD_REQUEST)
 
