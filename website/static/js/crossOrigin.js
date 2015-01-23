@@ -53,3 +53,8 @@ xhook.before(function(request, callback) {
 
 // Must tell jQuery that CORS is available, else requests won't be sent
 jquery.support.cors = true;
+
+// Hack: Disable xhook if not using MSIE
+if (!window.XDomainRequest) {
+    xhook.disable();
+}
