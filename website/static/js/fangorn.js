@@ -809,7 +809,7 @@ tbOptions = {
         clickable : '#treeGrid',
         addRemoveLinks: false,
         previewTemplate: '<div></div>',
-        parallelUploads: 1
+        parallelUploads: 10
     },
     resolveIcon : _fangornResolveIcon,
     resolveToggle : _fangornResolveToggle,
