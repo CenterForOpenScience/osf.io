@@ -297,12 +297,11 @@ height: 32px ;
 */
 .tt-hint {
     color: #999;
-    padding-top: 9px;
-    padding-left: 13px;
+    padding: 2px 12px 0px 13px;
 }
 h3.category {
     font-size: 18px;
-    margin-top: 5px;
+    margin-top: 4px;
     margin-left: 5px;
 }
 .tt-dropdown-menu {
@@ -372,6 +371,9 @@ h3.category {
     margin-right: 4px;
 }
 
+.tt-input {
+    padding: 0 12px;
+}
 
 
 

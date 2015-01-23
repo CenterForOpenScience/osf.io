@@ -208,12 +208,14 @@ function _fangornUploadProgress(treebeard, file, progress) {
     } else {
         column = 1;
     }
-    msgText  += 'Uploaded ' + Math.floor(progress) + '%'
+    msgText  += 'Uploaded ' + Math.floor(progress) + '%';
 
     if (progress < 100) {
+        treebeard.options.uploadInProgress = true;
         item.notify.update(msgText, 'success', column, 0);
     } else {
         item.notify.update(msgText, 'success', column, 2000);
+        treebeard.options.uploadInProgress = false;
     }
 }
 
@@ -228,6 +230,7 @@ function _fangornUploadProgress(treebeard, file, progress) {
  * @private
  */
 function _fangornSending(treebeard, file, xhr, formData) {
+    treebeard.options.uploadInProgress = true;
     var parent = file.treebeardParent;
     var parentID = parent.id,
         configOption,
@@ -243,7 +246,6 @@ function _fangornSending(treebeard, file, xhr, formData) {
             },
             tmpID: tmpID
         };
-        console.log('TempID', tmpID);
     treebeard.createItem(blankItem, parentID);
     file.tmpID = tmpID;
     var _send = xhr.send;
@@ -286,7 +288,6 @@ function _fangornDragOver(treebeard, event) {
         itemID =  parseInt(closestTarget.attr('data-id')),
         item = treebeard.find(itemID);
     $('.tb-row').removeClass(dropzoneHoverClass).removeClass(treebeard.options.hoverClass);
-    console.log(closestTarget.attr('data-id'));
     if (item !== undefined) {
         if (item.data.provider && item.kind === 'folder') {
             closestTarget.addClass(dropzoneHoverClass);
@@ -315,8 +316,9 @@ function _fangornComplete(treebeard, file) {
  * @private
  */
 function _fangornDropzoneSuccess(treebeard, file, response) {
-    var parent = file.treebeardParent;
-    var item,
+    treebeard.options.uploadInProgress = false;
+    var parent = file.treebeardParent,
+        item,
         revisedItem,
         child;
     for(var i = 0; i < parent.children.length; i++) {
@@ -367,6 +369,7 @@ function _fangornDropzoneError(treebeard, file, message) {
     item.notify.message = msgText;
     item.notify.col = 1;
     item.notify.selfDestruct(treebeard, item);
+    treebeard.options.uploadInProgress = false;
 }
 
 /**
@@ -437,12 +440,10 @@ function _removeEvent (event, item, col) {
         .done(function(data) {
             // delete view
             tb.deleteNode(item.parentID, item.id);
-            window.console.log('Delete success: ', data);
             tb.modal.dismiss();
         })
         .fail(function(data){
             tb.modal.dismiss();
-            window.console.log('Delete failed: ', data);
             item.notify.update('Delete failed.', 'danger', undefined, 3000);
         });
     }
@@ -758,21 +759,23 @@ tbOptions = {
         $(document).on('click', '.fangorn-dismiss', function() {
             tb.redraw();
         });
+
+        window.onbeforeunload = function(e) {
+            if (tb.options.uploadInProgress) {
+              return 'You have pending uploads, if you leave this page they may not complete.';
+            }
+        };
     },
     createcheck : function (item, parent) {
-        window.console.log('createcheck', this, item, parent);
         return true;
     },
     deletecheck : function (item) {  // When user attempts to delete a row, allows for checking permissions etc.
-        window.console.log('deletecheck', this, item);
         return true;
     },
     movecheck : function (to, from) { //This method gives the users an option to do checks and define their return
-        window.console.log('movecheck: to', to, 'from', from);
         return true;
     },
     movefail : function (to, from) { //This method gives the users an option to do checks and define their return
-        window.console.log('moovefail: to', to, 'from', from);
         return true;
     },
     addcheck : function (treebeard, item, file) {
@@ -829,7 +832,8 @@ tbOptions = {
         error : _fangornDropzoneError,
         dragover : _fangornDragOver,
         addedfile : _fangornAddedFile
-    }
+    },
+    uploadInProgress : false
 };
 
 /**
