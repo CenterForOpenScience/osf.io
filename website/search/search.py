@@ -2,6 +2,7 @@ import logging
 
 from website import settings
 
+
 logger = logging.getLogger(__name__)
 
 if settings.SEARCH_ENGINE == 'elastic':
@@ -19,7 +20,7 @@ def requires_search(func):
 
 
 @requires_search
-def search(query, index='website', doc_type=None, raw=False):
+def search(query, index=settings.INDICES, doc_type=settings.TYPES, raw=False):
     return search_engine.search(query, index=index, doc_type=doc_type, raw=raw)
 
 @requires_search

@@ -223,3 +223,21 @@ GOOGLE_SITE_VERIFICATION = None
 
 # Pingdom
 PINGDOM_ID = None
+
+INDICES = ['website']
+
+TYPES = [
+    'project',
+    'component',
+    'registration',
+    'user',
+]
+
+ALIASES = {
+    'total': 'Total',
+    'project': 'Projects',
+    'component': 'Components',
+    'registration': 'Registrations',
+    'user': 'Users',
+}
+

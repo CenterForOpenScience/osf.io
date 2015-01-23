@@ -26,19 +26,9 @@ from website.models import User, Node
 from website.search import exceptions
 from website.search.util import build_query, format_mapping
 
+from website.settings import INDICES, TYPES, ALIASES
+
 logger = logging.getLogger(__name__)
-
-
-# These are the doc_types that exist in the search database
-INDICES = ['website', 'metadata']
-ALIASES = {
-    'project': 'Projects',
-    'component': 'Components',
-    'registration': 'Registrations',
-    'user': 'Users',
-    'total': 'Total'
-}
-
 
 try:
     es = Elasticsearch(
@@ -89,7 +79,7 @@ def get_counts(count_query, clean=True):
         }
     }
 
-    res = es.search(index=INDICES, doc_type=None, search_type='count', body=count_query)
+    res = es.search(index=INDICES, doc_type=TYPES, search_type='count', body=count_query)
 
     counts = {x['key']: x['doc_count'] for x in res['aggregations']['counts']['buckets'] if x['key'] in ALIASES.keys()}
 
@@ -104,15 +94,14 @@ def get_tags(query, index):
             'terms': {'field': 'tags'}
         }
     }
-
-    results = es.search(index=index, doc_type=None, body=query)
+    results = es.search(index=index, doc_type=TYPES, body=query)
     tags = results['aggregations']['tag_cloud']['buckets']
 
     return tags
 
 
 @requires_search
-def search(query, index='website', doc_type='_all', raw=False):
+def search(query, index=INDICES, doc_type=TYPES, raw=False):
     """Search for a query
 
     :param query: The substring of the username/project name/tag to search for
