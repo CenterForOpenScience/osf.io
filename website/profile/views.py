@@ -31,6 +31,7 @@ from website.util.sanitize import strip_html
 from website.profile import utils as profile_utils
 from website import settings
 from website.notifications.utils import SubscriptionsDict
+from website.notifications.model import Subscription
 
 logger = logging.getLogger(__name__)
 
@@ -213,12 +214,14 @@ def user_notifications(auth, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
     return {
         'mailing_lists': auth.user.mailing_lists,
-        'user_subscriptions': find_user_subscriptions(auth.user),
-        'subscriptions_available': settings.SUBSCRIPTIONS_AVAILABLE
+        'user_subscriptions': find_user_level_subscriptions(auth.user),
+        'user_subscriptions_available': settings.USER_SUBSCRIPTIONS_AVAILABLE,
+        'node_subscriptions': find_user_project_subscriptions(auth.user),
+        'node_subscriptions_available': settings.SUBSCRIPTIONS_AVAILABLE
     }
 
 
-def find_user_subscriptions(user):
+def find_user_project_subscriptions(user):
     subscriptions = SubscriptionsDict()
 
     for notification_type in settings.NOTIFICATION_TYPES:
@@ -230,6 +233,18 @@ def find_user_subscriptions(user):
     return {
         'node_subscriptions': subscriptions
     }
+
+
+def find_user_level_subscriptions(user):
+    subscriptions = [s for s in Subscription.find(Q('object_id', 'eq', user._id))]
+    user_subscriptions = {}
+    for s in subscriptions:
+        user_subscriptions[s.event_name] = []
+        for notification_type in settings.NOTIFICATION_TYPES:
+            if getattr(s, notification_type) and user.username in getattr(s, notification_type):
+                user_subscriptions[s.event_name].append(notification_type)
+
+    return user_subscriptions
 
 
 def collect_user_config_js(addons):

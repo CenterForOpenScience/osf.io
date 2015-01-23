@@ -2,6 +2,7 @@
 <%def name="title()">Notifications</%def>
 <%def name="content()">
 <% import json %>
+<% from website import settings%>
 <h2 class="page-header">Notifications</h2>
 
 <div class="row">
@@ -49,14 +50,40 @@
             <div class="panel-heading"><h3 class="panel-title">Configure Notification Preferences</h3></div>
             <div class="panel-body">
                 <div class="form">
-                    <h3>Project Notifications</h3>
+                    <h4>User Notifications</h4>
+                    <div style="font-weight: bold">
+                        <div class="col-md-6">Notifications</div>
+                        <div class="col-md-6">Notification Type</div>
+                    </div>
+                    % for subscription in user_subscriptions_available:
+                    <div class="col-md-6">
+                    <label style="font-weight:normal; padding-right: 50px">
+                            ${user_subscriptions_available[subscription]}
+                    </label>
+                    </div>
+
+                    <div class="col-md-6">
+                        <select class="form-control" name="${subscription}">
+                            <option value="none" ${'checked' if 'email_transactional' not in user_subscriptions[subscription] and 'email_digest' not in user_subscriptions[subscription] else ''}>
+                                None
+                            </option>
+                            <option value="email_transactional" ${'checked' if 'email_transactional' in user_subscriptions[subscription] else ''}>
+                                Receive emails immediately
+                            </option>
+                            <option value="email_digest" ${'checked' if 'email_digest' in user_subscriptions[subscription] else ''}>
+                                Receive in a daily email digest
+                            </option>
+                        </select>
+                </div>
+                % endfor
                     </br>
+                    <h4>Project Notifications</h4>
                     <div style="font-weight: bold">
                         <div class="col-md-6">Notifications</div>
                         <div class="col-md-6">Notification Type</div>
                     </div>
                     </br>
-                    ${format_subscriptions(user_subscriptions['node_subscriptions']['children'], indent=0)}
+                    ${format_subscriptions(node_subscriptions['node_subscriptions']['children'], indent=0)}
 
                 </div>
                 <div class="padded">
@@ -77,13 +104,13 @@
         <a href="${Node.load(node_id).url}">${Node.load(node_id).title}</a>
         <br/>
 
-        % for subscription in subscriptions_available:
+        % for subscription in node_subscriptions_available:
             <div class="col-md-6">
             %for i in range(indent):
                 &emsp;
             %endfor
                 <label style="font-weight:normal; padding-right: 50px">
-                            ${subscriptions_available[subscription]}
+                            ${node_subscriptions_available[subscription]}
                 </label>
                 </div>
 
