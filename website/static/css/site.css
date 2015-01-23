@@ -1752,7 +1752,7 @@ span#profileFullname{
     color: #FFF;
 }
 
-.osf-navbar .nav .open>a, .osf-navbar .nav .open>a:hover, .osf-navbar .nav .open>a:focus, .osf-navbar a:hover, .osf-navbar li > a:hover, .osf-navbar li.active{
+.osf-navbar .nav .open>a, .osf-navbar .nav .open>a:hover, .osf-navbar .nav .open>a:focus, .osf-navbar a:hover, .osf-navbar li > a:hover, .osf-navbar li.active, .osf-navbar li.a:focus, .osf-navbar .navbar-nav>li>a:focus {
     background: rgba(187, 187, 187, 0.2);
 }
 .osf-navbar .navbar-nav>li>a {
@@ -1760,6 +1760,7 @@ span#profileFullname{
     padding-bottom: 6px;
     line-height: 24px;
 }
+
 .navbar-brand {
     height: 42px;
     line-height: 14px;
