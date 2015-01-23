@@ -464,7 +464,7 @@ function _poActionColumn(item, col) {
     // Build the template for icons
     return buttons.map(function (btn) {
         return m('span', { 'data-col' : item.id }, [ m('i',
-            { 'class' : btn.css, 'style' : btn.style, 'onclick' : function (event) {  btn.onclick.call(self, event, item, col); } },
+            { 'class' : btn.css, 'data-toggle' : 'tooltip', title : 'Go to Project', 'data-placement': 'bottom','style' : btn.style, 'onclick' : function (event) {  btn.onclick.call(self, event, item, col); } },
             [ m('span', { 'class' : btn.icon}, btn.name) ])
             ]);
     });
@@ -666,10 +666,8 @@ function _poResolveToggle(item) {
         childrenCount = item.data.childrenCount || item.children.length;
     if (item.kind === 'folder' && childrenCount > 0) {
         if (item.open) {
-            //console.log(item.data.name, "Toggle Minus:", toggleMinus);
             return toggleMinus;
         }
-        //console.log(item.data.name, "Toggle Plus:", togglePlus);
         return togglePlus;
     }
     return '';
@@ -696,6 +694,10 @@ function _poResolveLazyLoad(item) {
 function expandStateLoad(item) {
     var tb = this,
         i;
+    if(item.children.length === 0 && item.data.childrenCount > 0){
+        item.data.childrenCount = 0; 
+        tb.updateFolder(null, item);
+    }
     if (item.children.length > 0 && item.depth > 0) {
         for (i = 0; i < item.children.length; i++) {
             if (item.children[i].data.expand) {
@@ -1174,7 +1176,6 @@ var tbOptions = {
         over : _poOver
     },
     onload : function () {
-        console.log("Onload");
         var tb = this;
         _poLoadOpenChildren.call(tb);
         $('.tb-row').first().trigger('click');
@@ -1198,7 +1199,18 @@ var tbOptions = {
         if (!item.open) {
             item.load = false;
         }
+        $('[data-toggle="tooltip"]').tooltip();
+        // Clean up Mithril related redraw issues
+        $('.tb-toggle-icon').each(function(){
+            var children = $(this).children('i'); 
+            if (children.length > 1) {
+                children.last().remove();
+            }
+        });
 
+    },
+    onscrollcomplete : function(){
+        $('[data-toggle="tooltip"]').tooltip();
     },
     onmultiselect : _poMultiselect,
     resolveIcon : _poResolveIcon,
