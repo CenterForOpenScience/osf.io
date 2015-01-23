@@ -125,17 +125,6 @@ def ensure_schemas(clear=True):
             schema_obj.save()
 
 
-class MetaData(GuidStoredObject):
-
-    _id = fields.StringField(primary=True)
-
-    target = fields.AbstractForeignField(backref='metadata')
-    data = fields.DictionaryField()
-
-    date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
-    date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
-
-
 def validate_comment_reports(value, *args, **kwargs):
     for key, val in value.iteritems():
         if not User.load(key):
@@ -545,6 +534,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     # Use an OrderedDict so that menu items show in the correct order
     CATEGORY_MAP = OrderedDict([
         ('', 'Uncategorized'),
+        ('app', 'Application'),
         ('project', 'Project'),
         ('hypothesis', 'Hypothesis'),
         ('methods and measures', 'Methods and Measures'),
@@ -553,7 +543,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         ('data', 'Data'),
         ('analysis', 'Analysis'),
         ('communication', 'Communication'),
-        ('other', 'Other')
+        ('other', 'Other'),
+        ('report', 'Report')
     ])
 
     _id = fields.StringField(primary=True)
@@ -650,6 +641,10 @@ class Node(GuidStoredObject, AddonModelMixin):
     def __repr__(self):
         return ('<Node(title={self.title!r}, category={self.category!r}) '
                 'with _id {self._id!r}>').format(self=self)
+
+    @property
+    def is_system_project(self):
+        return 'application_created' in self.system_tags
 
     @property
     def category_display(self):
@@ -850,6 +845,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             contributor._id
             for contributor in self.contributors
             if contributor._id in self.visible_contributor_ids
+            and not contributor.is_system_user
         ]
         if save:
             self.save()
@@ -922,7 +918,9 @@ class Node(GuidStoredObject, AddonModelMixin):
                 if 'node' in addon.added_default:
                     self.add_addon(addon.short_name, auth=None, log=False)
 
-            #
+                if self.category == 'app' and 'app' in addon.added_default:
+                    self.add_addon(addon.short_name, auth=None, log=False)
+
             if getattr(self, 'project', None):
 
                 # Append log to parent
@@ -1357,7 +1355,11 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     def update_search(self):
         import website.search.search as search
-        search.update_node(self)
+        if self.category == 'app':
+            index = 'application'
+        else:
+            index = 'website'
+        search.update_node(self, index=index)
 
     def remove_node(self, auth, date=None):
         """Marks a node as deleted.
@@ -1953,7 +1955,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     @property
     def deep_url(self):
-        if self.category == 'project':
+        if self.category in ['project', 'app']:
             return '/project/{}/'.format(self._primary_key)
         else:
             if self.node__parent and self.node__parent[0].category == 'project':
@@ -2046,7 +2048,11 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     @property
     def project_or_component(self):
-        return 'project' if self.category == 'project' else 'component'
+        if self.category == 'project':
+            return 'project'
+        elif self.category == 'app':
+            return 'application'
+        return 'component'
 
     def is_contributor(self, user):
         return (

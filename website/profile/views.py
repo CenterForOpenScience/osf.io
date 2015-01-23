@@ -72,6 +72,10 @@ def _profile_view(profile, is_profile):
     if profile and profile.is_disabled:
         raise HTTPError(http.GONE)
 
+    if profile and profile.is_system_user:
+        # System users dont get a profile page
+        raise HTTPError(http.BAD_REQUEST)
+
     if 'badges' in settings.ADDONS_REQUESTED:
         badge_assertions = get_sorted_user_badges(profile),
         badges = _get_user_created_badges(profile)
@@ -203,6 +207,11 @@ def user_addons(auth, **kwargs):
     out['addon_enabled_settings'] = addon_enabled_settings
     out['addon_js'] = collect_user_config_js(user.get_addons())
     return out
+
+@must_be_logged_in
+def user_apikeys(auth, **kwargs):
+    return {}
+
 
 @must_be_logged_in
 def user_notifications(auth, **kwargs):
@@ -339,7 +348,7 @@ def get_keys(**kwargs):
 def create_user_key(**kwargs):
 
     # Generate key
-    api_key = ApiKey(label=request.form['label'])
+    api_key = ApiKey(label=request.json.get('label'))
     api_key.save()
 
     # Append to user
@@ -350,14 +359,17 @@ def create_user_key(**kwargs):
     # Return response
     return {
         'response': 'success',
+        'key': api_key._id
     }
 
 
 @must_be_logged_in
 def revoke_user_key(**kwargs):
-
     # Load key
-    api_key = ApiKey.load(request.form['key'])
+    api_key = ApiKey.load(request.args.get('key'))
+
+    if not api_key:
+        raise HTTPError(http.BAD_REQUEST)
 
     # Remove from user
     user = kwargs['auth'].user

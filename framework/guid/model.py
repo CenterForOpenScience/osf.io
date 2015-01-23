@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from modularodm import fields
 from framework.mongo import StoredObject
 

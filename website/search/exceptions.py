@@ -11,5 +11,8 @@ class IndexNotFoundError(SearchException):
 class MalformedQueryError(SearchException):
     pass
 
+class TypeCollisionError(SearchException):
+    pass
+
 class SearchUnavailableError(SearchException):
     pass

@@ -24,7 +24,7 @@ def _kwargs_to_nodes(kwargs):
     project = kwargs.get('project') or Node.load(kwargs.get('pid', kwargs.get('nid')))
     if not project:
         raise HTTPError(http.NOT_FOUND)
-    if project.category != 'project':
+    if project.category not in ['project', 'app']:
         raise HTTPError(http.BAD_REQUEST)
     if project.is_deleted:
         raise HTTPError(http.GONE)

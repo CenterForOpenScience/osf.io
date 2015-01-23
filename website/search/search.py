@@ -2,6 +2,7 @@ import logging
 
 from website import settings
 
+
 logger = logging.getLogger(__name__)
 
 if settings.SEARCH_ENGINE == 'elastic':
@@ -19,8 +20,8 @@ def requires_search(func):
 
 
 @requires_search
-def search(query, index='website', doc_type=None):
-    return search_engine.search(query, index=index, doc_type=doc_type)
+def search(query, index=settings.INDICES, doc_type=settings.TYPES, raw=False):
+    return search_engine.search(query, index=index, doc_type=doc_type, raw=raw)
 
 @requires_search
 def update_node(node, index='website'):
@@ -50,3 +51,13 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
     result = search_engine.search_contributor(query=query, page=page, size=size,
                                               exclude=exclude, current_user=current_user)
     return result
+
+
+@requires_search
+def update_metadata(metadata):
+    search_engine.update_metadata(metadata)
+
+
+@requires_search
+def get_mapping(index, _type, flatten=False):
+    return search_engine.get_mapping(index, _type, flatten=flatten)

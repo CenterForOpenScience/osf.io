@@ -28,6 +28,7 @@ from website.project import model
 from website.util import web_url_for
 from website.util import permissions
 from website.project import new_dashboard
+from website.settings import ALL_MY_APPS_ID
 from website.settings import ALL_MY_PROJECTS_ID
 from website.settings import ALL_MY_REGISTRATIONS_ID
 
@@ -126,6 +127,8 @@ def get_dashboard(auth, nid=None, **kwargs):
         node = find_dashboard(user)
         dashboard_projects = [rubeus.to_project_root(node, auth, **kwargs)]
         return_value = {'data': dashboard_projects}
+    elif nid == ALL_MY_APPS_ID:
+        return_value = {'data': get_all_apps_smart_folder(**kwargs)}
     elif nid == ALL_MY_PROJECTS_ID:
         return_value = {'data': get_all_projects_smart_folder(**kwargs)}
     elif nid == ALL_MY_REGISTRATIONS_ID:
@@ -169,13 +172,32 @@ def get_all_projects_smart_folder(auth, **kwargs):
         # exclude deleted nodes
         Q('is_deleted', 'eq', False) &
         # exclude registrations
-        Q('is_registration', 'eq', False)
+        Q('is_registration', 'eq', False) &
+        # exclude applications
+        Q('category', 'ne', 'app')
     )
 
     return_value = [rubeus.to_project_root(node, auth, **kwargs) for node in comps]
     return_value.extend([rubeus.to_project_root(node, auth, **kwargs) for node in nodes])
     return return_value
 
+
+@must_be_logged_in
+def get_all_apps_smart_folder(auth, **kwargs):
+    #TODO: Unit tests
+    user = auth.user
+    contributed = user.node__contributed
+
+    nodes = contributed.find(
+        Q('category', 'eq', 'app') &
+        Q('is_deleted', 'eq', False) &
+        Q('is_registration', 'eq', False) &
+        Q('is_folder', 'eq', False) &
+        # parent is not in the nodes list
+        Q('__backrefs.parent.node.nodes', 'eq', None)
+    ).sort('-title')
+
+    return [rubeus.to_project_root(node, auth, **kwargs) for node in nodes]
 
 @must_be_logged_in
 def get_all_registrations_smart_folder(auth, **kwargs):
@@ -242,7 +264,7 @@ def get_dashboard_nodes(auth):
     if request.args.get('no_components') not in [True, 'true', 'True', '1', 1]:
         comps = contributed.find(
             # components only
-            Q('category', 'ne', 'project') &
+            Q('category', 'nin', ['app', 'project']) &
             # parent is not in the nodes list
             Q('__backrefs.parent.node.nodes', 'nin', nodes.get_keys()) &
             # exclude deleted nodes
@@ -394,7 +416,8 @@ def resolve_guid(guid, suffix=None):
         if prefix or mode == 'redirect':
             if request.query_string:
                 url += '?' + request.query_string
-            return redirect(url)
+            #Code is 307 to not change all methods to GET
+            return redirect(url, code=307)
         return proxy_url(url)
 
     # GUID not found; try lower-cased and redirect if exists

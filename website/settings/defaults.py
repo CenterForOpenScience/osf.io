@@ -176,6 +176,7 @@ ADDON_CATEGORIES = [
     'bibliography',
     'other',
     'security',
+    'service'
 ]
 
 SYSTEM_ADDED_ADDONS = {
@@ -199,14 +200,19 @@ SENTRY_DSN_JS = None
 MISSING_FILE_NAME = 'untitled'
 
 # Dashboard
+ALL_MY_APPS_ID = '-ama'
 ALL_MY_PROJECTS_ID = '-amp'
 ALL_MY_REGISTRATIONS_ID = '-amr'
+ALL_MY_APPS_NAME = 'All my apps'
 ALL_MY_PROJECTS_NAME = 'All my projects'
 ALL_MY_REGISTRATIONS_NAME = 'All my registrations'
 
 # FOR EMERGENCIES ONLY: Setting this to True will disable forks, registrations,
 # and uploads in order to save disk space.
 DISK_SAVING_MODE = False
+
+#SHARE
+SHARE_APP_ID = '6qajn'
 
 # Add Contributors (most in common)
 MAX_MOST_IN_COMMON_LENGTH = 15
@@ -217,3 +223,23 @@ GOOGLE_SITE_VERIFICATION = None
 
 # Pingdom
 PINGDOM_ID = None
+
+INDICES = ['website', 'metadata']
+
+TYPES = [
+    'project',
+    'component',
+    'registration',
+    'user',
+    SHARE_APP_ID
+]
+
+ALIASES = {
+    'total': 'Total',
+    'project': 'Projects',
+    'component': 'Components',
+    'registration': 'Registrations',
+    'user': 'Users',
+    SHARE_APP_ID: 'SHARE'
+}
+

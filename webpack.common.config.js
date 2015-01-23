@@ -16,6 +16,7 @@ var staticPath = function(dir) {
  * to website/static/public/
  */
 var entry = {
+    'apikey-page': staticPath('js/pages/apikey-page.js'),
     'base-page': staticPath('js/pages/base-page.js'),
     'home-page': staticPath('js/pages/home-page.js'),
     'dashboard-page': staticPath('js/pages/dashboard-page.js'),
@@ -56,7 +57,7 @@ var entry = {
 // Collect adddons endpoints. If an addon's static folder has
 // any of the following files, it will be added as an entry point
 // and output to website/static/public/js/<addon-name>/files.js
-var addonModules = ['files.js', 'node-cfg.js', 'user-cfg.js', 'file-detail.js', 'widget-cfg.js'];
+var addonModules = ['files.js', 'node-cfg.js', 'user-cfg.js', 'file-detail.js', 'widget-cfg.js', 'page.js'];
 addons.addons.forEach(function(addonName) {
     var baseDir = addonName + '/';
     addonModules.forEach(function(module) {
@@ -86,6 +87,7 @@ var resolve = {
         'jquery-tagsinput': staticPath('vendor/bower_components/jquery.tagsinput/jquery.tagsinput.js'),
         'jquery.cookie': staticPath('vendor/bower_components/jquery.cookie/jquery.cookie.js'),
         'history': staticPath('vendor/bower_components/history.js/scripts/bundled/html4+html5/jquery.history.js'),
+        'jsonlint': staticPath('vendor/jsonlint/formatter.js'),
         // Needed for knockout-sortable
         'jquery.ui.sortable': staticPath('vendor/bower_components/jquery-ui/ui/jquery.ui.sortable.js'),
         // Dropzone doesn't have a proper 'main' entry in its bower.json

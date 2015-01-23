@@ -5,6 +5,7 @@ from __future__ import absolute_import
 from modularodm.query.querydialect import DefaultQueryDialect as Q
 from website.models import Node
 from framework.auth import User
+from website.addons.app.model import Metadata
 import website.search.search as search
 
 from website.app import init_app
@@ -24,6 +25,10 @@ def migrate_users():
         user.update_search()
 
 
+def migrate_metadata():
+    for data in Metadata.find():
+        search.update_metadata(data)
+
 def main():
 
     ctx = app.test_request_context()
@@ -33,6 +38,7 @@ def main():
     search.create_index()
     migrate_nodes()
     migrate_users()
+    migrate_metadata()
 
     ctx.pop()
 

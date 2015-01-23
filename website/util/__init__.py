@@ -27,7 +27,7 @@ def _get_guid_url_for(url):
     return guid_url
 
 
-def api_url_for(view_name, _absolute=False, *args, **kwargs):
+def api_url_for(view_name, _absolute=False, _xml=False, *args, **kwargs):
     """Reverse URL lookup for API routes (those that use the JSONRenderer).
     Takes the same arguments as Flask's url_for, with the addition of
     `_absolute`, which will make an absolute URL with the correct HTTP scheme
@@ -42,7 +42,10 @@ def api_url_for(view_name, _absolute=False, *args, **kwargs):
     else:
         _external = kwargs.pop('_external', False)
         _scheme = kwargs.pop('_scheme', None)
-    return url_for('JSONRenderer__{0}'.format(view_name),
+
+    renderer = 'XMLRenderer' if _xml else 'JSONRenderer'
+
+    return url_for('{0}__{1}'.format(renderer, view_name),
         _external=_external, _scheme=_scheme,
         *args, **kwargs)
 

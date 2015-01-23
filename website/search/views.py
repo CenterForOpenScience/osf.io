@@ -49,7 +49,6 @@ def search_search(**kwargs):
     _type = kwargs.get('type', None)
 
     tick = time.time()
-    results = {}
 
     if request.method == 'POST':
         results = search.search(request.get_json(), doc_type=_type)

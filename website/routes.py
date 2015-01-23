@@ -221,6 +221,8 @@ def make_url_map(app):
     process_rules(app, [
         # API route for getting summary information for dashboard nodes.
         Rule('/dashboard/get_nodes/', 'get', website_views.get_dashboard_nodes, json_renderer),
+        # TODO Fix apps
+        # Rule('/dashboard/apps/', 'get', website_views.get_dashboard_apps, json_renderer),
         # API route for getting serialized HGrid data, e.g. for the project
         # organizer
         # TODO: Perhaps this should be namespaced to so that the above route
@@ -471,6 +473,12 @@ def make_url_map(app):
             OsfWebRenderer('profile/notifications.mako'),
         ),
 
+        Rule(
+            '/settings/api/',
+            'get',
+            profile_views.user_apikeys,
+            OsfWebRenderer('profile/apikeys.mako'),
+        ),
     ])
 
     # API
@@ -488,8 +496,8 @@ def make_url_map(app):
             profile_views.get_public_components, json_renderer),
 
         Rule('/settings/keys/', 'get', profile_views.get_keys, json_renderer),
-        Rule('/settings/create_key/', 'post', profile_views.create_user_key, json_renderer),
-        Rule('/settings/revoke_key/', 'post', profile_views.revoke_user_key, json_renderer),
+        Rule('/settings/keys/', 'post', profile_views.create_user_key, json_renderer),
+        Rule('/settings/keys/', 'delete', profile_views.revoke_user_key, json_renderer),
         Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history, json_renderer),
 
         Rule('/profile/<user_id>/summary/', 'get',
@@ -569,27 +577,16 @@ def make_url_map(app):
     # Web
 
     process_rules(app, [
-
         Rule('/search/', 'get', {}, OsfWebRenderer('search.mako')),
-
-        Rule('/api/v1/user/search/', 'get', search_views.search_contributor, json_renderer),
-
-        Rule(
-            '/api/v1/search/node/',
-            'post',
-            project_views.node.search_node,
-            json_renderer,
-        ),
-
     ])
 
     # API
 
     process_rules(app, [
-
         Rule(['/search/', '/search/<type>/'], ['get', 'post'], search_views.search_search, json_renderer),
         Rule('/search/projects/', 'get', search_views.search_projects_by_title, json_renderer),
-
+        Rule('/user/search/', 'get', search_views.search_contributor, json_renderer),
+        Rule('/search/node/', 'post', project_views.node.search_node, json_renderer),
     ], prefix='/api/v1')
 
     # Project

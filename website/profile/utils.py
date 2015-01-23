@@ -85,6 +85,7 @@ def serialize_contributors(contribs, node):
     return [
         serialize_user(contrib, node)
         for contrib in contribs
+        if not contrib.is_system_user
     ]
 
 

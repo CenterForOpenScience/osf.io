@@ -24,21 +24,11 @@ from website import settings
 from website.filters import gravatar
 from website.models import User, Node
 from website.search import exceptions
-from website.search.util import build_query
+from website.search.util import build_query, format_mapping
+
+from website.settings import INDICES, TYPES, ALIASES
 
 logger = logging.getLogger(__name__)
-
-
-# These are the doc_types that exist in the search database
-ALIASES = {
-    'project': 'Projects',
-    'component': 'Components',
-    'registration': 'Registrations',
-    'user': 'Users',
-    'total': 'Total'
-}
-
-INDICES = ['website']
 
 try:
     es = Elasticsearch(
@@ -66,10 +56,12 @@ def requires_search(func):
             except ConnectionError:
                 raise exceptions.SearchUnavailableError('Could not connect to elasticsearch')
             except NotFoundError as e:
-                raise exceptions.IndexNotFoundError(e.error)
+                raise exceptions.IndexNotFoundError(e)
             except RequestError as e:
                 if 'ParseException' in e.error:
                     raise exceptions.MalformedQueryError(e.error)
+                if 'MapperParsingException' in e.error:
+                    raise exceptions.TypeCollisionError(e.error)
                 raise exceptions.SearchException(e.error)
 
         sentry.log_message('Elastic search action failed. Is elasticsearch running?')
@@ -87,7 +79,7 @@ def get_counts(count_query, clean=True):
         }
     }
 
-    res = es.search(index='_all', doc_type=None, search_type='count', body=count_query)
+    res = es.search(index=INDICES, doc_type=TYPES, search_type='count', body=count_query)
 
     counts = {x['key']: x['doc_count'] for x in res['aggregations']['counts']['buckets'] if x['key'] in ALIASES.keys()}
 
@@ -102,15 +94,14 @@ def get_tags(query, index):
             'terms': {'field': 'tags'}
         }
     }
-
-    results = es.search(index=index, doc_type=None, body=query)
+    results = es.search(index=index, doc_type=TYPES, body=query)
     tags = results['aggregations']['tag_cloud']['buckets']
 
     return tags
 
 
 @requires_search
-def search(query, index='website', doc_type='_all'):
+def search(query, index=INDICES, doc_type=TYPES, raw=False):
     """Search for a query
 
     :param query: The substring of the username/project name/tag to search for
@@ -126,6 +117,12 @@ def search(query, index='website', doc_type='_all'):
     tag_query = copy.deepcopy(query)
     count_query = copy.deepcopy(query)
 
+    # Run the real query and get the results
+    raw_results = es.search(index=index, doc_type=doc_type, body=query)
+
+    if raw:
+        return raw_results
+
     for key in ['from', 'size', 'sort']:
         try:
             del tag_query[key]
@@ -136,10 +133,8 @@ def search(query, index='website', doc_type='_all'):
     tags = get_tags(tag_query, index)
     counts = get_counts(count_query, index)
 
-    # Run the real query and get the results
-    raw_results = es.search(index=index, doc_type=doc_type, body=query)
-
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
+
     return_value = {
         'results': format_results(results),
         'counts': counts,
@@ -185,7 +180,9 @@ def load_parent(parent_id):
     parent = Node.load(parent_id)
     if parent is None:
         return None
+
     parent_info = {}
+
     if parent is not None and parent.is_public:
         parent_info['title'] = parent.title
         parent_info['url'] = parent.url
@@ -406,9 +403,27 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
 
             })
 
-    return {
-        'users': users,
-        'total': results['counts']['total'],
-        'pages': pages,
-        'page': page,
-    }
+    return \
+        {
+            'users': users,
+            'total': results['counts']['total'],
+            'pages': pages,
+            'page': page,
+        }
+
+
+@requires_search
+def update_metadata(metadata):
+    app_id = metadata.namespace
+    data = metadata.to_json()
+    es.index(index='metadata', doc_type=app_id, body=data, id=metadata._id, refresh=True)
+
+
+@requires_search
+def get_mapping(index, _type, flatten=False):
+    try:
+        mappings = es.indices.get_mapping(index=index)[index]['mappings'][_type]
+        mappings = format_mapping(mappings['properties'], flatten=flatten)
+        return mappings
+    except KeyError as e:
+        raise exceptions.IndexNotFoundError(e.message)

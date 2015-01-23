@@ -55,6 +55,9 @@ def new_node(category, title, user, description=None, project=None):
         project=project,
     )
 
+    if user.is_system_user:
+        node.system_tags.append('application_created')
+
     node.save()
 
     return node

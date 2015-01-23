@@ -144,10 +144,10 @@ class Auth(object):
 
     @classmethod
     def from_kwargs(cls, request_args, kwargs):
-        user = request_args.get('user') or kwargs.get('user') or _get_current_user()
+        private_key = request_args.get('view_only')
         api_key = request_args.get('api_key') or kwargs.get('api_key')
         api_node = request_args.get('api_node') or kwargs.get('api_node')
-        private_key = request_args.get('view_only')
+        user = request_args.get('user') or kwargs.get('user') or _get_current_user()
 
         return cls(
             user=user,
@@ -194,6 +194,7 @@ class User(GuidStoredObject, AddonModelMixin):
     password = fields.StringField()
     fullname = fields.StringField(required=True, validate=string_required)
     is_registered = fields.BooleanField()
+    is_system_user = fields.BooleanField()
 
     # TODO: Migrate unclaimed users to the new style, then remove this attribute
     # Note: No new users should be created where is_claimed is False.
@@ -323,6 +324,14 @@ class User(GuidStoredObject, AddonModelMixin):
             user.emails.append(email)
         user.is_registered = False
         return user
+
+    @classmethod
+    def from_api_key(cls, key):
+        from website.project.model import ApiKey
+        key = ApiKey.load(key)
+
+        if key:
+            return key.user
 
     @classmethod
     def create(cls, username, password, fullname):

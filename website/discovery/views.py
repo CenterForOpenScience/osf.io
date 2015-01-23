@@ -48,7 +48,8 @@ def activity():
     recent_query = (
         Q('category', 'eq', 'project') &
         Q('is_public', 'eq', True) &
-        Q('is_deleted', 'eq', False)
+        Q('is_deleted', 'eq', False) &
+        Q('system_tags', 'ne', 'application_created')
     )
 
     # Temporary bug fix: Skip projects with empty contributor lists

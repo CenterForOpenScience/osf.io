@@ -9,7 +9,7 @@ from framework.sessions.model import Session
 from website.project.model import (
     ApiKey, Node, NodeLog,
     Tag, WatchConfig, MetaSchema, Pointer,
-    Comment, PrivateLink, MetaData,
+    Comment, PrivateLink,
 )
 from website.conferences.model import Conference, MailRecord
 
@@ -17,7 +17,7 @@ from website.conferences.model import Conference, MailRecord
 MODELS = (
     User, ApiKey, Node, NodeLog,
     Tag, WatchConfig, Session, Guid, MetaSchema, Pointer,
-    MailRecord, Comment, PrivateLink, MetaData, Conference,
+    MailRecord, Comment, PrivateLink, Conference,
 )
 
-GUID_MODELS = (User, Node, Comment, MetaData)
+GUID_MODELS = (User, Node, Comment,)

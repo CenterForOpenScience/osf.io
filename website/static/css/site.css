@@ -948,6 +948,9 @@ h1.unavailable {
 }
 
 /* Search */
+#searchBox input{
+    width: 450px;
+}
 .page-header
     {
         overflow: hidden;
