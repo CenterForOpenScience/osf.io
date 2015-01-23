@@ -51,7 +51,7 @@ function _fangornActionColumn (item, col){
         if (item.data.permissions.edit) {
             var mithrilContent = m('div', [
                     m('h3', 'Delete "' + item.data.name+ '"?'),
-                    m('p', 'This action is irreversable.')
+                    m('p', 'This action is irreversible.')
                 ]); 
             var mithrilButtons = m('div', [
                     m('button', { 'class' : 'btn btn-default m-r-md', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
