@@ -75,6 +75,7 @@ function _fangornActionColumn (item, col){
         if (item.data.permissions.edit) {
             buttons.push({
                 'name' : '',
+                'tooltip' : 'Upload files',
                 'icon' : 'icon-upload-alt',
                 'css' : 'fangorn-clickable btn btn-default btn-xs',
                 'onclick' : Fangorn.ButtonEvents._uploadEvent
@@ -85,12 +86,14 @@ function _fangornActionColumn (item, col){
             buttons.push(
                 {
                     'name' : '',
+                    'tooltip' : 'Download Repositoy',
                     'icon' : 'icon-download-alt',
                     'css' : 'fangorn-clickable btn btn-info btn-xs',
                     'onclick' : function(){window.location = item.data.urls.zip;}
                 },
                 {
                     'name' : '',
+                    'tooltip' : 'Go to repository webpage',
                     'icon' : 'icon-external-link',
                     'css' : 'btn btn-primary btn-xs',
                     'onclick' : function(){window.location = item.data.urls.repo;}//GO TO EXTERNAL PAGE
@@ -100,6 +103,7 @@ function _fangornActionColumn (item, col){
     } else if (item.kind === 'file') {
         buttons.push({
             'name' : '',
+            'tooltip' : 'Download file',
             'icon' : 'icon-download-alt',
             'css' : 'btn btn-info btn-xs',
             'onclick' : _downloadEvent
@@ -108,6 +112,7 @@ function _fangornActionColumn (item, col){
         if (item.data.permissions.edit) {
             buttons.push({
                 'name' : '',
+                'tooltip' : 'Delete',
                 'icon' : 'icon-remove',
                 'css' : 'm-l-lg text-danger fg-hover-hide',
                 'style' : 'display:none',
@@ -121,6 +126,7 @@ function _fangornActionColumn (item, col){
             m('i', {
                 'class' : btn.css,
                 style : btn.style,
+                'data-toggle' : 'tooltip', title : btn.tooltip, 'data-placement': 'bottom',
                 'onclick' : function(event){ btn.onclick.call(self, event, item, col); }
             }, [ m('span', { 'class' : btn.icon}, btn.name) ])
         ]);
@@ -157,12 +163,13 @@ function _fangornGithubTitle(item, col)  {
         return m('span',[
             m('github-name', item.data.name + ' '),
             m('span',[
-                m('select[name=branch-selector]', { onchange: function(ev) { changeBranch.call(tb, item, ev.target.value ) } }, branchArray)
+                m('select[name=branch-selector]', { onchange: function(ev) { changeBranch.call(tb, item, ev.target.value ) }, 'data-toggle' : 'tooltip', title : 'Change Branch', 'data-placement': 'bottom' }, branchArray)
             ])
         ]);
     } else {
-        return m('span',[
-            m('github-name', {
+        if (item.kind === 'file' && item.data.permissions.view) {
+            return m('span',[
+                m('github-name', {
                 onclick: function() {
                     var params = $.param(
                         $.extend(
@@ -175,11 +182,14 @@ function _fangornGithubTitle(item, col)  {
                         )
                     );
                     window.location = item.data.nodeApiUrl + 'waterbutler/files/?' + params;
-                }}, item.data.name)
-        ]);
+                },'data-toggle' : 'tooltip', title : 'View file', 'data-placement': 'right'
+            }, item.data.name)]);
+        } else {
+            return m('span', item.data.name);
+        }
     }
-
 }
+
 
 function _fangornColumns (item) {
     var columns = [];

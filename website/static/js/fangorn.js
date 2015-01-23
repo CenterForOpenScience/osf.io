@@ -526,6 +526,7 @@ function _fangornLazyLoadOnLoad (tree) {
         inheritFromParent(item, tree);
     });
     resolveconfigOption.call(this, tree, 'lazyLoadOnLoad', [tree]);
+    $('[data-toggle="tooltip"]').tooltip();
 }
 
 /**
@@ -557,6 +558,8 @@ function _fangornActionColumn (item, col) {
         buttons.push({
             name: '',
             icon: 'icon-upload-alt',
+            'tooltip' : 'Upload files',
+
             css: 'fangorn-clickable btn btn-default btn-xs',
             onclick: _uploadEvent
         });
@@ -565,11 +568,13 @@ function _fangornActionColumn (item, col) {
     if (item.kind === 'file') {
         buttons.push({
             'name' : '',
+            'tooltip' : 'Download file',
             'icon' : 'icon-download-alt',
             'css' : 'btn btn-info btn-xs',
             'onclick' : _downloadEvent
         }, {
             'name' : '',
+            'tooltip' : 'Delete',
             'icon' : 'icon-remove',
             'css' : 'm-l-lg text-danger fg-hover-hide',
             'style' : 'display:none',
@@ -579,7 +584,7 @@ function _fangornActionColumn (item, col) {
     // Build the template for icons
     return buttons.map(function (btn) {
         return m('span', { 'data-col' : item.id }, [ m('i',
-            { 'class' : btn.css, style : btn.style, 'onclick' : function(event) { btn.onclick.call(self, event, item, col); } },
+            { 'class' : btn.css, 'data-toggle' : 'tooltip', title : btn.tooltip, 'data-placement': 'bottom', style : btn.style, 'onclick' : function(event) { btn.onclick.call(self, event, item, col); } },
             [ m('span', { 'class' : btn.icon}, btn.name) ])
             ]);
     });
@@ -594,9 +599,9 @@ function _fangornActionColumn (item, col) {
  * @private
  */
 function _fangornTitleColumn(item, col) {
-    return m('span',{
-        onclick: function() {
-            if (item.kind === 'file' && item.data.permissions.view) {
+    if (item.kind === 'file' && item.data.permissions.view) {
+        return m('span',{
+            onclick: function() {
                 var params = $.param(
                     $.extend({
                         provider: item.data.provider,
@@ -606,9 +611,11 @@ function _fangornTitleColumn(item, col) {
                     )
                 );
                 window.location = item.data.nodeApiUrl + 'waterbutler/files/?' + params;
-            }
-        }
-    }, item.data.name);
+            },
+            'data-toggle' : 'tooltip', title : 'View file', 'data-placement': 'right'
+        }, item.data.name);
+    }
+    return m('span', item.data.name);
 }
 
 /**
@@ -712,7 +719,6 @@ function expandStateLoad(item) {
         console.log(item);
     if (item.children.length > 0 && item.depth === 1) {
         for (i = 0; i < item.children.length; i++) {
-            console.log(item.children[i].data);
             // if (item.children[i].data.isAddonRoot || item.children[i].data.addonFullName === 'OSF Storage' ) {
                 tb.updateFolder(null, item.children[i]);
             // }
@@ -720,12 +726,12 @@ function expandStateLoad(item) {
     }
     if (item.children.length > 0 && item.depth === 2) {
         for (i = 0; i < item.children.length; i++) {
-            console.log(item.children[i].data);
             if (item.children[i].data.isAddonRoot || item.children[i].data.addonFullName === 'OSF Storage' ) {
                 tb.updateFolder(null, item.children[i]);
             }
         }
     }
+    $('[data-toggle="tooltip"]').tooltip();
 }
 
 
@@ -801,6 +807,9 @@ tbOptions = {
     },
     onselectrow : function (item) {
         window.console.log('Row: ', item);
+    },
+    onscrollcomplete : function(){
+        $('[data-toggle="tooltip"]').tooltip();
     },
     filterPlaceholder : "Search",
     onmouseoverrow : _fangornMouseOverRow,
