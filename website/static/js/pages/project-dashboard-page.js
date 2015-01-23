@@ -64,7 +64,14 @@ $(document).ready(function() {
                     }
                 ];
                 },
-            resolveRows : function(){
+            resolveRows : function(item){
+                if (item.parentID) {
+                    item.data.permissions = item.data.permissions || item.parent().data.permissions;
+                    if (item.data.kind === 'folder') {
+                        item.data.accept = item.data.accept || item.parent().data.accept;
+                    }
+                }
+
                 return  [{
                     data: 'name',
                     folderIcons: true,
