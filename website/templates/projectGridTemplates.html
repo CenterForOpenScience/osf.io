@@ -1,6 +1,6 @@
 <script id="project-detail-template" type="text/x-handlebars-template">
     <div class="row" id="ptd-{{ theItem.node_id }}">
-        
+
         {{#if theItem.parentIsFolder}}
             <div class="col-sm-4">
                 <span class = "title">
@@ -13,7 +13,7 @@
                                 <i class="icon icon-pencil" style="font-size: 11px;"></i> Edit</button>
                           {{/if}}{{/unless}}{{/unless}}
                     </span>
-                    
+
                 </span>
             </div>
             <div class="col-sm-8">
@@ -27,7 +27,7 @@
                                     <div class="col-xs-4">
                                         <input type="submit" class = "rename-node-btn btn btn-sm btn-default submit-button-{{ theItem.node_id }}" id="rename-node-button{{theItem.node_id}}" disabled="disabled" value="Rename">
                                         <input type="reset" class = "btn btn-sm btn-default cancel-button-{{ theItem.node_id }}" value="Cancel">
-                                    </div>                    
+                                    </div>
                                 </div>
                               </fieldset>
                         </form>
@@ -70,7 +70,7 @@
                                     <input type="submit" class = "addFolderBtn btn btn-sm btn-default submit-button-{{ theItem.node_id }}" id="add-folder-button{{theItem.node_id}}" disabled="disabled" value="Add">
                                     <input type="reset" class = "btn btn-sm btn-default cancel-button-{{ theItem.node_id }}" value="Cancel">
                                 </div>
-                            </div>                            
+                            </div>
                             </fieldset>
                                 </form>
                         </div>
@@ -89,7 +89,7 @@
                 {{/unless}}
             </div>
         {{/if}}
-        
+
         {{#unless theItem.parentIsFolder}}
             {{#unless theItem.isDashboard}}
                 <div class="col-xs-12">
@@ -120,7 +120,7 @@
                         </span>
                     </span>
                 </div>
-                <div class="col-xs-8"> 
+                <div class="col-xs-8">
                     <div class = "organize-project-controls pull-right">
                         <div id = "buttons{{theItem.node_id}}">
                             <div class = "orgnaize-btn btn btn-sm btn-default" id="add-item-{{theItem.node_id}}">Add Existing Project</div>
@@ -154,17 +154,31 @@
                                     <input type="submit" class = "addFolderBtn btn btn-sm btn-default submit-button-{{ theItem.node_id }}" id="add-folder-button{{theItem.node_id}}" disabled="disabled" value="Add">
                                     <input type="reset" class = "btn btn-sm btn-default cancel-button-{{ theItem.node_id }}" value="Cancel">
                                 </div>
-                            </div>                            
+                            </div>
                             </fieldset>
                                 </form>
                         </div>
                     </div>
                 </div>
             {{/if}}
-
-
+                <span class="rename-container" id="rnc-{{theItem.node_id}}">
+                      <form action="">
+                            <fieldset class="project-detail-fields">
+                              <div class="row">
+                                  <div class="col-xs-8">
+                                      <input class="typeahead" id="rename-node-input{{theItem.node_id}}" type="text" value="{{{theItem.name}}}" autofocus>
+                                  </div>
+                                  <div class="col-xs-4">
+                                      <input type="submit" class = "rename-node-btn btn btn-sm btn-default submit-button-{{ theItem.node_id }}" id="rename-node-button{{theItem.node_id}}" disabled="disabled" value="Rename">
+                                      <input type="reset" class = "btn btn-sm btn-default cancel-button-{{ theItem.node_id }}" value="Cancel">
+                                  </div>
+                              </div>
+                            </fieldset>
+                      </form>
+                </span>
+            </div>
         {{/unless}}
-       
+
     </div>
 </script>
 
