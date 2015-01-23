@@ -5,6 +5,7 @@ import bson
 import logging
 
 import furl
+import pymongo
 
 from modularodm import fields, Q
 from modularodm import exceptions as modm_errors
@@ -120,6 +121,15 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
 
 
 class BaseFileObject(StoredObject):
+    __indices__ = [
+        {
+            'key_or_list': [
+                ('path', pymongo.ASCENDING),
+                ('node_settings', pymongo.ASCENDING),
+            ],
+            'unique': True,
+        }
+    ]
 
     path = fields.StringField(required=True, index=True)
     node_settings = fields.ForeignField(

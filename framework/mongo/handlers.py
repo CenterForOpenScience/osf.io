@@ -73,40 +73,6 @@ client = LocalProxy(_get_current_client)
 database = LocalProxy(_get_current_database)
 
 
-class Index(object):
-    def __init__(self, *args, **kwargs):
-        self.args = args
-        self.kwargs = kwargs
-
-
-INDICES = {
-    'osfstoragefiletree': [
-        Index(
-            [
-                ('path', pymongo.ASCENDING),
-                ('node_settings', pymongo.ASCENDING),
-            ],
-            unique=True,
-        )
-    ],
-    'osfstoragefilerecord': [
-        Index(
-            [
-                ('path', pymongo.ASCENDING),
-                ('node_settings', pymongo.ASCENDING),
-            ],
-            unique=True,
-        )
-    ],
-}
-
-
-def ensure_indices():
-    for collection, indices in INDICES.iteritems():
-        for index in indices:
-            database[collection].ensure_index(*index.args, **index.kwargs)
-
-
 def set_up_storage(schemas, storage_class, prefix='', addons=None, **kwargs):
     '''Setup the storage backend for each schema in ``schemas``.
     note::
@@ -138,4 +104,6 @@ def set_up_storage(schemas, storage_class, prefix='', addons=None, **kwargs):
                 **kwargs
             )
         )
-    ensure_indices()
+        # Allow models to define extra indices
+        for index in getattr(schema, '__indices__', []):
+            database[collection].ensure_index(**index)
