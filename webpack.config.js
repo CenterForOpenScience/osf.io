@@ -38,7 +38,6 @@ var entry = {
         'mithril',
         'treebeard',
         'osfHelpers',
-        'settings',
         'waterbutler',
         'knockout-punches',
         'dropzone',
@@ -96,7 +95,6 @@ module.exports = {
             'dropzone': staticPath('vendor/bower_components/dropzone/downloads/dropzone.js'),
             // Also alias some internal libraries for easy access
             'waterbutler': staticPath('js/waterbutler.js'),
-            'settings': staticPath('js/settings.js'),
             'fangorn': staticPath('js/fangorn.js'),
             'folderpicker': staticPath('js/folderPicker.js'),
             'osfHelpers': staticPath('js/osfHelpers.js'),
