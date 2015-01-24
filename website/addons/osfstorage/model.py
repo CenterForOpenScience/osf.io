@@ -5,9 +5,11 @@ import bson
 import logging
 
 import furl
+import pymongo
 
 from modularodm import fields, Q
 from modularodm import exceptions as modm_errors
+from modularodm.storage.base import KeyExistsException
 
 from framework.auth import Auth
 from framework.mongo import StoredObject
@@ -119,6 +121,15 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
 
 
 class BaseFileObject(StoredObject):
+    __indices__ = [
+        {
+            'key_or_list': [
+                ('path', pymongo.ASCENDING),
+                ('node_settings', pymongo.ASCENDING),
+            ],
+            'unique': True,
+        }
+    ]
 
     path = fields.StringField(required=True, index=True)
     node_settings = fields.ForeignField(
@@ -142,14 +153,6 @@ class BaseFileObject(StoredObject):
         return value
 
     @property
-    def parent(self):
-        parents = getattr(self, '_parent', None)
-        if parents:
-            assert len(parents) == 1
-            return parents[0]
-        return None
-
-    @property
     def node(self):
         return self.node_settings.owner
 
@@ -170,7 +173,7 @@ class BaseFileObject(StoredObject):
                 Q('node_settings', 'eq', node_settings._id)
             )
             return obj
-        except (modm_errors.NoResultsFound, modm_errors.MultipleResultsFound):
+        except modm_errors.NoResultsFound:
             return None
 
     @classmethod
@@ -181,22 +184,21 @@ class BaseFileObject(StoredObject):
         :param node_settings: Root node settings record
         :returns: Tuple of (record, created)
         """
-        obj = cls.find_by_path(path, node_settings)
-
-        if obj:
+        try:
+            obj = cls(path=path, node_settings=node_settings)
+            obj.save()
+        except KeyExistsException:
+            obj = cls.find_by_path(path, node_settings)
+            assert obj is not None
             return obj, False
 
-        obj = cls(path=path, node_settings=node_settings)
-        obj.save()
         # Ensure all intermediate paths
         if path:
             parent_path, _ = os.path.split(path)
             parent_class = cls.parent_class()
             parent_obj, _ = parent_class.get_or_create(parent_path, node_settings)
-            parent_obj.children.append(obj)
-            parent_obj.save()
+            parent_obj.append_child(obj)
         else:
-            assert node_settings.file_tree is None
             node_settings.file_tree = obj
             node_settings.save()
 
@@ -219,11 +221,24 @@ class BaseFileObject(StoredObject):
 class OsfStorageFileTree(BaseFileObject):
 
     _id = oid_primary_key
-    children = fields.AbstractForeignField(list=True, backref='_parent')
+    children = fields.AbstractForeignField(list=True)
 
     @classmethod
     def parent_class(cls):
         return OsfStorageFileTree
+
+    def append_child(self, child):
+        """Appending children through ODM introduces a race condition such that
+        concurrent requests can overwrite previously added items; use the native
+        `addToSet` operation instead.
+        """
+        collection = self._storage[0].store
+        collection.update(
+            {'_id': self._id},
+            {'$addToSet': {'children': (child._id, child._name)}}
+        )
+        # Updating MongoDB directly means the cache is wrong; reload manually
+        self.reload()
 
 
 class OsfStorageFileRecord(BaseFileObject):

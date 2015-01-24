@@ -88,15 +88,6 @@ class TestOsfStorageFileTree(OsfTestCase):
     def test_name(self):
         assert_equal(self.tree.name, 'world')
 
-    def test_parent_root(self):
-        tree, _ = model.OsfStorageFileTree.get_or_create('', self.node_settings)
-        assert_is(tree.parent, None)
-
-    def test_parent_branch(self):
-        tree, _ = model.OsfStorageFileTree.get_or_create('branch', self.node_settings)
-        expected_parent, _ = model.OsfStorageFileTree.get_or_create('', self.node_settings)
-        assert_equal(tree.parent, expected_parent)
-
     def test_find_by_path_found(self):
         result = model.OsfStorageFileTree.find_by_path(self.path, self.node_settings)
         assert_equal(result, self.tree)
