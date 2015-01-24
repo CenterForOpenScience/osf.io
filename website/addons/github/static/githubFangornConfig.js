@@ -164,17 +164,19 @@ function _fangornGithubTitle(item, col)  {
         return m('span',[
             m('github-name', {
                 onclick: function() {
-                    var params = $.param(
-                        $.extend(
-                          {
-                              provider: item.data.provider,
-                              path: item.data.path.substring(1),
-                              branch: item.data.branch
-                          },
-                          item.data.extra || {}
-                        )
-                    );
-                    window.location = item.data.nodeApiUrl + 'waterbutler/files/?' + params;
+                    if (item.kind !== 'folder') {
+                        var params = $.param(
+                            $.extend(
+                            {
+                                provider: item.data.provider,
+                                path: item.data.path.substring(1),
+                                branch: item.data.branch
+                            },
+                            item.data.extra || {}
+                            )
+                        );
+                        window.location = item.data.nodeApiUrl + 'waterbutler/files/?' + params;
+                    }
                 }}, item.data.name)
         ]);
     }
