@@ -3,7 +3,8 @@ var $osf = require('osfHelpers');
 
 
 function getCookie() {
-    match = document.cookie.match(/osf=(.*?)(;|$)/);
+    cookieName =  window.contextVars.cookieName;
+    match = document.cookie.match(new RegExp(cookieName + '=(.*?)(;|$)'));
     return match ? match[1] : null;
 }
 
