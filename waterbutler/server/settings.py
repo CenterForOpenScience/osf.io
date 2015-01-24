@@ -11,6 +11,7 @@ config = settings.get('SERVER_CONFIG', {})
 ADDRESS = config.get('ADDRESS', '127.0.0.1')
 PORT = config.get('PORT', 7777)
 DEBUG = config.get('DEBUG', True)
+XHEADERS = config.get('XHEADERS', False)
 
 CHUNK_SIZE = config.get('CHUNK_SIZE', 65536)  # 64KB
 MAX_BUFFER_SIZE = config.get('MAX_BUFFER_SIZE', 1024 * 1024 * 100)  # 100MB
