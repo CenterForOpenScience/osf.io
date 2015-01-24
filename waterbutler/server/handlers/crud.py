@@ -72,6 +72,8 @@ class CRUDHandler(core.BaseHandler):
         """Upload a file."""
         self.stream.feed_eof()
         metadata, created = yield from self.uploader
+        if created:
+            self.set_status(201)
         self.write(metadata)
 
         self._send_hook(
