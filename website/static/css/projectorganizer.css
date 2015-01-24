@@ -295,9 +295,13 @@ height: 32px ;
 }
 /* rgb of glow 106 176 232
 */
+.tt-input, .typeahead {
+    padding: 0 12px;
+}
+
 .tt-hint {
     color: #999;
-    padding: 2px 12px 0px 12px;
+    padding: 2px 12px 0px 13px;
 }
 h3.category {
     font-size: 18px;
@@ -371,9 +375,7 @@ h3.category {
     margin-right: 4px;
 }
 
-.tt-input, .typeahead {
-    padding: 0 12px;
-}
+
 
 
 
