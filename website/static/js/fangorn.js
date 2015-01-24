@@ -231,16 +231,12 @@ function _fangornUploadProgress(treebeard, file, progress) {
  */
 function _fangornSending(treebeard, file, xhr, formData) {
     treebeard.options.uploadInProgress = true;
-    var parentID = treebeard.dropzoneItemCache.id,
-        parent = treebeard.dropzoneItemCache,
-        configOption;
-
+    var parent = file.treebeardParent || treebeard.dropzoneItemCache;
     var _send = xhr.send;
     xhr.send = function() {
         _send.call(xhr, file);
     };
-
-    configOption = resolveconfigOption.call(treebeard, parent, 'uploadSending', [file, xhr, formData]);
+    var configOption = resolveconfigOption.call(treebeard, parent, 'uploadSending', [file, xhr, formData]);
     return configOption || null;
 }
 
@@ -288,7 +284,7 @@ function _fangornAddedFile(treebeard, file) {
  * @private
  */
 function _fangornDragOver(treebeard, event) {
-    var dropzoneHoverClass = "fangorn-dz-hover",
+    var dropzoneHoverClass = 'fangorn-dz-hover',
         closestTarget = $(event.target).closest('.tb-row'),
         itemID =  parseInt(closestTarget.attr('data-id')),
         item = treebeard.find(itemID);
@@ -836,7 +832,7 @@ tbOptions = {
     onscrollcomplete : function(){
         $('[data-toggle="tooltip"]').tooltip();
     },
-    filterPlaceholder : "Search",
+    filterPlaceholder : 'Search',
     onmouseoverrow : _fangornMouseOverRow,
     dropzone : {                                           // All dropzone options.
         url: function(files) {return files[0].url;},
