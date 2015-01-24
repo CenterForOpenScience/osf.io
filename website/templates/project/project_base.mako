@@ -42,8 +42,6 @@ ${next.body()}
     var nodeApiUrl = '${node['api_url']}';
     // Mako variables accessible globally
     window.contextVars = $.extend(true, {}, window.contextVars, {
-        waterbutlerURL: '${waterbutler_url if waterbutler_url.endswith('/') else waterbutler_url + '/' | js_str}',
-        cookieName: '${cookie_name}',
         currentUser: {
             ## TODO: Abstract me
             username: ${json.dumps(user['username']) | n},
