@@ -42,6 +42,7 @@ ${next.body()}
     var nodeApiUrl = '${node['api_url']}';
     // Mako variables accessible globally
     window.contextVars = $.extend(true, {}, window.contextVars, {
+        cookieName: '${cookie_name}',
         currentUser: {
             ## TODO: Abstract me
             username: ${json.dumps(user['username']) | n},
