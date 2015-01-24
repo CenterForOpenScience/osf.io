@@ -4,6 +4,7 @@
 * the viewmodels for each of the individual onboarding widgets.
 */
 'use strict';
+var Dropzone = require('dropzone');
 var waterbutler = require('waterbutler');
 var Handlebars = require('handlebars');
 var Raven = require('raven-js');
