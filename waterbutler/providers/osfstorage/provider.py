@@ -18,11 +18,6 @@ from waterbutler.providers.osfstorage.metadata import OsfStorageFileMetadata
 from waterbutler.providers.osfstorage.metadata import OsfStorageFolderMetadata
 
 
-import time
-import logging
-logger = logging.getLogger(__name__)
-
-
 QUERY_METHODS = ('GET', 'DELETE')
 
 
@@ -101,23 +96,16 @@ class OSFStorageProvider(provider.BaseProvider):
         stream.add_writer('sha1', streams.HashStreamWriter(hashlib.sha1))
         stream.add_writer('sha256', streams.HashStreamWriter(hashlib.sha256))
 
-        begin = time.time()
         with open(pending_path, 'wb') as file_pointer:
             stream.add_writer('file', file_pointer)
             provider = self.make_provider(self.settings)
             yield from provider.upload(stream, pending_name, check_created=False, fetch_metadata=False, **kwargs)
-        logger.info('[{}] ({}) PROVIDER.UPLOAD({})'.format(
-            time.time() - begin,
-            self.__class__.__name__,
-            pending_path,
-        ))
 
         complete_name = stream.writers['sha256'].hexdigest
         complete_path = os.path.join(settings.FILE_PATH_COMPLETE, complete_name)
 
         complete_name = OSFPath('/' + complete_name).path
 
-        begin = time.time()
         try:
             metadata = yield from provider.metadata(complete_name)
         except exceptions.ProviderError:
@@ -128,25 +116,11 @@ class OSFStorageProvider(provider.BaseProvider):
             )
         else:
             yield from provider.delete(pending_name)
-        logger.info('[{}] ({}) PROVIDER.MOVE({}, {})'.format(
-            time.time() - begin,
-            self.__class__.__name__,
-            pending_path,
-            complete_path,
-        ))
 
         # Due to cross volume movement in unix we leverage shutil.move which properly handles this case.
         # http://bytes.com/topic/python/answers/41652-errno-18-invalid-cross-device-link-using-os-rename#post157964
-        begin = time.time()
         shutil.move(pending_path, complete_path)
-        logger.info('[{}] ({}) SHUTIL.MOVE({}, {})'.format(
-            time.time() - begin,
-            self.__class__.__name__,
-            pending_path,
-            complete_path,
-        ))
 
-        begin = time.time()
         response = yield from self.make_signed_request(
             'POST',
             self.callback,
@@ -169,16 +143,10 @@ class OSFStorageProvider(provider.BaseProvider):
             }),
             headers={'Content-Type': 'application/json'},
         )
-        logger.info('[{}] ({}) MAKE_SIGNED_REQUEST(POST, {})'.format(
-            time.time() - begin,
-            self.__class__.__name__,
-            self.callback,
-        ))
 
         created = response.status == 201
         data = yield from response.json()
 
-        begin = time.time()
         if settings.RUN_TASKS:
             version_id = data['version_id']
             parity.main(
@@ -193,10 +161,6 @@ class OSFStorageProvider(provider.BaseProvider):
                 self.archive_credentials,
                 self.archive_settings,
             )
-        logger.info('[{}] ({}) RUN_TASKS'.format(
-            time.time() - begin,
-            self.__class__.__name__,
-        ))
 
         _, name = os.path.split(path)
 
