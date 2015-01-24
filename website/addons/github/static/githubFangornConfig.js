@@ -52,11 +52,11 @@ function _fangornActionColumn (item, col){
             var mithrilContent = m('div', [
                     m('h3', 'Delete "' + item.data.name+ '"?'),
                     m('p', 'This action is irreversable.')
-                ]); 
+                ]);
             var mithrilButtons = m('div', [
                     m('button', { 'class' : 'btn btn-default m-r-md', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
                     m('button', { 'class' : 'btn btn-success', onclick : function() { runDelete.call(tb); }  }, 'OK')
-                ]); 
+                ]);
             tb.modal.update(mithrilContent, mithrilButtons);
         } else {
             item.notify.update('You don\'t have permission to delete this file.', 'info', undefined, 3000);
@@ -86,7 +86,7 @@ function _fangornActionColumn (item, col){
             buttons.push(
                 {
                     'name' : '',
-                    'tooltip' : 'Download Repositoy',
+                    'tooltip' : 'Download Repository',
                     'icon' : 'icon-download-alt',
                     'css' : 'fangorn-clickable btn btn-info btn-xs',
                     'onclick' : function(){window.location = item.data.urls.zip;}
@@ -163,7 +163,7 @@ function _fangornGithubTitle(item, col)  {
         return m('span',[
             m('github-name', item.data.name + ' '),
             m('span',[
-                m('select[name=branch-selector]', { onchange: function(ev) { changeBranch.call(tb, item, ev.target.value ) }, 'data-toggle' : 'tooltip', title : 'Change Branch', 'data-placement': 'bottom' }, branchArray)
+                m('select[name=branch-selector]', { onchange: function(ev) { changeBranch.call(tb, item, ev.target.value ); }, 'data-toggle' : 'tooltip', title : 'Change Branch', 'data-placement': 'bottom' }, branchArray)
             ])
         ]);
     } else {
