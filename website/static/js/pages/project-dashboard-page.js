@@ -46,7 +46,6 @@ $(document).ready(function() {
         url:  nodeApiUrl + 'files/grid/'
     })
     .done(function( data ) {
-        console.log("data", data);
         var fangornOpts = {
             divID: 'treeGrid',
             filesData: data.data,
@@ -91,7 +90,6 @@ $(document).ready(function() {
                 }];
             },
         };
-        console.log("fangorn", Fangorn);
         var filebrowser = new Fangorn(fangornOpts);
     });
 

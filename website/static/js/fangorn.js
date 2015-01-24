@@ -30,7 +30,7 @@ function _fangornResolveIcon(item) {
 
     if (item.kind === 'folder') {
         if (item.data.iconUrl) {
-            return m('img', { src : item.data.iconUrl, style: {width: "16px", height: "auto"} });
+            return m('img', { src : item.data.iconUrl, style: {width: '16px', height: 'auto'} });
         }
         if (!item.data.permissions.view) {
             return privateFolder;
@@ -273,7 +273,6 @@ function _fangornAddedFile(treebeard, file) {
         },
         tmpID: tmpID
     };
-    console.log('TempID', tmpID);
     treebeard.createItem(blankItem, item.id);
 
 
@@ -377,11 +376,6 @@ function _fangornDropzoneError(treebeard, file, message) {
     item.notify.col = 1;
     item.notify.selfDestruct(treebeard, item);
     treebeard.options.uploadInProgress = false;
-}
-
-
-function _fangornSendingMultiple(treebeard, files) {
-    console.log(treebeard, files);
 }
 
 /**
@@ -749,7 +743,6 @@ function _loadTopLevelChildren() {
 function expandStateLoad(item) {
     var tb = this,
         i;
-        console.log(item);
     if (item.children.length > 0 && item.depth === 1) {
         for (i = 0; i < item.children.length; i++) {
             // if (item.children[i].data.isAddonRoot || item.children[i].data.addonFullName === 'OSF Storage' ) {
@@ -839,9 +832,6 @@ tbOptions = {
             }
         }
         return false;
-    },
-    onselectrow : function (item) {
-        window.console.log('Row: ', item);
     },
     onscrollcomplete : function(){
         $('[data-toggle="tooltip"]').tooltip();
