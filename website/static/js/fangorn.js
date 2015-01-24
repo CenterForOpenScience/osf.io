@@ -214,7 +214,7 @@ function _fangornUploadProgress(treebeard, file, progress) {
         treebeard.options.uploadInProgress = true;
         item.notify.update(msgText, 'success', column, 0);
     } else {
-        item.notify.update(msgText, 'success', column, 2000);
+        item.notify.update(msgText, 'success', column, 3000);
         treebeard.options.uploadInProgress = false;
     }
 }
@@ -231,23 +231,10 @@ function _fangornUploadProgress(treebeard, file, progress) {
  */
 function _fangornSending(treebeard, file, xhr, formData) {
     treebeard.options.uploadInProgress = true;
-    var parent = file.treebeardParent;
-    var parentID = parent.id,
-        configOption,
-        tmpID = tempCounter++;
-        blankItem = {       // create a blank item that will refill when upload is finished.
-            name: file.name,
-            kind: 'file',
-            provider: parent.data.provider,
-            children: [],
-            permissions: {
-                view: false,
-                edit: false
-            },
-            tmpID: tmpID
-        };
-    treebeard.createItem(blankItem, parentID);
-    file.tmpID = tmpID;
+    var parentID = treebeard.dropzoneItemCache.id,
+        parent = treebeard.dropzoneItemCache,
+        configOption;
+
     var _send = xhr.send;
     xhr.send = function() {
         _send.call(xhr, file);
@@ -269,8 +256,27 @@ function _fangornAddedFile(treebeard, file) {
     var item = file.treebeardParent;
     var configOption = resolveconfigOption.call(treebeard, item, 'uploadAdd', [file, item]);
 
+    var tmpID = tempCounter++;
+
+    file.tmpID = tmpID;
     file.url = _fangornResolveUploadUrl(item, file);
     file.method = _fangornUploadMethod(item);
+
+    blankItem = {       // create a blank item that will refill when upload is finished.
+        name: file.name,
+        kind: 'file',
+        provider: item.data.provider,
+        children: [],
+        permissions: {
+            view: false,
+            edit: false
+        },
+        tmpID: tmpID
+    };
+    console.log('TempID', tmpID);
+    treebeard.createItem(blankItem, item.id);
+
+
 
     return configOption || null;
 }
@@ -341,6 +347,7 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
         item.data = response;
         inheritFromParent(item, item.parent());
     }
+    if(item.data.tmpID){ item.data.tmpID = null; }
     treebeard.redraw();
 }
 
@@ -370,6 +377,11 @@ function _fangornDropzoneError(treebeard, file, message) {
     item.notify.col = 1;
     item.notify.selfDestruct(treebeard, item);
     treebeard.options.uploadInProgress = false;
+}
+
+
+function _fangornSendingMultiple(treebeard, files) {
+    console.log(treebeard, files);
 }
 
 /**
@@ -631,6 +643,25 @@ function _fangornResolveRows(item) {
     var default_columns = [];
     var configOption;
     item.css = '';
+
+    if(item.data.tmpID){
+        return [
+        {
+            data : 'name',  // Data field name
+            folderIcons : true,
+            filter : true,
+            custom : function(){ return m('span.text-muted', item.data.name); }
+        },
+        {
+            data : '',  // Data field name
+            custom : function(){ return m('span.text-muted', 'Upload pending...'); }
+        },
+        {
+            data : '',  // Data field name
+            custom : function(){ return m('span', ''); }
+        }
+        ];
+    }
 
     if (item.parentID) {
         item.data.permissions = item.data.permissions || item.parent().data.permissions;

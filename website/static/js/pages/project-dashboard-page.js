@@ -25,8 +25,8 @@ new pointers.PointerManager('#addPointer', window.contextVars.node.title);
 // Listen for the nodeLoad event (prevents multiple requests for data)
 $('body').on('nodeLoad', function(event, data) {
     new LogFeed('#logScope', nodeApiUrl + 'log/');
-    // Initialize nodeControl 
-    new NodeControl('#projectScope', data); 
+    // Initialize nodeControl
+    new NodeControl('#projectScope', data);
 
 });
 
@@ -72,13 +72,24 @@ $(document).ready(function() {
                     }
                 }
 
+                if(item.data.tmpID){
+                    return [
+                        {
+                            data : 'name',  // Data field name
+                            folderIcons : true,
+                            filter : true,
+                            custom : function(){ return m('span.text-muted', 'Uploading ' + item.data.name + '...'); }
+                        }
+                    ];
+                }
+
                 return  [{
                     data: 'name',
                     folderIcons: true,
                     filter: true,
                     custom: Fangorn.DefaultColumns._fangornTitleColumn
                 }];
-                },
+            },
         };
         console.log("fangorn", Fangorn);
         var filebrowser = new Fangorn(fangornOpts);
