@@ -113,6 +113,7 @@ function _fangornActionColumn (item, col) {
     if (item.kind === 'folder' && item.data.addonFullname && item.data.permissions.edit) {
         buttons.push({
             'name' : '',
+            'tooltip' : 'Upload file',
             'icon' : 'icon-upload-alt',
             'css' : 'fangorn-clickable btn btn-default btn-xs',
             'onclick' : _uploadEvent
@@ -120,6 +121,7 @@ function _fangornActionColumn (item, col) {
         if (item.data.state === 'draft') {
             buttons.push({
                 'name' : ' Release Study',
+                'tooltip' : '',
                 'icon' : 'icon-globe',
                 'css' : 'btn btn-primary btn-xs',
                 'onclick' : dataverseRelease
@@ -129,6 +131,7 @@ function _fangornActionColumn (item, col) {
         buttons.push(
             {
                 'name' : '',
+                'tooltip' : 'Upload file',
                 'icon' : 'icon-upload-alt',
                 'css' : 'fangorn-clickable btn btn-default btn-xs',
                 'onclick' : _uploadEvent
@@ -138,6 +141,7 @@ function _fangornActionColumn (item, col) {
         if (item.data.state === 'released' || item.data.permissions.edit) {
             buttons.push({
                 name : '',
+                'tooltip' : 'Download file',
                 icon : 'icon-download-alt',
                 css : 'btn btn-info btn-xs',
                 onclick: _downloadEvent
@@ -146,6 +150,7 @@ function _fangornActionColumn (item, col) {
         if (item.data.state === 'draft' || item.data.permissions.edit) {
             buttons.push({
                 'name' : '',
+                'tooltip' : 'Delete',
                 'icon' : 'icon-remove',
                 'css' : 'm-l-lg text-danger fg-hover-hide',
                 'style' : 'display:none',
@@ -155,7 +160,7 @@ function _fangornActionColumn (item, col) {
     }
     return m('.btn-group', [
             buttons.map(function(btn){
-                return m('i', { 'data-col' : item.id, 'class' : btn.css, style : btn.style, 'onclick' : function(){ btn.onclick.call(self, event, item, col); } },
+                return m('i', { 'data-col' : item.id, 'class' : btn.css, 'data-toggle' : 'tooltip', title : btn.tooltip, 'data-placement': 'bottom',  style : btn.style, 'onclick' : function(){ btn.onclick.call(self, event, item, col); } },
                     [ m('span', { 'class' : btn.icon}, btn.name) ]);
             })
     ]);
