@@ -222,7 +222,7 @@ def render_file(version_idx, file_version, file_record):
     node_settings = file_obj.node.get_addon('osfstorage')
     rendered = get_cache_content(node_settings, cache_file_name)
     if rendered is None:
-        download_url = get_waterbutler_download_url(version_idx, file_version, file_record)
+        download_url = get_waterbutler_download_url(version_idx, file_version, file_record, mode='render')
         file_response = requests.get(download_url)
         rendered = get_cache_content(
             node_settings,
