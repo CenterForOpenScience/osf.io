@@ -783,7 +783,13 @@ function _poMultiselect(event, tree) {
                     return false;
                 });
             } else {
-                createBlankProjectDetail();
+                detailTemplateContext = {
+                    itemsCount: selectedRows.length
+                };
+                var theParentNode = selectedRows[0].parent();
+                var displayHTML = multiItemDetailTemplateNoAction(detailTemplateContext);
+                $('.project-details').html(displayHTML);
+                $('.project-details').show();
             }
         }
 
