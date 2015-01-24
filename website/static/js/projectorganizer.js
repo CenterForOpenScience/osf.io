@@ -700,6 +700,10 @@ function _poResolveLazyLoad(item) {
 function expandStateLoad(item) {
     var tb = this,
         i;
+    if(item.children.length === 0 && item.data.childrenCount > 0){
+        item.data.childrenCount = 0;
+        tb.updateFolder(null, item);
+    }
     if (item.children.length > 0 && item.depth > 0) {
         for (i = 0; i < item.children.length; i++) {
             if (item.children[i].data.expand) {
@@ -710,8 +714,7 @@ function expandStateLoad(item) {
             }
         }
     }
-
-
+    _cleanupMithril();
 }
 
 /**
@@ -1134,6 +1137,15 @@ function whichIsContainer(itemOne, itemTwo) {
     return null;
 }
 
+function _cleanupMithril() {
+    // Clean up Mithril related redraw issues
+    $('.tb-toggle-icon').each(function(){
+        var children = $(this).children('i');
+        if (children.length > 1) {
+            children.last().remove();
+        }
+    });
+}
 
 //
 /**
@@ -1196,6 +1208,7 @@ var tbOptions = {
     },
     onscrollcomplete : function(){
         $('[data-toggle="tooltip"]').tooltip();
+        _cleanupMithril();
     },
     onmultiselect : _poMultiselect,
     resolveIcon : _poResolveIcon,
