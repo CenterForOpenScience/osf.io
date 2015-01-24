@@ -230,7 +230,6 @@ def serialize_file(idx, version, record, path, node):
 
 
 def download_file(path, node_addon, version_query, **query):
-    mode = request.args.get('mode')
     idx, version, record = get_version(path, node_addon, version_query)
     url = utils.get_waterbutler_download_url(idx, version, record, **query)
     return redirect(url)
