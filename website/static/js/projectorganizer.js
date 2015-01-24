@@ -26,9 +26,10 @@ var projectOrganizer = {};
 var detailTemplateSource = $('#project-detail-template').html();
 var detailTemplate = Handlebars.compile(detailTemplateSource);
 
-var multiItemDetailTemplateSource = $('#project-detail-multi-item-no-action').html();
+var multiItemDetailTemplateSource = $('#project-detail-multi-item-template').html();
 var multiItemDetailTemplate = Handlebars.compile(multiItemDetailTemplateSource);
-var multiItemDetailTemplateSourceNoAction = $('#project-detail-multi-item-template').html();
+var multiItemDetailTemplateSourceNoAction = $('#project-detail-multi-item-no-action').html();
+var multiItemDetailTemplateNoAction = Handlebars.compile(multiItemDetailTemplateSourceNoAction);
 
 /**
  * Bloodhound is a typeahead suggestion engine. Searches here for public projects
@@ -760,7 +761,7 @@ function _poMultiselect(event, tree) {
                 itemsCount: selectedRows.length
             };
             var theParentNode = selectedRows[0].parent();
-            var displayHTML = multiItemDetailTemplate(detailTemplateContext);
+            var displayHTML = multiItemDetailTemplateNoAction(detailTemplateContext);
             $('.project-details').html(displayHTML);
             $('.project-details').show();
         } else {
