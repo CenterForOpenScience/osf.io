@@ -39,6 +39,7 @@ class BaseHandler(tornado.web.RequestHandler, SentryMixin):
 
     def set_default_headers(self):
         self.set_header('Access-Control-Allow-Origin', '*')
+        self.set_header('Cache-control', 'no-store, no-cache, must-revalidate, max-age=0')
 
     def initialize(self):
         method = self.get_query_argument('method', None)
