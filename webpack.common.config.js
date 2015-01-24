@@ -46,7 +46,6 @@ var entry = {
         'knockout-punches',
         'dropzone',
         'knockout-sortable',
-        'rubeus',
         'treebeard',
         'jquery.cookie'
     ]
@@ -88,9 +87,8 @@ var resolve = {
         // Needed for knockout-sortable
         'jquery.ui.sortable': staticPath('vendor/bower_components/jquery-ui/ui/jquery.ui.sortable.js'),
         // Dropzone doesn't have a proper 'main' entry in its bower.json
-        'dropzone': staticPath('vendor/bower_components/dropzone/downloads/dropzone.js'),
+        'dropzone': staticPath('vendor/bower_components/dropzone/dist/dropzone.js'),
         // Also alias some internal libraries for easy access
-        'rubeus': staticPath('js/rubeus.js'),
         'fangorn': staticPath('js/fangorn.js'),
         'waterbutler': staticPath('js/waterbutler.js'),
         'folderpicker': staticPath('js/folderPicker.js'),
@@ -109,8 +107,7 @@ var externals = {
     //  on the global var jQuery, which is loaded with CDN
     'jquery': 'jQuery',
     'jquery-ui': 'jQuery.ui',
-    'raven-js': 'Raven',
-    'dropzone': 'Dropzone'
+    'raven-js': 'Raven'
 };
 
 var plugins = [

@@ -23,7 +23,7 @@
     "jquery-autosize": "~1.18.15",
     "x-editable": "~1.5.1",
     "slickgrid": "~2.1.0",
-    "dropzone": "https://github.com/enyo/dropzone.git#master",
+    "dropzone": "~4.0.0",
     "treebeard": "https://github.com/caneruguz/treebeard.git#develop",
     "jquery.cookie": "~1.4.1",
     "hgrid": "~0.2.10",
