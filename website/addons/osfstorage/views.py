@@ -216,7 +216,7 @@ def serialize_file(idx, version, record, path, node):
         'file_path': '/' + record.path,
         'rendered': rendered,
         'files_url': node.web_url_for('collect_file_trees'),
-        'download_url': node.web_url_for('osf_storage_view_file', path=path, action='download', mode='render'),
+        'download_url': node.web_url_for('osf_storage_view_file', path=path, action='download'),
         'revisions_url': node.api_url_for(
             'osf_storage_get_revisions',
             path=path,
@@ -229,10 +229,9 @@ def serialize_file(idx, version, record, path, node):
     }
 
 
-def download_file(path, node_addon, version_query):
-    mode = request.args.get('mode')
+def download_file(path, node_addon, version_query, **query):
     idx, version, record = get_version(path, node_addon, version_query)
-    url = utils.get_waterbutler_download_url(idx, version, record, mode=mode)
+    url = utils.get_waterbutler_download_url(idx, version, record, **query)
     return redirect(url)
 
 
@@ -254,7 +253,8 @@ def osf_storage_view_file(auth, path, node_addon, **kwargs):
     action = request.args.get('action', 'view')
     version_idx = request.args.get('version')
     if action == 'download':
-        return download_file(path, node_addon, version_idx)
+        mode = request.args.get('mode')
+        return download_file(path, node_addon, version_idx, mode=mode)
     if action == 'view':
         return view_file(auth, path, node_addon, version_idx)
     raise HTTPError(httplib.BAD_REQUEST)
