@@ -93,7 +93,6 @@ var resolve = {
         'rubeus': staticPath('js/rubeus.js'),
         'fangorn': staticPath('js/fangorn.js'),
         'waterbutler': staticPath('js/waterbutler.js'),
-        'settings': staticPath('js/settings.js'),
         'folderpicker': staticPath('js/folderPicker.js'),
         'osfHelpers': staticPath('js/osfHelpers.js'),
         'osfLanguage': staticPath('js/osfLanguage.js'),
