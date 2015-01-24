@@ -297,7 +297,7 @@ height: 32px ;
 */
 .tt-hint {
     color: #999;
-    padding: 2px 12px 0px 13px;
+    padding: 2px 12px 0px 12px;
 }
 h3.category {
     font-size: 18px;
@@ -371,7 +371,7 @@ h3.category {
     margin-right: 4px;
 }
 
-.tt-input {
+.tt-input, .typeahead {
     padding: 0 12px;
 }
 
