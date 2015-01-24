@@ -1028,7 +1028,6 @@ function dropLogic(event, items, folder) {
         getChildrenURL,
         folderChildren,
         sampleItem,
-        //itemParentID,
         itemParent,
         itemParentNodeID,
         getAction;
@@ -1036,7 +1035,6 @@ function dropLogic(event, items, folder) {
         theFolderNodeID = folder.data.node_id;
         getChildrenURL = folder.data.apiURL + 'get_folder_pointers/';
         sampleItem = items[0];
-        //itemParentID = sampleItem.parentID;
         itemParent = sampleItem.parent();
         itemParentNodeID = itemParent.data.node_id;
         if (itemParentNodeID !== theFolderNodeID) { // This shouldn't happen, but if it does, it's bad
@@ -1087,23 +1085,18 @@ function dropLogic(event, items, folder) {
                             if (copyMode === 'move') {
                                 if (!outerFolder) {
                                     tb.updateFolder(null, itemParent);
+                                    tb.updateFolder(null, folder);
                                 } else {
                                     tb.updateFolder(null, outerFolder);
                                 }
+                            } else {
+                                tb.updateFolder(null, folder);
                             }
-                            // } else {
-                            //     tb.updateFolder(null, folder);
-                            // }
-                            tb.updateFolder(null, folder);
-
                         });
                         postAction.fail(function (jqxhr, textStatus, errorThrown) {
                             $osf.growl('Error:', textStatus + '. ' + errorThrown);
                         });
                     }
-                    // else { // From:  if (itemsToMove.length > 0)
-                    //    tb.updateFolder(null, itemParent);
-                    //}
                 }
             });
             getAction.fail(function (jqxhr, textStatus, errorThrown) {
