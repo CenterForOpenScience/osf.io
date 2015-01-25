@@ -105,10 +105,14 @@ class GitHubProvider(provider.BaseProvider):
         if existing:
             data['sha'] = existing['extra']['fileSha']
 
+        # JSON encode the data before making the request and release the content variable to avoid
+        # unnecessary memory consumption.
+        data = json.dumps(data)
+        del content
         resp = yield from self.make_request(
             'PUT',
             self.build_repo_url('contents', path.path),
-            data=json.dumps(data),
+            data=data,
             expects=(200, 201),
             throws=exceptions.UploadError,
         )
