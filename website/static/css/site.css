@@ -324,11 +324,17 @@ li.pointer {
 .comment-container {
     margin-top: 10px;
     margin-bottom: 10px;
+    border-left-style: dashed;
+    border-left-color: lightgrey;
+    border-left-width: 1px;
+}
+
+.comment-container ul {
+    padding-left: 25px;
 }
 
 .comment-body {
     padding: 5px;
-    background-color: white;
 }
 
 .comment-author {
@@ -363,9 +369,9 @@ li.pointer {
 
 .unread-comments-count {
     font-size: medium;
-    color: white;
+    color: #428bca;
     position: absolute;
-    margin-left: 40px;
+    right: 0px;
 }
 
 .addon-auth {
@@ -1962,7 +1968,7 @@ span#profileFullname{
     width: 190px;
     }
     .osf-project-navbar a.project-title {
-        max-width: 190px;
+        max-width: 90px;
     }
     .navbar-brand {
         margin-left: 0 !important;
@@ -1980,7 +1986,7 @@ span#profileFullname{
         width: 360px;
     }
     .osf-project-navbar a.project-title {
-        max-width: 300px;
+        max-width: 200px;
     }
 }
 @media (min-width: 1200px) {
@@ -1992,7 +1998,7 @@ span#profileFullname{
     width: 270px;
     }
     .osf-project-navbar a.project-title {
-        max-width: 400px;
+        max-width: 300px;
     }
 }
 

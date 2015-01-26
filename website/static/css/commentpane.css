@@ -36,10 +36,11 @@
     margin-top: 88px;
     height: 100%;
     margin-left: 1px;  /* Note: Should be the same as .cp-bar:width */
-    background-color: #f5f5f5;
+    background-color: whitesmoke;
     padding: 10px;
     padding-bottom: 70px;
     overflow-y: auto;
+    box-shadow: -1px 0 3px lightgrey;
 }
 
 .unselectable {

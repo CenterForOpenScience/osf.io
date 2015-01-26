@@ -1,6 +1,6 @@
 <div class="commentPane hidden-xs">
 
-    <div class="cp-handle pull-right" data-bind="click:removeCount">
+    <div class="cp-handle pull-right" data-bind="click:removeCount" data-toggle="tooltip" data-placement="left" title="Discussion Pane">
         <p data-bind="text: displayCount" class="unread-comments-count"></p>
         <i class="icon-comments-alt icon-2x comment-handle-icon" style="color: #428bca"></i>
     </div>

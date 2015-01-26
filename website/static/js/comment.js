@@ -19,7 +19,10 @@ var nodeUrl = '/' + window.contextVars.node.id + '/';
 
 // Maximum length for comments, in characters
 var MAXLENGTH = 500;
-var MAXLEVEL = 5;
+var MAXLEVEL = new Array();
+MAXLEVEL['page'] = 10;
+MAXLEVEL['pane'] = 5;
+MAXLEVEL['widget'] = 5;
 
 var ABUSE_CATEGORIES = {
     spam: 'Spam or advertising',
@@ -68,8 +71,6 @@ var exclusifyGroup = function() {
 var BaseComment = function() {
 
     var self = this;
-    self.MAXLEVEL = MAXLEVEL;
-
     self.abuseOptions = Object.keys(ABUSE_CATEGORIES);
 
     self._loaded = false;
@@ -225,7 +226,7 @@ BaseComment.prototype.submitReply = function() {
             self.$root.fetchDiscussion();
         }
         self.onSubmitSuccess(response);
-        if (self.level >= MAXLEVEL) {
+        if (self.level >= self.MAXLEVEL) {
             window.location.href = nodeUrl + 'discussions/' + self.id();
         }
     }).fail(function() {
@@ -258,6 +259,7 @@ var CommentModel = function(data, $parent, $root) {
     });
 
     self.mode = $parent.mode;
+    self.MAXLEVEL = MAXLEVEL[self.mode];
 
     self.level = $parent.level + 1;
 
@@ -304,7 +306,7 @@ var CommentModel = function(data, $parent, $root) {
     });
 
     self.shouldShowChildren = ko.computed(function() {
-        return self.level < MAXLEVEL;
+        return self.level < self.MAXLEVEL;
     })
 
     self.rootUrl = ko.computed(function(){
@@ -335,7 +337,7 @@ var CommentModel = function(data, $parent, $root) {
         }
     });
 
-    if (self.mode == 'page' && self.level < MAXLEVEL) {
+    if (self.mode == 'page' && self.level < self.MAXLEVEL) {
         self.toggle();
     }
 
@@ -506,6 +508,7 @@ var CommentListModel = function(userName, host_page, host_name, title, mode, can
     self.MAXLENGTH = MAXLENGTH;
 
     self.mode = mode;
+    self.MAXLEVEL = MAXLEVEL[self.mode];
 
     self.editors = 0;
     self.userName = ko.observable(userName);
