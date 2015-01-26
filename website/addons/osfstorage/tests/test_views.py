@@ -243,9 +243,9 @@ class TestViewFile(StorageTestCase):
         assert_equal(redirect_parsed.path.strip('/'), file_obj._id)
 
     def test_view_file_does_not_create_guid_if_exists(self):
-        _ = self.view_file(self.path)
+        self.view_file(self.path)
         n_objs = model.OsfStorageGuidFile.find().count()
-        res = self.view_file(self.path)
+        self.view_file(self.path)
         assert_equal(n_objs, model.OsfStorageGuidFile.find().count())
 
     def test_view_file_deleted_throws_error(self):

@@ -54,7 +54,7 @@ def osf_storage_download_file_hook(node_addon, payload, **kwargs):
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    version_idx, version, record = get_version(path, node_addon, request.args.get('version'))
+    version_idx, version, record = get_version(path, node_addon, payload.get('version'))
 
     if payload.get('mode') != 'render':
         update_analytics(node_addon.owner, path, version_idx)
