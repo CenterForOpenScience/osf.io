@@ -3,6 +3,7 @@ from website import settings
 from framework.tasks import app
 from framework.auth.core import User
 from framework.auth.signals import user_confirmed
+from framework import sentry
 
 
 def get_mailchimp_api():
@@ -27,12 +28,17 @@ def subscribe(list_name, user_id):
     user = User.load(user_id)
     m = get_mailchimp_api()
     list_id = get_list_id_from_name(list_name=list_name)
-    m.lists.subscribe(id=list_id,
-                      email={'email': user.username},
-                      merge_vars={'fname': user.given_name,
-                                  'lname': user.family_name},
-                      double_optin=False,
-                      update_existing=True)
+    try:
+        m.lists.subscribe(id=list_id,
+                          email={'email': user.username},
+                          merge_vars={'fname': user.given_name,
+                                      'lname': user.family_name},
+                          double_optin=False,
+                          update_existing=True)
+
+    except mailchimp.ValidationError as error:
+        sentry.log_exception()
+        sentry.log_message(error.message)
 
     # Update mailing_list user field
     if user.mailing_lists is None:
