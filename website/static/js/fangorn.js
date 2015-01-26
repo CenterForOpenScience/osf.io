@@ -911,7 +911,8 @@ Fangorn.DefaultColumns = {
 };
 
 Fangorn.Utils = {
-    inheritFromParent: inheritFromParent
+    inheritFromParent: inheritFromParent,
+    resolveconfigOption: resolveconfigOption
 };
 
 module.exports = Fangorn;

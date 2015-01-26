@@ -62,8 +62,15 @@ $(document).ready(function() {
                     sortType : 'text'
                     }
                 ];
-                },
+            },
             resolveRows : function(item){
+                var default_columns = [{
+                    data: 'name',
+                    folderIcons: true,
+                    filter: true,
+                    custom: Fangorn.DefaultColumns._fangornTitleColumn
+                }];
+
                 if (item.parentID) {
                     item.data.permissions = item.data.permissions || item.parent().data.permissions;
                     if (item.data.kind === 'folder') {
@@ -72,7 +79,7 @@ $(document).ready(function() {
                 }
 
                 if(item.data.tmpID){
-                    return [
+                    default_columns = [
                         {
                             data : 'name',  // Data field name
                             folderIcons : true,
@@ -82,13 +89,9 @@ $(document).ready(function() {
                     ];
                 }
 
-                return  [{
-                    data: 'name',
-                    folderIcons: true,
-                    filter: true,
-                    custom: Fangorn.DefaultColumns._fangornTitleColumn
-                }];
-            },
+                configOption = Fangorn.Utils.resolveconfigOption.call(this, item, 'resolveRows', [item]);
+                return configOption || default_columns;
+            }
         };
         var filebrowser = new Fangorn(fangornOpts);
     });
