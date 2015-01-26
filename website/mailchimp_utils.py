@@ -31,7 +31,6 @@ def subscribe(list_name, user_id):
 
     if user.mailing_lists is None:
         user.mailing_lists = {}
-        user.save()
 
     try:
         m.lists.subscribe(id=list_id,
@@ -45,10 +44,9 @@ def subscribe(list_name, user_id):
         sentry.log_exception()
         sentry.log_message(error.message)
         user.mailing_lists[list_name] = False
-        user.save()
-
     else:
         user.mailing_lists[list_name] = True
+    finally:
         user.save()
 
 @app.task
