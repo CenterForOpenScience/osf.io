@@ -87,19 +87,7 @@ function Meeting(data) {
         },
         showFilter : true,     // Gives the option to filter by showing the filter box.
         filterStyle : { 'float' : 'right', 'width' : '50%'},
-        title : function() {
-            if(window.contextVars.tbInstructions === 'withLink') {
-                return m('div', [
-                    m('a', { href : window.contextVars.tbInstructionsLink, target : '_blank' }, 'Add your poster or talk')
-                ]);
-            }
-            if(window.contextVars.tbInstructions === 'withAnchor') {
-                return m('div', [
-                    m('a', { href : "#submit" }, 'Add your poster or talk')
-                ]);
-            }
-            return undefined;
-        },
+        title : false,          // Title of the grid, boolean, string OR function that returns a string.
         allowMove : false,       // Turn moving on or off.
         hoverClass : 'fangorn-hover'
     };

@@ -10,6 +10,12 @@
         <br /><br />
     % endif
 
+    % if meeting['active'] and meeting['info_url']:
+        <div><a href="${ meeting['info_url'] }" target="_blank">Add your poster or talk</a></div>
+    % else:
+        <div><a href="#submit">Add your poster or talk</a></div>
+    % endif
+
     <div id="grid" style="width: 100%;"></div>
 
     % if meeting['active'] and not meeting.get('info_url'):
@@ -58,15 +64,6 @@
     <script type="text/javascript">
         window.contextVars = window.contextVars || {};
         window.contextVars.meetingData = ${data};
-        
-        % if meeting['active'] and meeting['info_url']:
-            window.contextVars.tbInstructions =  'withLink';
-            window.contextVars.tbInstructionsLink =  '${ meeting['info_url'] }';
-        % else:
-            window.contextVars.tbInstructions =  'withAnchor'; 
-        % endif
-
-
     </script>
     <script src=${"/static/public/js/conference-page.js" | webpack_asset}></script>
 </%def>
