@@ -24,9 +24,11 @@ var Revision = function(data) {
 var RevisionsViewModel = function(node, path, editable, urls) {
 
     var self = this;
+    var sliced = path.split('/');
 
     self.node = node;
     self.path = path;
+    self.name = sliced[sliced.length - 1];
     self.editable = editable;
     self.urls = urls;
     self.page = 0;
@@ -68,7 +70,7 @@ RevisionsViewModel.prototype.askDelete = function() {
         title: 'Delete file?',
         message: '<p class="overflow">' +
                 'Are you sure you want to delete <strong>' +
-                self.path + '</strong>?' +
+                self.name + '</strong>?' +
             '</p>',
         callback: function(confirm) {
             if (confirm) {
