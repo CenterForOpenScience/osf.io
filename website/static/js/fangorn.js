@@ -783,9 +783,9 @@ tbOptions = {
     title : function() {
         if(window.contextVars.uploadInstruction) {
             return m('p', [
-                m('span', 'To Upload: Drag files from your desktop into a folder below OR click an upload('),
+                m('span', 'To Upload: Drag files into a folder below OR click the ('),
                 m('i.btn.btn-default.btn-xs', { disabled : 'disabled'}, [ m('span.icon-upload-alt')]),
-                m('span', ') button.')
+                m('span', ') below.')
             ]);
         }
         return undefined;
