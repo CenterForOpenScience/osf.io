@@ -780,9 +780,17 @@ tbOptions = {
     uploads : true,         // Turns dropzone on/off.
     columnTitles : _fangornColumnTitles,
     resolveRows : _fangornResolveRows,
+    title : function() {
+        if(window.contextVars.uploadInstruction) {
+            return m('p', [
+                m('span', 'To Upload: Drag files from your desktop into a folder below OR click an upload('),
+                m('i.btn.btn-default.btn-xs', { disabled : 'disabled'}, [ m('span.icon-upload-alt')]),
+                m('span', ') button.')
+            ]);
+        }
+        return undefined;
+    },
     showFilter : true,     // Gives the option to filter by showing the filter box.
-    filterStyle : { 'float' : 'right', 'width' : '50%'},
-    title : false,          // Title of the grid, boolean, string OR function that returns a string.
     allowMove : false,       // Turn moving on or off.
     hoverClass : 'fangorn-hover',
     togglecheck : _fangornToggleCheck,
