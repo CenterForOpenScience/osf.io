@@ -14,7 +14,7 @@ FILE_PATH_COMPLETE = config.get('FILE_PATH_COMPLETE', '/tmp/complete')
 RUN_TASKS = config.get('RUN_TASKS', False)
 
 HMAC_ALGORITHM = getattr(hashlib, config.get('HMAC_ALGORITHM', 'sha256'))
-HMAC_SECRET = config.get('HMAC_SECRET', 'changeme').encode('utf-8')
+HMAC_SECRET = config.get('HMAC_SECRET', None).encode('utf-8')
 
 # Retry options
 UPLOAD_RETRY_ATTEMPTS = config.get('UPLOAD_RETRY_ATTEMPTS', 1)
