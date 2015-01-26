@@ -32,8 +32,8 @@ class GitHubProvider(provider.BaseProvider):
 
     def __init__(self, auth, credentials, settings):
         super().__init__(auth, credentials, settings)
-        self.name = self.auth['name']
-        self.email = self.auth['email']
+        self.name = self.auth.get('name', None)
+        self.email = self.auth.get('email', None)
         self.token = self.credentials['token']
         self.owner = self.settings['owner']
         self.repo = self.settings['repo']
@@ -82,6 +82,9 @@ class GitHubProvider(provider.BaseProvider):
     def upload(self, stream, path, message=None, branch=None, **kwargs):
         path = GitHubPath(path)
 
+        assert self.name is not None
+        assert self.email is not None
+
         content = yield from stream.read()
         content = base64.b64encode(content)
         content = content.decode('utf-8')
@@ -122,6 +125,9 @@ class GitHubProvider(provider.BaseProvider):
     @asyncio.coroutine
     def delete(self, path, sha=None, message=None, branch=None, **kwargs):
         path = GitHubPath(path)
+
+        assert self.name is not None
+        assert self.email is not None
 
         if path.is_dir:
             yield from self._delete_folder(path, message, branch, **kwargs)
@@ -256,6 +262,7 @@ class GitHubProvider(provider.BaseProvider):
             headers={'Content-Type': 'application/json'},
             data=json.dumps({
                 'message': message,
+                'committer': self.committer,
                 'tree': tree_sha,
                 'parents': [
                     old_commit_sha,
