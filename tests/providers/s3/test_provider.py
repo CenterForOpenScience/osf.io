@@ -243,7 +243,7 @@ class TestCRUD:
     @pytest.mark.aiohttpretty
     def test_download(self, provider):
         path = S3Path('/muhtriangle')
-        url = provider.bucket.new_key(path.path).generate_url(100)
+        url = provider.bucket.new_key(path.path).generate_url(100, response_headers={'response-content-disposition': 'attachment'})
         aiohttpretty.register_uri('GET', url, body=b'delicious')
 
         result = yield from provider.download(str(path))
@@ -255,7 +255,7 @@ class TestCRUD:
     @pytest.mark.aiohttpretty
     def test_download_not_found(self, provider):
         path = S3Path('/muhtriangle')
-        url = provider.bucket.new_key(path.path).generate_url(100)
+        url = provider.bucket.new_key(path.path).generate_url(100, response_headers={'response-content-disposition': 'attachment'})
         aiohttpretty.register_uri('GET', url, status=404)
 
         with pytest.raises(exceptions.DownloadError):
@@ -301,7 +301,7 @@ class TestCRUD:
     @pytest.mark.aiohttpretty
     def test_accepts_url(self, provider):
         path = S3Path('/my-image')
-        url = provider.bucket.new_key(path.path).generate_url(100, 'GET')
+        url = provider.bucket.new_key(path.path).generate_url(100, 'GET', response_headers={'response-content-disposition': 'attachment'})
 
         ret_url = yield from provider.download(str(path), accept_url=True)
 
