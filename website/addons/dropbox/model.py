@@ -186,6 +186,7 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         nodelogger = DropboxNodeLogger(node=self.owner, auth=Auth(user_settings.owner))
         nodelogger.log(action="node_authorized", save=True)
 
+    # TODO: Is this used? If not, remove this and perhaps remove the 'deleted' field
     def delete(self, save=True):
         self.deauthorize(add_log=False)
         super(DropboxNodeSettings, self).delete(save)
