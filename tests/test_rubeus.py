@@ -53,9 +53,9 @@ class TestRubeus(OsfTestCase):
         node = self.project
         user = Auth(self.project.creator)
         # FIXME: These tests are very brittle.
-        rv = {
+        expected = {
             'isPointer': False,
-            'addon': 's3',
+            'provider': 's3',
             'addonFullname': node_settings.config.full_name,
             'iconUrl': node_settings.config.icon_url,
             'name': 'Amazon Simple Storage Service: {0}'.format(
@@ -67,8 +67,8 @@ class TestRubeus(OsfTestCase):
                 'edit': node.can_edit(user) and not node.is_registration,
             },
             'urls': {
-                'fetch': node.api_url + 's3/hgrid/',
-                'upload': node.api_url + 's3/'
+                'fetch': node.api_url_for('s3_hgrid_data_contents'),
+                'upload': node.api_url_for('s3_upload'),
             },
             'accept': {
                 'maxSize': node_settings.config.max_file_size,
@@ -77,6 +77,9 @@ class TestRubeus(OsfTestCase):
             'isAddonRoot': True,
             'extra': None,
             'buttons': None,
+            'nodeId': node._id,
+            'nodeUrl': node.url,
+            'nodeApiUrl': node.api_url,
         }
         permissions = {
             'view': node.can_view(user),
@@ -86,7 +89,43 @@ class TestRubeus(OsfTestCase):
             rubeus.build_addon_root(
                 node_settings, node_settings.bucket, permissions=permissions
             ),
-            rv
+            expected
+        )
+
+    def test_build_addon_root_has_correct_upload_limits(self):
+        self.node_settings.config.max_file_size = 10
+        self.node_settings.config.high_max_file_size = 20
+
+        node = self.project
+        user = self.project.creator
+        auth = Auth(user)
+        permissions = {
+            'view': node.can_view(auth),
+            'edit': node.can_edit(auth) and not node.is_registration,
+        }
+
+        result = rubeus.build_addon_root(
+            self.node_settings,
+            self.node_settings.bucket,
+            permissions=permissions,
+            user=user
+        )
+
+        assert_equal(result['accept']['maxSize'], self.node_settings.config.max_file_size)
+
+        # user now has elevated upload limit
+        user.system_tags.append('high_upload_limit')
+        user.save()
+
+        result = rubeus.build_addon_root(
+            self.node_settings,
+            self.node_settings.bucket,
+            permissions=permissions,
+            user=user
+        )
+        assert_equal(
+            result['accept']['maxSize'],
+            self.node_settings.config.high_max_file_size
         )
 
     def test_hgrid_dummy_fail(self):
@@ -115,6 +154,9 @@ class TestRubeus(OsfTestCase):
                 'acceptedFiles': node_settings.config.accept_extensions
             },
             'isAddonRoot': True,
+            'nodeId': node._id,
+            'nodeUrl': node.url,
+            'nodeApiUrl': node.api_url,
         }
         permissions = {
             'view': node.can_view(user),
@@ -125,12 +167,11 @@ class TestRubeus(OsfTestCase):
 
     def test_hgrid_dummy_overrides(self):
         node_settings = self.node_settings
-        node_settings.config.urls = None
         node = self.project
         user = Auth(self.project.creator)
-        rv = {
+        expected = {
             'isPointer': False,
-            'addon': 's3',
+            'provider': 's3',
             'addonFullname': node_settings.config.full_name,
             'iconUrl': node_settings.config.icon_url,
             'name': 'Amazon Simple Storage Service: {0}'.format(
@@ -149,17 +190,20 @@ class TestRubeus(OsfTestCase):
             'isAddonRoot': True,
             'extra': None,
             'buttons': None,
+            'nodeId': node._id,
+            'nodeUrl': node.url,
+            'nodeApiUrl': node.api_url,
         }
         permissions = {
             'view': node.can_view(user),
             'edit': node.can_edit(user) and not node.is_registration,
         }
-        assert_equals(
+        assert_equal(
             rubeus.build_addon_root(
                 node_settings, node_settings.bucket,
                 permissions=permissions, urls={}
             ),
-            rv
+            expected
         )
 
     def test_hgrid_dummy_node_urls(self):
@@ -167,14 +211,10 @@ class TestRubeus(OsfTestCase):
         user = Auth(self.project.creator)
 
         node = self.project
-        node_settings.config.urls = {
-            'fetch': node.api_url + 's3/hgrid/',
-            'upload': node.api_url + 's3/upload/'
-        }
 
-        rv = {
+        expected = {
             'isPointer': False,
-            'addon': 's3',
+            'provider': 's3',
             'addonFullname': node_settings.config.full_name,
             'iconUrl': node_settings.config.icon_url,
             'name': 'Amazon Simple Storage Service: {0}'.format(
@@ -186,8 +226,8 @@ class TestRubeus(OsfTestCase):
                 'edit': node.can_edit(user) and not node.is_registration,
             },
             'urls': {
-                'fetch': node.api_url + 's3/hgrid/',
-                'upload': node.api_url + 's3/upload/'
+                'fetch': node.api_url_for('s3_hgrid_data_contents'),
+                'upload': node.api_url_for('s3_upload'),
             },
             'accept': {
                 'maxSize': node_settings.config.max_file_size,
@@ -196,6 +236,9 @@ class TestRubeus(OsfTestCase):
             'isAddonRoot': True,
             'extra': None,
             'buttons': None,
+            'nodeId': node._id,
+            'nodeUrl': node.url,
+            'nodeApiUrl': node.api_url,
         }
         permissions = {
             'view': node.can_view(user),
@@ -205,7 +248,7 @@ class TestRubeus(OsfTestCase):
             rubeus.build_addon_root(
                 node_settings, node_settings.bucket, permissions=permissions
             ),
-            rv
+            expected
         )
 
     def test_serialize_private_node(self):
@@ -307,17 +350,19 @@ class TestSerializingNodeWithAddon(OsfTestCase):
         )
         assert_equal(ret['kind'], rubeus.FOLDER)
         assert_equal(ret['name'], 'Project: {0}'.format(self.project.title))
-        assert_equal(ret['permissions'], {
-            'view': True,
-            'edit': False,
-        })
+        assert_equal(
+            ret['permissions'],
+            {
+                'view': True,
+                'edit': True,
+            }
+        )
         assert_equal(
             ret['urls'],
             {
-                'upload': os.path.join(self.project.api_url, 'osffiles') + '/',
-                'fetch': None
+                'upload': None,
+                'fetch': None,
             },
-            'project root data has no upload or fetch urls'
         )
 
     def test_collect_js_recursive(self):

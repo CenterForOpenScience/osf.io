@@ -82,6 +82,7 @@
             <div class="padded">
 
                 <button
+                        type="button"
                         class="btn btn-default"
                         data-bind="click: cancel"
                     >Cancel</button>
@@ -117,7 +118,7 @@
             <div class="well well-sm">Not provided</div>
         </div>
 
-        <div data-bind="if: editable">
+        <div data-bind="if: editAllowed">
             <a class="btn btn-default" data-bind="click: edit">Edit</a>
         </div>
 

@@ -1,6 +1,7 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Configure Add-ons</%def>
 <%def name="content()">
+<% from website import settings %>
 <h2 class="page-header">Configure Add-ons</h2>
 
 <div class="row">
@@ -12,6 +13,9 @@
                 <li><a href="${ web_url_for('user_profile') }">Profile Information</a></li>
                 <li><a href="${ web_url_for('user_account') }">Account Settings</a></li>
                 <li><a href="#">Configure Add-ons</a></li>
+                %if settings.ENABLE_EMAIL_SUBSCRIPTIONS:
+                    <li><a href="${ web_url_for('user_notifications') }">Notifications</a></li>
+                %endif
             </ul>
         </div><!-- end sidebar -->
 
@@ -87,15 +91,18 @@
 
 </%def>
 
-<%def name="javascript()">
-    <script src="/static/public/js/addon-permissions.js"></script>
-</%def>
 
 <%def name="javascript_bottom()">
+    <% import json %>
     ${parent.javascript_bottom()}
-    <script src="/static/public/js/user-addon-cfg-page.js"></script>
+
+   <script type="text/javascript">
+        window.contextVars = $.extend({}, window.contextVars, {'addonEnabledSettings': ${json.dumps(addon_enabled_settings)}});
+    </script>
+    <script src="${"/static/public/js/user-addon-cfg-page.js" | webpack_asset}"></script>
+
     ## Webpack bundles
     % for js_asset in addon_js:
-      <script src="${js_asset}"></script>
+      <script src="${js_asset | webpack_asset}"></script>
     % endfor
 </%def>

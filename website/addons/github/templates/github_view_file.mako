@@ -85,5 +85,9 @@
         }
     });
 </script>
-<script src="/static/public/js/github/file-detail.js"></script>
+</%def>
+
+<%def name="javascript_bottom()">
+${parent.javascript_bottom()}
+<script src=${"/static/public/js/github/file-detail.js" | webpack_asset}></script>
 </%def>

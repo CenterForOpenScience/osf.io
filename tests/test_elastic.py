@@ -77,6 +77,24 @@ class TestUserUpdate(SearchTestCase):
         docs_current = query_user(user.fullname)['results']
         assert_equal(len(docs_current), 1)
 
+    def test_disabled_user(self):
+        """Test that disabled users are not in search index"""
+
+        user = UserFactory(fullname='Bettie Page')
+        user.save()
+
+        # Ensure user is in search index
+        assert_equal(len(query_user(user.fullname)['results']), 1)
+
+        # Disable the user
+        user.is_disabled = True
+        user.save()
+
+        # Ensure user is not in search index
+        assert_equal(len(query_user(user.fullname)['results']), 0)
+
+
+
     def test_merged_user(self):
         user = UserFactory(fullname='Annie Lennox')
         merged_user = UserFactory(fullname='Lisa Stansfield')

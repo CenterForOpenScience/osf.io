@@ -2,6 +2,34 @@
 Changelog
 *********
 
+0.23.0 (unreleased)
+===================
+
+- Developers: Use webpack for asset bundling and minification. All JS modules
+follow the CommonJS module style. Replaces script.js and webassets.
+- Enable the Notifications widget on the user settings page.
+- Add "Edit your profile" button on user profile pages. Remove "in-place"
+profile editing.
+- Email confirmation tokens expire after 24 hours.
+- Lots of refactoring to the conference email submission service.
+- Various minor UI fixes.
+- Developers: Update stale requirements: celery, bleach, furl,
+elasticsearch.py.
+
+0.22.0 (2014-12-17)
+===================
+
+- Add API for subscribing/unsubscribing users to Mailchimp mailing lists. Add
+sync_email.py script to add all registered, confirmed users to the OSF General
+Mailing list.
+- Add "Add to Dashboard" button in project header to add a project to the
+dashboard organizer.
+- Add "Account Settings" page with form to change password.
+- Growl-style notifications and messages.
+- Developers: Switch elasticsearch client to elasticsearch-py.
+- Developers: Remove ``get_current_user`` function. Use the auth decorators
+(e.g. ``must_be_logged_in`` instead).
+
 0.21.17 (2014-12-02)
 ====================
 

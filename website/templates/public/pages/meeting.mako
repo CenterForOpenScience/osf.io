@@ -10,16 +10,12 @@
         <br /><br />
     % endif
 
-    % if meeting['info_url']:
+    % if meeting['active'] and meeting['info_url']:
         <div><a href="${ meeting['info_url'] }" target="_blank">Add your poster or talk</a></div>
     % else:
         <div><a href="#submit">Add your poster or talk</a></div>
     % endif
 
-    <div style="padding-bottom: 30px;">
-        Search results by title or author:
-        <input id="gridSearch" />
-    </div>
     <div id="grid" style="width: 100%;"></div>
 
     % if meeting['active'] and not meeting.get('info_url'):
@@ -58,11 +54,16 @@
 
 </%def>
 
+<%def name="stylesheets()">
+    ${parent.stylesheets()}
+    <link rel="stylesheet" href="/static/vendor/bower_components/hgrid/dist/hgrid.min.css" />
+</%def>
+
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
     <script type="text/javascript">
         window.contextVars = window.contextVars || {};
         window.contextVars.meetingData = ${data};
     </script>
-    <script src="/static/public/js/conference-page.js"></script>
+    <script src=${"/static/public/js/conference-page.js" | webpack_asset}></script>
 </%def>

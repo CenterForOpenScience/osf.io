@@ -26,7 +26,9 @@ CATEGORIES = ['storage']
 INCLUDE_JS = {
     'widget': [],
     'page': [],
+    'files': [],
 }
+
 
 INCLUDE_CSS = {
     'widget': [],

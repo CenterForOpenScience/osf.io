@@ -11,6 +11,10 @@
 ##        }
 ##    }'></div>
 
+<div class="page-header visible-xs">
+  <h2 class="text-300">Settings</h2>
+</div>
+
 <div class="row">
     <div class="col-sm-3">
         <div class="panel panel-default">
@@ -18,12 +22,10 @@
                 % if 'admin' in user['permissions'] and not node['is_registration']:
                     <li><a href="#configureNode">Configure ${node['node_type'].capitalize()}</a></li>
                 % endif
-                % if 'admin' in user['permissions']:
+                % if 'admin' in user['permissions'] and not node['is_registration']:
                     <li><a href="#configureCommenting">Configure Commenting</a></li>
                 % endif
-                % if not node['is_registration']:
-                    <li><a href="#selectAddons">Select Add-ons</a></li>
-                % endif
+                  <li><a href="#selectAddons">Select Add-ons</a></li>
                 % if addon_enabled_settings:
                     <li><a href="#configureAddons">Configure Add-ons</a></li>
                 % endif
@@ -31,7 +33,7 @@
         </div><!-- end sidebar -->
     </div>
 
-    <div class="col-sm-9 col-md-7">
+    <div class="col-sm-9">
 
         % if 'admin' in user['permissions'] and not node['is_registration']:
 
@@ -91,7 +93,7 @@
         % endif
 
         <div class="panel panel-default">
-            <span id="selectAddons" class="anchor"></span>
+            <span id="selectAddons"></span>
              <div class="panel-heading">
                  <h3 class="panel-title">Select Add-ons</h3>
              </div>
@@ -190,9 +192,9 @@
       window.contextVars.node = window.contextVars.node || {};
       window.contextVars.node.nodeType = '${node['node_type']}';
     </script>
-    <script type="text/javascript" src="/static/public/js/project-settings-page.js"></script>
+    <script type="text/javascript" src=${"/static/public/js/project-settings-page.js" | webpack_asset}></script>
     % for js_asset in addon_js:
-      <script src="${js_asset}"></script>
+    <script src="${js_asset | webpack_asset}"></script>
     % endfor
 
 </%def>

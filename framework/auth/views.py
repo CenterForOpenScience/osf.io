@@ -27,8 +27,10 @@ from website.models import User
 from website.util import web_url_for
 
 
-def reset_password(**kwargs):
-
+@collect_auth
+def reset_password(auth, **kwargs):
+    if auth.logged_in:
+        logout()
     verification_key = kwargs['verification_key']
     form = ResetPasswordForm(request.form)
 
@@ -52,7 +54,6 @@ def reset_password(**kwargs):
     }
 
 
-# TODO: Rewrite async
 def forgot_password():
     form = ForgotPasswordForm(request.form, prefix='forgot_password')
 
@@ -111,10 +112,12 @@ def auth_login(auth, registration_form=None, forgot_password_form=None, **kwargs
                     twofactor_code
                 )
                 return response
+            except exceptions.LoginDisabledError:
+                status.push_status_message(language.DISABLED, 'error')
             except exceptions.LoginNotAllowedError:
                 status.push_status_message(language.UNCONFIRMED, 'warning')
                 # Don't go anywhere
-                return {'next': ''}
+                return {'next_url': ''}
             except exceptions.PasswordIncorrectError:
                 status.push_status_message(language.LOGIN_FAILED)
             except exceptions.TwoFactorValidationError:
@@ -142,7 +145,7 @@ def auth_login(auth, registration_form=None, forgot_password_form=None, **kwargs
         # Don't raise error if user is being logged out
         if not request.args.get('logout'):
             code = http.UNAUTHORIZED
-    return {'next': next_url}, code
+    return {'next_url': next_url}, code
 
 
 def auth_logout():
@@ -164,12 +167,14 @@ def confirm_email_get(**kwargs):
     user = User.load(kwargs['uid'])
     token = kwargs['token']
     if user:
-        if user.confirm_email(token):  # Confirm and register the usre
+        if user.confirm_email(token):  # Confirm and register the user
             user.date_last_login = datetime.datetime.utcnow()
             user.save()
+
             # Go to settings page
             status.push_status_message(language.WELCOME_MESSAGE, 'success')
             response = redirect('/settings/')
+
             return framework.auth.authenticate(user, response=response)
     # Return data for the error template
     return {
@@ -185,7 +190,7 @@ def send_confirm_email(user, email):
     :raises: KeyError if user does not have a confirmation token for the given
         email.
     """
-    confirmation_url = user.get_confirmation_url(email, external=True)
+    confirmation_url = user.get_confirmation_url(email, external=True, force=True)
     mails.send_mail(email, mails.CONFIRM_EMAIL, 'plain',
         user=user,
         confirmation_url=confirmation_url)

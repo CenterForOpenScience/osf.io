@@ -2,7 +2,7 @@ var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 require('jquery-ui');
-var $osf = require('osf-helpers');
+var $osf = require('osfHelpers');
 require('knockout-sortable');
 
 var contribsEqual = function(a, b) {
@@ -145,7 +145,6 @@ var MessageModel = function(text, level) {
     self.cssClass = ko.computed(function() {
         var out = classes[self.level()];
         if (out === undefined) {
-            console.log('Unrecognized message level ' + self.level());
             out = '';
         }
         return out;

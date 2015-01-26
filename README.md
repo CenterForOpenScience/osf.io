@@ -8,7 +8,7 @@
 - Huboard: https://huboard.com/CenterForOpenScience/osf.io#/
 - Docs: http://cosdev.rtfd.org/
 
-> ## Help
+## Help
 
 Solutions to many common issues may be found at the [OSF Developer Docs](http://cosdev.rtfd.org/).
 
@@ -44,13 +44,7 @@ $ invoke setup
 ```
 
 
-- Optionally, you may install the requirements for the Modular File Renderer:
-
-```bash
-$ invoke mfr_requirements
-```
-
-and for addons:
+- Optionally, you may install the requirements for addons:
 
 ```bash
 $ invoke addon_requirements
@@ -326,14 +320,14 @@ $ npm install -g webpack
 ```bash
 # Make sure dependencies are up to date
 $ bower install && npm install
-# Run webpack in watch mode
-$ inv pack -w
+# Run webpack in debug mode and watch for changes
+$ inv pack -dw
 ```
 
-The above commands can be run in one step with:
+**The above commands can be run in one step with**:
 
 ```bash
-$ inv assets -w
+$ inv assets -dw
 ```
 
 ## Setting up addons

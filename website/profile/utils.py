@@ -22,6 +22,15 @@ def get_public_projects(user):
     return [p for p in get_projects(user) if p.is_public]
 
 
+def get_gravatar(user, size=None):
+    if size is None:
+        size = settings.GRAVATAR_SIZE_PROFILE
+    return gravatar(
+        user, use_ssl=True,
+        size=size
+    )
+
+
 def serialize_user(user, node=None, full=False):
     """Return a dictionary representation of a registered user.
 
@@ -40,7 +49,7 @@ def serialize_user(user, node=None, full=False):
             user, use_ssl=True,
             size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
         ),
-        'active': user.is_active(),
+        'active': user.is_active,
     }
     if node is not None:
         rv.update({
@@ -113,7 +122,7 @@ def add_contributor_json(user, current_user=None):
         'education': education,
         'n_projects_in_common': n_projects_in_common,
         'registered': user.is_registered,
-        'active': user.is_active(),
+        'active': user.is_active,
         'gravatar_url': gravatar(
             user, use_ssl=True,
             size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR

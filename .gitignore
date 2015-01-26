@@ -47,6 +47,7 @@ cover/
 ########
 .webassets-cache
 website/static/public/*
+website/static/mfr/*
 website/static/vendor/node_modules/*
 website/static/vendor/bower_components/
 node_modules
@@ -64,6 +65,7 @@ website/settings/uploads/*
 website/uploads/*
 website/mfrcache/*
 website/gpg/*
+webpack-assets.json
 
 # Built log templates
 website/templates/_log_templates.mako

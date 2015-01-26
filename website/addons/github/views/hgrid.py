@@ -3,7 +3,6 @@ import os
 import logging
 import httplib as http
 
-from mako.template import Template
 from flask import request
 
 from framework.exceptions import HTTPError
@@ -82,37 +81,6 @@ def to_hgrid(data, node_url, node_api_url=None, branch=None, sha=None,
     return grid
 
 
-github_branch_template = Template('''
-    % if len(branches) > 1:
-            <select class="github-branch-select">
-                % for each in branches:
-                    <option value="${each}" ${"selected" if each == branch else ""}>${each}</option>
-                % endfor
-            </select>
-    % else:
-        <span>${branch}</span>
-    % endif
-    % if sha:
-        <a href="https://github.com/${owner}/${repo}/commit/${sha}" target="_blank" class="github-sha text-muted">${sha[:10]}</a>
-    % endif
-''')
-
-
-def github_branch_widget(branches, owner, repo, branch, sha):
-    """Render branch selection widget for GitHub add-on. Displayed in the
-    name field of HGrid file trees.
-
-    """
-    rendered = github_branch_template.render(
-        branches=[each.name for each in branches],
-        branch=branch,
-        sha=sha,
-        owner=owner,
-        repo=repo
-    )
-    return rendered
-
-
 def github_repo_url(owner, repo, branch):
     url = "https://github.com/{0}/{1}/tree/{2}".format(owner, repo, branch)
     return url
@@ -160,13 +128,9 @@ def github_hgrid_data(node_settings, auth, **kwargs):
         can_edit = check_permissions(
             node_settings, auth, connection, branch, sha, repo=repo,
         )
-        name_append = github_branch_widget(branches, owner=node_settings.user,
-            repo=node_settings.repo, branch=branch, sha=sha)
     else:
-
         ref = None
         can_edit = False
-        name_append = None
 
     name_tpl = '{user}/{repo}'.format(
         user=node_settings.user, repo=node_settings.repo
@@ -183,18 +147,14 @@ def github_hgrid_data(node_settings, auth, **kwargs):
         'zip': node_settings.owner.api_url + 'github/zipball/' + (ref or ''),
         'repo': github_repo_url(owner=node_settings.user, repo=node_settings.repo, branch=branch)
     }
-    buttons = [
-        rubeus.build_addon_button('<i class="icon-download-alt"></i>', 'githubDownloadZip', "Download Zip"),
-        rubeus.build_addon_button('<i class="icon-external-link"></i>', 'githubVisitRepo', "Visit Repository"),
-    ]
 
     return [rubeus.build_addon_root(
         node_settings,
         name_tpl,
         urls=urls,
         permissions=permissions,
-        extra=name_append,
-        buttons=buttons,
+        branches=[each.name for each in branches],
+        defaultBranch=branch,
     )]
 
 

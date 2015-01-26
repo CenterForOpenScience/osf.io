@@ -86,6 +86,16 @@ class TestAuthUtils(OsfTestCase):
             # password is correct, but user is unregistered
             auth.login(user.username, 'killerqueen')
 
+    def test_login_disabled_user(self):
+        """Logging in to a disabled account fails"""
+        user = UserFactory()
+        user.set_password('Leeloo')
+        user.is_disabled = True
+        user.save()
+
+        with assert_raises(auth.LoginDisabledError):
+            auth.login(user.username, 'Leeloo')
+
     def test_login_with_incorrect_password_returns_false(self):
         user = UserFactory.build()
         user.set_password('rhapsody')
