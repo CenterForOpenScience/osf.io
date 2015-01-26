@@ -8,6 +8,11 @@ If you find a bug in osf.io or would like to propose a new feature, please file 
 
 If you do this a lot, or you just want to know how to make it easier for us to find and fix the problem, keep reading.
 
+Quick link
+----------
+[Submit an issue](https://github.com/CenterForOpenScience/OSF.io/issues/new?body=Steps%0A-------%0A1.%20%0A%0AExpected%0A------------%0A%0AActual%0A--------%0A)
+using that link and you will have a handy template to save you a little time in your issue reporting.
+
 How to make the best issue
 --------------------------
 
