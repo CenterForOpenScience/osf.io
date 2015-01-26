@@ -58,7 +58,7 @@ $(document).ready(function() {
                     {
                     title: 'Name',
                     width : '100%',
-                    sort : false,
+                    sort : true,
                     sortType : 'text'
                     }
                 ];
