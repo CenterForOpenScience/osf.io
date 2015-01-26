@@ -321,6 +321,10 @@ li.pointer {
     overflow-x: hidden;
 }
 
+#comments-widget-container .comment-container {
+    border: none !important;
+}
+
 .comment-container {
     margin-top: 10px;
     margin-bottom: 10px;
