@@ -19,11 +19,8 @@ def set_sentry(status):
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
             enabled, sentry.enabled = sentry.enabled, status
-            try:
-                return func(*args, **kwargs)
-            except:
-                sentry.enabled = enabled
-                raise
+            func(*args, **kwargs)
+            sentry.enabled = enabled
         return wrapped
     return wrapper
 
