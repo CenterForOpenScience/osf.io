@@ -5,8 +5,6 @@ from nose.tools import *  # noqa
 
 from tests.factories import AuthUserFactory
 
-import markupsafe
-
 from framework import sessions
 from framework.flask import request
 
@@ -48,11 +46,11 @@ class TestHGridUtils(StorageTestCase):
         )
         assert_equal(
             serialized['path'],
-            markupsafe.escape('kind/of/<strong>magic.mp3'),
+            'kind/of/<strong>magic.mp3',
         )
         assert_equal(
             serialized['name'],
-            markupsafe.escape('<strong>magic.mp3'),
+            '<strong>magic.mp3',
         )
         assert_equal(serialized['ext'], '.mp3')
         assert_equal(serialized['kind'], 'file')

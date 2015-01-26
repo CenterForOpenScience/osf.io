@@ -15,7 +15,6 @@ from website.addons.osfstorage.tests import factories
 import urlparse
 
 import furl
-import markupsafe
 
 from framework.auth import signing
 from website import settings
@@ -262,7 +261,7 @@ class TestViewFile(StorageTestCase):
         record.versions.append(version)
         record.save()
         res = self.view_file(path).follow(auth=self.project.creator.auth)
-        assert markupsafe.escape(record.name) in res
+        assert record.name in res
 
 
 class TestGetRevisions(StorageTestCase):
