@@ -85,7 +85,7 @@ class GitHubProvider(provider.BaseProvider):
         content = yield from stream.read()
         content = base64.b64encode(content)
         content = content.decode('utf-8')
-        message = message or 'File uploaded on behalf of WaterButler'
+        message = message or settings.UPLOAD_FILE_MESSAGE
 
         data = {
             'path': path.path,
@@ -105,10 +105,14 @@ class GitHubProvider(provider.BaseProvider):
         if existing:
             data['sha'] = existing['extra']['fileSha']
 
+        # JSON encode the data before making the request and release the content variable to avoid
+        # unnecessary memory consumption.
+        data = json.dumps(data)
+        del content
         resp = yield from self.make_request(
             'PUT',
             self.build_repo_url('contents', path.path),
-            data=json.dumps(data),
+            data=data,
             expects=(200, 201),
             throws=exceptions.UploadError,
         )
@@ -159,7 +163,7 @@ class GitHubProvider(provider.BaseProvider):
         if not sha:
             raise exceptions.MetadataError('A sha is required for deleting')
 
-        message = message or 'File deleted on behalf of WaterButler'
+        message = message or settings.DELETE_FILE_MESSAGE
         data = {
             'message': message,
             'sha': sha,
@@ -245,7 +249,7 @@ class GitHubProvider(provider.BaseProvider):
                 tree_sha = tree_data['sha']
 
         # Create a new commit which references our top most tree change.
-        message = message or 'Folder deleted on behalf of WaterButler'
+        message = message or settings.DELETE_FOLDER_MESSAGE
         commit_resp = yield from self.make_request(
             'POST',
             self.build_repo_url('git', 'commits'),

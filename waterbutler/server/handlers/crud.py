@@ -1,8 +1,6 @@
 import os
 import http
-import time
 import asyncio
-import logging
 
 from tornado import web
 
@@ -12,9 +10,6 @@ from waterbutler.server import utils
 from waterbutler.server import settings
 from waterbutler.server.handlers import core
 from waterbutler.core import exceptions
-
-
-logger = logging.getLogger(__name__)
 
 
 @web.stream_request_body
@@ -29,8 +24,6 @@ class CRUDHandler(core.BaseHandler):
 
     @utils.coroutine
     def prepare(self):
-        self.begin = time.time()
-
         yield from super().prepare()
         self.prepare_stream()
 
@@ -79,6 +72,8 @@ class CRUDHandler(core.BaseHandler):
         """Upload a file."""
         self.stream.feed_eof()
         metadata, created = yield from self.uploader
+        if created:
+            self.set_status(201)
         self.write(metadata)
 
         self._send_hook(
@@ -100,11 +95,3 @@ class CRUDHandler(core.BaseHandler):
             'delete',
             {'path': self.arguments['path']}
         )
-
-    def on_finish(self):
-        logger.info('[{}] ({}) Finish request, {} ({})'.format(
-            time.time() - self.begin,
-            self.__class__.__name__,
-            self.request.uri,
-            self.request.method,
-        ))

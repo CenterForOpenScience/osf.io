@@ -32,6 +32,7 @@ def serve():
     app.listen(
         server_settings.PORT,
         address=server_settings.ADDRESS,
+        xheaders=server_settings.XHEADERS,
         max_buffer_size=server_settings.MAX_BUFFER_SIZE,
     )
 

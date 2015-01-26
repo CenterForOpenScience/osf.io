@@ -1,6 +1,4 @@
-import time
 import asyncio
-import logging
 
 import aiohttp
 
@@ -9,8 +7,6 @@ from waterbutler.server import settings
 
 
 IDENTITY_METHODS = {}
-
-logger = logging.getLogger(__name__)
 
 
 def get_identity_func(name):
@@ -34,17 +30,12 @@ def get_identity(name, **kwargs):
 @register_identity('rest')
 @asyncio.coroutine
 def fetch_rest_identity(**params):
-    begin = time.time()
     response = yield from aiohttp.request(
         'get',
         settings.IDENTITY_API_URL,
         params=params,
         headers={'Content-Type': 'application/json'},
     )
-    logger.info('[{}] ({}) Fetch Identity from OSF'.format(
-        time.time() - begin,
-        __name__,
-    ))
 
     # TOOD Handle Errors nicely
     if response.status != 200:
