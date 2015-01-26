@@ -2,7 +2,9 @@
 
 import os
 
+import pymongo
 from modularodm import fields
+
 from framework.auth.decorators import Auth
 
 from website.models import NodeLog
@@ -16,6 +18,17 @@ from . import messages
 
 
 class FigShareGuidFile(GuidFile):
+
+    __indices__ = [
+        {
+            'key_or_list': [
+                ('node', pymongo.ASCENDING),
+                ('article_id', pymongo.ASCENDING),
+                ('file_id', pymongo.ASCENDING),
+            ],
+            'unique': True,
+        }
+    ]
 
     article_id = fields.StringField(index=True)
     file_id = fields.StringField(index=True)

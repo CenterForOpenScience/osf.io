@@ -399,6 +399,16 @@ class OsfStorageFileVersion(StoredObject):
 
 class OsfStorageGuidFile(GuidFile):
 
+    __indices__ = [
+        {
+            'key_or_list': [
+                ('node', pymongo.ASCENDING),
+                ('path', pymongo.ASCENDING),
+            ],
+            'unique': True,
+        }
+    ]
+
     path = fields.StringField(required=True, index=True)
 
     @property
@@ -417,11 +427,12 @@ class OsfStorageGuidFile(GuidFile):
     @classmethod
     def get_or_create(cls, node, path):
         try:
+            obj = cls(node=node, path=path)
+            obj.save()
+        except KeyExistsException:
             obj = cls.find_one(
                 Q('node', 'eq', node) &
                 Q('path', 'eq', path)
             )
-        except modm_errors.ModularOdmException:
-            obj = cls(node=node, path=path)
-            obj.save()
+            assert obj is not None
         return obj

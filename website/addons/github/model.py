@@ -5,6 +5,7 @@ import urlparse
 import itertools
 import httplib as http
 
+import pymongo
 from modularodm import fields
 from github3 import GitHubError
 
@@ -26,6 +27,16 @@ hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
 
 
 class GithubGuidFile(GuidFile):
+
+    __indices__ = [
+        {
+            'key_or_list': [
+                ('node', pymongo.ASCENDING),
+                ('path', pymongo.ASCENDING),
+            ],
+            'unique': True,
+        }
+    ]
 
     path = fields.StringField(index=True)
 

@@ -8,6 +8,7 @@ from boto.exception import S3ResponseError, BotoClientError
 
 from flask import request
 from modularodm import Q
+from modularodm.storage.base import KeyExistsException
 
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
@@ -98,16 +99,16 @@ def s3_view(**kwargs):
         raise HTTPError(http.NOT_FOUND)
 
     try:
-        guid = S3GuidFile.find_one(
-            Q('node', 'eq', node) &
-            Q('path', 'eq', path)
-        )
-    except:
         guid = S3GuidFile(
             node=node,
             path=path,
         )
         guid.save()
+    except KeyExistsException:
+        guid = S3GuidFile.find_one(
+            Q('node', 'eq', node) &
+            Q('path', 'eq', path)
+        )
 
     redirect_url = check_file_guid(guid)
     if redirect_url:

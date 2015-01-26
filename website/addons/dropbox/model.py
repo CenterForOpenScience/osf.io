@@ -5,9 +5,10 @@ import logging
 import urllib
 
 import furl
+import pymongo
 
 from modularodm import fields, Q
-from modularodm.exceptions import ModularOdmException
+from modularodm.storage.base import KeyExistsException
 
 from framework.auth import Auth
 from website.addons.base import exceptions
@@ -23,6 +24,16 @@ class DropboxFile(GuidFile):
     """A Dropbox file model with a GUID. Created lazily upon viewing a
     file's detail page.
     """
+
+    __indices__ = [
+        {
+            'key_or_list': [
+                ('node', pymongo.ASCENDING),
+                ('path', pymongo.ASCENDING),
+            ],
+            'unique': True,
+        }
+    ]
 
     #: Full path to the file, e.g. 'My Pictures/foo.png'
     path = fields.StringField(required=True, index=True)
@@ -103,17 +114,18 @@ class DropboxFile(GuidFile):
         """
         cleaned_path = clean_path(path)
         try:
-            new = cls.find_one(
+            # Create new
+            obj = cls(node=node, path=cleaned_path)
+            obj.save()
+            created = True
+        except KeyExistsException:
+            obj = cls.find_one(
                 Q('node', 'eq', node) &
                 Q('path', 'eq', cleaned_path)
             )
+            assert obj is not None
             created = False
-        except ModularOdmException:
-            # Create new
-            new = cls(node=node, path=cleaned_path)
-            new.save()
-            created = True
-        return new, created
+        return obj, created
 
 
 class DropboxUserSettings(AddonUserSettingsBase):

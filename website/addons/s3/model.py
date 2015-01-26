@@ -2,6 +2,7 @@
 
 import os
 
+import pymongo
 from modularodm import fields
 from boto.exception import BotoServerError
 
@@ -13,6 +14,16 @@ from website.addons.s3.utils import get_bucket_drop_down, remove_osf_user, build
 
 
 class S3GuidFile(GuidFile):
+
+    __indices__ = [
+        {
+            'key_or_list': [
+                ('node', pymongo.ASCENDING),
+                ('path', pymongo.ASCENDING),
+            ],
+            'unique': True,
+        }
+    ]
 
     path = fields.StringField(index=True)
 

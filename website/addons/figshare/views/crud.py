@@ -8,6 +8,7 @@ from urllib2 import urlopen
 
 from flask import request, make_response
 from modularodm import Q
+from modularodm.storage.base import KeyExistsException
 
 from framework.exceptions import HTTPError
 from framework.flask import redirect
@@ -305,16 +306,15 @@ def figshare_view_file(*args, **kwargs):
         raise HTTPError(http.NOT_FOUND)
 
     try:
-        # If GUID has already been created, we won't redirect, and can check
-        # whether the file exists below
+        guid = FigShareGuidFile(node=node, article_id=article_id, file_id=file_id)
+        guid.save()
+    except KeyExistsException:
         guid = FigShareGuidFile.find_one(
             Q('node', 'eq', node) &
             Q('article_id', 'eq', article_id) &
             Q('file_id', 'eq', file_id)
         )
-    except:
-        guid = FigShareGuidFile(node=node, article_id=article_id, file_id=file_id)
-        guid.save()
+        assert guid is not None
 
     redirect_url = check_file_guid(guid)
 

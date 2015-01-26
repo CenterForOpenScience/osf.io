@@ -7,7 +7,7 @@ import datetime
 import httplib as http
 
 from modularodm import Q
-from modularodm.exceptions import ModularOdmException
+from modularodm.storage.base import KeyExistsException
 from flask import request, make_response
 
 from framework.exceptions import HTTPError
@@ -111,14 +111,6 @@ def github_view_file(auth, **kwargs):
 
     anonymous = has_anonymous_link(node, auth)
     try:
-        # If GUID has already been created, we won't redirect, and can check
-        # whether the file exists below
-        guid = GithubGuidFile.find_one(
-            Q('node', 'eq', node) &
-            Q('path', 'eq', path)
-        )
-
-    except ModularOdmException:
         # If GUID doesn't exist, check whether file exists before creating
         commits = connection.history(
             node_settings.user, node_settings.repo, path, ref,
@@ -130,6 +122,11 @@ def github_view_file(auth, **kwargs):
             path=path,
         )
         guid.save()
+    except KeyExistsException:
+        guid = GithubGuidFile.find_one(
+            Q('node', 'eq', node) &
+            Q('path', 'eq', path)
+        )
 
     redirect_url = check_file_guid(guid)
     if redirect_url:
