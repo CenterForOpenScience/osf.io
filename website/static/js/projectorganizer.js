@@ -573,8 +573,7 @@ function _poColumnTitles() {
     columns.push({
         title: 'Name',
         width : '45%',
-        sort : true,
-        sortType : 'text'
+        sort : false
     }, {
         title : 'Actions',
         width : '10%',

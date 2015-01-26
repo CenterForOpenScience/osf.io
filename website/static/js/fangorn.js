@@ -250,6 +250,9 @@ function _fangornSending(treebeard, file, xhr, formData) {
  */
 function _fangornAddedFile(treebeard, file) {
     var item = file.treebeardParent;
+    if (!item.data.permissions.edit) {
+        return;
+    }
     var configOption = resolveconfigOption.call(treebeard, item, 'uploadAdd', [file, item]);
 
     var tmpID = tempCounter++;
@@ -290,7 +293,7 @@ function _fangornDragOver(treebeard, event) {
         item = treebeard.find(itemID);
     $('.tb-row').removeClass(dropzoneHoverClass).removeClass(treebeard.options.hoverClass);
     if (item !== undefined) {
-        if (item.data.provider && item.kind === 'folder') {
+        if (item.data.provider && item.kind === 'folder' && item.data.permissions.edit) {
             closestTarget.addClass(dropzoneHoverClass);
         }
     }
@@ -587,14 +590,17 @@ function _fangornActionColumn (item, col) {
             'icon' : 'icon-download-alt',
             'css' : 'btn btn-info btn-xs',
             'onclick' : _downloadEvent
-        }, {
-            'name' : '',
-            'tooltip' : 'Delete',
-            'icon' : 'icon-remove',
-            'css' : 'm-l-lg text-danger fg-hover-hide',
-            'style' : 'display:none',
-            'onclick' : _removeEvent
         });
+        if (item.data.permissions.edit) {
+            buttons.push({
+                'name' : '',
+                'tooltip' : 'Delete',
+                'icon' : 'icon-remove',
+                'css' : 'm-l-lg text-danger fg-hover-hide',
+                'style' : 'display:none',
+                'onclick' : _removeEvent
+            });
+        }
     }
     // Build the template for icons
     return buttons.map(function (btn) {
@@ -820,23 +826,18 @@ tbOptions = {
         var maxSize;
         var displaySize;
         var msgText;
-        if (item.data.provider && item.kind === 'folder') {
-            if (item.data.permissions.edit) {
-                if (item.data.accept && item.data.accept.maxSize) {
-                    size = file.size / 1000000;
-                    maxSize = item.data.accept.maxSize;
-                    if (size > maxSize) {
-                        displaySize = Math.round(file.size / 10000) / 100;
-                        msgText = 'One of the files is too large (' + displaySize + ' MB). Max file size is ' + item.data.accept.maxSize + ' MB.';
-                        item.notify.update(msgText, 'warning', undefined, 3000);
-                        return false;
-                    }
+        if (item.data.provider && item.kind === 'folder' && item.data.permissions.edit) {
+            if (item.data.accept && item.data.accept.maxSize) {
+                size = file.size / 1000000;
+                maxSize = item.data.accept.maxSize;
+                if (size > maxSize) {
+                    displaySize = Math.round(file.size / 10000) / 100;
+                    msgText = 'One of the files is too large (' + displaySize + ' MB). Max file size is ' + item.data.accept.maxSize + ' MB.';
+                    item.notify.update(msgText, 'warning', undefined, 3000);
+                    return false;
                 }
-                return true;
-            } else {
-                msgText = 'You don\'t have permission to upload here';
-                item.notify.update(msgText, 'warning', 1, 3000, 'animated flipInX');
             }
+            return true;
         }
         return false;
     },
