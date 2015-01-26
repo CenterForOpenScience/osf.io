@@ -742,7 +742,8 @@ function _poMultiselect(event, tree) {
     var tb = this,
         selectedRows = filterRowsNotInParent.call(tb, tb.multiselected),
         someItemsAreFolders,
-        pointerIds;
+        pointerIds,
+        detailDiv = $('.project-details');
     if (selectedRows.length > 1) {
         someItemsAreFolders = false;
         pointerIds = [];
@@ -762,8 +763,7 @@ function _poMultiselect(event, tree) {
             };
             var theParentNode = selectedRows[0].parent();
             var displayHTML = multiItemDetailTemplateNoAction(detailTemplateContext);
-            $('.project-details').html(displayHTML);
-            $('.project-details').show();
+            detailDiv.html(displayHTML).show();
         } else {
             if (!someItemsAreFolders) {
                 detailTemplateContext = {
@@ -772,8 +772,7 @@ function _poMultiselect(event, tree) {
                 };
                 var theParentNode = selectedRows[0].parent();
                 var displayHTML = multiItemDetailTemplate(detailTemplateContext);
-                $('.project-details').html(displayHTML);
-                $('.project-details').show();
+                detailDiv.html(displayHTML).show();
                 $('#remove-links-multiple').click(function () {
                     deleteMultiplePointersFromFolder.call(tb, pointerIds, theParentNode);
                     createBlankProjectDetail();
@@ -788,8 +787,7 @@ function _poMultiselect(event, tree) {
                 };
                 var theParentNode = selectedRows[0].parent();
                 var displayHTML = multiItemDetailTemplateNoAction(detailTemplateContext);
-                $('.project-details').html(displayHTML);
-                $('.project-details').show();
+                detailDiv.html(displayHTML).show();
             }
         }
 
@@ -927,7 +925,8 @@ function dragLogic(event, items, ui) {
     var canCopy = true,
         canMove = true,
         folder = this.find($(event.target).attr('data-id')),
-        isSelf = false;
+        isSelf = false,
+        dragGhost = $('.tb-drag-ghost');
     items.forEach(function (item) {
         if (!isSelf) {
             isSelf = item.id === folder.id;
@@ -957,18 +956,19 @@ function dragLogic(event, items, ui) {
     }
     // Set the cursor to match the appropriate copy mode
     // Remember that Treebeard is using tb-drag-ghost instead of ui.helper
+    
     switch (copyMode) {
     case 'forbidden':
-        $('.tb-drag-ghost').css('cursor', 'not-allowed');
+        dragGhost.css('cursor', 'not-allowed');
         break;
     case 'copy':
-        $('.tb-drag-ghost').css('cursor', 'copy');
+        dragGhost.css('cursor', 'copy');
         break;
     case 'move':
-        $('.tb-drag-ghost').css('cursor', 'move');
+        dragGhost.css('cursor', 'move');
         break;
     default:
-        $('.tb-drag-ghost').css('cursor', 'default');
+        dragGhost.css('cursor', 'default');
     }
     return copyMode;
 }
@@ -1188,12 +1188,13 @@ var tbOptions = {
         over : _poOver
     },
     onload : function () {
-        var tb = this;
+        var tb = this,
+            rowDiv = $('.tb-row');
         _poLoadOpenChildren.call(tb);
-        $('.tb-row').first().trigger('click');
+       rowDiv.first().trigger('click');
 
         $('.gridWrapper').on('mouseout', function(){
-            $('.tb-row').removeClass('po-hover');
+            rowDiv.removeClass('po-hover');
         });
 
 
