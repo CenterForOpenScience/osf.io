@@ -5,6 +5,7 @@ require('knockout-punches');
 var $ = require('jquery');
 var $osf = require('osfHelpers');
 var bootbox = require('bootbox');
+var waterbutler = require('waterbutler');
 
 ko.punches.enableAll();
 
@@ -49,17 +50,17 @@ RevisionsViewModel.prototype.fetch = function() {
     });
 };
 
-    RevisionsViewModel.prototype.delete = function() {
-        var self = this;
-        $.ajax({
-            type: 'DELETE',
-            url: self.urls.delete
-        }).done(function() {
-            window.location = self.urls.files;
-        }).fail(function() {
-            $osf.growl('Error', 'Could not delete file.');
-        });
-    };
+RevisionsViewModel.prototype.delete = function() {
+    var self = this;
+    $.ajax({
+        type: 'DELETE',
+        url: waterbutler.buildDeleteUrl(self.path, 'osfstorage', window.contextVars.node.id)
+    }).done(function() {
+        window.location = self.urls.files;
+    }).fail(function() {
+        $osf.growl('Error', 'Could not delete file.');
+    });
+};
 
 RevisionsViewModel.prototype.askDelete = function() {
     var self = this;

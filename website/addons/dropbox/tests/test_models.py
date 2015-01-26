@@ -16,6 +16,7 @@ from website.addons.dropbox.tests.factories import (
     DropboxFileFactory
 )
 from website.util import web_url_for
+from website.addons.base import exceptions
 
 
 class TestUserSettingsModel(OsfTestCase):
@@ -191,6 +192,50 @@ class TestDropboxNodeSettingsModel(OsfTestCase):
         assert_equal(log_params['folder'], node_settings.folder)
         assert_equal(log_params['node'], node_settings.owner._primary_key)
         assert_equal(last_log.user, user_settings.owner)
+
+    def test_serialize_credentials(self):
+        self.user_settings.access_token = 'secret'
+        self.user_settings.save()
+        credentials = self.node_settings.serialize_waterbutler_credentials()
+        expected = {'token': self.node_settings.user_settings.access_token}
+        assert_equal(credentials, expected)
+
+    def test_serialize_credentials_not_authorized(self):
+        self.node_settings.user_settings = None
+        self.node_settings.save()
+        with assert_raises(exceptions.AddonError):
+            self.node_settings.serialize_waterbutler_credentials()
+
+    def test_serialize_settings(self):
+        settings = self.node_settings.serialize_waterbutler_settings()
+        expected = {'folder': self.node_settings.folder}
+        assert_equal(settings, expected)
+
+    def test_serialize_settings_not_configured(self):
+        self.node_settings.folder = None
+        self.node_settings.save()
+        with assert_raises(exceptions.AddonError):
+            self.node_settings.serialize_waterbutler_settings()
+
+    def test_create_log(self):
+        action = 'file_added'
+        path = 'pizza.nii'
+        nlog = len(self.project.logs)
+        self.node_settings.create_waterbutler_log(
+            auth=Auth(user=self.user),
+            action=action,
+            metadata={'path': path},
+        )
+        self.project.reload()
+        assert_equal(len(self.project.logs), nlog + 1)
+        assert_equal(
+            self.project.logs[-1].action,
+            'dropbox_{0}'.format(action),
+        )
+        assert_equal(
+            self.project.logs[-1].params['path'],
+            os.path.join(self.node_settings.folder, path),
+        )
 
 
 class TestNodeSettingsCallbacks(OsfTestCase):

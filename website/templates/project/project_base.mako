@@ -13,6 +13,7 @@
 <%def name="content()">
 
 <%include file="project_header.mako"/>
+
 <%include file="modal_show_links.mako"/>
 
 ${next.body()}

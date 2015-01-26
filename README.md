@@ -8,7 +8,7 @@
 - Huboard: https://huboard.com/CenterForOpenScience/osf.io#/
 - Docs: http://cosdev.rtfd.org/
 
-> ## Help
+## Help
 
 Solutions to many common issues may be found at the [OSF Developer Docs](http://cosdev.rtfd.org/).
 
@@ -44,13 +44,7 @@ $ invoke setup
 ```
 
 
-- Optionally, you may install the requirements for the Modular File Renderer:
-
-```bash
-$ invoke mfr_requirements
-```
-
-and for addons:
+- Optionally, you may install the requirements for addons:
 
 ```bash
 $ invoke addon_requirements

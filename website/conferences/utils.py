@@ -82,8 +82,6 @@ def provision_node(conference, message, node, user):
     if message.is_spam:
         node.system_tags.append('spam')
 
-    upload_attachments(user, node, message.attachments)
-
     node.save()
 
 
@@ -102,14 +100,11 @@ def upload_attachment(user, node, attachment):
     from website.addons.osfstorage import utils as storage_utils
     attachment.seek(0)
     name = attachment.filename or settings.MISSING_FILE_NAME
-    content_type = attachment.content_type
     content = attachment.read()
-    size = attachment.tell()
-    upload_url = storage_utils.get_upload_url(node, user, size, content_type, name)
+    upload_url = storage_utils.get_waterbutler_upload_url(user, node, path=name)
     requests.put(
         upload_url,
         data=content,
-        headers={'Content-Type': attachment.content_type},
     )
 
 

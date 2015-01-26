@@ -293,16 +293,15 @@ def node_forks(**kwargs):
 
 
 @must_be_valid_project
+@must_not_be_registration
 @must_have_permission('write')
-def node_setting(**kwargs):
-
-    auth = kwargs['auth']
+def node_setting(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
 
     if not node.can_edit(auth):
         raise HTTPError(http.FORBIDDEN)
 
-    rv = _view_project(node, auth, primary=True)
+    ret = _view_project(node, auth, primary=True)
 
     addons_enabled = []
     addon_enabled_settings = []
@@ -313,24 +312,24 @@ def node_setting(**kwargs):
         if 'node' in addon.config.configs:
             addon_enabled_settings.append(addon.to_json(auth.user))
 
-    rv['addon_categories'] = settings.ADDON_CATEGORIES
-    rv['addons_available'] = [
+    ret['addon_categories'] = settings.ADDON_CATEGORIES
+    ret['addons_available'] = [
         addon
         for addon in settings.ADDONS_AVAILABLE
         if 'node' in addon.owners
         and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node']
     ]
-    rv['addons_enabled'] = addons_enabled
-    rv['addon_enabled_settings'] = addon_enabled_settings
-    rv['addon_capabilities'] = settings.ADDON_CAPABILITIES
+    ret['addons_enabled'] = addons_enabled
+    ret['addon_enabled_settings'] = addon_enabled_settings
+    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
 
-    rv['addon_js'] = collect_node_config_js(node.get_addons())
+    ret['addon_js'] = collect_node_config_js(node.get_addons())
 
-    rv['comments'] = {
+    ret['comments'] = {
         'level': node.comment_level,
     }
 
-    return rv
+    return ret
 
 def collect_node_config_js(addons):
     """Collect webpack bundles for each of the addons' node-cfg.js modules. Return
