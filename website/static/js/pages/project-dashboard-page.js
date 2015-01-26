@@ -64,7 +64,7 @@ $(document).ready(function() {
                 ];
             },
             resolveRows : function(item){
-                var default_columns = [{
+                var defaultColumns = [{
                     data: 'name',
                     folderIcons: true,
                     filter: true,
@@ -79,7 +79,7 @@ $(document).ready(function() {
                 }
 
                 if(item.data.tmpID){
-                    default_columns = [
+                    defaultColumns = [
                         {
                             data : 'name',  // Data field name
                             folderIcons : true,
@@ -90,7 +90,7 @@ $(document).ready(function() {
                 }
 
                 configOption = Fangorn.Utils.resolveconfigOption.call(this, item, 'resolveRows', [item]);
-                return configOption || default_columns;
+                return configOption || defaultColumns;
             }
         };
         var filebrowser = new Fangorn(fangornOpts);
@@ -102,34 +102,34 @@ $(document).ready(function() {
 
     // Tag input
     $('#node-tags').tagsInput({
-        width: "100%",
+        width: '100%',
         interactive: window.contextVars.currentUser.canEdit,
         maxChars: 128,
         onAddTag: function(tag){
-            var url = window.contextVars.node.urls.api + "addtag/" + tag + "/";
+            var url = window.contextVars.node.urls.api + 'addtag/' + tag + '/';
             var request = $.ajax({
                 url: url,
-                type: "POST",
-                contentType: "application/json"
+                type: 'POST',
+                contentType: 'application/json'
             });
             request.fail(function(xhr, textStatus, error) {
                 Raven.captureMessage('Failed to add tag', {
                     tag: tag, url: url, textStatus: textStatus, error: error
                 });
-            })
+            });
         },
         onRemoveTag: function(tag){
-            var url = window.contextVars.node.urls.api + "removetag/" + tag + "/";
+            var url = window.contextVars.node.urls.api + 'removetag/' + tag + '/';
             var request = $.ajax({
                 url: url,
-                type: "POST",
-                contentType: "application/json"
+                type: 'POST',
+                contentType: 'application/json'
             });
             request.fail(function(xhr, textStatus, error) {
                 Raven.captureMessage('Failed to remove tag', {
                     tag: tag, url: url, textStatus: textStatus, error: error
                 });
-            })
+            });
         }
     });
 
@@ -140,7 +140,7 @@ $(document).ready(function() {
     if (!window.contextVars.currentUser.canEdit || window.contextVars.node.isRegistration) {
         $('a[title="Removing tag"]').remove();
         $('span.tag span').each(function(idx, elm) {
-            $(elm).text($(elm).text().replace(/\s*$/, ''))
+            $(elm).text($(elm).text().replace(/\s*$/, ''));
         });
     }
 
