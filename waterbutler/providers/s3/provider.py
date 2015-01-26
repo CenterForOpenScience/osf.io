@@ -90,7 +90,7 @@ class S3Provider(provider.BaseProvider):
             raise exceptions.DownloadError('No file specified for download', code=400)
 
         key = self.bucket.new_key(path.path)
-        url = key.generate_url(settings.TEMP_URL_SECS, headers={'response-content-disposition': 'attachment'})
+        url = key.generate_url(settings.TEMP_URL_SECS, response_headers={'response-content-disposition': 'attachment'})
         if accept_url:
             return url
         resp = yield from self.make_request(
