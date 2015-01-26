@@ -99,12 +99,12 @@ class TestGetDownloadUrl(StorageTestCase):
 
     def test_get_filename_latest_version(self):
         filename = utils.get_filename(3, self.record.versions[-1], self.record)
-        assert_equal(filename, '/' + self.record.name)
+        assert_equal(filename, self.record.name)
 
     def test_get_filename_not_latest_version(self):
         filename = utils.get_filename(2, self.record.versions[-2], self.record)
         expected = ''.join([
-            '/reviews-',
+            'reviews-',
             self.record.versions[-2].date_created.isoformat(),
             '.gif',
         ])
