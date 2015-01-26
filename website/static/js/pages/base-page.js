@@ -11,6 +11,9 @@ require('../crossOrigin.js');
 var NavbarControl = require('navbar-control');
 var $osf = require('osfHelpers');
 
+// Prevent IE from caching responses
+$.ajaxSetup({ cache: false });
+
 // Apply an empty view-model to the navbar, just so the tooltip bindingHandler
 // can be used
 // $osf.applyBindings({}, '#navbarScope');
