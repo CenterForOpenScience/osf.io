@@ -54,14 +54,12 @@ $(document).ready(function() {
               url:  '/api/v1/dashboard/'
             })
             .done(function( data ) {
-                console.log("first data", data);
                 var options = {
                         placement : 'dashboard',
                         divID: 'project-grid',
                         filesData: data.data,
                         multiselect : true
                     };
-                    console.log("project Organizer", ProjectOrganizer);
                     var filebrowser = new ProjectOrganizer(options);   
  
             });

@@ -1,10 +1,10 @@
 var $ = require('jquery');
 var $osf = require('osfHelpers');
-var settings = require('settings');
 
 
 function getCookie() {
-    match = document.cookie.match(/osf=(.*?)(;|$)/);
+    cookieName =  window.contextVars.cookieName;
+    match = document.cookie.match(new RegExp(cookieName + '=(.*?)(;|$)'));
     return match ? match[1] : null;
 }
 
@@ -24,7 +24,7 @@ function getDefaultOptions(path, provider) {
 
 function buildUrl(suffix, path, provider, nid, options) {
     path = path || '/';
-    var baseUrl = settings.WATERBUTLER_URL + suffix;
+    var baseUrl = contextVars.waterbutlerURL + suffix;
 
     return baseUrl + $.param($.extend(getDefaultOptions(path, provider), {nid: nid}, options));
 }

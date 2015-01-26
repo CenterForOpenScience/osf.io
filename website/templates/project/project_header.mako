@@ -15,7 +15,7 @@
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                     </button>
-                    <a class="navbar-brand visible-xs" href="#">
+                    <a class="navbar-brand visible-xs" href="${node['url']}">
                         ${'Project' if node['node_type'] == 'project' else 'Component'} Navigation
                     </a>
                 </div>

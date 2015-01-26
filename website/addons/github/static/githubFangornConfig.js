@@ -182,7 +182,7 @@ function _fangornGithubTitle(item, col)  {
                         )
                     );
                     window.location = item.data.nodeApiUrl + 'waterbutler/files/?' + params;
-                },'data-toggle' : 'tooltip', title : 'View file', 'data-placement': 'right'
+                },'data-toggle': 'tooltip', title: 'View file', 'data-placement': 'right'
             }, item.data.name)]);
         } else {
             return m('span', item.data.name);

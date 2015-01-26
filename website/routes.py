@@ -52,6 +52,7 @@ def get_globals():
         'sentry_dsn_js': settings.SENTRY_DSN_JS if sentry.enabled else None,
         'dev_mode': settings.DEV_MODE,
         'allow_login': settings.ALLOW_LOGIN,
+        'cookie_name': settings.COOKIE_NAME,
         'status': status.pop_status_messages(),
         'css_all': assets_env['css'].urls(),
         'domain': settings.DOMAIN,
@@ -62,6 +63,7 @@ def get_globals():
         'sanitize': sanitize,
         'js_str': lambda x: x.replace("'", r"\'").replace('"', r'\"'),
         'webpack_asset': paths.webpack_asset,
+        'waterbutler_url': settings.WATERBUTLER_URL
     }
 
 

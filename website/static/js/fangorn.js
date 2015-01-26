@@ -30,7 +30,7 @@ function _fangornResolveIcon(item) {
 
     if (item.kind === 'folder') {
         if (item.data.iconUrl) {
-            return m('img', { src : item.data.iconUrl, style: {width: "16px", height: "auto"} });
+            return m('img', { src : item.data.iconUrl, style: {width: '16px', height: 'auto'} });
         }
         if (!item.data.permissions.view) {
             return privateFolder;
@@ -186,8 +186,9 @@ function _fangornMouseOverRow(item, event) {
  * @private
  */
 function _fangornUploadProgress(treebeard, file, progress) {
-    var parent = treebeard.dropzoneItemCache,
-        item,
+    var parent = file.treebeardParent;
+
+    var item,
         child,
         column,
         msgText = '';
@@ -213,8 +214,8 @@ function _fangornUploadProgress(treebeard, file, progress) {
         treebeard.options.uploadInProgress = true;
         item.notify.update(msgText, 'success', column, 0);
     } else {
-        item.notify.update(msgText, 'success', column, 2000);
-        treebeard.options.uploadInProgress = false; 
+        item.notify.update(msgText, 'success', column, 3000);
+        treebeard.options.uploadInProgress = false;
     }
 }
 
@@ -230,30 +231,12 @@ function _fangornUploadProgress(treebeard, file, progress) {
  */
 function _fangornSending(treebeard, file, xhr, formData) {
     treebeard.options.uploadInProgress = true;
-
-    var parentID = treebeard.dropzoneItemCache.id,
-        parent = treebeard.dropzoneItemCache,
-        configOption,
-        tmpID = tempCounter++;
-        blankItem = {       // create a blank item that will refill when upload is finished.
-            name: file.name,
-            kind: 'file',
-            provider: parent.data.provider,
-            children: [],
-            permissions: {
-                view: false,
-                edit: false
-            },
-            tmpID: tmpID
-        };
-    treebeard.createItem(blankItem, parentID);
-    file.tmpID = tmpID;
+    var parent = file.treebeardParent || treebeard.dropzoneItemCache;
     var _send = xhr.send;
     xhr.send = function() {
         _send.call(xhr, file);
     };
-
-    configOption = resolveconfigOption.call(treebeard, parent, 'uploadSending', [file, xhr, formData]);
+    var configOption = resolveconfigOption.call(treebeard, parent, 'uploadSending', [file, xhr, formData]);
     return configOption || null;
 }
 
@@ -266,11 +249,29 @@ function _fangornSending(treebeard, file, xhr, formData) {
  * @private
  */
 function _fangornAddedFile(treebeard, file) {
-    var item = treebeard.dropzoneItemCache,
-        configOption = resolveconfigOption.call(treebeard, item, 'uploadAdd', [file, item]);
+    var item = file.treebeardParent;
+    var configOption = resolveconfigOption.call(treebeard, item, 'uploadAdd', [file, item]);
 
+    var tmpID = tempCounter++;
+
+    file.tmpID = tmpID;
     file.url = _fangornResolveUploadUrl(item, file);
     file.method = _fangornUploadMethod(item);
+
+    blankItem = {       // create a blank item that will refill when upload is finished.
+        name: file.name,
+        kind: 'file',
+        provider: item.data.provider,
+        children: [],
+        permissions: {
+            view: false,
+            edit: false
+        },
+        tmpID: tmpID
+    };
+    treebeard.createItem(blankItem, item.id);
+
+
 
     return configOption || null;
 }
@@ -283,7 +284,7 @@ function _fangornAddedFile(treebeard, file) {
  * @private
  */
 function _fangornDragOver(treebeard, event) {
-    var dropzoneHoverClass = "fangorn-dz-hover",
+    var dropzoneHoverClass = 'fangorn-dz-hover',
         closestTarget = $(event.target).closest('.tb-row'),
         itemID =  parseInt(closestTarget.attr('data-id')),
         item = treebeard.find(itemID);
@@ -303,7 +304,7 @@ function _fangornDragOver(treebeard, event) {
  * @private
  */
 function _fangornComplete(treebeard, file) {
-    var item = treebeard.dropzoneItemCache;
+    var item = file.treebeardParent;
     resolveconfigOption.call(treebeard, item, 'onUploadComplete', [item]);
 }
 
@@ -316,11 +317,11 @@ function _fangornComplete(treebeard, file) {
  * @private
  */
 function _fangornDropzoneSuccess(treebeard, file, response) {
-    treebeard.options.uploadInProgress = false; 
-    var item,
+    treebeard.options.uploadInProgress = false;
+    var parent = file.treebeardParent,
+        item,
         revisedItem,
-        child,
-        parent = treebeard.dropzoneItemCache;
+        child;
     for(var i = 0; i < parent.children.length; i++) {
         child = parent.children[i];
         if(!child.data.tmpID){
@@ -341,6 +342,18 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
         item.data = response;
         inheritFromParent(item, item.parent());
     }
+    if(item.data.tmpID) {
+        item.data.tmpID = null;
+    }
+    // Check and remove duplicates
+    if(parent.children.length  > 0 ) {
+        for (var j = 0; j < parent.children.length; j++){
+            var o = parent.children[j];
+            if(o.data.name === item.data.name && o.id !== item.id){
+                o.removeSelf();
+            }
+        }
+    }
     treebeard.redraw();
 }
 
@@ -352,9 +365,9 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
  * @private
  */
 function _fangornDropzoneError(treebeard, file, message) {
+    var parent = file.treebeardParent;
     var item,
         child,
-        parent = treebeard.dropzoneItemCache,
         msgText = message.message_short || message;
     for(var i = 0; i < parent.children.length; i++) {
         child = parent.children[i];
@@ -369,7 +382,7 @@ function _fangornDropzoneError(treebeard, file, message) {
     item.notify.message = msgText;
     item.notify.col = 1;
     item.notify.selfDestruct(treebeard, item);
-    treebeard.options.uploadInProgress = false; 
+    treebeard.options.uploadInProgress = false;
 }
 
 /**
@@ -385,8 +398,8 @@ function _uploadEvent(event, item, col) {
     } catch (e) {
         window.event.cancelBubble = true;
     }
-    this.dropzone.hiddenFileInput.click();
     this.dropzoneItemCache = item;
+    this.dropzone.hiddenFileInput.click();
     if(!item.open){
         this.updateFolder(null, item);
     }
@@ -632,6 +645,25 @@ function _fangornResolveRows(item) {
     var configOption;
     item.css = '';
 
+    if(item.data.tmpID){
+        return [
+        {
+            data : 'name',  // Data field name
+            folderIcons : true,
+            filter : true,
+            custom : function(){ return m('span.text-muted', item.data.name); }
+        },
+        {
+            data : '',  // Data field name
+            custom : function(){ return m('span.text-muted', 'Upload pending...'); }
+        },
+        {
+            data : '',  // Data field name
+            custom : function(){ return m('span', ''); }
+        }
+        ];
+    }
+
     if (item.parentID) {
         item.data.permissions = item.data.permissions || item.parent().data.permissions;
         if (item.data.kind === 'folder') {
@@ -718,7 +750,6 @@ function _loadTopLevelChildren() {
 function expandStateLoad(item) {
     var tb = this,
         i;
-        console.log(item);
     if (item.children.length > 0 && item.depth === 1) {
         for (i = 0; i < item.children.length; i++) {
             // if (item.children[i].data.isAddonRoot || item.children[i].data.addonFullName === 'OSF Storage' ) {
@@ -767,8 +798,8 @@ tbOptions = {
         });
 
         window.onbeforeunload = function(e) {
-            if(tb.options.uploadInProgress){
-              return 'You have pending uploads, if you leave this page they may not complete.';                
+            if (tb.options.uploadInProgress) {
+              return 'You have pending uploads, if you leave this page they may not complete.';
             }
         };
     },
@@ -809,13 +840,10 @@ tbOptions = {
         }
         return false;
     },
-    onselectrow : function (item) {
-        window.console.log('Row: ', item);
-    },
     onscrollcomplete : function(){
         $('[data-toggle="tooltip"]').tooltip();
     },
-    filterPlaceholder : "Search",
+    filterPlaceholder : 'Search',
     onmouseoverrow : _fangornMouseOverRow,
     dropzone : {                                           // All dropzone options.
         url: function(files) {return files[0].url;},
