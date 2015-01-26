@@ -28,6 +28,11 @@ def subscribe(list_name, user_id):
     user = User.load(user_id)
     m = get_mailchimp_api()
     list_id = get_list_id_from_name(list_name=list_name)
+
+    if user.mailing_lists is None:
+        user.mailing_lists = {}
+        user.save()
+
     try:
         m.lists.subscribe(id=list_id,
                           email={'email': user.username},
@@ -36,18 +41,15 @@ def subscribe(list_name, user_id):
                           double_optin=False,
                           update_existing=True)
 
-        # Update mailing_list user field
-        if user.mailing_lists is None:
-            user.mailing_lists = {}
-            user.save()
-
-        user.mailing_lists[list_name] = True
-        user.save()
-
     except mailchimp.ValidationError as error:
         sentry.log_exception()
         sentry.log_message(error.message)
+        user.mailing_lists[list_name] = False
+        user.save()
 
+    else:
+        user.mailing_lists[list_name] = True
+        user.save()
 
 @app.task
 def unsubscribe(list_name, user_id):
