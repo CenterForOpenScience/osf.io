@@ -23,7 +23,6 @@ $('#figsharePublishArticle').on('click', function(){
 </script>
 -->
 ## % endif
-
     <ol class="breadcrumb">
         <li class="active overflow"><a href=${urls['files']}>${node['title']}</a></li>
         <li>Figshare</li>
