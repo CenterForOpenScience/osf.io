@@ -8,16 +8,17 @@ from dropbox.rest import ErrorResponse
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
-from website.project.model import NodeLog
 from framework.flask import redirect  # VOL-aware redirect
+from framework.exceptions import HTTPError
+from framework.transactions.handlers import no_auto_transaction
+
+from website.project.model import NodeLog
 from website.project.utils import serialize_node
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 from website.project.decorators import must_be_contributor_or_public
 from website.addons.base.views import check_file_guid
-
-from framework.exceptions import HTTPError
 
 from website.addons.dropbox.model import DropboxFile
 from website.addons.dropbox.client import get_node_addon_client
@@ -153,6 +154,7 @@ def dropbox_get_revisions(path, node_addon, auth, **kwargs):
     }, http.OK
 
 
+@no_auto_transaction
 @must_be_contributor_or_public
 @must_have_addon('dropbox', 'node')
 def dropbox_view_file(path, node_addon, auth, **kwargs):

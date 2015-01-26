@@ -13,6 +13,7 @@ from flask import request, make_response
 from framework.exceptions import HTTPError
 from framework.utils import secure_filename
 from framework.flask import redirect  # VOL-aware redirect
+from framework.transactions.handlers import no_auto_transaction
 
 from website import models
 from website.project.decorators import (
@@ -87,6 +88,7 @@ def get_cache_file(path, sha):
     )
 
 
+@no_auto_transaction
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
 def github_view_file(auth, **kwargs):

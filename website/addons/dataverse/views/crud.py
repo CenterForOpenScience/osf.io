@@ -11,6 +11,7 @@ from framework.flask import redirect
 from framework.exceptions import HTTPError
 from framework.utils import secure_filename
 from framework.auth.utils import privacy_info_handle
+from framework.transactions.handlers import no_auto_transaction
 from website.addons.dataverse.client import delete_file, upload_file, \
     get_file, get_file_by_id, release_study, get_study, get_dataverse, \
     connect_from_settings_or_403, get_files
@@ -148,6 +149,7 @@ def dataverse_get_file_info(node_addon, auth, **kwargs):
     }, http.OK
 
 
+@no_auto_transaction
 @must_be_contributor_or_public
 @must_have_addon('dataverse', 'node')
 def dataverse_view_file(node_addon, auth, **kwargs):

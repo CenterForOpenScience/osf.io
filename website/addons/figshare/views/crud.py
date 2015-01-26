@@ -15,6 +15,7 @@ from framework.flask import redirect
 from framework.auth.utils import privacy_info_handle
 from framework.utils import secure_filename
 from website.addons.base.views import check_file_guid
+from framework.transactions.handlers import no_auto_transaction
 
 from website.project import decorators  # noqa
 from website.project.decorators import must_be_contributor_or_public, must_be_contributor  # noqa
@@ -272,6 +273,7 @@ def figshare_upload_file_to_article(*args, **kwargs):
 # FILES: R
 
 
+@no_auto_transaction
 @must_be_contributor_or_public
 @must_have_addon('figshare', 'node')
 def figshare_view_file(*args, **kwargs):

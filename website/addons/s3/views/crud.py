@@ -12,6 +12,7 @@ from modularodm.storage.base import KeyExistsException
 
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
+from framework.transactions.handlers import no_auto_transaction
 
 from website.models import NodeLog
 
@@ -76,6 +77,7 @@ def s3_delete(**kwargs):
     return {}
 
 
+@no_auto_transaction
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
 def s3_view(**kwargs):
