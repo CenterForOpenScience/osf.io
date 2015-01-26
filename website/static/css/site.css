@@ -372,10 +372,12 @@ li.pointer {
 }
 
 .unread-comments-count {
-    font-size: medium;
-    color: #428bca;
+    font-size: small;
+    background-color: #428bca;
+    color: white;
     position: absolute;
     right: 0px;
+    z-index: 1000;
 }
 
 .addon-auth {

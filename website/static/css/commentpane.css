@@ -5,7 +5,7 @@
     top: 0;
     right: 0;
     height: 100%;
-    padding-bottom: 43px; /* Note: Must be the same as .cp-handle:margin-top */
+    padding-bottom: 88px; /* Note: Must be the same as .cp-bar:margin-top */
 }
 
 .cp-handle {

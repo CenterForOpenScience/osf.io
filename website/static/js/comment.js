@@ -113,7 +113,7 @@ var BaseComment = function() {
         return notEmpty(self.replyContent());
     });
     self.saveButtonText = ko.computed(function() {
-        return self.submittingReply() ? 'Saving' : 'Save';
+        return self.submittingReply() ? 'Saving' : 'Comment';
     });
 
 };

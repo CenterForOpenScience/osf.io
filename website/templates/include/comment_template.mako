@@ -98,8 +98,8 @@
                                 <textarea class="form-control" data-bind="value: content, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
                             </div>
                             <div class="form-inline">
-                                <a class="btn btn-default btn-default" data-bind="click: submitEdit, visible: editNotEmpty"><i class="icon-check"></i> Save</a>
-                                <a class="btn btn-default btn-default" data-bind="click: cancelEdit"><i class="icon-undo"></i> Cancel</a>
+                                <a class="btn btn-primary" data-bind="click: submitEdit, visible: editNotEmpty"><i class="icon-check"></i> Save</a>
+                                <a class="btn btn-default" data-bind="click: cancelEdit"><i class="icon-undo"></i> Cancel</a>
                                 <span data-bind="text: editErrorMessage" class="comment-error"></span>
                             </div>
                         </div>
@@ -162,7 +162,7 @@
                         <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
                     </div>
                     <div>
-                        <a class="btn btn-default" data-bind="click: submitReply, visible: replyNotEmpty, css: {disabled: submittingReply}"><i class="icon-check"></i> {{saveButtonText}}</a>
+                        <a class="btn btn-primary" data-bind="click: submitReply, visible: replyNotEmpty, css: {disabled: submittingReply}"><i class="icon-check"></i> {{saveButtonText}}</a>
                         <a class="btn btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"><i class="icon-undo"></i> Cancel</a>
                         <span data-bind="text: replyErrorMessage" class="comment-error"></span>
                     </div>
