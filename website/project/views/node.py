@@ -953,7 +953,10 @@ def get_summary(**kwargs):
     node = kwargs['node'] or kwargs['project']
     rescale_ratio = kwargs.get('rescale_ratio')
     if rescale_ratio is None and request.args.get('rescale_ratio'):
-        rescale_ratio = float(request.args.get('rescale_ratio'))
+        try:
+            rescale_ratio = float(request.args.get('rescale_ratio'))
+        except:
+            raise HTTPError(http.BAD_REQUEST)
     primary = kwargs.get('primary')
     link_id = kwargs.get('link_id')
 
