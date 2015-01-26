@@ -31,6 +31,9 @@ var multiItemDetailTemplate = Handlebars.compile(multiItemDetailTemplateSource);
 var multiItemDetailTemplateSourceNoAction = $('#project-detail-multi-item-no-action').html();
 var multiItemDetailTemplateNoAction = Handlebars.compile(multiItemDetailTemplateSourceNoAction);
 
+
+var $detailDiv = $('.project-details');
+
 /**
  * Bloodhound is a typeahead suggestion engine. Searches here for public projects
  * @type {Bloodhound}
@@ -126,13 +129,13 @@ function createProjectDetailHTMLFromTemplate(theItem) {
         parentIsSmartFolder: theItem.parentIsSmartFolder
     };
     var displayHTML = detailTemplate(detailTemplateContext);
-    $('.project-details').html(displayHTML);
+    $detailDiv.html(displayHTML);
     addFormKeyBindings(theItem.node_id);
 }
 
 function createBlankProjectDetail(message) {
     var text = message || 'Select a row to view further actions.';
-    $('.project-details').html('<div class="row"> <div class="col-xs-12"> <i class="text-muted text-center po-placeholder"> ' + text + ' </i> </div> </div>');
+    $detailDiv.html('<div class="row"> <div class="col-xs-12"> <i class="text-muted text-center po-placeholder"> ' + text + ' </i> </div> </div>');
 }
 
 function triggerClickOnItem(item, force) {
@@ -742,8 +745,7 @@ function _poMultiselect(event, tree) {
     var tb = this,
         selectedRows = filterRowsNotInParent.call(tb, tb.multiselected),
         someItemsAreFolders,
-        pointerIds,
-        detailDiv = $('.project-details');
+        pointerIds;
     if (selectedRows.length > 1) {
         someItemsAreFolders = false;
         pointerIds = [];
@@ -763,7 +765,7 @@ function _poMultiselect(event, tree) {
             };
             var theParentNode = selectedRows[0].parent();
             var displayHTML = multiItemDetailTemplateNoAction(detailTemplateContext);
-            detailDiv.html(displayHTML).show();
+            $detailDiv.html(displayHTML).show();
         } else {
             if (!someItemsAreFolders) {
                 detailTemplateContext = {
@@ -772,7 +774,7 @@ function _poMultiselect(event, tree) {
                 };
                 var theParentNode = selectedRows[0].parent();
                 var displayHTML = multiItemDetailTemplate(detailTemplateContext);
-                detailDiv.html(displayHTML).show();
+                $detailDiv.html(displayHTML).show();
                 $('#remove-links-multiple').click(function () {
                     deleteMultiplePointersFromFolder.call(tb, pointerIds, theParentNode);
                     createBlankProjectDetail();
@@ -787,10 +789,9 @@ function _poMultiselect(event, tree) {
                 };
                 var theParentNode = selectedRows[0].parent();
                 var displayHTML = multiItemDetailTemplateNoAction(detailTemplateContext);
-                detailDiv.html(displayHTML).show();
+                $detailDiv.html(displayHTML).show();
             }
         }
-
     } else {
         _showProjectDetails.call(tb, event, tb.multiselected[0]);
     }
@@ -956,7 +957,7 @@ function dragLogic(event, items, ui) {
     }
     // Set the cursor to match the appropriate copy mode
     // Remember that Treebeard is using tb-drag-ghost instead of ui.helper
-    
+
     switch (copyMode) {
     case 'forbidden':
         dragGhost.css('cursor', 'not-allowed');
