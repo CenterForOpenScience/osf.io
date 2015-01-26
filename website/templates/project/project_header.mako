@@ -86,19 +86,6 @@
         </nav>
     </header>
 
-<<<<<<< HEAD
-            $(".project-nav a").each(function () {
-                var href = $(this).attr('href');
-                if (path === href ||
-                   (path.indexOf('discussions') > -1 && href.indexOf('discussions') > -1) ||
-                   (path.indexOf('files') > -1 && href.indexOf('files') > -1 && path.indexOf('discussions') < 0) ||
-                   (path.indexOf('wiki') > -1 && href.indexOf('wiki') > -1) && path.indexOf('discussions') < 0) {
-                    $(this).closest('li').addClass('active');
-                }
-            });
-        });
-    </script>
-=======
 
     <style type="text/css">
     .watermarked {
@@ -127,6 +114,4 @@
     <div class="alert alert-info"><strong>NOTICE: </strong>Forks, registrations, and uploads will be temporarily disabled while the OSF undergoes a hardware upgrade. These features will return shortly. Thank you for your patience.</div>
 % endif
 
-
->>>>>>> f06b14bf9b01c7a00a6f36a13eee129f9344998e
 </div>

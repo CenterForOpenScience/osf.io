@@ -191,22 +191,31 @@
 
         <!-- Discussions -->
         <div id="comments-widget-container" class="addon-widget-container">
-            <h3 class="addon-widget-header clearfix"><a href="${node['url']}discussions/">Discussions</a></h3>
-            <div data-bind="if: commented">
-                Show <a data-bind="click: showRecent">recently commented users</a> or
-                <a data-bind="click: showFrequent">most frequently commented users</a>
-                <div style="padding-top: 5px">
-                    <span data-bind="foreach: {data: discussion, afterAdd: setupToolTips}">
-                        <a data-toggle="tooltip" data-bind="attr: {href: url, title: fullname}" data-placement="bottom">
-                            <img data-bind="attr: {src: gravatarUrl}"/>
-                        </a>
-                    </span>
+            <div class="addon-widget-header clearfix">
+                <h4>Discussions</h4>
+                <div class="pull-right">
+                    <a href="${node['url']}discussions/" class="btn"> <i class="icon icon-external-link"></i> </a>
                 </div>
-                <div data-bind="template: {name: 'commentTemplate', foreach: recentComments}"></div>
-                <a class="pull-right" href="${node['url']}discussions/">See more in discussions page...</a>
             </div>
-            <div data-bind="ifnot: commented">
-                <span>There are no comments in this project yet. Open the <a onclick="openCommentPane()">comment pane</a> on the right and make the first one!</span>
+            <div class="addon-widget-body">
+                <div data-bind="if: commented">
+                    Show <a data-bind="click: showRecent">recently commented users</a> or
+                    <a data-bind="click: showFrequent">most frequently commented users</a>
+                    <div style="padding-top: 5px">
+                        <span data-bind="foreach: {data: discussion, afterAdd: setupToolTips}">
+                            <a data-toggle="tooltip" data-bind="attr: {href: url, title: fullname}" data-placement="bottom">
+                                <img data-bind="attr: {src: gravatarUrl}"/>
+                            </a>
+                        </span>
+                    </div>
+                    <div data-bind="template: {name: 'commentTemplate', foreach: recentComments}"></div>
+                    <div style="padding-bottom: 20px;">
+                        <a class="pull-right" href="${node['url']}discussions/">See more in discussions page...</a>
+                    </div>
+                </div>
+                <div data-bind="ifnot: commented">
+                    <span>There are no comments in this project yet. Open the <a onclick="openCommentPane()">comment pane</a> on the right and make the first one!</span>
+                </div>
             </div>
         </div>
     </div>

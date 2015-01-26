@@ -1,10 +1,11 @@
-<div class="commentPane">
+<div class="commentPane hidden-xs">
 
-    <div class="cp-handle" data-bind="click:removeCount">
+    <div class="cp-handle pull-right" data-bind="click:removeCount">
         <p data-bind="text: displayCount" class="unread-comments-count"></p>
-        <i class="icon-comments-alt icon-white icon-2x comment-handle-icon" style=""></i>
+        <i class="icon-comments-alt icon-2x comment-handle-icon" style="color: #428bca"></i>
     </div>
     <div class="cp-bar"></div>
+
 
     <div class="comments cp-sidebar">
         <h4>

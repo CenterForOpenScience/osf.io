@@ -28,8 +28,8 @@ function replaceAnchorScroll (buffer){
 			event.preventDefault();
 			// get location of the target
 			var target = $(this).attr('href'),
-			    offset = $(target).offset(); 
-			$(window).scrollTop(offset.top-buffer);			
+			    offset = $(target).offset();
+			$(window).scrollTop(offset.top-buffer);
 		}
 	});
 }
