@@ -4,8 +4,9 @@ from invoke import task, run
 
 
 @task
-def install(upgrade=False, pip_cache=None, wheel_repo=None):
-    cmd = 'pip install -r dev-requirements.txt'
+def install(develop=False, upgrade=False, pip_cache=None, wheel_repo=None):
+    req_file = 'dev-requirements.txt' if develop else 'requirements.txt'
+    cmd = 'pip install -r {}'.format(req_file)
 
     if upgrade:
         cmd += ' --upgrade'
