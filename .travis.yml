@@ -11,6 +11,9 @@ install:
   - travis_retry pip install invoke
   - travis_retry invoke install --upgrade --pip-cache=tmp/.pip-cache --wheel-repo=https://github.com/CenterForOpenScience/wheelhouse
 
+env:
+  - WATERBUTLER_CONFIG=./travis-config.json
+
 before_script:
   - invoke flake
 
