@@ -57,8 +57,9 @@ $(document).ready(function() {
             filesData: data.data,
             uploads : true,
             showFilter : true,
-            filterStyle : { 'float' : 'left', width : '100%'},
             placement: 'dashboard',
+            title : undefined,
+            filterFullWidth : true, // Make the filter span the entire row for this view
             columnTitles : function(){
                 return [
                     {

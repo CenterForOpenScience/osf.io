@@ -6,19 +6,8 @@
   <h2 class="text-300">Files</h2>
 </div>
 
-<div class="row">
-<div class="col-md-12">
-    <div class='help-block'>
-        % if 'write' in user['permissions'] and not disk_saving_mode:
-            <p>To Upload: Drag files from your desktop into a folder below OR click an upload (<i class="btn btn-default btn-xs" disabled><span class="icon-upload-alt"></span></i>) button.</p>
-        % endif
-    </div>
-</div><!-- end col-md-->
-
-</div><!--end row -->
-
 <div id="treeGrid">
-<div class="fangorn-loading"> <i class="icon-spinner fangorn-spin"></i> <p class="m-t-sm fg-load-message"> Loading files...  </p> </div>
+	<div class="fangorn-loading"> <i class="icon-spinner fangorn-spin"></i> <p class="m-t-sm fg-load-message"> Loading files...  </p> </div>
 </div>
 
 
@@ -29,10 +18,20 @@ ${parent.stylesheets()}
 % endfor
 </%def>
 
+
+
 <%def name="javascript_bottom()">
+
+
 ${parent.javascript_bottom()}
 % for script in tree_js:
 <script type="text/javascript" src="${script | webpack_asset}"></script>
 % endfor
 <script src=${"/static/public/js/files-page.js" | webpack_asset}></script>
+<script type="text/javascript">
+    window.contextVars = window.contextVars || {}; 
+    % if 'write' in user['permissions'] and not disk_saving_mode:
+        window.contextVars.uploadInstruction = true
+    % endif
+</script>
 </%def>
