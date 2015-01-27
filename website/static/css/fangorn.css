@@ -64,3 +64,6 @@ font-size: 13px
 	border-top : none;
 	border: 1px solid #EBEBEB;
 }
+.tb-row .icon-remove {
+	cursor : pointer;
+}

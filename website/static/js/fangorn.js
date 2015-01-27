@@ -22,8 +22,8 @@ var tempCounter = 1;
 function _fangornResolveIcon(item) {
     var privateFolder = m('img', { src : '/static/img/hgrid/fatcowicons/folder_delete.png' }),
         pointerFolder = m('i.icon-link', ' '),
-        openFolder  = m('i.icon-folder-open-alt', ' '),
-        closedFolder = m('i.icon-folder-close-alt', ' '),
+        openFolder  = m('i.icon-folder-open', ' '),
+        closedFolder = m('i.icon-folder-close', ' '),
         configOption = item.data.provider ? resolveconfigOption.call(this, item, 'folderIcon', [item]) : undefined,
         ext,
         extensions;
