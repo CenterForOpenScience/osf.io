@@ -31,7 +31,7 @@ class OSFStorageProvider(provider.BaseProvider):
 
     def __init__(self, auth, credentials, settings):
         super().__init__(auth, credentials, settings)
-        self.callback_url= settings.get('callback')
+        self.callback_url = settings.get('callback')
         self.metadata_url = settings.get('metadata')
         self.provider_name = settings['storage'].get('provider')
         self.parity_credentials = credentials.get('parity')
