@@ -179,6 +179,7 @@ ADDON_CATEGORIES = [
     'bibliography',
     'other',
     'security',
+    'citations',
 ]
 
 SYSTEM_ADDED_ADDONS = {
