@@ -440,16 +440,18 @@ function _removeEvent (event, item, col) {
     }
     var tb = this;
 
-    function cancelDelete () {
+    function cancelDelete() {
         this.modal.dismiss();
     }
-    function runDelete () {
+    function runDelete() {
         var tb = this;
         $('.tb-modal-footer .btn-success').html('<i> Deleting...</i>').attr('disabled', 'disabled');
         // delete from server, if successful delete from view
+        var url = resolveconfigOption.call(this, item, 'resolveDeleteUrl', [item]);
+        url = url || waterbutler.buildTreebeardDelete(item);
         $.ajax({
-            url: waterbutler.buildTreeBeardDelete(item),
-            type : 'DELETE'
+            url: url,
+            type: 'DELETE'
         })
         .done(function(data) {
             // delete view
@@ -461,7 +463,6 @@ function _removeEvent (event, item, col) {
             item.notify.update('Delete failed.', 'danger', undefined, 3000);
         });
     }
-
 
     if (item.data.permissions.edit) {
         var mithrilContent = m('div', [
