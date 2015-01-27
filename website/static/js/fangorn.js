@@ -211,11 +211,9 @@ function _fangornUploadProgress(treebeard, file, progress) {
     msgText  += 'Uploaded ' + Math.floor(progress) + '%';
 
     if (progress < 100) {
-        treebeard.options.uploadInProgress = true;
         item.notify.update(msgText, 'success', column, 0);
     } else {
         item.notify.update(msgText, 'success', column, 2000);
-        treebeard.options.uploadInProgress = false;
     }
 }
 
@@ -825,11 +823,11 @@ tbOptions = {
             tb.redraw();
         });
 
-        window.onbeforeunload = function(e) {
-            if (tb.options.uploadInProgress) {
+        $(window).on('beforeunload', function() {
+            if (tb.dropzone && tb.dropzone.getUploadingFiles().length) {
               return 'You have pending uploads, if you leave this page they may not complete.';
             }
-        };
+        });
     },
     createcheck : function (item, parent) {
         return true;
@@ -892,8 +890,7 @@ tbOptions = {
         error : _fangornDropzoneError,
         dragover : _fangornDragOver,
         addedfile : _fangornAddedFile
-    },
-    uploadInProgress : false
+    }
 };
 
 /**
