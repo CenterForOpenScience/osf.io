@@ -1099,7 +1099,14 @@ function dropLogic(event, items, folder) {
                                     tb.updateFolder(null, itemParent);
                                     tb.updateFolder(null, folder);
                                 } else {
-                                    tb.updateFolder(null, outerFolder);
+                                    // if item is closed folder save expand state to be open
+                                    if(!folder.data.expand){
+                                        saveExpandState(folder.data, function(){
+                                            tb.updateFolder(null, outerFolder);
+                                        });
+                                    } else {
+                                        tb.updateFolder(null, outerFolder);
+                                    }
                                 }
                             } else {
                                 tb.updateFolder(null, folder);
