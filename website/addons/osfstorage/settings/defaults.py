@@ -33,7 +33,7 @@ WATERBUTLER_CREDENTIALS = {
 }
 
 WATERBUTLER_SETTINGS = {
-    'provider': 'buttfiles',
+    'provider': 'cloudfiles',
     'container': 'changeme',
 }
 
