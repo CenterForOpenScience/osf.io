@@ -116,9 +116,9 @@ class FigshareProjectProvider(BaseFigshareProvider):
             )
 
     @asyncio.coroutine
-    def _make_article_provider(self, article_id, safe=False):
+    def _make_article_provider(self, article_id, check_parent=True):
         article_id = str(article_id)
-        if not safe:
+        if check_parent:
             yield from self._assert_contains_article(article_id)
         settings = {'article_id': article_id}
         return FigshareArticleProvider(self.auth, self.credentials, settings, child=True)
@@ -144,7 +144,7 @@ class FigshareProjectProvider(BaseFigshareProvider):
 
     @asyncio.coroutine
     def _get_article_metadata(self, article_id):
-        provider = yield from self._make_article_provider(article_id, safe=True)
+        provider = yield from self._make_article_provider(article_id, check_parent=False)
         return (yield from provider.metadata(''))
 
     @asyncio.coroutine
@@ -182,14 +182,14 @@ class FigshareProjectProvider(BaseFigshareProvider):
         should_create = not figshare_path.file_id
         if should_create:
             article_json = yield from self._create_article(figshare_path.article_id)
-            provider = yield from self._make_article_provider(article_json['article_id'], safe=True)
-            metadata = (yield from provider.upload(stream, str(figshare_path), **kwargs))
+            provider = yield from self._make_article_provider(article_json['article_id'], check_parent=False)
+            metadata, created = (yield from provider.upload(stream, str(figshare_path), **kwargs))
         else:
             provider = yield from self._make_article_provider(figshare_path.article_id)
-            metadata = (yield from provider.upload(stream, str(figshare_path.child), **kwargs))
+            metadata, created = (yield from provider.upload(stream, str(figshare_path.child), **kwargs))
         if should_create:
             yield from provider._add_to_project(self.project_id)
-        return metadata
+        return metadata, created
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
@@ -250,6 +250,22 @@ class FigshareArticleProvider(BaseFigshareProvider):
         )
         return (yield from resp.json())
 
+    def _serialize_item(self, item, parent=None):
+        defined_type = item.get('defined_type')
+        files = item.get('files')
+        if defined_type == 'fileset':
+            metadata_class = metadata.FigshareArticleMetadata
+            metadata_kwargs = {}
+        elif defined_type and not files:
+            # Hide single-file articles with no contents
+            return None
+        else:
+            metadata_class = metadata.FigshareFileMetadata
+            metadata_kwargs = {'parent': parent, 'child': self.child}
+            if defined_type:
+                item = item['files'][0]
+        return metadata_class(item, **metadata_kwargs).serialized()
+
     @asyncio.coroutine
     def download(self, path, accept_url=False, **kwargs):
         file_metadata = yield from self.metadata(path)
@@ -294,8 +310,6 @@ class FigshareArticleProvider(BaseFigshareProvider):
         article_json = yield from self._get_article_json()
         if figshare_path.file_id:
             file_json = figshare_utils.file_or_error(article_json, figshare_path.file_id)
-            if file_json is None:
-                raise exceptions.MetadataError
             return metadata.FigshareFileMetadata(file_json, parent=article_json, child=self.child).serialized()
         if figshare_path.is_dir:
             serialized = [
@@ -304,19 +318,3 @@ class FigshareArticleProvider(BaseFigshareProvider):
             ]
             return [each for each in serialized if each]
         return self._serialize_item(article_json, parent=article_json)
-
-    def _serialize_item(self, item, parent=None):
-        defined_type = item.get('defined_type')
-        files = item.get('files')
-        if defined_type == 'fileset':
-            metadata_class = metadata.FigshareArticleMetadata
-            metadata_kwargs = {}
-        elif defined_type and not files:
-            # Hide single-file articles with no contents
-            return None
-        else:
-            metadata_class = metadata.FigshareFileMetadata
-            metadata_kwargs = {'parent': parent, 'child': self.child}
-            if defined_type:
-                item = item['files'][0]
-        return metadata_class(item, **metadata_kwargs).serialized()

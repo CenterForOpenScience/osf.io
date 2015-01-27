@@ -159,7 +159,7 @@ class TestMetadata:
         result = yield from project_provider.metadata('/')
         assert aiohttpretty.has_call(method='GET', uri=list_articles_url)
         assert aiohttpretty.has_call(method='GET', uri=article_metadata_url)
-        article_provider = yield from project_provider._make_article_provider(list_project_articles[0]['id'], safe=True)
+        article_provider = yield from project_provider._make_article_provider(list_project_articles[0]['id'], check_parent=False)
         expected = [
             article_provider._serialize_item(
                 article_metadata['items'][0],
@@ -180,13 +180,14 @@ class TestMetadata:
         result = yield from project_provider.metadata(path)
         assert aiohttpretty.has_call(method='GET', uri=list_articles_url)
         assert aiohttpretty.has_call(method='GET', uri=article_metadata_url)
-        article_provider = yield from project_provider._make_article_provider(list_project_articles[0]['id'], safe=True)
+        article_provider = yield from project_provider._make_article_provider(list_project_articles[0]['id'], check_parent=False)
         expected = [
             article_provider._serialize_item(
                 article_metadata['items'][0]['files'][0],
                 parent=article_metadata['items'][0],
             ),
         ]
+        assert result == expected
 
     @async
     @pytest.mark.aiohttpretty
@@ -311,7 +312,6 @@ class TestCRUD:
         article_id = str(list_project_articles[0]['id'])
         file_id = str(file_metadata['id'])[::-1]
         path = '/{0}/{1}'.format(article_id, file_id)
-        body = b'castle on a cloud'
         list_articles_url = project_provider.build_url('projects', project_provider.project_id, 'articles')
         article_metadata_url = project_provider.build_url('articles', article_id)
         aiohttpretty.register_json_uri('GET', list_articles_url, body=list_project_articles)
