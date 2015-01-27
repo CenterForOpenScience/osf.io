@@ -6,7 +6,6 @@ import logging
 
 import furl
 import requests
-import markupsafe
 import itsdangerous
 from modularodm import Q
 from flask import request
@@ -56,8 +55,8 @@ def serialize_metadata_hgrid(item, node):
     """
     return {
         # Must escape names rendered by HGrid
-        'path': markupsafe.escape(item.path),
-        'name': markupsafe.escape(item.name),
+        'path': item.path,
+        'name': item.name,
         'ext': item.extension,
         rubeus.KIND: get_item_kind(item),
         'nodeUrl': node.url,
