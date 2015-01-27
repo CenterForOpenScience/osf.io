@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
-
 import os
 import logging
 import errno
 import codecs
+
+import mfr
+from mfr.ext import ALL_HANDLERS
+from mfr.exceptions import MFRError
 
 from framework.tasks import app
 from website import settings
@@ -11,8 +14,16 @@ from website.language import ERROR_PREFIX
 
 logger = logging.getLogger(__name__)
 
-import mfr
-from mfr.exceptions import MFRError
+# Ensure all filehandlers are registered. This MUST happen here so that
+# the handlers are registered when celery imports this module
+mfr.register_filehandlers(ALL_HANDLERS)
+# Update mfr config with static path and url
+mfr.config.update({
+    # Base URL for static files
+    'ASSETS_URL': os.path.join(settings.STATIC_URL_PATH, 'mfr'),
+    # Where to save static files
+    'ASSETS_FOLDER': os.path.join(settings.STATIC_FOLDER, 'mfr'),
+})
 
 CUSTOM_ERROR_MESSAGES = {}
 
@@ -67,7 +78,7 @@ if settings.USE_CELERY:
 
 def _build_css_asset(css_uri):
     """Wrap a css asset so it can be included on an html page"""
-    return '<link rel="stylesheet" href={uri}/>'.format(uri=css_uri)
+    return '<link rel="stylesheet" href="{uri}" />'.format(uri=css_uri)
 
 def _build_js_asset(js_uri):
     """Wrap a js asset so it can be included on an html page"""

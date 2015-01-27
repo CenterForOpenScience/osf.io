@@ -20,7 +20,7 @@
             href="/getting-started">Getting
         Started</a> videos, see the <a
             href="/4znZP/wiki/home">OSF
-        Features </a>page,</p> or see how other scientists <a href="/svje2/">use the OSF.</a>
+        Features </a>page, or see how other scientists <a href="/svje2/">use the OSF.</a></p>
 
 <h3>How can I use the OSF?</h3><p>OSF membership is open and free, so you can
     just register and get started!</p>

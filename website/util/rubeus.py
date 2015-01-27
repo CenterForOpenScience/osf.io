@@ -4,7 +4,6 @@
 """Contains helper functions for generating correctly
 formatted hgrid list/folders.
 """
-import os
 import datetime
 
 import hurry
@@ -19,7 +18,7 @@ from website.settings import (
 
 
 FOLDER = 'folder'
-FILE = 'item'
+FILE = 'file'
 KIND = 'kind'
 
 # TODO: Validate the JSON schema, esp. for addons
@@ -106,8 +105,8 @@ def build_addon_root(node_settings, name, permissions=None,
     if user and 'high_upload_limit' in user.system_tags:
         max_size = node_settings.config.high_max_file_size
 
-    rv = {
-        'addon': node_settings.config.short_name,
+    ret = {
+        'provider': node_settings.config.short_name,
         'addonFullname': node_settings.config.full_name,
         'name': name,
         'iconUrl': node_settings.config.icon_url,
@@ -122,9 +121,12 @@ def build_addon_root(node_settings, name, permissions=None,
         },
         'urls': urls,
         'isPointer': False,
+        'nodeId': node_settings.owner._id,
+        'nodeUrl': node_settings.owner.url,
+        'nodeApiUrl': node_settings.owner.api_url,
     }
-    rv.update(kwargs)
-    return rv
+    ret.update(kwargs)
+    return ret
 
 
 def build_addon_button(text, action, title=""):
@@ -440,16 +442,17 @@ class NodeFileCollector(object):
             else u'Private Component',
             'kind': FOLDER,
             'permissions': {
-                'edit': False,
+                'edit': node.can_edit(self.auth) and not node.is_registration,
                 'view': can_view,
             },
             'urls': {
-                'upload': os.path.join(node.api_url, 'osffiles') + '/',
+                'upload': None,
                 'fetch': None,
             },
             'children': children,
             'isPointer': not node.primary,
             'isSmartFolder': False,
+            'nodeID': node.resolve()._id,
         }
 
     def _collect_addons(self, node):

@@ -171,8 +171,7 @@ class TestProvisionNode(ContextTestCase):
         data.update(kwargs.pop('data', {}))
         return super(TestProvisionNode, self).make_context(data=data, **kwargs)
 
-    @mock.patch('website.conferences.utils.upload_attachments')
-    def test_provision(self, mock_upload):
+    def test_provision(self):
         with self.make_context():
             msg = message.ConferenceMessage()
             utils.provision_node(self.conference, msg, self.node, self.user)
@@ -182,10 +181,8 @@ class TestProvisionNode(ContextTestCase):
         assert_in(self.conference.endpoint, self.node.system_tags)
         assert_in(self.conference.endpoint, self.node.tags)
         assert_not_in('spam', self.node.system_tags)
-        mock_upload.assert_called_with(self.user, self.node, msg.attachments)
 
-    @mock.patch('website.conferences.utils.upload_attachments')
-    def test_provision_private(self, mock_upload):
+    def test_provision_private(self):
         self.conference.public_projects = False
         self.conference.save()
         with self.make_context():
@@ -195,10 +192,8 @@ class TestProvisionNode(ContextTestCase):
         assert_in(self.conference.admins[0], self.node.contributors)
         assert_in('emailed', self.node.system_tags)
         assert_not_in('spam', self.node.system_tags)
-        mock_upload.assert_called_with(self.user, self.node, msg.attachments)
 
-    @mock.patch('website.conferences.utils.upload_attachments')
-    def test_provision_spam(self, mock_upload):
+    def test_provision_spam(self):
         with self.make_context(data={'X-Mailgun-Sscore': message.SSCORE_MAX_VALUE + 1}):
             msg = message.ConferenceMessage()
             utils.provision_node(self.conference, msg, self.node, self.user)
@@ -206,46 +201,39 @@ class TestProvisionNode(ContextTestCase):
         assert_in(self.conference.admins[0], self.node.contributors)
         assert_in('emailed', self.node.system_tags)
         assert_in('spam', self.node.system_tags)
-        mock_upload.assert_called_with(self.user, self.node, msg.attachments)
 
     @mock.patch('website.conferences.utils.requests.put')
-    @mock.patch('website.addons.osfstorage.utils.get_upload_url')
+    @mock.patch('website.addons.osfstorage.utils.get_waterbutler_upload_url')
     def test_upload(self, mock_get_url, mock_put):
         mock_get_url.return_value = 'http://queen.com/'
         self.attachment.filename = 'hammer-to-fall'
         self.attachment.content_type = 'application/json'
         utils.upload_attachment(self.user, self.node, self.attachment)
         mock_get_url.assert_called_with(
-            self.node,
             self.user,
-            len(self.content),
-            self.attachment.content_type,
-            self.attachment.filename,
+            self.node,
+            path=self.attachment.filename,
         )
         mock_put.assert_called_with(
             mock_get_url.return_value,
             data=self.content,
-            headers={'Content-Type': self.attachment.content_type},
         )
 
     @mock.patch('website.conferences.utils.requests.put')
-    @mock.patch('website.addons.osfstorage.utils.get_upload_url')
+    @mock.patch('website.addons.osfstorage.utils.get_waterbutler_upload_url')
     def test_upload_no_file_name(self, mock_get_url, mock_put):
         mock_get_url.return_value = 'http://queen.com/'
         self.attachment.filename = ''
         self.attachment.content_type = 'application/json'
         utils.upload_attachment(self.user, self.node, self.attachment)
         mock_get_url.assert_called_with(
-            self.node,
             self.user,
-            len(self.content),
-            self.attachment.content_type,
-            settings.MISSING_FILE_NAME,
+            self.node,
+            path=settings.MISSING_FILE_NAME,
         )
         mock_put.assert_called_with(
             mock_get_url.return_value,
             data=self.content,
-            headers={'Content-Type': self.attachment.content_type},
         )
 
 

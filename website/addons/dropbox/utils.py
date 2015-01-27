@@ -52,7 +52,7 @@ class DropboxNodeLogger(object):
         params = {
             'project': self.node.parent_id,
             'node': self.node._primary_key,
-            'folder': self.node.get_addon('dropbox').folder
+            'folder': self.node.get_addon('dropbox', deleted=True).folder
         }
         # If logging a file-related action, add the file's view and download URLs
         if self.file_obj or self.path:

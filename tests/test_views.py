@@ -789,7 +789,7 @@ class TestUserProfile(OsfTestCase):
 
     def test_sanitization_of_edit_profile(self):
         url = api_url_for('edit_profile', uid=self.user._id)
-        post_data = {'name': 'fullname',  'value': 'new<b> name</b>'}
+        post_data = {'name': 'fullname', 'value': 'new<b> name</b>'}
         request = self.app.post(url, post_data, auth=self.user.auth)
         assert_equal('new name', request.json['name'])
 
@@ -1023,6 +1023,48 @@ class TestUserProfile(OsfTestCase):
         url = api_url_for('unserialize_jobs')
         res = self.app.put_json(url, payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
+
+    def test_get_current_user_gravatar_default_size(self):
+        url = api_url_for('current_user_gravatar')
+        res = self.app.get(url, auth=self.user.auth)
+        current_user_gravatar = res.json['gravatar_url']
+        assert_true(current_user_gravatar is not None)
+        url = api_url_for('get_gravatar', uid=self.user._id)
+        res = self.app.get(url, auth=self.user.auth)
+        my_user_gravatar = res.json['gravatar_url']
+        assert_equal(current_user_gravatar, my_user_gravatar)
+
+    def test_get_other_user_gravatar_default_size(self):
+        user2 = AuthUserFactory()
+        url = api_url_for('current_user_gravatar')
+        res = self.app.get(url, auth=self.user.auth)
+        current_user_gravatar = res.json['gravatar_url']
+        url = api_url_for('get_gravatar', uid=user2._id)
+        res = self.app.get(url, auth=self.user.auth)
+        user2_gravatar = res.json['gravatar_url']
+        assert_true(user2_gravatar is not None)
+        assert_not_equal(current_user_gravatar, user2_gravatar)
+
+    def test_get_current_user_gravatar_specific_size(self):
+        url = api_url_for('current_user_gravatar')
+        res = self.app.get(url, auth=self.user.auth)
+        current_user_default_gravatar = res.json['gravatar_url']
+        url = api_url_for('current_user_gravatar', size=11)
+        res = self.app.get(url, auth=self.user.auth)
+        current_user_small_gravatar = res.json['gravatar_url']
+        assert_true(current_user_small_gravatar is not None)
+        assert_not_equal(current_user_default_gravatar, current_user_small_gravatar)
+
+    def test_get_other_user_gravatar_specific_size(self):
+        user2 = AuthUserFactory()
+        url = api_url_for('get_gravatar', uid=user2._id)
+        res = self.app.get(url, auth=self.user.auth)
+        gravatar_default_size = res.json['gravatar_url']
+        url = api_url_for('get_gravatar', uid=user2._id, size=11)
+        res = self.app.get(url, auth=self.user.auth)
+        gravatar_small = res.json['gravatar_url']
+        assert_true(gravatar_small is not None)
+        assert_not_equal(gravatar_default_size, gravatar_small)
 
 
 class TestUserAccount(OsfTestCase):

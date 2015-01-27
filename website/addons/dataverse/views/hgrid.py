@@ -3,19 +3,16 @@
 import os
 
 from flask import request
-from mako.template import Template
 
 from website.addons.dataverse.client import get_study, get_files, \
     get_dataverse, connect_from_settings
 
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_addon
-from website.settings import BASE_PATH
 from website.util import rubeus
 
 
 def dataverse_hgrid_root(node_addon, auth, state=None, **kwargs):
-
     node = node_addon.owner
     user_settings = node_addon.user_settings
 
@@ -50,7 +47,7 @@ def dataverse_hgrid_root(node_addon, auth, state=None, **kwargs):
         study_name = u'{0}...'.format(study_name[:20])
 
     permissions = {
-        'edit': node.can_edit(auth) and not node.is_registration and state == 'draft',
+        'edit': node.can_edit(auth) and not node.is_registration,
         'view': node.can_view(auth)
     }
 
@@ -61,16 +58,6 @@ def dataverse_hgrid_root(node_addon, auth, state=None, **kwargs):
         'release': node.api_url_for('dataverse_release_study'),
     }
 
-    # Determine default state / selection permissions
-    template_file = os.path.join(
-        BASE_PATH, 'addons/dataverse/templates/dataverse_state_template.mako'
-    )
-    dataverse_state_template = Template(filename=template_file)
-    state_append = dataverse_state_template.render(
-        state=state,
-        has_released_files=bool(released_files),
-        authorized=authorized,
-    )
     buttons = [rubeus.build_addon_button(
         '<i class="icon-globe"></i> Release Study',
         'releaseStudy')] if state == 'draft' else None
@@ -80,28 +67,26 @@ def dataverse_hgrid_root(node_addon, auth, state=None, **kwargs):
         study_name,
         urls=urls,
         permissions=permissions,
-        extra=state_append,
         buttons=buttons,
         study=study_name,
         doi=study.doi,
         dataverse=dataverse.title,
         citation=study.citation,
+        hasReleasedFiles=bool(released_files),
+        state=state,
     )]
 
 
 @must_be_contributor_or_public
 @must_have_addon('dataverse', 'node')
 def dataverse_root_folder_public(node_addon, auth, **kwargs):
-
     state = request.args['state']
-
     return dataverse_hgrid_root(node_addon, auth=auth, state=state)
 
 
 @must_be_contributor_or_public
 @must_have_addon('dataverse', 'node')
 def dataverse_hgrid_data_contents(node_addon, auth, **kwargs):
-
     node = node_addon.owner
     user_settings = node_addon.user_settings
 
@@ -132,8 +117,10 @@ def dataverse_hgrid_data_contents(node_addon, auth, **kwargs):
 
         item = {
             'addon': 'dataverse',
-            rubeus.KIND: rubeus.FILE,
+            'provider': 'dataverse',
+            rubeus.KIND: 'file',
             'name': f.name,
+            'path': f.name,
             'file_id': f.id,
             'ext': os.path.splitext(f.name)[1],
             'urls': {
