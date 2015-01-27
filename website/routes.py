@@ -1104,6 +1104,13 @@ def make_url_map(app):
         ),
 
         Rule(
+            '/settings/batch_subscribe/',
+            'post',
+            notification_views.batch_subscribe,
+            json_renderer,
+        ),
+
+        Rule(
             [
                 '/project/<pid>/settings/addons/',
                 '/project/<pid>/node/<nid>/settings/addons/',
