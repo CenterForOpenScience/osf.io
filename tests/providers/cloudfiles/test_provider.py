@@ -4,16 +4,17 @@ from unittest import mock
 from tests.utils import async
 
 import io
+import json
 import time
 import hashlib
 
-import json
+import furl
 import aiohttp
 import aiohttp.multidict
 import aiohttpretty
 
-from waterbutler.core import exceptions
 from waterbutler.core import streams
+from waterbutler.core import exceptions
 
 from waterbutler.providers.cloudfiles import settings
 from waterbutler.providers.cloudfiles import CloudFilesProvider
@@ -348,8 +349,10 @@ class TestCRUD:
         path = CloudFilesPath('/lets-go-crazy')
         body = b'dearly-beloved'
         url = connected_provider.sign_url(path)
+        parsed_url = furl.furl(url)
+        parsed_url.args['filename'] = 'lets-go-crazy'
         result = yield from connected_provider.download(str(path), accept_url=True)
-        assert result == url
+        assert result == parsed_url.url
         aiohttpretty.register_uri('GET', url, body=body)
         response = yield from aiohttp.request('GET', url)
         content = yield from response.read()
