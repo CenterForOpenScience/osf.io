@@ -88,16 +88,16 @@ function Meeting(data) {
         showFilter : true,     // Gives the option to filter by showing the filter box.
         filterStyle : { 'float' : 'right', 'width' : '50%'},
         title : function() {
-            if(window.contextVars.tbInstructions === 'withLink') {
+            if(window.contextVars.tbInstructionsLink) {
                 return m('div', [
                     m('a', { href : window.contextVars.tbInstructionsLink, target : '_blank' }, 'Add your poster or talk')
                 ]);
-            }
-            if(window.contextVars.tbInstructions === 'withAnchor') {
+            } else {
                 return m('div', [
                     m('a', { href : "#submit" }, 'Add your poster or talk')
                 ]);
             }
+                
             return undefined;
         },
         allowMove : false,       // Turn moving on or off.

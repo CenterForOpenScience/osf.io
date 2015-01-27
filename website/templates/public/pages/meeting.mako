@@ -60,10 +60,7 @@
         window.contextVars.meetingData = ${data};
         
         % if meeting['active'] and meeting['info_url']:
-            window.contextVars.tbInstructions =  'withLink';
             window.contextVars.tbInstructionsLink =  '${ meeting['info_url'] }';
-        % else:
-            window.contextVars.tbInstructions =  'withAnchor'; 
         % endif
 
 
