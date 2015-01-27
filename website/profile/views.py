@@ -214,7 +214,10 @@ def user_notifications(auth, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
     return {
         'mailing_lists': auth.user.mailing_lists,
-        'user_subscriptions': find_user_level_subscriptions(auth.user),
+        'user_subscriptions': {
+            'id': auth.user._id,
+            'subscriptions': find_user_level_subscriptions(auth.user)
+        },
         'user_subscriptions_available': settings.USER_SUBSCRIPTIONS_AVAILABLE,
         'node_subscriptions': find_user_project_subscriptions(auth.user),
         'node_subscriptions_available': settings.SUBSCRIPTIONS_AVAILABLE
@@ -238,10 +241,11 @@ def find_user_project_subscriptions(user):
 def find_user_level_subscriptions(user):
     subscriptions = [s for s in Subscription.find(Q('object_id', 'eq', user._id))]
     user_subscriptions = {}
+    for subscription in settings.USER_SUBSCRIPTIONS_AVAILABLE:
+        user_subscriptions[subscription] = []
     for s in subscriptions:
-        user_subscriptions[s.event_name] = []
         for notification_type in settings.NOTIFICATION_TYPES:
-            if getattr(s, notification_type) and user.username in getattr(s, notification_type):
+            if getattr(s, notification_type) and user in getattr(s, notification_type):
                 user_subscriptions[s.event_name].append(notification_type)
 
     return user_subscriptions
