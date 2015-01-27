@@ -42,13 +42,11 @@ var entry = {
         'bootstrap',
         'bootbox',
         'select2',
-        'hgrid',
         'osfHelpers',
         'knockout-punches',
         'dropzone',
         'knockout-sortable',
-        'dropzonePatch',
-        'rubeus',
+        'treebeard',
         'jquery.cookie'
     ]
 };
@@ -89,7 +87,7 @@ var resolve = {
         // Needed for knockout-sortable
         'jquery.ui.sortable': staticPath('vendor/bower_components/jquery-ui/ui/jquery.ui.sortable.js'),
         // Dropzone doesn't have a proper 'main' entry in its bower.json
-        'dropzone': staticPath('vendor/bower_components/dropzone/downloads/dropzone.js'),
+        'dropzone': staticPath('vendor/bower_components/dropzone/dist/dropzone.js'),
         // Needed for ace code editor in wiki
         'ace-mode-markdown': staticPath('vendor/bower_components/ace-builds/src-noconflict/mode-markdown.js'),
         'ace-noconflict': staticPath('vendor/bower_components/ace-builds/src-noconflict/ace.js'),
@@ -97,15 +95,16 @@ var resolve = {
         'pagedown-ace-sanitizer': staticPath('vendor/pagedown-ace/Markdown.Sanitizer.js'),
         'pagedown-ace-editor': staticPath('vendor/pagedown-ace/Markdown.Editor.js'),
         // Also alias some internal libraries for easy access
-        'dropzonePatch': staticPath('js/dropzonePatch.js'),
-        'rubeus': staticPath('js/rubeus.js'),
+        'fangorn': staticPath('js/fangorn.js'),
+        'waterbutler': staticPath('js/waterbutler.js'),
         'folderpicker': staticPath('js/folderPicker.js'),
         'osfHelpers': staticPath('js/osfHelpers.js'),
         'osfLanguage': staticPath('js/osfLanguage.js'),
         'addons': path.join(__dirname, 'website', 'addons'),
         'addonHelper': staticPath('js/addonHelper.js'),
         'koHelpers': staticPath('js/koHelpers.js'),
-        'addonPermissions': staticPath('js/addonPermissions.js')
+        'addonPermissions': staticPath('js/addonPermissions.js'),
+        'navbar-control': staticPath('js/navbarControl.js')
     }
 };
 
@@ -114,9 +113,7 @@ var externals = {
     //  on the global var jQuery, which is loaded with CDN
     'jquery': 'jQuery',
     'jquery-ui': 'jQuery.ui',
-    'raven-js': 'Raven',
-    'hgrid': 'HGrid',
-    'dropzone': 'Dropzone'
+    'raven-js': 'Raven'
 };
 
 var plugins = [

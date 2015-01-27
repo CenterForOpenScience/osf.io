@@ -16,10 +16,6 @@
         <div><a href="#submit">Add your poster or talk</a></div>
     % endif
 
-    <div style="padding-bottom: 30px;">
-        Search results by title or author:
-        <input id="gridSearch" />
-    </div>
     <div id="grid" style="width: 100%;"></div>
 
     % if meeting['active'] and not meeting.get('info_url'):
@@ -56,6 +52,11 @@
         </div>
     % endif
 
+</%def>
+
+<%def name="stylesheets()">
+    ${parent.stylesheets()}
+    <link rel="stylesheet" href="/static/vendor/bower_components/hgrid/dist/hgrid.min.css" />
 </%def>
 
 <%def name="javascript_bottom()">

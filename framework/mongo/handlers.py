@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import logging
+
+import pymongo
 from flask import g
-from pymongo import MongoClient
 from werkzeug.local import LocalProxy
 
 from website import settings
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 def get_mongo_client():
     """Create MongoDB client and authenticate database.
     """
-    client = MongoClient(settings.DB_HOST, settings.DB_PORT)
+    client = pymongo.MongoClient(settings.DB_HOST, settings.DB_PORT)
 
     db = client[settings.DB_NAME]
 
@@ -102,3 +103,6 @@ def set_up_storage(schemas, storage_class, prefix='', addons=None, **kwargs):
                 **kwargs
             )
         )
+        # Allow models to define extra indices
+        for index in getattr(schema, '__indices__', []):
+            database[collection].ensure_index(**index)

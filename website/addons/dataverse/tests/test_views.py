@@ -7,7 +7,6 @@ import httplib as http
 from tests.factories import AuthUserFactory, PrivateLinkFactory
 from framework.auth.decorators import Auth
 from framework.exceptions import HTTPError
-from webtest import Upload
 from website.util import api_url_for, web_url_for
 from website.addons.dataverse.settings import HOST
 from website.addons.dataverse.views.config import serialize_settings
@@ -404,15 +403,15 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         # Contributor can select between states, current state is correct
         res = self.app.get(url, auth=self.user.auth)
         assert_in('released', res.json[0]['urls']['fetch'])
-        assert_false(res.json[0]['permissions']['edit'])
-        assert_in('<option value="released" selected>', res.json[0]['extra'])
+        assert_true(res.json[0]['hasReleasedFiles'])
+        assert_equal(res.json[0]['state'], 'released')
 
         # Non-contributor gets released version, no options
         user2 = AuthUserFactory()
         res = self.app.get(url, auth=user2.auth)
         assert_in('released', res.json[0]['urls']['fetch'])
         assert_false(res.json[0]['permissions']['edit'])
-        assert_not_in('select', res.json[0]['extra'])
+        assert_true(res.json[0]['hasReleasedFiles'])
 
     @mock.patch('website.addons.dataverse.views.hgrid.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.hgrid.request')
@@ -433,14 +432,12 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_in('draft', res.json[0]['urls']['fetch'])
         assert_true(res.json[0]['permissions']['edit'])
-        assert_in('<option value="draft" selected>', res.json[0]['extra'])
+        assert_true(res.json[0]['hasReleasedFiles'])
 
         # Non-contributor gets released version, no options
         user2 = AuthUserFactory()
         res = self.app.get(url, auth=user2.auth)
         assert_in('released', res.json[0]['urls']['fetch'])
-        assert_false(res.json[0]['permissions']['edit'])
-        assert_not_in('select', res.json[0]['extra'])
 
     @mock.patch('website.addons.dataverse.views.hgrid.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.hgrid.request')
@@ -461,7 +458,7 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_in('draft', res.json[0]['urls']['fetch'])
         assert_true(res.json[0]['permissions']['edit'])
-        assert_not_in('select', res.json[0]['extra'])
+        assert_false(res.json[0]['hasReleasedFiles'])
 
         # Non-contributor gets nothing
         user2 = AuthUserFactory()
@@ -516,13 +513,16 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         # Define payload
         filename = 'myfile.rst'
         content = 'bazbaz'
-        path = '54321'
-        payload = {'file': Upload(filename, content,'text/x-rst')}
 
         # Upload the file
         url = api_url_for('dataverse_upload_file',
-                          pid=self.project._primary_key, path=path)
-        res = self.app.post(url, payload, auth=self.user.auth)
+                          pid=self.project._primary_key, name=filename)
+        res = self.app.put(
+            url,
+            params=content,
+            auth=self.user.auth,
+            headers={'Content-Type': 'application/octet-stream'},
+        )
 
         # File was uploaded
         assert_equal(res.status_code, http.CREATED)
@@ -550,13 +550,16 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         # Define payload
         filename = 'myfile.rst'
         content = 'bazbaz'
-        path = '54321'
-        payload = {'file': Upload(filename, content,'text/x-rst')}
 
         # Attempt to upload the file
         url = api_url_for('dataverse_upload_file',
-                          pid=self.project._primary_key, path=path)
-        res = self.app.post(url, payload, auth=self.user.auth)
+                          pid=self.project._primary_key, name=filename)
+        res = self.app.put(
+            url,
+            params=content,
+            auth=self.user.auth,
+            headers={'Content-Type': 'application/octet-stream'},
+        )
 
         # Old file was deleted
         mock_delete.assert_called_once
@@ -585,14 +588,17 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         # Define payload
         filename = 'myfile.rst'
         content = 'baz'
-        path = '54321'
-        payload = {'file': Upload(filename, content,'text/x-rst')}
 
         # Attempt to upload the file
         url = api_url_for('dataverse_upload_file',
-                          pid=self.project._primary_key, path=path)
-        res = self.app.post(url, payload, auth=self.user.auth,
-                            expect_errors=True)
+                          pid=self.project._primary_key, name=filename)
+        res = self.app.put(
+            url,
+            params=content,
+            auth=self.user.auth,
+            headers={'Content-Type': 'application/octet-stream'},
+            expect_errors=True,
+        )
 
         # Old file was not deleted
         assert_false(mock_delete.call_count)
@@ -641,7 +647,8 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
     @mock.patch('website.addons.dataverse.views.crud.scrape_dataverse')
     @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
     @mock.patch('website.addons.dataverse.views.crud.get_files')
-    def test_dataverse_get_file_info_returns_filename_and_links(self, mock_get_files, mock_connection, mock_scrape):
+    @mock.patch('website.addons.dataverse.views.crud.fail_if_private')
+    def test_dataverse_get_file_info_returns_filename_and_links(self, mock_fail_if_private, mock_get_files, mock_connection, mock_scrape):
         mock_connection.return_value = create_mock_connection()
         mock_get_files.return_value = [create_mock_draft_file('foo')]
         mock_scrape.return_value = ('filename', 'content')
