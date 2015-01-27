@@ -421,9 +421,6 @@ function _downloadEvent (event, item, col) {
     } catch (e) {
         window.event.cancelBubble = true;
     }
-    if (item.data.provider === 'osfstorage') {
-        item.data.extra.downloads++;
-    }
     window.location = waterbutler.buildTreeBeardDownload(item);
 }
 
