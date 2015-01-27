@@ -166,6 +166,7 @@ function saveExpandState(item, callback) {
         collapseUrl = item.apiURL + 'collapse/';
         postAction = $osf.postJSON(collapseUrl, {});
         postAction.done(function () {
+            item.expand = false;
             if (typeof callback !== 'undefined') {
                 callback();
             }
@@ -175,6 +176,7 @@ function saveExpandState(item, callback) {
         expandUrl = item.apiURL + 'expand/';
         postAction = $osf.postJSON(expandUrl, {});
         postAction.done(function () {
+            item.expand = false;
             if (typeof callback !== 'undefined') {
                 callback();
             }
