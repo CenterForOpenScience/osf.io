@@ -448,7 +448,7 @@ function _removeEvent (event, item, col) {
         $('.tb-modal-footer .btn-success').html('<i> Deleting...</i>').attr('disabled', 'disabled');
         // delete from server, if successful delete from view
         var url = resolveconfigOption.call(this, item, 'resolveDeleteUrl', [item]);
-        url = url || waterbutler.buildTreebeardDelete(item);
+        url = url || waterbutler.buildTreeBeardDelete(item);
         $.ajax({
             url: url,
             type: 'DELETE'
