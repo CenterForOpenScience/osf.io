@@ -214,7 +214,7 @@ function _fangornUploadProgress(treebeard, file, progress) {
         treebeard.options.uploadInProgress = true;
         item.notify.update(msgText, 'success', column, 0);
     } else {
-        item.notify.update(msgText, 'success', column, 3000);
+        item.notify.update(msgText, 'success', column, 2000);
         treebeard.options.uploadInProgress = false;
     }
 }
@@ -309,6 +309,7 @@ function _fangornDragOver(treebeard, event) {
 function _fangornComplete(treebeard, file) {
     var item = file.treebeardParent;
     resolveconfigOption.call(treebeard, item, 'onUploadComplete', [item]);
+    _fangornOrderFolder.call(treebeard, item);
 }
 
 /**
@@ -532,7 +533,7 @@ function _fangornLazyLoadError (item) {
 
 /**
  * Called when new object data has arrived to be loaded.
- * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
+ * @param {Object} tree A Treebeard _item object for the row involved. Node information is inside item.data
  * @this Treebeard.controller
  * @private
  */
@@ -542,6 +543,21 @@ function _fangornLazyLoadOnLoad (tree) {
     });
     resolveconfigOption.call(this, tree, 'lazyLoadOnLoad', [tree]);
     $('[data-toggle="tooltip"]').tooltip();
+    _fangornOrderFolder.call(this, tree);
+}
+
+/**
+ * Order contents of a folder without an entire sorting of all the table
+ * @param {Object} tree A Treebeard _item object for the row involved. Node information is inside item.data
+ * @this Treebeard.controller
+ * @private
+ */
+function _fangornOrderFolder(tree) {
+    var sortDirection = this.isSorted[0].desc ? 'desc' : 'asc';
+    if (tree.depth > 1) {
+        tree.sortChildren(this, sortDirection, 'text', 0);
+        this.redraw();
+    }
 }
 
 /**
@@ -555,6 +571,7 @@ function _fangornUploadMethod(item) {
     var configOption = resolveconfigOption.call(this, item, 'uploadMethod', [item]);
     return configOption || 'PUT';
 }
+
 
 /**
  * Defines the contents for the action column, upload and download buttons etc.
