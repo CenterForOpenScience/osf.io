@@ -2,6 +2,23 @@
     <div class="row" id="ptd-{{ theItem.node_id }}">
 
         {{#if theItem.parentIsFolder}}
+            <div class="col-xs-12">
+                <span class="rename-container" id="rnc-{{theItem.node_id}}">
+                    <form action="">
+                          <fieldset class="project-detail-fields">
+                            <div class="row">
+                                <div class="col-xs-8">
+                                    <input class="typeahead" id="rename-node-input{{theItem.node_id}}" type="text" value="{{{theItem.name}}}" autofocus>
+                                </div>
+                                <div class="col-xs-4">
+                                    <input type="submit" class = "rename-node-btn btn btn-sm btn-default submit-button-{{ theItem.node_id }}" id="rename-node-button{{theItem.node_id}}" disabled="disabled" value="Rename">
+                                    <input type="reset" class = "btn btn-sm btn-default cancel-button-{{ theItem.node_id }}" value="Cancel">
+                                </div>
+                            </div>
+                          </fieldset>
+                    </form>
+                </span>
+            </div>
             <div class="col-sm-4">
                 <span class = "title">
                     <span class = "name-container" id="nc-{{theItem.node_id}}">
@@ -17,22 +34,6 @@
                 </span>
             </div>
             <div class="col-sm-8">
-                <span class="rename-container" id="rnc-{{theItem.node_id}}">
-                        <form action="">
-                              <fieldset class="project-detail-fields">
-                                <div class="row">
-                                    <div class="col-xs-8">
-                                        <input class="typeahead" id="rename-node-input{{theItem.node_id}}" type="text" value="{{{theItem.name}}}" autofocus>
-                                    </div>
-                                    <div class="col-xs-4">
-                                        <input type="submit" class = "rename-node-btn btn btn-sm btn-default submit-button-{{ theItem.node_id }}" id="rename-node-button{{theItem.node_id}}" disabled="disabled" value="Rename">
-                                        <input type="reset" class = "btn btn-sm btn-default cancel-button-{{ theItem.node_id }}" value="Cancel">
-                                    </div>
-                                </div>
-                              </fieldset>
-                        </form>
-                    </span>
-
                 {{#if theItem.isFolder}}
                     <div class = "organize-project-controls pull-right">
                         <div id = "buttons{{theItem.node_id}}">
@@ -46,13 +47,13 @@
                             <form action="">
                             <fieldset class="project-detail-fields">
                                 <div class="row">
-                                    <div class="col-xs-8">
+                                    <div class="col-xs-7 col-sm-12 col-md-7 col-lg-8">
                                         <input class="typeahead" id="input{{theItem.node_id}}" type="text" placeholder="Name of project to find" autofocus>
                                         <span class="add-link-warning" id="add-link-warn-{{theItem.node_id}}"></span>
                                     </div>
-                                    <div class="col-xs-4">
-                                    <input type="submit" class = "findBtn btn btn-sm btn-default" id="add-link-{{theItem.node_id}}" disabled="disabled" value="Add">
-                                        <input type="reset" class = "btn btn-sm btn-default cancel-button-{{ theItem.node_id }}" value="Cancel">
+                                    <div class="col-xs-5 col-sm-12 col-md-5 col-lg-4">
+                                        <input type="submit" class = "pull-left m-r-xs findBtn btn btn-sm btn-default" id="add-link-{{theItem.node_id}}" disabled="disabled" value="Add">
+                                        <input type="reset" class = "pull-left btn btn-sm btn-default cancel-button-{{ theItem.node_id }}" value="Cancel">
                                     </div>
                                 </div>
                             </fieldset>
@@ -67,8 +68,8 @@
                                      <input class = "typeahead" id="add-folder-input{{theItem.node_id}}" type="text" placeholder="Folder Name" autofocus>
                                 </div>
                                 <div class="col-xs-4">
-                                    <input type="submit" class = "addFolderBtn btn btn-sm btn-default submit-button-{{ theItem.node_id }}" id="add-folder-button{{theItem.node_id}}" disabled="disabled" value="Add">
-                                    <input type="reset" class = "btn btn-sm btn-default cancel-button-{{ theItem.node_id }}" value="Cancel">
+                                    <input type="submit" class = "pull-left m-r-xs addFolderBtn btn btn-sm btn-default submit-button-{{ theItem.node_id }}" id="add-folder-button{{theItem.node_id}}" disabled="disabled" value="Add">
+                                    <input type="reset" class = "pull-left btn btn-sm btn-default cancel-button-{{ theItem.node_id }}" value="Cancel">
                                 </div>
                             </div>
                             </fieldset>
@@ -93,7 +94,7 @@
         {{#unless theItem.parentIsFolder}}
             {{#unless theItem.isDashboard}}
                 <div class="col-xs-12">
-                    <span class = "title">
+                    <span class = "title">  
                         <span class = "name-container" id="nc-{{theItem.node_id}}">
                               {{#if theItem.isFolder}}{{{ theItem.name }}}{{/if}}
                               {{#unless theItem.isFolder}}<a href="{{ theItem.urls.fetch }}">{{{ theItem.name }}}</a>{{#if theItem.isRegistration}} (Registration){{/if}}
@@ -108,7 +109,7 @@
             {{/unless}}
             {{#if theItem.isDashboard}}
                 <div class="col-xs-4">
-                    <span class = "title">
+                    <span class="title">
                         <span class = "name-container" id="nc-{{theItem.node_id}}">
                               {{#if theItem.isFolder}}{{{ theItem.name }}}{{/if}}
                               {{#unless theItem.isFolder}}<a href="{{ theItem.urls.fetch }}">{{{ theItem.name }}}</a>{{#if theItem.isRegistration}} (Registration){{/if}}
@@ -130,13 +131,13 @@
                             <form action="">
                             <fieldset class="project-detail-fields">
                                 <div class="row">
-                                    <div class="col-xs-8">
+                                    <div class="col-xs-7 col-sm-12 col-md-7 col-lg-8">
                                         <input class="typeahead" id="input{{theItem.node_id}}" type="text" placeholder="Name of project to find" autofocus>
                                         <span class="add-link-warning" id="add-link-warn-{{theItem.node_id}}"></span>
                                     </div>
-                                    <div class="col-xs-4">
-                                    <input type="submit" class = "findBtn btn btn-sm btn-default" id="add-link-{{theItem.node_id}}" disabled="disabled" value="Add">
-                                        <input type="reset" class = "btn btn-sm btn-default cancel-button-{{ theItem.node_id }}" value="Cancel">
+                                    <div class="col-xs-5 col-sm-12 col-md-5 col-lg-4">
+                                        <input type="submit" class = "pull-left m-r-xs findBtn btn btn-sm btn-default" id="add-link-{{theItem.node_id}}" disabled="disabled" value="Add">
+                                        <input type="reset" class = "pull-left btn btn-sm btn-default cancel-button-{{ theItem.node_id }}" value="Cancel">
                                     </div>
                                 </div>
                             </fieldset>
@@ -147,12 +148,12 @@
                             <fieldset class="project-detail-fields">
 
                             <div class="row">
-                                <div class="col-xs-8">
+                                <div class="col-xs-7 col-sm-12 col-md-7 col-lg-8">
                                      <input class = "typeahead" id="add-folder-input{{theItem.node_id}}" type="text" placeholder="Folder Name" autofocus>
                                 </div>
-                                <div class="col-xs-4">
-                                    <input type="submit" class = "addFolderBtn btn btn-sm btn-default submit-button-{{ theItem.node_id }}" id="add-folder-button{{theItem.node_id}}" disabled="disabled" value="Add">
-                                    <input type="reset" class = "btn btn-sm btn-default cancel-button-{{ theItem.node_id }}" value="Cancel">
+                                <div class="col-xs-5 col-sm-12 col-md-5 col-lg-4">
+                                    <input type="submit" class = "pull-left m-r-xs addFolderBtn btn btn-sm btn-default submit-button-{{ theItem.node_id }}" id="add-folder-button{{theItem.node_id}}" disabled="disabled" value="Add">
+                                    <input type="reset" class = "pull-left btn btn-sm btn-default cancel-button-{{ theItem.node_id }}" value="Cancel">
                                 </div>
                             </div>
                             </fieldset>
@@ -161,21 +162,23 @@
                     </div>
                 </div>
             {{/if}}
-                <span class="rename-container" id="rnc-{{theItem.node_id}}">
-                      <form action="">
-                            <fieldset class="project-detail-fields">
-                              <div class="row">
-                                  <div class="col-xs-8">
-                                      <input class="typeahead" id="rename-node-input{{theItem.node_id}}" type="text" value="{{{theItem.name}}}" autofocus>
+                <div class="col-xs-12">
+                    <span class="rename-container" id="rnc-{{theItem.node_id}}">
+                          <form action="">
+                                <fieldset class="project-detail-fields">
+                                  <div class="row">
+                                      <div class="col-xs-8 col-sm-7 col-lg-9">
+                                          <input class="typeahead" id="rename-node-input{{theItem.node_id}}" type="text" value="{{{theItem.name}}}" autofocus>
+                                      </div>
+                                      <div class="col-xs-4 col-sm-5 col-lg-3">
+                                          <input type="submit" class = "rename-node-btn btn btn-sm btn-default submit-button-{{ theItem.node_id }}" id="rename-node-button{{theItem.node_id}}" disabled="disabled" value="Rename">
+                                          <input type="reset" class = "btn btn-sm btn-default cancel-button-{{ theItem.node_id }}" value="Cancel">
+                                      </div>
                                   </div>
-                                  <div class="col-xs-4">
-                                      <input type="submit" class = "rename-node-btn btn btn-sm btn-default submit-button-{{ theItem.node_id }}" id="rename-node-button{{theItem.node_id}}" disabled="disabled" value="Rename">
-                                      <input type="reset" class = "btn btn-sm btn-default cancel-button-{{ theItem.node_id }}" value="Cancel">
-                                  </div>
-                              </div>
-                            </fieldset>
-                      </form>
-                </span>
+                                </fieldset>
+                          </form>
+                    </span>
+                </div>
             </div>
         {{/unless}}
 
