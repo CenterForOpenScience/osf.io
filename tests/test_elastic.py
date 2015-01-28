@@ -429,20 +429,23 @@ class TestAddContributor(SearchTestCase):
         assert_equal(len(contribs['users']), 0)
 
 
-class TestSearchExceptions(SearchTestCase):
+class TestSearchExceptions(OsfTestCase):
     """
     Verify that the correct exception is thrown when the connection is lost
     """
-    def setUp(self):
+
+    @classmethod
+    def setUpClass(cls):
+        super(TestSearchExceptions, cls).setUpClass()
         if settings.SEARCH_ENGINE == 'elastic':
+            cls._es = search.search_engine.es
             search.search_engine.es = None
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(cls):
+        super(TestSearchExceptions, cls).tearDownClass()
         if settings.SEARCH_ENGINE == 'elastic':
-            search.search_engine.es = search.search_engine.Elasticsearch(
-                settings.ELASTIC_URI,
-                request_timeout=settings.ELASTIC_TIMEOUT
-            )
+            search.search_engine.es = cls._es
 
 
     def test_connection_error(self):
