@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from nose.tools import *  # noqa (PEP8 asserts)
-from box.client import BoxClient
+from boxview.boxview import BoxView
 
 from tests.base import OsfTestCase
 from tests.factories import UserFactory
@@ -50,7 +50,7 @@ class TestClientHelpers(OsfTestCase):
 
     def test_get_client_returns_a_box_client(self):
         client = get_client(self.user)
-        assert_true(isinstance(client, BoxClient))
+        assert_true(isinstance(client, BoxView))
 
     def test_get_client_raises_addon_error_if_user_doesnt_have_addon_enabled(self):
         user_no_box = UserFactory()
@@ -59,12 +59,12 @@ class TestClientHelpers(OsfTestCase):
 
     def test_get_node_addon_client(self):
         client = get_node_addon_client(self.node_settings)
-        assert_true(isinstance(client, BoxClient))
+        assert_true(isinstance(client, BoxView))
 
     def test_get_node_client(self):
         client = get_node_client(self.node)
-        assert_true(isinstance(client, BoxClient))
+        assert_true(isinstance(client, BoxView))
 
     def test_get_client_from_user_settings(self):
         client = get_client_from_user_settings(self.user_settings)
-        assert_true(isinstance(client, BoxClient))
+        assert_true(isinstance(client, BoxView))

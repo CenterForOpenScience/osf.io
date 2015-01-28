@@ -12,7 +12,7 @@ from webtest import Upload
 from framework.auth import Auth
 from website.util import api_url_for, web_url_for
 from website.project.model import NodeLog
-from box.rest import ErrorResponse
+from boxview.boxview import BoxViewError
 from urllib3.exceptions import MaxRetryError
 from tests.base import OsfTestCase, assert_is_redirect
 from tests.factories import AuthUserFactory
@@ -75,7 +75,7 @@ class TestAuthViews(OsfTestCase):
 
         mock_response = mock.Mock()
         mock_response.status = 401
-        mock_disable_access_token.side_effect = ErrorResponse(mock_response, "The given OAuth 2 access token doesn't exist or has expired.")
+        mock_disable_access_token.side_effect = BoxViewError(mock_response, "The given OAuth 2 access token doesn't exist or has expired.")
 
         self.user.save()
         url = api_url_for('box_oauth_delete_user')
@@ -108,7 +108,7 @@ class TestConfigViews(BoxAddonTestCase):
     def test_box_user_config_get_has_invalid_credentials(self, mock_account_info):
         mock_response = mock.Mock()
         mock_response.status = 401
-        mock_account_info.side_effect = ErrorResponse(mock_response, "The given OAuth 2 access token doesn't exist or has expired.")
+        mock_account_info.side_effect = BoxViewError(mock_response, "The given OAuth 2 access token doesn't exist or has expired.")
         url = api_url_for('box_user_config_get')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -163,7 +163,7 @@ class TestConfigViews(BoxAddonTestCase):
     def test_serialize_settings_invalid_credentials(self, mock_account_info):
         mock_response = mock.Mock()
         mock_response.status = 401
-        mock_account_info.side_effect = ErrorResponse(mock_response, "The given OAuth 2 access token doesn't exist or has expired.")
+        mock_account_info.side_effect = BoxViewError(mock_response, "The given OAuth 2 access token doesn't exist or has expired.")
         result = serialize_settings(self.node_settings, self.user)
         assert_false(result['validCredentials'])
 
@@ -383,7 +383,7 @@ class TestFilebrowserViews(BoxAddonTestCase):
     @mock.patch('website.addons.box.client.BoxClient.metadata')
     def test_box_hgrid_data_contents_returns_error_if_invalid_path(self, mock_metadata):
         mock_response = mock.Mock()
-        mock_metadata.side_effect = ErrorResponse(mock_response, body='File not found')
+        mock_metadata.side_effect = BoxViewError(mock_response, body='File not found')
         url = self.project.api_url_for('box_hgrid_data_contents')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.NOT_FOUND)
@@ -513,7 +513,7 @@ class TestCRUDViews(BoxAddonTestCase):
     def test_upload_file_with_invalid_credentials_throws_error(self, mock_put_file):
         mock_response = mock.Mock()
         mock_response.status = 401
-        mock_put_file.side_effect = ErrorResponse(mock_response, "The given OAuth 2 access token doesn't exist or has expired.")
+        mock_put_file.side_effect = BoxViewError(mock_response, "The given OAuth 2 access token doesn't exist or has expired.")
 
         payload = {'file': Upload('foobar.rst', b'baz', 'text/x-rst')}
         url = api_url_for('box_upload',
@@ -526,7 +526,7 @@ class TestCRUDViews(BoxAddonTestCase):
     def test_upload_file_non_401_errors_thrown_as_400(self, mock_put_file):
         mock_response = mock.Mock()
         mock_response.status = 404
-        mock_put_file.side_effect = ErrorResponse(mock_response, "Bad Request.")
+        mock_put_file.side_effect = BoxViewError(mock_response, "Bad Request.")
         payload = {'file': Upload('fizzbuzz.rst', b'baz', 'text/x-rst')}
         url = api_url_for('box_upload',
                 pid=self.project._primary_key,
