@@ -13,6 +13,8 @@ from framework.auth.core import Auth
 import website.search.search as search
 from website.search.util import build_query
 
+from website import settings
+
 
 @requires_search
 class SearchTestCase(OsfTestCase):
@@ -425,3 +427,36 @@ class TestAddContributor(SearchTestCase):
 
         contribs = search.search_contributor(self.name2.split(' ')[0][:-1])
         assert_equal(len(contribs['users']), 0)
+
+
+class TestSearchExceptions(OsfTestCase):
+    """
+    Verify that the correct exception is thrown when the connection is lost
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super(TestSearchExceptions, cls).setUpClass()
+        if settings.SEARCH_ENGINE == 'elastic':
+            cls._es = search.search_engine.es
+            search.search_engine.es = None
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestSearchExceptions, cls).tearDownClass()
+        if settings.SEARCH_ENGINE == 'elastic':
+            search.search_engine.es = cls._es
+
+
+    def test_connection_error(self):
+        """
+        Ensures that saving projects/users doesn't break as a result of connection errors
+        """
+        self.user = UserFactory(usename='Doug Bogie')
+        self.project = ProjectFactory(
+            title="Tom Sawyer",
+            creator=self.user,
+            is_public=True,
+        )
+        self.user.save()
+        self.project.save()
