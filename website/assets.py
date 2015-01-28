@@ -17,6 +17,8 @@ css = Bundle(
         'vendor/bower_components/x-editable/dist/bootstrap3-editable/css/bootstrap-editable.css',
         'vendor/bower_components/treebeard/dist/treebeard.css',
         'vendor/bower_components/bootstrap/dist/css/bootstrap-theme.css',
+        'vendor/bower_components/jquery-ui/themes/base/minified/jquery.ui.resizable.min.css',
+
         filters='cssmin'),
     # Site-specific CSS
     Bundle(
