@@ -30,7 +30,7 @@ function _fangornActionColumn (item, col) {
         });
     }
 
-    if (item.kind === 'file' && item.data.extra && item.data.extra.status !== 'public') {
+    if (item.kind === 'file' && item.data.extra && item.data.extra.status !== 'public' && item.data.permissions.edit) {
         buttons.push({
             'name' : '',
             'icon' : 'icon-remove',
