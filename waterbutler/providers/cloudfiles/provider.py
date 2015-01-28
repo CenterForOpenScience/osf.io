@@ -247,8 +247,8 @@ class CloudFilesProvider(provider.BaseProvider):
                 raise exceptions.ProviderError('No temp url key is available', code=503)
 
     def _extract_endpoints(self, data):
-        """Pulls the both the public and internal, returned respectively,
-        cloudfiles url from the return of tokens
+        """Pulls both the public and internal cloudfiles urls,
+        returned respectively, from the return of tokens
         Very optimized.
         :param dict data: The json response from the token endpoint
         :rtype (str, str):
