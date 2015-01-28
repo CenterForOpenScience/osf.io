@@ -1356,8 +1356,11 @@ class Node(GuidStoredObject, AddonModelMixin):
         return None
 
     def update_search(self):
-        import website.search.search as search
-        search.update_node(self)
+        from website import search
+        try:
+            search.search.update_node(self)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
 
     def remove_node(self, auth, date=None):
         """Marks a node as deleted.
