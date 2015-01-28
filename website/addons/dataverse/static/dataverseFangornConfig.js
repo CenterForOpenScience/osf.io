@@ -85,24 +85,23 @@ function _fangornActionColumn (item, col) {
         }
     }
 
-    // Download Zip File
-    if (item.kind === 'folder' && item.data.addonFullname && item.data.permissions.edit) {
-        buttons.push({
-            'name' : '',
-            'tooltip' : 'Upload file',
-            'icon' : 'icon-upload-alt',
-            'css' : 'fangorn-clickable btn btn-default btn-xs',
-            'onclick' : _uploadEvent
-        });
-        if (item.data.state === 'draft') {
-            buttons.push({
+    if (item.kind === 'folder' && item.data.addonFullname && item.data.state === 'draft' && item.data.permissions.edit) {
+        buttons.push(
+            {
+                'name' : '',
+                'tooltip' : 'Upload file',
+                'icon' : 'icon-upload-alt',
+                'css' : 'fangorn-clickable btn btn-default btn-xs',
+                'onclick' : _uploadEvent
+            },
+            {
                 'name' : ' Release Study',
                 'tooltip' : '',
                 'icon' : 'icon-globe',
                 'css' : 'btn btn-primary btn-xs',
                 'onclick' : dataverseRelease
-            });
-        }
+            }
+        );
     } else if (item.kind === 'folder' && !item.data.addonFullname) {
         buttons.push(
             {
