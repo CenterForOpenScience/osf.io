@@ -135,7 +135,7 @@ function createProjectDetailHTMLFromTemplate(theItem) {
 
 function createBlankProjectDetail(message) {
     var text = message || 'Select a row to view further actions.';
-    $detailDiv.html('<div class="row"> <div class="col-xs-12"> <i class="text-muted text-center po-placeholder"> ' + text + ' </i> </div> </div>');
+    $detailDiv.html('<div class="row text-muted "> <div class="col-xs-8"> <i class="text-center po-placeholder"> ' + text + ' </i> </div> <div class="col-xs-4"><i class="po-placeholder pull-right"> No Actions </i> </div>');
 }
 
 function triggerClickOnItem(item, force) {
@@ -448,7 +448,7 @@ function _showProjectDetails(event, item, col) {
             $('#findNode' + theItem.node_id).show();
         });
     } else {
-        createBlankProjectDetail('Smart folders don\'t have any actions.');
+        createBlankProjectDetail(theItem.name);
     }
 }
 
