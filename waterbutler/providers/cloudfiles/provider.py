@@ -88,7 +88,9 @@ class CloudFilesProvider(provider.BaseProvider):
         path = CloudFilesPath(path)
 
         if accept_url:
-            return self.sign_url(path, _endpoint=self.public_endpoint)
+            parsed_url = furl.furl(self.sign_url(path, _endpoint=self.public_endpoint))
+            parsed_url.args['filename'] = kwargs.get('displayName') or path.name
+            return parsed_url.url
 
         resp = yield from self.make_request(
             'GET',

@@ -81,7 +81,11 @@ class OSFStorageProvider(provider.BaseProvider):
         data = yield from resp.json()
         provider = self.make_provider(data['settings'])
         data['data']['path'] = '/' + data['data']['path']
-        return (yield from provider.download(**data['data']))
+        download_kwargs = {}
+        download_kwargs.update(kwargs)
+        download_kwargs.update(data['data'])
+        download_kwargs['displayName'] = kwargs.get('displayName') or kwargs['path']
+        return (yield from provider.download(**download_kwargs))
 
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):

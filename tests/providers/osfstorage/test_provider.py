@@ -101,7 +101,7 @@ def test_download(monkeypatch, provider_and_mock, osf_response):
     assert provider.make_provider.called
     assert inner_provider.download.called
 
-    inner_provider.download.assert_called_once_with(path='/test/path')
+    inner_provider.download.assert_called_once_with(path='/test/path', displayName='unrelatedpath')
     provider.make_provider.assert_called_once_with(osf_response['settings'])
 
 
