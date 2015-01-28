@@ -1,0 +1,51 @@
+body { 
+	width: 100%;
+}
+
+#content{
+	text-align: center;
+}
+
+#content-banner {
+	text-align: center;
+}
+
+#content-banner img{
+	width: 40%;
+}
+
+#content-title{
+	text-align: center;
+	font-family: Novecentosanswide-Normal; 
+	font-size:6em;
+	color: #333;
+}
+
+#content-text{
+	width: 60%;
+	margin-right: auto;
+	margin-left: auto;
+	text-align: center;
+	font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+	font-size: 1.2em;
+	color: #333;
+}
+
+#content-firstline{
+	font-size: 1.6em;
+	color: #0DA3E2;
+}
+
+a:link{
+	color: #0DA3E2;
+	text-decoration: none;
+}
+
+a:visited {
+    color: #0DA3E2;
+}
+
+a:hover{
+	color: #428bca;
+	text-decoration: underline;
+}
