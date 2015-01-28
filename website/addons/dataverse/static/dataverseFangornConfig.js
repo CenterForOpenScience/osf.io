@@ -120,7 +120,7 @@ function _fangornActionColumn (item, col) {
             css : 'btn btn-info btn-xs',
             onclick: _downloadEvent
         });
-        if (item.data.state === 'draft' && item.data.permissions.edit) {
+        if (item.parent().data.state === 'draft' && item.data.permissions.edit) {
             buttons.push({
                 name: '',
                 tooltip : 'Delete',
