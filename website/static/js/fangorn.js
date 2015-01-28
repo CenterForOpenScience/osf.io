@@ -583,9 +583,10 @@ function _fangornUploadMethod(item) {
 function _fangornActionColumn (item, col) {
     var self = this,
         buttons = [];
-    //
+
     // Upload button if this is a folder
-    if (item.kind === 'folder' && item.data.provider && item.data.permissions.edit) {
+    // If File and FileRead are not defined dropzone is not supported and neither is uploads
+    if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions.edit) {
         buttons.push({
             name: '',
             icon: 'icon-upload-alt',
@@ -801,10 +802,22 @@ tbOptions = {
     resolveRows : _fangornResolveRows,
     title : function() {
         if(window.contextVars.uploadInstruction) {
-            return m('p', [
-                m('span', 'To Upload: Drag files into a folder below OR click the '),
-                m('i.btn.btn-default.btn-xs', { disabled : 'disabled'}, [ m('span.icon-upload-alt')]),
-                m('span', ' below.')
+            // If File and FileRead are not defined dropzone is not supported and neither is uploads
+            if (window.File && window.FileReader) {
+                return m('p', {
+                }, [
+                    m('span', 'To Upload: Drag files into a folder below OR click the '),
+                    m('i.btn.btn-default.btn-xs', { disabled : 'disabled'}, [ m('span.icon-upload-alt')]),
+                    m('span', ' below.')
+                ]);
+            }
+            return m('p', {
+                class: 'text-danger'
+            }, [
+                m('span', 'Your browser does not support file uploads, ', [
+                    m('a', { href: 'http://browsehappy.com' }, 'learn more'),
+                    '.'
+                ])
             ]);
         }
         return undefined;
@@ -874,7 +887,8 @@ tbOptions = {
         clickable : '#treeGrid',
         addRemoveLinks: false,
         previewTemplate: '<div></div>',
-        parallelUploads: 10
+        parallelUploads: 10,
+        fallback: function(){},
     },
     resolveIcon : _fangornResolveIcon,
     resolveToggle : _fangornResolveToggle,
