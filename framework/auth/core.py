@@ -726,7 +726,7 @@ class User(GuidStoredObject, AddonModelMixin):
             search.search.update_user(self)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
-            log_exception(e)
+            log_exception()
 
     @classmethod
     def find_by_email(cls, email):

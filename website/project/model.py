@@ -1362,7 +1362,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             search.search.update_node(self)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
-            log_exception(e)
+            log_exception()
 
     def remove_node(self, auth, date=None):
         """Marks a node as deleted.
