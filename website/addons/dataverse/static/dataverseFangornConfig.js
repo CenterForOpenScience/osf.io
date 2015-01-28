@@ -136,7 +136,7 @@ function _fangornActionColumn (item, col) {
     }
     return m('.btn-group', [
             buttons.map(function(btn){
-                return m('i', { 'data-col' : item.id, 'class' : btn.css, 'data-toggle' : 'tooltip', title : btn.tooltip, 'data-placement': 'bottom',  style : btn.style, 'onclick' : function(){ btn.onclick.call(self, event, item, col); } },
+                return m('i', { 'data-col' : item.id, 'class' : btn.css, 'data-toggle' : 'tooltip', title : btn.tooltip, 'data-placement': 'bottom',  style : btn.style, 'onclick' : function(event){ btn.onclick.call(self, event, item, col); } },
                     [ m('span', { 'class' : btn.icon}, btn.name) ]);
             })
     ]);
