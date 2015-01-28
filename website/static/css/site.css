@@ -2094,3 +2094,6 @@ span#profileFullname{
     font-size: 18px;
     color: #555;
 }
+.break-word {
+    word-wrap: break-word;
+}

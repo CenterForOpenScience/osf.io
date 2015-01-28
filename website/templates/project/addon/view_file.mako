@@ -8,7 +8,7 @@
 % endif
 =======
     <div>
-        <h2>
+        <h2 class="break-word">
             ${file_name | h}
             % if file_revision:
                 <small>&nbsp;${file_revision | h}</small>

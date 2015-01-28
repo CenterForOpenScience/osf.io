@@ -22,8 +22,8 @@ var tempCounter = 1;
 function _fangornResolveIcon(item) {
     var privateFolder = m('img', { src : '/static/img/hgrid/fatcowicons/folder_delete.png' }),
         pointerFolder = m('i.icon-link', ' '),
-        openFolder  = m('i.icon-folder-open-alt', ' '),
-        closedFolder = m('i.icon-folder-close-alt', ' '),
+        openFolder  = m('i.icon-folder-open', ' '),
+        closedFolder = m('i.icon-folder-close', ' '),
         configOption = item.data.provider ? resolveconfigOption.call(this, item, 'folderIcon', [item]) : undefined,
         ext,
         extensions;
@@ -211,11 +211,9 @@ function _fangornUploadProgress(treebeard, file, progress) {
     msgText  += 'Uploaded ' + Math.floor(progress) + '%';
 
     if (progress < 100) {
-        treebeard.options.uploadInProgress = true;
         item.notify.update(msgText, 'success', column, 0);
     } else {
         item.notify.update(msgText, 'success', column, 2000);
-        treebeard.options.uploadInProgress = false;
     }
 }
 
@@ -440,16 +438,18 @@ function _removeEvent (event, item, col) {
     }
     var tb = this;
 
-    function cancelDelete () {
+    function cancelDelete() {
         this.modal.dismiss();
     }
-    function runDelete () {
+    function runDelete() {
         var tb = this;
         $('.tb-modal-footer .btn-success').html('<i> Deleting...</i>').attr('disabled', 'disabled');
         // delete from server, if successful delete from view
+        var url = resolveconfigOption.call(this, item, 'resolveDeleteUrl', [item]);
+        url = url || waterbutler.buildTreeBeardDelete(item);
         $.ajax({
-            url: waterbutler.buildTreeBeardDelete(item),
-            type : 'DELETE'
+            url: url,
+            type: 'DELETE'
         })
         .done(function(data) {
             // delete view
@@ -461,7 +461,6 @@ function _removeEvent (event, item, col) {
             item.notify.update('Delete failed.', 'danger', undefined, 3000);
         });
     }
-
 
     if (item.data.permissions.edit) {
         var mithrilContent = m('div', [
@@ -825,11 +824,11 @@ tbOptions = {
             tb.redraw();
         });
 
-        window.onbeforeunload = function(e) {
-            if (tb.options.uploadInProgress) {
+        $(window).on('beforeunload', function() {
+            if (tb.dropzone && tb.dropzone.getUploadingFiles().length) {
               return 'You have pending uploads, if you leave this page they may not complete.';
             }
-        };
+        });
     },
     createcheck : function (item, parent) {
         return true;
@@ -892,8 +891,7 @@ tbOptions = {
         error : _fangornDropzoneError,
         dragover : _fangornDragOver,
         addedfile : _fangornAddedFile
-    },
-    uploadInProgress : false
+    }
 };
 
 /**

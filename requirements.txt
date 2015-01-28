@@ -20,7 +20,7 @@ python-gnupg==0.3.6
 pytz==2014.9
 bleach==1.4.1
 blinker==1.3
-furl==0.4.2
+furl==0.4.4
 elasticsearch==1.3.0
 # Development version of modular-odm
 git+https://github.com/CenterForOpenScience/modular-odm.git@develop
