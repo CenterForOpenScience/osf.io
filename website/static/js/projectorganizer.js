@@ -895,7 +895,7 @@ function _poOver(event, ui) {
     var items = this.multiselected.length === 0 ? [this.find(this.selected)] : this.multiselected,
         folder = this.find($(event.target).attr('data-id')),
         dragState = dragLogic.call(this, event, items, ui);
-    $('.tb-row').removeClass('tb-h-success po-hover po-hover-multiselect');
+    $('.tb-row').removeClass('tb-h-success po-hover');
     if (dragState !== 'forbidden') {
         $('.tb-row[data-id="' + folder.id + '"]').addClass('tb-h-success');
     } else {
