@@ -1,5 +1,6 @@
 {
     "addons": [
+        "box",
         "dataverse",
         "dropbox",
         "figshare",
