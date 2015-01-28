@@ -211,11 +211,9 @@ function _fangornUploadProgress(treebeard, file, progress) {
     msgText  += 'Uploaded ' + Math.floor(progress) + '%';
 
     if (progress < 100) {
-        treebeard.options.uploadInProgress = true;
         item.notify.update(msgText, 'success', column, 0);
     } else {
         item.notify.update(msgText, 'success', column, 2000);
-        treebeard.options.uploadInProgress = false;
     }
 }
 
@@ -448,7 +446,7 @@ function _removeEvent (event, item, col) {
         $('.tb-modal-footer .btn-success').html('<i> Deleting...</i>').attr('disabled', 'disabled');
         // delete from server, if successful delete from view
         var url = resolveconfigOption.call(this, item, 'resolveDeleteUrl', [item]);
-        url = url || waterbutler.buildTreebeardDelete(item);
+        url = url || waterbutler.buildTreeBeardDelete(item);
         $.ajax({
             url: url,
             type: 'DELETE'
@@ -826,11 +824,11 @@ tbOptions = {
             tb.redraw();
         });
 
-        window.onbeforeunload = function(e) {
-            if (tb.options.uploadInProgress) {
+        $(window).on('beforeunload', function() {
+            if (tb.dropzone && tb.dropzone.getUploadingFiles().length) {
               return 'You have pending uploads, if you leave this page they may not complete.';
             }
-        };
+        });
     },
     createcheck : function (item, parent) {
         return true;
@@ -893,8 +891,7 @@ tbOptions = {
         error : _fangornDropzoneError,
         dragover : _fangornDragOver,
         addedfile : _fangornAddedFile
-    },
-    uploadInProgress : false
+    }
 };
 
 /**
