@@ -720,8 +720,11 @@ class User(GuidStoredObject, AddonModelMixin):
         return ret
 
     def update_search(self):
-        from website.search import search
-        search.update_user(self)
+        from website import search
+        try:
+            search.search.update_user(self)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
 
     @classmethod
     def find_by_email(cls, email):
