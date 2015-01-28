@@ -22,8 +22,8 @@ var tempCounter = 1;
 function _fangornResolveIcon(item) {
     var privateFolder = m('img', { src : '/static/img/hgrid/fatcowicons/folder_delete.png' }),
         pointerFolder = m('i.icon-link', ' '),
-        openFolder  = m('i.icon-folder-open-alt', ' '),
-        closedFolder = m('i.icon-folder-close-alt', ' '),
+        openFolder  = m('i.icon-folder-open', ' '),
+        closedFolder = m('i.icon-folder-close', ' '),
         configOption = item.data.provider ? resolveconfigOption.call(this, item, 'folderIcon', [item]) : undefined,
         ext,
         extensions;
@@ -211,11 +211,9 @@ function _fangornUploadProgress(treebeard, file, progress) {
     msgText  += 'Uploaded ' + Math.floor(progress) + '%';
 
     if (progress < 100) {
-        treebeard.options.uploadInProgress = true;
         item.notify.update(msgText, 'success', column, 0);
     } else {
-        item.notify.update(msgText, 'success', column, 3000);
-        treebeard.options.uploadInProgress = false;
+        item.notify.update(msgText, 'success', column, 2000);
     }
 }
 
@@ -250,6 +248,9 @@ function _fangornSending(treebeard, file, xhr, formData) {
  */
 function _fangornAddedFile(treebeard, file) {
     var item = file.treebeardParent;
+    if (!item.data.permissions.edit) {
+        return;
+    }
     var configOption = resolveconfigOption.call(treebeard, item, 'uploadAdd', [file, item]);
 
     var tmpID = tempCounter++;
@@ -290,7 +291,7 @@ function _fangornDragOver(treebeard, event) {
         item = treebeard.find(itemID);
     $('.tb-row').removeClass(dropzoneHoverClass).removeClass(treebeard.options.hoverClass);
     if (item !== undefined) {
-        if (item.data.provider && item.kind === 'folder') {
+        if (item.data.provider && item.kind === 'folder' && item.data.permissions.edit) {
             closestTarget.addClass(dropzoneHoverClass);
         }
     }
@@ -306,6 +307,7 @@ function _fangornDragOver(treebeard, event) {
 function _fangornComplete(treebeard, file) {
     var item = file.treebeardParent;
     resolveconfigOption.call(treebeard, item, 'onUploadComplete', [item]);
+    _fangornOrderFolder.call(treebeard, item);
 }
 
 /**
@@ -418,9 +420,6 @@ function _downloadEvent (event, item, col) {
     } catch (e) {
         window.event.cancelBubble = true;
     }
-    if (item.data.provider === 'osfstorage') {
-        item.data.extra.downloads++;
-    }
     window.location = waterbutler.buildTreeBeardDownload(item);
 }
 
@@ -439,16 +438,18 @@ function _removeEvent (event, item, col) {
     }
     var tb = this;
 
-    function cancelDelete () {
+    function cancelDelete() {
         this.modal.dismiss();
     }
-    function runDelete () {
+    function runDelete() {
         var tb = this;
         $('.tb-modal-footer .btn-success').html('<i> Deleting...</i>').attr('disabled', 'disabled');
         // delete from server, if successful delete from view
+        var url = resolveconfigOption.call(this, item, 'resolveDeleteUrl', [item]);
+        url = url || waterbutler.buildTreeBeardDelete(item);
         $.ajax({
-            url: waterbutler.buildTreeBeardDelete(item),
-            type : 'DELETE'
+            url: url,
+            type: 'DELETE'
         })
         .done(function(data) {
             // delete view
@@ -460,7 +461,6 @@ function _removeEvent (event, item, col) {
             item.notify.update('Delete failed.', 'danger', undefined, 3000);
         });
     }
-
 
     if (item.data.permissions.edit) {
         var mithrilContent = m('div', [
@@ -532,7 +532,7 @@ function _fangornLazyLoadError (item) {
 
 /**
  * Called when new object data has arrived to be loaded.
- * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
+ * @param {Object} tree A Treebeard _item object for the row involved. Node information is inside item.data
  * @this Treebeard.controller
  * @private
  */
@@ -542,6 +542,21 @@ function _fangornLazyLoadOnLoad (tree) {
     });
     resolveconfigOption.call(this, tree, 'lazyLoadOnLoad', [tree]);
     $('[data-toggle="tooltip"]').tooltip();
+    _fangornOrderFolder.call(this, tree);
+}
+
+/**
+ * Order contents of a folder without an entire sorting of all the table
+ * @param {Object} tree A Treebeard _item object for the row involved. Node information is inside item.data
+ * @this Treebeard.controller
+ * @private
+ */
+function _fangornOrderFolder(tree) {
+    var sortDirection = this.isSorted[0].desc ? 'desc' : 'asc';
+    if (tree.depth > 1) {
+        tree.sortChildren(this, sortDirection, 'text', 0);
+        this.redraw();
+    }
 }
 
 /**
@@ -555,6 +570,7 @@ function _fangornUploadMethod(item) {
     var configOption = resolveconfigOption.call(this, item, 'uploadMethod', [item]);
     return configOption || 'PUT';
 }
+
 
 /**
  * Defines the contents for the action column, upload and download buttons etc.
@@ -587,14 +603,17 @@ function _fangornActionColumn (item, col) {
             'icon' : 'icon-download-alt',
             'css' : 'btn btn-info btn-xs',
             'onclick' : _downloadEvent
-        }, {
-            'name' : '',
-            'tooltip' : 'Delete',
-            'icon' : 'icon-remove',
-            'css' : 'm-l-lg text-danger fg-hover-hide',
-            'style' : 'display:none',
-            'onclick' : _removeEvent
         });
+        if (item.data.permissions.edit) {
+            buttons.push({
+                'name' : '',
+                'tooltip' : 'Delete',
+                'icon' : 'icon-remove',
+                'css' : 'm-l-lg text-danger fg-hover-hide',
+                'style' : 'display:none',
+                'onclick' : _removeEvent
+            });
+        }
     }
     // Build the template for icons
     return buttons.map(function (btn) {
@@ -780,9 +799,17 @@ tbOptions = {
     uploads : true,         // Turns dropzone on/off.
     columnTitles : _fangornColumnTitles,
     resolveRows : _fangornResolveRows,
+    title : function() {
+        if(window.contextVars.uploadInstruction) {
+            return m('p', [
+                m('span', 'To Upload: Drag files into a folder below OR click the '),
+                m('i.btn.btn-default.btn-xs', { disabled : 'disabled'}, [ m('span.icon-upload-alt')]),
+                m('span', ' below.')
+            ]);
+        }
+        return undefined;
+    },
     showFilter : true,     // Gives the option to filter by showing the filter box.
-    filterStyle : { 'float' : 'right', 'width' : '50%'},
-    title : false,          // Title of the grid, boolean, string OR function that returns a string.
     allowMove : false,       // Turn moving on or off.
     hoverClass : 'fangorn-hover',
     togglecheck : _fangornToggleCheck,
@@ -797,11 +824,11 @@ tbOptions = {
             tb.redraw();
         });
 
-        window.onbeforeunload = function(e) {
-            if (tb.options.uploadInProgress) {
+        $(window).on('beforeunload', function() {
+            if (tb.dropzone && tb.dropzone.getUploadingFiles().length) {
               return 'You have pending uploads, if you leave this page they may not complete.';
             }
-        };
+        });
     },
     createcheck : function (item, parent) {
         return true;
@@ -820,23 +847,18 @@ tbOptions = {
         var maxSize;
         var displaySize;
         var msgText;
-        if (item.data.provider && item.kind === 'folder') {
-            if (item.data.permissions.edit) {
-                if (item.data.accept && item.data.accept.maxSize) {
-                    size = file.size / 1000000;
-                    maxSize = item.data.accept.maxSize;
-                    if (size > maxSize) {
-                        displaySize = Math.round(file.size / 10000) / 100;
-                        msgText = 'One of the files is too large (' + displaySize + ' MB). Max file size is ' + item.data.accept.maxSize + ' MB.';
-                        item.notify.update(msgText, 'warning', undefined, 3000);
-                        return false;
-                    }
+        if (item.data.provider && item.kind === 'folder' && item.data.permissions.edit) {
+            if (item.data.accept && item.data.accept.maxSize) {
+                size = file.size / 1000000;
+                maxSize = item.data.accept.maxSize;
+                if (size > maxSize) {
+                    displaySize = Math.round(file.size / 10000) / 100;
+                    msgText = 'One of the files is too large (' + displaySize + ' MB). Max file size is ' + item.data.accept.maxSize + ' MB.';
+                    item.notify.update(msgText, 'warning', undefined, 3000);
+                    return false;
                 }
-                return true;
-            } else {
-                msgText = 'You don\'t have permission to upload here';
-                item.notify.update(msgText, 'warning', 1, 3000, 'animated flipInX');
             }
+            return true;
         }
         return false;
     },
@@ -869,8 +891,7 @@ tbOptions = {
         error : _fangornDropzoneError,
         dragover : _fangornDragOver,
         addedfile : _fangornAddedFile
-    },
-    uploadInProgress : false
+    }
 };
 
 /**
@@ -911,7 +932,8 @@ Fangorn.DefaultColumns = {
 };
 
 Fangorn.Utils = {
-    inheritFromParent: inheritFromParent
+    inheritFromParent: inheritFromParent,
+    resolveconfigOption: resolveconfigOption
 };
 
 module.exports = Fangorn;

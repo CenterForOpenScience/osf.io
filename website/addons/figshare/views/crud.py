@@ -363,9 +363,9 @@ def figshare_view_file(*args, **kwargs):
                 download_url=download_url,
             )
 
-    categories = connect.categories()['items']  # TODO Cache this
-    categories = ''.join(
-        ["<option value='{val}'>{label}</option>".format(val=i['id'], label=i['name']) for i in categories])
+    # categories = connect.categories()['items']  # TODO Cache this
+    # categories = ''.join(
+    #     ["<option value='{val}'>{label}</option>".format(val=i['id'], label=i['name']) for i in categories])
 
     rv = {
         'node': {
@@ -379,9 +379,10 @@ def figshare_view_file(*args, **kwargs):
         'doi': 'http://dx.doi.org/10.6084/m9.figshare.{0}'.format(article['items'][0]['article_id']),
         'parent_type': 'fileset' if article['items'][0]['defined_type'] == 'fileset' else 'singlefile',
         'parent_id': article['items'][0]['article_id'],
-        'figshare_categories': categories,
+        # 'figshare_categories': categories,
         'figshare_title': article['items'][0]['title'],
         'figshare_desc': article['items'][0]['description'],
+        'render_url': render_url,
         'urls': {
             'render': render_url,
             'download': found.get('download_url'),

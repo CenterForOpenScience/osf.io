@@ -3,6 +3,7 @@ from website import mailchimp_utils
 from tests.base import OsfTestCase
 from nose.tools import *  # PEP8 asserts
 from tests.factories import UserFactory
+import mailchimp
 
 
 class TestMailChimpHelpers(OsfTestCase):
@@ -42,6 +43,17 @@ class TestMailChimpHelpers(OsfTestCase):
                                                                    'lname': user.family_name},
                                                        double_optin=False,
                                                        update_existing=True)
+
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_subscribe_fake_email_does_not_throw_validation_error(self, mock_get_mailchimp_api):
+        list_name = 'foo'
+        user = UserFactory(username='fake@fake.com')
+        mock_client = mock.MagicMock()
+        mock_get_mailchimp_api.return_value = mock_client
+        mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
+        mock_client.lists.subscribe.side_effect = mailchimp.ValidationError
+        mailchimp_utils.subscribe(list_name, user)
+        assert_false(user.mailing_lists[list_name])
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_unsubscribe_called_with_correct_arguments(self, mock_get_mailchimp_api):

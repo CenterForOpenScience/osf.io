@@ -15,7 +15,6 @@ from website.addons.osfstorage.tests import factories
 import urlparse
 
 import furl
-import markupsafe
 
 from framework.auth import signing
 from website import settings
@@ -243,9 +242,9 @@ class TestViewFile(StorageTestCase):
         assert_equal(redirect_parsed.path.strip('/'), file_obj._id)
 
     def test_view_file_does_not_create_guid_if_exists(self):
-        _ = self.view_file(self.path)
+        self.view_file(self.path)
         n_objs = model.OsfStorageGuidFile.find().count()
-        res = self.view_file(self.path)
+        self.view_file(self.path)
         assert_equal(n_objs, model.OsfStorageGuidFile.find().count())
 
     def test_view_file_deleted_throws_error(self):
@@ -262,7 +261,7 @@ class TestViewFile(StorageTestCase):
         record.versions.append(version)
         record.save()
         res = self.view_file(path).follow(auth=self.project.creator.auth)
-        assert markupsafe.escape(record.name) in res
+        assert record.name in res
 
 
 class TestGetRevisions(StorageTestCase):

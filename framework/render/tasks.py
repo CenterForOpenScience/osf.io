@@ -78,7 +78,7 @@ if settings.USE_CELERY:
 
 def _build_css_asset(css_uri):
     """Wrap a css asset so it can be included on an html page"""
-    return '<link rel="stylesheet" href={uri}/>'.format(uri=css_uri)
+    return '<link rel="stylesheet" href="{uri}" />'.format(uri=css_uri)
 
 def _build_js_asset(js_uri):
     """Wrap a js asset so it can be included on an html page"""

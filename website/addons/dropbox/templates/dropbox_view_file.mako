@@ -2,9 +2,6 @@
 
 <%def name="file_versions()">
 <div class="scripted" id="revisionScope">
-    <div id="deletingAlert" class="alert alert-warning fade">
-        Deleting your file…
-    </div>
 
     <ol class="breadcrumb">
         <li><a data-bind="attr: {href: filesUrl()}">{{nodeTitle}}</a></li>

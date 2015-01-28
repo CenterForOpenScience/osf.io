@@ -2,10 +2,12 @@ var xhook = require('../vendor/bower_components/xhook/dist/xhook.js').xhook;
 var URI = require('../vendor/bower_components/uri.js/src/URI.js');
 var jquery = require('jquery');
 
+var xdrExists = navigator.appVersion.indexOf('MSIE 9.') !== -1;
+
 // Adapted from http://jpillora.com/xhook/example/ie-8-9-cors-polyfill.html
 xhook.before(function(request, callback) {
   // Skip modern browsers
-  if (!window.XDomainRequest) {
+  if (!xdrExists) {
     return callback();
   }
   // Skip same-origin requests
@@ -55,6 +57,6 @@ xhook.before(function(request, callback) {
 jquery.support.cors = true;
 
 // Hack: Disable xhook if not using MSIE
-if (!window.XDomainRequest) {
+if (!xdrExists) {
     xhook.disable();
 }

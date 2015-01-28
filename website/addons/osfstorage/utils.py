@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-# encoding: utf-8
+# -*- coding: utf-8 -*-
 
 import os
 import httplib
@@ -7,7 +6,6 @@ import logging
 
 import furl
 import requests
-import markupsafe
 import itsdangerous
 from modularodm import Q
 from flask import request
@@ -57,8 +55,8 @@ def serialize_metadata_hgrid(item, node):
     """
     return {
         # Must escape names rendered by HGrid
-        'path': markupsafe.escape(item.path),
-        'name': markupsafe.escape(item.name),
+        'path': item.path,
+        'name': item.name,
         'ext': item.extension,
         rubeus.KIND: get_item_kind(item),
         'nodeUrl': node.url,
@@ -145,9 +143,9 @@ def get_filename(version_idx, file_version, file_record):
     :param FileRecord file_record: Root file object
     """
     if version_idx == len(file_record.versions):
-        return '/' + file_record.name
+        return file_record.name
     name, ext = os.path.splitext(file_record.name)
-    return u'/{name}-{date}{ext}'.format(
+    return u'{name}-{date}{ext}'.format(
         name=name,
         date=file_version.date_created.isoformat(),
         ext=ext,
@@ -192,8 +190,16 @@ def get_waterbutler_url(user, *path, **query):
 
 def get_waterbutler_download_url(version_idx, file_version, file_record, user=None, **query):
     nid = file_record.node._id
-    path = get_filename(version_idx, file_version, file_record)
-    return get_waterbutler_url(user, 'file', nid=nid, path=path, **query)
+    display_name = get_filename(version_idx, file_version, file_record)
+    return get_waterbutler_url(
+        user,
+        'file',
+        nid=nid,
+        path='/' + file_record.name,
+        displayName=display_name,
+        version=version_idx,
+        **query
+    )
 
 
 def get_waterbutler_upload_url(user, node, path, **query):
@@ -222,7 +228,12 @@ def render_file(version_idx, file_version, file_record):
     node_settings = file_obj.node.get_addon('osfstorage')
     rendered = get_cache_content(node_settings, cache_file_name)
     if rendered is None:
-        download_url = get_waterbutler_download_url(version_idx, file_version, file_record, mode='render')
+        download_url = get_waterbutler_download_url(
+            version_idx,
+            file_version,
+            file_record,
+            mode='render',
+        )
         file_response = requests.get(download_url)
         rendered = get_cache_content(
             node_settings,

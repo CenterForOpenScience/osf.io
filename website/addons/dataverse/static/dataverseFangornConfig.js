@@ -25,7 +25,6 @@ function _uploadUrl(item, file) {
 
 function _downloadEvent(event, item, col) {
     event.stopPropagation();
-    console.log('Download Event triggered', this, event, item, col);
     window.location = item.data.urls.download;
 }
 
@@ -38,7 +37,6 @@ function _fangornActionColumn (item, col) {
         event.stopPropagation();
         this.dropzone.hiddenFileInput.click();
         this.dropzoneItemCache = item;
-        console.log('Upload Event triggered', this, event,  item, col);
     }
 
     function dataverseRelease(event, item, col) {
@@ -71,7 +69,6 @@ function _fangornActionColumn (item, col) {
                 ];
                 self.modal.update(modalContent, modalActions);
             }).fail( function(args) {
-                console.log('Returned error:', args);
                 var message = args.responseJSON.code === 400 ?
                     'Error: Something went wrong when attempting to release your study.' :
                     'Error: This version has already been released.';
@@ -84,27 +81,6 @@ function _fangornActionColumn (item, col) {
                 ];
                 self.modal.update(modalContent, modalActions);
                 //self.updateItem(row);
-            });
-        }
-    }
-
-    function _removeEvent (event, item, col) {
-        event.stopPropagation();
-        console.log('Remove Event triggered', this, event, item, col);
-        var tb = this;
-        if (item.data.permissions.edit) {
-            // delete from server, if successful delete from view
-            $.ajax({
-              url: item.data.urls.delete,
-              type : 'DELETE'
-            })
-            .done(function(data) {
-                // delete view
-                tb.deleteNode(item.parentID, item.id);
-                console.log('Delete success: ', data);
-            })
-            .fail(function(data){
-                console.log('Delete failed: ', data);
             });
         }
     }
@@ -149,18 +125,18 @@ function _fangornActionColumn (item, col) {
         }
         if (item.data.state === 'draft' || item.data.permissions.edit) {
             buttons.push({
-                'name' : '',
-                'tooltip' : 'Delete',
-                'icon' : 'icon-remove',
-                'css' : 'm-l-lg text-danger fg-hover-hide',
-                'style' : 'display:none',
-                'onclick' : _removeEvent
+                name: '',
+                tooltip : 'Delete',
+                icon: 'icon-remove',
+                css: 'm-l-lg text-danger fg-hover-hide',
+                style: 'display:none',
+                onclick: Fangorn.ButtonEvents._removeEvent
             });
         }
     }
     return m('.btn-group', [
             buttons.map(function(btn){
-                return m('i', { 'data-col' : item.id, 'class' : btn.css, 'data-toggle' : 'tooltip', title : btn.tooltip, 'data-placement': 'bottom',  style : btn.style, 'onclick' : function(){ btn.onclick.call(self, event, item, col); } },
+                return m('i', { 'data-col' : item.id, 'class' : btn.css, 'data-toggle' : 'tooltip', title : btn.tooltip, 'data-placement': 'bottom',  style : btn.style, 'onclick' : function(event){ btn.onclick.call(self, event, item, col); } },
                     [ m('span', { 'class' : btn.icon}, btn.name) ]);
             })
     ]);
@@ -197,7 +173,6 @@ function _fangornDataverseTitle(item, col) {
         return m('span',[
             m('dataverse-name', {
                 onclick: function() {
-                    console.log(item);
                     window.location = item.data.urls.view;
                 }}, item.data.name
              )
@@ -211,20 +186,20 @@ function _fangornColumns(item) {
         data : 'name',
         folderIcons : true,
         filter : true,
-        custom: _fangornDataverseTitle,
+        custom: _fangornDataverseTitle
     });
 
     if (this.options.placement === 'project-files') {
         columns.push(
             {
-                css : 'action-col',
+                css: 'action-col',
                 filter: false,
-                custom : _fangornActionColumn
+                custom: _fangornActionColumn
             },
             {
-                data  : 'downloads',
-                filter : false,
-                css : ''
+                data: 'downloads',
+                filter: false,
+                css: ''
             }
         );
     }
@@ -239,6 +214,10 @@ function _fangornFolderIcons(item){
     return undefined;
 }
 
+function _fangornDeleteUrl(item) {
+    return item.data.urls.delete;
+}
+
 function _fangornLazyLoad(item) {
     return item.data.urls.fetch;
 }
@@ -246,6 +225,7 @@ function _fangornLazyLoad(item) {
 Fangorn.config.dataverse = {
     // Handle changing the branch select
     folderIcon: _fangornFolderIcons,
+    resolveDeleteUrl: _fangornDeleteUrl,
     resolveRows: _fangornColumns,
     lazyload:_fangornLazyLoad,
     uploadUrl: _uploadUrl

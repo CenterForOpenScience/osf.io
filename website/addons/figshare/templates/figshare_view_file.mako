@@ -4,7 +4,7 @@
 <%def name="file_versions()">
 <div class="scripted" id="figshareScope">
 <h3>Status: <span class="label label-${'success' if file_status == 'Public' else 'warning'}"> ${file_status}</span></h3>
-% if file_status != 'Public' and parent_type == 'singlefile':
+## % if file_status != 'Public' and parent_type == 'singlefile':
 <!--<a id="figsharePublishArticle" class="btn btn-danger">Publish</a><h3>
 <script type="text/javascript">
 $('#figsharePublishArticle').on('click', function(){
@@ -22,12 +22,7 @@ $('#figsharePublishArticle').on('click', function(){
 });
 </script>
 -->
-% endif
-
-    <div class="alert alert-warning" data-bind="visible: deleting">
-        Deleting your file…
-    </div>
-
+## % endif
     <ol class="breadcrumb">
         <li class="active overflow"><a href=${urls['files']}>${node['title']}</a></li>
         <li>Figshare</li>
@@ -58,11 +53,11 @@ $('#figsharePublishArticle').on('click', function(){
             % endif
     </p>
 
-%if file_versions:
-    <p>Versions: ${file_version}
+%if file_version:
+    <p>Version: ${file_version}
     <a href="${urls['version']}">Version History</a></p>
 %endif
-%if figshare_url and not node['anonymous']:
+%if urls.get('figshare') and not node['anonymous']:
     <p><a href="${urls['figshare']}">View on FigShare</a></p>
 %endif
 
@@ -76,7 +71,7 @@ $('#figsharePublishArticle').on('click', function(){
                 urls: {
                     delete_url: '${urls['delete']}',
                     files_page_url: '${urls['files']}'
-                    }
+                }
             }
         });
     </script>
