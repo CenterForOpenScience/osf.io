@@ -6,6 +6,7 @@ from collections import namedtuple
 
 from flask import request
 from werkzeug.wrappers import BaseResponse
+#TODO: (mfraezz) fix oauth for box
 #from box.client import BoxOAuth2Flow
 
 from framework.flask import redirect  # VOL-aware redirect
@@ -22,7 +23,7 @@ from website.project.decorators import must_have_addon
 
 from website.addons.box import settings
 from website.addons.box.client import get_client_from_user_settings
-#from box.rest import ErrorResponse
+from boxview.boxview import BoxViewError
 
 
 logger = logging.getLogger(__name__)
@@ -128,7 +129,7 @@ def box_oauth_delete_user(user_addon, auth, **kwargs):
     try:
         client = get_client_from_user_settings(user_addon)
         client.disable_access_token()
-    except ErrorResponse as error:
+    except BoxViewError as error:
         if error.status == 401:
             pass
         else:
@@ -156,7 +157,7 @@ def box_user_config_get(user_addon, auth, **kwargs):
         try:
             client = get_client_from_user_settings(user_addon)
             client.account_info()
-        except ErrorResponse as error:
+        except BoxViewError as error:
             if error.status == 401:
                 valid_credentials = False
             else:

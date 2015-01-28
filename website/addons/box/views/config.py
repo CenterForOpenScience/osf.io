@@ -16,7 +16,7 @@ from website.util import web_url_for
 
 from website.addons.box import utils
 from website.addons.box.client import get_client_from_user_settings
-#from box.rest import ErrorResponse
+from boxview.boxview import BoxViewError
 
 
 @collect_auth
@@ -99,7 +99,7 @@ def serialize_settings(node_settings, current_user, client=None):
         try:
             client = client or get_client_from_user_settings(user_settings)
             client.account_info()
-        except ErrorResponse as error:
+        except BoxViewError as error:
             if error.status == 401:
                 valid_credentials = False
             else:

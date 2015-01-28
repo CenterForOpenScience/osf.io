@@ -4,7 +4,7 @@ import os
 import httplib as http
 
 from flask import request
-from box.rest import ErrorResponse
+from boxview.boxview import BoxViewError
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
@@ -71,7 +71,7 @@ def box_upload(node_addon, auth, **kwargs):
             abort_if_not_subdir(path, node_addon.folder)
         try:
             metadata = client.put_file(filepath, file_obj)
-        except ErrorResponse as error:
+        except BoxViewError as error:
             if error.status == 401:
                 raise HTTPError(http.UNAUTHORIZED, data=dict(message_short='Invalid Access Token',
                                                              message_long='Your Box token is no longer valid. '

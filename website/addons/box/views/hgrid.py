@@ -3,7 +3,7 @@
 import httplib as http
 
 from flask import request
-from box.rest import ErrorResponse
+from boxview.boxview import BoxViewError
 from urllib3.exceptions import MaxRetryError
 
 from framework.exceptions import HTTPError
@@ -50,7 +50,7 @@ def box_hgrid_data_contents(node_addon, auth, **kwargs):
 
     try:
         metadata = client.metadata(path)
-    except ErrorResponse:
+    except BoxViewError:
         raise file_not_found
     except MaxRetryError:
         raise max_retry_error

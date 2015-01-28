@@ -4,7 +4,7 @@ import logging
 import httplib as http
 
 from flask import make_response
-#from box.rest import ErrorResponse
+from boxview.boxview import BoxViewError
 
 from framework.exceptions import HTTPError
 from website.project.utils import get_cache_content
@@ -149,7 +149,7 @@ def render_box_file(file_obj, client=None, rev=None):
         try:
             file_response, metadata = box_client.get_file_and_metadata(
                 file_obj.path, rev=rev)
-        except ErrorResponse as err:
+        except BoxViewError as err:
             logger.error(err.body['error'])
             if err.status == 461:
                 message = ('This file is no longer available due to a takedown request '
