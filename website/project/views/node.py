@@ -951,6 +951,11 @@ def get_summary(**kwargs):
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
     rescale_ratio = kwargs.get('rescale_ratio')
+    if rescale_ratio is None and request.args.get('rescale_ratio'):
+        try:
+            rescale_ratio = float(request.args.get('rescale_ratio'))
+        except (TypeError, ValueError):
+            raise HTTPError(http.BAD_REQUEST)
     primary = kwargs.get('primary')
     link_id = kwargs.get('link_id')
 
@@ -988,20 +993,20 @@ def get_folder_pointers(**kwargs):
 
 
 @must_be_contributor_or_public
-def get_forks(**kwargs):
+def get_forks(auth, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     forks = node_to_use.node__forked.find(
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', False)
     )
-    return _render_nodes(forks)
+    return _render_nodes(forks, auth)
 
 
 @must_be_contributor_or_public
-def get_registrations(**kwargs):
+def get_registrations(auth, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     registrations = node_to_use.node__registrations
-    return _render_nodes(registrations)
+    return _render_nodes(registrations, auth)
 
 
 @must_be_valid_project  # returns project

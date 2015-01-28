@@ -8,16 +8,15 @@ function _fangornActionColumn (item, col) {
     var self = this;
     var buttons = [];
 
-    if (item.kind === 'folder') {
-        buttons.push(
-            {
-                'name' : '',
-                'tooltip' : 'Upload files',
-                'icon' : 'icon-upload-alt',
-                'css' : 'fangorn-clickable btn btn-default btn-xs',
-                'onclick' : Fangorn.ButtonEvents._uploadEvent
-            }
-        );
+    // If File and FileRead are not defined dropzone is not supported and neither is uploads
+    if (window.File && window.FileReader && item.data.permissions.edit && item.kind === 'folder') {
+        buttons.push({
+            'name' : '',
+            'tooltip' : 'Upload files',
+            'icon' : 'icon-upload-alt',
+            'css' : 'fangorn-clickable btn btn-default btn-xs',
+            'onclick' : Fangorn.ButtonEvents._uploadEvent
+        });
     }
 
     if (item.kind === 'file' && item.data.extra && item.data.extra.status === 'public') {
@@ -30,7 +29,7 @@ function _fangornActionColumn (item, col) {
         });
     }
 
-    if (item.kind === 'file' && item.data.extra && item.data.extra.status !== 'public') {
+    if (item.kind === 'file' && item.data.extra && item.data.extra.status !== 'public' && item.data.permissions.edit) {
         buttons.push({
             'name' : '',
             'icon' : 'icon-remove',
