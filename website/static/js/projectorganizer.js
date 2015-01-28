@@ -675,7 +675,7 @@ function _poResolveToggle(item) {
     var toggleMinus = m('i.icon-minus'),
         togglePlus = m('i.icon-plus'),
         childrenCount = item.data.childrenCount || item.children.length;
-    if (item.kind === 'folder' && childrenCount > 0) {
+    if (item.kind === 'folder' && childrenCount > 0 && item.depth > 1) {
         if (item.open) {
             return toggleMinus;
         }
