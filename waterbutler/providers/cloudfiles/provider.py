@@ -88,7 +88,7 @@ class CloudFilesProvider(provider.BaseProvider):
         path = CloudFilesPath(path)
 
         if accept_url:
-            parsed_url = furl.furl(self.sign_url(path, _endpoint=self.public_endpoint))
+            parsed_url = furl.furl(self.sign_url(path, endpoint=self.public_endpoint))
             parsed_url.args['filename'] = kwargs.get('displayName') or path.name
             return parsed_url.url
 
@@ -205,7 +205,7 @@ class CloudFilesProvider(provider.BaseProvider):
     def can_intra_move(self, dest_provider):
         return self.can_intra_copy(dest_provider)
 
-    def sign_url(self, path, method='GET', _endpoint=None, seconds=settings.TEMP_URL_SECS):
+    def sign_url(self, path, method='GET', endpoint=None, seconds=settings.TEMP_URL_SECS):
         """Sign a temp url for the specified stream
         :param str stream: The requested stream's path
         :param CloudFilesPath path: A path to a file/folder
@@ -215,7 +215,7 @@ class CloudFilesProvider(provider.BaseProvider):
         """
         method = method.upper()
         expires = str(int(time.time() + seconds))
-        url = furl.furl(self.build_url(path.path, _endpoint=_endpoint))
+        url = furl.furl(self.build_url(path.path, _endpoint=endpoint))
 
         body = '\n'.join([method, expires, str(url.path)]).encode()
         signature = hmac.new(self.temp_url_key, body, hashlib.sha1).hexdigest()
@@ -249,8 +249,8 @@ class CloudFilesProvider(provider.BaseProvider):
                 raise exceptions.ProviderError('No temp url key is available', code=503)
 
     def _extract_endpoints(self, data):
-        """Pulls the both the public and internal, returned respectively,
-        cloudfiles url from the return of tokens
+        """Pulls both the public and internal cloudfiles urls,
+        returned respectively, from the return of tokens
         Very optimized.
         :param dict data: The json response from the token endpoint
         :rtype (str, str):
