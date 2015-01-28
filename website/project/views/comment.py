@@ -31,9 +31,7 @@ def view_comments_project(**kwargs):
         'comment_target': 'total',
         'comment_target_id': None
     }
-    _update_comments_timestamp(auth, node, page='node')
-    _update_comments_timestamp(auth, node, page='wiki')
-    _update_comments_timestamp(auth, node, page='files')
+
     ret.update(_view_project(node, auth, primary=True))
     return ret
 

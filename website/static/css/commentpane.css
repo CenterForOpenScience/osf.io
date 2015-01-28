@@ -12,9 +12,8 @@
     /* Handle starts under Bootstrap header */
     /* Note: Must be the same as #commentPane:padding-bottom */
     margin-top: 40px;
-    width: 50px;
+    width: 100px;
     height: 48px;
-    margin-left: -50px;
     text-align: center;
 }
 

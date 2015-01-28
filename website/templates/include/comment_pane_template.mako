@@ -4,7 +4,7 @@
         <span data-bind="if: unreadComments() !== 0">
             <span data-bind="text: displayCount" class="badge unread-comments-count"></span>
         </span>
-        <i class="icon-comments-alt icon-3x comment-handle-icon" style="color: #428bca"></i>
+        <i class="icon-comments-alt icon-2x comment-handle-icon" style="color: #428bca"></i>
     </div>
     <div class="cp-bar"></div>
 

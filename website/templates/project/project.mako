@@ -192,7 +192,7 @@
         <!-- Discussions -->
         <div id="comments-widget-container" class="addon-widget-container">
             <div class="addon-widget-header clearfix">
-                <h4>Discussions</h4>
+                <h4>Recent discussions</h4>
                 <div class="pull-right">
                     <a href="${node['url']}discussions/" class="btn"> <i class="icon icon-external-link"></i> </a>
                 </div>
@@ -210,7 +210,7 @@
                     </div>
                     <div data-bind="template: {name: 'commentTemplate', foreach: recentComments}"></div>
                     <div style="padding-bottom: 20px;">
-                        <a class="pull-right" href="${node['url']}discussions/">See more in discussions page...</a>
+                        <a onclick="openCommentPane()">Open the comment pane</a> on the right and make a new comment, or <a href="${node['url']}discussions/">see more in discussions page.</a>
                     </div>
                 </div>
                 <div data-bind="ifnot: commented">

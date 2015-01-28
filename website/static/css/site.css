@@ -376,7 +376,8 @@ li.pointer {
     background-color: #428bca;
     color: white;
     position: absolute;
-    right: 0px;
+    right: 20px;
+    margin-top: 5px;
     z-index: 1000;
 }
 
