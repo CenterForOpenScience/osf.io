@@ -88,8 +88,9 @@
                             <i class="icon-eye-open"></i>
                             <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
                         </a>
-                        <a rel="tooltip" title="Duplicate"
+                        <a title="Duplicate"
                             class="btn btn-default${ '' if is_project else ' disabled'}" href="#"
+                            data-bind="tooltip: {title: 'Duplicate', placement: 'bottom'}"
                             data-toggle="modal" data-target="#duplicateModal">
                             <span class="glyphicon glyphicon-share"></span>&nbsp; ${ node['templated_count'] + node['fork_count'] + node['points'] }
                         </a>
@@ -188,7 +189,7 @@
                         % if user['is_contributor']:
                             <li><a href="${node['url']}contributors/">Sharing</a></li>
                         % endif
-                        % if 'write' in user['permissions']:
+                        % if 'write' in user['permissions'] and not node['is_registration']:
                             <li><a href="${node['url']}settings/">Settings</a></li>
                         % endif
                     </ul>

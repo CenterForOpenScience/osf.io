@@ -70,6 +70,7 @@ def add_poster_by_email(conference, message):
         set_password_url = web_url_for(
             'reset_password',
             verification_key=user.verification_key,
+            _absolute=True,
         )
     else:
         set_password_url = None
@@ -96,6 +97,7 @@ def add_poster_by_email(conference, message):
         conf_view_url=web_url_for(
             'conference_results',
             meeting=message.conference_name,
+            _absolute=True,
         ),
         fullname=message.sender_display,
         user_created=user_created,
@@ -110,15 +112,19 @@ def add_poster_by_email(conference, message):
 
 def _render_conference_node(node, idx):
     storage_settings = node.get_addon('osfstorage')
-    if storage_settings.file_tree and storage_settings.file_tree.children:
-        record = storage_settings.file_tree.children[0]
+    records = storage_settings.file_tree.children if storage_settings.file_tree else []
+    try:
+        record = next(
+            each for each in records
+            if not each.is_deleted,
+        )
         download_count = record.get_download_count()
         download_url = node.web_url_for(
             'osf_storage_view_file',
             path=record.path,
             action='download',
         )
-    else:
+    except StopIteration:
         download_url = ''
         download_count = 0
 

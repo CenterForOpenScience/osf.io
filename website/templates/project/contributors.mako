@@ -95,11 +95,11 @@
                     <tr>
                         <td class="col-sm-3">
                             <div>
-                                <span class="link-name overflow-block" data-bind="text: name, tooltip: {title: linkName}" style="width: 200px"></span>
+                                <span class="link-name overflow-block" data-bind="text: name, tooltip: {title: 'Link name'}" style="width: 200px"></span>
                             </div>
                             <div class="btn-group">
-                            <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="Click to copy the link"
-                                    data-bind="attr: {data-clipboard-text: linkUrl}" >
+                            <button class="btn btn-default btn-mini copy-button" data-trigger="manual"
+                                    data-bind="attr: {data-clipboard-text: linkUrl}, tooltip: {title: 'Click to copy'}" >
                                 <span class="icon-copy" ></span>
                             </button>
                                 <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}"  />
@@ -177,7 +177,7 @@
                     <!-- Note: Prevent clickBubble so that removing a
                      contributor does not immediately un-remove her. -->
                     <a
-                            data-bind="click: remove, clickBubble: false, tooltip: {title: removeContributor}"
+                            data-bind="click: remove, clickBubble: false, tooltip: {title: 'Remove contributor'}"
                         >
                                 <i class="icon-remove text-danger no-sort"></i>
                     </a>
@@ -190,9 +190,7 @@
             <!-- ko ifnot: $parent.canEdit -->
                 <!-- ko if: canRemove -->
                     <a
-                            data-bind="click: removeSelf"
-                            rel="tooltip"
-                            title="Remove contributor"
+                            data-bind="click: removeSelf, tooltip: {title: 'Remove contributor'}"
                         >
                         <i class="icon-remove text-danger no-sort"></i>
                     </a>
