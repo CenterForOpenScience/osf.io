@@ -15,7 +15,7 @@
                 <h3> Contributors
                     <!-- ko if: canEdit -->
                         <a href="#addContributors" data-toggle="modal" class="btn btn-success btn-sm" style="margin-left:20px;margin-top: -3px">
-                            <i class="icon icon-plus"> Add </i> 
+                          <i class="icon icon-plus"> </i>Add
                         </a>
                     <!-- /ko -->
                 </h3>
