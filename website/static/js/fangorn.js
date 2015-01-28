@@ -124,7 +124,7 @@ function _fangornResolveToggle(item) {
     var toggleMinus = m('i.icon-minus', ' '),
         togglePlus = m('i.icon-plus', ' ');
     // check if folder has children whether it's lazyloaded or not.
-    if (item.kind === 'folder') {
+    if (item.kind === 'folder' && item.depth > 1) {
         if(!item.data.permissions.view){
             return '';
         }
@@ -864,6 +864,8 @@ tbOptions = {
     },
     onscrollcomplete : function(){
         $('[data-toggle="tooltip"]').tooltip();
+    },
+    onselectrow : function(row) {
     },
     filterPlaceholder : 'Search',
     onmouseoverrow : _fangornMouseOverRow,
