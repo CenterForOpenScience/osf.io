@@ -219,11 +219,19 @@ function _fangornLazyLoad(item) {
     return item.data.urls.fetch;
 }
 
+function _canDrop(item) {
+    return item.data.provider &&
+        item.kind === 'folder' &&
+        item.data.permissions.edit &&
+        item.data.state === 'draft'
+}
+
 Fangorn.config.dataverse = {
     // Handle changing the branch select
     folderIcon: _fangornFolderIcons,
     resolveDeleteUrl: _fangornDeleteUrl,
     resolveRows: _fangornColumns,
     lazyload:_fangornLazyLoad,
-    uploadUrl: _uploadUrl
+    uploadUrl: _uploadUrl,
+    canDrop: _canDrop
 };

@@ -248,7 +248,7 @@ function _fangornSending(treebeard, file, xhr, formData) {
  */
 function _fangornAddedFile(treebeard, file) {
     var item = file.treebeardParent;
-    if (!item.data.permissions.edit) {
+    if (!_fangornCanDrop(treebeard, item)) {
         return;
     }
     var configOption = resolveconfigOption.call(treebeard, item, 'uploadAdd', [file, item]);
@@ -277,6 +277,14 @@ function _fangornAddedFile(treebeard, file) {
     return configOption || null;
 }
 
+function _fangornCanDrop(treebeard, item) {
+    var canDrop = resolveconfigOption.call(treebeard, item, 'canDrop', [item]);
+    if (canDrop === null) {
+        canDrop = item.data.provider && item.kind === 'folder' && item.data.permissions.edit;
+    }
+    return canDrop;
+}
+
 /**
  * Runs when Dropzone's dragover event hook is run.
  * @param {Object} treebeard The treebeard instance currently being run, check Treebeard API
@@ -291,7 +299,7 @@ function _fangornDragOver(treebeard, event) {
         item = treebeard.find(itemID);
     $('.tb-row').removeClass(dropzoneHoverClass).removeClass(treebeard.options.hoverClass);
     if (item !== undefined) {
-        if (item.data.provider && item.kind === 'folder' && item.data.permissions.edit) {
+        if (_fangornCanDrop(treebeard, item)) {
             closestTarget.addClass(dropzoneHoverClass);
         }
     }
@@ -847,7 +855,7 @@ tbOptions = {
         var maxSize;
         var displaySize;
         var msgText;
-        if (item.data.provider && item.kind === 'folder' && item.data.permissions.edit) {
+        if (_fangornCanDrop(treebeard, item)) {
             if (item.data.accept && item.data.accept.maxSize) {
                 size = file.size / 1000000;
                 maxSize = item.data.accept.maxSize;
