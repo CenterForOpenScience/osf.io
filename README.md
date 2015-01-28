@@ -1,6 +1,5 @@
 # OSF
 
-- `my develop` Build Status: [![Build Status](https://travis-ci.org/fabianvf/osf.io.svg?branch=develop)](https://travis-ci.org/fabianvf/osf.io)
 - `master` Build Status: [![Build Status](https://travis-ci.org/CenterForOpenScience/osf.io.svg?branch=master)](https://travis-ci.org/CenterForOpenScience/osf.io)
 - `develop` Build Status: [![Build Status](https://travis-ci.org/CenterForOpenScience/osf.io.svg?branch=master)](https://travis-ci.org/CenterForOpenScience/osf.io)
 - Public Repo: https://github.com/CenterForOpenScience/osf.io/
