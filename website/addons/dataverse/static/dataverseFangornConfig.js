@@ -114,16 +114,14 @@ function _fangornActionColumn (item, col) {
             }
         );
     } else if (item.kind === 'file') {
-        if (item.data.state === 'released' || item.data.permissions.edit) {
-            buttons.push({
-                name : '',
-                'tooltip' : 'Download file',
-                icon : 'icon-download-alt',
-                css : 'btn btn-info btn-xs',
-                onclick: _downloadEvent
-            });
-        }
-        if (item.data.state === 'draft' || item.data.permissions.edit) {
+        buttons.push({
+            name : '',
+            'tooltip' : 'Download file',
+            icon : 'icon-download-alt',
+            css : 'btn btn-info btn-xs',
+            onclick: _downloadEvent
+        });
+        if (item.data.state === 'draft' && item.data.permissions.edit) {
             buttons.push({
                 name: '',
                 tooltip : 'Delete',
