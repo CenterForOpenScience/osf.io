@@ -88,7 +88,7 @@ class CloudFilesProvider(provider.BaseProvider):
         path = CloudFilesPath(path)
 
         if accept_url:
-            return self.sign_url(path, _endpoint=self.public_endpoint)
+            return self.sign_url(path, endpoint=self.public_endpoint)
 
         resp = yield from self.make_request(
             'GET',
@@ -203,7 +203,7 @@ class CloudFilesProvider(provider.BaseProvider):
     def can_intra_move(self, dest_provider):
         return self.can_intra_copy(dest_provider)
 
-    def sign_url(self, path, method='GET', _endpoint=None, seconds=settings.TEMP_URL_SECS):
+    def sign_url(self, path, method='GET', endpoint=None, seconds=settings.TEMP_URL_SECS):
         """Sign a temp url for the specified stream
         :param str stream: The requested stream's path
         :param CloudFilesPath path: A path to a file/folder
@@ -213,7 +213,7 @@ class CloudFilesProvider(provider.BaseProvider):
         """
         method = method.upper()
         expires = str(int(time.time() + seconds))
-        url = furl.furl(self.build_url(path.path, _endpoint=_endpoint))
+        url = furl.furl(self.build_url(path.path, _endpoint=endpoint))
 
         body = '\n'.join([method, expires, str(url.path)]).encode()
         signature = hmac.new(self.temp_url_key, body, hashlib.sha1).hexdigest()
