@@ -72,7 +72,8 @@ function _fangornActionColumn (item, col){
 
     // Download Zip File
     if (item.kind === 'folder') {
-        if (item.data.permissions.edit) {
+        // If File and FileRead are not defined dropzone is not supported and neither is uploads
+        if (window.File && window.FileReader && item.data.permissions.edit) {
             buttons.push({
                 'name' : '',
                 'tooltip' : 'Upload files',
