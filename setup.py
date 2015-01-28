@@ -1,5 +1,7 @@
 from setuptools import setup, find_packages
 
+from waterbutler import __version__
+
 
 def parse_requirements(requirements):
     with open(requirements) as f:
@@ -10,6 +12,7 @@ requirements = parse_requirements('requirements.txt')
 
 setup(
     name='waterbutler',
+    version=__version__,
     namespace_packages=['waterbutler', 'waterbutler.providers'],
     description='WaterButler Storage Server',
     author='Center for Open Science',
@@ -21,11 +24,12 @@ setup(
     # install_requires=requirements,
     zip_safe=False,
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
-        'Intended Audience :: Developers',
         'Natural Language :: English',
-        "Programming Language :: Python :: 3",
+        'Intended Audience :: Developers',
+        'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.4',
+        'Development Status :: 5 - Production/Stable',
+        'License :: OSI Approved :: Apache Software License',
     ],
     provides=[
         'waterbutler.providers',

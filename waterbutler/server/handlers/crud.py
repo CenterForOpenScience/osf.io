@@ -53,12 +53,14 @@ class CRUDHandler(core.BaseHandler):
         if isinstance(result, str):
             return self.redirect(result)
 
-        _, file_name = os.path.split(self.arguments['path'])
+        display_name = self.arguments.get('displayName')
+        if not display_name:
+            _, display_name = os.path.split(self.arguments['path'])
         self.set_header('Content-Type', result.content_type)
 
         if result.size:
             self.set_header('Content-Length', str(result.size))
-        self.set_header('Content-Disposition', 'attachment; filename=' + file_name)
+        self.set_header('Content-Disposition', 'attachment; filename=' + display_name)
 
         while True:
             chunk = yield from result.read(settings.CHUNK_SIZE)
