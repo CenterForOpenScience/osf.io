@@ -154,7 +154,7 @@ function _fangornGithubTitle(item, col)  {
     if (item.data.branches) {
         item.data.branch = item.data.branch || item.data.defaultBranch;
         for (var i = 0; i < item.data.branches.length; i++) {
-            var selected = item.data.branches[i] === item.data.defaultBranch ? 'selected' : '';
+            var selected = item.data.branches[i] === item.data.branch ? 'selected' : '';
             branchArray.push(m('option', {selected : selected, value:item.data.branches[i]}, item.data.branches[i]));
         }
     }
