@@ -43,6 +43,7 @@ class CloudFilesProvider(provider.BaseProvider):
         super().__init__(auth, credentials, settings)
         self.token = None
         self.endpoint = None
+        self.public_endpoint = None
         self.temp_url_key = credentials.get('temp_key', '').encode()
         self.region = self.credentials['region']
         self.og_token = self.credentials['token']
@@ -85,14 +86,15 @@ class CloudFilesProvider(provider.BaseProvider):
         :raises: exceptions.DownloadError
         """
         path = CloudFilesPath(path)
-        url = self.sign_url(path)
 
         if accept_url:
-            return url
+            parsed_url = furl.furl(self.sign_url(path, endpoint=self.public_endpoint))
+            parsed_url.args['filename'] = kwargs.get('displayName') or path.name
+            return parsed_url.url
 
         resp = yield from self.make_request(
             'GET',
-            url,
+            self.sign_url(path),
             expects=(200, ),
             throws=exceptions.DownloadError,
         )
@@ -188,13 +190,14 @@ class CloudFilesProvider(provider.BaseProvider):
         else:
             return (yield from self._metadata_file(path, **kwargs))
 
-    def build_url(self, *segments, **query):
+    def build_url(self, *segments, _endpoint=None, **query):
         """Build the url for the specified object
         :param args segments: URI segments
         :param kwargs query: Query parameters
         :rtype str:
         """
-        return provider.build_url(self.endpoint, self.container, *segments, **query)
+        endpoint = _endpoint or self.endpoint
+        return provider.build_url(endpoint, self.container, *segments, **query)
 
     def can_intra_copy(self, dest_provider):
         return self is dest_provider
@@ -202,7 +205,7 @@ class CloudFilesProvider(provider.BaseProvider):
     def can_intra_move(self, dest_provider):
         return self.can_intra_copy(dest_provider)
 
-    def sign_url(self, path, method='GET', seconds=settings.TEMP_URL_SECS):
+    def sign_url(self, path, method='GET', endpoint=None, seconds=settings.TEMP_URL_SECS):
         """Sign a temp url for the specified stream
         :param str stream: The requested stream's path
         :param CloudFilesPath path: A path to a file/folder
@@ -212,7 +215,7 @@ class CloudFilesProvider(provider.BaseProvider):
         """
         method = method.upper()
         expires = str(int(time.time() + seconds))
-        url = furl.furl(self.build_url(path.path))
+        url = furl.furl(self.build_url(path.path, _endpoint=endpoint))
 
         body = '\n'.join([method, expires, str(url.path)]).encode()
         signature = hmac.new(self.temp_url_key, body, hashlib.sha1).hexdigest()
@@ -233,7 +236,11 @@ class CloudFilesProvider(provider.BaseProvider):
         if not self.token or not self.endpoint:
             data = yield from self._get_token()
             self.token = data['access']['token']['id']
-            self.endpoint = self._extract_endpoint(data)
+            if self.use_public:
+                self.public_endpoint, _ = self._extract_endpoints(data)
+                self.endpoint = self.public_endpoint
+            else:
+                self.public_endpoint, self.endpoint = self._extract_endpoints(data)
         if not self.temp_url_key:
             resp = yield from self.make_request('HEAD', self.endpoint, expects=(204, ))
             try:
@@ -241,18 +248,18 @@ class CloudFilesProvider(provider.BaseProvider):
             except KeyError:
                 raise exceptions.ProviderError('No temp url key is available', code=503)
 
-    def _extract_endpoint(self, data):
-        """Pulls the proper cloudfiles url from the return of tokens
+    def _extract_endpoints(self, data):
+        """Pulls both the public and internal cloudfiles urls,
+        returned respectively, from the return of tokens
         Very optimized.
         :param dict data: The json response from the token endpoint
-        :rtype str:
+        :rtype (str, str):
         """
-        serviceUrl = 'publicURL' if self.use_public else 'internalURL'
         for service in reversed(data['access']['serviceCatalog']):
             if service['name'].lower() == 'cloudfiles':
                 for region in service['endpoints']:
                     if region['region'].lower() == self.region.lower():
-                        return region[serviceUrl]
+                        return region['publicURL'], region['internalURL']
 
     @asyncio.coroutine
     def _get_token(self):

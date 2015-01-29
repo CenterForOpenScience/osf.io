@@ -77,8 +77,8 @@ class BaseHandler(tornado.web.RequestHandler, SentryMixin):
                 return
 
         self.finish({
-            "code": status_code,
-            "message": self._reason,
+            'code': status_code,
+            'message': self._reason,
         })
 
     def options(self):

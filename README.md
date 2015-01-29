@@ -1,6 +1,8 @@
-# waterbutler
+# WaterButler
 
-[![Build Status](https://travis-ci.org/CenterForOpenScience/waterbutler.svg?branch=develop)](https://travis-ci.org/CenterForOpenScience/waterbutler)
+`Master` Build Status: [![Build Status](https://travis-ci.org/CenterForOpenScience/waterbutler.svg?branch=master)](https://travis-ci.org/CenterForOpenScience/waterbutler)
+
+`Develop` Build Status: [![Build Status](https://travis-ci.org/CenterForOpenScience/waterbutler.svg?branch=develop)](https://travis-ci.org/CenterForOpenScience/waterbutler)
 
 ### osf startup commands
 *(requires two instances of osf in order to render files)*
@@ -37,35 +39,7 @@ waterbutler-test.json, e.g.
     "PORT": 7777,
     "DEBUG": true,
     "HMAC_SECRET": "changeme",
-    "IDENTITY_METHOD": "rest",
     "IDENTITY_API_URL": "http://127.0.0.1:5001/api/v1/files/auth/"
-  },
-  "LOGGING": {
-     "version": 1,
-     "disable_existing_loggers": false,
-     "formatters": {
-       "console": {
-         "format": "[%(asctime)s][%(levelname)s][%(name)s]: %(message)s"
-       }
-     },
-     "handlers": {
-       "console": {
-         "class": "logging.StreamHandler",
-         "level": "INFO",
-         "formatter": "console"
-       },
-    },
-    "loggers": {
-      "": {
-        "handlers": ["console"],
-        "level": "INFO",
-        "propagate": false
-      }
-    },
-    "root": {
-      "level": "INFO",
-      "handlers": ["console"]
-    }
   }
 }
 ```

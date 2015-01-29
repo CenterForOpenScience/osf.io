@@ -1,0 +1,8 @@
+{
+  "OSFSTORAGE_PROVIDER_CONFIG": {
+    "HMAC_SECRET": "travis"
+  },
+  "SERVER_CONFIG": {
+    "HMAC_SECRET": "travis"
+  }
+}
