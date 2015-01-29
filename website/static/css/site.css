@@ -1973,7 +1973,7 @@ span#profileFullname{
     }
     .osf-search {
         margin-top: -30px;
-        z-index: 1033; 
+        z-index: 1028; /* should be less than 1030 to not cover navbar */
     }
     #searchControls > .osf-search {
         margin-top: -30px;
