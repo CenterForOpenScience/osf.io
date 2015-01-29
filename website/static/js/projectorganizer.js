@@ -841,7 +841,7 @@ function filterRowsNotInParent(rows) {
         return this.multiselected;
     }
     var i, newRows = [],
-        originalRow = this.find(this.selected),
+        originalRow = this.find(this.multiselected[0].id),
         originalParent,
         currentItem;
     if (typeof originalRow !== "undefined") {
