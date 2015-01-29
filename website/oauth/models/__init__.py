@@ -12,6 +12,7 @@ from requests_oauthlib import OAuth2Session
 from framework.exceptions import PermissionsError
 from framework.mongo import ObjectId
 from framework.mongo import StoredObject
+from framework.sessions import get_session
 from website import settings
 from website.oauth.utils import PROVIDER_LOOKUP
 from website.util import api_url_for
@@ -26,7 +27,6 @@ OAUTH2 = 2
 class ExternalAccount(StoredObject):
     _id = fields.StringField(default=lambda: str(ObjectId()))
 
-    temporary = fields.BooleanField(required=True, default=True)
     oauth_key = fields.StringField()
     oauth_secret = fields.StringField()
     refresh_token = fields.StringField()
@@ -39,6 +39,10 @@ class ExternalAccount(StoredObject):
 
     # The unique, persistent ID on the remote service.
     provider_id = fields.StringField()
+
+    def __repr__(self):
+        return '<ExternalAccount: {}/{}>'.format(self.provider,
+                                                 self.provider_id)
 
 
 class ExternalProviderMeta(abc.ABCMeta):
@@ -72,42 +76,43 @@ class ExternalProvider(object):
         already attached to the instance, in order to store the state token and
         scope."""
 
-        # create an account if necessary; we need a scope specified
-        if self.account is None:
-            self.account = ExternalAccount(provider=self.short_name,
-                                           scopes=self.default_scopes)
+        session = get_session()
+
+        # create a dict on the session object if it's not already there
+        if session.data.get("oauth_states") is None:
+            session.data['oauth_states'] = {}
+
 
         if self._oauth_version == OAUTH2:
             # build the URL
-            session = OAuth2Session(
+            oauth = OAuth2Session(
                 self.client_id,
                 redirect_uri=api_url_for('oauth_callback',
                                          service_name=self.short_name,
                                          _absolute=True),
-                scope=self.account.scopes,
+                scope=self.default_scopes,
             )
 
-            url, state = session.authorization_url(self.auth_url_base)
+            url, state = oauth.authorization_url(self.auth_url_base)
 
             # save state token to the account instance to be available in callback
-            self.account.oauth_key = state
+            session.data['oauth_states'][self.short_name] = {'state': state}
 
         elif self._oauth_version == OAUTH1:
             # get a request token
-            session = OAuth1Session(
+            oauth = OAuth1Session(
                 client_key=self.client_id,
                 client_secret=self.client_secret,
             )
 
-            response = session.fetch_request_token(self.request_token_url)
+            response = oauth.fetch_request_token(self.request_token_url)
 
-            self.account.oauth_key = response.get('oauth_token')
-            self.account.oauth_secret = response.get('oauth_token_secret')
+            session.data['oauth_states'][self.short_name] = {
+                'token': response.get('oauth_token'),
+                'secret': response.get('oauth_token_secret'),
+            }
 
-            url = session.authorization_url(self.auth_url_base)
-
-        self.account.temporary = True
-        self.account.save()
+            url = oauth.authorization_url(self.auth_url_base)
 
         return url
 
@@ -139,78 +144,111 @@ class ExternalProvider(object):
         raise NotImplementedError()
 
     def auth_callback(self, user):
-        # Get the associated ExternalAccount instance for token
-        if self._oauth_version == 1:
+        session = get_session()
+
+        try:
+            cached_credentials = session.data['oauth_states'][self.short_name]
+        except KeyError:
+            raise PermissionsError("OAuth flow not recognized.")
+
+        if self._oauth_version == OAUTH1:
             request_token = request.args.get('oauth_token')
 
-            self.account = ExternalAccount.find_one(
-                Q('provider', 'eq', self.short_name) &
-                Q('oauth_key', 'eq', request_token) &
-                Q('temporary', 'eq', True)
-            )
-        elif self._oauth_version == 2:
-            state = request.args.get('state')
+            if cached_credentials.get('token') != request_token:
+                raise PermissionsError("Request token does not match")
 
-            self.account = ExternalAccount.find_one(
-                Q('provider', 'eq', self.short_name) &
-                Q('oauth_key', 'eq', state) &
-                Q('temporary', 'eq', True)
-            )
-
-        # Make sure the user owns the ExternalAccount
-        if self.account not in user.external_accounts:
-            raise PermissionsError("User does not match ExternalAccount's owner.")
-
-        if self._oauth_version == 1:
-
-            verifier = request.args.get('oauth_verifier')
-
-
-            # TODO: Verify account matches the token provided
-
-            session = OAuth1Session(
+            response = OAuth1Session(
                 client_key=self.client_id,
                 client_secret=self.client_secret,
-                resource_owner_key=self.account.oauth_key,
-                resource_owner_secret=self.account.oauth_secret,
-                verifier=verifier
-            )
-
-            response = session.fetch_access_token(self.callback_url)
-
-            # TODO: See if the format of the response is in the spec
-
-        elif self._oauth_version == 2:
-            code = request.args.get('code')
-            session = OAuth2Session(
-                self.client_id,
-                redirect_uri=api_url_for('oauth_callback',
-                                         service_name=self.short_name,
-                                         _absolute=True),
-            )
-
-            response = session.fetch_token(
-                self.callback_url,
-                client_secret=self.client_secret,
-                code=code,
-            )
-
-        self.handle_callback(response)
-        self.account.temporary = False
-        self.account.save()
-
-    def handle_callback(self, data):
-        if self._oauth_version == OAUTH1:
-            self.account.oauth_key = data['oauth_token']
-            self.account.oauth_secret = data['oauth_token_secret']
+                resource_owner_key=cached_credentials.get('token'),
+                resource_owner_secret=cached_credentials.get('secret'),
+                verifier=request.args.get('oauth_verifier'),
+            ).fetch_access_token(self.callback_url)
 
         elif self._oauth_version == OAUTH2:
-            self.account.refresh_token = data['refresh_token']
-            self.account.expires_at = datetime.datetime.fromtimestamp(
-                float(data['expires_at'])
+            state = request.args.get('state')
+
+            if cached_credentials.get('state') != state:
+                raise PermissionsError("Request token does not match")
+
+            response = OAuth2Session(
+                self.client_id,
+                redirect_uri=api_url_for(
+                    'oauth_callback',
+                    service_name=self.short_name,
+                    _absolute=True
+                ),
+            ).fetch_token(
+                self.callback_url,
+                client_secret=self.client_secret,
+                code=request.args.get('code'),
             )
-            self.account.oauth_key = data['access_token']
-            self.account.scopes = data['scope']
+
+        info = self._default_handle_callback(response)
+        info.update(self.handle_callback(response))
+
+        try:
+            self.account = ExternalAccount.find_one(
+                Q('provider', 'eq', self.short_name) &
+                Q('provider_id', 'eq', info['provider_id'])
+            )
+        except NoResultsFound:
+            self.account = ExternalAccount(provider=self.short_name,
+                                           provider_id=info['provider_id'])
+
+        # required
+        self.account.oauth_key = info['key']
+
+        # only for OAuth1
+        self.account.oauth_secret = info.get('secret')
+
+        # only for OAuth2
+        self.account.expires_at = info.get('expires_at')
+        self.account.refresh_token = info.get('refresh_token')
+
+        self.account.save()
+
+        if self.account not in user.external_accounts:
+            user.external_accounts.append(self.account)
+            user.save()
+
+    def _default_handle_callback(self, data):
+        if self._oauth_version == OAUTH1:
+            key = data.get('oauth_token')
+            secret = data.get('oauth_token_secret')
+
+            values = {}
+
+            if key:
+                values['key'] = key
+            if secret:
+                values['secret'] = secret
+
+            return values
+
+        elif self._oauth_version == OAUTH2:
+            key = data.get('access_token')
+            refresh_token = data.get('refresh_token')
+            expires_at = data.get('expires_at')
+            scopes = data.get('scope')
+
+            values = {}
+
+            if key:
+                values['key'] = key
+            if scopes:
+                values['scope'] = scopes
+            if refresh_token:
+                values['refresh_token'] = refresh_token
+            if expires_at:
+                values['expires_at'] = datetime.datetime.fromtimestamp(
+                    float(expires_at)
+                )
+
+            return values
+
+    def handle_callback(self, response):
+        return {}
 
 
 class Zotero(ExternalProvider):
@@ -226,9 +264,9 @@ class Zotero(ExternalProvider):
     callback_url = 'https://www.zotero.org/oauth/access'
 
     def handle_callback(self, data):
-        self.account.provider_id = data['userID']
-        self.account.oauth_key = data['oauth_token']
-        self.account.oauth_secret = data['oauth_token_secret']
+        return {
+            'provider_id': data['userID'],
+        }
 
 
 class Orcid(ExternalProvider):
@@ -243,8 +281,9 @@ class Orcid(ExternalProvider):
     default_scopes = ['/authenticate']
 
     def handle_callback(self, data):
-        self.account.oauth_key = data['access_token']
-        self.account.provider_id = data['orcid']
+        return {
+            'provider_id': data['orcid']
+        }
 
 
 class Github(ExternalProvider):
@@ -272,6 +311,12 @@ class Mendeley(ExternalProvider):
     auth_url_base = 'https://api.mendeley.com/oauth/authorize'
     callback_url = 'https://api.mendeley.com/oauth/token'
     default_scopes = ['all']
+
+    def handle_callback(self, response):
+
+        return {
+
+        }
 
 
 class Linkedin(ExternalProvider):
