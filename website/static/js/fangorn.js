@@ -896,6 +896,7 @@ tbOptions = {
         addRemoveLinks: false,
         previewTemplate: '<div></div>',
         parallelUploads: 10,
+        acceptDirectories: false,
         fallback: function(){},
     },
     resolveIcon : _fangornResolveIcon,

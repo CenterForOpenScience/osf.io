@@ -503,6 +503,8 @@ function OBUploaderViewModel(params) {
         //in mib
         maxFilesize: 128,
 
+        acceptDirectories: false,
+
         method: 'PUT',
         uploadprogress: function(file, progress) { // progress bar update
             self.progress(progress);
