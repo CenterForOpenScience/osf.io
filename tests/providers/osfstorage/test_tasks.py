@@ -99,6 +99,17 @@ class TestParityTask:
             with open(os.devnull, 'wb') as DEVNULL:
                 mock_sp_call.assert_called_once_with(args, stdout=DEVNULL, stderr=DEVNULL)
 
+    def test_skip_empty_files(self, monkeypatch):
+        mock_stat = mock.Mock(return_value=mock.Mock(st_size=0))
+        mock_sp_call = mock.Mock()
+        monkeypatch.setattr(os, 'stat', mock_stat)
+        monkeypatch.setattr(utils.subprocess, 'call', mock_sp_call)
+        path = 'foo/bar/baz'
+
+        paths = utils.create_parity_files(path)
+        assert paths == []
+        assert not mock_sp_call.called
+
 
 class TestBackUpTask:
 
