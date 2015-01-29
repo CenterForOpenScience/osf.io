@@ -8,6 +8,8 @@ var m = require('mithril');
 var Treebeard = require('treebeard');
 var waterbutler = require('waterbutler');
 
+var $osf = require('osfHelpers');
+
 var tbOptions;
 
 var tempCounter = 1;
@@ -374,11 +376,21 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
  * @param message Error message returned
  * @private
  */
+var DEFAULT_ERROR_MESSAGE = 'Could not upload file. The file may be invalid.';
 function _fangornDropzoneError(treebeard, file, message) {
-    var parent = file.treebeardParent;
-    var item,
-        child,
-        msgText = message.message_short || message;
+    // File may either be a webkit Entry or a file object, depending on the browser
+    // On Chrome we can check if a directory is being uploaded
+    var msgText;
+    if (file.isDirectory) {
+        msgText = 'Cannot upload directories, applications, or packages.';
+    } else {
+        msgText = DEFAULT_ERROR_MESSAGE;
+    }
+    var parent = file.treebeardParent || treebeard.dropzoneItemCache;
+    // Parent may be undefined, e.g. in Chrome, where file is an entry object
+    var item;
+    var child;
+    var destroyItem = false;
     for(var i = 0; i < parent.children.length; i++) {
         child = parent.children[i];
         if(!child.data.tmpID){
@@ -386,12 +398,10 @@ function _fangornDropzoneError(treebeard, file, message) {
         }
         if(child.data.tmpID === file.tmpID) {
             item = child;
+            treebeard.deleteNode(parent.id, item.id);
         }
     }
-    item.notify.type = 'danger';
-    item.notify.message = msgText;
-    item.notify.col = 1;
-    item.notify.selfDestruct(treebeard, item);
+    $osf.growl('Error', msgText);
     treebeard.options.uploadInProgress = false;
 }
 
