@@ -472,7 +472,7 @@ function _removeEvent (event, item, col) {
 
     if (item.data.permissions.edit) {
         var mithrilContent = m('div', [
-                m('h3', 'Delete "' + item.data.name+ '"?'),
+                m('h3.break-word', 'Delete "' + item.data.name+ '"?'),
                 m('p', 'This action is irreversible.')
             ]);
         var mithrilButtons = m('div', [
