@@ -40,6 +40,8 @@ class ExternalAccount(StoredObject):
     # The unique, persistent ID on the remote service.
     provider_id = fields.StringField()
 
+    display_name = fields.StringField()
+
     def __repr__(self):
         return '<ExternalAccount: {}/{}>'.format(self.provider,
                                                  self.provider_id)
@@ -206,6 +208,9 @@ class ExternalProvider(object):
         self.account.expires_at = info.get('expires_at')
         self.account.refresh_token = info.get('refresh_token')
 
+        # additional information
+        self.account.display_name = info.get('display_name')
+
         self.account.save()
 
         if self.account not in user.external_accounts:
@@ -299,24 +304,6 @@ class Github(ExternalProvider):
     def handle_callback(self, data):
         self.account.oauth_key = data['access_token']
         self.account.scopes = data['scope']
-
-
-class Mendeley(ExternalProvider):
-    name = "Mendeley"
-    short_name = "mendeley"
-
-    client_id = settings.MENDELEY_CLIENT_ID
-    client_secret = settings.MENDELEY_CLIENT_SECRET
-
-    auth_url_base = 'https://api.mendeley.com/oauth/authorize'
-    callback_url = 'https://api.mendeley.com/oauth/token'
-    default_scopes = ['all']
-
-    def handle_callback(self, response):
-
-        return {
-
-        }
 
 
 class Linkedin(ExternalProvider):
