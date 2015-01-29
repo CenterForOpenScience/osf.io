@@ -1,10 +1,9 @@
-decorator
-flake8
-ipdb
-ipython
-jinja2
-pytest
-pytest-cov
-pyzmq
+decorator==3.4.0
+flake8==2.3.0
+ipdb==0.8
+ipython==2.3.1
+pytest==2.6.4
+pytest-cov==1.8.1
+pyzmq==14.4.1
 -e git+https://github.com/centerforopenscience/aiohttpretty.git#egg=aiohttpretty
 -r requirements.txt
