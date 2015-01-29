@@ -4,7 +4,7 @@ import httplib as http
 
 from flask import request
 from modularodm import Q
-from modularodm.exceptions import ModularOdmException, ValidationValueError
+from modularodm.exceptions import ModularOdmException, ValidationValueError, NoResultsFound
 
 from framework import status
 from framework.utils import iso8601format
@@ -336,6 +336,64 @@ def node_setting(auth, **kwargs):
     ret['notification_types'] = settings.NOTIFICATION_TYPES
 
     return ret
+
+
+def get_all_user_subscriptions(user):
+    user_subscriptions = []
+    for notification_type in settings.NOTIFICATION_TYPES:
+        if getattr(user, notification_type, []):
+            for subscription in getattr(user, notification_type, []):
+                if subscription:
+                    user_subscriptions.append(subscription)
+
+    return user_subscriptions
+
+
+def get_configured_projects(user):
+    configured_project_ids = []
+    user_subscriptions = get_all_user_subscriptions(user)
+    for subscription in user_subscriptions:
+        try:
+            node = Node.load(subscription.object_id)
+            if node.project_or_component == 'project' and subscription.object_id not in configured_project_ids:
+                configured_project_ids.append(subscription.object_id)
+        except NoResultsFound:
+            # handle case where object_id for the subscription is NOT a project, but a user
+            pass
+
+    return configured_project_ids
+
+
+def format_data(user, node_ids, subscriptions_available, data):
+    subscriptions_available = subscriptions_available if subscriptions_available else settings.SUBSCRIPTIONS_AVAILABLE
+
+    for idx, node_id in enumerate(node_ids):
+        node = Node.load(node_id)
+        data.append({'node_id': node_id,
+                     'title': node.title,
+                     'events': {},
+                     'children': []
+                    })
+
+        user_subscriptions = get_all_user_subscriptions(user)
+        node_subscriptions = []
+        for user_subscription in user_subscriptions:
+            if user_subscription.object_id == node_id:
+                node_subscriptions.append(user_subscription)
+
+        for s in subscriptions_available:
+            data[idx]['events'][s] = {}
+            data[idx]['events'][s]['notification_type'] = None
+
+            for subscription in node_subscriptions:
+                if subscription.event_name == s:
+                    data[idx]['events'][s]['notification_type'] = subscription.notification_type
+
+        for n in node.nodes:
+            if n._id != node_id:
+                data[idx]['children'] = format_data(user, [n._id], None, data[idx]['children'])
+
+    return data
 
 
 def find_node_subscriptions_and_notifications(user, node):
