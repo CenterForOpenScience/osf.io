@@ -8,8 +8,10 @@ import pytest
 from tests.utils import async
 
 from waterbutler.providers.osfstorage import settings
+from waterbutler.providers.osfstorage.tasks import utils
 from waterbutler.providers.osfstorage.tasks import backup
 from waterbutler.providers.osfstorage.tasks import parity
+from waterbutler.providers.osfstorage.tasks import exceptions
 from waterbutler.providers.osfstorage import settings as osf_settings
 
 
@@ -80,6 +82,20 @@ class TestParityTask:
             stream,
             path='/' + os.path.split(path)[1],
         )
+
+    def test_exceptions_get_raised(self, monkeypatch):
+        mock_sp_call = mock.Mock(return_value=7)
+        monkeypatch.setattr(utils.subprocess, 'call', mock_sp_call)
+        path = 'foo/bar/baz'
+        args = ['par2', 'c', '-r5', 'baz.par2', path]
+
+        with pytest.raises(exceptions.ParchiveError) as e:
+            utils.create_parity_files(path)
+
+            assert e.value == '{0} failed with code {1}'.format(' '.join(args), 7)
+
+            with open(os.devnull, 'wb') as DEVNULL:
+                mock_sp_call.assert_called_once_with(args, stdout=DEVNULL, stderr=DEVNULL)
 
 
 class TestBackUpTask:
