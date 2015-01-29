@@ -1947,12 +1947,16 @@ span#profileFullname{
         overflow: hidden;
     }
     .osf-search {
-        margin-top: 195px;
-        z-index: 1033;
+        margin-top: -30px;
+        z-index: 1028;
     }
     #searchControls > .osf-search {
         margin-top: -30px;
         z-index: 99;
+    }
+    .osf-xs-search {
+        text-decoration: none !important;
+        padding: 8px;
     }
 }
 
