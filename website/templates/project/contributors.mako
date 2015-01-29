@@ -19,7 +19,7 @@
                         </a>
                     <!-- /ko -->
                 </h3>
-                % if 'admin' in user['permissions']:
+                % if 'admin' in user['permissions'] and not node['is_registration']:
                     <p>Drag and drop contributors to change listing order.</p>
                 % endif
                 <table id="manageContributorsTable" class="table">
