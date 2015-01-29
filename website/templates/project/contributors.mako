@@ -8,7 +8,7 @@
     <div class="col-md-12">
 
         <h2>Contributors</h2>
-            % if 'admin' in user['permissions']:
+            % if 'admin' in user['permissions'] and not node['is_registration']:
                 <p>Drag and drop contributors to change listing order.</p>
             % endif
             <div id="manageContributors" class="scripted">
