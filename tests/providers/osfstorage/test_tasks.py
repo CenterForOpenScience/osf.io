@@ -1,11 +1,13 @@
 import os
+import json
 import asyncio
-import functools
 from unittest import mock
 
 import pytest
 
 from tests.utils import async
+
+from boto.glacier.exceptions import UnexpectedHTTPResponseError
 
 from waterbutler.providers.osfstorage import settings
 from waterbutler.providers.osfstorage.tasks import utils
@@ -38,7 +40,7 @@ class TestParityTask:
         monkeypatch.setattr(parity, '_parity_create_files', task)
 
         fut = parity.main('The Best', credentials, settings)
-        loop = asyncio.get_event_loop().run_until_complete(fut)
+        asyncio.get_event_loop().run_until_complete(fut)
 
         task.delay.assert_called_once_with('The Best', credentials, settings)
 
@@ -143,3 +145,46 @@ class TestBackUpTask:
                 'archive': 3
             },
         )
+
+    def test_upload_error_empty_file(self, monkeypatch):
+        mock_vault = mock.Mock()
+        mock_vault.name = 'ThreePoint'
+        mock_response = mock.Mock()
+        mock_response.status = 400
+        mock_response.read.return_value = json.dumps({
+            'status': 400,
+            'message': 'Invalid Content-Length: 0',
+        }).encode('utf-8')
+        error = UnexpectedHTTPResponseError(200, mock_response)
+        mock_vault.upload_archive.side_effect = error
+        mock_get_vault = mock.Mock()
+        mock_get_vault.return_value = mock_vault
+        mock_complete = mock.Mock()
+        monkeypatch.setattr(backup, 'get_vault', mock_get_vault)
+        monkeypatch.setattr(backup, '_push_archive_complete', mock_complete)
+
+        backup._push_file_archive('Triangles', None, None, {}, {})
+
+        mock_vault.upload_archive.assert_called_once_with('Triangles', description='Triangles')
+        assert not mock_complete.called
+
+    def test_upload_error(self, monkeypatch):
+        mock_vault = mock.Mock()
+        mock_vault.name = 'ThreePoint'
+        mock_response = mock.Mock()
+        mock_response.status = 400
+        mock_response.read.return_value = json.dumps({
+            'status': 400,
+            'message': 'Jean Valjean means nothing now',
+        }).encode('utf-8')
+        error = UnexpectedHTTPResponseError(200, mock_response)
+        mock_vault.upload_archive.side_effect = error
+        mock_get_vault = mock.Mock()
+        mock_get_vault.return_value = mock_vault
+        mock_complete = mock.Mock()
+        monkeypatch.setattr(backup, 'get_vault', mock_get_vault)
+        monkeypatch.setattr(backup, '_push_archive_complete', mock_complete)
+
+        with pytest.raises(UnexpectedHTTPResponseError):
+            backup._push_file_archive('Triangles', None, None, {}, {})
+        assert not mock_complete.called
