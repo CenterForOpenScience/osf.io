@@ -1,9 +1,14 @@
+# -*- coding: utf-8 -*-
+
 import mailchimp
-from website import settings
+
+from framework import sentry
 from framework.tasks import app
 from framework.auth.core import User
+from framework.tasks.handlers import queued_task
 from framework.auth.signals import user_confirmed
-from framework import sentry
+
+from website import settings
 
 
 def get_mailchimp_api():
@@ -23,8 +28,10 @@ def get_list_name_from_id(list_id):
     mailing_list = m.lists.list(filters={'list_id': list_id})
     return mailing_list['data'][0]['name']
 
+
+@queued_task
 @app.task
-def subscribe(list_name, user_id):
+def subscribe_mailchimp(list_name, user_id):
     user = User.load(user_id)
     m = get_mailchimp_api()
     list_id = get_list_id_from_name(list_name=list_name)
@@ -49,8 +56,10 @@ def subscribe(list_name, user_id):
     finally:
         user.save()
 
+
+@queued_task
 @app.task
-def unsubscribe(list_name, user_id):
+def unsubscribe_mailchimp(list_name, user_id):
     """ Unsubscribe a user from a mailchimp mailing list given its name.
 
         :param str list_name: mailchimp mailing list name
@@ -72,19 +81,9 @@ def unsubscribe(list_name, user_id):
     user.mailing_lists[list_name] = False
     user.save()
 
+
 @user_confirmed.connect
 def subscribe_on_confirm(user):
     # Subscribe user to general OSF mailing list upon account confirmation
     if settings.ENABLE_EMAIL_SUBSCRIPTIONS:
         subscribe_mailchimp(settings.MAILCHIMP_GENERAL_LIST, user._id)
-
-subscribe_mailchimp = (
-    subscribe.delay
-    if settings.USE_CELERY
-    else subscribe)
-
-unsubscribe_mailchimp = (
-    unsubscribe.delay
-    if settings.USE_CELERY
-    else unsubscribe
-)
