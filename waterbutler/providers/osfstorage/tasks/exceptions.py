@@ -1,0 +1,2 @@
+class ParchiveError(Exception):
+    pass
