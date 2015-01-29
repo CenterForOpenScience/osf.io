@@ -8,6 +8,8 @@ from framework.auth.core import User
 from framework.tasks.handlers import queued_task
 from framework.auth.signals import user_confirmed
 
+from framework.transactions.context import transaction
+
 from website import settings
 
 
@@ -31,6 +33,7 @@ def get_list_name_from_id(list_id):
 
 @queued_task
 @app.task
+@transaction()
 def subscribe_mailchimp(list_name, user_id):
     user = User.load(user_id)
     m = get_mailchimp_api()
@@ -40,12 +43,16 @@ def subscribe_mailchimp(list_name, user_id):
         user.mailing_lists = {}
 
     try:
-        m.lists.subscribe(id=list_id,
-                          email={'email': user.username},
-                          merge_vars={'fname': user.given_name,
-                                      'lname': user.family_name},
-                          double_optin=False,
-                          update_existing=True)
+        m.lists.subscribe(
+            id=list_id,
+            email={'email': user.username},
+            merge_vars={
+                'fname': user.given_name,
+                'lname': user.family_name,
+            },
+            double_optin=False,
+            update_existing=True,
+        )
 
     except mailchimp.ValidationError as error:
         sentry.log_exception()
@@ -59,14 +66,14 @@ def subscribe_mailchimp(list_name, user_id):
 
 @queued_task
 @app.task
+@transaction()
 def unsubscribe_mailchimp(list_name, user_id):
-    """ Unsubscribe a user from a mailchimp mailing list given its name.
+    """Unsubscribe a user from a mailchimp mailing list given its name.
 
-        :param str list_name: mailchimp mailing list name
-        :param str username: current user's email
+    :param str list_name: mailchimp mailing list name
+    :param str username: current user's email
 
-        A ListNotSubscribed error will be raised if a user
-        not subscribed to the list tries to unsubscribe again.
+    :raises: ListNotSubscribed if user not already subscribed
     """
     user = User.load(user_id)
     m = get_mailchimp_api()
