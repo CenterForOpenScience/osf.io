@@ -43,7 +43,7 @@ def create_parity_files(file_path, redundancy=5):
         if not stat.st_size:
             return []
     except OSError as error:
-        raise exceptions.ParchiveError('Could not read file')
+        raise exceptions.ParchiveError('Could not read file: {0}'.format(error.strerror))
     path, name = os.path.split(file_path)
     with open(os.devnull, 'wb') as DEVNULL:
         args = [
