@@ -23,11 +23,6 @@ $('#figsharePublishArticle').on('click', function(){
 </script>
 -->
 ## % endif
-
-    <div class="alert alert-warning" data-bind="visible: deleting">
-        Deleting your file…
-    </div>
-
     <ol class="breadcrumb">
         <li class="active overflow"><a href=${urls['files']}>${node['title']}</a></li>
         <li>Figshare</li>

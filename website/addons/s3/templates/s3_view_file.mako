@@ -3,11 +3,6 @@
 
 <%def name="file_versions()">
     <div id='s3Scope' class="scripted">
-
-        <div class="alert alert-warning" data-bind="visible: deleting">
-            Deleting your file…
-        </div>
-
             <p>
                 % if download_url:
                     <!--download button-->

@@ -12,6 +12,7 @@ from framework.auth import Auth
 from framework.mongo import StoredObject
 
 from website import settings
+from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 from website.addons.base import GuidFile
 
@@ -257,6 +258,57 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                 'is_owner': owner == user,
             })
         return rv
+
+    def serialize_waterbutler_credentials(self):
+        if not self.complete or not self.repo:
+            raise exceptions.AddonError('Addon is not authorized')
+        return {'token': self.user_settings.oauth_access_token}
+
+    def serialize_waterbutler_settings(self):
+        if not self.complete:
+            raise exceptions.AddonError('Repo is not configured')
+        return {
+            'owner': self.user,
+            'repo': self.repo,
+        }
+
+    def create_waterbutler_log(self, auth, action, metadata):
+        path = metadata['path']
+
+        if not metadata.get('extra'):
+            sha = None
+            urls = {}
+        else:
+            sha = metadata['extra']['commit']['sha']
+            urls = {
+                'view': '{0}?ref={1}'.format(
+                    self.owner.web_url_for('github_view_file', path=path),
+                    sha
+                ),
+                'download': '{0}?ref={1}'.format(
+                    self.owner.web_url_for('github_download_file', path=path),
+                    sha
+                )
+            }
+
+        self.owner.add_log(
+            'github_{0}'.format(action),
+            auth=auth,
+            params={
+                'project': self.owner.parent_id,
+                'node': self.owner._id,
+                'path': path,
+                'urls': urls,
+                'github': {
+                    'user': self.user,
+                    'repo': self.repo,
+                    'sha': sha,
+                },
+            },
+        )
+
+    def get_waterbutler_render_url(self, path, branch=None, **kwargs):
+        return self.owner.web_url_for('github_view_file', path=path, branch=branch)
 
     #############
     # Callbacks #

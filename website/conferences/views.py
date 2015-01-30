@@ -8,11 +8,14 @@ from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
 from framework.exceptions import HTTPError
+from framework.transactions.context import TokuTransaction
+from framework.transactions.handlers import no_auto_transaction
 
 from website import settings
 from website.models import Node
 from website.util import web_url_for
-from website.mails import send_mail, CONFERENCE_SUBMITTED, CONFERENCE_FAILED
+from website.mails import send_mail
+from website.mails import CONFERENCE_SUBMITTED, CONFERENCE_INACTIVE, CONFERENCE_FAILED
 
 from website.conferences import utils
 from website.conferences.message import ConferenceMessage, ConferenceError
@@ -22,6 +25,7 @@ from website.conferences.model import Conference
 logger = logging.getLogger(__name__)
 
 
+@no_auto_transaction
 def meeting_hook():
     """View function for email conference submission.
     """
@@ -34,9 +38,18 @@ def meeting_hook():
         raise HTTPError(httplib.NOT_ACCEPTABLE)
 
     try:
-        conference = Conference.get_by_endpoint(message.conference_name)
+        conference = Conference.get_by_endpoint(message.conference_name, active=False)
     except ConferenceError as error:
         logger.error(error)
+        raise HTTPError(httplib.NOT_ACCEPTABLE)
+
+    if not conference.active:
+        send_mail(
+            message.sender_email,
+            CONFERENCE_INACTIVE,
+            fullname=message.sender_display,
+            presentations_url=web_url_for('conference_view', _absolute=True),
+        )
         raise HTTPError(httplib.NOT_ACCEPTABLE)
 
     add_poster_by_email(conference=conference, message=message)
@@ -57,30 +70,33 @@ def add_poster_by_email(conference, message):
 
     created = []
 
-    user, user_created = utils.get_or_create_user(
-        message.sender_display,
-        message.sender_email,
-        message.is_spam,
-    )
-    if user_created:
-        created.append(user)
-
-    if user_created:
-        created.append(user)
-        set_password_url = web_url_for(
-            'reset_password',
-            verification_key=user.verification_key,
-            _absolute=True,
+    with TokuTransaction():
+        user, user_created = utils.get_or_create_user(
+            message.sender_display,
+            message.sender_email,
+            message.is_spam,
         )
-    else:
-        set_password_url = None
+        if user_created:
+            created.append(user)
 
-    node, node_created = utils.get_or_create_node(message.subject, user)
-    if node_created:
-        created.append(node)
+        if user_created:
+            created.append(user)
+            set_password_url = web_url_for(
+                'reset_password',
+                verification_key=user.verification_key,
+                _absolute=True,
+            )
+        else:
+            set_password_url = None
 
-    utils.provision_node(conference, message, node, user)
-    utils.record_message(message, created)
+        node, node_created = utils.get_or_create_node(message.subject, user)
+        if node_created:
+            created.append(node)
+
+        utils.provision_node(conference, message, node, user)
+        utils.record_message(message, created)
+
+    utils.upload_attachments(user, node, message.attachments)
 
     download_url = node.web_url_for(
         'osf_storage_view_file',
@@ -123,6 +139,7 @@ def _render_conference_node(node, idx):
             'osf_storage_view_file',
             path=record.path,
             action='download',
+            _absolute=True,
         )
     except StopIteration:
         download_url = ''

@@ -5,10 +5,6 @@
 <%def name="file_versions()">
 <div class="scripted" id="dataverseScope">
 
-    <div class="alert alert-warning" data-bind="visible: deleting">
-        Deleting your file…
-    </div>
-
     <ol class="breadcrumb">
          <li class="active overflow"><a data-bind="attr: {href: files_url}">{{nodeTitle}}</a></li>
          <li>Dataverse</li>

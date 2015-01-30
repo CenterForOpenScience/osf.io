@@ -1,1 +1,1 @@
-require('./github-rubeus-cfg.js');
+require('./githubFangornConfig.js');

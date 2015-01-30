@@ -1,0 +1,69 @@
+
+.fangorn-spin {
+	-webkit-animation: spin 2s infinite linear;
+	animation: spin 2s infinite linear;
+}
+
+@-moz-keyframes spin {
+    from { -moz-transform: rotate(0deg); }
+    to { -moz-transform: rotate(360deg); }
+}
+@-webkit-keyframes spin {
+    from { -webkit-transform: rotate(0deg); }
+    to { -webkit-transform: rotate(360deg); }
+}
+@keyframes spin {
+    from {transform:rotate(0deg);}
+    to {transform:rotate(360deg);}
+}
+
+.fangorn-loading {
+	text-align: center;
+	font-size: 16px;
+	font-weight: 200;
+	background: #EAEAEA;
+	padding: 20px;
+	border-radius: 4px;
+}
+.fangorn-dz-hover {
+	background: #BEF8FF;
+}
+
+.alert-deleting {
+	background: #F5F5F5;
+color: #F00;
+text-align: center;
+}
+
+.tb-td .btn {
+	margin-right: 5px;
+}
+
+.fangorn-hover {
+    background: #F4F5DF;
+}
+.tb-th {
+	line-height: 14px;
+	background: url('/static/img/hgrid/header-columns-bg.gif');
+	padding: 3px 0px 7px 5px;
+font-size: 13px
+}
+
+.tb-td {
+    height: inherit;
+    padding-top: 6px;
+}
+.tb-toggle-icon {
+	font-size: 10px;
+	width: 15px;
+}
+.tb-row-titles {
+	height: 25px;
+}
+#tb-tbody {
+	border-top : none;
+	border: 1px solid #EBEBEB;
+}
+.tb-row .icon-remove {
+	cursor : pointer;
+}

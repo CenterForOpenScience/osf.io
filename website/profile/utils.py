@@ -22,6 +22,15 @@ def get_public_projects(user):
     return [p for p in get_projects(user) if p.is_public]
 
 
+def get_gravatar(user, size=None):
+    if size is None:
+        size = settings.GRAVATAR_SIZE_PROFILE
+    return gravatar(
+        user, use_ssl=True,
+        size=size
+    )
+
+
 def serialize_user(user, node=None, full=False):
     """Return a dictionary representation of a registered user.
 

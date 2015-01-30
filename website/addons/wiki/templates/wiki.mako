@@ -1,5 +1,9 @@
 <%page expression_filter="h"/>
 <%inherit file="project/project_base.mako"/>
+<div class="page-header  visible-xs">
+  <h2 class="text-300">Wiki</h2>
+</div>
+
 <%def name="title()">${node['title'] | n} Wiki</%def>
 
 <div class="row">

@@ -57,6 +57,16 @@ def get_public_components(uid=None, user=None):
     ])
 
 
+@must_be_logged_in
+def current_user_gravatar(size=None, **kwargs):
+    user_id = kwargs['auth'].user._id
+    return get_gravatar(user_id, size=size)
+
+
+def get_gravatar(uid, size=None):
+    return {'gravatar_url': profile_utils.get_gravatar(User.load(uid), size=size)}
+
+
 def date_or_none(date):
     try:
         return parse_date(date)

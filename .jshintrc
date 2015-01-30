@@ -11,7 +11,7 @@
     "quotmark": "single",
     "smarttabs": true,
     "trailing": true,
-    "unused": true,
+    "unused": false,
     "node": true,
     "evil": true,
     "predef": ["window", "document"]
