@@ -3,6 +3,9 @@
  * For Treebeard and _item API's check: https://github.com/caneruguz/treebeard/wiki
  */
 
+// CSS
+require('../css/fangorn.css');
+
 var $ = require('jquery');
 var m = require('mithril');
 var Treebeard = require('treebeard');

@@ -3,6 +3,10 @@
  * code goes here.
  */
 'use strict';
+// CSS used on every page
+require('../../css/site.css');
+require('../../css/bootstrap-xl.css');
+require('../../css/animate.css');
 
 var $ = require('jquery');
 require('jquery.cookie');
@@ -63,7 +67,7 @@ $(document).on('click', '.project-toggle', function() {
         up.removeClass('icon-angle-up').addClass('icon-angle-down');
     }
     if(down.length > 0) {
-        down.removeClass('icon-angle-down').addClass('icon-angle-up');            
+        down.removeClass('icon-angle-down').addClass('icon-angle-up');
     }
 
     widget.find('.addon-widget-body').slideToggle();
