@@ -1962,6 +1962,22 @@ class Node(GuidStoredObject, AddonModelMixin):
                 )
         logger.error("Node {0} has a parent that is not a project".format(self._id))
 
+    def to_csl(self):  # formats node information into CSL format for citation parsing
+        return {
+            "id": self._id,
+            "title": self.title,
+            "author": [
+                contributor.authors_to_csl()  # method in auth/model.py which parses the names of authors
+                for contributor in self.contributors
+            ],
+            "publisher": "Open Science Framework",
+            "issued": {
+                "date-parts": [[self.logs[-1].date.year if self.logs else '?']]
+            },
+            "type": "article",
+            "URL": self.display_absolute_url,
+        }
+
     def author_list(self, and_delim='&'):
         author_names = [
             author.biblio_name

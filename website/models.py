@@ -11,6 +11,7 @@ from website.project.model import (
     Tag, WatchConfig, MetaSchema, Pointer,
     Comment, PrivateLink, MetaData,
 )
+from website.project.citation.model import CitationStyle
 from website.conferences.model import Conference, MailRecord
 from website.oauth.models import ExternalAccount
 
@@ -19,7 +20,7 @@ MODELS = (
     User, ApiKey, Node, NodeLog,
     Tag, WatchConfig, Session, Guid, MetaSchema, Pointer,
     MailRecord, Comment, PrivateLink, MetaData, Conference,
-    ExternalAccount,
+    CitationStyle, ExternalAccount,
 )
 
 GUID_MODELS = (User, Node, Comment, MetaData)

@@ -29,6 +29,7 @@ from website.search import views as search_views
 from website.oauth import views as oauth_views
 from website.profile import views as profile_views
 from website.project import views as project_views
+from website.project.citation import views as citation_views
 from website.addons.base import views as addon_views
 from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
@@ -200,6 +201,13 @@ def make_url_map(app):
             OsfWebRenderer('public/pages/meeting_landing.mako'),
         ),
 
+        Rule(
+            '/api/v1/citation_styles/',
+            'get',
+            citation_views.styles,
+            json_renderer,
+        ),
+
         Rule('/news/', 'get', {}, OsfWebRenderer('public/pages/news.mako')),
 
     ])
@@ -339,6 +347,16 @@ def make_url_map(app):
             ],
             'post',
             project_views.comment.unreport_abuse,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/citation/<style>/',
+                '/project/<pid>/node/<nid>/citation/<style>/',
+            ],
+            'get',
+            citation_views.view_citation,
             json_renderer,
         ),
 

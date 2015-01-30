@@ -40,6 +40,7 @@ ${next.body()}
     var nodeId = '${node['id']}';
     var userApiUrl = '${user_api_url}';
     var nodeApiUrl = '${node['api_url']}';
+    var absoluteUrl = '${node['display_absolute_url']}';
     // Mako variables accessible globally
     window.contextVars = $.extend(true, {}, window.contextVars, {
         currentUser: {

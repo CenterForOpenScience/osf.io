@@ -35,7 +35,6 @@ from website.profile import utils
 from website.project import new_folder
 from website.util.sanitize import strip_html
 
-
 logger = logging.getLogger(__name__)
 
 
