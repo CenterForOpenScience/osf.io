@@ -476,6 +476,8 @@ def setup():
 @task
 def analytics():
     from website.app import init_app
+    import matplotlib
+    matplotlib.use('Agg')
     init_app()
     from scripts.analytics import (
         logs, addons, comments, links, watch, email_invites,

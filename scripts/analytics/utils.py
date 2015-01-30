@@ -2,14 +2,12 @@
 
 import os
 import csv
-import datetime
 from bson import ObjectId
 from cStringIO import StringIO
 
-import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-import seaborn as sns
+import seaborn as sns  # noqa
 
 import requests
 
@@ -59,11 +57,9 @@ def send_file(app, name, content_type, file_like, nchar, node, user):
     """Upload file to OSF."""
     with app.test_request_context():
         upload_url = storage_utils.get_upload_url(
-            node,
             user,
-            nchar,
-            content_type,
-            name,
+            node,
+            path=name,
         )
     requests.put(
         upload_url,
