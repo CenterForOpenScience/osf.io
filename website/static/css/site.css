@@ -1946,6 +1946,18 @@ span#profileFullname{
     .project-nav {
         overflow: hidden;
     }
+    .osf-search {
+        margin-top: -30px;
+        z-index: 1028;
+    }
+    #searchControls > .osf-search {
+        margin-top: -30px;
+        z-index: 99;
+    }
+    .osf-xs-search {
+        text-decoration: none !important;
+        padding: 8px;
+    }
 }
 
 @media (min-width: 768px) {
@@ -1962,6 +1974,13 @@ span#profileFullname{
     .navbar-brand {
         margin-left: 0 !important;
         padding-left: 0;
+    }
+    .osf-search {
+        margin-top: -30px;
+        z-index: 1028; /* should be less than 1030 to not cover navbar */
+    }
+    #searchControls > .osf-search {
+        margin-top: -30px;
     }
 
 }
@@ -1995,12 +2014,13 @@ span#profileFullname{
 .osf-search {
     padding: 10px 0;
     background: #B8ECC0;
-    margin-top: -30px;
     position: fixed;
     width: 100%;
     box-shadow: 0 0 9px -2px #464545;
-    z-index: 111;
     left: 0;
+}
+#searchControls > .osf-search {
+    margin-top: -30px;
 }
 .osf-search-input {
     background: none;

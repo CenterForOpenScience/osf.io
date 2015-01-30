@@ -8,6 +8,8 @@ var m = require('mithril');
 var Treebeard = require('treebeard');
 var waterbutler = require('waterbutler');
 
+var $osf = require('osfHelpers');
+
 var tbOptions;
 
 var tempCounter = 1;
@@ -124,7 +126,7 @@ function _fangornResolveToggle(item) {
     var toggleMinus = m('i.icon-minus', ' '),
         togglePlus = m('i.icon-plus', ' ');
     // check if folder has children whether it's lazyloaded or not.
-    if (item.kind === 'folder') {
+    if (item.kind === 'folder' && item.depth > 1) {
         if(!item.data.permissions.view){
             return '';
         }
@@ -248,7 +250,7 @@ function _fangornSending(treebeard, file, xhr, formData) {
  */
 function _fangornAddedFile(treebeard, file) {
     var item = file.treebeardParent;
-    if (!item.data.permissions.edit) {
+    if (!_fangornCanDrop(treebeard, item)) {
         return;
     }
     var configOption = resolveconfigOption.call(treebeard, item, 'uploadAdd', [file, item]);
@@ -277,6 +279,14 @@ function _fangornAddedFile(treebeard, file) {
     return configOption || null;
 }
 
+function _fangornCanDrop(treebeard, item) {
+    var canDrop = resolveconfigOption.call(treebeard, item, 'canDrop', [item]);
+    if (canDrop === null) {
+        canDrop = item.data.provider && item.kind === 'folder' && item.data.permissions.edit;
+    }
+    return canDrop;
+}
+
 /**
  * Runs when Dropzone's dragover event hook is run.
  * @param {Object} treebeard The treebeard instance currently being run, check Treebeard API
@@ -291,7 +301,7 @@ function _fangornDragOver(treebeard, event) {
         item = treebeard.find(itemID);
     $('.tb-row').removeClass(dropzoneHoverClass).removeClass(treebeard.options.hoverClass);
     if (item !== undefined) {
-        if (item.data.provider && item.kind === 'folder' && item.data.permissions.edit) {
+        if (_fangornCanDrop(treebeard, item)) {
             closestTarget.addClass(dropzoneHoverClass);
         }
     }
@@ -366,11 +376,21 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
  * @param message Error message returned
  * @private
  */
+var DEFAULT_ERROR_MESSAGE = 'Could not upload file. The file may be invalid.';
 function _fangornDropzoneError(treebeard, file, message) {
-    var parent = file.treebeardParent;
-    var item,
-        child,
-        msgText = message.message_short || message;
+    // File may either be a webkit Entry or a file object, depending on the browser
+    // On Chrome we can check if a directory is being uploaded
+    var msgText;
+    if (file.isDirectory) {
+        msgText = 'Cannot upload directories, applications, or packages.';
+    } else {
+        msgText = DEFAULT_ERROR_MESSAGE;
+    }
+    var parent = file.treebeardParent || treebeard.dropzoneItemCache;
+    // Parent may be undefined, e.g. in Chrome, where file is an entry object
+    var item;
+    var child;
+    var destroyItem = false;
     for(var i = 0; i < parent.children.length; i++) {
         child = parent.children[i];
         if(!child.data.tmpID){
@@ -378,12 +398,10 @@ function _fangornDropzoneError(treebeard, file, message) {
         }
         if(child.data.tmpID === file.tmpID) {
             item = child;
+            treebeard.deleteNode(parent.id, item.id);
         }
     }
-    item.notify.type = 'danger';
-    item.notify.message = msgText;
-    item.notify.col = 1;
-    item.notify.selfDestruct(treebeard, item);
+    $osf.growl('Error', msgText);
     treebeard.options.uploadInProgress = false;
 }
 
@@ -464,7 +482,7 @@ function _removeEvent (event, item, col) {
 
     if (item.data.permissions.edit) {
         var mithrilContent = m('div', [
-                m('h3', 'Delete "' + item.data.name+ '"?'),
+                m('h3.break-word', 'Delete "' + item.data.name+ '"?'),
                 m('p', 'This action is irreversible.')
             ]);
         var mithrilButtons = m('div', [
@@ -583,9 +601,10 @@ function _fangornUploadMethod(item) {
 function _fangornActionColumn (item, col) {
     var self = this,
         buttons = [];
-    //
+
     // Upload button if this is a folder
-    if (item.kind === 'folder' && item.data.provider && item.data.permissions.edit) {
+    // If File and FileRead are not defined dropzone is not supported and neither is uploads
+    if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions.edit) {
         buttons.push({
             name: '',
             icon: 'icon-upload-alt',
@@ -801,10 +820,22 @@ tbOptions = {
     resolveRows : _fangornResolveRows,
     title : function() {
         if(window.contextVars.uploadInstruction) {
-            return m('p', [
-                m('span', 'To Upload: Drag files into a folder below OR click the '),
-                m('i.btn.btn-default.btn-xs', { disabled : 'disabled'}, [ m('span.icon-upload-alt')]),
-                m('span', ' below.')
+            // If File and FileRead are not defined dropzone is not supported and neither is uploads
+            if (window.File && window.FileReader) {
+                return m('p', {
+                }, [
+                    m('span', 'To Upload: Drag files into a folder below OR click the '),
+                    m('i.btn.btn-default.btn-xs', { disabled : 'disabled'}, [ m('span.icon-upload-alt')]),
+                    m('span', ' below.')
+                ]);
+            }
+            return m('p', {
+                class: 'text-danger'
+            }, [
+                m('span', 'Your browser does not support file uploads, ', [
+                    m('a', { href: 'http://browsehappy.com' }, 'learn more'),
+                    '.'
+                ])
             ]);
         }
         return undefined;
@@ -847,7 +878,7 @@ tbOptions = {
         var maxSize;
         var displaySize;
         var msgText;
-        if (item.data.provider && item.kind === 'folder' && item.data.permissions.edit) {
+        if (_fangornCanDrop(treebeard, item)) {
             if (item.data.accept && item.data.accept.maxSize) {
                 size = file.size / 1000000;
                 maxSize = item.data.accept.maxSize;
@@ -865,6 +896,8 @@ tbOptions = {
     onscrollcomplete : function(){
         $('[data-toggle="tooltip"]').tooltip();
     },
+    onselectrow : function(row) {
+    },
     filterPlaceholder : 'Search',
     onmouseoverrow : _fangornMouseOverRow,
     dropzone : {                                           // All dropzone options.
@@ -872,7 +905,9 @@ tbOptions = {
         clickable : '#treeGrid',
         addRemoveLinks: false,
         previewTemplate: '<div></div>',
-        parallelUploads: 10
+        parallelUploads: 1,
+        acceptDirectories: false,
+        fallback: function(){},
     },
     resolveIcon : _fangornResolveIcon,
     resolveToggle : _fangornResolveToggle,

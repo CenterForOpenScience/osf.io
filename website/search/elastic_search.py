@@ -13,10 +13,9 @@ import six
 from elasticsearch import (
     Elasticsearch,
     RequestError,
-    NotFoundError
+    NotFoundError,
+    ConnectionError
 )
-
-from requests.exceptions import ConnectionError
 
 from framework import sentry
 

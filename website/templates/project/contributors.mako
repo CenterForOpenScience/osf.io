@@ -15,11 +15,11 @@
                 <h3> Contributors
                     <!-- ko if: canEdit -->
                         <a href="#addContributors" data-toggle="modal" class="btn btn-success btn-sm" style="margin-left:20px;margin-top: -3px">
-                            <i class="icon icon-plus"> Add </i> 
+                          <i class="icon icon-plus"> </i>Add
                         </a>
                     <!-- /ko -->
                 </h3>
-                % if 'admin' in user['permissions']:
+                % if 'admin' in user['permissions'] and not node['is_registration']:
                     <p>Drag and drop contributors to change listing order.</p>
                 % endif
                 <table id="manageContributorsTable" class="table">

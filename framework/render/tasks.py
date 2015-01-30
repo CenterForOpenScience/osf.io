@@ -31,7 +31,7 @@ CUSTOM_ERROR_MESSAGES = {}
 def render_mfr_error(err):
     pre = ERROR_PREFIX
     msg = CUSTOM_ERROR_MESSAGES.get(type(err), err.message)
-    return """
+    return u"""
            <div class="osf-mfr-error">
            <p>{pre}</p>
            <p>{msg}</p>
@@ -88,18 +88,18 @@ def _build_html(render_result):
     """Build all of the assets and content into an html page"""
     if render_result.assets:
         css_list = render_result.assets.get('css') or []
-        css_assets = "\n".join(
+        css_assets = u"\n".join(
             [_build_css_asset(css_uri) for css_uri in css_list]
         )
 
         js_list = render_result.assets.get('js') or []
-        js_assets = "\n".join(
+        js_assets = u"\n".join(
             [_build_js_asset(js_uri) for js_uri in js_list]
         )
     else:
         css_assets = js_assets = ""
 
-    rv = "{css}\n\n{js}\n\n{content}".format(
+    rv = u"{css}\n\n{js}\n\n{content}".format(
         css=css_assets,
         js=js_assets,
         content=render_result.content or "",

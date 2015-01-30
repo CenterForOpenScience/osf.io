@@ -3,6 +3,7 @@
 import httplib
 import logging
 
+import requests
 from flask import request
 
 from framework.auth import Auth
@@ -232,7 +233,11 @@ def serialize_file(idx, version, record, path, node):
 def download_file(path, node_addon, version_query, **query):
     idx, version, record = get_version(path, node_addon, version_query)
     url = utils.get_waterbutler_download_url(idx, version, record, **query)
-    return redirect(url)
+    # Redirect the user directly to the backend service (CloudFiles or S3) rather than
+    # routing through OSF; this saves a request and avoids potential CORS configuration
+    # errors in WaterButler.
+    resp = requests.get(url, allow_redirects=False)
+    return redirect(resp.headers['Location'])
 
 
 def view_file(auth, path, node_addon, version_query):
