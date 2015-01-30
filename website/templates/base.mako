@@ -219,11 +219,6 @@
     ## select2 stylesheet also needs to be here so that it finds the correct images
     <link rel="stylesheet" href="/static/vendor/bower_components/select2/select2.css">
 
-    % for url in css_all:
-    <link rel="stylesheet" href="${url}">
-    % endfor
-    ## <link rel="stylesheet" href="/static/css/site.css">
-
     <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
     <script>window.jQuery || document.write('<script src="/static/vendor/bower_components/jQuery/dist/jquery.min.js">\x3C/script>')</script>
     <script src="//code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>

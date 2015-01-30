@@ -146,7 +146,9 @@ module.exports = {
     module: {
         loaders: [
             {test: /\.css$/, loaders: ['style', 'css']},
-            {test: /\.png$/, loader: 'url?limit=100000&minetype=image/png'}
+            {test: /\.png$/, loader: 'url?limit=100000&minetype=image/png'},
+            {test: /\.gif$/, loader: 'url?limit=10000&mimetype=image/gif'},
+            {test: /\.jpg$/, loader: 'url?limit=10000&mimetype=image/jpg'}
         ]
     }
 };

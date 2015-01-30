@@ -7,6 +7,10 @@
 require('../../css/site.css');
 require('../../css/bootstrap-xl.css');
 require('../../css/animate.css');
+require('../../vendor/bower_components/bootstrap/dist/css/bootstrap-theme.css');
+require('../../vendor/bower_components/x-editable/dist/bootstrap3-editable/css/bootstrap-editable.css');
+require('../../vendor/bower_components/jquery-ui/themes/base/minified/jquery.ui.resizable.min.css');
+
 
 var $ = require('jquery');
 require('jquery.cookie');
