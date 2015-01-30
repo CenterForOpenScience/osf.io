@@ -128,6 +128,7 @@ class OSFStorageProvider(provider.BaseProvider):
         response = yield from self.make_signed_request(
             'POST',
             self.callback_url,
+            expects=(200, 201),
             data=json.dumps({
                 'auth': self.auth,
                 'settings': self.settings['storage'],

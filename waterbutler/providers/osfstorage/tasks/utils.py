@@ -38,6 +38,12 @@ def create_parity_files(file_path, redundancy=5):
     """
     :raise: `ParchiveError` if creation of parity files fails
     """
+    try:
+        stat = os.stat(file_path)
+        if not stat.st_size:
+            return []
+    except OSError as error:
+        raise exceptions.ParchiveError('Could not read file: {0}'.format(error.strerror))
     path, name = os.path.split(file_path)
     with open(os.devnull, 'wb') as DEVNULL:
         args = [

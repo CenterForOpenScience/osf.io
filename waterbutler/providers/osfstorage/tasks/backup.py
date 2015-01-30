@@ -5,6 +5,7 @@ import asyncio
 
 import aiohttp
 from boto.glacier.layer2 import Layer2
+from boto.glacier.exceptions import UnexpectedHTTPResponseError
 
 from waterbutler.core import signing
 from waterbutler.core.utils import async_retry
@@ -26,7 +27,16 @@ def _push_file_archive(self, local_path, version_id, callback_url,
     _, name = os.path.split(local_path)
     with utils.RetryUpload(self):
         vault = get_vault(credentials, settings)
-        glacier_id = vault.upload_archive(local_path, description=name)
+        try:
+            glacier_id = vault.upload_archive(local_path, description=name)
+        except UnexpectedHTTPResponseError as error:
+            # Glacier doesn't allow empty files; catch this exception but raise
+            # other errors
+            if error.status == 400:
+                payload = json.loads(error.body.decode('utf-8'))
+                if payload.get('message') == 'Invalid Content-Length: 0':
+                    return
+            raise
     metadata = {
         'vault': vault.name,
         'archive': glacier_id,
