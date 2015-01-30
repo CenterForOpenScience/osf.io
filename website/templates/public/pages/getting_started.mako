@@ -44,6 +44,7 @@
                             <li><a href="#amazon"><i class="icon-chevron-right"></i> Amazon S3</a></li>
                             <li><a href="#figshare"><i class="icon-chevron-right"></i> FigShare</a></li>
                             <li><a href="#dataverse"><i class="icon-chevron-right"></i> Dataverse</a></li>
+                            <li><a href="#twofactor"><i class="icon-chevron-right"></i> Two-factor Authentication</a></li>
                         </ul>
                     </li>
                     <li>
@@ -64,14 +65,14 @@
                     <img class="gs-count" src="/static/img/one_big.gif">
                     <p class="lead"> Getting started with the OSF is easy and we provide you with the tools you need to organize your research and communicate efficiently with your collaborators </p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
-                        <div class="embed-responsive-item youtube-loader" id="A3HV4T156TI"></div>
+                        <div class="embed-responsive-item youtube-loader" id="2TV21gOzfhw"></div>
                     </div>
                     <br>
                     <div id="start-two"></div>
                     <img class="gs-count" src="/static/img/two_big.gif">
                     <p class="lead"> Keep yourself and your collaborators on point while collecting data by using the OSF. Add contributors to your project so that everyone has access to the same files. Use our pre-formatted citations and URLs to make credit is given where credit is due.  </p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
-                        <div class="embed-responsive-item youtube-loader" id="mBXZ2DuoeKU"></div>
+                        <div class="embed-responsive-item youtube-loader" id="UtahdT9wZ1Y"></div>
                     </div>
                     <br>
                     <div id="start-three"></div>
@@ -109,7 +110,7 @@
                     <p class="gs-header">Components</p>
                     <p>Components are like folders in your project. You can assign a component a category upon its creation (data, materials, projects, etc.). A component that is categorized as a project can have more components added within it.</p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
-                        <div class="embed-responsive-item youtube-loader" id="pSFcSm-MHXo"></div>
+                        <div class="embed-responsive-item youtube-loader" id="kotF8Pnurpw"></div>
                     </div>
                     <p>Components come with their own privacy settings, contributors, wikis, add-ons, and files.</p>
                     <p>To delete a component or project, visit its page and go to "Settings" in the grey navigation bar under the component's title. This will also delete that component's wiki.</p>
@@ -175,7 +176,7 @@
                     <p>Adding contributors to a project allows credit to be given to those who have worked on the project, and allows them to make changes to the project.</p>
                     <p>Admins on a project can add contributors by visiting the "Sharing" tab in the grey navigation bar under the project's name. Click on the top link labeled "Click to add a contributor." A pop-up will appear where you can search for a person to add. If they have an OSF account, their name will appear and you can add them and select their privileges. If they do not have an OSF account, you can provide them as an unregistered user and they will be notified by email.  You can select what components you would like to add them to.</p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
-                        <div class="embed-responsive-item youtube-loader" id="_NFJTgjohZk"></div>
+                        <div class="embed-responsive-item youtube-loader" id="eYpAn59G6Yk"></div>
                     </div>
                     <p><strong>Contributor permissions</strong> are the rules that govern who can see or edit a project. When a project is made, the creator is automatically the administrator, meaning that they can add other people and make changes to the project. The admin can add contributors and make them administrators as well, or they can assign the other contributors to read or read & write priveleges.<p>
                     <p>Reading privileges means that the contributor can see any project or component they are listed as a contributor on.</p>
