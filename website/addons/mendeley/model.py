@@ -1,8 +1,12 @@
+import time
+
 import mendeley
 from mendeley.session import MendeleySession
 
 from website import settings
 from website.addons.base import AddonUserSettingsBase
+from website.citations import Citation
+from website.citations import CitationList
 from website.oauth.models import ExternalProvider
 
 
@@ -24,7 +28,7 @@ class Mendeley(ExternalProvider):
     _client = None
 
     def handle_callback(self, response):
-        client = self.get_client(response)
+        client = self._get_client(response)
 
         profile = client.profiles.me
 
@@ -33,7 +37,7 @@ class Mendeley(ExternalProvider):
             'display_name': profile.display_name
         }
 
-    def get_client(self, credentials):
+    def _get_client(self, credentials):
         if not self._client:
             partial = mendeley.Mendeley(
                 client_id=self.client_id,
@@ -43,3 +47,28 @@ class Mendeley(ExternalProvider):
             self._client = MendeleySession(partial, credentials)
 
         return self._client
+
+    @property
+    def client(self):
+        if not self._client:
+            self._client = self._get_client({
+                'access_token': self.account.oauth_key,
+                'refresh_token': self.account.refresh_token,
+                'expires_at': time.mktime(self.account.expires_at.timetuple()),
+                'token_type': 'bearer',
+            })
+        return self._client
+
+    @property
+    def citation_lists(self):
+        client = self.client
+
+        folders = client.folders.list().items
+
+        return (
+            self._mendeley_folder_to_citation_list(folder)
+            for folder in folders
+        )
+
+    def _mendeley_folder_to_citation_list(self, folder):
+        return CitationList(name=folder.name)

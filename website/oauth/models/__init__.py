@@ -65,6 +65,12 @@ class ExternalProvider(object):
     account = None
     _oauth_version = OAUTH2
 
+    def __repr__(self):
+        return '<{name}: {status}>'.format(
+            name=self.__class__.__name__,
+            status=self.account.provider_id if self.account else 'anonymous'
+        )
+
     @abc.abstractproperty
     def auth_url_base(self):
         """The base URL to begin the OAuth dance"""
@@ -83,7 +89,6 @@ class ExternalProvider(object):
         # create a dict on the session object if it's not already there
         if session.data.get("oauth_states") is None:
             session.data['oauth_states'] = {}
-
 
         if self._oauth_version == OAUTH2:
             # build the URL

@@ -1,1 +1,1 @@
-mendeley==0.2.5
+git+https://github.com/lyndsysimon/mendeley-python-sdk.git@add_folders
