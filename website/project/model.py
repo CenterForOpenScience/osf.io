@@ -2555,6 +2555,29 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
         self.save()
 
+    def validate_node_wiki_name(self, name):
+        """Validate the node wiki name.
+
+        :param name: A string, the page's name, e.g. ``"My Page"``.
+
+        """
+        # TODO: Fix circular imports
+        from website.addons.wiki.model import validate_page_name
+        from website.addons.wiki.exceptions import (
+            PageConflictError,
+        )
+
+        name = (name or '').strip()
+        key = to_mongo_key(name)
+
+        if (key in self.wiki_pages_current) or key == 'home':
+            raise PageConflictError(
+                'Page already exists with name {0}'.format(
+                    name,
+                )
+            )
+        validate_page_name(name)
+
     # TODO: Move to wiki add-on
     def rename_node_wiki(self, name, new_name, auth):
         """Rename the node's wiki page with new name.
@@ -2581,12 +2604,12 @@ class Node(GuidStoredObject, AddonModelMixin):
             raise PageCannotRenameError('Cannot rename wiki home page')
         if not page:
             raise PageNotFoundError('Wiki page not found')
-        if (new_key in self.wiki_pages_current and key != new_key) or new_key == 'home':
-            raise PageConflictError(
-                'Page already exists with name {0}'.format(
-                    new_name,
-                )
-            )
+        try:
+            self.validate_node_wiki_name(new_name)
+        except PageConflictError as error:
+            # allow name case change
+            if key != new_key:
+                raise error
 
         # rename the page first in case we hit a validation exception.
         old_name = page.page_name

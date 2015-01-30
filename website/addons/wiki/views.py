@@ -101,6 +101,7 @@ def _get_wiki_api_urls(node, name, additional_urls=None):
         'base': node.api_url_for('project_wiki_home'),
         'delete': node.api_url_for('project_wiki_delete', wname=name),
         'rename': node.api_url_for('project_wiki_rename', wname=name),
+        'validate_name': node.api_url_for('project_wiki_validate_name'),
     }
     if additional_urls:
         urls.update(additional_urls)
@@ -413,14 +414,23 @@ def project_wiki_rename(auth, wname, **kwargs):
 @must_have_permission('write')  # returns user, project
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
-def project_wiki_validate_name(wname, **kwargs):
+def project_wiki_validate_name(**kwargs):
     node = kwargs['node'] or kwargs['project']
-    wiki_name = wname.strip()
-    wiki_key = to_mongo_key(wiki_name)
+    wiki_name = request.args.get('name', '').strip()
 
-    if wiki_key in node.wiki_pages_current or wiki_key == 'home':
-        raise HTTPError(http.CONFLICT, data=dict(
-            message_short='Wiki page name conflict.',
-            message_long='A wiki page with that name already exists.'
+    try:
+        node.validate_node_wiki_name(wiki_name)
+    except NameEmptyError:
+        raise WIKI_NAME_EMPTY_ERROR
+    except NameInvalidError as error:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_short='Invalid name',
+            message_long=error.args[0]
         ))
+    except NameMaximumLengthError:
+        raise WIKI_NAME_MAXIMUM_LENGTH_ERROR
+    except PageCannotRenameError:
+        raise WIKI_PAGE_CANNOT_RENAME_ERROR
+    except PageConflictError:
+        raise WIKI_PAGE_CONFLICT_ERROR
     return {'message': wiki_name}

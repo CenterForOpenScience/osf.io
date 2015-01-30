@@ -209,37 +209,37 @@ class TestWikiViews(OsfTestCase):
         assert_is_not_none(wiki)
 
     def test_wiki_validate_name(self):
-        url = self.project.api_url_for('project_wiki_validate_name', wname='Capslock')
-        res = self.app.get(url, auth=self.user.auth)
+        url = self.project.api_url_for('project_wiki_validate_name')
+        res = self.app.get(url, {'name': 'Capslock'}, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
     def test_wiki_validate_name_cannot_create_home(self):
-        url = self.project.api_url_for('project_wiki_validate_name', wname='home')
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        url = self.project.api_url_for('project_wiki_validate_name')
+        res = self.app.get(url, {'name': 'home'}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
 
     def test_project_wiki_validate_name_mixed_casing(self):
-        url = self.project.api_url_for('project_wiki_validate_name', wname='CaPsLoCk')
-        res = self.app.get(url, auth=self.user.auth)
+        url = self.project.api_url_for('project_wiki_validate_name')
+        res = self.app.get(url, {'name': 'CaPsLoCk'}, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_not_in('capslock', self.project.wiki_pages_current)
         self.project.update_node_wiki('CaPsLoCk', 'hello', self.consolidate_auth)
         assert_in('capslock', self.project.wiki_pages_current)
 
     def test_project_wiki_validate_name_diplay_correct_capitalization(self):
-        url = self.project.api_url_for('project_wiki_validate_name', wname='CaPsLoCk')
-        res = self.app.get(url, auth=self.user.auth)
+        url = self.project.api_url_for('project_wiki_validate_name')
+        res = self.app.get(url, {'name': 'CaPsLoCk'}, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_in('CaPsLoCk', res)
 
     def test_project_wiki_validate_name_conflict_different_casing(self):
-        url = self.project.api_url_for('project_wiki_validate_name', wname='CAPSLOCK')
-        res = self.app.get(url, auth=self.user.auth)
+        url = self.project.api_url_for('project_wiki_validate_name')
+        res = self.app.get(url, {'name': 'CAPSLOCK'}, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         self.project.update_node_wiki('CaPsLoCk', 'hello', self.consolidate_auth)
         assert_in('capslock', self.project.wiki_pages_current)
-        url = self.project.api_url_for('project_wiki_validate_name', wname='capslock')
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        url = self.project.api_url_for('project_wiki_validate_name')
+        res = self.app.get(url, {'name': 'capslock'}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
 
     def test_project_dashboard_shows_no_wiki_content_text(self):

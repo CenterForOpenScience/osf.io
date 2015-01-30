@@ -96,8 +96,8 @@ api_routes = {
 
         # Validate | GET
         Rule([
-            '/project/<pid>/wiki/<wname>/validate/',
-            '/project/<pid>/node/<nid>/wiki/<wname>/validate/',
+            '/project/<pid>/wiki/validate/',
+            '/project/<pid>/node/<nid>/wiki/validate/',
         ], 'get', views.project_wiki_validate_name, json_renderer),
 
         # Edit | POST
