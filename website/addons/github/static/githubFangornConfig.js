@@ -39,12 +39,10 @@ function _fangornActionColumn (item, col){
             .done(function(data) {
                 // delete view
                 tb.deleteNode(item.parentID, item.id);
-                window.console.log('Delete success: ', data);
                 tb.modal.dismiss();
             })
             .fail(function(data){
                 tb.modal.dismiss();
-                window.console.log('Delete failed: ', data);
                 item.notify.update('Delete failed.', 'danger', undefined, 3000);
             });
         }
@@ -66,7 +64,6 @@ function _fangornActionColumn (item, col){
 
     function _downloadEvent (event, item, col) {
         event.stopPropagation();
-        console.log('Download Event triggered', this, event, item, col);
         window.location = waterbutler.buildTreeBeardDownload(item, {ref: item.data.extra.fileSha});
     }
 
@@ -225,7 +222,6 @@ function _fangornFolderIcons(item){
 }
 
 function _fangornUploadComplete(item){
-    console.log('upload complete', this, item);
     var index = this.returnIndex(item.id);
 }
 
