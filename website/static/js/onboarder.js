@@ -534,7 +534,7 @@ function OBUploaderViewModel(params) {
                 // Otherwise, use generic message
                 var msg = message.message_long || message;
                 if (msg === 'Server responded with 0 code.' || msg.indexOf('409') !== -1) {
-                    msg = 'Could not upload file The file may be invalid.';
+                    msg = 'Could not upload file. The file may be invalid.';
                 }
                 self.changeMessage(msg, 'text-danger');
             });
