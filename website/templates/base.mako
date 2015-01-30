@@ -214,7 +214,6 @@
 
     <!-- Le styles -->
     ## Don't bundle Bootstrap or else Glyphicons won't work
-    <link rel="stylesheet" href="/static/vendor/bower_components/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="/static/vendor/font-awesome/css/font-awesome.min.css">
     ## select2 stylesheet also needs to be here so that it finds the correct images
     <link rel="stylesheet" href="/static/vendor/bower_components/select2/select2.css">
