@@ -4,6 +4,9 @@
  */
 'use strict';
 
+require('../css/projectorganizer.css');
+require('../css/typeahead.css');
+
 var Handlebars = require('handlebars');
 var $ = require('jquery');
 var m = require('mithril');
