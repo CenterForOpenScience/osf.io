@@ -16,6 +16,7 @@ var staticPath = function(dir) {
  * to website/static/public/
  */
 var entry = {
+    // JS
     'base-page': staticPath('js/pages/base-page.js'),
     'home-page': staticPath('js/pages/home-page.js'),
     'dashboard-page': staticPath('js/pages/dashboard-page.js'),
@@ -141,5 +142,11 @@ module.exports = {
     resolve: resolve,
     externals: externals,
     plugins: plugins,
-    output: output
+    output: output,
+    module: {
+        loaders: [
+            {test: /\.css$/, loaders: ['style', 'css']},
+            {test: /\.png$/, loader: 'url?limit=100000&minetype=image/png'}
+        ]
+    }
 };
