@@ -85,24 +85,23 @@ function _fangornActionColumn (item, col) {
         }
     }
 
-    // Download Zip File
-    if (item.kind === 'folder' && item.data.addonFullname && item.data.permissions.edit) {
-        buttons.push({
-            'name' : '',
-            'tooltip' : 'Upload file',
-            'icon' : 'icon-upload-alt',
-            'css' : 'fangorn-clickable btn btn-default btn-xs',
-            'onclick' : _uploadEvent
-        });
-        if (item.data.state === 'draft') {
-            buttons.push({
+    if (item.kind === 'folder' && item.data.addonFullname && item.data.state === 'draft' && item.data.permissions.edit) {
+        buttons.push(
+            {
+                'name' : '',
+                'tooltip' : 'Upload file',
+                'icon' : 'icon-upload-alt',
+                'css' : 'fangorn-clickable btn btn-default btn-xs',
+                'onclick' : _uploadEvent
+            },
+            {
                 'name' : ' Release Study',
                 'tooltip' : '',
                 'icon' : 'icon-globe',
                 'css' : 'btn btn-primary btn-xs',
                 'onclick' : dataverseRelease
-            });
-        }
+            }
+        );
     } else if (item.kind === 'folder' && !item.data.addonFullname) {
         buttons.push(
             {
@@ -114,16 +113,14 @@ function _fangornActionColumn (item, col) {
             }
         );
     } else if (item.kind === 'file') {
-        if (item.data.state === 'released' || item.data.permissions.edit) {
-            buttons.push({
-                name : '',
-                'tooltip' : 'Download file',
-                icon : 'icon-download-alt',
-                css : 'btn btn-info btn-xs',
-                onclick: _downloadEvent
-            });
-        }
-        if (item.data.state === 'draft' || item.data.permissions.edit) {
+        buttons.push({
+            name : '',
+            'tooltip' : 'Download file',
+            icon : 'icon-download-alt',
+            css : 'btn btn-info btn-xs',
+            onclick: _downloadEvent
+        });
+        if (item.parent().data.state === 'draft' && item.data.permissions.edit) {
             buttons.push({
                 name: '',
                 tooltip : 'Delete',
@@ -222,11 +219,19 @@ function _fangornLazyLoad(item) {
     return item.data.urls.fetch;
 }
 
+function _canDrop(item) {
+    return item.data.provider &&
+        item.kind === 'folder' &&
+        item.data.permissions.edit &&
+        item.data.state === 'draft'
+}
+
 Fangorn.config.dataverse = {
     // Handle changing the branch select
     folderIcon: _fangornFolderIcons,
     resolveDeleteUrl: _fangornDeleteUrl,
     resolveRows: _fangornColumns,
     lazyload:_fangornLazyLoad,
-    uploadUrl: _uploadUrl
+    uploadUrl: _uploadUrl,
+    canDrop: _canDrop
 };

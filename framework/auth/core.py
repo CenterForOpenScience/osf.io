@@ -22,6 +22,7 @@ from framework.addons import AddonModelMixin
 from framework.auth import utils, signals
 from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
 from framework.exceptions import PermissionsError
+from framework.sentry import log_exception
 
 from website import settings, filters, security
 
@@ -725,8 +726,12 @@ class User(GuidStoredObject, AddonModelMixin):
         return ret
 
     def update_search(self):
-        from website.search import search
-        search.update_user(self)
+        from website import search
+        try:
+            search.search.update_user(self)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+            log_exception()
 
     @classmethod
     def find_by_email(cls, email):
