@@ -213,9 +213,8 @@
     <![endif]-->
 
     <!-- Le styles -->
-    ## Don't bundle Bootstrap or else Glyphicons won't work
+    ## TODO: Get fontawesome and select2 to play nicely with webpack
     <link rel="stylesheet" href="/static/vendor/font-awesome/css/font-awesome.min.css">
-    ## select2 stylesheet also needs to be here so that it finds the correct images
     <link rel="stylesheet" href="/static/vendor/bower_components/select2/select2.css">
 
     <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>

@@ -147,13 +147,13 @@ module.exports = {
         loaders: [
             {test: /\.css$/, loaders: ['style', 'css']},
             // url-loader uses DataUrls; files-loader emits files
-            {test: /\.png$/, loader: 'url?limit=100000&minetype=image/png'},
-            {test: /\.gif$/, loader: 'url?limit=10000&mimetype=image/gif'},
-            {test: /\.jpg$/, loader: 'url?limit=10000&mimetype=image/jpg'},
-            {test: /\.woff/,loader: 'url?limit=10000&mimetype=application/font-woff'},
-            {test: /\.svg$/, loader: 'file'},
-            {test: /\.eot$/, loader: 'file'},
-            {test: /\.ttf$/, loader: 'file'}
+            {test: /\.png$/, loader: 'url-loader?limit=100000&minetype=image/png'},
+            {test: /\.gif$/, loader: 'url-loader?limit=10000&mimetype=image/gif'},
+            {test: /\.jpg$/, loader: 'url-loader?limit=10000&mimetype=image/jpg'},
+            {test: /\.woff/, loader: 'url-loader?limit=10000&mimetype=application/font-woff'},
+            {test: /\.svg/, loader: 'file-loader'},
+            {test: /\.eot/, loader: 'file-loader'},
+            {test: /\.ttf/, loader: 'file-loader'}
         ]
     }
 };
