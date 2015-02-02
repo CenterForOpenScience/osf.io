@@ -329,11 +329,13 @@ def node_setting(auth, **kwargs):
         'level': node.comment_level,
     }
 
-    ret['subscriptions_enabled'] = find_node_subscriptions_and_notifications(auth.user, node)['node_subscriptions']
-    ret['subscriptions_available'] = settings.SUBSCRIPTIONS_AVAILABLE
+    # ret['subscriptions_enabled'] = find_node_subscriptions_and_notifications(auth.user, node)['node_subscriptions']
+    # ret['subscriptions_available'] = settings.SUBSCRIPTIONS_AVAILABLE
 
-    ret['notification_types_enabled'] = find_node_subscriptions_and_notifications(auth.user, node)['node_notification_types']
-    ret['notification_types'] = settings.NOTIFICATION_TYPES
+    # ret['notification_types_enabled'] = find_node_subscriptions_and_notifications(auth.user, node)['node_notification_types']
+    # ret['notification_types'] = settings.NOTIFICATION_TYPES
+
+    ret['subscriptions'] = format_data(auth.user, [node._id], [], [])
 
     return ret
 
@@ -369,9 +371,11 @@ def format_data(user, node_ids, subscriptions_available, data):
 
     for idx, node_id in enumerate(node_ids):
         node = Node.load(node_id)
+        index = len(data)
         data.append({'node_id': node_id,
                      'title': node.title,
-                     'events': {},
+                     'kind': 'folder' if node.nodes else 'node',
+                     'nodeUrl': node.url,
                      'children': []
                     })
 
@@ -379,49 +383,56 @@ def format_data(user, node_ids, subscriptions_available, data):
         node_subscriptions = []
         for user_subscription in user_subscriptions:
             if user_subscription.object_id == node_id:
-                node_subscriptions.append(user_subscription)
+                node_subscriptions.append(user_subscription) #xyz_comments
 
         for s in subscriptions_available:
-            data[idx]['events'][s] = {}
-            data[idx]['events'][s]['notification_type'] = None
-
+            event = {
+                'title': s,
+                'kind': 'event',
+                'notificationType': None,
+                'children': []
+            }
             for subscription in node_subscriptions:
                 if subscription.event_name == s:
-                    data[idx]['events'][s]['notification_type'] = subscription.notification_type
+                    for notification_type in settings.NOTIFICATION_TYPES:
+                        if user in getattr(subscription, notification_type):
+                            event['notificationType'] = notification_type  #need description as well
 
-        for n in node.nodes:
-            if n._id != node_id:
-                data[idx]['children'] = format_data(user, [n._id], None, data[idx]['children'])
+            data[index]['children'].append(event)
+
+            if node.nodes:
+                authorized_nodes = [n for n in node.nodes if user in n.contributors]
+                format_data(user, [n._id for n in authorized_nodes], None, data[index]['children'])
 
     return data
 
 
-def find_node_subscriptions_and_notifications(user, node):
-    node_subscriptions = []
-    user_notification_types = get_user_notification_types(user)
-    node_notification_types = []
-
-    for notification_type in user_notification_types:
-        for subscription in getattr(user, notification_type, []):
-            if subscription:
-                if subscription.object_id == node._id:
-                    if subscription.event_name not in node_subscriptions:
-                        node_subscriptions.append(subscription.event_name)
-                    if notification_type not in node_notification_types:
-                        node_notification_types.append(notification_type)
-
-    return {
-        'node_subscriptions': node_subscriptions,
-        'node_notification_types': node_notification_types
-    }
-
-
-def get_user_notification_types(user):
-    user_notification_types = []
-    for notification_type in settings.NOTIFICATION_TYPES:
-        if getattr(user, notification_type, []) and None not in getattr(user, notification_type, []):
-            user_notification_types.append(notification_type)
-    return user_notification_types
+# def find_node_subscriptions_and_notifications(user, node):
+#     node_subscriptions = []
+#     user_notification_types = get_user_notification_types(user)
+#     node_notification_types = []
+#
+#     for notification_type in user_notification_types:
+#         for subscription in getattr(user, notification_type, []):
+#             if subscription:
+#                 if subscription.object_id == node._id:
+#                     if subscription.event_name not in node_subscriptions:
+#                         node_subscriptions.append(subscription.event_name)
+#                     if notification_type not in node_notification_types:
+#                         node_notification_types.append(notification_type)
+#
+#     return {
+#         'node_subscriptions': node_subscriptions,
+#         'node_notification_types': node_notification_types
+#     }
+#
+#
+# def get_user_notification_types(user):
+#     user_notification_types = []
+#     for notification_type in settings.NOTIFICATION_TYPES:
+#         if getattr(user, notification_type, []) and None not in getattr(user, notification_type, []):
+#             user_notification_types.append(notification_type)
+#     return user_notification_types
 
 def collect_node_config_js(addons):
     """Collect webpack bundles for each of the addons' node-cfg.js modules. Return
