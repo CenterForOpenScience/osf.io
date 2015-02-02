@@ -163,6 +163,8 @@
             </script>
         % endif
 
+        <script src="${"/static/public/js/base-page.js" | webpack_asset}"></script>
+
         ${self.javascript_bottom()}
     </body>
 </html>
@@ -212,6 +214,7 @@
 
     <!-- Le styles -->
     ## TODO: Get fontawesome and select2 to play nicely with webpack
+    <link rel="stylesheet" href="/static/vendor/bower_components/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="/static/vendor/font-awesome/css/font-awesome.min.css">
     <link rel="stylesheet" href="/static/vendor/bower_components/select2/select2.css">
 
@@ -220,9 +223,9 @@
     <script src="//code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
     <script>window.jQuery.ui || document.write('<script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js">\x3C/script>')</script>
 
-    ## NOTE: We load vendor and base-page at the top of the page because they contain
-    ## a number of necessary stylesheets which should be loaded before the user sees
+    ## NOTE: We load vendor bundle  at the top of the page because contains
+    ## the webpack runtime and a number of necessary stylesheets which should be loaded before the user sees
     ## content.
     <script src="${"/static/public/js/vendor.js" | webpack_asset}"></script>
-    <script src="${"/static/public/js/base-page.js" | webpack_asset}"></script>
+
 </%def>
