@@ -234,7 +234,7 @@
         %endif
 
 
-        <%include file="log_list.mako"/>
+        <%include file="log_list.mako" args="scripted=True" />
 
     </div>
 
