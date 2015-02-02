@@ -409,6 +409,18 @@ class TestUser(OsfTestCase):
         u._set_email_token_expiration(valid_token, expiration=manual_expiration)
         assert_false(u.verify_confirmation_token(valid_token))
 
+    def test_verify_confirmation_token_when_token_has_no_expiration(self):
+        # A user verification token may not have an expiration
+        email = fake.email()
+        u = UserFactory.build()
+        u.add_email_verification(email)
+        token = u.get_confirmation_token(email)
+        # manually remove expiration to simulate legacy user
+        del u.email_verifications[token]['expiration']
+        u.save()
+
+        assert_true(u.verify_confirmation_token(token))
+
     def test_factory(self):
         # Clear users
         Node.remove()
