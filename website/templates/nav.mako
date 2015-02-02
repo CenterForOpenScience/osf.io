@@ -1,4 +1,5 @@
-<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+<div class="osf-nav-wrapper">
+<nav class="navbar osf-navbar navbar-fixed-top" id="navbarScope" role="navigation">
     <div class="container">
         <div class="navbar-header">
             <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
@@ -7,11 +8,20 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand visible-md visible-lg" href="/">Open Science Framework<span class="brand-version"> BETA</span></a>
-            <a class="navbar-brand visible-xs visible-sm" href="/">OSF</a>
+            <!-- ko ifnot: onSearchPage -->
+            <span class="visible-xs" data-bind="click : toggleSearch, css: searchCSS">
+                <a class="osf-xs-search pull-right" >
+                    <span rel="tooltip" data-placement="bottom" title="Search OSF" class="icon-search icon-lg" ></span>
+                </a>
+            </span>
+            <!-- /ko -->
+            <a class="navbar-brand visible-lg" href="/"><img src="/static/img/cos-white2.png" class="osf-navbar-logo" width="27" alt="COS logo"/> Open Science Framework <span class="brand-version"> BETA</span></a>
+            <a class="navbar-brand hidden-lg hidden-xs" href="/"><img src="/static/img/cos-white2.png" class="osf-navbar-logo" width="27" alt="COS logo"/> OSF</a>
+            <a class="navbar-brand visible-xs" href="/"><img src="/static/img/cos-white2.png" class="osf-navbar-logo" width="27" alt="COS logo"/> Open Science Framework</a>
+
         </div><!-- end navbar-header -->
         <div class="collapse navbar-collapse navbar-ex1-collapse">
-            <ul class="nav navbar-nav">
+            <ul class="nav navbar-nav navbar-mid">
                 <li class="visible-xs"><a href="/">Home</a></li>
                 % if user_name:
                 <li><a href="${web_url_for('dashboard')}">My Dashboard</a></li>
@@ -34,38 +44,46 @@
                     </ul><!-- end dropdown-menu -->
                 </li><!-- end dropdown -->
             </ul><!-- end nav navbar-nav -->
-            <!-- Search bar -->
-            <form id="searchBar" class="navbar-form navbar-left" action="/search/" method="get" role="search">
-                <div class="form-group">
-                    <input type="text" class="form-control search-query" placeholder="Search the OSF" name="q">
-                </div>
-            </form>
             <ul class="nav navbar-nav navbar-right">
+                <!-- ko ifnot: onSearchPage -->
+                <li class="hidden-xs" data-bind="click : toggleSearch, css: searchCSS">
+                    <a class="" >
+                        <span rel="tooltip" data-placement="bottom" title="Search OSF" class="icon-search icon-lg" ></span>
+                    </a>
+                </li>
+                <!-- /ko -->
                 % if user_name and display_name:
                 <li>
                     <a class="hidden-lg hidden-xs" href="/profile/">
-                        <span rel="tooltip" title="${user_name}" class="icon-user"></span>
+                        <span rel="tooltip" data-placement="bottom" title="${user_name}" class="osf-gravatar"><img src="${user_gravatar}" alt="User gravatar"/> </span>
                     </a>
                     <a class="visible-lg visible-xs" href="/profile/">
-                        <span rel="tooltip" title="${user_name}">${display_name}</span>
+                        <span rel="tooltip" data-placement="bottom" title="${user_name}"><span class="osf-gravatar"> <img src="${user_gravatar}" alt="User gravatar"/> </span> ${display_name}</span>
                     </a>
                 </li>
                 <li>
                     <a href="${web_url_for('user_profile')}">
-                        <span rel="tooltip" title="Settings" class="icon-cog hidden-xs"></span>
+                        <span rel="tooltip" data-placement="bottom" title="Settings" class="icon-cog hidden-xs icon-lg"></span>
                         <span class="visible-xs">Settings</span>
                     </a>
                 </li>
                 <li>
                     <a href="${web_url_for('auth_logout')}">
-                        <span rel="tooltip" title="Log&nbsp;out" class="icon-signout hidden-xs"></span>
+                        <span rel="tooltip" data-placement="bottom" title="Log&nbsp;out" class="icon-signout hidden-xs icon-lg"></span>
                         <span class="visible-xs">Log out</span>
                     </a>
                 </li>
                 % elif allow_login:
-                <a class="btn btn-primary navbar-btn" href="${web_url_for('auth_login')}">Create an Account or Sign-In</a>
+                <li>
+                    <a class="btn btn-primary" href="${web_url_for('auth_login')}">Create an Account or Sign-In</a>
+                </li>
                 % endif
             </ul><!-- end nav navbar-nav navbar-right -->
         </div><!-- end navbar-collapse -->
     </div><!-- end container-->
 </nav>
+    <!-- ko ifnot: onSearchPage -->
+        <%include file='./search_bar.mako' />
+    <!-- /ko -->
+</div>
+

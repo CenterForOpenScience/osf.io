@@ -13,7 +13,7 @@ var Raven = require('raven-js');
 var FolderPicker = require('folderpicker');
 var ZeroClipboard = require('zeroclipboard');
 ZeroClipboard.config('/static/vendor/bower_components/zeroclipboard/dist/ZeroClipboard.swf');
-var $osf = require('osf-helpers');
+var $osf = require('osfHelpers');
 
 ko.punches.enableAll();
 /**
@@ -331,13 +331,13 @@ var ViewModel = function(url, selector, folderPicker) {
                 // Lazy-load each folder's contents
                 // Each row stores its url for fetching the folders it contains
 
-                resolveLazyloadUrl : function(tree, item){
+                resolveLazyloadUrl : function(item){
                     return item.data.urls.folders;
                 },
                 oddEvenClass : {
                     odd : 'dropbox-folderpicker-odd',
                     even : 'dropbox-folderpicker-even'
-                },  
+                },
                 ajaxOptions: {
                     error: function(xhr, textStatus, error) {
                         self.loading(false);
@@ -383,7 +383,6 @@ function DropboxNodeConfig(selector, url, folderPicker) {
     self.folderPicker = folderPicker;
     self.viewModel = new ViewModel(url, selector, folderPicker);
     $osf.applyBindings(self.viewModel, selector);
-    window.bobob = self.viewModel;
 }
 
 module.exports = DropboxNodeConfig;

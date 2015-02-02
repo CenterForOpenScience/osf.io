@@ -2,16 +2,14 @@
 
 import os
 import bson
-import time
 import logging
-import datetime
-import functools
 
 import furl
-from dateutil.parser import parse as parse_date
+import pymongo
 
 from modularodm import fields, Q
 from modularodm import exceptions as modm_errors
+from modularodm.storage.base import KeyExistsException
 
 from framework.auth import Auth
 from framework.mongo import StoredObject
@@ -33,19 +31,13 @@ oid_primary_key = fields.StringField(
 )
 
 
-def copy_file_tree_stable(tree, node_settings):
-    """Copy file tree, recursively creating stable copies of its children.
+def copy_file_tree(tree, node_settings):
+    """Recursively copy file tree.
 
     :param OsfStorageFileTree tree: Tree to copy
     :param node_settings: Root node settings record
     """
-    children = filter(
-        lambda item: item is not None,
-        map(
-            lambda child: copy_files_stable(child, node_settings),
-            tree.children
-        )
-    )
+    children = [copy_files(child, node_settings) for child in tree.children]
     clone = tree.clone()
     clone.children = children
     clone.node_settings = node_settings
@@ -53,33 +45,25 @@ def copy_file_tree_stable(tree, node_settings):
     return clone
 
 
-def copy_file_record_stable(record, node_settings):
-    """Copy stable versions of an `OsfStorageFileRecord`. Versions are copied
+def copy_file_record(record, node_settings):
+    """Copy versions of an `OsfStorageFileRecord`. Versions are copied
     by primary key and will not be duplicated in the database.
 
     :param OsfStorageFileRecord record: Record to copy
     :param node_settings: Root node settings record
-    :return: Cloned `OsfStorageFileRecord` if any stable versions were found,
-        else ``None``
     """
-    versions = [
-        version for version in record.versions
-        if not version.pending
-    ]
-    if versions:
-        clone = record.clone()
-        clone.versions = versions
-        clone.node_settings = node_settings
-        clone.save()
-        return clone
-    return None
+    clone = record.clone()
+    clone.versions = record.versions
+    clone.node_settings = node_settings
+    clone.save()
+    return clone
 
 
-def copy_files_stable(files, node_settings):
+def copy_files(files, node_settings):
     if isinstance(files, OsfStorageFileTree):
-        return copy_file_tree_stable(files, node_settings)
+        return copy_file_tree(files, node_settings)
     if isinstance(files, OsfStorageFileRecord):
-        return copy_file_record_stable(files, node_settings)
+        return copy_file_record(files, node_settings)
     raise TypeError('Input must be `OsfStorageFileTree` or `OsfStorageFileRecord`')
 
 
@@ -95,7 +79,7 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
         """
         dest.save()
         if self.file_tree:
-            dest.file_tree = copy_file_tree_stable(self.file_tree, dest)
+            dest.file_tree = copy_file_tree(self.file_tree, dest)
             dest.save()
 
     def after_fork(self, node, fork, user, save=True):
@@ -112,8 +96,40 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
         self.copy_contents_to(clone)
         return clone, message
 
+    def serialize_waterbutler_settings(self):
+        ret = {
+            'callback': self.owner.api_url_for(
+                'osf_storage_update_metadata_hook',
+                _absolute=True,
+            ),
+            'metadata': self.owner.api_url_for(
+                'osf_storage_get_metadata_hook',
+                _absolute=True,
+            ),
+        }
+        ret.update(settings.WATERBUTLER_SETTINGS)
+        return ret
+
+    def serialize_waterbutler_credentials(self):
+        return settings.WATERBUTLER_CREDENTIALS
+
+    def create_waterbutler_log(self, auth, action, metadata):
+        pass
+
+    def get_waterbutler_render_url(self, path, **kwargs):
+        return self.owner.web_url_for('osf_storage_view_file', path=path)
+
 
 class BaseFileObject(StoredObject):
+    __indices__ = [
+        {
+            'key_or_list': [
+                ('path', pymongo.ASCENDING),
+                ('node_settings', pymongo.ASCENDING),
+            ],
+            'unique': True,
+        }
+    ]
 
     path = fields.StringField(required=True, index=True)
     node_settings = fields.ForeignField(
@@ -137,14 +153,6 @@ class BaseFileObject(StoredObject):
         return value
 
     @property
-    def parent(self):
-        parents = getattr(self, '_parent', None)
-        if parents:
-            assert len(parents) == 1
-            return parents[0]
-        return None
-
-    @property
     def node(self):
         return self.node_settings.owner
 
@@ -153,55 +161,48 @@ class BaseFileObject(StoredObject):
         raise NotImplementedError
 
     @classmethod
-    def find_by_path(cls, path, node_settings, touch=True):
+    def find_by_path(cls, path, node_settings):
         """Find a record by path and root settings record.
 
         :param str path: Path to file or directory
         :param node_settings: Root node settings record
-        :param bool touch: Handle expired records
         """
         try:
             obj = cls.find_one(
                 Q('path', 'eq', path) &
                 Q('node_settings', 'eq', node_settings._id)
             )
-            if touch:
-                obj.touch()
             return obj
-        except (modm_errors.NoResultsFound, modm_errors.MultipleResultsFound):
+        except modm_errors.NoResultsFound:
             return None
 
     @classmethod
-    def get_or_create(cls, path, node_settings, touch=True):
+    def get_or_create(cls, path, node_settings):
         """Get or create a record by path and root settings record.
 
         :param str path: Path to file or directory
         :param node_settings: Root node settings record
-        :param bool touch: Handle expired records
+        :returns: Tuple of (record, created)
         """
-        obj = cls.find_by_path(path, node_settings, touch=touch)
-        if obj:
-            return obj
-        obj = cls(path=path, node_settings=node_settings)
-        obj.save()
+        try:
+            obj = cls(path=path, node_settings=node_settings)
+            obj.save()
+        except KeyExistsException:
+            obj = cls.find_by_path(path, node_settings)
+            assert obj is not None
+            return obj, False
+
         # Ensure all intermediate paths
         if path:
             parent_path, _ = os.path.split(path)
             parent_class = cls.parent_class()
-            parent_obj = parent_class.get_or_create(parent_path, node_settings)
-            parent_obj.children.append(obj)
-            parent_obj.save()
+            parent_obj, _ = parent_class.get_or_create(parent_path, node_settings)
+            parent_obj.append_child(obj)
         else:
-            assert node_settings.file_tree is None
             node_settings.file_tree = obj
             node_settings.save()
-        return obj
 
-    def touch(self):
-        """Check whether the current object is valid. By default, always return
-        `True`.
-        """
-        return True
+        return obj, True
 
     def get_download_count(self, version=None):
         """Return download count or `None` if this is not a file object (e.g. a
@@ -220,11 +221,24 @@ class BaseFileObject(StoredObject):
 class OsfStorageFileTree(BaseFileObject):
 
     _id = oid_primary_key
-    children = fields.AbstractForeignField(list=True, backref='_parent')
+    children = fields.AbstractForeignField(list=True)
 
     @classmethod
     def parent_class(cls):
         return OsfStorageFileTree
+
+    def append_child(self, child):
+        """Appending children through ODM introduces a race condition such that
+        concurrent requests can overwrite previously added items; use the native
+        `addToSet` operation instead.
+        """
+        collection = self._storage[0].store
+        collection.update(
+            {'_id': self._id},
+            {'$addToSet': {'children': (child._id, child._name)}}
+        )
+        # Updating MongoDB directly means the cache is wrong; reload manually
+        self.reload()
 
 
 class OsfStorageFileRecord(BaseFileObject):
@@ -253,98 +267,34 @@ class OsfStorageFileRecord(BaseFileObject):
         more = stop > 0
         return indices, versions, more
 
-    def create_pending_version(self, creator, signature):
+    def create_version(self, creator, location, metadata=None):
         latest_version = self.get_version()
-        if latest_version and latest_version.pending:
-            raise errors.PathLockedError
-        if latest_version and latest_version.signature == signature:
-            raise errors.SignatureConsumedError
-        version = OsfStorageFileVersion(
-            creator=creator,
-            signature=signature,
-            status=status_map['UPLOADING'],
-        )
+        version = OsfStorageFileVersion(creator=creator, location=location)
+
+        if latest_version and latest_version.is_duplicate(version):
+            if self.is_deleted:
+                self.undelete(Auth(creator))
+            return latest_version
+
+        if metadata:
+            version.update_metadata(metadata)
+
         version.save()
         self.versions.append(version)
         self.is_deleted = False
         self.save()
+        self.log(
+            Auth(creator),
+            NodeLog.FILE_UPDATED if len(self.versions) > 1 else NodeLog.FILE_ADDED,
+        )
         return version
 
-    def ping_pending_version(self, signature):
-        latest_version = self.get_version(required=True)
-        latest_version.ping(signature)
-        return latest_version
-
-    def set_pending_version_cached(self, signature):
-        latest_version = self.get_version(required=True)
-        latest_version.set_cached(signature)
-        return latest_version
-
-    def update_version_metadata(self, signature, metadata):
-        for version in self.versions[::-1]:
-            if version.signature == signature:
-                version.update_metadata(signature, metadata)
+    def update_version_metadata(self, location, metadata):
+        for version in reversed(self.versions):
+            if version.location == location:
+                version.update_metadata(metadata)
                 return
         raise errors.VersionNotFoundError
-
-    def remove_version(self, version):
-        if len(self.versions) == 1:
-            OsfStorageFileRecord.remove_one(self)
-            retained_self = False
-        else:
-            self.versions.remove(version)
-            self.save()
-            retained_self = True
-        OsfStorageFileVersion.remove_one(version)
-        return retained_self
-
-    def touch(self):
-        """Check for expired pending versions. Note: the current `FileRecord`
-        will be removed if this method reduces the number of versions to zero.
-
-        :return: Current record is valid
-        """
-        latest_version = self.get_version()
-        if latest_version and latest_version.expired:
-            retained_self = self.remove_version(latest_version)
-            logger.warn('Removed pending version on {!r} due to inactivity'.format(self))
-            return retained_self
-        return True
-
-    def resolve_pending_version(self, signature, location, metadata, log=True):
-        """Finish pending upload. Update version record with file information
-        and unlock file path.
-
-        :param str signature: Signature used in signed URL
-        :param dict location: Location of file in backend
-        :param dict metadata: Metadata to append to record
-        :param bool log: Add log to containing `Node`
-        """
-        action = None
-        latest_version = self.get_version(required=True)
-        latest_version.resolve(signature, location, metadata)
-        previous_version = self.get_version(-2)
-        if previous_version and previous_version.is_duplicate(latest_version):
-            self.versions.remove(latest_version)
-            self.save()
-            OsfStorageFileVersion.remove_one(latest_version)
-            action = NodeLog.FILE_UPDATED
-            ret = previous_version
-        else:
-            action = (
-                NodeLog.FILE_UPDATED
-                if len(self.versions) > 1
-                else NodeLog.FILE_ADDED
-            )
-            ret = latest_version
-        if log:
-            self.log(Auth(latest_version.creator), action)
-        return ret
-
-    def cancel_pending_version(self, signature, log=True):
-        latest_version = self.get_version(required=True)
-        latest_version.cancel(signature)
-        self.remove_version(latest_version)
 
     def log(self, auth, action, version=True):
         node_logger = logs.OsfStorageNodeLogger(
@@ -369,7 +319,7 @@ class OsfStorageFileRecord(BaseFileObject):
         self.is_deleted = False
         self.save()
         if log:
-            self.log(auth, NodeLog.FILE_RESTORED)
+            self.log(auth, NodeLog.FILE_ADDED)
 
     def get_download_count(self, version=None):
         """
@@ -385,38 +335,18 @@ class OsfStorageFileRecord(BaseFileObject):
 
 identity = lambda value: value
 metadata_fields = {
-    'size': identity,
-    'content_type': identity,
-    'date_modified': parse_date,
+    # TODO: Add missing fields to WaterButler metadata
+    # 'size': identity,
+    # 'content_type': identity,
+    # 'date_modified': parse_date,
 }
 
 
-status_map = {
-    'UPLOADING': 'uploading',
-    'CACHED': 'cached',
-    'COMPLETE': 'complete',
-}
-def validate_status(value):
-    if value not in status_map.values():
-        raise modm_errors.ValidationValueError
-
-
-def check_status(*statuses):
-    def wrapper(func):
-        @functools.wraps(func)
-        def wrapped(self, signature, *args, **kwargs):
-            if statuses and self.status not in statuses:
-                raise errors.VersionStatusError(
-                    'Version status must be one of {0}; received {1}'.format(
-                        ', '.join(statuses),
-                        self.status,
-                    )
-                )
-            if self.signature != signature:
-                raise errors.SignatureMismatchError
-            return func(self, signature, *args, **kwargs)
-        return wrapped
-    return wrapper
+LOCATION_KEYS = ['service', settings.WATERBUTLER_RESOURCE, 'object']
+def validate_location(value):
+    for key in LOCATION_KEYS:
+        if key not in value:
+            raise modm_errors.ValidationValueError
 
 
 class OsfStorageFileVersion(StoredObject):
@@ -424,22 +354,17 @@ class OsfStorageFileVersion(StoredObject):
     _id = oid_primary_key
     creator = fields.ForeignField('user', required=True)
 
-    status = fields.StringField(required=True, validate=validate_status)
-    signature = fields.StringField()
-
     date_created = fields.DateTimeField(auto_now_add=True)
-    date_resolved = fields.DateTimeField()
-    last_ping = fields.FloatField(default=lambda: time.time())
 
     # Dictionary specifying all information needed to locate file on backend
     # {
-    #     'service': 'cloudfiles',  # required
+    #     'service': 'buttfiles',  # required
     #     'container': 'osf',       # required
     #     'object': '20c53b',       # required
     #     'worker_url': '127.0.0.1',
     #     'worker_host': 'upload-service-1',
     # }
-    location = fields.DictionaryField()
+    location = fields.DictionaryField(validate=validate_location)
 
     # Dictionary containing raw metadata from upload service response
     # {
@@ -455,52 +380,14 @@ class OsfStorageFileVersion(StoredObject):
     date_modified = fields.DateTimeField()
 
     @property
-    def pending(self):
-        return self.status != status_map['COMPLETE']
-
-    @property
-    def expired(self):
-        """A version is expired if in pending state and has not received a ping
-        from the upload service since in `PING_TIMEOUT` seconds.
-        """
-        if self.status != status_map['UPLOADING']:
-            return False
-        return time.time() > (self.last_ping + settings.PING_TIMEOUT)
-
-    @property
     def location_hash(self):
-        return self.location['object'] if self.location else None
+        return self.location['object']
 
     def is_duplicate(self, other):
-        return (
-            bool(self.location_hash) and
-            self.location_hash == other.location_hash
-        )
+        return self.location_hash == other.location_hash
 
-    @check_status(status_map['UPLOADING'])
-    def ping(self, signature):
-        """Verify upload signature and update last ping time.
-
-        :param str signature: Signature used in signed URL
-        """
-        self.last_ping = time.time()
-        self.save()
-
-    @check_status(status_map['UPLOADING'])
-    def set_cached(self, signature):
-        """
-        """
-        self.status = status_map['CACHED']
-        self.save()
-
-    @check_status(status_map['UPLOADING'], status_map['CACHED'])
-    def resolve(self, signature, location, metadata):
-        """
-        """
-        self.status = status_map['COMPLETE']
-        self.date_resolved = datetime.datetime.utcnow()
-        self.location = location
-        self.metadata = metadata
+    def update_metadata(self, metadata):
+        self.metadata.update(metadata)
         for key, parser in metadata_fields.iteritems():
             try:
                 value = metadata[key]
@@ -508,35 +395,6 @@ class OsfStorageFileVersion(StoredObject):
                 raise errors.MissingFieldError
             setattr(self, key, parser(value))
         self.save()
-
-    @check_status()
-    def update_metadata(self, signature, metadata):
-        self.metadata.update(metadata)
-        self.save()
-
-    @check_status(status_map['UPLOADING'])
-    def cancel(self, signature):
-        pass
-
-
-LOCATION_KEYS = ['service', 'container', 'object']
-@OsfStorageFileVersion.subscribe('before_save')
-def validate_version_location(schema, instance):
-    if instance.pending:
-        return
-    for key in LOCATION_KEYS:
-        if key not in instance.location:
-            raise modm_errors.ValidationValueError
-
-
-@OsfStorageFileVersion.subscribe('before_save')
-def validate_version_dates(schema, instance):
-    if instance.pending:
-        return
-    if not instance.date_resolved:
-        raise modm_errors.ValidationValueError
-    if instance.date_created > instance.date_resolved:
-        raise modm_errors.ValidationValueError
 
 
 class OsfStorageGuidFile(GuidFile):

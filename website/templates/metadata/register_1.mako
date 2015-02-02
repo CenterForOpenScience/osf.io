@@ -1,5 +1,3 @@
-<script type="text/javascript" src="/static/js/metadata_1.js"></script>
-
 <div class="col-md-6 col-md-offset-3" id="registration_template">
 
     <%include file="metadata_1.html" />
@@ -52,5 +50,3 @@
     window.contextVars.regPayload = ${json.dumps(payload)};
     window.contextVars.registered = ${json.dumps(int(registered))};
 </script>
-
-<script src="/static/public/js/register_1-page.js"></script>

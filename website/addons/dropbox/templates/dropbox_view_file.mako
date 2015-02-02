@@ -2,9 +2,6 @@
 
 <%def name="file_versions()">
 <div class="scripted" id="revisionScope">
-    <div id="deletingAlert" class="alert alert-warning fade">
-        Deleting your file…
-    </div>
 
     <ol class="breadcrumb">
         <li><a data-bind="attr: {href: filesUrl()}">{{nodeTitle}}</a></li>
@@ -78,5 +75,8 @@
         }
     });
 </script>
-<script src="/static/public/js/dropbox/file-detail.js"></script>
+</%def>
+<%def name="javascript_bottom()">
+${parent.javascript_bottom()}
+<script src=${"/static/public/js/dropbox/file-detail.js" | webpack_asset}></script>
 </%def>

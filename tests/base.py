@@ -6,6 +6,7 @@ import logging
 import os
 import shutil
 import unittest
+import mock
 
 from webtest_plus import TestApp
 import blinker
@@ -34,6 +35,8 @@ from website.addons.wiki.model import NodeWikiPage
 import website.models
 from website.signals import ALL_SIGNALS
 from website.app import init_app
+
+from tests.exceptions import UnmockedError
 
 # Just a simple app without routing set up or backends
 test_app = init_app(
@@ -86,6 +89,8 @@ class DbTestCase(unittest.TestCase):
         settings.DB_NAME = cls.DB_NAME
         cls._original_piwik_host = settings.PIWIK_HOST
         settings.PIWIK_HOST = None
+        cls._original_enable_email_subscriptions = settings.ENABLE_EMAIL_SUBSCRIPTIONS
+        settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
 
         teardown_database(database=database_proxy._get_current_object())
         # TODO: With `database` as a `LocalProxy`, we should be able to simply
@@ -103,6 +108,7 @@ class DbTestCase(unittest.TestCase):
         teardown_database(database=database_proxy._get_current_object())
         settings.DB_NAME = cls._original_db_name
         settings.PIWIK_HOST = cls._original_piwik_host
+        settings.ENABLE_EMAIL_SUBSCRIPTIONS = cls._original_enable_email_subscriptions
 
 
 class AppTestCase(unittest.TestCase):
@@ -143,7 +149,15 @@ class UploadTestCase(unittest.TestCase):
         settings.UPLOADS_PATH = cls._old_uploads_path
 
 
-class OsfTestCase(DbTestCase, AppTestCase, UploadTestCase):
+class MockRequestTestCase(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super(MockRequestTestCase, cls).setUpClass()
+        mock.patch('requests.Session.send', side_effect=UnmockedError).start()
+
+
+class OsfTestCase(DbTestCase, AppTestCase, UploadTestCase, MockRequestTestCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
     application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.

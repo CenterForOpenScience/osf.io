@@ -2,6 +2,8 @@
  * Simple knockout model and view model for rendering the revision table on the
  * file detail page.
  */
+var waterbulter = require('waterbutler');
+
 ;(function (global, factory) {
     if (typeof define === 'function' && define.amd) {
         define(['knockout', 'jquery', 'osfutils'], factory);
@@ -65,7 +67,7 @@
                         $('#deletingAlert').addClass('in');
                         var request = $.ajax({
                             type: 'DELETE',
-                            url: self.api_url()
+                            url: waterbutler.buildFileUrlFromPath(self.file_name())
                         });
                         request.done(function() {
                             window.location = self.files_page_url();

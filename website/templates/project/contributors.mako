@@ -4,19 +4,24 @@
 <%include file="project/modal_generate_private_link.mako"/>
 <%include file="project/modal_add_contributor.mako"/>
 
-<div class="row">
-    <div class="col-md-12">
+<div class="page-header  visible-xs">
+  <h2 class="text-300">Contributors</h2>
+</div>
 
-        <h2>Contributors</h2>
-            % if 'admin' in user['permissions']:
-                <p>Drag and drop contributors to change listing order.</p>
-            % endif
+<div class="row">
+    <div class="col-md-10 col-md-offset-1">
+
             <div id="manageContributors" class="scripted">
-            <!-- ko if: canEdit -->
-            <a href="#addContributors" data-toggle="modal" class="btn btn-primary">
-                Add Contributors
-            </a>
-            <!-- /ko -->
+                <h3> Contributors
+                    <!-- ko if: canEdit -->
+                        <a href="#addContributors" data-toggle="modal" class="btn btn-success btn-sm" style="margin-left:20px;margin-top: -3px">
+                          <i class="icon icon-plus"> </i>Add
+                        </a>
+                    <!-- /ko -->
+                </h3>
+                % if 'admin' in user['permissions'] and not node['is_registration']:
+                    <p>Drag and drop contributors to change listing order.</p>
+                % endif
                 <table id="manageContributorsTable" class="table">
                     <thead>
                         <tr>
@@ -62,7 +67,7 @@
 
 
     % if 'admin' in user['permissions']:
-        <h2>View-only Links</h2>
+        <h3>View-only Links</h3>
         <div class="text-align">Create a link to share this project so those who have the link can view&mdash;but not edit&mdash;the project</div>
         <div class="scripted" id="linkScope">
 
@@ -95,11 +100,11 @@
                     <tr>
                         <td class="col-sm-3">
                             <div>
-                                <span class="link-name overflow-block" data-bind="text: name, tooltip: {title: linkName}" style="width: 200px"></span>
+                                <span class="link-name overflow-block" data-bind="text: name, tooltip: {title: 'Link name'}" style="width: 200px"></span>
                             </div>
                             <div class="btn-group">
-                            <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="Click to copy the link"
-                                    data-bind="attr: {data-clipboard-text: linkUrl}" >
+                            <button class="btn btn-default btn-mini copy-button" data-trigger="manual"
+                                    data-bind="attr: {data-clipboard-text: linkUrl}, tooltip: {title: 'Click to copy'}" >
                                 <span class="icon-copy" ></span>
                             </button>
                                 <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}"  />
@@ -177,7 +182,7 @@
                     <!-- Note: Prevent clickBubble so that removing a
                      contributor does not immediately un-remove her. -->
                     <a
-                            data-bind="click: remove, clickBubble: false, tooltip: {title: removeContributor}"
+                            data-bind="click: remove, clickBubble: false, tooltip: {title: 'Remove contributor'}"
                         >
                                 <i class="icon-remove text-danger no-sort"></i>
                     </a>
@@ -190,9 +195,7 @@
             <!-- ko ifnot: $parent.canEdit -->
                 <!-- ko if: canRemove -->
                     <a
-                            data-bind="click: removeSelf"
-                            rel="tooltip"
-                            title="Remove contributor"
+                            data-bind="click: removeSelf, tooltip: {title: 'Remove contributor'}"
                         >
                         <i class="icon-remove text-danger no-sort"></i>
                     </a>
@@ -225,6 +228,6 @@
       window.contextVars.contributors = ${json.dumps(contributors)};
 
     </script>
-    <script src="/static/public/js/sharing-page.js"></script>
+    <script src=${"/static/public/js/sharing-page.js" | webpack_asset}></script>
 
 </%def>

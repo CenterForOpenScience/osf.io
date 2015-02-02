@@ -42,3 +42,28 @@ text-align: center;
 .fangorn-hover {
     background: #F4F5DF;
 }
+.tb-th {
+	line-height: 14px;
+	background: url('/static/img/hgrid/header-columns-bg.gif');
+	padding: 3px 0px 7px 5px;
+font-size: 13px
+}
+
+.tb-td {
+    height: inherit;
+    padding-top: 6px;
+}
+.tb-toggle-icon {
+	font-size: 10px;
+	width: 15px;
+}
+.tb-row-titles {
+	height: 25px;
+}
+#tb-tbody {
+	border-top : none;
+	border: 1px solid #EBEBEB;
+}
+.tb-row .icon-remove {
+	cursor : pointer;
+}

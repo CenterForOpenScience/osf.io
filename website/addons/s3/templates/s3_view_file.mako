@@ -3,11 +3,6 @@
 
 <%def name="file_versions()">
     <div id='s3Scope' class="scripted">
-
-        <div class="alert alert-warning" data-bind="visible: deleting">
-            Deleting your file…
-        </div>
-
             <p>
                 % if download_url:
                     <!--download button-->
@@ -63,5 +58,9 @@
             }
         });
     </script>
-    <script src="/static/public/js/s3/file-detail.js"></script>
+</%def>
+
+<%def name="javascript_bottom()">
+${parent.javascript_bottom()}
+<script src=${"/static/public/js/s3/file-detail.js" | webpack_asset}></script>
 </%def>

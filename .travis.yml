@@ -23,8 +23,11 @@ install:
     - travis_retry invoke travis_addon_settings
     - travis_retry invoke requirements
     - travis_retry invoke addon_requirements
-    - npm install -g bower
-    - bower install
+    - travis_retry mfr -r install all
+    - travis_retry npm install
+    - travis_retry npm install -g bower
+    - travis_retry bower install
+    - inv webpack
 
 before_script:
     - flake8 .

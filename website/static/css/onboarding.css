@@ -34,7 +34,7 @@ ul.ob-widget-list li.ob-list-item {
 }
 
 ul.ob-widget-list {
-    padding: 0px;
+    padding: 0;
 }
 
 .ob-reveal {
@@ -103,7 +103,10 @@ ul.ob-widget-list {
 	display: block !important;
 }
 
-.ob-tab-head {padding-bottom:9px;margin:20px 0 30px;}
+.ob-tab-head {
+    padding-bottom: 9px;
+    margin: 20px 0 16px;
+}
 
 
 div.ob-dropzone-filename{

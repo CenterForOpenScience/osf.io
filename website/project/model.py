@@ -38,6 +38,7 @@ from framework.mongo.utils import to_mongo, to_mongo_key
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters
 )
+from framework.sentry import log_exception
 
 from website import language
 from website import settings
@@ -611,7 +612,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     tags = fields.ForeignField('tag', list=True, backref='tagged')
 
     # Tags for internal use
-    system_tags = fields.StringField(list=True, index=True)
+    system_tags = fields.StringField(list=True)
 
     nodes = fields.AbstractForeignField(list=True, backref='parent')
     forked_from = fields.ForeignField('node', backref='forked')
@@ -1356,8 +1357,12 @@ class Node(GuidStoredObject, AddonModelMixin):
         return None
 
     def update_search(self):
-        import website.search.search as search
-        search.update_node(self)
+        from website import search
+        try:
+            search.search.update_node(self)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+            log_exception()
 
     def remove_node(self, auth, date=None):
         """Marks a node as deleted.
@@ -2711,13 +2716,6 @@ class WatchConfig(StoredObject):
 
     def __repr__(self):
         return '<WatchConfig(node="{self.node}")>'.format(self=self)
-
-
-class MailRecord(StoredObject):
-
-    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
-    data = fields.DictionaryField()
-    records = fields.AbstractForeignField(list=True, backref='created')
 
 
 class PrivateLink(StoredObject):

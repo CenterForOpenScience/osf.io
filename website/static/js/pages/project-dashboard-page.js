@@ -1,3 +1,4 @@
+
 /** Initialization code for the project dashboard. */
 
 var $ = require('jquery');
@@ -12,6 +13,8 @@ var pointers = require('../pointers.js');
 var Comment = require('../comment.js');
 var Raven = require('raven-js');
 
+var NodeControl = require('../nodeControl.js');
+
 
 var nodeApiUrl = window.contextVars.node.urls.api;
 
@@ -20,8 +23,11 @@ var nodeApiUrl = window.contextVars.node.urls.api;
 new pointers.PointerManager('#addPointer', window.contextVars.node.title);
 
 // Listen for the nodeLoad event (prevents multiple requests for data)
-$('body').on('nodeLoad', function() {
+$('body').on('nodeLoad', function(event, data) {
     new LogFeed('#logScope', nodeApiUrl + 'log/');
+    // Initialize nodeControl
+    new NodeControl('#projectScope', data);
+
 });
 
 
@@ -35,49 +41,59 @@ if ($comments.length) {
 }
 
 $(document).ready(function() {
-
-    function _fangornTitleColumn (item, col) {
-        return m('span', 
-            { onclick : function(){ 
-                if (item.kind === 'item') {
-                    window.location = item.data.urls.view;                    
-                } 
-            }}, 
-            item.data.name);
-    }
-
-    // Treebeard Files view 
+    // Treebeard Files view
     $.ajax({
-      url:  nodeApiUrl + 'files/grid/'
+        url:  nodeApiUrl + 'files/grid/'
     })
     .done(function( data ) {
-        console.log("data", data);
         var fangornOpts = {
             divID: 'treeGrid',
             filesData: data.data,
-            uploads : false,
+            uploads : true,
             showFilter : true,
-            filterStyle : { 'float' : 'left', width : '100%'},
-            columnTitles : function(){ 
+            placement: 'dashboard',
+            title : undefined,
+            filterFullWidth : true, // Make the filter span the entire row for this view
+            columnTitles : function(){
                 return [
                     {
                     title: 'Name',
                     width : '100%',
-                    sort : false,
+                    sort : true,
                     sortType : 'text'
                     }
-                ]; 
-                },
-            resolveRows : function(){ 
-                return  [{
-                    data : 'name',  
-                    folderIcons : true,
-                    filter : true,
-                    custom : _fangornTitleColumn
+                ];
+            },
+            resolveRows : function(item){
+                var defaultColumns = [{
+                    data: 'name',
+                    folderIcons: true,
+                    filter: true,
+                    custom: Fangorn.DefaultColumns._fangornTitleColumn
                 }];
-                },
+
+                if (item.parentID) {
+                    item.data.permissions = item.data.permissions || item.parent().data.permissions;
+                    if (item.data.kind === 'folder') {
+                        item.data.accept = item.data.accept || item.parent().data.accept;
+                    }
+                }
+
+                if(item.data.tmpID){
+                    defaultColumns = [
+                        {
+                            data : 'name',  // Data field name
+                            folderIcons : true,
+                            filter : true,
+                            custom : function(){ return m('span.text-muted', 'Uploading ' + item.data.name + '...'); }
+                        }
+                    ];
+                }
+
+                configOption = Fangorn.Utils.resolveconfigOption.call(this, item, 'resolveRows', [item]);
+                return configOption || defaultColumns;
+            }
         };
-        console.log("fangorn", Fangorn);
         var filebrowser = new Fangorn(fangornOpts);
     });
 
@@ -87,34 +103,34 @@ $(document).ready(function() {
 
     // Tag input
     $('#node-tags').tagsInput({
-        width: "100%",
+        width: '100%',
         interactive: window.contextVars.currentUser.canEdit,
         maxChars: 128,
         onAddTag: function(tag){
-            var url = window.contextVars.node.urls.api + "addtag/" + tag + "/";
+            var url = window.contextVars.node.urls.api + 'addtag/' + tag + '/';
             var request = $.ajax({
                 url: url,
-                type: "POST",
-                contentType: "application/json"
+                type: 'POST',
+                contentType: 'application/json'
             });
             request.fail(function(xhr, textStatus, error) {
                 Raven.captureMessage('Failed to add tag', {
                     tag: tag, url: url, textStatus: textStatus, error: error
                 });
-            })
+            });
         },
         onRemoveTag: function(tag){
-            var url = window.contextVars.node.urls.api + "removetag/" + tag + "/";
+            var url = window.contextVars.node.urls.api + 'removetag/' + tag + '/';
             var request = $.ajax({
                 url: url,
-                type: "POST",
-                contentType: "application/json"
+                type: 'POST',
+                contentType: 'application/json'
             });
             request.fail(function(xhr, textStatus, error) {
                 Raven.captureMessage('Failed to remove tag', {
                     tag: tag, url: url, textStatus: textStatus, error: error
                 });
-            })
+            });
         }
     });
 
@@ -125,7 +141,7 @@ $(document).ready(function() {
     if (!window.contextVars.currentUser.canEdit || window.contextVars.node.isRegistration) {
         $('a[title="Removing tag"]').remove();
         $('span.tag span').each(function(idx, elm) {
-            $(elm).text($(elm).text().replace(/\s*$/, ''))
+            $(elm).text($(elm).text().replace(/\s*$/, ''));
         });
     }
 

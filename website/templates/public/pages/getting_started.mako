@@ -17,6 +17,7 @@
                         <a href="#structure">Structure</a>
                         <ul class="nav">
                             <li><a href="#dashboards"><i class="icon-chevron-right"></i> Dashboard</a></li>
+                            <li><a href="#userprofile"><i class="icon-chevron-right"></i> User Profile</a></li>
                             <li><a href="#projects"><i class="icon-chevron-right"></i> Projects</a></li>
                             <li><a href="#components"><i class="icon-chevron-right"></i> Components</a></li>
                             <li><a href="#files"><i class="icon-chevron-right"></i> Files</a></li>
@@ -43,6 +44,7 @@
                             <li><a href="#amazon"><i class="icon-chevron-right"></i> Amazon S3</a></li>
                             <li><a href="#figshare"><i class="icon-chevron-right"></i> FigShare</a></li>
                             <li><a href="#dataverse"><i class="icon-chevron-right"></i> Dataverse</a></li>
+                            <li><a href="#twofactor"><i class="icon-chevron-right"></i> Two-factor Authentication</a></li>
                         </ul>
                     </li>
                     <li>
@@ -63,14 +65,14 @@
                     <img class="gs-count" src="/static/img/one_big.gif">
                     <p class="lead"> Getting started with the OSF is easy and we provide you with the tools you need to organize your research and communicate efficiently with your collaborators </p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
-                        <div class="embed-responsive-item youtube-loader" id="A3HV4T156TI"></div>
+                        <div class="embed-responsive-item youtube-loader" id="2TV21gOzfhw"></div>
                     </div>
                     <br>
                     <div id="start-two"></div>
                     <img class="gs-count" src="/static/img/two_big.gif">
                     <p class="lead"> Keep yourself and your collaborators on point while collecting data by using the OSF. Add contributors to your project so that everyone has access to the same files. Use our pre-formatted citations and URLs to make credit is given where credit is due.  </p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
-                        <div class="embed-responsive-item youtube-loader" id="mBXZ2DuoeKU"></div>
+                        <div class="embed-responsive-item youtube-loader" id="UtahdT9wZ1Y"></div>
                     </div>
                     <br>
                     <div id="start-three"></div>
@@ -91,6 +93,9 @@
                     <div class="gs-video embed-responsive embed-responsive-16by9">
                         <div class="embed-responsive-item youtube-loader" id="lS0WG8sw2Ig"></div>
                     </div>
+
+                    <%include file="/public/pages/help/user_profile.mako"/>
+
                     <span id="projects" class="anchor"></span>
                     <p class="gs-header">Projects</p>
                     <p>Projects are the largest form of categorization that the OSF supports. A project could be an experiment, a lab group, or a paper–anything that has contributing members and files or explanatory texts/images.</p>
@@ -105,7 +110,7 @@
                     <p class="gs-header">Components</p>
                     <p>Components are like folders in your project. You can assign a component a category upon its creation (data, materials, projects, etc.). A component that is categorized as a project can have more components added within it.</p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
-                        <div class="embed-responsive-item youtube-loader" id="pSFcSm-MHXo"></div>
+                        <div class="embed-responsive-item youtube-loader" id="kotF8Pnurpw"></div>
                     </div>
                     <p>Components come with their own privacy settings, contributors, wikis, add-ons, and files.</p>
                     <p>To delete a component or project, visit its page and go to "Settings" in the grey navigation bar under the component's title. This will also delete that component's wiki.</p>
@@ -134,7 +139,7 @@
                     <p class="gs-header">Forks</p>
                     <p>Forking a project means you have created a copy of it into your dashboard, and can change that copy for your own purposes. You will be the only contributor to the forked project until you add others.</p>
                     <p>Forks will automatically reference the original project as a functional citation.  Over time, the network of forks trace the evolution of project materials.</p>
-                    <p>To fork a project, visit the project and click the button at the top right of the page. This will give you several options on how you can duplicate a project. Click "Fork" and a fork will be created.</p>
+                    <p>To fork a project, visit the project and click the button at the top right of the page. This will give you several options on how you can duplicate a project. Click "Fork" and a fork will be created. It is important to note that the fork will contain only public components, or those for which you are a contributor. Private components that you do not have access to will not be forked.</p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
                         <div class="embed-responsive-item youtube-loader" id="qW5_AycdsWU"></div>
                     </div>
@@ -171,7 +176,7 @@
                     <p>Adding contributors to a project allows credit to be given to those who have worked on the project, and allows them to make changes to the project.</p>
                     <p>Admins on a project can add contributors by visiting the "Sharing" tab in the grey navigation bar under the project's name. Click on the top link labeled "Click to add a contributor." A pop-up will appear where you can search for a person to add. If they have an OSF account, their name will appear and you can add them and select their privileges. If they do not have an OSF account, you can provide them as an unregistered user and they will be notified by email.  You can select what components you would like to add them to.</p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
-                        <div class="embed-responsive-item youtube-loader" id="_NFJTgjohZk"></div>
+                        <div class="embed-responsive-item youtube-loader" id="eYpAn59G6Yk"></div>
                     </div>
                     <p><strong>Contributor permissions</strong> are the rules that govern who can see or edit a project. When a project is made, the creator is automatically the administrator, meaning that they can add other people and make changes to the project. The admin can add contributors and make them administrators as well, or they can assign the other contributors to read or read & write priveleges.<p>
                     <p>Reading privileges means that the contributor can see any project or component they are listed as a contributor on.</p>
@@ -185,13 +190,9 @@
                     <div class="gs-video embed-responsive embed-responsive-16by9">
                         <div class="embed-responsive-item youtube-loader" id="IHLRR0T6Kvk"></div>
                     </div>
-                    <span id="viewonly" class="anchor"></span>
-                    <p class="gs-header">View-only Links</p>
-                    <p>View-only links can be created for sharing your private projects or components so that people can view - but not edit - them. These links can be anonymized, to remove contributors’ names from the project and associated logs, for use in blinded peer review. </p>
-                    <p>To create a view-only link, click on the “Sharing” tab, and scroll down to the “View-only links” section. Click “create a link,” give the link a name, and chose the project or component(s) you’d like to link to.</p>
-                    <div class="gs-video embed-responsive embed-responsive-16by9">
-                        <div class="embed-responsive-item youtube-loader" id="st68P4r2IqM"></div>
-                    </div>
+
+                    <%include file="/public/pages/help/view_only.mako"/>
+
                     <span id="comments" class="anchor"></span>
                     <p class="gs-header">Comments</p>
                     <p>Commenting can be enabled for any OSF project. To leave a comment on a project, if the administrators have allowed chat, you will see blue speech bubbles in the top right corner of your screen. Click on those speech bubbles and add your comment in the text box.</p>
@@ -205,50 +206,9 @@
             <div class="row" style="margin-bottom: 70px;">
                 <div class="col-sm-12">
                     <p class="subHeadFour text-center anchor" id="addons">OSF Add-ons:</p>
-                    <span id="dropbox" class="anchor"></span>
-                    <p class="gs-header">Dropbox Add-on</p>
-                     <p>To link a Drobpox folder to a project/component, visit the project you want to add a Dropbox folder to. Then go to "Settings" in the grey navigation bar. Check "Dropbox" under "Select Add-ons" to enable the add-on. Read, then click “OK” on the pop-up, then submit.</p>
-                    <p>Then, authenticate with Dropbox by clicking the "Authorize" button. Once you have said "OK" you can choose the folder you would like to add to your OSF project.</p>
-                    <div class="gs-video embed-responsive embed-responsive-16by9">
-                        <div class="embed-responsive-item youtube-loader" id="W12ijNBkOKE"></div>
-                    </div>
-                    <span id="github" class="anchor"></span>
-                    <p class="gs-header">GitHub Add-on</p>
-                     <p>To link a GitHub repository to a project/component, visit your profile settings by clicking the gear in the top right of the page. Check "GitHub" under "Select Add-ons" to enable the add-on.</p>
-                    <p>Then, authenticate with GitHub by clicking the "Create Access Token" button and following the instructions on the GitHub page. Once you have created the access token in your user profile, you will not need to follow those first few steps again. </p>
-                    <div class="gs-video embed-responsive embed-responsive-16by9">
-                        <div class="embed-responsive-item youtube-loader" id="5OEy5LpfvMc"></div>
-                    </div>
-                    <p>After creating the access token for your user profile, visit the project you want to add a GitHub repository to. Click on the project name then go to "Settings" in the grey navigation bar. Select the Github add-on by clicking “OK” on the pop-up, then submitting. </p>
-                    <p>Authorize the Github repository by clicking the blue button. Once you have authorized GitHub then you need to either select a repository or create a new one.</p>
-                    <span id="amazon" class="anchor"></span>
-                    <p class="gs-header">Amazon Simple Storage Service Add-on</p>
-                    <p>To link Amazon Simple Storage Service bucket to a project/component, visit your profile settings by clicking the gear in the top right of the page. Check "Amazon Simple Storage Service" under "Select Add-on.”</p>
-                    <p>Next, authenticate Amazon Simple Storage Service by entering the access key and secret key. Then, click “Submit.”</p>
-                    <div class="gs-video embed-responsive embed-responsive-16by9">
-                        <div class="embed-responsive-item youtube-loader" id="GF7qWKwfDyk"></div>
-                    </div>
-                    <p>Once you have enabled Amazon Simple Storage Service in your user settings, you won’t need to do those previous steps again. To associate a bucket with a project, visit the project you want to add a Amazon Simple Storage Service bucket to. Go to "Settings" in the grey navigation bar. Select the Amazon Simple Storage Service add-on under “Select Add-ons” and click“OK” on the pop-up. Then, submit your new settings.</p>
-                    <p>Once you have authorized Amazon Simple Storage then you need to either select a buckets from the dropdown or create one.</p>
-                    <span id="figshare" class="anchor"></span>
-                    <p class="gs-header">FigShare</p>
-                    <p>Currently, the OSF only supports linking FigShare projects to an OSF project–not individual files or articles.</p>
-                    <p>To link a FigShare project to an OSF project, first visit your profile settings by clicking the gear in the top right of the page. Check "FigShare" under "Select Add-on.”</p>
-                    <p>Next, authenticate FigShare by clicking "Create Access Token" and following the instructions on the FigShare website. Once you have enabled FigShare in your user settings, you won’t need to do those previous steps again. </p>
-                    <div class="gs-video embed-responsive embed-responsive-16by9">
-                        <div class="embed-responsive-item youtube-loader" id="HeZpfas0lTk"></div>
-                    </div>
-                    <p>To associate a FigShare project with an OSF project, visit the project you want to add the FigShare project to. Go to "Settings" in the grey navigation bar. Select the FigShare add-on under “Select Add-ons” and click “OK” on the pop-up. Then, submit your new settings.</p>
-                    <p>Still in your project settings, now click the authorize button for FigShare under "Configure Add-ons" and then select the project you want to add.</p>
-                    <span id="dataverse" class="anchor"></span>
-                    <p class="gs-header">Dataverse</p>
-                     <p>Currently, the OSF only supports linking Dataverses that you have already released on the <a href="http://thedata.harvard.edu/dvn/">Harvard Dataverse Network</a>.</p>
-                    <p>To link a Dataverse study to a project/component, visit the project you want to add a Dataverse study to. Then go to "Settings" in the grey navigation bar. Check "Dataverse" under "Select Add-ons" to enable the add-on. Read, then click "OK" on the pop-up, then submit.</p>
-                    <p>Next, authenticate with Dataverse by entering your Dataverse username and password and clicking "Submit". You can then choose the Dataverse study you would like to add to your OSF project. Click "Submit" to save your settings.</p>
-                    <div class="gs-video embed-responsive embed-responsive-16by9">
-                        <div class="embed-responsive-item youtube-loader" id="G8ufuqlUfB4"></div>
-                    </div>
-                    <p>Contributors to your project will have access to both released and draft versions of your study, but only the most recent release will be made public alongside your OSF project.</p>
+
+                    <%include file="/public/pages/help/addons.mako"/>
+
                 </div>
             </div>
             <div class="row" style="margin-bottom: 70px;">

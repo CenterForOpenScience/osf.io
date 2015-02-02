@@ -15,6 +15,7 @@ span.project-organizer-icon-folder {
     height: 16px;
     vertical-align: middle;
     background-image: url('/static/img/hgrid/folder.png');
+    background-repeat: no-repeat;
 }
 
 span.project-organizer-icon-smart-folder {
@@ -23,6 +24,7 @@ span.project-organizer-icon-smart-folder {
     height: 16px;
     vertical-align: middle;
     background-image: url('/static/img/hgrid/smart-folder.png');
+    background-repeat: no-repeat;
 }
 
 span.project-organizer-icon-project {
@@ -31,6 +33,7 @@ span.project-organizer-icon-project {
     height: 16px;
     vertical-align: middle;
     background-image: url('/static/img/hgrid/project.png');
+    background-repeat: no-repeat;
 }
 
 span.project-organizer-icon-project:hover {
@@ -39,6 +42,7 @@ span.project-organizer-icon-project:hover {
     height: 16px;
     vertical-align: middle;
     background-image: url('/static/img/hgrid/project-hover.png');
+    background-repeat: no-repeat;
 }
 
 span.project-organizer-icon-component {
@@ -47,6 +51,7 @@ span.project-organizer-icon-component {
     height: 16px;
     vertical-align: middle;
     background-image: url('/static/img/hgrid/component.png');
+    background-repeat: no-repeat;
 }
 
 span.project-organizer-icon-component:hover {
@@ -55,6 +60,7 @@ span.project-organizer-icon-component:hover {
     height: 16px;
     vertical-align: middle;
     background-image: url('/static/img/hgrid/component-hover.png');
+    background-repeat: no-repeat;
 }
 
 span.project-organizer-icon-pointer {
@@ -63,6 +69,7 @@ span.project-organizer-icon-pointer {
     height: 16px;
     vertical-align: middle;
     background-image: url('/static/img/hgrid/pointer.png');
+    background-repeat: no-repeat;
 }
 
 span.project-organizer-icon-reg-pointer {
@@ -71,11 +78,13 @@ span.project-organizer-icon-reg-pointer {
     height: 16px;
     vertical-align: middle;
     background-image: url('/static/img/hgrid/reg-pointer.png');
+    background-repeat: no-repeat;
 }
 
 
 span.project-organizer-icon-reg-pointer:hover {
     background-image: url('/static/img/hgrid/pointer-hover.png');
+    background-repeat: no-repeat;
 }
 
 span.project-organizer-icon-pointer:hover {
@@ -84,6 +93,7 @@ span.project-organizer-icon-pointer:hover {
     height: 16px;
     vertical-align: middle;
     background-image: url('/static/img/hgrid/pointer-hover.png');
+    background-repeat: no-repeat;
 }
 
 span.project-organizer-icon-reg-project {
@@ -92,6 +102,7 @@ span.project-organizer-icon-reg-project {
     height: 16px;
     vertical-align: middle;
     background-image: url('/static/img/hgrid/reg-project.png');
+    background-repeat: no-repeat;
 }
 
 span.project-organizer-icon-reg-project:hover {
@@ -100,6 +111,7 @@ span.project-organizer-icon-reg-project:hover {
     height: 16px;
     vertical-align: middle;
     background-image: url('/static/img/hgrid/reg-project-hover.png');
+    background-repeat: no-repeat;
 }
 
 span.project-organizer-icon-reg-component {
@@ -108,6 +120,7 @@ span.project-organizer-icon-reg-component {
     height: 16px;
     vertical-align: middle;
     background-image: url('/static/img/hgrid/reg-component.png');
+    background-repeat: no-repeat;
 }
 
 span.project-organizer-icon-reg-component:hover {
@@ -116,6 +129,7 @@ span.project-organizer-icon-reg-component:hover {
     height: 16px;
     vertical-align: middle;
     background-image: url('/static/img/hgrid/reg-component-hover.png');
+    background-repeat: no-repeat;
 }
 
 button.project-organizer-icon-info {
@@ -186,7 +200,6 @@ span.project-details {
 
 span.add-link-warning {
     color: #808080;
-    margin-left: 5px;
 }
 
 div.add-folder-container {
@@ -199,25 +212,12 @@ span.rename-container{
 }
 
 div.project-details span.title {
-    padding: 8px 14px;
-    margin: 0;
-    font-size: 14px;
-    font-weight: 400;
-    line-height: 18px;
-    background-color: #f7f7f7;
-    border-bottom: 1px solid #ebebeb;
-    border-radius: 5px 5px 0 0;
-    width: 100%;
-    display: block;
-    -webkit-margin-before: 0em;
-    -webkit-margin-after: 0em;
-    -webkit-margin-start: 0px;
-    -webkit-margin-end: 0px;
+    display: inline;
+    overflow-x: hidden;
+    font-size: 15px;
+    overflow-x: hidden;
 }
 
-div.project-detail-content {
-    padding:9px 14px;
-}
 
 .project-action-icons img {
     margin-right: 4px;
@@ -225,33 +225,14 @@ div.project-detail-content {
 }
 
 div.project-details {
-    width: 450px;
-    float: right;
-    margin-left: 35%;
-    margin-top: 130px;
-    position: fixed;
-    z-index: 9999999;
-    display: none;
-    overflow: visible;
-
-    padding: 1px;
-    text-align: left;
-    white-space: normal;
-    background-color: #fff;
-    -webkit-background-clip: padding-box;
-    background-clip: padding-box;
-    border: 1px solid rgba(0,0,0,.2);
-    border-radius: 6px;
-    -webkit-box-shadow: 0 5px 10px rgba(0,0,0,.7);
-    box-shadow: 0 5px 10px rgba(0,0,0,.7);
-
+    display: inline-block;
+    width: 100%;
+    background-color: #EEE;
+    padding: 7px;
+    margin-bottom: 10px;
 }
 
 div.contributors {
-    overflow-x: hidden;
-}
-
-div.project-details span.title {
     overflow-x: hidden;
 }
 
@@ -262,9 +243,9 @@ div.project-details span.title {
 div.organize-project-controls {
     display: block;
     position: relative;
-    width: 100%;
     bottom: 0;
-    margin-top: 10px;
+    width: 100%;
+    text-align: right;
 }
 
 .organize-project-controls .organizeBtn.btn.btn-default {
@@ -276,14 +257,10 @@ div.organize-project-controls {
 
 /* Typeahead autocomplete box */
 
-input.typeahead{
-    width: 100%;
-    margin-bottom: 5px;
-}
+
 
 .organize-project-controls span.twitter-typeahead {
     width: 100%;
-
 }
 
 /* Typeahead scaffolding */
@@ -302,12 +279,15 @@ input.typeahead{
 .tt-query {
     width: 100%;
     height: 30px;
-    font-size: 18px;
+    font-size: 16px;
     border: 1px solid rgb(204, 204, 204);
     -webkit-border-radius: 4px;
     -moz-border-radius: 4px;
     border-radius: 4px;
     outline: none;
+}
+input.typeahead.tt-input { 
+height: 32px ;
 }
 
 .typeahead {
@@ -327,12 +307,17 @@ input.typeahead{
 }
 /* rgb of glow 106 176 232
 */
+.tt-input, .typeahead {
+    padding: 0 12px;
+}
+
 .tt-hint {
     color: #999;
+    padding: 2px 12px 0px 13px;
 }
 h3.category {
     font-size: 18px;
-    margin-top: 5px;
+    margin-top: 4px;
     margin-left: 5px;
 }
 .tt-dropdown-menu {
@@ -362,9 +347,9 @@ h3.category {
 
 }
 
-.tt-suggestion p {
+/*.tt-suggestion p {
     margin: 0;
-}
+}*/
 
 .gist {
     font-size: 14px;
@@ -372,3 +357,55 @@ h3.category {
 .tb-row {
     font-size: 13px;
 }
+
+.po-hover {
+    background : #F4F5DF;
+}
+
+.tb-td {
+    height: inherit;
+    padding-top: 4px;
+}
+
+/* Project Toolbar New Additions and Changes */
+
+.po-placeholder {
+    line-height: 30px; 
+}
+
+#project-grid {
+    margin-bottom: 5px;
+}
+
+.organizer-legend {
+    font-size: 13px;
+    padding-left: 4px;
+}
+
+.organizer-legend img {
+    vertical-align: bottom;
+    margin-right: 4px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

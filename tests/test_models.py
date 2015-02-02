@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 '''Unit tests for models and their factories.'''
-import os
-import subprocess
-import shutil
 import mock
 import unittest
 from nose.tools import *  # noqa (PEP8 asserts)
@@ -13,13 +10,12 @@ import urlparse
 from dateutil import parser
 
 from modularodm.exceptions import ValidationError, ValidationValueError, ValidationTypeError
-from modularodm import Q
 
 
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
 from framework.auth import User, Auth
-from framework.auth.exceptions import ChangePasswordError
+from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
 from framework.auth.utils import impute_names_model
 from framework.bcrypt import check_password_hash
 from website import filters, language, settings
@@ -30,14 +26,8 @@ from website.project.model import (
     get_pointer_parent,
 )
 from website.addons.osffiles.model import NodeFile
-from website.addons.osffiles.exceptions import FileNotModified
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.util import web_url_for, api_url_for
-from website.addons.osffiles.exceptions import (
-    InvalidVersionError,
-    VersionNotFoundError,
-    FileNotFoundError,
-)
 from website.addons.wiki.exceptions import (
     NameEmptyError,
     NameInvalidError,
@@ -78,23 +68,48 @@ class TestUserValidation(OsfTestCase):
             self.user.save()
 
     def test_validate_social_personal_empty(self):
-        self.user.social = {'personal_site': ''}
-        try:
-            self.user.save()
-        except:
-            assert 0
+        self.user.social = {'personal': ''}
+        self.user.save()
 
     def test_validate_social_valid(self):
-        self.user.social = {'personal_site': 'http://cos.io/'}
-        try:
-            self.user.save()
-        except:
-            assert 0
+        self.user.social = {'personal': 'http://cos.io/'}
+        self.user.save()
 
     def test_validate_social_personal_invalid(self):
-        self.user.social = {'personal_site': 'help computer'}
+        self.user.social = {'personal': 'help computer'}
         with assert_raises(ValidationError):
             self.user.save()
+
+    def test_empty_social_links(self):
+        assert_equal(self.user.social_links, {})
+        assert_equal(len(self.user.social_links), 0)
+
+    def test_personal_site_unchanged(self):
+        self.user.social = {'personal': 'http://cos.io/'}
+        self.user.save()
+        assert_equal(self.user.social_links['personal'], 'http://cos.io/')
+        assert_equal(len(self.user.social_links), 1)
+
+    def test_various_social_handles(self):
+        self.user.social = {
+            'personal': 'http://cos.io/',
+            'twitter': 'OSFramework',
+            'github': 'CenterForOpenScience'
+        }
+        self.user.save()
+        assert_equal(self.user.social_links, {
+            'personal': 'http://cos.io/',
+            'twitter': 'http://twitter.com/OSFramework',
+            'github': 'http://github.com/CenterForOpenScience'
+        })
+
+    def test_nonsocial_ignored(self):
+        self.user.social = {
+            'foo': 'bar',
+        }
+        self.user.save()
+        assert_equal(self.user.social_links, {})
+
 
     def test_validate_jobs_valid(self):
         self.user.jobs = [{
@@ -172,7 +187,7 @@ class TestUser(OsfTestCase):
                  is_registered=False)
         u.set_password('killerqueen')
         u.save()
-        assert_false(u.is_active())
+        assert_false(u.is_active)
 
     def test_create_unregistered(self):
         name, email = fake.name(), fake.email()
@@ -209,12 +224,12 @@ class TestUser(OsfTestCase):
             is_registered=True,
         )
         u.save()
-        assert_false(u.is_active())
+        assert_false(u.is_active)
 
     def test_merged_user_is_not_active(self):
         master = UserFactory()
         dupe = UserFactory(merged_by=master)
-        assert_false(dupe.is_active())
+        assert_false(dupe.is_active)
 
     def test_cant_create_user_without_username(self):
         u = User()  # No username given
@@ -267,12 +282,21 @@ class TestUser(OsfTestCase):
 
     @mock.patch('website.security.random_string')
     def test_add_email_verification(self, random_string):
-        random_string.return_value = '12345'
+        token = fake.lexify('???????')
+        random_string.return_value = token
         u = UserFactory()
         assert_equal(len(u.email_verifications.keys()), 0)
         u.add_email_verification('foo@bar.com')
         assert_equal(len(u.email_verifications.keys()), 1)
-        assert_equal(u.email_verifications['12345']['email'], 'foo@bar.com')
+        assert_equal(u.email_verifications[token]['email'], 'foo@bar.com')
+
+    @mock.patch('website.security.random_string')
+    def test_add_email_verification_adds_expiration_date(self, random_string):
+        token = fake.lexify('???????')
+        random_string.return_value = token
+        u = UserFactory()
+        u.add_email_verification(u.username)
+        assert_is_instance(u.email_verifications[token]['expiration'], datetime.datetime)
 
     @mock.patch('website.security.random_string')
     def test_get_confirmation_token(self, random_string):
@@ -282,6 +306,32 @@ class TestUser(OsfTestCase):
         assert_equal(u.get_confirmation_token('foo@bar.com'), '12345')
         assert_equal(u.get_confirmation_token('fOo@bar.com'), '12345')
 
+    def test_get_confirmation_token_when_token_is_expired_raises_error(self):
+        u = UserFactory()
+        # Make sure token is already expired
+        expiration = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
+        u.add_email_verification('foo@bar.com', expiration=expiration)
+
+        with assert_raises(ExpiredTokenError):
+            u.get_confirmation_token('foo@bar.com')
+
+    @mock.patch('website.security.random_string')
+    def test_get_confirmation_token_when_token_is_expired_force(self, random_string):
+        random_string.return_value = '12345'
+        u = UserFactory()
+        # Make sure token is already expired
+        expiration = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
+        u.add_email_verification('foo@bar.com', expiration=expiration)
+
+        # sanity check
+        with assert_raises(ExpiredTokenError):
+            u.get_confirmation_token('foo@bar.com')
+
+        random_string.return_value = '54321'
+
+        token = u.get_confirmation_token('foo@bar.com', force=True)
+        assert_equal(token, '54321')
+
     @mock.patch('website.security.random_string')
     def test_get_confirmation_url(self, random_string):
         random_string.return_value = 'abcde'
@@ -289,6 +339,33 @@ class TestUser(OsfTestCase):
         u.add_email_verification('foo@bar.com')
         assert_equal(u.get_confirmation_url('foo@bar.com'),
                 '{0}confirm/{1}/{2}/'.format(settings.DOMAIN, u._primary_key, 'abcde'))
+
+    def test_get_confirmation_url_when_token_is_expired_raises_error(self):
+        u = UserFactory()
+        # Make sure token is already expired
+        expiration = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
+        u.add_email_verification('foo@bar.com', expiration=expiration)
+
+        with assert_raises(ExpiredTokenError):
+            u.get_confirmation_url('foo@bar.com')
+
+    @mock.patch('website.security.random_string')
+    def test_get_confirmation_url_when_token_is_expired_force(self, random_string):
+        random_string.return_value = '12345'
+        u = UserFactory()
+        # Make sure token is already expired
+        expiration = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
+        u.add_email_verification('foo@bar.com', expiration=expiration)
+
+        # sanity check
+        with assert_raises(ExpiredTokenError):
+            u.get_confirmation_token('foo@bar.com')
+
+        random_string.return_value = '54321'
+
+        url = u.get_confirmation_url('foo@bar.com', force=True)
+        expected = '{0}confirm/{1}/{2}/'.format(settings.DOMAIN, u._primary_key, '54321')
+        assert_equal(url, expected)
 
     def test_confirm_primary_email(self):
         u = UserFactory.build(username='foo@bar.com')
@@ -328,6 +405,21 @@ class TestUser(OsfTestCase):
         assert_false(u.verify_confirmation_token('badtoken'))
         valid_token = u.get_confirmation_token('foo@bar.com')
         assert_true(u.verify_confirmation_token(valid_token))
+        manual_expiration = datetime.datetime.utcnow() - datetime.timedelta(0, 10)
+        u._set_email_token_expiration(valid_token, expiration=manual_expiration)
+        assert_false(u.verify_confirmation_token(valid_token))
+
+    def test_verify_confirmation_token_when_token_has_no_expiration(self):
+        # A user verification token may not have an expiration
+        email = fake.email()
+        u = UserFactory.build()
+        u.add_email_verification(email)
+        token = u.get_confirmation_token(email)
+        # manually remove expiration to simulate legacy user
+        del u.email_verifications[token]['expiration']
+        u.save()
+
+        assert_true(u.verify_confirmation_token(token))
 
     def test_factory(self):
         # Clear users
@@ -482,7 +574,7 @@ class TestUser(OsfTestCase):
         assert_equal(d['registered'], user.is_registered)
         assert_equal(d['absolute_url'], user.absolute_url)
         assert_equal(d['date_registered'], user.date_registered.strftime('%Y-%m-%d'))
-        assert_equal(d['active'], user.is_active())
+        assert_equal(d['active'], user.is_active)
 
     def test_serialize_user_full(self):
         master = UserFactory()
@@ -618,6 +710,36 @@ class TestUserParse(unittest.TestCase):
         parsed = impute_names_model('John van der Slice')
         assert_equal(parsed['given_name'], 'John')
         assert_equal(parsed['family_name'], 'van der Slice')
+
+
+class TestDisablingUsers(OsfTestCase):
+    def setUp(self):
+        super(TestDisablingUsers, self).setUp()
+        self.user = UserFactory()
+
+    def test_user_enabled_by_default(self):
+        assert_false(self.user.is_disabled)
+
+    def test_disabled_user(self):
+        """Ensure disabling a user sets date_disabled"""
+        self.user.is_disabled = True
+        self.user.save()
+
+        assert_true(isinstance(self.user.date_disabled, datetime.datetime))
+        assert_true(self.user.is_disabled)
+        assert_false(self.user.is_active)
+
+    def test_reenabled_user(self):
+        """Ensure restoring a disabled user unsets date_disabled"""
+        self.user.is_disabled = True
+        self.user.save()
+
+        self.user.is_disabled = False
+        self.user.save()
+
+        assert_is_none(self.user.date_disabled)
+        assert_false(self.user.is_disabled)
+        assert_true(self.user.is_active)
 
 
 class TestMergingUsers(OsfTestCase):

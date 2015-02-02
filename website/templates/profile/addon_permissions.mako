@@ -1,23 +1,25 @@
 % if nodes:
     <div class ="table-less" style="margin-right: 20px; margin-left: 20px;" id="${addon_short_name}-header">
         <table class="table table-hover" id="${addon_short_name}-auth-table">
-             <thead><th>Authorized Projects:</th><th></th></thead>
+            <thead><th>Authorized Projects:</th><th></th></thead>
             % for node in nodes:
-                 <tr id="${addon_short_name}-${node['_id']}-auth-row">
-                     <th>
-                         <a style="font-weight: normal" href="${node['url']}">
-                             % if node['registered']:
-                                 [ Registration ]
-                             % endif
-                             ${node['title']}
-                         </a>
-                     </th>
-                     <th>
-                         <a>
-                             <i class="icon-remove pull-right text-danger ${addon_short_name}-remove-token" node-id="${node['_id']}" title="Deauthorize Project"></i>
-                         </a>
-                     </th>
-                 </tr>
+                <tr id="${addon_short_name}-${node['_id']}-auth-row">
+                    <th>
+                        <a style="font-weight: normal" href="${node['url']}">
+                            % if node['registered']:
+                                [ Registration ]
+                            % endif
+                            ${node['title']}
+                        </a>
+                    </th>
+                    <th>
+                        % if not node['registered']:
+                            <a>
+                                <i class="icon-remove pull-right text-danger ${addon_short_name}-remove-token" node-id="${node['_id']}" title="Deauthorize Project"></i>
+                            </a>
+                        % endif
+                    </th>
+                </tr>
             % endfor
         </table>
     </div>
@@ -28,6 +30,13 @@
         </div>
     %endif
     <script>
-        AddonPermissionsTable.init("${addon_short_name}", "${addon_full_name}");
+        window.contextVars = $.extend(true, {}, window.contextVars, {
+            addonsWithNodes: {
+                '${addon_short_name}': {
+                    shortName: '${addon_short_name}',
+                    fullName: '${addon_full_name}'
+                }
+            }
+        });
     </script>
 % endif

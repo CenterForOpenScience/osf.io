@@ -1,7 +1,7 @@
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
-var $osf = require('osf-helpers');
+var $osf = require('osfHelpers');
 
 var ProjectSettings = {};
 

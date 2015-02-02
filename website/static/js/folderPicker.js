@@ -19,10 +19,10 @@
 
     function _treebeardToggleCheck (item) {
         if(item.data.addon === 'figshare') {
-            return false; 
+            return false;
         }
 
-        if (item.data.path == "/") {
+        if (item.data.path === '/') {
             return false;
         }
         return true;
@@ -30,10 +30,10 @@
 
     function _treebeardResolveToggle(item){
         if(item.data.addon === 'figshare') {
-            return ''; 
+            return '';
         }
 
-        if (item.data.path!="/") {
+        if (item.data.path !== '/') {
             var toggleMinus = m('i.icon-minus', ' '),
                 togglePlus = m('i.icon-plus', ' ');
             if (item.kind === 'folder') {
@@ -139,6 +139,7 @@
         var tb = this;
         var folderName = tb.options.initialFolderName;
         var folderPath = tb.options.initialFolderPath;
+        var folderArray;
         if (folderName != undefined) {
             if (folderName === "None") {
                 tb.options.folderPath = null;
@@ -146,7 +147,7 @@
                 if(folderPath) {
                     tb.options.folderPath = folderName.replace(folderPath, '');  //folderName.replace('Dropbox', '');
                 }
-                var folderArray = folderName.trim().split('/');
+                folderArray = folderName.trim().split('/');
                 if (folderArray[folderArray.length - 1] === "") {
                     folderArray.pop();
                 }
@@ -155,7 +156,6 @@
                 }
                 tb.options.folderArray = folderArray;
             }
-
             for (var i = 0; i < tb.treeData.children.length; i++) {
                 if (tb.treeData.children[i].data.addon !== 'figshare' && tb.treeData.children[i].data.name === folderArray[0]) {
                     tb.updateFolder(null, tb.treeData.children[i]);
@@ -163,19 +163,20 @@
             }
             tb.options.folderIndex = 1;
         }
-        tb.options.folderPickerOnload(); 
+        tb.options.folderPickerOnload();
     }
 
     function _treebeardLazyLoadOnLoad  (item) {
-        var tb = this; 
+        var tb = this;
+
         for (var i = 0; i < item.children.length; i++) {
             if (item.children[i].data.addon === 'figshare'){
                 return;
             }
             if (item.children[i].data.name === tb.options.folderArray[tb.options.folderIndex]) {
                 tb.updateFolder(null,item.children[i]);
-                tb.options.folderIndex++; 
-                return; 
+                tb.options.folderIndex++;
+                return;
             }
         }
     }
@@ -187,11 +188,13 @@
         resolveIcon : _treebeardResolveIcon,
         togglecheck : _treebeardToggleCheck,
         resolveToggle : _treebeardResolveToggle,
-        onload : _treebeardOnload,
+        ondataload : _treebeardOnload,
         lazyLoadOnLoad : _treebeardLazyLoadOnLoad,
         // Disable uploads
         uploads: false,
-        showFilter : false
+        showFilter : false,
+        resizeColumns : false,
+        rowHeight : 35
     };
 
     function FolderPicker(selector, opts) {
@@ -230,5 +233,5 @@
             return new FolderPicker(selector, options);
         });
     };
- 
+
 module.exports = FolderPicker;

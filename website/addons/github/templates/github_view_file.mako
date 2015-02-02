@@ -4,10 +4,6 @@
 <%def name="file_versions()">
 <div class="scripted" id="githubScope">
 
-    <div class="alert alert-warning" data-bind="visible: deleting">
-        Deleting your file…
-    </div>
-
     <ol class="breadcrumb">
         <li class="active overflow"><a href=${files_page_url}>${node['title']}</a></li>
         <li>GitHub</li>
@@ -85,5 +81,9 @@
         }
     });
 </script>
-<script src="/static/public/js/github/file-detail.js"></script>
+</%def>
+
+<%def name="javascript_bottom()">
+${parent.javascript_bottom()}
+<script src=${"/static/public/js/github/file-detail.js" | webpack_asset}></script>
 </%def>

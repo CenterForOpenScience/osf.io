@@ -1,6 +1,6 @@
 var $ = require('jquery');
 var bootbox = require('bootbox');
-var $osf = require('osf-helpers');
+var $osf = require('osfHelpers');
 
     $(document).ready(function() {
 

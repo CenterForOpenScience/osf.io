@@ -4,17 +4,19 @@ import hashlib
 import logging
 import urllib
 
+import furl
+
 from modularodm import fields, Q
 from modularodm.exceptions import ModularOdmException
 
 from framework.auth import Auth
+from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
 from website.addons.dropbox.client import get_node_addon_client
 from website.addons.dropbox.utils import clean_path, DropboxNodeLogger
 
 logger = logging.getLogger(__name__)
-debug = logger.debug
 
 
 class DropboxFile(GuidFile):
@@ -167,6 +169,10 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
     registration_data = fields.DictionaryField()
 
     @property
+    def display_name(self):
+        return '{0}: {1}'.format(self.config.full_name, self.folder)
+
+    @property
     def has_auth(self):
         """Whether an access token is associated with this node."""
         return bool(self.user_settings and self.user_settings.has_auth)
@@ -186,6 +192,7 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         nodelogger = DropboxNodeLogger(node=self.owner, auth=Auth(user_settings.owner))
         nodelogger.log(action="node_authorized", save=True)
 
+    # TODO: Is this used? If not, remove this and perhaps remove the 'deleted' field
     def delete(self, save=True):
         self.deauthorize(add_log=False)
         super(DropboxNodeSettings, self).delete(save)
@@ -203,22 +210,61 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
             nodelogger = DropboxNodeLogger(node=node, auth=auth)
             nodelogger.log(action="node_deauthorized", extra=extra, save=True)
 
+    def serialize_waterbutler_credentials(self):
+        if not self.has_auth:
+            raise exceptions.AddonError('Addon is not authorized')
+        return {'token': self.user_settings.access_token}
+
+    def serialize_waterbutler_settings(self):
+        if not self.folder:
+            raise exceptions.AddonError('Folder is not configured')
+        return {'folder': self.folder}
+
+    def create_waterbutler_log(self, auth, action, metadata):
+        cleaned_path = clean_path(os.path.join(self.folder, metadata['path']))
+        self.owner.add_log(
+            'dropbox_{0}'.format(action),
+            auth=auth,
+            params={
+                'project': self.owner.parent_id,
+                'node': self.owner._id,
+                'path': cleaned_path,
+                'folder': self.folder,
+                'urls': {
+                    'view': self.owner.web_url_for('dropbox_view_file', path=cleaned_path),
+                    'download': self.owner.web_url_for('dropbox_download', path=cleaned_path),
+                },
+            },
+        )
+
+    def get_waterbutler_render_url(self, path, rev=None, **kwargs):
+        cleaned_path = clean_path(os.path.join(self.folder, path))
+        url = furl.furl(self.owner.web_url_for('dropbox_view_file', path=cleaned_path))
+
+        if rev:
+            url.args['rev'] = rev
+
+        return url.url
+
     def __repr__(self):
         return u'<DropboxNodeSettings(node_id={self.owner._primary_key!r})>'.format(self=self)
 
     ##### Callback overrides #####
 
-    # def before_register_message(self, node, user):
-    #     """Return warning text to display if user auth will be copied to a
-    #     registration.
-    #     """
-    #     category, title = node.project_or_component, node.title
-    #     if self.user_settings and self.user_settings.has_auth:
-    #         return (u'Registering {category} "{title}" will copy Dropbox add-on '
-    #                 'authentication to the registered {category}.').format(**locals())
-    #
-    # # backwards compatibility
-    # before_register = before_register_message
+    def before_register_message(self, node, user):
+        """Return warning text to display if user auth will be copied to a
+        registration.
+        """
+        category = node.project_or_component
+        if self.user_settings and self.user_settings.has_auth:
+            return (
+                u'The contents of Dropbox add-ons cannot be registered at this time; '
+                u'the Dropbox folder linked to this {category} will not be included '
+                u'as part of this registration.'
+            ).format(**locals())
+
+    # backwards compatibility
+    before_register = before_register_message
 
     def before_fork_message(self, node, user):
         """Return warning text to display if user auth will be copied to a
