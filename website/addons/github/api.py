@@ -79,11 +79,9 @@ class GitHub(object):
         return self.gh3.iter_user_repos(user, type='all', sort='full_name')
 
     def my_org_repos(self, permissions=None):
-        permissions = permissions or ['push']
         return itertools.chain.from_iterable(
-            team.iter_repos()
-            for team in self.gh3.iter_user_teams()
-            if team.permission in permissions
+            org.iter_repos()
+            for org in self.gh3.iter_orgs()
         )
 
     def create_repo(self, repo, **kwargs):
