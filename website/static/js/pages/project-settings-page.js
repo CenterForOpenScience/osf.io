@@ -49,19 +49,23 @@ $(document).ready(function() {
 
         var payload = {};
 
-        $notificationSettings.find('.form-control').find('option').each(function(idx, elm) {
-                var $elm = $(elm);
-                var event = $elm.attr('name');
-                    if (payload[event.toLowerCase()] === undefined) {
-                        payload[event.toLowerCase()] = {};
-                    }
-                    if ($elm.attr('value') !== 'none') {
-                        payload[event.toLowerCase()][$elm.attr('value')] = $elm.is(':selected');
-                    }
-	        });
+        $notificationSettings.find('.form-control').each(function(idx, elm) {
+            var pid = $(elm).attr('id'); //uw8fk
+            var event = $(elm).attr('name'); //comments
+
+            if (payload[pid] === undefined) {
+                payload[pid] = {};
+            }
+            payload[pid][event] = {};
+
+            $(elm).find('option').each(function(idx, elm) {
+                var notificationType = $(elm).attr('value');
+                payload[pid][event][notificationType] = $(elm).is(':selected');
+            });
+        });
 
         $osf.postJSON(
-            nodeApiUrl + 'subscribe/',
+            '/api/v1/settings/batch_subscribe/',
             payload
         ).done(function() {
             $notificationsMsg.addClass('text-success');
