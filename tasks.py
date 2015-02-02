@@ -458,12 +458,6 @@ def packages():
 
 
 @task
-def npm_install():
-    print('Installing local npm packages')
-    run('npm install')
-
-
-@task
 def npm_bower():
     print('Installing bower')
     run('npm install -g bower', echo=True)
@@ -482,7 +476,6 @@ def setup():
     packages()
     requirements(all=True)
     encryption()
-    npm_install()
     npm_bower()
     bower_install()
 
