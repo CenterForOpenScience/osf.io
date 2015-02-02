@@ -120,20 +120,21 @@ ${parent.javascript_bottom()}
 <script>
     window.contextVars = window.contextVars || {};
     window.contextVars.wiki = {
-        urls: {content: '${urls['api']['content']}'},
+        urls: {
+            content: '${urls['api']['content']}',
+            sharejs: '${sharejs_url}'
+        },
         email: '${user_name}',
         metadata: {
             registration: true,
             docId: '${sharejs_uuid}',
             userId: '${user_id}',
             userName: '${user_full_name}',
-            userUrl: '${user_url}',
-            sharejsHost: '${sharejs_host}',
-            sharejsPort: '${sharejs_port}'
+            userUrl: '${user_url}'
         }
     };
 </script>
-<script src="//${sharejs_host}:${sharejs_port}/text.js"></script>
-<script src="//${sharejs_host}:${sharejs_port}/share.js"></script>
+<script src="//${sharejs_url}/text.js"></script>
+<script src="//${sharejs_url}/share.js"></script>
 <script src=${"/static/public/js/wiki-edit-page.js" | webpack_asset}></script>
 </%def>

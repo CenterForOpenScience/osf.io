@@ -12,7 +12,7 @@ from framework.exceptions import HTTPError
 from framework.auth.utils import privacy_info_handle
 from framework.flask import redirect
 
-from website import settings
+from website.addons.wiki import settings
 from website.addons.wiki import utils as wiki_utils
 from website.project.views.node import _view_project
 from website.project import show_diff
@@ -279,8 +279,7 @@ def project_wiki_edit(auth, wname, **kwargs):
         'version': version,
         'versions': _get_wiki_versions(node, wiki_name),
         'sharejs_uuid': wiki_utils.get_sharejs_uuid(node, wiki_name),
-        'sharejs_host': settings.SHAREJS_HOST,
-        'sharejs_port': settings.SHAREJS_PORT,
+        'sharejs_url': settings.SHAREJS_URL,
         'is_current': is_current,
         'is_edit': True,
         'pages_current': _get_wiki_pages_current(node),

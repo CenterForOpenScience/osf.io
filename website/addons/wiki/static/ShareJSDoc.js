@@ -16,7 +16,7 @@ var ShareJSDoc = function(viewModel, url, metadata) {
 
     // Configure connection
     var wsPrefix = (window.location.protocol == 'https:') ? 'wss://' : 'ws://';
-    var wsUrl = wsPrefix + metadata.sharejsHost + ':' + metadata.sharejsPort;
+    var wsUrl = wsPrefix + window.contextVars.wiki.urls.sharejs;
     var socket = new ReconnectingWebSocket(wsUrl);
     var sjs = new sharejs.Connection(socket);
     var doc = sjs.get('docs', metadata.docId);
