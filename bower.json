@@ -24,7 +24,7 @@
     "x-editable": "~1.5.1",
     "slickgrid": "~2.1.0",
     "dropzone": "https://github.com/sloria/dropzone.git#accept-directory",
-    "treebeard": "https://github.com/caneruguz/treebeard.git#49fd0c4572474dc8de4ece093e9b38ddcd22f0f1",
+    "treebeard": "https://github.com/caneruguz/treebeard.git#c2c0a7a4d2b6404dfac39aaf2c72cda01b65905d",
     "jquery.cookie": "~1.4.1",
     "hgrid": "~0.2.10",
     "uri.js": "~1.14.1",
