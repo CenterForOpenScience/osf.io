@@ -476,13 +476,16 @@ def setup():
 @task
 def analytics():
     from website.app import init_app
+    import matplotlib
+    matplotlib.use('Agg')
     init_app()
+    from scripts import metrics
     from scripts.analytics import (
         logs, addons, comments, links, watch, email_invites,
         permissions, profile, benchmarks
     )
     modules = (
-        logs, addons, comments, links, watch, email_invites,
+        metrics, logs, addons, comments, links, watch, email_invites,
         permissions, profile, benchmarks
     )
     for module in modules:
