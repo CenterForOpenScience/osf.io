@@ -3,8 +3,6 @@
  * For Treebeard and _item API's check: https://github.com/caneruguz/treebeard/wiki
  */
 
-// CSS
-require('../css/fangorn.css');
 
 var $ = require('jquery');
 var m = require('mithril');
@@ -12,6 +10,9 @@ var Treebeard = require('treebeard');
 var waterbutler = require('waterbutler');
 
 var $osf = require('osfHelpers');
+
+// CSS
+require('../css/fangorn.css');
 
 var tbOptions;
 
