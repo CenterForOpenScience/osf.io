@@ -1,10 +1,7 @@
 // Load config file
 var fs = require('fs');
-var config = {};
-var configFile = process.env.HOME + '/.cos/sharejs.json';
-fs.exists(configFile, function(exists) {
-    if (exists) config = require(configFile);
-});
+var configFile = './settings/sharejs.json';
+var config = fs.existsSync(configFile) ? require(configFile) : {};
 
 // Server Options
 var serverConfig = config.server || {};
