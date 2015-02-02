@@ -138,7 +138,6 @@
             });
         </script>
 
-        <script src="${"/static/public/js/vendor.js" | webpack_asset}"></script>
 
         % if piwik_host:
             <% is_public = node.get('is_public', 'ERROR') if node else True %>
@@ -164,7 +163,6 @@
             </script>
         % endif
 
-        <script src="${"/static/public/js/base-page.js" | webpack_asset}"></script>
         ${self.javascript_bottom()}
     </body>
 </html>
@@ -221,4 +219,10 @@
     <script>window.jQuery || document.write('<script src="/static/vendor/bower_components/jQuery/dist/jquery.min.js">\x3C/script>')</script>
     <script src="//code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
     <script>window.jQuery.ui || document.write('<script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js">\x3C/script>')</script>
+
+    ## NOTE: We load vendor and base-page at the top of the page because they contain
+    ## a number of necessary stylesheets which should be loaded before the user sees
+    ## content.
+    <script src="${"/static/public/js/vendor.js" | webpack_asset}"></script>
+    <script src="${"/static/public/js/base-page.js" | webpack_asset}"></script>
 </%def>

@@ -110,7 +110,6 @@ class TestUserValidation(OsfTestCase):
         self.user.save()
         assert_equal(self.user.social_links, {})
 
-
     def test_validate_jobs_valid(self):
         self.user.jobs = [{
             'institution': 'School of Lover Boys',
