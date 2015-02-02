@@ -86,6 +86,12 @@ $ invoke mongo
 $ invoke server
 ```
 
+- Run your local sharejs server.
+
+```bash
+$ invoke sharejs
+```
+
 ## Running the shell
 
 To open the interactive Python shell, run:

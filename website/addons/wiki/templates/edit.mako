@@ -8,21 +8,63 @@
             <%include file="wiki/templates/nav.mako"/>
             <%include file="wiki/templates/toc.mako"/>
         </div>
-         <div class="col-sm-9">
-                 <%include file="wiki/templates/status.mako"/>
-            <form action="${urls['web']['edit']}" method="POST">
+        <div class="col-sm-9">
+            <%include file="wiki/templates/status.mako"/>
+            <form id="wiki-form" action="${urls['web']['edit']}" method="POST">
                 <div class="form-group wmd-panel">
-                    <div id="wmd-button-bar"></div>
-                    <textarea class="form-control wmd-input" rows="25" id="wmd-input" name="content" data-bind="value: wikiText"></textarea>
+                    <div class="row">
+                        <div class="col-sm-8">
+                             <p>
+                                 <em>Changes will be stored but not published until
+                                 you click "Publish Version."</em>
+                             </p>
+                            <div id="wmd-button-bar"></div>
+                        </div>
+                        <div class="col-sm-4">
+                            <ul class="list-inline" data-bind="foreach: activeUsers" style="float: right">
+                                <!-- ko ifnot: id === '${user_id}' -->
+                                    <li><a data-bind="attr: { href: url }" >
+                                        <img data-bind="attr: {src: gravatar}, tooltip: name"
+                                             style="border: 1px solid black;">
+                                    </a></li>
+                                <!-- /ko -->
+                            </ul>
+                        </div>
+                    </div>
+                    <div id="editor" class="wmd-input wiki-editor"
+                         data-bind="ace: currentText">Loading. . .</div>
+                    <!-- Invisible textarea for form submission -->
+                    <textarea name="content" style="visibility: hidden" data-bind="value: currentText"></textarea>
                 </div>
                 <div class="pull-right">
                     <!-- clicking "Cancel" overrides unsaved changes check -->
-                    % if wiki_created:
-                        <a href="${urls['web']['home']}" class="btn btn-default">Cancel</a>
-                    % else:
-                        <a href="${urls['web']['page']}" class="btn btn-default">Cancel</a>
-                    % endif
-                    <input type="submit" class="btn btn-primary" value="Save" onclick=$(window).off('beforeunload')>
+                        <a class="btn btn-default"
+                           data-toggle="tooltip"
+                           data-placement="top"
+                           title="Your draft version will be saved, but only visible to users with edit permissions."
+                        % if wiki_created:
+                           href="${urls['web']['home']}"
+                        % else:
+                           href="${urls['web']['page']}"
+                        % endif
+                           >
+                            Return To View
+                        </a>
+                    <button id="revert-button"
+                            class="btn btn-primary"
+                            data-bind="click: loadPublished, enable: changed"
+                            data-toggle="tooltip"
+                            data-placement="top"
+                            title="Clicking this button will revert the current draft to the last published version of this wiki."
+                            >Revert to Last Publication</button>
+                    <input type="submit"
+                           class="btn btn-success"
+                           value="Publish Version"
+                           data-toggle="tooltip"
+                           data-placement="top"
+                           title="Publishing this wiki version will allow anyone with read access to view it."
+                           data-bind="enable: changed"
+                           onclick=$(window).off('beforeunload')>
                 </div>
                 <p class="help-block">Preview</p>
                 <div id="wmd-preview" class="wmd-panel wmd-preview"></div>
@@ -31,15 +73,67 @@
     </div><!-- end row -->
 </div><!-- end wiki -->
 
+<div class="modal fade" id="permissions-modal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">The permissions for this page have changed</h3>
+      </div>
+      <div class="modal-body">
+        <p>Your browser should refresh shortly&hellip;</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="rename-modal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">The content of this wiki has been moved to a different page</h3>
+      </div>
+      <div class="modal-body">
+        <p>Your browser should refresh shortly&hellip;</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="delete-modal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">This wiki page has been deleted</h3>
+      </div>
+      <div class="modal-body">
+        <p>Press OK to return to the project wiki home page.</p>
+      </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <%def name="javascript_bottom()">
 ${parent.javascript_bottom()}
 <script>
     window.contextVars = window.contextVars || {};
-    window.contextVars.wiki = {urls: {content: '${urls['api']['content']}'}};
+    window.contextVars.wiki = {
+        urls: {content: '${urls['api']['content']}'},
+        email: '${user_name}',
+        metadata: {
+            registration: true,
+            docId: '${sharejs_uuid}',
+            userId: '${user_id}',
+            userName: '${user_full_name}',
+            userUrl: '${user_url}',
+            sharejsHost: '${sharejs_host}',
+            sharejsPort: '${sharejs_port}'
+        }
+    };
 </script>
-<script src="/static/vendor/pagedown/Markdown.Converter.js"></script>
-<script src="/static/vendor/pagedown/Markdown.Sanitizer.js"></script>
-<script src="/static/vendor/pagedown/Markdown.Editor.js"></script>
+<script src="//${sharejs_host}:${sharejs_port}/text.js"></script>
+<script src="//${sharejs_host}:${sharejs_port}/share.js"></script>
 <script src=${"/static/public/js/wiki-edit-page.js" | webpack_asset}></script>
 </%def>

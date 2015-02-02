@@ -6,6 +6,8 @@
     "bootstrap": "~3.3.0",
     "requirejs": "~2.1.11",
     "moment": "~2.7.0",
+    "select2": "~3.5.1",
+    "ace-builds": "https://github.com/ajaxorg/ace-builds.git",
     "qunit": "~1.14.0",
     "sinon": "~1.10.2",
     "select2": "~3.5.1",

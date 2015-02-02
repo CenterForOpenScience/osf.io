@@ -8,6 +8,12 @@
     "exports-loader": "^0.6.2",
     "imports-loader": "^0.6.3",
     "object-assign": "^2.0.0",
-    "webpack": "^1.4.13"
+    "webpack": "^1.4.13",
+    "share": "~0.7.3",
+    "express": "~4.10.0",
+    "livedb": "~0.4.8",
+    "livedb-mongo": "~0.4.1",
+    "crypto-js": "~3.1.2-5",
+    "ws": "~0.4.32"
   }
 }

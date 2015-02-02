@@ -240,6 +240,13 @@ def mongorestore(path, drop=False):
     run(cmd, echo=True)
 
 
+@task
+def sharejs():
+    """Start a local ShareJS server."""
+    share_server = os.path.join(settings.ADDON_PATH, 'wiki', 'shareServer.js')
+    run("node {0}".format(share_server))
+
+
 @task(aliases=['celery'])
 def celery_worker(level="debug"):
     """Run the Celery process."""
@@ -451,6 +458,12 @@ def packages():
 
 
 @task
+def npm_install():
+    print('Installing local npm packages')
+    run('npm install')
+
+
+@task
 def npm_bower():
     print('Installing bower')
     run('npm install -g bower', echo=True)
@@ -469,6 +482,7 @@ def setup():
     packages()
     requirements(all=True)
     encryption()
+    npm_install()
     npm_bower()
     bower_install()
 
