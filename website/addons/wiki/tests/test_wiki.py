@@ -5,6 +5,8 @@ from copy import deepcopy
 import httplib as http
 import uuid
 
+import mock
+
 from nose.tools import *  # noqa
 from modularodm.exceptions import ValidationValueError
 
@@ -343,7 +345,8 @@ class TestWikiDelete(OsfTestCase):
         self.elephant_wiki = self.project.get_wiki_page('Elephants')
         self.lion_wiki = self.project.get_wiki_page('Lions')
 
-    def test_project_wiki_delete(self):
+    @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
+    def test_project_wiki_delete(self, mock_shrejs):
         assert_in('elephants', self.project.wiki_pages_current)
         url = self.project.api_url_for(
             'project_wiki_delete',
@@ -356,7 +359,8 @@ class TestWikiDelete(OsfTestCase):
         self.project.reload()
         assert_not_in('elephants', self.project.wiki_pages_current)
 
-    def test_project_wiki_delete_w_valid_special_characters(self):
+    @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
+    def test_project_wiki_delete_w_valid_special_characters(self, mock_sharejs):
         # TODO: Need to understand why calling update_node_wiki with failure causes transaction rollback issue later
         # with assert_raises(NameInvalidError):
         #     self.project.update_node_wiki(SPECIAL_CHARACTERS_ALL, 'Hello Special Characters', self.consolidate_auth)
@@ -399,7 +403,8 @@ class TestWikiRename(OsfTestCase):
             wname=self.page_name,
         )
 
-    def test_rename_wiki_page_valid(self, new_name=u'away'):
+    @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
+    def test_rename_wiki_page_valid(self, mock_sharejs, new_name=u'away'):
         self.app.put_json(
             self.url,
             {'value': new_name},
@@ -474,7 +479,8 @@ class TestWikiRename(OsfTestCase):
         )
         assert_equal(res.status_code, 409)
 
-    def test_rename_wiki_page_same_name_different_casing(self):
+    @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
+    def test_rename_wiki_page_same_name_different_casing(self, mock_sharejs):
         old_name = 'away'
         new_name = 'AWAY'
         self.project.update_node_wiki(old_name, 'Hello world', self.consolidate_auth)
@@ -492,7 +498,8 @@ class TestWikiRename(OsfTestCase):
         res = self.app.put_json(url, {'value': 'homelol'}, auth=self.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
-    def test_can_rename_to_a_deleted_page(self):
+    @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
+    def test_can_rename_to_a_deleted_page(self, mock_sharejs):
         self.project.delete_node_wiki(self.page_name, self.consolidate_auth)
         self.project.save()
 
@@ -683,7 +690,8 @@ class TestWikiUuid(OsfTestCase):
         assert_not_in(project_uuid, fork_res)
         assert_not_in(fork_uuid, project_res)
 
-    def test_migration_does_not_affect_forks(self):
+    @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
+    def test_migration_does_not_affect_forks(self, mock_sharejs):
         original_uuid = generate_private_uuid(self.project, self.wname)
         self.project.update_node_wiki(self.wname, 'Hello world', Auth(self.user))
         fork = self.project.fork_node(Auth(self.user))
@@ -695,7 +703,8 @@ class TestWikiUuid(OsfTestCase):
         assert_not_equal(original_uuid, self.project.wiki_private_uuids.get(self.wkey))
         assert_equal(original_uuid, fork.wiki_private_uuids.get(self.wkey))
 
-    def test_uuid_persists_after_delete(self):
+    @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
+    def test_uuid_persists_after_delete(self, mock_sharejs):
         assert_is_none(self.project.wiki_private_uuids.get(self.wkey))
 
         # Create wiki page
@@ -723,7 +732,8 @@ class TestWikiUuid(OsfTestCase):
         assert_equal(original_private_uuid, self.project.wiki_private_uuids.get(self.wkey))
         assert_in(original_sharejs_uuid, res.body)
 
-    def test_uuid_persists_after_rename(self):
+    @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
+    def test_uuid_persists_after_rename(self, mock_sharejs):
         new_wname = 'bar.baz'
         new_wkey = to_mongo_key(new_wname)
         assert_is_none(self.project.wiki_private_uuids.get(self.wkey))
@@ -794,7 +804,8 @@ class TestWikiShareJSMongo(OsfTestCase):
             item['name'] = item['name'].replace(example_uuid, self.sharejs_uuid)
         self.db.docs_ops.insert(self.example_ops)
 
-    def test_migrate_uuid(self):
+    @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
+    def test_migrate_uuid(self, mock_sharejs):
         self.wiki_page.migrate_uuid(self.project)
         assert_is_none(self.db.docs.find_one({'_id': self.sharejs_uuid}))
         assert_is_none(self.db.docs_ops.find_one({'name': self.sharejs_uuid}))
@@ -809,7 +820,8 @@ class TestWikiShareJSMongo(OsfTestCase):
             len([item for item in self.db.docs_ops.find({'name': new_sharejs_uuid})])
         )
 
-    def test_migrate_uuid_no_mongo(self):
+    @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
+    def test_migrate_uuid_no_mongo(self, mock_sharejs):
         # Case where no edits have been made to the wiki
         wname = 'bar.baz'
         wkey = to_mongo_key(wname)
@@ -824,17 +836,20 @@ class TestWikiShareJSMongo(OsfTestCase):
         assert_is_none(self.db.docs.find_one({'_id': sharejs_uuid}))
         assert_is_none(self.db.docs_ops.find_one({'name': sharejs_uuid}))
 
-    def test_migrate_uuid_updates_node(self):
+    @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
+    def test_migrate_uuid_updates_node(self, mock_sharejs):
         assert_equal(self.private_uuid, self.project.wiki_private_uuids[self.wkey])
         self.wiki_page.migrate_uuid(self.project)
         assert_not_equal(self.private_uuid, self.project.wiki_private_uuids[self.wkey])
 
-    def test_delete_share_doc(self):
+    @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
+    def test_delete_share_doc(self, mock_sharejs):
         self.wiki_page.delete_share_doc(self.project, self.wname)
         assert_is_none(self.db.docs.find_one({'_id': self.sharejs_uuid}))
         assert_is_none(self.db.docs_ops.find_one({'name': self.sharejs_uuid}))
 
-    def test_delete_share_doc_updates_node(self):
+    @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
+    def test_delete_share_doc_updates_node(self, mock_sharejs):
         assert_equal(self.private_uuid, self.project.wiki_private_uuids[self.wkey])
         self.wiki_page.delete_share_doc(self.project)
         assert_not_in(self.wkey, self.project.wiki_private_uuids)
