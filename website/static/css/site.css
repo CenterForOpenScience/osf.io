@@ -412,9 +412,9 @@ img.hg-addon-icon {
     font-weight: bold;
 }
 
-.citation-list {
+/*.citation-list {
     display: none;
-}
+}*/
 
 .citation-text {
     text-indent: -3em;
@@ -662,9 +662,10 @@ h4 {
 
 /* Profile gravatar
 -------------------------------------------------- */
-#profile-gravatar{
-    float:left;
+.profile-avatar{
     margin-right:.5em;
+}
+#profile-gravatar{
     width:70px;
     height:70px;
 }
@@ -808,7 +809,7 @@ li.node p.date{
 /***********/
 
 h1.node-title, h1.node-parent-title {
-  line-height: 36px;
+  line-height: 50px;
   border-bottom: none;
   margin-top: 0.3em;
 }
@@ -1651,6 +1652,24 @@ div.pydocx-center{
   display: block;
 }
 
+span.edit-profile-settings {
+    display: block;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+}
+
+div.profile-fullname{
+    display: block;
+    position: relative;
+    bottom: 0;
+}
+
+span#profileFullname{
+    position: absolute;
+    bottom: 0;
+}
+
 .scripted {display: none;}
 
 .pointer {cursor: pointer;}
@@ -1714,4 +1733,370 @@ div.pydocx-center{
 .tooltip-inner {
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+
+
+
+/* Revision changes for ui - experimental, should not be in production */
+
+
+/* Main Navbar */
+.osf-navbar {
+    background-color: #214762;
+    box-shadow: 0 0 3px #AEADAD;
+    min-height: 40px;
+}
+
+.osf-navbar a {
+    color: #FFF;
+}
+
+.osf-navbar .nav .open>a, .osf-navbar .nav .open>a:hover, .osf-navbar .nav .open>a:focus, .osf-navbar a:hover, .osf-navbar li > a:hover, .osf-navbar li.active, .osf-navbar li.a:focus, .osf-navbar .navbar-nav>li>a:focus {
+    background: rgba(187, 187, 187, 0.2);
+}
+.osf-navbar .navbar-nav>li>a {
+    padding-top: 9px;
+    padding-bottom: 6px;
+    line-height: 24px;
+}
+
+.navbar-brand {
+    height: 42px;
+    line-height: 14px;
+    padding:13px 15px;
+}
+
+.navbar-form {
+    margin-top: 5px;
+    margin-bottom: 2px;
+}
+
+.navbar-toggle {
+    margin-top: 5px;
+    margin-bottom: 3px;
+}
+
+.navbar-toggle .icon-bar {
+    background-color: white;
+}
+
+.navbar-mid>li>a{
+    padding-bottom: 8px !important;
+}
+
+.icon-lg {
+    font-size: 20px;
+    line-height: 26px;
+}
+
+.osf-navbar-logo {
+    float: left;
+    margin-right: 8px;
+    margin-top: -7px;
+}
+
+.osf-navbar .navbar-nav>li>a.btn {
+    padding-top: 4px;
+    padding-bottom: 3px;
+    margin-top: 4px;
+    margin-left: 8px;
+}
+
+.osf-gravatar > img {
+    border: 1px solid #CDCDCD;
+    border-radius: 13px;
+    margin-right: 5px;
+}
+
+
+/* Project pages navigation */
+
+.osf-project-navbar {
+    position: fixed;
+    width: 100%;
+    left: 0;
+    top: 43px;
+    background: #EEE;
+    z-index: 99;
+    box-shadow:0 0 9px -1px #838383;
+    border-radius: 0;
+    border: none;
+    min-height:40px;
+}
+
+.osf-project-navbar li>a {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    font-size: 15px;
+}
+
+
+
+.osf-project-navbar .navbar-nav li>a:hover {
+    background-color: #DADADA;
+}
+
+.osf-project-navbar li.active, .osf-project-navbar li.active a:hover, .osf-project-navbar li:hover{
+    background-color: #337AB7;
+}
+
+
+.osf-project-navbar li.active a {
+    color: white;
+}
+
+.osf-project-navbar a.project-title {
+    font-weight: 300;
+    font-size: 20px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.m-v-lg {
+    margin: 20px 0 20px 0;
+}
+
+.padder-lg-v {
+    padding-top:20px;
+    padding-bottom: 20px;
+}
+
+
+/* Project Dashboard */
+
+
+.addon-widget-container {
+    border:1px solid #ddd;
+    margin-bottom: 20px;
+}
+.addon-widget-header {
+    padding: 0 10px;
+    border-bottom: 1px solid #ddd;
+    background-color: #efefef;
+    width: 100%;
+}
+.addon-widget-header .btn {
+    padding-left: 7px;
+    padding-right: 7px;
+    margin-top: 2px;
+}
+.addon-widget-header h4 {
+    display: inline-block;
+    float: left;
+    margin-bottom: 0;
+
+}
+.addon-widget-body {
+    padding: 15px;
+    background-color: white;
+}
+.addon-widget-body .list-group-item {
+    border: none;
+    border-bottom: 1px dotted #999;;
+}
+.hgrid {
+    border: 1px solid #E4E4E4;
+    margin-top: 10px;
+}
+.node-title {
+    line-height: 44px;
+    border-bottom: none;
+    margin-top: 0.3em;
+    font-size: 36px;
+    font-weight: 300;
+}
+.text-300 {
+    font-weight: 300;
+}
+
+
+#projectSubnav .navbar-collapse {
+    padding-left: 0; 
+    padding-right: 0;
+}
+
+.osf-dash-portlet {
+    background-color: #eee;
+    width: 100%;
+    height: 40px;
+    margin-bottom: 20px;
+    border: 2px dashed #ddd;
+}
+
+.page-header.visible-xs {
+    margin: 0;
+}
+
+
+@media (max-width: 767px) {
+    .navbar .search-query {
+        width: 100%;
+    }
+    .navbar-nav .open .dropdown-menu>li>a {
+        color: #FFF;
+    }
+    .osf-project-navbar li>a {
+        padding-left: 30px;
+        padding-right: 30px;
+    }   
+    .osf-project-navbar a.project-title {
+    }
+    .project-nav {
+        overflow: hidden;
+    }
+    .osf-search {
+        margin-top: -30px;
+        z-index: 1028;
+    }
+    #searchControls > .osf-search {
+        margin-top: -30px;
+        z-index: 99;
+    }
+    .osf-xs-search {
+        text-decoration: none !important;
+        padding: 8px;
+    }
+}
+
+@media (min-width: 768px) {
+    .osf-navbar .navbar-nav>li>a, .osf-project-navbar li>a {
+        padding-left: 7px;
+        padding-right: 7px;    
+    }
+    .navbar .search-query {
+    width: 190px;
+    }
+    .osf-project-navbar a.project-title {
+        max-width: 190px;
+    }
+    .navbar-brand {
+        margin-left: 0 !important;
+        padding-left: 0;
+    }
+    .osf-search {
+        margin-top: -30px;
+        z-index: 1028; /* should be less than 1030 to not cover navbar */
+    }
+    #searchControls > .osf-search {
+        margin-top: -30px;
+    }
+
+}
+
+@media (min-width: 992px) {
+    .osf-navbar .navbar-nav>li>a, .osf-project-navbar li>a {
+        padding-left: 10px;
+        padding-right: 10px;    
+    }
+    .navbar .search-query {
+        width: 360px;
+    }
+    .osf-project-navbar a.project-title {
+        max-width: 300px;
+    }
+}
+@media (min-width: 1200px) {
+    .osf-navbar .navbar-nav>li>a, .osf-project-navbar li>a {
+        padding-left: 15px;
+        padding-right: 15px;    
+    }
+    .navbar .search-query {
+    width: 270px;
+    }
+    .osf-project-navbar a.project-title {
+        max-width: 400px;
+    }
+}
+
+/* Search bar */
+.osf-search {
+    padding: 10px 0;
+    background: #B8ECC0;
+    position: fixed;
+    width: 100%;
+    box-shadow: 0 0 9px -2px #464545;
+    left: 0;
+}
+#searchControls > .osf-search {
+    margin-top: -30px;
+}
+.osf-search-input {
+    background: none;
+    border: none;
+    box-shadow: none;
+    border-bottom: 1px dotted #FFF;
+    border-radius: 0;
+    padding: 0 0;
+    font-size: 20px;
+    color: #214762;
+    font-weight: 300;
+}
+.osf-search-input:focus {
+    outline : 0 !important;
+    box-shadow: none;
+    border-bottom: 1px dotted #FFF;
+}
+.osf-search-btn {
+    color: #214762;
+    background: rgba(0, 0, 0, 0);
+}
+
+.osf-search-btn:hover {
+    color: #738EA2;
+}
+
+
+#searchPageFullBar::-webkit-input-placeholder {
+   color: #738EA2;
+}
+
+#searchPageFullBar:-moz-placeholder { /* Firefox 18- */
+   color: #738EA2;  
+}
+
+#searchPageFullBar::-moz-placeholder {  /* Firefox 19+ */
+   color: #738EA2;  
+}
+
+#searchPageFullBar:-ms-input-placeholder {  
+   color: #738EA2;  
+}
+#searchControls>.row {
+    padding-top: 60px;
+}
+
+.editableControl {
+    background-color: #eee;
+    color: #999898;
+}
+.dker {
+    background-color: #DDD;
+}
+
+.osf-project-navbar .project-nav .icon {
+    font-size: 18px;
+}
+
+.osf-project-navbar .project-nav .icon.rotate-180 {
+    display: block;
+}
+
+.node-parent-title {
+    font-weight: 300;
+    margin-top: 0;
+    font-size: 22px;
+}
+.rotate-180 {
+    -ms-transform: rotate(180deg);
+    -webkit-transform: rotate(180deg);
+    transform: rotate(180deg);
+}
+.icon-dark-lg {
+    font-size: 18px;
+    color: #555;
+}
+.break-word {
+    word-wrap: break-word;
 }

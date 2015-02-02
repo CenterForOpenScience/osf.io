@@ -1,21 +1,15 @@
-'''
-Created on Jan 7, 2014
-
-@author: seto
-'''
-"""
-
-"""
+# -*- coding: utf-8 -*-
 
 import os
 
-from boto.exception import BotoServerError
 from modularodm import fields
+from boto.exception import BotoServerError
 
 from framework.auth.core import Auth
 
+from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
-from website.addons.s3.utils import get_bucket_drop_down, remove_osf_user
+from website.addons.s3.utils import get_bucket_drop_down, remove_osf_user, build_urls
 
 
 class S3GuidFile(GuidFile):
@@ -82,6 +76,10 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         'addons3usersettings', backref='authorized'
     )
 
+    @property
+    def display_name(self):
+        return u'{0}: {1}'.format(self.config.full_name, self.bucket)
+
     def authorize(self, user_settings, save=False):
         self.user_settings = user_settings
         self.owner.add_log(
@@ -115,6 +113,35 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
     def delete(self, save=True):
         self.deauthorize(log=False, save=False)
         super(AddonS3NodeSettings, self).delete(save=save)
+
+    def serialize_waterbutler_credentials(self):
+        if not self.has_auth:
+            raise exceptions.AddonError('Cannot serialize credentials for S3 addon')
+        return {
+            'access_key': self.user_settings.access_key,
+            'secret_key': self.user_settings.secret_key,
+        }
+
+    def serialize_waterbutler_settings(self):
+        if not self.bucket:
+            raise exceptions.AddonError('Cannot serialize settings for S3 addon')
+        return {'bucket': self.bucket}
+
+    def create_waterbutler_log(self, auth, action, metadata):
+        self.owner.add_log(
+            's3_{0}'.format(action),
+            auth=auth,
+            params={
+                'project': self.owner.parent_id,
+                'node': self.owner._id,
+                'path': metadata['path'],
+                'bucket': self.bucket,
+                'urls': build_urls(self.owner, metadata['path']),
+            },
+        )
+
+    def get_waterbutler_render_url(self, path, **kwargs):
+        return self.owner.web_url_for('s3_view', path=path)
 
     def to_json(self, user):
         rv = super(AddonS3NodeSettings, self).to_json(user)

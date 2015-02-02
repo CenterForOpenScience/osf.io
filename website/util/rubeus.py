@@ -4,14 +4,13 @@
 """Contains helper functions for generating correctly
 formatted hgrid list/folders.
 """
-import os
 import datetime
 
 import hurry
 from modularodm import Q
 
+from website.util import paths
 from framework.auth.decorators import Auth
-from website import settings
 from website.settings import (
     ALL_MY_PROJECTS_ID, ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_NAME,
     ALL_MY_REGISTRATIONS_NAME
@@ -19,7 +18,7 @@ from website.settings import (
 
 
 FOLDER = 'folder'
-FILE = 'item'
+FILE = 'file'
 KIND = 'kind'
 
 # TODO: Validate the JSON schema, esp. for addons
@@ -106,8 +105,8 @@ def build_addon_root(node_settings, name, permissions=None,
     if user and 'high_upload_limit' in user.system_tags:
         max_size = node_settings.config.high_max_file_size
 
-    rv = {
-        'addon': node_settings.config.short_name,
+    ret = {
+        'provider': node_settings.config.short_name,
         'addonFullname': node_settings.config.full_name,
         'name': name,
         'iconUrl': node_settings.config.icon_url,
@@ -122,9 +121,12 @@ def build_addon_root(node_settings, name, permissions=None,
         },
         'urls': urls,
         'isPointer': False,
+        'nodeId': node_settings.owner._id,
+        'nodeUrl': node_settings.owner.url,
+        'nodeApiUrl': node_settings.owner.api_url,
     }
-    rv.update(kwargs)
-    return rv
+    ret.update(kwargs)
+    return ret
 
 
 def build_addon_button(text, action, title=""):
@@ -319,7 +321,8 @@ class NodeProjectCollector(object):
             to_expand = False
 
         return {
-            'name': node.title if can_view else u'Private Component',
+            #TODO Remove the replace when mako html safe comes around
+            'name': node.title.replace('&amp;', '&') if can_view else u'Private Component',
             'kind': FOLDER,
             # Once we get files into the project organizer, files would be kind of FILE
             'permissions': {
@@ -435,21 +438,23 @@ class NodeFileCollector(object):
         else:
             children = []
         return {
-            'name': u'{0}: {1}'.format(node.project_or_component.capitalize(), node.title)
+            # #TODO Remove the replace when mako html safe comes around
+            'name': u'{0}: {1}'.format(node.project_or_component.capitalize(), node.title.replace('&amp;', '&'))
             if can_view
             else u'Private Component',
             'kind': FOLDER,
             'permissions': {
-                'edit': False,
+                'edit': node.can_edit(self.auth) and not node.is_registration,
                 'view': can_view,
             },
             'urls': {
-                'upload': os.path.join(node.api_url, 'osffiles') + '/',
+                'upload': None,
                 'fetch': None,
             },
             'children': children,
             'isPointer': not node.primary,
             'isSmartFolder': False,
+            'nodeID': node.resolve()._id,
         }
 
     def _collect_addons(self, node):
@@ -490,16 +495,8 @@ def collect_addon_js(node, visited=None, filename='files.js', config_entry='file
         # JS modules configured in each addon's __init__ file
         js = js.union(addon.config.include_js.get(config_entry, []))
         # Webpack bundle
-        file_path = os.path.join('static',
-                                 'public',
-                                 'js',
-                                 addon.config.short_name,
-                                 filename)
-        js_file = os.path.join(
-            settings.BASE_PATH, file_path
-        )
-        if os.path.exists(js_file):
-            js_path = os.path.join('/', file_path)
+        js_path = paths.resolve_addon_path(addon.config, filename)
+        if js_path:
             js.add(js_path)
     for each in node.nodes:
         if each._id not in visited:
@@ -511,8 +508,8 @@ def collect_addon_js(node, visited=None, filename='files.js', config_entry='file
 def collect_addon_css(node, visited=None):
     """Collect CSS includes for all addons-ons implementing Hgrid views.
 
-    :return list: List of CSS include paths
-
+    :return: List of CSS include paths
+    :rtype: list
     """
     visited = visited or []
     visited.append(node._id)

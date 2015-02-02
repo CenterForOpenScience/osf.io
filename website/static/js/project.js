@@ -266,11 +266,27 @@ $(document).ready(function() {
         window.location = '/search/?q=(tags:' + $(e.target).text().toString().trim()+ ')';
     });
 
-    $('.citation-toggle').on('click', function() {
-        $(this).closest('.citations').find('.citation-list').slideToggle();
-        return false;
-    });
 
+    // Portlet feature for the dashboard, to be implemented in later versions. 
+    // $( ".osf-dash-col" ).sortable({
+    //   connectWith: ".osf-dash-col",
+    //   handle: ".addon-widget-header",
+    //   cancel: ".pull-right",
+    //   placeholder: "osf-dash-portlet ui-corner-all"
+    // });
+
+    // Adds active class to current menu item 
+    $(function () {
+        var path = window.location.pathname;
+        $(".project-nav a").each(function () {
+            var href = $(this).attr('href');
+            if (path === href ||
+               (path.indexOf('files') > -1 && href.indexOf('files') > -1) ||
+               (path.indexOf('wiki') > -1 && href.indexOf('wiki') > -1)) {
+                $(this).closest('li').addClass('active');
+            }
+        });
+    });
 });
 
 window.NodeActions = NodeActions;

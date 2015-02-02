@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # encoding: utf-8
 
 import hashlib
@@ -20,3 +19,22 @@ WEBHOOK_HMAC_SECRET = 'changeme'
 WEBHOOK_HMAC_DIGEST = hashlib.sha1
 
 REVISIONS_PAGE_SIZE = 10
+
+# IDENTITY = {
+#     'provider': 's3',
+#     'access_key': '',
+#     'secret_key': ''
+# }
+
+WATERBUTLER_CREDENTIALS = {
+    'username': 'changeme',
+    'token': 'changeme',
+    'region': 'changeme'
+}
+
+WATERBUTLER_SETTINGS = {
+    'provider': 'cloudfiles',
+    'container': 'changeme',
+}
+
+WATERBUTLER_RESOURCE = 'container'

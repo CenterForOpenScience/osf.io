@@ -10,7 +10,6 @@ import httplib as http
 
 from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
-from werkzeug.wrappers import Response
 
 from modularodm import Q
 from dateutil.parser import parse as parse_date
@@ -448,6 +447,35 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res.status_code, 404)
         assert_in('Template not found', res)
 
+    # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1478
+    def test_registered_projects_contributions(self):
+        # register a project
+        self.project.register_node(None, Auth(user=self.project.creator), '', None)
+        # get the first registered project of a project
+        url = self.project.api_url_for('get_registrations')
+        res = self.app.get(url, auth=self.auth)
+        data = res.json
+        pid = data['nodes'][0]['id']
+        url2 = api_url_for('get_summary', pid=pid)
+        # count contributions
+        res2 = self.app.get(url2, {'rescale_ratio': data['rescale_ratio']}, auth=self.auth)
+        data = res2.json
+        assert_is_not_none(data['summary']['nlogs'])
+
+    def test_forks_contributions(self):
+        # fork a project
+        self.project.fork_node(Auth(user=self.project.creator))
+        # get the first forked project of a project
+        url = self.project.api_url_for('get_forks')
+        res = self.app.get(url, auth=self.auth)
+        data = res.json
+        pid = data['nodes'][0]['id']
+        url2 = api_url_for('get_summary', pid=pid)
+        # count contributions
+        res2 = self.app.get(url2, {'rescale_ratio': data['rescale_ratio']}, auth=self.auth)
+        data = res2.json
+        assert_is_not_none(data['summary']['nlogs'])
+
     @mock.patch('framework.transactions.commands.begin')
     @mock.patch('framework.transactions.commands.rollback')
     @mock.patch('framework.transactions.commands.commit')
@@ -790,7 +818,7 @@ class TestUserProfile(OsfTestCase):
 
     def test_sanitization_of_edit_profile(self):
         url = api_url_for('edit_profile', uid=self.user._id)
-        post_data = {'name': 'fullname',  'value': 'new<b> name</b>'}
+        post_data = {'name': 'fullname', 'value': 'new<b> name</b>'}
         request = self.app.post(url, post_data, auth=self.user.auth)
         assert_equal('new name', request.json['name'])
 
@@ -817,6 +845,23 @@ class TestUserProfile(OsfTestCase):
         for key, value in payload.iteritems():
             assert_equal(self.user.social[key], value)
         assert_true(self.user.social['researcherId'] is None)
+
+    def test_unserialize_social_validation_failure(self):
+        url = api_url_for('unserialize_social')
+        # personal URL is invalid
+        payload = {
+            'personal': 'http://invalidurl',
+            'twitter': 'howtopizza',
+            'github': 'frozenpizzacode',
+        }
+        res = self.app.put_json(
+            url,
+            payload,
+            auth=self.user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['message_long'], 'Invalid personal URL.')
 
     def test_serialize_social_editable(self):
         self.user.social['twitter'] = 'howtopizza'
@@ -1008,6 +1053,48 @@ class TestUserProfile(OsfTestCase):
         res = self.app.put_json(url, payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
+    def test_get_current_user_gravatar_default_size(self):
+        url = api_url_for('current_user_gravatar')
+        res = self.app.get(url, auth=self.user.auth)
+        current_user_gravatar = res.json['gravatar_url']
+        assert_true(current_user_gravatar is not None)
+        url = api_url_for('get_gravatar', uid=self.user._id)
+        res = self.app.get(url, auth=self.user.auth)
+        my_user_gravatar = res.json['gravatar_url']
+        assert_equal(current_user_gravatar, my_user_gravatar)
+
+    def test_get_other_user_gravatar_default_size(self):
+        user2 = AuthUserFactory()
+        url = api_url_for('current_user_gravatar')
+        res = self.app.get(url, auth=self.user.auth)
+        current_user_gravatar = res.json['gravatar_url']
+        url = api_url_for('get_gravatar', uid=user2._id)
+        res = self.app.get(url, auth=self.user.auth)
+        user2_gravatar = res.json['gravatar_url']
+        assert_true(user2_gravatar is not None)
+        assert_not_equal(current_user_gravatar, user2_gravatar)
+
+    def test_get_current_user_gravatar_specific_size(self):
+        url = api_url_for('current_user_gravatar')
+        res = self.app.get(url, auth=self.user.auth)
+        current_user_default_gravatar = res.json['gravatar_url']
+        url = api_url_for('current_user_gravatar', size=11)
+        res = self.app.get(url, auth=self.user.auth)
+        current_user_small_gravatar = res.json['gravatar_url']
+        assert_true(current_user_small_gravatar is not None)
+        assert_not_equal(current_user_default_gravatar, current_user_small_gravatar)
+
+    def test_get_other_user_gravatar_specific_size(self):
+        user2 = AuthUserFactory()
+        url = api_url_for('get_gravatar', uid=user2._id)
+        res = self.app.get(url, auth=self.user.auth)
+        gravatar_default_size = res.json['gravatar_url']
+        url = api_url_for('get_gravatar', uid=user2._id, size=11)
+        res = self.app.get(url, auth=self.user.auth)
+        gravatar_small = res.json['gravatar_url']
+        assert_true(gravatar_small is not None)
+        assert_not_equal(gravatar_default_size, gravatar_small)
+
 
 class TestUserAccount(OsfTestCase):
 
@@ -1077,14 +1164,6 @@ class TestUserAccount(OsfTestCase):
             new_password='12345',
             confirm_password='12345',
             error_message='Password should be at least six characters',
-        )
-
-    def test_password_change_invalid_confirm_password(self):
-        self.test_password_change_invalid(
-            old_password='password',
-            new_password='new password',
-            confirm_password='invalid confirm password',
-            error_message='Password does not match the confirmation',
         )
 
     def test_password_change_invalid_blank_password(self, old_password='', new_password='', confirm_password=''):
@@ -2255,7 +2334,6 @@ class TestAuthViews(OsfTestCase):
         assert_equal(unclaimed_user.unclaimed_records, {})
         assert_equal(len(unclaimed_user.email_verifications.keys()), 0)
 
-
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_resend_confirmation_post_sends_confirm_email(self, send_mail):
         # Make sure user has a confirmation token for their primary email
@@ -2265,6 +2343,23 @@ class TestAuthViews(OsfTestCase):
         assert_true(send_mail.called)
         assert_true(send_mail.called_with(
             to_addr=self.user.username
+        ))
+
+    # see: https://github.com/CenterForOpenScience/osf.io/issues/1492
+    @mock.patch('website.security.random_string')
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_resend_confirmation_post_regenerates_token(self, send_mail, random_string):
+        expiration = dt.datetime.utcnow() - dt.timedelta(seconds=1)
+        random_string.return_value = '12345'
+        self.user.add_email_verification(self.user.username, expiration=expiration)
+        self.user.save()
+
+        self.app.post('/resend/', {'email': self.user.username})
+        confirm_url = self.user.get_confirmation_url(self.user.username, force=True)
+        assert_true(send_mail.called)
+        assert_true(send_mail.called_with(
+            to_addr=self.user.username,
+            confirmation_url=confirm_url
         ))
 
     @mock.patch('framework.auth.views.mails.send_mail')

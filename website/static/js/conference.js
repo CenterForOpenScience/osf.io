@@ -1,122 +1,109 @@
 var $ = require('jquery');
-var Slick = window.Slick;
+require('../vendor/bower_components/slickgrid/lib/jquery.event.drag-2.2.js');
+var m = require('mithril');
+var Treebeard = require('treebeard');
 
-function titleFormatter(row, cell, value, columnDef, dataContext) {
-    return '<a target="_blank" href="' + dataContext.nodeUrl + '">' +
-        value +
-    '</a>';
-}
-
-function authorFormatter(row, cell, value, columnDef, dataContext) {
-    if (value) {
-        return '<a target="_blank" href="' + dataContext.authorUrl + '">' +
-            value +
-        '</a>';
-    }
-    return '';
-}
-
-function downloadFormatter(row, cell, value, columnDef, dataContext) {
-    if (dataContext.downloadUrl) {
-        return '<a href="' + dataContext.downloadUrl + '">' +
-            '<button class="btn btn-success btn-mini" style="margin-right: 10px;">' +
-                '<i class="icon-download-alt icon-white"></i>' +
-            '</button>' +
-        '</a>&nbsp;' + value;
-    } else {
-        return '';
-    }
-}
-
-function searchFilter(item, args) {
-    if (args.searchString === '') {
-        return true;
-    }
-    if (item.title.toLowerCase().indexOf(args.searchString) !== -1 ||
-            item.author.toLowerCase().indexOf(args.searchString) !== -1) {
-        return true;
-    }
-    return false;
-}
-
-var columns = [
-    {id: 'title', field: 'title', name: 'Title', width: 400, sortable: true, formatter: titleFormatter},
-    {id: 'author', field: 'author', name: 'Author', width: 100, formatter: authorFormatter, sortable: true},
-    {id: 'category', field: 'category', name: 'Category', width: 100, sortable: true},
-    {id: 'download', field: 'download', name: 'Downloads', width: 100, sortable: true, formatter: downloadFormatter}
-];
-
-var options = {
-    autoHeight: true,
-    forceFitColumns: true
-};
 
 function Meeting(data) {
+    //  Treebeard version 
+    var tbOptions = {
+        divID: 'grid',
+        filesData: data,
+        rowHeight : 30,         // user can override or get from .tb-row height
+        paginate : false,       // Whether the applet starts with pagination or not.
+        paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.
+        uploads : false,         // Turns dropzone on/off.
+        columnTitles : function _conferenceColumnTitles(item, col) {
+             return [
+                {
+                    title: "Title",
+                    width: "50%",
+                    sortType : "text",
+                    sort : true
+                },
+                {
+                    title: "Author",
+                    width : "25%",
+                    sortType : "text",
+                    sort : true
 
-    var dataView = new Slick.Data.DataView({inlineFilters: true});
-    var grid = new Slick.Grid('#grid', dataView, columns, options);
-    var searchString = '';
+                },
+                {
+                    title: "Category",
+                    width : "15%",
+                    sort : false
+                },
+                {
+                    title: "Downloads",
+                    width : "10%",
+                    sort : false
+                }
+            ]},            
+        resolveRows : function _conferenceResolveRows(item){
+        
+            var default_columns = [
+                {
+                    data : 'title',  // Data field name
+                    folderIcons : false,
+                    filter : true,
+                    sortInclude : true,  
+                    custom : function() { return m('a', { href : item.data.nodeUrl, target : '_blank' }, item.data.title ); }
+                  
+                },
+                {
+                    data : 'author',  // Data field name
+                    folderIcons : false,
+                    filter : true,
+                    sortInclude : true,  
+                    custom : function() { return m('a', { href : item.data.authorUrl }, item.data.author ); }
+                },           
+                {
+                    data : 'category',  // Data field name
+                    folderIcons : false,
+                    filter : false
+                },
+                {   
+                    data : 'download',  // Data field name
+                    folderIcons : false,
+                    filter : false,
+                    custom : function() { 
+                        if(item.data.downloadUrl){
+                            return [ m('a', { href : item.data.downloadUrl }, [ 
+                                m('button.btn.btn-success.btn-xs', { style : 'margin-right : 10px;'},  m('i.icon-download-alt icon-white')),
+                                
+                            ] ), item.data.download  ]; 
+                        } else {
+                            return '';
+                        }
+                    }
 
-    function sortView(field, sortAsc) {
-        function comparator(a, b) {
-            return a[field] > b[field] ? 1 :
-                    a[field] < b[field] ? -1 :
-                    0;
-        }
-        dataView.sort(comparator, sortAsc);
-        dataView.refresh();
-    }
-
-    grid.onSort.subscribe(function(e, args) {
-        sortView(args.sortCol.field, args.sortAsc);
-    });
-
-    dataView.onRowCountChanged.subscribe(function () {
-        grid.updateRowCount();
-        grid.render();
-    });
-
-    dataView.onRowsChanged.subscribe(function (e, args) {
-        grid.invalidateRows(args.rows);
-        grid.render();
-    });
-
-    dataView.onPagingInfoChanged.subscribe(function (e, pagingInfo) {
-        var isLastPage = pagingInfo.pageNum === pagingInfo.totalPages - 1;
-        var enableAddRow = isLastPage || pagingInfo.pageSize === 0;
-        var options = grid.getOptions();
-        if (options.enableAddRow !== enableAddRow) {
-            grid.setOptions({enableAddRow: enableAddRow});
-        }
-    });
-
-    function updateFilter() {
-        dataView.setFilterArgs({
-            searchString: searchString
-        });
-        dataView.refresh();
-    }
-
-    $('#gridSearch').keyup(function (e) {
-        // clear on Esc
-        if (e.which === 27) {
-            this.value = '';
-        }
-        searchString = this.value.toLowerCase();
-        updateFilter();
-    });
-
-    dataView.beginUpdate();
-    dataView.setItems(data);
-    dataView.setFilterArgs({
-        searchString: searchString
-    });
-    dataView.setFilter(searchFilter);
-    dataView.endUpdate();
-
-    // Sort by title by default
-    sortView('title', true);
-
+                } 
+            ]; 
+            return default_columns;
+        },
+        sortButtonSelector : {
+            up : 'i.icon-chevron-up',
+            down : 'i.icon-chevron-down'
+        },
+        showFilter : true,     // Gives the option to filter by showing the filter box.
+        filterStyle : { 'float' : 'right', 'width' : '50%'},
+        title : function() {
+            if(window.contextVars.tbInstructionsLink) {
+                return m('div', [
+                    m('a', { href : window.contextVars.tbInstructionsLink, target : '_blank' }, 'Add your poster or talk')
+                ]);
+            } else {
+                return m('div', [
+                    m('a', { href : "#submit" }, 'Add your poster or talk')
+                ]);
+            }
+                
+            return undefined;
+        },
+        allowMove : false,       // Turn moving on or off.
+        hoverClass : 'fangorn-hover'
+    };
+    var grid = new Treebeard(tbOptions);
 }
 
 module.exports = Meeting;

@@ -199,8 +199,9 @@ var BaseViewModel = function(urls, modes) {
     self.urls = urls;
     self.modes = modes || ['view'];
     self.viewable = $.inArray('view', modes) >= 0;
-    self.editable = ko.observable(false);
-    self.mode = ko.observable(self.viewable ? 'view' : 'edit');
+    self.editAllowed = $.inArray('edit', self.modes) >= 0;
+    self.editable = ko.observable(self.editAllowed);
+    self.mode = ko.observable(self.editable() ? 'edit' : 'view');
 
     self.original = ko.observable();
     self.tracked = [];  // Define for each view model that inherits
@@ -262,9 +263,11 @@ BaseViewModel.prototype.handleSuccess = function() {
     }
 };
 
-BaseViewModel.prototype.handleError = function() {
+BaseViewModel.prototype.handleError = function(response) {
+    var defaultMsg = 'Could not update settings';
+    var msg = response.responseJSON.message_long || defaultMsg;
     this.changeMessage(
-        'Could not update settings',
+        msg,
         'text-danger',
         5000
     );
@@ -286,7 +289,7 @@ BaseViewModel.prototype.fetch = function() {
 };
 
 BaseViewModel.prototype.edit = function() {
-    if (this.editable()) {
+    if (this.editable() && this.editAllowed) {
         this.mode('edit');
     }
 };
@@ -491,7 +494,7 @@ var SocialViewModel = function(urls, modes) {
     );
     self.researcherId = extendLink(
         ko.observable().extend({cleanup: cleanByRule(socialRules.researcherId)}),
-        self, 'researcherId', 'http://researcherId.com/'
+        self, 'researcherId', 'http://researcherId.com/rid/'
     );
     self.twitter = extendLink(
         ko.observable().extend({cleanup: cleanByRule(socialRules.twitter)}),
@@ -651,7 +654,11 @@ ListViewModel.prototype.removeContent = function(content) {
 
 ListViewModel.prototype.unserialize = function(data) {
     var self = this;
-    self.editable(data.editable);
+    if(self.editAllowed) {
+        self.editable(data.editable);
+    } else {
+        self.editable(false);
+    }
     self.contents(ko.utils.arrayMap(data.contents || [], function (each) {
         return new self.ContentModel(self).unserialize(each);
     }));

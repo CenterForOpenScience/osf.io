@@ -6,7 +6,7 @@ import os
 import re
 import mock
 
-from nose.tools import *  # PEP8 asserts
+from nose.tools import *  # noqa (PEP8 asserts)
 
 from modularodm import Q
 
@@ -21,6 +21,7 @@ from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
                              PrivateLinkFactory)
 from tests.test_features import requires_piwik
 from website import settings, language
+from website.security import random_string
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.model import ensure_schemas
 from website.project.views.file import get_cache_path
@@ -145,7 +146,6 @@ class TestAUser(OsfTestCase):
         # Sees dashboard with projects and watched projects
         assert_in('Projects', res)
         assert_in('Watchlist', res)
-
 
     def test_sees_flash_message_on_bad_login(self):
         # Goes to log in page
@@ -371,26 +371,12 @@ class TestRegistrations(OsfTestCase):
             user=self.user,
         )
 
-    def test_cant_be_deleted(self):
-        # Goes to project's page
-        res = self.app.get(self.project.url + 'settings/', auth=self.auth).maybe_follow()
-        assert_not_in('Delete project', res)
-
     def test_can_see_contributor(self):
         # Goes to project's page
         res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
         # Settings is not in the project navigation bar
         subnav = res.html.select('#projectSubnav')[0]
         assert_in('Sharing', subnav.text)
-
-    # https://github.com/CenterForOpenScience/osf.io/issues/1424
-    def test_navbar_has_correct_links(self):
-        # Goes to project settings page
-        url = self.project.web_url_for('node_setting')
-        res = self.app.get(url, auth=self.auth)
-        # Correct links are in navbar
-        assert_in('Select Add-ons', res)
-        assert_not_in('Configure Commenting', res)
 
     def test_sees_registration_templates(self):
         # Browse to original project
@@ -432,6 +418,13 @@ class TestRegistrations(OsfTestCase):
         subnav = res.html.select('#projectSubnav')[0]
         assert_not_in('Registrations', subnav.text)
 
+    def test_settings_nav_not_seen(self):
+        # Goes to project's page
+        res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
+        # Settings is not in the project navigation bar
+        subnav = res.html.select('#projectSubnav')[0]
+        assert_not_in('Settings', subnav.text)
+
 
 class TestComponents(OsfTestCase):
 
@@ -463,7 +456,7 @@ class TestComponents(OsfTestCase):
 
     def test_sees_parent(self):
         res = self.app.get(self.component.url, auth=self.user.auth).maybe_follow()
-        parent_title = res.html.find_all('h1', class_='node-parent-title')
+        parent_title = res.html.find_all('h2', class_='node-parent-title')
         assert_equal(len(parent_title), 1)
         assert_in(self.project.title, parent_title[0].text)
 
@@ -1234,7 +1227,6 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         form['password'] = 'killerqueen'
         res = form.submit(auth=reg_user.auth).follow(auth=reg_user.auth)
 
-
         self.project.reload()
         self.user.reload()
         # user is now a contributor to the project
@@ -1260,10 +1252,50 @@ class TestExplorePublicActivity(OsfTestCase):
         res = self.app.get(url)
 
         assert_in(str(self.project.title), res)
-        assert_in(str(self.project.date_created.date()),res)
+        assert_in(str(self.project.date_created.date()), res)
         assert_in(str(self.registration.title), res)
         assert_in(str(self.registration.registered_date.date()), res)
         assert_not_in(str(self.private_project.title), res)
+
+
+class TestForgotAndResetPasswordViews(OsfTestCase):
+
+    def setUp(self):
+        super(TestForgotAndResetPasswordViews, self).setUp()
+        self.user = AuthUserFactory()
+        self.key = random_string(20)
+        # manually set verifification key
+        self.user.verification_key = self.key
+        self.user.save()
+
+        self.url = web_url_for('reset_password', verification_key=self.key)
+
+    def test_reset_password_view_returns_200(self):
+        res = self.app.get(self.url)
+        assert_equal(res.status_code, 200)
+
+    def test_can_reset_password_if_form_success(self):
+        res = self.app.get(self.url)
+        form = res.forms['resetPasswordForm']
+        form['password'] = 'newpassword'
+        form['password2'] = 'newpassword'
+        res = form.submit()
+
+        # password was updated
+        self.user.reload()
+        assert_true(self.user.check_password('newpassword'))
+
+    def test_reset_password_logs_out_user(self):
+        another_user = AuthUserFactory()
+        # visits reset password link while another user is logged in
+        res = self.app.get(self.url, auth=another_user.auth)
+        assert_equal(res.status_code, 200)
+        # We check if another_user is logged in by checking if
+        # their full name appears on the page (it should be in the navbar).
+        # Yes, this is brittle.
+        assert_not_in(another_user.fullname, res)
+        # make sure the form is on the page
+        assert_true(res.forms['resetPasswordForm'])
 
 
 if __name__ == '__main__':

@@ -3,18 +3,19 @@
 import mock
 from nose.tools import *  # noqa (PEP8 asserts)
 
-from modularodm import Q
-from modularodm.exceptions import ValidationError
-
 import hmac
 import hashlib
 from StringIO import StringIO
+
+import furl
+from modularodm import Q
+from modularodm.exceptions import ValidationError
 
 from framework.auth.core import Auth
 
 from website import settings
 from website.models import User, Node
-from website.conferences.views import _render_conference_node
+from website.conferences import views
 from website.conferences.model import Conference
 from website.conferences import utils, message
 from website.util import api_url_for, web_url_for
@@ -22,6 +23,20 @@ from website.util import api_url_for, web_url_for
 from tests.base import OsfTestCase, fake
 from tests.factories import ModularOdmFactory, FakerAttribute, ProjectFactory, UserFactory
 from factory import Sequence, post_generation
+
+
+def assert_absolute(url):
+    parsed_domain = furl.furl(settings.DOMAIN)
+    parsed_url = furl.furl(url)
+    assert_equal(parsed_domain.host, parsed_url.host)
+
+
+def assert_equal_urls(first, second):
+    parsed_first = furl.furl(first)
+    parsed_first.port = None
+    parsed_second = furl.furl(second)
+    parsed_second.port = None
+    assert_equal(parsed_first, parsed_second)
 
 
 class ConferenceFactory(ModularOdmFactory):
@@ -156,8 +171,7 @@ class TestProvisionNode(ContextTestCase):
         data.update(kwargs.pop('data', {}))
         return super(TestProvisionNode, self).make_context(data=data, **kwargs)
 
-    @mock.patch('website.conferences.utils.upload_attachments')
-    def test_provision(self, mock_upload):
+    def test_provision(self):
         with self.make_context():
             msg = message.ConferenceMessage()
             utils.provision_node(self.conference, msg, self.node, self.user)
@@ -167,10 +181,8 @@ class TestProvisionNode(ContextTestCase):
         assert_in(self.conference.endpoint, self.node.system_tags)
         assert_in(self.conference.endpoint, self.node.tags)
         assert_not_in('spam', self.node.system_tags)
-        mock_upload.assert_called_with(self.user, self.node, msg.attachments)
 
-    @mock.patch('website.conferences.utils.upload_attachments')
-    def test_provision_private(self, mock_upload):
+    def test_provision_private(self):
         self.conference.public_projects = False
         self.conference.save()
         with self.make_context():
@@ -180,10 +192,8 @@ class TestProvisionNode(ContextTestCase):
         assert_in(self.conference.admins[0], self.node.contributors)
         assert_in('emailed', self.node.system_tags)
         assert_not_in('spam', self.node.system_tags)
-        mock_upload.assert_called_with(self.user, self.node, msg.attachments)
 
-    @mock.patch('website.conferences.utils.upload_attachments')
-    def test_provision_spam(self, mock_upload):
+    def test_provision_spam(self):
         with self.make_context(data={'X-Mailgun-Sscore': message.SSCORE_MAX_VALUE + 1}):
             msg = message.ConferenceMessage()
             utils.provision_node(self.conference, msg, self.node, self.user)
@@ -191,46 +201,39 @@ class TestProvisionNode(ContextTestCase):
         assert_in(self.conference.admins[0], self.node.contributors)
         assert_in('emailed', self.node.system_tags)
         assert_in('spam', self.node.system_tags)
-        mock_upload.assert_called_with(self.user, self.node, msg.attachments)
 
     @mock.patch('website.conferences.utils.requests.put')
-    @mock.patch('website.addons.osfstorage.utils.get_upload_url')
+    @mock.patch('website.addons.osfstorage.utils.get_waterbutler_upload_url')
     def test_upload(self, mock_get_url, mock_put):
         mock_get_url.return_value = 'http://queen.com/'
         self.attachment.filename = 'hammer-to-fall'
         self.attachment.content_type = 'application/json'
         utils.upload_attachment(self.user, self.node, self.attachment)
         mock_get_url.assert_called_with(
-            self.node,
             self.user,
-            len(self.content),
-            self.attachment.content_type,
-            self.attachment.filename,
+            self.node,
+            path=self.attachment.filename,
         )
         mock_put.assert_called_with(
             mock_get_url.return_value,
             data=self.content,
-            headers={'Content-Type': self.attachment.content_type},
         )
 
     @mock.patch('website.conferences.utils.requests.put')
-    @mock.patch('website.addons.osfstorage.utils.get_upload_url')
+    @mock.patch('website.addons.osfstorage.utils.get_waterbutler_upload_url')
     def test_upload_no_file_name(self, mock_get_url, mock_put):
         mock_get_url.return_value = 'http://queen.com/'
         self.attachment.filename = ''
         self.attachment.content_type = 'application/json'
         utils.upload_attachment(self.user, self.node, self.attachment)
         mock_get_url.assert_called_with(
-            self.node,
             self.user,
-            len(self.content),
-            self.attachment.content_type,
-            settings.MISSING_FILE_NAME,
+            self.node,
+            path=settings.MISSING_FILE_NAME,
         )
         mock_put.assert_called_with(
             mock_get_url.return_value,
             data=self.content,
-            headers={'Content-Type': self.attachment.content_type},
         )
 
 
@@ -421,8 +424,9 @@ class TestConferenceModel(OsfTestCase):
 
 class TestConferenceIntegration(ContextTestCase):
 
+    @mock.patch('website.conferences.views.send_mail')
     @mock.patch('website.conferences.utils.upload_attachments')
-    def test_integration(self, mock_upload):
+    def test_integration(self, mock_upload, mock_send_mail):
         fullname = 'John Deacon'
         username = 'deacon@queen.com'
         title = 'good songs'
@@ -462,3 +466,51 @@ class TestConferenceIntegration(ContextTestCase):
         assert_equal(nodes.count(), 1)
         node = nodes[0]
         assert_equal(node.get_wiki_page('home').content, body)
+        assert_true(mock_send_mail.called)
+        call_args, call_kwargs = mock_send_mail.call_args
+        assert_absolute(call_kwargs['conf_view_url'])
+        assert_absolute(call_kwargs['set_password_url'])
+        assert_absolute(call_kwargs['profile_url'])
+        assert_absolute(call_kwargs['file_url'])
+        assert_absolute(call_kwargs['node_url'])
+
+    @mock.patch('website.conferences.views.send_mail')
+    def test_integration_inactive(self, mock_send_mail):
+        conference = ConferenceFactory(active=False)
+        fullname = 'John Deacon'
+        username = 'deacon@queen.com'
+        title = 'good songs'
+        body = 'dragon on my back'
+        content = 'dragon attack'
+        recipient = '{0}{1}-poster@osf.io'.format(
+            'test-' if settings.DEV_MODE else '',
+            conference.endpoint,
+        )
+        res = self.app.post(
+            api_url_for('meeting_hook'),
+            {
+                'X-Mailgun-Sscore': 0,
+                'timestamp': '123',
+                'token': 'secret',
+                'signature': hmac.new(
+                    key=settings.MAILGUN_API_KEY,
+                    msg='{}{}'.format('123', 'secret'),
+                    digestmod=hashlib.sha256,
+                ).hexdigest(),
+                'attachment-count': '1',
+                'X-Mailgun-Sscore': 0,
+                'from': '{0} <{1}>'.format(fullname, username),
+                'recipient': recipient,
+                'subject': title,
+                'stripped-text': body,
+            },
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 406)
+        call_args, call_kwargs = mock_send_mail.call_args
+        assert_equal(call_args, (username, views.CONFERENCE_INACTIVE))
+        assert_equal(call_kwargs['fullname'], fullname)
+        assert_equal_urls(
+            call_kwargs['presentations_url'],
+            web_url_for('conference_view', _absolute=True),
+        )

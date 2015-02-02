@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import os
 import logging
 import operator
 import httplib as http
@@ -25,7 +24,7 @@ from website import mailchimp_utils
 from website.models import User
 from website.models import ApiKey
 from website.views import _render_nodes
-from website.util import web_url_for
+from website.util import web_url_for, paths
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
 from website.profile import utils as profile_utils
@@ -56,6 +55,16 @@ def get_public_components(uid=None, user=None):
         and not node.is_registration
         and not node.is_deleted
     ])
+
+
+@must_be_logged_in
+def current_user_gravatar(size=None, **kwargs):
+    user_id = kwargs['auth'].user._id
+    return get_gravatar(user_id, size=size)
+
+
+def get_gravatar(uid, size=None):
+    return {'gravatar_url': profile_utils.get_gravatar(User.load(uid), size=size)}
 
 
 def date_or_none(date):
@@ -222,20 +231,8 @@ def collect_user_config_js(addons):
     """
     js_modules = []
     for addon in addons:
-
-        file_path = os.path.join('static',
-                                 'public',
-                                 'js',
-                                 addon.config.short_name,
-                                 'user-cfg.js')
-        js_file = os.path.join(
-            settings.BASE_PATH,
-            file_path,
-        )
-        if os.path.exists(js_file):
-            js_path = os.path.join(
-                '/', file_path
-            )
+        js_path = paths.resolve_addon_path(addon.config, 'user-cfg.js')
+        if js_path:
             js_modules.append(js_path)
     return js_modules
 
@@ -544,8 +541,10 @@ def unserialize_social(auth, **kwargs):
 
     try:
         user.save()
-    except ValidationError:
-        raise HTTPError(http.BAD_REQUEST)
+    except ValidationError as exc:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_long=exc.args[0]
+        ))
 
 
 def unserialize_job(job):

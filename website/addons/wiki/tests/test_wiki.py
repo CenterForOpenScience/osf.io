@@ -112,7 +112,8 @@ class TestWikiViews(OsfTestCase):
         assert_equal(new_wiki.content, 'new content')
 
     def test_project_wiki_edit_post_with_new_wname_and_no_content(self):
-        page_name = fake.catch_phrase()
+        # note: forward slashes not allowed in page_name
+        page_name = fake.catch_phrase().replace('/', ' ')
 
         old_wiki_page_count = NodeWikiPage.find().count()
         url = self.project.web_url_for('project_wiki_edit_post', wname=page_name)
@@ -130,7 +131,9 @@ class TestWikiViews(OsfTestCase):
         assert_is_not_none(new_page)
 
     def test_project_wiki_edit_post_with_new_wname_and_content(self):
-        page_name, page_content = fake.catch_phrase(), fake.bs()
+        # note: forward slashes not allowed in page_name
+        page_name = fake.catch_phrase().replace('/' , ' ')
+        page_content = fake.bs()
 
         old_wiki_page_count = NodeWikiPage.find().count()
         url = self.project.web_url_for('project_wiki_edit_post', wname=page_name)

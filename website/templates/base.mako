@@ -128,6 +128,18 @@
 
         % if piwik_host:
             <script src="${ piwik_host }piwik.js" type="text/javascript"></script>
+        % endif
+
+        <script>
+            // Mako variables accessible globally
+            window.contextVars = $.extend(true, {}, window.contextVars, {
+                waterbutlerURL: '${waterbutler_url if waterbutler_url.endswith('/') else waterbutler_url + '/' | js_str}',
+                cookieName: '${cookie_name}'
+            });
+        </script>
+
+
+        % if piwik_host:
             <% is_public = node.get('is_public', 'ERROR') if node else True %>
             <script type="text/javascript">
 
@@ -151,10 +163,6 @@
             </script>
         % endif
 
-        <script src="/static/vendor/bower_components/dropzone/downloads/dropzone.min.js"></script>
-        <script src="/static/vendor/bower_components/hgrid/dist/hgrid.js"></script>
-        <script src="${"/static/public/js/vendor.js" | webpack_asset}"></script>
-        <script src="${"/static/public/js/base-page.js" | webpack_asset}"></script>
         ${self.javascript_bottom()}
     </body>
 </html>
@@ -203,19 +211,18 @@
     <![endif]-->
 
     <!-- Le styles -->
-    ## Don't bundle Bootstrap or else Glyphicons won't work
-    <link rel="stylesheet" href="/static/vendor/bower_components/bootstrap/dist/css/bootstrap.min.css">
+    ## TODO: Get fontawesome and select2 to play nicely with webpack
     <link rel="stylesheet" href="/static/vendor/font-awesome/css/font-awesome.min.css">
-    ## select2 stylesheet also needs to be here so that it finds the correct images
     <link rel="stylesheet" href="/static/vendor/bower_components/select2/select2.css">
-
-    % for url in css_all:
-    <link rel="stylesheet" href="${url}">
-    % endfor
-    ## <link rel="stylesheet" href="/static/css/site.css">
 
     <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
     <script>window.jQuery || document.write('<script src="/static/vendor/bower_components/jQuery/dist/jquery.min.js">\x3C/script>')</script>
     <script src="//code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
     <script>window.jQuery.ui || document.write('<script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js">\x3C/script>')</script>
+
+    ## NOTE: We load vendor and base-page at the top of the page because they contain
+    ## a number of necessary stylesheets which should be loaded before the user sees
+    ## content.
+    <script src="${"/static/public/js/vendor.js" | webpack_asset}"></script>
+    <script src="${"/static/public/js/base-page.js" | webpack_asset}"></script>
 </%def>

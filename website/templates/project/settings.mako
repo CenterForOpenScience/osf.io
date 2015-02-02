@@ -11,6 +11,10 @@
 ##        }
 ##    }'></div>
 
+<div class="page-header visible-xs">
+  <h2 class="text-300">Settings</h2>
+</div>
+
 <div class="row">
     <div class="col-sm-3">
         <div class="panel panel-default">
@@ -29,7 +33,7 @@
         </div><!-- end sidebar -->
     </div>
 
-    <div class="col-sm-9 col-md-7">
+    <div class="col-sm-9">
 
         % if 'admin' in user['permissions'] and not node['is_registration']:
 
@@ -190,7 +194,7 @@
     </script>
     <script type="text/javascript" src=${"/static/public/js/project-settings-page.js" | webpack_asset}></script>
     % for js_asset in addon_js:
-      <script src="${js_asset}"></script>
+    <script src="${js_asset | webpack_asset}"></script>
     % endfor
 
 </%def>

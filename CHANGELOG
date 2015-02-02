@@ -2,7 +2,30 @@
 Changelog
 *********
 
-0.22.0 (unreleased)
+0.24.0 (2014-01-29)
+===================
+
+- Significant UI changes sitewide, esp. with navbar, project navigation, project overview widgets, project
+organizer.
+- New filebrowser. Replace HGrid with treebeard. Affects project organizer,
+	files viewer, and conference poster view.
+- Use the waterbutler service for handling all storage addon CRUD.
+
+0.23.0 (2014-01-16)
+===================
+
+- Developers: Use webpack for asset bundling and minification. All JS modules
+follow the CommonJS module style. Replaces script.js and webassets.
+- Enable the Notifications widget on the user settings page.
+- Add "Edit your profile" button on user profile pages. Remove "in-place"
+profile editing.
+- Email confirmation tokens expire after 24 hours.
+- Lots of refactoring to the conference email submission service.
+- Various minor UI fixes.
+- Developers: Update stale requirements: celery, bleach, furl,
+elasticsearch.py.
+
+0.22.0 (2014-12-17)
 ===================
 
 - Add API for subscribing/unsubscribing users to Mailchimp mailing lists. Add

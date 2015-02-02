@@ -12,6 +12,7 @@ from framework.auth import Auth
 from framework.mongo import StoredObject
 
 from website import settings
+from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 from website.addons.base import GuidFile
 
@@ -258,6 +259,57 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             })
         return rv
 
+    def serialize_waterbutler_credentials(self):
+        if not self.complete or not self.repo:
+            raise exceptions.AddonError('Addon is not authorized')
+        return {'token': self.user_settings.oauth_access_token}
+
+    def serialize_waterbutler_settings(self):
+        if not self.complete:
+            raise exceptions.AddonError('Repo is not configured')
+        return {
+            'owner': self.user,
+            'repo': self.repo,
+        }
+
+    def create_waterbutler_log(self, auth, action, metadata):
+        path = metadata['path']
+
+        if not metadata.get('extra'):
+            sha = None
+            urls = {}
+        else:
+            sha = metadata['extra']['commit']['sha']
+            urls = {
+                'view': '{0}?ref={1}'.format(
+                    self.owner.web_url_for('github_view_file', path=path),
+                    sha
+                ),
+                'download': '{0}?ref={1}'.format(
+                    self.owner.web_url_for('github_download_file', path=path),
+                    sha
+                )
+            }
+
+        self.owner.add_log(
+            'github_{0}'.format(action),
+            auth=auth,
+            params={
+                'project': self.owner.parent_id,
+                'node': self.owner._id,
+                'path': path,
+                'urls': urls,
+                'github': {
+                    'user': self.user,
+                    'repo': self.repo,
+                    'sha': sha,
+                },
+            },
+        )
+
+    def get_waterbutler_render_url(self, path, branch=None, **kwargs):
+        return self.owner.web_url_for('github_view_file', path=path, branch=branch)
+
     #############
     # Callbacks #
     #############
@@ -473,52 +525,14 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         :param Node node:
         :param User user:
         :return str: Alert message
-
         """
+        category = node.project_or_component
         if self.user_settings and self.user_settings.has_auth:
             return (
-                u'Registering {cat} "{title}" will copy the authentication for its '
-                u'GitHub add-on to the registered {cat}. The registered {cat} '
-                u'will only display changes prior to the current state of the '
-                u'GitHub repository.'
-            ).format(
-                cat=node.project_or_component,
-                title=node.title,
-            )
-
-    def after_register(self, node, registration, user, save=True):
-        """
-
-        :param Node node: Original node
-        :param Node registration: Registered node
-        :param User user: User creating registration
-        :param bool save: Save settings after callback
-        :return tuple: Tuple of cloned settings and alert message
-
-        """
-        clone, message = super(AddonGitHubNodeSettings, self).after_register(
-            node, registration, user, save=False
-        )
-
-        # Copy foreign fields from current add-on
-        clone.user_settings = self.user_settings
-
-        # Store current branch data
-        if self.user and self.repo:
-            connect = GitHub.from_settings(self.user_settings)
-            try:
-                branches = [
-                    branch.to_json()
-                    for branch in connect.branches(self.user, self.repo)
-                ]
-                clone.registration_data['branches'] = branches
-            except ApiError:
-                pass
-
-        if save:
-            clone.save()
-
-        return clone, message
+                u'The contents of GitHub add-ons cannot be registered at this time; '
+                u'the GitHub repository linked to this {category} will not be included '
+                u'as part of this registration.'
+            ).format(**locals())
 
     def before_make_public(self, node):
         try:
