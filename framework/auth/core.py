@@ -556,8 +556,13 @@ class User(GuidStoredObject, AddonModelMixin):
         """Return whether or not a confirmation token is valid for this user.
         :rtype: bool
         """
-        if token in self.email_verifications.keys():
-            return self.email_verifications.get(token)['expiration'] > dt.datetime.utcnow()
+        if token in self.email_verifications:
+            verification = self.email_verifications[token]
+            # Not all tokens are guaranteed to have expiration dates
+            if 'expiration' in verification:
+                return verification['expiration'] > dt.datetime.utcnow()
+            else:
+                return True
         return False
 
     def verify_claim_token(self, token, project_id):
