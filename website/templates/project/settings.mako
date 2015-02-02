@@ -102,37 +102,39 @@
                 </div>
 
                 <div class="panel-body">
-
                     <form id="notificationSettings">
-                    <div class="row">
-                            <div class="col-md-6">
-                                <h5>Notifications </h5>
-                            </div>
-                            <div class="col-md-6">
-                                <h5>Notification Type</h5>
-                            </div>
-                    </div>
+                    <div id="grid"></div>
 
-                    % for subscription in subscriptions_available:
-                        <div class="row">
-                            <div class="col-md-6">
-                                <label style="font-weight:normal; padding-right: 50px">
-                                        ${subscriptions_available[subscription]}
-                                </label>
-                            </div>
-                            <div class="col-md-6">
-                                <select class="form-control" name="${subscription}">
-                                    <option value="none" ${'selected' if 'email_transactional' not in notification_types_enabled and 'email_digest' not in notification_types_enabled else ''}>None</option>
-                                    <option value="email_transactional" ${'selected' if 'email_transactional' in notification_types_enabled else ''}>
-                                        Receive emails immediately
-                                    </option>
-                                    <option value="email_digest" ${'selected' if 'email_digest' in notification_types_enabled else ''}>
-                                        Receive in a daily email digest
-                                    </option>
-                                </select>
-                            </div>
-                        </div>
-                    % endfor
+
+##                    <div class="row">
+##                            <div class="col-md-6">
+##                                <h5>Notifications </h5>
+##                            </div>
+##                            <div class="col-md-6">
+##                                <h5>Notification Type</h5>
+##                            </div>
+##                    </div>
+
+##                    % for subscription in subscriptions_available:
+##                        <div class="row">
+##                            <div class="col-md-6">
+##                                <label style="font-weight:normal; padding-right: 50px">
+##                                        ${subscriptions_available[subscription]}
+##                                </label>
+##                            </div>
+##                            <div class="col-md-6">
+##                                <select class="form-control" name="${subscription}">
+##                                    <option value="none" ${'selected' if 'email_transactional' not in notification_types_enabled and 'email_digest' not in notification_types_enabled else ''}>None</option>
+##                                    <option value="email_transactional" ${'selected' if 'email_transactional' in notification_types_enabled else ''}>
+##                                        Receive emails immediately
+##                                    </option>
+##                                    <option value="email_digest" ${'selected' if 'email_digest' in notification_types_enabled else ''}>
+##                                        Receive in a daily email digest
+##                                    </option>
+##                                </select>
+##                            </div>
+##                        </div>
+##                    % endfor
 
                     <br />
 
@@ -155,7 +157,6 @@
                  <h3 class="panel-title">Select Add-ons</h3>
              </div>
                 <div class="panel-body">
-
                     <form id="selectAddonsForm">
 
                         % for category in addon_categories:
@@ -243,13 +244,17 @@
 % endfor
 
 <%def name="javascript_bottom()">
+    <% import json %>
     ${parent.javascript_bottom()}
     <script>
       window.contextVars = window.contextVars || {};
       window.contextVars.node = window.contextVars.node || {};
       window.contextVars.node.nodeType = '${node['node_type']}';
+      window.contextVars.node.subscriptions = ${json.dumps(subscriptions)};
     </script>
+
     <script type="text/javascript" src=${"/static/public/js/project-settings-page.js" | webpack_asset}></script>
+
     % for js_asset in addon_js:
     <script src="${js_asset | webpack_asset}"></script>
     % endfor

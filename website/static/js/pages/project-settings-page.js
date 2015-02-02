@@ -7,6 +7,12 @@ var $osf = require('osfHelpers');
 
 var ctx = window.contextVars;
 
+// Initialize treebeard grid
+var ProjectNotifications = require('../project-settings-treebeard.js');
+var data = [];
+new ProjectNotifications(window.contextVars.node.subscriptions);
+
+
 $(document).ready(function() {
 
     $('#deleteNode').on('click', function() {
@@ -44,8 +50,8 @@ $(document).ready(function() {
         var payload = {};
 
         $notificationSettings.find('.form-control').find('option').each(function(idx, elm) {
-	            var event = $notificationSettings.find('.form-control').attr('name');
                 var $elm = $(elm);
+                var event = $elm.attr('name');
                     if (payload[event.toLowerCase()] === undefined) {
                         payload[event.toLowerCase()] = {};
                     }
@@ -114,6 +120,6 @@ $(document).ready(function() {
         }
     });
 
-
 });
+
 
