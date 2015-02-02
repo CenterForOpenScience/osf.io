@@ -1,6 +1,8 @@
 // Load config file
 var fs = require('fs');
-var configFile = './settings/sharejs.json';
+
+var env = process.env.NODE_ENV || 'development';
+var configFile = './settings/sharejs-' + env + '.json';
 var config = fs.existsSync(configFile) ? require(configFile) : {};
 
 // Server Options

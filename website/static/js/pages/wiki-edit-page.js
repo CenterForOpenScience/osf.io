@@ -8,7 +8,7 @@ var ShareJSDoc = require('addons/wiki/static/ShareJSDoc.js');
 // Generate gravatar URL
 var CryptoJS = require("crypto-js");
 var email = window.contextVars.wiki.email;
-var baseGravatarUrl = 'http://secure.gravatar.com/avatar/';
+var baseGravatarUrl = '//secure.gravatar.com/avatar/';
 var hash = CryptoJS.MD5(email.toLowerCase().trim());
 var params = '?d=identicon&size=32';
 window.contextVars.wiki.metadata.userGravatar = baseGravatarUrl + hash + params;
