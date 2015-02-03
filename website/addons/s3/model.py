@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import os
+from modularodm import fields, Q
+from modularodm.exceptions import ModularOdmException
 
-from modularodm import fields
 from boto.exception import BotoServerError
 
 from framework.auth.core import Auth
@@ -17,10 +17,8 @@ class S3GuidFile(GuidFile):
     path = fields.StringField(index=True)
 
     @property
-    def file_url(self):
-        if self.path is None:
-            raise ValueError('Path field must be defined.')
-        return os.path.join('s3', self.path)
+    def provider(self):
+        return 's3'
 
 
 class AddonS3UserSettings(AddonUserSettingsBase):
@@ -75,6 +73,20 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
     user_settings = fields.ForeignField(
         'addons3usersettings', backref='authorized'
     )
+
+    def find_or_create_file_guid(self, path):
+        try:
+            return S3GuidFile.find_one(
+                Q('path', 'eq', path) &
+                Q('node', 'eq', self.owner)
+            ), False
+        except ModularOdmException:
+            pass
+
+        # Create new
+        new = S3GuidFile(node=self.owner, path=path)
+        new.save()
+        return new, True
 
     @property
     def display_name(self):
