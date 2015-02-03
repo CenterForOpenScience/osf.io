@@ -156,6 +156,7 @@ class Comment(GuidStoredObject):
     user = fields.ForeignField('user', required=True, backref='commented')
     node = fields.ForeignField('node', required=True, backref='comment_owner')
     target = fields.AbstractForeignField(required=True, backref='commented')
+    root_target = fields.AbstractForeignField(required=True, backref='comment_target')
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
@@ -165,7 +166,6 @@ class Comment(GuidStoredObject):
     is_hidden = fields.BooleanField(default=False)
     page = fields.StringField()
     content = fields.StringField()
-    root_id = fields.StringField(default='')
     root_title = fields.StringField(default='')
 
     # Dictionary field mapping user IDs to dictionaries of report details:
@@ -183,13 +183,10 @@ class Comment(GuidStoredObject):
     def create(cls, auth, **kwargs):
 
         comment = cls(**kwargs)
-        from website.addons.wiki.model import NodeWikiPage
         if isinstance(comment.target, Comment):
-            comment.root_id = comment.target.root_id
-        elif isinstance(comment.target, NodeWikiPage):
-            comment.root_id = comment.target.page_name
+            comment.root_target = comment.target.root_target
         else:
-            comment.root_id = comment.target._id
+            comment.root_target = comment.target
         comment.save()
 
         comment.node.add_log(
@@ -264,13 +261,6 @@ class Comment(GuidStoredObject):
 
     def show(self, save=False):
         self.is_hidden = False
-        if save:
-            self.save()
-
-    def change_root_id(self, new_root_id, save=False):
-        self.root_id = new_root_id
-        if self.page == 'wiki':
-            self.root_title = new_root_id
         if save:
             self.save()
 

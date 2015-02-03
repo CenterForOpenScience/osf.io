@@ -24,6 +24,8 @@ MAXLEVEL['page'] = 10;
 MAXLEVEL['pane'] = 5;
 MAXLEVEL['widget'] = 5;
 
+var TOGGLELEVEL = 2
+
 var ABUSE_CATEGORIES = {
     spam: 'Spam or advertising',
     hate: 'Hate speech',
@@ -337,7 +339,10 @@ var CommentModel = function(data, $parent, $root) {
         }
     });
 
-    if (self.mode == 'page' && self.level < self.MAXLEVEL) {
+    if ((self.mode == 'pane' &&
+        self.level < TOGGLELEVEL) ||
+        (self.mode == 'page' &&
+        self.level < self.MAXLEVEL)) {
         self.toggle();
     }
 

@@ -28,7 +28,7 @@ from website.project.decorators import (
 from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, get_pointer_parent
 from website.project.forms import NewNodeForm
-from website.models import Node, Pointer, WatchConfig, PrivateLink, Comment
+from website.models import Guid, Node, Pointer, WatchConfig, PrivateLink, Comment
 from website import settings
 from website.views import _render_nodes, find_dashboard
 from website.profile import utils
@@ -839,7 +839,7 @@ def n_unread_comments(node, user, page, root_id=None):
     """Return the number of unread comments on a node for a user."""
     if root_id is None or root_id == 'None' or page == 'node':
         return n_unread_total(node, user, page)
-
+    root_target = Guid.load(root_id) or node.get_wiki_page(root_id, 1)
     default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
     view_timestamp = user.comments_viewed_timestamp.get(node._id, default_timestamp)
     if isinstance(view_timestamp, dict):
@@ -852,11 +852,11 @@ def n_unread_comments(node, user, page, root_id=None):
                         Q('date_modified', 'gt', view_timestamp) &
                         Q('is_deleted', 'eq', False) &
                         Q('is_hidden', 'eq', False) &
-                        Q('page', 'eq', page) &
-                        Q('root_id', 'eq', root_id)).count()
+                        Q('root_target', 'eq', root_target)).count()
 
 
 def n_unread_total(node, user, page):
+    from website.addons.wiki.model import NodeWikiPage
     default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
     view_timestamp = user.comments_viewed_timestamp.get(node._id, default_timestamp)
     if page != 'total':
@@ -864,16 +864,23 @@ def n_unread_total(node, user, page):
             view_timestamp = view_timestamp.get(page, default_timestamp)
         # files/wiki
         if isinstance(view_timestamp, dict):
-            comments_ids = Comment.find(Q('node', 'eq', node) &
-                                        Q('page', 'eq', page) &
-                                        Q('is_deleted', 'eq', False) &
-                                        Q('is_hidden', 'eq', False)).get_keys()
-            ids = set()
-            for cmt in comments_ids:
-                ids.add(getattr(Comment.load(cmt), 'root_id'))
             n_unread = 0
-            for root_id in ids:
-                n_unread += n_unread_comments(node, user, page, root_id)
+            if page == 'files':
+                from website.addons.github.model import GithubGuidFile
+                root_targets = GithubGuidFile.find(Q('node', 'eq', node)).get_keys()
+                for root_target in root_targets:
+                    file = GithubGuidFile.load(root_target)
+                    if hasattr(file, 'comment_target'):
+                        root_id = file._id
+                        n_unread += n_unread_comments(node, user, page, root_id)
+            elif page == 'wiki':
+                root_targets = NodeWikiPage.find(Q('node', 'eq', node)).get_keys()
+                for root_target in root_targets:
+                    wiki_page = NodeWikiPage.load(root_target)
+                    if hasattr(wiki_page, 'comment_target'):
+                        root_id = wiki_page.page_name
+                        n_unread += n_unread_comments(node, user, page, root_id)
+
             return n_unread
         # mostly node
         return Comment.find(Q('node', 'eq', node) &

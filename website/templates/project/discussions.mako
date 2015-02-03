@@ -12,10 +12,11 @@
             <!-- Total -->
             <li>
                 <a href="${node['url']}discussions/">
-                    <h4 style="padding-bottom: 0">Total</h4>
+                    <h4 style="padding-bottom: 0">Total
                     % if user['unread_comments']['total'] > 0:
                         <span class="badge pull-right">${user['unread_comments']['total']}</span>
                     % endif
+                    </h4>
                 </a>
                 <hr style="margin-top: 0"/>
             </li>
@@ -77,13 +78,13 @@
             </div>
             <div data-bind="if: discussion().length == 0" style="padding-top: 20px;">
                 % if comment_target == 'total':
-                    There are no comments on this project yet! Go to the
+                    There are no comments on this project yet. Go to the
                     <a href="${node['url']}">Overview page,</a> open the comment pane and make a first one!
                 % elif comment_target == 'node':
-                    There are no comments on the Overview page yet! Go to the
+                    There are no comments on the Overview page yet. Go to the
                     <a href="${node['url']}">Overview page,</a> open the comment pane and make a first one!
                 % else:
-                    There are no comments on the ${comment_target.title()} page yet! Go to the
+                    There are no comments on the ${comment_target.title()} page yet. Go to the
                     <a href="${node['url']}${comment_target}">${comment_target.title()} page,</a> open the comment pane and make a first one!
                 % endif
             </div>

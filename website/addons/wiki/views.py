@@ -419,9 +419,6 @@ def project_wiki_rename(auth, wname, **kwargs):
         auth.user.comments_viewed_timestamp[node._id]['wiki'][new_wiki_name] = \
             auth.user.comments_viewed_timestamp[node._id]['wiki'][wiki_name]
         auth.user.save()
-    comments = getattr(node.get_wiki_page(new_wiki_name, 1), 'commented', [])
-    for comment in comments:
-        comment.change_root_id(new_wiki_name, save=True)
 
 
 

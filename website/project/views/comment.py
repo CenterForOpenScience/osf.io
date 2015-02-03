@@ -95,10 +95,14 @@ def view_comments_single(**kwargs):
     auth = kwargs['auth']
     comment = kwargs_to_comment(kwargs)
     serialized_comment = serialize_comment(comment, auth)
+
+    from website.addons.wiki.model import NodeWikiPage
     ret = {
         'comment': serialized_comment,
         'comment_target': serialized_comment['page'],
-        'comment_target_id': comment.root_id
+        'comment_target_id': comment.root_target.page_name \
+            if isinstance(comment.root_target, NodeWikiPage) \
+            else comment.root_target._id
     }
     ret.update(_view_project(node, auth, primary=True))
     return ret
@@ -199,6 +203,13 @@ def serialize_discussion(node, user, anonymous=False):
     }
 
 def serialize_comment(comment, auth, anonymous=False):
+    from website.addons.wiki.model import NodeWikiPage
+    if isinstance(comment.root_target, NodeWikiPage):
+        root_id = comment.root_target.page_name
+        title = comment.root_target.page_name
+    else:
+        root_id = comment.root_target._id
+        title = ''
     return {
         'id': comment._id,
         'author': {
@@ -219,8 +230,8 @@ def serialize_comment(comment, auth, anonymous=False):
         'dateModified': comment.date_modified.isoformat(),
         'page': comment.page or 'node',
         'targetId': getattr(comment.target, 'page_name', comment.target._id),
-        'rootId': comment.root_id or comment.node._id,
-        'title': comment.root_title,
+        'rootId': root_id,
+        'title': title or comment.root_title,
         'content': comment.content,
         'hasChildren': bool(getattr(comment, 'commented', [])),
         'canEdit': comment.user == auth.user,
@@ -301,14 +312,14 @@ def list_comments(auth, **kwargs):
     guid = request.args.get('target')
     root_id = request.args.get('rootId')
 
-    if page == 'total' and root_id == 'None':
+    if page == 'total' and root_id == 'None':    # "Total" on discussion page
         serialized_comments = list_total_comments(node, auth, 'total')
-    elif page == 'total':
+    elif page == 'total':    # Discussion widget on overview's page
         serialized_comments = [
             serialize_comment(comment, auth, anonymous)
             for comment in getattr(node, 'comment_owner', [])
         ]
-    elif root_id == 'None':
+    elif root_id == 'None':    # Overview/Files/Wiki page on discussion page
         serialized_comments = list_total_comments(node, auth, page)
     else:
         target = resolve_target(node, page, guid)
@@ -417,14 +428,20 @@ def _update_comments_timestamp(auth, node, page='node', root_id=None):
             timestamps[page] = dict()
 
         # if updating timestamp on the files/wiki total page...
+        from website.addons.github.model import GithubGuidFile
+        from website.addons.wiki.model import NodeWikiPage
         if root_id is None or root_id == 'None':
-            comments_ids = Comment.find(Q('node', 'eq', node) & Q('page', 'eq', page)).get_keys()
-            ids = set()
-            for cmt in comments_ids:
-                ids.add(getattr(Comment.load(cmt), 'root_id'))
             ret = {}
-            for rid in ids:
-                ret = _update_comments_timestamp(auth, node, page, rid)
+            if page == 'files':
+                root_targets = GithubGuidFile.find(Q('node', 'eq', node)).get_keys()
+                for root_target in root_targets:
+                    if hasattr(GithubGuidFile.load(root_target), 'comment_target'):
+                        ret = _update_comments_timestamp(auth, node, page, root_target)
+            elif page == 'wiki':
+                root_targets = NodeWikiPage.find(Q('node', 'eq', node)).get_keys()
+                for root_target in root_targets:
+                    if hasattr(NodeWikiPage.load(root_target), 'comment_target'):
+                        ret = _update_comments_timestamp(auth, node, page, root_target)
             return ret
 
         # if updating timestamp on a specific files/wiki page

@@ -21,7 +21,7 @@ from website.project.decorators import (
 )
 from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
-from website.project.model import has_anonymous_link
+from website.project.model import has_anonymous_link, Comment
 from website.addons.base.views import check_file_guid
 from website.util import rubeus, permissions
 from website.util.mimetype import get_mimetype
@@ -208,6 +208,11 @@ def github_view_file(auth, **kwargs):
                     download_url=download_url,
                 )
 
+    comment_guids = Comment.find(Q('root_id', 'eq', guid._id)).get_keys()
+    for comment_guid in comment_guids:
+        comment = Comment.load(comment_guid)
+        comment.show(save=True)
+
     rv = {
         'node': {
             'id': node._id,
@@ -389,6 +394,15 @@ def github_delete_file(auth, node_addon, **kwargs):
 
     if data is None:
         raise HTTPError(http.BAD_REQUEST)
+
+    guid = GithubGuidFile.find_one(
+        Q('node', 'eq', node) &
+        Q('path', 'eq', path)
+    )
+    comment_guids = Comment.find(Q('root_id', 'eq', guid._id)).get_keys()
+    for comment_guid in comment_guids:
+        comment = Comment.load(comment_guid)
+        comment.hide(save=True)
 
     node.add_log(
         action='github_' + models.NodeLog.FILE_REMOVED,

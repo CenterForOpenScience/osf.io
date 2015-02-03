@@ -5,7 +5,8 @@ import urlparse
 import itertools
 import httplib as http
 
-from modularodm import fields
+from modularodm import fields, Q
+from modularodm.exceptions import ModularOdmException
 from github3 import GitHubError
 
 from framework.auth import Auth
@@ -582,6 +583,24 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                 self.hook_secret = secret
                 if save:
                     self.save()
+                # Re-enable file comments
+                files = connect.tree(self.user, self.repo, 'master', recursive=True)
+                for github_file in files.tree:
+                    if github_file.type in ['file', 'blob']:
+                        path = github_file.path
+                        try:
+                            # If GUID has already been created, we won't redirect, and can check
+                            # whether the file exists below
+                            guid = GithubGuidFile.find_one(
+                                Q('node', 'eq', self.owner) &
+                                Q('path', 'eq', path)
+                            )
+                            for comment in getattr(guid, 'comment_target', []):
+                                comment.show(save=True)
+                        except ModularOdmException:
+                            continue
+
+
 
     def delete_hook(self, save=True):
         """
@@ -596,6 +615,14 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             except NotFoundError:
                 return False
             if response:
+
+                #disable comments
+                files_id = GithubGuidFile.find(Q('node', 'eq', self.owner)).get_keys()
+                for github_file_id in files_id:
+                    github_file = GithubGuidFile.load(github_file_id)
+                    for comment in getattr(github_file, 'comment_target', []):
+                        comment.hide(save=True)
+
                 self.hook_id = None
                 if save:
                     self.save()

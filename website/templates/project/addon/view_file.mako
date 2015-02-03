@@ -1,12 +1,11 @@
 <%inherit file="../project_base.mako"/>
 <%def name="title()">${file_name}</%def>
 
-<<<<<<< HEAD
 % if user['can_comment'] or node['has_comments']:
     <%include file="../../include/comment_pane_template.mako"/>
     <%include file="../../include/comment_template.mako"/>
 % endif
-=======
+
     <div>
         <h2 class="break-word">
             ${file_name | h}
@@ -16,7 +15,6 @@
         </h2>
         <hr />
     </div>
->>>>>>> f06b14bf9b01c7a00a6f36a13eee129f9344998e
 
 <div id="file-container" class="row">
 
