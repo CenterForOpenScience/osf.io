@@ -1,4 +1,4 @@
-from website.addons.gdrive import routes, views, model
+from website.addons.gdrive import routes, views, model, views_hgrid
 
 
 MODELS = [
@@ -30,6 +30,6 @@ INCLUDE_CSS = {
     'files': []
 }
 
-HAS_HGRID_FILES = False  # set to True for storage addons that display in HGrid
-#GET_HGRID_DATA = views.hgrid.gdrive_hgrid_data
-# MAX_FILE_SIZE = 10  # MB
+HAS_HGRID_FILES = True  # set to True for storage addons that display in HGrid
+GET_HGRID_DATA = views_hgrid.hgrid.gdrive_addon_folder
+MAX_FILE_SIZE = 10  # MB

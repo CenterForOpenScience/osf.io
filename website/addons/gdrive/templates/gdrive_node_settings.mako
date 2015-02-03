@@ -29,10 +29,12 @@
     </small>
     </h4>
 
+
+
     <div id="currentFolder" data-bind="if:showFolders()">
        <p>
         <strong> Current folder:</strong>
-        <span data-bind = "text:selectedName"> </span>
+        <span data-bind = "if:selectedName"> fdb</span>
        </p>
 
         <div id="display-permissions">
@@ -46,13 +48,17 @@
             </p>
         </div>
 
-         <div class="btn-group" >
-           <button data-bind="click:changeFolder" class="btn btn-sm btn-dropbox"> Change Folder</button>
-       </div>
+        <div class="btn-group" >
+        <button data-bind="click:changeFolder" class="btn btn-sm btn-dropbox"> Change Folder</button>
+        </div>
+
         <div id="myGdriveGrid"
              class="filebrowser hgrid dropbox-folder-picker">
 
         </div>
+
+
+
     </div>
 
 

@@ -14,7 +14,7 @@ var Raven = require('raven-js');
 var FolderPicker = require('folderpicker');
 var ZeroClipboard = require('zeroclipboard');
 ZeroClipboard.config('/static/vendor/bower_components/zeroclipboard/dist/ZeroClipboard.swf');
-var $osf = require('osf-helpers');
+var $osf = require('osfHelpers');
 
 ko.punches.enableAll();
 /**
@@ -36,7 +36,7 @@ ko.punches.enableAll();
         //Folderpicker specific
         self.folderPicker =  folderPicker;
         self.selected = ko.observable(null);
-        self.selectedName = ko.observable();
+        self.selectedName = ko.observable("No folder selected yet !");
         self.showFileTypes = ko.observable(false);
         var setOwner;
 
