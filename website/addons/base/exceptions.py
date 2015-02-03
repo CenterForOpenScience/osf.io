@@ -9,3 +9,10 @@ class AddonError(Exception):
 
 class HookError(AddonError):
     pass
+
+
+class AddonEnrichmentError(AddonError):
+
+    @property
+    def renderable_error(self):
+        return 'TODO'
