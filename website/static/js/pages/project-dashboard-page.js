@@ -16,6 +16,7 @@ var Raven = require('raven-js');
 
 var NodeControl = require('../nodeControl.js');
 
+require('../citations.js');
 
 var nodeApiUrl = window.contextVars.node.urls.api;
 

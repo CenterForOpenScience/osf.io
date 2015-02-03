@@ -686,3 +686,10 @@ def generate_self_signed(domain):
         ' -keyout {0}.key -out {0}.crt'
     ).format(domain)
     run(cmd)
+
+@task
+def update_citation_styles():
+    print("Not implemented. Do the following manually:")
+    print(" 1. git submodule init")
+    print(" 2. git submodule update")
+    print(" 3. python -m scripts.parse_citation_styles")

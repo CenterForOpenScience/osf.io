@@ -408,19 +408,6 @@ img.hg-addon-icon {
 
 /* End add-on styles */
 
-.citation-label {
-    font-weight: bold;
-}
-
-/*.citation-list {
-    display: none;
-}*/
-
-.citation-text {
-    text-indent: -3em;
-    margin-left: 3em;
-}
-
 .disabled {
     cursor: default !important;
     pointer-events: none;
@@ -1404,6 +1391,27 @@ dl.activity-log dd {
  */
 #projectScope .form-control, #wikiName .form-control {
     width: 400px;
+}
+
+/* Citations */
+
+.citations .addon-widget-header .permalink {
+    vertical-align:middle;
+    color:#777;
+}
+
+#citation-text {
+    display: none;
+    margin-top:15px;
+    margin-bottom:0px;
+}
+#citation-style-panel .select2-container {
+    width:100%;
+}
+
+.formatted-citation {
+    white-space: pre-wrap;
+    word-break: keep-all;
 }
 
 /* Contributors list */

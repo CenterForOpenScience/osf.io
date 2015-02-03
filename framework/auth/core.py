@@ -471,6 +471,12 @@ class User(GuidStoredObject, AddonModelMixin):
             return False
         return check_password_hash(self.password, raw_password)
 
+    def authors_to_csl(self):
+        return {
+            'family': self.family_name,
+            'given': self.given_name,
+        }
+
     def change_password(self, raw_old_password, raw_new_password, raw_confirm_password):
         """Change the password for this user to the hash of ``raw_new_password``."""
         raw_old_password = (raw_old_password or '').strip()
