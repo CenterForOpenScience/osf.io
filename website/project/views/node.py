@@ -367,7 +367,7 @@ def get_configured_projects(user):
 
 
 def format_data(user, node_ids, subscriptions_available, data):
-    subscriptions_available = subscriptions_available if subscriptions_available else settings.SUBSCRIPTIONS_AVAILABLE.keys()
+    subscriptions_available = subscriptions_available if subscriptions_available else settings.SUBSCRIPTIONS_AVAILABLE
 
     for idx, node_id in enumerate(node_ids):
         node = Node.load(node_id)
@@ -388,6 +388,7 @@ def format_data(user, node_ids, subscriptions_available, data):
         for s in subscriptions_available:
             event = {
                 'title': s,
+                'description': subscriptions_available[s],
                 'kind': 'event',
                 'notificationType': None,
                 'children': []

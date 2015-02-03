@@ -107,7 +107,7 @@ function ProjectNotifications(data) {
                     filter : true,
                     sortInclude : true,
                     custom : function(item, col) {
-                        return item.data.title;
+                        return item.data.description;
 
                     }
                 },
@@ -157,7 +157,7 @@ function ProjectNotifications(data) {
                     filter : true,
                     sortInclude : true,
                     custom : function() {
-                        return item.data.title;
+                        return item.data.description;
 
                     }
                 },
