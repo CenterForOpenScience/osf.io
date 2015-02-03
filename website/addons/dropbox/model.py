@@ -2,7 +2,6 @@
 import os
 import hashlib
 import logging
-import urllib
 
 import furl
 
@@ -31,47 +30,51 @@ class DropboxFile(GuidFile):
     #: See https://www.dropbox.com/developers/core/docs#metadata
     metadata = fields.DictionaryField(required=False)
 
-    def url(self, guid=True, rev='', *args, **kwargs):
-        """The web url for the file.
-
-        :param bool guid: Whether to return the short URL
-        """
-        # Short URLS must be built 'manually'
-        if guid:
-            # If returning short URL, urlencode the kwargs to build querystring
-            base_url = os.path.join('/', self._primary_key)
-            args = {'rev': rev}
-            args.update(**kwargs)
-            querystring = urllib.urlencode(args)
-            url = '/?'.join([base_url, querystring])
-        else:
-            url = self.node.web_url_for('dropbox_view_file', path=self.path,
-                rev=rev, **kwargs)
-        return url
-
     @property
-    def file_url(self):
-        if self.path is None:
-            raise ValueError('Path field must be defined.')
-        return os.path.join('dropbox', 'files', self.path)
+    def provider(self):
+        return 'dropbox'
 
-    def download_url(self, guid=True, rev='', *args, **kwargs):
-        """Return the download url for the file.
+    # def url(self, guid=True, rev='', *args, **kwargs):
+    #     """The web url for the file.
 
-        :param bool guid: Whether to return the short URL
-        """
-        # Short URLS must be built 'manually'
-        if guid:
-            # If returning short URL, urlencode the kwargs to build querystring
-            base_url = os.path.join('/', self._primary_key, 'download/')
-            args = {'rev': rev}
-            args.update(**kwargs)
-            querystring = urllib.urlencode(args)
-            url = '?'.join([base_url, querystring])
-        else:
-            url = self.node.web_url_for('dropbox_download',
-                    path=self.path, _absolute=True, rev=rev, **kwargs)
-        return url
+    #     :param bool guid: Whether to return the short URL
+    #     """
+    #     # Short URLS must be built 'manually'
+    #     if guid:
+    #         # If returning short URL, urlencode the kwargs to build querystring
+    #         base_url = os.path.join('/', self._primary_key)
+    #         args = {'rev': rev}
+    #         args.update(**kwargs)
+    #         querystring = urllib.urlencode(args)
+    #         url = '/?'.join([base_url, querystring])
+    #     else:
+    #         url = self.node.web_url_for('dropbox_view_file', path=self.path,
+    #             rev=rev, **kwargs)
+    #     return url
+
+    # @property
+    # def file_url(self):
+    #     if self.path is None:
+    #         raise ValueError('Path field must be defined.')
+    #     return os.path.join('dropbox', 'files', self.path)
+
+    # def download_url(self, guid=True, rev='', *args, **kwargs):
+    #     """Return the download url for the file.
+
+    #     :param bool guid: Whether to return the short URL
+    #     """
+    #     # Short URLS must be built 'manually'
+    #     if guid:
+    #         # If returning short URL, urlencode the kwargs to build querystring
+    #         base_url = os.path.join('/', self._primary_key, 'download/')
+    #         args = {'rev': rev}
+    #         args.update(**kwargs)
+    #         querystring = urllib.urlencode(args)
+    #         url = '?'.join([base_url, querystring])
+    #     else:
+    #         url = self.node.web_url_for('dropbox_download',
+    #                 path=self.path, _absolute=True, rev=rev, **kwargs)
+    #     return url
 
     def update_metadata(self, client=None, rev=''):
         cl = client or get_node_addon_client(self.node.get_addon('dropbox'))
@@ -101,16 +104,15 @@ class DropboxFile(GuidFile):
     def get_or_create(cls, node, path):
         """Get or create a new file record. Return a tuple of the form (obj, created)
         """
-        cleaned_path = clean_path(path)
         try:
             new = cls.find_one(
                 Q('node', 'eq', node) &
-                Q('path', 'eq', cleaned_path)
+                Q('path', 'eq', path)
             )
             created = False
         except ModularOdmException:
             # Create new
-            new = cls(node=node, path=cleaned_path)
+            new = cls(node=node, path=path)
             new.save()
             created = True
         return new, created
@@ -176,6 +178,9 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
     def has_auth(self):
         """Whether an access token is associated with this node."""
         return bool(self.user_settings and self.user_settings.has_auth)
+
+    def find_or_create_file_guid(self, path):
+        return DropboxFile.get_or_create(self.owner, path)
 
     def set_folder(self, folder, auth):
         self.folder = folder
