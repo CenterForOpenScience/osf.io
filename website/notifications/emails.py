@@ -12,17 +12,41 @@ def notify(uid, event, **context):
     key = str(uid + '_' + event)
 
     for notification_type in notifications.keys():
+
         try:
             subscription = Subscription.find_one(Q('_id', 'eq', key))
         except NoResultsFound:
-            return
+            subscription = None
         subscribed_users = []
         try:
             subscribed_users = getattr(subscription, notification_type)
         # TODO: handle this error
         except AttributeError:
             pass
-        send(subscribed_users, notification_type, uid, event, **context)
+
+        indirectly_subscribed_users = get_automatic_subscribers(uid, event, notification_type)
+
+        all_subscribers = set(subscribed_users).union(indirectly_subscribed_users)
+
+        send(list(all_subscribers), notification_type, uid, event, **context)
+
+
+def get_automatic_subscribers(uid, event, notification_type):
+        subscribed_users = []
+        parent = Node.load(uid).node__parent
+        if parent:
+            key = str(parent[0]._id + '_' + event + '_future_nodes')
+            try:
+                subscription = Subscription.find_one(Q('_id', 'eq', key))
+            except NoResultsFound:
+                return
+            try:
+                subscribed_users = getattr(subscription, notification_type)
+            # TODO: handle this error
+            except AttributeError:
+                pass
+
+        return set(subscribed_users)
 
 
 def send(subscribed_users, notification_type, uid, event, **context):
