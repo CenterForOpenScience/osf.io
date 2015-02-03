@@ -27,7 +27,7 @@ ROOT = os.path.join(BASE_PATH, '..')
 
 # Hours before email confirmation tokens expire
 EMAIL_TOKEN_EXPIRATION = 24
-CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'project', 'citation', 'styles')
+CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'citation', 'styles')
 
 LOAD_BALANCER = False
 PROXY_ADDRS = []
