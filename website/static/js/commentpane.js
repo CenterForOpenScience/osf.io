@@ -88,9 +88,8 @@ var CommentPane = CommentPane || function(selector, host_page, host_name, mode, 
                             {width: '0'}, options.animateTime
                         );
                     }
-                })
+                });
             }
-            ;
         });
 
         // Bind toggle handler
@@ -123,4 +122,23 @@ if (typeof define === 'function' && define.amd) {
     });
 }
 
+<<<<<<< HEAD
+=======
+    if ((typeof module !== 'undefined') && module.exports) {
+        // Load css with webpack if possible
+        if (typeof webpackJsonp !== 'undefined') {
+            // NOTE: Assumes that the style-loader and css-loader are used for .css files
+            require('../css/commentpane.css');
+        }
+        module.exports = CommentPane;
+    }
+    if (typeof ender === 'undefined') {
+        this.CommentPane = CommentPane;
+    }
+    if (typeof define === 'function' && define.amd) {
+        define(['jquery'], function($) {
+            return CommentPane;
+        });
+    }
+>>>>>>> 7b40c1db264f51817f1d3d89035ef15c90e07f86
 

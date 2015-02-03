@@ -13,6 +13,11 @@ var Bloodhound = require('exports?Bloodhound!typeahead.js');
 var moment = require('moment');
 var Raven = require('raven-js');
 
+// CSS
+require('../css/projectorganizer.css');
+require('../css/typeahead.css');
+require('../css/fangorn.css');
+
 var $osf = require('osfHelpers');
 
 // copyMode can be 'copy', 'move', 'forbidden', or null.
