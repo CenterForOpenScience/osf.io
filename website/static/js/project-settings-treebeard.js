@@ -117,7 +117,13 @@ function ProjectNotifications(data) {
                     filter : false,
                     custom : function(item, col) {
                         return m("div[style='padding-right:10px']",
-                            [m("select.form-control", {id: item.parent().data.node_id, name: item.data.title}, { onchange: function(ev) {item.data.notificationType = ev.target.value; }}, [
+                            [m("select.form-control", {
+                                id: item.parent().data.node_id,
+                                name: item.data.title,
+                                onchange: function(ev) {
+                                    item.data.notificationType = ev.target.value;
+                                }},
+                                [
                                     m("option", {value: "none", selected : item.data.notificationType === "none" ? "selected": ""}, "None"),
                                     m("option", {value: "email_transactional", selected : item.data.notificationType === "email_transactional" ? "selected": ""}, "Emails"),
                                     m("option", {value: "email_digest", selected : item.data.notificationType === "email_digest" ? "selected": ""}, "Email Digest")
@@ -155,7 +161,13 @@ function ProjectNotifications(data) {
                     filter : false,
                     custom : function() {
                         return  m("div[style='padding-right:10px']",
-                            [m("select.form-control", {id: item.parent().data.node_id, name: item.data.title}, { onchange: function(ev) {  item.data.notificationType = ev.target.value; } }, [
+                            [m("select.form-control", {
+                                id: item.parent().data.node_id,
+                                name: item.data.title,
+                                onchange: function(ev) {
+                                    item.data.notificationType = ev.target.value;
+                                }},
+                                [
                                     m("option", {value: "none", selected : item.data.notificationType === "none" ? "selected": ""}, "None"),
                                     m("option", {value: "email_transactional",  selected : item.data.notificationType === "email_transactional" ? "selected": ""}, "Emails"),
                                     m("option", {value: "email_digest", selected : item.data.notificationType === "email_digest" ? "selected": ""}, "Email Digest")
