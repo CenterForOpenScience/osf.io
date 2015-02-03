@@ -57,15 +57,16 @@ function ViewModel(url) {
        return self.activeUsers().length > 1;
     });
 
-    self.changed = ko.computed(function() {
-        // Handle inconsistencies in newline notation
-        var published = typeof self.publishedText() === 'string' ?
-            self.publishedText().replace(/(\r\n|\n|\r)/gm, '\n') : '';
-        var current = typeof self.currentText() === 'string' ?
-            self.currentText().replace(/(\r\n|\n|\r)/gm, '\n') : '';
-
-        return published !== current;
-    });
+    // Causes slowness on large wikis
+//    self.changed = ko.computed(function() {
+//        // Handle inconsistencies in newline notation
+//        var published = typeof self.publishedText() === 'string' ?
+//            self.publishedText().replace(/(\r\n|\n|\r)/gm, '\n') : '';
+//        var current = typeof self.currentText() === 'string' ?
+//            self.currentText().replace(/(\r\n|\n|\r)/gm, '\n') : '';
+//
+//        return published !== current;
+//    });
 
     // Fetch initial wiki text
     self.fetchData = function(callback) {

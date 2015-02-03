@@ -16,7 +16,7 @@
                         <div class="col-sm-8">
                              <p>
                                  <em>Changes will be stored but not published until
-                                 you click "Publish Version."</em>
+                                 you click "Save."</em>
                              </p>
                             <div id="wmd-button-bar"></div>
                         </div>
@@ -33,41 +33,32 @@
                     </div>
                     <div id="editor" class="wmd-input wiki-editor"
                          data-bind="ace: currentText">Loading. . .</div>
-                    <!-- Invisible textarea for form submission -->
-                    <textarea name="content" style="visibility: hidden" data-bind="value: currentText"></textarea>
                 </div>
                 <div class="pull-right">
                     <!-- clicking "Cancel" overrides unsaved changes check -->
                         <a class="btn btn-default"
-                           data-toggle="tooltip"
-                           data-placement="top"
-                           title="Your draft version will be saved, but only visible to users with edit permissions."
                         % if wiki_created:
                            href="${urls['web']['home']}"
                         % else:
                            href="${urls['web']['page']}"
                         % endif
                            >
-                            Return To View
+                            Back
                         </a>
                     <button id="revert-button"
-                            class="btn btn-primary"
-                            data-bind="click: loadPublished, enable: changed"
-                            data-toggle="tooltip"
-                            data-placement="top"
-                            title="Clicking this button will revert the current draft to the last published version of this wiki."
-                            >Revert to Last Publication</button>
+                            class="btn btn-success"
+                            data-bind="click: loadPublished"
+                            >Revert</button>
                     <input type="submit"
-                           class="btn btn-success"
-                           value="Publish Version"
-                           data-toggle="tooltip"
-                           data-placement="top"
-                           title="Publishing this wiki version will allow anyone with read access to view it."
-                           data-bind="enable: changed"
+                           class="btn btn-primary"
+                           value="Save"
                            onclick=$(window).off('beforeunload')>
                 </div>
                 <p class="help-block">Preview</p>
                 <div id="wmd-preview" class="wmd-panel wmd-preview"></div>
+                <!-- Invisible textarea for form submission -->
+                <textarea name="content" style="visibility: hidden; height: 0px"
+                          data-bind="value: currentText"></textarea>
             </form>
         </div>
     </div><!-- end row -->
