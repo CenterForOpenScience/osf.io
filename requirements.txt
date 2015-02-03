@@ -26,7 +26,7 @@ elasticsearch==1.3.0
 git+https://github.com/CenterForOpenScience/modular-odm.git@develop
 # Development version of modular file renderer
 git+https://github.com/CenterForOpenScience/modular-file-renderer.git@dev
-git+https://github.com/brechtm/citeproc-py.git@master
+git+http://github.com/brechtm/citeproc-py.git@master
 
 # Assets
 webassets==0.10.1
