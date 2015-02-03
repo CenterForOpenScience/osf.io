@@ -5,6 +5,7 @@ var m = require('mithril');
 
 var Fangorn = require('fangorn');
 var waterbutler = require('waterbutler');
+var URI = require('../../../static/vendor/bower_components/uri.js/src/URI.js');
 
 
 function _uploadUrl(item, file) {
@@ -169,17 +170,10 @@ function _fangornGithubTitle(item, col)  {
             return m('span',[
                 m('github-name', {
                 onclick: function() {
-                    var params = $.param(
-                        $.extend(
-                          {
-                              provider: item.data.provider,
-                              path: item.data.path.substring(1),
-                              branch: item.data.branch
-                          },
-                          item.data.extra || {}
-                        )
-                    );
-                    window.location = item.data.nodeApiUrl + 'waterbutler/files/?' + params;
+                    var redir = new URI(item.data.nodeUrl);
+                    redir.segment('files').segment(item.data.provider).segment(item.data.path.substring(1));
+                    window.location = redir.toString() + '/?branch=' + item.data.branch;
+
                 },'data-toggle': 'tooltip', title: 'View file', 'data-placement': 'right'
             }, item.data.name)]);
         } else {
