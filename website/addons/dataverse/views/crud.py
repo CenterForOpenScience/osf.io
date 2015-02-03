@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import os
-import datetime
+import httplib
 import logging
+import datetime
+
 import requests
 from bs4 import BeautifulSoup
 from flask import request, make_response
@@ -11,10 +13,10 @@ from framework.flask import redirect
 from framework.exceptions import HTTPError
 from framework.utils import secure_filename
 from framework.auth.utils import privacy_info_handle
+
 from website.addons.dataverse.client import delete_file, upload_file, \
     get_file, get_file_by_id, release_study, get_study, get_dataverse, \
     connect_from_settings_or_403, get_files
-
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_not_be_registration
@@ -26,8 +28,6 @@ from website.util import rubeus
 from website.addons.dataverse.model import DataverseFile
 from website.addons.dataverse.settings import HOST
 from website.addons.base.views import check_file_guid
-
-import httplib as http
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +56,7 @@ def dataverse_release_study(node_addon, auth, **kwargs):
     study = get_study(dataverse, node_addon.study_hdl)
 
     if study.get_state() == 'RELEASED':
-        raise HTTPError(http.CONFLICT)
+        raise HTTPError(httplib.CONFLICT)
 
     release_study(study)
 
@@ -72,7 +72,7 @@ def dataverse_release_study(node_addon, auth, **kwargs):
         log_date=now,
     )
 
-    return {'study': study.title}, http.OK
+    return {'study': study.title}, httplib.OK
 
 
 @must_be_contributor_or_public
@@ -143,9 +143,7 @@ def dataverse_get_file_info(node_addon, auth, **kwargs):
         }
     }
 
-    return {
-        'data': data,
-    }, http.OK
+    return {'data': data}, httplib.OK
 
 
 @must_be_contributor_or_public
@@ -216,7 +214,7 @@ def dataverse_upload_file(node_addon, auth, **kwargs):
     try:
         name = request.args['name']
     except KeyError:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(httplib.BAD_REQUEST)
 
     now = datetime.datetime.utcnow()
 
@@ -226,7 +224,7 @@ def dataverse_upload_file(node_addon, auth, **kwargs):
     try:
         connection = connect_from_settings_or_403(user_settings)
     except HTTPError as error:
-        if error.code == 403:
+        if error.code == httplib.FORBIDDEN:
             connection = None
         else:
             raise
@@ -235,29 +233,29 @@ def dataverse_upload_file(node_addon, auth, **kwargs):
     study = get_study(dataverse, node_addon.study_hdl)
 
     filename = secure_filename(name)
-    action = 'file_uploaded'
+    status_code = httplib.CREATED
     old_id = None
 
     # Fail if file is too small (Dataverse issue)
     content = request.data
     if len(content) < 5:
-        raise HTTPError(http.UNSUPPORTED_MEDIA_TYPE)
+        raise HTTPError(httplib.UNSUPPORTED_MEDIA_TYPE)
 
     # Replace file if old version exists
     old_file = get_file(study, filename)
     if old_file is not None:
-        action = 'file_updated'
+        status_code = httplib.OK
         old_id = old_file.id
         delete_file(old_file)
         # Check if file was deleted
         if get_file_by_id(study, old_id) is not None:
-            raise HTTPError(http.BAD_REQUEST)
+            raise HTTPError(httplib.BAD_REQUEST)
 
     upload_file(study, filename, content)
     file = get_file(study, filename)
 
     if file is None:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(httplib.BAD_REQUEST)
 
     node.add_log(
         action='dataverse_file_added',
@@ -295,10 +293,9 @@ def dataverse_upload_file(node_addon, auth, **kwargs):
             'view': can_view,
             'edit': can_edit,
         },
-        'actionTaken': action,
     }
 
-    return info, 201
+    return info, status_code
 
 
 @must_have_permission('write')
@@ -313,12 +310,12 @@ def dataverse_delete_file(node_addon, auth, **kwargs):
 
     file_id = kwargs.get('path')
     if file_id is None:
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(httplib.NOT_FOUND)
 
     try:
         connection = connect_from_settings_or_403(user_settings)
     except HTTPError as error:
-        if error.code == 403:
+        if error.code == httplib.FORBIDDEN:
             connection = None
         else:
             raise
@@ -331,7 +328,7 @@ def dataverse_delete_file(node_addon, auth, **kwargs):
 
     # Check if file was deleted
     if get_file_by_id(study, file_id) is not None:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(httplib.BAD_REQUEST)
 
     node.add_log(
         action='dataverse_file_removed',
@@ -383,7 +380,7 @@ def scrape_dataverse(file_id, name_only=False):
         response = session.head(url) if name_only else session.get(url)
 
     if 'content-disposition' not in response.headers.keys():
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(httplib.NOT_FOUND)
 
     filename = response.headers['content-disposition'].split('"')[1]
 
@@ -396,7 +393,7 @@ def fail_if_unauthorized(node_addon, auth, file_id):
     user_settings = node_addon.user_settings
 
     if file_id is None:
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(httplib.NOT_FOUND)
 
     try:
         connection = connect_from_settings_or_403(user_settings)
@@ -412,9 +409,9 @@ def fail_if_unauthorized(node_addon, auth, file_id):
     all_file_ids = [f.id for f in get_files(study)] + released_file_ids
 
     if file_id not in all_file_ids:
-        raise HTTPError(http.FORBIDDEN)
+        raise HTTPError(httplib.FORBIDDEN)
     elif not node.can_edit(auth) and file_id not in released_file_ids:
-        raise HTTPError(http.UNAUTHORIZED)
+        raise HTTPError(httplib.UNAUTHORIZED)
 
 
 def fail_if_private(file_id):
@@ -422,9 +419,9 @@ def fail_if_private(file_id):
     url = 'http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, file_id)
     resp = requests.head(url)
 
-    if resp.status_code == 403:
+    if resp.status_code == httplib.FORBIDDEN:
         raise HTTPError(
-            http.FORBIDDEN,
+            httplib.FORBIDDEN,
             data={
                 'message_short': 'Cannot access file contents',
                 'message_long':
