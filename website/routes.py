@@ -26,6 +26,7 @@ from website import landing_pages as landing_page_views
 from website import views as website_views
 from website.citations import views as citation_views
 from website.search import views as search_views
+from website.oauth import views as oauth_views
 from website.profile import views as profile_views
 from website.project import views as project_views
 from website.addons.base import views as addon_views
@@ -231,6 +232,21 @@ def make_url_map(app):
             json_renderer,
         ),
     ], prefix='/api/v1')
+
+
+    # OAuth
+
+    process_rules(app, [
+        Rule('/oauth/connect/<service_name>/', 'get',
+            oauth_views.oauth_connect,
+            json_renderer,
+        ),
+
+        Rule('/oauth/callback/<service_name>/', 'get',
+            oauth_views.oauth_callback,
+            OsfWebRenderer('util/oauth_complete.mako'),
+        ),
+    ])
 
     process_rules(app, [
         Rule('/dashboard/get_nodes/', 'get', website_views.get_dashboard_nodes, json_renderer),
