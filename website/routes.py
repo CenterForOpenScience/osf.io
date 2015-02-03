@@ -725,6 +725,15 @@ def make_url_map(app):
             OsfWebRenderer('project/files.mako'),
             view_kwargs={'mode': 'page'},
         ),
+        Rule(
+            [
+                '/project/<pid>/files/<provider>/<path:path>/',
+                '/project/<pid>/node/<nid>/files/<provider>/<path:path>/',
+            ],
+            'get',
+            addon_views.addon_view_file,
+            OsfWebRenderer('project/view_file.mako')
+        ),
 
 
     ])
@@ -1111,12 +1120,12 @@ def make_url_map(app):
         ),
         Rule(
             [
-                '/project/<pid>/waterbutler/files/',
-                '/project/<pid>/node/<nid>/waterbutler/files/',
+                '/project/<pid>/files/<provider>/<path:path>/',
+                '/project/<pid>/node/<nid>/files/<provider>/<path:path>/',
             ],
             'get',
-            addon_views.get_waterbutler_render_url,
-            json_renderer,
+            addon_views.addon_render_file,
+            json_renderer
         ),
         Rule(
             '/settings/addons/',
