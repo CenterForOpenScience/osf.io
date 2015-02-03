@@ -401,7 +401,7 @@ def format_data(user, node_ids, subscriptions_available, data):
             data[index]['children'].append(event)
 
             if node.nodes:
-                authorized_nodes = [n for n in node.nodes if user in n.contributors]
+                authorized_nodes = [n for n in node.nodes if user in n.contributors and not n.is_deleted]
                 format_data(user, [n._id for n in authorized_nodes], None, data[index]['children'])
 
     return data
