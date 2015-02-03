@@ -104,10 +104,13 @@ ul.ob-widget-list {
 }
 
 .ob-tab-head {
-    padding-bottom: 9px;
-    margin: 20px 0 16px;
+    padding-bottom: 5px;
+    margin: 25px 0 5px;
 }
 
+ul.nav.nav-tabs {
+    border-bottom:1px solid #eee
+}
 
 div.ob-dropzone-filename{
 	margin-top:10px;
