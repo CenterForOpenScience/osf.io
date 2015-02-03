@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 import os
-import logging
 import errno
 import codecs
+import urllib
+import logging
 
 import mfr
 from mfr.ext import ALL_HANDLERS
@@ -39,36 +40,42 @@ def render_mfr_error(err):
         """.format(**locals())
 
 
+# TODO only allow one task at a time
 @app.task(ignore_result=True, timeout=settings.MFR_TIMEOUT)
-def _build_rendered_html(file_path, cache_dir, cache_file_name, download_url):
+def _build_rendered_html(download_url, cache_path, temp_path):
     """
     :param str file_path: Full path to raw file on disk
     :param str cache_dir: Folder to store cached file in
     :param str cache_file_name: Name of cached file
     :param str download_url: External download URL
     """
-    with codecs.open(file_path) as file_pointer:
+    try:
+        ensure_path(os.path.split(temp_path)[0])
+        urllib.urlretrieve(download_url, temp_path)
+    except:
+        # TODO Log to sentry here
+        return
+
+    with codecs.open(temp_path) as file_pointer:
 
         # Build path to cached content
         # Note: Ensures that cache directories have the same owner as the files
         # inside them
-        ensure_path(cache_dir)
-        cache_file_path = os.path.join(cache_dir, cache_file_name)
+        ensure_path(os.path.split(cache_path)[0])
 
-        with codecs.open(cache_file_path, 'w', 'utf-8') as write_file_pointer:
+        with codecs.open(cache_path, 'w', 'utf-8') as write_file_pointer:
             # Render file
             try:
                 render_result = mfr.render(file_pointer, src=download_url)
             except MFRError as err:
-                rendered = render_mfr_error(err).format(download_path=download_url)
+                rendered = render_mfr_error(err)
             else:
                 rendered = _build_html(render_result)
 
             # Cache rendered content
             write_file_pointer.write(rendered)
 
-    os.remove(file_path)
-    return True
+    os.remove(temp_path)
 
 #Expose render function
 build_rendered_html = _build_rendered_html
