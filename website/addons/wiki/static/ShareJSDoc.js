@@ -68,7 +68,6 @@ var ShareJSDoc = function(viewModel, url, metadata) {
             }
             viewModel.activeUsers(activeUsers);
         } else if (data.type === 'updatePublished') {
-            console.log('content', data.content);
             viewModel.publishedText(data.content);
         } else if (data.type === 'lock') {
             editor.setReadOnly(true);
