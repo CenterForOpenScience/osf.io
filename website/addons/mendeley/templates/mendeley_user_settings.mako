@@ -1,21 +1,18 @@
 <!-- Authorization -->
 <div>
-    <h4 class="addon-title">
-        Mendeley
-        <small class="authorized-by">
-            % if authorized:
-                    authorized by
-                    <a href="https://github.com/${'authorized_github_user'}" target="_blank">
-                        ${'authorized_github_user'}
-                    </a>
-                <a id="githubDelKey" class="text-danger pull-right addon-auth">Delete Access Token</a>
-            % else:
-                <a id="githubAddKey" class="text-primary pull-right addon-auth">
-                    Create Access Token
-                </a>
-            % endif
-        </small>
-    </h4>
+    <h4 class="addon-title">Mendeley</h4>
+    <table class="table">
+        <tbody>
+        % for account in accounts:
+            <tr>
+                <td>${ account['display_name'] }</td>
+                <td>${ account['provider_id'] }</td>
+                <td><a class="btn btn-danger">Remove</a></td>
+            </tr>
+        % endfor
+        </tbody>
+    </table>
+    <a id="mendeleyConnect" class="btn btn-primary">Connect an account</a>
 </div>
 
 <%def name="submit_btn()"></%def>

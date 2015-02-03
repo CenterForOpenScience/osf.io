@@ -15,7 +15,7 @@ from framework.mongo import StoredObject
 from framework.sessions import get_session
 from website import settings
 from website.oauth.utils import PROVIDER_LOOKUP
-from website.util import api_url_for
+from website.util import web_url_for
 
 
 logger = logging.getLogger(__name__)
@@ -94,7 +94,7 @@ class ExternalProvider(object):
             # build the URL
             oauth = OAuth2Session(
                 self.client_id,
-                redirect_uri=api_url_for('oauth_callback',
+                redirect_uri=web_url_for('oauth_callback',
                                          service_name=self.short_name,
                                          _absolute=True),
                 scope=self.default_scopes,
@@ -180,7 +180,7 @@ class ExternalProvider(object):
 
             response = OAuth2Session(
                 self.client_id,
-                redirect_uri=api_url_for(
+                redirect_uri=web_url_for(
                     'oauth_callback',
                     service_name=self.short_name,
                     _absolute=True

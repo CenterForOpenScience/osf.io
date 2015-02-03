@@ -1,13 +1,22 @@
 /**
  * Created by lyndsy on 1/29/15.
  */
-var bootbox = require('bootbox');
 var $ = require('jquery');
+var ko = require('knockout');
 
 $(document).ready(function() {
 
-    $('#githubAddKey').on('click', function() {
-        window.location.href = '/oauth/connect/mendeley/';
+    window.oauth_complete = function(success) {
+        if(success) {
+            console.log("successful auth");
+        } else {
+            console.log("bad auth");
+        }
+        console.log("Flow completed");
+    }
+
+    $('#mendeleyConnect').on('click', function() {
+        window.open('/oauth/connect/mendeley/');
     });
 
     $('#githubDelKey').on('click', function() {

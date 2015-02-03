@@ -242,7 +242,7 @@ def make_url_map(app):
 
         Rule('/oauth/callback/<service_name>/', 'get',
             oauth_views.oauth_callback,
-            json_renderer,
+            OsfWebRenderer('util/oauth_complete.mako'),
         ),
     ])
 

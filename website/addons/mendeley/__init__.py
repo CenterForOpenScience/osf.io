@@ -1,14 +1,16 @@
 from . import model
+from . import routes
 
 MODELS = [
     model.AddonMendeleyUserSettings,
+    model.AddonMendeleyNodeSettings,
 ]
 
 
 USER_SETTINGS_MODEL = model.AddonMendeleyUserSettings
-# NODE_SETTINGS_MODEL = model.AddonGitHubNodeSettings
+NODE_SETTINGS_MODEL = model.AddonMendeleyNodeSettings
 
-ROUTES = []
+ROUTES = [routes.api_routes]
 
 SHORT_NAME = 'mendeley'
 FULL_NAME = 'Mendeley'

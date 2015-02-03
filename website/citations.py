@@ -9,6 +9,8 @@ class CitationList(list):
 
     def __init__(self, *args, **kwargs):
         self.name = kwargs.pop('name', '')
+        self.provider_list_id = kwargs.pop('provider_list_id', None)
+        self.provider_account_id = kwargs.pop('provider_account_id', None)
         self._citations = None
         super(CitationList, self).__init__(*args, **kwargs)
 
@@ -51,6 +53,10 @@ class CitationList(list):
     @property
     def json(self):
         """JSON-formatted string for instance and all children"""
-        pass
+        return {
+            'name': self.name,
+            'provider_list_id': self.provider_list_id,
+            'provider_account_id': self.provider_account_id,
+        }
 
 

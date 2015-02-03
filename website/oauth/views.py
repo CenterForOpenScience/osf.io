@@ -24,4 +24,4 @@ def oauth_callback(service_name, auth):
         user.external_accounts.append(provider.account)
         user.save()
 
-    return repr(provider.account.to_storage())
+    return {}

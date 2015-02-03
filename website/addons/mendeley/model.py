@@ -1,17 +1,62 @@
 import time
 
 import mendeley
-from mendeley.session import MendeleySession
+from modularodm import fields
+from modularodm import Q
+
 
 from website import settings
+from website.addons.base import AddonNodeSettingsBase
 from website.addons.base import AddonUserSettingsBase
 from website.citations import Citation
 from website.citations import CitationList
+from website.oauth.models import ExternalAccount
 from website.oauth.models import ExternalProvider
+
+from .api import APISession
 
 
 class AddonMendeleyUserSettings(AddonUserSettingsBase):
-    pass
+
+    def _get_connected_accounts(self):
+        return [x for x in self.owner.external_accounts if x.provider == 'mendeley']
+
+    def to_json(self, user):
+        rv = super(AddonMendeleyUserSettings, self).to_json(user)
+        rv['accounts'] = [
+            {
+                'id': account._id,
+                'provider_id': account.provider_id,
+                'display_name': account.display_name,
+            } for account in self._get_connected_accounts()
+        ]
+        return rv
+
+
+class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
+    external_account = fields.ForeignField('externalaccount',
+                                           backref='connected')
+
+    def to_json(self, user):
+        accounts = {
+            account for account
+            in user.external_accounts
+            if account.provider == 'mendeley'
+        }
+        if self.external_account:
+            accounts.add(self.external_account)
+
+        rv = super(AddonMendeleyNodeSettings, self).to_json(user)
+        rv['accounts'] = [
+            {
+                'id': account._id,
+                'provider_id': account.provider_id,
+                'display_name': account.display_name,
+            } for account in accounts
+        ]
+
+        return rv
+
 
 
 class Mendeley(ExternalProvider):
@@ -44,7 +89,7 @@ class Mendeley(ExternalProvider):
                 client_secret=self.client_secret,
                 redirect_uri='http://cos.ngrok.com/oauth/callback/mendeley/',
             )
-            self._client = MendeleySession(partial, credentials)
+            self._client = APISession(partial, credentials)
 
         return self._client
 
@@ -71,4 +116,8 @@ class Mendeley(ExternalProvider):
         )
 
     def _mendeley_folder_to_citation_list(self, folder):
-        return CitationList(name=folder.name)
+        return CitationList(
+            name=folder.name,
+            provider_account_id=self.account.provider_id,
+            provider_list_id=folder.json['id'],
+        )
