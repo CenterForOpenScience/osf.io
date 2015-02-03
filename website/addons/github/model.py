@@ -5,8 +5,9 @@ import urlparse
 import itertools
 import httplib as http
 
-from modularodm import fields
 from github3 import GitHubError
+from modularodm import fields, Q
+from modularodm.exceptions import ModularOdmException
 
 from framework.auth import Auth
 from framework.mongo import StoredObject
@@ -30,10 +31,8 @@ class GithubGuidFile(GuidFile):
     path = fields.StringField(index=True)
 
     @property
-    def file_url(self):
-        if self.path is None:
-            raise ValueError('Path field must be defined.')
-        return os.path.join('github', 'file', self.path)
+    def provider(self):
+        return 'github'
 
 
 class AddonGitHubOauthSettings(StoredObject):
@@ -162,6 +161,20 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     )
 
     registration_data = fields.DictionaryField()
+
+    def find_or_create_file_guid(self, path):
+        try:
+            return GithubGuidFile.find_one(
+                Q('path', 'eq', path) &
+                Q('node', 'eq', self.owner)
+            ), False
+        except ModularOdmException:
+            pass
+
+        # Create new
+        new = GithubGuidFile(node=self.owner, path=path)
+        new.save()
+        return new, True
 
     def authorize(self, user_settings, save=False):
         self.user_settings = user_settings
