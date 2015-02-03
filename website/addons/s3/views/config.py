@@ -9,12 +9,15 @@ from framework.exceptions import HTTPError
 from framework.status import push_status_message
 from framework.auth.decorators import must_be_logged_in
 
+from modularodm import Q
+
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 
 from website.addons.s3.api import S3Wrapper, has_access, does_bucket_exist
 from website.addons.s3.utils import adjust_cors, create_osf_user
+from website.addons.s3.model import S3GuidFile
 
 
 def add_s3_auth(access_key, secret_key, user_settings):
@@ -116,9 +119,26 @@ def s3_node_settings(auth, user_addon, node_addon, **kwargs):
 
     if bucket != node_addon.bucket:
 
+        # Hide original comments
+        node_addon.hide_comments()
+
         # Update node settings
         node_addon.bucket = bucket
         node_addon.save()
+
+        s3wrapper = S3Wrapper.from_addon(node_addon)
+        if s3wrapper is None:
+            raise HTTPError(http.BAD_REQUEST)
+        for key in s3wrapper.bucket.list():
+            try:
+                guid = S3GuidFile.find_one(
+                    Q('node', 'eq', node) &
+                    Q('path', 'eq', key.name)
+                )
+                for comment in getattr(guid, 'comment_target', []):
+                    comment.show(save=True)
+            except:
+                continue
 
         node.add_log(
             action='s3_bucket_linked',

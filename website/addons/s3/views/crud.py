@@ -22,6 +22,7 @@ from website.project.decorators import (
     must_have_permission, must_be_contributor_or_public,
     must_not_be_registration, must_have_addon
 )
+from website.project.model import Comment
 
 from website.addons.s3.model import S3GuidFile
 from website.addons.s3.settings import MAX_RENDER_SIZE
@@ -135,6 +136,7 @@ def s3_view(**kwargs):
     versions = create_version_list(wrapper, urllib.unquote(path), node)
 
     rv = {
+        'file_id': guid._id,
         'file_name': key.name,
         'rendered': render,
         'download_url': urls['download'],

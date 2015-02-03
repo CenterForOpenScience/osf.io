@@ -2,7 +2,7 @@
 
 import os
 
-from modularodm import fields
+from modularodm import fields, Q
 from boto.exception import BotoServerError
 
 from framework.auth.core import Auth
@@ -97,6 +97,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         self.registration_data = {}
         self.bucket = None
         self.user_settings = None
+        self.hide_comments()
 
         if log:
             self.owner.add_log(
@@ -287,6 +288,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         if self.user_settings and self.user_settings.owner == removed:
             self.user_settings = None
             self.bucket = None
+            self.hide_comments()
             self.save()
 
             return (
@@ -301,3 +303,12 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
 
     def after_delete(self, node, user):
         self.deauthorize(Auth(user=user), log=True, save=True)
+
+    def hide_comments(self):
+        files_id = S3GuidFile.find(Q('node', 'eq', self.owner)).get_keys()
+        for s3_file_id in files_id:
+            s3_file = S3GuidFile.load(s3_file_id)
+            for comment in getattr(s3_file, 'comment_target', []):
+                comment.hide(save=True)
+
+    #def show_comments(self):

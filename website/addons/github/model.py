@@ -406,6 +406,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         if self.user_settings and self.user_settings.owner == removed:
 
             # Delete OAuth tokens
+            self.delete_hook(save=False)
             self.user_settings = None
             self.save()
 
