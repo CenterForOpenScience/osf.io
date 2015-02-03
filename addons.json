@@ -5,9 +5,11 @@
         "figshare",
         "forward",
         "github",
+        "mendeley",
         "osfstorage",
         "s3",
         "twofactor",
-        "wiki"
+        "wiki",
+        "zotero"
     ]
 }

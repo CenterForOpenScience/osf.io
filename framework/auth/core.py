@@ -245,6 +245,11 @@ class User(GuidStoredObject, AddonModelMixin):
     # Recently added contributors stored via a list of users
     recently_added = fields.ForeignField("user", list=True, backref="recently_added")
 
+    # Attached external accounts (OAuth)
+    external_accounts = fields.ForeignField("externalaccount",
+                                            list=True,
+                                            backref="connected")
+
     # CSL names
     given_name = fields.StringField()
     middle_names = fields.StringField()
@@ -469,6 +474,12 @@ class User(GuidStoredObject, AddonModelMixin):
         if not self.password or not raw_password:
             return False
         return check_password_hash(self.password, raw_password)
+
+    def authors_to_csl(self):
+        return {
+            'family': self.family_name,
+            'given': self.given_name,
+        }
 
     def change_password(self, raw_old_password, raw_new_password, raw_confirm_password):
         """Change the password for this user to the hash of ``raw_new_password``."""

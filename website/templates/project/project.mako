@@ -190,27 +190,37 @@
 
     <div class="col-sm-6 osf-dash-col">
 
+        <!-- Begin section prior to Azeem's changes -->
         <!-- Citations -->
         % if not node['anonymous']:
-        <div class="citations addon-widget-container" >
-            <div class="addon-widget-header clearfix"> 
-                <h4>Citation <small>${node['display_absolute_url']}</small></h4>
-                <div class="pull-right">
-                  <a href="#" class="btn project-toggle"><i class="icon icon-angle-down"></i></a>
+            <div class="citations">
+                <div>
+                    <span class="citation-label">Citation:</span>
+                    ${node['display_absolute_url']}
+                    <a id="citation-more">more</a>
                 </div>
-            </div>
-            <div class="addon-widget-body" style="display : none;">
-                <dl class="citation-list">
-                    <dt>APA</dt>
-                        <dd class="citation-text">${node['citations']['apa']}</dd>
-                    <dt>MLA</dt>
-                        <dd class="citation-text">${node['citations']['mla']}</dd>
-                    <dt>Chicago</dt>
-                        <dd class="citation-text">${node['citations']['chicago']}</dd>
-                </dl>
-            </div> 
-        </div>
+                <div id="citation-style-panel">
+                    <input id="citation-style-input" type="hidden" />
+                </div>
+                <pre id="citation-text"></pre>
+            </div><!-- end .citations -->
+            <!-- End section prior to Azeem's changes -->
+                <style>
+                    #citation-style-panel{
+                        display: none;
+                        margin-top:12px;
+                    }
+                    #citation-text {
+                        display: none;
+                        margin-top:20px;
+                    }
+                    #citation-style-panel .select2-container {
+                        width:100%;
+                    }
+                </style>
 
+
+        <hr />
         % endif
 
         <!-- Show child on right if widgets -->
