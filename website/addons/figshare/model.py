@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import os
-
-from modularodm import fields
+from modularodm import fields, Q
+from modularodm.exceptions import ModularOdmException
 from framework.auth.decorators import Auth
 
 from website.models import NodeLog
@@ -10,9 +9,10 @@ from website.addons.base import GuidFile
 from website.addons.base import exceptions
 from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
 
-from .api import Figshare
-from . import settings as figshare_settings
 from . import messages
+from .api import Figshare
+from . import exceptions as fig_exceptions
+from . import settings as figshare_settings
 
 
 class FigShareGuidFile(GuidFile):
@@ -21,16 +21,26 @@ class FigShareGuidFile(GuidFile):
     file_id = fields.StringField(index=True)
 
     @property
-    def file_url(self):
-        if self.article_id is None or self.file_id is None:
-            raise ValueError('Path field must be defined.')
-        return os.path.join(
-            'figshare',
-            'article',
-            self.article_id,
-            'file',
-            self.file_id,
-        )
+    def path(self):
+        return '/{}/{}'.format(self.article_id, self.file_id)
+
+    @property
+    def provider(self):
+        return 'figshare'
+
+    def enrich(self):
+        resp = self._fetch_metadata(should_raise=True)
+
+        metadata = resp.json()['data']
+
+        self.name = metadata['name']
+
+        if metadata['extra']['status'] == 'drafts':
+            self.save()
+            raise fig_exceptions.FigshareIsDraftError()
+
+        self.enriched = True
+        self.save()
 
 
 class AddonFigShareUserSettings(AddonUserSettingsBase):
@@ -73,6 +83,27 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
     user_settings = fields.ForeignField(
         'addonfigshareusersettings', backref='authorized'
     )
+
+    def find_or_create_file_guid(self, path):
+        # path should be /aid/fid
+        # split return ['', aid, fid]
+        _, article_id, file_id = path.split('/')
+        try:
+            return FigShareGuidFile.find_one(
+                Q('node', 'eq', self.owner) &
+                Q('file_id', 'eq', file_id) &
+                Q('article_id', 'eq', article_id)
+            ), False
+        except ModularOdmException:
+            pass
+        # Create new
+        new = FigShareGuidFile(
+            node=self.owner,
+            file_id=file_id,
+            article_id=article_id
+        )
+        new.save()
+        return new, True
 
     @property
     def embed_url(self):
