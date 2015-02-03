@@ -63,6 +63,15 @@ $(document).ready(function() {
                 payload[pid][event][notificationType] = $(elm).is(':selected');
             });
         });
+        $notificationSettings.find('input').each(function(idx, elm) {
+            var pid = $(elm).attr('id'); //uw8fk
+            var event = $(elm).attr('name'); //comments
+            var key = event + '_future_nodes'; //comments_future_nodes
+
+            if ($(elm).is(':checked')) {
+               payload[pid][key] = payload[pid][event];
+           }
+        });
 
         $osf.postJSON(
             '/api/v1/settings/batch_subscribe/',

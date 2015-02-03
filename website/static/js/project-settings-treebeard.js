@@ -69,19 +69,19 @@ function ProjectNotifications(data) {
              return [
                 {
                     title: "Project",
-                    width: "50%",
+                    width: "40%",
                     sortType : "text",
                     sort : true
                 },
                 {
                     title: "Notification Type",
-                    width : "25%",
+                    width : "20%",
                     sort : true
 
                 },
                 {
                     title: "Apply To",
-                    width : "25%",
+                    width : "30%",
                     sort : false
                 }
             ]},
@@ -137,9 +137,15 @@ function ProjectNotifications(data) {
                         filter: false,
                         custom: function (item, col) {
                             var tb = this;
-                            return m("button.btn.btn-default[type='button']", { onclick: function () {
-                                applyToChildren(item, tb);
-                            } }, "Apply to all");
+                            return m("form-control", [m("button.btn.btn-default[type='button']", {
+                                onclick: function () {
+                                    applyToChildren(item, tb);
+                            } }, "Apply to all components"),
+                                m("label", [
+                                    m("input[type='checkbox']", {
+                                        id: item.parent().data.node_id,
+                                        name: item.data.title}), " Apply to future components"])
+                            ]);
                         }
                     });
             }
