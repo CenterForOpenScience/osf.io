@@ -144,7 +144,9 @@ function ProjectNotifications(data) {
                                 m("label", [
                                     m("input[type='checkbox']", {
                                         id: item.parent().data.node_id,
-                                        name: item.data.title}), " Apply to future components"])
+                                        name: item.data.title,
+                                        checked: item.data.future ? "checked": ""
+                                    }), " Apply to future components"])
                             ]);
                         }
                     });

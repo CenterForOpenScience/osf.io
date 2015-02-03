@@ -391,6 +391,7 @@ def format_data(user, node_ids, subscriptions_available, data):
                 'description': subscriptions_available[s],
                 'kind': 'event',
                 'notificationType': None,
+                'future': check_future_subscriptions(user, node_id, s) if node.nodes else False,
                 'children': []
             }
             for subscription in node_subscriptions:
@@ -407,6 +408,21 @@ def format_data(user, node_ids, subscriptions_available, data):
 
     return data
 
+
+def check_future_subscriptions(user, node_id, event):
+    key = str(node_id + '_' + event + '_future_nodes')
+    try:
+        subscription = Subscription.find_one(Q('_id', 'eq', key))
+    except NoResultsFound:
+        return False
+    for notification_type in settings.NOTIFICATION_TYPES:
+        try:
+            if user in getattr(subscription, notification_type):
+                return True
+        except AttributeError:
+            pass
+
+    return False
 
 # def find_node_subscriptions_and_notifications(user, node):
 #     node_subscriptions = []
@@ -434,6 +450,7 @@ def format_data(user, node_ids, subscriptions_available, data):
 #         if getattr(user, notification_type, []) and None not in getattr(user, notification_type, []):
 #             user_notification_types.append(notification_type)
 #     return user_notification_types
+
 
 def collect_node_config_js(addons):
     """Collect webpack bundles for each of the addons' node-cfg.js modules. Return
