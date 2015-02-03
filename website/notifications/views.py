@@ -42,11 +42,13 @@ def update_subscription(user, object_id, subscriptions):
                     try:
                         s = Subscription.find_one(Q('_id', 'eq', event_id))
                     except NoResultsFound:
-                            pass
-                    for n in settings.NOTIFICATION_TYPES:
-                        if user in getattr(s, n):
-                            getattr(s, n).remove(user)
-                            s.save()
+                        s = None
+
+                    if s:
+                        for n in settings.NOTIFICATION_TYPES:
+                            if user in getattr(s, n):
+                                getattr(s, n).remove(user)
+                                s.save()
 
             else:
                 # Create subscription or find existing
