@@ -3,12 +3,16 @@
  * For Treebeard and _item API's check: https://github.com/caneruguz/treebeard/wiki
  */
 
+
 var $ = require('jquery');
 var m = require('mithril');
 var Treebeard = require('treebeard');
 var waterbutler = require('waterbutler');
 
 var $osf = require('osfHelpers');
+
+// CSS
+require('../css/fangorn.css');
 
 var tbOptions;
 
@@ -557,7 +561,10 @@ function _fangornLazyLoadOnLoad (tree) {
     });
     resolveconfigOption.call(this, tree, 'lazyLoadOnLoad', [tree]);
     $('[data-toggle="tooltip"]').tooltip();
-    _fangornOrderFolder.call(this, tree);
+
+    if (tree.depth > 1) {
+        _fangornOrderFolder.call(this, tree);
+    }
 }
 
 /**
@@ -568,10 +575,8 @@ function _fangornLazyLoadOnLoad (tree) {
  */
 function _fangornOrderFolder(tree) {
     var sortDirection = this.isSorted[0].desc ? 'desc' : 'asc';
-    if (tree.depth > 1) {
-        tree.sortChildren(this, sortDirection, 'text', 0);
-        this.redraw();
-    }
+    tree.sortChildren(this, sortDirection, 'text', 0);
+    this.redraw();
 }
 
 /**
@@ -897,6 +902,7 @@ tbOptions = {
     },
     filterPlaceholder : 'Search',
     onmouseoverrow : _fangornMouseOverRow,
+    sortDepth : 2,
     dropzone : {                                           // All dropzone options.
         url: function(files) {return files[0].url;},
         clickable : '#treeGrid',

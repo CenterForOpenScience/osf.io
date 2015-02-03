@@ -2,6 +2,7 @@
 /** Initialization code for the project dashboard. */
 
 var $ = require('jquery');
+require('../../vendor/bower_components/jquery.tagsinput/jquery.tagsinput.css');
 require('jquery-tagsinput');
 
 var m = require('mithril');
