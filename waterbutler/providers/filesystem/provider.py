@@ -45,7 +45,7 @@ class FileSystemProvider(provider.BaseProvider):
         dest_path = FileSystemPath(self.folder, dest_options['path'])
 
         shutil.copy(source_path.full_path, dest_path.full_path)
-        return self.metadata(str(dest_path))
+        return (yield from dest_provider.metadata(str(dest_path)))
 
     @asyncio.coroutine
     def intra_move(self, dest_provider, source_options, dest_options):
@@ -53,7 +53,7 @@ class FileSystemProvider(provider.BaseProvider):
         dest_path = FileSystemPath(self.folder, dest_options['path'])
 
         shutil.move(source_path.full_path, dest_path.full_path)
-        return self.metadata(str(dest_path))
+        return (yield from dest_provider.metadata(str(dest_path)))
 
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
