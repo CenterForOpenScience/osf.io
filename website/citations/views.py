@@ -9,7 +9,7 @@ from website.models import CitationStyle
 from website.project.decorators import must_be_contributor_or_public
 
 
-def styles():
+def list_citation_styles():
     query = None
 
     term = request.args.get('q')
@@ -22,7 +22,7 @@ def styles():
 
 
 @must_be_contributor_or_public
-def view_citation(**kwargs):
+def node_citation(**kwargs):
     node = kwargs.get('node') or kwargs.get('project')
     try:
         citation_text = citations.render(node, style=kwargs.get("style"))
@@ -31,6 +31,5 @@ def view_citation(**kwargs):
                         data={"message_short": "Invalid citation style"})
 
     return {
-        'citation': citation_text,
-        'other': node.to_csl()
+        'citation': citation_text
     }

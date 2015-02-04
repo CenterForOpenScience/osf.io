@@ -201,7 +201,7 @@ def make_url_map(app):
         Rule(
             '/api/v1/citation_styles/',
             'get',
-            citation_views.styles,
+            citation_views.list_citation_styles,
             json_renderer,
         ),
 
@@ -338,7 +338,7 @@ def make_url_map(app):
                 '/project/<pid>/node/<nid>/citation/<style>/',
             ],
             'get',
-            citation_views.view_citation,
+            citation_views.node_citation,
             json_renderer,
         ),
 

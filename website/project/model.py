@@ -45,6 +45,7 @@ from website import settings
 from website.util import web_url_for
 from website.util import api_url_for
 from website.exceptions import NodeStateError
+from website.citations.utils import datetime_to_csl
 from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.project.metadata.schemas import OSF_META_SCHEMAS
@@ -1968,20 +1969,28 @@ class Node(GuidStoredObject, AddonModelMixin):
         logger.error("Node {0} has a parent that is not a project".format(self._id))
 
     def to_csl(self):  # formats node information into CSL format for citation parsing
-        return {
-            "id": self._id,
-            "title": self.title,
-            "author": [
+        """a dict in CSL-JSON schema
+
+        For details on this schema, see:
+            https://github.com/citation-style-language/schema#csl-json-schema
+        """
+        csl = {
+            'id': self._id,
+            'title': self.title,
+            'author': [
                 contributor.authors_to_csl()  # method in auth/model.py which parses the names of authors
                 for contributor in self.contributors
             ],
-            "publisher": "Open Science Framework",
-            "issued": {
-                "date-parts": [[self.logs[-1].date.year if self.logs else '?']]
-            },
-            "type": "article",
-            "URL": self.display_absolute_url,
+            'publisher': 'Open Science Framework',
+            'type': 'webpage',
+            'URL': self.display_absolute_url,
         }
+
+        if self.logs:
+            csl['issued'] = datetime_to_csl(self.logs[-1].date)
+
+        return csl
+
 
     def author_list(self, and_delim='&'):
         author_names = [
