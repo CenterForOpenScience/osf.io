@@ -135,10 +135,10 @@ def s3_node_settings(auth, user_addon, node_addon, **kwargs):
                     Q('node', 'eq', node) &
                     Q('path', 'eq', key.name)
                 )
-                for comment in getattr(guid, 'comment_target', []):
-                    comment.show(save=True)
             except:
                 continue
+            for comment in getattr(guid, 'comment_target', []):
+                comment.show(save=True)
 
         node.add_log(
             action='s3_bucket_linked',

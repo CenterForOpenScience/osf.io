@@ -2,7 +2,7 @@
 
 import os
 
-from modularodm import fields
+from modularodm import fields, Q
 from framework.auth.decorators import Auth
 
 from website.models import NodeLog
@@ -202,6 +202,35 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
 
         self.save()
         if updated:
+            # Configure comments visibility
+            files_id = FigShareGuidFile.find(Q('node', 'eq', self.owner)).get_keys()
+            for fs_file_id in files_id:
+                fs_file = FigShareGuidFile.load(fs_file_id)
+                for comment in getattr(fs_file, 'comment_target', []):
+                    comment.hide(save=True)
+
+            if self.figshare_type == 'project':
+                articles = Figshare.from_settings(self.user_settings).project(self, self.figshare_id)['articles']
+            else:
+                articles = Figshare.from_settings(self.user_settings).article(self, self.figshare_id)['items']
+            if not self.figshare_id or not self.has_auth or not articles:
+                return
+            for article in articles:
+                files = article.get('files', [])
+                for fs_file in files:
+                    file_id = str(fs_file['id'])
+                    try:
+                        guid = FigShareGuidFile.find_one(
+                            Q('node', 'eq', self.owner) &
+                            Q('article_id', 'eq', str(article['article_id'])) &
+                            Q('file_id', 'eq', file_id)
+                        )
+                    except:
+                        continue
+                    for comment in getattr(guid, 'comment_target', []):
+                        comment.show(save=True)
+
+            # Add log
             node.add_log(
                 action='figshare_content_linked',
                 params={

@@ -596,10 +596,10 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                                 Q('node', 'eq', self.owner) &
                                 Q('path', 'eq', path)
                             )
-                            for comment in getattr(guid, 'comment_target', []):
-                                comment.show(save=True)
                         except ModularOdmException:
                             continue
+                        for comment in getattr(guid, 'comment_target', []):
+                            comment.show(save=True)
 
 
 

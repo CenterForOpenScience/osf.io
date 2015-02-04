@@ -372,6 +372,7 @@ def figshare_view_file(*args, **kwargs):
             'id': node._id,
             'title': node.title
         },
+        'file_id': guid._id,
         'file_name': filename,
         'rendered': rendered,
         'file_status': article['items'][0]['status'],

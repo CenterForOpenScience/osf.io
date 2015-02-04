@@ -147,8 +147,8 @@ def comment_discussion(**kwargs):
         users = collections.defaultdict(list)
         comments = Comment.find(Q('node', 'eq', node) &
                                 Q('page', 'eq', page) &
-                                Q('is_deleted', 'ne', True) &
-                                Q('is_hidden', 'ne', True)).get_keys()
+                                Q('is_deleted', 'eq', False) &
+                                Q('is_hidden', 'eq', False)).get_keys()
         for cid in comments:
             comment = Comment.load(cid)
             if not comment.is_deleted or not comment.is_hidden:
