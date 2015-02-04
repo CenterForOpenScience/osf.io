@@ -71,6 +71,9 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
 
     file_tree = fields.ForeignField('OsfStorageFileTree')
 
+    def find_or_create_file_guid(self, path):
+        return OsfStorageGuidFile.get_or_create(self.owner, path), False
+
     def copy_contents_to(self, dest):
         """Copy file tree and contents to destination. Note: destination must be
         saved before copying so that copied items can refer to it.
@@ -104,6 +107,10 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
             ),
             'metadata': self.owner.api_url_for(
                 'osf_storage_get_metadata_hook',
+                _absolute=True,
+            ),
+            'revisions': self.owner.api_url_for(
+                'osf_storage_get_revisions',
                 _absolute=True,
             ),
         }
@@ -401,6 +408,30 @@ class OsfStorageGuidFile(GuidFile):
 
     path = fields.StringField(required=True, index=True)
 
+    @classmethod
+    def get_or_create(cls, node, path):
+        try:
+            obj = cls.find_one(
+                Q('node', 'eq', node) &
+                Q('path', 'eq', path)
+            )
+        except modm_errors.ModularOdmException:
+            obj = cls(node=node, path=path)
+            obj.save()
+        return obj
+
+    @property
+    def provider(self):
+        return 'osfstorage'
+
+    @property
+    def version_identifier(self):
+        return 'version'
+
+    @property
+    def unique_identifier(self):
+        return self._metadata_cache['extra']['version']
+
     @property
     def file_url(self):
         return os.path.join('osfstorage', 'files', self.path)
@@ -414,14 +445,3 @@ class OsfStorageGuidFile(GuidFile):
         })
         return url.url
 
-    @classmethod
-    def get_or_create(cls, node, path):
-        try:
-            obj = cls.find_one(
-                Q('node', 'eq', node) &
-                Q('path', 'eq', path)
-            )
-        except modm_errors.ModularOdmException:
-            obj = cls(node=node, path=path)
-            obj.save()
-        return obj
