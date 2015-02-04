@@ -1,6 +1,7 @@
 'use strict';
 
 var $ = require('jquery');
+var $osf = require('osfHelpers');
 require('select2');
 require('../css/citations.css');
 
@@ -43,16 +44,22 @@ input.select2({
         results: function(data, page) {
             return {results: data.styles}
         },
-        cache: true,
+        cache: true
     }
 }).on('select2-selecting', function(e) {
-    $.get(
-        nodeApiUrl + 'citation/' + e.val,
-        {},
-        function(data) {
-            citationElement.text(data.citation).slideDown();
-        }
-    );
+    var request = $.ajax({
+        url: nodeApiUrl + 'citation/' + e.val
+    });
+    request.done(function (data) {
+        citationElement.text(data.citation).slideDown();
+    });
+    request.fail(function() {
+        $osf.growl(
+            'Citation render failed',
+            'The requested citation format generated an error.',
+            'danger'
+        );
+    });
 }).on('select2-removed', function (e) {
     citationElement.slideUp().text();
 });

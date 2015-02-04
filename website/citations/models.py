@@ -7,18 +7,15 @@ from framework.mongo import StoredObject
 
 class CitationStyle(StoredObject):
 
-    # Required Fields
-
     # The name of the citation file, sans extension
     _id = fields.StringField(primary=True)
 
     # The full title of the style
-    title = fields.StringField()
+    title = fields.StringField(required=True)
 
     # Datetime the file was last parsed
-    parsed = fields.DateTimeField(default=datetime.datetime.utcnow)
-
-    # Optional Fields
+    date_parsed = fields.DateTimeField(default=datetime.datetime.utcnow,
+                                       required=True)
 
     short_title = fields.StringField()
     summary = fields.StringField()
