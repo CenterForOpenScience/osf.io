@@ -225,10 +225,11 @@ def get_waterbutler_render_url(**kwargs):
     return redirect(url)
 
 
-def get_or_start_render(file_guid, start_render=True):
+def get_or_start_render(file_guid, extra, start_render=True):
+    file_guid.maybe_version(**extra)
+
     try:
-        if not file_guid.enriched:
-            file_guid.enrich()
+        file_guid.enrich()
 
         return codecs.open(file_guid.cache_path, 'r', 'utf-8').read()
     except exceptions.AddonEnrichmentError as error:
@@ -259,8 +260,6 @@ def addon_view_file(auth, path, provider, **kwargs):
     if file_guid.guid_url != request.path:
         return redirect(file_guid.guid_url)
 
-    file_guid.maybe_version(**extras)
-
     render_url = furl.furl(node.api_url_for('addon_render_file', path=path[1:], provider=provider))
     render_url.args.update(extras)
 
@@ -268,11 +267,11 @@ def addon_view_file(auth, path, provider, **kwargs):
     resp.update({
         'provider': provider,
         'render_url': render_url,
-        'files_url': node.web_url_for('collect_file_trees'),
-        'rendered': get_or_start_render(file_guid),
-        #NOTE: get_or_start_render must be called first to populate name
-        'file_name': file_guid.name,
         'file_path': file_guid.path,
+        'files_url': node.web_url_for('collect_file_trees'),
+        'rendered': get_or_start_render(file_guid, extras),
+        #NOTE: get_or_start_render must be called first to populate name
+        'file_name': getattr(file_guid, 'name', ''),
     })
 
     return resp
@@ -293,6 +292,4 @@ def addon_render_file(auth, path, provider, **kwargs):
 
     file_guid, created = node_addon.find_or_create_file_guid(path)
 
-    file_guid.maybe_version(**request.args.to_dict())
-
-    return get_or_start_render(file_guid)
+    return get_or_start_render(file_guid, request.args.to_dict())
