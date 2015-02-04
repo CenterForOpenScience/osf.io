@@ -139,7 +139,10 @@ class CitationsViewsTestCase(OsfTestCase):
     def setUpClass(cls):
         super(CitationsViewsTestCase, cls).setUpClass()
         # populate the DB with parsed citation styles
-        parse_citation_styles.main()
+        try:
+            parse_citation_styles.main()
+        except OSError:
+            pass
 
     @requires_csl_styles
     def test_list_styles(self):
