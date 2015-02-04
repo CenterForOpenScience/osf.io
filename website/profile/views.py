@@ -22,7 +22,7 @@ from framework.status import push_status_message
 
 from website import settings
 from website import mailchimp_utils
-from website.models import User
+from website.models import User, Node
 from website.models import ApiKey
 from website.views import _render_nodes
 from website.util import web_url_for, paths
@@ -240,9 +240,12 @@ def find_user_project_subscriptions(user):
     for notification_type in settings.NOTIFICATION_TYPES:
         if getattr(user, notification_type, []):
             for subscription in getattr(user, notification_type, []):
-                if subscription and subscription.object_id not in subscriptions:
+
+                if subscription and subscription.event_name != 'comments_future_nodes' and subscription.object_id not in subscriptions:
                         if subscription.node_lineage: #can be removed after development
-                            subscriptions.add_subscription(subscription.node_lineage, subscription)
+                            if not Node.load(subscription.object_id).is_deleted:
+                                subscriptions.add_subscription(subscription.node_lineage, subscription)
+
     return {
         'node_subscriptions': subscriptions
     }
