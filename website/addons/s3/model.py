@@ -24,6 +24,10 @@ class S3GuidFile(GuidFile):
     def version_identifier(self):
         return 'version'
 
+    @property
+    def unique_identifier(self):
+        return self._metadata_cache['extra']['md5']
+
 
 class AddonS3UserSettings(AddonUserSettingsBase):
 
