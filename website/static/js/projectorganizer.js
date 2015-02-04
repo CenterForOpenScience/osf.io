@@ -379,6 +379,7 @@ function _showProjectDetails(event, item, col) {
             $('#rnc-' + theItem.node_id).hide();
             $('#findNode' + theItem.node_id).hide();
             $('#afc-' + theItem.node_id).show();
+            $('#add-folder-input' + theItem.node_id).focus();
         });
         $('#add-folder-input' + theItem.node_id).bind('keyup', function () {
             var contents = $.trim($(this).val());
@@ -416,6 +417,7 @@ function _showProjectDetails(event, item, col) {
             $('#findNode' + theItem.node_id).hide();
             $('#nc-' + theItem.node_id).hide();
             $('#rnc-' + theItem.node_id).css({'display':'inline-block', 'width' : '100%'});
+            $('#rename-node-input' + theItem.node_id).focus();
         });
         $('#rename-node-input' + theItem.node_id).bind('keyup', function () {
             var contents = $.trim($(this).val());
@@ -451,6 +453,7 @@ function _showProjectDetails(event, item, col) {
             $('#afc-' + theItem.node_id).hide();
             $('#rnc-' + theItem.node_id).hide();
             $('#findNode' + theItem.node_id).show();
+            $('#input' + theItem.node_id).focus();
         });
     } else {
         createBlankProjectDetail(theItem.name);

@@ -64,6 +64,7 @@ website/cache/*
 website/settings/uploads/*
 website/uploads/*
 website/mfrcache/*
+website/osfstoragecache/*
 website/gpg/*
 webpack-assets.json
 
