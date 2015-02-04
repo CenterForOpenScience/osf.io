@@ -198,16 +198,20 @@ def make_url_map(app):
             OsfWebRenderer('public/pages/meeting_landing.mako'),
         ),
 
+        Rule('/news/', 'get', {}, OsfWebRenderer('public/pages/news.mako')),
+
+    ])
+
+    # Site-wide API routes
+
+    process_rules(app, [
         Rule(
-            '/api/v1/citation_styles/',
+            '/citations/styles/',
             'get',
             citation_views.list_citation_styles,
             json_renderer,
         ),
-
-        Rule('/news/', 'get', {}, OsfWebRenderer('public/pages/news.mako')),
-
-    ])
+    ], prefix='/api/v1')
 
     process_rules(app, [
         Rule(

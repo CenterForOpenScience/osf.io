@@ -39,7 +39,7 @@ input.select2({
     placeholder: 'Citation Style (e.g. "APA")',
     minimumInputLength: 1,
     ajax: {
-        url: '/api/v1/citation_styles/',
+        url: '/api/v1/citations/styles/',
         quietMillis: 200,
         data: function(term, page) {
             return {

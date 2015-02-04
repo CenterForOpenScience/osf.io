@@ -266,7 +266,7 @@ $(document).ready(function() {
         panel = $('#citation-style-panel');
         panel.slideToggle(200, function() {
             if (panel.is(":visible")) {
-                $('#citation-style-input').select2("open");
+                $('#citationStyleInput').select2("open");
             }
         });
 
