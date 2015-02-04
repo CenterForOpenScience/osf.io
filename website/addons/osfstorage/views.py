@@ -1,10 +1,11 @@
 # encoding: utf-8
 
+import os
 import httplib
 import logging
 
 import requests
-from flask import request
+from flask import request, make_response
 
 from framework.auth import Auth
 from framework.flask import redirect
@@ -237,7 +238,19 @@ def download_file(path, node_addon, version_query, **query):
     # routing through OSF; this saves a request and avoids potential CORS configuration
     # errors in WaterButler.
     resp = requests.get(url, allow_redirects=False)
-    return redirect(resp.headers['Location'])
+    if resp.status_code in [301, 302]:
+        return redirect(resp.headers['Location'])
+    else:
+        response = make_response(resp.content)
+        filename = record.name.encode('utf-8')
+        if version != record.versions[-1]:
+            # add revision to filename
+            # foo.mp3 -> foo-abc123.mp3
+            filename = '-{}'.format(version.date_created.strftime('%Y-%m-%d')).join(os.path.splitext(filename))
+        disposition = 'attachment; filename={}'.format(filename)
+        response.headers['Content-Disposition'] = disposition
+        response.headers['Content-Type'] = 'application/octet-stream'
+        return response
 
 
 def view_file(auth, path, node_addon, version_query):
