@@ -286,19 +286,30 @@ def osf_storage_render_file(path, node_addon, **kwargs):
 @must_be_signed
 @must_have_addon('osfstorage', 'node')
 def osf_storage_get_metadata_hook(node_addon, payload, **kwargs):
-    path = payload.get('path', '')
-    file_tree = model.OsfStorageFileTree.find_by_path(path, node_addon)
-    if file_tree is None:
-        if path == '':
-            return []
-        raise HTTPError(httplib.NOT_FOUND)
     node = node_addon.owner
-    # TODO: Handle nested folders
-    return [
-        utils.serialize_metadata_hgrid(item, node)
-        for item in list(file_tree.children)
-        if not item.is_deleted
-    ]
+    path = payload.get('path', '')
+
+    if path.endswith('/'):
+        file_tree = model.OsfStorageFileTree.find_by_path(path, node_addon)
+        if file_tree is None:
+            if path == '':
+                return []
+            raise HTTPError(httplib.NOT_FOUND)
+        # TODO: Handle nested folders
+        return [
+            utils.serialize_metadata_hgrid(item, node)
+            for item in list(file_tree.children)
+            if not item.is_deleted
+        ]
+    else:
+        file_record = model.OsfStorageFileRecord.find_by_path(path, node_addon)
+        if not file_record:
+            raise HTTPError(httplib.NOT_FOUND)
+
+        if file_record.is_deleted:
+            raise HTTPError(httplib.GONE)
+
+        return utils.serialize_metadata_hgrid(file_record, node)
 
 
 def osf_storage_root(node_settings, auth, **kwargs):

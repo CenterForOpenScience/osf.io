@@ -88,8 +88,8 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/osfstorage/revisions/<path:path>',
-                '/project/<pid>/node/<nid>/osfstorage/revisions/<path:path>',
+                '/project/<pid>/osfstorage/revisions/',
+                '/project/<pid>/node/<nid>/osfstorage/revisions/',
             ],
             'get',
             views.osf_storage_get_revisions,
