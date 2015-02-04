@@ -49,11 +49,11 @@ function ViewModel(url) {
     self.statusDisplay = ko.computed(function() {
         switch(self.status()) {
             case 'connected':
-                return 'Collaborative Editing Mode';
+                return 'Live Editing Mode';
             case 'connecting':
                 return 'Attempting to Reconnect';
             default:
-                return 'Collaborative Editing Unavailable';
+                return 'Live Editing Unavailable';
         }
     });
 
@@ -67,7 +67,7 @@ function ViewModel(url) {
             case 'connecting':
                 return {
                     class: "progress-bar progress-bar-warning progress-bar-striped active",
-                    style: "width: 50%"
+                    style: "width: 100%"
                 };
             default:
                 return {

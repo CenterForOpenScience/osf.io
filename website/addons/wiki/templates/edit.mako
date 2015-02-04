@@ -117,14 +117,14 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h3 class="modal-title">Connected to the Collaborative Editor</h3>
+        <h3 class="modal-title">Connected to the Live Editor</h3>
       </div>
       <div class="modal-body">
         <p>
-            The current wiki is in collaborative editing mode.
+            The current wiki is in live editing mode.
             You and other contributors will be able to see the changes made
-            in real time. All changes you make will be preserved even after
-            leaving this page.
+            in real time. All changes you make will be saved as a draft
+            after leaving this page.
         </p>
       </div>
     </div>
@@ -136,13 +136,13 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h3 class="modal-title">Connecting to the Collaborative Editor</h3>
+        <h3 class="modal-title">Connecting to the Live Editor</h3>
       </div>
       <div class="modal-body">
         <p>
-            This page is currently attempting to connect to the collaborative
-            editor. While you are still trying to connect, you will be prompted
-            to save any changes before leaving the page.
+            This page is currently attempting to connect to the live
+            editor. While you are not yet connected, changes will not be
+            saved after leaving this page unless you press the "Save" button.
         </p>
       </div>
     </div>
@@ -154,15 +154,14 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h3 class="modal-title">Collaborative Editing is Unavailable</h3>
+        <h3 class="modal-title">Live Editing is Unavailable</h3>
       </div>
       <div class="modal-body">
         <p>
-            The collaborative editor is currently unavailable.
-            This means other contributors are not able to see any of the changes,
-            and none of the changes you make will be saved until you press the
-            "Save" button.
-            You will be prompted to save any changes before leaving the page.
+            The live editor is currently unavailable.
+            This means other contributors are not able to see any of your
+            changes, and changes will not be saved after leaving this page
+            unless you press the "Save" button.
         </p>
       </div>
     </div>
