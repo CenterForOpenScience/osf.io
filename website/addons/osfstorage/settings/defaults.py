@@ -1,5 +1,6 @@
 # encoding: utf-8
 
+import os
 import hashlib
 
 from website import settings
@@ -27,14 +28,14 @@ REVISIONS_PAGE_SIZE = 10
 # }
 
 WATERBUTLER_CREDENTIALS = {
-    'username': 'changeme',
-    'token': 'changeme',
-    'region': 'changeme'
+    'storage': {}
 }
 
 WATERBUTLER_SETTINGS = {
-    'provider': 'cloudfiles',
-    'container': 'changeme',
+    'storage': {
+        'provider': 'filesystem',
+        'folder': os.path.join(os.getcwd(), 'osfstoragecache'),
+    }
 }
 
-WATERBUTLER_RESOURCE = 'container'
+WATERBUTLER_RESOURCE = 'folder'

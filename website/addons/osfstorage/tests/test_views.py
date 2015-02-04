@@ -346,8 +346,27 @@ class TestDownloadFile(StorageTestCase):
     @mock.patch('website.addons.osfstorage.utils.requests.get')
     @mock.patch('website.addons.osfstorage.utils.get_waterbutler_download_url')
     def test_download(self, mock_get_url, mock_request):
+        file_content = b'I am a teapot!'
         mock_get_url.return_value = 'http://freddie.queen.com/'
-        mock_request.return_value = mock.Mock(headers={'Location': 'http://eddiebowy.horse/'})
+        mock_request.return_value = mock.Mock(content=file_content)
+
+        res = self.download_file(self.path)
+
+        assert_equal(res.status_code, 200)
+        mock_request.assert_called_once_with('http://freddie.queen.com/', allow_redirects=False)
+        assert_equal(res.body, file_content)
+        mock_get_url.assert_called_with(
+            len(self.record.versions),
+            self.version,
+            self.record,
+            mode=None,
+        )
+
+    @mock.patch('website.addons.osfstorage.utils.requests.get')
+    @mock.patch('website.addons.osfstorage.utils.get_waterbutler_download_url')
+    def test_download_redirect_signed_url(self, mock_get_url, mock_request):
+        mock_get_url.return_value = 'http://freddie.queen.com/'
+        mock_request.return_value = mock.Mock(status_code=302, headers={'Location': 'http://eddiebowy.horse/'})
 
         res = self.download_file(self.path)
 
@@ -365,7 +384,7 @@ class TestDownloadFile(StorageTestCase):
     @mock.patch('website.addons.osfstorage.utils.get_waterbutler_download_url')
     def test_download_render_mode(self, mock_get_url, mock_request):
         mock_get_url.return_value = 'http://freddie.queen.com/'
-        mock_request.return_value = mock.Mock(headers={'Location': 'http://eddiebowy.horse/'})
+        mock_request.return_value = mock.Mock(status_code=302, headers={'Location': 'http://eddiebowy.horse/'})
 
         self.app.get(
             self.project.web_url_for(
@@ -388,7 +407,7 @@ class TestDownloadFile(StorageTestCase):
     @mock.patch('website.addons.osfstorage.utils.get_waterbutler_download_url')
     def test_download_by_version_latest(self, mock_get_url, mock_request):
         mock_get_url.return_value = 'http://freddie.queen.com/'
-        mock_request.return_value = mock.Mock(headers={'Location': 'http://eddiebowy.horse/'})
+        mock_request.return_value = mock.Mock(status_code=302, headers={'Location': 'http://eddiebowy.horse/'})
 
         versions = [factories.FileVersionFactory() for _ in range(3)]
         self.record.versions.extend(versions)
