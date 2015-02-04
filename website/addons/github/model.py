@@ -38,6 +38,10 @@ class GithubGuidFile(GuidFile):
     def version_identifier(self):
         return 'ref'
 
+    @property
+    def unique_identifier(self):
+        return self._metadata_cache['extra']['fileSha']
+
 
 class AddonGitHubOauthSettings(StoredObject):
     """
