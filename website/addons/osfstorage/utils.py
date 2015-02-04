@@ -117,7 +117,7 @@ def patch_url(url, **kwargs):
 
 
 def ensure_domain(url):
-    return patch_url(url, host=settings.DOMAIN)
+    return patch_url(url, host=site_settings.DOMAIN)
 
 
 def build_callback_urls(node, path):
