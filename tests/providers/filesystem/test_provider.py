@@ -149,12 +149,13 @@ class TestMetadata:
 
         assert isinstance(result, list)
         assert len(result) == 2
-        assert result[0]['kind'] == 'file'
-        assert result[0]['name'] == 'flower.jpg'
-        assert result[0]['path'] == '/flower.jpg'
-        assert result[1]['kind'] == 'folder'
-        assert result[1]['name'] == 'subfolder'
-        assert result[1]['path'] == '/subfolder/'
+
+        file = next(x for x in result if x['kind'] == 'file')
+        assert file['name'] == 'flower.jpg'
+        assert file['path'] == '/flower.jpg'
+        folder = next(x for x in result if x['kind'] == 'folder')
+        assert folder['name'] == 'subfolder'
+        assert folder['path'] == '/subfolder/'
 
     @async
     def test_metadata_root_file(self, provider):
