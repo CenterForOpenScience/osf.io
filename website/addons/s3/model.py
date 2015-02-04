@@ -20,6 +20,10 @@ class S3GuidFile(GuidFile):
     def provider(self):
         return 's3'
 
+    @property
+    def version_identifier(self):
+        return 'version'
+
 
 class AddonS3UserSettings(AddonUserSettingsBase):
 
