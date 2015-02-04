@@ -1992,7 +1992,6 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         return csl
 
-
     def author_list(self, and_delim='&'):
         author_names = [
             author.biblio_name

@@ -5,7 +5,6 @@ from citeproc import Citation, CitationItem
 from citeproc import formatter
 from citeproc.source.json import CiteProcJSON
 
-from website.citations.utils import datetime_to_csl
 from website.settings import CITATION_STYLES_PATH
 
 
