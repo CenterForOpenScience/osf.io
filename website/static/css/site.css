@@ -1393,27 +1393,6 @@ dl.activity-log dd {
     width: 400px;
 }
 
-/* Citations */
-
-.citations .addon-widget-header .permalink {
-    vertical-align:middle;
-    color:#777;
-}
-
-#citationText {
-    display: none;
-    margin-top:15px;
-    margin-bottom:0px;
-}
-#citation-style-panel .select2-container {
-    width:100%;
-}
-
-.formatted-citation {
-    white-space: pre-wrap;
-    word-break: keep-all;
-}
-
 /* Contributors list */
 
 #contributors {

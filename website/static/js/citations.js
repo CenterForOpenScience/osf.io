@@ -2,6 +2,7 @@
 
 var $ = require('jquery');
 require('select2');
+require('../css/citations.css');
 
 var r = function(query) {
     query.callback({results: [
