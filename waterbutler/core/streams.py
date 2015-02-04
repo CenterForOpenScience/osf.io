@@ -89,6 +89,7 @@ class FileStreamReader(BaseStream):
         self.file_gen = None
         self.file_pointer = file_pointer
         self.read_size = None
+        self.content_type = 'application/octet-stream'
 
     @property
     def size(self):
