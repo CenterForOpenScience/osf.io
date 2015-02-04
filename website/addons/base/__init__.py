@@ -164,9 +164,6 @@ class GuidFile(GuidStoredObject):
     redirect_mode = 'proxy'
 
     _id = fields.StringField(primary=True)
-
-    name = fields.StringField()
-    enriched = fields.BooleanField(default=False)
     node = fields.ForeignField('node', required=True, index=True)
 
     _meta = {
@@ -182,14 +179,22 @@ class GuidFile(GuidStoredObject):
         raise NotImplementedError
 
     @property
+    def unique_identifier(self):
+        raise NotImplementedError
+
+    @property
     def guid_url(self):
         return '/{0}/'.format(self._id)
+
+    @property
+    def name(self):
+        return self._metadata_cache['name']
 
     @property
     def file_name(self):
         if self.revision:
             return '{0}_{1}.html'.format(self._id, self.revision)
-        return '{0}.html'.format(self._id)
+        return '{0}_{1}.html'.format(self._id, self.unique_identifier)
 
     @property
     def joinable_path(self):
@@ -228,6 +233,7 @@ class GuidFile(GuidStoredObject):
     def cache_path(self):
         return os.path.join(
             settings.MFR_CACHE_PATH,
+            self.node._id,
             self.provider,
             self.file_name,
         )
@@ -236,7 +242,9 @@ class GuidFile(GuidStoredObject):
     def temp_path(self):
         return os.path.join(
             settings.MFR_TEMP_PATH,
+            self.node._id,
             self.provider,
+            # Attempt to keep the original extension of the file for MFR detection
             self.file_name + os.path.splitext(self.path)[1]
         )
 
@@ -265,15 +273,10 @@ class GuidFile(GuidStoredObject):
         self._revision = kwargs.get(self.version_identifier)
 
     def enrich(self, save=True):
-        resp = self._fetch_metadata(should_raise=True)
+        self._fetch_metadata(should_raise=True)
 
-        if resp.json().get('code', 200) != 200:
-            raise exceptions.AddonEnrichmentError(resp.json()['code'])
-
-        metadata = resp.json()['data']
-        self.name = metadata['name']
-        self.enriched = True
-        self.save()
+        if self._metadata_cache.get('code', 200) != 200:
+            raise exceptions.AddonEnrichmentError(self._metadata_cache['code'])
 
     def _fetch_metadata(self, should_raise=False):
         resp = requests.get(self.metadata_url)
@@ -282,7 +285,7 @@ class GuidFile(GuidStoredObject):
             if resp.status_code != 200:
                 raise exceptions.AddonEnrichmentError(resp.status_code)
 
-        return resp
+        self._metadata_cache = resp.json()['data']
 
 
 class AddonSettingsBase(StoredObject):
