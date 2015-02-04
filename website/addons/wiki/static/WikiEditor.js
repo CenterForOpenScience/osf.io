@@ -34,30 +34,61 @@ ko.bindingHandlers.ace = {
     }
 };
 
-ko.bindingHandlers.tooltip = {
-    init: function(element, valueAccessor) {
-        var value = ko.unwrap(valueAccessor());
-        var options = {
-            title: value,
-            placement: 'bottom'
-        };
-
-        $(element).tooltip(options);
-    }
-};
-
 function ViewModel(url) {
     var self = this;
 
     self.publishedText = ko.observable('');
     self.currentText = ko.observable('');
     self.activeUsers = ko.observableArray([]);
+    self.status = ko.observable('connecting');
 
     self.displayCollaborators = ko.computed(function() {
        return self.activeUsers().length > 1;
     });
 
-    self.changed = ko.computed(function() {
+    self.statusDisplay = ko.computed(function() {
+        switch(self.status()) {
+            case 'connected':
+                return 'Live Editing Mode';
+            case 'connecting':
+                return 'Attempting to Reconnect';
+            default:
+                return 'Live Editing Unavailable';
+        }
+    });
+
+    self.progressBar = ko.computed(function() {
+        switch(self.status()) {
+            case 'connected':
+                return {
+                    class: "progress-bar progress-bar-success",
+                    style: "width: 100%"
+                };
+            case 'connecting':
+                return {
+                    class: "progress-bar progress-bar-warning progress-bar-striped active",
+                    style: "width: 100%"
+                };
+            default:
+                return {
+                    class: "progress-bar progress-bar-danger",
+                    style: "width: 100%"
+                };
+        }
+    });
+
+    self.modalTarget = ko.computed(function() {
+        switch(self.status()) {
+            case 'connected':
+                return '#connected-modal';
+            case 'connecting':
+                return '#connecting-modal';
+            default:
+                return '#disconnected-modal';
+        }
+    });
+
+    self.changed = function() {
         // Handle inconsistencies in newline notation
         var published = typeof self.publishedText() === 'string' ?
             self.publishedText().replace(/(\r\n|\n|\r)/gm, '\n') : '';
@@ -65,7 +96,7 @@ function ViewModel(url) {
             self.currentText().replace(/(\r\n|\n|\r)/gm, '\n') : '';
 
         return published !== current;
-    });
+    };
 
     // Fetch initial wiki text
     self.fetchData = function(callback) {
@@ -96,13 +127,11 @@ function ViewModel(url) {
 
     self.fetchData();
 
-    // TODO: Do we want this?
-//        $(window).on('beforeunload', function() {
-//            if (self.changed()) {
-//                return 'If you leave this page, your changes will be ' +
-//                    'saved as a draft for collaborators, but not made public.';
-//            }
-//        });
+    $(window).on('beforeunload', function() {
+        if (self.changed() && self.status() !== 'connected') {
+            return 'There are unsaved changes to your wiki.';
+        }
+    });
 }
 
 function WikiEditor(selector, url) {
