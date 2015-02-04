@@ -34,6 +34,10 @@ class GithubGuidFile(GuidFile):
     def provider(self):
         return 'github'
 
+    @property
+    def version_identifier(self):
+        return 'ref'
+
 
 class AddonGitHubOauthSettings(StoredObject):
     """
