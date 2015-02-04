@@ -11,7 +11,7 @@ from website.settings import CITATION_STYLES_PATH
 
 def render(node, style='apa'):
     """Given a node, return a citation"""
-    data = [node.to_csl(), ]
+    data = [node.csl, ]
 
     bib_source = CiteProcJSON(data)
 

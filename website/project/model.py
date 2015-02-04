@@ -1968,7 +1968,8 @@ class Node(GuidStoredObject, AddonModelMixin):
                 )
         logger.error("Node {0} has a parent that is not a project".format(self._id))
 
-    def to_csl(self):  # formats node information into CSL format for citation parsing
+    @property
+    def csl(self):  # formats node information into CSL format for citation parsing
         """a dict in CSL-JSON schema
 
         For details on this schema, see:
@@ -1978,7 +1979,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             'id': self._id,
             'title': self.title,
             'author': [
-                contributor.authors_to_csl()  # method in auth/model.py which parses the names of authors
+                contributor.csl_name  # method in auth/model.py which parses the names of authors
                 for contributor in self.contributors
             ],
             'publisher': 'Open Science Framework',

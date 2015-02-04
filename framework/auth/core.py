@@ -471,7 +471,8 @@ class User(GuidStoredObject, AddonModelMixin):
             return False
         return check_password_hash(self.password, raw_password)
 
-    def authors_to_csl(self):
+    @property
+    def csl_name(self):
         return {
             'family': self.family_name,
             'given': self.given_name,

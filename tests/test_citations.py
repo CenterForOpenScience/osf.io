@@ -71,7 +71,7 @@ class CitationsNodeTestCase(OsfTestCase):
     def test_csl_single_author(self):
         """Nodes with one contributor generate valid CSL-data"""
         assert_equal(
-            self.node.to_csl(),
+            self.node.csl,
             {
                 'publisher': 'Open Science Framework',
                 'author': [{
@@ -94,7 +94,7 @@ class CitationsNodeTestCase(OsfTestCase):
 
 
         assert_equal(
-            self.node.to_csl(),
+            self.node.csl,
             {
                 'publisher': 'Open Science Framework',
                 'author': [
@@ -126,7 +126,7 @@ class CitationsUserTestCase(OsfTestCase):
     def test_user_csl(self):
         """Convert a User instance to csl's name-variable schema"""
         assert_equal(
-            self.user.authors_to_csl(),
+            self.user.csl_name,
             {
                 'given': self.user.given_name,
                 'family': self.user.family_name,
