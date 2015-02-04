@@ -50,7 +50,7 @@ def main():
             style = CitationStyle(**fields)
             style.save()
 
-    print("Parsed {} files".format(total))
+    return total
 
 
 def get_style_files(path):
@@ -59,4 +59,5 @@ def get_style_files(path):
 
 
 if __name__ == '__main__':
-    main()
+    total = main()
+    print("Parsed {} styles".format(total))

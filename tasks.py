@@ -689,7 +689,8 @@ def generate_self_signed(domain):
 
 @task
 def update_citation_styles():
-    print("Not implemented. Do the following manually:")
-    print(" 1. git submodule init")
-    print(" 2. git submodule update")
-    print(" 3. python -m scripts.parse_citation_styles")
+    from scripts import parse_citation_styles
+    run('git submodule init')
+    run('git submodule update')
+    total = parse_citation_styles.main()
+    print("Parsed {} styles".format(total))
