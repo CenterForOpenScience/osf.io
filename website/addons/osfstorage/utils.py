@@ -54,13 +54,11 @@ def serialize_metadata_hgrid(item, node):
     :param dict permissions: Permissions data from `get_permissions`
     """
     return {
-        # Must escape names rendered by HGrid
         'path': item.path,
         'name': item.name,
         'ext': item.extension,
+        'version': len(item.versions),
         rubeus.KIND: get_item_kind(item),
-        'nodeUrl': node.url,
-        'nodeApiUrl': node.api_url,
         'downloads': item.get_download_count(),
     }
 
@@ -81,19 +79,6 @@ def serialize_revision(node, record, version, index):
         },
         'date': version.date_created.isoformat(),
         'downloads': record.get_download_count(version=index),
-        'urls': {
-            'view': node.web_url_for(
-                'osf_storage_view_file',
-                path=record.path,
-                version=index,
-            ),
-            'download': node.web_url_for(
-                'osf_storage_view_file',
-                path=record.path,
-                version=index,
-                action='download',
-            ),
-        },
     }
 
 
