@@ -34,7 +34,7 @@ WATERBUTLER_CREDENTIALS = {
 WATERBUTLER_SETTINGS = {
     'storage': {
         'provider': 'filesystem',
-        'folder': os.path.join(os.getcwd(), 'osfstoragecache'),
+        'folder': os.path.join(settings.BASE_PATH, 'osfstoragecache'),
     }
 }
 
