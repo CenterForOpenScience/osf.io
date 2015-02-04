@@ -2118,3 +2118,6 @@ span#profileFullname{
 .break-word {
     word-wrap: break-word;
 }
+.modal-backdrop {
+    position: fixed;
+}
