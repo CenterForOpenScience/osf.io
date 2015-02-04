@@ -207,24 +207,6 @@ def create_waterbutler_log(payload, **kwargs):
     return {'status': 'success'}
 
 
-@must_be_valid_project
-def get_waterbutler_render_url(**kwargs):
-    provider = request.args.get('provider')
-    node = kwargs.get('node') or kwargs['project']
-
-    node_addon = node.get_addon(provider)
-
-    if not node_addon:
-        raise HTTPError(httplib.BAD_REQUEST)
-
-    try:
-        url = node_addon.get_waterbutler_render_url(**request.args.to_dict())
-    except TypeError:
-        raise HTTPError(httplib.BAD_REQUEST)
-
-    return redirect(url)
-
-
 def get_or_start_render(file_guid, extra, start_render=True):
     file_guid.maybe_version(**extra)
 
