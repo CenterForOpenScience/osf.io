@@ -24,9 +24,11 @@ bibtex_template = '''@misc{{{id},
 
 class CitationsTestCase(OsfTestCase):
     def setUp(self):
+        super(CitationsTestCase, self).setUp()
         self.node = ProjectFactory()
 
     def tearDown(self):
+        super(CitationsTestCase, self).tearDown()
         Node.remove()
 
     @requires_csl_styles
@@ -62,9 +64,11 @@ class CitationsUtilsTestCase(OsfTestCase):
 
 class CitationsNodeTestCase(OsfTestCase):
     def setUp(self):
+        super(CitationsNodeTestCase, self).setUp()
         self.node = ProjectFactory()
 
     def tearDown(self):
+        super(CitationsNodeTestCase, self).tearDown()
         Node.remove()
         User.remove()
 
@@ -118,9 +122,11 @@ class CitationsNodeTestCase(OsfTestCase):
 
 class CitationsUserTestCase(OsfTestCase):
     def setUp(self):
+        super(CitationsUserTestCase, self).setUp()
         self.user = UserFactory()
 
     def tearDown(self):
+        super(CitationsUserTestCase, self).setUp()
         User.remove()
 
     def test_user_csl(self):
