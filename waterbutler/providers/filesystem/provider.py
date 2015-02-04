@@ -44,7 +44,7 @@ class FileSystemProvider(provider.BaseProvider):
         source_path = FileSystemPath(self.folder, source_options['path'])
         dest_path = FileSystemPath(self.folder, dest_options['path'])
 
-        shutil.copy(source_path, dest_path)
+        shutil.copy(source_path.full_path, dest_path.full_path)
         return self.metadata(str(dest_path))
 
     @asyncio.coroutine
@@ -52,7 +52,7 @@ class FileSystemProvider(provider.BaseProvider):
         source_path = FileSystemPath(self.folder, source_options['path'])
         dest_path = FileSystemPath(self.folder, dest_options['path'])
 
-        shutil.move(source_path, dest_path)
+        shutil.move(source_path.full_path, dest_path.full_path)
         return self.metadata(str(dest_path))
 
     @asyncio.coroutine
@@ -136,7 +136,6 @@ class FileSystemProvider(provider.BaseProvider):
     def _metadata_file(self, path, file_name=''):
         full_path = path.full_path if file_name == '' else os.path.join(path.full_path, file_name)
         modified = datetime.datetime.fromtimestamp(os.path.getmtime(full_path))
-
         return {
             'path': full_path,
             'size': os.path.getsize(full_path),
