@@ -2055,6 +2055,17 @@ span#profileFullname{
     color: #738EA2;
 }
 
+.sharejs-info-btn {
+    background: none;
+    outline : 0 !important;
+    box-shadow: none;
+    color: #FFFFFF;
+}
+
+.sharejs-info-btn:hover {
+    color: #D3D3D3;
+    text-decoration: none;
+}
 
 #searchPageFullBar::-webkit-input-placeholder {
    color: #738EA2;

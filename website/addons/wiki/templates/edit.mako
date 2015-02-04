@@ -24,27 +24,33 @@
                             <ul class="list-inline" data-bind="foreach: activeUsers" style="float: right">
                                 <!-- ko ifnot: id === '${user_id}' -->
                                     <li><a data-bind="attr: { href: url }" >
-                                        <img data-bind="attr: {src: gravatar}, tooltip: name"
+                                        <img data-bind="attr: {src: gravatar}, tooltip: {title: name, placement: 'bottom'}"
                                              style="border: 1px solid black;">
                                     </a></li>
                                 <!-- /ko -->
                             </ul>
                         </div>
                     </div>
+
+                    <div class="progress" style="margin-bottom: 5px">
+                        <div role="progressbar"
+                             data-bind="attr: progressBar"
+                                >
+                            <span data-bind="text: statusDisplay"></span>
+                            <a class="sharejs-info-btn">
+                                <i class="icon-question-sign icon-large"
+                                   data-toggle="modal"
+                                   data-bind="attr: {data-target: modalTarget}"
+                                        >
+                                </i>
+                            </a>
+                        </div>
+                    </div>
+
                     <div id="editor" class="wmd-input wiki-editor"
                          data-bind="ace: currentText">Loading. . .</div>
                 </div>
                 <div class="pull-right">
-                    <!-- clicking "Cancel" overrides unsaved changes check -->
-                        <a class="btn btn-default"
-                        % if wiki_created:
-                           href="${urls['web']['home']}"
-                        % else:
-                           href="${urls['web']['page']}"
-                        % endif
-                           >
-                            Back
-                        </a>
                     <button id="revert-button"
                             class="btn btn-success"
                             data-bind="click: loadPublished"
@@ -101,6 +107,63 @@
       </div>
       <div class="modal-footer">
           <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="connected-modal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h3 class="modal-title">Connected to the Collaborative Editor</h3>
+      </div>
+      <div class="modal-body">
+        <p>
+            The current wiki is in collaborative editing mode.
+            You and other contributors will be able to see the changes made
+            in real time. All changes you make will be preserved even after
+            leaving this page.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="connecting-modal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h3 class="modal-title">Connecting to the Collaborative Editor</h3>
+      </div>
+      <div class="modal-body">
+        <p>
+            This page is currently attempting to connect to the collaborative
+            editor. While you are still trying to connect, you will be prompted
+            to save any changes before leaving the page.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="disconnected-modal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h3 class="modal-title">Collaborative Editing is Unavailable</h3>
+      </div>
+      <div class="modal-body">
+        <p>
+            The collaborative editor is currently unavailable.
+            This means other contributors are not able to see any of the changes,
+            and none of the changes you make will be saved until you press the
+            "Save" button.
+            You will be prompted to save any changes before leaving the page.
+        </p>
       </div>
     </div>
   </div>

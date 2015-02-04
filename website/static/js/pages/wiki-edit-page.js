@@ -1,6 +1,5 @@
 require('ace-noconflict');
 require('ace-mode-markdown');
-require('addons/wiki/static/ace.js');
 
 var WikiEditor = require('addons/wiki/static/WikiEditor.js');
 var ShareJSDoc = require('addons/wiki/static/ShareJSDoc.js');

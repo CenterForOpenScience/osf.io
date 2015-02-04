@@ -1,6 +1,5 @@
-var ReconnectingWebSocket = require('addons/wiki/static/ReconnectingWebSocket.js');
-
 var activeUsers = [];
+var collaborative = (typeof sharejs !== 'undefined');
 
 var ShareJSDoc = function(viewModel, url, metadata) {
 
@@ -13,6 +12,19 @@ var ShareJSDoc = function(viewModel, url, metadata) {
     editor.setShowPrintMargin(false);           // Hides print margin
     editor.commands.removeCommand('showSettingsMenu');  // Disable settings menu
     editor.setReadOnly(true); // Read only until initialized
+
+    if (!collaborative) {
+        // Populate editor with last saved version
+        viewModel.fetchData(function(response) {
+            editor.setValue(response.wiki_content, -1);
+            editor.setReadOnly(false);
+            viewModel.status('disconnected');
+        });
+        return;
+    }
+
+    var ReconnectingWebSocket = require('addons/wiki/static/ReconnectingWebSocket.js');
+    require('addons/wiki/static/ace.js');
 
     // Configure connection
     var wsPrefix = (window.location.protocol == 'https:') ? 'wss://' : 'ws://';
@@ -89,13 +101,27 @@ var ShareJSDoc = function(viewModel, url, metadata) {
             }, 3000);
         } else if (data.type === 'delete') {
             editor.setReadOnly(true);
-            $('#delete-modal').on('hide.bs.modal', function() {
+            var deleteModal = $('#delete-modal');
+            deleteModal.on('hide.bs.modal', function() {
                 window.location.replace(data.redirect);
             });
-            $('#delete-modal').modal();
+            deleteModal.modal();
         } else {
             onmessage(message);
         }
+    };
+
+    // Update status when reconnecting
+    var onclose = socket.onclose;
+    socket.onclose = function (event) {
+        onclose(event);
+        viewModel.status('connecting');
+    };
+
+    var onopen = socket.onopen;
+    socket.onopen = function(event) {
+        onopen(event);
+        viewModel.status('connected');
     };
 
     // This will be called on both connect and reconnect
