@@ -80,6 +80,7 @@ def get_user_from_cookie(cookie):
 
 
 permission_map = {
+    'revisions': 'read',
     'metadata': 'read',
     'download': 'read',
     'upload': 'write',
@@ -224,8 +225,7 @@ def get_waterbutler_render_url(**kwargs):
     return redirect(url)
 
 
-def get_or_start_render(file_guid, start_render=True, **extras):
-
+def get_or_start_render(file_guid, start_render=True):
     try:
         if not file_guid.enriched:
             file_guid.enrich()
@@ -236,9 +236,7 @@ def get_or_start_render(file_guid, start_render=True, **extras):
     except IOError:
         if start_render:
             # Start rendering job if requested
-            download_url = furl.furl(file_guid.download_url)
-            download_url.args.update(extras)
-            build_rendered_html(download_url.url, file_guid.cache_path, file_guid.temp_path)
+            build_rendered_html(file_guid.download_url, file_guid.cache_path, file_guid.temp_path)
     return None
 
 
@@ -261,6 +259,8 @@ def addon_view_file(auth, path, provider, **kwargs):
     if file_guid.guid_url != request.path:
         return redirect(file_guid.guid_url)
 
+    file_guid.maybe_version(**extras)
+
     render_url = furl.furl(node.api_url_for('addon_render_file', path=path[1:], provider=provider))
     render_url.args.update(extras)
 
@@ -268,9 +268,11 @@ def addon_view_file(auth, path, provider, **kwargs):
     resp.update({
         'provider': provider,
         'render_url': render_url,
-        'rendered': get_or_start_render(file_guid, **extras),
+        'files_url': node.web_url_for('collect_file_trees'),
+        'rendered': get_or_start_render(file_guid),
         #NOTE: get_or_start_render must be called first to populate name
         'file_name': file_guid.name,
+        'file_path': file_guid.path,
     })
 
     return resp
@@ -290,5 +292,7 @@ def addon_render_file(auth, path, provider, **kwargs):
         path = '/' + path
 
     file_guid, created = node_addon.find_or_create_file_guid(path)
+
+    file_guid.maybe_version(**request.args.to_dict())
 
     return get_or_start_render(file_guid)
