@@ -34,6 +34,10 @@ class DropboxFile(GuidFile):
     def provider(self):
         return 'dropbox'
 
+    @property
+    def version_identifier(self):
+        return 'revision'
+
     # def url(self, guid=True, rev='', *args, **kwargs):
     #     """The web url for the file.
 
