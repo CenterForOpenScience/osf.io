@@ -79,9 +79,11 @@ class FileSystemProvider(provider.BaseProvider):
         else:
             created = False
 
+        os.makedirs(os.path.split(path.full_path)[0], exist_ok=True)
+
         with open(path.full_path, 'wb') as file_pointer:
             chunk = yield from stream.read(settings.CHUNK_SIZE)
-            while chunk != b'':
+            while chunk:
                 file_pointer.write(chunk)
                 chunk = yield from stream.read(settings.CHUNK_SIZE)
 

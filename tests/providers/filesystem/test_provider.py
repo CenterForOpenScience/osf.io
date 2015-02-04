@@ -101,7 +101,7 @@ class TestCRUD:
     @async
     def test_upload_nested_create(self, provider):
         file_name = 'new.txt'
-        file_folder = '/subfolder'
+        file_folder = '/newsubfolder'
         file_path = os.path.join(file_folder, file_name)
         file_content = b'Test New Nested Content'
         file_stream = streams.FileStreamReader(io.BytesIO(file_content))
