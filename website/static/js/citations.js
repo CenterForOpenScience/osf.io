@@ -1,5 +1,7 @@
 'use strict';
 
+var $ = require('jquery');
+require('select2');
 
 var r = function(query) {
     query.callback({results: [
