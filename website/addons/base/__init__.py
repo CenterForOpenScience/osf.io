@@ -178,8 +178,8 @@ class GuidFile(GuidStoredObject):
         raise NotImplementedError
 
     @property
-    def waterbutler_extras(self):
-        return {}
+    def version_identifier(self):
+        raise NotImplementedError
 
     @property
     def guid_url(self):
@@ -187,6 +187,8 @@ class GuidFile(GuidStoredObject):
 
     @property
     def file_name(self):
+        if self.revision:
+            return '{0}_{1}.html'.format(self._id, self.revision)
         return '{0}.html'.format(self._id)
 
     @property
@@ -198,12 +200,12 @@ class GuidFile(GuidStoredObject):
     @property
     def _base_butler_url(self):
         url = furl.furl(settings.WATERBUTLER_URL)
-        url.args.update(self.waterbutler_extras)
 
         url.args.update({
             'nid': self.node._id,
             'path': self.path,
             'provider': self.provider,
+            self.version_identifier: self.revision,
             'cookie': request.cookies.get(settings.COOKIE_NAME)
         })
 
@@ -227,7 +229,7 @@ class GuidFile(GuidStoredObject):
         return os.path.join(
             settings.MFR_CACHE_PATH,
             self.provider,
-            self.file_name
+            self.file_name,
         )
 
     @property
@@ -255,14 +257,12 @@ class GuidFile(GuidStoredObject):
         else:
             return url + '/'
 
-    def _fetch_metadata(self, should_raise=False):
-        resp = requests.get(self.metadata_url)
+    @property
+    def revision(self):
+        return getattr(self, '_revision', None)
 
-        if should_raise:
-            if resp.status_code != 200:
-                raise exceptions.AddonEnrichmentError(resp.status_code)
-
-        return resp
+    def maybe_version(self, **kwargs):
+        self._revision = kwargs.get(self.version_identifier)
 
     def enrich(self, save=True):
         resp = self._fetch_metadata(should_raise=True)
@@ -274,6 +274,15 @@ class GuidFile(GuidStoredObject):
         self.name = metadata['name']
         self.enriched = True
         self.save()
+
+    def _fetch_metadata(self, should_raise=False):
+        resp = requests.get(self.metadata_url)
+
+        if should_raise:
+            if resp.status_code != 200:
+                raise exceptions.AddonEnrichmentError(resp.status_code)
+
+        return resp
 
 
 class AddonSettingsBase(StoredObject):
