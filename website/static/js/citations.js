@@ -15,14 +15,7 @@ var r = function(query) {
 }
 
 var formatResult = function(state) {
-    var html = "<div class='citation-result-title'>" + state.title + "</div>";
-    //if (state.short_title_!== null) {
-    //    html += "<div class='citation-result-slug'>" + state.short_title + "</div>";
-    //};
-    //if (state.summary !== null) {
-    //    html += "<div class='citation-result-summary'>" + state.summary + "</div>";
-    //};
-    return html;
+    return "<div class='citation-result-title'>" + state.title + "</div>";;
 };
 
 var formatSelection = function(state) {
