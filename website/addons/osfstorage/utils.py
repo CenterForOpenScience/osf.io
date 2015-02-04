@@ -12,14 +12,13 @@ from flask import request
 
 from framework.exceptions import HTTPError
 
-from website import settings as site_settings
+from website import settings as settings
 
 from website.util import rubeus
 from website.models import Session
 from website.project.views.file import get_cache_content
 
 from website.addons.osfstorage import model
-from website.addons.osfstorage import settings
 
 
 logger = logging.getLogger(__name__)
@@ -117,7 +116,7 @@ def patch_url(url, **kwargs):
 
 
 def ensure_domain(url):
-    return patch_url(url, host=site_settings.DOMAIN)
+    return patch_url(url, host=settings.DOMAIN)
 
 
 def build_callback_urls(node, path):
@@ -167,17 +166,17 @@ def get_cookie_for_user(user):
             'auth_user_fullname': user.fullname,
         })
         session.save()
-    signer = itsdangerous.Signer(site_settings.SECRET_KEY)
+    signer = itsdangerous.Signer(settings.SECRET_KEY)
     return signer.sign(session._id)
 
 
 def get_waterbutler_url(user, *path, **query):
-    url = furl.furl(site_settings.WATERBUTLER_URL)
+    url = furl.furl(settings.WATERBUTLER_URL)
     url.path.segments.extend(path)
     cookie = (
         get_cookie_for_user(user)
         if user
-        else request.cookies.get(site_settings.COOKIE_NAME)
+        else request.cookies.get(settings.COOKIE_NAME)
     )
     url.args.update({
         'token': '',
