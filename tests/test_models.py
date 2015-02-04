@@ -2004,6 +2004,39 @@ class TestProject(OsfTestCase):
         other_guy_auth.private_key = link.key
         assert_true(self.project.can_view(other_guy_auth))
 
+    def test_is_admin_parent_target_admin(self):
+        assert_true(self.project.is_admin_parent(self.project.creator))
+
+    def test_is_admin_parent_parent_admin(self):
+        user = UserFactory()
+        node = NodeFactory(project=self.project, creator=user)
+        assert_true(node.is_admin_parent(self.project.creator))
+
+    def test_is_admin_parent_parent_write(self):
+        user = UserFactory()
+        node = NodeFactory(project=self.project, creator=user)
+        self.project.set_permissions(self.project.creator, ['read', 'write'])
+        assert_false(node.is_admin_parent(self.project.creator))
+
+    def test_has_permission_read_parent_admin(self):
+        user = UserFactory()
+        node = NodeFactory(project=self.project, creator=user)
+        assert_true(node.has_permission(self.project.creator, 'read'))
+        assert_false(node.has_permission(self.project.creator, 'admin'))
+
+    def test_can_view_parent_admin(self):
+        user = UserFactory()
+        node = NodeFactory(project=self.project, creator=user)
+        assert_true(node.can_view(Auth(user=self.project.creator)))
+        assert_false(node.can_edit(Auth(user=self.project.creator)))
+
+    def test_can_view_parent_write(self):
+        user = UserFactory()
+        node = NodeFactory(project=self.project, creator=user)
+        self.project.set_permissions(self.project.creator, ['read', 'write'])
+        assert_false(node.can_view(Auth(user=self.project.creator)))
+        assert_false(node.can_edit(Auth(user=self.project.creator)))
+
     def test_creator_cannot_edit_project_if_they_are_removed(self):
         creator = UserFactory()
         project = ProjectFactory(creator=creator)

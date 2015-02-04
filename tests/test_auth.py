@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import unittest
-from nose.tools import *  # PEP8 asserts
+from nose.tools import *  # noqa; PEP8 asserts
 from webtest_plus import TestApp
 import mock
 import datetime
@@ -16,7 +16,7 @@ from framework.exceptions import HTTPError
 from tests.base import OsfTestCase, assert_is_redirect
 from tests.factories import (
     UserFactory, UnregUserFactory, AuthFactory,
-    ProjectFactory, AuthUserFactory, PrivateLinkFactory
+    ProjectFactory, NodeFactory, AuthUserFactory, PrivateLinkFactory
 )
 
 from framework.auth import User, Auth
@@ -225,6 +225,29 @@ class TestMustBeContributorDecorator(AuthAppTestCase):
         assert_is_redirect(res)
         redirect_url = res.headers['Location']
         assert_equal(redirect_url, '/login/?next=/')
+
+    def test_must_be_contributor_parent_admin(self):
+        user = UserFactory()
+        node = NodeFactory(project=self.project, creator=user)
+        res = view_that_needs_contributor(
+            pid=self.project._id,
+            nid=node._id,
+            user=self.project.creator,
+        )
+        assert_equal(res, self.project)
+
+    def test_must_be_contributor_parent_write(self):
+        user = UserFactory()
+        node = NodeFactory(project=self.project, creator=user)
+        self.project.set_permissions(self.project.creator, ['read', 'write'])
+        self.project.save()
+        with assert_raises(HTTPError) as exc_info:
+            view_that_needs_contributor(
+                pid=self.project._id,
+                nid=node._id,
+                user=self.project.creator,
+            )
+        assert_equal(exc_info.exception.code, 403)
 
 
 @must_be_logged_in
