@@ -38,6 +38,10 @@ class DropboxFile(GuidFile):
     def version_identifier(self):
         return 'revision'
 
+    @property
+    def unique_identifier(self):
+        return self._metadata_cache['extra']['revisionId']
+
     # def url(self, guid=True, rev='', *args, **kwargs):
     #     """The web url for the file.
 
