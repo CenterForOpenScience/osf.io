@@ -20,7 +20,7 @@
                 </span>
             </div>
             {{#if theItem.isFolder}}
-                        <div class="col-sm-4">
+                        <div class="col-md-5">
                             <span class = "title">
                                 <span class = "name-container" id="nc-{{theItem.node_id}}">
                                       {{#if theItem.isFolder}}{{{ theItem.name }}}{{/if}}
@@ -34,7 +34,7 @@
                             </span>
                         </div>
             {{/if}}
-            <div class="col-sm-8">
+            <div class="col-md-7 ">
                 {{#if theItem.isFolder}}
                     <div class = "organize-project-controls pull-right">
                         <div id = "buttons{{theItem.node_id}}">
@@ -84,7 +84,7 @@
         {{#unless theItem.isFolder}}
             {{#if theItem.parentIsFolder}}
                 {{#unless parentIsSmartFolder}}
-                    <div class="col-sm-8">
+                    <div class="col-sm-7 col-md-8">
                         <span class = "title">
                             <span class = "name-container" id="nc-{{theItem.node_id}}">
                                   {{#if theItem.isFolder}}{{{ theItem.name }}}{{/if}}
@@ -97,7 +97,7 @@
                             </span>
                         </span>
                     </div>
-                    <div class="col-sm-4">
+                    <div class="col-sm-5 col-md-4">
                         <div class = "organize-project-controls pull-right">
                             <div id = "buttons{{theItem.node_id}}">
                                 <div class="orgnaize-btn btn btn-sm btn-default" id="remove-link-{{theItem.node_id}}">Remove from folder</div>
