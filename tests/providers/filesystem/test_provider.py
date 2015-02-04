@@ -99,6 +99,38 @@ class TestCRUD:
         assert created == False
 
     @async
+    def test_upload_nested_create(self, provider):
+        file_name = 'new.txt'
+        file_folder = '/subfolder'
+        file_path = os.path.join(file_folder, file_name)
+        file_content = b'Test New Nested Content'
+        file_stream = streams.FileStreamReader(io.BytesIO(file_content))
+
+        path = FileSystemPath(provider.folder, file_path)
+        metadata, created = yield from provider.upload(file_stream, str(path))
+
+        assert metadata['name'] == file_name
+        assert metadata['path'] == file_path
+        assert metadata['size'] == len(file_content)
+        assert created == True
+
+    @async
+    def test_upload_nested_update(self, provider):
+        file_name = 'nested.txt'
+        file_folder = '/subfolder'
+        file_path = os.path.join(file_folder, file_name)
+        file_content = b'Test Update Nested Content'
+        file_stream = streams.FileStreamReader(io.BytesIO(file_content))
+
+        path = FileSystemPath(provider.folder, file_path)
+        metadata, created = yield from provider.upload(file_stream, str(path))
+
+        assert metadata['name'] == file_name
+        assert metadata['path'] == file_path
+        assert metadata['size'] == len(file_content)
+        assert created == False
+
+    @async
     def test_delete_file(self, provider):
         path = FileSystemPath(provider.folder, '/flower.jpg')
 
