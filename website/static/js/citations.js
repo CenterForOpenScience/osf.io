@@ -29,8 +29,8 @@ var formatSelection = function(state) {
     return state.title;
 };
 
-var input = $('#citation-style-input');
-var citationElement = $('#citation-text');
+var input = $('#citationStyleInput');
+var citationElement = $('#citationText');
 
 input.select2({
     allowClear: true,

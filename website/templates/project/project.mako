@@ -202,9 +202,9 @@
             </div>
             <div class="addon-widget-body" style="display:none">
                 <div id="citation-style-panel">
-                    <input id="citation-style-input" type="hidden" />
+                    <input id="citationStyleInput" type="hidden" />
                 </div>
-                <pre id="citation-text" class="formatted-citation"></pre>
+                <pre id="citationText" class="formatted-citation"></pre>
             </div>
          </div>
         % endif
