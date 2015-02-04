@@ -335,6 +335,7 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         if self.user_settings and self.user_settings.owner == removed:
 
             # Delete OAuth tokens
+            self.deauthorize(auth=None, add_log=False, save=False)
             self.user_settings = None
             self.save()
 

@@ -178,6 +178,12 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         return bool(self.user_settings and self.user_settings.has_auth)
 
     def set_folder(self, folder, auth):
+        if self.folder != folder:
+            # configure comments
+            self.hide_all_comments()
+            client = get_node_addon_client(self)
+            self.show_comments(client, folder)
+
         self.folder = folder
         # Add log to node
         nodelogger = DropboxNodeLogger(node=self.owner, auth=auth)
@@ -204,6 +210,8 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
 
         self.folder = None
         self.user_settings = None
+
+        self.hide_all_comments()
 
         if add_log:
             extra = {'folder': folder}
@@ -359,6 +367,7 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
             self.save()
             name = removed.fullname
             url = node.web_url_for('node_setting')
+            self.hide_all_comments()
             return (u'Because the Dropbox add-on for this project was authenticated'
                     'by {name}, authentication information has been deleted. You '
                     'can re-authenticate on the <a href="{url}">Settings</a> page'
@@ -367,3 +376,28 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
     def after_delete(self, node, user):
         self.deauthorize(Auth(user=user), add_log=True)
         self.save()
+
+    def hide_all_comments(self):
+        files_id = DropboxFile.find(Q('node', 'eq', self.owner))
+        for file_id in files_id:
+            db_file = DropboxFile.load(file_id)
+            for comment in getattr(db_file, 'comment_target', []):
+                comment.hide(save=True)
+
+    def show_comments(self, client, path):
+        metadata = client.metadata(path)
+        for content in metadata['contents']:
+            if content['is_dir']:
+                self.show_comments(client, content['path'])
+            else:
+                # Show comments
+                cleaned_path = clean_path(content['path'])
+                try:
+                    guid = DropboxFile.find_one(
+                        Q('node', 'eq', self.owner) &
+                        Q('path', 'eq', cleaned_path)
+                    )
+                except:
+                    continue
+                for comment in getattr(guid, 'comment_target', []):
+                    comment.show(save=True)

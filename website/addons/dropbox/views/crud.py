@@ -176,6 +176,7 @@ def dropbox_view_file(path, node_addon, auth, **kwargs):
     response = {
         'revisions_url': node.api_url_for('dropbox_get_revisions',
             path=cleaned_path, rev=rev),  # Append current revision as a query param
+        'file_id': file_obj._id,
         'file_name': get_file_name(path),
         'render_url': node.api_url_for('dropbox_render_file', path=cleaned_path),
         'download_url': file_obj.download_url(guid=True, rev=rev),

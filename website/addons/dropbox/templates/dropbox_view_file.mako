@@ -72,7 +72,9 @@
             urls: {
                 revisions_url: '${revisions_url}'
                 }
-        }
+        },
+        file_id: '${file_id}',
+        file_name: '${file_name}'
     });
 </script>
 </%def>
