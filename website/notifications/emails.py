@@ -11,6 +11,8 @@ from mako.lookup import Template
 def notify(uid, event, **context):
     key = str(uid + '_' + event)
 
+    direct_subscribers = []
+
     for notification_type in notifications.keys():
 
         try:
@@ -24,29 +26,37 @@ def notify(uid, event, **context):
         except AttributeError:
             pass
 
-        indirectly_subscribed_users = get_automatic_subscribers(uid, event, notification_type)
+        for u in subscribed_users:
+            direct_subscribers.append(u)
 
-        all_subscribers = set(subscribed_users).union(indirectly_subscribed_users)
+        if notification_type != 'none':
+            send(subscribed_users, notification_type, uid, event, **context)
 
-        send(list(all_subscribers), notification_type, uid, event, **context)
+    check_parent(uid, event, direct_subscribers, **context)
 
 
-def get_automatic_subscribers(uid, event, notification_type):
-        subscribed_users = []
-        parent = Node.load(uid).node__parent
-        if parent:
-            key = str(parent[0]._id + '_' + event + '_future_nodes')
+def check_parent(uid, event, direct_subscribers, **context):
+    parent = Node.load(uid).node__parent
+    if parent:
+        for idx, p in parent:
+            key = str(p[idx]._id + '_' + event)
             try:
                 subscription = Subscription.find_one(Q('_id', 'eq', key))
             except NoResultsFound:
                 return
-            try:
-                subscribed_users = getattr(subscription, notification_type)
-            # TODO: handle this error
-            except AttributeError:
-                pass
 
-        return set(subscribed_users)
+            for notification_type in notifications.keys():
+                subscribed_users = []
+                try:
+                    subscribed_users = getattr(subscription, notification_type)
+                except AttributeError:
+                    pass
+
+                for u in subscribed_users:
+                    if u not in direct_subscribers:
+                        send([u], notification_type, uid, event, **context)
+
+    return {}
 
 
 def send(subscribed_users, notification_type, uid, event, **context):
@@ -104,7 +114,8 @@ def get_node_lineage(node, node_lineage):
 
 notifications = {
     'email_transactional': email_transactional,
-    'email_digest': email_digest
+    'email_digest': email_digest,
+    'none': 'none'
 }
 
 email_templates = {
