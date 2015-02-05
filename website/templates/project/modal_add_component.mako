@@ -9,7 +9,7 @@
                 </div><!-- end modal-header -->
                 <div class="modal-body">
                     <div class="alert alert-info">
-                      Note: Beginning on 2014/02/20, project administrators will automatically
+                      Note: Beginning on 2015/02/20, project administrators will automatically
                       be granted read-only access to all child components.
                     </div>
                     <div id="alert" style="padding-bottom:10px;color:blue"></div>
