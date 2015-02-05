@@ -18,39 +18,61 @@ var CitationList = function(name, provider_list_id, provider_account_id ) {
 var MendeleySettingsViewModel = function() {
     var self=this;
 
+    self.settings_url = nodeApiUrl + 'mendeley/settings/';
+
     self.accounts = ko.observableArray();
-    self.selectedAccount = ko.observable();
+    self.selectedAccountId = ko.observable();
     self.citationLists = ko.observableArray();
-    self.selectedAccount.subscribe(function(value) {
-        self.updateCitationLists();
-    });
     self.selectedCitationList = ko.observable();
 
-    $.getJSON(nodeApiUrl + 'mendeley/accounts/', function(data) {
-        for(var i=0; i<data.accounts.length; i++) {
-            self.accounts.push(new MendeleyAccount(
-                data.accounts[i].display_name,
-                data.accounts[i].id
-            ))
-        }
-        self.accounts.push(new MendeleyAccount('foo', 'bar'));
-        self.selectedAccount(self.accounts()[0]);
-    }).fail(function() {
-        console.log("Failed to load list of accounts");
-    });
+    self.updateAccounts = function() {
+        $.getJSON(nodeApiUrl + 'mendeley/accounts/', function(data) {
+            for(var i=0; i<data.accounts.length; i++) {
+                self.accounts.push(new MendeleyAccount(
+                    data.accounts[i].display_name,
+                    data.accounts[i].id
+                ));
+            }
+            self.selectedAccountId(self.accounts()[0].id);
+            self.updateCitationLists();
+        }).fail(function() {
+            console.log("Failed to load list of accounts");
+        });
+    };
 
     self.updateCitationLists = function() {
         $.getJSON(
-            nodeApiUrl + 'mendeley/' + self.selectedAccount() + '/lists/',
+            nodeApiUrl + 'mendeley/' + self.selectedAccountId() + '/lists/',
             function(data) {
                 self.citationLists(ko.utils.arrayMap(data.citation_lists, function(item) {
                     return new CitationList(item.name, item.provider_list_id, item.provider_account_id);
                 }));
+                self.selectedCitationList(self.citationLists()[0].provider_list_id);
             }
         );
-    }
+    };
 
-    self.updateCitationLists();
+    self.selectedAccountId.subscribe(function(value) {
+        self.updateCitationLists();
+    });
+
+    self.updateAccounts();
+
+    self.save = function() {
+        var request = $osf.postJSON(
+            self.settings_url,
+            {
+                external_account_id: self.selectedAccountId(),
+                external_list_id: self.selectedCitationList()
+            }
+        );
+        request.done(function(){
+            console.log('done');
+        });
+        request.fail(function() {
+            console.log('fail');
+        });
+    }
 
 
 };

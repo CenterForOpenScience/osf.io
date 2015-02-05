@@ -37,6 +37,49 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
     external_account = fields.ForeignField('externalaccount',
                                            backref='connected')
 
+    mendeley_list_id = fields.StringField()
+
+    # Keep track of all user settings that have been associated with this
+    #   instance. This is so OAuth grants can be checked, even if the grant is
+    #   not currently being used.
+    associated_user_settings = fields.AbstractForeignField(list=True)
+
+    def grant_oauth_access(self, user, external_account, metadata=None):
+        user_settings = user.get_addon('mendeley')
+
+        # associate the user settings with this node's settings
+        if user_settings not in self.associated_user_settings:
+            self.associated_user_settings.append(user_settings)
+
+        user_settings.grant_oauth_access(
+            node=self.owner,
+            external_account=external_account,
+            metadata=metadata
+        )
+
+        user_settings.save()
+
+    def verify_oauth_access(self, external_account, list_id):
+        """Determine if access to the ExternalAccount has been granted
+
+        :param ExternalAccount external_account:
+        :param str list_id: ID of the Mendeley list requested
+        :return bool: True or False
+        """
+        for user_settings in self.associated_user_settings:
+            try:
+                granted = user_settings[self.owner._id][external_account._id]
+            except KeyError:
+                # no grant for this node, move along
+                continue
+
+            if list_id in granted.get('lists', []):
+                return True
+        return False
+
+
+
+
     def to_json(self, user):
         accounts = {
             account for account

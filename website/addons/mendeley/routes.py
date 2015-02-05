@@ -34,6 +34,16 @@ api_routes = {
             json_renderer,
         ),
 
+        Rule(
+            [
+                '/project/<pid>/mendeley/settings/',
+                '/project/<pid>/node/<nid>/mendeley/settings/',
+            ],
+            'post',
+            views.mendeley_set_config,
+            json_renderer,
+        )
+
     ],
     'prefix': '/api/v1'
 }

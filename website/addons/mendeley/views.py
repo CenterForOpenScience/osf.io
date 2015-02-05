@@ -1,3 +1,7 @@
+import httplib as http
+
+from flask import request
+
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 from website.oauth.models import ExternalAccount
@@ -60,3 +64,40 @@ def list_citationlists_node(pid, account_id, auth, node, project, node_addon):
     return {
         'citation_lists': [each.json for each in mendeley.citation_lists]
     }
+
+
+@must_have_permission('write')
+@must_have_addon('mendeley', 'node')
+@must_not_be_registration
+def mendeley_set_config(pid, auth, node, project, node_addon):
+    # Ensure request has all required information
+    try:
+        external_account = ExternalAccount.load(
+            request.json['external_account_id']
+        )
+        list_id = request.json['external_list_id']
+    except KeyError:
+        raise HTTPError(http.BAD_REQUEST)
+
+    user = auth.user
+
+    # User is an owner of this ExternalAccount
+    if external_account in user.external_accounts:
+        # grant access to the node for the Mendeley list
+        node_addon.grant_oauth_access(
+            user=user,
+            external_account=external_account,
+            metadata={'lists': list_id},
+        )
+    # User doesn't own the ExternalAccount
+    else:
+        # Make sure the node has previously been granted access
+        if not node_addon.verify_oauth_access(external_account, list_id):
+            raise HTTPError(http.FORBIDDEN)
+
+    # associate the list with the node
+    node_addon.external_account = external_account
+    node_addon.mendeley_list_id = list_id
+    node_addon.save()
+
+    return {}
