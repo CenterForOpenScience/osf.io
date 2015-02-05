@@ -2,9 +2,9 @@ import httplib as http
 
 from flask import request
 
-from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 from website.oauth.models import ExternalAccount
+from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
@@ -101,3 +101,11 @@ def mendeley_set_config(pid, auth, node, project, node_addon):
     node_addon.save()
 
     return {}
+
+
+@must_be_contributor_or_public
+@must_have_addon('mendeley', 'node')
+def mendeley_widget(node_addon, project, node, pid, auth):
+    response = node_addon.config.to_json()
+    response['complete'] = True
+    return response

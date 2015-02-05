@@ -42,6 +42,16 @@ api_routes = {
             'post',
             views.mendeley_set_config,
             json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/mendeley/widget/',
+                '/project/<pid>/node/<nid>/mendeley/widget/',
+            ],
+            'get',
+            views.mendeley_widget,
+            json_renderer,
         )
 
     ],
