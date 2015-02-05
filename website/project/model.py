@@ -843,6 +843,31 @@ class Node(GuidStoredObject, AddonModelMixin):
             for _id in self.visible_contributor_ids
         ]
 
+    @property
+    def parents(self):
+        if self.parent_node:
+            return [self.parent_node] + self.parent_node.parents
+        return []
+
+    @property
+    def admin_contributor_ids(self, contributors=None):
+        contributor_ids = self.contributors._to_primary_keys()
+        admin_ids = set()
+        for parent in self.parents:
+            admins = [
+                user for user, perms in parent.permissions.iteritems()
+                if 'admin' in perms
+            ]
+            admin_ids.update(set(admins).difference(contributor_ids))
+        return admin_ids
+
+    @property
+    def admin_contributors(self):
+        return sorted(
+            [User.load(_id) for _id in self.admin_contributor_ids],
+            key=lambda user: user.family_name,
+        )
+
     def get_visible(self, user):
         if not self.is_contributor(user):
             raise ValueError(u'User {0} not in contributors'.format(user))

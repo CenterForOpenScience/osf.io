@@ -2066,6 +2066,38 @@ class TestProject(OsfTestCase):
         assert_true(self.project.can_view(contributor_auth))
         assert_true(self.project.can_view(other_guy_auth))
 
+    def test_parents(self):
+        child1 = ProjectFactory(project=self.project)
+        child2 = ProjectFactory(project=child1)
+        assert_equal(self.project.parents, [])
+        assert_equal(child1.parents, [self.project])
+        assert_equal(child2.parents, [child1, self.project])
+
+    def test_admin_contributor_ids(self):
+        assert_equal(self.project.admin_contributor_ids, set())
+        child1 = ProjectFactory(project=self.project)
+        child2 = ProjectFactory(project=child1)
+        assert_equal(child1.admin_contributor_ids, {self.project.creator._id})
+        assert_equal(child2.admin_contributor_ids, {self.project.creator._id, child1.creator._id})
+        self.project.set_permissions(self.project.creator, ['read', 'write'])
+        self.project.save()
+        assert_equal(child1.admin_contributor_ids, set())
+        assert_equal(child2.admin_contributor_ids, {child1.creator._id})
+
+    def test_admin_contributors(self):
+        assert_equal(self.project.admin_contributors, [])
+        child1 = ProjectFactory(project=self.project)
+        child2 = ProjectFactory(project=child1)
+        assert_equal(child1.admin_contributors, [self.project.creator])
+        assert_equal(
+            child2.admin_contributors,
+            sorted([self.project.creator, child1.creator], key=lambda user: user.family_name)
+        )
+        self.project.set_permissions(self.project.creator, ['read', 'write'])
+        self.project.save()
+        assert_equal(child1.admin_contributors, [])
+        assert_equal(child2.admin_contributors, [child1.creator])
+
     def test_is_contributor(self):
         contributor = UserFactory()
         other_guy = UserFactory()
