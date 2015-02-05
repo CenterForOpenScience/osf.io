@@ -72,24 +72,6 @@ api_routes = {
     'rules': [
         Rule(
             [
-                '/project/<pid>/s3/',
-                '/project/<pid>/node/<nid>/s3/'
-            ],
-            'post',
-            views.crud.s3_upload,
-            json_renderer
-        ),
-        Rule(
-            [
-                '/project/<pid>/s3/<path:path>/',
-                '/project/<pid>/node/<nid>/s3/<path:path>/',
-            ],
-            'delete',
-            views.crud.s3_delete,
-            json_renderer
-        ),
-        Rule(
-            [
                 '/project/<pid>/s3/hgrid/',
                 '/project/<pid>/node/<nid>/s3/hgrid/',
                 '/project/<pid>/s3/hgrid/<path:path>/',
@@ -108,30 +90,11 @@ api_routes = {
             views.hgrid.s3_dummy_folder,
             json_renderer,
         ),
-        Rule(
-            [
-                '/project/<pid>/s3/<path:path>/info/',
-                '/project/<pid>/node/<nid>/s3/<path:path>/info/',
-            ],
-            'get',
-            views.crud.file_delete_info,
-            json_renderer,
-        ),
     ],
     'prefix': '/api/v1',
 }
 
 
 nonapi_routes = {
-    'rules': [
-        Rule(
-            [
-                '/project/<pid>/s3/<path:path>/download/',
-                '/project/<pid>/node/<nid>/s3/<path:path>/download/'
-            ],
-            'get',
-            views.crud.s3_download,
-            json_renderer,
-        ),
-    ]
+    'rules': []
 }
