@@ -65,7 +65,7 @@ function _fangornActionColumn (item, col){
 
     function _downloadEvent (event, item, col) {
         event.stopPropagation();
-        window.location = waterbutler.buildTreeBeardDownload(item, {ref: item.data.extra.fileSha});
+        window.location = waterbutler.buildTreeBeardDownload(item, {fileSha: item.data.extra.fileSha});
     }
 
     // Download Zip File
