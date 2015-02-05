@@ -55,10 +55,12 @@ class GitHubProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def download(self, path, ref=None, **kwargs):
-        if self._is_sha(ref):
+        file_sha = kwargs.get('fileSha')
+
+        if file_sha:
             resp = yield from self.make_request(
                 'GET',
-                self.build_repo_url('git', 'blobs', ref),
+                self.build_repo_url('git', 'blobs', file_sha),
                 headers={'Accept': 'application/vnd.github.VERSION.raw'},
                 expects=(200, ),
                 throws=exceptions.DownloadError,
