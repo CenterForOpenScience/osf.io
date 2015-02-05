@@ -2077,3 +2077,17 @@ span#profileFullname{
     font-size: 18px;
     color: #555;
 }
+
+/* Treebeard in Configure Notifications, settings page */
+#notificationSettings #tb-tbody {
+    border: none;
+}
+#notificationSettings .tb-row-titles {
+    height: 25px;
+    border: none;
+    background: none;
+}
+
+#notificationSettings .tb-head {
+    display: none;
+}

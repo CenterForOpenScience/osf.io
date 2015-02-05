@@ -95,15 +95,14 @@
 
         % if not node['is_registration']:
         <div class="panel panel-default">
-                <span id="configureNotifications" class="anchor"></span>
+            <span id="configureNotifications" class="anchor"></span>
 
-                <div class="panel-heading">
-                    <h3 class="panel-title">Configure Notifications</h3>
-                </div>
+            <div class="panel-heading">
+                <h3 class="panel-title">Configure Notifications</h3>
+            </div>
 
-                <div class="panel-body">
-                    <form id="notificationSettings">
-                    <div id="grid"></div>
+            <form id="notificationSettings">
+            <div id="grid"></div>
 
 
 ##                    <div class="row">
@@ -136,18 +135,17 @@
 ##                        </div>
 ##                    % endfor
 
-                    <br />
+                <br />
 
+            <div style="padding-left: 10px">
                     <button class="btn btn-success">Submit</button>
+            </div>
 
-                    <!-- Flashed Messages -->
-                    <div class="help-block">
-                        <p id="configureNotificationsMessage"></p>
-                    </div>
-                    </form>
-
+                <!-- Flashed Messages -->
+                <div class="help-block">
+                    <p id="configureNotificationsMessage"></p>
                 </div>
-
+                </form>
             </div>
          % endif
 
