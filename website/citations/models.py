@@ -4,24 +4,35 @@ from collections import Iterable
 from modularodm import fields
 
 from framework.mongo import StoredObject
+from website import citations
 
 
 class Citation(dict):
-    pass
+    @property
+    def json(self):
+        """Json-encodable dict conforming to the CSL-data schema"""
+        return self
 
 
-class CitationList(list):
 
-    def __init__(self, *args, **kwargs):
-        self.name = kwargs.pop('name', '')
-        self.provider_list_id = kwargs.pop('provider_list_id', None)
-        self.provider_account_id = kwargs.pop('provider_account_id', None)
-        self._citations = None
-        super(CitationList, self).__init__(*args, **kwargs)
+class CitationList(object):
+
+    def __init__(self,
+                 name=None,
+                 provider_list_id=None,
+                 provider_account_id=None,
+                 citations=None):
+        self.name = name
+        self.provider_list_id = provider_list_id
+        self.provider_account_id = provider_account_id
+        if citations is not None:
+            self.citations = citations
 
     def __repr__(self):
         return '<CitationList: {}>'.format(self.name or '[anonymous]')
 
+    __get_citations = None
+    __citations = None
 
     @property
     def _get_citations(self):
@@ -33,7 +44,13 @@ class CitationList(list):
 
         :return: iterable(Citation)
         """
-        raise NotImplementedError()
+        if self.__get_citations is None:
+            raise NotImplementedError()
+        return self.__get_citations
+
+    @_get_citations.setter
+    def _get_citations(self, value):
+        self.__get_citations = value
 
     @property
     def citations(self):
@@ -41,10 +58,10 @@ class CitationList(list):
 
         :return: iterable(Citation)
         """
-        if self._citations is None:
-            self._citations = self._get_citations()
+        if self.__citations is None:
+            self.__citations = self._get_citations()
 
-        return self._citations
+        return self.__citations
 
     @citations.setter
     def citations(self, val):
@@ -57,12 +74,17 @@ class CitationList(list):
 
     @property
     def json(self):
-        """JSON-formatted string for instance and all children"""
+        """JSON-formatted string for instance, not including citations"""
         return {
             'name': self.name,
             'provider_list_id': self.provider_list_id,
             'provider_account_id': self.provider_account_id,
         }
+
+    def render(self, style):
+        rv = self.json
+        rv['citations'] = list(citations.render_iterable(self.citations, style))
+        return rv
 
 
 class CitationStyle(StoredObject):

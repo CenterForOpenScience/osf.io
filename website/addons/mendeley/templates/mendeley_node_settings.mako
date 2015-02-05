@@ -14,6 +14,4 @@
     </div>
 
     <a class="btn btn-primary" data-bind="click: save">Save</a>
-
-    <pre data-bind="text: ko.toJSON($data, null, 2)"></pre>
 </form>

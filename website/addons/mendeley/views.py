@@ -109,3 +109,10 @@ def mendeley_widget(node_addon, project, node, pid, auth):
     response = node_addon.config.to_json()
     response['complete'] = True
     return response
+
+
+@must_be_contributor_or_public
+@must_have_addon('mendeley', 'node')
+def mendeley_citation_list(node_addon, project, node, pid, auth):
+    citation_list = node_addon.api.get_list(node_addon.mendeley_list_id)
+    return citation_list.render('apa')

@@ -5,7 +5,25 @@ var $osf = require('osfHelpers');
 var CitationsWidgetViewModel = function() {
     var self = this;
 
-    self.temp = ko.observable('Working');
+    self.widget_api_url = nodeApiUrl + 'mendeley/citations/';
+
+    self.error = ko.observable();
+    self.name = ko.observable();
+    self.citations = ko.observableArray();
+
+    self.updateList = function() {
+        var request = $.get(self.widget_api_url);
+        request.done(function(data){
+            console.log('loaded');
+            console.log(data);
+            self.name(data.name);
+            self.citations(data.citations);
+        });
+        request.fail(function() {
+           self.error('Loading failed');
+        });
+    };
+    self.updateList();
 };
 
 

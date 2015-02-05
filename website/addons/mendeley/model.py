@@ -44,6 +44,16 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
     #   not currently being used.
     associated_user_settings = fields.AbstractForeignField(list=True)
 
+    _api = None
+
+    @property
+    def api(self):
+        """authenticated ExternalProvider instance"""
+        if self._api is None:
+            self._api = Mendeley()
+            self._api.account = self.external_account
+        return self._api
+
     def grant_oauth_access(self, user, external_account, metadata=None):
         user_settings = user.get_addon('mendeley')
 
@@ -158,9 +168,88 @@ class Mendeley(ExternalProvider):
             for folder in folders
         )
 
+    def get_list(self, list_id=None):
+        """Get a single CitationList
+
+        :param str list_id: ID for a Mendeley folder. Optional.
+        :return CitationList: CitationList for the folder, or for all documents
+        """
+
+        folder = self.client.folders.get(list_id) if list_id else None
+        if folder:
+            citations = lambda: self._citations_for_mendeley_folder(folder)
+        else:
+            citations = lambda: self._citations_for_mendeley_user()
+
+        citation_list = CitationList(
+            name=folder.name if folder else self.account.display_name,
+            provider_account_id=self.account.provider_id,
+            provider_list_id=list_id,
+            citations=citations,
+        )
+
+        return citation_list
+
+
     def _mendeley_folder_to_citation_list(self, folder):
         return CitationList(
             name=folder.name,
             provider_account_id=self.account.provider_id,
             provider_list_id=folder.json['id'],
         )
+
+    def _citations_for_mendeley_folder(self, folder):
+        return (
+            self._citation_for_mendeley_document(document)
+            for document in folder.documents.list().items
+        )
+
+    def _citations_for_mendeley_user(self):
+        return (
+            self._citation_for_mendeley_document(document)
+            for document in self.client.documents.list().items
+        )
+
+    def _citation_for_mendeley_document(self, document):
+        """Mendeley document to ``website.citations.models.Citation``
+
+        :param BaseDocument document:
+            An instance of ``mendeley.models.base_document.BaseDocument``
+        :return Citation:
+        """
+        csl = {
+            'id': document.json.get('id'),
+            'type': document.json.get('type'),
+        }
+
+        if document.title:
+            csl['title'] = document.title
+
+        if document.json.get('authors'):
+            csl['author'] = [
+                {
+                    'given': person.get('first_name'),
+                    'family': person.get('last_name'),
+                } for person in document.json.get('authors')
+            ]
+
+        if document.json.get('source'):
+            csl['source'] = document.json.get('source')
+
+        if document.year:
+            csl['issued'] = {'date-parts': [[document.year]]}
+
+
+        # gather identifiers
+        idents = document.json.get('identifiers')
+        if idents is not None:
+            if idents.get('isbn'):
+                csl['ISBN'] = idents.get('isbn')
+            if idents.get('issn'):
+                csl['ISSN'] = idents.get('issn')
+            if idents.get('pmid'):
+                csl['PMID'] = idents.get('pmid')
+            if idents.get('doi'):
+                csl['DOI'] = idents.get('doi')
+
+        return Citation(**csl)

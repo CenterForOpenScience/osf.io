@@ -52,7 +52,18 @@ api_routes = {
             'get',
             views.mendeley_widget,
             json_renderer,
-        )
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/mendeley/citations/',
+                '/project/<pid>/node/<nid>/mendeley/citations/',
+            ],
+            'get',
+            views.mendeley_citation_list,
+            json_renderer,
+
+        ),
 
     ],
     'prefix': '/api/v1'
