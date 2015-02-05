@@ -390,8 +390,7 @@ def format_data(user, node_ids, subscriptions_available, data):
                 'title': s,
                 'description': subscriptions_available[s],
                 'kind': 'event',
-                'notificationType': None,
-                'future': True if (check_future_subscriptions(user, node_id, s) if node.nodes else False) else False,
+                'notificationType': 'none' if not node.node__parent else 'adopt_parent',
                 'children': []
             }
             for subscription in node_subscriptions:
@@ -399,11 +398,6 @@ def format_data(user, node_ids, subscriptions_available, data):
                     for notification_type in settings.NOTIFICATION_TYPES:
                         if user in getattr(subscription, notification_type):
                             event['notificationType'] = notification_type
-
-            if event['notificationType'] is None:
-                automatic_subscription = check_future_subscriptions(user, node_id, s)
-                if automatic_subscription:
-                    event['notificationType'] = automatic_subscription
 
             data[index]['children'].append(event)
 
@@ -413,24 +407,6 @@ def format_data(user, node_ids, subscriptions_available, data):
 
     return data
 
-
-def check_future_subscriptions(user, node_id, event):
-    parent = Node.load(node_id).node__parent
-    if parent:
-        key = str(parent[0]._id + '_' + event + '_future_nodes')
-    else:
-        key = str(node_id + '_' + event + '_future_nodes')
-    try:
-        subscription = Subscription.find_one(Q('_id', 'eq', key))
-    except NoResultsFound:
-        return False
-    for notification_type in settings.NOTIFICATION_TYPES:
-        try:
-            if user in getattr(subscription, notification_type):
-                return notification_type
-        except AttributeError:
-            pass
-    return False
 
 # def find_node_subscriptions_and_notifications(user, node):
 #     node_subscriptions = []

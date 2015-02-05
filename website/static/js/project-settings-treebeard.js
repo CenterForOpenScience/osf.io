@@ -129,12 +129,12 @@ function ProjectNotifications(data) {
                                     item.data.notificationType = ev.target.value;
                                 }},
                                 [
-                                    m("option", {value: "adopt_parent", name: item.parent().parent().data.node_id, selected : item.data.kind == 'node' ? "selected" : ""}),
+                                    m("option", {value: "adopt_parent", selected: item.data.notificationType === "adopt_parent" ? "selected" : ""}, "Adopt setting from parent project"),
                                     m("option", {value: "none", selected : item.data.notificationType === "none" ? "selected": ""}, "None"),
                                     m("option", {value: "email_transactional",  selected : item.data.notificationType === "email_transactional" ? "selected": ""}, "Emails"),
                                     m("option", {value: "email_digest", selected : item.data.notificationType === "email_digest" ? "selected": ""}, "Email Digest")
                             ])
-                        ]);
+                        ])
                     }
                 });
             }
