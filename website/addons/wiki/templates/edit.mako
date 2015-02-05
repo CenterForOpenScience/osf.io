@@ -53,7 +53,7 @@
                 <div class="pull-right">
                     <button id="revert-button"
                             class="btn btn-success"
-                            data-bind="click: loadPublished"
+                            data-bind="click: revertChanges"
                             >Revert</button>
                     <input type="submit"
                            class="btn btn-primary"

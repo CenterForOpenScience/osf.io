@@ -14,9 +14,9 @@ var ShareJSDoc = function(viewModel, url, metadata) {
     editor.setReadOnly(true); // Read only until initialized
 
     if (!collaborative) {
-        // Populate editor with last saved version
+        // Populate editor with most recent draft
         viewModel.fetchData(function(response) {
-            editor.setValue(response.wiki_content, -1);
+            editor.setValue(response.wiki_draft, -1);
             editor.setReadOnly(false);
             viewModel.status('disconnected');
         });
@@ -32,21 +32,24 @@ var ShareJSDoc = function(viewModel, url, metadata) {
     var socket = new ReconnectingWebSocket(wsUrl);
     var sjs = new sharejs.Connection(socket);
     var doc = sjs.get('docs', metadata.docId);
+    var madeConnection = false;
 
     function whenReady() {
 
         // Create a text document if one does not exist
         if (!doc.type) {
             doc.create('text');
-            viewModel.fetchData(function(response) {
-                doc.attachAce(editor);
-                editor.setValue(response.wiki_content);
-                unlockEditor();
-            });
-        } else {
-            doc.attachAce(editor);
-            unlockEditor();
         }
+
+        viewModel.fetchData(function(response) {
+            doc.attachAce(editor);
+            if (viewModel.wikisDiffer(viewModel.currentText(), response.wiki_draft)) {
+                viewModel.currentText(response.wiki_draft);
+            }
+            unlockEditor();
+            viewModel.status('connected');
+            madeConnection = true;
+        });
 
     }
 
@@ -63,15 +66,6 @@ var ShareJSDoc = function(viewModel, url, metadata) {
         socket.send(JSON.stringify(metadata));
     }
 
-    // Inform client of new published version
-    $('#wiki-form').submit(function() {
-        socket.send(JSON.stringify({
-            publish: true,
-            docId: metadata.docId,
-            content: viewModel.currentText()
-        }));
-    });
-
     // Handle our custom messages separately
     var onmessage = socket.onmessage;
     socket.onmessage = function (message) {
@@ -86,8 +80,6 @@ var ShareJSDoc = function(viewModel, url, metadata) {
                 activeUsers.push(userMeta);
             }
             viewModel.activeUsers(activeUsers);
-        } else if (data.type === 'updatePublished') {
-            viewModel.publishedText(data.content);
         } else if (data.type === 'lock') {
             editor.setReadOnly(true);
             $('#permissions-modal').modal({
@@ -128,7 +120,9 @@ var ShareJSDoc = function(viewModel, url, metadata) {
     var onopen = socket.onopen;
     socket.onopen = function(event) {
         onopen(event);
-        viewModel.status('connected');
+        if (madeConnection) {
+            viewModel.status('connected');
+        }
     };
 
     // This will be called on both connect and reconnect

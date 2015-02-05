@@ -192,25 +192,21 @@
 
         <!-- Citations -->
         % if not node['anonymous']:
-        <div class="citations addon-widget-container" >
-            <div class="addon-widget-header clearfix"> 
-                <h4>Citation <small>${node['display_absolute_url']}</small></h4>
+
+         <div class="citations addon-widget-container">
+            <div class="addon-widget-header clearfix">
+                <h4>Citation</h4>
                 <div class="pull-right">
-                  <a href="#" class="btn project-toggle"><i class="icon icon-angle-down"></i></a>
+                    <span class="permalink">${node['display_absolute_url']}</span><a href="#" class="btn project-toggle"><i class="icon icon-angle-down"></i></a>
                 </div>
             </div>
-            <div class="addon-widget-body" style="display : none;">
-                <dl class="citation-list">
-                    <dt>APA</dt>
-                        <dd class="citation-text">${node['citations']['apa']}</dd>
-                    <dt>MLA</dt>
-                        <dd class="citation-text">${node['citations']['mla']}</dd>
-                    <dt>Chicago</dt>
-                        <dd class="citation-text">${node['citations']['chicago']}</dd>
-                </dl>
-            </div> 
-        </div>
-
+            <div class="addon-widget-body" style="display:none">
+                <div id="citation-style-panel">
+                    <input id="citationStyleInput" type="hidden" />
+                </div>
+                <pre id="citationText" class="formatted-citation"></pre>
+            </div>
+         </div>
         % endif
 
         <!-- Show child on right if widgets -->

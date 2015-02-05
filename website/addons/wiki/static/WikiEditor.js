@@ -28,8 +28,10 @@ ko.bindingHandlers.ace = {
         var value = ko.unwrap(valueAccessor()); // Value from view model
 
         // Updates the editor based on changes to the view model
-        if (!editor.getReadOnly() && value !== undefined && content !== value) {
-            editor.setValue(value, -1);
+        if (value !== undefined && content !== value) {
+            var cursorPosition = editor.getCursorPosition();
+            editor.setValue(value);
+            editor.gotoLine(cursorPosition.row + 1, cursorPosition.column);
         }
     }
 };
@@ -51,7 +53,7 @@ function ViewModel(url) {
             case 'connected':
                 return 'Live Editing Mode';
             case 'connecting':
-                return 'Attempting to Reconnect';
+                return 'Attempting to Connect';
             default:
                 return 'Live Editing Unavailable';
         }
@@ -88,14 +90,18 @@ function ViewModel(url) {
         }
     });
 
-    self.changed = function() {
+    self.wikisDiffer = function(wiki1, wiki2) {
         // Handle inconsistencies in newline notation
-        var published = typeof self.publishedText() === 'string' ?
-            self.publishedText().replace(/(\r\n|\n|\r)/gm, '\n') : '';
-        var current = typeof self.currentText() === 'string' ?
-            self.currentText().replace(/(\r\n|\n|\r)/gm, '\n') : '';
+        var clean1 = typeof wiki1 === 'string' ?
+            wiki1.replace(/(\r\n|\n|\r)/gm, '\n') : '';
+        var clean2 = typeof wiki2 === 'string' ?
+            wiki2.replace(/(\r\n|\n|\r)/gm, '\n') : '';
 
-        return published !== current;
+        return clean1 !== clean2;
+    };
+
+    self.changed = function() {
+        return self.wikisDiffer(self.publishedText(), self.currentText());
     };
 
     // Fetch initial wiki text
@@ -119,13 +125,11 @@ function ViewModel(url) {
         });
     };
 
-    self.loadPublished = function() {
+    self.revertChanges = function() {
         self.fetchData(function() {
             self.currentText(self.publishedText());
         });
     };
-
-    self.fetchData();
 
     $(window).on('beforeunload', function() {
         if (self.changed() && self.status() !== 'connected') {

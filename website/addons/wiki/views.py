@@ -213,15 +213,15 @@ def project_wiki_compare(auth, wname, wver, **kwargs):
 
 
 @must_be_valid_project
-@must_be_contributor_or_public
+@must_have_permission('write')
 @must_have_addon('wiki', 'node')
 def wiki_page_content(wname, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    wiki_name = wname.strip()
-    wiki_page = node.get_wiki_page(wiki_name)
+    wiki_page = node.get_wiki_page(wname)
 
     return {
-        'wiki_content': wiki_page.content if wiki_page else ''
+        'wiki_content': wiki_page.content if wiki_page else '',
+        'wiki_draft': wiki_page.get_draft(node) if wiki_page else '',
     }
 
 
