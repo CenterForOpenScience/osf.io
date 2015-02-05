@@ -6,13 +6,15 @@
 
 <%def name="title()">${node['title'] | n} Wiki</%def>
 
+<div>
+        <%include file="wiki/templates/status.mako"/>
+</div>
 <div class="row">
-    <div class="col-sm-3">
+    <div class="col-sm-3 col-md-4">
         <%include file="wiki/templates/nav.mako" />
         <%include file="wiki/templates/toc.mako" />
     </div>
-    <div class="col-sm-9">
-        <%include file="wiki/templates/status.mako"/>
+    <div class="col-sm-9 col-md-8">
         % if not page and wiki_name != 'home':
             <p><i>This wiki page does not currently exist. Would you like to
                 <a href="edit/">create it</a>?</i></p>
