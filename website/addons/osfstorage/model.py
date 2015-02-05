@@ -309,6 +309,7 @@ class OsfStorageFileRecord(BaseFileObject):
         if self.is_deleted:
             raise errors.DeleteError
         self.is_deleted = True
+        OsfStorageGuidFile.configure_comment(self.node, self.path, delete=True)
         self.save()
         if log:
             self.log(auth, NodeLog.FILE_REMOVED, version=False)
@@ -317,6 +318,7 @@ class OsfStorageFileRecord(BaseFileObject):
         if not self.is_deleted:
             raise errors.UndeleteError
         self.is_deleted = False
+        OsfStorageGuidFile.configure_comment(self.node, self.path, delete=False)
         self.save()
         if log:
             self.log(auth, NodeLog.FILE_ADDED)
@@ -425,3 +427,25 @@ class OsfStorageGuidFile(GuidFile):
             obj = cls(node=node, path=path)
             obj.save()
         return obj
+
+    @classmethod
+    def configure_comment(cls, node, path, delete=True):
+        """
+
+        :param node:
+        :param path:
+        :param delete: If True, comments are going to be hidden; else, comments are going to be shown
+        :return:
+        """
+        try:
+            obj = cls.find_one(
+                Q('node', 'eq', node) &
+                Q('path', 'eq', path)
+            )
+        except modm_errors.ModularOdmException:
+            return
+        for comment in getattr(obj, 'comment_target', []):
+            if delete:
+                comment.hide(save=True)
+            else:
+                comment.show(save=True)

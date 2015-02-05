@@ -208,11 +208,12 @@ def get_version(path, node_settings, version_str, throw=True):
     return version_idx, file_version, record
 
 
-def serialize_file(idx, version, record, path, node):
+def serialize_file(file_id, idx, version, record, path, node):
     """Serialize data used to render a file.
     """
     rendered = utils.render_file(idx, version, record)
     return {
+        'file_id': file_id,
         'file_name': record.name,
         'file_revision': 'Version {0}'.format(idx),
         'file_path': '/' + record.path,
@@ -257,10 +258,11 @@ def view_file(auth, path, node_addon, version_query):
     node = node_addon.owner
     idx, version, record = get_version(path, node_addon, version_query, throw=False)
     file_obj = model.OsfStorageGuidFile.get_or_create(node=node, path=path)
+    file_id = file_obj._id
     redirect_url = check_file_guid(file_obj)
     if redirect_url:
         return redirect(redirect_url)
-    ret = serialize_file(idx, version, record, path, node)
+    ret = serialize_file(file_id, idx, version, record, path, node)
     ret.update(serialize_node(node, auth, primary=True))
     return ret
 

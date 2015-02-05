@@ -435,13 +435,15 @@ def _update_comments_timestamp(auth, node, page='node', root_id=None):
             if page == 'files':
                 root_targets = GithubGuidFile.find(Q('node', 'eq', node)).get_keys()
                 for root_target in root_targets:
-                    if hasattr(GithubGuidFile.load(root_target), 'comment_target'):
-                        ret = _update_comments_timestamp(auth, node, page, root_target)
+                    github_file = GithubGuidFile.load(root_target)
+                    if hasattr(github_file, 'comment_target'):
+                        ret = _update_comments_timestamp(auth, node, page, github_file._id)
             elif page == 'wiki':
                 root_targets = NodeWikiPage.find(Q('node', 'eq', node)).get_keys()
                 for root_target in root_targets:
-                    if hasattr(NodeWikiPage.load(root_target), 'comment_target'):
-                        ret = _update_comments_timestamp(auth, node, page, root_target)
+                    wiki_page = NodeWikiPage.load(root_target)
+                    if hasattr(wiki_page, 'comment_target'):
+                        ret = _update_comments_timestamp(auth, node, page, wiki_page.page_name)
             return ret
 
         # if updating timestamp on a specific files/wiki page

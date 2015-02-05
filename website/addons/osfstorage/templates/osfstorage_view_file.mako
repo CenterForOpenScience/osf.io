@@ -76,7 +76,9 @@
                 revisions: '${revisions_url}',
                 download: '${download_url}'
             }
-        }
+        },
+        file_id: '${file_id}',
+        file_name: '${file_name}'
     });
 </script>
 
