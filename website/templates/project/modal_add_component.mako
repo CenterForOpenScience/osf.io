@@ -9,8 +9,9 @@
                 </div><!-- end modal-header -->
                 <div class="modal-body">
                     <div class="alert alert-info">
-                      Note: Beginning on 2015/02/20, project administrators will automatically
-                      be granted read-only access to all child components.
+                      Note: Beginning on 2015/02/20, project administrators will have read-only
+                      access to all sub-components of the project, even if they are not listed as
+                      a contributor.
                     </div>
                     <div id="alert" style="padding-bottom:10px;color:blue"></div>
                     <div class="form-group">
