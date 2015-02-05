@@ -9,17 +9,6 @@ from website.addons.osfstorage import views
 web_routes = {
 
     'rules': [
-
-        Rule(
-            [
-                '/project/<pid>/osfstorage/files/<path:path>/',
-                '/project/<pid>/node/<nid>/osfstorage/files/<path:path>/',
-            ],
-            'get',
-            views.osf_storage_view_file,
-            OsfWebRenderer('../addons/osfstorage/templates/osfstorage_view_file.mako'),
-        ),
-
         Rule(
             [
                 # Legacy routes for `view_file`
@@ -132,16 +121,6 @@ api_routes = {
             ],
             'post',
             views.osf_storage_upload_file_hook,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/osfstorage/render/<path:path>/',
-                '/project/<pid>/node/<nid>/osfstorage/render/<path:path>/',
-            ],
-            'get',
-            views.osf_storage_render_file,
             json_renderer,
         ),
 

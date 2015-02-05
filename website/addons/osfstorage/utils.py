@@ -5,7 +5,6 @@ import httplib
 import logging
 
 import furl
-import requests
 import itsdangerous
 from modularodm import Q
 from flask import request
@@ -16,7 +15,6 @@ from website import settings as site_settings
 
 from website.util import rubeus
 from website.models import Session
-from website.project.views.file import get_cache_content
 
 from website.addons.osfstorage import model
 from website.addons.osfstorage import settings
@@ -189,43 +187,3 @@ def get_waterbutler_download_url(version_idx, file_version, file_record, user=No
 
 def get_waterbutler_upload_url(user, node, path, **query):
     return get_waterbutler_url(user, 'file', nid=node._id, path=path, **query)
-
-
-def get_cache_filename(file_version):
-    """Get path to cached rendered file on disk.
-
-    :param FileVersion file_version: Version to locate
-    """
-    return '{0}.html'.format(file_version.location_hash)
-
-
-def render_file(version_idx, file_version, file_record):
-    """
-    :param int version_idx: One-based version index
-    :param FileVersion file_version: File version to render
-    :param FileRecord file_record: Base file object
-    """
-    file_obj = model.OsfStorageGuidFile.find_one(
-        Q('node', 'eq', file_record.node) &
-        Q('path', 'eq', file_record.path)
-    )
-    cache_file_name = get_cache_filename(file_version)
-    node_settings = file_obj.node.get_addon('osfstorage')
-    rendered = get_cache_content(node_settings, cache_file_name)
-    if rendered is None:
-        download_url = get_waterbutler_download_url(
-            version_idx,
-            file_version,
-            file_record,
-            mode='render',
-        )
-        file_response = requests.get(download_url)
-        rendered = get_cache_content(
-            node_settings,
-            cache_file_name,
-            start_render=True,
-            remote_path=file_obj.path,
-            file_content=file_response.content,
-            download_url=file_obj.get_download_path(version_idx),
-        )
-    return rendered

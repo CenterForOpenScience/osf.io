@@ -4,13 +4,9 @@ import logging
 import httplib as http
 
 from flask import make_response
-from dropbox.rest import ErrorResponse
 
 from framework.exceptions import HTTPError
-from website.project.utils import get_cache_content
 from website.util import rubeus
-
-from website.addons.dropbox.client import get_node_addon_client
 
 logger = logging.getLogger(__name__)
 
@@ -130,42 +126,6 @@ def make_file_response(fileobject, metadata):
     resp.headers['Content-Disposition'] = disposition
     resp.headers['Content-Type'] = metadata.get('mime_type', 'application/octet-stream')
     return resp
-
-
-def render_dropbox_file(file_obj, client=None, rev=None):
-    """Render a DropboxFile with the MFR.
-
-    :param DropboxFile file_obj: The file's GUID record.
-    :param DropboxClient client:
-    :param str rev: Revision ID.
-    :return: The HTML for the rendered file.
-    """
-    # Filename for the cached MFR HTML file
-    cache_file_name = file_obj.get_cache_filename(client=client, rev=rev)
-    node_settings = file_obj.node.get_addon('dropbox')
-    rendered = get_cache_content(node_settings, cache_file_name)
-    if rendered is None:  # not in MFR cache
-        dropbox_client = client or get_node_addon_client(node_settings)
-        try:
-            file_response, metadata = dropbox_client.get_file_and_metadata(
-                file_obj.path, rev=rev)
-        except ErrorResponse as err:
-            logger.error(err.body['error'])
-            if err.status == 461:
-                message = ('This file is no longer available due to a takedown request '
-                    'under the Digital Millennium Copyright Act.')
-            else:
-                message = 'This Dropbox file cannot be rendered.'
-            return ''.join(['<p class="text-danger">', message, '</p>'])
-        rendered = get_cache_content(
-            node_settings=node_settings,
-            cache_file_name=cache_file_name,
-            start_render=True,
-            remote_path=file_obj.path,
-            file_content=file_response.read(),
-            download_url=file_obj.download_url(guid=True, rev=rev),
-        )
-    return rendered
 
 
 def ensure_leading_slash(path):

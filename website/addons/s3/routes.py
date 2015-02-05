@@ -1,5 +1,4 @@
 from framework.routing import Rule, json_renderer
-from website.routes import OsfWebRenderer
 
 from website.addons.s3 import views
 
@@ -91,15 +90,6 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/s3/<path:path>/render/',
-                '/project/<pid>/node/<nid>/s3/<path:path>/render/',
-            ],
-            'get',
-            views.crud.ping_render,
-            json_renderer,
-        ),
-        Rule(
-            [
                 '/project/<pid>/s3/hgrid/',
                 '/project/<pid>/node/<nid>/s3/hgrid/',
                 '/project/<pid>/s3/hgrid/<path:path>/',
@@ -134,15 +124,6 @@ api_routes = {
 
 nonapi_routes = {
     'rules': [
-        Rule(
-            [
-                '/project/<pid>/s3/<path:path>/',
-                '/project/<pid>/node/<nid>/s3/<path:path>/'
-            ],
-            'get',
-            views.crud.s3_view,
-            OsfWebRenderer('../addons/s3/templates/s3_view_file.mako'),
-        ),
         Rule(
             [
                 '/project/<pid>/s3/<path:path>/download/',

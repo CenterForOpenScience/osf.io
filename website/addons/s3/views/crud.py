@@ -7,28 +7,21 @@ import httplib as http
 from boto.exception import S3ResponseError, BotoClientError
 
 from flask import request
-from modularodm import Q
 
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 
 from website.models import NodeLog
 
-from website.addons.base.views import check_file_guid
-
-from website.project.views.node import _view_project
-from website.project.views.file import get_cache_content
 from website.project.decorators import (
     must_have_permission, must_be_contributor_or_public,
     must_not_be_registration, must_have_addon
 )
 
-from website.addons.s3.model import S3GuidFile
-from website.addons.s3.settings import MAX_RENDER_SIZE
 from website.addons.s3.api import S3Wrapper, create_bucket
 
 from website.addons.s3.utils import (
-    create_version_list, build_urls, get_cache_file_name, generate_signed_url,
+    build_urls, generate_signed_url,
     validate_bucket_name
 )
 
@@ -73,92 +66,6 @@ def s3_delete(**kwargs):
         log_date=datetime.datetime.utcnow(),
     )
     return {}
-
-
-@must_be_contributor_or_public
-@must_have_addon('s3', 'node')
-def s3_view(**kwargs):
-
-    path = kwargs.get('path')
-    vid = request.args.get('vid')
-    if not path:
-        raise HTTPError(http.NOT_FOUND)
-
-    if vid == 'Pre-versioning':
-        vid = 'null'
-
-    node_settings = kwargs['node_addon']
-    auth = kwargs['auth']
-    node = kwargs['node'] or kwargs['project']
-
-    wrapper = S3Wrapper.from_addon(node_settings)
-    key = wrapper.get_wrapped_key(urllib.unquote(path), vid=vid)
-
-    if key is None:
-        raise HTTPError(http.NOT_FOUND)
-
-    try:
-        guid = S3GuidFile.find_one(
-            Q('node', 'eq', node) &
-            Q('path', 'eq', path)
-        )
-    except:
-        guid = S3GuidFile(
-            node=node,
-            path=path,
-        )
-        guid.save()
-
-    redirect_url = check_file_guid(guid)
-    if redirect_url:
-        return redirect(redirect_url)
-
-    cache_file_name = get_cache_file_name(path, key.etag)
-    urls = build_urls(node, path, etag=key.etag)
-
-    if key.s3Key.size > MAX_RENDER_SIZE:
-        render = 'File too large to render; download file to view it'
-    else:
-        # Check to see if the file has already been rendered.
-        render = get_cache_content(node_settings, cache_file_name)
-        if render is None:
-            file_contents = key.s3Key.get_contents_as_string()
-            render = get_cache_content(
-                node_settings,
-                cache_file_name,
-                start_render=True,
-                remote_path=path,
-                file_content=file_contents,
-                download_url=urls['download'],
-            )
-
-    versions = create_version_list(wrapper, urllib.unquote(path), node)
-
-    rv = {
-        'file_name': key.name,
-        'rendered': render,
-        'download_url': urls['download'],
-        'render_url': urls['render'],
-        'versions': versions,
-        'current': key.version_id,
-        'info_url': urls['info'],
-        'delete_url': urls['delete'],
-        'files_page_url': node.web_url_for('collect_file_trees')
-    }
-    rv.update(_view_project(node, auth, primary=True))
-    return rv
-
-
-@must_be_contributor_or_public
-@must_have_addon('s3', 'node')
-def ping_render(**kwargs):
-    node_settings = kwargs['node_addon']
-    path = kwargs.get('path')
-    etag = request.args.get('etag')
-
-    cache_file = get_cache_file_name(path, etag)
-
-    return get_cache_content(node_settings, cache_file)
 
 
 @must_have_permission('write')

@@ -9,23 +9,17 @@ from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
 from website.project.model import NodeLog
-from framework.flask import redirect  # VOL-aware redirect
-from website.project.utils import serialize_node
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 from website.project.decorators import must_be_contributor_or_public
-from website.addons.base.views import check_file_guid
 
 from framework.exceptions import HTTPError
 
 from website.addons.dropbox.model import DropboxFile
 from website.addons.dropbox.client import get_node_addon_client
 from website.addons.dropbox.utils import (
-    render_dropbox_file,
-    get_file_name,
     metadata_to_hgrid,
-    clean_path,
     DropboxNodeLogger,
     make_file_response,
     abort_if_not_subdir,
@@ -151,52 +145,3 @@ def dropbox_get_revisions(path, node_addon, auth, **kwargs):
         'path': path,
         'registered': node.registered_date.isoformat() if node.registered_date else None,
     }, http.OK
-
-
-@must_be_contributor_or_public
-@must_have_addon('dropbox', 'node')
-def dropbox_view_file(path, node_addon, auth, **kwargs):
-    """Web view for the file detail page."""
-    if not path:
-        raise HTTPError(http.NOT_FOUND)
-    # check that current user has access to the path
-    if not is_authorizer(auth, node_addon):
-        abort_if_not_subdir(path, node_addon.folder)
-    node = node_addon.owner
-    client = get_node_addon_client(node_addon)
-    # Lazily create a file GUID record
-    file_obj, created = DropboxFile.get_or_create(node=node, path=path)
-
-    redirect_url = check_file_guid(file_obj)
-    if redirect_url:
-        return redirect(redirect_url)
-    rev = request.args.get('rev') or ''
-    rendered = render_dropbox_file(file_obj, client=client, rev=rev)
-    cleaned_path = clean_path(path)
-    response = {
-        'revisions_url': node.api_url_for('dropbox_get_revisions',
-            path=cleaned_path, rev=rev),  # Append current revision as a query param
-        'file_name': get_file_name(path),
-        'render_url': node.api_url_for('dropbox_render_file', path=cleaned_path),
-        'download_url': file_obj.download_url(guid=True, rev=rev),
-        'rendered': rendered,
-    }
-    response.update(serialize_node(node, auth, primary=True))
-    return response, http.OK
-
-##### MFR Rendering #####
-
-@must_be_contributor_or_public
-@must_have_addon('dropbox', 'node')
-def dropbox_render_file(path, node_addon, auth, **kwargs):
-    """View polled by the FileRenderer. Return the rendered HTML for the
-    requested file.
-    """
-    # check that current user has access to the path
-    if not is_authorizer(auth, node_addon):
-        abort_if_not_subdir(path, node_addon.folder)
-    node = node_addon.owner
-    file_obj = DropboxFile.find_one(Q('node', 'eq', node) & Q('path', 'eq', path))
-    client = get_node_addon_client(node_addon)
-    rev = request.args.get('rev', '')
-    return render_dropbox_file(file_obj, client=client, rev=rev)

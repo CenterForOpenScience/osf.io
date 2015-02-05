@@ -3,7 +3,7 @@
 from framework.routing import Rule, json_renderer
 
 from website.addons.dropbox import views
-from website.routes import OsfWebRenderer, notemplate
+from website.routes import notemplate
 
 
 auth_routes = {
@@ -54,18 +54,6 @@ auth_routes = {
 
 web_routes = {
     'rules': [
-
-        ##### View file #####
-        Rule(
-            [
-                '/project/<pid>/dropbox/files/<path:path>',
-                '/project/<pid>/node/<nid>/dropbox/files/<path:path>',
-            ],
-            'get',
-            views.crud.dropbox_view_file,
-            OsfWebRenderer('../addons/dropbox/templates/dropbox_view_file.mako'),
-        ),
-
 
         ##### Download file #####
         Rule(
@@ -148,17 +136,6 @@ api_routes = {
             ],
             'post',
             views.crud.dropbox_upload,
-            json_renderer
-        ),
-
-        ##### File rendering #####
-        Rule(
-            [
-                '/project/<pid>/dropbox/files/<path:path>/render/',
-                '/project/<pid>/node/<nid>/dropbox/files/<path:path>/render/',
-            ],
-            'get',
-            views.crud.dropbox_render_file,
             json_renderer
         ),
 

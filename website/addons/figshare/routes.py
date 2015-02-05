@@ -3,7 +3,6 @@
 """
 
 from framework.routing import Rule, json_renderer
-from website.routes import OsfWebRenderer
 
 from . import views
 
@@ -117,10 +116,6 @@ api_routes = {
 
         ], 'get', views.hgrid.figshare_hgrid_data_contents, json_renderer),
         Rule([
-            '/project/<pid>/figshare/render/article/<aid>/file/<fid>/',
-            '/project/<pid>/node/<nid>/figshare/render/article/<aid>/file/<fid>/'
-        ], 'get', views.crud.figshare_get_rendered_file, json_renderer,),
-        Rule([
             '/project/<pid>/figshare/download/article/<aid>/file/<fid>/',
             '/project/<pid>/node/<nid>/figshare/download/article/<aid>/file/<fid>/'
         ], 'get', views.crud.figshare_download_file, json_renderer,),
@@ -130,9 +125,5 @@ api_routes = {
 
 page_routes = {
     'rules': [
-        Rule([
-            '/project/<pid>/figshare/article/<aid>/file/<fid>/',
-            '/project/<pid>/node/<nid>/figshare/article/<aid>/file/<fid>/',
-        ], 'get', views.crud.figshare_view_file, OsfWebRenderer('../addons/figshare/templates/figshare_view_file.mako')),
     ],
 }

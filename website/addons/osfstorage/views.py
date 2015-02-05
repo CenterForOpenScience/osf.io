@@ -19,8 +19,6 @@ from website.project.decorators import (
     must_not_be_registration, must_have_addon,
 )
 from website.util import rubeus
-from website.project.utils import serialize_node
-from website.addons.base.views import check_file_guid
 
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
@@ -207,29 +205,6 @@ def get_version(path, node_settings, version_str, throw=True):
     return version_idx, file_version, record
 
 
-def serialize_file(idx, version, record, path, node):
-    """Serialize data used to render a file.
-    """
-    rendered = utils.render_file(idx, version, record)
-    return {
-        'file_name': record.name,
-        'file_revision': 'Version {0}'.format(idx),
-        'file_path': '/' + record.path,
-        'rendered': rendered,
-        'files_url': node.web_url_for('collect_file_trees'),
-        'download_url': node.web_url_for('osf_storage_view_file', path=path, action='download'),
-        'revisions_url': node.api_url_for(
-            'osf_storage_get_revisions',
-            path=path,
-        ),
-        'render_url': node.api_url_for(
-            'osf_storage_render_file',
-            path=path,
-            version=idx,
-        ),
-    }
-
-
 def download_file(path, node_addon, version_query, **query):
     idx, version, record = get_version(path, node_addon, version_query)
     url = utils.get_waterbutler_download_url(idx, version, record, **query)
@@ -240,18 +215,6 @@ def download_file(path, node_addon, version_query, **query):
     return redirect(resp.headers['Location'])
 
 
-def view_file(auth, path, node_addon, version_query):
-    node = node_addon.owner
-    idx, version, record = get_version(path, node_addon, version_query, throw=False)
-    file_obj = model.OsfStorageGuidFile.get_or_create(node=node, path=path)
-    redirect_url = check_file_guid(file_obj)
-    if redirect_url:
-        return redirect(redirect_url)
-    ret = serialize_file(idx, version, record, path, node)
-    ret.update(serialize_node(node, auth, primary=True))
-    return ret
-
-
 @must_be_contributor_or_public
 @must_have_addon('osfstorage', 'node')
 def osf_storage_view_file(auth, path, node_addon, **kwargs):
@@ -260,8 +223,8 @@ def osf_storage_view_file(auth, path, node_addon, **kwargs):
     if action == 'download':
         mode = request.args.get('mode')
         return download_file(path, node_addon, version_idx, mode=mode)
-    if action == 'view':
-        return view_file(auth, path, node_addon, version_idx)
+    # if action == 'view':
+    #     return view_file(auth, path, node_addon, version_idx)
     raise HTTPError(httplib.BAD_REQUEST)
 
 
@@ -273,14 +236,6 @@ def update_analytics(node, path, version_idx):
     """
     update_counter(u'download:{0}:{1}'.format(node._id, path))
     update_counter(u'download:{0}:{1}:{2}'.format(node._id, path, version_idx))
-
-
-@must_be_contributor_or_public
-@must_have_addon('osfstorage', 'node')
-def osf_storage_render_file(path, node_addon, **kwargs):
-    version = request.args.get('version')
-    idx, version, record = get_version(path, node_addon, version)
-    return utils.render_file(idx, version, record)
 
 
 @must_be_signed
