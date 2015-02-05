@@ -46,20 +46,15 @@ function ProjectNotifications(data) {
              return [
                 {
                     title: "Project",
-                    width: "40%",
+                    width: "60%",
                     sortType : "text",
                     sort : true
                 },
                 {
                     title: "Notification Type",
-                    width : "20%",
+                    width : "40%",
                     sort : true
 
-                },
-                {
-                    title: "Apply To",
-                    width : "30%",
-                    sort : false
                 }
             ]},
         resolveRows : function _conferenceResolveRows(item){
@@ -107,23 +102,7 @@ function ProjectNotifications(data) {
                             ])
                         ]);
                     }
-                },
-                    {
-                        data: 'applyTo',  // Data field name
-                        folderIcons: false,
-                        filter: false,
-                        custom: function (item, col) {
-                            var tb = this;
-                            return m("form-control", [
-                                m("label", [
-                                    m("input[type='checkbox']", {
-                                        id: item.parent().data.node_id,
-                                        name: item.data.title,
-                                        checked: item.data.future ? "checked": ""
-                                    }), " Apply to future components"])
-                            ]);
-                        }
-                    });
+                });
             }
             else {
                 default_columns.push(
