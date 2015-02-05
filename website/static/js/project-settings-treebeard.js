@@ -3,29 +3,6 @@ require('../vendor/bower_components/slickgrid/lib/jquery.event.drag-2.2.js');
 var m = require('mithril');
 var Treebeard = require('treebeard');
 
-
-function applyToChildren(item, tb){
-     var parent = item.parent(),
-         eventName = item.data.title,
-         notificationType = item.data.notificationType,
-         i,
-         j;
-    for (i = 0; i < parent.children.length; i++) {
-       var sibling = parent.children[i];
-       if (sibling.kind !== 'event') {
-           for (j = 0; j < sibling.children.length; j++) {
-               var child =  sibling.children[j];
-               if (child.data.kind === 'event' && child.data.title === eventName) {
-                    child.data.notificationType = notificationType;
-                }
-           }
-           if (!sibling.open) {
-               tb.updateFolder(null, sibling);
-           }
-       }
-    }
-}
-
 function resolveToggle(item) {
         var toggleMinus = m('i.icon-minus', ' '),
             togglePlus = m('i.icon-plus', ' ');
@@ -137,10 +114,7 @@ function ProjectNotifications(data) {
                         filter: false,
                         custom: function (item, col) {
                             var tb = this;
-                            return m("form-control", [m("button.btn.btn-default[type='button']", {
-                                onclick: function () {
-                                    applyToChildren(item, tb);
-                            } }, "Apply to all components"),
+                            return m("form-control", [
                                 m("label", [
                                     m("input[type='checkbox']", {
                                         id: item.parent().data.node_id,
