@@ -14,6 +14,7 @@ from framework.flask import redirect
 
 from website.addons.wiki import settings
 from website.addons.wiki import utils as wiki_utils
+from website.profile.utils import get_gravatar
 from website.project.views.node import _view_project
 from website.project import show_diff
 from website.project.model import has_anonymous_link
@@ -291,6 +292,7 @@ def project_wiki_edit(auth, wname, **kwargs):
                 'page': wiki_page_api_url
             }),
             'web': _get_wiki_web_urls(node, wiki_name),
+            'gravatar': get_gravatar(auth.user, 32),
         },
     }
     ret.update(_view_project(node, auth, primary=True))

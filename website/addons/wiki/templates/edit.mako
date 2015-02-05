@@ -177,13 +177,13 @@ ${parent.javascript_bottom()}
             content: '${urls['api']['content']}',
             sharejs: '${sharejs_url}'
         },
-        email: '${user_name}',
         metadata: {
             registration: true,
             docId: '${sharejs_uuid}',
             userId: '${user_id}',
             userName: '${user_full_name}',
-            userUrl: '${user_url}'
+            userUrl: '${user_url}',
+            userGravatar: '${urls['gravatar']}'.replace('&amp;', '&')
         }
     };
 </script>
