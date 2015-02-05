@@ -844,7 +844,6 @@ def n_unread_comments(node, user, page, root_id=None):
         root_target = root_target.referent
     else:
         root_target = node.get_wiki_page(root_id, 1)
-    if page == 'files':
     default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
     view_timestamp = user.comments_viewed_timestamp.get(node._id, default_timestamp)
     if isinstance(view_timestamp, dict):
