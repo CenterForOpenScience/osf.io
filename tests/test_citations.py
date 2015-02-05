@@ -126,7 +126,7 @@ class CitationsUserTestCase(OsfTestCase):
         self.user = UserFactory()
 
     def tearDown(self):
-        super(CitationsUserTestCase, self).setUp()
+        super(CitationsUserTestCase, self).tearDown()
         User.remove()
 
     def test_user_csl(self):
