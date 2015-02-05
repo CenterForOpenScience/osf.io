@@ -15,11 +15,10 @@ from modularodm import Q
 from dateutil.parser import parse as parse_date
 
 from framework import auth
-from framework.exceptions import HTTPError, PermissionsError
+from framework.exceptions import HTTPError
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 
-import website.app
 from website import mailchimp_utils
 from website.views import _rescale_ratio
 from website.util import permissions
@@ -200,7 +199,6 @@ class TestProjectViews(OsfTestCase):
         my_user.reload()
         dashboard = my_user.node__contributed.find(Q('is_dashboard', 'eq', True))
         assert_equal(dashboard.count(), 1)
-
 
     def test_add_contributor_post(self):
         # Two users are added as a contributor via a POST request

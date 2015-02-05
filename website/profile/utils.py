@@ -31,7 +31,7 @@ def get_gravatar(user, size=None):
     )
 
 
-def serialize_user(user, node=None, full=False):
+def serialize_user(user, node=None, admin=False, full=False):
     """Return a dictionary representation of a registered user.
 
     :param User user: A User object
@@ -52,10 +52,17 @@ def serialize_user(user, node=None, full=False):
         'active': user.is_active,
     }
     if node is not None:
-        rv.update({
-            'visible': user._id in node.visible_contributor_ids,
-            'permission': reduce_permissions(node.get_permissions(user)),
-        })
+        if admin:
+            flags = {
+                'visible': False,
+                'permission': 'read',
+            }
+        else:
+            flags = {
+                'visible': user._id in node.visible_contributor_ids,
+                'permission': reduce_permissions(node.get_permissions(user)),
+            }
+        rv.update(flags)
     if user.is_registered:
         rv.update({
             'url': user.url,
@@ -89,10 +96,9 @@ def serialize_user(user, node=None, full=False):
     return rv
 
 
-def serialize_contributors(contribs, node):
-
+def serialize_contributors(contribs, node, **kwargs):
     return [
-        serialize_user(contrib, node)
+        serialize_user(contrib, node, **kwargs)
         for contrib in contribs
     ]
 

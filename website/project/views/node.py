@@ -354,14 +354,12 @@ def node_choose_addons(**kwargs):
 
 @must_be_valid_project
 @must_have_permission('read')
-def node_contributors(**kwargs):
-
-    auth = kwargs['auth']
+def node_contributors(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
-
-    rv = _view_project(node, auth, primary=True)
-    rv['contributors'] = utils.serialize_contributors(node.contributors, node)
-    return rv
+    ret = _view_project(node, auth, primary=True)
+    ret['contributors'] = utils.serialize_contributors(node.contributors, node)
+    ret['adminContributors'] = utils.serialize_contributors(node.admin_contributors, node, admin=True)
+    return ret
 
 
 @must_have_permission('admin')
