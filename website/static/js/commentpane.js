@@ -63,6 +63,7 @@
                 width = options.toggleWidth * bodyWidth;
                 options.onOpen.call(self, self.page, self.host_name);
             }
+            $handle.tooltip('hide');
             $toggleElm.animate(
                 {width: width},
                 options.animateTime
