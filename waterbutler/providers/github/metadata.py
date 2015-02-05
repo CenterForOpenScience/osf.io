@@ -100,3 +100,11 @@ class GitHubRevision(metadata.BaseFileRevisionMetadata):
     @property
     def version(self):
         return self.raw['sha']
+
+    @property
+    def extra(self):
+        return {
+            'user': {
+                'name': self.raw['commit']['committer']['name']
+            }
+        }
