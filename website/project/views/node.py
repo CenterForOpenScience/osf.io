@@ -839,7 +839,12 @@ def n_unread_comments(node, user, page, root_id=None):
     """Return the number of unread comments on a node for a user."""
     if root_id is None or root_id == 'None' or page == 'node':
         return n_unread_total(node, user, page)
-    root_target = Guid.load(root_id) or node.get_wiki_page(root_id, 1)
+    root_target = Guid.load(root_id)
+    if root_target:
+        root_target = root_target.referent
+    else:
+        root_target = node.get_wiki_page(root_id, 1)
+    if page == 'files':
     default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
     view_timestamp = user.comments_viewed_timestamp.get(node._id, default_timestamp)
     if isinstance(view_timestamp, dict):
@@ -856,6 +861,7 @@ def n_unread_comments(node, user, page, root_id=None):
 
 
 def n_unread_total(node, user, page):
+    from website.addons.osfstorage.model import OsfStorageGuidFile
     from website.addons.wiki.model import NodeWikiPage
     default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
     view_timestamp = user.comments_viewed_timestamp.get(node._id, default_timestamp)
@@ -866,12 +872,11 @@ def n_unread_total(node, user, page):
         if isinstance(view_timestamp, dict):
             n_unread = 0
             if page == 'files':
-                from website.addons.github.model import GithubGuidFile
-                root_targets = GithubGuidFile.find(Q('node', 'eq', node)).get_keys()
+                root_targets = OsfStorageGuidFile.find(Q('node', 'eq', node)).get_keys()
                 for root_target in root_targets:
-                    file = GithubGuidFile.load(root_target)
-                    if hasattr(file, 'comment_target'):
-                        root_id = file._id
+                    osf_file = OsfStorageGuidFile.load(root_target)
+                    if hasattr(osf_file, 'comment_target'):
+                        root_id = osf_file._id
                         n_unread += n_unread_comments(node, user, page, root_id)
             elif page == 'wiki':
                 root_targets = NodeWikiPage.find(Q('node', 'eq', node)).get_keys()

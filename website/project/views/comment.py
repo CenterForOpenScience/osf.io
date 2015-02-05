@@ -428,16 +428,16 @@ def _update_comments_timestamp(auth, node, page='node', root_id=None):
             timestamps[page] = dict()
 
         # if updating timestamp on the files/wiki total page...
-        from website.addons.github.model import GithubGuidFile
+        from website.addons.osfstorage.model import OsfStorageGuidFile
         from website.addons.wiki.model import NodeWikiPage
         if root_id is None or root_id == 'None':
             ret = {}
             if page == 'files':
-                root_targets = GithubGuidFile.find(Q('node', 'eq', node)).get_keys()
+                root_targets = OsfStorageGuidFile.find(Q('node', 'eq', node)).get_keys()
                 for root_target in root_targets:
-                    github_file = GithubGuidFile.load(root_target)
-                    if hasattr(github_file, 'comment_target'):
-                        ret = _update_comments_timestamp(auth, node, page, github_file._id)
+                    osf_file = OsfStorageGuidFile.load(root_target)
+                    if hasattr(osf_file, 'comment_target'):
+                        ret = _update_comments_timestamp(auth, node, page, osf_file._id)
             elif page == 'wiki':
                 root_targets = NodeWikiPage.find(Q('node', 'eq', node)).get_keys()
                 for root_target in root_targets:
