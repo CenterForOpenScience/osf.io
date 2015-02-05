@@ -29,18 +29,18 @@ class FigShareGuidFile(GuidFile):
         return 'figshare'
 
     def enrich(self):
-        resp = self._fetch_metadata(should_raise=True)
+        self._fetch_metadata(should_raise=True)
 
-        metadata = resp.json()['data']
+        if self._metadata_cache['extra']['status'] == 'drafts':
+            raise fig_exceptions.FigshareIsDraftError(self)
 
-        self.name = metadata['name']
+    @property
+    def version_identifier(self):
+        return ''
 
-        if metadata['extra']['status'] == 'drafts':
-            self.save()
-            raise fig_exceptions.FigshareIsDraftError()
-
-        self.enriched = True
-        self.save()
+    @property
+    def unique_identifier(self):
+        return '{}{}'.format(self.article_id, self.file_id)
 
 
 class AddonFigShareUserSettings(AddonUserSettingsBase):
