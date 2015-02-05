@@ -1,9 +1,13 @@
 'use strict';
 
 var $ = require('jquery');
+var Raven = require('raven-js');
+
 var $osf = require('osfHelpers');
 require('select2');
 require('../css/citations.css');
+
+var ctx = window.contextVars;
 
 var r = function(query) {
     query.callback({results: [
@@ -47,18 +51,22 @@ input.select2({
         cache: true
     }
 }).on('select2-selecting', function(e) {
+    var url = ctx.node.urls.api + 'citation/' + e.val;
     var request = $.ajax({
-        url: nodeApiUrl + 'citation/' + e.val
+        url: url
     });
     request.done(function (data) {
         citationElement.text(data.citation).slideDown();
     });
-    request.fail(function() {
+    request.fail(function(jqxhr, status, error) {
         $osf.growl(
             'Citation render failed',
             'The requested citation format generated an error.',
             'danger'
         );
+        Raven.captureMessage('Unexpected error when fetching citation', {
+            url: url, citationStyle: e.val, status: status, error: error
+        });
     });
 }).on('select2-removed', function (e) {
     citationElement.slideUp().text();
