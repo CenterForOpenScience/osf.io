@@ -48,6 +48,10 @@
                 <tr>
                     <th>Version</th>
                     <th>Date</th>
+                    <!-- ko if: revisions()[0] && revisions()[0].extra && revisions()[0].extra.user -->
+                    <th>User</th>
+                    <!-- /ko -->
+                    <th>Download</th>
                 </tr>
             </thead>
 
@@ -59,8 +63,23 @@
                       </a>
                     </td>
                     <td>{{ revision.displayDate }}</td>
+                    <!-- ko if: revision.extra && revision.extra.user -->
                     <td>
-                      <a class="btn btn-primary btn-sm">
+                      <!-- ko if: revision.extra.user.url -->
+                      <a href="{{ revision.extra.user.url }}">
+                        {{ revision.extra.user.name }}
+                      </a>
+                    <!-- /ko -->
+                    <!-- ko ifnot: revision.extra.user.url -->
+                        {{ revision.extra.user.name }}
+                    <!-- /ko -->
+                    </td>
+                    <!-- /ko -->
+                    <td>
+                      <!-- ko if: revision.extra && revision.extra.downloads -->
+                      <span class="badge">{{ revision.extra.downloads }}</span>
+                      <!-- /ko -->
+                      <a class="btn btn-primary btn-sm" href="{{ revision.downloadUrl }}">
                         <i class="icon-download-alt"></i>
                       </a>
                     </td>

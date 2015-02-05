@@ -9,11 +9,14 @@ var waterbutler = require('waterbutler');
 
 ko.punches.enableAll();
 
-var Revision = function(data) {
+var Revision = function(data, file, node) {
 
     var self = this;
 
     $.extend(self, data);
+    var ops = {};
+    ops[self.versionIdentifier] = self.version;
+    self.downloadUrl = waterbutler.buildDownloadUrl(file.path, file.provider, node.id, ops);
     self.date = new $osf.FormattableDate(data.modified);
     self.displayDate = self.date.local !== 'Invalid date' ?
         self.date.local :
@@ -51,7 +54,7 @@ RevisionsViewModel.prototype.fetch = function() {
     request.done(function(response) {
         // self.more(response.more);
         var revisions = ko.utils.arrayMap(response.data, function(item) {
-            return new Revision(item);
+            return new Revision(item, self.file, self.node);
         });
         self.revisions(self.revisions().concat(revisions));
         self.page += 1;
