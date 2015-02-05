@@ -2762,30 +2762,26 @@ class TestRegisterNode(OsfTestCase):
             assert_not_in(node, self.project.nodes)
             assert_true(node.is_registration)
 
-    def test_partial_contributor_registration(self):
+    def test_private_contributor_registration(self):
 
         # Create some nodes
         self.component = NodeFactory(
             creator=self.user,
             project=self.project,
-            title='Not Registered',
         )
         self.subproject = ProjectFactory(
             creator=self.user,
             project=self.project,
-            title='Not Registered',
         )
 
         # Create some nodes to share
         self.shared_component = NodeFactory(
             creator=self.user,
             project=self.project,
-            title='Registered',
         )
         self.shared_subproject = ProjectFactory(
             creator=self.user,
             project=self.project,
-            title='Registered',
         )
 
         # Share the project and some nodes
@@ -2798,11 +2794,9 @@ class TestRegisterNode(OsfTestCase):
         registration = RegistrationFactory(project=self.project, user=user2)
 
         # The correct subprojects were registered
-        assert_equal(len(registration.nodes), 2)
-        assert_not_in(
-            'Not Registered',
-            [node.title for node in registration.nodes],
-        )
+        assert_equal(len(registration.nodes), len(self.project.nodes))
+        for idx in range(len(registration.nodes)):
+            assert_true(registration.nodes[idx].is_registration_of(self.project.nodes[idx]))
 
     def test_is_registration(self):
         assert_true(self.registration.is_registration)

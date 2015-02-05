@@ -1551,11 +1551,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param auth: All the auth information including user, API key.
         :template: Template name
         :data: Form data
-
         """
-        if not self.can_edit(auth):
-            return
-
         if self.is_folder:
             raise NodeStateError("Folders may not be registered")
 
