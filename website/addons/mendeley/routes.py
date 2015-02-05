@@ -7,6 +7,15 @@ api_routes = {
     'rules': [
         Rule(
             [
+                '/settings/mendeley/accounts/',
+            ],
+            'get',
+            views.list_mendeley_accounts_user,
+            json_renderer,
+        ),
+
+        Rule(
+            [
                 '/project/<pid>/mendeley/accounts/',
                 '/project/<pid>/node/<nid>/mendeley/accounts/',
             ],

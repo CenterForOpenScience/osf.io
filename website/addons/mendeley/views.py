@@ -8,6 +8,19 @@ from website.project.decorators import must_have_addon
 from .model import Mendeley
 
 
+@must_have_addon('mendeley', 'user')
+def list_mendeley_accounts_user(auth, user_addon):
+    return {
+        'accounts': [
+            {
+                'id': account._id,
+                'provider_id': account.provider_id,
+                'display_name': account.display_name,
+            } for account in auth.user.external_accounts
+            if account.provider == 'mendeley'
+        ]
+    }
+
 @must_have_permission('write')
 @must_have_addon('mendeley', 'node')
 @must_not_be_registration

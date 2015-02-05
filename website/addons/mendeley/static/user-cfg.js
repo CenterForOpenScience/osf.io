@@ -1,9 +1,82 @@
-/**
- * Created by lyndsy on 1/29/15.
- */
+'use strict';
+
 var $ = require('jquery');
 var ko = require('knockout');
+var $osf = require('osfHelpers');
 
+var MendeleyAccount = function(display_name, id) {
+    var self = this;
+    self.display_name = display_name;
+    self.id = id;
+};
+
+var MendeleyUserSettingsViewModel = function() {
+    var self = this;
+    self.accounts = ko.observableArray();
+
+    self.updateAccounts = function() {
+        var request = $.ajax({
+            url: '/api/v1/settings/mendeley/accounts/'
+        });
+        request.done(function(data) {
+            self.accounts([]);
+            ko.utils.arrayMap(data.accounts, function(acct) {
+                self.accounts.push(
+                    new MendeleyAccount(acct.display_name, acct.id)
+                )
+            })
+        });
+        request.fail(function() {
+            console.log('fail');
+        });
+    };
+
+    self.connectAccount = function() {
+        window.oauth_complete = function() {
+            self.updateAccounts();
+        };
+        window.open('/oauth/connect/mendeley/');
+    };
+
+    self.disconnectAccount = function(account) {
+        var request = $.ajax({
+            url: '/api/v1/oauth/accounts/' + account.id + '/',
+            type: 'DELETE'
+        });
+        request.done(function(data) {
+            self.updateAccounts();
+        });
+    };
+
+    self.updateAccounts();
+
+
+
+};
+
+
+////////////////
+// Public API //
+////////////////
+
+function MendeleyUserSettings (selector) {
+    var self = this;
+    self.selector = selector;
+    self.$element = $(selector);
+    self.viewModel = new MendeleyUserSettingsViewModel();
+    self.init();
+}
+
+MendeleyUserSettings.prototype.init = function() {
+    var self = this;
+    ko.applyBindings(self.viewModel, self.$element[0]);
+};
+
+//module.exports = MendeleySettings;
+new MendeleyUserSettings('#mendeleyUserSettings');
+
+
+/*
 $(document).ready(function() {
 
     window.oauth_complete = function(success) {
@@ -41,3 +114,4 @@ $(document).ready(function() {
         });
     });
 });
+    */

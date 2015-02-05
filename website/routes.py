@@ -249,6 +249,18 @@ def make_url_map(app):
     ])
 
     process_rules(app, [
+        Rule(
+            [
+                '/oauth/accounts/<external_account_id>/',
+            ],
+            'delete',
+            oauth_views.oauth_disconnect,
+            json_renderer,
+        )
+    ], prefix='/api/v1')
+
+
+    process_rules(app, [
         Rule('/dashboard/get_nodes/', 'get', website_views.get_dashboard_nodes, json_renderer),
         Rule(
             [

@@ -1,9 +1,32 @@
+import httplib as http
+
 from flask import redirect
-from flask import request
 
 from framework.auth.decorators import must_be_logged_in
-from .utils import get_service
+from framework.exceptions import HTTPError
+from website.oauth.models import ExternalAccount
+from website.oauth.utils import get_service
 
+
+@must_be_logged_in
+def oauth_disconnect(external_account_id, auth):
+    account = ExternalAccount.load(external_account_id)
+    user = auth.user
+
+    if account is None:
+        HTTPError(http.NOT_FOUND)
+
+    if account not in user.external_accounts:
+        HTTPError(http.FORBIDDEN)
+
+    # iterate AddonUserSettings for addons
+    for user_settings in user.get_addons():
+        user_settings.revoke_oauth_grants(account)
+        user_settings.save()
+
+    # only after all addons have been dealt with can we remove it from the user
+    user.external_accounts.remove(account)
+    user.save()
 
 @must_be_logged_in
 def oauth_connect(service_name, auth):

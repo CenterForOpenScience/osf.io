@@ -222,6 +222,19 @@ class AddonUserSettingsBase(AddonSettingsBase):
 
     owner = fields.ForeignField('user', backref='addons')
 
+    oauth_grants = fields.DictionaryField()
+    # example:
+    # {
+    #     '<Node._id>': {
+    #         '<ExternalAccount._id>': {
+    #             <metadata>
+    #         },
+    #     }
+    # }
+    #
+    # metadata here is the specific to each addon.
+
+
     _meta = {
         'abstract': True,
     }
@@ -261,6 +274,15 @@ class AddonUserSettingsBase(AddonSettingsBase):
             for node_addon in getattr(self, nodes_backref)
             if not node_addon.owner.is_deleted
         ]
+
+    def revoke_oauth_grants(self, external_account):
+        """Given an ExternalAccount instance, revoke all grants made by the user
+        """
+        for node_id, grants in self.oauth_grants.iteritems():
+            # if the external account was granted for the node
+            if external_account._id in grants:
+                del self.oauth_grants[node_id][external_account._d]
+
 
     def to_json(self, user):
         ret = super(AddonUserSettingsBase, self).to_json(user)
