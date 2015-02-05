@@ -10,7 +10,6 @@
     "ace-builds": "https://github.com/ajaxorg/ace-builds.git",
     "qunit": "~1.14.0",
     "sinon": "~1.10.2",
-    "select2": "~3.5.1",
     "jquery-mockjax": "1.5.3",
     "raven-js": "~1.1.16",
     "sinon-qunit": "~1.0.0",
@@ -30,6 +29,7 @@
     "jquery.cookie": "~1.4.1",
     "hgrid": "~0.2.10",
     "uri.js": "~1.14.1",
-    "xhook": "~1.3.0"
+    "xhook": "~1.3.0",
+    "osf-panel": "~0.1.0"
   }
 }
