@@ -75,7 +75,7 @@ class S3Provider(provider.BaseProvider):
         return (yield from dest_provider.metadata(dest_options['path']))
 
     @asyncio.coroutine
-    def download(self, path, accept_url=False, **kwargs):
+    def download(self, path, accept_url=False, version=None, **kwargs):
         """Returns a ResponseWrapper (Stream) for the specified path
         raises FileNotFoundError if the status from S3 is not 200
 
@@ -89,10 +89,22 @@ class S3Provider(provider.BaseProvider):
         if not path.is_file:
             raise exceptions.DownloadError('No file specified for download', code=400)
 
+        if not version or version.lower() == 'latest':
+            query_parameters = None
+        else:
+            query_parameters = {'versionId': version}
+
         key = self.bucket.new_key(path.path)
-        url = key.generate_url(settings.TEMP_URL_SECS, response_headers={'response-content-disposition': 'attachment'})
+
+        url = key.generate_url(
+            settings.TEMP_URL_SECS,
+            query_parameters=query_parameters,
+            response_headers={'response-content-disposition': 'attachment'},
+        )
+
         if accept_url:
             return url
+
         resp = yield from self.make_request(
             'GET',
             url,
@@ -166,10 +178,15 @@ class S3Provider(provider.BaseProvider):
             throws=exceptions.MetadataError,
         )
         content = yield from resp.read_and_close()
-        obj = xmltodict.parse(content)['ListVersionsResult']
+        versions = xmltodict.parse(content)['ListVersionsResult'].get('Version')
+
+        if isinstance(versions, dict):
+            versions = [versions]
+
         return [
-            S3Revision(path.path, item).serialized()
-            for item in obj.get('Version', [])
+            S3Revision(item).serialized()
+            for item in versions
+            if item['Key'] == path.path
         ]
 
     @asyncio.coroutine
