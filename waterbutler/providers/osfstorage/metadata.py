@@ -62,3 +62,10 @@ class OsfStorageRevisionMetadata(BaseOsfStorageMetadata, metadata.BaseFileRevisi
     @property
     def version(self):
         return str(self.raw['index'])
+
+    @property
+    def extra(self):
+        return {
+            'user': self.raw['user'],
+            'downloads': self.raw['downloads'],
+        }
