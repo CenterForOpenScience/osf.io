@@ -120,6 +120,8 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         self.figshare_type = None
         self.figshare_title = None
 
+        self.hide_comments()
+
         if add_log:
             node = self.owner
             self.owner.add_log(
@@ -203,11 +205,7 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         self.save()
         if updated:
             # Configure comments visibility
-            files_id = FigShareGuidFile.find(Q('node', 'eq', self.owner)).get_keys()
-            for fs_file_id in files_id:
-                fs_file = FigShareGuidFile.load(fs_file_id)
-                for comment in getattr(fs_file, 'comment_target', []):
-                    comment.hide(save=True)
+            self.hide_comments()
 
             if self.figshare_type == 'project':
                 articles = Figshare.from_settings(self.user_settings).project(self, self.figshare_id)['articles']
@@ -410,3 +408,10 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             return messages.BEFORE_REGISTER.format(
                 category=node.project_or_component,
             )
+
+    def hide_comments(self):
+        files_id = FigShareGuidFile.find(Q('node', 'eq', self.owner)).get_keys()
+        for fs_file_id in files_id:
+            fs_file = FigShareGuidFile.load(fs_file_id)
+            for comment in getattr(fs_file, 'comment_target', []):
+                comment.hide(save=True)
