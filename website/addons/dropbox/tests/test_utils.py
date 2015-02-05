@@ -60,16 +60,16 @@ def test_is_subdir():
     assert_true(utils.is_subdir('foo', 'foo'))
     assert_true(utils.is_subdir('foo/bar baz', 'foo'))
     assert_true(utils.is_subdir('bar baz/foo', 'bar baz'))
+    assert_true(utils.is_subdir('foo', ''))
+    assert_true(utils.is_subdir('', ''))
 
     assert_false(utils.is_subdir('foo/bar', 'baz'))
     assert_false(utils.is_subdir('foo/bar', 'bar'))
     assert_false(utils.is_subdir('foo', 'foo/bar'))
     assert_false(utils.is_subdir('', 'foo'))
-    assert_false(utils.is_subdir('foo', ''))
     assert_false(utils.is_subdir('foo', None))
     assert_false(utils.is_subdir(None, 'foo'))
     assert_false(utils.is_subdir(None, None))
-    assert_false(utils.is_subdir('', ''))
 
     assert_true(utils.is_subdir('foo/bar', 'Foo/bar'))
     assert_true(utils.is_subdir('Foo/bar', 'foo/bar'))
