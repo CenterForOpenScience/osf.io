@@ -79,10 +79,10 @@ class DropboxNodeLogger(object):
 
 
 def is_subdir(path, directory):
-    if path is None or directory is None:
+    if not (path and directory):
         return False
     # directory is root directory
-    if directory == '' or directory == '/':
+    if directory == '/':
         return True
     #make both absolute
     abs_directory = os.path.abspath(directory).lower()
@@ -115,6 +115,8 @@ def clean_path(path):
     """Ensure a path is formatted correctly for url_for."""
     if path is None:
         return ''
+    if path == '/':
+        return path
     return path.strip('/')
 
 

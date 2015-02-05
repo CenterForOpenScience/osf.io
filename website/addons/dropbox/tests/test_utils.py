@@ -60,13 +60,14 @@ def test_is_subdir():
     assert_true(utils.is_subdir('foo', 'foo'))
     assert_true(utils.is_subdir('foo/bar baz', 'foo'))
     assert_true(utils.is_subdir('bar baz/foo', 'bar baz'))
-    assert_true(utils.is_subdir('foo', ''))
-    assert_true(utils.is_subdir('', ''))
+    assert_true(utils.is_subdir('foo', '/'))
+    assert_true(utils.is_subdir('/', '/'))
 
     assert_false(utils.is_subdir('foo/bar', 'baz'))
     assert_false(utils.is_subdir('foo/bar', 'bar'))
     assert_false(utils.is_subdir('foo', 'foo/bar'))
     assert_false(utils.is_subdir('', 'foo'))
+    assert_false(utils.is_subdir('foo', ''))
     assert_false(utils.is_subdir('foo', None))
     assert_false(utils.is_subdir(None, 'foo'))
     assert_false(utils.is_subdir(None, None))
@@ -91,7 +92,7 @@ def test_is_subdir():
 
 
 def test_clean_path():
-    assert_equal(utils.clean_path('/'), '')
+    assert_equal(utils.clean_path('/'), '/')
     assert_equal(utils.clean_path('/foo/bar/baz/'), 'foo/bar/baz')
     assert_equal(utils.clean_path(None), '')
 
