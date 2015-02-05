@@ -105,7 +105,7 @@ class DropboxProvider(provider.BaseProvider):
         path = DropboxPath(self.folder, path)
         resp = yield from self.make_request(
             'GET',
-            self._build_content_url('files', 'auto', path.full_path),
+            self._build_content_url('files', 'auto', path.full_path, rev=revision),
             expects=(200, ),
             throws=exceptions.DownloadError,
         )
@@ -198,7 +198,7 @@ class DropboxProvider(provider.BaseProvider):
             'GET',
             self.build_url('revisions', 'auto', path.full_path),
             expects=(200, ),
-            throws=exceptions.RevisionError
+            throws=exceptions.RevisionsError
         )
         data = yield from response.json()
 
