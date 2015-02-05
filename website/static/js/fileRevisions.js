@@ -35,22 +35,31 @@ var RevisionsViewModel = function(node, file, editable) {
     };
     self.page = 0;
     self.more = ko.observable(false);
+    self.errorMessage = ko.observable('');
     self.revisions = ko.observableArray([]);
+    self.versioningSupported = ko.observable(true);
 
 };
 
 RevisionsViewModel.prototype.fetch = function() {
     var self = this;
-    $.getJSON(
+    var request = $.getJSON(
         self.urls.revisions,
         {page: self.page}
-    ).done(function(response) {
+    );
+
+    request.done(function(response) {
         // self.more(response.more);
         var revisions = ko.utils.arrayMap(response.data, function(item) {
             return new Revision(item);
         });
         self.revisions(self.revisions().concat(revisions));
         self.page += 1;
+    });
+
+    request.fail(function(response) {
+        self.versioningSupported(false);
+        self.errorMessage(response.responseJSON.message || 'Unable to fetch versions');
     });
 };
 
