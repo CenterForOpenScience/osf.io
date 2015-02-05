@@ -12,16 +12,16 @@ var ctx = window.contextVars;
 var r = function(query) {
     query.callback({results: [
         {
-            _id: "academy-of-management-review",
+            _id: 'academy-of-management-review',
             summary: null,
-            short_title: "AMR",
-            title: "Academy of Management Review"
+            short_title: 'AMR',
+            title: 'Academy of Management Review'
         }
-    ]})
-}
+    ]});
+};
 
 var formatResult = function(state) {
-    return "<div class='citation-result-title'>" + state.title + "</div>";;
+    return '<div class="citation-result-title">' + state.title + '</div>';
 };
 
 var formatSelection = function(state) {
@@ -43,10 +43,10 @@ input.select2({
         data: function(term, page) {
             return {
                 'q': term
-            }
+            };
         },
         results: function(data, page) {
-            return {results: data.styles}
+            return {results: data.styles};
         },
         cache: true
     }
