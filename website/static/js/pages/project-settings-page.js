@@ -60,7 +60,10 @@ $(document).ready(function() {
 
             $(elm).find('option').each(function(idx, elm) {
                 var notificationType = $(elm).attr('value');
-                payload[pid][event][notificationType] = $(elm).is(':selected');
+
+                if (notificationType !== "adopt_parent") {
+                    payload[pid][event][notificationType] = $(elm).is(':selected');
+                }
             });
         });
 

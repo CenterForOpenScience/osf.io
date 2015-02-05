@@ -7,10 +7,10 @@ class Subscription(StoredObject):
     object_id = fields.StringField()     # pid, user._id
     event_name = fields.StringField()      # wiki_updated, comment_replies
     node_lineage = fields.StringField(list=True)
-
     # Notification types
     email_transactional = fields.ForeignField('user', list=True, backref='email_transactional')
     email_digest = fields.ForeignField('user', list=True, backref='email_digest')
+    none = fields.ForeignField('user', list=True, backref='none')
 
 
 class DigestNotification(StoredObject):
