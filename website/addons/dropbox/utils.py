@@ -82,8 +82,10 @@ def is_subdir(path, directory):
     if not path:
         return False
     # directory is root directory
-    if not directory:
+    if directory == '' or directory == '/':
         return True
+    if not directory:
+        return False
     #make both absolute
     abs_directory = os.path.abspath(directory).lower()
     abs_path = os.path.abspath(path).lower()
