@@ -1,5 +1,5 @@
-
-/** Initialization code for the project dashboard. */
+/** Initialization code for the project overview page. */
+'use strict';
 
 var $ = require('jquery');
 require('../../vendor/bower_components/jquery.tagsinput/jquery.tagsinput.css');
@@ -16,8 +16,10 @@ var Raven = require('raven-js');
 
 var NodeControl = require('../nodeControl.js');
 
+var CitationWidget = require('../citations.js');
 
-var nodeApiUrl = window.contextVars.node.urls.api;
+var ctx = window.contextVars;
+var nodeApiUrl = ctx.node.urls.api;
 
 
 // Initialize controller for "Add Links" modal
@@ -46,6 +48,12 @@ if ($comments.length) {
 openCommentPane = function(){
     $('.cp-handle').click();
 }
+
+// Initialize CitationWidget if user isn't viewing through an anonymized VOL
+if (!ctx.node.anonymous) {
+    new CitationWidget('#citationStyleInput', '#citationText');
+}
+
 
 $(document).ready(function() {
     // Treebeard Files view
@@ -97,7 +105,7 @@ $(document).ready(function() {
                     ];
                 }
 
-                configOption = Fangorn.Utils.resolveconfigOption.call(this, item, 'resolveRows', [item]);
+                var configOption = Fangorn.Utils.resolveconfigOption.call(this, item, 'resolveRows', [item]);
                 return configOption || defaultColumns;
             }
         };
@@ -142,7 +150,7 @@ $(document).ready(function() {
     });
 
     // Limit the maximum length that you can type when adding a tag
-    $('#node-tags_tag').attr("maxlength", "128");
+    $('#node-tags_tag').attr('maxlength', '128');
 
     // Remove delete UI if not contributor
     if (!window.contextVars.currentUser.canEdit || window.contextVars.node.isRegistration) {
