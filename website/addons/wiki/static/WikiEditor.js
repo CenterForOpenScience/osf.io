@@ -11,6 +11,7 @@ require('bootstrap-editable');
 var Markdown = require('pagedown-ace-converter');
 Markdown.getSanitizingConverter = require('pagedown-ace-sanitizer').getSanitizingConverter;
 require('imports?Markdown=pagedown-ace-converter!pagedown-ace-editor');
+require('osf-panel');
 
 var editor;
 
@@ -132,6 +133,11 @@ function ViewModel(url) {
             return 'There are unsaved changes to your wiki.';
         }
     });
+
+    $(document).ready(function(){
+        $('*[data-osf-panel]').osfPanel({ buttonElement : '.switch', onSize : 'md' });     
+    })
+
 }
 
 function WikiEditor(selector, url) {
