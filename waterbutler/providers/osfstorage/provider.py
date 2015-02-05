@@ -156,7 +156,7 @@ class OSFStorageProvider(provider.BaseProvider):
         data = yield from response.json()
 
         if settings.RUN_TASKS:
-            version_id = data['version_id']
+            version_id = data['version']
             parity.main(
                 complete_path,
                 self.parity_credentials,
@@ -175,6 +175,7 @@ class OSFStorageProvider(provider.BaseProvider):
         metadata.update({
             'name': name,
             'path': path,
+            'version': data['version'],
             'downloads': data['downloads']
         })
 
