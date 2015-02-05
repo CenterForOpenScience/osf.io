@@ -2,7 +2,7 @@
 var fs = require('fs');
 
 var env = process.env.NODE_ENV || 'development';
-var configFile = './settings/sharejs-' + env + '.json';
+var configFile = __dirname + '/settings/sharejs-' + env + '.json';
 var config = fs.existsSync(configFile) ? require(configFile) : {};
 
 // Server Options
@@ -119,11 +119,6 @@ wss.on('connection', function(client) {
             if (locked[docId]) {
                 client.send(JSON.stringify({type: 'lock'}));
             }
-        } else if (data.publish) {
-            wss.broadcast(data.docId, JSON.stringify({
-                type: 'updatePublished',
-                content: data.content
-            }));
         } else {
             stream.push(data);
         }

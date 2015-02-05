@@ -169,6 +169,26 @@ class NodeWikiPage(GuidStoredObject):
         if save:
             self.save()
 
+    def get_draft(self, node):
+        """
+        Return most recently edited version of wiki, whether that is the
+        last saved version or the most recent sharejs draft.
+        """
+
+        db = wiki_utils.share_db()
+        sharejs_uuid = wiki_utils.get_sharejs_uuid(node, self.page_name)
+
+        doc_item = db['docs'].find_one({'_id': sharejs_uuid})
+        sharejs_timestamp = doc_item['_m']['mtime'] if doc_item else 0
+        sharejs_timestamp /= 1000   # Convert to appropriate units
+        sharejs_date = datetime.datetime.utcfromtimestamp(sharejs_timestamp)
+        sharejs_version = doc_item['_v']
+
+        if sharejs_version > 1 and sharejs_date > self.date:
+            return doc_item['_data']
+        else:
+            return self.content
+
     def save(self, *args, **kwargs):
         rv = super(NodeWikiPage, self).save(*args, **kwargs)
         if self.node:

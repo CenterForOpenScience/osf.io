@@ -63,4 +63,7 @@ def broadcast_to_sharejs(action, sharejs_uuid, node=None, wiki_name='home'):
         )
         url = os.path.join(url, redirect_url)
 
-    requests.post(url)
+    try:
+        requests.post(url)
+    except requests.ConnectionError:
+        pass    # Assume sharejs is not online

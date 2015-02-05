@@ -59,10 +59,9 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
 
-    def test_wiki_content_returns_200(self):
-        node = ProjectFactory(is_public=True)
-        url = node.api_url_for('wiki_page_content', wname='somerandomid')
-        res = self.app.get(url)
+    def test_wiki_draft_returns_200(self):
+        url = self.project.api_url_for('wiki_page_content', wname='somerandomid')
+        res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
     def test_wiki_url_for_component_returns_200(self):
