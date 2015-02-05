@@ -163,10 +163,18 @@ class Mendeley(ExternalProvider):
 
         folders = client.folders.list().items
 
-        return (
+        all_documents = [
+            CitationList(
+                name="All Documents",
+                provider_list_id=None,
+                provider_account_id=self.account.provider_id
+            )
+        ]
+
+        return all_documents + [
             self._mendeley_folder_to_citation_list(folder)
             for folder in folders
-        )
+        ]
 
     def get_list(self, list_id=None):
         """Get a single CitationList
@@ -189,7 +197,6 @@ class Mendeley(ExternalProvider):
         )
 
         return citation_list
-
 
     def _mendeley_folder_to_citation_list(self, folder):
         return CitationList(
