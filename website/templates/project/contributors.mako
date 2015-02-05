@@ -66,7 +66,7 @@
                 <div data-bind="if: adminContributors.length">
                     <h3>
                       Users with Read Access
-                      <i class="icon-question-sign visibility-info"
+                      <i class="icon-question-sign admin-info"
                               data-toggle="popover"
                               data-title="Visibility Information"
                               data-container="body"
