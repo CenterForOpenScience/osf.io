@@ -289,7 +289,7 @@ def osf_storage_get_metadata_hook(node_addon, payload, **kwargs):
     node = node_addon.owner
     path = payload.get('path', '')
 
-    if path.endswith('/'):
+    if path.endswith('/') or not path:
         file_tree = model.OsfStorageFileTree.find_by_path(path, node_addon)
         if file_tree is None:
             if path == '':
