@@ -3,6 +3,19 @@ var $ = require('jquery');
 
 $(document).ready(function() {
 
+    window.oauth_complete = function(success) {
+        if(success) {
+            console.log("successful auth");
+        } else {
+            console.log("bad auth");
+        }
+        console.log("Flow completed");
+    }
+
+    $('#zoteroConnect').on('click', function() {
+        window.open('/oauth/connect/zotero/');
+    });
+
     $('#githubAddKey').on('click', function() {
         window.location.href = '/oauth/connect/zotero/';
     });

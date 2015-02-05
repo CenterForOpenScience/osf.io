@@ -2,11 +2,12 @@ from . import model
 
 MODELS = [
     model.AddonZoteroUserSettings,
+    model.AddonZoteroNodeSettings,
 ]
 
 
 USER_SETTINGS_MODEL = model.AddonZoteroUserSettings
-# NODE_SETTINGS_MODEL = model.AddonGitHubNodeSettings
+NODE_SETTINGS_MODEL = model.AddonZoteroNodeSettings
 
 ROUTES = []
 

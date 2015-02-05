@@ -206,6 +206,7 @@ class ExternalProvider(object):
         # required
         self.account.oauth_key = info['key']
 
+
         # only for OAuth1
         self.account.oauth_secret = info.get('secret')
 
@@ -259,67 +260,3 @@ class ExternalProvider(object):
 
     def handle_callback(self, response):
         return {}
-
-
-class Zotero(ExternalProvider):
-    name = 'Zotero'
-    short_name = 'zotero'
-
-    client_id = settings.ZOTERO_CLIENT_ID
-    client_secret = settings.ZOTERO_CLIENT_SECRET
-
-    _oauth_version = OAUTH1
-    auth_url_base = 'https://www.zotero.org/oauth/authorize'
-    request_token_url = 'https://www.zotero.org/oauth/request'
-    callback_url = 'https://www.zotero.org/oauth/access'
-
-    def handle_callback(self, data):
-        return {
-            'provider_id': data['userID'],
-        }
-
-
-class Orcid(ExternalProvider):
-    name = 'ORCiD'
-    short_name = 'orcid'
-
-    client_id = settings.ORCID_CLIENT_ID
-    client_secret = settings.ORCID_CLIENT_SECRET
-
-    auth_url_base = 'https://orcid.org/oauth/authorize'
-    callback_url = 'https://pub.orcid.org/oauth/token'
-    default_scopes = ['/authenticate']
-
-    def handle_callback(self, data):
-        return {
-            'provider_id': data['orcid']
-        }
-
-
-class Github(ExternalProvider):
-    name = 'GitHub'
-    short_name = 'github'
-
-    client_id = settings.GITHUB_CLIENT_ID
-    client_secret = settings.GITHUB_CLIENT_SECRET
-
-    auth_url_base = 'https://github.com/login/oauth/authorize'
-    callback_url = 'https://github.com/login/oauth/access_token'
-
-    def handle_callback(self, data):
-        self.account.oauth_key = data['access_token']
-        self.account.scopes = data['scope']
-
-
-class Linkedin(ExternalProvider):
-    name = "LinkedIn"
-    short_name = "linkedin"
-
-    client_id = settings.LINKEDIN_CLIENT_ID
-    client_secret = settings.LINKEDIN_CLIENT_SECRET
-
-    auth_url_base = 'https://www.linkedin.com/uas/oauth2/authorization'
-    callback_url = 'https://www.linkedin.com/uas/oauth2/accessToken'
-
-    def handle_callback(self, data):
-        self.account.oauth_key = data['access_token']
