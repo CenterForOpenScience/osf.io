@@ -7,7 +7,7 @@
 <%def name="title()">${node['title'] | n} Wiki</%def>
 
 <div>
-        <%include file="wiki/templates/status.mako"/>
+    <%include file="wiki/templates/status.mako"/>
 </div>
 <div class="row">
     <div class="col-sm-3 col-md-4">
