@@ -1,8 +1,8 @@
 <%page expression_filter="h"/>
 
-<nav class="navbar navbar-default">
+<nav class="">
     <div class="navbar-collapse">
-        <ul class="superlist nav navbar-nav" style="text-align: center; float: none">
+        <ul class="superlist nav navbar-nav" style="float: none">
             <li><a href="${urls['web']['page']}">View</a></li>
             % if not versions or version == 'NA':
                 <li class="disabled"><a>History</a></li>

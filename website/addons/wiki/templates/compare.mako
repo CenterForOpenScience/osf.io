@@ -8,8 +8,13 @@
 
 <div class="row">
     <div class="col-sm-3 col-md-4">
-        <%include file="wiki/templates/nav.mako"/>
-        <%include file="wiki/templates/toc.mako"/>
+            <div class="wiki-panel"> 
+                <div class="wiki-panel-body"> 
+
+                    <%include file="wiki/templates/nav.mako"/>
+                    <%include file="wiki/templates/toc.mako"/>
+                </div>
+            </div>
     </div>
     <div class="col-sm-9 col-md-8">
         <div class="row">
