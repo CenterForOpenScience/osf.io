@@ -31,6 +31,22 @@ function resolveIcon(item) {
     return m("i.icon.icon-circle-blank");
 }
 
+function expandOnLoad() {
+    for (var i = 0; i < this.treeData.children.length; i++) {
+        var parent = this.treeData.children[i];
+        this.updateFolder(null, parent);
+        for (var j = 0; j < parent.children.length; j++) {
+            var child = parent.children[j];
+            if (child.data.kind !== 'event') {
+               for (var k = 0; k < child.children.length; k++)
+                    if (child.children[k].data.notificationType !== "adopt_parent") {
+                        this.updateFolder(null, child);
+                }
+            }
+        }
+    }
+}
+
 function ProjectNotifications(data) {
     //  Treebeard version
     var tbOptions = {
@@ -42,6 +58,10 @@ function ProjectNotifications(data) {
         paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.
         uploads : false,         // Turns dropzone on/off.
         resolveIcon : resolveIcon,
+        onload: function () {
+            var tb = this;
+            expandOnLoad.call(tb);
+        },
         columnTitles : function _conferenceColumnTitles(item, col) {
              return [
                 {
@@ -53,7 +73,7 @@ function ProjectNotifications(data) {
                 {
                     title: "Notification Type",
                     width : "40%",
-                    sort : true
+                    sort : false
 
                 }
             ]},
