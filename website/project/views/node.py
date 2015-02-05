@@ -34,7 +34,7 @@ from website.views import _render_nodes, find_dashboard
 from website.profile import utils
 from website.project import new_folder
 from website.util.sanitize import strip_html
-from website.notifications.model import Subscription
+from website.notifications.utils import format_data
 
 
 logger = logging.getLogger(__name__)
@@ -338,75 +338,6 @@ def node_setting(auth, **kwargs):
     ret['subscriptions'] = format_data(auth.user, [node._id], [], [])
 
     return ret
-
-
-def get_all_user_subscriptions(user):
-    user_subscriptions = []
-    for notification_type in settings.NOTIFICATION_TYPES:
-        if getattr(user, notification_type, []):
-            for subscription in getattr(user, notification_type, []):
-                if subscription:
-                    user_subscriptions.append(subscription)
-
-    return user_subscriptions
-
-
-# def get_configured_projects(user):
-#     configured_project_ids = []
-#     user_subscriptions = get_all_user_subscriptions(user)
-#     for subscription in user_subscriptions:
-#         try:
-#             node = Node.load(subscription.object_id)
-#             if node.project_or_component == 'project' and subscription.object_id not in configured_project_ids:
-#                 configured_project_ids.append(subscription.object_id)
-#         except NoResultsFound:
-#             # handle case where object_id for the subscription is NOT a project, but a user
-#             pass
-#
-#     return configured_project_ids
-
-
-def format_data(user, node_ids, subscriptions_available, data):
-    subscriptions_available = subscriptions_available if subscriptions_available else settings.SUBSCRIPTIONS_AVAILABLE
-
-    for idx, node_id in enumerate(node_ids):
-        node = Node.load(node_id)
-        index = len(data)
-        data.append({'node_id': node_id,
-                     'title': node.title,
-                     'kind': 'folder' if node.nodes else 'node',
-                     'nodeUrl': node.url,
-                     'children': []
-                    })
-
-        user_subscriptions = get_all_user_subscriptions(user)
-        node_subscriptions = []
-        for user_subscription in user_subscriptions:
-            if user_subscription.object_id == node_id:
-                node_subscriptions.append(user_subscription) #xyz_comments
-
-        for s in subscriptions_available:
-            event = {
-                'title': s,
-                'description': subscriptions_available[s],
-                'kind': 'event',
-                'notificationType': 'none' if not node.node__parent else 'adopt_parent',
-                'children': []
-            }
-            for subscription in node_subscriptions:
-                if subscription.event_name == s:
-                    for notification_type in settings.NOTIFICATION_TYPES:
-                        if user in getattr(subscription, notification_type):
-                            event['notificationType'] = notification_type
-
-            data[index]['children'].append(event)
-
-        if node.nodes:
-            authorized_nodes = [n for n in node.nodes if user in n.contributors and not n.is_deleted]
-            format_data(user, [n._id for n in authorized_nodes], None, data[index]['children'])
-
-    return data
-
 
 # def find_node_subscriptions_and_notifications(user, node):
 #     node_subscriptions = []
