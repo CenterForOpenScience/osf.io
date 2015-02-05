@@ -444,4 +444,3 @@ class OsfStorageGuidFile(GuidFile):
             'mode': 'render',
         })
         return url.url
-

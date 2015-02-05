@@ -107,7 +107,7 @@ def osf_storage_upload_file_hook(node_addon, payload, **kwargs):
 
     return {
         'status': 'success',
-        'version_id': version._id,
+        'version': version._id,
         'downloads': record.get_download_count(),
     }, code
 
@@ -116,7 +116,7 @@ def osf_storage_upload_file_hook(node_addon, payload, **kwargs):
 @must_have_addon('osfstorage', 'node')
 def osf_storage_update_metadata_hook(node_addon, payload, **kwargs):
     try:
-        version_id = payload['version_id']
+        version_id = payload['version']
         metadata = payload['metadata']
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
