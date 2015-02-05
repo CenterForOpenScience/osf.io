@@ -71,6 +71,7 @@ def test_is_subdir():
     assert_false(utils.is_subdir('foo', None))
     assert_false(utils.is_subdir(None, 'foo'))
     assert_false(utils.is_subdir(None, None))
+    assert_false(utils.is_subdir('', ''))
 
     assert_true(utils.is_subdir('foo/bar', 'Foo/bar'))
     assert_true(utils.is_subdir('Foo/bar', 'foo/bar'))
