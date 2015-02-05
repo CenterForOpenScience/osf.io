@@ -5,7 +5,7 @@ html, body {
 }
 
 body {
-    padding-top: 70px; /* body padding for fixed top nav */
+    padding-top: 50px; /* body padding for fixed top nav */
     position: relative; /* for bootstrap affix */
 }
 
@@ -1963,11 +1963,11 @@ span#profileFullname{
         overflow: hidden;
     }
     .osf-search {
-        margin-top: -30px;
+        margin-top: -8px;
         z-index: 1028;
     }
     #searchControls > .osf-search {
-        margin-top: -30px;
+        margin-top: -8px;
         z-index: 99;
     }
     .osf-xs-search {
@@ -1996,7 +1996,7 @@ span#profileFullname{
         z-index: 1028; /* should be less than 1030 to not cover navbar */
     }
     #searchControls > .osf-search {
-        margin-top: -30px;
+        margin-top: -8px;
     }
 
 }
@@ -2036,7 +2036,7 @@ span#profileFullname{
     left: 0;
 }
 #searchControls > .osf-search {
-    margin-top: -30px;
+    margin-top: -8px;
 }
 .osf-search-input {
     background: none;
