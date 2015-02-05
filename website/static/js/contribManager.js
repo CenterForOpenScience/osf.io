@@ -49,19 +49,29 @@ var setupEditable = function(elm, data) {
     });
 };
 
-var ContributorModel = function(contributor, pageOwner, isRegistration) {
+var ContributorModel = function(contributor, manager, pageOwner, isRegistration, isAdmin) {
 
     var self = this;
-
     $.extend(self, contributor);
+
+    self.deleteStaged = false;
+    self.manager = manager;
+    self.isAdmin = isAdmin;
     self.visible = ko.observable(contributor.visible);
     self.permission = ko.observable(contributor.permission);
     self.deleteStaged = ko.observable(contributor.deleteStaged);
     self.removeContributor = 'Remove contributor';
     self.pageOwner = pageOwner;
     self.serialize = function() {
-        return ko.toJS(self);
+        serialized = ko.toJS(self);
+        // Must delete reference to manager to avoid circular references
+        delete serialized.manager;
+        return serialized;
     };
+
+    self.canEdit = ko.computed(function() {
+      return self.manager.canEdit() && !self.isAdmin;
+    });
 
     self.remove = function() {
         self.deleteStaged(true);
@@ -152,17 +162,14 @@ var MessageModel = function(text, level) {
 
 };
 
-var ContributorsViewModel = function(contributors, user, isRegistration) {
+var ContributorsViewModel = function(contributors, adminContributors, user, isRegistration) {
 
     var self = this;
 
-    self.bob = ko.observable(false);
-    for (var i=0; i<contributors.length; i++) {
-        contributors[i].deleteStaged = false;
-    }
     self.original = ko.observableArray(contributors);
 
     self.contributors = ko.observableArray();
+    self.adminContributors = adminContributors;
 
     self.user = ko.observable(user);
     self.userIsAdmin  = ko.observable($.inArray('admin', user.permissions) !== -1);
@@ -251,8 +258,11 @@ var ContributorsViewModel = function(contributors, user, isRegistration) {
     self.init = function() {
         self.messages([]);
         self.contributors(self.original().map(function(item) {
-            return new ContributorModel(item, self.user(), isRegistration);
+            return new ContributorModel(item, self, self.user(), isRegistration);
         }));
+        self.adminContributors = adminContributors.map(function(contributor) {
+          return new ContributorModel(contributor, self, self.user(), isRegistration, true);
+        });
     };
 
     self.initListeners = function() {
@@ -307,12 +317,14 @@ var ContributorsViewModel = function(contributors, user, isRegistration) {
     };
 
     self.serialize = function() {
-        toSubmit = ko.utils.arrayFilter(self.contributors(), function(item) {
-            return !item.deleteStaged();
-        });
-        return ko.utils.arrayMap(toSubmit, function(item) {
-            return item.serialize();
-        });
+        return ko.utils.arrayMap(
+            ko.utils.arrayFilter(self.contributors(), function(contributor) {
+                return !contributor.deleteStaged();
+            }),
+            function(contributor) {
+                return contributor.serialize();
+            }
+        );
     };
 
     self.cancel = function() {
@@ -359,12 +371,13 @@ var ContributorsViewModel = function(contributors, user, isRegistration) {
 // Public API //
 ////////////////
 
-function ContribManager(selector, contributors, user, isRegistration) {
+function ContribManager(selector, contributors, adminContributors, user, isRegistration) {
     var self = this;
     self.selector = selector;
     self.$element = $(selector);
     self.contributors = contributors;
-    self.viewModel = new ContributorsViewModel(contributors, user, isRegistration);
+    self.adminContributors = adminContributors;
+    self.viewModel = new ContributorsViewModel(contributors, adminContributors, user, isRegistration);
     self.init();
 }
 
