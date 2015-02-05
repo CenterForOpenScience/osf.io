@@ -37,36 +37,50 @@ def update_subscription(user, object_id, subscriptions):
         event_id = category + "_" + event
 
         for notification_type in subscriptions[event]:
-            # Create subscription or find existing
-            if subscriptions[event][notification_type]:
-                try:
-                    s = Subscription(_id=event_id)
-                    s.save()
+            if notification_type == 'adopt_parent':
+                if subscriptions[event][notification_type]:
+                    try:
+                        s = Subscription.find_one(Q('_id', 'eq', event_id))
+                    except NoResultsFound:
+                        s = None
 
-                except KeyExistsException:
-                    s = Subscription.find_one(Q('_id', 'eq', event_id))
-
-                s.object_id = category
-                s.event_name = event
-                s.node_lineage = node_lineage
-                s.save()
-
-                # Add user to list of subscribers
-                if notification_type not in s._fields:
-                    setattr(s, notification_type, [])
-                    s.save()
-
-                if user not in getattr(s, notification_type):
-                    getattr(s, notification_type).append(user)
-                    s.save()
+                    if s:
+                        for n in settings.NOTIFICATION_TYPES:
+                            if user in getattr(s, n):
+                                getattr(s, n).remove(user)
+                                s.save()
 
             else:
-                try:
-                    s = Subscription.find_one(Q('_id', 'eq', event_id))
-                    if user in getattr(s, notification_type):
-                        getattr(s, notification_type).remove(user)
+                # Create subscription or find existing
+                if subscriptions[event][notification_type]:
+                    try:
+                        s = Subscription(_id=event_id)
                         s.save()
-                except NoResultsFound:
-                    pass
+
+                    except KeyExistsException:
+                        s = Subscription.find_one(Q('_id', 'eq', event_id))
+
+                    s.object_id = category
+                    s.event_name = event
+                    s.node_lineage = node_lineage
+                    s.save()
+
+                    # Add user to list of subscribers
+                    if notification_type not in s._fields:
+                        setattr(s, notification_type, [])
+                        s.save()
+
+                    if user not in getattr(s, notification_type):
+                        getattr(s, notification_type).append(user)
+                        s.save()
+
+                else:
+                    try:
+                        s = Subscription.find_one(Q('_id', 'eq', event_id))
+                        if user in getattr(s, notification_type):
+                            getattr(s, notification_type).remove(user)
+                            s.save()
+                    except NoResultsFound:
+                        pass
 
     return {}
