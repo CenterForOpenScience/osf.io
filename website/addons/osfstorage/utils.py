@@ -19,8 +19,6 @@ from website.models import Session
 from website.project.views.file import get_cache_content
 
 from website.addons.osfstorage import model
-from website.addons.osfstorage import settings
-
 
 logger = logging.getLogger(__name__)
 
