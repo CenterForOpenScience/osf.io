@@ -23,7 +23,7 @@ var ShareJSDoc = function(viewModel, url, metadata) {
         return;
     }
 
-    var ReconnectingWebSocket = require('addons/wiki/static/ReconnectingWebSocket.js');
+    var ReconnectingWebSocket = require('ReconnectingWebSocket');
     require('addons/wiki/static/ace.js');
 
     // Configure connection

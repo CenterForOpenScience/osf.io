@@ -7,6 +7,7 @@ var config = fs.existsSync(configFile) ? require(configFile) : {};
 
 // Server Options
 var serverConfig = config.server || {};
+var host = serverConfig.host || 'localhost';
 var port = serverConfig.port || 7007;
 var ssl = serverConfig.ssl || false;
 var sslKey = serverConfig.sslKey || "website/addons/wiki/sharejs.key";
@@ -192,6 +193,6 @@ app.post('/delete/:id/:redirect', function lockDoc(req, res, next) {
     res.send(req.params.id + " was deleted and redirected to " + req.params.redirect);
 });
 
-server.listen(port, function() {
-    console.log('Server running at http://127.0.0.1:' + port);
+server.listen(port, host, function() {
+    console.log('Server running at http://' + host + ':' + port);
 });

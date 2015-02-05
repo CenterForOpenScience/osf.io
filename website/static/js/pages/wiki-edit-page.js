@@ -5,6 +5,8 @@ var WikiEditor = require('addons/wiki/static/WikiEditor.js');
 var ShareJSDoc = require('addons/wiki/static/ShareJSDoc.js');
 
 // Generate gravatar URL
+// CryptoJS fix for IE 10
+if (typeof Uint8ClampedArray == 'undefined') Uint8ClampedArray = Uint8Array;
 var CryptoJS = require("crypto-js");
 var email = window.contextVars.wiki.email;
 var baseGravatarUrl = '//secure.gravatar.com/avatar/';
