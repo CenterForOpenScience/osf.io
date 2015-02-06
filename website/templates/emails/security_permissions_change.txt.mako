@@ -1,6 +1,6 @@
 Dear ${user.given_name},
 
-We are writing to let you know of a change to our permission model that may affect how you choose to organize your projects.
+We are writing to let you know of a change to our permission model that may affect how you choose to organize your projects on the Open Science Framework.
 
 Contributors on Open Science Framework (OSF) projects have one of three permission statuses: administrator, read+write, and read-only. These affect what actions those contributors can perform on the project. Projects can have sub-components that have contributor lists that are distinct from the project contributor list.
 
@@ -22,4 +22,4 @@ The OSF Team
 Center for Open Science
 http://osf.io/
 
-Note: You are receiving this message because you have an account on the Open Science Framework. In system-wide security messages, we will not include links or ask you for information - passwords or otherwise.
+Note: In system-wide security messages, we will not ask you to click on links or ask you for information - passwords or otherwise.
