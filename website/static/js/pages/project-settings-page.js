@@ -9,7 +9,6 @@ var ctx = window.contextVars;
 
 // Initialize treebeard grid
 var ProjectNotifications = require('../project-settings-treebeard.js');
-var data = [];
 new ProjectNotifications(window.contextVars.node.subscriptions);
 
 
@@ -41,40 +40,6 @@ $(document).ready(function() {
 
     });
 
-    // Submit for notifications preferences
-    var $notificationSettings = $('#notificationSettings');
-
-    $notificationSettings.on('submit', function() {
-        var $notificationsMsg = $('#configureNotificationsMessage');
-
-        var payload = {};
-
-        $notificationSettings.find('.form-control').each(function(idx, elm) {
-            var pid = $(elm).attr('id'); //uw8fk
-            var event = $(elm).attr('name'); //comments
-
-            if (payload[pid] === undefined) {
-                payload[pid] = {};
-            }
-            payload[pid][event] = {};
-
-            $(elm).find('option').each(function(idx, elm) {
-                var notificationType = $(elm).attr('value');
-                payload[pid][event][notificationType] = $(elm).is(':selected');
-            });
-        });
-
-        $osf.postJSON(
-            '/api/v1/settings/batch_subscribe/',
-            payload
-        ).done(function() {
-            $notificationsMsg.addClass('text-success');
-            $notificationsMsg.text('Successfully updated notification preferences');
-            window.location.reload();
-        }).fail(function() {
-            bootbox.alert('Could not update notification preferences.')
-        });
-    });
 
     // Set up submission for addon selection form
     $('#selectAddonsForm').on('submit', function() {

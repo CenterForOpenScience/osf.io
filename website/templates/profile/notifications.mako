@@ -93,12 +93,6 @@
 ##                        You are not receiving any notifications from your OSF projects.
 ##                     % endif
 
-                <div class="padded">
-                    <button class="btn btn-success">Submit</button>
-                </div>
-                <div class="help-block">
-                        <p id="configureNotificationsMessage"></p>
-                </div>
                 </form>
 ##            </div>
         </div>

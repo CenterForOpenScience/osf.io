@@ -136,15 +136,6 @@
 ##                    % endfor
 
                 <br />
-
-            <div style="padding-left: 10px">
-                    <button class="btn btn-success">Submit</button>
-            </div>
-
-                <!-- Flashed Messages -->
-                <div class="help-block">
-                    <p id="configureNotificationsMessage"></p>
-                </div>
                 </form>
             </div>
          % endif
