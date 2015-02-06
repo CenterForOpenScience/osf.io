@@ -4,7 +4,7 @@ We are writing to let you know of a change to our permission model that may affe
 
 Contributors on Open Science Framework (OSF) projects have one of three permission statuses: administrator, read+write, and read-only. These affect what actions those contributors can perform on the project. Projects can have sub-components that have contributor lists that are distinct from the project contributor list.
 
-Currently, project administrators can view the contents of components in their projectsonly ifthey are listed as contributors on those components. However, two weeks from today, project administrators will have read-only access to sub-components of their projects even if they are not listed as a contributor. This means that administrators can see the component and its contents.
+Currently, project administrators can view the contents of components in their projects only if they are listed as contributors on those components. However, two weeks from today, project administrators will have read-only access to sub-components of their projects even if they are not listed as a contributor. This means that administrators can see the component and its contents.
 
 For example, if Thomas, Nikola, and Angus are administrators on project "AC/DC", but Angus is the sole contributor to a subcomponent "High Voltage" within that project, Thomas and Nikola will now be able to view the contents of "High Voltage".
 
