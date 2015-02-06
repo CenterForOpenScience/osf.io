@@ -100,28 +100,28 @@ function ViewModel(url) {
     };
 
     // Fetch initial wiki text
-    self.fetchData = function(callback) {
-        $.ajax({
+    self.fetchData = function() {
+        var request = $.ajax({
             type: 'GET',
             url: url,
-            dataType: 'json',
-            success: function (response) {
-                self.publishedText(response.wiki_content);
-                if (callback) callback(response);
-            },
-            error: function (xhr, textStatus, error) {
-                $osf.growl('Error','The wiki content could not be loaded.');
-                Raven.captureMessage('Could not GET wiki contents.', {
-                    url: url,
-                    textStatus: textStatus,
-                    error: error
-                });
-            }
+            dataType: 'json'
         });
+        request.done(function (response) {
+            self.publishedText(response.wiki_content);
+        });
+        request.fail(function (xhr, textStatus, error) {
+            $osf.growl('Error','The wiki content could not be loaded.');
+            Raven.captureMessage('Could not GET wiki contents.', {
+                url: url,
+                textStatus: textStatus,
+                error: error
+            });
+        });
+        return request;
     };
 
     self.revertChanges = function() {
-        self.fetchData(function() {
+        return self.fetchData().then(function() {
             self.currentText(self.publishedText());
         });
     };

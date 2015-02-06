@@ -22,7 +22,7 @@ var ShareJSDoc = function(viewModel, url, metadata) {
 
     if (!collaborative) {
         // Populate editor with most recent draft
-        viewModel.fetchData(function(response) {
+        viewModel.fetchData().done(function(response) {
             editor.setValue(response.wiki_draft, -1);
             editor.setReadOnly(false);
             if (typeof WebSocket === 'undefined') {
@@ -54,7 +54,7 @@ var ShareJSDoc = function(viewModel, url, metadata) {
             doc.create('text');
         }
 
-        viewModel.fetchData(function(response) {
+        viewModel.fetchData().done(function(response) {
             doc.attachAce(editor);
             if (viewModel.wikisDiffer(viewModel.currentText(), response.wiki_draft)) {
                 viewModel.currentText(response.wiki_draft);
