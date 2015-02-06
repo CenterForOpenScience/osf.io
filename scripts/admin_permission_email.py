@@ -10,6 +10,7 @@ from framework.email.tasks import send_email
 
 from website import mails
 from website import models
+from website import settings
 from website.app import init_app
 
 from scripts import utils as script_utils
@@ -30,12 +31,17 @@ SECURITY_MESSAGE = mails.Mail(
 def send_security_message(user, label, mail):
     if label in user.security_messages:
         return
+    # Pass mailer so that celery is not used
+    # Email synchronously so that user is only saved after email has been sent
     mails.send_mail(
         user.username,
         mail,
         from_addr=FROM_ADDR,
         mailer=send_email,
         user=user,
+        username=settings.MANDRILL_USERNAME,
+        password=settings.MANDRILL_PASSWORD,
+        mail_server=settings.MANDRILL_MAIL_SERVER,
     )
     user.security_messages[label] = datetime.datetime.utcnow()
     user.save()
