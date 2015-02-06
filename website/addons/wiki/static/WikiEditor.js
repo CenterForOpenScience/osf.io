@@ -50,8 +50,6 @@ function ViewModel(url) {
 
     self.statusDisplay = ko.computed(function() {
         switch(self.status()) {
-            case 'connected':
-                return 'Live Editing Mode';
             case 'connecting':
                 return 'Attempting to Connect';
             case 'noWebSocket':
@@ -63,11 +61,6 @@ function ViewModel(url) {
 
     self.progressBar = ko.computed(function() {
         switch(self.status()) {
-            case 'connected':
-                return {
-                    class: "progress-bar progress-bar-success",
-                    style: "width: 100%"
-                };
             case 'connecting':
                 return {
                     class: "progress-bar progress-bar-warning progress-bar-striped active",

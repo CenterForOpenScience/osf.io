@@ -13,37 +13,37 @@
             <form id="wiki-form" action="${urls['web']['edit']}" method="POST">
                 <div class="form-group wmd-panel">
                     <div class="row">
-                        <div class="col-sm-8">
-                             <p>
-                                 <em>Changes will be stored but not published until
-                                 you click "Save."</em>
-                             </p>
+                        <div class="col-lg-6 col-md-7">
+                            <p>
+                                <em>Changes will be stored but not published until
+                                you click "Save."</em>
+                            </p>
                             <div id="wmd-button-bar"></div>
                         </div>
-                        <div class="col-sm-4">
-                            <ul class="list-inline" data-bind="foreach: activeUsers" style="float: right">
-                                <!-- ko ifnot: id === '${user_id}' -->
-                                    <li><a data-bind="attr: { href: url }" >
-                                        <img data-bind="attr: {src: gravatar}, tooltip: {title: name, placement: 'bottom'}"
-                                             style="border: 1px solid black;">
-                                    </a></li>
-                                <!-- /ko -->
-                            </ul>
-                        </div>
-                    </div>
-
-                    <div class="progress" style="margin-bottom: 5px">
-                        <div role="progressbar"
-                             data-bind="attr: progressBar"
-                                >
-                            <span data-bind="text: statusDisplay"></span>
-                            <a class="sharejs-info-btn">
-                                <i class="icon-question-sign icon-large"
-                                   data-toggle="modal"
-                                   data-bind="attr: {data-target: modalTarget}"
-                                        >
-                                </i>
-                            </a>
+                        <div class="col-lg-6 col-md-5">
+                            <div data-bind="fadeVisible: status() === 'connected' && activeUsers" style="float: right">
+                                <ul class="list-inline" data-bind="foreach: activeUsers">
+                                    <li>
+                                        <a data-bind="attr: { href: url }">
+                                            <img data-bind="attr: {src: gravatar}, tooltip: {title: name, placement: 'bottom'}"
+                                                 style="border: 1px solid black;">
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div data-bind="fadeVisible: status() !== 'connected'">
+                                <div class="progress" style="margin-bottom: 5px;">
+                                    <div role="progressbar" data-bind="attr: progressBar">
+                                        <span data-bind="text: statusDisplay"></span>
+                                        <a class="sharejs-info-btn">
+                                            <i class="icon-question-sign icon-large"
+                                               data-toggle="modal"
+                                               data-bind="attr: {data-target: modalTarget}"
+                                            ></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

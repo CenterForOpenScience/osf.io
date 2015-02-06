@@ -1,6 +1,5 @@
 var ReconnectingWebSocket = require('reconnectingWebsocket');
 var LanguageTools = ace.require('ace/ext/language_tools');
-require('addons/wiki/static/ace.js');
 
 var activeUsers = [];
 var collaborative = (typeof WebSocket !== 'undefined' && typeof sharejs !== 'undefined');
@@ -34,6 +33,11 @@ var ShareJSDoc = function(viewModel, url, metadata) {
         });
         return;
     }
+
+    // Requirements load order is specific in this case. We do not want to load the ace.js
+    // wrapper unless we have ensured collaborative is true (socket is supported
+    // in the browser and sharejs was loaded).
+    require('addons/wiki/static/ace.js');
 
     // Configure connection
     var wsPrefix = (window.location.protocol == 'https:') ? 'wss://' : 'ws://';
