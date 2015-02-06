@@ -41,8 +41,6 @@ var RevisionsViewModel = function(node, file, editable) {
         download: waterbutler.buildDownloadUrl(file.path, file.provider, node.id),
         revisions: waterbutler.buildRevisionsUrl(file.path, file.provider, node.id),
     };
-    self.page = 0;
-    self.more = ko.observable(false);
     self.errorMessage = ko.observable('');
     self.revisions = ko.observableArray([]);
     self.versioningSupported = ko.observable(true);
@@ -51,23 +49,23 @@ var RevisionsViewModel = function(node, file, editable) {
 
 RevisionsViewModel.prototype.fetch = function() {
     var self = this;
-    var request = $.getJSON(
-        self.urls.revisions,
-        {page: self.page}
-    );
+    var request = $.getJSON(self.urls.revisions);
 
     request.done(function(response) {
-        // self.more(response.more);
         var revisions = ko.utils.arrayMap(response.data, function(item) {
             return new Revision(item, self.file, self.node);
         });
+
         self.revisions(self.revisions().concat(revisions));
-        self.page += 1;
     });
 
     request.fail(function(response) {
         self.versioningSupported(false);
-        self.errorMessage(response.responseJSON.message || 'Unable to fetch versions');
+        var err = response.responseJSON ?
+            response.responseJSON.message || 'Unable to fetch versions' :
+            'Unable to fetch versions';
+
+        self.errorMessage(err);
     });
 };
 
