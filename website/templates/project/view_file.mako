@@ -31,7 +31,7 @@
             <li class="active overflow" data-bind="text: file.name"></li>
           </ol>
 
-          <a class="btn btn-success btn-md" href="{{ currentVersion().downloadUrl}}" data-bind="click: currentVersion().download">
+          <a class="btn btn-success btn-md" href="{{ currentVersion().osfUrl }}" data-bind="click: currentVersion().download">
             Download <i class="icon-download-alt"></i>
           </a>
           <button class="btn btn-danger btn-md" data-bind="click: askDelete, if: editable">
@@ -73,7 +73,7 @@
                   <span class="badge" data-bind="if: revision.extra.downloads">
                     {{ revision.extra.downloads }}
                   </span>
-                  <a class="btn btn-primary btn-sm" href="{{ revision.downloadUrl }}"
+                  <a class="btn btn-primary btn-sm" href="{{ revision.osfUrl }}"
                     data-bind="click: revision.download">
                     <i class="icon-download-alt"></i>
                   </a>
