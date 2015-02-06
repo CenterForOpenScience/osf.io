@@ -232,7 +232,6 @@ def update_node(node, index='website'):
             'contributors': [
                 x.fullname for x in node.visible_contributors
                 if x is not None
-                and x.is_active
             ],
             'contributors_url': [
                 x.profile_url for x in node.visible_contributors
