@@ -41,6 +41,14 @@ def share_db():
     return client[wiki_settings.SHAREJS_DB_NAME]
 
 
+def get_sharejs_content(node, wname):
+    db = share_db()
+    sharejs_uuid = get_sharejs_uuid(node, wname)
+
+    doc_item = db['docs'].find_one({'_id': sharejs_uuid})
+    return doc_item['_data'] if doc_item else ''
+
+
 def broadcast_to_sharejs(action, sharejs_uuid, node=None, wiki_name='home'):
     """
     Broadcast an action to all documents connected to a wiki.

@@ -222,7 +222,8 @@ def wiki_page_content(wname, **kwargs):
 
     return {
         'wiki_content': wiki_page.content if wiki_page else '',
-        'wiki_draft': wiki_page.get_draft(node) if wiki_page else '',
+        'wiki_draft': (wiki_page.get_draft(node) if wiki_page
+                       else wiki_utils.get_sharejs_content(node, wname)),
     }
 
 
