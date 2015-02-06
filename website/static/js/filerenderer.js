@@ -6,9 +6,8 @@ var $ = require('jquery');
 FileRenderer = {
     start: function(url, selector){
         this.url = url;
-        this.element = $(selector);
         this.tries = 0;
-        // this.refreshContent = window.setInterval(this.getCachedFromServer.bind(this), 1000);
+        this.element = $(selector);
         this.getCachedFromServer();
     },
 
