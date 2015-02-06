@@ -19,7 +19,7 @@ Fangorn.config.gdrive = {
     /*FETCH_ERROR: '<span class="text-danger">This Google Drive folder may ' +
                     'have been renamed or deleted. ' +
                     'Please select a folder at the settings page.</span>'*/
-                    // /static/addons/dropbox/comicon.png
+                    // /static/addons/gdrive/comicon.png
     folderIcon: _fangornFolderIcons,
     lazyLoadError : _fangornLazyLoadError
 };

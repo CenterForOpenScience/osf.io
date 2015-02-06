@@ -1,61 +1,7 @@
-# -*- coding: utf-8 -*-
-import os
-from flask import request
-from framework.auth.core import _get_current_user
-from framework.exceptions import HTTPError
+
 from framework.auth.decorators import must_be_logged_in, collect_auth
-from framework.flask import redirect # VOL-aware redirect
-from framework.status import push_status_message as flash
-from framework.sessions import session
+from framework.exceptions import HTTPError
 import httplib as http
-import httplib2
-from website.project.model import Node
-from website.project.decorators import (must_be_valid_project,
-    must_have_addon, must_have_permission, must_not_be_registration, must_be_addon_authorizer
-)
-from website.util import api_url_for
-from website.util import web_url_for
-from .utils import serialize_settings, serialize_urls, to_hgrid
-
-from apiclient.discovery import build
-from oauth2client.client import OAuth2WebServerFlow, AccessTokenCredentials
-from oauth2client.file import Storage
-from apiclient import errors
-
-import settings
-
-# TODO
-@must_be_valid_project
-@must_have_addon('gdrive', 'node')
-def gdrive_config_get(node_addon, **kwargs):
-    """API that returns the serialized node settings."""
-    user = _get_current_user()
-    return {
-        'result': serialize_settings(node_addon, user),
-    }, http.OK
-
-
-# @must_have_permission('write')
-@must_not_be_registration
-@must_have_addon('gdrive', 'user')
-@must_have_addon('gdrive', 'node')
-@must_be_addon_authorizer('gdrive')
-def gdrive_config_put(node_addon, user_addon, auth, **kwargs):
-    """View for changing a node's linked Drive folder/file."""
-    folder = request.json.get('selected')
-    path = folder['path']
-    node_addon.set_folder(folder, auth=auth)
-    node_addon.save()
-    return {
-        'result': {
-            'folder': {
-                'name': 'Google Drive' + path,
-                'path': path
-            },
-            'urls': serialize_urls(node_addon)
-        },
-        'message': 'Successfully updated settings.',
-    }, http.OK
 
 
 @must_be_logged_in
@@ -139,51 +85,4 @@ def gdrive_import_user_auth(auth, node_addon, **kwargs):
     return {
         'result': serialize_settings(node_addon, user),
         'message': 'Successfully imported access token from profile.',
-    }, http.OK
-
-
-def retrieve_all_files(service, folderId):
-  """Retrieve a list of File resources.
-
-  Args:
-    service: Drive API service instance.
-  Returns:
-    List of File resources.
-  """
-  result = []
-  page_token = None
-  folderId = folderId or 'root'
-  while True:
-    try:
-      param = {}
-      if page_token:
-        param['pageToken'] = page_token
-      if service:
-        Folders = service.files().list(q= " '%s' in parents and trashed = false and mimeType = 'application/vnd.google-apps.folder'" %folderId).execute()
-        result.extend(Folders['items'])
-        page_token = Folders.get('nextPageToken')
-        if not page_token:
-            break
-    except errors.HttpError, error:
-      break
-  return result
-
-
-
-@must_be_logged_in
-@must_have_addon('gdrive', 'user')
-def drive_user_config_get(user_addon, auth, **kwargs):
-    """View for getting a JSON representation of the logged-in user's
-    GDrive user settings.
-    """
-    urls = {
-        'create': api_url_for('drive_oauth_start_user'),
-        'delete': api_url_for('drive_oauth_delete_user'),
-    }
-
-    return {
-        'result': {
-            'userHasAuth': user_addon.has_auth,
-            'urls': urls
-        },
     }, http.OK

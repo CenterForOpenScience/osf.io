@@ -198,6 +198,7 @@ def metadata_to_hgrid(item, node, permissions):
     """Serializes a dictionary of metadata (returned from the DropboxClient)
     to the format expected by Rubeus/HGrid.
     """
+    import pdb; pdb.set_trace()
     filename = get_file_name(item['path'])
     serialized = {
         'addon': 'dropbox',

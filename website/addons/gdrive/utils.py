@@ -9,8 +9,9 @@ def serialize_urls(node_settings):
         'create' : node.api_url_for('drive_oauth_start'),
         'importAuth': node.api_url_for('gdrive_import_user_auth'),
         'deauthorize': node.api_url_for('gdrive_deauthorize'),
-        'get_folders' : node.api_url_for('get_children')
-
+        'get_folders' : node.api_url_for('get_gdrive_children'),
+        'config': node.api_url_for('gdrive_config_put'),
+        'files': node.web_url_for('collect_file_trees')
     }
     return urls
 
@@ -38,3 +39,30 @@ def serialize_settings(node_settings, current_user):
         rv['access_token'] = user_settings.access_token
     return rv
 
+def clean_path(path):
+    """Ensure a path is formatted correctly for url_for."""
+    if path is None:
+        return ''
+    return path.strip('/')
+
+def build_gdrive_urls(item, node, path):
+    newpath=clean_path(path)
+    return{
+    'get_folders': node.api_url_for('get_gdrive_children', folderId=item['id'], path=newpath)
+    }
+
+def to_hgrid(item, node, path):
+    """
+    :param result: contents returned from Google Drive API
+    :return: results formatted as required for Hgrid display
+    """
+    path = path + '/' + item['title']
+    serialized = {
+        'name' : item['title'],
+        'id': item['id'],
+        'kind' : 'folder',
+        'urls' : build_gdrive_urls(item, node, path=path),
+        'path' : path
+
+    }
+    return serialized

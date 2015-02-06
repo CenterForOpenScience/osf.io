@@ -34,29 +34,41 @@
     <div id="currentFolder" data-bind="if:showFolders()">
        <p>
         <strong> Current folder:</strong>
-        <span data-bind = "if:selectedName"> fdb</span>
+        <span data-bind = "text:selectedName, style:{color: selectedName() == 'No folder selected yet !' ? 'red' : 'black'}"> </span>
        </p>
-
-        <div id="display-permissions">
-            <p>
-            <select data-bind = "value : selectedFileTypeOption , optionsCaption : 'Choose..'">
-                <option value="">Chose...</option>
-                <option value="owner">Owned only by Me</option>
-                <option value="incoming">Shared by me but not owned by me</option>
-                <option value="all">All files</option>
-            </select>
-            </p>
-        </div>
 
         <div class="btn-group" >
         <button data-bind="click:changeFolder" class="btn btn-sm btn-dropbox"> Change Folder</button>
         </div>
 
+        <!-- Google Drive Treebeard -->
+        <p class="text-muted text-center dropbox-loading-text" data-bind="visible: loading">
+                    Loading folders...</p>
         <div id="myGdriveGrid"
              class="filebrowser hgrid dropbox-folder-picker">
 
+
         </div>
 
+        <!-- Queued selection -->
+        <div class="gdrive-confirm-selection"
+            data-bind="visible:selected">
+            <form data-bind="submit: submitSettings">
+
+                <h4 data-bind="if: selected" class="dropbox-confirm-dlg">
+                    Connect &ldquo;{{ selectedFolderName }}&rdquo;?
+                </h4>
+                <div class="pull-right">
+                    <button class="btn btn-default"
+                            data-bind="click: cancelSelection">
+                        Cancel
+                    </button>
+                    <input type="submit"
+                           class="btn btn-primary"
+                           value="Submit" />
+                </div>
+            </form>
+        </div><!-- end gdrive-confirm-selection -->
 
 
     </div>

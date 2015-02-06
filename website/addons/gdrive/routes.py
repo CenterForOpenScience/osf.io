@@ -5,7 +5,7 @@
 from framework.routing import Rule, json_renderer
 from website.routes import OsfWebRenderer
 
-from . import views
+from . import views, views_hgrid
 
 # Routes that use the web renderer
 web_routes = {
@@ -90,7 +90,7 @@ api_routes = {
             ['/project/<pid>/gdrive/get-children/',
             '/project/<pid>/node/<nid>/gdrive/get-children/'],
             'get',
-            views.get_children,
+            views_hgrid.hgrid.get_gdrive_children,
             json_renderer
         ),
 

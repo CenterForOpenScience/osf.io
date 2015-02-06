@@ -1,9 +1,21 @@
 # -*- coding: utf-8 -*-
 """Persistence layer for the gdrive addon.
 """
+import os
 
+from website.addons.base import GuidFile
 from modularodm import fields
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
+
+class AddonGdriveGuidFile(GuidFile):
+
+    path = fields.StringField(index=True)
+
+    @property
+    def file_url(self):
+        if self.path is None:
+            raise ValueError('Path field must be defined.')
+        return os.path.join('gdrive', 'file', self.path)
 
 
 class AddonGdriveUserSettings(AddonUserSettingsBase):
@@ -27,6 +39,8 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
         'addongdriveusersettings', backref='authorized'
     )
 
+    folder = fields.StringField(default=None)
+
     @property
     def has_auth(self):
         """Whether an access token is associated with this node."""
@@ -45,6 +59,11 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
             },
             auth=auth,
         )
+
+    def set_folder(self, folder, auth):
+        self.folder = folder
+        #TODO : Add log to node
+
 
     def set_user_auth(self, user_settings):
         """Import a user's GDrive authentication and create a NodeLog.
@@ -94,7 +113,7 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
 
         :return: A tuple of the form (cloned_settings, message)
         """
-        clone, message = super(GdriveNodeSettings, self).after_register(
+        clone, message = super(AddonGdriveNodeSettings, self).after_register(
             node, registration, user, save=False
         )
         # Copy user_settings and add registration data
@@ -111,7 +130,7 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
 
         :return: A tuple of the form (cloned_settings, message)
         """
-        clone, _ = super(GdriveNodeSettings, self).after_fork(
+        clone, _ = super(AddonGdriveNodeSettings, self).after_fork(
             node=node, fork=fork, user=user, save=False
         )
 
