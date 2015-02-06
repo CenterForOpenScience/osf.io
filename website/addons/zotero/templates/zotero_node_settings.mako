@@ -1,6 +1,6 @@
 <form role="form" id="addonSettings${addon_short_name.capitalize()}" data-addon="${addon_short_name}" class="container-fluid">
     <div class="row">
-        <h4 class="addon-title">Mendeley</h4>
+        <h4 class="addon-title">Zotero</h4>
     </div>
 
     <div class="row">

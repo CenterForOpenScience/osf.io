@@ -3,7 +3,7 @@ var ko = require('knockout');
 var $osf = require('osfHelpers');
 require('./node-cfg.css');
 
-var MendeleyAccount = function(display_name, id) {
+var ZoteroAccount = function(display_name, id) {
     var self=this;
     self.display_name = display_name;
     self.id = id;
@@ -16,10 +16,10 @@ var CitationList = function(name, provider_list_id, provider_account_id ) {
     self.provider_account_id = provider_account_id;
 };
 
-var MendeleySettingsViewModel = function() {
+var ZoteroSettingsViewModel = function() {
     var self=this;
 
-    self.settings_url = nodeApiUrl + 'mendeley/settings/';
+    self.settings_url = nodeApiUrl + 'zotero/settings/';
 
     self.accounts = ko.observableArray();
     self.selectedAccountId = ko.observable();
@@ -28,9 +28,9 @@ var MendeleySettingsViewModel = function() {
     self.message = ko.observable();
 
     self.updateAccounts = function() {
-        $.getJSON(nodeApiUrl + 'mendeley/accounts/', function(data) {
+        $.getJSON(nodeApiUrl + 'zotero/accounts/', function(data) {
             for(var i=0; i<data.accounts.length; i++) {
-                self.accounts.push(new MendeleyAccount(
+                self.accounts.push(new ZoteroAccount(
                     data.accounts[i].display_name,
                     data.accounts[i].id
                 ));
@@ -44,7 +44,7 @@ var MendeleySettingsViewModel = function() {
 
     self.updateCitationLists = function() {
         $.getJSON(
-            nodeApiUrl + 'mendeley/' + self.selectedAccountId() + '/lists/',
+            nodeApiUrl + 'zotero/' + self.selectedAccountId() + '/lists/',
             function(data) {
                 self.citationLists(ko.utils.arrayMap(data.citation_lists, function(item) {
                     return new CitationList(item.name, item.provider_list_id, item.provider_account_id);
@@ -83,19 +83,19 @@ var MendeleySettingsViewModel = function() {
 // Public API //
 ////////////////
 
-function MendeleySettings (selector) {
+function ZoteroSettings (selector) {
     var self = this;
     self.selector = selector;
     self.$element = $(selector);
-    self.viewModel = new MendeleySettingsViewModel();
+    self.viewModel = new ZoteroSettingsViewModel();
     self.init();
 }
 
-MendeleySettings.prototype.init = function() {
+ZoteroSettings.prototype.init = function() {
     var self = this;
     ko.applyBindings(self.viewModel, self.$element[0]);
 };
 
-//module.exports = MendeleySettings;
-new MendeleySettings('#addonSettingsMendeley');
+//module.exports = ZoteroSettings;
+new ZoteroSettings('#addonSettingsZotero');
 

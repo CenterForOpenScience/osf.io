@@ -1,4 +1,5 @@
 from . import model
+from . import routes
 
 MODELS = [
     model.AddonZoteroUserSettings,
@@ -19,7 +20,7 @@ OWNERS = ['user', 'node']
 ADDED_DEFAULT = []
 ADDED_MANDATORY = []
 
-VIEWS = []
+VIEWS = ['widget']
 CONFIGS = ['user', 'node']
 
 CATEGORIES = ['citations']

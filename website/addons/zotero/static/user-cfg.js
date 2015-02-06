@@ -4,25 +4,25 @@ var $ = require('jquery');
 var ko = require('knockout');
 var $osf = require('osfHelpers');
 
-var MendeleyAccount = function(display_name, id) {
+var ZoteroAccount = function(display_name, id) {
     var self = this;
     self.display_name = display_name;
     self.id = id;
 };
 
-var MendeleyUserSettingsViewModel = function() {
+var ZoteroUserSettingsViewModel = function() {
     var self = this;
     self.accounts = ko.observableArray();
 
     self.updateAccounts = function() {
         var request = $.ajax({
-            url: '/api/v1/settings/mendeley/accounts/'
+            url: '/api/v1/settings/zotero/accounts/'
         });
         request.done(function(data) {
             self.accounts([]);
             ko.utils.arrayMap(data.accounts, function(acct) {
                 self.accounts.push(
-                    new MendeleyAccount(acct.display_name, acct.id)
+                    new ZoteroAccount(acct.display_name, acct.id)
                 )
             })
         });
@@ -35,7 +35,7 @@ var MendeleyUserSettingsViewModel = function() {
         window.oauth_complete = function() {
             self.updateAccounts();
         };
-        window.open('/oauth/connect/mendeley/');
+        window.open('/oauth/connect/zotero/');
     };
 
     self.disconnectAccount = function(account) {
@@ -59,21 +59,21 @@ var MendeleyUserSettingsViewModel = function() {
 // Public API //
 ////////////////
 
-function MendeleyUserSettings (selector) {
+function ZoteroUserSettings (selector) {
     var self = this;
     self.selector = selector;
     self.$element = $(selector);
-    self.viewModel = new MendeleyUserSettingsViewModel();
+    self.viewModel = new ZoteroUserSettingsViewModel();
     self.init();
 }
 
-MendeleyUserSettings.prototype.init = function() {
+ZoteroUserSettings.prototype.init = function() {
     var self = this;
     ko.applyBindings(self.viewModel, self.$element[0]);
 };
 
-//module.exports = MendeleySettings;
-new MendeleyUserSettings('#mendeleyUserSettings');
+//module.exports = ZoteroSettings;
+new ZoteroUserSettings('#zoteroUserSettings');
 
 
 /*
@@ -88,8 +88,8 @@ $(document).ready(function() {
         console.log("Flow completed");
     }
 
-    $('#mendeleyConnect').on('click', function() {
-        window.open('/oauth/connect/mendeley/');
+    $('#zoteroConnect').on('click', function() {
+        window.open('/oauth/connect/zotero/');
     });
 
     $('#githubDelKey').on('click', function() {

@@ -2,7 +2,6 @@ import time
 
 import mendeley
 from modularodm import fields
-from modularodm import Q
 
 
 from website import settings
@@ -10,7 +9,6 @@ from website.addons.base import AddonNodeSettingsBase
 from website.addons.base import AddonUserSettingsBase
 from website.citations.models import Citation
 from website.citations.models import CitationList
-from website.oauth.models import ExternalAccount
 from website.oauth.models import ExternalProvider
 
 from .api import APISession
@@ -59,7 +57,6 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
 
     def grant_oauth_access(self, user, external_account, metadata=None):
         """Grant OAuth access, updates metadata on user settings
-
         :param User user:
         :param ExternalAccount external_account:
         :param dict metadata:
@@ -80,7 +77,6 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
 
     def verify_oauth_access(self, external_account, list_id):
         """Determine if access to the ExternalAccount has been granted
-
         :param ExternalAccount external_account:
         :param str list_id: ID of the Mendeley list requested
         :return bool: True or False
@@ -171,6 +167,8 @@ class Mendeley(ExternalProvider):
 
         folders = client.folders.list().items
 
+        # TODO: Verify OAuth access to each folder
+
         # fake object to represent the user's whole account
         all_documents = [
             CitationList(
@@ -187,7 +185,6 @@ class Mendeley(ExternalProvider):
 
     def get_list(self, list_id=None):
         """Get a single CitationList
-
         :param str list_id: ID for a Mendeley folder. Optional.
         :return CitationList: CitationList for the folder, or for all documents
         """
@@ -228,7 +225,6 @@ class Mendeley(ExternalProvider):
 
     def _citation_for_mendeley_document(self, document):
         """Mendeley document to ``website.citations.models.Citation``
-
         :param BaseDocument document:
             An instance of ``mendeley.models.base_document.BaseDocument``
         :return Citation:
@@ -254,7 +250,6 @@ class Mendeley(ExternalProvider):
 
         if document.year:
             csl['issued'] = {'date-parts': [[document.year]]}
-
 
         # gather identifiers
         idents = document.json.get('identifiers')

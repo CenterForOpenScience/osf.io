@@ -9,11 +9,11 @@ from website.project.decorators import must_have_permission
 from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 
-from .model import Mendeley
+from .model import Zotero
 
 
-@must_have_addon('mendeley', 'user')
-def list_mendeley_accounts_user(auth, user_addon):
+@must_have_addon('zotero', 'user')
+def list_zotero_accounts_user(auth, user_addon):
     return {
         'accounts': [
             {
@@ -21,16 +21,16 @@ def list_mendeley_accounts_user(auth, user_addon):
                 'provider_id': account.provider_id,
                 'display_name': account.display_name,
             } for account in auth.user.external_accounts
-            if account.provider == 'mendeley'
+            if account.provider == 'zotero'
         ]
     }
 
 @must_have_permission('write')
-@must_have_addon('mendeley', 'node')
+@must_have_addon('zotero', 'node')
 @must_not_be_registration
-def list_mendeley_accounts_node(pid, auth, node, project, node_addon):
+def list_zotero_accounts_node(pid, auth, node, project, node_addon):
     accounts = [
-        each for each in auth.user.external_accounts if each.provider == 'mendeley'
+        each for each in auth.user.external_accounts if each.provider == 'zotero'
     ]
     if (
         node_addon.external_account and
@@ -49,7 +49,7 @@ def list_mendeley_accounts_node(pid, auth, node, project, node_addon):
     }
 
 @must_have_permission('write')
-@must_have_addon('mendeley', 'node')
+@must_have_addon('zotero', 'node')
 @must_not_be_registration
 def list_citationlists_node(pid, account_id, auth, node, project, node_addon):
     # TODO: clean up signature
@@ -58,18 +58,18 @@ def list_citationlists_node(pid, account_id, auth, node, project, node_addon):
     if not account:
         raise HTTPError(404)
 
-    mendeley = Mendeley()
-    mendeley.account = account
+    zotero = Zotero()
+    zotero.account = account
 
     return {
-        'citation_lists': [each.json for each in mendeley.citation_lists]
+        'citation_lists': [each.json for each in zotero.citation_lists]
     }
 
 
 @must_have_permission('write')
-@must_have_addon('mendeley', 'node')
+@must_have_addon('zotero', 'node')
 @must_not_be_registration
-def mendeley_set_config(pid, auth, node, project, node_addon):
+def zotero_set_config(pid, auth, node, project, node_addon):
     # Ensure request has all required information
     try:
         external_account = ExternalAccount.load(
@@ -83,7 +83,7 @@ def mendeley_set_config(pid, auth, node, project, node_addon):
 
     # User is an owner of this ExternalAccount
     if external_account in user.external_accounts:
-        # grant access to the node for the Mendeley list
+        # grant access to the node for the Zotero list
         node_addon.grant_oauth_access(
             user=user,
             external_account=external_account,
@@ -97,22 +97,22 @@ def mendeley_set_config(pid, auth, node, project, node_addon):
 
     # associate the list with the node
     node_addon.external_account = external_account
-    node_addon.mendeley_list_id = list_id
+    node_addon.zotero_list_id = list_id
     node_addon.save()
 
     return {}
 
 
 @must_be_contributor_or_public
-@must_have_addon('mendeley', 'node')
-def mendeley_widget(node_addon, project, node, pid, auth):
+@must_have_addon('zotero', 'node')
+def zotero_widget(node_addon, project, node, pid, auth):
     response = node_addon.config.to_json()
     response['complete'] = True
     return response
 
 
 @must_be_contributor_or_public
-@must_have_addon('mendeley', 'node')
-def mendeley_citation_list(node_addon, project, node, pid, auth):
-    citation_list = node_addon.api.get_list(node_addon.mendeley_list_id)
+@must_have_addon('zotero', 'node')
+def zotero_citation_list(node_addon, project, node, pid, auth):
+    citation_list = node_addon.api.get_list(node_addon.zotero_list_id)
     return citation_list.render('apa')

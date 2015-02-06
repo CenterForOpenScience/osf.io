@@ -17,7 +17,9 @@ from pyzotero import zotero
 class AddonZoteroUserSettings(AddonUserSettingsBase):
 
     def _get_connected_accounts(self):
-        return [x for x in self.owner.external_accounts if x.provider == 'zotero']
+        return [
+            x for x in self.owner.external_accounts if x.provider == 'zotero'
+        ]
 
     def to_json(self, user):
         rv = super(AddonZoteroUserSettings, self).to_json(user)
@@ -34,6 +36,60 @@ class AddonZoteroNodeSettings(AddonNodeSettingsBase):
     external_account = fields.ForeignField('externalaccount',
                                            backref='connected')
 
+    zotero_list_id = fields.StringField()
+
+    # Keep track of all user settings that have been associated with this
+    #   instance. This is so OAuth grants can be checked, even if the grant is
+    #   not currently being used.
+    associated_user_settings = fields.AbstractForeignField(list=True)
+
+    _api = None
+
+    @property
+    def api(self):
+        """authenticated ExternalProvider instance"""
+        if self._api is None:
+            self._api = Zotero()
+            self._api.account = self.external_account
+        return self._api
+
+    def grant_oauth_access(self, user, external_account, metadata=None):
+        """Grant OAuth access, updates metadata on user settings
+        :param User user:
+        :param ExternalAccount external_account:
+        :param dict metadata:
+        """
+        user_settings = user.get_addon('zotero')
+
+        # associate the user settings with this node's settings
+        if user_settings not in self.associated_user_settings:
+            self.associated_user_settings.append(user_settings)
+
+        user_settings.grant_oauth_access(
+            node=self.owner,
+            external_account=external_account,
+            metadata=metadata
+        )
+
+        user_settings.save()
+
+    def verify_oauth_access(self, external_account, list_id):
+        """Determine if access to the ExternalAccount has been granted
+        :param ExternalAccount external_account:
+        :param str list_id: ID of the Zotero list requested
+        :return bool: True or False
+        """
+        for user_settings in self.associated_user_settings:
+            try:
+                granted = user_settings[self.owner._id][external_account._id]
+            except KeyError:
+                # no grant for this node, move along
+                continue
+
+            if list_id in granted.get('lists', []):
+                return True
+        return False
+    
     def to_json(self, user):
         accounts = {
             account for account

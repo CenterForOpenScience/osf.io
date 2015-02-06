@@ -1,13 +1,13 @@
-#mendeleyWidget > ul {
+#zoteroWidget > ul {
     list-style-type: none;
     padding-left:0;
     margin-bottom:0;
 }
 
-#mendeleyWidget > ul > li {
+#zoteroWidget > ul > li {
     margin-bottom:10px;
 }
 
-#mendeleyWidget > ul > li:last-child {
+#zoteroWidget > ul > li:last-child {
     margin-bottom:0px;
 }

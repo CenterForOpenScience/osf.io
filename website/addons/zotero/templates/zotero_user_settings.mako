@@ -1,6 +1,6 @@
 <!-- Authorization -->
-<div id="mendeleyUserSettings">
-    <h4 class="addon-title">Mendeley</h4>
+<div id="zoteroUserSettings">
+    <h4 class="addon-title">Zotero</h4>
     <table class="table">
         <tbody data-bind="foreach: accounts">
             <tr>

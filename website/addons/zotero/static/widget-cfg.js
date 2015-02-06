@@ -6,7 +6,7 @@ require('./citations_widget.css');
 var CitationsWidgetViewModel = function() {
     var self = this;
 
-    self.widget_api_url = nodeApiUrl + 'mendeley/citations/';
+    self.widget_api_url = nodeApiUrl + 'zotero/citations/';
 
     self.error = ko.observable();
     self.name = ko.observable();
@@ -45,5 +45,5 @@ CitationsWidget.prototype.init = function() {
     ko.applyBindings(self.viewModel, self.$element[0]);
 };
 
-//module.exports = MendeleySettings;
-new CitationsWidget('#mendeleyWidget');
+//module.exports = ZoteroSettings;
+new CitationsWidget('#zoteroWidget');
