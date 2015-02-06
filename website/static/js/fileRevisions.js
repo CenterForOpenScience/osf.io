@@ -16,16 +16,23 @@ var Revision = function(data, file, node) {
     $.extend(self, data);
     var ops = {};
     ops[self.versionIdentifier] = self.version;
+
     self.downloadUrl = waterbutler.buildDownloadUrl(file.path, file.provider, node.id, ops);
     self.date = new $osf.FormattableDate(data.modified);
     self.displayDate = self.date.local !== 'Invalid date' ?
         self.date.local :
         data.date;
 
+    self.viewUrl = '?' + $.param(ops);
+
+    ops.action = 'download';
+    self.downloadUrl = '?' + $.param(ops);
+
     self.download = function() {
         window.location = self.downloadUrl;
         return false;
     };
+
 
 };
 
@@ -44,6 +51,11 @@ var RevisionsViewModel = function(node, file, editable) {
     self.errorMessage = ko.observable('');
     self.revisions = ko.observableArray([]);
     self.versioningSupported = ko.observable(true);
+    self.userColumn = ko.computed(function() {
+        return self.revisions()[0] &&
+            self.revisions()[0].extra &&
+            self.revisions()[0].extra.user;
+    });
 
 };
 

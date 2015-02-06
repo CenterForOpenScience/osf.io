@@ -11,103 +11,86 @@
         <hr />
     </div>
 
-<div id="file-container" class="row">
+    <div id="file-container" class="row">
 
-    <div class="col-md-8">
-      <div id="fileRendered" class="mfr mfr-file">
+      <div class="col-md-8">
+        <div id="fileRendered" class="mfr mfr-file">
           % if rendered is not None:
-              ${rendered}
+            ${rendered}
           % else:
-              <img src="/static/img/loading.gif">
+            <img src="/static/img/loading.gif">
           % endif
+        </div>
       </div>
-    </div>
 
-    <div class="col-md-4">
-      <div id="fileRevisions" class="scripted">
-        <ol class="breadcrumb">
+      <div class="col-md-4">
+        <div id="fileRevisions" class="scripted">
+          <ol class="breadcrumb">
             <li><a href="{{ node.urls.files }}" data-bind="text: node.title"></a></li>
             <li class="active overflow" data-bind="text: file.provider"></li>
             <li class="active overflow" data-bind="text: file.name"></li>
-        </ol>
+          </ol>
 
-        <a class="btn btn-success btn-md" href="?action=download" data-bind="click: file.download">
-          Download <i class="icon-download-alt"></i>
-        </a>
-        <!-- ko if: editable -->
-        <button class="btn btn-danger btn-md" data-bind="click: askDelete">
-          Delete <i class="icon-trash"></i>
-        </button>
-        <!-- /ko -->
+          <a class="btn btn-success btn-md" href="?action=download" data-bind="click: file.download">
+            Download <i class="icon-download-alt"></i>
+          </a>
+          <button class="btn btn-danger btn-md" data-bind="click: askDelete, if: editable">
+            Delete <i class="icon-trash"></i>
+          </button>
 
 
-        <!-- ko if: versioningSupported -->
-        <table class="table osfstorage-revision-table ">
-
+          <table class="table" data-bind="if: versioningSupported">
             <thead>
-                <tr>
-                    <th>Version</th>
-                    <th>Date</th>
-                    <!-- ko if: revisions()[0] && revisions()[0].extra && revisions()[0].extra.user -->
-                    <th>User</th>
-                    <!-- /ko -->
-                    <th>Download</th>
-                </tr>
+              <tr>
+                <th>Version</th>
+                <th>Date</th>
+                <th data-bind="if: userColumn">User</th>
+                <th>Download</th>
+              </tr>
             </thead>
 
             <tbody data-bind="foreach: {data: revisions, as: 'revision'}">
-                <tr>
-                    <td>
-                      <a href="{{ '?' + revision.versionIdentifier + '=' + revision.version }}">
-                        {{ revision.version.substring(0, 8) }}
-                      </a>
-                    </td>
-                    <td>{{ revision.displayDate }}</td>
-                    <!-- ko if: revision.extra && revision.extra.user -->
-                    <td>
-                      <!-- ko if: revision.extra.user.url -->
-                      <a href="{{ revision.extra.user.url }}">
-                        {{ revision.extra.user.name }}
-                      </a>
-                    <!-- /ko -->
-                    <!-- ko ifnot: revision.extra.user.url -->
-                        {{ revision.extra.user.name }}
-                    <!-- /ko -->
-                    </td>
-                    <!-- /ko -->
-                    <td>
-                      <!-- ko if: revision.extra && revision.extra.downloads -->
-                      <span class="badge">{{ revision.extra.downloads }}</span>
-                      <!-- /ko -->
-                      <a class="btn btn-primary btn-sm" 
-                        href="{{ '?' + revision.versionIdentifier + '=' + revision.version + '&action=download' }}"
-                        data-bind="click: revision.download">
-                        <i class="icon-download-alt"></i>
-                      </a>
-                    </td>
-                </tr>
+              <tr>
+                <td>
+                  <a href="{{ revision.viewUrl }}">
+                    {{ revision.version.substring(0, 8) }}
+                  </a>
+                </td>
+                <td>{{ revision.displayDate }}</td>
+                <td data-bind="if: $parent.userColumn">
+                  <a data-bind="if: revision.extra.user.url"
+                    href="{{ revision.extra.user.url }}">
+                    {{ revision.extra.user.name }}
+                  </a>
+                  <span data-bind="ifnot: revision.extra.user.url">
+                    {{ revision.extra.user.name }}
+                  </span>
+                </td>
+                <td>
+                  <span class="badge" data-bind="if: revision.extra.downloads">
+                    {{ revision.extra.downloads }}
+                  </span>
+                  <a class="btn btn-primary btn-sm" href="{{ revision.osfUrl }}"
+                    data-bind="click: revision.download">
+                    <i class="icon-download-alt"></i>
+                  </a>
+                </td>
+              </tr>
             </tbody>
+          </table>
 
-        </table>
-
-        <p data-bind="if: more">
-            <a data-bind="click: fetch">More versions...</a>
-        </p>
-        <!-- /ko -->
-
-        <!-- ko ifnot: versioningSupported -->
-          <hr>
-
-          <div class="alert alert-warning" role="alert">
-            {{ errorMessage }}
+          <div data-bind="ifnot: versioningSupported">
+            <hr>
+            <div class="alert alert-warning" role="alert">
+              {{ errorMessage }}
+            </div>
           </div>
-        <!-- /ko -->
 
-    </div>
+        </div>
       </div>
     </div>
 
-</div>
+  </div>
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
