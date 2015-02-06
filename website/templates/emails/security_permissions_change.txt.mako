@@ -1,8 +1,8 @@
 Dear ${user.given_name},
 
-We are writing to let you know of a change to our permission model that may affect how you choose to organize your projects on the Open Science Framework.
+You are receiving this message because you have an account on the Open Science Framework (OSF). We are writing to let you know of a change to our permission model that may affect how you choose to organize your projects.
 
-Contributors on Open Science Framework (OSF) projects have one of three permission statuses: administrator, read+write, and read-only. These affect what actions those contributors can perform on the project. Projects can have sub-components that have contributor lists that are distinct from the project contributor list.
+Contributors on OSF projects have one of three permission statuses: administrator, read+write, and read-only. These affect what actions those contributors can perform on the project. Projects can have sub-components that have contributor lists that are distinct from the project contributor list.
 
 Currently, project administrators can view the contents of components in their projects only if they are listed as contributors on those components. However, two weeks from today, project administrators will have read-only access to sub-components of their projects even if they are not listed as a contributor. This means that administrators can see the component and its contents.
 
