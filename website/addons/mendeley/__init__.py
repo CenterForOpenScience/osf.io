@@ -20,7 +20,7 @@ OWNERS = ['user', 'node']
 ADDED_DEFAULT = []
 ADDED_MANDATORY = []
 
-VIEWS = []
+VIEWS = ['widget']
 CONFIGS = ['user', 'node']
 
 CATEGORIES = ['citations']

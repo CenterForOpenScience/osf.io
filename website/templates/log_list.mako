@@ -1,3 +1,5 @@
+<%page args="scripted" />
+
 ### Included where the LogsViewModel is used ###
 <div id="logProgressBar" class="progress progress-striped active">
     <div class="progress-bar"  role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">

@@ -343,12 +343,17 @@ class TestDownloadFile(StorageTestCase):
             **kwargs
         )
 
+    @mock.patch('website.addons.osfstorage.utils.requests.get')
     @mock.patch('website.addons.osfstorage.utils.get_waterbutler_download_url')
-    def test_download(self, mock_get_url):
+    def test_download(self, mock_get_url, mock_request):
         mock_get_url.return_value = 'http://freddie.queen.com/'
+        mock_request.return_value = mock.Mock(headers={'Location': 'http://eddiebowy.horse/'})
+
         res = self.download_file(self.path)
+
         assert_equal(res.status_code, 302)
-        assert_equal(res.location, mock_get_url.return_value)
+        mock_request.assert_called_once_with('http://freddie.queen.com/', allow_redirects=False)
+        assert_equal(res.location, 'http://eddiebowy.horse/')
         mock_get_url.assert_called_with(
             len(self.record.versions),
             self.version,
@@ -356,9 +361,12 @@ class TestDownloadFile(StorageTestCase):
             mode=None,
         )
 
+    @mock.patch('website.addons.osfstorage.utils.requests.get')
     @mock.patch('website.addons.osfstorage.utils.get_waterbutler_download_url')
-    def test_download_render_mode(self, mock_get_url):
+    def test_download_render_mode(self, mock_get_url, mock_request):
         mock_get_url.return_value = 'http://freddie.queen.com/'
+        mock_request.return_value = mock.Mock(headers={'Location': 'http://eddiebowy.horse/'})
+
         self.app.get(
             self.project.web_url_for(
                 'osf_storage_view_file',
@@ -368,6 +376,7 @@ class TestDownloadFile(StorageTestCase):
             ),
             auth=self.project.creator.auth,
         )
+
         mock_get_url.assert_called_with(
             len(self.record.versions),
             self.version,
@@ -375,24 +384,30 @@ class TestDownloadFile(StorageTestCase):
             mode='render',
         )
 
+    @mock.patch('website.addons.osfstorage.utils.requests.get')
     @mock.patch('website.addons.osfstorage.utils.get_waterbutler_download_url')
-    def test_download_by_version_latest(self, mock_get_url):
+    def test_download_by_version_latest(self, mock_get_url, mock_request):
         mock_get_url.return_value = 'http://freddie.queen.com/'
+        mock_request.return_value = mock.Mock(headers={'Location': 'http://eddiebowy.horse/'})
+
         versions = [factories.FileVersionFactory() for _ in range(3)]
         self.record.versions.extend(versions)
         self.record.save()
         res = self.download_file(path=self.path, version=3)
+
         assert_equal(res.status_code, 302)
-        assert_equal(res.location, mock_get_url.return_value)
+        assert_equal(res.location, 'http://eddiebowy.horse/')
         mock_get_url.assert_called_with(3, versions[1], self.record, mode=None)
 
     @mock.patch('website.addons.osfstorage.utils.get_waterbutler_download_url')
     def test_download_invalid_version(self, mock_get_url):
         mock_get_url.return_value = 'http://freddie.queen.com/'
+
         res = self.download_file(
             path=self.path, version=3,
             expect_errors=True,
         )
+
         assert_equal(res.status_code, 404)
         assert_false(mock_get_url.called)
 

@@ -1,5 +1,9 @@
 'use strict';
 
+var $ = require('jquery');
+var $osf = require('osfHelpers');
+require('select2');
+require('../css/citations.css');
 
 var r = function(query) {
     query.callback({results: [
@@ -13,22 +17,15 @@ var r = function(query) {
 }
 
 var formatResult = function(state) {
-    var html = "<div class='citation-result-title'>" + state.title + "</div>";
-    //if (state.short_title_!== null) {
-    //    html += "<div class='citation-result-slug'>" + state.short_title + "</div>";
-    //};
-    //if (state.summary !== null) {
-    //    html += "<div class='citation-result-summary'>" + state.summary + "</div>";
-    //};
-    return html;
+    return "<div class='citation-result-title'>" + state.title + "</div>";;
 };
 
 var formatSelection = function(state) {
     return state.title;
 };
 
-var input = $('#citation-style-input');
-var citationElement = $('#citation-text');
+var input = $('#citationStyleInput');
+var citationElement = $('#citationText');
 
 input.select2({
     allowClear: true,
@@ -37,7 +34,7 @@ input.select2({
     placeholder: 'Citation Style (e.g. "APA")',
     minimumInputLength: 1,
     ajax: {
-        url: '/api/v1/citation_styles/',
+        url: '/api/v1/citations/styles/',
         quietMillis: 200,
         data: function(term, page) {
             return {
@@ -47,16 +44,22 @@ input.select2({
         results: function(data, page) {
             return {results: data.styles}
         },
-        cache: true,
+        cache: true
     }
 }).on('select2-selecting', function(e) {
-    $.get(
-        nodeApiUrl + 'citation/' + e.val,
-        {},
-        function(data) {
-            citationElement.text(data.citation).slideDown();
-        }
-    );
+    var request = $.ajax({
+        url: nodeApiUrl + 'citation/' + e.val
+    });
+    request.done(function (data) {
+        citationElement.text(data.citation).slideDown();
+    });
+    request.fail(function() {
+        $osf.growl(
+            'Citation render failed',
+            'The requested citation format generated an error.',
+            'danger'
+        );
+    });
 }).on('select2-removed', function (e) {
     citationElement.slideUp().text();
 });

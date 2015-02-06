@@ -11,7 +11,7 @@ from website.project.model import (
     Tag, WatchConfig, MetaSchema, Pointer,
     Comment, PrivateLink, MetaData,
 )
-from website.project.citation.model import CitationStyle
+from website.citations.models import CitationStyle
 from website.conferences.model import Conference, MailRecord
 from website.oauth.models import ExternalAccount
 

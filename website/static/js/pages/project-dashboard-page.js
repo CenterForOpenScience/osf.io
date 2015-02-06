@@ -2,6 +2,7 @@
 /** Initialization code for the project dashboard. */
 
 var $ = require('jquery');
+require('../../vendor/bower_components/jquery.tagsinput/jquery.tagsinput.css');
 require('jquery-tagsinput');
 
 var m = require('mithril');
@@ -16,13 +17,6 @@ var Raven = require('raven-js');
 var NodeControl = require('../nodeControl.js');
 
 require('../citations.js');
-
-// Since we don't have an Buttons/Status column, we append status messages to the
-// name column
-Rubeus.Col.DashboardName = $.extend({}, Rubeus.Col.Name);
-Rubeus.Col.DashboardName.itemView = function(item) {
-    return Rubeus.Col.Name.itemView(item) + '&nbsp;<span data-status></span>';
-};
 
 var nodeApiUrl = window.contextVars.node.urls.api;
 

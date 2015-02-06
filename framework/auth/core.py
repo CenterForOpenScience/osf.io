@@ -22,6 +22,7 @@ from framework.addons import AddonModelMixin
 from framework.auth import utils, signals
 from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
 from framework.exceptions import PermissionsError
+from framework.sentry import log_exception
 
 from website import settings, filters, security
 
@@ -475,7 +476,8 @@ class User(GuidStoredObject, AddonModelMixin):
             return False
         return check_password_hash(self.password, raw_password)
 
-    def authors_to_csl(self):
+    @property
+    def csl_name(self):
         return {
             'family': self.family_name,
             'given': self.given_name,
@@ -561,8 +563,13 @@ class User(GuidStoredObject, AddonModelMixin):
         """Return whether or not a confirmation token is valid for this user.
         :rtype: bool
         """
-        if token in self.email_verifications.keys():
-            return self.email_verifications.get(token)['expiration'] > dt.datetime.utcnow()
+        if token in self.email_verifications:
+            verification = self.email_verifications[token]
+            # Not all tokens are guaranteed to have expiration dates
+            if 'expiration' in verification:
+                return verification['expiration'] > dt.datetime.utcnow()
+            else:
+                return True
         return False
 
     def verify_claim_token(self, token, project_id):
@@ -731,8 +738,12 @@ class User(GuidStoredObject, AddonModelMixin):
         return ret
 
     def update_search(self):
-        from website.search import search
-        search.update_user(self)
+        from website import search
+        try:
+            search.search.update_user(self)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+            log_exception()
 
     @classmethod
     def find_by_email(cls, email):

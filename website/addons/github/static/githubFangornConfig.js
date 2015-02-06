@@ -39,12 +39,10 @@ function _fangornActionColumn (item, col){
             .done(function(data) {
                 // delete view
                 tb.deleteNode(item.parentID, item.id);
-                window.console.log('Delete success: ', data);
                 tb.modal.dismiss();
             })
             .fail(function(data){
                 tb.modal.dismiss();
-                window.console.log('Delete failed: ', data);
                 item.notify.update('Delete failed.', 'danger', undefined, 3000);
             });
         }
@@ -66,13 +64,13 @@ function _fangornActionColumn (item, col){
 
     function _downloadEvent (event, item, col) {
         event.stopPropagation();
-        console.log('Download Event triggered', this, event, item, col);
         window.location = waterbutler.buildTreeBeardDownload(item, {ref: item.data.extra.fileSha});
     }
 
     // Download Zip File
     if (item.kind === 'folder') {
-        if (item.data.permissions.edit) {
+        // If File and FileRead are not defined dropzone is not supported and neither is uploads
+        if (window.File && window.FileReader && item.data.permissions.edit) {
             buttons.push({
                 'name' : '',
                 'tooltip' : 'Upload files',
@@ -154,7 +152,7 @@ function _fangornGithubTitle(item, col)  {
     if (item.data.branches) {
         item.data.branch = item.data.branch || item.data.defaultBranch;
         for (var i = 0; i < item.data.branches.length; i++) {
-            var selected = item.data.branches[i] === item.data.defaultBranch ? 'selected' : '';
+            var selected = item.data.branches[i] === item.data.branch ? 'selected' : '';
             branchArray.push(m('option', {selected : selected, value:item.data.branches[i]}, item.data.branches[i]));
         }
     }
@@ -224,7 +222,6 @@ function _fangornFolderIcons(item){
 }
 
 function _fangornUploadComplete(item){
-    console.log('upload complete', this, item);
     var index = this.returnIndex(item.id);
 }
 

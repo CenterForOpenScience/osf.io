@@ -38,12 +38,14 @@ from framework.mongo.utils import to_mongo, to_mongo_key
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters
 )
+from framework.sentry import log_exception
 
 from website import language
 from website import settings
 from website.util import web_url_for
 from website.util import api_url_for
 from website.exceptions import NodeStateError
+from website.citations.utils import datetime_to_csl
 from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.project.metadata.schemas import OSF_META_SCHEMAS
@@ -1356,8 +1358,12 @@ class Node(GuidStoredObject, AddonModelMixin):
         return None
 
     def update_search(self):
-        import website.search.search as search
-        search.update_node(self)
+        from website import search
+        try:
+            search.search.update_node(self)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+            log_exception()
 
     def remove_node(self, auth, date=None):
         """Marks a node as deleted.
@@ -1962,21 +1968,29 @@ class Node(GuidStoredObject, AddonModelMixin):
                 )
         logger.error("Node {0} has a parent that is not a project".format(self._id))
 
-    def to_csl(self):  # formats node information into CSL format for citation parsing
-        return {
-            "id": self._id,
-            "title": self.title,
-            "author": [
-                contributor.authors_to_csl()  # method in auth/model.py which parses the names of authors
+    @property
+    def csl(self):  # formats node information into CSL format for citation parsing
+        """a dict in CSL-JSON schema
+
+        For details on this schema, see:
+            https://github.com/citation-style-language/schema#csl-json-schema
+        """
+        csl = {
+            'id': self._id,
+            'title': self.title,
+            'author': [
+                contributor.csl_name  # method in auth/model.py which parses the names of authors
                 for contributor in self.contributors
             ],
-            "publisher": "Open Science Framework",
-            "issued": {
-                "date-parts": [[self.logs[-1].date.year if self.logs else '?']]
-            },
-            "type": "article",
-            "URL": self.display_absolute_url,
+            'publisher': 'Open Science Framework',
+            'type': 'webpage',
+            'URL': self.display_absolute_url,
         }
+
+        if self.logs:
+            csl['issued'] = datetime_to_csl(self.logs[-1].date)
+
+        return csl
 
     def author_list(self, and_delim='&'):
         author_names = [

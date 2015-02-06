@@ -190,37 +190,23 @@
 
     <div class="col-sm-6 osf-dash-col">
 
-        <!-- Begin section prior to Azeem's changes -->
         <!-- Citations -->
         % if not node['anonymous']:
-            <div class="citations">
-                <div>
-                    <span class="citation-label">Citation:</span>
-                    ${node['display_absolute_url']}
-                    <a id="citation-more">more</a>
+
+         <div class="citations addon-widget-container">
+            <div class="addon-widget-header clearfix">
+                <h4>Citation</h4>
+                <div class="pull-right">
+                    <span class="permalink">${node['display_absolute_url']}</span><a href="#" class="btn project-toggle"><i class="icon icon-angle-down"></i></a>
                 </div>
+            </div>
+            <div class="addon-widget-body" style="display:none">
                 <div id="citation-style-panel">
-                    <input id="citation-style-input" type="hidden" />
+                    <input id="citationStyleInput" type="hidden" />
                 </div>
-                <pre id="citation-text"></pre>
-            </div><!-- end .citations -->
-            <!-- End section prior to Azeem's changes -->
-                <style>
-                    #citation-style-panel{
-                        display: none;
-                        margin-top:12px;
-                    }
-                    #citation-text {
-                        display: none;
-                        margin-top:20px;
-                    }
-                    #citation-style-panel .select2-container {
-                        width:100%;
-                    }
-                </style>
-
-
-        <hr />
+                <pre id="citationText" class="formatted-citation"></pre>
+            </div>
+         </div>
         % endif
 
         <!-- Show child on right if widgets -->
@@ -244,7 +230,7 @@
         %endif
 
 
-        <%include file="log_list.mako"/>
+        <%include file="log_list.mako" args="scripted=True" />
 
     </div>
 
