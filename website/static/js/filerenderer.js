@@ -14,25 +14,22 @@ FileRenderer = {
 
     getCachedFromServer: function() {
         var self = this;
-        var fut = $.ajax({
+        $.ajax({
             url: self.url,
-        });
-
-        fut.done(function(data) {
+        }).done(function(data) {
             if (data) {
                 self.element.html(data);
                 clearInterval(self.refreshContent);
             } else {
                 self.handleRetry();
             }
-        });
-
-        fut.fail(self.handleRetry);
+        }).fail(self.handleRetry);
     },
 
     handleRetry: function() {
-        var self = this;
+        var self = FileRenderer;
         self.tries += 1;
+
         if(self.tries > self.ALLOWED_RETRIES){
             clearInterval(self.refreshContent);
             self.element.html('Timeout occurred while loading, please refresh the page');
