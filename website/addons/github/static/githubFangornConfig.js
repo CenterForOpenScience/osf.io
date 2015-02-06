@@ -5,7 +5,7 @@ var m = require('mithril');
 
 var Fangorn = require('fangorn');
 var waterbutler = require('waterbutler');
-var URI = require('../../../static/vendor/bower_components/uri.js/src/URI.js');
+var URI = require('uri.js/src/URI.js');
 
 
 function _uploadUrl(item, file) {

@@ -6,8 +6,8 @@
 var $ = require('jquery');
 var m = require('mithril');
 var Treebeard = require('treebeard');
+var URI = require('uri.js/src/URI.js');
 var waterbutler = require('waterbutler');
-var URI = require('../vendor/bower_components/uri.js/src/URI.js');
 
 var $osf = require('osfHelpers');
 
