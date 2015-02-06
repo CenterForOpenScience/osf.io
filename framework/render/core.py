@@ -53,8 +53,6 @@ def save_to_file_or_error(download_url, dest_path):
         response = requests.get(download_url, stream=True)
         if response.ok:
             for block in response.iter_content(1024):  # 1kb
-                if not block:
-                    break
                 temp_file.write(block)
         else:
             temp_file.write(
