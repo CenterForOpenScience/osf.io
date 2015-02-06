@@ -179,15 +179,16 @@ class NodeWikiPage(GuidStoredObject):
         sharejs_uuid = wiki_utils.get_sharejs_uuid(node, self.page_name)
 
         doc_item = db['docs'].find_one({'_id': sharejs_uuid})
-        sharejs_timestamp = doc_item['_m']['mtime'] if doc_item else 0
-        sharejs_timestamp /= 1000   # Convert to appropriate units
-        sharejs_date = datetime.datetime.utcfromtimestamp(sharejs_timestamp)
-        sharejs_version = doc_item['_v']
+        if doc_item:
+            sharejs_version = doc_item['_v']
+            sharejs_timestamp = doc_item['_m']['mtime']
+            sharejs_timestamp /= 1000   # Convert to appropriate units
+            sharejs_date = datetime.datetime.utcfromtimestamp(sharejs_timestamp)
 
-        if sharejs_version > 1 and sharejs_date > self.date:
-            return doc_item['_data']
-        else:
-            return self.content
+            if sharejs_version > 1 and sharejs_date > self.date:
+                return doc_item['_data']
+
+        return self.content
 
     def save(self, *args, **kwargs):
         rv = super(NodeWikiPage, self).save(*args, **kwargs)
