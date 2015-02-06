@@ -31,7 +31,7 @@
             <li class="active overflow" data-bind="text: file.name"></li>
           </ol>
 
-          <a class="btn btn-success btn-md" href="?action=download" data-bind="click: file.download">
+          <a class="btn btn-success btn-md" href="{{ currentVersion().downloadUrl}}" data-bind="click: currentVersion().download">
             Download <i class="icon-download-alt"></i>
           </a>
           <button class="btn btn-danger btn-md" data-bind="click: askDelete, if: editable">
@@ -50,11 +50,14 @@
             </thead>
 
             <tbody data-bind="foreach: {data: revisions, as: 'revision'}">
-              <tr>
+              <tr data-bind="css: $parent.isActive(revision)">
                 <td>
-                  <a href="{{ revision.viewUrl }}">
+                  <a href="{{ revision.viewUrl }}" data-bind="if: revision !== $parent.currentVersion()">
                     {{ revision.version.substring(0, 8) }}
                   </a>
+                  <span data-bind="if: revision === $parent.currentVersion()">
+                    {{ revision.version.substring(0, 8) }}
+                  </span>
                 </td>
                 <td>{{ revision.displayDate }}</td>
                 <td data-bind="if: $parent.userColumn">
@@ -70,7 +73,7 @@
                   <span class="badge" data-bind="if: revision.extra.downloads">
                     {{ revision.extra.downloads }}
                   </span>
-                  <a class="btn btn-primary btn-sm" href="{{ revision.osfUrl }}"
+                  <a class="btn btn-primary btn-sm" href="{{ revision.downloadUrl }}"
                     data-bind="click: revision.download">
                     <i class="icon-download-alt"></i>
                   </a>

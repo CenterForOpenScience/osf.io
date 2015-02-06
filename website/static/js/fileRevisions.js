@@ -49,8 +49,10 @@ var RevisionsViewModel = function(node, file, editable) {
         revisions: waterbutler.buildRevisionsUrl(file.path, file.provider, node.id),
     };
     self.errorMessage = ko.observable('');
+    self.currentVersion = ko.observable({});
     self.revisions = ko.observableArray([]);
     self.versioningSupported = ko.observable(true);
+
     self.userColumn = ko.computed(function() {
         return self.revisions()[0] &&
             self.revisions()[0].extra &&
@@ -64,11 +66,17 @@ RevisionsViewModel.prototype.fetch = function() {
     var request = $.getJSON(self.urls.revisions);
 
     request.done(function(response) {
-        var revisions = ko.utils.arrayMap(response.data, function(item) {
+        self.revisions(ko.utils.arrayMap(response.data, function(item) {
+            if($osf.urlParams()[item.versionIdentifier] === item.version) {
+                self.currentVersion(new Revision(item, self.file, self.node));
+                return self.currentVersion();
+            }
             return new Revision(item, self.file, self.node);
-        });
+        }));
 
-        self.revisions(self.revisions().concat(revisions));
+        if (Object.keys(self.currentVersion()).length === 0) {
+            self.currentVersion(self.revisions()[0]);
+        }
     });
 
     request.fail(function(response) {
@@ -109,10 +117,13 @@ RevisionsViewModel.prototype.askDelete = function() {
     });
 };
 
-RevisionsViewModel.prototype.download = function() {
+RevisionsViewModel.prototype.isActive = function(version) {
     var self = this;
-    window.location = self.urls.download;
-    return false;
+
+    if (self.currentVersion() === version) {
+        return 'info';
+    }
+    return;
 };
 
 var RevisionTable = function(selector, node, file, editable) {
