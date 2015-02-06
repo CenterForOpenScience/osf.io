@@ -1,5 +1,5 @@
 var activeUsers = [];
-var collaborative = (typeof sharejs !== 'undefined');
+var collaborative = (typeof WebSocket !== 'undefined' && typeof sharejs !== 'undefined');
 
 var ShareJSDoc = function(viewModel, url, metadata) {
 
@@ -18,7 +18,11 @@ var ShareJSDoc = function(viewModel, url, metadata) {
         viewModel.fetchData(function(response) {
             editor.setValue(response.wiki_draft, -1);
             editor.setReadOnly(false);
-            viewModel.status('disconnected');
+            if (typeof WebSocket === 'undefined') {
+                viewModel.status('noWebSocket');
+            } else {
+                viewModel.status('disconnected');
+            }
         });
         return;
     }
