@@ -20,6 +20,5 @@ Regards,
 
 The OSF Team
 Center for Open Science
-http://osf.io/
 
 Note: In system-wide security messages, we will not ask you to click on links or ask you for information - passwords or otherwise.
