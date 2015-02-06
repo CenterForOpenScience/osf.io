@@ -4,9 +4,9 @@ You are receiving this message because you have an account on the Open Science F
 
 Contributors on OSF projects have one of three permission statuses: administrator, read+write, and read-only. These affect what actions those contributors can perform on the project. Projects can have sub-components that have contributor lists that are distinct from the project contributor list.
 
-Currently, project administrators can view the contents of components in their projects only if they are listed as contributors on those components. However, two weeks from today, project administrators will have read-only access to sub-components of their projects even if they are not listed as a contributor. This means that administrators can see the component and its contents.
+Currently, project administrators can view the contents of components in their projects only if they are listed as contributors on those components. However, two weeks from today on February 20, project administrators will have read-only access to sub-components of their projects even if they are not listed as a contributor. This means that administrators can see the component and its contents.
 
-For example, if Thomas, Nikola, and Angus are administrators on project "AC/DC", but Angus is the sole contributor to a subcomponent "High Voltage" within that project, Thomas and Nikola will now be able to view the contents of "High Voltage".
+For example, if Thomas, Nikola, and Angus are administrators on project "AC/DC", but Angus is the sole contributor to a subcomponent "High Voltage" within that project, then Thomas and Nikola will now be able to view the contents of "High Voltage".
 
 Overall, we expect this to provide a more intuitive experience when thinking about permissions within the OSF. Administrators can view the contents of their projects, even if they are not directly contributing to all components. Also, this is an important change because administrators can register projects (i.e., create permanent, uneditable versions). It is important that administrators know what they are registering.
 
