@@ -9,7 +9,7 @@ from framework.auth.core import Auth
 
 from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
-from website.addons.s3.utils import get_bucket_drop_down, remove_osf_user, build_urls
+from website.addons.s3.utils import get_bucket_drop_down, remove_osf_user
 
 
 class S3GuidFile(GuidFile):
@@ -148,6 +148,8 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         return {'bucket': self.bucket}
 
     def create_waterbutler_log(self, auth, action, metadata):
+        url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='s3')
+
         self.owner.add_log(
             's3_{0}'.format(action),
             auth=auth,
@@ -156,7 +158,10 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
                 'node': self.owner._id,
                 'path': metadata['path'],
                 'bucket': self.bucket,
-                'urls': build_urls(self.owner, metadata['path']),
+                'urls': {
+                    'view': url,
+                    'download': url + '?action=download'
+                }
             },
         )
 

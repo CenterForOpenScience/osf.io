@@ -296,20 +296,16 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     def create_waterbutler_log(self, auth, action, metadata):
         path = metadata['path']
 
+        url = self.owner.web_url_for('addon_download_or_view_file', path=path, provider='github')
+
         if not metadata.get('extra'):
             sha = None
             urls = {}
         else:
             sha = metadata['extra']['commit']['sha']
             urls = {
-                'view': '{0}?ref={1}'.format(
-                    self.owner.web_url_for('github_view_file', path=path),
-                    sha
-                ),
-                'download': '{0}?ref={1}'.format(
-                    self.owner.web_url_for('github_download_file', path=path),
-                    sha
-                )
+                'view': '{0}?ref={1}'.format(url, sha),
+                'download': '{0}?action=download&ref={1}'.format(url, sha)
             }
 
         self.owner.add_log(

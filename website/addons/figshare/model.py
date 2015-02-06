@@ -186,11 +186,10 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
     def create_waterbutler_log(self, auth, action, metadata):
         if action in [NodeLog.FILE_ADDED, NodeLog.FILE_UPDATED]:
             name = metadata['name']
-            article_id = metadata['extra']['articleId']
-            file_id = metadata['extra']['fileId']
+            url = self.owner.web_url_for('addon_view_or_download_file', provider='figshare', path=metadata['path'])
             urls = {
-                'view': self.owner.web_url_for('figshare_view_file', aid=article_id, fid=file_id),
-                'download': self.owner.api_url_for('figshare_download_file', aid=article_id, fid=file_id),
+                'view': url,
+                'download': url + '?action=download'
             }
         elif action == NodeLog.FILE_REMOVED:
             name = metadata['path']
