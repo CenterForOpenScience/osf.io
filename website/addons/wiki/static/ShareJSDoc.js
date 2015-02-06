@@ -2,7 +2,7 @@ var activeUsers = [];
 var collaborative = (typeof sharejs !== 'undefined');
 
 var ShareJSDoc = function(viewModel, url, metadata) {
-
+    var languageTools = ace.require('ace/ext/language_tools');
     // Initialize Ace and configure settings
     var editor = ace.edit("editor");
     editor.getSession().setMode("ace/mode/markdown");
@@ -12,6 +12,11 @@ var ShareJSDoc = function(viewModel, url, metadata) {
     editor.setShowPrintMargin(false);           // Hides print margin
     editor.commands.removeCommand('showSettingsMenu');  // Disable settings menu
     editor.setReadOnly(true); // Read only until initialized
+    editor.setOptions({
+        enableBasicAutocompletion: [languageTools.snippetCompleter],
+        enableSnippets: true,
+        enableLiveAutocompletion: true
+    });
 
     if (!collaborative) {
         // Populate editor with most recent draft
