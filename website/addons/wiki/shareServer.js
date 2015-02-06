@@ -162,21 +162,21 @@ wss.on('connection', function(client) {
 });
 
 // Lock a document
-app.post('/lock/:id', function lockDoc(req, res, next) {
+app.post('/lock/:id', function (req, res, next) {
     locked[req.params.id] = true;
     wss.broadcast(req.params.id, JSON.stringify({type: 'lock'}));
     res.send(req.params.id + " was locked.");
 });
 
 // Unlock a document
-app.post('/unlock/:id', function lockDoc(req, res, next) {
+app.post('/unlock/:id', function (req, res, next) {
     delete locked[req.params.id];
     wss.broadcast(req.params.id, JSON.stringify({type: 'unlock'}));
     res.send(req.params.id + " was unlocked.");
 });
 
 // Redirect from a document
-app.post('/redirect/:id/:redirect', function lockDoc(req, res, next) {
+app.post('/redirect/:id/:redirect', function (req, res, next) {
     wss.broadcast(req.params.id, JSON.stringify({
         type: 'redirect',
         redirect: req.params.redirect
@@ -185,7 +185,7 @@ app.post('/redirect/:id/:redirect', function lockDoc(req, res, next) {
 });
 
 // Redirect from a deleted document
-app.post('/delete/:id/:redirect', function lockDoc(req, res, next) {
+app.post('/delete/:id/:redirect', function (req, res, next) {
     wss.broadcast(req.params.id, JSON.stringify({
         type: 'delete',
         redirect: req.params.redirect
