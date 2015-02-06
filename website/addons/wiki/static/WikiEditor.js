@@ -54,6 +54,8 @@ function ViewModel(url) {
                 return 'Live Editing Mode';
             case 'connecting':
                 return 'Attempting to Connect';
+            case 'noWebSocket':
+                return 'Your browser does not support Live Editing';
             default:
                 return 'Live Editing Unavailable';
         }
@@ -133,7 +135,8 @@ function ViewModel(url) {
 
     $(window).on('beforeunload', function() {
         if (self.changed() && self.status() !== 'connected') {
-            return 'There are unsaved changes to your wiki.';
+            return 'There are unsaved changes to your wiki. If you exit ' +
+                'the page now, those changes may be lost.';
         }
     });
 }
