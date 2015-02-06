@@ -3,7 +3,7 @@ ace.define("ace/snippets/markdown",["require","exports","module"], function(requ
 
 exports.snippetText = "# Markdown\n\
 \n\
-snippet font-italics\n\
+snippet font-italic\n\
 	*${1:text}*\n\
 \n\
 snippet font-bold\n\
