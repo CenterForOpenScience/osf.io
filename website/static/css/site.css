@@ -2078,16 +2078,28 @@ span#profileFullname{
     color: #555;
 }
 
-/* Treebeard in Configure Notifications, settings page */
+/* Treebeard in Configure Notifications, project settings page */
 #notificationSettings #tb-tbody {
     border: none;
 }
 #notificationSettings .tb-row-titles {
-    height: 25px;
     border: none;
     background: none;
 }
 
 #notificationSettings .tb-head {
+    display: none;
+}
+
+/* Treebeard in Configure Notifications, project settings page */
+#selectNotifications #tb-tbody {
+    border: none;
+}
+
+#selectNotifications .tb-row-titles {
+    border: none;
+}
+
+#selectNotifications .tb-head {
     display: none;
 }
