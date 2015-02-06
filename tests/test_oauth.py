@@ -1,6 +1,4 @@
-import mock
 import responses
-import urllib
 import urlparse
 from nose.tools import *
 

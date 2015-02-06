@@ -234,7 +234,6 @@ class AddonUserSettingsBase(AddonSettingsBase):
     #
     # metadata here is the specific to each addon.
 
-
     _meta = {
         'abstract': True,
     }

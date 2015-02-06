@@ -2,7 +2,6 @@ import time
 
 import mendeley
 from modularodm import fields
-from modularodm import Q
 
 
 from website import settings
@@ -10,7 +9,6 @@ from website.addons.base import AddonNodeSettingsBase
 from website.addons.base import AddonUserSettingsBase
 from website.citations.models import Citation
 from website.citations.models import CitationList
-from website.oauth.models import ExternalAccount
 from website.oauth.models import ExternalProvider
 
 from .api import APISession
@@ -254,7 +252,6 @@ class Mendeley(ExternalProvider):
 
         if document.year:
             csl['issued'] = {'date-parts': [[document.year]]}
-
 
         # gather identifiers
         idents = document.json.get('identifiers')
