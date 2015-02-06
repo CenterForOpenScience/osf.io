@@ -12,9 +12,7 @@ Overall, we expect this to provide a more intuitive experience when thinking abo
 
 How will this affect you? If you are a contributor on a component of a project and do not want the administrator of that project to see the content, then you may wish to delete the component and move the content to a new project in which you are the administrator.
 
-Please do let us know if you have any questions or would like help in addressing the organization of your projects:
-
-support@osf.io
+Please do let us know if you have any questions or would like help in addressing the organization of your projects.
 
 Regards,
 
