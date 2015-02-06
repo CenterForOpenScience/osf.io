@@ -232,7 +232,7 @@ class GuidFile(GuidStoredObject):
         return url.url
 
     @property
-    def cache_path(self):
+    def mfr_cache_path(self):
         return os.path.join(
             settings.MFR_CACHE_PATH,
             self.node._id,
@@ -241,7 +241,7 @@ class GuidFile(GuidStoredObject):
         )
 
     @property
-    def temp_path(self):
+    def mfr_temp_path(self):
         return os.path.join(
             settings.MFR_TEMP_PATH,
             self.node._id,

@@ -216,11 +216,11 @@ def get_or_start_render(file_guid, extra, start_render=True):
         return error.renderable_error
 
     try:
-        return codecs.open(file_guid.cache_path, 'r', 'utf-8').read()
+        return codecs.open(file_guid.mfr_cache_path, 'r', 'utf-8').read()
     except IOError:
         if start_render:
             # Start rendering job if requested
-            build_rendered_html(file_guid.download_url, file_guid.cache_path, file_guid.temp_path)
+            build_rendered_html(file_guid.download_url, file_guid.mfr_cache_path, file_guid.mfr_temp_path)
     return None
 
 
