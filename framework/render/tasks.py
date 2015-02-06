@@ -2,16 +2,18 @@
 import os
 import errno
 import codecs
-import urllib
 import logging
 
 import mfr
 from mfr.ext import ALL_HANDLERS
 from mfr.exceptions import MFRError
 
-from framework.tasks import app
 from website import settings
 from website.language import ERROR_PREFIX
+
+from framework.tasks import app
+from framework.render.core import save_to_file_or_error
+
 
 logger = logging.getLogger(__name__)
 
@@ -49,20 +51,15 @@ def _build_rendered_html(download_url, cache_path, temp_path):
     :param str cache_file_name: Name of cached file
     :param str download_url: External download URL
     """
-    try:
-        ensure_path(os.path.split(temp_path)[0])
-        urllib.urlretrieve(download_url, temp_path)
-    except:
-        # TODO Log to sentry here
-        return
+    # Ensure our paths exists
+    # Note: Ensures that cache directories have the same owner
+    # as the files inside them
+    ensure_path(os.path.split(temp_path)[0])
+    ensure_path(os.path.split(cache_path)[0])
+
+    save_to_file_or_error(download_url, temp_path)
 
     with codecs.open(temp_path) as file_pointer:
-
-        # Build path to cached content
-        # Note: Ensures that cache directories have the same owner as the files
-        # inside them
-        ensure_path(os.path.split(cache_path)[0])
-
         with codecs.open(cache_path, 'w', 'utf-8') as write_file_pointer:
             # Render file
             try:
@@ -75,7 +72,9 @@ def _build_rendered_html(download_url, cache_path, temp_path):
             # Cache rendered content
             write_file_pointer.write(rendered)
 
+    # Cleanup when we're done
     os.remove(temp_path)
+
 
 @app.task(ignore_result=True, timeout=settings.MFR_TIMEOUT)
 def _old_build_rendered_html(file_path, cache_dir, cache_file_name, download_url):

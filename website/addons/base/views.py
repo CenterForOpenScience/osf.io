@@ -225,8 +225,9 @@ def get_or_start_render(file_guid, extra, start_render=True):
 
 @must_be_valid_project
 @must_be_contributor_or_public
-def addon_view_file(auth, path, provider, **kwargs):
+def addon_view_or_download_file(auth, path, provider, **kwargs):
     extras = request.args.to_dict()
+    mode = extras.pop('action', 'view')
     node = kwargs.get('node') or kwargs['project']
 
     node_addon = node.get_addon(provider)
@@ -242,12 +243,19 @@ def addon_view_file(auth, path, provider, **kwargs):
     if file_guid.guid_url != request.path:
         return redirect(file_guid.guid_url)
 
-    render_url = furl.furl(node.api_url_for('addon_render_file', path=path[1:], provider=provider))
+    if mode == 'download':
+        return redirect(file_guid.download_url)
+
+    return addon_view_file(auth, node, node_addon, file_guid, extras)
+
+
+def addon_view_file(auth, node, node_addon, file_guid, extras):
+    render_url = furl.furl(node.api_url_for('addon_render_file', file_guid.path[1:], provider=file_guid.provider))
     render_url.args.update(extras)
 
     resp = serialize_node(node, auth, primary=True)
     resp.update({
-        'provider': provider,
+        'provider': file_guid.provider,
         'render_url': render_url,
         'file_path': file_guid.path,
         'files_url': node.web_url_for('collect_file_trees'),

@@ -731,7 +731,7 @@ def make_url_map(app):
                 '/project/<pid>/node/<nid>/files/<provider>/<path:path>/',
             ],
             'get',
-            addon_views.addon_view_file,
+            addon_views.addon_view_or_download_file,
             OsfWebRenderer('project/view_file.mako')
         ),
 
