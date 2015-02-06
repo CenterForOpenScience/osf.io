@@ -52,7 +52,7 @@ function ViewModel(url) {
         switch(self.status()) {
             case 'connecting':
                 return 'Attempting to connect';
-            case 'noWebSocket':
+            case 'unsupported':
                 return 'Your browser does not support live editing';
             default:
                 return 'Live editing unavailable';
@@ -78,6 +78,8 @@ function ViewModel(url) {
         switch(self.status()) {
             case 'connecting':
                 return '#connecting-modal';
+            case 'unsupported':
+                return '#unsupported-modal';
             default:
                 return '#disconnected-modal';
         }

@@ -150,6 +150,24 @@
   </div>
 </div>
 
+<div class="modal fade" id="unsupported-modal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h3 class="modal-title">Browser unsupported</h3>
+      </div>
+      <div class="modal-body">
+        <p>
+            Your browser does not support live editing. Other contributors
+            are not able to see any of your changes, and changes will not be
+            saved after leaving this page unless you press the "Save" button.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
 <%def name="javascript_bottom()">
 ${parent.javascript_bottom()}
 <script>

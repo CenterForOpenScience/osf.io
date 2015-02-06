@@ -25,7 +25,7 @@ var ShareJSDoc = function(viewModel, url, metadata) {
             editor.setValue(response.wiki_draft, -1);
             editor.setReadOnly(false);
             if (typeof WebSocket === 'undefined') {
-                viewModel.status('noWebSocket');
+                viewModel.status('unsupported');
             } else {
                 viewModel.status('disconnected');
             }
