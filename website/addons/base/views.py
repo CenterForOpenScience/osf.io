@@ -207,9 +207,7 @@ def create_waterbutler_log(payload, **kwargs):
     return {'status': 'success'}
 
 
-def get_or_start_render(file_guid, extra, start_render=True):
-    file_guid.maybe_set_version(**extra)
-
+def get_or_start_render(file_guid, start_render=True):
     try:
         file_guid.enrich()
     except exceptions.AddonEnrichmentError as error:
@@ -243,6 +241,8 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     if file_guid.guid_url != request.path:
         return redirect(file_guid.guid_url)
+
+    file_guid.maybe_set_version(**extras)
 
     if mode == 'download':
         return redirect(file_guid.download_url)
