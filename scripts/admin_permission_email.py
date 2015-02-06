@@ -16,7 +16,6 @@ from scripts import utils as script_utils
 
 
 logger = logging.getLogger(__name__)
-script_utils.add_file_logger(logger, __file__)
 logging.basicConfig(level=logging.INFO)
 
 
@@ -43,7 +42,15 @@ def send_security_message(user, label, mail):
 
 
 def get_targets():
-    query = Q('security_messages.{0}'.format(MESSAGE_NAME), 'exists', False)
+    # Active users who have not received the email
+    query = (
+        Q('security_messages.{0}'.format(MESSAGE_NAME), 'exists', False) &
+        Q('is_registered', 'eq', True) &
+        Q('password', 'ne', None) &
+        Q('is_merged', 'ne', True) &
+        Q('is_disabled', 'ne', True) &
+        Q('date_confirmed', 'ne', None)
+    )
     return models.User.find(query)
 
 
@@ -57,6 +64,7 @@ def main(dry_run):
 
 if __name__ == '__main__':
     import sys
+    script_utils.add_file_logger(logger, __file__)
     dry_run = 'dry' in sys.argv
     init_app(set_backends=True, routes=False)
     main(dry_run=dry_run)
