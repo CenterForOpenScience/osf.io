@@ -146,7 +146,3 @@ api_routes = {
     ],
     'prefix': '/api/v1'
 }
-
-page_routes = {
-    'rules': []
-}
