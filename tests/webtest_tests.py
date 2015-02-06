@@ -102,6 +102,7 @@ class TestAUser(OsfTestCase):
     def setUp(self):
         super(TestAUser, self).setUp()
         self.user = UserFactory()
+        # TODO: remove and re-write tests with 'password' as password /hrybacki
         self.user.set_password('science')
         # Add an API key for quicker authentication
         api_key = ApiKeyFactory()
@@ -158,6 +159,47 @@ class TestAUser(OsfTestCase):
         res = form.submit()
         # Sees a flash message
         assert_in('Log-in failed', res)
+
+    @mock.patch('website.addons.twofactor.models.push_status_message')
+    def test_user_with_two_factor_redirected_to_two_factor_page(self, mock_push_message):
+        # User with two factor enabled is sent to two factor page
+        self.user.add_addon('twofactor')
+        self.user_settings = self.user.get_addon('twofactor')
+        self.user_settings.is_confirmed = True
+        self.user_settings.save()
+
+        # Goes to log in page
+        res = self.app.get('/account/')
+        # Fills the form with correct password
+        form  = res.forms['signinForm']
+        form['username'] = self.user.username
+        form['password'] = 'science'
+        # Submits
+        res = form.submit()
+        res = res.follow()
+        assert_equal('/login/two-factor/', res.request.path)
+        assert_equal(res.status_code, 200)
+
+    @mock.patch('website.addons.twofactor.models.push_status_message')
+    def test_access_resource_before_two_factor_authorization(self, mock_push_message):
+        # User attempts to access resource after login page but before two factor authentication
+        self.user.add_addon('twofactor')
+        self.user_settings = self.user.get_addon('twofactor')
+        self.user_settings.is_confirmed = True
+        self.user_settings.save()
+
+        # Goes to log in page
+        res = self.app.get('/account/')
+        # Fills the form with correct password
+        form  = res.forms['signinForm']
+        form['username'] = self.user.username
+        form['password'] = 'science'
+        # Submits
+        form.submit()
+        # User attempts to access a protected resource
+        res = self.app.get('/dashboard/')
+        assert_equal(res.status_code, 302)
+        assert_in('login', res.location)
 
     def test_is_redirected_to_dashboard_already_logged_in_at_login_page(self):
         res = self._login(self.user.username, 'science')

@@ -37,7 +37,7 @@ class TestViews(OsfTestCase):
     def test_confirm_code_failure(self):
         res = self.app.post_json(
             '/api/v1/settings/twofactor/',
-            {'code': '000000'},
+            {'code': '0000000'},
             auth=self.user.auth,
             expect_errors=True
         )

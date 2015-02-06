@@ -14,10 +14,11 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.auth import exceptions
 from framework.exceptions import HTTPError
 from framework.sessions import set_previous_url
-from framework.auth import (login, logout, get_user, DuplicateEmailError)
+from framework.auth import (login, logout, get_user, DuplicateEmailError, verify_two_factor)
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import (SignInForm, MergeAccountForm, RegistrationForm,
         ResetPasswordForm, ForgotPasswordForm, ResendConfirmationForm)
+from framework.sessions import session
 
 import website.settings
 from website import mails
@@ -102,15 +103,9 @@ def auth_login(auth, registration_form=None, forgot_password_form=None, **kwargs
     if request.method == 'POST' and not direct_call:
         form = SignInForm(request.form)
         if form.validate():
-            twofactor_code = None
-            if 'twofactor' in website.settings.ADDONS_REQUESTED:
-                twofactor_code = form.two_factor.data
             try:
-                response = login(
-                    form.username.data,
-                    form.password.data,
-                    twofactor_code
-                )
+                session.data.update({'next_url': request.args.get('next')})
+                response = login(form.username.data, form.password.data)
                 return response
             except exceptions.LoginDisabledError:
                 status.push_status_message(language.DISABLED, 'error')
@@ -120,8 +115,6 @@ def auth_login(auth, registration_form=None, forgot_password_form=None, **kwargs
                 return {'next_url': ''}
             except exceptions.PasswordIncorrectError:
                 status.push_status_message(language.LOGIN_FAILED)
-            except exceptions.TwoFactorValidationError:
-                status.push_status_message(language.TWO_FACTOR_FAILED)
         forms.push_errors_to_status(form.errors)
 
     if kwargs.get('first', False):
@@ -146,6 +139,32 @@ def auth_login(auth, registration_form=None, forgot_password_form=None, **kwargs
         if not request.args.get('logout'):
             code = http.UNAUTHORIZED
     return {'next_url': next_url}, code
+
+
+def two_factor(**kwargs):
+    """View for handling two factor code authentication
+
+    methods: GET, POST
+    """
+    if request.method != 'POST':
+        return {}
+
+    two_factor_code = request.form['twoFactorCode']
+    try:  # verify two factor for current user
+        response = verify_two_factor(session.data['two_factor_auth']['auth_user_id'],
+                                     two_factor_code)
+        return response
+    except exceptions.TwoFactorValidationError:
+        status.push_status_message(language.TWO_FACTOR_FAILED)
+        # Get next URL from GET / POST data
+        next_url = request.args.get(
+            'next',
+            request.form.get(
+                'next_url',
+                ''
+            )
+        )
+        return {'next_url': next_url}, http.UNAUTHORIZED
 
 
 def auth_logout():
