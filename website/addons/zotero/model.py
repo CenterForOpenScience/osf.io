@@ -9,7 +9,7 @@ from website import settings
 from website.addons.base import AddonNodeSettingsBase
 from website.addons.base import AddonUserSettingsBase
 from website.citations import Citation
-from website.citations import CitationList
+from website.citations.models import CitationList
 from website.oauth.models import ExternalAccount
 from website.oauth.models import ExternalProvider
 from pyzotero import zotero
