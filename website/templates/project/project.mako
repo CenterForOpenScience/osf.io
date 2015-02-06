@@ -310,6 +310,12 @@ ${parent.javascript_bottom()}
 </script>
 
 <script src="${"/static/public/js/project-dashboard.js" | webpack_asset}"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
+</script>
+<script type="text/javascript"
+    src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
 
 % for asset in addon_widget_js:
 <script src="${asset | webpack_asset}"></script>
