@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import os
-import hashlib
 import logging
 
 import furl
@@ -12,7 +11,6 @@ from framework.auth import Auth
 from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
-from website.addons.dropbox.client import get_node_addon_client
 from website.addons.dropbox.utils import clean_path, DropboxNodeLogger
 
 logger = logging.getLogger(__name__)
@@ -26,10 +24,6 @@ class DropboxFile(GuidFile):
     #: Full path to the file, e.g. 'My Pictures/foo.png'
     path = fields.StringField(required=True, index=True)
 
-    #: Stored metadata from the dropbox API
-    #: See https://www.dropbox.com/developers/core/docs#metadata
-    metadata = fields.DictionaryField(required=False)
-
     @property
     def provider(self):
         return 'dropbox'
@@ -41,72 +35,6 @@ class DropboxFile(GuidFile):
     @property
     def unique_identifier(self):
         return self._metadata_cache['extra']['revisionId']
-
-    # def url(self, guid=True, rev='', *args, **kwargs):
-    #     """The web url for the file.
-
-    #     :param bool guid: Whether to return the short URL
-    #     """
-    #     # Short URLS must be built 'manually'
-    #     if guid:
-    #         # If returning short URL, urlencode the kwargs to build querystring
-    #         base_url = os.path.join('/', self._primary_key)
-    #         args = {'rev': rev}
-    #         args.update(**kwargs)
-    #         querystring = urllib.urlencode(args)
-    #         url = '/?'.join([base_url, querystring])
-    #     else:
-    #         url = self.node.web_url_for('dropbox_view_file', path=self.path,
-    #             rev=rev, **kwargs)
-    #     return url
-
-    # @property
-    # def file_url(self):
-    #     if self.path is None:
-    #         raise ValueError('Path field must be defined.')
-    #     return os.path.join('dropbox', 'files', self.path)
-
-    # def download_url(self, guid=True, rev='', *args, **kwargs):
-    #     """Return the download url for the file.
-
-    #     :param bool guid: Whether to return the short URL
-    #     """
-    #     # Short URLS must be built 'manually'
-    #     if guid:
-    #         # If returning short URL, urlencode the kwargs to build querystring
-    #         base_url = os.path.join('/', self._primary_key, 'download/')
-    #         args = {'rev': rev}
-    #         args.update(**kwargs)
-    #         querystring = urllib.urlencode(args)
-    #         url = '?'.join([base_url, querystring])
-    #     else:
-    #         url = self.node.web_url_for('dropbox_download',
-    #                 path=self.path, _absolute=True, rev=rev, **kwargs)
-    #     return url
-
-    def update_metadata(self, client=None, rev=''):
-        cl = client or get_node_addon_client(self.node.get_addon('dropbox'))
-        self.metadata = cl.metadata(self.path, list=False, rev=rev)
-
-    def get_metadata(self, client=None, force=False, rev=''):
-        """Gets the file metadata from the Dropbox API (cached)."""
-        if force or (not self.metadata):
-            self.update_metadata(client=client, rev=rev)
-            self.save()
-        return self.metadata
-
-    def get_cache_filename(self, client=None, rev=''):
-        if not rev:
-            metadata = self.get_metadata(client=client, rev=rev, force=True)
-            revision = metadata['rev']
-        else:
-            revision = rev
-        # Note: Use hash of file path instead of file path in case paths are
-        # very long; see https://github.com/CenterForOpenScience/openscienceframework.org/issues/769
-        return '{digest}_{rev}.html'.format(
-            digest=hashlib.md5(self.path).hexdigest(),
-            rev=revision,
-        )
 
     @classmethod
     def get_or_create(cls, node, path):
