@@ -31,7 +31,7 @@
             <li class="active overflow" data-bind="text: file.name"></li>
         </ol>
 
-        <a class="btn btn-success btn-md" href="{{ urls.download }}">
+        <a class="btn btn-success btn-md" href="?action=download" data-bind="click: file.download">
           Download <i class="icon-download-alt"></i>
         </a>
         <!-- ko if: editable -->
@@ -79,7 +79,9 @@
                       <!-- ko if: revision.extra && revision.extra.downloads -->
                       <span class="badge">{{ revision.extra.downloads }}</span>
                       <!-- /ko -->
-                      <a class="btn btn-primary btn-sm" href="{{ revision.downloadUrl }}">
+                      <a class="btn btn-primary btn-sm" 
+                        href="{{ '?' + revision.versionIdentifier + '=' + revision.version + '&action=download' }}"
+                        data-bind="click: revision.download">
                         <i class="icon-download-alt"></i>
                       </a>
                     </td>

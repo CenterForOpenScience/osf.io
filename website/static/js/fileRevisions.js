@@ -22,6 +22,11 @@ var Revision = function(data, file, node) {
         self.date.local :
         data.date;
 
+    self.download = function() {
+        window.location = self.downloadUrl;
+        return false;
+    };
+
 };
 
 var RevisionsViewModel = function(node, file, editable) {
@@ -92,6 +97,12 @@ RevisionsViewModel.prototype.askDelete = function() {
             }
         }
     });
+};
+
+RevisionsViewModel.prototype.download = function() {
+    var self = this;
+    window.location = self.urls.download;
+    return false;
 };
 
 var RevisionTable = function(selector, node, file, editable) {
