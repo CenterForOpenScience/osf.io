@@ -20,11 +20,11 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-FROM_ADDR = 'support@osf.io'
+FROM_ADDR = 'OSF Support <support@osf.io>'
 MESSAGE_NAME = 'permissions_change'
 SECURITY_MESSAGE = mails.Mail(
     'security_permissions_change',
-    subject='OSF Permissions Change',
+    subject='OSF Privacy Notice',
 )
 
 
