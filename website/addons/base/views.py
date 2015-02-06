@@ -237,9 +237,7 @@ def addon_view_or_download_file_legacy(**kwargs):
     elif 'osffiles' in request.path:
         provider = 'osfstorage'
 
-    if kwargs.get('action'):
-        action = kwargs['action']
-    elif 'download' in request.path:
+    if 'download' in request.path:
         action = 'download'
     else:
         action = 'view'
@@ -320,4 +318,6 @@ def addon_render_file(auth, path, provider, **kwargs):
 
     file_guid, created = node_addon.find_or_create_file_guid(path)
 
-    return get_or_start_render(file_guid, request.args.to_dict())
+    file_guid.maybe_set_version(**request.args.to_dict())
+
+    return get_or_start_render(file_guid)
