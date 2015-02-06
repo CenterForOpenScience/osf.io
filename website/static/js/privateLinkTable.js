@@ -75,9 +75,9 @@ function LinkViewModel(data, $root) {
     self.$root = $root;
     $.extend(self, data);
 
-    self.collapse = "Collapse";
+    self.collapse = 'Collapse';
     self.name = ko.observable(data.name);
-    self.readonly = "readonly";
+    self.readonly = 'readonly';
     self.selectText = "this.setSelectionRange(0, this.value.length);";
 
     self.collapseNode = ko.observable(false);
@@ -93,7 +93,20 @@ function LinkViewModel(data, $root) {
     });
 
     self.anonymousDisplay = ko.computed(function() {
-        return data.anonymous ? 'Yes' : 'No';
+        var openTag = '<span>';
+        var closeTag = '</span>';
+        var text;
+        if (data.anonymous) {
+            text = 'Yes';
+            // Strikethrough if node is public
+            if ($root.nodeIsPublic) {
+                openTag = '<del>';
+                closeTag = '</del>';
+            }
+        } else{
+            text = 'No';
+        }
+        return [openTag, text, closeTag].join('');
     });
 
     self.displayAllNodes = function() {
@@ -109,8 +122,9 @@ function LinkViewModel(data, $root) {
 
 }
 
-function ViewModel(url) {
+function ViewModel(url, nodeIsPublic) {
     var self = this;
+    self.nodeIsPublic = nodeIsPublic || false;
     self.url = url;
     self.privateLinks = ko.observableArray();
     self.nodeUrl = ko.observable(null);
@@ -124,10 +138,10 @@ function ViewModel(url) {
     }
 
     function onFetchError() {
-            $osf.growl('Could not retrieve view-only links.', 'Please refresh the page or ' +
-                    'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
-                    'problem persists.');
-        }
+        $osf.growl('Could not retrieve view-only links.', 'Please refresh the page or ' +
+                'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
+                'problem persists.');
+    }
 
     function fetch() {
         $.ajax({
@@ -180,9 +194,9 @@ function ViewModel(url) {
 
 }
 
-function PrivateLinkTable (selector, url) {
+function PrivateLinkTable (selector, url, nodeIsPublic) {
     var self = this;
-    self.viewModel = new ViewModel(url);
+    self.viewModel = new ViewModel(url, nodeIsPublic);
     $osf.applyBindings(self.viewModel, selector);
 
 }

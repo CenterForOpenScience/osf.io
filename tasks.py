@@ -686,3 +686,11 @@ def generate_self_signed(domain):
         ' -keyout {0}.key -out {0}.crt'
     ).format(domain)
     run(cmd)
+
+@task
+def update_citation_styles():
+    from scripts import parse_citation_styles
+    run('git submodule init')
+    run('git submodule update')
+    total = parse_citation_styles.main()
+    print("Parsed {} styles".format(total))

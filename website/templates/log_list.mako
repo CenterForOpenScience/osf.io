@@ -35,7 +35,7 @@
 
                 <dl class="dl-horizontal activity-log" data-bind="foreach: {data: logs, as: 'log'}">
                     <dt><span class="date log-date" data-bind="text: log.date.local, tooltip: {title: log.date.utc}"></span></dt>
-                    <dd class="log-content">
+                    <dd class="log-content break-word">
 
                         <!-- ko if: log.hasTemplate() -->
                         <span data-bind="if:log.anonymous">

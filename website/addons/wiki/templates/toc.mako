@@ -27,7 +27,7 @@
                 <li>
                     <a href="${child['url']}">
                         % if child['is_pointer']:
-                            <i class="icon-hand-right"></i>
+                            <i class="icon icon-link"></i>
                         % endif
 
                         ${child['title'] | n}

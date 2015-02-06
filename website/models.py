@@ -11,6 +11,7 @@ from website.project.model import (
     Tag, WatchConfig, MetaSchema, Pointer,
     Comment, PrivateLink, MetaData,
 )
+from website.citations.models import CitationStyle
 from website.conferences.model import Conference, MailRecord
 
 # All models
@@ -18,6 +19,7 @@ MODELS = (
     User, ApiKey, Node, NodeLog,
     Tag, WatchConfig, Session, Guid, MetaSchema, Pointer,
     MailRecord, Comment, PrivateLink, MetaData, Conference,
+    CitationStyle,
 )
 
 GUID_MODELS = (User, Node, Comment, MetaData)

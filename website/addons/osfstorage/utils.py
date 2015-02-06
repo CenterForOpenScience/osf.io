@@ -19,8 +19,6 @@ from website.models import Session
 from website.project.views.file import get_cache_content
 
 from website.addons.osfstorage import model
-from website.addons.osfstorage import settings
-
 
 logger = logging.getLogger(__name__)
 
@@ -117,7 +115,7 @@ def patch_url(url, **kwargs):
 
 
 def ensure_domain(url):
-    return patch_url(url, host=settings.DOMAIN)
+    return patch_url(url, host=site_settings.DOMAIN)
 
 
 def build_callback_urls(node, path):
