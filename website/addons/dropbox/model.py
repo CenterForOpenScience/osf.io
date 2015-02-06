@@ -161,6 +161,8 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
 
     def create_waterbutler_log(self, auth, action, metadata):
         cleaned_path = clean_path(os.path.join(self.folder, metadata['path']))
+        url = self.owner.web_url_for('addon_view_or_download_file', path=cleaned_path, provider='dropbox'),
+
         self.owner.add_log(
             'dropbox_{0}'.format(action),
             auth=auth,
@@ -170,8 +172,8 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
                 'path': cleaned_path,
                 'folder': self.folder,
                 'urls': {
-                    'view': self.owner.web_url_for('dropbox_view_file', path=cleaned_path),
-                    'download': self.owner.web_url_for('dropbox_download', path=cleaned_path),
+                    'view': url,
+                    'download': url + '?action=download'
                 },
             },
         )
