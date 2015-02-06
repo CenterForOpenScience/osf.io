@@ -225,6 +225,13 @@ class GuidFile(GuidStoredObject):
         return url.url
 
     @property
+    def mfr_download_url(self):
+        url = self._base_butler_url
+        url.path.add('file')
+        url.args['mode'] = 'render'
+        return url.url
+
+    @property
     def metadata_url(self):
         url = self._base_butler_url
         url.path.add('data')
