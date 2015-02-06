@@ -68,7 +68,7 @@ class CitationList(object):
         if callable(val):
             self._get_citations = val
         elif isinstance(val, Iterable):
-            self._citations = val
+            self.__citations = val
         else:
             raise ValueError("must be iterable or callable")
 

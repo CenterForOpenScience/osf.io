@@ -1,28 +1,26 @@
-<form role="form" id="addonSettings${addon_short_name.capitalize()}" data-addon="${addon_short_name}">
-
-    <div>
-        <h4 class="addon-title">Zotero</h4>
+<form role="form" id="addonSettings${addon_short_name.capitalize()}" data-addon="${addon_short_name}" class="container-fluid">
+    <div class="row">
+        <h4 class="addon-title">Mendeley</h4>
     </div>
 
-    <div>
-        <select class="form-control" data-bind="foreach: accounts, value: selectedAccount">
-                <option data-bind="text: display_name, value: id"></option>
-        </select>
-        <pre data-bind="text: ko.toJSON($data, null, 2)"></pre>
-        <select class="form-control" data-bind="foreach: citationLists, value: selectedCitationList">
-                <option data-bind="text: name, value: provider_list_id"></option>
-        </select>
+    <div class="row">
+        <div class="form-group">
+            <label>User</label>
+            <select class="form-control" data-bind="foreach: accounts, value: selectedAccountId">
+                    <option data-bind="text: display_name, value: id"></option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Folder</label>
+            <select class="form-control" data-bind="foreach: citationLists, value: selectedCitationList">
+                    <option data-bind="text: name, value: provider_list_id"></option>
+            </select>
+        </div>
+        <div>
+            <a class="btn btn-primary" data-bind="click: save">Save</a>
+            <span data-bind="text: message"></span>
+        </div>
     </div>
 
-
-    ${self.on_submit()}
-
-    <div class="addon-settings-message" style="display: none; padding-top: 10px;"></div>
 
 </form>
-
-<%def name="on_submit()">
-    <script type="text/javascript">
-        window.contextVars = $.extend({}, window.contextVars, {'githubSettingsSelector': '#addonSettings${addon_short_name.capitalize()}'});
-    </script>
-</%def>
