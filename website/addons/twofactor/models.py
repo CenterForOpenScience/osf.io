@@ -51,6 +51,7 @@ class TwoFactorUserSettings(AddonUserSettingsBase):
     #############
 
     def on_add(self):
+        # TODO: push status message shouldn't need a session /hrybacki /sloria
         push_status_message('Please <a href="#TfaVerify">activate your'
                             ' device</a> before continuing.')
         super(TwoFactorUserSettings, self).on_add()
