@@ -1,8 +1,11 @@
+var ReconnectingWebSocket = require('reconnectingWebsocket');
+var LanguageTools = ace.require('ace/ext/language_tools');
+require('addons/wiki/static/ace.js');
+
 var activeUsers = [];
 var collaborative = (typeof WebSocket !== 'undefined' && typeof sharejs !== 'undefined');
 
 var ShareJSDoc = function(viewModel, url, metadata) {
-
     // Initialize Ace and configure settings
     var editor = ace.edit("editor");
     editor.getSession().setMode("ace/mode/markdown");
@@ -12,6 +15,11 @@ var ShareJSDoc = function(viewModel, url, metadata) {
     editor.setShowPrintMargin(false);           // Hides print margin
     editor.commands.removeCommand('showSettingsMenu');  // Disable settings menu
     editor.setReadOnly(true); // Read only until initialized
+    editor.setOptions({
+        enableBasicAutocompletion: [LanguageTools.snippetCompleter],
+        enableSnippets: true,
+        enableLiveAutocompletion: true
+    });
 
     if (!collaborative) {
         // Populate editor with most recent draft
@@ -26,9 +34,6 @@ var ShareJSDoc = function(viewModel, url, metadata) {
         });
         return;
     }
-
-    var ReconnectingWebSocket = require('ReconnectingWebSocket');
-    require('addons/wiki/static/ace.js');
 
     // Configure connection
     var wsPrefix = (window.location.protocol == 'https:') ? 'wss://' : 'ws://';
