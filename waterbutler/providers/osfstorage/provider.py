@@ -81,14 +81,13 @@ class OSFStorageProvider(provider.BaseProvider):
             throws=exceptions.DownloadError,
         )
 
-        #Passing version on breaks S3 and cloud files
         kwargs.pop('version', None)
 
         data = yield from resp.json()
         provider = self.make_provider(data['settings'])
         data['data']['path'] = '/' + data['data']['path']
         download_kwargs = {}
-        # download_kwargs.update(kwargs)
+        download_kwargs.update(kwargs)
         download_kwargs.update(data['data'])
         download_kwargs['displayName'] = kwargs.get('displayName') or kwargs['path']
         return (yield from provider.download(**download_kwargs))

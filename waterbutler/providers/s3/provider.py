@@ -96,10 +96,15 @@ class S3Provider(provider.BaseProvider):
 
         key = self.bucket.new_key(path.path)
 
+        if kwargs.get('displayName'):
+            response_headers = {'response-content-disposition': 'attachment; filename={}'.format(kwargs['displayName'])}
+        else:
+            response_headers = {'response-content-disposition': 'attachment'}
+
         url = key.generate_url(
             settings.TEMP_URL_SECS,
             query_parameters=query_parameters,
-            response_headers={'response-content-disposition': 'attachment'},
+            response_headers=response_headers
         )
 
         if accept_url:
