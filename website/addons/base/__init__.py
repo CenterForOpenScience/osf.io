@@ -210,9 +210,11 @@ class GuidFile(GuidStoredObject):
             'nid': self.node._id,
             'path': self.path,
             'provider': self.provider,
-            self.version_identifier: self.revision,
             'cookie': request.cookies.get(settings.COOKIE_NAME)
         })
+
+        if self.revision:
+            url.args[self.version_identifier] = self.revision
 
         return url
 
