@@ -11,32 +11,33 @@ ko.punches.enableAll();
 
 var Revision = function(data, index, file, node) {
 
+    var ops = {};
     var self = this;
 
     $.extend(self, data);
-    var ops = {};
     ops[self.versionIdentifier] = self.version;
-    // Append modification time to file name if OSF Storage and not current version
-    if (self.provider !== 'osfstorage' && file.name && index !== 0) {
-        var parts = file.name.split('.');
-        if (parts.length === 1) {
-          ops.displayName = parts[0] + '-' + data.modified;
-        } else {
-          ops.displayName = parts.slice(0, parts.length - 1).join('') + '-' + data.modified + '.' + parts[parts.length - 1];
-        }
-    }
 
-    self.downloadUrl = waterbutler.buildDownloadUrl(file.path, file.provider, node.id, ops);
     self.date = new $osf.FormattableDate(data.modified);
     self.displayDate = self.date.local !== 'Invalid date' ?
         self.date.local :
         data.date;
 
-    self.viewUrl = '?' + $.param(ops);
-    self.osfUrl = '?' + $.param($.extend({action: 'download'}, ops));
+    // Append modification time to file name if OSF Storage and not current version
+    if (self.provider !== 'osfstorage' && file.name && index !== 0) {
+        var parts = file.name.split('.');
+        if (parts.length === 1) {
+            ops.displayName = parts[0] + '-' + data.modified;
+        } else {
+            ops.displayName = parts.slice(0, parts.length - 1).join('') + '-' + data.modified + '.' + parts[parts.length - 1];
+        }
+    }
+
+    self.osfViewUrl = '?' + $.param(ops);
+    self.osfDownloadUrl = '?' + $.param($.extend({action: 'download'}, ops));
+    self.waterbutlerDownloadUrl = waterbutler.buildDownloadUrl(file.path, file.provider, node.id, ops);
 
     self.download = function() {
-        window.location = self.downloadUrl;
+        window.location = self.waterbutlerDownloadUrl;
         return false;
     };
 
