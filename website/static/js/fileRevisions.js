@@ -9,13 +9,22 @@ var waterbutler = require('waterbutler');
 
 ko.punches.enableAll();
 
-var Revision = function(data, file, node) {
+var Revision = function(data, index, file, node) {
 
     var self = this;
 
     $.extend(self, data);
     var ops = {};
     ops[self.versionIdentifier] = self.version;
+    // Append modification time to file name if OSF Storage and not current version
+    if (self.provider !== 'osfstorage' && file.name && index !== 0) {
+        var parts = file.name.split('.');
+        if (parts.length === 1) {
+          ops.displayName = parts[0] + '-' + data.modified;
+        } else {
+          ops.displayName = parts.slice(0, parts.length - 1).join('') + '-' + data.modified + '.' + parts[parts.length - 1];
+        }
+    }
 
     self.downloadUrl = waterbutler.buildDownloadUrl(file.path, file.provider, node.id, ops);
     self.date = new $osf.FormattableDate(data.modified);
@@ -24,15 +33,12 @@ var Revision = function(data, file, node) {
         data.date;
 
     self.viewUrl = '?' + $.param(ops);
-
-    ops.action = 'download';
-    self.downloadUrl = '?' + $.param(ops);
+    self.osfUrl = '?' + $.param($.extend({action: 'download'}, ops));
 
     self.download = function() {
         window.location = self.downloadUrl;
         return false;
     };
-
 
 };
 
@@ -66,12 +72,12 @@ RevisionsViewModel.prototype.fetch = function() {
     var request = $.getJSON(self.urls.revisions);
 
     request.done(function(response) {
-        self.revisions(ko.utils.arrayMap(response.data, function(item) {
-            if($osf.urlParams()[item.versionIdentifier] === item.version) {
-                self.currentVersion(new Revision(item, self.file, self.node));
+        self.revisions(ko.utils.arrayMap(response.data, function(item, index) {
+            if ($osf.urlParams()[item.versionIdentifier] === item.version) {
+                self.currentVersion(new Revision(item, index, self.file, self.node));
                 return self.currentVersion();
             }
-            return new Revision(item, self.file, self.node);
+            return new Revision(item, index, self.file, self.node);
         }));
 
         if (Object.keys(self.currentVersion()).length === 0) {
