@@ -277,10 +277,9 @@ class GuidFile(GuidStoredObject):
     def enrich(self, save=True):
         self._fetch_metadata(should_raise=True)
 
-        if self._metadata_cache.get('code', 200) != 200:
-            raise exceptions.AddonEnrichmentError(self._metadata_cache['code'])
-
     def _fetch_metadata(self, should_raise=False):
+        # Note: We should look into caching this at some point
+        # Some attributes may change however.
         resp = requests.get(self.metadata_url)
 
         if should_raise:
