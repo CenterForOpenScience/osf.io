@@ -8,6 +8,17 @@ from website import citations
 
 
 class Citation(dict):
+    """A single citation. Should be valid CSL-data.
+
+    === NOTE ===
+    Note that this object is a bit of a shell for now - it's just a dict.
+    Eventually, Citation objects will have additional functionality, especially
+    validating that instances against the CSL-data schema.
+
+    When using instances, use the ``Citation.json`` property to retrieve a
+    JSON-encodable dict. Future implementations may not be subclasses of dict.
+    === Lyndsy Simon, Feb 2105 ===
+    """
     @property
     def json(self):
         """Json-encodable dict conforming to the CSL-data schema"""
@@ -15,7 +26,13 @@ class Citation(dict):
 
 
 class CitationList(object):
+    """An list of citations, plus metadata for the list itself
 
+    This is an abstraction of Mendeley's "folder" and Zotero's "collection".
+    Other citation managements systems should have similary concepts.
+
+    Nested instances will be supported in the future.
+    """
     def __init__(self,
                  name=None,
                  provider_list_id=None,
@@ -64,6 +81,12 @@ class CitationList(object):
 
     @citations.setter
     def citations(self, val):
+        """May be set to an iterable of Citation instances, or a callable that
+        returns an iterable of Citation instances
+
+        :param val: Iterable or callable
+        :return:
+        """
         if callable(val):
             self._get_citations = val
         elif isinstance(val, Iterable):
@@ -73,7 +96,14 @@ class CitationList(object):
 
     @property
     def json(self):
-        """JSON-formatted string for instance, not including citations"""
+        """JSON-formatted string for instance, not including citations
+
+        Not-yet-implemented keys:
+            * children - list of child CitationList instances
+            * num_citations - count of citation
+
+        :return: dict
+        """
         return {
             'name': self.name,
             'provider_list_id': self.provider_list_id,
@@ -81,12 +111,22 @@ class CitationList(object):
         }
 
     def render(self, style):
+        """Returns a full JSON-encodable dict, including the formatted text for
+        citations.
+
+        :param str style: a CitationStyle._id - ex. "apa", "harvard1"
+        :return: dict
+        """
         rv = self.json
         rv['citations'] = list(citations.render_iterable(self.citations, style))
         return rv
 
 
 class CitationStyle(StoredObject):
+    """Persistent representation of a CSL style.
+
+    These are parsed from .csl files, so that metadata fields can be indexed.
+    """
 
     # The name of the citation file, sans extension
     _id = fields.StringField(primary=True)

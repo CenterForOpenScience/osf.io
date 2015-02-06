@@ -169,6 +169,8 @@ class Mendeley(ExternalProvider):
 
         folders = client.folders.list().items
 
+        # TODO: Verify OAuth access to each folder
+
         # fake object to represent the user's whole account
         all_documents = [
             CitationList(

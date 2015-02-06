@@ -50,6 +50,10 @@ class CitationsTestCase(OsfTestCase):
             expected,
         )
 
+    def test_render_iterable_bibtex(self):
+        """render a list of ``Citation``s as bibtex"""
+        assert_true(False)
+
 
 class CitationsUtilsTestCase(OsfTestCase):
     def test_datetime_to_csl(self):
@@ -178,3 +182,27 @@ class CitationsViewsTestCase(OsfTestCase):
             response.json,
             {'citation': citations.render(node, style='bibtex')}
         )
+
+
+class TestCitationsModel(OsfTestCase):
+    def test_json_encoding(self):
+        """Citation.json must be JSON-encodeable"""
+        assert_true(False)
+
+
+class TestCitationListModel(OsfTestCase):
+    def test_json_encoding(self):
+        """CitationList.json must be JSON-encodeable"""
+        assert_true(False)
+
+    def test_citations_iterable(self):
+        """Citations supplied as an iterable"""
+        assert_true(False)
+
+    def test_citations_callable(self):
+        """Citations supplied as a callable"""
+        assert_true(False)
+
+    def test_render(self):
+        """citations value must be a list of formatted strings"""
+        assert_true(False)

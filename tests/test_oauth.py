@@ -52,7 +52,7 @@ class MockOAuth2Provider(ExternalProvider):
 
 
 class TestExternalProviderOAuth1(OsfTestCase):
-    """Test functionality of the ExternalProvider class, for OAuth 2.0"""
+    """Test functionality of the ExternalProvider class, for OAuth 1.0a"""
 
     def setUp(self):
         super(TestExternalProviderOAuth1, self).setUp()
@@ -97,6 +97,8 @@ class TestExternalProviderOAuth1(OsfTestCase):
 
     @responses.activate
     def test_callback(self):
+        """Exchange temporary credentials for permanent credentials"""
+
         # mock a successful call to the provider to exchange temp keys for
         #   permanent keys
         responses.add(
@@ -138,6 +140,8 @@ class TestExternalProviderOAuth1(OsfTestCase):
 
     @responses.activate
     def test_callback_wrong_user(self):
+        """Do not accept temporary credentials not assigned to the user"""
+
         # mock a successful call to the provider to exchange temp keys for
         #   permanent keys
         responses.add(
@@ -189,10 +193,11 @@ class TestExternalProviderOAuth2(OsfTestCase):
         super(TestExternalProviderOAuth2, self).tearDown()
 
     def test_oauth_version_default(self):
+        """OAuth 2.0 is the default version"""
         assert_is(self.provider._oauth_version, OAUTH2)
 
     def test_start_flow(self):
-        """Generate the appropriate URL and nonce"""
+        """Generate the appropriate URL and state token"""
 
         with self.app.app.test_request_context("/oauth/connect/mock2/") as ctx:
 
@@ -234,3 +239,11 @@ class TestExternalProviderOAuth2(OsfTestCase):
                 url.split("?")[0],
                 "https://mock2.com/auth",
             )
+
+        def test_multiple_users_associated(self):
+            """Only one ExternalAccount is created for multiple OSF users"""
+            assert_true(False)
+
+        def test_multiple_users_disconnect(self):
+            """One users removes ExternalAccount, other users still attached"""
+            assert_true(False)
