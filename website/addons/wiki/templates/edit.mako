@@ -21,14 +21,16 @@
                             <div id="wmd-button-bar"></div>
                         </div>
                         <div class="col-lg-6 col-md-5">
-                            <div data-bind="fadeVisible: status() === 'connected' && activeUsers" style="float: right">
+                            <div data-bind="fadeVisible: status() === 'connected'" style="float: right">
                                 <ul class="list-inline" data-bind="foreach: activeUsers">
-                                    <li>
-                                        <a data-bind="attr: { href: url }">
-                                            <img data-bind="attr: {src: gravatar}, tooltip: {title: name, placement: 'bottom'}"
-                                                 style="border: 1px solid black;">
-                                        </a>
-                                    </li>
+                                    <!-- ko ifnot: id === '${user_id}' -->
+                                        <li>
+                                            <a data-bind="attr: { href: url }">
+                                                <img data-bind="attr: {src: gravatar}, tooltip: {title: name, placement: 'bottom'}"
+                                                     style="border: 1px solid black;">
+                                            </a>
+                                        </li>
+                                    <!-- /ko -->
                                 </ul>
                             </div>
                             <div data-bind="fadeVisible: status() !== 'connected'">

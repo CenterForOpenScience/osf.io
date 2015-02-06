@@ -110,7 +110,7 @@ function ViewModel(url) {
                 if (callback) callback(response);
             },
             error: function (xhr, textStatus, error) {
-                $.osf.growl('Error','The wiki content could not be loaded.');
+                $osf.growl('Error','The wiki content could not be loaded.');
                 Raven.captureMessage('Could not GET wiki contents.', {
                     url: url,
                     textStatus: textStatus,
@@ -136,7 +136,7 @@ function ViewModel(url) {
 
 function WikiEditor(selector, url) {
     this.viewModel = new ViewModel(url);
-    $.osf.applyBindings(this.viewModel, selector);
+    $osf.applyBindings(this.viewModel, selector);
     var mdConverter = Markdown.getSanitizingConverter();
     var mdEditor = new Markdown.Editor(mdConverter);
     mdEditor.run(editor);
