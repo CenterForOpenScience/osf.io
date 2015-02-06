@@ -35,8 +35,6 @@ var ShareJSDoc = function(viewModel, url, metadata) {
         return;
     }
 
-
-
     // Configure connection
     var wsPrefix = (window.location.protocol == 'https:') ? 'wss://' : 'ws://';
     var wsUrl = wsPrefix + window.contextVars.wiki.urls.sharejs;
