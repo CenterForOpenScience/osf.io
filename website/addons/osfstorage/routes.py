@@ -2,59 +2,7 @@
 
 from framework.routing import Rule, json_renderer
 
-from website.routes import OsfWebRenderer, notemplate
 from website.addons.osfstorage import views
-
-
-web_routes = {
-
-    'rules': [
-        Rule(
-            [
-                # Legacy routes for `view_file`
-                '/project/<pid>/osffiles/<fid>/',
-                '/project/<pid>/node/<nid>/osffiles/<fid>/',
-            ],
-            'get',
-            views.osf_storage_view_file_legacy,
-            OsfWebRenderer('../addons/osfstorage/templates/osfstorage_view_file.mako'),
-        ),
-
-        Rule(
-            [
-                # Legacy routes for `download_file`
-                '/project/<pid>/osffiles/<fid>/download/',
-                '/project/<pid>/node/<nid>/osffiles/<fid>/download/',
-                # Note: Added these old URLs for backwards compatibility with
-                # hard-coded links.
-                '/project/<pid>/osffiles/download/<fid>/',
-                '/project/<pid>/node/<nid>/osffiles/download/<fid>/',
-                '/project/<pid>/files/<fid>/',
-                '/project/<pid>/node/<nid>/files/<fid>/',
-                '/project/<pid>/files/download/<fid>/',
-                '/project/<pid>/node/<nid>/files/download/<fid>/',
-
-                # Legacy routes for `download_file_by_version`
-                '/project/<pid>/osffiles/<fid>/version/<vid>/download/',
-                '/project/<pid>/node/<nid>/osffiles/<fid>/version/<vid>/download/',
-                # Note: Added these old URLs for backwards compatibility with
-                # hard-coded links.
-                '/project/<pid>/osffiles/<fid>/version/<vid>/',
-                '/project/<pid>/node/<nid>/osffiles/<fid>/version/<vid>/',
-                '/project/<pid>/osffiles/download/<fid>/version/<vid>/',
-                '/project/<pid>/node/<nid>/osffiles/download/<fid>/version/<vid>/',
-                '/project/<pid>/files/<fid>/version/<vid>/',
-                '/project/<pid>/node/<nid>/files/<fid>/version/<vid>/',
-                '/project/<pid>/files/download/<fid>/version/<vid>/',
-                '/project/<pid>/node/<nid>/files/download/<fid>/version/<vid>/',
-            ],
-            'get',
-            views.osf_storage_download_file_legacy,
-            notemplate,
-        ),
-
-    ],
-}
 
 
 api_routes = {
@@ -123,26 +71,6 @@ api_routes = {
             views.osf_storage_upload_file_hook,
             json_renderer,
         ),
-
-        Rule(
-            [
-                # Legacy routes for `download_file`
-                '/project/<pid>/osffiles/<fid>/',
-                '/project/<pid>/node/<nid>/osffiles/<fid>/',
-                '/project/<pid>/files/download/<fid>/',
-                '/project/<pid>/node/<nid>/files/download/<fid>/',
-
-                # Legacy routes for `download_file_by_version`
-                '/project/<pid>/osffiles/<fid>/version/<vid>/',
-                '/project/<pid>/node/<nid>/osffiles/<fid>/version/<vid>/',
-                '/project/<pid>/files/download/<fid>/version/<vid>/',
-                '/project/<pid>/node/<nid>/files/download/<fid>/version/<vid>/',
-            ],
-            'get',
-            views.osf_storage_download_file_legacy,
-            json_renderer,
-        ),
-
     ],
 
 }
