@@ -208,14 +208,15 @@ def create_waterbutler_log(payload, **kwargs):
 
 
 def get_or_start_render(file_guid, extra, start_render=True):
-    file_guid.maybe_version(**extra)
+    file_guid.maybe_set_version(**extra)
 
     try:
         file_guid.enrich()
-
-        return codecs.open(file_guid.cache_path, 'r', 'utf-8').read()
     except exceptions.AddonEnrichmentError as error:
         return error.renderable_error
+
+    try:
+        return codecs.open(file_guid.cache_path, 'r', 'utf-8').read()
     except IOError:
         if start_render:
             # Start rendering job if requested
