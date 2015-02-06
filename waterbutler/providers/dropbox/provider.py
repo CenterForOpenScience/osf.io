@@ -212,6 +212,7 @@ class DropboxProvider(provider.BaseProvider):
         return [
             DropboxRevision(item).serialized()
             for item in data
+            if not item.get('is_deleted')
         ]
 
     def can_intra_copy(self, dest_provider):
