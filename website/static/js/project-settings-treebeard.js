@@ -1,4 +1,6 @@
 var $ = require('jquery');
+var $osf = require('osfHelpers');
+var bootbox = require('bootbox');
 require('../vendor/bower_components/slickgrid/lib/jquery.event.drag-2.2.js');
 var m = require('mithril');
 var Treebeard = require('treebeard');
@@ -18,8 +20,6 @@ function resolveToggle(item) {
     }
 
 function resolveIcon(item) {
-    // this = treebeard object;
-    // Item = item acted on
     if (item.children.length > 0) {
         if (item.open) {
             return m("i.icon.icon-folder-open", " ");
@@ -43,6 +43,21 @@ function expandOnLoad() {
         }
     }
 }
+
+function subscribe(id, event, notification_type) {
+    var payload = {
+                'id': id,
+                'event': event,
+                'notification_type': notification_type
+    };
+    $osf.postJSON(
+        '/api/v1/settings/subscribe/',
+        payload
+    ).fail(function() {
+        bootbox.alert('Could not update notification preferences.')
+    });
+}
+
 
 function ProjectNotifications(data) {
     //  Treebeard version
@@ -76,7 +91,6 @@ function ProjectNotifications(data) {
             ]},
         resolveRows : function notificationResolveRows(item){
             var default_columns = [];
-
 
             if (item.data.kind === 'heading') {
                  default_columns.push({
@@ -121,10 +135,9 @@ function ProjectNotifications(data) {
                     custom : function(item, col) {
                         return m("div[style='padding-right:10px']",
                             [m("select.form-control", {
-                                id: item.parent().data.node_id,
-                                name: item.data.title,
                                 onchange: function(ev) {
                                     item.data.notificationType = ev.target.value;
+                                    subscribe(item.parent().data.node_id, item.data.title, item.data.notificationType)
                                 }},
                                 [
                                     m("option", {value: "none", selected : item.data.notificationType === "none" ? "selected": ""}, "None"),
@@ -154,10 +167,9 @@ function ProjectNotifications(data) {
                     custom : function() {
                         return  m("div[style='padding-right:10px']",
                             [m("select.form-control", {
-                                id: item.parent().data.node_id,
-                                name: item.data.title,
                                 onchange: function(ev) {
                                     item.data.notificationType = ev.target.value;
+                                    subscribe(item.parent().data.node_id, item.data.title, item.data.notificationType)
                                 }},
                                 [
                                     m("option", {value: "adopt_parent", selected: item.data.notificationType === "adopt_parent" ? "selected" : ""}, "Adopt setting from parent project"),

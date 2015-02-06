@@ -9,78 +9,58 @@ from website.models import Node
 from website import settings
 
 @must_be_logged_in
-def subscribe(auth, **kwargs):
+def subscribe(auth):
     user = auth.user
-    pid = kwargs.get('pid')
-    nid = kwargs.get('nid')
-    object_id = nid if nid else pid
-    subscriptions = request.json
-    update_subscription(user, object_id, subscriptions)
+    subscription = request.json
+    event = subscription.get('event')
+    notification_type = subscription.get('notification_type')
 
-@must_be_logged_in
-def batch_subscribe(auth):
-    subscriptions = request.json
-    for key in subscriptions.keys():
-        update_subscription(auth.user, key, subscriptions[key])
+    node_lineage = []
+    if event == 'comment_replies':
+        category = user._id
+    else:
+        category = subscription.get('id')
+        node_lineage = get_node_lineage(Node.load(category), [])
+        node_lineage.reverse()
 
+    event_id = category + "_" + event
 
-def update_subscription(user, object_id, subscriptions):
-    for event in subscriptions:
-        node_lineage = []
-        if event == 'comment_replies':
-            category = user._id
-        else:
-            category = object_id
-            node_lineage = get_node_lineage(Node.load(category), [])
-            node_lineage.reverse()
+    if notification_type == 'adopt_parent':
+        try:
+            s = Subscription.find_one(Q('_id', 'eq', event_id))
+        except NoResultsFound:
+            s = None
 
-        event_id = category + "_" + event
-
-        for notification_type in subscriptions[event]:
-            if notification_type == 'adopt_parent':
-                if subscriptions[event][notification_type]:
-                    try:
-                        s = Subscription.find_one(Q('_id', 'eq', event_id))
-                    except NoResultsFound:
-                        s = None
-
-                    if s:
-                        for n in settings.NOTIFICATION_TYPES:
-                            if user in getattr(s, n):
-                                getattr(s, n).remove(user)
-                                s.save()
-
-            else:
-                # Create subscription or find existing
-                if subscriptions[event][notification_type]:
-                    try:
-                        s = Subscription(_id=event_id)
-                        s.save()
-
-                    except KeyExistsException:
-                        s = Subscription.find_one(Q('_id', 'eq', event_id))
-
-                    s.object_id = category
-                    s.event_name = event
-                    s.node_lineage = node_lineage
+        if s:
+            for n in settings.NOTIFICATION_TYPES:
+                if user in getattr(s, n):
+                    getattr(s, n).remove(user)
                     s.save()
 
-                    # Add user to list of subscribers
-                    if notification_type not in s._fields:
-                        setattr(s, notification_type, [])
-                        s.save()
+    else:
+        try:
+            s = Subscription(_id=event_id)
+            s.save()
 
-                    if user not in getattr(s, notification_type):
-                        getattr(s, notification_type).append(user)
-                        s.save()
+        except KeyExistsException:
+            s = Subscription.find_one(Q('_id', 'eq', event_id))
 
-                else:
-                    try:
-                        s = Subscription.find_one(Q('_id', 'eq', event_id))
-                        if user in getattr(s, notification_type):
-                            getattr(s, notification_type).remove(user)
-                            s.save()
-                    except NoResultsFound:
-                        pass
+        s.object_id = category
+        s.event_name = event
+        s.node_lineage = node_lineage
+        s.save()
 
-    return {}
+        # Add user to list of subscribers
+        if notification_type not in s._fields:
+            setattr(s, notification_type, [])
+            s.save()
+
+        if user not in getattr(s, notification_type):
+            getattr(s, notification_type).append(user)
+            s.save()
+
+        for nt in settings.NOTIFICATION_TYPES:
+            if nt != notification_type:
+                if user in getattr(s, nt):
+                    getattr(s, nt).remove(user)
+                    s.save()

@@ -735,16 +735,6 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule(
-            [
-                '/project/<pid>/subscribe/',
-                '/project/<pid>/node/<nid>/subscribe/',
-            ],
-            'post',
-            notification_views.subscribe,
-            json_renderer,
-        ),
-
-        Rule(
             '/email/meeting/',
             'post',
             conference_views.meeting_hook,
@@ -1151,9 +1141,9 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/settings/batch_subscribe/',
+            '/settings/subscribe/',
             'post',
-            notification_views.batch_subscribe,
+            notification_views.subscribe,
             json_renderer,
         ),
 
