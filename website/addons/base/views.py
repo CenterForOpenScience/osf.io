@@ -223,6 +223,43 @@ def get_or_start_render(file_guid, start_render=True):
 
 
 @must_be_valid_project
+def addon_view_or_download_file_legacy(**kwargs):
+    query_params = request.args_to_dict()
+    node = kwargs.get('node') or kwargs['project']
+
+    if kwargs.get('path'):
+        path = kwargs['path']
+    elif kwargs.get('fid'):
+        path = kwargs['fid']
+
+    if kwargs.get('provider'):
+        provider = kwargs['provider']
+    elif 'osffiles' in request.path:
+        provider = 'osfstorage'
+
+    if kwargs.get('action'):
+        action = kwargs['action']
+    elif 'download' in request.path:
+        action = 'download'
+    else:
+        action = 'view'
+
+    if kwargs.get('vid'):
+        query_params['version'] = kwargs['vid']
+
+    return redirect(
+        node.web_url_for(
+            'addon_view_or_download_file',
+            path=path,
+            provider=provider,
+            action=action,
+            **query_params
+        ),
+        code=httplib.MOVED_PERMANENTLY
+    )
+
+
+@must_be_valid_project
 @must_be_contributor_or_public
 def addon_view_or_download_file(auth, path, provider, **kwargs):
     extras = request.args.to_dict()
