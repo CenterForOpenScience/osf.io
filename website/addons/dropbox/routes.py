@@ -51,10 +51,6 @@ auth_routes = {
     'prefix': '/api/v1'
 }
 
-web_routes = {
-    'rules': []
-}
-
 api_routes = {
     'rules': [
 
