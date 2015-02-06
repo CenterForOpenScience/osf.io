@@ -736,12 +736,13 @@ def make_url_map(app):
         ),
         Rule(
             [
+
                 # Legacy Addon view file paths
                 '/project/<pid>/<provider>/files/<path:path>/',
                 '/project/<pid>/node/<nid>/<provider>/files/<path:path>/',
 
-                '/project/<pid>/<provider>/files/<path:path>/<action>/',
-                '/project/<pid>/node/<nid>/<provider>/files/<path:path>/<action>/',
+                '/project/<pid>/<provider>/files/<path:path>/download/',
+                '/project/<pid>/node/<nid>/<provider>/files/<path:path>/download/',
 
                 # Legacy routes for `download_file`
                 '/project/<pid>/osffiles/<fid>/download/',
