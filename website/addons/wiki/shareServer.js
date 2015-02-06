@@ -7,11 +7,8 @@ var config = fs.existsSync(configFile) ? require(configFile) : {};
 
 // Server Options
 var serverConfig = config.server || {};
-var host = serverConfig.host || 'localhost';
-var port = serverConfig.port || 7007;
-var ssl = serverConfig.ssl || false;
-var sslKey = serverConfig.sslKey || "website/addons/wiki/sharejs.key";
-var sslCert = serverConfig.sslCert || "website/addons/wiki/sharejs.crt";
+var host = serverConfig.host || process.env.SHAREJS_HOST || 'localhost';
+var port = serverConfig.port || process.env.SHAREJS_PORT || 7007;
 
 // Mongo options
 var dbConfig = config.db || {};
@@ -25,7 +22,7 @@ var livedb = require('livedb');
 var Duplex = require('stream').Duplex;
 var WebSocketServer = require('ws').Server;
 var express = require('express');
-var http = (ssl) ? require('https') : require('http');
+var http = require('http');
 
 // Server setup
 var mongo = require('livedb-mongo')(
@@ -35,12 +32,7 @@ var mongo = require('livedb-mongo')(
 var backend = livedb.client(mongo);
 var share = sharejs.server.createClient({backend: backend});
 var app = express();
-var server = (ssl)
-    ? http.createServer({
-       key: fs.readFileSync(sslKey),
-       cert: fs.readFileSync(sslCert)
-    }, app)
-    : http.createServer(app);
+var server = http.createServer(app);
 var wss = new WebSocketServer({ server: server});
 
 // Local variables
@@ -69,7 +61,6 @@ wss.broadcast = function(docId, message) {
 };
 
 wss.on('connection', function(client) {
-
     var stream = new Duplex({objectMode: true});
 
     stream._read = function() {};
@@ -84,7 +75,6 @@ wss.on('connection', function(client) {
     stream.remoteAddress = client.upgradeReq.connection.remoteAddress;
 
     client.on('message', function(data) {
-
         if (client.userMeta && locked[client.userMeta.docId]) {
             wss.broadcast(client.userMeta.docId, JSON.stringify({type: 'lock'}));
             return;
@@ -97,8 +87,9 @@ wss.on('connection', function(client) {
             var userId = data.userId;
 
             // Create a metadata entry for this document
-            if (!docs[docId])
+            if (!docs[docId]) {
                 docs[docId] = {};
+            }
 
             // Add user to metadata
             if (!docs[docId][userId]) {
@@ -158,7 +149,6 @@ wss.on('connection', function(client) {
 
     // Give the stream to sharejs
     return share.listen(stream);
-
 });
 
 // Lock a document
