@@ -1,4 +1,3 @@
-var ReconnectingWebSocket = require('reconnectingWebsocket');
 var LanguageTools = ace.require('ace/ext/language_tools');
 
 var activeUsers = [];
@@ -34,9 +33,9 @@ var ShareJSDoc = function(viewModel, url, metadata) {
         return;
     }
 
-    // Requirements load order is specific in this case. We do not want to load the ace.js
-    // wrapper unless we have ensured collaborative is true (socket is supported
-    // in the browser and sharejs was loaded).
+    // Requirements load order is specific in this case to compensate
+    // for older browsers.
+    var ReconnectingWebSocket = require('reconnectingWebsocket');
     require('addons/wiki/static/ace.js');
 
     // Configure connection
