@@ -84,7 +84,7 @@ RevisionsViewModel.prototype.askDelete = function() {
         title: 'Delete file?',
         message: '<p class="overflow">' +
                 'Are you sure you want to delete <strong>' +
-                self.name + '</strong>?' +
+                self.file.name + '</strong>?' +
             '</p>',
         callback: function(confirm) {
             if (confirm) {
