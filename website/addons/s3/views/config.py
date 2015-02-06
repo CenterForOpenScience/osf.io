@@ -9,15 +9,12 @@ from framework.exceptions import HTTPError
 from framework.status import push_status_message
 from framework.auth.decorators import must_be_logged_in
 
-from modularodm import Q
-
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 
 from website.addons.s3.api import S3Wrapper, has_access, does_bucket_exist
 from website.addons.s3.utils import adjust_cors, create_osf_user
-from website.addons.s3.model import S3GuidFile
 
 
 def add_s3_auth(access_key, secret_key, user_settings):
@@ -129,15 +126,8 @@ def s3_node_settings(auth, user_addon, node_addon, **kwargs):
         s3wrapper = S3Wrapper.from_addon(node_addon)
         if s3wrapper is None:
             raise HTTPError(http.BAD_REQUEST)
-        for key in s3wrapper.bucket.list():
-            try:
-                guid = S3GuidFile.find_one(
-                    Q('node', 'eq', node) &
-                    Q('path', 'eq', key.name)
-                )
-            except:
-                continue
-            for comment in getattr(guid, 'comment_target', []):
+        for s3_file in node_addon.get_existing_files(connection=s3wrapper):
+            for comment in getattr(s3_file, 'comment_target', []):
                 comment.show(save=True)
 
         node.add_log(

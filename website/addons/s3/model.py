@@ -10,6 +10,7 @@ from framework.auth.core import Auth
 from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 from website.addons.s3.utils import get_bucket_drop_down, remove_osf_user, build_urls
+from website.addons.s3.api import S3Wrapper
 
 
 class S3GuidFile(GuidFile):
@@ -311,4 +312,19 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             for comment in getattr(s3_file, 'comment_target', []):
                 comment.hide(save=True)
 
-    #def show_comments(self):
+    def get_existing_files(self, connection=None):
+        if not self.bucket:
+            return list()
+        if not connection:
+            connection = S3Wrapper.from_addon(self)
+        s3_files = []
+        for key in connection.bucket.list():
+            try:
+                guid = S3GuidFile.find_one(
+                    Q('node', 'eq', self.owner) &
+                    Q('path', 'eq', key.name)
+                )
+            except:
+                continue
+            s3_files.append(guid)
+        return s3_files

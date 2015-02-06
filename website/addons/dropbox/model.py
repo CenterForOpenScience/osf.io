@@ -182,9 +182,9 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
             # configure comments
             self.hide_all_comments()
             client = get_node_addon_client(self)
-            self.show_comments(client, folder)
 
         self.folder = folder
+        self.show_comments(client, folder)
         # Add log to node
         nodelogger = DropboxNodeLogger(node=self.owner, auth=auth)
         nodelogger.log(action="folder_selected", save=True)
@@ -385,12 +385,24 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
                 comment.hide(save=True)
 
     def show_comments(self, client, path):
-        metadata = client.metadata(path)
-        for content in metadata['contents']:
+        dropbox_files = self.get_existing_files(client)
+        for dropbox_file in dropbox_files:
+            for comment in getattr(dropbox_file, 'comment_target', []):
+                comment.show(save=True)
+
+    def get_existing_files(self, connection=None):
+        if not self.folder:
+            return list()
+        if not connection:
+            connection = get_node_addon_client(self)
+        metadata = connection.metadata(self.folder)
+        dropbox_files = []
+        queue = list(metadata['contents'])
+        while len(queue) > 0:
+            content = queue.pop(0)
             if content['is_dir']:
-                self.show_comments(client, content['path'])
+                queue.extend(connection.metadata(content['path'])['contents'])
             else:
-                # Show comments
                 cleaned_path = clean_path(content['path'])
                 try:
                     guid = DropboxFile.find_one(
@@ -399,5 +411,5 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
                     )
                 except:
                     continue
-                for comment in getattr(guid, 'comment_target', []):
-                    comment.show(save=True)
+                dropbox_files.append(guid)
+        return dropbox_files

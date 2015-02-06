@@ -585,21 +585,11 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                 if save:
                     self.save()
                 # Re-enable file comments
-                files = connect.tree(self.user, self.repo, 'master', recursive=True)
-                for github_file in files.tree:
-                    if github_file.type in ['file', 'blob']:
-                        path = github_file.path
-                        try:
-                            # If GUID has already been created, we won't redirect, and can check
-                            # whether the file exists below
-                            guid = GithubGuidFile.find_one(
-                                Q('node', 'eq', self.owner) &
-                                Q('path', 'eq', path)
-                            )
-                        except ModularOdmException:
-                            continue
-                        for comment in getattr(guid, 'comment_target', []):
-                            comment.show(save=True)
+                github_files = self.get_existing_files(connect=connect)
+                for github_file in github_files:
+                    for comment in getattr(github_file, 'comment_target', []):
+                        comment.show(save=True)
+
 
 
 
@@ -629,3 +619,23 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                     self.save()
                 return True
         return False
+
+    def get_existing_files(self, connect=None):
+        if not (self.hook_id and self.repo):
+            return list()
+        if not connect:
+            connect = GitHub.from_settings(self.user_settings)
+        files = connect.tree(self.user, self.repo, 'master', recursive=True)
+        github_files = []
+        for github_file in files.tree:
+            if github_file.type in ['file', 'blob']:
+                path = github_file.path
+                try:
+                    guid = GithubGuidFile.find_one(
+                        Q('node', 'eq', self.owner) &
+                        Q('path', 'eq', path)
+                    )
+                except ModularOdmException:
+                    continue
+                github_files.append(guid)
+        return github_files

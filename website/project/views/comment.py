@@ -338,9 +338,12 @@ def list_comments(auth, **kwargs):
     }
 
 def list_total_comments(node, auth, page):
+    comments = []
     if page == 'total':
-        comments = Comment.find(Q('node', 'eq', node) & Q('is_hidden', 'eq', False)).get_keys()
-    else:
+        comments = Comment.find(Q('node', 'eq', node) &
+                                Q('is_hidden', 'eq', False) &
+                                Q('page', 'ne', 'files')).get_keys()
+    elif page != 'files':
         comments = Comment.find(Q('node', 'eq', node) &
                                 Q('page', 'eq', page) &
                                 Q('is_hidden', 'eq', False)).get_keys()
@@ -349,6 +352,8 @@ def list_total_comments(node, auth, page):
         cmt = Comment.load(cid)
         if not isinstance(cmt.target, Comment):
             serialized_comments.append(cmt)
+    if page in ('total', 'files'):
+        serialized_comments.extend(get_files_comments(node))
     serialized_comments = [
         serialize_comment(comment, auth)
         for comment in serialized_comments
@@ -359,6 +364,29 @@ def list_total_comments(node, auth, page):
         reverse=False,
     )
     return serialized_comments
+
+def get_files_comments(node):
+    comments = []
+    addons = node.get_addon_names()
+    # github, figshare, dropbox, s3
+    for addon_name in addons:
+        if addon_name in ('figshare', 'dropbox', 's3', 'github'):
+            addon = node.get_addon(addon_name)
+            if not addon is None:
+                files = addon.get_existing_files()
+                for addon_file in files:
+                    for comment in getattr(addon_file, 'commented', []):
+                        comments.append(comment)
+    # osf storage
+    from website.addons.osfstorage.model import OsfStorageGuidFile
+    files_id = OsfStorageGuidFile.find(Q('node', 'eq', node)).get_keys()
+    osf_files = map(lambda guid: OsfStorageGuidFile.load(guid), files_id)
+    for osf_file in osf_files:
+        for comment in getattr(osf_file, 'commented', []):
+            if comment.is_hidden: # File is already deleted
+                break
+            comments.append(comment)
+    return comments
 
 @must_be_logged_in
 @must_be_contributor_or_public
