@@ -25,10 +25,7 @@ function resolveIcon(item) {
             return m("i.icon.icon-folder-open", " ");
         }
         return m("i.icon.icon-folder-close", " ");
-    } else if (item.data.kind === 'node') {
-            return m("i.icon.icon-folder-close", " ");
     }
-    return m("i.icon.icon-circle-blank");
 }
 
 function expandOnLoad() {
@@ -62,13 +59,13 @@ function ProjectNotifications(data) {
             var tb = this;
             expandOnLoad.call(tb);
         },
-        columnTitles : function _conferenceColumnTitles(item, col) {
-             return [
+        columnTitles : function notificationColumnTitles(item, col) {
+            return [
                 {
                     title: "Project",
                     width: "60%",
                     sortType : "text",
-                    sort : true
+                    sort : false
                 },
                 {
                     title: "Notification Type",
@@ -77,27 +74,41 @@ function ProjectNotifications(data) {
 
                 }
             ]},
-        resolveRows : function _conferenceResolveRows(item){
+        resolveRows : function notificationResolveRows(item){
             var default_columns = [];
 
-            if (item.data.kind === 'folder' || item.data.kind === 'node') {
+
+            if (item.data.kind === 'heading') {
+                 default_columns.push({
+                    data : 'project',  // Data field name
+                    folderIcons : false,
+                    filter : true,
+                    sortInclude : false,
+                    custom : function() {
+                        return m("div[style='padding-left:5px']",
+                                [m('b', [m("p", item.data.title + ':')])
+                                ])
+                    }
+                });
+            }
+            else if (item.data.kind === 'folder' || item.data.kind === 'node') {
                 default_columns.push({
                     data : 'project',  // Data field name
                     folderIcons : true,
                     filter : true,
-                    sortInclude : true,
+                    sortInclude : false,
                     custom : function() {
                         return m('a', { href : item.data.nodeUrl, target : '_blank' }, item.data.title );
                     }
                 });
             }
-            else if (item.parent().data.kind === 'folder' && item.data.kind === 'event') {
+            else if (item.parent().data.kind === 'folder' || item.parent().data.kind === 'heading' && item.data.kind === 'event') {
                 default_columns.push(
                 {
                     data : 'project',  // Data field name
                     folderIcons : true,
                     filter : true,
-                    sortInclude : true,
+                    sortInclude : false,
                     custom : function(item, col) {
                         return item.data.description;
 
@@ -130,7 +141,7 @@ function ProjectNotifications(data) {
                     data : 'project',  // Data field name
                     folderIcons : true,
                     filter : true,
-                    sortInclude : true,
+                    sortInclude : false,
                     custom : function() {
                         return item.data.description;
 

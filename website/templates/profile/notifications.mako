@@ -48,49 +48,50 @@
         </div>
         <div class="panel panel-default">
             <div class="panel-heading"><h3 class="panel-title">Configure Notification Preferences</h3></div>
-            <div class="panel-body">
+##            <div class="panel-body">
                 <form id="selectNotifications">
-                    <h4>User Notifications</h4>
-                    <div class="row" style="font-weight: bold">
-                        <div class="col-md-6">Notifications</div>
-                        <div class="col-md-6">Notification Type</div>
-                    </div>
-                    % for subscription in user_subscriptions_available:
-                    <div class="form-group" id="${user_subscriptions['id']}">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <label style="font-weight:normal; padding-right: 50px">
-                                ${user_subscriptions_available[subscription]}
-                            </label>
-                         </div>
-
-                        <div class="col-md-6">
-                            <select class="form-control" name="${subscription}">
-                                <option value="none" ${'selected' if user_subscriptions['subscriptions'] == [] else ''}>
-                                    None
-                                </option>
-                                <option value="email_transactional" ${'selected' if 'email_transactional' in user_subscriptions['subscriptions'][subscription] else ''}>
-                                    Receive emails immediately
-                                </option>
-                                <option value="email_digest" ${'selected' if 'email_digest' in user_subscriptions['subscriptions'][subscription] else ''}>
-                                    Receive in a daily email digest
-                                </option>
-                            </select>
-                        </div>
-                    </div>
-                    </div>
-                    % endfor
-                    <br/>
-                    <h4>Project Notifications</h4>
-                    % if node_subscriptions['node_subscriptions']['children']:
-                        <div class="row" style="font-weight: bold">
-                            <div class="col-md-6">Notifications</div>
-                            <div class="col-md-6">Notification Type</div>
-                        </div>
-                        ${format_subscriptions(node_subscriptions['node_subscriptions']['children'], indent=0)}
-                     %else:
-                        You are not receiving any notifications from your OSF projects.
-                     % endif
+                    <div id="grid"></div>
+##                    <h4>User Notifications</h4>
+##                    <div class="row" style="font-weight: bold">
+##                        <div class="col-md-6">Notifications</div>
+##                        <div class="col-md-6">Notification Type</div>
+##                    </div>
+##                    % for subscription in user_subscriptions_available:
+##                    <div class="form-group" id="${user_subscriptions['id']}">
+##                    <div class="row">
+##                        <div class="col-md-6">
+##                            <label style="font-weight:normal; padding-right: 50px">
+##                                ${user_subscriptions_available[subscription]}
+##                            </label>
+##                         </div>
+##
+##                        <div class="col-md-6">
+##                            <select class="form-control" name="${subscription}">
+##                                <option value="none" ${'selected' if user_subscriptions['subscriptions'] == [] else ''}>
+##                                    None
+##                                </option>
+##                                <option value="email_transactional" ${'selected' if 'email_transactional' in user_subscriptions['subscriptions'][subscription] else ''}>
+##                                    Receive emails immediately
+##                                </option>
+##                                <option value="email_digest" ${'selected' if 'email_digest' in user_subscriptions['subscriptions'][subscription] else ''}>
+##                                    Receive in a daily email digest
+##                                </option>
+##                            </select>
+##                        </div>
+##                    </div>
+##                    </div>
+##                    % endfor
+##                    <br/>
+##                    <h4>Project Notifications</h4>
+##                    % if node_subscriptions['node_subscriptions']['children']:
+##                        <div class="row" style="font-weight: bold">
+##                            <div class="col-md-6">Notifications</div>
+##                            <div class="col-md-6">Notification Type</div>
+##                        </div>
+##                        ${format_subscriptions(node_subscriptions['node_subscriptions']['children'], indent=0)}
+##                     %else:
+##                        You are not receiving any notifications from your OSF projects.
+##                     % endif
 
                 <div class="padded">
                     <button class="btn btn-success">Submit</button>
@@ -99,59 +100,63 @@
                         <p id="configureNotificationsMessage"></p>
                 </div>
                 </form>
-            </div>
+##            </div>
         </div>
     </div>
 </div>
 </%def>
 
-<%def name="format_subscriptions(d_to_use, indent=0)">
-    <% from website.models import Node %>
-    %for node_id in d_to_use.keys():
-        <div class="form-group" id="${node_id}">
-            %for i in range(indent):
-                &emsp;
-            %endfor
-            <a href="${Node.load(node_id).url}">${Node.load(node_id).title}</a>
-            <br/>
-
-            % for subscription in node_subscriptions_available:
-                <div class="col-md-6">
-                %for i in range(indent):
-                    &emsp;
-                %endfor
-                <label style="font-weight:normal; padding-right: 50px">
-                                ${node_subscriptions_available[subscription]}
-                </label>
-                </div>
-
-                <div class="col-md-6">
-
-                    <select class="form-control" name="${subscription}">
-                        <option value="none" ${'selected' if 'email_transactional' not in d_to_use[node_id]['subscriptions'][subscription] and 'email_digest' not in d_to_use[node_id]['subscriptions'][subscription] else ''}>None</option>
-                        <option value="email_transactional" ${'selected' if 'email_transactional' in d_to_use[node_id]['subscriptions'][subscription] else ''}>
-                            Receive emails immediately
-                        </option>
-                        <option value="email_digest" ${'selected' if 'email_digest' in d_to_use[node_id]['subscriptions'][subscription] else ''}>
-                            Receive in a daily email digest
-                        </option>
-                    </select>
-
-                </div>
-            % endfor
-                <hr>
-            %if d_to_use[node_id]['children'] != {}:
-                ${format_subscriptions(d_to_use[node_id]['children'], indent=indent+1)}
-            %endif
-    </div>
-    %endfor
-</%def>
+##<%def name="format_subscriptions(d_to_use, indent=0)">
+##    <% from website.models import Node %>
+##    %for node_id in d_to_use.keys():
+##        <div class="form-group" id="${node_id}">
+##            %for i in range(indent):
+##                &emsp;
+##            %endfor
+##            <a href="${Node.load(node_id).url}">${Node.load(node_id).title}</a>
+##            <br/>
+##
+##            % for subscription in node_subscriptions_available:
+##                <div class="col-md-6">
+##                %for i in range(indent):
+##                    &emsp;
+##                %endfor
+##                <label style="font-weight:normal; padding-right: 50px">
+##                                ${node_subscriptions_available[subscription]}
+##                </label>
+##                </div>
+##
+##                <div class="col-md-6">
+##
+##                    <select class="form-control" name="${subscription}">
+##                        <option value="none" ${'selected' if 'email_transactional' not in d_to_use[node_id]['subscriptions'][subscription] and 'email_digest' not in d_to_use[node_id]['subscriptions'][subscription] else ''}>None</option>
+##                        <option value="email_transactional" ${'selected' if 'email_transactional' in d_to_use[node_id]['subscriptions'][subscription] else ''}>
+##                            Receive emails immediately
+##                        </option>
+##                        <option value="email_digest" ${'selected' if 'email_digest' in d_to_use[node_id]['subscriptions'][subscription] else ''}>
+##                            Receive in a daily email digest
+##                        </option>
+##                    </select>
+##
+##                </div>
+##            % endfor
+##                <hr>
+##            %if d_to_use[node_id]['children'] != {}:
+##                ${format_subscriptions(d_to_use[node_id]['children'], indent=indent+1)}
+##            %endif
+##    </div>
+##    %endfor
+##</%def>
 
 <%def name="javascript()">
     <% import website %>
+    <% import json %>
     ${parent.javascript()}
     <script type="text/javascript">
-        window.contextVars = $.extend({}, window.contextVars, {'mailingList': '${website.settings.MAILCHIMP_GENERAL_LIST}'});
+        window.contextVars = $.extend({}, window.contextVars, {'mailingList': '${website.settings.MAILCHIMP_GENERAL_LIST}',
+                                                               'notificationsData': ${json.dumps(notifications_data)}
+        });
+
     </script>
 </%def>
 
