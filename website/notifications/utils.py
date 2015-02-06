@@ -2,6 +2,7 @@ import collections
 from website import settings
 from website.models import Node
 from website.notifications.model import Subscription
+from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
 
