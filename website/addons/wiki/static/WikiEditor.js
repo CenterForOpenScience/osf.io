@@ -51,11 +51,11 @@ function ViewModel(url) {
     self.statusDisplay = ko.computed(function() {
         switch(self.status()) {
             case 'connecting':
-                return 'Attempting to Connect';
+                return 'Attempting to connect';
             case 'noWebSocket':
-                return 'Your browser does not support Live Editing';
+                return 'Your browser does not support live editing';
             default:
-                return 'Live Editing Unavailable';
+                return 'Live editing unavailable';
         }
     });
 
@@ -76,8 +76,6 @@ function ViewModel(url) {
 
     self.modalTarget = ko.computed(function() {
         switch(self.status()) {
-            case 'connected':
-                return '#connected-modal';
             case 'connecting':
                 return '#connecting-modal';
             default:

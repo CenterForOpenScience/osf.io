@@ -114,31 +114,12 @@
   </div>
 </div>
 
-<div class="modal fade" id="connected-modal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h3 class="modal-title">Connected to the Live Editor</h3>
-      </div>
-      <div class="modal-body">
-        <p>
-            The current wiki is in live editing mode.
-            You and other contributors will be able to see the changes made
-            in real time. All changes you make will be saved as a draft
-            after leaving this page.
-        </p>
-      </div>
-    </div>
-  </div>
-</div>
-
 <div class="modal fade" id="connecting-modal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h3 class="modal-title">Connecting to the Live Editor</h3>
+        <h3 class="modal-title">Connecting to the live editor</h3>
       </div>
       <div class="modal-body">
         <p>
@@ -156,14 +137,13 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h3 class="modal-title">Live Editing is Unavailable</h3>
+        <h3 class="modal-title">Live editing is unavailable</h3>
       </div>
       <div class="modal-body">
         <p>
-            The live editor is currently unavailable.
-            This means other contributors are not able to see any of your
-            changes, and changes will not be saved after leaving this page
-            unless you press the "Save" button.
+            The live editor is currently unavailable. Other contributors
+            are not able to see any of your changes, and changes will not be
+            saved after leaving this page unless you press the "Save" button.
         </p>
       </div>
     </div>
