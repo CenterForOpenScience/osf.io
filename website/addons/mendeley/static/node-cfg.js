@@ -1,6 +1,7 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var $osf = require('osfHelpers');
+require('./node-cfg.css');
 
 var MendeleyAccount = function(display_name, id) {
     var self=this;
@@ -24,6 +25,7 @@ var MendeleySettingsViewModel = function() {
     self.selectedAccountId = ko.observable();
     self.citationLists = ko.observableArray();
     self.selectedCitationList = ko.observable();
+    self.message = ko.observable();
 
     self.updateAccounts = function() {
         $.getJSON(nodeApiUrl + 'mendeley/accounts/', function(data) {
@@ -67,10 +69,10 @@ var MendeleySettingsViewModel = function() {
             }
         );
         request.done(function(){
-            console.log('done');
+            self.message('Settings updated.');
         });
         request.fail(function() {
-            console.log('fail');
+            self.message('Settings failed');
         });
     }
 

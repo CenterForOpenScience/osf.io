@@ -1,6 +1,7 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var $osf = require('osfHelpers');
+require('./citations_widget.css');
 
 var CitationsWidgetViewModel = function() {
     var self = this;

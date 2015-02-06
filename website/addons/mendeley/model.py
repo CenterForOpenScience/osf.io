@@ -19,7 +19,10 @@ from .api import APISession
 class AddonMendeleyUserSettings(AddonUserSettingsBase):
 
     def _get_connected_accounts(self):
-        return [x for x in self.owner.external_accounts if x.provider == 'mendeley']
+        """Get user's connected Mendeley accounts"""
+        return [
+            x for x in self.owner.external_accounts if x.provider == 'mendeley'
+        ]
 
     def to_json(self, user):
         rv = super(AddonMendeleyUserSettings, self).to_json(user)
@@ -55,6 +58,12 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
         return self._api
 
     def grant_oauth_access(self, user, external_account, metadata=None):
+        """Grant OAuth access, updates metadata on user settings
+
+        :param User user:
+        :param ExternalAccount external_account:
+        :param dict metadata:
+        """
         user_settings = user.get_addon('mendeley')
 
         # associate the user settings with this node's settings
@@ -87,9 +96,6 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
                 return True
         return False
 
-
-
-
     def to_json(self, user):
         accounts = {
             account for account
@@ -111,7 +117,6 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
         return rv
 
 
-
 class Mendeley(ExternalProvider):
     name = "Mendeley"
     short_name = "mendeley"
@@ -128,6 +133,7 @@ class Mendeley(ExternalProvider):
     def handle_callback(self, response):
         client = self._get_client(response)
 
+        # make a second request for the Mendeley user's ID and name
         profile = client.profiles.me
 
         return {
@@ -148,6 +154,7 @@ class Mendeley(ExternalProvider):
 
     @property
     def client(self):
+        """An API session with Mendeley"""
         if not self._client:
             self._client = self._get_client({
                 'access_token': self.account.oauth_key,
@@ -159,10 +166,12 @@ class Mendeley(ExternalProvider):
 
     @property
     def citation_lists(self):
+        """List of CitationList objects, derived from Mendeley folders"""
         client = self.client
 
         folders = client.folders.list().items
 
+        # fake object to represent the user's whole account
         all_documents = [
             CitationList(
                 name="All Documents",
