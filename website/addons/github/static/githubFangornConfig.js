@@ -169,13 +169,19 @@ function _fangornGithubTitle(item, col)  {
         if (item.kind === 'file' && item.data.permissions.view) {
             return m('span',[
                 m('github-name', {
-                onclick: function() {
-                    var redir = new URI(item.data.nodeUrl);
-                    redir.segment('files').segment(item.data.provider).segment(item.data.path.substring(1));
-                    window.location = redir.toString() + '/?branch=' + item.data.branch;
-
-                },'data-toggle': 'tooltip', title: 'View file', 'data-placement': 'right'
-            }, item.data.name)]);
+                    onclick: function() {
+                        var redir = new URI(item.data.nodeUrl);
+                        window.location = new URI(item.data.nodeUrl)
+                            .segment('files')
+                            .segment(item.data.provider)
+                            .segment(item.data.path.substring(1))
+                            .search({branch: item.data.branch})
+                            .toString();
+                    },
+                    'data-toggle': 'tooltip',
+                    title: 'View file',
+                    'data-placement': 'right'
+                }, item.data.name)]);
         } else {
             return m('span', item.data.name);
         }
