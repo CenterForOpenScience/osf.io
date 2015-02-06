@@ -271,7 +271,7 @@ class GuidFile(GuidStoredObject):
     def revision(self):
         return getattr(self, '_revision', None)
 
-    def maybe_version(self, **kwargs):
+    def maybe_set_version(self, **kwargs):
         self._revision = kwargs.get(self.version_identifier)
 
     def enrich(self, save=True):
