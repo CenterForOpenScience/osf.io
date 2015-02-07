@@ -10,8 +10,7 @@ MODELS = [
 USER_SETTINGS_MODEL = model.AddonMendeleyUserSettings
 NODE_SETTINGS_MODEL = model.AddonMendeleyNodeSettings
 
-# routes.api_routes missing from below line, because it causes issues.
-ROUTES = []
+ROUTES = [routes.api_routes]
 
 SHORT_NAME = 'mendeley'
 FULL_NAME = 'Mendeley'

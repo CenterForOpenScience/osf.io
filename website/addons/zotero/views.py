@@ -51,7 +51,7 @@ def list_zotero_accounts_node(pid, auth, node, project, node_addon):
 @must_have_permission('write')
 @must_have_addon('zotero', 'node')
 @must_not_be_registration
-def list_citationlists_node(pid, account_id, auth, node, project, node_addon):
+def list_zotero_citationlists_node(pid, account_id, auth, node, project, node_addon):
     # TODO: clean up signature
 
     account = ExternalAccount.load(account_id)

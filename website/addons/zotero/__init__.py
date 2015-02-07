@@ -10,7 +10,7 @@ MODELS = [
 USER_SETTINGS_MODEL = model.AddonZoteroUserSettings
 NODE_SETTINGS_MODEL = model.AddonZoteroNodeSettings
 
-ROUTES = []
+ROUTES = [routes.api_routes]
 
 SHORT_NAME = 'zotero'
 FULL_NAME = 'Zotero'

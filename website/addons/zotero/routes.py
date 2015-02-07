@@ -30,7 +30,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/zotero/<account_id>/lists/',
             ],
             'get',
-            views.list_citationlists_node,
+            views.list_zotero_citationlists_node,
             json_renderer,
         ),
 
