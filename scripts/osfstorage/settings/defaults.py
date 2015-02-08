@@ -17,3 +17,7 @@ STORAGE_CONTAINER_NAME = None
 UPLOAD_PRIMARY_HASH = hashlib.sha256
 
 SPECIAL_CASES = {}
+
+AWS_ACCESS_KEY = 'changeme'
+AWS_SECRET_KEY = 'changeme'
+AUDIT_TEMP_PATH = 'audit'
