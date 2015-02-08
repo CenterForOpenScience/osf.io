@@ -17,3 +17,7 @@ STORAGE_CONTAINER_NAME = None
 UPLOAD_PRIMARY_HASH = hashlib.sha256
 
 SPECIAL_CASES = {}
+
+USERNAME = 'changeme'
+API_KEY = 'changeme'
+REGION = 'changeme'
