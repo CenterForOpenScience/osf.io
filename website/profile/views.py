@@ -223,13 +223,6 @@ def user_notifications(auth, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
     return {
         'mailing_lists': auth.user.mailing_lists,
-        # 'user_subscriptions': {
-        #     'id': auth.user._id,
-        #     'subscriptions': find_user_level_subscriptions(auth.user)
-        # },
-        # 'user_subscriptions_available': settings.USER_SUBSCRIPTIONS_AVAILABLE,
-        # 'node_subscriptions': find_user_project_subscriptions(auth.user),
-        # 'node_subscriptions_available': settings.SUBSCRIPTIONS_AVAILABLE,
         'notifications_data': format_user_and_project_subscriptions(auth.user)
     }
 

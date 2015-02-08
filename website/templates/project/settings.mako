@@ -94,48 +94,15 @@
         % endif
 
         % if not node['is_registration']:
-        <div class="panel panel-default">
-            <span id="configureNotifications" class="anchor"></span>
+            <div class="panel panel-default">
+                <span id="configureNotifications" class="anchor"></span>
 
-            <div class="panel-heading">
-                <h3 class="panel-title">Configure Notifications</h3>
-            </div>
+                <div class="panel-heading">
+                    <h3 class="panel-title">Configure Notifications</h3>
+                </div>
 
-            <form id="notificationSettings">
-            <div id="grid"></div>
-
-
-##                    <div class="row">
-##                            <div class="col-md-6">
-##                                <h5>Notifications </h5>
-##                            </div>
-##                            <div class="col-md-6">
-##                                <h5>Notification Type</h5>
-##                            </div>
-##                    </div>
-
-##                    % for subscription in subscriptions_available:
-##                        <div class="row">
-##                            <div class="col-md-6">
-##                                <label style="font-weight:normal; padding-right: 50px">
-##                                        ${subscriptions_available[subscription]}
-##                                </label>
-##                            </div>
-##                            <div class="col-md-6">
-##                                <select class="form-control" name="${subscription}">
-##                                    <option value="none" ${'selected' if 'email_transactional' not in notification_types_enabled and 'email_digest' not in notification_types_enabled else ''}>None</option>
-##                                    <option value="email_transactional" ${'selected' if 'email_transactional' in notification_types_enabled else ''}>
-##                                        Receive emails immediately
-##                                    </option>
-##                                    <option value="email_digest" ${'selected' if 'email_digest' in notification_types_enabled else ''}>
-##                                        Receive in a daily email digest
-##                                    </option>
-##                                </select>
-##                            </div>
-##                        </div>
-##                    % endfor
-
-                <br />
+                <form id="notificationSettings">
+                    <div id="grid"></div>
                 </form>
             </div>
          % endif
