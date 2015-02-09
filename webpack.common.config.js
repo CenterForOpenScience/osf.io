@@ -105,7 +105,9 @@ var resolve = {
         'addonHelper': staticPath('js/addonHelper.js'),
         'koHelpers': staticPath('js/koHelpers.js'),
         'addonPermissions': staticPath('js/addonPermissions.js'),
-        'navbar-control': staticPath('js/navbarControl.js')
+        'navbar-control': staticPath('js/navbarControl.js'),
+        'osf-panel': staticPath('vendor/bower_components/osf-panel/dist/jquery-osfPanel.js'),
+
     }
 };
 
