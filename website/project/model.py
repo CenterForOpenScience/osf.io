@@ -626,6 +626,9 @@ class Node(GuidStoredObject, AddonModelMixin):
     files_versions = fields.DictionaryField()
     wiki_pages_current = fields.DictionaryField()
     wiki_pages_versions = fields.DictionaryField()
+    # Dictionary field mapping node wiki page to sharejs private uuid.
+    # {<page_name>: <sharejs_id>}
+    wiki_private_uuids = fields.DictionaryField()
 
     creator = fields.ForeignField('user', backref='created')
     contributors = fields.ForeignField('user', list=True, backref='contributed')
@@ -1029,6 +1032,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         new.files_versions = {}
         new.wiki_pages_current = {}
         new.wiki_pages_versions = {}
+        new.wiki_private_uuids = {}
 
         # set attributes which may be overridden by `changes`
         new.is_public = False
@@ -2646,6 +2650,9 @@ class Node(GuidStoredObject, AddonModelMixin):
             del self.wiki_pages_versions[key]
             self.wiki_pages_current[new_key] = self.wiki_pages_current[key]
             del self.wiki_pages_current[key]
+            if key in self.wiki_private_uuids:
+                self.wiki_private_uuids[new_key] = self.wiki_private_uuids[key]
+                del self.wiki_private_uuids[key]
 
         self.add_log(
             action=NodeLog.WIKI_RENAMED,
