@@ -29,15 +29,24 @@ function resolveIcon(item) {
 }
 
 function expandOnLoad() {
-    for (var i = 0; i < this.treeData.children.length; i++) {
-        var parent = this.treeData.children[i];
-        this.updateFolder(null, parent);
-        for (var j = 0; j < parent.children.length; j++) {
-            var child = parent.children[j];
-            if (child.data.kind !== 'event') {
-               for (var k = 0; k < child.children.length; k++)
-                    if (child.children[k].data.notificationType !== "adopt_parent") {
-                        this.updateFolder(null, child);
+    var tb = this;
+    for (var i = 0; i < tb.treeData.children.length; i++) {
+        var parent = tb.treeData.children[i];
+        tb.updateFolder(null, parent);
+        expandChildren(tb, parent.children);
+    }
+}
+
+function expandChildren(tb, children) {
+    for (var i = 0; i < children.length; i++) {
+        var child = children[i];
+        if (child.data.kind !== 'event') {
+            for (var j = 0; j < child.children.length; j++) {
+                if (child.children[j].data.notificationType !== "adopt_parent") {
+                    tb.updateFolder(null, child);
+                }
+                if (child.children.length > 0) {
+                    expandChildren(tb, child.children);
                 }
             }
         }
