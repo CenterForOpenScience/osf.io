@@ -5,6 +5,7 @@ from copy import deepcopy
 import httplib as http
 
 import mock
+import time
 
 from nose.tools import *  # noqa
 from modularodm.exceptions import ValidationValueError
@@ -851,6 +852,27 @@ class TestWikiShareJSMongo(OsfTestCase):
         assert_equal(self.private_uuid, self.project.wiki_private_uuids[self.wkey])
         self.wiki_page.delete_share_doc(self.project)
         assert_not_in(self.wkey, self.project.wiki_private_uuids)
+
+    def test_get_draft(self):
+        # draft is current with latest wiki save
+        current_content = self.wiki_page.get_draft(self.project)
+        assert_equals(current_content, self.wiki_page.content)
+
+        # modify the sharejs wiki page contents and ensure we
+        # return the draft contents
+        new_content = 'I am a teapot'
+        new_time = int(time.time() * 1000) + 10000
+        new_version = self.example_docs[0]['_v'] + 1
+        self.db.docs.update(
+            {'_id': self.sharejs_uuid},
+            {'$set': {
+                '_v': new_version,
+                '_m.mtime': new_time,
+                '_data': new_content
+            }}
+        )
+        current_content = self.wiki_page.get_draft(self.project)
+        assert_equals(current_content, new_content)
 
     def tearDown(self):
         super(TestWikiShareJSMongo, self).tearDown()
