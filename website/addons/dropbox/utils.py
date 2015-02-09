@@ -3,8 +3,6 @@ import os
 import logging
 import httplib as http
 
-from flask import make_response
-
 from framework.exceptions import HTTPError
 from website.util import rubeus
 
@@ -50,18 +48,6 @@ class DropboxNodeLogger(object):
             'node': self.node._primary_key,
             'folder': self.node.get_addon('dropbox', deleted=True).folder
         }
-        # If logging a file-related action, add the file's view and download URLs
-        if self.file_obj or self.path:
-            path = self.file_obj.path if self.file_obj else self.path
-            cleaned_path = clean_path(path)
-            params.update({
-                'urls': {
-                    'view': self.node.web_url_for('dropbox_view_file', path=cleaned_path),
-                    'download': self.node.web_url_for(
-                        'dropbox_download', path=cleaned_path)
-                },
-                'path': cleaned_path,
-            })
         if extra:
             params.update(extra)
         # Prefix the action with dropbox_
@@ -111,47 +97,10 @@ def clean_path(path):
     return path.strip('/')
 
 
-def make_file_response(fileobject, metadata):
-    """Builds a response from a file-like object and metadata returned by
-    a Dropbox client.
-    """
-    resp = make_response(fileobject.read())
-    filename = get_file_name(metadata['path'])
-    rev = metadata.get('rev')
-    if rev:
-        # add revision to filename
-        # foo.mp3 -> foo-abc123.mp3
-        filename = '-{rev}'.format(rev=rev).join(os.path.splitext(filename))
-    disposition = 'attachment; filename={0}'.format(filename)
-    resp.headers['Content-Disposition'] = disposition
-    resp.headers['Content-Type'] = metadata.get('mime_type', 'application/octet-stream')
-    return resp
-
-
 def ensure_leading_slash(path):
     if not path.startswith('/'):
         return '/' + path
     return path
-
-
-def build_dropbox_urls(item, node):
-    path = clean_path(item['path'])  # Strip trailing and leading slashes
-    if item['is_dir']:
-        return {
-            'upload': node.api_url_for('dropbox_upload', path=path),
-            # Endpoint for fetching all of a folder's contents
-            'fetch': node.api_url_for('dropbox_hgrid_data_contents', path=path),
-            # Add extra endpoint for fetching folders only (used by node settings page)
-            # NOTE: querystring params in camel-case
-            'folders': node.api_url_for('dropbox_hgrid_data_contents',
-                path=path, foldersOnly=1)
-        }
-    else:
-        return {
-            'download': node.web_url_for('dropbox_download', path=path),
-            'view': node.web_url_for('dropbox_view_file', path=path),
-            'delete': node.api_url_for('dropbox_delete_file', path=path)
-        }
 
 
 def metadata_to_hgrid(item, node, permissions):
@@ -165,7 +114,6 @@ def metadata_to_hgrid(item, node, permissions):
         'name': get_file_name(item['path']),
         'ext': os.path.splitext(filename)[1],
         rubeus.KIND: rubeus.FOLDER if item['is_dir'] else rubeus.FILE,
-        'urls': build_dropbox_urls(item, node),
         'path': item['path'],
     }
     return serialized
