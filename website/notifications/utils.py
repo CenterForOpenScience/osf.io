@@ -73,7 +73,7 @@ def format_data(user, node_ids, subscriptions_available, data):
         index = len(data)
         data.append({'node_id': node_id,
                      'title': node.title,
-                     'kind': 'folder' if node.nodes else 'node',
+                     'kind': 'folder' if not node.node__parent else 'node',
                      'nodeUrl': node.url,
                      'children': []
                     })
