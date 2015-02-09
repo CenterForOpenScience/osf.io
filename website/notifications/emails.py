@@ -69,18 +69,17 @@ def email_transactional(subscribed_users, uid, event, **context):
     :param context: context variables for email template
     :return:
     """
-    subject = Template(email_templates[event]['subject']).render(**context)
-    message = Template(email_templates[event]['message']).render(**context)
+    # subject = Template(email_templates[event]['subject']).render(**context)
+    # message = Template(email_templates[event]['message']).render(**context)
 
     for user in subscribed_users:
         email = user.username
         if context.get('commenter') != user.fullname:
             mails.send_mail(
                 to_addr=email,
-                mail=mails.TRANSACTIONAL,
+                mail=email_templates[event],
                 name=user.fullname,
-                subject=subject,
-                message=message)
+                **context)
 
 
 def email_digest(subscribed_users, uid, event, **context):
@@ -119,16 +118,20 @@ notifications = {
 }
 
 email_templates = {
-    'comments': {
-        'subject': '${commenter} commented on "${title}".',
-        'message': '${commenter} commented on your project "${title}": "${content}".' +
-        '\n\n\tTo view this on the Open Science Framework, please visit: ${url}.'
-    },
-    'comment_replies': {
-        'subject': '${commenter} replied to your comment on "${title}".',
-        'message': '${commenter} replied to your comment "${parent_comment}" on your project "${title}": "${content}".' +
-        '\n\n\tTo view this on the Open Science Framework, please visit: ${url}.'
-    }
+    'comments': mails.COMMENT_ADDED,
 }
+
+# email_templates = {
+#     'comments': {
+#         'subject': '${commenter} commented on "${title}".',
+#         'message': '${commenter} commented on your project "${title}": "${content}".' +
+#         '\n\n\tTo view this on the Open Science Framework, please visit: ${url}.'
+#     },
+#     'comment_replies': {
+#         'subject': '${commenter} replied to your comment on "${title}".',
+#         'message': '${commenter} replied to your comment "${parent_comment}" on your project "${title}": "${content}".' +
+#         '\n\n\tTo view this on the Open Science Framework, please visit: ${url}.'
+#     }
+# }
 
 
