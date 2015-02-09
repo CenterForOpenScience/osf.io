@@ -241,12 +241,18 @@ def mongorestore(path, drop=False):
 
 
 @task
-def sharejs(host=None, port=None):
+def sharejs(host=None, port=None, db_host=None, db_port=None, db_name=None):
     """Start a local ShareJS server."""
     if host:
-        os.environ['SHAREJS_HOST'] = host
+        os.environ['SHAREJS_SERVER_HOST'] = host
     if port:
-        os.environ['SHAREJS_PORT'] = port
+        os.environ['SHAREJS_SERVER_PORT'] = port
+    if db_host:
+        os.environ['SHAREJS_DB_HOST'] = db_host
+    if db_port:
+        os.environ['SHAREJS_DB_PORT'] = db_port
+    if db_name:
+        os.environ['SHAREJS_DB_NAME'] = db_name
     share_server = os.path.join(settings.ADDON_PATH, 'wiki', 'shareServer.js')
     run("node {0}".format(share_server))
 

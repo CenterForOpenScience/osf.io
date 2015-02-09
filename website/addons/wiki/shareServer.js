@@ -1,20 +1,11 @@
-// Load config file
-var fs = require('fs');
-
-var env = process.env.NODE_ENV || 'development';
-var configFile = __dirname + '/settings/sharejs-' + env + '.json';
-var config = fs.existsSync(configFile) ? require(configFile) : {};
-
 // Server Options
-var serverConfig = config.server || {};
-var host = serverConfig.host || process.env.SHAREJS_HOST || 'localhost';
-var port = serverConfig.port || process.env.SHAREJS_PORT || 7007;
+var host = process.env.SHAREJS_SERVER_HOST || 'localhost';
+var port = process.env.SHAREJS_SERVER_PORT || 7007;
 
 // Mongo options
-var dbConfig = config.db || {};
-var dbHost = dbConfig.host || 'localhost';
-var dbPort = dbConfig.port || 27017;
-var dbName = dbConfig.name || 'sharejs';
+var dbHost = process.env.SHAREJS_DB_HOST || 'localhost';
+var dbPort = process.env.SHAREJS_DB_PORT || 27017;
+var dbName = process.env.SHAREJS_DB_NAME || 'sharejs';
 
 // Library imports
 var sharejs = require('share');
