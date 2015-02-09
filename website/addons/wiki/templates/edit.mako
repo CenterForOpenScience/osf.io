@@ -15,7 +15,7 @@
 
 <div class="wiki">
     <div class="row">
-      <div class="col-sm-3 col-md-3" data-osf-panel="Menu">
+      <div class="col-md-3" data-osf-panel="Menu" data-osf-panel-col="3">
               <div class="wiki-panel"> 
                   <div class="wiki-panel-body"> 
                     <div class="wiki-panel-header"> <i class="icon-list"> </i>  Menu </div>
@@ -24,7 +24,7 @@
                     </div>
                   </div>
           </div>
-      <div class="col-sm-5 col-md-5" data-osf-panel="Edit">
+      <div class="col-md-5" data-osf-panel="Edit">
               <div class="wiki-panel"> 
                 <div class="wiki-panel-header"> <i class="icon-edit"> </i>  Edit </div>
                 <div class="wiki-panel-body"> 
@@ -93,7 +93,7 @@
                 </div>
               </div>
         </div>
-        <div class="col-sm-4 col-md-4" data-osf-panel="Preview">
+        <div class="col-md-4" data-osf-panel="Preview">
             <div class="wiki-panel"> 
               <div class="wiki-panel-header"> <i class="icon-eye-open"> </i> Preview </div>
                 <div class="wiki-panel-body"> 
