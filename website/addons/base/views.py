@@ -224,7 +224,7 @@ def get_or_start_render(file_guid, start_render=True):
 
 @must_be_valid_project
 def addon_view_or_download_file_legacy(**kwargs):
-    query_params = request.args_to_dict()
+    query_params = request.args.to_dict()
     node = kwargs.get('node') or kwargs['project']
 
     if kwargs.get('path'):
