@@ -56,7 +56,10 @@ def group_digest_notifications_by_user():
         initial={'info': []},
         reduce=Code("""function(curr, result) {
                             info = {
-                                'message': curr.message,
+                                'message': {
+                                    'message': curr.message,
+                                    'timestamp': curr.timestamp
+                                },
                                 'node_lineage': curr.node_lineage
                             }
                             result.info.push(info);

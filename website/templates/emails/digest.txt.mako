@@ -25,7 +25,7 @@ From the Open Science Framework
     ${'\t' * indent + Node.load(key).title + ':'}
     %if d['children'][key]['messages']:
         %for m in d['children'][key]['messages']:
-        ${'\t' * indent + '- ' + m}
+        ${'\t' * indent + '- ' + m['message'] + ' ' + m['timestamp'].strftime("%H:%M")}
         %endfor
     %endif
     %if isinstance(d['children'][key]['children'], dict):
