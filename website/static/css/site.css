@@ -2155,3 +2155,8 @@ span#profileFullname{
 #wmd-preview {
     padding: 10px;
 }
+@media (max-width: 767px) {
+    .wiki-panel {
+        margin-bottom: 20px;
+    }
+}
