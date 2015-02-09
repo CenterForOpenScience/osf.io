@@ -2142,3 +2142,16 @@ span#profileFullname{
 .wiki-panel-body .navbar-collapse {
     background: #F5F5F5;
 }
+.wiki-panel-header {
+    background: #efefef;
+    padding: 10px;
+    font-size: 16px;
+    font-weight: 300;
+}
+#wiki-form {
+    padding: 10px;
+}
+
+#wmd-preview {
+    padding: 10px;
+}
