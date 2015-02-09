@@ -135,8 +135,12 @@ function ViewModel(url) {
     });
 
     $(document).ready(function(){
-        $('*[data-osf-panel]').osfPanel({ buttonElement : '.switch', onSize : 'md' });     
-    })
+        $('*[data-osf-panel]').osfPanel({ 
+            buttonElement : '.switch', 
+            onSize : 'md', 
+            'onclick' : function() { console.log(editor); editor.resize(); } 
+        });     
+    }); 
 
 }
 
