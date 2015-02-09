@@ -3,6 +3,14 @@
  * code goes here.
  */
 'use strict';
+// CSS used on every page
+require('../../vendor/bower_components/bootstrap/dist/css/bootstrap-theme.css');
+require('../../vendor/bower_components/x-editable/dist/bootstrap3-editable/css/bootstrap-editable.css');
+require('../../vendor/bower_components/jquery-ui/themes/base/minified/jquery.ui.resizable.min.css');
+require('../../css/bootstrap-xl.css');
+require('../../css/animate.css');
+require('../../css/site.css');
+
 
 var $ = require('jquery');
 require('jquery.cookie');
@@ -63,7 +71,7 @@ $(document).on('click', '.project-toggle', function() {
         up.removeClass('icon-angle-up').addClass('icon-angle-down');
     }
     if(down.length > 0) {
-        down.removeClass('icon-angle-down').addClass('icon-angle-up');            
+        down.removeClass('icon-angle-down').addClass('icon-angle-up');
     }
 
     widget.find('.addon-widget-body').slideToggle();

@@ -3,6 +3,7 @@
  * For Treebeard and _item API's check: https://github.com/caneruguz/treebeard/wiki
  */
 
+
 var $ = require('jquery');
 var m = require('mithril');
 var Treebeard = require('treebeard');
@@ -10,6 +11,9 @@ var URI = require('uri.js/src/URI.js');
 var waterbutler = require('waterbutler');
 
 var $osf = require('osfHelpers');
+
+// CSS
+require('../css/fangorn.css');
 
 var tbOptions;
 
@@ -274,9 +278,6 @@ function _fangornAddedFile(treebeard, file) {
         tmpID: tmpID
     };
     treebeard.createItem(blankItem, item.id);
-
-
-
     return configOption || null;
 }
 
@@ -335,12 +336,12 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
         item,
         revisedItem,
         child;
-    for(var i = 0; i < parent.children.length; i++) {
+    for (var i = 0; i < parent.children.length; i++) {
         child = parent.children[i];
-        if(!child.data.tmpID){
+        if (!child.data.tmpID){
             continue;
         }
-        if(child.data.tmpID === file.tmpID) {
+        if (child.data.tmpID === file.tmpID) {
             item = child;
         }
     }
@@ -355,17 +356,17 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
         item.data = response;
         inheritFromParent(item, item.parent());
     }
-    if(item.data.tmpID) {
+    if (item.data.tmpID) {
         item.data.tmpID = null;
     }
-    // Check and remove duplicates
-    if(parent.children.length  > 0 ) {
-        for (var j = 0; j < parent.children.length; j++){
-            var o = parent.children[j];
-            if(o.data.name === item.data.name && o.id !== item.id){
-                o.removeSelf();
+    // Remove duplicates if file was updated
+    var status = file.xhr.status;
+    if (status === 200) {
+        parent.children.forEach(function(child) {
+            if (child.data.name === item.data.name && child.id !== item.id) {
+                child.removeSelf();
             }
-        }
+        });
     }
     treebeard.redraw();
 }
@@ -392,12 +393,12 @@ function _fangornDropzoneError(treebeard, file, message) {
     var item;
     var child;
     var destroyItem = false;
-    for(var i = 0; i < parent.children.length; i++) {
+    for (var i = 0; i < parent.children.length; i++) {
         child = parent.children[i];
-        if(!child.data.tmpID){
+        if (!child.data.tmpID) {
             continue;
         }
-        if(child.data.tmpID === file.tmpID) {
+        if (child.data.tmpID === file.tmpID) {
             item = child;
             treebeard.deleteNode(parent.id, item.id);
         }
@@ -561,7 +562,10 @@ function _fangornLazyLoadOnLoad (tree) {
     });
     resolveconfigOption.call(this, tree, 'lazyLoadOnLoad', [tree]);
     $('[data-toggle="tooltip"]').tooltip();
-    _fangornOrderFolder.call(this, tree);
+
+    if (tree.depth > 1) {
+        _fangornOrderFolder.call(this, tree);
+    }
 }
 
 /**
@@ -572,10 +576,8 @@ function _fangornLazyLoadOnLoad (tree) {
  */
 function _fangornOrderFolder(tree) {
     var sortDirection = this.isSorted[0].desc ? 'desc' : 'asc';
-    if (tree.depth > 1) {
-        tree.sortChildren(this, sortDirection, 'text', 0);
-        this.redraw();
-    }
+    tree.sortChildren(this, sortDirection, 'text', 0);
+    this.redraw();
 }
 
 /**
@@ -895,6 +897,7 @@ tbOptions = {
     },
     filterPlaceholder : 'Search',
     onmouseoverrow : _fangornMouseOverRow,
+    sortDepth : 2,
     dropzone : {                                           // All dropzone options.
         url: function(files) {return files[0].url;},
         clickable : '#treeGrid',

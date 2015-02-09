@@ -476,13 +476,16 @@ def setup():
 @task
 def analytics():
     from website.app import init_app
+    import matplotlib
+    matplotlib.use('Agg')
     init_app()
+    from scripts import metrics
     from scripts.analytics import (
         logs, addons, comments, links, watch, email_invites,
         permissions, profile, benchmarks
     )
     modules = (
-        logs, addons, comments, links, watch, email_invites,
+        metrics, logs, addons, comments, links, watch, email_invites,
         permissions, profile, benchmarks
     )
     for module in modules:
@@ -683,3 +686,11 @@ def generate_self_signed(domain):
         ' -keyout {0}.key -out {0}.crt'
     ).format(domain)
     run(cmd)
+
+@task
+def update_citation_styles():
+    from scripts import parse_citation_styles
+    run('git submodule init')
+    run('git submodule update')
+    total = parse_citation_styles.main()
+    print("Parsed {} styles".format(total))

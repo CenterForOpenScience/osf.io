@@ -4,6 +4,11 @@
 * the viewmodels for each of the individual onboarding widgets.
 */
 'use strict';
+
+// CSS
+require('../css/onboarding.css');
+require('../css/typeahead.css');
+
 var Dropzone = require('dropzone');
 var waterbutler = require('waterbutler');
 var Handlebars = require('handlebars');

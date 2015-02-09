@@ -27,6 +27,7 @@ ROOT = os.path.join(BASE_PATH, '..')
 
 # Hours before email confirmation tokens expire
 EMAIL_TOKEN_EXPIRATION = 24
+CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'citations', 'styles')
 
 LOAD_BALANCER = False
 PROXY_ADDRS = []
@@ -71,6 +72,11 @@ FROM_EMAIL = 'openscienceframework-noreply@osf.io'
 MAIL_SERVER = 'smtp.sendgrid.net'
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = ''  # Set this in local.py
+
+# Mandrill
+MANDRILL_USERNAME = None
+MANDRILL_PASSWORD = None
+MANDRILL_MAIL_SERVER = None
 
 # Mailchimp
 MAILCHIMP_API_KEY = None

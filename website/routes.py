@@ -24,7 +24,7 @@ from website.util import paths
 from website.util import sanitize
 from website import landing_pages as landing_page_views
 from website import views as website_views
-from website.assets import env as assets_env
+from website.citations import views as citation_views
 from website.search import views as search_views
 from website.profile import views as profile_views
 from website.project import views as project_views
@@ -54,7 +54,6 @@ def get_globals():
         'allow_login': settings.ALLOW_LOGIN,
         'cookie_name': settings.COOKIE_NAME,
         'status': status.pop_status_messages(),
-        'css_all': assets_env['css'].urls(),
         'domain': settings.DOMAIN,
         'disk_saving_mode': settings.DISK_SAVING_MODE,
         'language': language,
@@ -203,6 +202,17 @@ def make_url_map(app):
 
     ])
 
+    # Site-wide API routes
+
+    process_rules(app, [
+        Rule(
+            '/citations/styles/',
+            'get',
+            citation_views.list_citation_styles,
+            json_renderer,
+        ),
+    ], prefix='/api/v1')
+
     process_rules(app, [
         Rule(
             [
@@ -323,6 +333,16 @@ def make_url_map(app):
             ],
             'post',
             project_views.comment.unreport_abuse,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/citation/<style>/',
+                '/project/<pid>/node/<nid>/citation/<style>/',
+            ],
+            'get',
+            citation_views.node_citation,
             json_renderer,
         ),
 
