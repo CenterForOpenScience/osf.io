@@ -45,7 +45,7 @@
                 <th>Version</th>
                 <th>Date</th>
                 <th data-bind="if: userColumn">User</th>
-                <th>Download</th>
+                <th colspan="2">Download</th>
               </tr>
             </thead>
 
@@ -70,9 +70,11 @@
                   </span>
                 </td>
                 <td>
-                  <span class="badge" data-bind="if: revision.extra.downloads">
+                  <span class="badge" data-bind="if: revision.extra.downloads !== undefined">
                     {{ revision.extra.downloads }}
                   </span>
+                </td>
+                <td>
                   <a class="btn btn-primary btn-sm" href="{{ revision.osfDownloadUrl }}"
                     data-bind="click: revision.download">
                     <i class="icon-download-alt"></i>
