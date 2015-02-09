@@ -134,4 +134,3 @@ CONFERENCE_FAILED = Mail(
 )
 DIGEST = Mail('digest', subject='OSF Email Digest')
 TRANSACTIONAL = Mail('transactional', subject='OSF: ${subject}')
-COMMENT_ADDED = Mail('comment_added', subject='${commenter} commented on "${title}".')
