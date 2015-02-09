@@ -60,8 +60,9 @@ def ensure_glacier(version, dry_run):
 
 
 def check_parity_files(version):
-    objs = list(container_parity.list_all(prefix=version.location['object']))
-    return len(objs) == 8
+    index = list(container_parity.list_all(prefix='{0}.par2'.format(version.location['object'])))
+    vols = list(container_parity.list_all(prefix='{0}.vol'.format(version.location['object'])))
+    return len(index) == 1 and len(vols) >= 1
 
 
 def ensure_parity(version, dry_run):
@@ -150,15 +151,6 @@ class TestFilesAudit(OsfTestCase):
 
     @mock.patch('scripts.osfstorage.files_audit.download_from_cloudfiles')
     @mock.patch('scripts.osfstorage.files_audit.vault')
-    def test_ensure_glacier_exists(self, mock_vault, mock_download):
-        version = FileVersionFactory()
-        version.metadata['archive'] = 'foo'
-        version.save()
-        ensure_glacier(version, dry_run=False)
-        assert_false(mock_vault.upload_archive.called)
-
-    @mock.patch('scripts.osfstorage.files_audit.download_from_cloudfiles')
-    @mock.patch('scripts.osfstorage.files_audit.vault')
     def test_ensure_glacier(self, mock_vault, mock_download):
         glacier_id = 'iamarchived'
         mock_vault.upload_archive.return_value = glacier_id
@@ -168,6 +160,15 @@ class TestFilesAudit(OsfTestCase):
         mock_vault.upload_archive.assert_called_with(os.path.join(storage_settings.AUDIT_TEMP_PATH, key), description=key)
         version.reload()
         assert_equal(version.metadata['archive'], glacier_id)
+
+    @mock.patch('scripts.osfstorage.files_audit.download_from_cloudfiles')
+    @mock.patch('scripts.osfstorage.files_audit.vault')
+    def test_ensure_glacier_exists(self, mock_vault, mock_download):
+        version = FileVersionFactory()
+        version.metadata['archive'] = 'foo'
+        version.save()
+        ensure_glacier(version, dry_run=False)
+        assert_false(mock_vault.upload_archive.called)
 
     @mock.patch('os.remove')
     @mock.patch('scripts.osfstorage.files_audit.script_utils.create_parity_files')
@@ -184,7 +185,7 @@ class TestFilesAudit(OsfTestCase):
     @mock.patch('scripts.osfstorage.files_audit.download_from_cloudfiles')
     @mock.patch('scripts.osfstorage.files_audit.container_parity')
     def test_ensure_parity_exists(self, mock_container, mock_download, mock_create_parity):
-        mock_container.list_all.return_value = ['hi'] * 8
+        mock_container.list_all.side_effect = [['hi'], ['hi'] * 4]
         version = FileVersionFactory()
         ensure_parity(version, dry_run=False)
         assert_false(mock_download.called)
