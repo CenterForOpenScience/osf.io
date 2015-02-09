@@ -209,12 +209,10 @@
                         </span>
                     </div>
                     <div data-bind="template: {name: 'commentTemplate', foreach: recentComments}"></div>
-                    <div style="padding-bottom: 20px;">
-                        <a onclick="openCommentPane()">Open the comment pane</a> on the right and make a new comment, or <a href="${node['url']}discussions/">see more in discussions page.</a>
-                    </div>
                 </div>
-                <div data-bind="ifnot: commented">
-                    <span>There are no comments in this project yet. Open the <a onclick="openCommentPane()">comment pane</a> on the right and make the first one!</span>
+                <div data-bind="ifnot: commented">There are no comments in this ${node['node_type']} yet.</div>
+                <div>
+                    <span>Open the <a class="openCommentPane">comment pane</a> on the right to make a comment.</span>
                 </div>
             </div>
         </div>

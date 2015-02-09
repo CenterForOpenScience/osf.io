@@ -45,10 +45,6 @@ if ($comments.length) {
     Comment.init('#comments-widget-container', 'total', node_id, '', 'widget', userName, canComment, hasChildren);
 }
 
-openCommentPane = function(){
-    $('.cp-handle').click();
-}
-
 // Initialize CitationWidget if user isn't viewing through an anonymized VOL
 if (!ctx.node.anonymous) {
     new CitationWidget('#citationStyleInput', '#citationText');
@@ -163,5 +159,10 @@ $(document).ready(function() {
     if (window.contextVars.node.isRegistration && window.contextVars.node.tags.length === 0) {
         $('div.tags').remove();
     }
+
+    // Comment pane trigger
+    $(".openCommentPane").click(function(){
+        $(".cp-handle").click();
+    })
 
 });
