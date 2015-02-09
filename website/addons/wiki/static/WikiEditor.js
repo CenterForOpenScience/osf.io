@@ -54,7 +54,6 @@ function ViewModel(url) {
        return self.activeUsers().length > 1;
     });
 
-
     // Throttle the display when updating status.
     self.updateStatus = function() {
         self.throttledStatus(self.status());
@@ -63,6 +62,10 @@ function ViewModel(url) {
     self.throttledUpdateStatus = $osf.throttle(self.updateStatus, 4000, {leading: false});
 
     self.status.subscribe(function (newValue) {
+        if (newValue === 'disconnected') {
+            self.updateStatus();
+        }
+
         self.throttledUpdateStatus();
     });
 
