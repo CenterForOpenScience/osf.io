@@ -47,14 +47,30 @@ function ViewModel(url) {
     self.publishedText = ko.observable('');
     self.currentText = ko.observable('');
     self.activeUsers = ko.observableArray([]);
-    self.status = ko.observable('connecting');
+    self.status = ko.observable('connected');
+    self.throttledStatus = ko.observable(self.status());
 
     self.displayCollaborators = ko.computed(function() {
        return self.activeUsers().length > 1;
     });
 
+    // Throttle the display when updating status.
+    self.updateStatus = function() {
+        self.throttledStatus(self.status());
+    };
+
+    self.throttledUpdateStatus = $osf.throttle(self.updateStatus, 4000, {leading: false});
+
+    self.status.subscribe(function (newValue) {
+        if (newValue === 'disconnected') {
+            self.updateStatus();
+        }
+
+        self.throttledUpdateStatus();
+    });
+
     self.statusDisplay = ko.computed(function() {
-        switch(self.status()) {
+        switch(self.throttledStatus()) {
             case 'connecting':
                 return 'Attempting to connect';
             case 'unsupported':
@@ -65,7 +81,7 @@ function ViewModel(url) {
     });
 
     self.progressBar = ko.computed(function() {
-        switch(self.status()) {
+        switch(self.throttledStatus()) {
             case 'connecting':
                 return {
                     class: 'progress-bar progress-bar-warning progress-bar-striped active',
@@ -80,7 +96,7 @@ function ViewModel(url) {
     });
 
     self.modalTarget = ko.computed(function() {
-        switch(self.status()) {
+        switch(self.throttledStatus()) {
             case 'connecting':
                 return '#connectingModal';
             case 'unsupported':
