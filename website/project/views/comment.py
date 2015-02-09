@@ -16,7 +16,7 @@ from website.models import Guid, Comment
 from website.project.decorators import must_be_contributor_or_public
 from datetime import datetime
 from website.project.model import has_anonymous_link
-from website.project.views.node import _view_project, n_unread_comments
+from website.project.views.node import _view_project, n_unread_comments, get_all_files
 
 
 @must_be_contributor_or_public
@@ -367,16 +367,11 @@ def list_total_comments(node, auth, page):
 
 def get_files_comments(node):
     comments = []
-    addons = node.get_addon_names()
     # github, figshare, dropbox, s3
-    for addon_name in addons:
-        if addon_name in ('figshare', 'dropbox', 's3', 'github'):
-            addon = node.get_addon(addon_name)
-            if not addon is None:
-                files = addon.get_existing_files()
-                for addon_file in files:
-                    for comment in getattr(addon_file, 'commented', []):
-                        comments.append(comment)
+    files = get_all_files(node)
+    for addon_file in files:
+        for comment in getattr(addon_file, 'commented', []):
+            comments.append(comment)
     # osf storage
     from website.addons.osfstorage.model import OsfStorageGuidFile
     files_id = OsfStorageGuidFile.find(Q('node', 'eq', node)).get_keys()
@@ -461,11 +456,17 @@ def _update_comments_timestamp(auth, node, page='node', root_id=None):
         if root_id is None or root_id == 'None':
             ret = {}
             if page == 'files':
+                # Osf file
                 root_targets = OsfStorageGuidFile.find(Q('node', 'eq', node)).get_keys()
                 for root_target in root_targets:
                     osf_file = OsfStorageGuidFile.load(root_target)
                     if hasattr(osf_file, 'comment_target'):
-                        ret = _update_comments_timestamp(auth, node, page, osf_file._id)
+                        ret = _update_comments_timestamp(auth, node, page, root_target)
+                # Files in other addons
+                files = get_all_files(node)
+                for addon_file in files:
+                    if hasattr(addon_file, 'comment_target'):
+                        ret = _update_comments_timestamp(auth, node, page, addon_file._id)
             elif page == 'wiki':
                 root_targets = NodeWikiPage.find(Q('node', 'eq', node)).get_keys()
                 for root_target in root_targets:
