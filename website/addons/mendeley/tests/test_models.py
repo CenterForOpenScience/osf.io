@@ -2,13 +2,34 @@
 
 import mock
 from nose.tools import *  # noqa
+from factory import SubFactory, Sequence
 
 from tests.base import OsfTestCase
+from tests.factories import ModularOdmFactory, UserFactory, ProjectFactory, ExternalAccountFactory
 
 import datetime
 
 from website.addons.mendeley import model
 from website.citations.models import CitationList
+
+
+class MendeleyAccountFactory(ExternalAccountFactory):
+    provider = 'mendeley'
+    provider_id = Sequence(lambda n: 'id-{0}'.format(n))
+    oauth_key = Sequence(lambda n: 'key-{0}'.format(n))
+    oauth_secret = Sequence(lambda n: 'secret-{0}'.format(n))
+
+
+class MendeleyUserSettingsFactory(ModularOdmFactory):
+    FACTORY_FOR = model.AddonMendeleyUserSettings
+
+    owner = SubFactory(UserFactory)
+
+
+class MendeleyNodeSettingsFactory(ModularOdmFactory):
+    FACTORY_FOR = model.AddonMendeleyNodeSettings
+
+    owner = SubFactory(ProjectFactory)
 
 
 class MendeleyProviderTestCase(OsfTestCase):
@@ -104,47 +125,104 @@ class MendeleyProviderTestCase(OsfTestCase):
 
 
 class MendeleyNodeSettingsTestCase(OsfTestCase):
-    def test_api_not_cached(self):
-        """The first call to .api returns a new object"""
-        assert_true(False)
 
-    def test_api_cached(self):
+    def setUp(self):
+        super(MendeleyNodeSettingsTestCase, self).setUp()
+        self.node_addon = model.AddonMendeleyNodeSettings()
+        self.node_addon.save()
+
+    @mock.patch('website.addons.mendeley.model.Mendeley')
+    def test_api_not_cached(self, mock_mendeley):
+        """The first call to .api returns a new object"""
+        api = self.node_addon.api
+        mock_mendeley.assert_called_once()
+        assert_equal(api, mock_mendeley())
+
+    @mock.patch('website.addons.mendeley.model.Mendeley')
+    def test_api_cached(self, mock_mendeley):
         """Repeated calls to .api returns the same object"""
-        assert_true(False)
+        self.node_addon._api = 'testapi'
+        api = self.node_addon.api
+        assert_false(mock_mendeley.called)
+        assert_equal(api, 'testapi')
 
     def test_grant_oauth(self):
         """Grant the node access to a single folder in a Mendeley account"""
-        assert_true(False)
-
-    def test_revoke_oauth(self):
-        """Revoke access to a Mendeley account for the node"""
-        assert_true(False)
+        account = MendeleyAccountFactory()
+        user_addon = MendeleyUserSettingsFactory()
+        node_addon = MendeleyNodeSettingsFactory()
+        node_addon.grant_oauth_access(user_addon.owner, account, metadata=None)
+        assert_in(user_addon, node_addon.associated_user_settings)
+        assert_equal(user_addon.oauth_grants[node_addon.owner._id][account._id], None)
 
     def test_verify_oauth_current_user(self):
         """Confirm access to a Mendeley account attached to the current user"""
-        assert_true(False)
+        account = MendeleyAccountFactory()
+        user = UserFactory()
+        user_addon = MendeleyUserSettingsFactory(owner=user)
+        node_addon = MendeleyNodeSettingsFactory(owner=ProjectFactory(creator=user))
+        node_addon.grant_oauth_access(user_addon.owner, account, metadata={'lists': 'testlist'})
+        assert_true(node_addon.verify_oauth_access(account, 'testlist'))
 
     def test_verify_oauth_other_user(self):
         """Verify access to a Mendeley account's folder beloning to another user
         """
-        assert_true(False)
+        account = MendeleyAccountFactory()
+        user_addon = MendeleyUserSettingsFactory()
+        node_addon = MendeleyNodeSettingsFactory()
+        node_addon.grant_oauth_access(user_addon.owner, account, metadata={'lists': 'testlist'})
+        assert_true(node_addon.verify_oauth_access(account, 'testlist'))
 
     def test_verify_oauth_other_user_failed(self):
         """Verify access to a Mendeley account's folder where the account is
         associated with the node, but the folder is not
         """
-        assert_true(False)
+        account = MendeleyAccountFactory()
+        user = UserFactory()
+        user_addon = MendeleyUserSettingsFactory(owner=user)
+        node_addon = MendeleyNodeSettingsFactory(owner=ProjectFactory(creator=user))
+        node_addon.grant_oauth_access(user_addon.owner, account, metadata={'lists': 'testlist'})
+        assert_false(node_addon.verify_oauth_access(account, 'privatelist'))
 
-    def test_verify_json(self):
+    def test_to_json(self):
         """All values are passed to the node settings view"""
-        assert_true(False)
+        user_account = MendeleyAccountFactory()
+        user = UserFactory(external_accounts=[user_account])
+        node_account = MendeleyAccountFactory()
+        node_addon = MendeleyNodeSettingsFactory(external_account=node_account)
+        res = node_addon.to_json(user)
+        assert_equal(len(res['accounts']), 2)
+        for account in [user_account, node_account]:
+            assert_in(
+                {
+                    'id': account._id,
+                    'provider_id': account.provider_id,
+                    'display_name': account.display_name
+                },
+                res['accounts'],
+            )
 
 
 class MendeleyUserSettingsTestCase(OsfTestCase):
     def test_get_connected_accounts(self):
         """Get all Mendeley accounts for user"""
-        assert_true(False)
+        user_accounts = [MendeleyAccountFactory(), MendeleyAccountFactory()]
+        user = UserFactory(external_accounts=user_accounts)
+        user_addon = MendeleyUserSettingsFactory(owner=user)
+        assert_equal(user_addon._get_connected_accounts(), user_accounts)
 
     def test_to_json(self):
         """All values are passed to the user settings view"""
-        assert_true(False)
+        user_accounts = [MendeleyAccountFactory(), MendeleyAccountFactory()]
+        user = UserFactory(external_accounts=user_accounts)
+        user_addon = MendeleyUserSettingsFactory(owner=user)
+        res = user_addon.to_json(user)
+        for account in user_accounts:
+            assert_in(
+                {
+                    'id': account._id,
+                    'provider_id': account.provider_id,
+                    'display_name': account.display_name
+                },
+                res['accounts'],
+            )

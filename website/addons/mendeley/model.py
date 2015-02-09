@@ -71,7 +71,7 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
         user_settings.grant_oauth_access(
             node=self.owner,
             external_account=external_account,
-            metadata=metadata
+            metadata=metadata,
         )
 
         user_settings.save()
@@ -81,11 +81,11 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
 
         :param ExternalAccount external_account:
         :param str list_id: ID of the Mendeley list requested
-        :return bool: True or False
+        :rtype bool:
         """
         for user_settings in self.associated_user_settings:
             try:
-                granted = user_settings[self.owner._id][external_account._id]
+                granted = user_settings.oauth_grants[self.owner._id][external_account._id]
             except KeyError:
                 # no grant for this node, move along
                 continue
