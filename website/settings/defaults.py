@@ -103,6 +103,7 @@ MFR_TIMEOUT = 30000
 
 # TODO: Override in local.py in production
 USE_TOKU_MX = True
+DB_HOST = 'localhost'
 DB_PORT = os_env.get('OSF_DB_PORT', 27017)
 DB_NAME = 'osf20130903'
 DB_USER = None
