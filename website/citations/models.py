@@ -102,7 +102,7 @@ class CitationList(object):
             * children - list of child CitationList instances
             * num_citations - count of citation
 
-        :return: dict
+        :rtype: dict
         """
         return {
             'name': self.name,
@@ -115,7 +115,7 @@ class CitationList(object):
         citations.
 
         :param str style: a CitationStyle._id - ex. "apa", "harvard1"
-        :return: dict
+        :rtype: dict
         """
         rv = self.json
         rv['citations'] = list(citations.render_iterable(self.citations, style))

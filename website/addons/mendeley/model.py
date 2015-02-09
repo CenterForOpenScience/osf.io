@@ -191,7 +191,6 @@ class Mendeley(ExternalProvider):
         :param str list_id: ID for a Mendeley folder. Optional.
         :return CitationList: CitationList for the folder, or for all documents
         """
-
         folder = self.client.folders.get(list_id) if list_id else None
         if folder:
             citations = lambda: self._citations_for_mendeley_folder(folder)
