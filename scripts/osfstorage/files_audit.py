@@ -14,6 +14,7 @@ import logging
 import pyrax
 from boto.glacier.layer2 import Layer2
 
+from website.app import init_app
 from website.addons.osfstorage import model
 
 from scripts.osfstorage import utils as script_utils
@@ -79,6 +80,9 @@ def ensure_parity(version, dry_run):
 
 
 def ensure_backups(version, dry_run):
+    if version.size == 0:
+        logger.info('Skipping empty version {0}'.format(version._id))
+        return
     ensure_glacier(version, dry_run)
     ensure_parity(version, dry_run)
     delete_temp_file(version)
@@ -96,6 +100,9 @@ def main(dry_run):
 if __name__ == '__main__':
     import sys
     dry_run = 'dry' in sys.argv
+
+    # Set up storage backends
+    init_app()
 
     # Connect to Rackspace
     container_primary = pyrax.cloudfiles.get_container(storage_settings.PRIMARY_CONTAINER_NAME)
