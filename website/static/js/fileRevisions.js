@@ -23,7 +23,7 @@ var Revision = function(data, index, file, node) {
         data.date;
 
     // Append modification time to file name if OSF Storage and not current version
-    if (self.provider !== 'osfstorage' && file.name && index !== 0) {
+    if (file.provider === 'osfstorage' && file.name && index !== 0) {
         var parts = file.name.split('.');
         if (parts.length === 1) {
             ops.displayName = parts[0] + '-' + data.modified;
