@@ -21,19 +21,19 @@
                             <div id="wmd-button-bar"></div>
                         </div>
                         <div class="col-lg-6 col-md-5">
-                            <div data-bind="fadeVisible: status() === 'connected'" class="pull-right">
+                            <div data-bind="fadeVisible: throttledStatus() === 'connected'" class="pull-right">
                                 <ul class="list-inline" data-bind="foreach: activeUsers">
                                     <!-- ko ifnot: id === '${user_id}' -->
                                         <li>
                                             <a data-bind="attr: { href: url }">
-                                                <img data-bind="attr: {src: gravatar}, tooltip: {title: name, placement: 'bottom'}"
+                                                <img height="27" width="27" data-bind="attr: {src: gravatar}, tooltip: {title: name, placement: 'bottom'}"
                                                      style="border: 1px solid black;">
                                             </a>
                                         </li>
                                     <!-- /ko -->
                                 </ul>
                             </div>
-                            <div data-bind="fadeVisible: status() !== 'connected'">
+                            <div data-bind="fadeVisible: throttledStatus() !== 'connected'">
                                 <div class="progress" style="margin-bottom: 5px;">
                                     <div role="progressbar" data-bind="attr: progressBar">
                                         <span data-bind="text: statusDisplay"></span>
@@ -48,7 +48,6 @@
                             </div>
                         </div>
                     </div>
-
                     <div id="editor" class="wmd-input wiki-editor"
                          data-bind="ace: currentText">Loading. . .</div>
                 </div>
