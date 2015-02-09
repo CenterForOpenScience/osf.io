@@ -300,7 +300,7 @@ def osf_storage_root(node_settings, auth, **kwargs):
 @must_have_addon('osfstorage', 'node')
 def osf_storage_get_revisions(payload, node_addon, **kwargs):
     node = node_addon.owner
-    page = payload.get('page', 0)
+    page = payload.get('page') or 0
     path = payload.get('path')
 
     if not path:
