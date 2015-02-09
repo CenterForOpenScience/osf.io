@@ -12,9 +12,9 @@ var port = serverConfig.port || process.env.SHAREJS_PORT || 7007;
 
 // Mongo options
 var dbConfig = config.db || {};
-var dbHost = dbConfig.host || "localhost";
+var dbHost = dbConfig.host || 'localhost';
 var dbPort = dbConfig.port || 27017;
-var dbName = dbConfig.name || "sharejs";
+var dbName = dbConfig.name || 'sharejs';
 
 // Library imports
 var sharejs = require('share');
@@ -41,8 +41,8 @@ var locked = {};
 
 // Allow CORS
 app.use(function(req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
     next();
 });
 
@@ -155,14 +155,14 @@ wss.on('connection', function(client) {
 app.post('/lock/:id', function (req, res, next) {
     locked[req.params.id] = true;
     wss.broadcast(req.params.id, JSON.stringify({type: 'lock'}));
-    res.send(req.params.id + " was locked.");
+    res.send(req.params.id + ' was locked.');
 });
 
 // Unlock a document
 app.post('/unlock/:id', function (req, res, next) {
     delete locked[req.params.id];
     wss.broadcast(req.params.id, JSON.stringify({type: 'unlock'}));
-    res.send(req.params.id + " was unlocked.");
+    res.send(req.params.id + ' was unlocked.');
 });
 
 // Redirect from a document
@@ -171,7 +171,7 @@ app.post('/redirect/:id/:redirect', function (req, res, next) {
         type: 'redirect',
         redirect: req.params.redirect
     }));
-    res.send(req.params.id + " was redirected to " + req.params.redirect);
+    res.send(req.params.id + ' was redirected to ' + req.params.redirect);
 });
 
 // Redirect from a deleted document
@@ -180,7 +180,7 @@ app.post('/delete/:id/:redirect', function (req, res, next) {
         type: 'delete',
         redirect: req.params.redirect
     }));
-    res.send(req.params.id + " was deleted and redirected to " + req.params.redirect);
+    res.send(req.params.id + ' was deleted and redirected to ' + req.params.redirect);
 });
 
 server.listen(port, host, function() {
