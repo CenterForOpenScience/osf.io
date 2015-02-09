@@ -171,6 +171,9 @@ class BaseFileObject(StoredObject):
         :param str path: Path to file or directory
         :param node_settings: Root node settings record
         """
+        if path.endswith('/'):
+            path = path[:-1]
+
         try:
             obj = cls.find_one(
                 Q('path', 'eq', path) &
@@ -188,6 +191,9 @@ class BaseFileObject(StoredObject):
         :param node_settings: Root node settings record
         :returns: Tuple of (record, created)
         """
+        if path.endswith('/'):
+            path = path[:-1]
+
         try:
             obj = cls(path=path, node_settings=node_settings)
             obj.save()
