@@ -2341,6 +2341,11 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.contributors = users
 
         if permissions_changed:
+            if ['read'] in permissions_changed.values():
+                for wiki_name in self.wiki_pages_current:
+                    wiki_page = self.get_wiki_page(wiki_name)
+                    wiki_page.migrate_uuid(self)
+
             self.add_log(
                 action=NodeLog.PERMISSIONS_UPDATED,
                 params={
