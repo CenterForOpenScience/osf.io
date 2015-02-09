@@ -38,8 +38,8 @@ def notify(uid, event, **context):
 def check_parent(uid, event, direct_subscribers, **context):
     parent = Node.load(uid).node__parent
     if parent:
-        for idx, p in parent:
-            key = str(p[idx]._id + '_' + event)
+        for p in parent:
+            key = str(p._id + '_' + event)
             try:
                 subscription = Subscription.find_one(Q('_id', 'eq', key))
             except NoResultsFound:
@@ -124,11 +124,9 @@ email_templates = {
     'comments': {
         'subject': '${commenter} commented on "${title}".'
     },
-    # 'comment_replies': {
-    #     'subject': '${commenter} replied to your comment on "${title}".',
-    #     'message': '${commenter} replied to your comment "${parent_comment}" on your project "${title}": "${content}".' +
-    #     '\n\n\tTo view this on the Open Science Framework, please visit: ${url}.'
-    # }
+    'comment_replies': {
+        'subject': '${commenter} replied to your comment on "${title}".'
+    }
 }
 
 
