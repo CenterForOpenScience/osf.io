@@ -8,11 +8,6 @@ from . import views
 
 settings_routes = {
     'rules': [
-        # Widget
-        Rule([
-            '/project/<pid>/figshare/widget/',
-            '/project/<pid>/node/<nid>/figshare/widget/',
-        ], 'get', views.widget.figshare_widget, json_renderer),
         # OAuth: Node
         Rule([
             '/project/<pid>/figshare/oauth/',
