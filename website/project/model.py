@@ -604,6 +604,8 @@ class Node(GuidStoredObject, AddonModelMixin):
     files_versions = fields.DictionaryField()
     wiki_pages_current = fields.DictionaryField()
     wiki_pages_versions = fields.DictionaryField()
+    # Dictionary field mapping node wiki page to sharejs private uuid.
+    # {<page_name>: <sharejs_id>}
     wiki_private_uuids = fields.DictionaryField()
 
     creator = fields.ForeignField('user', backref='created')

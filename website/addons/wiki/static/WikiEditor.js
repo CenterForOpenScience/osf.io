@@ -14,9 +14,14 @@ require('imports?Markdown=pagedown-ace-converter!pagedown-ace-editor');
 
 var editor;
 
+/**
+ * Binding handler that instantiates an ACE editor.
+ * The value accessor must be a ko.observable.
+ * Example: <div data-bind="ace: currentText" id="editor"></div>
+ */
 ko.bindingHandlers.ace = {
     init: function(element, valueAccessor) {
-        editor = ace.edit(element.id);
+        editor = ace.edit(element.id); // jshint ignore:line
 
         // Updates the view model based on changes to the editor
         editor.getSession().on('change', function () {
@@ -63,13 +68,13 @@ function ViewModel(url) {
         switch(self.status()) {
             case 'connecting':
                 return {
-                    class: "progress-bar progress-bar-warning progress-bar-striped active",
-                    style: "width: 100%"
+                    class: 'progress-bar progress-bar-warning progress-bar-striped active',
+                    style: 'width: 100%'
                 };
             default:
                 return {
-                    class: "progress-bar progress-bar-danger",
-                    style: "width: 100%"
+                    class: 'progress-bar progress-bar-danger',
+                    style: 'width: 100%'
                 };
         }
     });
@@ -77,11 +82,11 @@ function ViewModel(url) {
     self.modalTarget = ko.computed(function() {
         switch(self.status()) {
             case 'connecting':
-                return '#connecting-modal';
+                return '#connectingModal';
             case 'unsupported':
-                return '#unsupported-modal';
+                return '#unsupportedModal';
             default:
-                return '#disconnected-modal';
+                return '#disconnectedModal';
         }
     });
 

@@ -10,7 +10,7 @@
         </div>
         <div class="col-sm-9">
             <%include file="wiki/templates/status.mako"/>
-            <form id="wiki-form" action="${urls['web']['edit']}" method="POST">
+            <form id="wikiForm" action="${urls['web']['edit']}" method="POST">
                 <div class="form-group wmd-panel">
                     <div class="row">
                         <div class="col-lg-6 col-md-7">
@@ -53,8 +53,7 @@
                          data-bind="ace: currentText">Loading. . .</div>
                 </div>
                 <div class="pull-right">
-                    <button id="revert-button"
-                            class="btn btn-success"
+                    <button class="btn btn-success"
                             data-bind="click: revertChanges"
                             >Revert</button>
                     <input type="submit"
@@ -72,7 +71,7 @@
     </div><!-- end row -->
 </div><!-- end wiki -->
 
-<div class="modal fade" id="permissions-modal">
+<div class="modal fade" id="permissionsModal">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
@@ -85,7 +84,7 @@
   </div>
 </div>
 
-<div class="modal fade" id="rename-modal">
+<div class="modal fade" id="renameModal">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
@@ -98,7 +97,7 @@
   </div>
 </div>
 
-<div class="modal fade" id="delete-modal" tabindex="-1">
+<div class="modal fade" id="deleteModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
@@ -114,43 +113,41 @@
   </div>
 </div>
 
-<div class="modal fade" id="connecting-modal" tabindex="-1">
+<div class="modal fade" id="connectingModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h3 class="modal-title">Connecting to the live editor</h3>
+        <h3 class="modal-title">Connecting to the collaborative wiki</h3>
       </div>
       <div class="modal-body">
         <p>
-            This page is currently attempting to connect to the live
-            editor. While you are not yet connected, changes will not be
-            saved after leaving this page unless you press the "Save" button.
+            This page is currently attempting to connect to the collaborative wiki. You may continue to make edits.
+            <strong>Changes will not be saved until you press the "Save" button.</strong>
         </p>
       </div>
     </div>
   </div>
 </div>
 
-<div class="modal fade" id="disconnected-modal" tabindex="-1">
+<div class="modal fade" id="disconnectedModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h3 class="modal-title">Live editing is unavailable</h3>
+        <h3 class="modal-title">Collaborative wiki is unavailable</h3>
       </div>
       <div class="modal-body">
         <p>
-            The live editor is currently unavailable. Other contributors
-            are not able to see any of your changes, and changes will not be
-            saved after leaving this page unless you press the "Save" button.
+            The collaborative wiki is currently unavailable. You may continue to make edits.
+            <strong>Changes will not be saved until you press the "Save" button.</strong>
         </p>
       </div>
     </div>
   </div>
 </div>
 
-<div class="modal fade" id="unsupported-modal" tabindex="-1">
+<div class="modal fade" id="unsupportedModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
@@ -159,9 +156,8 @@
       </div>
       <div class="modal-body">
         <p>
-            Your browser does not support live editing. Other contributors
-            are not able to see any of your changes, and changes will not be
-            saved after leaving this page unless you press the "Save" button.
+            Your browser does not support collaborative editing. You may continue to make edits.
+            <strong>Changes will not be saved until you press the "Save" button.</strong>
         </p>
       </div>
     </div>

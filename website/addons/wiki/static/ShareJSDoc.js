@@ -1,12 +1,19 @@
+var $ = require('jquery');
+require('bootstrap');
+
+var WikiEditor = require('./WikiEditor.js');
 var LanguageTools = ace.require('ace/ext/language_tools');
 
 var activeUsers = [];
 var collaborative = (typeof WebSocket !== 'undefined' && typeof sharejs !== 'undefined');
 
-var ShareJSDoc = function(viewModel, url, metadata) {
+var ShareJSDoc = function(selector, url, metadata) {
+    var wikiEditor = new WikiEditor(selector, url);
+    var viewModel = wikiEditor.viewModel;
+
     // Initialize Ace and configure settings
-    var editor = ace.edit("editor");
-    editor.getSession().setMode("ace/mode/markdown");
+    var editor = ace.edit('editor');
+    editor.getSession().setMode('ace/mode/markdown');
     editor.getSession().setUseSoftTabs(true);   // Replace tabs with spaces
     editor.getSession().setUseWrapMode(true);   // Wraps text
     editor.renderer.setShowGutter(false);       // Hides line number
@@ -39,7 +46,7 @@ var ShareJSDoc = function(viewModel, url, metadata) {
     require('addons/wiki/static/ace.js');
 
     // Configure connection
-    var wsPrefix = (window.location.protocol == 'https:') ? 'wss://' : 'ws://';
+    var wsPrefix = (window.location.protocol === 'https:') ? 'wss://' : 'ws://';
     var wsUrl = wsPrefix + window.contextVars.wiki.urls.sharejs;
     var socket = new ReconnectingWebSocket(wsUrl);
     var sjs = new sharejs.Connection(socket);
@@ -94,7 +101,7 @@ var ShareJSDoc = function(viewModel, url, metadata) {
             viewModel.activeUsers(activeUsers);
         } else if (data.type === 'lock') {
             editor.setReadOnly(true);
-            $('#permissions-modal').modal({
+            $('#permissionsModal').modal({
                 backdrop: 'static',
                 keyboard: false
             });
@@ -103,7 +110,7 @@ var ShareJSDoc = function(viewModel, url, metadata) {
             window.location.reload();
         } else if (data.type === 'redirect') {
             editor.setReadOnly(true);
-            $('#rename-modal').modal({
+            $('#renameModal').modal({
                 backdrop: 'static',
                 keyboard: false
             });
@@ -112,7 +119,7 @@ var ShareJSDoc = function(viewModel, url, metadata) {
             }, 3000);
         } else if (data.type === 'delete') {
             editor.setReadOnly(true);
-            var deleteModal = $('#delete-modal');
+            var deleteModal = $('#deleteModal');
             deleteModal.on('hide.bs.modal', function() {
                 window.location.replace(data.redirect);
             });
