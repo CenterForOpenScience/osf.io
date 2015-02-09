@@ -335,7 +335,8 @@ class OsfStorageFileRecord(BaseFileObject):
         return count or 0
 
 
-identity = lambda value: value
+def identity(val):
+    return val
 metadata_fields = {
     # TODO: Add missing fields to WaterButler metadata
     # 'size': identity,
