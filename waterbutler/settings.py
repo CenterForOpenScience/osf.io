@@ -7,6 +7,38 @@ import logging.config
 PROJECT_NAME = 'waterbutler'
 PROJECT_CONFIG_PATH = '~/.cos'
 
+DEFAULT_LOGGING_CONFIG = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'console': {
+            'format': '[%(asctime)s][%(levelname)s][%(name)s]: %(message)s'
+        }
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'level': 'INFO',
+            'formatter': 'console'
+        },
+        'syslog': {
+            'class': 'logging.handlers.SysLogHandler',
+            'level': 'INFO'
+        }
+    },
+    'loggers': {
+        '': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False
+        }
+    },
+    'root': {
+        'level': 'INFO',
+        'handlers': ['console']
+    }
+}
+
 
 try:
     config_path = os.environ['{}_CONFIG'.format(PROJECT_NAME.upper())]
@@ -28,6 +60,5 @@ def get(key, default):
     return config.get(key, default)
 
 
-logging_config = get('LOGGING', None)
-if logging_config:
-    logging.config.dictConfig(logging_config)
+logging_config = get('LOGGING', DEFAULT_LOGGING_CONFIG)
+logging.config.dictConfig(logging_config)

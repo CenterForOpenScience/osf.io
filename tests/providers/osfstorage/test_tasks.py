@@ -1,15 +1,19 @@
 import os
+import json
 import asyncio
-import functools
 from unittest import mock
 
 import pytest
 
 from tests.utils import async
 
+from boto.glacier.exceptions import UnexpectedHTTPResponseError
+
 from waterbutler.providers.osfstorage import settings
+from waterbutler.providers.osfstorage.tasks import utils
 from waterbutler.providers.osfstorage.tasks import backup
 from waterbutler.providers.osfstorage.tasks import parity
+from waterbutler.providers.osfstorage.tasks import exceptions
 from waterbutler.providers.osfstorage import settings as osf_settings
 
 
@@ -36,7 +40,7 @@ class TestParityTask:
         monkeypatch.setattr(parity, '_parity_create_files', task)
 
         fut = parity.main('The Best', credentials, settings)
-        loop = asyncio.get_event_loop().run_until_complete(fut)
+        asyncio.get_event_loop().run_until_complete(fut)
 
         task.delay.assert_called_once_with('The Best', credentials, settings)
 
@@ -80,6 +84,31 @@ class TestParityTask:
             stream,
             path='/' + os.path.split(path)[1],
         )
+
+    def test_exceptions_get_raised(self, monkeypatch):
+        mock_sp_call = mock.Mock(return_value=7)
+        monkeypatch.setattr(utils.subprocess, 'call', mock_sp_call)
+        path = 'foo/bar/baz'
+        args = ['par2', 'c', '-r5', 'baz.par2', path]
+
+        with pytest.raises(exceptions.ParchiveError) as e:
+            utils.create_parity_files(path)
+
+            assert e.value == '{0} failed with code {1}'.format(' '.join(args), 7)
+
+            with open(os.devnull, 'wb') as DEVNULL:
+                mock_sp_call.assert_called_once_with(args, stdout=DEVNULL, stderr=DEVNULL)
+
+    def test_skip_empty_files(self, monkeypatch):
+        mock_stat = mock.Mock(return_value=mock.Mock(st_size=0))
+        mock_sp_call = mock.Mock()
+        monkeypatch.setattr(os, 'stat', mock_stat)
+        monkeypatch.setattr(utils.subprocess, 'call', mock_sp_call)
+        path = 'foo/bar/baz'
+
+        paths = utils.create_parity_files(path)
+        assert paths == []
+        assert not mock_sp_call.called
 
 
 class TestBackUpTask:
@@ -127,3 +156,46 @@ class TestBackUpTask:
                 'archive': 3
             },
         )
+
+    def test_upload_error_empty_file(self, monkeypatch):
+        mock_vault = mock.Mock()
+        mock_vault.name = 'ThreePoint'
+        mock_response = mock.Mock()
+        mock_response.status = 400
+        mock_response.read.return_value = json.dumps({
+            'status': 400,
+            'message': 'Invalid Content-Length: 0',
+        }).encode('utf-8')
+        error = UnexpectedHTTPResponseError(200, mock_response)
+        mock_vault.upload_archive.side_effect = error
+        mock_get_vault = mock.Mock()
+        mock_get_vault.return_value = mock_vault
+        mock_complete = mock.Mock()
+        monkeypatch.setattr(backup, 'get_vault', mock_get_vault)
+        monkeypatch.setattr(backup, '_push_archive_complete', mock_complete)
+
+        backup._push_file_archive('Triangles', None, None, {}, {})
+
+        mock_vault.upload_archive.assert_called_once_with('Triangles', description='Triangles')
+        assert not mock_complete.called
+
+    def test_upload_error(self, monkeypatch):
+        mock_vault = mock.Mock()
+        mock_vault.name = 'ThreePoint'
+        mock_response = mock.Mock()
+        mock_response.status = 400
+        mock_response.read.return_value = json.dumps({
+            'status': 400,
+            'message': 'Jean Valjean means nothing now',
+        }).encode('utf-8')
+        error = UnexpectedHTTPResponseError(200, mock_response)
+        mock_vault.upload_archive.side_effect = error
+        mock_get_vault = mock.Mock()
+        mock_get_vault.return_value = mock_vault
+        mock_complete = mock.Mock()
+        monkeypatch.setattr(backup, 'get_vault', mock_get_vault)
+        monkeypatch.setattr(backup, '_push_archive_complete', mock_complete)
+
+        with pytest.raises(UnexpectedHTTPResponseError):
+            backup._push_file_archive('Triangles', None, None, {}, {})
+        assert not mock_complete.called

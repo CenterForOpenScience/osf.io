@@ -8,9 +8,9 @@ import subprocess
 
 from celery.utils.log import get_task_logger
 
-from waterbutler.core import exceptions
 from waterbutler.tasks.app import app, client
 from waterbutler.providers.osfstorage import settings
+from waterbutler.providers.osfstorage.tasks import exceptions
 
 
 logger = get_task_logger(__name__)
@@ -38,21 +38,27 @@ def create_parity_files(file_path, redundancy=5):
     """
     :raise: `ParchiveError` if creation of parity files fails
     """
+    try:
+        stat = os.stat(file_path)
+        if not stat.st_size:
+            return []
+    except OSError as error:
+        raise exceptions.ParchiveError('Could not read file: {0}'.format(error.strerror))
     path, name = os.path.split(file_path)
     with open(os.devnull, 'wb') as DEVNULL:
-        ret_code = subprocess.call(
-            [
-                'par2',
-                'c',
-                '-r{0}'.format(redundancy),
-                os.path.join(path, '{0}.par2'.format(name)),
-                file_path,
-            ],
-            stdout=DEVNULL,
-            stderr=DEVNULL,
-        )
+        args = [
+            'par2',
+            'c',
+            '-r{0}'.format(redundancy),
+            os.path.join(path, '{0}.par2'.format(name)),
+            file_path,
+        ]
+
+        ret_code = subprocess.call(args, stdout=DEVNULL, stderr=DEVNULL)
+
         if ret_code != 0:
-            raise exceptions.ParchiveError()
+            raise exceptions.ParchiveError('{0} failed with code {1}'.format(' '.join(args), ret_code))
+
         return [
             os.path.abspath(fpath)
             for fpath in
