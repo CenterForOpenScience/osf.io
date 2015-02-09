@@ -22,7 +22,7 @@ python setup.py develop
 invoke server
 ```
 
-### testing configuration
+### testing configuration (optional)
 
 ```bash
 vim ~/.cos/waterbutler-test.json
