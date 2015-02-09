@@ -10,6 +10,9 @@ var collaborative = (typeof WebSocket !== 'undefined' && typeof sharejs !== 'und
 var ShareJSDoc = function(selector, url, metadata) {
     var wikiEditor = new WikiEditor(selector, url);
     var viewModel = wikiEditor.viewModel;
+    var deleteModal = $('#deleteModal');
+    var renameModal = $('#renameModal');
+    var permissionsModal = $('#permissionsModal');
 
     // Initialize Ace and configure settings
     var editor = ace.edit('editor');
@@ -90,42 +93,48 @@ var ShareJSDoc = function(selector, url, metadata) {
     socket.onmessage = function (message) {
         var data = JSON.parse(message.data);
         // Meta type is not built into sharejs; we pass it manually
-        if (data.type === 'meta') {
-            // Convert users object into knockout array
-            activeUsers = [];
-            for (var user in data.users) {
-                var userMeta = data.users[user];
-                userMeta.id = user;
-                activeUsers.push(userMeta);
-            }
-            viewModel.activeUsers(activeUsers);
-        } else if (data.type === 'lock') {
-            editor.setReadOnly(true);
-            $('#permissionsModal').modal({
-                backdrop: 'static',
-                keyboard: false
-            });
-        } else if (data.type === 'unlock') {
-            // TODO: Wait a certain number of seconds so they can read it?
-            window.location.reload();
-        } else if (data.type === 'redirect') {
-            editor.setReadOnly(true);
-            $('#renameModal').modal({
-                backdrop: 'static',
-                keyboard: false
-            });
-            setTimeout(function() {
-                window.location.replace(data.redirect);
-            }, 3000);
-        } else if (data.type === 'delete') {
-            editor.setReadOnly(true);
-            var deleteModal = $('#deleteModal');
-            deleteModal.on('hide.bs.modal', function() {
-                window.location.replace(data.redirect);
-            });
-            deleteModal.modal();
-        } else {
-            onmessage(message);
+        switch (data.type) {
+            case 'meta':
+                // Convert users object into knockout array
+                activeUsers = [];
+                for (var user in data.users) {
+                    var userMeta = data.users[user];
+                    userMeta.id = user;
+                    activeUsers.push(userMeta);
+                }
+                viewModel.activeUsers(activeUsers);
+                break;
+            case 'lock':
+                editor.setReadOnly(true);
+                permissionsModal.modal({
+                    backdrop: 'static',
+                    keyboard: false
+                });
+                break;
+            case 'unlock':
+                // TODO: Wait a certain number of seconds so they can read it?
+                window.location.reload();
+                break;
+            case 'redirect':
+                editor.setReadOnly(true);
+                renameModal.modal({
+                    backdrop: 'static',
+                    keyboard: false
+                });
+                setTimeout(function() {
+                    window.location.replace(data.redirect);
+                }, 3000);
+                break;
+            case 'delete':
+                editor.setReadOnly(true);
+                deleteModal.on('hide.bs.modal', function() {
+                    window.location.replace(data.redirect);
+                });
+                deleteModal.modal();
+                break;
+            default:
+                onmessage(message);
+                break;
         }
     };
 
@@ -152,7 +161,6 @@ var ShareJSDoc = function(selector, url, metadata) {
 
     // Subscribe to changes
     doc.subscribe();
-
 };
 
 module.exports = ShareJSDoc;

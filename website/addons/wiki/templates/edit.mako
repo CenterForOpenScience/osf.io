@@ -21,7 +21,7 @@
                             <div id="wmd-button-bar"></div>
                         </div>
                         <div class="col-lg-6 col-md-5">
-                            <div data-bind="fadeVisible: status() === 'connected'" style="float: right">
+                            <div data-bind="fadeVisible: status() === 'connected'" class="pull-right">
                                 <ul class="list-inline" data-bind="foreach: activeUsers">
                                     <!-- ko ifnot: id === '${user_id}' -->
                                         <li>
