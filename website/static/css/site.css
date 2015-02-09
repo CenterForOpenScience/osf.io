@@ -386,6 +386,14 @@ li.pointer {
     margin-top: 0;
 }
 
+/* Style for Ace wiki editor */
+.wiki-editor {
+    position: relative;
+    height: 300px;
+    border: solid;
+    border-width: 1px;
+}
+
 /* Make wiki images responsive */
 .wiki img{
   vertical-align: middle;
@@ -1146,7 +1154,7 @@ div.search-result  {
 }
 
 .wmd-button > span {
-    background-image: url(../vendor/pagedown/wmd-buttons.png);
+    background-image: url(../vendor/pagedown-ace/wmd-buttons.png);
     background-repeat: no-repeat;
     background-position: 0px 0px;
     width: 20px;
@@ -2034,6 +2042,17 @@ span#profileFullname{
     color: #738EA2;
 }
 
+.sharejs-info-btn {
+    background: none;
+    outline : 0 !important;
+    box-shadow: none;
+    color: #FFFFFF;
+}
+
+.sharejs-info-btn:hover {
+    color: #D3D3D3;
+    text-decoration: none;
+}
 
 #searchPageFullBar::-webkit-input-placeholder {
    color: #738EA2;

@@ -12,6 +12,11 @@
     "object-assign": "^2.0.0",
     "style-loader": "^0.8.3",
     "url-loader": "^0.5.5",
-    "webpack": "^1.4.13"
+    "webpack": "^1.4.13",
+    "share": "~0.7.3",
+    "express": "~4.10.0",
+    "livedb": "~0.4.8",
+    "livedb-mongo": "~0.4.1",
+    "ws": "~0.4.32"
   }
 }
