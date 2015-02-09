@@ -49,14 +49,18 @@ def serialize_metadata_hgrid(item, node):
     :param Node node: Root node to which the item is attached
     :param dict permissions: Permissions data from `get_permissions`
     """
-    return {
+    ret = {
         'path': item.path,
         'name': item.name,
         'ext': item.extension,
-        'version': len(item.versions),
         rubeus.KIND: get_item_kind(item),
         'downloads': item.get_download_count(),
     }
+
+    if isinstance(item, model.OsfStorageFileRecord):
+        ret['version'] = len(item.versions)
+
+    return ret
 
 
 def serialize_revision(node, record, version, index):
