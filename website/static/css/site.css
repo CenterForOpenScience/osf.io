@@ -1913,7 +1913,7 @@ span#profileFullname{
 
 
 #projectSubnav .navbar-collapse {
-    padding-left: 0; 
+    padding-left: 0;
     padding-right: 0;
 }
 
@@ -1940,7 +1940,7 @@ span#profileFullname{
     .osf-project-navbar li>a {
         padding-left: 30px;
         padding-right: 30px;
-    }   
+    }
     .osf-project-navbar a.project-title {
     }
     .project-nav {
@@ -1963,7 +1963,7 @@ span#profileFullname{
 @media (min-width: 768px) {
     .osf-navbar .navbar-nav>li>a, .osf-project-navbar li>a {
         padding-left: 7px;
-        padding-right: 7px;    
+        padding-right: 7px;
     }
     .navbar .search-query {
     width: 190px;
@@ -1988,7 +1988,7 @@ span#profileFullname{
 @media (min-width: 992px) {
     .osf-navbar .navbar-nav>li>a, .osf-project-navbar li>a {
         padding-left: 10px;
-        padding-right: 10px;    
+        padding-right: 10px;
     }
     .navbar .search-query {
         width: 360px;
@@ -2000,7 +2000,7 @@ span#profileFullname{
 @media (min-width: 1200px) {
     .osf-navbar .navbar-nav>li>a, .osf-project-navbar li>a {
         padding-left: 15px;
-        padding-right: 15px;    
+        padding-right: 15px;
     }
     .navbar .search-query {
     width: 270px;
@@ -2053,15 +2053,15 @@ span#profileFullname{
 }
 
 #searchPageFullBar:-moz-placeholder { /* Firefox 18- */
-   color: #738EA2;  
+   color: #738EA2;
 }
 
 #searchPageFullBar::-moz-placeholder {  /* Firefox 19+ */
-   color: #738EA2;  
+   color: #738EA2;
 }
 
-#searchPageFullBar:-ms-input-placeholder {  
-   color: #738EA2;  
+#searchPageFullBar:-ms-input-placeholder {
+   color: #738EA2;
 }
 #searchControls>.row {
     padding-top: 60px;
