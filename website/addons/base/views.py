@@ -232,12 +232,14 @@ def addon_view_or_download_file_legacy(**kwargs):
     elif kwargs.get('fid'):
         path = kwargs['fid']
 
-    if kwargs.get('provider'):
-        provider = kwargs['provider']
-    elif 'osffiles' in request.path:
+    if 'osffiles' in request.path:
         provider = 'osfstorage'
+    else:
+        provider = kwargs['provider']
 
     if 'download' in request.path:
+        action = 'download'
+    elif '/api/v1/' in request.path:
         action = 'download'
     else:
         action = 'view'
