@@ -2,34 +2,18 @@
 
 import mock
 from nose.tools import *  # noqa
-from factory import SubFactory, Sequence
 
 from tests.base import OsfTestCase
-from tests.factories import ModularOdmFactory, UserFactory, ProjectFactory, ExternalAccountFactory
+from tests.factories import UserFactory, ProjectFactory
+from website.addons.mendeley.tests.factories import (
+    MendeleyAccountFactory, MendeleyUserSettingsFactory,
+    MendeleyNodeSettingsFactory
+)
 
 import datetime
 
 from website.addons.mendeley import model
 from website.citations.models import CitationList
-
-
-class MendeleyAccountFactory(ExternalAccountFactory):
-    provider = 'mendeley'
-    provider_id = Sequence(lambda n: 'id-{0}'.format(n))
-    oauth_key = Sequence(lambda n: 'key-{0}'.format(n))
-    oauth_secret = Sequence(lambda n: 'secret-{0}'.format(n))
-
-
-class MendeleyUserSettingsFactory(ModularOdmFactory):
-    FACTORY_FOR = model.AddonMendeleyUserSettings
-
-    owner = SubFactory(UserFactory)
-
-
-class MendeleyNodeSettingsFactory(ModularOdmFactory):
-    FACTORY_FOR = model.AddonMendeleyNodeSettings
-
-    owner = SubFactory(ProjectFactory)
 
 
 class MendeleyProviderTestCase(OsfTestCase):

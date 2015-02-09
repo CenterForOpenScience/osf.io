@@ -11,6 +11,7 @@ from website.citations.models import Citation
 from website.citations.models import CitationList
 from website.oauth.models import ExternalProvider
 
+from . import utils
 from .api import APISession
 
 
@@ -25,11 +26,8 @@ class AddonMendeleyUserSettings(AddonUserSettingsBase):
     def to_json(self, user):
         rv = super(AddonMendeleyUserSettings, self).to_json(user)
         rv['accounts'] = [
-            {
-                'id': account._id,
-                'provider_id': account.provider_id,
-                'display_name': account.display_name,
-            } for account in self._get_connected_accounts()
+            utils.serialize_account(each)
+            for each in self._get_connected_accounts()
         ]
         return rv
 
@@ -67,6 +65,7 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
         # associate the user settings with this node's settings
         if user_settings not in self.associated_user_settings:
             self.associated_user_settings.append(user_settings)
+            self.save()
 
         user_settings.grant_oauth_access(
             node=self.owner,
@@ -94,24 +93,19 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
                 return True
         return False
 
-    def to_json(self, user):
-        accounts = {
+    def get_accounts(self, user):
+        accounts = [
             account for account
             in user.external_accounts
             if account.provider == 'mendeley'
-        }
-        if self.external_account:
-            accounts.add(self.external_account)
-
-        rv = super(AddonMendeleyNodeSettings, self).to_json(user)
-        rv['accounts'] = [
-            {
-                'id': account._id,
-                'provider_id': account.provider_id,
-                'display_name': account.display_name,
-            } for account in accounts
         ]
+        if self.external_account and self.external_account not in accounts:
+            accounts.append(self.external_account)
+        return accounts
 
+    def to_json(self, user):
+        rv = super(AddonMendeleyNodeSettings, self).to_json(user)
+        rv['accounts'] = [utils.serialize_account(each) for each in self.get_accounts(user)]
         return rv
 
 

@@ -9,6 +9,7 @@ from website.project.decorators import must_have_permission
 from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 
+from . import utils
 from .model import Mendeley
 
 
@@ -16,12 +17,9 @@ from .model import Mendeley
 def list_mendeley_accounts_user(auth, user_addon):
     return {
         'accounts': [
-            {
-                'id': account._id,
-                'provider_id': account.provider_id,
-                'display_name': account.display_name,
-            } for account in auth.user.external_accounts
-            if account.provider == 'mendeley'
+            utils.serialize_account(each)
+            for each in auth.user.external_accounts
+            if each.provider == 'mendeley'
         ]
     }
 
@@ -29,23 +27,9 @@ def list_mendeley_accounts_user(auth, user_addon):
 @must_have_addon('mendeley', 'node')
 @must_not_be_registration
 def list_mendeley_accounts_node(pid, auth, node, project, node_addon):
-    accounts = [
-        each for each in auth.user.external_accounts if each.provider == 'mendeley'
-    ]
-    if (
-        node_addon.external_account and
-        node_addon.external_account not in accounts
-    ):
-        accounts.append(node_addon.external_account)
-
+    accounts = node_addon.get_accounts(auth.user)
     return {
-        'accounts': [
-            {
-                'id': each._id,
-                'provider_id': each.provider_id,
-                'display_name': each.display_name,
-            } for each in accounts
-        ]
+        'accounts': [utils.serialize_account(each) for each in accounts],
     }
 
 @must_have_permission('write')
@@ -56,7 +40,7 @@ def list_citationlists_node(pid, account_id, auth, node, project, node_addon):
 
     account = ExternalAccount.load(account_id)
     if not account:
-        raise HTTPError(404)
+        raise HTTPError(http.NOT_FOUND)
 
     mendeley = Mendeley()
     mendeley.account = account
