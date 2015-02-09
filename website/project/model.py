@@ -2342,9 +2342,9 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         if permissions_changed:
             if ['read'] in permissions_changed.values():
-                for wiki_name in self.wiki_pages_current:
-                    wiki_page = self.get_wiki_page(wiki_name)
-                    wiki_page.migrate_uuid(self)
+                from website.addons.wiki.utils import migrate_uuid
+                for wiki_name in self.wiki_private_uuids:
+                    migrate_uuid(self, wiki_name)
 
             self.add_log(
                 action=NodeLog.PERMISSIONS_UPDATED,
