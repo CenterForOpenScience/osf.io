@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import os
-
-from modularodm import fields
+from modularodm import fields, Q
+from modularodm.exceptions import ModularOdmException
 from framework.auth.decorators import Auth
 
 from website.models import NodeLog
@@ -10,9 +9,10 @@ from website.addons.base import GuidFile
 from website.addons.base import exceptions
 from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
 
-from .api import Figshare
-from . import settings as figshare_settings
 from . import messages
+from .api import Figshare
+from . import exceptions as fig_exceptions
+from . import settings as figshare_settings
 
 
 class FigShareGuidFile(GuidFile):
@@ -21,16 +21,26 @@ class FigShareGuidFile(GuidFile):
     file_id = fields.StringField(index=True)
 
     @property
-    def file_url(self):
-        if self.article_id is None or self.file_id is None:
-            raise ValueError('Path field must be defined.')
-        return os.path.join(
-            'figshare',
-            'article',
-            self.article_id,
-            'file',
-            self.file_id,
-        )
+    def path(self):
+        return '/{}/{}'.format(self.article_id, self.file_id)
+
+    @property
+    def provider(self):
+        return 'figshare'
+
+    def enrich(self):
+        self._fetch_metadata(should_raise=True)
+
+        if self._metadata_cache['extra']['status'] == 'drafts':
+            raise fig_exceptions.FigshareIsDraftError(self)
+
+    @property
+    def version_identifier(self):
+        return ''
+
+    @property
+    def unique_identifier(self):
+        return '{}{}'.format(self.article_id, self.file_id)
 
 
 class AddonFigShareUserSettings(AddonUserSettingsBase):
@@ -73,6 +83,27 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
     user_settings = fields.ForeignField(
         'addonfigshareusersettings', backref='authorized'
     )
+
+    def find_or_create_file_guid(self, path):
+        # path should be /aid/fid
+        # split return ['', aid, fid]
+        _, article_id, file_id = path.split('/')
+        try:
+            return FigShareGuidFile.find_one(
+                Q('node', 'eq', self.owner) &
+                Q('file_id', 'eq', file_id) &
+                Q('article_id', 'eq', article_id)
+            ), False
+        except ModularOdmException:
+            pass
+        # Create new
+        new = FigShareGuidFile(
+            node=self.owner,
+            file_id=file_id,
+            article_id=article_id
+        )
+        new.save()
+        return new, True
 
     @property
     def embed_url(self):
@@ -155,11 +186,10 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
     def create_waterbutler_log(self, auth, action, metadata):
         if action in [NodeLog.FILE_ADDED, NodeLog.FILE_UPDATED]:
             name = metadata['name']
-            article_id = metadata['extra']['articleId']
-            file_id = metadata['extra']['fileId']
+            url = self.owner.web_url_for('addon_view_or_download_file', provider='figshare', path=metadata['path'])
             urls = {
-                'view': self.owner.web_url_for('figshare_view_file', aid=article_id, fid=file_id),
-                'download': self.owner.api_url_for('figshare_download_file', aid=article_id, fid=file_id),
+                'view': url,
+                'download': url + '?action=download'
             }
         elif action == NodeLog.FILE_REMOVED:
             name = metadata['path']
@@ -178,11 +208,6 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
                 },
             },
         )
-
-    def get_waterbutler_render_url(self, **kwargs):
-        article_id = kwargs['articleId']
-        file_id = kwargs['fileId']
-        return self.owner.web_url_for('figshare_view_file', aid=article_id, fid=file_id)
 
     def delete(self, save=False):
         super(AddonFigShareNodeSettings, self).delete(save=False)

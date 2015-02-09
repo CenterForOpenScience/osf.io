@@ -289,3 +289,123 @@ class TestCheckAuth(OsfTestCase):
         with assert_raises(HTTPError) as exc_info:
             views.check_access(self.node, None, 'download')
         assert_equal(exc_info.exception.code, 401)
+
+
+class TestAddonFileViews(OsfTestCase):
+    pass
+
+
+def assert_urls_equal(url1, url2):
+    furl1 = furl.furl(url1)
+    furl2 = furl.furl(url2)
+    for attr in ['scheme', 'host', 'port']:
+        setattr(furl1, attr, None)
+        setattr(furl2, attr, None)
+    assert_equal(furl1, furl2)
+
+
+class TestLegacyViews(OsfTestCase):
+
+    def setUp(self):
+        super(TestLegacyViews, self).setUp()
+        self.path = 'mercury.png'
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
+
+    def test_view_file_redirect(self):
+        url = '/{0}/osffiles/{1}/'.format(self.project._id, self.path)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 301)
+        expected_url = self.project.web_url_for(
+            'addon_view_or_download_file',
+            action='view',
+            path=self.path,
+            provider='osfstorage',
+        )
+        assert_urls_equal(res.location, expected_url)
+
+    def test_download_file_redirect(self):
+        url = '/{0}/osffiles/{1}/download/'.format(self.project._id, self.path)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 301)
+        expected_url = self.project.web_url_for(
+            'addon_view_or_download_file',
+            path=self.path,
+            action='download',
+            provider='osfstorage',
+        )
+        assert_urls_equal(res.location, expected_url)
+
+    def test_download_file_version_redirect(self):
+        url = '/{0}/osffiles/{1}/version/3/download/'.format(
+            self.project._id,
+            self.path,
+        )
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 301)
+        expected_url = self.project.web_url_for(
+            'addon_view_or_download_file',
+            version=3,
+            path=self.path,
+            action='download',
+            provider='osfstorage',
+        )
+        assert_urls_equal(res.location, expected_url)
+
+    def test_api_download_file_redirect(self):
+        url = '/api/v1/project/{0}/osffiles/{1}/'.format(self.project._id, self.path)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 301)
+        expected_url = self.project.web_url_for(
+            'addon_view_or_download_file',
+            path=self.path,
+            action='download',
+            provider='osfstorage',
+        )
+        assert_urls_equal(res.location, expected_url)
+
+    def test_api_download_file_version_redirect(self):
+        url = '/api/v1/project/{0}/osffiles/{1}/version/3/'.format(
+            self.project._id,
+            self.path,
+        )
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 301)
+        expected_url = self.project.web_url_for(
+            'addon_view_or_download_file',
+            version=3,
+            path=self.path,
+            action='download',
+            provider='osfstorage',
+        )
+        assert_urls_equal(res.location, expected_url)
+
+    def test_other_addon_redirect(self):
+        url = '/project/{0}/mycooladdon/files/{1}/'.format(
+            self.project._id,
+            self.path,
+        )
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 301)
+        expected_url = self.project.web_url_for(
+            'addon_view_or_download_file',
+            action='view',
+            path=self.path,
+            provider='mycooladdon',
+        )
+        assert_urls_equal(res.location, expected_url)
+
+    def test_other_addon_redirect_download(self):
+        url = '/project/{0}/mycooladdon/files/{1}/download/'.format(
+            self.project._id,
+            self.path,
+        )
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 301)
+        expected_url = self.project.web_url_for(
+            'addon_view_or_download_file',
+            path=self.path,
+            action='download',
+            provider='mycooladdon',
+        )
+        assert_urls_equal(res.location, expected_url)

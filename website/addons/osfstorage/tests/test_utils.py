@@ -135,19 +135,6 @@ class TestSerializeRevision(StorageTestCase):
             },
             'date': self.versions[0].date_created.isoformat(),
             'downloads': 2,
-            'urls': {
-                'view': self.project.web_url_for(
-                    'osf_storage_view_file',
-                    path=self.path,
-                    version=1,
-                ),
-                'download': self.project.web_url_for(
-                    'osf_storage_view_file',
-                    path=self.path,
-                    action='download',
-                    version=1,
-                ),
-            },
         }
         observed = utils.serialize_revision(
             self.project,

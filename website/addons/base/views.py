@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
+import codecs
 import httplib
 import functools
 
+import furl
 import itsdangerous
 from flask import request
 from flask import redirect
@@ -10,12 +12,15 @@ from flask import redirect
 from framework.auth import Auth
 from framework.sessions import Session
 from framework.exceptions import HTTPError
+from framework.render.tasks import build_rendered_html
 from framework.auth.decorators import must_be_logged_in, must_be_signed
 
 from website import settings
-from website.models import User, Node, NodeLog
 from website.project import decorators
-from website.project.decorators import must_be_valid_project
+from website.addons.base import exceptions
+from website.models import User, Node, NodeLog
+from website.project.utils import serialize_node
+from website.project.decorators import must_be_valid_project, must_be_contributor_or_public
 
 
 @decorators.must_have_permission('write')
@@ -75,6 +80,7 @@ def get_user_from_cookie(cookie):
 
 
 permission_map = {
+    'revisions': 'read',
     'metadata': 'read',
     'download': 'read',
     'upload': 'write',
@@ -201,19 +207,119 @@ def create_waterbutler_log(payload, **kwargs):
     return {'status': 'success'}
 
 
+def get_or_start_render(file_guid, start_render=True):
+    try:
+        file_guid.enrich()
+    except exceptions.AddonEnrichmentError as error:
+        return error.renderable_error
+
+    try:
+        return codecs.open(file_guid.mfr_cache_path, 'r', 'utf-8').read()
+    except IOError:
+        if start_render:
+            # Start rendering job if requested
+            build_rendered_html(file_guid.mfr_download_url, file_guid.mfr_cache_path, file_guid.mfr_temp_path)
+    return None
+
+
 @must_be_valid_project
-def get_waterbutler_render_url(**kwargs):
-    provider = request.args.get('provider')
+def addon_view_or_download_file_legacy(**kwargs):
+    query_params = request.args.to_dict()
+    node = kwargs.get('node') or kwargs['project']
+
+    if kwargs.get('path'):
+        path = kwargs['path']
+    elif kwargs.get('fid'):
+        path = kwargs['fid']
+
+    if 'osffiles' in request.path:
+        provider = 'osfstorage'
+    else:
+        provider = kwargs['provider']
+
+    if 'download' in request.path:
+        action = 'download'
+    elif '/api/v1/' in request.path:
+        action = 'download'
+    else:
+        action = 'view'
+
+    if kwargs.get('vid'):
+        query_params['version'] = kwargs['vid']
+
+    return redirect(
+        node.web_url_for(
+            'addon_view_or_download_file',
+            path=path,
+            provider=provider,
+            action=action,
+            **query_params
+        ),
+        code=httplib.MOVED_PERMANENTLY
+    )
+
+
+@must_be_valid_project
+@must_be_contributor_or_public
+def addon_view_or_download_file(auth, path, provider, **kwargs):
+    extras = request.args.to_dict()
+    mode = extras.pop('action', 'view')
     node = kwargs.get('node') or kwargs['project']
 
     node_addon = node.get_addon(provider)
 
-    if not node_addon:
+    if not path or not node_addon:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    try:
-        url = node_addon.get_waterbutler_render_url(**request.args.to_dict())
-    except TypeError:
+    if not path.startswith('/'):
+        path = '/' + path
+
+    file_guid, created = node_addon.find_or_create_file_guid(path)
+
+    if file_guid.guid_url != request.path:
+        return redirect(file_guid.guid_url)
+
+    file_guid.maybe_set_version(**extras)
+
+    if mode == 'download':
+        return redirect(file_guid.download_url)
+
+    return addon_view_file(auth, node, node_addon, file_guid, extras)
+
+
+def addon_view_file(auth, node, node_addon, file_guid, extras):
+    render_url = furl.furl(node.api_url_for('addon_render_file', path=file_guid.path[1:], provider=file_guid.provider))
+    render_url.args.update(extras)
+
+    resp = serialize_node(node, auth, primary=True)
+    resp.update({
+        'provider': file_guid.provider,
+        'render_url': render_url,
+        'file_path': file_guid.path,
+        'files_url': node.web_url_for('collect_file_trees'),
+        'rendered': get_or_start_render(file_guid, extras),
+        #NOTE: get_or_start_render must be called first to populate name
+        'file_name': getattr(file_guid, 'name', ''),
+    })
+
+    return resp
+
+
+@must_be_valid_project
+@must_be_contributor_or_public
+def addon_render_file(auth, path, provider, **kwargs):
+    node = kwargs.get('node') or kwargs['project']
+
+    node_addon = node.get_addon(provider)
+
+    if not path or not node_addon:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    return redirect(url)
+    if not path.startswith('/'):
+        path = '/' + path
+
+    file_guid, created = node_addon.find_or_create_file_guid(path)
+
+    file_guid.maybe_set_version(**request.args.to_dict())
+
+    return get_or_start_render(file_guid)
