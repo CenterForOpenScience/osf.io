@@ -120,6 +120,13 @@ def metadata_to_hgrid(item, node, permissions):
         'ext': os.path.splitext(filename)[1],
         rubeus.KIND: rubeus.FOLDER if item['is_dir'] else rubeus.FILE,
         'path': item['path'],
+        'urls': {
+            'folders': node.api_url_for(
+                'dropbox_hgrid_data_contents',
+                foldersOnly=1,
+                path=clean_path(item['path']),
+            ),
+        }
     }
     return serialized
 
