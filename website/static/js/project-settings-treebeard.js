@@ -68,7 +68,25 @@ function subscribe(id, event, notification_type) {
 }
 
 
+function displayParentNotificationType(item){
+    var notificationTypeDescriptions = {
+        'email_transactional': 'Emails',
+        'email_digest': 'Email Digest',
+        'adopt_parent': 'Adopt setting from parent project',
+        'none': 'None'
+    };
+
+    if (item.data.parent_notification_type) {
+        if (item.parent().parent().parent() === undefined) {
+            return "(" + notificationTypeDescriptions[item.data.parent_notification_type] + ")";
+        }
+    }
+    return "";
+}
+
+
 function ProjectNotifications(data) {
+
     //  Treebeard version
     var tbOptions = {
         divID: 'grid',
@@ -181,7 +199,9 @@ function ProjectNotifications(data) {
                                     subscribe(item.parent().data.node_id, item.data.title, item.data.notificationType)
                                 }},
                                 [
-                                    m("option", {value: "adopt_parent", selected: item.data.notificationType === "adopt_parent" ? "selected" : ""}, "Adopt setting from parent project"),
+                                    m("option", {value: "adopt_parent",
+                                                 selected: item.data.notificationType === "adopt_parent" ? "selected" : ""},
+                                                 "Adopt setting from parent project " + displayParentNotificationType(item)),
                                     m("option", {value: "none", selected : item.data.notificationType === "none" ? "selected": ""}, "None"),
                                     m("option", {value: "email_transactional",  selected : item.data.notificationType === "email_transactional" ? "selected": ""}, "Emails"),
                                     m("option", {value: "email_digest", selected : item.data.notificationType === "email_digest" ? "selected": ""}, "Email Digest")

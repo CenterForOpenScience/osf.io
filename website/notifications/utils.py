@@ -98,6 +98,11 @@ def format_data(user, node_ids, subscriptions_available, data):
                         if user in getattr(subscription, notification_type):
                             event['notificationType'] = notification_type
 
+            if event['notificationType'] == 'adopt_parent':
+                event['parent_notification_type'] = get_parent_notification_type(node_id, s, user)
+            else:
+                event['parent_notification_type'] = None
+
             data[index]['children'].append(event)
 
         if node.nodes:
@@ -106,6 +111,20 @@ def format_data(user, node_ids, subscriptions_available, data):
 
     return data
 
+
+def get_parent_notification_type(uid, event, user):
+    parent = Node.load(uid).node__parent
+    if parent:
+        for p in parent:
+            key = str(p._id + '_' + event)
+            try:
+                subscription = Subscription.find_one(Q('_id', 'eq', key))
+            except NoResultsFound:
+                return
+
+            for notification_type in settings.NOTIFICATION_TYPES:
+                if user in getattr(subscription, notification_type):
+                    return notification_type
 
 def format_user_and_project_subscriptions(user):
     return [
