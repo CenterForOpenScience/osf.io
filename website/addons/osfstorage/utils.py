@@ -165,10 +165,11 @@ def get_waterbutler_url(user, *path, **query):
         else request.cookies.get(site_settings.COOKIE_NAME)
     )
     url.args.update({
-        'token': '',
         'provider': 'osfstorage',
         'cookie': cookie,
     })
+    if 'view_only' in request.args:
+        url.args['view_only'] = request.args['view_only']
     url.args.update(query)
     return url.url
 

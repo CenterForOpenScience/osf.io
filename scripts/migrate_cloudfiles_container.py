@@ -36,6 +36,10 @@ def migrate_version(version):
         raise ValueError('Version is already in correct container')
     key = test_container.get_object(version.location['object'])
     key.copy(prod_container)
+    logger.info('Setting container of OsfStorageFileVersion {0} to {1}'.format(
+        version._id,
+        PROD_CONTAINER_NAME)
+    )
     version.location['container'] = PROD_CONTAINER_NAME
     version.save()
 
@@ -48,7 +52,7 @@ def get_targets():
 def main(dry_run):
     versions = get_targets()
     for version in versions:
-        logger.info('Migrating version {0!r}'.format(version))
+        logger.info('Migrating OsfStorageFileVersion {0}'.format(version._id))
         if not dry_run:
             migrate_version(version)
 
@@ -59,7 +63,8 @@ if __name__ == '__main__':
     dry_run = 'dry' in sys.argv
 
     # Log to file
-    script_utils.add_file_logger(logger, __file__)
+    if not dry_run:
+        script_utils.add_file_logger(logger, __file__)
 
     # Authenticate to Rackspace
     pyrax.settings.set('identity_type', 'rackspace')
