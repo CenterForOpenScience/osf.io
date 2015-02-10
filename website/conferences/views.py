@@ -99,8 +99,9 @@ def add_poster_by_email(conference, message):
     utils.upload_attachments(user, node, message.attachments)
 
     download_url = node.web_url_for(
-        'osf_storage_view_file',
+        'addon_view_or_download_file',
         path=message.attachments[0].filename,
+        provider='osfstorage',
         action='download',
         _absolute=True,
     )

@@ -90,6 +90,13 @@ var resolve = {
         'jquery.ui.sortable': staticPath('vendor/bower_components/jquery-ui/ui/jquery.ui.sortable.js'),
         // Dropzone doesn't have a proper 'main' entry in its bower.json
         'dropzone': staticPath('vendor/bower_components/dropzone/dist/dropzone.js'),
+        // Needed for ace code editor in wiki
+        'ace-noconflict': staticPath('vendor/bower_components/ace-builds/src-noconflict/ace.js'),
+        'ace-ext-language_tools': staticPath('vendor/bower_components/ace-builds/src-noconflict/ext-language_tools.js'),
+        'ace-mode-markdown': staticPath('vendor/bower_components/ace-builds/src-noconflict/mode-markdown.js'),
+        'pagedown-ace-converter': staticPath('vendor/pagedown-ace/Markdown.Converter.js'),
+        'pagedown-ace-sanitizer': staticPath('vendor/pagedown-ace/Markdown.Sanitizer.js'),
+        'pagedown-ace-editor': staticPath('vendor/pagedown-ace/Markdown.Editor.js'),
         // Also alias some internal libraries for easy access
         'fangorn': staticPath('js/fangorn.js'),
         'waterbutler': staticPath('js/waterbutler.js'),
@@ -135,7 +142,8 @@ var plugins = [
 var output = {
     path: './website/static/public/js/',
     // publicPath: '/static/', // used to generate urls to e.g. images
-    filename: '[name].[chunkhash].js'
+    filename: '[name].[chunkhash].js',
+    sourcePrefix: ''
 };
 
 module.exports = {

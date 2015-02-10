@@ -206,6 +206,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     # Tags for internal use
     system_tags = fields.StringField(list=True)
+    security_messages = fields.DictionaryField()
 
     # Per-project unclaimed user data:
     # Format: {

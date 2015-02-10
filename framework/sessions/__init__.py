@@ -6,6 +6,7 @@ import urlparse
 import bson.objectid
 import itsdangerous
 from werkzeug.local import LocalProxy
+from weakref import WeakKeyDictionary
 from flask import request
 from framework.flask import app, redirect
 
@@ -125,7 +126,6 @@ def create_session(response, data=None):
         return response
 
 
-from weakref import WeakKeyDictionary
 sessions = WeakKeyDictionary()
 session = LocalProxy(get_session)
 

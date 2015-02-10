@@ -5,8 +5,9 @@ import urlparse
 import itertools
 import httplib as http
 
-from modularodm import fields
 from github3 import GitHubError
+from modularodm import fields, Q
+from modularodm.exceptions import ModularOdmException
 
 from framework.auth import Auth
 from framework.mongo import StoredObject
@@ -30,10 +31,16 @@ class GithubGuidFile(GuidFile):
     path = fields.StringField(index=True)
 
     @property
-    def file_url(self):
-        if self.path is None:
-            raise ValueError('Path field must be defined.')
-        return os.path.join('github', 'file', self.path)
+    def provider(self):
+        return 'github'
+
+    @property
+    def version_identifier(self):
+        return 'ref'
+
+    @property
+    def unique_identifier(self):
+        return self._metadata_cache['extra']['fileSha']
 
 
 class AddonGitHubOauthSettings(StoredObject):
@@ -163,6 +170,20 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
     registration_data = fields.DictionaryField()
 
+    def find_or_create_file_guid(self, path):
+        try:
+            return GithubGuidFile.find_one(
+                Q('path', 'eq', path) &
+                Q('node', 'eq', self.owner)
+            ), False
+        except ModularOdmException:
+            pass
+
+        # Create new
+        new = GithubGuidFile(node=self.owner, path=path)
+        new.save()
+        return new, True
+
     def authorize(self, user_settings, save=False):
         self.user_settings = user_settings
         self.owner.add_log(
@@ -275,20 +296,16 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     def create_waterbutler_log(self, auth, action, metadata):
         path = metadata['path']
 
+        url = self.owner.web_url_for('addon_view_or_download_file', path=path, provider='github')
+
         if not metadata.get('extra'):
             sha = None
             urls = {}
         else:
             sha = metadata['extra']['commit']['sha']
             urls = {
-                'view': '{0}?ref={1}'.format(
-                    self.owner.web_url_for('github_view_file', path=path),
-                    sha
-                ),
-                'download': '{0}?ref={1}'.format(
-                    self.owner.web_url_for('github_download_file', path=path),
-                    sha
-                )
+                'view': '{0}?ref={1}'.format(url, sha),
+                'download': '{0}?action=download&ref={1}'.format(url, sha)
             }
 
         self.owner.add_log(
@@ -306,9 +323,6 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                 },
             },
         )
-
-    def get_waterbutler_render_url(self, path, branch=None, **kwargs):
-        return self.owner.web_url_for('github_view_file', path=path, branch=branch)
 
     #############
     # Callbacks #
