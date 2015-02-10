@@ -294,12 +294,9 @@ def node_forks(**kwargs):
 
 @must_be_valid_project
 @must_not_be_registration
-@must_have_permission('write')
+@must_be_logged_in
 def node_setting(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
-
-    if not node.can_edit(auth):
-        raise HTTPError(http.FORBIDDEN)
 
     ret = _view_project(node, auth, primary=True)
 

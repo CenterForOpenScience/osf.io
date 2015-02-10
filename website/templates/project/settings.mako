@@ -25,11 +25,16 @@
                 % if 'admin' in user['permissions'] and not node['is_registration']:
                     <li><a href="#configureCommenting">Configure Commenting</a></li>
                 % endif
+
                     <li><a href="#configureNotifications">Configure Notifications</a></li>
+
+                % if 'write' in user['permissions'] and not node['is_registration']:
                     <li><a href="#selectAddons">Select Add-ons</a></li>
+
                 % if addon_enabled_settings:
                     <li><a href="#configureAddons">Configure Add-ons</a></li>
                 % endif
+                %endif
             </ul>
         </div><!-- end sidebar -->
     </div>
@@ -107,6 +112,7 @@
             </div>
          % endif
 
+        % if 'write' in user['permissions']:
         <div class="panel panel-default">
             <span id="selectAddons"></span>
              <div class="panel-heading">
@@ -182,6 +188,8 @@
                 </div>
 
             % endif
+
+        % endif
 
     </div>
 
