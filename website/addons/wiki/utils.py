@@ -35,6 +35,48 @@ def get_sharejs_uuid(node, wname):
     )) if private_uuid else None
 
 
+def delete_share_doc(node, wname):
+    """Deletes share document and removes namespace from model."""
+
+    db = share_db()
+    sharejs_uuid = get_sharejs_uuid(node, wname)
+
+    db['docs'].remove({'_id': sharejs_uuid})
+    db['docs_ops'].remove({'name': sharejs_uuid})
+
+    wiki_key = to_mongo_key(wname)
+    del node.wiki_private_uuids[wiki_key]
+    node.save()
+
+
+def migrate_uuid(node, wname):
+    """Migrates uuid to new namespace."""
+
+    db = share_db()
+    old_sharejs_uuid = get_sharejs_uuid(node, wname)
+
+    broadcast_to_sharejs('lock', old_sharejs_uuid)
+
+    generate_private_uuid(node, wname)
+    new_sharejs_uuid = get_sharejs_uuid(node, wname)
+
+    doc_item = db['docs'].find_one({'_id': old_sharejs_uuid})
+    if doc_item:
+        doc_item['_id'] = new_sharejs_uuid
+        db['docs'].insert(doc_item)
+        db['docs'].remove({'_id': old_sharejs_uuid})
+
+    ops_items = [item for item in db['docs_ops'].find({'name': old_sharejs_uuid})]
+    if ops_items:
+        for item in ops_items:
+            item['_id'] = item['_id'].replace(old_sharejs_uuid, new_sharejs_uuid)
+            item['name'] = new_sharejs_uuid
+        db['docs_ops'].insert(ops_items)
+        db['docs_ops'].remove({'name': old_sharejs_uuid})
+
+    broadcast_to_sharejs('unlock', old_sharejs_uuid)
+
+
 def share_db():
     """Generate db client for sharejs db"""
     client = MongoClient(settings.DB_HOST, settings.DB_PORT)

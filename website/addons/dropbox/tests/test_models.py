@@ -1,21 +1,17 @@
 # -*- coding: utf-8 -*-
 import os
-import hashlib
 
 from nose.tools import *  # noqa (PEP8 asserts)
 
 from framework.auth import Auth
 from website.addons.dropbox.model import (
-    DropboxUserSettings, DropboxNodeSettings, DropboxFile
+    DropboxUserSettings, DropboxNodeSettings
 )
 from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory
-from website.addons.dropbox.tests.utils import MockDropbox
 from website.addons.dropbox.tests.factories import (
     DropboxUserSettingsFactory, DropboxNodeSettingsFactory,
-    DropboxFileFactory
 )
-from website.util import web_url_for
 from website.addons.base import exceptions
 
 
@@ -294,75 +290,3 @@ class TestNodeSettingsCallbacks(OsfTestCase):
         self.node_settings.reload()
         assert_true(self.node_settings.user_settings is None)
         assert_true(self.node_settings.folder is None)
-
-
-class TestDropboxGuidFile(OsfTestCase):
-
-    def test_verbose_url(self):
-        project = ProjectFactory()
-        file_obj = DropboxFile(node=project, path='foo.txt')
-        file_obj.save()
-        file_url = file_obj.url(guid=False)
-
-        url = web_url_for('dropbox_view_file',
-            pid=project._primary_key, path=file_obj.path, rev='')
-        assert_equal(url, file_url)
-
-    def test_guid_url(self):
-        file_obj = DropboxFileFactory()
-        result = file_obj.url(guid=True, rev='123')
-        assert_equal(result, '/{guid}/?rev=123'.format(guid=file_obj._primary_key))
-
-    def test_cache_file_name(self):
-        project = ProjectFactory()
-        path = 'My Project/foo.txt'
-        file_obj = DropboxFile(node=project, path=path)
-        mock_client = MockDropbox()
-        file_obj.update_metadata(client=mock_client)
-        file_obj.save()
-
-        result = file_obj.get_cache_filename(client=mock_client)
-        assert_equal(
-            result,
-            '{0}_{1}.html'.format(
-                hashlib.md5(file_obj.path).hexdigest(),
-                file_obj.metadata['rev'],
-            )
-        )
-
-    def test_cache_file_name_encode(self):
-        project = ProjectFactory()
-        path = 'à/ é éà'
-        file_obj = DropboxFile(node=project, path=path)
-        mock_client = MockDropbox()
-        file_obj.update_metadata(client=mock_client)
-        file_obj.save()
-
-        result = file_obj.get_cache_filename(client=mock_client)
-        assert_equal(
-            result,
-            '{0}_{1}.html'.format(
-                hashlib.md5(path).hexdigest(),
-                file_obj.metadata['rev'],
-            )
-        )
-
-    def test_download_url(self):
-        file_obj = DropboxFileFactory()
-        dl_url = file_obj.download_url(guid=False)
-        expected = file_obj.node.web_url_for('dropbox_download', path=file_obj.path,
-            rev='', _absolute=True)
-        assert_equal(dl_url, expected)
-
-    def test_download_url_guid(self):
-        file_obj = DropboxFileFactory()
-        dl_url = file_obj.download_url(guid=True, rev='123')
-        expected = os.path.join('/', file_obj._primary_key, 'download/') + "?rev=123"
-        assert_equal(dl_url, expected)
-
-    def test_update_metadata(self):
-        client = MockDropbox()
-        file_obj = DropboxFileFactory(metadata=None)
-        file_obj.update_metadata(client=client)
-        file_obj.save()
-        assert_equal(file_obj.metadata, client.metadata(file_obj.path, list=False))
