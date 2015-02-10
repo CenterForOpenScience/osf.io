@@ -116,21 +116,9 @@
                        <table id="content" width="90%" border="0" cellpadding="0" cellspacing="0" align="center">
                            <tr> 
                             <td> 
-                               <p class="lead text-center"> Hello {{ name }}, there has been recent activity on your OSF projects!</p>
+                               <p class="lead text-center"> Hello ${name}, there has been recent activity on your OSF projects!</p>
                                 <div class="comment-block div-center">
-                                <h3>Materials </h3>
-                                <table class="comment-row" border="0" cellpadding="10" cellspacing="0" width="100%" style="margin-left: 20px;"> 
-                                    <tr> 
-                                        <td width="40" class="icon"> <i class="fa fa-comment"></i></td>
-                                        <td> 
-                                            <span class="person">Sarah </span>
-                                            <span class="text"> commented on your component </span>
-                                            <span class="project">"Materials" </span> 
-                                            <span class="timestamp"> at 1:40PM on Saturday, June 12</span>
-                                            <span class="content"> "Check out the protocol I just uploaded."</span>
-                                        </td>
-                                    </tr>
-                                </table>
+                                    ${message}                                
                                 </div>  
                                </td>
                            </tr> 
