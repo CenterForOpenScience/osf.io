@@ -1,8 +1,7 @@
 import datetime
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
-from model import Subscription
-from model import DigestNotification
+from model import Subscription, DigestNotification
 from website import mails
 from website.models import Node
 from mako.lookup import Template

@@ -114,13 +114,13 @@ def format_user_and_project_subscriptions(user):
     return [
         {
             'title': 'User Notifications',
-            'id': user._id,
+            'node_id': user._id,
             'kind': 'heading',
             'children': format_user_subscriptions(user, [])
         },
         {
             'title': 'Project Notifications',
-            'id': '',
+            'node_id': '',
             'kind': 'heading',
             'children': format_data(user, get_configured_projects(user), None, [])
         }]

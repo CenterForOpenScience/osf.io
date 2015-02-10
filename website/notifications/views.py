@@ -12,13 +12,8 @@ def subscribe(auth):
     subscription = request.json
     event = subscription.get('event')
     notification_type = subscription.get('notification_type')
-
-    if event == 'comment_replies':
-        category = user._id
-    else:
-        category = subscription.get('id')
-
-    event_id = category + "_" + event
+    uid = subscription.get('id')
+    event_id = uid + "_" + event
 
     if notification_type == 'adopt_parent':
         try:
@@ -40,7 +35,7 @@ def subscribe(auth):
         except KeyExistsException:
             s = Subscription.find_one(Q('_id', 'eq', event_id))
 
-        s.object_id = category
+        s.object_id = uid
         s.event_name = event
         s.save()
 
