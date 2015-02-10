@@ -13,45 +13,60 @@ class BaseBoxMetadata(metadata.BaseMetadata):
     def provider(self):
         return 'box'
 
-    def build_path(self, path):
-        # TODO write a test for this
-        if path.lower().startswith(self._folder.lower()):
-            path = path[len(self._folder):]
-        return super().build_path(path)
-
 
 class BoxFolderMetadata(BaseBoxMetadata, metadata.BaseFolderMetadata):
 
     @property
     def name(self):
-        return os.path.split(self.raw['path'])[1]
+        return self.raw['name']
 
     @property
     def path(self):
-        return self.build_path(self.raw['path'])
+        return '/{}/'.format(self.raw['id'])
+
+    @property
+    def content_type(self):
+        return self.raw['type']
 
 
 class BoxFileMetadata(BaseBoxMetadata, metadata.BaseFileMetadata):
 
     @property
     def name(self):
-        return os.path.split(self.raw['path'])[1]
+        return self.raw['name']
 
     @property
     def path(self):
-        return self.build_path(self.raw['path'])
+        return '/{0}/{1}'.format(self.raw['id'], self.raw['name'])
 
     @property
     def size(self):
-        return self.raw['bytes']
+        try:
+            return self.raw['size']
+        except KeyError:
+            return None
 
     @property
     def modified(self):
-        return self.raw['modified']
+        try:
+            return self.raw['modified_at']
+        except KeyError:
+            return None 
+
+    @property
+    def parent(self):
+        try:
+            return self.raw['parent']['id']
+        except KeyError:
+            return None 
+
+    @property
+    def folder(self):
+        return self.settings['folder']
 
     @property
     def content_type(self):
-        return self.raw['mime_type']
+        return self.raw['type']
 
 
 # TODO dates!
@@ -59,19 +74,16 @@ class BoxRevision(BaseBoxMetadata, metadata.BaseFileRevisionMetadata):
 
     @property
     def size(self):
-        return self.raw['bytes']
+        return self.raw['size']
 
     @property
     def modified(self):
-        return self.raw['modified']
+        return self.raw['modified_at']
 
     @property
     def revision(self):
-        return self.raw['rev']
+        return self.raw['etag']
 
-    @property
-    def content_type(self):
-        return self.raw['mime_type']
 
     @property
     def extra(self):
