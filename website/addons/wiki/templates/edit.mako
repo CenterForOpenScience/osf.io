@@ -61,7 +61,7 @@
                            onclick=$(window).off('beforeunload')>
                 </div>
                 <p class="help-block">Preview</p>
-                <div id="wmd-preview" class="wmd-panel wmd-preview"></div>
+                <div id="markdown-it-preview" class="wmd-panel wmd-preview"></div>
                 <!-- Invisible textarea for form submission -->
                 <textarea name="content" style="visibility: hidden; height: 0px"
                           data-bind="value: currentText"></textarea>
