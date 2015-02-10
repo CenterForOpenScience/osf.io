@@ -18,7 +18,7 @@ function getDefaultOptions(path, provider) {
         path: path,
         provider: provider,
         cookie: getCookie(),
-        viewOnly: getViewOnly()
+        view_only: getViewOnly()
     };
 }
 
