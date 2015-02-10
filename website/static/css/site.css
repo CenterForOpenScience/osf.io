@@ -2103,3 +2103,6 @@ span#profileFullname{
 #selectNotifications .tb-head {
     display: none;
 }
+.tb-no-icon .tb-expand-icon-holder {
+    width : 0;
+}
