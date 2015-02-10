@@ -7,8 +7,12 @@ Note: Must have pyrax installed to run.
 
 Run dry run: python -m scripts.migrate_cloudfiles_container dry
 Run migration: python -m scripts.migrate_cloudfiles_container
-"""
 
+Log:
+    Run by sloria, jmcarp, and icereval on 2015-02-10 at 1:15 PM. 822 file version records
+    were copied and migrated. A migration log was saved to the migration-logs directory.
+"""
+import sys
 import logging
 
 import pyrax
@@ -36,6 +40,10 @@ def migrate_version(version):
         raise ValueError('Version is already in correct container')
     key = test_container.get_object(version.location['object'])
     key.copy(prod_container)
+    logger.info('Setting container of OsfStorageFileVersion {0} to {1}'.format(
+        version._id,
+        PROD_CONTAINER_NAME)
+    )
     version.location['container'] = PROD_CONTAINER_NAME
     version.save()
 
@@ -48,23 +56,26 @@ def get_targets():
 def main(dry_run):
     versions = get_targets()
     for version in versions:
-        logger.info('Migrating version {0!r}'.format(version))
+        logger.info('Migrating OsfStorageFileVersion {0}'.format(version._id))
         if not dry_run:
             migrate_version(version)
 
 
 if __name__ == '__main__':
-    init_app()
-    import sys
+    init_app(set_backends=True, routes=False)
     dry_run = 'dry' in sys.argv
 
     # Log to file
-    script_utils.add_file_logger(logger, __file__)
+    if not dry_run:
+        script_utils.add_file_logger(logger, __file__)
 
     # Authenticate to Rackspace
     pyrax.settings.set('identity_type', 'rackspace')
-    pyrax.set_credentials(storage_settings.USERNAME, storage_settings.API_KEY)
-    pyrax.set_setting('region', storage_settings.REGION)
+    pyrax.set_credentials(
+        storage_settings.USERNAME,
+        storage_settings.API_KEY,
+        region=storage_settings.REGION
+    )
 
     # Look up containers
     test_container = pyrax.cloudfiles.get_container(TEST_CONTAINER_NAME)

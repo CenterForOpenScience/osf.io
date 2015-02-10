@@ -5,6 +5,8 @@ from nose.tools import *  # noqa
 
 from tests.factories import AuthUserFactory
 
+import furl
+
 from framework import sessions
 from framework.flask import request
 
@@ -107,6 +109,27 @@ class TestGetDownloadUrl(StorageTestCase):
             '.gif',
         ])
         assert_equal(filename, expected)
+
+    def test_get_waterbutler_url(self):
+        user = AuthUserFactory()
+        path = ('test', 'endpoint')
+        query = {'some': 'field'}
+        test_url = utils.get_waterbutler_url(user, *path, **query)
+        url = furl.furl(test_url)
+
+        assert_equal(url.path.segments[0], 'test')
+        assert_equal(url.path.segments[1], 'endpoint')
+        assert_equal(url.args['some'], 'field')
+        assert_not_in('view_only', url.args)
+
+    def test_get_waterbutler_url_view_only(self):
+        user = AuthUserFactory()
+        path = ('test', 'endpoint')
+        query = {'view_only': 'secret_key'}
+        test_url = utils.get_waterbutler_url(user, *path, **query)
+        url = furl.furl(test_url)
+
+        assert_equal(url.args['view_only'], 'secret_key')
 
 
 class TestSerializeRevision(StorageTestCase):
