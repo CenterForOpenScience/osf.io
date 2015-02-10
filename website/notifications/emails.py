@@ -68,7 +68,7 @@ def email_transactional(subscribed_users, uid, event, **context):
     :param context: context variables for email template
     :return:
     """
-    template = event + '.txt.mako'
+    template = event + '.html.mako'
     subject = Template(email_templates[event]['subject']).render(**context)
     message = mails.render_message(template, **context)
 
@@ -78,6 +78,7 @@ def email_transactional(subscribed_users, uid, event, **context):
             mails.send_mail(
                 to_addr=email,
                 mail=mails.TRANSACTIONAL,
+                mimetype='html',
                 name=user.fullname,
                 subject=subject,
                 message=message)
