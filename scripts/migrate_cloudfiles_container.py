@@ -8,7 +8,7 @@ Note: Must have pyrax installed to run.
 Run dry run: python -m scripts.migrate_cloudfiles_container dry
 Run migration: python -m scripts.migrate_cloudfiles_container
 """
-
+import sys
 import logging
 
 import pyrax
@@ -58,8 +58,7 @@ def main(dry_run):
 
 
 if __name__ == '__main__':
-    init_app()
-    import sys
+    init_app(set_backends=True, routes=False)
     dry_run = 'dry' in sys.argv
 
     # Log to file
@@ -68,8 +67,11 @@ if __name__ == '__main__':
 
     # Authenticate to Rackspace
     pyrax.settings.set('identity_type', 'rackspace')
-    pyrax.set_credentials(storage_settings.USERNAME, storage_settings.API_KEY)
-    pyrax.set_setting('region', storage_settings.REGION)
+    pyrax.set_credentials(
+        storage_settings.USERNAME,
+        storage_settings.API_KEY,
+        region=storage_settings.REGION
+    )
 
     # Look up containers
     test_container = pyrax.cloudfiles.get_container(TEST_CONTAINER_NAME)
