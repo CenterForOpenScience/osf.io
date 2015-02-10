@@ -45,7 +45,7 @@ class TestMigrateNodeCategories(OsfTestCase):
         user2 = UserFactory.build(date_confirmed=None, date_last_login=today, is_registered=True)
         user1.save()
         user2.save()
-        
+
         user_list = User.find(Q('_id', 'eq', user1._id) | Q('_id', 'eq', user2._id))
         do_migration(user_list)
 
