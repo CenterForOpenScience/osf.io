@@ -151,6 +151,7 @@ def wiki_widget(**kwargs):
 
     more = False
     if wiki_page and wiki_page.html(node):
+        wiki_raw = wiki_page.content;
         wiki_html = wiki_page.html(node)
         if len(wiki_html) > 500:
             wiki_html = BeautifulSoup(wiki_html[:500] + '...', 'html.parser')
@@ -159,11 +160,13 @@ def wiki_widget(**kwargs):
             wiki_html = BeautifulSoup(wiki_html)
             more = False
     else:
+        wiki_raw = None
         wiki_html = None
 
     ret = {
         'complete': True,
-        'content': unicode(wiki_html) if wiki_html else None,
+        'wiki_content': unicode(wiki_html) if wiki_html else None,
+        'wiki_raw': wiki_raw,
         'more': more,
         'include': False,
     }

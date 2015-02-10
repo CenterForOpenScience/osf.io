@@ -18,6 +18,9 @@ var NodeControl = require('../nodeControl.js');
 
 var CitationWidget = require('../citations.js');
 
+var md = require('markdown-it')();
+require('truncate');
+
 var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
 
@@ -145,6 +148,14 @@ $(document).ready(function() {
 
     // Limit the maximum length that you can type when adding a tag
     $('#node-tags_tag').attr('maxlength', '128');
+
+    // Render the raw markdown of the wiki
+    var markdownElement = $('#markdown-it-render');
+    var rawText = markdownElement.text();
+    var renderedText = md.render(rawText);
+    var truncatedText = $.truncate(renderedText, {length: 400});
+    markdownElement.html(truncatedText);
+    markdownElement.show();
 
     // Remove delete UI if not contributor
     if (!window.contextVars.currentUser.canEdit || window.contextVars.node.isRegistration) {

@@ -19,7 +19,7 @@
         % elif not wiki_raw:
             <p><em>No wiki content</em></p>
         % else:
-            <div id="markdown-it-render" style="display: none">${wiki_raw}</div>
+            <div id="markdown-it-render" style="display: none">${wiki_raw | n}</div>
         % endif
     </div>
 </div>
