@@ -7,6 +7,10 @@ Note: Must have pyrax installed to run.
 
 Run dry run: python -m scripts.migrate_cloudfiles_container dry
 Run migration: python -m scripts.migrate_cloudfiles_container
+
+Log:
+    Run by sloria, jmcarp, and icereval on 2015-02-10 at 1:15 PM. 822 file version records
+    were copied and migrated. A migration log was saved to the migration-logs directory.
 """
 import sys
 import logging
