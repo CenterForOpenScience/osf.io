@@ -73,6 +73,11 @@ MAIL_SERVER = 'smtp.sendgrid.net'
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = ''  # Set this in local.py
 
+# Mandrill
+MANDRILL_USERNAME = None
+MANDRILL_PASSWORD = None
+MANDRILL_MAIL_SERVER = None
+
 # Mailchimp
 MAILCHIMP_API_KEY = None
 MAILCHIMP_WEBHOOK_SECRET_KEY = 'CHANGEME'  # OSF secret key to ensure webhook is secure
@@ -98,6 +103,7 @@ MFR_TIMEOUT = 30000
 
 # TODO: Override in local.py in production
 USE_TOKU_MX = True
+DB_HOST = 'localhost'
 DB_PORT = os_env.get('OSF_DB_PORT', 27017)
 DB_NAME = 'osf20130903'
 DB_USER = None

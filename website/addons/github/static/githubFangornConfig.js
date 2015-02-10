@@ -5,6 +5,7 @@ var m = require('mithril');
 
 var Fangorn = require('fangorn');
 var waterbutler = require('waterbutler');
+var URI = require('uri.js/src/URI.js');
 
 
 function _uploadUrl(item, file) {
@@ -64,7 +65,7 @@ function _fangornActionColumn (item, col){
 
     function _downloadEvent (event, item, col) {
         event.stopPropagation();
-        window.location = waterbutler.buildTreeBeardDownload(item, {ref: item.data.extra.fileSha});
+        window.location = waterbutler.buildTreeBeardDownload(item, {fileSha: item.data.extra.fileSha});
     }
 
     // Download Zip File
@@ -168,20 +169,19 @@ function _fangornGithubTitle(item, col)  {
         if (item.kind === 'file' && item.data.permissions.view) {
             return m('span',[
                 m('github-name', {
-                onclick: function() {
-                    var params = $.param(
-                        $.extend(
-                          {
-                              provider: item.data.provider,
-                              path: item.data.path.substring(1),
-                              branch: item.data.branch
-                          },
-                          item.data.extra || {}
-                        )
-                    );
-                    window.location = item.data.nodeApiUrl + 'waterbutler/files/?' + params;
-                },'data-toggle': 'tooltip', title: 'View file', 'data-placement': 'right'
-            }, item.data.name)]);
+                    onclick: function() {
+                        var redir = new URI(item.data.nodeUrl);
+                        window.location = new URI(item.data.nodeUrl)
+                            .segment('files')
+                            .segment(item.data.provider)
+                            .segment(item.data.path.substring(1))
+                            .search({branch: item.data.branch})
+                            .toString();
+                    },
+                    'data-toggle': 'tooltip',
+                    title: 'View file',
+                    'data-placement': 'right'
+                }, item.data.name)]);
         } else {
             return m('span', item.data.name);
         }

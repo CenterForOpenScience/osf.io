@@ -23,6 +23,14 @@ class DataverseFile(GuidFile):
     def file_url(self):
         return os.path.join('dataverse', 'file', self.file_id)
 
+    @property
+    def deep_url(self):
+        if self.node is None:
+            raise ValueError('Node field must be defined.')
+        return os.path.join(
+            self.node.deep_url, self.file_url,
+        )
+
     @classmethod
     def get_or_create(cls, node, path):
         """Get or create a new file record. Return a tuple of the form (obj, created)

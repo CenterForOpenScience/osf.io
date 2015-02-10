@@ -99,8 +99,8 @@ class CitationStyle(StoredObject):
     date_parsed = fields.DateTimeField(default=datetime.datetime.utcnow,
                                        required=True)
 
-    short_title = fields.StringField()
-    summary = fields.StringField()
+    short_title = fields.StringField(required=False)
+    summary = fields.StringField(required=False)
 
     def to_json(self):
         return {

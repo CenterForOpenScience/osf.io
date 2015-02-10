@@ -1,5 +1,5 @@
 import datetime
-from nose.tools import *
+from nose.tools import *  # noqa
 
 from scripts import parse_citation_styles
 from website import citations
@@ -33,7 +33,7 @@ class CitationsTestCase(OsfTestCase):
 
     @requires_csl_styles
     def test_render_bibtex(self):
-        """render a node citation as BibTeX"""
+        # render a node citation as BibTeX
         expected = bibtex_template.format(
             id='_'.join((self.node.creator.family_name.lower(),
                          str(self.node.logs[-1].date.year))),
@@ -53,7 +53,7 @@ class CitationsTestCase(OsfTestCase):
 
 class CitationsUtilsTestCase(OsfTestCase):
     def test_datetime_to_csl(self):
-        """Convert a datetime instance to csl's date-variable schema"""
+        # Convert a datetime instance to csl's date-variable schema
         now = datetime.datetime.utcnow()
 
         assert_equal(
@@ -73,7 +73,7 @@ class CitationsNodeTestCase(OsfTestCase):
         User.remove()
 
     def test_csl_single_author(self):
-        """Nodes with one contributor generate valid CSL-data"""
+        # Nodes with one contributor generate valid CSL-data
         assert_equal(
             self.node.csl,
             {
@@ -91,11 +91,10 @@ class CitationsNodeTestCase(OsfTestCase):
         )
 
     def test_csl_multiple_authors(self):
-        """Nodes with multiple contributors generate valid CSL-data"""
+        # Nodes with multiple contributors generate valid CSL-data
         user = UserFactory()
         self.node.add_contributor(user)
         self.node.save()
-
 
         assert_equal(
             self.node.csl,
@@ -130,7 +129,7 @@ class CitationsUserTestCase(OsfTestCase):
         User.remove()
 
     def test_user_csl(self):
-        """Convert a User instance to csl's name-variable schema"""
+        # Convert a User instance to csl's name-variable schema
         assert_equal(
             self.user.csl_name,
             {
@@ -152,7 +151,7 @@ class CitationsViewsTestCase(OsfTestCase):
 
     @requires_csl_styles
     def test_list_styles(self):
-        """Response includes a list of available citation styles"""
+        # Response includes a list of available citation styles
         response = self.app.get(api_url_for('list_citation_styles'))
 
         assert_true(response.json)
@@ -168,7 +167,7 @@ class CitationsViewsTestCase(OsfTestCase):
 
     @requires_csl_styles
     def test_citation_view(self):
-        """Response includes a valid text citation in the given format"""
+        # Response includes a valid text citation in the given format
         node = ProjectFactory(is_public=True)
         response = self.app.get(api_url_for('node_citation',
                                             pid=node._id,
