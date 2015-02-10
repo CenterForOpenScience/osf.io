@@ -12,6 +12,7 @@ from website import settings
 from website.language import ERROR_PREFIX
 
 from framework.tasks import app
+from framework.render import exceptions
 from framework.render.core import save_to_file_or_error
 from framework.render.core import render_is_done_or_happening
 
@@ -61,20 +62,26 @@ def _build_rendered_html(download_url, cache_path, temp_path):
     ensure_path(os.path.split(temp_path)[0])
     ensure_path(os.path.split(cache_path)[0])
 
-    save_to_file_or_error(download_url, temp_path)
+    with codecs.open(cache_path, 'w', 'utf-8') as render_result_cache:
+        try:
+            save_to_file_or_error(download_url, temp_path)
 
-    with codecs.open(temp_path) as file_pointer:
-        with codecs.open(cache_path, 'w', 'utf-8') as write_file_pointer:
-            # Render file
-            try:
-                render_result = mfr.render(file_pointer, src=download_url)
-            except MFRError as err:
-                rendered = render_mfr_error(err)
-            else:
-                rendered = _build_html(render_result)
+            with codecs.open(temp_path) as temp_file:
+                # Render file
+                render_result = mfr.render(temp_file, src=download_url)
 
+            #attach additional assets
+            rendered = _build_html(render_result)
             # Cache rendered content
-            write_file_pointer.write(rendered)
+            render_result_cache.write(rendered)
+
+        except exceptions.RenderNotPossibleException as e:
+            # Write out unavoidable errors
+            render_result_cache.write(e.renderable_error)
+
+        except MFRError as err:
+            rendered = _build_html(render_mfr_error(err))
+            render_result_cache.write(rendered)
 
     # Cleanup when we're done
     os.remove(temp_path)
