@@ -19,21 +19,22 @@
                     </form>
                 </span>
             </div>
-            <div class="col-sm-4">
-                <span class = "title">
-                    <span class = "name-container" id="nc-{{theItem.node_id}}">
-                          {{#if theItem.isFolder}}{{{ theItem.name }}}{{/if}}
-                          {{#unless theItem.isFolder}}<a href="{{ theItem.urls.fetch }}">{{{ theItem.name }}}</a>{{#if theItem.isRegistration}} (Registration){{/if}}
-                          {{/unless}}
-                          {{#unless theItem.isDashboard}}{{#unless theItem.isRegistration}}{{#if theItem.permissions.edit}}
-                              <button id="rename-node-{{theItem.node_id}}" class="editableControl dker btn btn-xs">
-                                <i class="icon icon-pencil" style="font-size: 11px;"></i> Edit</button>
-                          {{/if}}{{/unless}}{{/unless}}
-                    </span>
-
-                </span>
-            </div>
-            <div class="col-sm-8">
+            {{#if theItem.isFolder}}
+                        <div class="col-md-5">
+                            <span class = "title">
+                                <span class = "name-container" id="nc-{{theItem.node_id}}">
+                                      {{#if theItem.isFolder}}{{{ theItem.name }}}{{/if}}
+                                      {{#unless theItem.isFolder}}<a href="{{ theItem.urls.fetch }}">{{{ theItem.name }}}</a>{{#if theItem.isRegistration}} (Registration){{/if}}
+                                      {{/unless}}
+                                      {{#unless theItem.isDashboard}}{{#unless theItem.isRegistration}}{{#if theItem.permissions.edit}}
+                                          <button id="rename-node-{{theItem.node_id}}" class="editableControl dker btn btn-xs">
+                                            <i class="icon icon-pencil" style="font-size: 11px;"></i> Edit</button>
+                                      {{/if}}{{/unless}}{{/unless}}
+                                </span>
+                            </span>
+                        </div>
+            {{/if}}
+            <div class="col-md-7 ">
                 {{#if theItem.isFolder}}
                     <div class = "organize-project-controls pull-right">
                         <div id = "buttons{{theItem.node_id}}">
@@ -77,19 +78,36 @@
                         </div>
                     </div>
                 {{/if}}
-                {{#unless theItem.isFolder}}
-                    {{#if theItem.parentIsFolder}}
-                        {{#unless parentIsSmartFolder}}
-                            <div class = "organize-project-controls pull-right">
-                                <div id = "buttons{{theItem.node_id}}">
-                                    <div class="orgnaize-btn btn btn-sm btn-default" id="remove-link-{{theItem.node_id}}">Remove from folder</div>
-                                </div>
-                            </div>
-                        {{/unless}}
-                    {{/if}}
-                {{/unless}}
             </div>
         {{/if}}
+
+        {{#unless theItem.isFolder}}
+            {{#if theItem.parentIsFolder}}
+                {{#unless parentIsSmartFolder}}
+                    <div class="col-sm-7 col-md-8">
+                        <span class = "title">
+                            <span class = "name-container" id="nc-{{theItem.node_id}}">
+                                  {{#if theItem.isFolder}}{{{ theItem.name }}}{{/if}}
+                                  {{#unless theItem.isFolder}}<a href="{{ theItem.urls.fetch }}">{{{ theItem.name }}}</a>{{#if theItem.isRegistration}} (Registration){{/if}}
+                                  {{/unless}}
+                                  {{#unless theItem.isDashboard}}{{#unless theItem.isRegistration}}{{#if theItem.permissions.edit}}
+                                      <button id="rename-node-{{theItem.node_id}}" class="editableControl dker btn btn-xs">
+                                        <i class="icon icon-pencil" style="font-size: 11px;"></i> Edit</button>
+                                  {{/if}}{{/unless}}{{/unless}}
+                            </span>
+                        </span>
+                    </div>
+                    <div class="col-sm-5 col-md-4">
+                        <div class = "organize-project-controls pull-right">
+                            <div id = "buttons{{theItem.node_id}}">
+                                <div class="orgnaize-btn btn btn-sm btn-default" id="remove-link-{{theItem.node_id}}">Remove from folder</div>
+                            </div>
+                        </div>
+                    </div>
+                {{/unless}}
+            {{/if}}
+        {{/unless}}
+
 
         {{#unless theItem.parentIsFolder}}
             {{#unless theItem.isDashboard}}

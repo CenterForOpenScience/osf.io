@@ -19,7 +19,7 @@
                         </a>
                     <!-- /ko -->
                 </h3>
-                % if 'admin' in user['permissions']:
+                % if 'admin' in user['permissions'] and not node['is_registration']:
                     <p>Drag and drop contributors to change listing order.</p>
                 % endif
                 <table id="manageContributorsTable" class="table">
@@ -127,7 +127,10 @@
                             <a data-bind="text: creator.fullname, attr: {href: creator.url}" class="overflow-block" style="width: 300px"></a>
                         </td>
                         <td class="col-sm-1">
-                            <span data-bind="text: anonymousDisplay"></span>
+                            <span data-bind="html: anonymousDisplay"></span>
+                            <!-- ko if: $root.nodeIsPublic && anonymous -->
+                            <i data-bind="tooltip: {title: 'Public projects are not anonymized.'}" class="icon-question-sign icon-sm"></i>
+                            <!-- /ko -->
                         </td>
                         <td class="col-sm-0">
                             <a data-bind="click: $root.removeLink, tooltip: {title: removeLink}">

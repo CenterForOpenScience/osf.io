@@ -240,6 +240,23 @@ def mongorestore(path, drop=False):
     run(cmd, echo=True)
 
 
+@task
+def sharejs(host=None, port=None, db_host=None, db_port=None, db_name=None):
+    """Start a local ShareJS server."""
+    if host:
+        os.environ['SHAREJS_SERVER_HOST'] = host
+    if port:
+        os.environ['SHAREJS_SERVER_PORT'] = port
+    if db_host:
+        os.environ['SHAREJS_DB_HOST'] = db_host
+    if db_port:
+        os.environ['SHAREJS_DB_PORT'] = db_port
+    if db_name:
+        os.environ['SHAREJS_DB_NAME'] = db_name
+    share_server = os.path.join(settings.ADDON_PATH, 'wiki', 'shareServer.js')
+    run("node {0}".format(share_server))
+
+
 @task(aliases=['celery'])
 def celery_worker(level="debug"):
     """Run the Celery process."""
@@ -476,13 +493,16 @@ def setup():
 @task
 def analytics():
     from website.app import init_app
+    import matplotlib
+    matplotlib.use('Agg')
     init_app()
+    from scripts import metrics
     from scripts.analytics import (
         logs, addons, comments, links, watch, email_invites,
         permissions, profile, benchmarks
     )
     modules = (
-        logs, addons, comments, links, watch, email_invites,
+        metrics, logs, addons, comments, links, watch, email_invites,
         permissions, profile, benchmarks
     )
     for module in modules:
@@ -683,3 +703,11 @@ def generate_self_signed(domain):
         ' -keyout {0}.key -out {0}.crt'
     ).format(domain)
     run(cmd)
+
+@task
+def update_citation_styles():
+    from scripts import parse_citation_styles
+    run('git submodule init')
+    run('git submodule update')
+    total = parse_citation_styles.main()
+    print("Parsed {} styles".format(total))

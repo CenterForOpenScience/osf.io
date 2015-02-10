@@ -4,6 +4,11 @@
 * the viewmodels for each of the individual onboarding widgets.
 */
 'use strict';
+
+// CSS
+require('../css/onboarding.css');
+require('../css/typeahead.css');
+
 var Dropzone = require('dropzone');
 var waterbutler = require('waterbutler');
 var Handlebars = require('handlebars');
@@ -441,7 +446,7 @@ function OBUploaderViewModel(params) {
         self.showProgress(true);
         self.dropzone.options.url = function(files) {
             //Files is always an array but we only support uploading a single file at once
-            var file = files[0]
+            var file = files[0];
             return waterbutler.buildUploadUrl('/', 'osfstorage', selected.id, file);
         };
         self.dropzone.processQueue(); // Tell Dropzone to process all queued files.
@@ -503,6 +508,8 @@ function OBUploaderViewModel(params) {
         //in mib
         maxFilesize: 128,
 
+        acceptDirectories: false,
+
         method: 'PUT',
         uploadprogress: function(file, progress) { // progress bar update
             self.progress(progress);
@@ -529,11 +536,10 @@ function OBUploaderViewModel(params) {
                 }
 
                 // Use OSF-provided error message if possible
-                // Otherwise, use dropzone's message
+                // Otherwise, use generic message
                 var msg = message.message_long || message;
                 if (msg === 'Server responded with 0 code.' || msg.indexOf('409') !== -1) {
-                    msg = 'Unable to upload file. Another upload with the ' +
-                        'same name may be pending; please try again in a moment.';
+                    msg = 'Could not upload file. The file may be invalid.';
                 }
                 self.changeMessage(msg, 'text-danger');
             });

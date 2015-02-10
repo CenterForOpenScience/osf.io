@@ -13,6 +13,11 @@ var Bloodhound = require('exports?Bloodhound!typeahead.js');
 var moment = require('moment');
 var Raven = require('raven-js');
 
+// CSS
+require('../css/projectorganizer.css');
+require('../css/typeahead.css');
+require('../css/fangorn.css');
+
 var $osf = require('osfHelpers');
 
 // copyMode can be 'copy', 'move', 'forbidden', or null.
@@ -135,7 +140,7 @@ function createProjectDetailHTMLFromTemplate(theItem) {
 
 function createBlankProjectDetail(message) {
     var text = message || 'Select a row to view further actions.';
-    $detailDiv.html('<div class="row"> <div class="col-xs-12"> <i class="text-muted text-center po-placeholder"> ' + text + ' </i> </div> </div>');
+    $detailDiv.html('<div class="row text-muted "> <div class="col-xs-8"> <i class="text-center po-placeholder"> ' + text + ' </i> </div> <div class="col-xs-4"><i class="po-placeholder pull-right"> No Actions </i> </div>');
 }
 
 function triggerClickOnItem(item, force) {
@@ -374,6 +379,7 @@ function _showProjectDetails(event, item, col) {
             $('#rnc-' + theItem.node_id).hide();
             $('#findNode' + theItem.node_id).hide();
             $('#afc-' + theItem.node_id).show();
+            $('#add-folder-input' + theItem.node_id).focus();
         });
         $('#add-folder-input' + theItem.node_id).bind('keyup', function () {
             var contents = $.trim($(this).val());
@@ -411,6 +417,7 @@ function _showProjectDetails(event, item, col) {
             $('#findNode' + theItem.node_id).hide();
             $('#nc-' + theItem.node_id).hide();
             $('#rnc-' + theItem.node_id).css({'display':'inline-block', 'width' : '100%'});
+            $('#rename-node-input' + theItem.node_id).focus();
         });
         $('#rename-node-input' + theItem.node_id).bind('keyup', function () {
             var contents = $.trim($(this).val());
@@ -446,9 +453,10 @@ function _showProjectDetails(event, item, col) {
             $('#afc-' + theItem.node_id).hide();
             $('#rnc-' + theItem.node_id).hide();
             $('#findNode' + theItem.node_id).show();
+            $('#input' + theItem.node_id).focus();
         });
     } else {
-        createBlankProjectDetail('Smart folders don\'t have any actions.');
+        createBlankProjectDetail(theItem.name);
     }
 }
 
@@ -841,7 +849,7 @@ function filterRowsNotInParent(rows) {
         return this.multiselected;
     }
     var i, newRows = [],
-        originalRow = this.find(this.selected),
+        originalRow = this.find(this.multiselected[0].id),
         originalParent,
         currentItem;
     if (typeof originalRow !== "undefined") {
@@ -895,7 +903,7 @@ function _poOver(event, ui) {
     var items = this.multiselected.length === 0 ? [this.find(this.selected)] : this.multiselected,
         folder = this.find($(event.target).attr('data-id')),
         dragState = dragLogic.call(this, event, items, ui);
-    $('.tb-row').removeClass('tb-h-success po-hover po-hover-multiselect');
+    $('.tb-row').removeClass('tb-h-success po-hover');
     if (dragState !== 'forbidden') {
         $('.tb-row[data-id="' + folder.id + '"]').addClass('tb-h-success');
     } else {

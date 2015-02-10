@@ -120,7 +120,7 @@ function _fangornActionColumn (item, col) {
             css : 'btn btn-info btn-xs',
             onclick: _downloadEvent
         });
-        if (item.data.state === 'draft' && item.data.permissions.edit) {
+        if (item.parent().data.state === 'draft' && item.data.permissions.edit) {
             buttons.push({
                 name: '',
                 tooltip : 'Delete',
@@ -131,12 +131,11 @@ function _fangornActionColumn (item, col) {
             });
         }
     }
-    return m('.btn-group', [
-            buttons.map(function(btn){
+    return buttons.map(function(btn){
                 return m('i', { 'data-col' : item.id, 'class' : btn.css, 'data-toggle' : 'tooltip', title : btn.tooltip, 'data-placement': 'bottom',  style : btn.style, 'onclick' : function(event){ btn.onclick.call(self, event, item, col); } },
                     [ m('span', { 'class' : btn.icon}, btn.name) ]);
-            })
-    ]);
+            });
+    
 }
 
 function _fangornDataverseTitle(item, col) {

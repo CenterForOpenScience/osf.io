@@ -55,16 +55,16 @@ def main():
     user = models.User.load(USER_ID)
     cutoff = datetime.datetime.utcnow() - TIME_OFFSET
     result = run_map_reduce(query={'date': {'$gt': cutoff}})
-    sio, nchar = utils.make_csv(
+    sio = utils.make_csv(
         (
             (row['_id'], row['value'])
             for row in result.find().sort([('value', pymongo.DESCENDING)])
         ),
         ['name', 'count'],
     )
-    utils.send_file(app, FILE_NAME, CONTENT_TYPE, sio, nchar, node, user)
+    utils.send_file(app, FILE_NAME, CONTENT_TYPE, sio, node, user)
 
 
 if __name__ == '__main__':
-    app = init_app()
+    init_app()
     main()

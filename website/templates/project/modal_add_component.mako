@@ -1,19 +1,24 @@
-  <!-- New Component Modal -->
-  <div class="modal fade" id="newComponent">
+<!-- New Component Modal -->
+<div class="modal fade" id="newComponent">
     <div class="modal-dialog">
         <div class="modal-content">
-        <form class="form" role="form" action="${node['url']}newnode/" method="post" id="componentForm">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-              <h3 class="modal-title">Add Component</h3>
-            </div><!-- end modal-header -->
-            <div class="modal-body">
+            <form class="form" role="form" action="${node['url']}newnode/" method="post" id="componentForm">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h3 class="modal-title">Add Component</h3>
+                </div><!-- end modal-header -->
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                      Note: Beginning on 2015/02/20, project administrators will have read-only
+                      access to all sub-components of the project, even if they are not listed as
+                      a contributor.
+                    </div>
                     <div id="alert" style="padding-bottom:10px;color:blue"></div>
-                    <div class='form-group'>
+                    <div class="form-group">
                         <input id="title" placeholder="Component Title" name="title" type="text" class='form-control'>
                     </div>
-                    <div class='form-group'>
-                        <select id="category" name="category" class='form-control'>
+                    <div class="form-group">
+                        <select id="category" name="category" class="form-control">
                             <option disabled selected value=''>-- Category--</option>
                             ## TODO: Remove hardcoded category values here and use the values from Node.CATEGORY_MAP
                             %for i in ["Project", "Hypothesis", "Methods and Measures", "Procedure", "Instrumentation", "Data", "Analysis", "Communication", "Other"]:
@@ -21,15 +26,16 @@
                             %endfor
                         </select>
                     </div>
-            </div><!-- end modal-body -->
-            <div class="modal-footer">
-               <a id='confirm' href="#" class="btn btn-default" data-dismiss="modal">Close</a>
-              <button id="add-component-submit" type="submit" class="btn btn-primary">OK</button>
-            </div><!-- end modal-footer -->
-        </form>
+                </div><!-- end modal-body -->
+                <div class="modal-footer">
+                    <a id="confirm" href="#" class="btn btn-default" data-dismiss="modal">Close</a>
+                    <button id="add-component-submit" type="submit" class="btn btn-primary">OK</button>
+                </div><!-- end modal-footer -->
+            </form>
         </div><!-- end modal- content -->
-      </div><!-- end modal-dialog -->
-    </div><!-- end modal -->
+    </div><!-- end modal-dialog -->
+</div><!-- end modal -->
+
 <script type="text/javascript">
         $(document).ready(function() {
             $('#confirm').on('click', function () {
@@ -39,5 +45,4 @@
 
             });
         });
-
 </script>

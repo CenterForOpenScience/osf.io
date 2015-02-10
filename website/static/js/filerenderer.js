@@ -6,25 +6,36 @@ var $ = require('jquery');
 FileRenderer = {
     start: function(url, selector){
         this.url = url;
-        this.element = $(selector);
         this.tries = 0;
-        this.refreshContent = window.setInterval(this.getCachedFromServer.bind(this), 1000);
+        this.ALLOWED_RETRIES = 10;
+        this.element = $(selector);
+        this.getCachedFromServer();
     },
 
     getCachedFromServer: function() {
         var self = this;
-        $.get( self.url, function(data) {
+        $.ajax({
+            url: self.url,
+        }).done(function(data) {
             if (data) {
                 self.element.html(data);
                 clearInterval(self.refreshContent);
             } else {
-                self.tries += 1;
-                if(self.tries > 10){
-                    clearInterval(self.refreshContent);
-                    self.element.html('Timeout occurred while loading, please refresh the page');
-                }
+                self.handleRetry();
             }
-        });
+        }).fail(self.handleRetry);
+    },
+
+    handleRetry: function() {
+        var self = FileRenderer;
+        self.tries += 1;
+
+        if(self.tries > self.ALLOWED_RETRIES){
+            clearInterval(self.refreshContent);
+            self.element.html('Timeout occurred while loading, please refresh the page');
+        } else {
+            self.getCachedFromServer();
         }
+    }
 };
 module.exports = FileRenderer;
