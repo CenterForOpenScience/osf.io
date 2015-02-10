@@ -19,6 +19,10 @@ CORS_ACCEPT_HEADERS = [
     'X-Requested-With',
 ]
 
+HTTP_REASONS = {
+    461: 'Unavailable For Legal Reasons'
+}
+
 
 def list_or_value(value):
     assert isinstance(value, list)
@@ -45,6 +49,9 @@ class BaseHandler(tornado.web.RequestHandler, SentryMixin):
         method = self.get_query_argument('method', None)
         if method:
             self.request.method = method.upper()
+
+    def set_status(self, code, reason=None):
+        return super().set_status(code, reason or HTTP_REASONS.get(code))
 
     @asyncio.coroutine
     def prepare(self):
