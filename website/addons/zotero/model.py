@@ -126,7 +126,7 @@ class Zotero(ExternalProvider):
     _client = None
 
     def handle_callback(self, response):
-        _userID = response['userID'],
+        _userID = response['userID']
         return {
             'provider_id': _userID,
             'display_name': response['username']
@@ -162,7 +162,7 @@ class Zotero(ExternalProvider):
             provider_list_id=collection['data']['key']
         )
 
-    def get_list(self, list_id=None):
+    def get_zotero_list(self, list_id=None):
         """Get a single CitationList
 
         :param str list_id: ID for a Zotero collection. Optional.
@@ -170,8 +170,11 @@ class Zotero(ExternalProvider):
         """
 
         collection = self.client.collection(list_id) if list_id else None
+        collection_items = self.client.collection_items(list_id, content='csljson') if list_id else None
+
+
         if collection:
-            citations = lambda: self._citations_for_zotero_collection(collection)
+            citations = lambda: self._citations_for_zotero_collection(collection_items)
         else:
             citations = lambda: self._citations_for_zotero_user()
 
@@ -181,9 +184,12 @@ class Zotero(ExternalProvider):
             provider_list_id=list_id,
             citations=citations,
         )
+
         return citation_list
 
     def _citations_for_zotero_collection(self, collection):
+
+
         return [
             self._citation_for_zotero_document(document)
             for document in collection
@@ -196,9 +202,10 @@ class Zotero(ExternalProvider):
         ]
 
     def _citation_for_zotero_document(self, document):
-        csl = document['data']
-        return Citation(**csl)
+        return Citation(**document)
 
+
+    #below method is not used
     def _citation_for_zotero_document2(self, document):
         """Zotero document to ``website.citations.models.Citation``
 

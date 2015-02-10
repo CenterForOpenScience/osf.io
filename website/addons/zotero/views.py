@@ -53,7 +53,6 @@ def list_zotero_accounts_node(pid, auth, node, project, node_addon):
 @must_not_be_registration
 def list_zotero_citationlists_node(pid, account_id, auth, node, project, node_addon):
     # TODO: clean up signature
-
     account = ExternalAccount.load(account_id)
     if not account:
         raise HTTPError(404)
@@ -76,6 +75,7 @@ def zotero_set_config(pid, auth, node, project, node_addon):
             request.json['external_account_id']
         )
         list_id = request.json['external_list_id']
+
     except KeyError:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -99,7 +99,7 @@ def zotero_set_config(pid, auth, node, project, node_addon):
     node_addon.external_account = external_account
     node_addon.zotero_list_id = list_id
     node_addon.save()
-
+    #import pdb; pdb.set_trace()
     return {}
 
 
@@ -114,5 +114,5 @@ def zotero_widget(node_addon, project, node, pid, auth):
 @must_be_contributor_or_public
 @must_have_addon('zotero', 'node')
 def zotero_citation_list(node_addon, project, node, pid, auth):
-    citation_list = node_addon.api.get_list(node_addon.zotero_list_id)
+    citation_list = node_addon.api.get_zotero_list(node_addon.zotero_list_id)
     return citation_list.render('apa')
