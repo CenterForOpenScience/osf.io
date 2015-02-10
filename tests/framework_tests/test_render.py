@@ -63,7 +63,7 @@ class TestSaveOrError(unittest.TestCase):
     def test_bad_response_raises(self, mock_request, mock_file):
         mock_request.return_value = mock.Mock(ok=False, status_code=418)
 
-        with self.assertRaises(exceptions.RenderFailureException):
+        with assert_raises(exceptions.RenderFailureException):
             core.save_to_file_or_error('test', 'test')
 
         mock_request.assert_called_once_with('test', stream=True)
