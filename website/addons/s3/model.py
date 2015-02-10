@@ -10,8 +10,8 @@ from framework.auth.core import Auth
 from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 from website.addons.s3.utils import get_bucket_drop_down, remove_osf_user
-from website.addons.s3.api import S3Wrapper
 
+from website.addons.s3.api import S3Wrapper
 
 class S3GuidFile(GuidFile):
 

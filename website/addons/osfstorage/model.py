@@ -472,3 +472,4 @@ class OsfStorageGuidFile(GuidFile):
                 comment.hide(save=True)
             else:
                 comment.show(save=True)
+
