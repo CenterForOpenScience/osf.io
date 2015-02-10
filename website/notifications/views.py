@@ -12,6 +12,7 @@ def subscribe(auth):
     subscription = request.json
     event = subscription.get('event')
     notification_type = subscription.get('notification_type')
+
     uid = subscription.get('id')
     event_id = uid + "_" + event
 
@@ -50,6 +51,6 @@ def subscribe(auth):
 
         for nt in settings.NOTIFICATION_TYPES:
             if nt != notification_type:
-                if user in getattr(s, nt):
+                if getattr(s, nt) and user in getattr(s, nt):
                     getattr(s, nt).remove(user)
                     s.save()
