@@ -1,7 +1,7 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${file_name}</%def>
 
-% if user['can_comment'] or node['has_comments']:
+% if (user['can_comment'] or node['has_comments']) and provider in ['github', 'figshare', 'dropbox', 's3', 'osfstorage']:
     <%include file="include/comment_pane_template.mako"/>
     <%include file="include/comment_template.mako"/>
 % endif
@@ -110,7 +110,8 @@
             file: {
                 name: '${file_name | js_str}',
                 path: '${file_path | js_str}',
-                provider: '${provider | js_str}'
+                provider: '${provider | js_str}',
+                id: '${file_id | js_str}'
             },
             node: {
               urls: {

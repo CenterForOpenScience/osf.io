@@ -475,7 +475,7 @@ def _update_comments_timestamp(auth, node, page='node', root_id=None):
                         ret = _update_comments_timestamp(auth, node, page, wiki_page.page_name)
             return ret
 
-        # if updating timestamp on a specific files/wiki page
+        # if updating timestamp on a specific file/wiki page
         timestamps[page][root_id] = datetime.utcnow()
         auth.user.save()
         return {node._id: auth.user.comments_viewed_timestamp[node._id][page][root_id].isoformat()}

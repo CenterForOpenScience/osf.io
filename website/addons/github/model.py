@@ -643,6 +643,8 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         for github_file in files.tree:
             if github_file.type in ['file', 'blob']:
                 path = github_file.path
+                if not path.startswith('/'):
+                    path = '/' + path
                 try:
                     guid = GithubGuidFile.find_one(
                         Q('node', 'eq', self.owner) &
