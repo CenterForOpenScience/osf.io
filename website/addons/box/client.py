@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from website.addons.base.exceptions import AddonError
-from boxview import boxview
+from box import BoxClient
 
 
 def get_client(user):
@@ -14,7 +14,7 @@ def get_client(user):
     user_settings = user.get_addon('box')
     if not user_settings:
         raise AddonError('User does not have the Box addon enabled.')
-    return boxview.BoxView(user_settings.access_token)
+    return BoxClient(user_settings.get_credentialsv2())
 
 
 def get_client_from_user_settings(settings_obj):

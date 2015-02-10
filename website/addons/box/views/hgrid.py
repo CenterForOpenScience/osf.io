@@ -3,7 +3,6 @@
 import httplib as http
 
 from flask import request
-from boxview.boxview import BoxViewError
 from urllib3.exceptions import MaxRetryError
 
 from framework.exceptions import HTTPError
@@ -31,7 +30,7 @@ def box_hgrid_data_contents(node_addon, auth, **kwargs):
     if node_addon.folder is None and not request.args.get('foldersOnly'):
         return {'data': []}
     node = node_addon.owner
-    path = kwargs.get('path', '')
+    folder_id = kwargs.get('folder_id', 0)
     # Verify that path is a subdirectory of the node's shared folder
     if not is_authorizer(auth, node_addon):
         abort_if_not_subdir(path, node_addon.folder)
@@ -49,24 +48,27 @@ def box_hgrid_data_contents(node_addon, auth, **kwargs):
                                                    'at this time.'))
 
     try:
-        metadata = client.metadata(path)
-    except BoxViewError:
-        raise file_not_found
+        
+        #import ipdb; ipdb.set_trace()
+        metadata = client.get_folder(folder_id)
+        #ipdb.set_trace()
+    except AttributeError:
+            raise file_not_found
     except MaxRetryError:
         raise max_retry_error
 
     # Raise error if folder was deleted
     if metadata.get('is_deleted'):
         raise file_not_found
-    contents = metadata['contents']
+    contents = metadata['item_collection']['entries']
     if request.args.get('foldersOnly'):
         contents = [metadata_to_hgrid(file_dict, node, permissions) for
-                    file_dict in contents if file_dict['is_dir']]
+                    file_dict in contents if file_dict['type'] == u'folder']
     else:
         contents = [metadata_to_hgrid(file_dict, node, permissions) for
                     file_dict in contents]
     if request.args.get('includeRoot'):
-        root = {'kind': rubeus.FOLDER, 'path': '/', 'name': '/ (Full Box)'}
+        root = {'kind': rubeus.FOLDER, 'path': '/', 'name': '/ (Full Box)', 'id': folder_id}
         contents.insert(0, root)
     return contents
 

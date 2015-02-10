@@ -31,7 +31,7 @@ var ViewModel = function(url, selector, folderPicker) {
     // whether the auth token is valid
     self.validCredentials = ko.observable(true);
     // Currently linked folder, an Object of the form {name: ..., path: ...}
-    self.folder = ko.observable({name: null, path: null});
+    self.folder = ko.observable({name: null, path: null, id: null});
     self.ownerName = ko.observable('');
     self.urls = ko.observable({});
     // Flashed messages
@@ -77,7 +77,7 @@ var ViewModel = function(url, selector, folderPicker) {
         self.userHasAuth(data.userHasAuth);
         self.validCredentials(data.validCredentials);
         // Make sure folder has name and path properties defined
-        self.folder(data.folder || {name: null, path: null});
+        self.folder(data.folder || {name: null, path: null, id: null});
         self.urls(data.urls);
     };
 
@@ -309,7 +309,7 @@ var ViewModel = function(url, selector, folderPicker) {
     */
     function onPickFolder(evt, item) {
             evt.preventDefault();
-            self.selected({name: 'Box' + item.data.path, path: item.data.path});
+            self.selected({name: 'Box' + item.data.path, path: item.data.path, id: item.data.id});
             return false; // Prevent event propagation
         }
 

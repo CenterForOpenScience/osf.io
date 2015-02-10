@@ -1,1 +1,1 @@
-python-boxview>=1.0.3
+box.py

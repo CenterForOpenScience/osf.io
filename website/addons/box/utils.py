@@ -176,7 +176,7 @@ def ensure_leading_slash(path):
 
 def build_box_urls(item, node):
     path = clean_path(item['path'])  # Strip trailing and leading slashes
-    if item['is_dir']:
+    if item['type']==u'folder':
         return {
             'upload': node.api_url_for('box_upload', path=path),
             # Endpoint for fetching all of a folder's contents
@@ -198,15 +198,17 @@ def metadata_to_hgrid(item, node, permissions):
     """Serializes a dictionary of metadata (returned from the BoxClient)
     to the format expected by Rubeus/HGrid.
     """
-    filename = get_file_name(item['path'])
+    #import ipdb; ipdb.set_trace()
+    filename = item['name']  # get_file_name(item['path'])
     serialized = {
         'addon': 'box',
         'permissions': permissions,
-        'name': get_file_name(item['path']),
-        'ext': os.path.splitext(filename)[1],
-        rubeus.KIND: rubeus.FOLDER if item['is_dir'] else rubeus.FILE,
-        'urls': build_box_urls(item, node),
-        'path': item['path'],
+        'name': item['name'],
+        'ext': os.path.splitext(filename)[-1],
+        rubeus.KIND: rubeus.FOLDER if item['type']==u'folder' else rubeus.FILE,
+        #'urls': build_box_urls(item, node),
+        'path': item['name'],
+        'id': item['id']
     }
     return serialized
 

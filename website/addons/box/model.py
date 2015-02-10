@@ -15,6 +15,9 @@ from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, Gu
 
 from website.addons.box.client import get_node_addon_client
 from website.addons.box.utils import clean_path, BoxNodeLogger
+from website.addons.box import settings
+
+from box import CredentialsV2
 
 logger = logging.getLogger(__name__)
 
@@ -24,8 +27,13 @@ class BoxFile(GuidFile):
     file's detail page.
     """
 
-    #: Full path to the file, e.g. 'My Pictures/foo.png'
+    #: Full path to the file/folder, e.g. 'files/{file id}/'
     path = fields.StringField(required=True, index=True)
+
+    #: UID of the file/folder, e.g. '11446498'
+    uid = fields.IntegerField(required=True)
+
+    #: Type of file/folder, e.g. 'file' or 'folder'
 
     #: Stored metadata from the box API
     #: See https://www.box.com/developers/core/docs#metadata
@@ -123,7 +131,11 @@ class BoxUserSettings(AddonUserSettingsBase):
 
     box_id = fields.StringField(required=False)
     access_token = fields.StringField(required=False)
+    refresh_token = fields.StringField(required=False)
     box_info = fields.DictionaryField(required=False)
+    token_type = fields.StringField(required=False)
+    restricted_to = fields.DictionaryField(required=False)
+    expires_in = fields.IntegerField(required=False)
 
     # TODO(sloria): The `user` param in unnecessary for AddonUserSettings
     def to_json(self, user=None):
@@ -134,6 +146,11 @@ class BoxUserSettings(AddonUserSettingsBase):
         output = super(BoxUserSettings, self).to_json(self.owner)
         output['has_auth'] = self.has_auth
         return output
+
+    def token_refreshed_callback(self, access_token, refresh_token):
+        self.access_token = access_token
+        self.refresh_token = refresh_token
+        self.save()
 
     @property
     def has_auth(self):
@@ -152,6 +169,15 @@ class BoxUserSettings(AddonUserSettingsBase):
             node_settings.save()
         return self
 
+    def get_credentialsv2(self):
+        return CredentialsV2(
+            self.access_token, 
+            self.refresh_token, 
+            settings.BOX_KEY,
+            settings.BOX_SECRET,
+            self.token_refreshed_callback,
+            )
+
     def __repr__(self):
         return u'<BoxUserSettings(user={self.owner.username!r})>'.format(self=self)
 
@@ -163,10 +189,12 @@ class BoxNodeSettings(AddonNodeSettingsBase):
     )
 
     folder = fields.StringField(default=None)
+    folder_id = fields.IntegerField(default=None)
 
     #: Information saved at the time of registration
     #: Note: This is unused right now
     registration_data = fields.DictionaryField()
+
 
     @property
     def display_name(self):
@@ -177,8 +205,9 @@ class BoxNodeSettings(AddonNodeSettingsBase):
         """Whether an access token is associated with this node."""
         return bool(self.user_settings and self.user_settings.has_auth)
 
-    def set_folder(self, folder, auth):
+    def set_folder(self, folder, folder_id, auth):
         self.folder = folder
+        self.folder_id = folder_id
         # Add log to node
         nodelogger = BoxNodeLogger(node=self.owner, auth=auth)
         nodelogger.log(action="folder_selected", save=True)
@@ -203,6 +232,7 @@ class BoxNodeSettings(AddonNodeSettingsBase):
         folder = self.folder
 
         self.folder = None
+        self.folder_id = None
         self.user_settings = None
 
         if add_log:
@@ -216,9 +246,9 @@ class BoxNodeSettings(AddonNodeSettingsBase):
         return {'token': self.user_settings.access_token}
 
     def serialize_waterbutler_settings(self):
-        if not self.folder:
+        if not self.folder_id:
             raise exceptions.AddonError('Folder is not configured')
-        return {'folder': self.folder}
+        return {'folder': self.folder_id}
 
     def create_waterbutler_log(self, auth, action, metadata):
         cleaned_path = clean_path(os.path.join(self.folder, metadata['path']))

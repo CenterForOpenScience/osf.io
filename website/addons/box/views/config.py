@@ -16,7 +16,6 @@ from website.util import web_url_for
 
 from website.addons.box import utils
 from website.addons.box.client import get_client_from_user_settings
-from boxview.boxview import BoxViewError
 
 
 @collect_auth
@@ -98,8 +97,10 @@ def serialize_settings(node_settings, current_user, client=None):
     if user_settings:
         try:
             client = client or get_client_from_user_settings(user_settings)
-            client.account_info()
-        except BoxViewError as error:
+            client.get_user_info()
+#        except BoxAuthenticationException as error:
+#            TODO: reauthorize
+        except Exception as error:
             if error.status == 401:
                 valid_credentials = False
             else:
@@ -139,12 +140,14 @@ def box_config_put(node_addon, user_addon, auth, **kwargs):
     """View for changing a node's linked box folder."""
     folder = request.json.get('selected')
     path = folder['path']
-    node_addon.set_folder(path, auth=auth)
+    #import ipdb; ipdb.set_trace()
+    uid = folder['id']
+    node_addon.set_folder(path, uid, auth=auth)
     node_addon.save()
     return {
         'result': {
             'folder': {
-                'name': 'Box' + path,
+                'name': 'Box ' + path,
                 'path': path
             },
             'urls': serialize_urls(node_addon)

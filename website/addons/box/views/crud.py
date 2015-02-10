@@ -43,7 +43,7 @@ def box_delete_file(path, auth, node_addon, **kwargs):
         if not is_authorizer(auth, node_addon):
             abort_if_not_subdir(path, node_addon.folder)
         client = get_node_addon_client(node_addon)
-        client.file_delete(path)
+        client.delete_document(path)
         # log the event
         nodelogger = BoxNodeLogger(node=node, auth=auth, path=path)
         nodelogger.log(NodeLog.FILE_REMOVED, save=True)
@@ -70,7 +70,7 @@ def box_upload(node_addon, auth, **kwargs):
         if not is_authorizer(auth, node_addon):
             abort_if_not_subdir(path, node_addon.folder)
         try:
-            metadata = client.put_file(filepath, file_obj)
+            metadata = client.create_document(file=filepath, name=file_obj.filename)
         except BoxViewError as error:
             if error.status == 401:
                 raise HTTPError(http.UNAUTHORIZED, data=dict(message_short='Invalid Access Token',
@@ -109,7 +109,7 @@ def box_download(path, node_addon, auth, **kwargs):
 @must_be_contributor_or_public
 @must_have_addon('box', 'node')
 def box_get_revisions(path, node_addon, auth, **kwargs):
-    """API view that gets a list of revisions for a file."""
+    """API view that gets a list of revisions for a file.""" #iff user is premium user, otherwise box doesn't support versioning
     # Check if current user has access to the path
     if not is_authorizer(auth, node_addon):
         abort_if_not_subdir(path, node_addon.folder)
