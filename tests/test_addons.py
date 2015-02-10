@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import mock
 import webtest
 import unittest
 from nose.tools import *
@@ -19,6 +20,7 @@ from framework.sessions.model import Session
 
 from website import settings
 from website.util import api_url_for
+from website.addons.base import exceptions
 from website.project import new_private_link
 from website.addons.base import AddonConfig, AddonNodeSettingsBase, views
 from website.addons.github.model import AddonGitHubOauthSettings
@@ -292,8 +294,60 @@ class TestCheckAuth(OsfTestCase):
 
 
 class TestAddonFileViews(OsfTestCase):
-    pass
 
+    @mock.patch('website.addons.base.views.codecs.open')
+    @mock.patch('website.addons.base.views.build_rendered_html')
+    def test_get_or_start_starts(self, mock_render, mock_open):
+        file_guid = mock.Mock()
+        mock_open.side_effect = IOError
+
+        file_guid.mfr_cache_path = 'at last'
+        file_guid.mfr_download_url = 'val jean'
+        file_guid.mfr_temp_path = 'we see each other plain'
+
+        views.get_or_start_render(file_guid)
+
+        mock_render.assert_called_once_with('val jean', 'at last', 'we see each other plain')
+
+    @mock.patch('website.addons.base.views.codecs.open')
+    @mock.patch('website.addons.base.views.build_rendered_html')
+    def test_get_or_start_respects_start_render(self, mock_render, mock_open):
+        file_guid = mock.Mock()
+        mock_open.side_effect = IOError
+
+        views.get_or_start_render(file_guid, start_render=False)
+
+        assert_false(mock_render.called)
+
+    @mock.patch('website.addons.base.views.codecs.open')
+    @mock.patch('website.addons.base.views.build_rendered_html')
+    def test_get_or_start_returns_found(self, mock_render, mock_open):
+        file_guid = mock.Mock()
+        mock_file = mock.Mock()
+
+        mock_file.read.return_value = 'Look at me, I\'m mr meseeks'
+        mock_open.return_value = mock_file
+
+        assert_equal(
+            'Look at me, I\'m mr meseeks',
+            views.get_or_start_render(file_guid)
+        )
+
+        assert_false(mock_render.called)
+
+    def test_get_or_start_returns_error(self):
+        class MyException(exceptions.AddonEnrichmentError):
+
+            @property
+            def renderable_error(self):
+                return 'wubalubadubdub'
+
+        file_guid = mock.Mock()
+        file_guid.enrich.side_effect = MyException()
+        assert_equal(
+            'wubalubadubdub',
+            views.get_or_start_render(file_guid)
+        )
 
 def assert_urls_equal(url1, url2):
     furl1 = furl.furl(url1)
