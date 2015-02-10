@@ -44,6 +44,7 @@ app.use(express.static(sharejs.scriptsDir));
 // Broadcasts message to all clients connected to that doc
 // TODO: Can we access the relevant list without iterating over every client?
 wss.broadcast = function(docId, message) {
+    console.log('Broadcasting ' + message + ' to all clients on ' + docId);
     async.each(this.clients, function (client, cb) {
         if (client.userMeta && client.userMeta.docId === docId) {
             try {
@@ -90,6 +91,7 @@ wss.on('connection', function(client) {
 
         // Handle our custom messages separately
         if (data.registration) {
+            console.log('Client registered: ' + data);
             var docId = data.docId;
             var userId = data.userId;
 
@@ -128,6 +130,7 @@ wss.on('connection', function(client) {
     });
 
     client.on('close', function(reason) {
+        console.log('Client disconnected: ' + reason);
         if (client.userMeta) {
             var docId = client.userMeta.docId;
             var userId = client.userMeta.userId;
@@ -151,7 +154,8 @@ wss.on('connection', function(client) {
     });
 
     stream.on('error', function(msg) {
-       client.close(msg);
+        console.error(msg);
+        client.close(msg);
     });
 
     stream.on('end', function() {
@@ -166,6 +170,7 @@ wss.on('connection', function(client) {
 app.post('/lock/:id', function (req, res, next) {
     locked[req.params.id] = true;
     wss.broadcast(req.params.id, JSON.stringify({type: 'lock'}));
+    console.log(req.params.id + ' was locked.');
     res.send(req.params.id + ' was locked.');
 });
 
@@ -173,6 +178,7 @@ app.post('/lock/:id', function (req, res, next) {
 app.post('/unlock/:id', function (req, res, next) {
     delete locked[req.params.id];
     wss.broadcast(req.params.id, JSON.stringify({type: 'unlock'}));
+    console.log(req.params.id + ' was unlocked.');
     res.send(req.params.id + ' was unlocked.');
 });
 
@@ -182,6 +188,7 @@ app.post('/redirect/:id/:redirect', function (req, res, next) {
         type: 'redirect',
         redirect: req.params.redirect
     }));
+    console.log(req.params.id + ' was redirected to ' + req.params.redirect);
     res.send(req.params.id + ' was redirected to ' + req.params.redirect);
 });
 
@@ -191,6 +198,7 @@ app.post('/delete/:id/:redirect', function (req, res, next) {
         type: 'delete',
         redirect: req.params.redirect
     }));
+    console.log(req.params.id + ' was deleted and redirected to ' + req.params.redirect);
     res.send(req.params.id + ' was deleted and redirected to ' + req.params.redirect);
 });
 
