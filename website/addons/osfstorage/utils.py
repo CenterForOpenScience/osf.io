@@ -180,7 +180,6 @@ def get_waterbutler_url(user, *path, **query):
         else request.cookies.get(site_settings.COOKIE_NAME)
     )
     url.args.update({
-        'token': '',
         'provider': 'osfstorage',
         'cookie': cookie,
     })
