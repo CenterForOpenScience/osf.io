@@ -20,7 +20,7 @@ class RenderFailureException(Exception):
         additional['status_code'] = http_status_code
 
         msg = json.dumps(additional)
-        super(Exception, self).__init__(msg)
+        super(RenderFailureException, self).__init__(msg)
 
 
 class RenderNotPossibleException(Exception):
