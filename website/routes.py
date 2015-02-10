@@ -233,16 +233,19 @@ def make_url_map(app):
         ),
     ], prefix='/api/v1')
 
-
     # OAuth
 
     process_rules(app, [
-        Rule('/oauth/connect/<service_name>/', 'get',
+        Rule(
+            '/oauth/connect/<service_name>/',
+            'get',
             oauth_views.oauth_connect,
             json_renderer,
         ),
 
-        Rule('/oauth/callback/<service_name>/', 'get',
+        Rule(
+            '/oauth/callback/<service_name>/',
+            'get',
             oauth_views.oauth_callback,
             OsfWebRenderer('util/oauth_complete.mako'),
         ),
@@ -258,7 +261,6 @@ def make_url_map(app):
             json_renderer,
         )
     ], prefix='/api/v1')
-
 
     process_rules(app, [
         Rule('/dashboard/get_nodes/', 'get', website_views.get_dashboard_nodes, json_renderer),

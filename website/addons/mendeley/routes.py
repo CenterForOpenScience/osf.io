@@ -1,5 +1,4 @@
 from framework.routing import Rule, json_renderer
-from website.routes import OsfWebRenderer, notemplate
 
 from website.addons.mendeley import views
 

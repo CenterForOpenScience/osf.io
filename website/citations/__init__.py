@@ -7,6 +7,8 @@ from citeproc.source.json import CiteProcJSON
 
 from website.settings import CITATION_STYLES_PATH
 
+# don't let citeproc's models be leaked into our namespace.
+__all__ = ('render', 'render_iterable')
 
 def render(node, style='apa'):
     """Given a node, return a citation"""

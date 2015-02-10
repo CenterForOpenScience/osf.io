@@ -21,7 +21,7 @@ from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 from website.oauth.models import ExternalAccount
 from website.project.model import (
-    ApiKey, Node, NodeLog, WatchConfig, Tag, Pointer, Comment, PrivateLink
+    ApiKey, Node, NodeLog, WatchConfig, Tag, Pointer, Comment, PrivateLink,
 )
 
 from website.addons.wiki.model import NodeWikiPage
