@@ -365,6 +365,7 @@ def project_wiki_page(auth, wname, **kwargs):
         version = wiki_page.version
         is_current = wiki_page.is_current
         content = wiki_page.html(node)
+        raw = wiki_page.content
     elif not wiki_page and wiki_name.lower() != 'home':
         status_code = 404
 
@@ -372,6 +373,7 @@ def project_wiki_page(auth, wname, **kwargs):
         'wiki_id': wiki_page._primary_key if wiki_page else None,
         'wiki_name': wiki_page.page_name if wiki_page else wiki_name,
         'wiki_content': content,
+        'wiki_raw': raw,
         'page': wiki_page,
         'version': version,
         'versions': _get_wiki_versions(node, wiki_name, anonymous=anonymous),

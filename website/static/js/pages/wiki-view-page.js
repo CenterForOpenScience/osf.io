@@ -7,8 +7,15 @@ var $ = require('jquery');
 var Raven = require('raven-js');
 var $osf = require('osfHelpers');
 require('bootstrap-editable');
+var md = require('markdown-it')();
 
 var ctx = window.contextVars;  // mako context variables
+
+// Render the raw markdown of the wiki
+var markdownElement = $('#markdown-it-render');
+var rawText = markdownElement.text();
+markdownElement.html(md.render(rawText));
+markdownElement.show();
 
 // Apply an empty ViewModel to the #wikiName element so that
 // we can use the tooltip binding handler. =/

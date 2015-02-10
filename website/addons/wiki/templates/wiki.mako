@@ -16,10 +16,10 @@
         % if not page and wiki_name != 'home':
             <p><i>This wiki page does not currently exist. Would you like to
                 <a href="edit/">create it</a>?</i></p>
-        % elif not wiki_content:
+        % elif not wiki_raw:
             <p><em>No wiki content</em></p>
         % else:
-            <div>${wiki_content | n}</div>
+            <div id="markdown-it-render" style="display: none">${wiki_raw}</div>
         % endif
     </div>
 </div>
