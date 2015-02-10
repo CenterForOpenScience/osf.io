@@ -150,10 +150,19 @@ class Zotero(ExternalProvider):
 
         collections = client.collections()
 
-        return (
+         # fake object to represent the user's whole account
+        all_documents = [
+            CitationList(
+                name="All Documents",
+                provider_list_id=None,
+                provider_account_id=self.account.provider_id
+            )
+        ]
+
+        return all_documents + [
             self._zotero_collection_to_citation_list(collection)
             for collection in collections
-        )
+        ]
 
     def _zotero_collection_to_citation_list(self, collection):
         return CitationList(
@@ -198,7 +207,7 @@ class Zotero(ExternalProvider):
     def _citations_for_zotero_user(self):
         return [
             self._citation_for_zotero_document(document)
-            for document in self.client.items()
+            for document in self.client.items(content='csljson')
         ]
 
     def _citation_for_zotero_document(self, document):
