@@ -141,7 +141,7 @@ def get_auth(**kwargs):
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    view_only = request.args.get('viewOnly')
+    view_only = request.args.get('view_only')
 
     user = get_user_from_cookie(cookie)
 

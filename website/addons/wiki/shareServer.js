@@ -1,35 +1,63 @@
 // Library imports
+var raven = require('raven');
 var sharejs = require('share');
 var livedb = require('livedb');
 var Duplex = require('stream').Duplex;
 var WebSocketServer = require('ws').Server;
 var express = require('express');
+var morgan = require('morgan');
 var http = require('http');
 var async = require('async');
 
-// Server Options
-var host = process.env.SHAREJS_SERVER_HOST || 'localhost';
-var port = process.env.SHAREJS_SERVER_PORT || 7007;
+var settings = {
+    debug: process.env.SHAREJS_DEBUG ? Boolean(process.env.SHAREJS_DEBUG) : true,
+    // Server Options
+    host: process.env.SHAREJS_SERVER_HOST || 'localhost',
+    port: process.env.SHAREJS_SERVER_PORT || 7007,
+    // Mongo options
+    dbHost: process.env.SHAREJS_DB_HOST || 'localhost',
+    dbPort: process.env.SHAREJS_DB_PORT || 27017,
+    dbName: process.env.SHAREJS_DB_NAME || 'sharejs',
+    // Raven client
+    sentryDSN: process.env.SHAREJS_SENTRY_DSN
+};
 
-// Mongo options
-var dbHost = process.env.SHAREJS_DB_HOST || 'localhost';
-var dbPort = process.env.SHAREJS_DB_PORT || 27017;
-var dbName = process.env.SHAREJS_DB_NAME || 'sharejs';
+var client = new raven.Client(settings.sentryDSN);
+
+if (!settings.debug) {
+    client.patchGlobal(function() {
+        // It is highly discouraged to leave the process running after a
+        // global uncaught exception has occurred.
+        //
+        // https://github.com/getsentry/raven-node#catching-global-errors
+        // http://nodejs.org/api/process.html#process_event_uncaughtexception
+        //
+        console.log('Uncaught Exception process exiting');
+        process.exit(1);
+    });
+}
 
 // Server setup
 var mongo = require('livedb-mongo')(
-    'mongodb://' + dbHost + ':' + dbPort + '/' + dbName,
+    'mongodb://' + settings.dbHost + ':' + settings.dbPort + '/' + settings.dbName,
     {safe:true}
 );
 var backend = livedb.client(mongo);
 var share = sharejs.server.createClient({backend: backend});
 var app = express();
 var server = http.createServer(app);
-var wss = new WebSocketServer({ server: server});
+var wss = new WebSocketServer({server: server});
 
 // Local variables
 var docs = {};  // TODO: Should this be stored in mongo?
 var locked = {};
+
+// Allow X-Forwarded-For headers
+app.set('trust proxy');
+
+// Raven Express Middleware
+app.use(raven.middleware.express(settings.sentryDSN));
+app.use(morgan('common'));
 
 // Allow CORS
 app.use(function(req, res, next) {
@@ -44,13 +72,12 @@ app.use(express.static(sharejs.scriptsDir));
 // Broadcasts message to all clients connected to that doc
 // TODO: Can we access the relevant list without iterating over every client?
 wss.broadcast = function(docId, message) {
-    console.log('Broadcasting ' + message + ' to all clients on ' + docId);
     async.each(this.clients, function (client, cb) {
         if (client.userMeta && client.userMeta.docId === docId) {
             try {
                 client.send(message);
             } catch (e) {
-                // ignore errors - connection will likely be closed by library
+                // ignore errors - connection should be handled by share.js library
             }
         }
 
@@ -67,7 +94,7 @@ wss.on('connection', function(client) {
             try {
                 client.send(JSON.stringify(chunk));
             } catch (e) {
-                // ignore errors - connection will likely be closed by library
+                // ignore errors - connection should be handled by share.js library
             }
         }
         callback();
@@ -85,13 +112,13 @@ wss.on('connection', function(client) {
         try {
             data = JSON.parse(data);
         } catch (e) {
-            console.error('could not parse message data as json');
+            client.captureMessage('Could not parse message data as json', {message: message});
             return;
         }
 
         // Handle our custom messages separately
         if (data.registration) {
-            console.log('Client registered: ' + data);
+            console.info('[User Registered] docId: %s, userId: %s', data.docId, data.userId);
             var docId = data.docId;
             var userId = data.userId;
 
@@ -121,7 +148,7 @@ wss.on('connection', function(client) {
                 try {
                     client.send(JSON.stringify({type: 'lock'}));
                 } catch (e) {
-                    // ignore errors - connection will likely be closed by library
+                    // ignore errors - connection should be handled by share.js library
                 }
             }
         } else {
@@ -130,7 +157,7 @@ wss.on('connection', function(client) {
     });
 
     client.on('close', function(reason) {
-        console.log('Client disconnected: ' + reason);
+        console.info('[Connection Closed] docId: %s, userId: %s, reason: %s', client.userMeta.docId, client.userMeta.userId, reason);
         if (client.userMeta) {
             var docId = client.userMeta.docId;
             var userId = client.userMeta.userId;
@@ -154,7 +181,7 @@ wss.on('connection', function(client) {
     });
 
     stream.on('error', function(msg) {
-        console.error(msg);
+        client.captureMessage('Could not parse message data as json', {msg: msg});
         client.close(msg);
     });
 
@@ -170,7 +197,7 @@ wss.on('connection', function(client) {
 app.post('/lock/:id', function (req, res, next) {
     locked[req.params.id] = true;
     wss.broadcast(req.params.id, JSON.stringify({type: 'lock'}));
-    console.log(req.params.id + ' was locked.');
+    console.info('[Document Locked] docId: %s', req.params.id);
     res.send(req.params.id + ' was locked.');
 });
 
@@ -178,7 +205,7 @@ app.post('/lock/:id', function (req, res, next) {
 app.post('/unlock/:id', function (req, res, next) {
     delete locked[req.params.id];
     wss.broadcast(req.params.id, JSON.stringify({type: 'unlock'}));
-    console.log(req.params.id + ' was unlocked.');
+    console.info('[Document Unlocked] docId: %s', req.params.id);
     res.send(req.params.id + ' was unlocked.');
 });
 
@@ -188,7 +215,7 @@ app.post('/redirect/:id/:redirect', function (req, res, next) {
         type: 'redirect',
         redirect: req.params.redirect
     }));
-    console.log(req.params.id + ' was redirected to ' + req.params.redirect);
+    console.info('[Document Redirect] docId: %s, redirect: %s', req.params.id, req.params.redirect);
     res.send(req.params.id + ' was redirected to ' + req.params.redirect);
 });
 
@@ -198,10 +225,10 @@ app.post('/delete/:id/:redirect', function (req, res, next) {
         type: 'delete',
         redirect: req.params.redirect
     }));
-    console.log(req.params.id + ' was deleted and redirected to ' + req.params.redirect);
+    console.info('[Document Delete] docId: %s, redirect: %s', req.params.id, req.params.redirect);
     res.send(req.params.id + ' was deleted and redirected to ' + req.params.redirect);
 });
 
-server.listen(port, host, function() {
-    console.log('Server running at http://' + host + ':' + port);
+server.listen(settings.port, settings.host, function() {
+    console.log('Server running at http://' + settings.host + ':' + settings.port);
 });
