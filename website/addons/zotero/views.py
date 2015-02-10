@@ -99,7 +99,6 @@ def zotero_set_config(pid, auth, node, project, node_addon):
     node_addon.external_account = external_account
     node_addon.zotero_list_id = list_id
     node_addon.save()
-    #import pdb; pdb.set_trace()
     return {}
 
 

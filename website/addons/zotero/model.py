@@ -150,7 +150,6 @@ class Zotero(ExternalProvider):
 
         collections = client.collections()
 
-         # fake object to represent the user's whole account
         all_documents = [
             CitationList(
                 name="All Documents",
@@ -198,63 +197,13 @@ class Zotero(ExternalProvider):
 
     def _citations_for_zotero_collection(self, collection):
 
-
         return [
-            self._citation_for_zotero_document(document)
+            Citation(**document)
             for document in collection
         ]
 
     def _citations_for_zotero_user(self):
         return [
-            self._citation_for_zotero_document(document)
+            Citation(**document)
             for document in self.client.items(content='csljson')
         ]
-
-    def _citation_for_zotero_document(self, document):
-        return Citation(**document)
-
-
-    #below method is not used
-    def _citation_for_zotero_document2(self, document):
-        """Zotero document to ``website.citations.models.Citation``
-
-        :param BaseDocument document:
-            An instance of ``zotero.models.base_document.BaseDocument``
-        :return Citation:
-        """
-        csl = {
-            'id': document['key'],
-            'type': document['data']['itemType']
-        }
-
-        if document['data']['title']:
-            csl['title'] = document['data']['title']
-
-        if document.json.get('authors'):
-            csl['author'] = [
-                {
-                    'given': person.get('first_name'),
-                    'family': person.get('last_name'),
-                } for person in document.json.get('authors')
-            ]
-
-        if document.json.get('source'):
-            csl['source'] = document.json.get('source')
-
-        if document.year:
-            csl['issued'] = {'date-parts': [[document.year]]}
-
-
-        # gather identifiers
-        idents = document.json.get('identifiers')
-        if idents is not None:
-            if idents.get('isbn'):
-                csl['ISBN'] = idents.get('isbn')
-            if idents.get('issn'):
-                csl['ISSN'] = idents.get('issn')
-            if idents.get('pmid'):
-                csl['PMID'] = idents.get('pmid')
-            if idents.get('doi'):
-                csl['DOI'] = idents.get('doi')
-
-        return Citation(**csl)
