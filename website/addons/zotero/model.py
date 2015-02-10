@@ -33,6 +33,7 @@ class AddonZoteroUserSettings(AddonUserSettingsBase):
         ]
         return rv
 
+
 class AddonZoteroNodeSettings(AddonNodeSettingsBase):
     external_account = fields.ForeignField('externalaccount',
                                            backref='connected')
@@ -110,6 +111,7 @@ class AddonZoteroNodeSettings(AddonNodeSettingsBase):
         ]
 
         return rv
+
 
 class Zotero(ExternalProvider):
     name = "Zotero"
@@ -205,6 +207,7 @@ class Zotero(ExternalProvider):
         ]
 
     def _citations_for_zotero_user(self):
+        """Get all the citations from the user """
         return [
             Citation(**document)
             for document in self.client.items(content='csljson')
