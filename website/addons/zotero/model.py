@@ -17,6 +17,7 @@ from pyzotero import zotero
 class AddonZoteroUserSettings(AddonUserSettingsBase):
 
     def _get_connected_accounts(self):
+        """Get user's connected Zotero accounts"""
         return [
             x for x in self.owner.external_accounts if x.provider == 'zotero'
         ]
@@ -132,13 +133,9 @@ class Zotero(ExternalProvider):
             'display_name': response['username']
         }
 
-    def _get_client(self):
-        if not self._client:
-            self._client = zotero.Zotero(self.account.provider_id, 'user', self.account.oauth_key)
-        return self._client
-
     @property
     def client(self):
+        """An API session with Zotero"""
         if not self._client:
             self._client = zotero.Zotero(self.account.provider_id, 'user', self.account.oauth_key)
         return self._client
@@ -146,6 +143,7 @@ class Zotero(ExternalProvider):
 
     @property
     def citation_lists(self):
+        """List of CitationList objects, derived from Zotero collections"""
         client = self.client
 
         collections = client.collections()
@@ -196,7 +194,11 @@ class Zotero(ExternalProvider):
         return citation_list
 
     def _citations_for_zotero_collection(self, collection):
+        """Get all the citations in a specified collection
 
+        :param  csljson collection: list of csljson documents
+        :return list of citation objects representing said dicts of said documents.
+        """
         return [
             Citation(**document)
             for document in collection
