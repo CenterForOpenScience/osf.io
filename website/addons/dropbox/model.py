@@ -10,6 +10,7 @@ from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
 from website.addons.dropbox.utils import clean_path, DropboxNodeLogger
+from website.addons.dropbox.client import get_node_addon_client
 
 logger = logging.getLogger(__name__)
 
