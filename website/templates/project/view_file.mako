@@ -34,9 +34,12 @@
           <a class="btn btn-success btn-md" href="{{ currentVersion().osfDownloadUrl }}" data-bind="click: currentVersion().download">
             Download <i class="icon-download-alt"></i>
           </a>
-          <button class="btn btn-danger btn-md" data-bind="click: askDelete, if: editable">
-            Delete <i class="icon-trash"></i>
-          </button>
+
+          <span data-bind="if: editable">
+            <button class="btn btn-danger btn-md" data-bind="click: askDelete">
+              Delete <i class="icon-trash"></i>
+            </button>
+          </span>
 
 
           <table class="table" data-bind="if: versioningSupported">
