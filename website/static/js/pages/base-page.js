@@ -60,6 +60,17 @@ var NO_FOOTER_PATHS = ['/login/', '/getting-started/', '/register/'];
 if ($(sliderSelector).length > 0 &&
         $.inArray(window.location.pathname, NO_FOOTER_PATHS) === -1) {
     $osf.applyBindings(new SlideInViewModel(), sliderSelector);
+
+    // Click event bindings for Google Analytics
+    $('#footerSlideInLoginBtn').on('click', function() {
+        ga('send', 'event', 'button', 'click', 'slidein-nav-create-account');
+    });
+    $('#footerSlideInLearnMoreBtn').on('click', function() {
+        ga('send', 'event', 'button', 'click', 'slidein-nav-learn-more');
+    });
+    $('#footerSlideInDismissBtn, #footerSlideInCloseBtn').on('click', function() {
+        ga('send', 'event', 'button', 'click', 'slidein-nav-dismiss');
+    });
 }
 
 
