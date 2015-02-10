@@ -1,5 +1,5 @@
 <%inherit file="project/project_base.mako"/>
-<%def name="title()">${file_name}</%def>
+<%def name="title()">${file_name | h}</%def>
 
     <div>
         <h2 class="break-word">
