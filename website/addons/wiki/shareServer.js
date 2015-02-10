@@ -1,3 +1,12 @@
+// Library imports
+var sharejs = require('share');
+var livedb = require('livedb');
+var Duplex = require('stream').Duplex;
+var WebSocketServer = require('ws').Server;
+var express = require('express');
+var http = require('http');
+var async = require('async');
+
 // Server Options
 var host = process.env.SHAREJS_SERVER_HOST || 'localhost';
 var port = process.env.SHAREJS_SERVER_PORT || 7007;
@@ -6,14 +15,6 @@ var port = process.env.SHAREJS_SERVER_PORT || 7007;
 var dbHost = process.env.SHAREJS_DB_HOST || 'localhost';
 var dbPort = process.env.SHAREJS_DB_PORT || 27017;
 var dbName = process.env.SHAREJS_DB_NAME || 'sharejs';
-
-// Library imports
-var sharejs = require('share');
-var livedb = require('livedb');
-var Duplex = require('stream').Duplex;
-var WebSocketServer = require('ws').Server;
-var express = require('express');
-var http = require('http');
 
 // Server setup
 var mongo = require('livedb-mongo')(
@@ -43,12 +44,17 @@ app.use(express.static(sharejs.scriptsDir));
 // Broadcasts message to all clients connected to that doc
 // TODO: Can we access the relevant list without iterating over every client?
 wss.broadcast = function(docId, message) {
-    for (var i in this.clients) {
-        var c = this.clients[i];
-        if (c.userMeta && c.userMeta.docId === docId) {
-            c.send(message);
+    async.each(this.clients, function (client, cb) {
+        if (client.userMeta && client.userMeta.docId === docId) {
+            try {
+                client.send(message);
+            } catch (e) {
+                // ignore errors - connection will likely be closed by library
+            }
         }
-    }
+
+        cb();
+    });
 };
 
 wss.on('connection', function(client) {
@@ -57,7 +63,11 @@ wss.on('connection', function(client) {
     stream._read = function() {};
     stream._write = function(chunk, encoding, callback) {
         if (client.state !== 'closed') {
-            client.send(JSON.stringify(chunk));
+            try {
+                client.send(JSON.stringify(chunk));
+            } catch (e) {
+                // ignore errors - connection will likely be closed by library
+            }
         }
         callback();
     };
@@ -71,8 +81,14 @@ wss.on('connection', function(client) {
             return;
         }
 
+        try {
+            data = JSON.parse(data);
+        } catch (e) {
+            console.error('could not parse message data as json');
+            return;
+        }
+
         // Handle our custom messages separately
-        data = JSON.parse(data);
         if (data.registration) {
             var docId = data.docId;
             var userId = data.userId;
@@ -100,7 +116,11 @@ wss.on('connection', function(client) {
 
             // Lock client if doc is locked
             if (locked[docId]) {
-                client.send(JSON.stringify({type: 'lock'}));
+                try {
+                    client.send(JSON.stringify({type: 'lock'}));
+                } catch (e) {
+                    // ignore errors - connection will likely be closed by library
+                }
             }
         } else {
             stream.push(data);
