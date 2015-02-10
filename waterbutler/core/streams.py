@@ -2,6 +2,8 @@ import os
 import abc
 import asyncio
 
+from io import BytesIO
+from zipfile import ZipFile
 
 class BaseStream(asyncio.StreamReader, metaclass=abc.ABCMeta):
 
@@ -80,6 +82,27 @@ class RequestStreamReader(BaseStream):
     @asyncio.coroutine
     def _read(self, size):
         return (yield from asyncio.StreamReader.read(self, size))
+
+
+class ZipStreamReader(RequestStreamReader):
+        
+    def __init__(self, request_stream):
+        super().__init__(request_stream.request)
+        self._cursor = 0
+
+    @asyncio.coroutine
+    def read(self, size=-1):
+        eof = self.at_eof()
+        data = yield from self._read(size)
+        zf = ZipFile(self._buffer, mode='ab', compression=0)
+        zf.writestr(a)        
+        data = zf.read()
+        if not eof:
+            for reader in self.readers.values():
+                reader.feed_data(data)
+            for writer in self.writers.values():
+                writer.write(data)
+        return data
 
 
 class FileStreamReader(BaseStream):
