@@ -105,7 +105,13 @@ if __name__ == '__main__':
     # Set up storage backends
     init_app()
 
-    # Connect to Rackspace
+    # Authenticate to Rackspace
+    pyrax.settings.set('identity_type', 'rackspace')
+    pyrax.set_credentials(
+        storage_settings.USERNAME,
+        storage_settings.API_KEY,
+        region=storage_settings.REGION
+    )
     container_primary = pyrax.cloudfiles.get_container(storage_settings.PRIMARY_CONTAINER_NAME)
     container_parity = pyrax.cloudfiles.get_container(storage_settings.PARITY_CONTAINER_NAME)
 
@@ -117,7 +123,8 @@ if __name__ == '__main__':
     vault = layer2.get_vault(storage_settings.GLACIER_VAULT)
 
     # Log to file
-    script_utils.add_file_logger(logger, __file__)
+    if not dry_run:
+        script_utils.add_file_logger(logger, __file__)
 
     main(dry_run=dry_run)
 
