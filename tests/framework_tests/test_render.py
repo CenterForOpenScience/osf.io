@@ -1,7 +1,7 @@
 import mock
 import time
 import unittest
-from nose.tools import *
+from nose.tools import *  # noqa
 
 from framework.render import core
 from framework.render import exceptions
