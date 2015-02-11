@@ -28,7 +28,9 @@
           <ol class="breadcrumb">
             <li><a href="{{ node.urls.files }}" data-bind="text: node.title"></a></li>
             <li class="active overflow" data-bind="text: file.provider"></li>
-            <li class="active overflow" data-bind="text: file.name"></li>
+            <!-- ko foreach: file.path.split('/').slice(1) -->
+            <li class="active overflow" data-bind="text: $data"></li>
+            <!-- /ko -->
           </ol>
 
           <a class="btn btn-success btn-md fileDownload" href="{{ currentVersion().osfDownloadUrl }}" data-bind="click: currentVersion().download">
