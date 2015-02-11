@@ -11,6 +11,7 @@ before_install:
     - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key 505A7412
     - echo "deb [arch=amd64] http://s3.amazonaws.com/tokumx-debs $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/tokumx.list
     - sudo apt-get update
+    - sudo apt-get -y install libxml2-dev
     - sudo apt-get -y install tokumx
     - wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.2.1.deb && sudo dpkg -i --force-confold elasticsearch-1.2.1.deb && sudo service elasticsearch restart
 
