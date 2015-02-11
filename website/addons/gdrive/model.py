@@ -2,12 +2,11 @@
 """Persistence layer for the gdrive addon.
 """
 import os
-import furl
-
-from website.addons.base import GuidFile
-from modularodm import fields
-from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
-from .utils import clean_path
+from modularodm.exceptions import ModularOdmException
+from framework.auth import Auth
+from modularodm import fields, Q
+from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
+from .utils import clean_path, GoogleDriveNodeLogger
 from website.addons.base import exceptions
 
 
@@ -20,7 +19,35 @@ class AddonGdriveGuidFile(GuidFile):
         if self.path is None:
             raise ValueError('Path field must be defined.')
         return os.path.join('gdrive', 'file', self.path)
+    @property
+    def provider(self):
+        return 'gdrive'
 
+    @property
+    def version_identifier(self):
+        return 'revision'
+
+    @property
+    def unique_identifier(self):
+        return self._metadata_cache['extra']['revisionId']
+
+    @classmethod
+    def get_or_create(cls, node, path):
+        """Get or create a new file record. Return a tuple of the form (obj, created)
+        """
+        path = clean_path(path)
+        try:
+            new = cls.find_one(
+                Q('node', 'eq', node) &
+                Q('path', 'eq', path)
+            )
+            created = False
+        except ModularOdmException:
+            # Create new
+            new = cls(node=node, path=path)
+            new.save()
+            created = True
+        return new, created
 
 class AddonGdriveUserSettings(AddonUserSettingsBase):
     """Stores user-specific information, including the Oauth access
@@ -51,24 +78,26 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
         """Whether an access token is associated with this node."""
         return bool(self.user_settings and self.user_settings.has_auth)
 
-    def deauthorize(self, auth):
+    def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""
         # TODO: Any other addon-specific settings should be removed here.
         node = self.owner
+        folder = self.folder
+
+        self.folder = None
         self.user_settings = None
-        self.owner.add_log(
-            action='gdrive_node_deauthorized',
-            params={
-                'project': node.parent_id,
-                'node': node._id,
-            },
-            auth=auth,
-        )
+
+        if add_log:
+            extra = {'folder': folder}
+            nodelogger = GoogleDriveNodeLogger(node=node, auth=auth)
+            nodelogger.log(action="gdrive_node_deauthorized", extra=extra, save=True)
+
 
     def set_folder(self, folder, auth):
         self.folder = folder
-        #TODO : Add log to node
-
+        # Add log to node
+        nodelogger = GoogleDriveNodeLogger(node=self.owner, auth=auth)
+        nodelogger.log(action="folder_selected", save=True)
 
     def set_user_auth(self, user_settings):
         """Import a user's GDrive authentication and create a NodeLog.
@@ -76,6 +105,8 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
         :param AddonGdriveUserSettings user_settings: The user settings to link.
         """
         self.user_settings = user_settings
+        nodelogger = GoogleDriveNodeLogger(node=self.owner, auth=auth)
+        nodelogger.log(action="gdrive_node_authorized", save=True)
 
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
@@ -88,7 +119,10 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
         return {'folder': self.folder}
 
     def create_waterbutler_log(self, auth, action, metadata):
-        cleaned_path = clean_path(os.path.join(self.folder, metadata['path']))
+
+        cleaned_path = clean_path(metadata['path'])
+        url = self.owner.web_url_for('addon_view_or_download_file', path=cleaned_path, provider='gdrive')
+
         self.owner.add_log(
             'gdrive_{0}'.format(action),
             auth=auth,
@@ -99,21 +133,14 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
                 'folder': self.folder,
 
                 'urls': {
-                    'view': self.owner.web_url_for('gdrive_view_file', path=cleaned_path), #TODO
-                    'download': self.owner.web_url_for('dropbox_download', path=cleaned_path),#TODO
+                    'view': url,
+                    'download': url + '?action=download'
                 },
             },
         )
 
-    def get_waterbutler_render_url(self, path, rev=None, **kwargs):
-        import pdb; pdb.set_trace()
-        url = furl.furl(self.owner.web_url_for('gdrive_view_file', path=path))
-
-        if rev:
-            url.args['rev'] = rev
-
-        return url.url
-
+    def find_or_create_file_guid(self, path):
+        return AddonGdriveGuidFile.get_or_create(self.owner, path)
 
     ##### Callback overrides #####
 
@@ -123,8 +150,11 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
         """
         category, title = node.project_or_component, node.title
         if self.user_settings and self.user_settings.has_auth:
-            # TODO:
-            pass
+            return (
+                u'The contents of Google Drive add-ons cannot be registered at this time; '
+                u'the Google Drive folder linked to this {category} will not be included '
+                u'as part of this registration.'
+            ).format(**locals())
 
     # backwards compatibility
     before_register = before_register_message
@@ -133,8 +163,16 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
         """Return warning text to display if user auth will be copied to a
         fork.
         """
-        # TODO
-        pass
+        category = node.project_or_component
+        if self.user_settings and self.user_settings.owner == user:
+            return (u'Because you have authorized the Google Drive add-on for this '
+                    '{category}, forking it will also transfer your authentication token to '
+                    'the forked {category}.').format(category=category)
+
+        else:
+            return (u'Because the Googlre Drive add-on has been authorized by a different '
+                    'user, forking it will not transfer authentication token to the forked '
+                    '{category}.').format(category=category)
 
     # backwards compatibility
     before_fork = before_fork_message
@@ -144,8 +182,12 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
         who authorized the Gdrive addon
         """
         if self.user_settings and self.user_settings.owner == removed:
-            # TODO
-            pass
+            category = node.project_or_component
+            name = removed.fullname
+            return (u'The Google Drive add-on for this {category} is authenticated by {name}. '
+                    'Removing this user will also remove write access to Dropbox '
+                    'unless another contributor re-authenticates the add-on.'
+                    ).format(**locals())
 
     # backwards compatibility
     before_remove_contributor = before_remove_contributor_message
@@ -181,10 +223,12 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
             clone.user_settings = self.user_settings
             message = 'Google Drive authorization copied to fork.'
         else:
-            message = ('Google Drive authorization not copied to fork. You may '
+            message = ('Google Drive authorization not copied to forked {cat}. You may '
                         'authorize this fork on the <a href="{url}">Settings</a>'
                         'page.').format(
-                        url=fork.web_url_for('node_setting'))
+                        url=fork.web_url_for('node_setting'),
+                        cat=fork.project_or_component
+            )
         if save:
             clone.save()
         return clone, message
@@ -203,3 +247,7 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
                     'by {name}, authentication information has been deleted. You '
                     'can re-authenticate on the <a href="{url}">Settings</a> page'
                     ).format(**locals())
+
+    def after_delete(self, node, user):
+        self.deauthorize(Auth(user=user), add_log=True)
+        self.save()

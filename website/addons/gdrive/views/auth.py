@@ -37,15 +37,16 @@ def drive_oauth_start(auth, **kwargs):
         return redirect(web_url_for('user_addons'))
     flow = OAuth2WebServerFlow(settings.CLIENT_ID, settings.CLIENT_SECRET, settings.OAUTH_SCOPE, redirect_uri = settings.REDIRECT_URI)
     authorize_url = flow.step1_get_authorize_url()
-    return{'url' : authorize_url}
+    return{'url': authorize_url}
 
 @collect_auth
 def drive_oauth_finish(auth, **kwargs):
-
-    user = auth.user
+    """View called when the Oauth flow is completed. Adds a new AddonGdriveUserSettings
+    record to the user and saves the user's access token and account info.
+    """
     if not auth.logged_in:
         raise HTTPError(http.FORBIDDEN)
-
+    user = auth.user
     user.add_addon('gdrive')
     user.save()
     user_settings = user.get_addon('gdrive')
@@ -59,7 +60,6 @@ def drive_oauth_finish(auth, **kwargs):
     credentials = flow.step2_exchange(code)
     http_service = httplib2.Http()
     http_service = credentials.authorize(http_service)
-    import pdb; pdb.set_trace()
     user_settings.access_token = credentials.access_token
     user_settings.save()
     if node_settings:

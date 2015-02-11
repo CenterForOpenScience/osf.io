@@ -4,6 +4,7 @@ from website.addons.gdrive import routes, views, model, views
 MODELS = [
     model.AddonGdriveUserSettings,
     model.AddonGdriveNodeSettings,
+    model.AddonGdriveGuidFile
 ]
 USER_SETTINGS_MODEL = model.AddonGdriveUserSettings
 NODE_SETTINGS_MODEL = model.AddonGdriveNodeSettings

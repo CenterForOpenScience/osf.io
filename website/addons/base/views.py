@@ -311,13 +311,11 @@ def addon_render_file(auth, path, provider, **kwargs):
     node = kwargs.get('node') or kwargs['project']
 
     node_addon = node.get_addon(provider)
-
     if not path or not node_addon:
         raise HTTPError(httplib.BAD_REQUEST)
 
     if not path.startswith('/'):
         path = '/' + path
-
     file_guid, created = node_addon.find_or_create_file_guid(path)
 
     file_guid.maybe_set_version(**request.args.to_dict())

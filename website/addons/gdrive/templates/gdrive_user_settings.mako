@@ -6,6 +6,7 @@
     <small>
         <!-- Delete Access Token Button-->
         <span data-bind="if: userHasAuth() && loaded()">
+            authorized
             <a data-bind="click:deleteKey" class="text-danger pull-right addon-auth">
                 Delete Access Token
             </a>

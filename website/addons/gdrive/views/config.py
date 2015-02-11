@@ -32,7 +32,6 @@ def gdrive_config_put(node_addon, user_addon, auth, **kwargs):
     path = folder['path']
     node_addon.set_folder(folder, auth=auth)
     node_addon.save()
-    import pdb; pdb.set_trace()
     return {
         'result': {
             'folder': {
