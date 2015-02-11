@@ -326,7 +326,7 @@ def node_setting(auth, **kwargs):
         'level': node.comment_level,
     }
 
-    ret['subscriptions'] = format_data(auth.user, [node._id], [], [])
+    ret['subscriptions'] = format_data(auth.user, [node._id], [])
 
     return ret
 

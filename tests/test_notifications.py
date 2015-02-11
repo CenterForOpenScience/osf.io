@@ -3,14 +3,15 @@ from modularodm.exceptions import NoResultsFound
 from tests.base import OsfTestCase
 from nose.tools import *  # PEP8 asserts
 from website.notifications.model import Subscription
-from website.notifications.utils import get_all_user_subscriptions
+from website.notifications.utils import (get_all_user_subscriptions, get_configured_projects,
+                                         get_parent_notification_type, format_data, format_user_subscriptions,
+                                         format_user_and_project_subscriptions)
 from website.util import api_url_for
 from website import settings
-from tests.factories import NodeFactory, UserFactory, SubscriptionFactory
+from tests.factories import ProjectFactory, NodeFactory, UserFactory, SubscriptionFactory
 
 
 class TestSubscriptionView(OsfTestCase):
-
     def test_create_new_subscription(self):
         node = NodeFactory()
         payload = {
@@ -21,11 +22,11 @@ class TestSubscriptionView(OsfTestCase):
         url = api_url_for('subscribe')
         self.app.post_json(url, payload, auth=node.creator.auth)
 
-        #  check that subscription was created
+        # check that subscription was created
         event_id = node._id + '_' + 'comments'
         s = Subscription.find_one(Q('_id', 'eq', event_id))
 
-        #  check that user was added to notification_type field
+        # check that user was added to notification_type field
         assert_equal(payload['id'], s.object_id)
         assert_equal(payload['event'], s.event_name)
         assert_in(node.creator, getattr(s, payload['notification_type']))
@@ -66,7 +67,7 @@ class TestSubscriptionView(OsfTestCase):
         url = api_url_for('subscribe')
         self.app.post_json(url, payload, auth=node.creator.auth)
 
-        #  check that subscription was created
+        # check that subscription was created
         event_id = node._id + '_' + 'comments'
         s = Subscription.find_one(Q('_id', 'eq', event_id))
 
@@ -86,32 +87,167 @@ class TestSubscriptionView(OsfTestCase):
 
 
 class TestNotificationUtils(OsfTestCase):
-
     def setUp(self):
         super(TestNotificationUtils, self).setUp()
         self.user = UserFactory()
-        self.node = NodeFactory()
-        self.s = SubscriptionFactory(
-            _id=self.node._id + '_' + 'comments'
+        self.project = ProjectFactory(creator=self.user)
+        self.project_subscription = SubscriptionFactory(
+            _id=self.project._id + '_' + 'comments',
+            object_id=self.project._id,
+            event_name='comments'
         )
-        self.s.save()
-        self.s.email_transactional.append(self.user)
-        self.s.save()
+        self.project_subscription.save()
+        self.project_subscription.email_transactional.append(self.user)
+        self.project_subscription.save()
+
+        self.node = NodeFactory(project=self.project, creator=self.user)
+        self.node_subscription = SubscriptionFactory(
+            _id=self.node._id + '_' + 'comments',
+            object_id=self.node._id,
+            event_name='comments'
+        )
+        self.node_subscription.save()
+        self.node_subscription.email_transactional.append(self.user)
+        self.node_subscription.save()
+
+        self.user_subscription = SubscriptionFactory(
+            _id=self.user._id + '_' + 'comment_replies',
+            object_id=self.user._id,
+            event_name='comment_replies'
+        )
+        self.user_subscription.save()
+        self.user_subscription.email_transactional.append(self.user)
+        self.user_subscription.save()
 
     def test_get_all_user_subscriptions(self):
-        assert_equal(get_all_user_subscriptions(self.user), [self.s])
+        user_subscriptions = get_all_user_subscriptions(self.user)
+        assert_in(self.project_subscription, user_subscriptions)
+        assert_in(self.node_subscription, user_subscriptions)
+        assert_in(self.user_subscription, user_subscriptions)
+        assert_equal(len(get_all_user_subscriptions(self.user)), 3)
 
-    def test_get_all_configured_projects(self):
-        pass
+    def test_get_configured_project_ids_does_not_return_user_or_node_ids(self):
+        assert_in(self.project._id, get_configured_projects(self.user))
+        assert_not_in(self.node._id, get_configured_projects(self.user))
+        assert_not_in(self.user._id, get_configured_projects(self.user))
+
+    def test_get_configured_project_ids_excludes_deleted_projects(self):
+        project = ProjectFactory()
+        subscription = SubscriptionFactory(
+            _id=project._id + '_' + 'comments',
+            object_id=project._id
+        )
+        subscription.email_transactional.append(self.user)
+        subscription.save()
+        subscription.save()
+        project.is_deleted = True
+        project.save()
+        assert_not_in(self.node._id, get_configured_projects(self.user))
 
     def test_get_parent_notification_type(self):
-        pass
+        nt = get_parent_notification_type(self.node._id, 'comments', self.user)
+        assert_equal(nt, 'email_transactional')
+
+    def test_get_parent_notification_type_no_parent_subscriptions(self):
+        node = NodeFactory()
+        nt = get_parent_notification_type(node._id, 'comments', self.user)
+        assert_equal(nt, None)
+
+    def test_get_parent_notification_type_no_parent(self):
+        project = ProjectFactory()
+        nt = get_parent_notification_type(project._id, 'comments', self.user)
+        assert_equal(nt, None)
+
+    def test_get_parent_notification_type_handles_user_id(self):
+        nt = get_parent_notification_type(self.user._id, 'comments', self.user)
+        assert_equal(nt, None)
+
+    def test_format_data_project_settings(self):
+        data = format_data(self.user, [self.project._id], [])
+        expected = [
+            {
+                'node_id': self.project._id,
+                'title': self.project.title,
+                'kind': 'folder' if not self.project.node__parent else 'node',
+                'nodeUrl': self.project.url,
+                'children': [
+                    {
+                        'title': 'comments',
+                        'description': settings.SUBSCRIPTIONS_AVAILABLE['comments'],
+                        'kind': 'event',
+                        'notificationType': 'email_transactional',
+                        'children': [],
+                        'parent_notification_type': None
+                    },
+                    {
+                        'node_id': self.node._id,
+                        'title': self.node.title,
+                        'kind': 'folder' if not self.node.node__parent else 'node',
+                        'nodeUrl': self.node.url,
+                        'children': [
+                            {
+                                'title': 'comments',
+                                'description': settings.SUBSCRIPTIONS_AVAILABLE['comments'],
+                                'kind': 'event',
+                                'notificationType': 'email_transactional',
+                                'children': [],
+                                'parent_notification_type': None
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+        assert_equal(data, expected)
 
     def test_format_data_node_settings(self):
-        pass
+        data = format_data(self.user, [self.node._id], [])
+        expected = [{
+                        'node_id': self.node._id,
+                        'title': self.node.title,
+                        'kind': 'folder' if not self.node.node__parent else 'node',
+                        'nodeUrl': self.node.url,
+                        'children': [
+                            {
+                                'title': 'comments',
+                                'description': settings.SUBSCRIPTIONS_AVAILABLE['comments'],
+                                'kind': 'event',
+                                'notificationType': 'email_transactional',
+                                'children': [],
+                                'parent_notification_type': None
+                            }
+                        ]
+                    }]
+        assert_equal(data, expected)
+
+    def test_format_user_subscriptions(self):
+        data = format_user_subscriptions(self.user, [])
+        expected = [{
+                        'title': 'comment_replies',
+                        'description': settings.USER_SUBSCRIPTIONS_AVAILABLE['comment_replies'],
+                        'kind': 'event',
+                        'notificationType': 'email_transactional',
+                        'children': []
+                    }]
+        assert_equal(data, expected)
 
     def test_format_data_user_settings(self):
-        pass
+        data = format_user_and_project_subscriptions(self.user)
+        expected = [
+            {
+                'title': 'User Notifications',
+                'node_id': self.user._id,
+                'kind': 'heading',
+                'children': format_user_subscriptions(self.user, [])
+            },
+            {
+                'title': 'Project Notifications',
+                'node_id': '',
+                'kind': 'heading',
+                'children': format_data(self.user, get_configured_projects(self.user), [])
+            }]
+
+        assert_equal(data, expected)
 
 
 class TestNotificationsDict(OsfTestCase):

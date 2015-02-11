@@ -48,8 +48,7 @@ def get_all_user_subscriptions(user):
     return user_subscriptions
 
 
-def format_data(user, node_ids, subscriptions_available, data):
-    subscriptions_available = subscriptions_available if subscriptions_available else settings.SUBSCRIPTIONS_AVAILABLE
+def format_data(user, node_ids, data, subscriptions_available=settings.SUBSCRIPTIONS_AVAILABLE):
 
     for idx, node_id in enumerate(node_ids):
         node = Node.load(node_id)
@@ -84,21 +83,21 @@ def format_data(user, node_ids, subscriptions_available, data):
             if event['notificationType'] == 'adopt_parent':
                 event['parent_notification_type'] = get_parent_notification_type(node_id, s, user)
             else:
-                event['parent_notification_type'] = None
+                event['parent_notification_type'] = None #only get nt if node = adopt_parent for display purposes
 
             data[index]['children'].append(event)
 
         if node.nodes:
             authorized_nodes = [n for n in node.nodes if user in n.contributors and not n.is_deleted]
-            format_data(user, [n._id for n in authorized_nodes], None, data[index]['children'])
+            format_data(user, [n._id for n in authorized_nodes], data[index]['children'])
 
     return data
 
 
 def get_parent_notification_type(uid, event, user):
-    parent = Node.load(uid).node__parent
-    if parent:
-        for p in parent:
+    node = Node.load(uid)
+    if node and node.node__parent:
+        for p in node.node__parent:
             key = str(p._id + '_' + event)
             try:
                 subscription = Subscription.find_one(Q('_id', 'eq', key))
@@ -122,7 +121,7 @@ def format_user_and_project_subscriptions(user):
             'title': 'Project Notifications',
             'node_id': '',
             'kind': 'heading',
-            'children': format_data(user, get_configured_projects(user), None, [])
+            'children': format_data(user, get_configured_projects(user), [])
         }]
 
 
@@ -136,7 +135,7 @@ def format_user_subscriptions(user, data):
                 'notificationType': 'none',
                 'children': []
                 }
-        for subscription in user_subscriptions :
+        for subscription in user_subscriptions:
             if subscription.event_name == s:
                 for notification_type in settings.NOTIFICATION_TYPES:
                     if user in getattr(subscription, notification_type):

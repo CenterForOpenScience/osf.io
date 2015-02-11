@@ -93,9 +93,6 @@ class UserFactory(ModularOdmFactory):
 class SubscriptionFactory(ModularOdmFactory):
     FACTORY_FOR = Subscription
 
-    email_transactional = []
-    email_digest = []
-
 
 class AuthUserFactory(UserFactory):
     """A user that automatically has an api key, for quick authentication.
