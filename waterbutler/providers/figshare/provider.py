@@ -210,6 +210,10 @@ class FigshareProjectProvider(BaseFigshareProvider):
             return (yield from self._project_metadata_contents())
         return (yield from self._get_project_metadata())
 
+    @asyncio.coroutine
+    def revisions(self, path, **kwargs):
+        raise exceptions.ProviderError({'message': 'Figshare does not support file revisions.'}, code=405)
+
 
 class FigshareArticleProvider(BaseFigshareProvider):
 
@@ -318,3 +322,7 @@ class FigshareArticleProvider(BaseFigshareProvider):
             ]
             return [each for each in serialized if each]
         return self._serialize_item(article_json, parent=article_json)
+
+    @asyncio.coroutine
+    def revisions(self, path, **kwargs):
+        raise exceptions.ProviderError({'message': 'Figshare does not support file revisions.'}, code=405)

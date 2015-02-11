@@ -55,10 +55,20 @@ class GitHubProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def download(self, path, ref=None, **kwargs):
-        if self._is_sha(ref):
+        '''Get the stream to the specified file on github
+        :param str path: The path to the file on github
+        :param str ref: The git 'ref' a branch or commit sha at which to get the file from
+        :param str fileSha: The sha of file to be downloaded if specifed path will be ignored
+        :param dict kwargs: Ignored
+        '''
+        # fileSha is camelCased as it is a query parameter set via javascript
+        # Its left in kwargs because it is  A) options and B) ugly to have camelCase variables in python
+        file_sha = kwargs.get('fileSha')
+
+        if file_sha:
             resp = yield from self.make_request(
                 'GET',
-                self.build_repo_url('git', 'blobs', ref),
+                self.build_repo_url('git', 'blobs', file_sha),
                 headers={'Accept': 'application/vnd.github.VERSION.raw'},
                 expects=(200, ),
                 throws=exceptions.DownloadError,

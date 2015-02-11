@@ -69,16 +69,34 @@ class BaseFileMetadata(BaseMetadata):
         pass
 
 
-class BaseFileRevisionMetadata(BaseFileMetadata):
+class BaseFileRevisionMetadata(metaclass=abc.ABCMeta):
+
+    def __init__(self, raw):
+        self.raw = raw
 
     def serialized(self):
-        return dict(super().serialized(), **{
-            'revision': self.revision,
-        })
+        return {
+            'extra': self.extra,
+            'version': self.version,
+            'modified': self.modified,
+            'versionIdentifier': self.version_identifier,
+        }
 
     @abc.abstractproperty
-    def revision(self):
+    def modified(self):
         pass
+
+    @abc.abstractproperty
+    def version(self):
+        pass
+
+    @abc.abstractproperty
+    def version_identifier(self):
+        pass
+
+    @property
+    def extra(self):
+        return {}
 
 
 class BaseFolderMetadata(BaseMetadata):

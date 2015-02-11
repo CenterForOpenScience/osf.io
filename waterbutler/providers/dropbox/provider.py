@@ -103,9 +103,16 @@ class DropboxProvider(provider.BaseProvider):
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
         path = DropboxPath(self.folder, path)
+
+        if revision:
+            url = self._build_content_url('files', 'auto', path.full_path, rev=revision)
+        else:
+            # Dont add unused query parameters
+            url = self._build_content_url('files', 'auto', path.full_path)
+
         resp = yield from self.make_request(
             'GET',
-            self._build_content_url('files', 'auto', path.full_path),
+            url,
             expects=(200, ),
             throws=exceptions.DownloadError,
         )
@@ -198,13 +205,14 @@ class DropboxProvider(provider.BaseProvider):
             'GET',
             self.build_url('revisions', 'auto', path.full_path),
             expects=(200, ),
-            throws=exceptions.RevisionError
+            throws=exceptions.RevisionsError
         )
         data = yield from response.json()
 
         return [
             DropboxRevision(item).serialized()
             for item in data
+            if not item.get('is_deleted')
         ]
 
     def can_intra_copy(self, dest_provider):
