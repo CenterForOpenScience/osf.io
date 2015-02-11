@@ -15,6 +15,7 @@ from framework.mongo.utils import from_mongo
 
 from website import language
 
+from website.addons.osfstorage.model import OsfStorageGuidFile
 from website.util import paths
 from website.util import rubeus
 from website.exceptions import NodeStateError
@@ -836,9 +837,10 @@ def _get_children(node, auth, indent=0):
 
 def get_all_files(node):
     files = []
+    # Other addons
     addons = node.get_addon_names()
     for addon_name in addons:
-        if addon_name in ('figshare', 'dropbox', 's3', 'github'):
+        if addon_name in ('figshare', 'dropbox', 's3', 'github', 'osfstorage'):
             addon = node.get_addon(addon_name)
             if not addon is None:
                 files.extend(addon.get_existing_files())
@@ -881,21 +883,15 @@ def n_unread_total(node, user, page):
         if isinstance(view_timestamp, dict):
             n_unread = 0
             if page == 'files':
-                root_targets = OsfStorageGuidFile.find(Q('node', 'eq', node)).get_keys()
-                for root_target in root_targets:
-                    osf_file = OsfStorageGuidFile.load(root_target)
-                    if hasattr(osf_file, 'comment_target'):
-                        n_unread += n_unread_comments(node, user, page, root_target)
-                # Other files
                 files = get_all_files(node)
-                for addon_file in files:
-                    if hasattr(addon_file, 'comment_target'):
-                        n_unread += n_unread_comments(node, user, page, addon_file._id)
+                for file_obj in files:
+                    if hasattr(file_obj, 'commented'):
+                        n_unread += n_unread_comments(node, user, page, file_obj._id)
             elif page == 'wiki':
                 root_targets = NodeWikiPage.find(Q('node', 'eq', node)).get_keys()
                 for root_target in root_targets:
                     wiki_page = NodeWikiPage.load(root_target)
-                    if hasattr(wiki_page, 'comment_target'):
+                    if hasattr(wiki_page, 'commented'):
                         root_id = wiki_page.page_name
                         n_unread += n_unread_comments(node, user, page, root_id)
 

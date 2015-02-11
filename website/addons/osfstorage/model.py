@@ -123,6 +123,10 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
     def create_waterbutler_log(self, auth, action, metadata):
         pass
 
+    def get_existing_files(self, connect=None):
+        files_id = OsfStorageGuidFile.find(Q('node', 'eq', self.owner)).get_keys()
+        return map(lambda guid: OsfStorageGuidFile.load(guid), files_id)
+
 
 class BaseFileObject(StoredObject):
     __indices__ = [
@@ -426,6 +430,30 @@ class OsfStorageGuidFile(GuidFile):
             obj.save()
         return obj
 
+    @classmethod
+    def configure_comment(cls, node, path, delete=True):
+        """
+
+        :param node:
+        :param path:
+        :param delete: If True, comments are going to be hidden; else, comments are going to be shown
+        :return:
+        """
+        if not path.startswith('/'):
+            path = '/' + path
+        try:
+            obj = cls.find_one(
+                Q('node', 'eq', node) &
+                Q('path', 'eq', path)
+            )
+        except modm_errors.ModularOdmException:
+            return
+        for comment in getattr(obj, 'comment_target', []):
+            if delete:
+                comment.hide(save=True)
+            else:
+                comment.show(save=True)
+
     @property
     def provider(self):
         return 'osfstorage'
@@ -451,25 +479,4 @@ class OsfStorageGuidFile(GuidFile):
         })
         return url.url
 
-    @classmethod
-    def configure_comment(cls, node, path, delete=True):
-        """
-
-        :param node:
-        :param path:
-        :param delete: If True, comments are going to be hidden; else, comments are going to be shown
-        :return:
-        """
-        try:
-            obj = cls.find_one(
-                Q('node', 'eq', node) &
-                Q('path', 'eq', path)
-            )
-        except modm_errors.ModularOdmException:
-            return
-        for comment in getattr(obj, 'comment_target', []):
-            if delete:
-                comment.hide(save=True)
-            else:
-                comment.show(save=True)
 

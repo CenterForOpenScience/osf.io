@@ -336,12 +336,13 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
             if content['is_dir']:
                 queue.extend(connection.metadata(content['path'])['contents'])
             else:
-                #if not path.startswith('/'):
-                #    path = '/' + path
+                path = content['path']
+                if not path.startswith('/'):
+                    path = '/' + path
                 try:
                     guid = DropboxFile.find_one(
                         Q('node', 'eq', self.owner) &
-                        Q('path', 'eq', content['path'])
+                        Q('path', 'eq', path)
                     )
                 except:
                     continue

@@ -556,6 +556,14 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         """
         pass
 
+    def get_existing_files(self, connect=None):
+        """
+
+        :param Connection connect:
+        :return: Files in the osf from provider
+        """
+        pass
+
 
 # TODO: No more magicks
 def init_addon(app, addon_name, routes=True):

@@ -367,17 +367,9 @@ def list_total_comments(node, auth, page):
 
 def get_files_comments(node):
     comments = []
-    # github, figshare, dropbox, s3
     files = get_all_files(node)
-    for addon_file in files:
-        for comment in getattr(addon_file, 'commented', []):
-            comments.append(comment)
-    # osf storage
-    from website.addons.osfstorage.model import OsfStorageGuidFile
-    files_id = OsfStorageGuidFile.find(Q('node', 'eq', node)).get_keys()
-    osf_files = map(lambda guid: OsfStorageGuidFile.load(guid), files_id)
-    for osf_file in osf_files:
-        for comment in getattr(osf_file, 'commented', []):
+    for file_obj in files:
+        for comment in getattr(file_obj, 'commented', []):
             if comment.is_hidden: # File is already deleted
                 break
             comments.append(comment)
@@ -456,22 +448,15 @@ def _update_comments_timestamp(auth, node, page='node', root_id=None):
         if root_id is None or root_id == 'None':
             ret = {}
             if page == 'files':
-                # Osf file
-                root_targets = OsfStorageGuidFile.find(Q('node', 'eq', node)).get_keys()
-                for root_target in root_targets:
-                    osf_file = OsfStorageGuidFile.load(root_target)
-                    if hasattr(osf_file, 'comment_target'):
-                        ret = _update_comments_timestamp(auth, node, page, root_target)
-                # Files in other addons
                 files = get_all_files(node)
                 for addon_file in files:
-                    if hasattr(addon_file, 'comment_target'):
+                    if hasattr(addon_file, 'commented'):
                         ret = _update_comments_timestamp(auth, node, page, addon_file._id)
             elif page == 'wiki':
                 root_targets = NodeWikiPage.find(Q('node', 'eq', node)).get_keys()
                 for root_target in root_targets:
                     wiki_page = NodeWikiPage.load(root_target)
-                    if hasattr(wiki_page, 'comment_target'):
+                    if hasattr(wiki_page, 'commented'):
                         ret = _update_comments_timestamp(auth, node, page, wiki_page.page_name)
             return ret
 
