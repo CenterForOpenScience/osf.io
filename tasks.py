@@ -396,7 +396,6 @@ def addon_requirements(download_cache=None, use_wheel=False):
                 open(requirements_file)
                 print('Installing requirements for {0}'.format(directory))
                 cmd = 'pip install --upgrade -r {0}'.format(requirements_file)
-                # run pip install w/ the wheelhouse folder specified
                 if use_wheel:
                     cmd += ' --use-wheel --find-links {}'.format(wheelhouse_path())
                 if download_cache:
