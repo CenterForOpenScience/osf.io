@@ -69,32 +69,42 @@
      * Returns the folder select button for a single row.
      */
     function _treebeardSelectView(item) {
+        var tb = this;
+        var setTempPicked = function () {
+            this._tempPicked = item.data.path;
+        };
+        var templateChecked = m('input', {
+            type:'radio',
+            checked : 'checked',
+            name: '#' + tb.options.divID + INPUT_NAME,
+            value:item.id
+            }, ' ');
+        var templateUnchecked = m('input',{
+            type: 'radio',
+            onclick : setTempPicked.bind(tb),
+            name: '#' + tb.options.divID + INPUT_NAME,
+            value:item.id
+            }, ' ');
 
-        if(item.data.path != undefined){
-            if (item.data.path === this.options.folderPath) {
-                return m("input",{
-                type:"radio",
-                checked : 'checked',
-                name: "#" + this.options.divID + INPUT_NAME,
-                value:item.id
-                }, " ");
+        if(tb._tempPicked) {
+            if(tb._tempPicked === item.data.path) {
+                return templateChecked;
+            } else {
+                return templateUnchecked;
             }
         }
 
-        if (this.options.folderArray && item.data.name === this.options.folderArray[0]) {
-            return m("input",{
-                type:"radio",
-                checked : 'checked',
-                name: "#" + this.options.divID + INPUT_NAME,
-                value:item.id
-                }, " ");
+        if(item.data.path != undefined){
+            if (item.data.path === tb.options.folderPath) {
+                return templateChecked;
+            }
         }
 
-        return m("input",{
-            type:"radio",
-            name: "#" + this.options.divID + INPUT_NAME,
-            value:item.id
-        }, " ");
+        if (tb.options.folderArray && item.data.name === tb.options.folderArray[0]) {
+            return templateChecked;
+        }
+
+        return templateUnchecked;
     }
 
     function _treebeardColumnTitle(){
