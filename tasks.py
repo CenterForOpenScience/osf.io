@@ -18,6 +18,8 @@ from website import settings
 logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+WHEELHOUSE_PATH = os.environ.get('WHEELHOUSE')
+
 
 def get_bin_path():
     """Get parent path of current python binary.
@@ -314,6 +316,8 @@ def flake8():
 def requirements(all=False, download_cache=None):
     """Install dependencies."""
     cmd = "pip install --upgrade -r dev-requirements.txt"
+    if WHEELHOUSE_PATH:
+        cmd += ' --use-wheel --find-links {}'.format(WHEELHOUSE_PATH)
     if download_cache:
         cmd += ' --download-cache {0}'.format(download_cache)
     run(bin_prefix(cmd), echo=True)
@@ -366,6 +370,20 @@ def test_all(flake=False):
     test_osf()
     test_addons()
 
+
+@task
+def wheelhouse(repo, path):
+    version = '.'.join([str(i) for i in sys.version_info[0:2]])
+    run('pip install wheel --upgrade', pty=False)
+    name = 'wheelhouse-{}.tar.gz'.format(version)
+    url = '{}/archive/{}.tar.gz'.format(repo, version)
+    # download and extract the wheelhouse github repository archive
+    run('mkdir {}'.format(path), pty=False)
+    run('curl -o {} -L {}'.format(name, url), pty=False)
+    run('tar -xvf {} --strip 1 -C {}'.format(name, path), pty=False)
+    run('rm -f {}'.format(name), pty=False)
+
+
 @task
 def addon_requirements(download_cache=None):
     """Install all addon requirements."""
@@ -377,6 +395,8 @@ def addon_requirements(download_cache=None):
                 open(requirements_file)
                 print('Installing requirements for {0}'.format(directory))
                 cmd = 'pip install --upgrade -r {0}'.format(requirements_file)
+                if WHEELHOUSE_PATH:
+                    cmd += ' --use-wheel --find-links {}'.format(WHEELHOUSE_PATH)
                 if download_cache:
                     cmd += ' --download-cache {0}'.format(download_cache)
                 run(bin_prefix(cmd))
