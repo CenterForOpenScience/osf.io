@@ -26,6 +26,9 @@ ${next.body()}
 
 <%def name="javascript_bottom()">
 
+<script src="/static/vendor/citeproc-js/xmldom.js"></script>
+<script src="/static/vendor/citeproc-js/citeproc.js"></script>
+
 <script>
 
     <% import json %>
@@ -57,7 +60,8 @@ ${next.body()}
             urls: {api: nodeApiUrl},
             isPublic: ${json.dumps(node.get('is_public', False))},
             piwikSiteID: ${json.dumps(node.get('piwik_site_id', None))},
-            piwikHost: ${json.dumps(piwik_host)}
+            piwikHost: ${json.dumps(piwik_host)},
+            anonymous: ${json.dumps(node['anonymous'])}
         }
     });
 

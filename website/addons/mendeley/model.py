@@ -187,18 +187,8 @@ class Mendeley(ExternalProvider):
         """
         folder = self.client.folders.get(list_id) if list_id else None
         if folder:
-            citations = lambda: self._citations_for_mendeley_folder(folder)
-        else:
-            citations = lambda: self._citations_for_mendeley_user()
-
-        citation_list = CitationList(
-            name=folder.name if folder else self.account.display_name,
-            provider_account_id=self.account.provider_id,
-            provider_list_id=list_id,
-            citations=citations,
-        )
-
-        return citation_list
+            return self._citations_for_mendeley_folder(folder)
+        return self._citations_for_mendeley_user()
 
     def _mendeley_folder_to_citation_list(self, folder):
         return CitationList(

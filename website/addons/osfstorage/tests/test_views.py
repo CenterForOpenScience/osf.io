@@ -4,27 +4,21 @@
 import mock
 from nose.tools import *  # noqa
 
-import datetime
-
 from framework.auth.core import Auth
 from website.addons.osfstorage.tests.utils import (
     StorageTestCase, Delta, AssertDeltas
 )
 from website.addons.osfstorage.tests import factories
 
-import urlparse
-
 import furl
 
 from framework.auth import signing
-from website import settings
 from website.util import rubeus
 
-from website import settings
-from website.addons.base.views import make_auth
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import views
+from website.addons.base.views import make_auth
 from website.addons.osfstorage import settings as storage_settings
 
 
@@ -60,7 +54,7 @@ class TestGetMetadataHook(HookTestCase):
         record.save()
         res = self.send_hook(
             'osf_storage_get_metadata_hook',
-            {'path': 'kind/of'},
+            {'path': 'kind/of/'},
         )
         assert_equal(len(res.json), 1)
         assert_equal(
@@ -137,7 +131,7 @@ class TestUploadFileHook(HookTestCase):
         assert_equal(res.status_code, 201)
         assert_equal(res.json['status'], 'success')
         assert_equal(res.json['downloads'], self.record.get_download_count())
-        version = model.OsfStorageFileVersion.load(res.json['version_id'])
+        version = model.OsfStorageFileVersion.load(res.json['version'])
         assert_is_not(version, None)
         assert_not_in(version, self.record.versions)
         record = model.OsfStorageFileRecord.find_by_path(path, self.node_settings)
@@ -150,7 +144,7 @@ class TestUploadFileHook(HookTestCase):
             self.record.reload()
         assert_equal(res.status_code, 200)
         assert_equal(res.json['status'], 'success')
-        version = model.OsfStorageFileVersion.load(res.json['version_id'])
+        version = model.OsfStorageFileVersion.load(res.json['version'])
         assert_is_not(version, None)
         assert_in(version, self.record.versions)
 
@@ -166,7 +160,7 @@ class TestUploadFileHook(HookTestCase):
             self.record.reload()
         assert_equal(res.status_code, 200)
         assert_equal(res.json['status'], 'success')
-        version = model.OsfStorageFileVersion.load(res.json['version_id'])
+        version = model.OsfStorageFileVersion.load(res.json['version'])
         assert_is_not(version, None)
         assert_in(version, self.record.versions)
 
@@ -185,7 +179,7 @@ class TestUpdateMetadataHook(HookTestCase):
         self.record.save()
         self.payload = {
             'metadata': {'archive': 'glacier'},
-            'version_id': self.version._id,
+            'version': self.version._id,
         }
 
     def send_metadata_hook(self, payload=None, **kwargs):
@@ -206,7 +200,7 @@ class TestUpdateMetadataHook(HookTestCase):
         res = self.send_metadata_hook(
             payload={
                 'metadata': {'archive': 'glacier'},
-                'version_id': self.version._id[::-1],
+                'version': self.version._id[::-1],
             },
             expect_errors=True,
         )
@@ -215,70 +209,27 @@ class TestUpdateMetadataHook(HookTestCase):
         assert_not_in('archive', self.version.metadata)
 
 
-class TestViewFile(StorageTestCase):
-
-    def setUp(self):
-        super(TestViewFile, self).setUp()
-        self.path = 'kind/of/magic.mp3'
-        self.record, _ = model.OsfStorageFileRecord.get_or_create(self.path, self.node_settings)
-        self.version = factories.FileVersionFactory()
-        self.record.versions.append(self.version)
-        self.record.save()
-
-    def view_file(self, path, **kwargs):
-        return self.app.get(
-            self.project.web_url_for('osf_storage_view_file', path=path),
-            auth=self.project.creator.auth,
-            **kwargs
-        )
-
-    def test_view_file_creates_guid_if_none_exists(self):
-        n_objs = model.OsfStorageGuidFile.find().count()
-        res = self.view_file(self.path)
-        assert_equal(n_objs + 1, model.OsfStorageGuidFile.find().count())
-        assert_equal(res.status_code, 302)
-        file_obj = model.OsfStorageGuidFile.find_one(node=self.project, path=self.path)
-        redirect_parsed = urlparse.urlparse(res.location)
-        assert_equal(redirect_parsed.path.strip('/'), file_obj._id)
-
-    def test_view_file_does_not_create_guid_if_exists(self):
-        self.view_file(self.path)
-        n_objs = model.OsfStorageGuidFile.find().count()
-        self.view_file(self.path)
-        assert_equal(n_objs, model.OsfStorageGuidFile.find().count())
-
-    def test_view_file_deleted_throws_error(self):
-        self.record.delete(self.auth_obj, log=False)
-        res = self.view_file(self.path, expect_errors=True)
-        assert_equal(res.status_code, 410)
-
-    @mock.patch('website.addons.osfstorage.utils.render_file')
-    def test_view_file_escapes_html_in_name(self, mock_render):
-        mock_render.return_value = 'mock'
-        path = 'kind/of/<strong>magic.mp3'
-        record, _ = model.OsfStorageFileRecord.get_or_create(path, self.node_settings)
-        version = factories.FileVersionFactory()
-        record.versions.append(version)
-        record.save()
-        res = self.view_file(path).follow(auth=self.project.creator.auth)
-        assert record.name in res
-
-
 class TestGetRevisions(StorageTestCase):
 
     def setUp(self):
         super(TestGetRevisions, self).setUp()
         self.path = 'tie/your/mother/down.mp3'
         self.record, _ = model.OsfStorageFileRecord.get_or_create(self.path, self.node_settings)
-        self.record.versions = [factories.FileVersionFactory() for _ in range(15)]
+        self.record.versions = [factories.FileVersionFactory() for __ in range(15)]
         self.record.save()
 
     def get_revisions(self, path=None, page=None, **kwargs):
+
         return self.app.get(
             self.project.api_url_for(
                 'osf_storage_get_revisions',
-                path=path or self.path,
-                page=page,
+                **signing.sign_data(
+                    signing.default_signer,
+                    {
+                        'path': path or self.path,
+                        'page': page,
+                    }
+                )
             ),
             auth=self.user.auth,
             **kwargs
@@ -321,101 +272,122 @@ class TestGetRevisions(StorageTestCase):
         assert_equal(res.status_code, 404)
 
 
-class TestDownloadFile(StorageTestCase):
+# class TestDownloadFile(StorageTestCase):
 
-    def setUp(self):
-        super(TestDownloadFile, self).setUp()
-        self.path = u'tie/your/mother/döwn.mp3'
-        self.record, _ = model.OsfStorageFileRecord.get_or_create(self.path, self.node_settings)
-        self.version = factories.FileVersionFactory()
-        self.record.versions.append(self.version)
-        self.record.save()
+#     def setUp(self):
+#         super(TestDownloadFile, self).setUp()
+#         self.path = u'tie/your/mother/döwn.mp3'
+#         self.record, _ = model.OsfStorageFileRecord.get_or_create(self.path, self.node_settings)
+#         self.version = factories.FileVersionFactory()
+#         self.record.versions.append(self.version)
+#         self.record.save()
 
-    def download_file(self, path, version=None, **kwargs):
-        return self.app.get(
-            self.project.web_url_for(
-                'osf_storage_view_file',
-                path=path,
-                version=version,
-                action='download',
-            ),
-            auth=self.project.creator.auth,
-            **kwargs
-        )
+#     def download_file(self, path, version=None, **kwargs):
+#         return self.app.get(
+#             self.project.web_url_for(
+#                 'addon_view_or_download_file',
+#                 path=path,
+#                 version=version,
+#                 action='download',
+#                 provider='osfstorage',
+#             ),
+#             maybe_follow=True,
+#             auth=self.project.creator.auth,
+#             **kwargs
+#         )
 
-    @mock.patch('website.addons.osfstorage.utils.requests.get')
-    @mock.patch('website.addons.osfstorage.utils.get_waterbutler_download_url')
-    def test_download(self, mock_get_url, mock_request):
-        mock_get_url.return_value = 'http://freddie.queen.com/'
-        mock_request.return_value = mock.Mock(headers={'Location': 'http://eddiebowy.horse/'})
+#     @mock.patch('website.addons.osfstorage.utils.requests.get')
+#     @mock.patch('website.addons.osfstorage.utils.get_waterbutler_download_url')
+#     def test_download(self, mock_get_url, mock_request):
+#         file_content = b'I am a teapot!'
+#         mock_get_url.return_value = 'http://freddie.queen.com/'
+#         mock_request.return_value = mock.Mock(content=file_content)
 
-        res = self.download_file(self.path)
+#         res = self.download_file(self.path)
 
-        assert_equal(res.status_code, 302)
-        mock_request.assert_called_once_with('http://freddie.queen.com/', allow_redirects=False)
-        assert_equal(res.location, 'http://eddiebowy.horse/')
-        mock_get_url.assert_called_with(
-            len(self.record.versions),
-            self.version,
-            self.record,
-            mode=None,
-        )
+#         assert_equal(res.status_code, 200)
+#         mock_request.assert_called_once_with('http://freddie.queen.com/', allow_redirects=False)
+#         assert_equal(res.body, file_content)
+#         mock_get_url.assert_called_with(
+#             len(self.record.versions),
+#             self.version,
+#             self.record,
+#             mode=None,
+#         )
 
-    @mock.patch('website.addons.osfstorage.utils.requests.get')
-    @mock.patch('website.addons.osfstorage.utils.get_waterbutler_download_url')
-    def test_download_render_mode(self, mock_get_url, mock_request):
-        mock_get_url.return_value = 'http://freddie.queen.com/'
-        mock_request.return_value = mock.Mock(headers={'Location': 'http://eddiebowy.horse/'})
+#     @mock.patch('website.addons.osfstorage.utils.requests.get')
+#     @mock.patch('website.addons.osfstorage.utils.get_waterbutler_download_url')
+#     def test_download_redirect_signed_url(self, mock_get_url, mock_request):
+#         mock_get_url.return_value = 'http://freddie.queen.com/'
+#         mock_request.return_value = mock.Mock(status_code=302, headers={'Location': 'http://eddiebowy.horse/'})
 
-        self.app.get(
-            self.project.web_url_for(
-                'osf_storage_view_file',
-                path=self.path,
-                action='download',
-                mode='render',
-            ),
-            auth=self.project.creator.auth,
-        )
+#         res = self.download_file(self.path)
 
-        mock_get_url.assert_called_with(
-            len(self.record.versions),
-            self.version,
-            self.record,
-            mode='render',
-        )
+#         assert_equal(res.status_code, 302)
+#         mock_request.assert_called_once_with('http://freddie.queen.com/', allow_redirects=False)
+#         assert_equal(res.location, 'http://eddiebowy.horse/')
+#         mock_get_url.assert_called_with(
+#             len(self.record.versions),
+#             self.version,
+#             self.record,
+#             mode=None,
+#         )
 
-    @mock.patch('website.addons.osfstorage.utils.requests.get')
-    @mock.patch('website.addons.osfstorage.utils.get_waterbutler_download_url')
-    def test_download_by_version_latest(self, mock_get_url, mock_request):
-        mock_get_url.return_value = 'http://freddie.queen.com/'
-        mock_request.return_value = mock.Mock(headers={'Location': 'http://eddiebowy.horse/'})
+#     @mock.patch('website.addons.osfstorage.utils.requests.get')
+#     @mock.patch('website.addons.osfstorage.utils.get_waterbutler_download_url')
+#     def test_download_render_mode(self, mock_get_url, mock_request):
+#         mock_get_url.return_value = 'http://freddie.queen.com/'
+#         mock_request.return_value = mock.Mock(status_code=302, headers={'Location': 'http://eddiebowy.horse/'})
 
-        versions = [factories.FileVersionFactory() for _ in range(3)]
-        self.record.versions.extend(versions)
-        self.record.save()
-        res = self.download_file(path=self.path, version=3)
+#         self.app.get(
+#             self.project.web_url_for(
+#                 'osf_storage_view_file',
+#                 path=self.path,
+#                 action='download',
+#                 mode='render',
+#             ),
+#             auth=self.project.creator.auth,
+#         )
 
-        assert_equal(res.status_code, 302)
-        assert_equal(res.location, 'http://eddiebowy.horse/')
-        mock_get_url.assert_called_with(3, versions[1], self.record, mode=None)
+#         mock_get_url.assert_called_with(
+#             len(self.record.versions),
+#             self.version,
+#             self.record,
+#             mode='render',
+#         )
 
-    @mock.patch('website.addons.osfstorage.utils.get_waterbutler_download_url')
-    def test_download_invalid_version(self, mock_get_url):
-        mock_get_url.return_value = 'http://freddie.queen.com/'
+#     @mock.patch('website.addons.osfstorage.utils.requests.get')
+#     @mock.patch('website.addons.osfstorage.utils.get_waterbutler_download_url')
+#     def test_download_by_version_latest(self, mock_get_url, mock_request):
+#         mock_get_url.return_value = 'http://freddie.queen.com/'
+#         mock_request.return_value = mock.Mock(status_code=302, headers={'Location': 'http://eddiebowy.horse/'})
 
-        res = self.download_file(
-            path=self.path, version=3,
-            expect_errors=True,
-        )
+#         versions = [factories.FileVersionFactory() for _ in range(3)]
+#         self.record.versions.extend(versions)
+#         self.record.save()
+#         res = self.download_file(path=self.path, version=3)
 
-        assert_equal(res.status_code, 404)
-        assert_false(mock_get_url.called)
+#         assert_equal(res.status_code, 302)
+#         assert_equal(res.location, 'http://eddiebowy.horse/')
+#         mock_get_url.assert_called_with(3, versions[1], self.record, mode=None)
 
-    @mock.patch('website.addons.osfstorage.utils.get_waterbutler_download_url')
-    def test_download_deleted_version(self, mock_get_url):
-        self.record.delete(self.auth_obj, log=False)
-        res = self.download_file(self.path, expect_errors=True)
-        assert_equal(res.status_code, 410)
+#     @mock.patch('website.addons.osfstorage.utils.get_waterbutler_download_url')
+#     def test_download_invalid_version(self, mock_get_url):
+#         mock_get_url.return_value = 'http://freddie.queen.com/'
+
+#         res = self.download_file(
+#             path=self.path, version=3,
+#             expect_errors=True,
+#         )
+
+#         assert_equal(res.status_code, 404)
+#         assert_false(mock_get_url.called)
+
+#     @mock.patch('website.addons.osfstorage.utils.get_waterbutler_download_url')
+#     def test_download_deleted_version(self, mock_get_url):
+#         self.record.delete(self.auth_obj, log=False)
+#         res = self.download_file(self.path, expect_errors=True)
+#         assert_equal(res.status_code, 410)
 
 
 def assert_urls_equal(url1, url2):
@@ -425,73 +397,3 @@ def assert_urls_equal(url1, url2):
         setattr(furl1, attr, None)
         setattr(furl2, attr, None)
     assert_equal(furl1, furl2)
-
-
-class TestLegacyViews(StorageTestCase):
-
-    def setUp(self):
-        super(TestLegacyViews, self).setUp()
-        self.path = 'mercury.png'
-
-    def test_view_file_redirect(self):
-        url = '/{0}/osffiles/{1}/'.format(self.project._id, self.path)
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 301)
-        expected_url = self.project.web_url_for(
-            'osf_storage_view_file',
-            path=self.path,
-        )
-        assert_urls_equal(res.location, expected_url)
-
-    def test_download_file_redirect(self):
-        url = '/{0}/osffiles/{1}/download/'.format(self.project._id, self.path)
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 301)
-        expected_url = self.project.web_url_for(
-            'osf_storage_view_file',
-            path=self.path,
-            action='download',
-        )
-        assert_urls_equal(res.location, expected_url)
-
-    def test_download_file_version_redirect(self):
-        url = '/{0}/osffiles/{1}/version/3/download/'.format(
-            self.project._id,
-            self.path,
-        )
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 301)
-        expected_url = self.project.web_url_for(
-            'osf_storage_view_file',
-            path=self.path,
-            action='download',
-            version=3,
-        )
-        assert_urls_equal(res.location, expected_url)
-
-    def test_api_download_file_redirect(self):
-        url = '/api/v1/project/{0}/osffiles/{1}/'.format(self.project._id, self.path)
-        res = self.app.get(url, auth=self.user.auth)
-        print(res.location)
-        assert_equal(res.status_code, 301)
-        expected_url = self.project.web_url_for(
-            'osf_storage_view_file',
-            path=self.path,
-            action='download',
-        )
-        assert_urls_equal(res.location, expected_url)
-
-    def test_api_download_file_version_redirect(self):
-        url = '/api/v1/project/{0}/osffiles/{1}/version/3/'.format(
-            self.project._id,
-            self.path,
-        )
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 301)
-        expected_url = self.project.web_url_for(
-            'osf_storage_view_file',
-            path=self.path,
-            action='download',
-            version=3,
-        )
-        assert_urls_equal(res.location, expected_url)

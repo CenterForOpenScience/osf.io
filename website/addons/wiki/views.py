@@ -12,6 +12,9 @@ from framework.exceptions import HTTPError
 from framework.auth.utils import privacy_info_handle
 from framework.flask import redirect
 
+from website.addons.wiki import settings
+from website.addons.wiki import utils as wiki_utils
+from website.profile.utils import get_gravatar
 from website.project.views.node import _view_project
 from website.project import show_diff
 from website.project.model import has_anonymous_link
@@ -19,7 +22,7 @@ from website.project.decorators import (
     must_be_contributor_or_public,
     must_have_addon, must_not_be_registration,
     must_be_valid_project,
-    must_have_permission
+    must_have_permission,
 )
 
 from .exceptions import (
@@ -211,15 +214,16 @@ def project_wiki_compare(auth, wname, wver, **kwargs):
 
 
 @must_be_valid_project
-@must_be_contributor_or_public
+@must_have_permission('write')
 @must_have_addon('wiki', 'node')
 def wiki_page_content(wname, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    wiki_name = wname.strip()
-    wiki_page = node.get_wiki_page(wiki_name)
+    wiki_page = node.get_wiki_page(wname)
 
     return {
-        'wiki_content': wiki_page.content if wiki_page else ''
+        'wiki_content': wiki_page.content if wiki_page else '',
+        'wiki_draft': (wiki_page.get_draft(node) if wiki_page
+                       else wiki_utils.get_sharejs_content(node, wname)),
     }
 
 
@@ -231,10 +235,12 @@ def project_wiki_delete(auth, wname, **kwargs):
     node = kwargs['node'] or kwargs['project']
     wiki_name = wname.strip()
     wiki_page = node.get_wiki_page(wiki_name)
+    sharejs_uuid = wiki_utils.get_sharejs_uuid(node, wiki_name)
 
     if not wiki_page:
         raise HTTPError(http.NOT_FOUND)
     node.delete_node_wiki(wiki_name, auth)
+    wiki_utils.broadcast_to_sharejs('delete', sharejs_uuid, node)
     return {}
 
 
@@ -245,6 +251,7 @@ def project_wiki_delete(auth, wname, **kwargs):
 def project_wiki_edit(auth, wname, **kwargs):
     node = kwargs['node'] or kwargs['project']
     wiki_name = wname.strip()
+    wiki_key = to_mongo_key(wiki_name)
     wiki_page = node.get_wiki_page(wiki_name)
 
     # ensure home is always lower case since it cannot be renamed
@@ -262,6 +269,9 @@ def project_wiki_edit(auth, wname, **kwargs):
         content = ''
         wiki_page_api_url = None
 
+    if wiki_key not in node.wiki_private_uuids:
+        wiki_utils.generate_private_uuid(node, wiki_name)
+
     # TODO: Remove duplication with project_wiki_page
     toc = _serialize_wiki_toc(node, auth=auth)
     ret = {
@@ -270,6 +280,8 @@ def project_wiki_edit(auth, wname, **kwargs):
         'wiki_content': content,
         'version': version,
         'versions': _get_wiki_versions(node, wiki_name),
+        'sharejs_uuid': wiki_utils.get_sharejs_uuid(node, wiki_name),
+        'sharejs_url': settings.SHAREJS_URL,
         'is_current': is_current,
         'is_edit': True,
         'pages_current': _get_wiki_pages_current(node),
@@ -281,6 +293,7 @@ def project_wiki_edit(auth, wname, **kwargs):
                 'page': wiki_page_api_url
             }),
             'web': _get_wiki_web_urls(node, wiki_name),
+            'gravatar': get_gravatar(auth.user, 32),
         },
     }
     ret.update(_view_project(node, auth, primary=True))
@@ -407,6 +420,9 @@ def project_wiki_rename(auth, wname, **kwargs):
         raise WIKI_PAGE_CONFLICT_ERROR
     except PageNotFoundError:
         raise WIKI_PAGE_NOT_FOUND_ERROR
+    else:
+        sharejs_uuid = wiki_utils.get_sharejs_uuid(node, new_wiki_name)
+        wiki_utils.broadcast_to_sharejs('redirect', sharejs_uuid, node, new_wiki_name)
 
 
 @must_be_valid_project  # returns project

@@ -5,7 +5,6 @@ import httplib
 import logging
 
 import furl
-import requests
 import itsdangerous
 from modularodm import Q
 from flask import request
@@ -16,11 +15,8 @@ from website import settings as site_settings
 
 from website.util import rubeus
 from website.models import Session
-from website.project.views.file import get_cache_content
 
 from website.addons.osfstorage import model
-from website.addons.osfstorage import settings
-
 
 logger = logging.getLogger(__name__)
 
@@ -53,16 +49,18 @@ def serialize_metadata_hgrid(item, node):
     :param Node node: Root node to which the item is attached
     :param dict permissions: Permissions data from `get_permissions`
     """
-    return {
-        # Must escape names rendered by HGrid
+    ret = {
         'path': item.path,
         'name': item.name,
         'ext': item.extension,
         rubeus.KIND: get_item_kind(item),
-        'nodeUrl': node.url,
-        'nodeApiUrl': node.api_url,
         'downloads': item.get_download_count(),
     }
+
+    if isinstance(item, model.OsfStorageFileRecord):
+        ret['version'] = len(item.versions)
+
+    return ret
 
 
 def serialize_revision(node, record, version, index):
@@ -81,19 +79,6 @@ def serialize_revision(node, record, version, index):
         },
         'date': version.date_created.isoformat(),
         'downloads': record.get_download_count(version=index),
-        'urls': {
-            'view': node.web_url_for(
-                'osf_storage_view_file',
-                path=record.path,
-                version=index,
-            ),
-            'download': node.web_url_for(
-                'osf_storage_view_file',
-                path=record.path,
-                version=index,
-                action='download',
-            ),
-        },
     }
 
 
@@ -117,7 +102,7 @@ def patch_url(url, **kwargs):
 
 
 def ensure_domain(url):
-    return patch_url(url, host=settings.DOMAIN)
+    return patch_url(url, host=site_settings.DOMAIN)
 
 
 def build_callback_urls(node, path):
@@ -180,10 +165,11 @@ def get_waterbutler_url(user, *path, **query):
         else request.cookies.get(site_settings.COOKIE_NAME)
     )
     url.args.update({
-        'token': '',
         'provider': 'osfstorage',
         'cookie': cookie,
     })
+    if 'view_only' in request.args:
+        url.args['view_only'] = request.args['view_only']
     url.args.update(query)
     return url.url
 
@@ -204,43 +190,3 @@ def get_waterbutler_download_url(version_idx, file_version, file_record, user=No
 
 def get_waterbutler_upload_url(user, node, path, **query):
     return get_waterbutler_url(user, 'file', nid=node._id, path=path, **query)
-
-
-def get_cache_filename(file_version):
-    """Get path to cached rendered file on disk.
-
-    :param FileVersion file_version: Version to locate
-    """
-    return '{0}.html'.format(file_version.location_hash)
-
-
-def render_file(version_idx, file_version, file_record):
-    """
-    :param int version_idx: One-based version index
-    :param FileVersion file_version: File version to render
-    :param FileRecord file_record: Base file object
-    """
-    file_obj = model.OsfStorageGuidFile.find_one(
-        Q('node', 'eq', file_record.node) &
-        Q('path', 'eq', file_record.path)
-    )
-    cache_file_name = get_cache_filename(file_version)
-    node_settings = file_obj.node.get_addon('osfstorage')
-    rendered = get_cache_content(node_settings, cache_file_name)
-    if rendered is None:
-        download_url = get_waterbutler_download_url(
-            version_idx,
-            file_version,
-            file_record,
-            mode='render',
-        )
-        file_response = requests.get(download_url)
-        rendered = get_cache_content(
-            node_settings,
-            cache_file_name,
-            start_render=True,
-            remote_path=file_obj.path,
-            file_content=file_response.content,
-            download_url=file_obj.get_download_path(version_idx),
-        )
-    return rendered

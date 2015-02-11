@@ -98,5 +98,5 @@ def mendeley_widget(node_addon, project, node, pid, auth):
 @must_be_contributor_or_public
 @must_have_addon('mendeley', 'node')
 def mendeley_citation_list(node_addon, project, node, pid, auth):
-    citation_list = node_addon.api.get_list(node_addon.mendeley_list_id)
-    return citation_list.render('apa')
+    citations = node_addon.api.get_list(node_addon.mendeley_list_id)
+    return {each['id']: each for each in citations}

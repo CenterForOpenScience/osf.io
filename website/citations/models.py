@@ -110,17 +110,6 @@ class CitationList(object):
             'provider_account_id': self.provider_account_id,
         }
 
-    def render(self, style):
-        """Returns a full JSON-encodable dict, including the formatted text for
-        citations.
-
-        :param str style: a CitationStyle._id - ex. "apa", "harvard1"
-        :rtype: dict
-        """
-        rv = self.json
-        rv['citations'] = list(citations.render_iterable(self.citations, style))
-        return rv
-
 
 class CitationStyle(StoredObject):
     """Persistent representation of a CSL style.
@@ -138,8 +127,8 @@ class CitationStyle(StoredObject):
     date_parsed = fields.DateTimeField(default=datetime.datetime.utcnow,
                                        required=True)
 
-    short_title = fields.StringField()
-    summary = fields.StringField()
+    short_title = fields.StringField(required=False)
+    summary = fields.StringField(required=False)
 
     def to_json(self):
         return {

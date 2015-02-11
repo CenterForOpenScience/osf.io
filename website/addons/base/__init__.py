@@ -7,14 +7,19 @@ import glob
 import importlib
 import mimetypes
 from bson import ObjectId
-from mako.lookup import TemplateLookup
+from flask import request
 from modularodm import fields
+from mako.lookup import TemplateLookup
+
+import furl
+import requests
 
 from framework.mongo import StoredObject
 from framework.routing import process_rules
 from framework.guid.model import GuidStoredObject
 
 from website import settings
+from website.addons.base import exceptions
 
 lookup = TemplateLookup(
     directories=[
@@ -166,16 +171,129 @@ class GuidFile(GuidStoredObject):
     }
 
     @property
-    def file_url(self):
+    def provider(self):
         raise NotImplementedError
+
+    @property
+    def version_identifier(self):
+        raise NotImplementedError
+
+    @property
+    def unique_identifier(self):
+        raise NotImplementedError
+
+    @property
+    def guid_url(self):
+        return '/{0}/'.format(self._id)
+
+    @property
+    def name(self):
+        return self._metadata_cache['name']
+
+    @property
+    def file_name(self):
+        if self.revision:
+            return '{0}_{1}.html'.format(self._id, self.revision)
+        return '{0}_{1}.html'.format(self._id, self.unique_identifier)
+
+    @property
+    def joinable_path(self):
+        if self.path.startswith('/'):
+            return self.path[1:]
+        return self.path
+
+    @property
+    def _base_butler_url(self):
+        url = furl.furl(settings.WATERBUTLER_URL)
+
+        url.args.update({
+            'nid': self.node._id,
+            'path': self.path,
+            'provider': self.provider,
+            'cookie': request.cookies.get(settings.COOKIE_NAME)
+        })
+
+        if self.revision:
+            url.args[self.version_identifier] = self.revision
+
+        return url
+
+    @property
+    def download_url(self):
+        url = self._base_butler_url
+        url.path.add('file')
+        return url.url
+
+    @property
+    def mfr_download_url(self):
+        url = self._base_butler_url
+        url.path.add('file')
+        url.args['mode'] = 'render'
+        return url.url
+
+    @property
+    def metadata_url(self):
+        url = self._base_butler_url
+        url.path.add('data')
+
+        return url.url
+
+    @property
+    def mfr_cache_path(self):
+        return os.path.join(
+            settings.MFR_CACHE_PATH,
+            self.node._id,
+            self.provider,
+            self.file_name,
+        )
+
+    @property
+    def mfr_temp_path(self):
+        return os.path.join(
+            settings.MFR_TEMP_PATH,
+            self.node._id,
+            self.provider,
+            # Attempt to keep the original extension of the file for MFR detection
+            self.file_name + os.path.splitext(self.path)[1]
+        )
 
     @property
     def deep_url(self):
         if self.node is None:
             raise ValueError('Node field must be defined.')
-        return os.path.join(
-            self.node.deep_url, self.file_url,
+
+        url = os.path.join(
+            self.node.deep_url,
+            'files',
+            self.provider,
+            self.joinable_path
         )
+
+        if url.endswith('/'):
+            return url
+        else:
+            return url + '/'
+
+    @property
+    def revision(self):
+        return getattr(self, '_revision', None)
+
+    def maybe_set_version(self, **kwargs):
+        self._revision = kwargs.get(self.version_identifier)
+
+    def enrich(self, save=True):
+        self._fetch_metadata(should_raise=True)
+
+    def _fetch_metadata(self, should_raise=False):
+        # Note: We should look into caching this at some point
+        # Some attributes may change however.
+        resp = requests.get(self.metadata_url)
+
+        if should_raise:
+            if resp.status_code != 200:
+                raise exceptions.AddonEnrichmentError(resp.status_code)
+
+        self._metadata_cache = resp.json()['data']
 
 
 class AddonSettingsBase(StoredObject):
