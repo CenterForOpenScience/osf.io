@@ -159,7 +159,7 @@ def add_comment(**kwargs):
     notify(uid=target.user._id if is_reply(target) else node._id,
            nodeType=node.project_or_component,
            event="comment_replies" if is_reply(target) else "comments",
-           timestamp=datetime.datetime.utcnow(),
+           timestamp=datetime.utcnow(),
            commenter=auth.user.fullname,
            content=content,
            parent_comment=target.content if is_reply(target) else "",
