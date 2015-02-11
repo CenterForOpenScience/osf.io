@@ -106,7 +106,7 @@
     ${parent.javascript_bottom()}
         <script type="text/javascript">
           window.contextVars = $.extend(true, {}, window.contextVars, {
-            renderURL: ${"'{}'".format(render_url) if rendered is None else 'undefined'},
+          renderURL: ${"'{}'".format(render_url.replace("'", "\\'")) if rendered is None else 'undefined'},
             file: {
                 name: '${file_name | js_str}',
                 path: '${file_path | js_str}',

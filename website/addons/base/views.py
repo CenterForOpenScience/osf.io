@@ -295,7 +295,7 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
     resp = serialize_node(node, auth, primary=True)
     resp.update({
         'provider': file_guid.provider,
-        'render_url': render_url,
+        'render_url': render_url.url,
         'file_path': file_guid.path,
         'files_url': node.web_url_for('collect_file_trees'),
         'rendered': get_or_start_render(file_guid, extras),
