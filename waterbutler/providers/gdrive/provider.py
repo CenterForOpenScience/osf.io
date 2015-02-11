@@ -21,9 +21,10 @@ class GoogleDrivePath(utils.WaterButlerPath):
         super().__init__(path, prefix=prefix, suffix=suffix)
 
         parts = path.strip('/').split('/')
-        self._name = parts[1]  # TODO : Remove this later if of no use
-        self._folderId = parts[0]
-        if self._folderId == folder['id']:
+        name = parts[1]  # TODO : Remove this later if of no use
+        folderId = parts[0]
+        self._folderId = folderId
+        if folderId == folder['id']:
             full_path = folder['name']
         else:
             tempPath = ''
@@ -37,7 +38,7 @@ class GoogleDrivePath(utils.WaterButlerPath):
         self._full_path = self._format_path(full_path)
 
     def __repr__(self):
-        return "{}({!r}, {!r})".format(self.__class__.__name__, self._folder, self._orig_path)
+        return "{}({!r}, {!r})".format(self.__class__.__name__, self._folderId, self._orig_path)
 
     @property
     def full_path(self):
@@ -62,14 +63,16 @@ class GoogleDriveProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
+
         path = GoogleDrivePath(path, self.folder)
+        import pdb; pdb.set_trace()
         resp = yield from self.make_request(
             'GET',
-            self._build_content_url('files', path._folderId),
+            self.build_url('files', path._folderId),
             expects=(200, ),
             throws=exceptions.DownloadError,
         )
-        data= yield from resp.json()
+        data = yield from resp.json()
         download_url = data['downloadUrl']
         downloadResp = yield from self.make_request(
             'GET',
@@ -113,7 +116,7 @@ class GoogleDriveProvider(provider.BaseProvider):
             'DELETE',
             self.build_url('files', path._folderId),
             # data={'root': 'auto', 'path': path.full_path},
-            expects=(200, ),
+            expects=(200, 204),
             throws=exceptions.DeleteError,
         )
 
@@ -123,7 +126,7 @@ class GoogleDriveProvider(provider.BaseProvider):
 
         resp = yield from self.make_request(
             'GET',
-            self.build_url('files', q="'%s' in parents and trashed = false" %path._folderId, alt="json"),
+            self.build_url('files', q="'%s' in parents and trashed = false" % path._folderId, alt="json"),
             expects=(200, ),
             throws=exceptions.MetadataError
         )

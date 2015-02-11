@@ -52,8 +52,12 @@ class GoogleDriveFileMetadata(BaseGoogleDriveMetadata, metadata.BaseFileMetadata
 
     @property
     def size(self):
-        #return self.raw['bytes']
-        return self.raw['fileSize']
+        # Google docs(Docs,sheets, slides, etc)  don't have file size before they are exported
+        try:
+            return self.raw['fileSize']
+        except KeyError:
+            return '0'
+
     @property
     def modified(self):
         #return self.raw['modified']
