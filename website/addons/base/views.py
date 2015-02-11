@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 import codecs
 import httplib
 import functools
@@ -211,7 +212,7 @@ def get_or_start_render(file_guid, start_render=True):
     try:
         file_guid.enrich()
     except exceptions.AddonEnrichmentError as error:
-        return error.renderable_error
+        return error.render_error
 
     try:
         return codecs.open(file_guid.mfr_cache_path, 'r', 'utf-8').read()
@@ -299,7 +300,7 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
         'files_url': node.web_url_for('collect_file_trees'),
         'rendered': get_or_start_render(file_guid, extras),
         #NOTE: get_or_start_render must be called first to populate name
-        'file_name': getattr(file_guid, 'name', ''),
+        'file_name': getattr(file_guid, 'name', os.path.split(file_guid.path)[1]),
     })
 
     return resp
