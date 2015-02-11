@@ -22,7 +22,11 @@ class AddonEnrichmentError(AddonError):
         return False
 
     @property
-    def renderable_error(self):
+    def _renderable_error(self):
+        '''A hook to be implemented by subclasses returning
+        a html error to be displayed to the user
+        Later concatenated with additional style tags
+        '''
         return '''
         <div class="alert alert-info" role="alert">
         This file is currently unable to be rendered. <br>
@@ -42,13 +46,13 @@ class AddonEnrichmentError(AddonError):
         if not self.can_delete:
             additional += "<style>.fileDelete{display: none;}</style>"
 
-        return self.renderable_error + additional
+        return self._renderable_error + additional
 
 
 class FileDeletedError(AddonEnrichmentError):
 
     @property
-    def renderable_error(self):
+    def _renderable_error(self):
         return '''
         <div class="alert alert-info" role="alert">
         This file has been deleted.
@@ -59,7 +63,7 @@ class FileDeletedError(AddonEnrichmentError):
 class FileDoesntExistError(AddonEnrichmentError):
 
     @property
-    def renderable_error(self):
+    def _renderable_error(self):
         return '''
         <div class="alert alert-info" role="alert">
         This file does not exist.

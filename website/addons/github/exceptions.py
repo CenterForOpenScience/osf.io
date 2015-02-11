@@ -26,7 +26,7 @@ class TooBigToRenderError(AddonEnrichmentError):
         self.file_guid = file_guid
 
     @property
-    def renderable_error(self):
+    def _renderable_error(self):
         return '''
         <div class="alert alert-info" role="alert">
         The file "{name}" is too large to be retrieved from Github for rendering.
