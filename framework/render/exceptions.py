@@ -7,6 +7,7 @@ and is unable to be rendered by the Open Science Framework
 </div>
 <style>.fileDownload{{display: none;}}</style>
 '''
+# Note: the style is for disabling download buttons
 
 
 STATUS_CODE_ERROR_MAP = {
