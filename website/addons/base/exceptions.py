@@ -45,7 +45,7 @@ class AddonEnrichmentError(AddonError):
         if not self.can_delete:
             additional += "<style>.file-delete{display: none;}</style>"
 
-        return self._renderable_error + additional
+        return self.renderable_error + additional
 
 
 class FileDeletedError(AddonEnrichmentError):
