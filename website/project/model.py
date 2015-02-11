@@ -90,6 +90,7 @@ def has_anonymous_link(node, auth):
 signals = blinker.Namespace()
 contributor_added = signals.signal('contributor-added')
 unreg_contributor_added = signals.signal('unreg-contributor-added')
+write_permissions_revoked = signals.signal('write-permissions-revoked')
 
 
 class MetaSchema(StoredObject):
@@ -2341,11 +2342,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.contributors = users
 
         if permissions_changed:
-            if ['read'] in permissions_changed.values():
-                from website.addons.wiki.utils import migrate_uuid
-                for wiki_name in self.wiki_private_uuids:
-                    migrate_uuid(self, wiki_name)
-
             self.add_log(
                 action=NodeLog.PERMISSIONS_UPDATED,
                 params={
@@ -2360,6 +2356,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.update_visible_ids()
         if save:
             self.save()
+
+        if to_remove or permissions_changed and ['read'] in permissions_changed.values():
+            write_permissions_revoked.send(self)
 
     def add_contributor(self, contributor, permissions=None, visible=True,
                         auth=None, log=True, save=False):
