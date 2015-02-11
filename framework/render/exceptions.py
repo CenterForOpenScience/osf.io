@@ -5,7 +5,7 @@ DMCA_ERROR = '''
 This file has been the subject of a DMCA take down
 and is unable to be rendered by the Open Science Framework
 </div>
-<style>.fileDownload{{display: none;}}</style>
+<style>.file-download{{display: none;}}</style>
 '''
 # Note: the style is for disabling download buttons
 

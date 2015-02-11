@@ -41,10 +41,10 @@ class AddonEnrichmentError(AddonError):
         # 2/10/14 ping @chrisseto when refactoring
         additional = ''
         if not self.can_download:
-            additional += "<style>.fileDownload{display: none;}</style>"
+            additional += "<style>.file-download{display: none;}</style>"
 
         if not self.can_delete:
-            additional += "<style>.fileDelete{display: none;}</style>"
+            additional += "<style>.file-delete{display: none;}</style>"
 
         return self._renderable_error + additional
 

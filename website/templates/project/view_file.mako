@@ -33,12 +33,12 @@
             <!-- /ko -->
           </ol>
 
-          <a class="btn btn-success btn-md fileDownload" href="{{ currentVersion().osfDownloadUrl }}" data-bind="click: currentVersion().download">
+          <a class="btn btn-success btn-md file-download" href="{{ currentVersion().osfDownloadUrl }}" data-bind="click: currentVersion().download">
             Download <i class="icon-download-alt"></i>
           </a>
 
           <span data-bind="if: editable">
-            <button class="btn btn-danger btn-md fileDelete" data-bind="click: askDelete">
+            <button class="btn btn-danger btn-md file-delete" data-bind="click: askDelete">
               Delete <i class="icon-trash"></i>
             </button>
           </span>
