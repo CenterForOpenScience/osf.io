@@ -47,19 +47,14 @@ class GithubGuidFile(GuidFile):
     def name(self):
         return os.path.split(self.path)[1]
 
-    def enrich(self):
-        resp = requests.get(self.metadata_url)
+    def _exception_from_response(self, response):
+        try:
+            if response.json()['errors'][0]['code'] == 'too_large':
+                raise TooBigToRenderError(self)
+        except (KeyError, IndexError):
+            pass
 
-        if resp.status_code != 200:
-            try:
-                if resp.json()['errors'][0]['code'] == 'too_large':
-                    raise TooBigToRenderError(self)
-            except (KeyError, IndexError):
-                pass
-
-            raise exceptions.AddonEnrichmentError(resp.status_code)
-        else:
-            self._metadata_cache = resp.json()['data']
+        super(GithubGuidFile, self)._exception_from_response(response)
 
 
 class AddonGitHubOauthSettings(StoredObject):
