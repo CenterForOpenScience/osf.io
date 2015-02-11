@@ -284,14 +284,22 @@ class GuidFile(GuidStoredObject):
     def enrich(self, save=True):
         self._fetch_metadata(should_raise=True)
 
+    def _exception_from_response(self, response):
+        if response.status_code == 404:
+            raise exceptions.FileDoesntExistError(response.status_code)
+
+        if response.status_code == 410:
+            raise exceptions.FileDeletedError(response.status_code)
+
+        raise exceptions.AddonEnrichmentError(response.status_code)
+
     def _fetch_metadata(self, should_raise=False):
         # Note: We should look into caching this at some point
         # Some attributes may change however.
         resp = requests.get(self.metadata_url)
 
-        if should_raise:
-            if resp.status_code != 200:
-                raise exceptions.AddonEnrichmentError(resp.status_code)
+        if should_raise and not resp.ok:
+            self._exception_from_response(resp)
 
         self._metadata_cache = resp.json()['data']
 
