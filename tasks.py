@@ -253,6 +253,10 @@ def sharejs(host=None, port=None, db_host=None, db_port=None, db_name=None):
         os.environ['SHAREJS_DB_PORT'] = db_port
     if db_name:
         os.environ['SHAREJS_DB_NAME'] = db_name
+
+    if settings.SENTRY_DSN:
+        os.environ['SHAREJS_SENTRY_DSN'] = settings.SENTRY_DSN
+
     share_server = os.path.join(settings.ADDON_PATH, 'wiki', 'shareServer.js')
     run("node {0}".format(share_server))
 
