@@ -2,7 +2,6 @@ import os
 
 from invoke import task, run
 
-PIP_CACHE_PATH = os.environ.get('PIP_CACHE')
 WHEELHOUSE_PATH = os.environ.get('WHEELHOUSE')
 
 
@@ -10,8 +9,6 @@ WHEELHOUSE_PATH = os.environ.get('WHEELHOUSE')
 def wheelhouse(develop=False):
     req_file = 'dev-requirements.txt' if develop else 'requirements.txt'
     cmd = 'pip wheel --find-links={} -r {} --wheel-dir={}'.format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
-    if PIP_CACHE_PATH:
-        cmd += ' --download-cache={}'.format(PIP_CACHE_PATH)
     run(cmd, pty=True)
 
 
@@ -22,8 +19,6 @@ def install(develop=False, upgrade=False):
 
     if upgrade:
         cmd += ' --upgrade'
-    if PIP_CACHE_PATH:
-        cmd += ' --download-cache={}'.format(PIP_CACHE_PATH)
     if WHEELHOUSE_PATH:
         cmd += ' --no-index --find-links={}'.format(WHEELHOUSE_PATH)
     run(cmd, pty=True)

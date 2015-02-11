@@ -7,12 +7,10 @@ sudo: false
 
 cache:
   directories:
-    - $HOME/pip-cache
     - $HOME/wheelhouse
 
 before_install:
     - export WHEELHOUSE=$HOME/wheelhouse
-    - export PIP_CACHE=$HOME/pip-cache
 
 install:
     - travis_retry pip install invoke
