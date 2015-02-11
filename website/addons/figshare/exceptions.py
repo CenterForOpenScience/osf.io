@@ -1,5 +1,6 @@
-from website.addons.base.exceptions import AddonEnrichmentError
 from website.util.sanitize import escape_html
+from website.addons.base.exceptions import AddonEnrichmentError
+
 
 class FigshareIsDraftError(AddonEnrichmentError):
 
