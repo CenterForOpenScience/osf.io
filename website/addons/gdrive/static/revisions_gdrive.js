@@ -1,4 +1,7 @@
-
+/**
+ * Simple knockout model and view model for rendering the revision table on the
+ * file detail page.
+ */
 
 'use strict';
 var ko = require('knockout');

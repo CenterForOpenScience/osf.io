@@ -512,7 +512,7 @@ function _fangornResolveLazyLoad(item) {
     if (item.data.provider === undefined) {
         return false;
     }
-
+    console.log(item);
     return waterbutler.buildTreeBeardMetadata(item);
 }
 
@@ -910,7 +910,7 @@ tbOptions = {
         previewTemplate: '<div></div>',
         parallelUploads: 1,
         acceptDirectories: false,
-        fallback: function(){},
+        fallback: function(){}
     },
     resolveIcon : _fangornResolveIcon,
     resolveToggle : _fangornResolveToggle,

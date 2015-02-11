@@ -81,9 +81,6 @@ class DropboxNodeLogger(object):
 def is_subdir(path, directory):
     if not (path and directory):
         return False
-    # directory is root directory
-    if directory == '/':
-        return True
     #make both absolute
     abs_directory = os.path.abspath(directory).lower()
     abs_path = os.path.abspath(path).lower()
@@ -115,8 +112,6 @@ def clean_path(path):
     """Ensure a path is formatted correctly for url_for."""
     if path is None:
         return ''
-    if path == '/':
-        return path
     return path.strip('/')
 
 
@@ -185,7 +180,7 @@ def build_dropbox_urls(item, node):
         return {
             'upload': node.api_url_for('dropbox_upload', path=path),
             # Endpoint for fetching all of a folder's contents
-            'fetch': node.api_url_for('dropbox_hgrid_data_contents', path=path),
+            'fetch': node.api_url_for('dropbox_hgrid_data_contents'),
             # Add extra endpoint for fetching folders only (used by node settings page)
             # NOTE: querystring params in camel-case
             'folders': node.api_url_for('dropbox_hgrid_data_contents',
@@ -203,7 +198,7 @@ def metadata_to_hgrid(item, node, permissions):
     """Serializes a dictionary of metadata (returned from the DropboxClient)
     to the format expected by Rubeus/HGrid.
     """
-    import pdb; pdb.set_trace()
+
     filename = get_file_name(item['path'])
     serialized = {
         'addon': 'dropbox',

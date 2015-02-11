@@ -240,6 +240,7 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
     def get_waterbutler_render_url(self, path, rev=None, **kwargs):
         cleaned_path = clean_path(os.path.join(self.folder, path))
         url = furl.furl(self.owner.web_url_for('dropbox_view_file', path=cleaned_path))
+        import pdb; pdb.set_trace()
 
         if rev:
             url.args['rev'] = rev
