@@ -18,7 +18,6 @@ from website import settings
 logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-PYTHON_VERSION = '.'.join([str(i) for i in sys.version_info[0:2]])
 WHEELHOUSE_PATH = os.environ.get('WHEELHOUSE')
 
 
@@ -374,9 +373,10 @@ def test_all(flake=False):
 
 @task
 def wheelhouse(repo, path):
+    version = '.'.join([str(i) for i in sys.version_info[0:2]])
     run('pip install wheel --upgrade', pty=False)
-    name = 'wheelhouse-{}.tar.gz'.format(PYTHON_VERSION)
-    url = '{}/archive/{}.tar.gz'.format(repo, PYTHON_VERSION)
+    name = 'wheelhouse-{}.tar.gz'.format(version)
+    url = '{}/archive/{}.tar.gz'.format(repo, version)
     # download and extract the wheelhouse github repository archive
     run('mkdir {}'.format(path), pty=False)
     run('curl -o {} -L {}'.format(name, url), pty=False)
