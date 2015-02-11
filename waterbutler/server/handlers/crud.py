@@ -9,7 +9,6 @@ from waterbutler.core.streams import RequestStreamReader
 from waterbutler.server import utils
 from waterbutler.server import settings
 from waterbutler.server.handlers import core
-from waterbutler.core import exceptions
 
 
 @web.stream_request_body
