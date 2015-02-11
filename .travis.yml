@@ -16,6 +16,7 @@ before_install:
 
 install:
     - travis_retry pip install invoke
+    - travis_retry pip install flake8
     - travis_retry invoke wheelhouse
     - travis_retry invoke install
 
