@@ -118,7 +118,11 @@ function ProjectNotifications(data) {
             ]},
         resolveRows : function notificationResolveRows(item){
             var default_columns = [];
-
+            var iconcss = 'test';
+            // check if should not get icon
+            if(item.children.length < 1 ){
+                iconcss = 'tb-no-icon';
+            }
             if (item.data.kind === 'heading') {
                  default_columns.push({
                     data : 'project',  // Data field name
@@ -149,6 +153,7 @@ function ProjectNotifications(data) {
                     data : 'project',  // Data field name
                     folderIcons : true,
                     filter : true,
+                    css : iconcss,
                     sortInclude : false,
                     custom : function(item, col) {
                         return item.data.description;
@@ -181,6 +186,7 @@ function ProjectNotifications(data) {
                     data : 'project',  // Data field name
                     folderIcons : true,
                     filter : true,
+                    css : iconcss,
                     sortInclude : false,
                     custom : function() {
                         return item.data.description;

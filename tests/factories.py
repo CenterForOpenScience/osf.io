@@ -22,6 +22,7 @@ from framework.auth.utils import impute_names_model
 from website.project.model import (
     ApiKey, Node, NodeLog, WatchConfig, Tag, Pointer, Comment, PrivateLink
 )
+from website.notifications.model import Subscription
 
 from website.addons.wiki.model import NodeWikiPage
 from tests.base import fake
@@ -87,6 +88,13 @@ class UserFactory(ModularOdmFactory):
             setattr(self, key, value)
         if create:
             self.save()
+
+
+class SubscriptionFactory(ModularOdmFactory):
+    FACTORY_FOR = Subscription
+
+    email_transactional = []
+    email_digest = []
 
 
 class AuthUserFactory(UserFactory):
