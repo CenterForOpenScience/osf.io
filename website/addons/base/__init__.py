@@ -291,6 +291,9 @@ class GuidFile(GuidStoredObject):
         self._fetch_metadata(should_raise=True)
 
     def _exception_from_response(self, response):
+        if response.ok:
+            return
+
         if response.status_code in STATUS_EXCEPTIONS:
             raise STATUS_EXCEPTIONS[response.status_code]
 
