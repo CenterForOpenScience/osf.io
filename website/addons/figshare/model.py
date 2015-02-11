@@ -29,8 +29,12 @@ class FigShareGuidFile(GuidFile):
         return 'figshare'
 
     def _exception_from_response(self, response):
-        if response.json()['extra']['status'] == 'drafts':
-            raise fig_exceptions.FigshareIsDraftError(self)
+        try:
+            if response.json()['data']['extra']['status'] == 'drafts':
+                self._metadata_cache = response.json()['data']
+                raise fig_exceptions.FigshareIsDraftError(self)
+        except KeyError:
+            pass
 
         super(FigShareGuidFile, self)._exception_from_response(response)
 

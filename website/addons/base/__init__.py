@@ -301,7 +301,7 @@ class GuidFile(GuidStoredObject):
         # Some attributes may change however.
         resp = requests.get(self.metadata_url)
 
-        if should_raise and not resp.ok:
+        if should_raise:
             self._exception_from_response(resp)
 
         self._metadata_cache = resp.json()['data']
