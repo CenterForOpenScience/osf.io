@@ -31,12 +31,12 @@
             <li class="active overflow" data-bind="text: file.name"></li>
           </ol>
 
-          <a class="btn btn-success btn-md" href="{{ currentVersion().osfDownloadUrl }}" data-bind="click: currentVersion().download">
+          <a class="btn btn-success btn-md fileDownload" href="{{ currentVersion().osfDownloadUrl }}" data-bind="click: currentVersion().download">
             Download <i class="icon-download-alt"></i>
           </a>
 
           <span data-bind="if: editable">
-            <button class="btn btn-danger btn-md" data-bind="click: askDelete">
+            <button class="btn btn-danger btn-md fileDelete" data-bind="click: askDelete">
               Delete <i class="icon-trash"></i>
             </button>
           </span>
@@ -78,7 +78,7 @@
                   </span>
                 </td>
                 <td>
-                  <a class="btn btn-primary btn-sm" href="{{ revision.osfDownloadUrl }}"
+                  <a class="btn btn-primary btn-sm fileDownload" href="{{ revision.osfDownloadUrl }}"
                     data-bind="click: revision.download">
                     <i class="icon-download-alt"></i>
                   </a>
