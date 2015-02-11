@@ -3,13 +3,21 @@ language: python
 python:
   - "3.4"
 
+sudo: false
+
 cache:
   directories:
-    - tmp/.pip-cache/
+    - $HOME/pip-cache
+    - $HOME/wheelhouse
+
+before_install:
+    - export WHEELHOUSE=$HOME/wheelhouse
+    - export PIP_CACHE=$HOME/pip-cache
 
 install:
-  - travis_retry pip install invoke
-  - travis_retry invoke install --develop --upgrade --pip-cache=tmp/.pip-cache --wheel-repo=https://github.com/CenterForOpenScience/wheelhouse
+    - travis_retry pip install invoke
+    - travis_retry invoke wheelhouse
+    - travis_retry invoke install
 
 env:
   - WATERBUTLER_CONFIG=./travis-config.json
