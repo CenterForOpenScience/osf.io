@@ -5,6 +5,7 @@ import urlparse
 import itertools
 import httplib as http
 
+import requests
 from github3 import GitHubError
 from modularodm import fields, Q
 from modularodm.exceptions import ModularOdmException
@@ -17,10 +18,10 @@ from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 from website.addons.base import GuidFile
 
-from website.addons.github import settings as github_settings
-from website.addons.github.exceptions import ApiError, NotFoundError
-from website.addons.github.api import GitHub
 from website.addons.github import utils
+from website.addons.github.api import GitHub
+from website.addons.github import settings as github_settings
+from website.addons.github.exceptions import ApiError, NotFoundError, TooBigToRenderError
 
 
 hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
@@ -41,6 +42,24 @@ class GithubGuidFile(GuidFile):
     @property
     def unique_identifier(self):
         return self._metadata_cache['extra']['fileSha']
+
+    @property
+    def name(self):
+        return os.path.split(self.path)[1]
+
+    def enrich(self):
+        resp = requests.get(self.metadata_url)
+
+        if resp.status_code != 200:
+            try:
+                if resp.json()['errors'][0]['code'] == 'too_large':
+                    raise TooBigToRenderError(self)
+            except (KeyError, IndexError):
+                pass
+
+            raise exceptions.AddonEnrichmentError(resp.status_code)
+        else:
+            self._metadata_cache = resp.json()['data']
 
 
 class AddonGitHubOauthSettings(StoredObject):

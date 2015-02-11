@@ -86,8 +86,14 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
 
     def find_or_create_file_guid(self, path):
         # path should be /aid/fid
-        # split return ['', aid, fid]
-        _, article_id, file_id = path.split('/')
+        # split return ['', aid, fid] or ['', fid]
+        split_path = path.split('/')
+        if len(split_path) == 3:
+            _, article_id, file_id = split_path
+        else:
+            _, file_id = split_path
+            article_id = self.figshare_id
+
         try:
             return FigShareGuidFile.find_one(
                 Q('node', 'eq', self.owner) &
