@@ -338,8 +338,7 @@ class TestAddonFileViews(OsfTestCase):
     def test_get_or_start_returns_error(self):
         class MyException(exceptions.AddonEnrichmentError):
 
-            @property
-            def render_error(self):
+            def as_html(self):
                 return 'wubalubadubdub'
 
         file_guid = mock.Mock()
