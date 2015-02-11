@@ -20,9 +20,10 @@ install:
     # - travis_retry invoke encryption
     - travis_retry pip install invoke==0.9.0 --force-reinstall --upgrade
     - travis_retry pip install flake8 --force-reinstall --upgrade
+    - travis_retry invoke wheelhouse --repo https://github.com/CenterForOpenScience/wheelhouse
     - travis_retry invoke travis_addon_settings
-    - travis_retry invoke requirements
-    - travis_retry invoke addon_requirements
+    - travis_retry invoke requirements --use-wheel
+    - travis_retry invoke addon_requirements --use-wheel
     - travis_retry mfr -r install all
     - travis_retry npm install
     - travis_retry npm install -g bower

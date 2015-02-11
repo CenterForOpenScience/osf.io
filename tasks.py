@@ -18,6 +18,8 @@ from website import settings
 logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+PYTHON_VERSION = '.'.join([str(i) for i in sys.version_info[0:2]])
+
 
 def get_bin_path():
     """Get parent path of current python binary.
@@ -29,6 +31,10 @@ def bin_prefix(cmd):
     """Prefix command with current binary path.
     """
     return os.path.join(get_bin_path(), cmd)
+
+
+def wheelhouse_path():
+    return os.path.join(HERE, 'wheelhouse-{}'.format(PYTHON_VERSION))
 
 
 try:
@@ -311,14 +317,16 @@ def flake8():
 
 
 @task
-def requirements(all=False, download_cache=None):
+def requirements(all=False, download_cache=None, use_wheel=False):
     """Install dependencies."""
     cmd = "pip install --upgrade -r dev-requirements.txt"
+    if use_wheel:
+        cmd += ' --use-wheel --find-links {}'.format(wheelhouse_path())
     if download_cache:
         cmd += ' --download-cache {0}'.format(download_cache)
     run(bin_prefix(cmd), echo=True)
     if all:
-        addon_requirements(download_cache=download_cache)
+        addon_requirements(download_cache=download_cache, use_wheel=use_wheel)
 
 
 @task
@@ -366,8 +374,19 @@ def test_all(flake=False):
     test_osf()
     test_addons()
 
+
 @task
-def addon_requirements(download_cache=None):
+def wheelhouse(repo):
+    run('pip install wheel --upgrade', pty=False)
+    name = 'wheelhouse-{}.zip'.format(PYTHON_VERSION)
+    url = '{}/archive/{}.zip'.format(repo, PYTHON_VERSION)
+    # download and extract the wheelhouse github repository archive
+    run('curl -o {} -L {}'.format(name, url), pty=False)
+    run('unzip {}'.format(name), pty=False)
+
+
+@task
+def addon_requirements(download_cache=None, use_wheel=False):
     """Install all addon requirements."""
     for directory in os.listdir(settings.ADDON_PATH):
         path = os.path.join(settings.ADDON_PATH, directory)
@@ -377,6 +396,9 @@ def addon_requirements(download_cache=None):
                 open(requirements_file)
                 print('Installing requirements for {0}'.format(directory))
                 cmd = 'pip install --upgrade -r {0}'.format(requirements_file)
+                # run pip install w/ the wheelhouse folder specified
+                if use_wheel:
+                    cmd += ' --use-wheel --find-links {}'.format(wheelhouse_path())
                 if download_cache:
                     cmd += ' --download-cache {0}'.format(download_cache)
                 run(bin_prefix(cmd))
