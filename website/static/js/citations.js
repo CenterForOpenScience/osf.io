@@ -10,18 +10,9 @@ var $osf = require('osfHelpers');
 require('select2');
 require('../css/citations.css');
 
-var ctx = window.contextVars;
+var locale = require('html!../vendor/bower_components/locales/locales-en-US.xml');
 
-var r = function(query) {
-    query.callback({results: [
-        {
-            _id: 'academy-of-management-review',
-            summary: null,
-            short_title: 'AMR',
-            title: 'Academy of Management Review'
-        }
-    ]});
-};
+var ctx = window.contextVars;
 
 var formatResult = function(state) {
     return '<div class="citation-result-title">' + state.title + '</div>';
@@ -31,6 +22,29 @@ var formatSelection = function(state) {
     return state.title;
 };
 
+var makeCiteproc = function(style, citations, format) {
+    format = format || 'html';
+    var sys = {
+        retrieveItem: function(id) {
+            return citations[id];
+        },
+        retrieveLocale: function() {
+            return locale;
+        }
+    };
+    var citeproc = new CSL.Engine(sys, style);  // jshint ignore:line
+    citeproc.setOutputFormat(format);
+    citeproc.appendCitationCluster({
+        citationItems: Object.keys(citations).map(function(key) {
+            return {id: key};
+        }),
+        properties: {
+            noteIndex: 0
+        }
+    });
+    return citeproc;
+};
+
 // Public API
 
 function CitationWidget(inputSelector, displaySelector) {
@@ -38,6 +52,7 @@ function CitationWidget(inputSelector, displaySelector) {
     this.$citationElement = $(displaySelector || '#citationText');
     this.init();
 }
+
 CitationWidget.prototype.init = function() {
     var self = this;
     // Initialize select2 for selecting citation style
@@ -60,22 +75,25 @@ CitationWidget.prototype.init = function() {
             },
             cache: true
         }
-    }).on('select2-selecting', function(e) {
-        var url = ctx.node.urls.api + 'citation/' + e.val;
-        var request = $.ajax({
-            url: url
-        });
-        request.done(function (data) {
-            self.$citationElement.text(data.citation).slideDown();
-        });
-        request.fail(function(jqxhr, status, error) {
+    }).on('select2-selecting', function(event) {
+        var styleUrl = '/static/vendor/bower_components/styles/' + event.val + '.csl';
+        var styleRequest = $.get(styleUrl);
+        var citationRequest = $.get(ctx.node.urls.api + 'citation/');
+        $.when(styleRequest, citationRequest).done(function(style, citations) {
+            var citeproc = makeCiteproc(style[0], citations[0], 'text');
+            var items = citeproc.makeBibliography()[1];
+            self.$citationElement.text(items[0]).slideDown();
+        }).fail(function(jqxhr, status, error) {
             $osf.growl(
                 'Citation render failed',
                 'The requested citation format generated an error.',
                 'danger'
             );
             Raven.captureMessage('Unexpected error when fetching citation', {
-                url: url, citationStyle: e.val, status: status, error: error
+                url: styleUrl,
+                citationStyle: event.val,
+                status: status,
+                error: error
             });
         });
     }).on('select2-removed', function (e) {
@@ -83,4 +101,5 @@ CitationWidget.prototype.init = function() {
     });
 
 };
+
 module.exports = CitationWidget;
