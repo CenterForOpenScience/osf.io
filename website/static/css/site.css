@@ -386,6 +386,14 @@ li.pointer {
     margin-top: 0;
 }
 
+/* Style for Ace wiki editor */
+.wiki-editor {
+    position: relative;
+    height: 300px;
+    border: solid;
+    border-width: 1px;
+}
+
 /* Make wiki images responsive */
 .wiki img{
   vertical-align: middle;
@@ -407,19 +415,6 @@ img.hg-addon-icon {
 }
 
 /* End add-on styles */
-
-.citation-label {
-    font-weight: bold;
-}
-
-/*.citation-list {
-    display: none;
-}*/
-
-.citation-text {
-    text-indent: -3em;
-    margin-left: 3em;
-}
 
 .disabled {
     cursor: default !important;
@@ -1159,7 +1154,7 @@ div.search-result  {
 }
 
 .wmd-button > span {
-    background-image: url(../vendor/pagedown/wmd-buttons.png);
+    background-image: url(../vendor/pagedown-ace/wmd-buttons.png);
     background-repeat: no-repeat;
     background-position: 0px 0px;
     width: 20px;
@@ -1913,7 +1908,7 @@ span#profileFullname{
 
 
 #projectSubnav .navbar-collapse {
-    padding-left: 0; 
+    padding-left: 0;
     padding-right: 0;
 }
 
@@ -1940,18 +1935,30 @@ span#profileFullname{
     .osf-project-navbar li>a {
         padding-left: 30px;
         padding-right: 30px;
-    }   
+    }
     .osf-project-navbar a.project-title {
     }
     .project-nav {
         overflow: hidden;
+    }
+    .osf-search {
+        margin-top: -30px;
+        z-index: 1028;
+    }
+    #searchControls > .osf-search {
+        margin-top: -30px;
+        z-index: 99;
+    }
+    .osf-xs-search {
+        text-decoration: none !important;
+        padding: 8px;
     }
 }
 
 @media (min-width: 768px) {
     .osf-navbar .navbar-nav>li>a, .osf-project-navbar li>a {
         padding-left: 7px;
-        padding-right: 7px;    
+        padding-right: 7px;
     }
     .navbar .search-query {
     width: 190px;
@@ -1963,13 +1970,20 @@ span#profileFullname{
         margin-left: 0 !important;
         padding-left: 0;
     }
+    .osf-search {
+        margin-top: -30px;
+        z-index: 1028; /* should be less than 1030 to not cover navbar */
+    }
+    #searchControls > .osf-search {
+        margin-top: -30px;
+    }
 
 }
 
 @media (min-width: 992px) {
     .osf-navbar .navbar-nav>li>a, .osf-project-navbar li>a {
         padding-left: 10px;
-        padding-right: 10px;    
+        padding-right: 10px;
     }
     .navbar .search-query {
         width: 360px;
@@ -1981,7 +1995,7 @@ span#profileFullname{
 @media (min-width: 1200px) {
     .osf-navbar .navbar-nav>li>a, .osf-project-navbar li>a {
         padding-left: 15px;
-        padding-right: 15px;    
+        padding-right: 15px;
     }
     .navbar .search-query {
     width: 270px;
@@ -1995,12 +2009,13 @@ span#profileFullname{
 .osf-search {
     padding: 10px 0;
     background: #B8ECC0;
-    margin-top: -30px;
     position: fixed;
     width: 100%;
     box-shadow: 0 0 9px -2px #464545;
-    z-index: 111;
     left: 0;
+}
+#searchControls > .osf-search {
+    margin-top: -30px;
 }
 .osf-search-input {
     background: none;
@@ -2027,21 +2042,32 @@ span#profileFullname{
     color: #738EA2;
 }
 
+.sharejs-info-btn {
+    background: none;
+    outline : 0 !important;
+    box-shadow: none;
+    color: #FFFFFF;
+}
+
+.sharejs-info-btn:hover {
+    color: #D3D3D3;
+    text-decoration: none;
+}
 
 #searchPageFullBar::-webkit-input-placeholder {
    color: #738EA2;
 }
 
 #searchPageFullBar:-moz-placeholder { /* Firefox 18- */
-   color: #738EA2;  
+   color: #738EA2;
 }
 
 #searchPageFullBar::-moz-placeholder {  /* Firefox 19+ */
-   color: #738EA2;  
+   color: #738EA2;
 }
 
-#searchPageFullBar:-ms-input-placeholder {  
-   color: #738EA2;  
+#searchPageFullBar:-ms-input-placeholder {
+   color: #738EA2;
 }
 #searchControls>.row {
     padding-top: 60px;
@@ -2076,6 +2102,12 @@ span#profileFullname{
 .icon-dark-lg {
     font-size: 18px;
     color: #555;
+}
+.break-word {
+    word-wrap: break-word;
+}
+.modal-backdrop {
+    position: fixed;
 }
 
 /* Treebeard in Configure Notifications, project settings page */

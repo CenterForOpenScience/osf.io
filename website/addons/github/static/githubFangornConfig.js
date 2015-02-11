@@ -5,6 +5,7 @@ var m = require('mithril');
 
 var Fangorn = require('fangorn');
 var waterbutler = require('waterbutler');
+var URI = require('uri.js/src/URI.js');
 
 
 function _uploadUrl(item, file) {
@@ -39,12 +40,10 @@ function _fangornActionColumn (item, col){
             .done(function(data) {
                 // delete view
                 tb.deleteNode(item.parentID, item.id);
-                window.console.log('Delete success: ', data);
                 tb.modal.dismiss();
             })
             .fail(function(data){
                 tb.modal.dismiss();
-                window.console.log('Delete failed: ', data);
                 item.notify.update('Delete failed.', 'danger', undefined, 3000);
             });
         }
@@ -66,13 +65,13 @@ function _fangornActionColumn (item, col){
 
     function _downloadEvent (event, item, col) {
         event.stopPropagation();
-        console.log('Download Event triggered', this, event, item, col);
-        window.location = waterbutler.buildTreeBeardDownload(item, {ref: item.data.extra.fileSha});
+        window.location = waterbutler.buildTreeBeardDownload(item, {fileSha: item.data.extra.fileSha});
     }
 
     // Download Zip File
     if (item.kind === 'folder') {
-        if (item.data.permissions.edit) {
+        // If File and FileRead are not defined dropzone is not supported and neither is uploads
+        if (window.File && window.FileReader && item.data.permissions.edit) {
             buttons.push({
                 'name' : '',
                 'tooltip' : 'Upload files',
@@ -154,7 +153,7 @@ function _fangornGithubTitle(item, col)  {
     if (item.data.branches) {
         item.data.branch = item.data.branch || item.data.defaultBranch;
         for (var i = 0; i < item.data.branches.length; i++) {
-            var selected = item.data.branches[i] === item.data.defaultBranch ? 'selected' : '';
+            var selected = item.data.branches[i] === item.data.branch ? 'selected' : '';
             branchArray.push(m('option', {selected : selected, value:item.data.branches[i]}, item.data.branches[i]));
         }
     }
@@ -170,20 +169,19 @@ function _fangornGithubTitle(item, col)  {
         if (item.kind === 'file' && item.data.permissions.view) {
             return m('span',[
                 m('github-name', {
-                onclick: function() {
-                    var params = $.param(
-                        $.extend(
-                          {
-                              provider: item.data.provider,
-                              path: item.data.path.substring(1),
-                              branch: item.data.branch
-                          },
-                          item.data.extra || {}
-                        )
-                    );
-                    window.location = item.data.nodeApiUrl + 'waterbutler/files/?' + params;
-                },'data-toggle': 'tooltip', title: 'View file', 'data-placement': 'right'
-            }, item.data.name)]);
+                    onclick: function() {
+                        var redir = new URI(item.data.nodeUrl);
+                        window.location = new URI(item.data.nodeUrl)
+                            .segment('files')
+                            .segment(item.data.provider)
+                            .segment(item.data.path.substring(1))
+                            .search({branch: item.data.branch})
+                            .toString();
+                    },
+                    'data-toggle': 'tooltip',
+                    title: 'View file',
+                    'data-placement': 'right'
+                }, item.data.name)]);
         } else {
             return m('span', item.data.name);
         }
@@ -224,7 +222,6 @@ function _fangornFolderIcons(item){
 }
 
 function _fangornUploadComplete(item){
-    console.log('upload complete', this, item);
     var index = this.returnIndex(item.id);
 }
 

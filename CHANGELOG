@@ -2,7 +2,16 @@
 Changelog
 *********
 
-0.23.0 (unreleased)
+0.24.0 (2014-01-29)
+===================
+
+- Significant UI changes sitewide, esp. with navbar, project navigation, project overview widgets, project
+organizer.
+- New filebrowser. Replace HGrid with treebeard. Affects project organizer,
+	files viewer, and conference poster view.
+- Use the waterbutler service for handling all storage addon CRUD.
+
+0.23.0 (2014-01-16)
 ===================
 
 - Developers: Use webpack for asset bundling and minification. All JS modules

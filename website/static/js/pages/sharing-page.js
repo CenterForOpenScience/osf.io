@@ -29,8 +29,7 @@ if ($.inArray('admin', ctx.user.permissions) !== -1) {
     // Controls the modal
     var configUrl = ctx.node.urls.api + 'get_editable_children/';
     var privateLinkManager = new PrivateLinkManager('#addPrivateLink', configUrl);
-
     var tableUrl = nodeApiUrl + 'private_link/';
-    var privateLinkTable = new PrivateLinkTable('#linkScope', tableUrl);
+    var privateLinkTable = new PrivateLinkTable('#linkScope', tableUrl, ctx.node.isPublic);
     $('#privateLinkTable').on('click', '.link-url', function(e) { e.target.select(); });
 }

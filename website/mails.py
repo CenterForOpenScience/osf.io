@@ -75,7 +75,8 @@ def render_message(tpl_name, **context):
     return tpl.render(**context)
 
 
-def send_mail(to_addr, mail, mimetype='plain', **context):
+def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
+            username=None, password=None, mail_server=None, **context):
     """Send an email from the OSF.
     Example: ::
 
@@ -92,19 +93,25 @@ def send_mail(to_addr, mail, mimetype='plain', **context):
          Requires celery worker.
 
     """
+    from_addr = from_addr or settings.FROM_EMAIL
+    mailer = mailer or framework_send_email
     subject = mail.subject(**context)
     message = mail.text(**context) if mimetype in ('plain', 'txt') else mail.html(**context)
     # Don't use ttls and login in DEBUG_MODE
     ttls = login = not settings.DEBUG_MODE
     logger.debug('Sending email...')
-    logger.debug(u'To: {to_addr}\nSubject: {subject}\nMessage: {message}'.format(**locals()))
-    return framework_send_email(
-        from_addr=settings.FROM_EMAIL,
+    logger.debug(u'To: {to_addr}\nFrom: {from_addr}\nSubject: {subject}\nMessage: {message}'.format(**locals()))
+    return mailer(
+        from_addr=from_addr,
         to_addr=to_addr,
         subject=subject,
         message=message,
         mimetype=mimetype,
-        ttls=ttls, login=login
+        ttls=ttls,
+        login=login,
+        username=username,
+        password=password,
+        mail_server=mail_server,
     )
 
 # Predefined Emails
