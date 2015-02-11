@@ -378,8 +378,8 @@ def wheelhouse(repo, path):
     name = 'wheelhouse-{}.zip'.format(PYTHON_VERSION)
     url = '{}/archive/{}.zip'.format(repo, PYTHON_VERSION)
     # download and extract the wheelhouse github repository archive
-    run('curl -o {} -L {}'.format(name, url), pty=False)
     run('mkdir {}'.format(path), pty=False)
+    run('curl -o {} -L {}'.format(name, url), pty=False)
     run('tar -xvf {} --strip 1 -C {}'.format(name, path), pty=False)
     run('rm -f {}'.format(name), pty=False)
 
