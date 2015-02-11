@@ -2,6 +2,7 @@
 
 (function () {
 
+    
     var util = {},
         position = {},
         ui = {},
@@ -17,39 +18,154 @@
             isOpera: /opera/.test(nav.userAgent.toLowerCase())
         };
 
+    var defaultsStrings = {
+        bold: "Strong <strong>",
+        boldexample: "strong text",
+        
+        italic: "Emphasis <em>",
+        italicexample: "emphasized text",
+        
+        link: "Hyperlink <a>",
+        linkdescription: "enter link description here",
+        linkdialog: "<p><b>Insert Hyperlink</b></p><p>http://example.com/ \"optional title\"</p>",
+        
+        quote: "Blockquote <blockquote>",
+        quoteexample: "Blockquote",
+        
+        code: "Code Sample <pre><code>",
+        codeexample: "enter code here",
+        
+        image: "Image <img>",
+        imagedescription: "enter image description here",
+        imagedialog: "<p><b>Insert Image</b></p><p>http://example.com/images/diagram.jpg \"optional title\"<br><br>Need <a href='http://www.google.com/search?q=free+image+hosting' target='_blank'>free image hosting?</a></p>",
+        
+        olist: "Numbered List <ol>",
+        ulist: "Bulleted List <ul>",
+        litem: "List item",
+        
+        heading: "Heading <h1>/<h2>",
+        headingexample: "Heading",
+        
+        hr: "Horizontal Rule <hr>",
+        
+        undo: "Undo -",
+        redo: "Redo -",
+        
+        help: "Markdown Editing Help"
+    };
+    
+    var keyStrokes = {
+        bold: {
+            win: 'Ctrl-B',
+            mac: 'Command-B|Ctrl-B',
+        },
+        italic: {
+            win: 'Ctrl-I',
+            mac: 'Command-I|Ctrl-I',
+        },
+        link: {
+            win: 'Ctrl-L',
+            mac: 'Command-L|Ctrl-L',
+        },
+        quote: {
+            win: 'Ctrl-Q',
+            mac: 'Command-Q|Ctrl-Q',
+        },
+        code: {
+            win: 'Ctrl-K',
+            mac: 'Command-K|Ctrl-K',
+        },
+        image: {
+            win: 'Ctrl-G',
+            mac: 'Command-G|Ctrl-G',
+        },
+        olist: {
+            win: 'Ctrl-O',
+            mac: 'Command-O|Ctrl-O',
+        },
+        ulist: {
+            win: 'Ctrl-U',
+            mac: 'Command-U|Ctrl-U',
+        },
+        heading: {
+            win: 'Ctrl-H',
+            mac: 'Command-H|Ctrl-H',
+        },
+        hr: {
+            win: 'Ctrl-R',
+            mac: 'Command-R|Ctrl-R',
+        },
+        undo: {
+            win: 'Ctrl-Z',
+            mac: 'Command-Z',
+        },
+        redo: {
+            win: 'Ctrl-Y|Ctrl-Shift-Z',
+            mac: 'Command-Y|Command-Shift-Z',
+        },
+    };
+
 
     // -------------------------------------------------------------------
     //  YOUR CHANGES GO HERE
     //
-    // I've tried to localize the things you are likely to change to 
+    // I've tried to localize the things you are likely to change to
     // this area.
     // -------------------------------------------------------------------
-
-    // The text that appears on the upper part of the dialog box when
-    // entering links.
-    var linkDialogText = "<p><b>Insert Hyperlink</b></p><p>http://example.com/ \"optional title\"</p>";
-    var imageDialogText = "<p><b>Insert Image</b></p><p>http://example.com/images/diagram.jpg \"optional title\"<br><br>Need <a href='http://www.google.com/search?q=free+image+hosting' target='_blank'>free image hosting?</a></p>";
 
     // The default text that appears in the dialog input box when entering
     // links.
     var imageDefaultText = "http://";
     var linkDefaultText = "http://";
 
-    var defaultHelpHoverTitle = "Markdown Editing Help";
+    var focusNoScroll = function(element) {
+        var x = window.scrollX;
+        var y = window.scrollY;
+        element.focus();
+        window.scrollTo(x, y);
+        return element;
+    };
 
     // -------------------------------------------------------------------
     //  END OF YOUR CHANGES
     // -------------------------------------------------------------------
 
-    // help, if given, should have a property "handler", the click handler for the help button,
-    // and can have an optional property "title" for the button's tooltip (defaults to "Markdown Editing Help").
-    // If help isn't given, not help button is created.
+    // options, if given, can have the following properties:
+    //   options.helpButton = { handler: yourEventHandler }
+    //   options.strings = { italicexample: "slanted text" }
+    // `yourEventHandler` is the click handler for the help button.
+    // If `options.helpButton` isn't given, not help button is created.
+    // `options.strings` can have any or all of the same properties as
+    // `defaultStrings` above, so you can just override some string displayed
+    // to the user on a case-by-case basis, or translate all strings to
+    // a different language.
+    //
+    // For backwards compatibility reasons, the `options` argument can also
+    // be just the `helpButton` object, and `strings.help` can also be set via
+    // `helpButton.title`. This should be considered legacy.
     //
     // The constructed editor object has the methods:
     // - getConverter() returns the markdown converter object that was passed to the constructor
     // - run() actually starts the editor; should be called after all necessary plugins are registered. Calling this more than once is a no-op.
     // - refreshPreview() forces the preview to be updated. This method is only available after run() was called.
-    Markdown.Editor = function (markdownConverter, idPostfix, help) {
+    Markdown.Editor = function (markdownConverter, idPostfix, options) {
+        
+        options = options || {};
+
+        if (typeof options.handler === "function") { //backwards compatible behavior
+            options = { helpButton: options };
+        }
+        options.strings = options.strings || {};
+        if (options.helpButton) {
+            options.strings.help = options.strings.help || options.helpButton.title;
+        }
+        // Override default keystrokes
+        if(options.keyStrokes) {
+            for(var key in options.keyStrokes) {
+                keyStrokes[key] = options.keyStrokes[key];
+            }
+        }
+        var getString = function (identifier) { return options.strings[identifier] || defaultsStrings[identifier]; }
 
         idPostfix = idPostfix || "";
 
@@ -60,21 +176,24 @@
                                                   * its own image insertion dialog, this hook should return true, and the callback should be called with the chosen
                                                   * image url (or null if the user cancelled). If this hook returns false, the default dialog will be used.
                                                   */
+        hooks.addFalse("insertLinkDialog");
 
         this.getConverter = function () { return markdownConverter; }
 
         var that = this,
             panels;
 
-        this.run = function () {
+        var undoManager;
+        this.run = function (aceEditor, previewWrapper) {
             if (panels)
                 return; // already initialized
 
-            panels = new PanelCollection(idPostfix);
-            var commandManager = new CommandManager(hooks);
-            var previewManager = new PreviewManager(markdownConverter, panels, function () { hooks.onPreviewRefresh(); });
-            var undoManager, uiManager;
+            panels = new PanelCollection(idPostfix, aceEditor);
+            var commandManager = new CommandManager(hooks, getString);
+            var previewManager = new PreviewManager(markdownConverter, panels, function () { hooks.onPreviewRefresh(); }, previewWrapper);
+            var uiManager;
 
+            /*benweet
             if (!/\?noundo/.test(doc.location.href)) {
                 undoManager = new UndoManager(function () {
                     previewManager.refresh();
@@ -87,13 +206,21 @@
                     that.refreshPreview();
                 }
             }
+            */
 
-            uiManager = new UIManager(idPostfix, panels, undoManager, previewManager, commandManager, help);
+            var useragent = ace.require('ace/lib/useragent');
+            var getKey = function (identifier) {
+                var keyStroke = keyStrokes[identifier][useragent.isMac ? "mac" : "win"];
+                var orIndex = keyStroke.indexOf('|');
+                return keyStroke.substring(0, orIndex > 0 ? orIndex : keyStroke.length);
+            };
+            uiManager = new UIManager(idPostfix, panels, undoManager, previewManager, commandManager, options.helpButton, getString, getKey);
             uiManager.setUndoRedoButtonStates();
 
             var forceRefresh = that.refreshPreview = function () { previewManager.refresh(true); };
 
             forceRefresh();
+            that.uiManager = uiManager;
         };
 
     }
@@ -160,7 +287,7 @@
             beforeReplacer = function (s) { that.before += s; return ""; }
             afterReplacer = function (s) { that.after = s + that.after; return ""; }
         }
-        
+
         this.selection = this.selection.replace(/^(\s*)/, beforeReplacer).replace(/(\s*)$/, afterReplacer);
     };
 
@@ -228,14 +355,14 @@
         }
     };
 
-    // end of Chunks 
+    // end of Chunks
 
     // A collection of the important regions on the page.
     // Cached so we don't have to keep traversing the DOM.
     // Also holds ieCachedRange and ieCachedScrollTop, where necessary; working around
     // this issue:
     // Internet explorer has problems with CSS sprite buttons that use HTML
-    // lists.  When you click on the background image "button", IE will 
+    // lists.  When you click on the background image "button", IE will
     // select the non-existent link text and discard the selection in the
     // textarea.  The solution to this is to cache the textarea selection
     // on the button's mousedown event and set a flag.  In the part of the
@@ -246,10 +373,10 @@
     // This ONLY affects Internet Explorer (tested on versions 6, 7
     // and 8) and ONLY on button clicks.  Keyboard shortcuts work
     // normally since the focus never leaves the textarea.
-    function PanelCollection(postfix) {
+    function PanelCollection(postfix, aceEditor) {
         this.buttonBar = doc.getElementById("wmd-button-bar" + postfix);
         this.preview = doc.getElementById("wmd-preview" + postfix);
-        this.input = doc.getElementById("wmd-input" + postfix);
+        this.input = aceEditor;
     };
 
     // Returns true if the DOM element is visible, false if it's hidden.
@@ -395,6 +522,7 @@
         return [maxWidth, maxHeight, innerWidth, innerHeight];
     };
 
+    /*benweet
     // Handles pushing and popping TextareaStates for undo/redo commands.
     // I should rename the stack variables to list.
     function UndoManager(callback, panels) {
@@ -517,13 +645,13 @@
 
             var handled = false;
 
-            if (event.ctrlKey || event.metaKey) {
+            if ((event.ctrlKey || event.metaKey) && !event.altKey) {
 
                 // IE and Opera do not support charCode.
                 var keyCode = event.charCode || event.keyCode;
                 var keyCodeChar = String.fromCharCode(keyCode);
 
-                switch (keyCodeChar) {
+                switch (keyCodeChar.toLowerCase()) {
 
                     case "y":
                         undoObj.redo();
@@ -580,7 +708,7 @@
                     setMode("escape");
                 }
                 else if ((keyCode < 16 || keyCode > 20) && keyCode != 91) {
-                    // 16-20 are shift, etc. 
+                    // 16-20 are shift, etc.
                     // 91: left window key
                     // I think this might be a little messed up since there are
                     // a lot of nonprinting keys above 20.
@@ -593,7 +721,7 @@
             util.addEvent(panels.input, "keypress", function (event) {
                 // keyCode 89: y
                 // keyCode 90: z
-                if ((event.ctrlKey || event.metaKey) && (event.keyCode == 89 || event.keyCode == 90)) {
+                if ((event.ctrlKey || event.metaKey) && !event.altKey && (event.keyCode == 89 || event.keyCode == 90)) {
                     event.preventDefault();
                 }
             });
@@ -608,7 +736,7 @@
                 }
             };
 
-            util.addEvent(panels.input, "keydown", handleCtrlYZ);
+            //util.addEvent(panels.input, "keydown", handleCtrlYZ);
             util.addEvent(panels.input, "keydown", handleModeChange);
             util.addEvent(panels.input, "mousedown", function () {
                 setMode("moving");
@@ -621,13 +749,31 @@
         var init = function () {
             setEventHandlers();
             refreshState(true);
+            //Not necessary
+            //saveState();
+        };
+        
+        this.reinit = function(content, start, end, scrollTop) {
+            undoStack = [];
+            stackPtr = 0;
+            mode = "none";
+            lastState = undefined;
+            timer = undefined;
+            refreshState();
+            inputStateObj.text = content;
+            inputStateObj.start = start;
+            inputStateObj.end = end;
+            inputStateObj.scrollTop = scrollTop;
+            inputStateObj.setInputAreaSelection();
             saveState();
         };
+        this.setMode = setMode;
 
         init();
     }
 
     // end of UndoManager
+    */
 
     // The input textarea state/contents.
     // This is used to implement undo/redo by the undo manager.
@@ -637,25 +783,44 @@
         var stateObj = this;
         var inputArea = panels.input;
         this.init = function () {
+            /*benweet
             if (!util.isVisible(inputArea)) {
                 return;
             }
             if (!isInitialState && doc.activeElement && doc.activeElement !== inputArea) { // this happens when tabbing out of the input box
                 return;
             }
+            */
 
+            var Range = ace.require('ace/range').Range;
+            (function(range) {
+                stateObj.before = inputArea.session.getTextRange(new Range(0,0,range.start.row, range.start.column));
+                stateObj.selection = inputArea.session.getTextRange();
+                stateObj.after = inputArea.session.getTextRange(new Range(range.end.row, range.end.column, Number.MAX_VALUE, Number.MAX_VALUE));
+            })(inputArea.selection.getRange());
+            this.text = [this.before, this.selection, this.after].join('');
+            this.length = this.text.length;
             this.setInputAreaSelectionStartEnd();
-            this.scrollTop = inputArea.scrollTop;
+            this.scrollTop = inputArea.renderer.getScrollTop();
+            /*benweet
             if (!this.text && inputArea.selectionStart || inputArea.selectionStart === 0) {
                 this.text = inputArea.value;
             }
-
+            */
         }
 
         // Sets the selected text in the input box after we've performed an
         // operation.
         this.setInputAreaSelection = function () {
 
+            var Range = ace.require('ace/range').Range;
+            inputArea.selection.setSelectionRange((function(posStart, posEnd) {
+                return new Range(posStart.row, posStart.column, posEnd.row, posEnd.column);
+            })(inputArea.session.doc.indexToPosition(stateObj.start), inputArea.session.doc.indexToPosition(stateObj.end)));
+            inputArea.renderer.scrollToY(stateObj.scrollTop);
+            focusNoScroll(inputArea);
+            
+            /*benweet
             if (!util.isVisible(inputArea)) {
                 return;
             }
@@ -681,10 +846,15 @@
                 range.moveStart("character", stateObj.start);
                 range.select();
             }
+            */
         };
 
         this.setInputAreaSelectionStartEnd = function () {
-
+            
+            stateObj.start = stateObj.before.length;
+            stateObj.end = stateObj.after.length;
+            
+            /*benweet
             if (!panels.ieCachedRange && (inputArea.selectionStart || inputArea.selectionStart === 0)) {
 
                 stateObj.start = inputArea.selectionStart;
@@ -724,32 +894,61 @@
 
                 if (panels.ieCachedRange)
                     stateObj.scrollTop = panels.ieCachedScrollTop; // this is set alongside with ieCachedRange
-                
+
                 panels.ieCachedRange = null;
 
                 this.setInputAreaSelection();
             }
+            */
         };
 
         // Restore this state into the input area.
         this.restore = function () {
+            // Here we could do editor.setValue but we want to update the less we can for undo management
+            
+            // Find the first modified char
+            var startIndex = 0;
+            var startIndexMax = stateObj.before.length; 
+            while(startIndex < startIndexMax) {
+                if(stateObj.before.charCodeAt(startIndex) !== stateObj.text.charCodeAt(startIndex))
+                    break;
+                startIndex++;
+            }
+            // Find the last modified char
+            var endIndex = 0;
+            var endIndexMax = stateObj.after.length;
+            var beforeMaxOffset = stateObj.after.length - 1;
+            var afterMaxOffset = stateObj.text.length - 1;
+            while(endIndex < endIndexMax) {
+                if(stateObj.after.charCodeAt(beforeMaxOffset - endIndex) !== stateObj.text.charCodeAt(afterMaxOffset - endIndex))
+                    break;
+                endIndex++;
+            }
+            
+            var Range = ace.require('ace/range').Range;
+            var range = (function(posStart, posEnd) {
+                return new Range(posStart.row, posStart.column, posEnd.row, posEnd.column);
+            })(inputArea.session.doc.indexToPosition(startIndex), inputArea.session.doc.indexToPosition(stateObj.length - endIndex));
+            inputArea.session.replace(range, stateObj.text.substring(startIndex, afterMaxOffset - endIndex + 1));
+            this.setInputAreaSelection();
 
+            /*benweet
             if (stateObj.text != undefined && stateObj.text != inputArea.value) {
                 inputArea.value = stateObj.text;
             }
-            this.setInputAreaSelection();
             inputArea.scrollTop = stateObj.scrollTop;
+            */
         };
 
         // Gets a collection of HTML chunks from the inptut textarea.
         this.getChunks = function () {
 
             var chunk = new Chunks();
-            chunk.before = util.fixEolChars(stateObj.text.substring(0, stateObj.start));
+            chunk.before = stateObj.before;
             chunk.startTag = "";
-            chunk.selection = util.fixEolChars(stateObj.text.substring(stateObj.start, stateObj.end));
+            chunk.selection = stateObj.selection;
             chunk.endTag = "";
-            chunk.after = util.fixEolChars(stateObj.text.substring(stateObj.end));
+            chunk.after = stateObj.after;
             chunk.scrollTop = stateObj.scrollTop;
 
             return chunk;
@@ -769,7 +968,7 @@
         this.init();
     };
 
-    function PreviewManager(converter, panels, previewRefreshCallback) {
+    function PreviewManager(converter, panels, previewRefreshCallback, previewWrapper) {
 
         var managerObj = this;
         var timeout;
@@ -779,6 +978,7 @@
         var startType = "delayed"; // The other legal value is "manual"
 
         // Adds event listeners to elements
+        /*benweet
         var setupEvents = function (inputElem, listener) {
 
             util.addEvent(inputElem, "input", listener);
@@ -788,6 +988,7 @@
             util.addEvent(inputElem, "keypress", listener);
             util.addEvent(inputElem, "keydown", listener);
         };
+        */
 
         var getDocScrollTop = function () {
 
@@ -816,7 +1017,7 @@
                 return;
 
 
-            var text = panels.input.value;
+            var text = panels.input.getValue();
             if (text && text == oldInputText) {
                 return; // Input text hasn't changed.
             }
@@ -835,6 +1036,9 @@
 
             pushPreviewHtml(text);
         };
+        if(previewWrapper !== undefined) {
+            makePreviewHtml = previewWrapper(makePreviewHtml);
+        }
 
         // setTimeout is already used.  Used as an event listener.
         var applyTimeout = function () {
@@ -925,36 +1129,40 @@
 
         var pushPreviewHtml = function (text) {
 
-            var emptyTop = position.getTop(panels.input) - getDocScrollTop();
+//            var emptyTop = position.getTop(panels.input) - getDocScrollTop();
 
             if (panels.preview) {
                 previewSet(text);
                 previewRefreshCallback();
             }
 
-            setPanelScrollTops();
-
-            if (isFirstTimeFilled) {
-                isFirstTimeFilled = false;
-                return;
-            }
-
-            var fullTop = position.getTop(panels.input) - getDocScrollTop();
-
-            if (uaSniffed.isIE) {
-                setTimeout(function () {
-                    window.scrollBy(0, fullTop - emptyTop);
-                }, 0);
-            }
-            else {
-                window.scrollBy(0, fullTop - emptyTop);
-            }
+//            setPanelScrollTops();
+//
+//            if (isFirstTimeFilled) {
+//                isFirstTimeFilled = false;
+//                return;
+//            }
+//
+//            var fullTop = position.getTop(panels.input) - getDocScrollTop();
+//
+//            if (uaSniffed.isIE) {
+//                setTimeout(function () {
+//                    window.scrollBy(0, fullTop - emptyTop);
+//                }, 0);
+//            }
+//            else {
+//                window.scrollBy(0, fullTop - emptyTop);
+//            }
         };
 
         var init = function () {
 
+            /*benweet
             setupEvents(panels.input, applyTimeout);
-            makePreviewHtml();
+            */
+            panels.input.session.on('change', applyTimeout);
+            //Not necessary
+            //makePreviewHtml();
 
             if (panels.preview) {
                 panels.preview.scrollTop = 0;
@@ -1157,15 +1365,24 @@
                 range.select();
             }
 
-            input.focus();
+            focusNoScroll(input);
         }, 0);
     };
 
-    function UIManager(postfix, panels, undoManager, previewManager, commandManager, helpOptions) {
+    function UIManager(postfix, panels, undoManager, previewManager, commandManager, helpOptions, getString, getKey) {
+        var getStringAndKey = function (identifier) { return getString(identifier) + ' ' + getKey(identifier); };
 
         var inputBox = panels.input,
             buttons = {}; // buttons.undo, buttons.link, etc. The actual DOM elements.
 
+        this.setUndoRedoButtonStates = function() {
+            setTimeout(function() {
+                setupButton(buttons.undo, inputBox.session.getUndoManager().hasUndo());
+                setupButton(buttons.redo, inputBox.session.getUndoManager().hasRedo());
+            }, 50);
+        };
+
+        var that = this;
         makeSpritedButtonRow();
 
         var keyEvent = "keydown";
@@ -1173,10 +1390,27 @@
             keyEvent = "keypress";
         }
 
+        function addKeyCmd(identifierList) {
+            if(identifierList.length === 0) {
+                return;
+            }
+            var identifier = identifierList.pop();
+            inputBox.commands.addCommand({
+                name: getString(identifier),
+                bindKey: keyStrokes[identifier],
+                exec: function(editor) {
+                    doClick(buttons[identifier]);
+                },
+            });
+            addKeyCmd(identifierList);
+        }
+        addKeyCmd(['bold', 'italic', 'link', 'quote', 'code', 'image', 'olist', 'ulist', 'heading', 'hr']);
+        
+        /*benweet
         util.addEvent(inputBox, keyEvent, function (key) {
 
             // Check to see if we have a button key and, if so execute the callback.
-            if ((key.ctrlKey || key.metaKey) && !key.altKey && !key.shiftKey) {
+            if ((key.ctrlKey || key.metaKey) && !key.altKey) {
 
                 var keyCode = key.charCode || key.keyCode;
                 var keyCodeStr = String.fromCharCode(keyCode).toLowerCase();
@@ -1223,6 +1457,12 @@
                             doClick(buttons.undo);
                         }
                         break;
+                    case "v":
+                        undoManager.setMode("typing");
+                        return;
+                    case "x":
+                        undoManager.setMode("deleting");
+                        return;
                     default:
                         return;
                 }
@@ -1260,16 +1500,18 @@
                 }
             });
         }
+        */
 
 
         // Perform the button's action.
         function doClick(button) {
 
-            inputBox.focus();
+            focusNoScroll(inputBox);
+            var linkOrImage = button.id == "wmd-link-button" || button.id == "wmd-image-button";
 
             if (button.textOp) {
 
-                if (undoManager) {
+                if (undoManager && !linkOrImage) {
                     undoManager.setCommandMode();
                 }
 
@@ -1289,7 +1531,7 @@
                 //
                 // var link = CreateLinkDialog();
                 // makeMarkdownLink(link);
-                // 
+                //
                 // Instead of this straightforward method of handling a
                 // dialog I have to pass any code which would execute
                 // after the dialog is dismissed (e.g. link creation)
@@ -1300,7 +1542,7 @@
                 // create dialogs and require the function pointers.
                 var fixupInputArea = function () {
 
-                    inputBox.focus();
+                    focusNoScroll(inputBox);
 
                     if (chunks) {
                         state.setChunks(chunks);
@@ -1314,6 +1556,11 @@
 
                 if (!noCleanup) {
                     fixupInputArea();
+                    /*benweet
+                    if(!linkOrImage) {
+                        inputBox.dispatchEvent(new Event('input'));
+                    }
+                    */
                 }
 
             }
@@ -1329,6 +1576,7 @@
             var disabledYShift = "-20px";
             var highlightYShift = "-40px";
             var image = button.getElementsByTagName("span")[0];
+            button.className = button.className.replace(/ disabled/g, "");
             if (isEnabled) {
                 image.style.backgroundPosition = button.XShift + " " + normalYShift;
                 button.onmouseover = function () {
@@ -1348,7 +1596,7 @@
                             return;
                         }
                         panels.ieCachedRange = document.selection.createRange();
-                        panels.ieCachedScrollTop = panels.input.scrollTop;
+                        panels.ieCachedScrollTop = panels.input.renderer.getScrollTop();
                     };
                 }
 
@@ -1365,6 +1613,7 @@
             else {
                 image.style.backgroundPosition = button.XShift + " " + disabledYShift;
                 button.onmouseover = button.onmouseout = button.onclick = function () { };
+                button.className += " disabled";
             }
         }
 
@@ -1411,36 +1660,32 @@
                 xPosition += 25;
             }
 
-            buttons.bold = makeButton("wmd-bold-button", "Strong <strong> Ctrl+B", "0px", bindCommand("doBold"));
-            buttons.italic = makeButton("wmd-italic-button", "Emphasis <em> Ctrl+I", "-20px", bindCommand("doItalic"));
+            buttons.bold = makeButton("wmd-bold-button", getStringAndKey("bold"), "0px", bindCommand("doBold"));
+            buttons.italic = makeButton("wmd-italic-button", getStringAndKey("italic"), "-20px", bindCommand("doItalic"));
             makeSpacer(1);
-            buttons.link = makeButton("wmd-link-button", "Hyperlink <a> Ctrl+L", "-40px", bindCommand(function (chunk, postProcessing) {
+            buttons.link = makeButton("wmd-link-button", getStringAndKey("link"), "-40px", bindCommand(function (chunk, postProcessing) {
                 return this.doLinkOrImage(chunk, postProcessing, false);
             }));
-            buttons.quote = makeButton("wmd-quote-button", "Blockquote <blockquote> Ctrl+Q", "-60px", bindCommand("doBlockquote"));
-            buttons.code = makeButton("wmd-code-button", "Code Sample <pre><code> Ctrl+K", "-80px", bindCommand("doCode"));
-            buttons.image = makeButton("wmd-image-button", "Image <img> Ctrl+G", "-100px", bindCommand(function (chunk, postProcessing) {
+            buttons.quote = makeButton("wmd-quote-button", getStringAndKey("quote"), "-60px", bindCommand("doBlockquote"));
+            buttons.code = makeButton("wmd-code-button", getStringAndKey("code"), "-80px", bindCommand("doCode"));
+            buttons.image = makeButton("wmd-image-button", getStringAndKey("image"), "-100px", bindCommand(function (chunk, postProcessing) {
                 return this.doLinkOrImage(chunk, postProcessing, true);
             }));
             makeSpacer(2);
-            buttons.olist = makeButton("wmd-olist-button", "Numbered List <ol> Ctrl+O", "-120px", bindCommand(function (chunk, postProcessing) {
+            buttons.olist = makeButton("wmd-olist-button", getStringAndKey("olist"), "-120px", bindCommand(function (chunk, postProcessing) {
                 this.doList(chunk, postProcessing, true);
             }));
-            buttons.ulist = makeButton("wmd-ulist-button", "Bulleted List <ul> Ctrl+U", "-140px", bindCommand(function (chunk, postProcessing) {
+            buttons.ulist = makeButton("wmd-ulist-button", getStringAndKey("ulist"), "-140px", bindCommand(function (chunk, postProcessing) {
                 this.doList(chunk, postProcessing, false);
             }));
-            buttons.heading = makeButton("wmd-heading-button", "Heading <h1>/<h2> Ctrl+H", "-160px", bindCommand("doHeading"));
-            buttons.hr = makeButton("wmd-hr-button", "Horizontal Rule <hr> Ctrl+R", "-180px", bindCommand("doHorizontalRule"));
+            buttons.heading = makeButton("wmd-heading-button", getStringAndKey("heading"), "-160px", bindCommand("doHeading"));
+            buttons.hr = makeButton("wmd-hr-button", getStringAndKey("hr"), "-180px", bindCommand("doHorizontalRule"));
             makeSpacer(3);
-            buttons.undo = makeButton("wmd-undo-button", "Undo - Ctrl+Z", "-200px", null);
-            buttons.undo.execute = function (manager) { if (manager) manager.undo(); };
+            buttons.undo = makeButton("wmd-undo-button", getStringAndKey("undo"), "-200px", null);
+            buttons.undo.execute = function (manager) { inputBox.session.getUndoManager().undo(); };
 
-            var redoTitle = /win/.test(nav.platform.toLowerCase()) ?
-                "Redo - Ctrl+Y" :
-                "Redo - Ctrl+Shift+Z"; // mac and other non-Windows platforms
-
-            buttons.redo = makeButton("wmd-redo-button", redoTitle, "-220px", null);
-            buttons.redo.execute = function (manager) { if (manager) manager.redo(); };
+            buttons.redo = makeButton("wmd-redo-button", getStringAndKey("redo"), "-220px", null);
+            buttons.redo.execute = function (manager) { inputBox.session.getUndoManager().redo(); };
 
             if (helpOptions) {
                 var helpButton = document.createElement("li");
@@ -1451,7 +1696,7 @@
                 helpButton.XShift = "-240px";
                 helpButton.isHelp = true;
                 helpButton.style.right = "0px";
-                helpButton.title = helpOptions.title || defaultHelpHoverTitle;
+                helpButton.title = getString("help");
                 helpButton.onclick = helpOptions.handler;
 
                 setupButton(helpButton, true);
@@ -1459,22 +1704,20 @@
                 buttons.help = helpButton;
             }
 
-            setUndoRedoButtonStates();
+            that.setUndoRedoButtonStates();
+            inputBox.session.on('change', function() {
+                that.setUndoRedoButtonStates();
+            });
         }
 
-        function setUndoRedoButtonStates() {
-            if (undoManager) {
-                setupButton(buttons.undo, undoManager.canUndo());
-                setupButton(buttons.redo, undoManager.canRedo());
-            }
-        };
-
-        this.setUndoRedoButtonStates = setUndoRedoButtonStates;
+        this.buttons = buttons;
+        this.setButtonState = setupButton;
 
     }
 
-    function CommandManager(pluginHooks) {
+    function CommandManager(pluginHooks, getString) {
         this.hooks = pluginHooks;
+        this.getString = getString;
     }
 
     var commandProto = CommandManager.prototype;
@@ -1504,11 +1747,11 @@
     };
 
     commandProto.doBold = function (chunk, postProcessing) {
-        return this.doBorI(chunk, postProcessing, 2, "strong text");
+        return this.doBorI(chunk, postProcessing, 2, this.getString("boldexample"));
     };
 
     commandProto.doItalic = function (chunk, postProcessing) {
-        return this.doBorI(chunk, postProcessing, 1, "emphasized text");
+        return this.doBorI(chunk, postProcessing, 1, this.getString("italicexample"));
     };
 
     // chunk: The selected region that will be enclosed with */**
@@ -1644,7 +1887,7 @@
             });
             if (title) {
                 title = title.trim ? title.trim() : title.replace(/^\s*/, "").replace(/\s*$/, "");
-                title = $.trim(title).replace(/"/g, "quot;").replace(/\(/g, "&#40;").replace(/\)/g, "&#41;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                title = title.replace(/"/g, "quot;").replace(/\(/g, "&#40;").replace(/\)/g, "&#41;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
             }
             return title ? link + ' "' + title + '"' : link;
         });
@@ -1711,10 +1954,10 @@
 
                     if (!chunk.selection) {
                         if (isImage) {
-                            chunk.selection = "enter image description here";
+                            chunk.selection = that.getString("imagedescription");
                         }
                         else {
-                            chunk.selection = "enter link description here";
+                            chunk.selection = that.getString("linkdescription");
                         }
                     }
                 }
@@ -1725,10 +1968,11 @@
 
             if (isImage) {
                 if (!this.hooks.insertImageDialog(linkEnteredCallback))
-                    ui.prompt(imageDialogText, imageDefaultText, linkEnteredCallback);
+                    ui.prompt(this.getString("imagedialog"), imageDefaultText, linkEnteredCallback);
             }
             else {
-                ui.prompt(linkDialogText, linkDefaultText, linkEnteredCallback);
+                if (!this.hooks.insertLinkDialog(linkEnteredCallback))
+                    ui.prompt(this.getString("linkdialog"), linkDefaultText, linkEnteredCallback);
             }
             return true;
         }
@@ -1795,7 +2039,7 @@
             });
 
         chunk.selection = chunk.selection.replace(/^(\s|>)+$/, "");
-        chunk.selection = chunk.selection || "Blockquote";
+        chunk.selection = chunk.selection || this.getString("quoteexample");
 
         // The original code uses a regular expression to find out how much of the
         // text *directly before* the selection already was a blockquote:
@@ -1864,6 +2108,8 @@
 
         // end of change
 
+        /*benweet Don't really know the purpose of it but it is destructive
+        
         if (chunk.after) {
             chunk.after = chunk.after.replace(/^\n?/, "\n");
         }
@@ -1874,6 +2120,7 @@
                 return "";
             }
         );
+        */
 
         var replaceBlanksInTags = function (useBracket) {
 
@@ -1952,7 +2199,7 @@
 
             if (!chunk.selection) {
                 chunk.startTag = "    ";
-                chunk.selection = "enter code here";
+                chunk.selection = this.getString("codeexample");
             }
             else {
                 if (/^[ ]{0,3}\S/m.test(chunk.selection)) {
@@ -1962,7 +2209,7 @@
                         chunk.before += "    ";
                 }
                 else {
-                    chunk.selection = chunk.selection.replace(/^[ ]{4}/gm, "");
+                    chunk.selection = chunk.selection.replace(/^(?:[ ]{4}|[ ]{0,3}\t)/gm, "");
                 }
             }
         }
@@ -1975,7 +2222,7 @@
             if (!chunk.startTag && !chunk.endTag) {
                 chunk.startTag = chunk.endTag = "`";
                 if (!chunk.selection) {
-                    chunk.selection = "enter code here";
+                    chunk.selection = this.getString("codeexample");
                 }
             }
             else if (chunk.endTag && !chunk.startTag) {
@@ -2069,7 +2316,7 @@
             });
 
         if (!chunk.selection) {
-            chunk.selection = "List item";
+            chunk.selection = this.getString("litem");
         }
 
         var prefix = getItemPrefix();
@@ -2101,7 +2348,7 @@
         // make a level 2 hash header around some default text.
         if (!chunk.selection) {
             chunk.startTag = "## ";
-            chunk.selection = "Heading";
+            chunk.selection = this.getString("headingexample");
             chunk.endTag = " ##";
             return;
         }

@@ -240,6 +240,27 @@ def mongorestore(path, drop=False):
     run(cmd, echo=True)
 
 
+@task
+def sharejs(host=None, port=None, db_host=None, db_port=None, db_name=None):
+    """Start a local ShareJS server."""
+    if host:
+        os.environ['SHAREJS_SERVER_HOST'] = host
+    if port:
+        os.environ['SHAREJS_SERVER_PORT'] = port
+    if db_host:
+        os.environ['SHAREJS_DB_HOST'] = db_host
+    if db_port:
+        os.environ['SHAREJS_DB_PORT'] = db_port
+    if db_name:
+        os.environ['SHAREJS_DB_NAME'] = db_name
+
+    if settings.SENTRY_DSN:
+        os.environ['SHAREJS_SENTRY_DSN'] = settings.SENTRY_DSN
+
+    share_server = os.path.join(settings.ADDON_PATH, 'wiki', 'shareServer.js')
+    run("node {0}".format(share_server))
+
+
 @task(aliases=['celery'])
 def celery_worker(level="debug"):
     """Run the Celery process."""

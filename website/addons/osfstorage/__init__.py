@@ -13,8 +13,7 @@ MODELS = [
 NODE_SETTINGS_MODEL = model.OsfStorageNodeSettings
 
 ROUTES = [
-    routes.web_routes,
-    routes.api_routes,
+    routes.api_routes
 ]
 
 SHORT_NAME = 'osfstorage'
