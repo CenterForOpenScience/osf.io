@@ -194,7 +194,7 @@ ko.punches.enableAll();
         */
         function onPickFolder(evt, item) {
                 evt.preventDefault();
-                self.selected({name: 'Google Drive' + item.data.path, path: item.data.path});
+                self.selected({name: 'Google Drive' + item.data.path.path, path: item.data.path, id: item.data.id});
                 self.selectedName(self.selected().name);
                 return false; // Prevent event propagation
         }
@@ -320,7 +320,6 @@ ko.punches.enableAll();
 //
 //                }
 //            );
-
 
 //            $.getScript('https://apis.google.com/js/api.js?onload=onApiLoad', function () {
 //

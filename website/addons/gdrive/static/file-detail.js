@@ -1,3 +1,4 @@
-var DeleteFile = require('../../../static/js/deleteFile.js');
+var RevisionTable = require('./revisions_gdrive.js');
 
-new DeleteFile('#driveAddonScope', window.contextVars.node.urls);
+var url = window.contextVars.node.urls.revisions_url;
+new RevisionTable('#revisionScope', url);

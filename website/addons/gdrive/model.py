@@ -2,10 +2,14 @@
 """Persistence layer for the gdrive addon.
 """
 import os
+import furl
 
 from website.addons.base import GuidFile
 from modularodm import fields
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
+from .utils import clean_path
+from website.addons.base import exceptions
+
 
 class AddonGdriveGuidFile(GuidFile):
 
@@ -40,6 +44,7 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
     )
 
     folder = fields.StringField(default=None)
+    folderId= fields.StringField(default=None)
 
     @property
     def has_auth(self):
@@ -71,6 +76,44 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
         :param AddonGdriveUserSettings user_settings: The user settings to link.
         """
         self.user_settings = user_settings
+
+    def serialize_waterbutler_credentials(self):
+        if not self.has_auth:
+            raise exceptions.AddonError('Addon is not authorized')
+        return {'token': self.user_settings.access_token}
+
+    def serialize_waterbutler_settings(self):
+        if not self.folder:
+            raise exceptions.AddonError('Folder is not configured')
+        return {'folder': self.folder}
+
+    def create_waterbutler_log(self, auth, action, metadata):
+        cleaned_path = clean_path(os.path.join(self.folder, metadata['path']))
+        self.owner.add_log(
+            'gdrive_{0}'.format(action),
+            auth=auth,
+            params={
+                'project': self.owner.parent_id,
+                'node': self.owner._id,
+                'path': cleaned_path,
+                'folder': self.folder,
+
+                'urls': {
+                    'view': self.owner.web_url_for('gdrive_view_file', path=cleaned_path), #TODO
+                    'download': self.owner.web_url_for('dropbox_download', path=cleaned_path),#TODO
+                },
+            },
+        )
+
+    def get_waterbutler_render_url(self, path, rev=None, **kwargs):
+        import pdb; pdb.set_trace()
+        url = furl.furl(self.owner.web_url_for('gdrive_view_file', path=path))
+
+        if rev:
+            url.args['rev'] = rev
+
+        return url.url
+
 
     ##### Callback overrides #####
 

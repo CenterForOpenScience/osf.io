@@ -7,6 +7,7 @@
 var $ = require('jquery');
 var m = require('mithril');
 var Treebeard = require('treebeard');
+var URI = require('uri.js/src/URI.js');
 var waterbutler = require('waterbutler');
 
 var $osf = require('osfHelpers');
@@ -512,7 +513,7 @@ function _fangornResolveLazyLoad(item) {
     if (item.data.provider === undefined) {
         return false;
     }
-
+    console.log(item);
     return waterbutler.buildTreeBeardMetadata(item);
 }
 
@@ -657,15 +658,9 @@ function _fangornTitleColumn(item, col) {
     if (item.kind === 'file' && item.data.permissions.view) {
         return m('span',{
             onclick: function() {
-                var params = $.param(
-                    $.extend({
-                        provider: item.data.provider,
-                        path: item.data.path.substring(1)
-                    },
-                        item.data.extra || {}
-                    )
-                );
-                window.location = item.data.nodeApiUrl + 'waterbutler/files/?' + params;
+                var redir = new URI(item.data.nodeUrl);
+                redir.segment('files').segment(item.data.provider).segment(item.data.path.substring(1));
+                window.location = redir.toString() + '/';
             },
             'data-toggle' : 'tooltip', title : 'View file', 'data-placement': 'right'
         }, item.data.name);
@@ -910,7 +905,7 @@ tbOptions = {
         previewTemplate: '<div></div>',
         parallelUploads: 1,
         acceptDirectories: false,
-        fallback: function(){},
+        fallback: function(){}
     },
     resolveIcon : _fangornResolveIcon,
     resolveToggle : _fangornResolveToggle,

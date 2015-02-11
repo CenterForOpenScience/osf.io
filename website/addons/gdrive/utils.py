@@ -9,7 +9,7 @@ def serialize_urls(node_settings):
         'create' : node.api_url_for('drive_oauth_start'),
         'importAuth': node.api_url_for('gdrive_import_user_auth'),
         'deauthorize': node.api_url_for('gdrive_deauthorize'),
-        'get_folders' : node.api_url_for('get_gdrive_children'),
+        'get_folders' : node.api_url_for('gdrive_folders', foldersOnly=1),
         'config': node.api_url_for('gdrive_config_put'),
         'files': node.web_url_for('collect_file_trees')
     }
@@ -46,9 +46,10 @@ def clean_path(path):
     return path.strip('/')
 
 def build_gdrive_urls(item, node, path):
-    newpath=clean_path(path)
+    newpath=clean_path(path['path'])
     return{
-    'get_folders': node.api_url_for('get_gdrive_children', folderId=item['id'], path=newpath)
+    'get_folders': node.api_url_for('gdrive_folders', folderId=item['id'], path=newpath, foldersOnly=1),
+    'fetch': node.api_url_for('gdrive_folders', folderId=item['id'])
     }
 
 def to_hgrid(item, node, path):
@@ -56,13 +57,17 @@ def to_hgrid(item, node, path):
     :param result: contents returned from Google Drive API
     :return: results formatted as required for Hgrid display
     """
-    path = path + '/' + item['title']
+    path = {
+        'path': path + '/' + item['title'],
+        'id': item['id']
+    }
     serialized = {
-        'name' : item['title'],
+        'addon': 'gdrive',
+        'name': item['title'],
         'id': item['id'],
-        'kind' : 'folder',
-        'urls' : build_gdrive_urls(item, node, path=path),
-        'path' : path
+        'kind': 'folder',
+        'urls': build_gdrive_urls(item, node, path=path),
+        'path': path # as required for waterbutler path
 
     }
     return serialized

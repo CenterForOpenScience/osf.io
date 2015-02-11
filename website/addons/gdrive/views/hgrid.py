@@ -69,20 +69,23 @@ from apiclient import errors
 
 @must_be_contributor_or_public
 @must_have_addon('gdrive', 'node')
-def get_gdrive_children(node_addon, **kwargs):
+def gdrive_folders(node_addon, **kwargs):
    auth = kwargs['auth']
    user = auth.user
    node = node_addon.owner #TODO change variable names
    nid = kwargs.get('nid') or kwargs.get('pid')
    node_addon= Node.load(nid)
    node_settings = node_addon.get_addon('gdrive')
+   # Get service using Access token
    if node_settings:
        user_settings = node_settings.user_settings
        credentials = AccessTokenCredentials(user_settings.access_token, request.headers.get('User-Agent'))
        http_service = httplib2.Http()
        http_service = credentials.authorize(http_service)
        service = build('drive', 'v2', http_service)
-   folderid = request.args.get('folderId')
+
+   if request.args.get('foldersOnly'):
+       folderid = request.args.get('folderId')
    path = request.args.get('path') or ''
    result = retrieve_all_files(service, folderid)
    contents= [to_hgrid(item, node, path=path)
@@ -122,12 +125,17 @@ def gdrive_addon_folder(node_settings, auth, **kwargs):
     if not node_settings.has_auth or not node_settings.folder:
         return None
     node = node_settings.owner
-    path= clean_path(node_settings.folder['path'])
+    path = {
+        'path' : clean_path(node_settings.folder['name']),
+        'id' : node_settings.folder['id']
+    }
+    # path = clean_path(node_settings.folder['name'])
     root = rubeus.build_addon_root(
         node_settings=node_settings,
-        name=node_settings.folder,
+        name=node_settings.folder['name'],
         permissions=auth,
         nodeUrl=node.url,
-        nodeApiUrl=node.api_url
+        nodeApiUrl=node.api_url,
+        path='/{0}/{1}'.format(path['id'], path['path'])
     )
     return [root]

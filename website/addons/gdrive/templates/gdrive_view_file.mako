@@ -5,7 +5,7 @@
 
     <ol class="breadcrumb">
         <li><a data-bind="attr: {href: filesUrl()}">{{nodeTitle}}</a></li>
-        <li>Dropbox</li>
+        <li>Google Drive</li>
         <li class="active overflow" >{{path}}</li>
     </ol>
 
@@ -78,5 +78,5 @@
 </%def>
 <%def name="javascript_bottom()">
 ${parent.javascript_bottom()}
-<script src=${"/static/public/js/dropbox/file-detail.js" | webpack_asset}></script>
+<script src=${"/static/public/js/gdrive/file-detail.js" | webpack_asset}></script>
 </%def>
