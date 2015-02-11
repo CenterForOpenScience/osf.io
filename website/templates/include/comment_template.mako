@@ -115,7 +115,7 @@
                         <!-- Action bar -->
                         <div data-bind="ifnot: mode === 'widget'" style="display: inline">
                             <div data-bind="ifnot: editing, event: {mouseover: setupToolTips('i')}" class="comment-actions pull-right">
-                                <a data-bind="attr:{href: '${node['url']}discussions/'+id()}" style="color: #000000">
+                                <a data-bind="attr:{href: '/'+id()}" style="color: #000000">
                                     <i data-toggle="tooltip" data-placement="bottom" title="Link to comment" class="icon-link"></i>
                                 </a>
                                 <span data-bind="if: $root.canComment, click: showReply">
@@ -178,7 +178,7 @@
         </ul>
 
         <div data-bind="ifnot: shouldShowChildren">
-            <a data-bind="attr: {href: '${node['url']}discussions/'+id()}">Continue this thread &#8594;</a>
+            <a data-bind="attr: {href: '/' + id()}">Continue this thread &#8594;</a>
         </div>
 
     </div>

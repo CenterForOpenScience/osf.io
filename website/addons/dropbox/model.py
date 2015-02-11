@@ -337,6 +337,7 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
                 queue.extend(connection.metadata(content['path'])['contents'])
             else:
                 path = content['path']
+                #print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',path)
                 if not path.startswith('/'):
                     path = '/' + path
                 try:

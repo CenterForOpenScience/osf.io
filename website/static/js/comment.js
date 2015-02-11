@@ -322,11 +322,10 @@ var CommentModel = function(data, $parent, $root) {
     });
 
     self.parentUrl = ko.computed(function(){
-        var url = 'discussions/';
         if (self.targetId() === self.rootId()) {
             return self.rootUrl();
         }
-        return url + self.targetId();
+        return '/' + self.targetId();
     });
 
     self.targetUrl = ko.computed(function(){

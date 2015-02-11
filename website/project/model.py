@@ -152,6 +152,8 @@ def validate_comment_reports(value, *args, **kwargs):
 
 class Comment(GuidStoredObject):
 
+    redirect_mode = 'proxy'
+
     _id = fields.StringField(primary=True)
 
     user = fields.ForeignField('user', required=True, backref='commented')
@@ -178,7 +180,11 @@ class Comment(GuidStoredObject):
 
     @property
     def url(self):
-        return '{0}discussions/{1}/'.format(self.node.url, self._id)
+        return '/{}/'.format(self._id)
+
+    @property
+    def deep_url(self):
+        return '/{0}discussions/{1}/'.format(self.node.deep_url, self._id)
 
     @classmethod
     def create(cls, auth, **kwargs):
