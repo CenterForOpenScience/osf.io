@@ -19,6 +19,12 @@ class BaseDropboxMetadata(metadata.BaseMetadata):
             path = path[len(self._folder):]
         return super().build_path(path)
 
+    @property
+    def extra(self):
+        return {
+            'revisionId': self.raw['rev']
+        }
+
 
 class DropboxFolderMetadata(BaseDropboxMetadata, metadata.BaseFolderMetadata):
 
@@ -55,26 +61,16 @@ class DropboxFileMetadata(BaseDropboxMetadata, metadata.BaseFileMetadata):
 
 
 # TODO dates!
-class DropboxRevision(BaseDropboxMetadata, metadata.BaseFileRevisionMetadata):
+class DropboxRevision(metadata.BaseFileRevisionMetadata):
 
     @property
-    def size(self):
-        return self.raw['bytes']
+    def version_identifier(self):
+        return 'revision'
+
+    @property
+    def version(self):
+        return self.raw['rev']
 
     @property
     def modified(self):
         return self.raw['modified']
-
-    @property
-    def revision(self):
-        return self.raw['rev']
-
-    @property
-    def content_type(self):
-        return self.raw['mime_type']
-
-    @property
-    def extra(self):
-        return {
-            'revisionNumber': self.raw['revision']
-        }

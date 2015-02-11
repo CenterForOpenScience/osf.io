@@ -9,7 +9,6 @@ from waterbutler.core.streams import RequestStreamReader
 from waterbutler.server import utils
 from waterbutler.server import settings
 from waterbutler.server.handlers import core
-from waterbutler.core import exceptions
 
 
 @web.stream_request_body
@@ -45,10 +44,7 @@ class CRUDHandler(core.BaseHandler):
     @utils.coroutine
     def get(self):
         """Download a file."""
-        try:
-            result = yield from self.provider.download(accept_url=True, **self.arguments)
-        except exceptions.ProviderError as error:
-            raise web.HTTPError(status_code=error.code)
+        result = yield from self.provider.download(accept_url=True, **self.arguments)
 
         if isinstance(result, str):
             return self.redirect(result)
