@@ -19,10 +19,7 @@ logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PYTHON_VERSION = '.'.join([str(i) for i in sys.version_info[0:2]])
-if os.environ.get('WHEELHOUSE'):
-    WHEELHOUSE_PATH = os.path.join(HERE, os.environ.get('WHEELHOUSE'))
-else:
-    WHEELHOUSE_PATH = None
+WHEELHOUSE_PATH = os.environ.get('WHEELHOUSE')
 
 
 def get_bin_path():
