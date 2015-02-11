@@ -283,6 +283,7 @@ class TestAUser(OsfTestCase):
         # Can see log event
         assert_in('created', res)
 
+    @unittest.skip('"No wiki content" replaced with javascript handling')
     def test_no_wiki_content_message(self):
         project = ProjectFactory(creator=self.user)
         # Goes to project's wiki, where there is no content

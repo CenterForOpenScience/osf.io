@@ -110,6 +110,7 @@ var resolve = {
         'addonHelper': staticPath('js/addonHelper.js'),
         'koHelpers': staticPath('js/koHelpers.js'),
         'addonPermissions': staticPath('js/addonPermissions.js'),
+        'markdown': staticPath('js/markdown.js'),
         'navbar-control': staticPath('js/navbarControl.js')
     }
 };

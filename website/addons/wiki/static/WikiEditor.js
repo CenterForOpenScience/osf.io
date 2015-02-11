@@ -11,7 +11,7 @@ require('bootstrap-editable');
 var Markdown = require('pagedown-ace-converter');
 Markdown.getSanitizingConverter = require('pagedown-ace-sanitizer').getSanitizingConverter;
 require('imports?Markdown=pagedown-ace-converter!pagedown-ace-editor');
-var md = require('markdown-it')();
+var md = require('markdown');
 
 var editor;
 

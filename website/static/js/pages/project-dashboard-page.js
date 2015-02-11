@@ -18,12 +18,12 @@ var NodeControl = require('../nodeControl.js');
 
 var CitationWidget = require('../citations.js');
 
-var md = require('markdown-it')();
+var md = require('markdown');
 require('truncate');
 
 var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
-
+var wikiContentUrl = ctx.urls.wikiContent;
 
 // Initialize controller for "Add Links" modal
 new pointers.PointerManager('#addPointer', window.contextVars.node.title);
@@ -151,11 +151,15 @@ $(document).ready(function() {
 
     // Render the raw markdown of the wiki
     var markdownElement = $('#markdown-it-render');
-    var rawText = markdownElement.text();
-    var renderedText = md.render(rawText);
-    var truncatedText = $.truncate(renderedText, {length: 400});
-    markdownElement.html(truncatedText);
-    markdownElement.show();
+    var request = $.ajax({
+        url: wikiContentUrl
+    });
+    request.done(function(resp) {
+        var rawText = resp.wiki_content || '*No wiki content*';
+        var renderedText = md.render(rawText);
+        var truncatedText = $.truncate(renderedText, {length: 400});
+        markdownElement.html(truncatedText);
+    });
 
     // Remove delete UI if not contributor
     if (!window.contextVars.currentUser.canEdit || window.contextVars.node.isRegistration) {

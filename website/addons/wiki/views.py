@@ -104,6 +104,7 @@ def _get_wiki_api_urls(node, name, additional_urls=None):
         'base': node.api_url_for('project_wiki_home'),
         'delete': node.api_url_for('project_wiki_delete', wname=name),
         'rename': node.api_url_for('project_wiki_rename', wname=name),
+        'content': node.api_url_for('wiki_page_content', wname=name),
     }
     if additional_urls:
         urls.update(additional_urls)
@@ -151,7 +152,6 @@ def wiki_widget(**kwargs):
 
     more = False
     if wiki_page and wiki_page.html(node):
-        wiki_raw = wiki_page.content
         wiki_html = wiki_page.html(node)
         if len(wiki_html) > 500:
             wiki_html = BeautifulSoup(wiki_html[:500] + '...', 'html.parser')
@@ -160,13 +160,12 @@ def wiki_widget(**kwargs):
             wiki_html = BeautifulSoup(wiki_html)
             more = False
     else:
-        wiki_raw = None
         wiki_html = None
 
     ret = {
         'complete': True,
         'wiki_content': unicode(wiki_html) if wiki_html else None,
-        'wiki_raw': wiki_raw,
+        'wiki_content_url': node.api_url_for('wiki_page_content', wname='home'),
         'more': more,
         'include': False,
     }
@@ -363,13 +362,11 @@ def project_wiki_page(auth, wname, **kwargs):
     version = 'NA'
     is_current = False
     content = ''
-    raw = ''
 
     if wiki_page:
         version = wiki_page.version
         is_current = wiki_page.is_current
         content = wiki_page.html(node)
-        raw = wiki_page.content
     elif not wiki_page and wiki_name.lower() != 'home':
         status_code = 404
 
@@ -377,7 +374,6 @@ def project_wiki_page(auth, wname, **kwargs):
         'wiki_id': wiki_page._primary_key if wiki_page else None,
         'wiki_name': wiki_page.page_name if wiki_page else wiki_name,
         'wiki_content': content,
-        'wiki_raw': raw,
         'page': wiki_page,
         'version': version,
         'versions': _get_wiki_versions(node, wiki_name, anonymous=anonymous),
