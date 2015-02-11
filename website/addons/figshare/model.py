@@ -28,11 +28,11 @@ class FigShareGuidFile(GuidFile):
     def provider(self):
         return 'figshare'
 
-    def enrich(self):
-        self._fetch_metadata(should_raise=True)
-
-        if self._metadata_cache['extra']['status'] == 'drafts':
+    def _exception_from_response(self, response):
+        if response.json()['extra']['status'] == 'drafts':
             raise fig_exceptions.FigshareIsDraftError(self)
+
+        super(FigShareGuidFile, self)._exception_from_response(response)
 
     @property
     def version_identifier(self):
