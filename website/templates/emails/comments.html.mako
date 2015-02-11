@@ -1,4 +1,4 @@
-<table class="comment-row" border="0" cellpadding="10" cellspacing="0" width="100%" style="margin-left: 20px;"> 
+<table class="comment-row" border="0" cellpadding="10" cellspacing="0" width="100%" style="margin-left: 20px;margin-top:10px;"> 
         <tr> 
             <td width="40" class="icon"> <i class="fa fa-comment"></i></td>
             <td> 
