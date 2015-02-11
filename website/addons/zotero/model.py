@@ -34,6 +34,14 @@ class AddonZoteroUserSettings(AddonUserSettingsBase):
         return rv
 
 
+def serialize_account(account):
+    return {
+        'id': account._id,
+        'provider_id': account.provider_id,
+        'display_name': account.display_name,
+    }
+
+
 class AddonZoteroNodeSettings(AddonNodeSettingsBase):
     external_account = fields.ForeignField('externalaccount',
                                            backref='connected')
@@ -101,16 +109,16 @@ class AddonZoteroNodeSettings(AddonNodeSettingsBase):
         if self.external_account:
             accounts.add(self.external_account)
 
-        rv = super(AddonZoteroNodeSettings, self).to_json(user)
-        rv['accounts'] = [
-            {
-                'id': account._id,
-                'provider_id': account.provider_id,
-                'display_name': account.display_name,
-            } for account in accounts
-        ]
+        ret = super(AddonZoteroNodeSettings, self).to_json(user)
+        ret['accounts'] = [serialize_account(each) for each in accounts]
+        ret['list_id'] = self.zotero_list_id
+        ret['current_account'] = (
+            serialize_account(self.external_account)
+            if self.external_account
+            else None
+        )
 
-        return rv
+        return ret
 
 
 class Zotero(ExternalProvider):

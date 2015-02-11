@@ -27,38 +27,24 @@ var ZoteroSettingsViewModel = function() {
     self.selectedCitationList = ko.observable();
     self.message = ko.observable();
 
-    self.updateAccounts = function() {
-        $.getJSON(nodeApiUrl + 'zotero/accounts/', function(data) {
-            for(var i=0; i<data.accounts.length; i++) {
-                self.accounts.push(new ZoteroAccount(
-                    data.accounts[i].display_name,
-                    data.accounts[i].id
-                ));
-            }
-            self.selectedAccountId(self.accounts()[0].id);
-            self.updateCitationLists();
-        }).fail(function() {
-            console.log("Failed to load list of accounts");
-        });
-    };
 
-    self.updateCitationLists = function() {
+    self.updateCitationLists = function(list_id) {
         $.getJSON(
             nodeApiUrl + 'zotero/' + self.selectedAccountId() + '/lists/',
             function(data) {
                 self.citationLists(ko.utils.arrayMap(data.citation_lists, function(item) {
                     return new CitationList(item.name, item.provider_list_id, item.provider_account_id);
                 }));
-                self.selectedCitationList(self.citationLists()[0].provider_list_id);
+                self.selectedCitationList(list_id || self.citationLists()[0].provider_list_id);
             }
         );
     };
 
     self.selectedAccountId.subscribe(function(value) {
         self.updateCitationLists();
+        console.log('working');
     });
 
-    self.updateAccounts();
 
     self.save = function() {
         var request = $osf.postJSON(
@@ -75,6 +61,25 @@ var ZoteroSettingsViewModel = function() {
             self.message('Settings failed');
         });
     }
+
+    self.get = function() {
+        $.getJSON(self.settings_url, function(data){
+            console.log(data);
+
+            for(var i=0; i < data['accounts'].length; i++) {
+                self.accounts.push(new ZoteroAccount(
+                    data.accounts[i].display_name,
+                    data.accounts[i].id
+                ));
+            }
+
+            self.selectedAccountId(data.current_account.id) || self.selectedAccountId(data.accounts[0].id);
+            self.updateCitationLists(data.list_id);
+        });
+    }
+
+    self.get();
+
 
 
 };

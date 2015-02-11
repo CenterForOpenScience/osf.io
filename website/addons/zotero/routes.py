@@ -46,6 +46,16 @@ api_routes = {
 
         Rule(
             [
+                '/project/<pid>/zotero/settings/',
+                '/project/<pid>/node/<nid>/zotero/settings/',
+            ],
+            'get',
+            views.zotero_get_config,
+            json_renderer,
+        ),
+
+        Rule(
+            [
                 '/project/<pid>/zotero/widget/',
                 '/project/<pid>/node/<nid>/zotero/widget/',
             ],

@@ -101,6 +101,15 @@ def zotero_set_config(pid, auth, node, project, node_addon):
     node_addon.save()
     return {}
 
+@must_have_permission('read')
+@must_have_addon('zotero', 'node')
+@must_not_be_registration
+def zotero_get_config(pid, auth, node, project, node_addon):
+    # TODO: Add security measures here @harrismendell @jmcarp
+    user = auth.user
+    return node_addon.to_json(user)
+
+
 
 @must_be_contributor_or_public
 @must_have_addon('zotero', 'node')
