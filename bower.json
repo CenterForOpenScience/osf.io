@@ -33,6 +33,8 @@
     "hgrid": "~0.2.10",
     "uri.js": "~1.14.1",
     "markdown-it": "~3.0.5",
+    "markdown-it-sanitizer": "~0.2.0",
+    "markdown-it-video": "https://github.com/brianjgeiger/markdown-it-video.git#586dcccb9151e6e15cd1232572f43cadc64296e7",
     "xhook": "~1.3.0"
   }
 }
