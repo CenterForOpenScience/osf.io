@@ -7,10 +7,8 @@ services:
 python:
     - "2.7"
 
-env:
-    - WHEELHOUSE=$(pwd)/wheelhouse
-
 before_install:
+    - export WHEELHOUSE=$(pwd)/wheelhouse
     - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key 505A7412
     - echo "deb [arch=amd64] http://s3.amazonaws.com/tokumx-debs $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/tokumx.list
     - sudo apt-get update
