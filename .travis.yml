@@ -8,7 +8,7 @@ python:
     - "2.7"
 
 env:
-    - WHEELHOUSE=./wheelhouse
+    - WHEELHOUSE=$(pwd)/wheelhouse
 
 before_install:
     - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key 505A7412

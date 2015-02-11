@@ -376,7 +376,7 @@ def test_all(flake=False):
 
 
 @task
-def wheelhouse(repo, path):
+def wheelhouse(repo,):
     run('pip install wheel --upgrade', pty=False)
     name = 'wheelhouse-{}.zip'.format(PYTHON_VERSION)
     url = '{}/archive/{}.zip'.format(repo, PYTHON_VERSION)
