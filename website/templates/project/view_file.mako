@@ -80,7 +80,7 @@
                   </span>
                 </td>
                 <td>
-                  <a class="btn btn-primary btn-sm fileDownload" href="{{ revision.osfDownloadUrl }}"
+                  <a class="btn btn-primary btn-sm file-download" href="{{ revision.osfDownloadUrl }}"
                     data-bind="click: revision.download">
                     <i class="icon-download-alt"></i>
                   </a>
