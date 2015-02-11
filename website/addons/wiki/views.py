@@ -151,7 +151,7 @@ def wiki_widget(**kwargs):
 
     more = False
     if wiki_page and wiki_page.html(node):
-        wiki_raw = wiki_page.content;
+        wiki_raw = wiki_page.content
         wiki_html = wiki_page.html(node)
         if len(wiki_html) > 500:
             wiki_html = BeautifulSoup(wiki_html[:500] + '...', 'html.parser')
@@ -363,6 +363,7 @@ def project_wiki_page(auth, wname, **kwargs):
     version = 'NA'
     is_current = False
     content = ''
+    raw = ''
 
     if wiki_page:
         version = wiki_page.version
