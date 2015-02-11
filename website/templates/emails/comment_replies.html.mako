@@ -3,7 +3,7 @@
         <td width="40" class="icon"> <i class="fa fa-comment"></i></td>
         <td> 
             <span class="person">${commenter} </span>
-            <span class="text"> commented on your ${nodeType} </span>
+            <span class="text"> replied to your comment  "${parent_comment}" on your project </span>
             <span class="project"> "${title}" </span> 
             <span class="timestamp"> at 1:40PM on Saturday, June 12</span>
             <span class="content"> "${content}"</span>
