@@ -69,25 +69,25 @@
      * Returns the folder select button for a single row.
      */
     function _treebeardSelectView(item) {
-        var tb = this; 
+        var tb = this;
         var setTempPicked = function () {
-            this.options.tempPicked = item.data.path;
-        } 
-        var templateChecked = m("input", {
-            type:"radio",
+            this._tempPicked = item.data.path;
+        };
+        var templateChecked = m('input', {
+            type:'radio',
             checked : 'checked',
-            name: "#" + tb.options.divID + INPUT_NAME,
+            name: '#' + tb.options.divID + INPUT_NAME,
             value:item.id
-            }, " ");
-        var templateUnchecked = m("input",{
-            type:"radio",
+            }, ' ');
+        var templateUnchecked = m('input',{
+            type: 'radio',
             onclick : setTempPicked.bind(tb),
-            name: "#" + tb.options.divID + INPUT_NAME,
+            name: '#' + tb.options.divID + INPUT_NAME,
             value:item.id
-            }, " ");
+            }, ' ');
 
-        if(tb.options.tempPicked) {
-            if(tb.options.tempPicked === item.data.path) {
+        if(tb._tempPicked) {
+            if(tb._tempPicked === item.data.path) {
                 return templateChecked;
             } else {
                 return templateUnchecked;
