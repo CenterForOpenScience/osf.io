@@ -10,7 +10,7 @@ var $osf = require('osfHelpers');
 require('select2');
 require('../css/citations.css');
 
-var locale = require('html!../vendor/bower_components/locales/locales-en-US.xml');
+var locale = require('raw!../vendor/bower_components/locales/locales-en-US.xml');
 
 var ctx = window.contextVars;
 
