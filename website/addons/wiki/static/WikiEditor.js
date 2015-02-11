@@ -163,8 +163,12 @@ function WikiEditor(selector, url) {
     var mdEditor = new Markdown.Editor(mdConverter);
     mdEditor.run(editor);
     var previewElement = $('#markdown-it-preview');
+    var renderTimeout;
     editor.on('change', function() {
-       previewElement.html(md.render(editor.getValue()));
+        clearTimeout(renderTimeout);
+        renderTimeout = setTimeout(function() {
+            previewElement.html(md.render(editor.getValue()));
+        }, 500);
     });
 }
 
