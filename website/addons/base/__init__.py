@@ -189,6 +189,13 @@ class GuidFile(GuidStoredObject):
         raise NotImplementedError
 
     @property
+    def waterbutler_path(self):
+        '''The waterbutler formatted path of the specified file.
+        Must being with a /
+        '''
+        raise NotImplementedError
+
+    @property
     def guid_url(self):
         return '/{0}/'.format(self._id)
 
@@ -204,9 +211,9 @@ class GuidFile(GuidStoredObject):
 
     @property
     def joinable_path(self):
-        if self.path.startswith('/'):
-            return self.path[1:]
-        return self.path
+        if self.waterbutler_path.startswith('/'):
+            return self.waterbutler_path[1:]
+        return self.waterbutler_path
 
     @property
     def _base_butler_url(self):
@@ -214,8 +221,8 @@ class GuidFile(GuidStoredObject):
 
         url.args.update({
             'nid': self.node._id,
-            'path': self.path,
             'provider': self.provider,
+            'path': self.waterbutler_path,
             'cookie': request.cookies.get(settings.COOKIE_NAME)
         })
 

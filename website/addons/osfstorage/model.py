@@ -412,6 +412,10 @@ class OsfStorageGuidFile(GuidFile):
 
     path = fields.StringField(required=True, index=True)
 
+    @property
+    def waterbutler_path(self):
+        return self.path
+
     @classmethod
     def get_or_create(cls, node, path):
         try:

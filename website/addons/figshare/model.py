@@ -21,7 +21,7 @@ class FigShareGuidFile(GuidFile):
     file_id = fields.StringField(index=True)
 
     @property
-    def path(self):
+    def waterbulter_path(self):
         return '/{}/{}'.format(self.article_id, self.file_id)
 
     @property

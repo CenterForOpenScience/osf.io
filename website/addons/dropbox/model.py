@@ -23,6 +23,10 @@ class DropboxFile(GuidFile):
     path = fields.StringField(required=True, index=True)
 
     @property
+    def waterbutler_path(self):
+        return '/' + self.path[len(self.node.get_addon('dropbox').folder):]
+
+    @property
     def provider(self):
         return 'dropbox'
 
@@ -114,7 +118,7 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         return bool(self.user_settings and self.user_settings.has_auth)
 
     def find_or_create_file_guid(self, path):
-        return DropboxFile.get_or_create(self.owner, path)
+        return DropboxFile.get_or_create(self.owner, clean_path(os.path.join(self.folder, path[1:])))
 
     def set_folder(self, folder, auth):
         self.folder = folder

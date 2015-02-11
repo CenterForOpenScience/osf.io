@@ -31,6 +31,10 @@ class GithubGuidFile(GuidFile):
     path = fields.StringField(index=True)
 
     @property
+    def waterbutler_path(self):
+        return self.path
+
+    @property
     def provider(self):
         return 'github'
 
