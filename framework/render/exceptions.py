@@ -4,7 +4,9 @@ DMCA_ERROR = '''
 <div class="alert alert-info" role="alert">
 This file has been the subject of a DMCA take down
 and is unable to be rendered by the Open Science Framework
-</div>'''
+</div>
+<style>.fileDownload{{display: none;}}</style>
+'''
 
 
 STATUS_CODE_ERROR_MAP = {
