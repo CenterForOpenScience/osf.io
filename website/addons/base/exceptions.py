@@ -22,7 +22,7 @@ class AddonEnrichmentError(AddonError):
         return False
 
     @property
-    def _renderable_error(self):
+    def renderable_error(self):
         '''A hook to be implemented by subclasses returning
         a html error to be displayed to the user
         Later concatenated with additional style tags
@@ -35,8 +35,7 @@ class AddonEnrichmentError(AddonError):
         </div>
         '''
 
-    @property
-    def render_error(self):
+    def as_html(self):
         # TODO Refactor me to be all in the front end
         # 2/10/14 ping @chrisseto when refactoring
         additional = ''
@@ -52,7 +51,7 @@ class AddonEnrichmentError(AddonError):
 class FileDeletedError(AddonEnrichmentError):
 
     @property
-    def _renderable_error(self):
+    def renderable_error(self):
         return '''
         <div class="alert alert-info" role="alert">
         This file has been deleted.
@@ -63,7 +62,7 @@ class FileDeletedError(AddonEnrichmentError):
 class FileDoesntExistError(AddonEnrichmentError):
 
     @property
-    def _renderable_error(self):
+    def renderable_error(self):
         return '''
         <div class="alert alert-info" role="alert">
         This file does not exist.

@@ -212,7 +212,7 @@ def get_or_start_render(file_guid, start_render=True):
     try:
         file_guid.enrich()
     except exceptions.AddonEnrichmentError as error:
-        return error.render_error
+        return error.as_html()
 
     try:
         return codecs.open(file_guid.mfr_cache_path, 'r', 'utf-8').read()

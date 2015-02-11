@@ -12,7 +12,7 @@ class FigshareIsDraftError(AddonEnrichmentError):
         return True
 
     @property
-    def _renderable_error(self):
+    def renderable_error(self):
         return '''
         <div class="alert alert-info" role="alert">
         The file "{name}" is still a draft on Figshare. <br>
