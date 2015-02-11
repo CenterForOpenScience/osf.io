@@ -5,7 +5,7 @@ MODELS = [model.DropboxUserSettings, model.DropboxNodeSettings, model.DropboxFil
 USER_SETTINGS_MODEL = model.DropboxUserSettings
 NODE_SETTINGS_MODEL = model.DropboxNodeSettings
 
-ROUTES = [routes.auth_routes, routes.web_routes, routes.api_routes]
+ROUTES = [routes.auth_routes, routes.api_routes]
 
 SHORT_NAME = 'dropbox'
 FULL_NAME = 'Dropbox'

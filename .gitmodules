@@ -1,0 +1,3 @@
+[submodule "website/citations/styles"]
+	path = website/citations/styles
+	url = https://github.com/lyndsysimon/styles.git

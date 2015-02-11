@@ -86,6 +86,12 @@ $ invoke mongo
 $ invoke server
 ```
 
+- Run your local sharejs server.
+
+```bash
+$ invoke sharejs
+```
+
 ## Running the shell
 
 To open the interactive Python shell, run:
@@ -329,6 +335,15 @@ $ inv pack -dw
 ```bash
 $ inv assets -dw
 ```
+
+## Downloading citation styles (optional)
+
+To download citation styles, run:
+
+```bash
+$ invoke update_citation_styles
+```
+
 
 ## Setting up addons
 

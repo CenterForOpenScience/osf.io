@@ -1,12 +1,8 @@
 var webpack = require('webpack');
 var common = require('./webpack.common.config.js');
+var assign = require('object-assign');
 
-module.exports = {
-    // Split code chunks by page
-    entry: common.entry,
-    resolve: common.resolve,
-    externals: common.externals,
-    output: common.output,
+module.exports = assign(common, {
     debug: true,
     plugins: common.plugins.concat([
         new webpack.optimize.DedupePlugin(),
@@ -14,4 +10,4 @@ module.exports = {
         new webpack.optimize.AggressiveMergingPlugin(),
         new webpack.optimize.UglifyJsPlugin({exclude: /conference.*?\.js$/})
     ])
-};
+});

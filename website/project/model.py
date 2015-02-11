@@ -38,12 +38,14 @@ from framework.mongo.utils import to_mongo, to_mongo_key
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters
 )
+from framework.sentry import log_exception
 
 from website import language
 from website import settings
 from website.util import web_url_for
 from website.util import api_url_for
 from website.exceptions import NodeStateError
+from website.citations.utils import datetime_to_csl
 from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.project.metadata.schemas import OSF_META_SCHEMAS
@@ -602,6 +604,9 @@ class Node(GuidStoredObject, AddonModelMixin):
     files_versions = fields.DictionaryField()
     wiki_pages_current = fields.DictionaryField()
     wiki_pages_versions = fields.DictionaryField()
+    # Dictionary field mapping node wiki page to sharejs private uuid.
+    # {<page_name>: <sharejs_id>}
+    wiki_private_uuids = fields.DictionaryField()
 
     creator = fields.ForeignField('user', backref='created')
     contributors = fields.ForeignField('user', list=True, backref='contributed')
@@ -1005,6 +1010,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         new.files_versions = {}
         new.wiki_pages_current = {}
         new.wiki_pages_versions = {}
+        new.wiki_private_uuids = {}
 
         # set attributes which may be overridden by `changes`
         new.is_public = False
@@ -1356,8 +1362,12 @@ class Node(GuidStoredObject, AddonModelMixin):
         return None
 
     def update_search(self):
-        import website.search.search as search
-        search.update_node(self)
+        from website import search
+        try:
+            search.search.update_node(self)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+            log_exception()
 
     def remove_node(self, auth, date=None):
         """Marks a node as deleted.
@@ -1962,6 +1972,30 @@ class Node(GuidStoredObject, AddonModelMixin):
                 )
         logger.error("Node {0} has a parent that is not a project".format(self._id))
 
+    @property
+    def csl(self):  # formats node information into CSL format for citation parsing
+        """a dict in CSL-JSON schema
+
+        For details on this schema, see:
+            https://github.com/citation-style-language/schema#csl-json-schema
+        """
+        csl = {
+            'id': self._id,
+            'title': self.title,
+            'author': [
+                contributor.csl_name  # method in auth/model.py which parses the names of authors
+                for contributor in self.contributors
+            ],
+            'publisher': 'Open Science Framework',
+            'type': 'webpage',
+            'URL': self.display_absolute_url,
+        }
+
+        if self.logs:
+            csl['issued'] = datetime_to_csl(self.logs[-1].date)
+
+        return csl
+
     def author_list(self, and_delim='&'):
         author_names = [
             author.biblio_name
@@ -2307,6 +2341,11 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.contributors = users
 
         if permissions_changed:
+            if ['read'] in permissions_changed.values():
+                from website.addons.wiki.utils import migrate_uuid
+                for wiki_name in self.wiki_private_uuids:
+                    migrate_uuid(self, wiki_name)
+
             self.add_log(
                 action=NodeLog.PERMISSIONS_UPDATED,
                 params={
@@ -2594,6 +2633,9 @@ class Node(GuidStoredObject, AddonModelMixin):
             del self.wiki_pages_versions[key]
             self.wiki_pages_current[new_key] = self.wiki_pages_current[key]
             del self.wiki_pages_current[key]
+            if key in self.wiki_private_uuids:
+                self.wiki_private_uuids[new_key] = self.wiki_private_uuids[key]
+                del self.wiki_private_uuids[key]
 
         self.add_log(
             action=NodeLog.WIKI_RENAMED,

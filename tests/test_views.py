@@ -447,6 +447,35 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res.status_code, 404)
         assert_in('Template not found', res)
 
+    # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1478
+    def test_registered_projects_contributions(self):
+        # register a project
+        self.project.register_node(None, Auth(user=self.project.creator), '', None)
+        # get the first registered project of a project
+        url = self.project.api_url_for('get_registrations')
+        res = self.app.get(url, auth=self.auth)
+        data = res.json
+        pid = data['nodes'][0]['id']
+        url2 = api_url_for('get_summary', pid=pid)
+        # count contributions
+        res2 = self.app.get(url2, {'rescale_ratio': data['rescale_ratio']}, auth=self.auth)
+        data = res2.json
+        assert_is_not_none(data['summary']['nlogs'])
+
+    def test_forks_contributions(self):
+        # fork a project
+        self.project.fork_node(Auth(user=self.project.creator))
+        # get the first forked project of a project
+        url = self.project.api_url_for('get_forks')
+        res = self.app.get(url, auth=self.auth)
+        data = res.json
+        pid = data['nodes'][0]['id']
+        url2 = api_url_for('get_summary', pid=pid)
+        # count contributions
+        res2 = self.app.get(url2, {'rescale_ratio': data['rescale_ratio']}, auth=self.auth)
+        data = res2.json
+        assert_is_not_none(data['summary']['nlogs'])
+
     @mock.patch('framework.transactions.commands.begin')
     @mock.patch('framework.transactions.commands.rollback')
     @mock.patch('framework.transactions.commands.commit')

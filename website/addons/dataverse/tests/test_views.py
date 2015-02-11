@@ -1,12 +1,15 @@
+# -*- coding: utf-8 -*-
+
 import nose
-from nose.tools import *
+from nose.tools import *  # noqa
 import mock
-import json
 
 import httplib as http
 from tests.factories import AuthUserFactory, PrivateLinkFactory
+
 from framework.auth.decorators import Auth
 from framework.exceptions import HTTPError
+
 from website.util import api_url_for, web_url_for
 from website.addons.dataverse.settings import HOST
 from website.addons.dataverse.views.config import serialize_settings
@@ -497,9 +500,9 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         url = api_url_for('dataverse_delete_file',
                           pid=self.project._primary_key, path=path)
 
-        res = self.app.delete(url=url, auth=self.user.auth)
+        self.app.delete(url=url, auth=self.user.auth)
 
-        mock_delete.assert_called_once
+        mock_delete.assert_called_once()
         assert_equal(path, mock_delete.call_args[0][0].id)
 
     @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
@@ -526,14 +529,13 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
 
         # File was uploaded
         assert_equal(res.status_code, http.CREATED)
-        mock_upload.assert_called_once
+        mock_upload.assert_called_once()
 
         # Parameters are correct
         assert_equal(self.node_settings.study_hdl,
                      mock_upload.call_args[0][0].doi)
         assert_equal(filename, mock_upload.call_args[0][1])
         assert_equal(content, mock_upload.call_args[0][2])
-        assert_equal('file_uploaded', json.loads(res.body)['actionTaken'])
 
     @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
     @mock.patch('website.addons.dataverse.views.crud.upload_file')
@@ -562,18 +564,17 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         )
 
         # Old file was deleted
-        mock_delete.assert_called_once
+        mock_delete.assert_called_once()
 
         # File was uploaded
-        assert_equal(res.status_code, http.CREATED)
-        mock_upload.assert_called_once
+        assert_equal(res.status_code, http.OK)
+        mock_upload.assert_called_once()
 
         # Parameters are correct
         assert_equal(self.node_settings.study_hdl,
                      mock_upload.call_args[0][0].doi)
         assert_equal(filename, mock_upload.call_args[0][1])
         assert_equal(content, mock_upload.call_args[0][2])
-        assert_equal('file_updated', json.loads(res.body)['actionTaken'])
 
     @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
     @mock.patch('website.addons.dataverse.views.crud.upload_file')
@@ -581,7 +582,7 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
     @mock.patch('website.addons.dataverse.views.crud.get_file')
     def test_upload_too_small(self, mock_get, mock_delete, mock_upload,
                              mock_connection):
-        mock_get.return_value = create_mock_draft_file() # File already exists
+        mock_get.return_value = create_mock_draft_file()  # File already exists
         mock_upload.return_value = {}
         mock_connection.return_value = create_mock_connection()
 
@@ -690,7 +691,7 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
 
         url = api_url_for('dataverse_release_study',
                           pid=self.project._primary_key)
-        res = self.app.put(url, auth=self.user.auth)
+        self.app.put(url, auth=self.user.auth)
         assert_true(mock_release.called)
 
     @mock.patch('website.addons.dataverse.views.crud.get_cache_content')
@@ -701,7 +702,7 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
 
         url = api_url_for('dataverse_get_rendered_file',
                           pid=self.project._primary_key, path=file_id)
-        res = self.app.get(url, auth=self.user.auth)
+        self.app.get(url, auth=self.user.auth)
         assert_equal(mock_get_cache.call_args[0][1],
                      '{0}.html'.format(file_id))
 
@@ -743,7 +744,6 @@ class TestDataverseRestrictions(DataverseAddonTestCase):
         self.contrib = AuthUserFactory()
         self.project.add_contributor(self.contrib, auth=Auth(self.user))
         self.project.save()
-
 
     @mock.patch('website.addons.dataverse.views.config.client.connect_from_settings')
     def test_restricted_set_study_not_owner(self, mock_connection):

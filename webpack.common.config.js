@@ -16,6 +16,7 @@ var staticPath = function(dir) {
  * to website/static/public/
  */
 var entry = {
+    // JS
     'base-page': staticPath('js/pages/base-page.js'),
     'home-page': staticPath('js/pages/home-page.js'),
     'dashboard-page': staticPath('js/pages/dashboard-page.js'),
@@ -89,6 +90,13 @@ var resolve = {
         'jquery.ui.sortable': staticPath('vendor/bower_components/jquery-ui/ui/jquery.ui.sortable.js'),
         // Dropzone doesn't have a proper 'main' entry in its bower.json
         'dropzone': staticPath('vendor/bower_components/dropzone/dist/dropzone.js'),
+        // Needed for ace code editor in wiki
+        'ace-noconflict': staticPath('vendor/bower_components/ace-builds/src-noconflict/ace.js'),
+        'ace-ext-language_tools': staticPath('vendor/bower_components/ace-builds/src-noconflict/ext-language_tools.js'),
+        'ace-mode-markdown': staticPath('vendor/bower_components/ace-builds/src-noconflict/mode-markdown.js'),
+        'pagedown-ace-converter': staticPath('vendor/pagedown-ace/Markdown.Converter.js'),
+        'pagedown-ace-sanitizer': staticPath('vendor/pagedown-ace/Markdown.Sanitizer.js'),
+        'pagedown-ace-editor': staticPath('vendor/pagedown-ace/Markdown.Editor.js'),
         // Also alias some internal libraries for easy access
         'fangorn': staticPath('js/fangorn.js'),
         'waterbutler': staticPath('js/waterbutler.js'),
@@ -134,7 +142,8 @@ var plugins = [
 var output = {
     path: './website/static/public/js/',
     // publicPath: '/static/', // used to generate urls to e.g. images
-    filename: '[name].[chunkhash].js'
+    filename: '[name].[chunkhash].js',
+    sourcePrefix: ''
 };
 
 module.exports = {
@@ -142,5 +151,18 @@ module.exports = {
     resolve: resolve,
     externals: externals,
     plugins: plugins,
-    output: output
+    output: output,
+    module: {
+        loaders: [
+            {test: /\.css$/, loaders: ['style', 'css']},
+            // url-loader uses DataUrls; files-loader emits files
+            {test: /\.png$/, loader: 'url-loader?limit=100000&minetype=image/png'},
+            {test: /\.gif$/, loader: 'url-loader?limit=10000&mimetype=image/gif'},
+            {test: /\.jpg$/, loader: 'url-loader?limit=10000&mimetype=image/jpg'},
+            {test: /\.woff/, loader: 'url-loader?limit=10000&mimetype=application/font-woff'},
+            {test: /\.svg/, loader: 'file-loader'},
+            {test: /\.eot/, loader: 'file-loader'},
+            {test: /\.ttf/, loader: 'file-loader'}
+        ]
+    }
 };

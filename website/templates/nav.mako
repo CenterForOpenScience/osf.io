@@ -8,9 +8,15 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
+            <!-- ko ifnot: onSearchPage -->
+            <span class="visible-xs" data-bind="click : toggleSearch, css: searchCSS">
+                <a class="osf-xs-search pull-right" >
+                    <span rel="tooltip" data-placement="bottom" title="Search OSF" class="icon-search icon-lg" ></span>
+                </a>
+            </span>
+            <!-- /ko -->
             <a class="navbar-brand visible-lg" href="/"><img src="/static/img/cos-white2.png" class="osf-navbar-logo" width="27" alt="COS logo"/> Open Science Framework <span class="brand-version"> BETA</span></a>
-            <a class="navbar-brand hidden-lg hidden-xs" href="/"><img src="/static/img/cos-white2.png" class="osf-navbar-logo" width="27" alt="COS logo"/> OSF</a>
-            <a class="navbar-brand visible-xs" href="/"><img src="/static/img/cos-white2.png" class="osf-navbar-logo" width="27" alt="COS logo"/> Open Science Framework</a>
+            <a class="navbar-brand hidden-lg" href="/"><img src="/static/img/cos-white2.png" class="osf-navbar-logo" width="27" alt="COS logo"/> OSF</a>
 
         </div><!-- end navbar-header -->
         <div class="collapse navbar-collapse navbar-ex1-collapse">
@@ -39,7 +45,7 @@
             </ul><!-- end nav navbar-nav -->
             <ul class="nav navbar-nav navbar-right">
                 <!-- ko ifnot: onSearchPage -->
-                <li data-bind="click : toggleSearch, css: searchCSS">
+                <li class="hidden-xs" data-bind="click : toggleSearch, css: searchCSS">
                     <a class="" >
                         <span rel="tooltip" data-placement="bottom" title="Search OSF" class="icon-search icon-lg" ></span>
                     </a>
