@@ -25,7 +25,7 @@ class TestFileGuid(OsfTestCase):
 
     def test_correct_path(self):
         guid = model.FigShareGuidFile(file_id=2, article_id=4)
-        assert_equal(guid.path, '/4/2')
+        assert_equal(guid.waterbutler_path, '/4/2')
 
     def test_unique_identifier(self):
         guid = model.FigShareGuidFile(file_id=2, article_id=4)
@@ -92,7 +92,7 @@ class TestFileGuid(OsfTestCase):
         node_addon = self.project.get_addon('figshare')
         node_addon.figshare_id = 8
         guid, _ = node_addon.find_or_create_file_guid('/4/2')
-        assert_equal(guid.path, '/4/2')
+        assert_equal(guid.waterbutler_path, '/4/2')
         assert_equal(guid.file_id, '2')
         assert_equal(guid.article_id, '4')
 
