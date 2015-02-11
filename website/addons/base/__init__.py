@@ -226,6 +226,9 @@ class GuidFile(GuidStoredObject):
             'cookie': request.cookies.get(settings.COOKIE_NAME)
         })
 
+        if request.args.get('view_only'):
+            url.args['view_only'] = request.args['view_only']
+
         if self.revision:
             url.args[self.version_identifier] = self.revision
 
