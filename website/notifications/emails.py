@@ -1,8 +1,10 @@
 import datetime
+import urlparse
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from model import Subscription, DigestNotification
-from website import mails
+from website import mails, settings
+from website.util import web_url_for
 from website.models import Node
 from mako.lookup import Template
 
@@ -35,25 +37,27 @@ def notify(uid, event, **context):
 
 
 def check_parent(uid, event, direct_subscribers, **context):
-    parent = Node.load(uid).node__parent
-    if parent:
-        for p in parent:
-            key = str(p._id + '_' + event)
-            try:
-                subscription = Subscription.find_one(Q('_id', 'eq', key))
-            except NoResultsFound:
-                return
-
-            for notification_type in notifications.keys():
-                subscribed_users = []
+    node = Node.load(uid)
+    if node:
+        parent = Node.load(uid).node__parent
+        if parent:
+            for p in parent:
+                key = str(p._id + '_' + event)
                 try:
-                    subscribed_users = getattr(subscription, notification_type)
-                except AttributeError:
-                    pass
+                    subscription = Subscription.find_one(Q('_id', 'eq', key))
+                except NoResultsFound:
+                    return
 
-                for u in subscribed_users:
-                    if u not in direct_subscribers:
-                        send([u], notification_type, uid, event, **context)
+                for notification_type in notifications.keys():
+                    subscribed_users = []
+                    try:
+                        subscribed_users = getattr(subscription, notification_type)
+                    except AttributeError:
+                        pass
+
+                    for u in subscribed_users:
+                        if u not in direct_subscribers:
+                            send([u], notification_type, uid, event, **context)
 
     return {}
 
@@ -80,7 +84,16 @@ def email_transactional(subscribed_users, uid, event, **context):
                 mail=mails.TRANSACTIONAL,
                 name=user.fullname,
                 subject=subject,
-                message=message)
+                message=message,
+                url=get_settings_url(uid, user)
+            )
+
+
+def get_settings_url(uid, user):
+    if uid == user._id:
+        return urlparse.urljoin(settings.DOMAIN, web_url_for('user_notifications'))
+    else:
+        return Node.load(uid).absolute_url + 'settings/'
 
 
 def email_digest(subscribed_users, uid, event, **context):
