@@ -50,6 +50,12 @@ class GithubGuidFile(GuidFile):
     def name(self):
         return os.path.split(self.path)[1]
 
+    @property
+    def extra(self):
+        return {
+            'sha': self._metadata_cache['extra']['fileSha']
+        }
+
     def _exception_from_response(self, response):
         try:
             if response.json()['errors'][0]['code'] == 'too_large':
