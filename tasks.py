@@ -14,6 +14,7 @@ def wheelhouse(develop=False):
         cmd += ' --download-cache={}'.format(PIP_CACHE_PATH)
     run(cmd, pty=True)
 
+
 @task
 def install(develop=False, upgrade=False):
     req_file = 'dev-requirements.txt' if develop else 'requirements.txt'
