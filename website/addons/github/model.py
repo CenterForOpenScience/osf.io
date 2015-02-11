@@ -5,7 +5,6 @@ import urlparse
 import itertools
 import httplib as http
 
-import requests
 from github3 import GitHubError
 from modularodm import fields, Q
 from modularodm.exceptions import ModularOdmException
