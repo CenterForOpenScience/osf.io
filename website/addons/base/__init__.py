@@ -27,6 +27,12 @@ lookup = TemplateLookup(
     ]
 )
 
+STATUS_EXCEPTIONS = {
+    410: exceptions.FileDeletedError,
+    404: exceptions.FileDoesntExistError
+}
+
+
 def _is_image(filename):
     mtype, _ = mimetypes.guess_type(filename)
     return mtype and mtype.startswith('image')
@@ -285,11 +291,8 @@ class GuidFile(GuidStoredObject):
         self._fetch_metadata(should_raise=True)
 
     def _exception_from_response(self, response):
-        if response.status_code == 404:
-            raise exceptions.FileDoesntExistError(response.status_code)
-
-        if response.status_code == 410:
-            raise exceptions.FileDeletedError(response.status_code)
+        if response.status_code in STATUS_EXCEPTIONS:
+            raise STATUS_EXCEPTIONS[response.status_code]
 
         raise exceptions.AddonEnrichmentError(response.status_code)
 
