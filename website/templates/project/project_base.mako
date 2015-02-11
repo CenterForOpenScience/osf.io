@@ -26,6 +26,9 @@ ${next.body()}
 
 <%def name="javascript_bottom()">
 
+<script src="/static/vendor/citeproc-js/xmldom.js"></script>
+<script src="/static/vendor/citeproc-js/citeproc.js"></script>
+
 <script>
 
     <% import json %>
