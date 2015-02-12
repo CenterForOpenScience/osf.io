@@ -16,7 +16,8 @@ var Raven = require('raven-js');
 
 var NodeControl = require('../nodeControl.js');
 
-var CitationWidget = require('../citations.js');
+var CitationList = require('../citationList.js');
+var CitationWidget = require('../citationWidget.js');
 
 var mathrender = require('mathrender');
 // Render math in the wiki widget
@@ -34,9 +35,7 @@ $('body').on('nodeLoad', function(event, data) {
     new LogFeed('#logScope', nodeApiUrl + 'log/');
     // Initialize nodeControl
     new NodeControl('#projectScope', data);
-
 });
-
 
 // Initialize comment pane w/ it's viewmodel
 var $comments = $('#comments');
@@ -49,6 +48,7 @@ if ($comments.length) {
 
 // Initialize CitationWidget if user isn't viewing through an anonymized VOL
 if (!ctx.node.anonymous) {
+    new CitationList('#citationList');
     new CitationWidget('#citationStyleInput', '#citationText');
 }
 
