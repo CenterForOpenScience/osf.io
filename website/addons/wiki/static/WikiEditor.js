@@ -14,6 +14,25 @@ require('imports?Markdown=pagedown-ace-converter!pagedown-ace-editor');
 
 var editor;
 
+var MATHJAX_THROTTLE = 500;
+function mathjaxify() {
+    var preview = document.getElementById('wmd-preview');
+    if (typeof(typeset) === 'undefined' || typeset === true) {
+        MathJax.Hub.Queue(['Typeset', MathJax.Hub, preview]);
+        typesetStubbornMath();
+    }
+}
+
+function typesetStubbornMath() {
+    $('#wmd-preview').each(function() {
+        if ($(this).text() !== '') {
+            MathJax.Hub.Queue(['Typeset', MathJax.Hub, $(this).attr('id')]);
+        }
+    });
+}
+
+var throttledMathjaxify = $osf.throttle(mathjaxify, MATHJAX_THROTTLE);
+
 /**
  * Binding handler that instantiates an ACE editor.
  * The value accessor must be a ko.observable.
@@ -25,6 +44,7 @@ ko.bindingHandlers.ace = {
 
         // Updates the view model based on changes to the editor
         editor.getSession().on('change', function () {
+            throttledMathjaxify();
             valueAccessor()(editor.getValue());
         });
     },
