@@ -7,6 +7,7 @@ Changelog
 
 - Wiki: Real-time collaborative editing powered by ShareJS.
 - Wiki: Markdown snippets support.
+- Wiki: Add MathJax support.
 - Files: File versions are retrieved from Waterbutler.
 - Files: Extensive refactor to unify file detail pages.
 - CiteProc-compliant citation widget. Add an extra input to select from
