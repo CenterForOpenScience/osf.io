@@ -77,7 +77,6 @@ website/templates/_log_templates.mako
 .pydevproject
 .settings/
 src/
-Notes.txt
-website/mfrcache/
+website/mfrtemp/
 docs/_build
 website/static/img/badges

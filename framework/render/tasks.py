@@ -62,26 +62,26 @@ def _build_rendered_html(download_url, cache_path, temp_path):
     ensure_path(os.path.split(temp_path)[0])
     ensure_path(os.path.split(cache_path)[0])
 
-    with codecs.open(cache_path, 'w', 'utf-8') as render_result_cache:
-        try:
-            save_to_file_or_error(download_url, temp_path)
-
-            with codecs.open(temp_path) as temp_file:
-                # Render file
+    rendered = None
+    try:
+        save_to_file_or_error(download_url, temp_path)
+    except exceptions.RenderNotPossibleException as e:
+        # Write out unavoidable errors
+        rendered = e.renderable_error
+    else:
+        with codecs.open(temp_path) as temp_file:
+            # Try to render file
+            try:
                 render_result = mfr.render(temp_file, src=download_url)
+                # Rendered result
+                rendered = _build_html(render_result)
+            except MFRError as err:
+                # Rendered MFR error
+                rendered = _build_html(render_mfr_error(err))
 
-            #attach additional assets
-            rendered = _build_html(render_result)
-            # Cache rendered content
-            render_result_cache.write(rendered)
-
-        except exceptions.RenderNotPossibleException as e:
-            # Write out unavoidable errors
-            render_result_cache.write(e.renderable_error)
-
-        except MFRError as err:
-            rendered = _build_html(render_mfr_error(err))
-            render_result_cache.write(rendered)
+    # Cache rendered content
+    with codecs.open(cache_path, 'w', 'utf-8') as render_result_cache:
+        render_result_cache.write(rendered)
 
     # Cleanup when we're done
     os.remove(temp_path)

@@ -122,7 +122,7 @@
                 % endif
             </div>
         </div>
-        
+
     </header>
 </div>
 
@@ -172,7 +172,7 @@
         % endif
 
         <div class="addon-widget-container">
-            <div class="addon-widget-header clearfix"> 
+            <div class="addon-widget-header clearfix">
                 <h4>Files</h4>
                 <div class="pull-right">
                    <a href="${node['url']}files/" class="btn"> <i class="icon icon-external-link"></i> </a>
@@ -180,8 +180,8 @@
             </div>
             <div class="addon-widget-body">
                 <div id="treeGrid">
-                    <div class="fangorn-loading"> 
-                        <i class="icon-spinner fangorn-spin"></i> <p class="m-t-sm fg-load-message"> Loading files...  </p> 
+                    <div class="fangorn-loading">
+                        <i class="icon-spinner fangorn-spin"></i> <p class="m-t-sm fg-load-message"> Loading files...  </p>
                     </div>
                 </div>
             </div>
@@ -201,6 +201,15 @@
                 </div>
             </div>
             <div class="addon-widget-body" style="display:none">
+                <dl class="citation-list">
+                    <dt>APA</dt>
+                        <dd class="citation-text">${node['citations']['apa']}</dd>
+                    <dt>MLA</dt>
+                        <dd class="citation-text">${node['citations']['mla']}</dd>
+                    <dt>Chicago</dt>
+                        <dd class="citation-text">${node['citations']['chicago']}</dd>
+                </dl>
+                <p><strong>More</strong></p>
                 <div id="citation-style-panel">
                     <input id="citationStyleInput" type="hidden" />
                 </div>
@@ -217,14 +226,14 @@
 
         %if node['tags'] or 'write' in user['permissions']:
          <div class="tags addon-widget-container">
-            <div class="addon-widget-header clearfix"> 
+            <div class="addon-widget-header clearfix">
                 <h4>Tags </h4>
                 <div class="pull-right">
                 </div>
             </div>
             <div class="addon-widget-body">
                 <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node['tags']]) if node['tags'] else ''}" />
-            </div> 
+            </div>
         </div>
 
         %endif
@@ -239,7 +248,7 @@
 <%def name="children()">
 % if node['node_type'] == 'project':
      <div class="components addon-widget-container">
-        <div class="addon-widget-header clearfix"> 
+        <div class="addon-widget-header clearfix">
             <h4>Components </h4>
             <div class="pull-right">
               % if 'write' in user['permissions'] and not node['is_registration']:
@@ -263,7 +272,7 @@
                 <p>No components have been added to this project.</p>
               % endif
 
-        </div> 
+        </div>
     </div>
 % endif
 
