@@ -10,6 +10,12 @@ var root = path.join(__dirname, 'website', 'static');
 var staticPath = function(dir) {
     return path.join(root, dir);
 };
+var nodePath = function(dir) {
+    return path.join(__dirname, 'node_modules', dir);
+};
+var addonsPath = function(dir) {
+    return path.join(__dirname, 'website', 'addons', dir);
+};
 
 /**
  * Each JS module for a page on the OSF is webpack entry point. These are built
@@ -89,13 +95,15 @@ var resolve = {
         'jquery.ui.sortable': staticPath('vendor/bower_components/jquery-ui/ui/jquery.ui.sortable.js'),
         // Dropzone doesn't have a proper 'main' entry in its bower.json
         'dropzone': staticPath('vendor/bower_components/dropzone/dist/dropzone.js'),
+        'truncate': staticPath('vendor/bower_components/truncate/jquery.truncate.js'),
         // Needed for ace code editor in wiki
         'ace-noconflict': staticPath('vendor/bower_components/ace-builds/src-noconflict/ace.js'),
         'ace-ext-language_tools': staticPath('vendor/bower_components/ace-builds/src-noconflict/ext-language_tools.js'),
         'ace-mode-markdown': staticPath('vendor/bower_components/ace-builds/src-noconflict/mode-markdown.js'),
-        'pagedown-ace-converter': staticPath('vendor/pagedown-ace/Markdown.Converter.js'),
-        'pagedown-ace-sanitizer': staticPath('vendor/pagedown-ace/Markdown.Sanitizer.js'),
-        'pagedown-ace-editor': staticPath('vendor/pagedown-ace/Markdown.Editor.js'),
+        'pagedown-ace-converter': addonsPath('wiki/static/pagedown-ace/Markdown.Converter.js'),
+        'pagedown-ace-sanitizer': addonsPath('wiki/static/pagedown-ace/Markdown.Sanitizer.js'),
+        'pagedown-ace-editor': addonsPath('wiki/static/pagedown-ace/Markdown.Editor.js'),
+        'highlight-css': nodePath('highlight.js/styles/default.css'),
         // Also alias some internal libraries for easy access
         'fangorn': staticPath('js/fangorn.js'),
         'waterbutler': staticPath('js/waterbutler.js'),
@@ -106,6 +114,7 @@ var resolve = {
         'addonHelper': staticPath('js/addonHelper.js'),
         'koHelpers': staticPath('js/koHelpers.js'),
         'addonPermissions': staticPath('js/addonPermissions.js'),
+        'markdown': staticPath('js/markdown.js'),
         'navbar-control': staticPath('js/navbarControl.js')
     }
 };
