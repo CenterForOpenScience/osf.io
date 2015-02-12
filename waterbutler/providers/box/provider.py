@@ -113,7 +113,6 @@ class BoxProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
-        #import ipdb
         path = BoxPath('/'+self.folder+path)
         try:
             yield from self.metadata(str(path))
@@ -121,28 +120,13 @@ class BoxProvider(provider.BaseProvider):
             created = True
         else:
             created = False
-        #if created
-        stream, boundary, size = box_utils.make_upload_data(stream, parent_id=path._id, file=path.name)
-        #streamdata = yield from stream.read()
-        #ipdb.set_trace()
-        resp = yield from self.make_request(
-            'POST',
-            self._build_upload_url('files', 'content'),
-            data=stream,
-            headers={
-                'Content-Length': str(size),
-                'Content-Type': 'multipart/form-data; boundary={0}'.format(boundary.decode()),
-            },
-            expects=(201, ),
-            throws=exceptions.UploadError,
-        )
-        #ipdb.set_trace()
+        
+        #if created:
+        data = yield from self._upload_create(stream, path)
         #else
         #TODO:
 
-        data = yield from resp.read()
-        #ipdb.set_trace()
-        return BoxFileMetadata(data, self.folder).serialized(), created
+        return BoxFileMetadata(data['entries'][0], self.folder).serialized(), created
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
@@ -240,6 +224,23 @@ class BoxProvider(provider.BaseProvider):
             else:
                 ret.append(BoxFileMetadata(item, self.folder).serialized())
         return ret
+
+    def _upload_create(self, stream, path):
+        stream, boundary, size = box_utils.make_upload_data(stream, parent_id=path._id, file=path.name)
+        resp = yield from self.make_request(
+            'POST',
+            self._build_upload_url('files', 'content'),
+            data=stream,
+            headers={
+                'Content-Length': str(size),
+                'Content-Type': 'multipart/form-data; boundary={0}'.format(boundary.decode()),
+            },
+            expects=(201, ),
+            throws=exceptions.UploadError,
+        )
+        data = yield from resp.json()
+        return data
+
 
     def _build_upload_url(self, *segments, **query):
         return provider.build_url(settings.BASE_UPLOAD_URL, *segments, **query)
