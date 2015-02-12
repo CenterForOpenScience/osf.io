@@ -3,12 +3,15 @@
 import datetime
 import urlparse
 import mock
+import unittest
 from bson.code import Code
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from framework import sentry
 from framework.auth.core import User
 from framework.mongo import database as db
+from framework.tasks import app
+from framework.tasks.handlers import queued_task
 from website import mails, settings
 from website.app import init_app
 from website.util import web_url_for
@@ -24,7 +27,8 @@ def main():
     grouped_digests = group_digest_notifications_by_user()
     print send_digest(grouped_digests)
 
-
+@queued_task
+@app.task
 def send_digest(grouped_digests):
     for group in grouped_digests:
         try:
@@ -43,7 +47,7 @@ def send_digest(grouped_digests):
                 mail=mails.DIGEST,
                 name=user.fullname,
                 message=sorted_messages,
-                url=urlparse.urljoin(settings.DOMAIN, web_url_for('user_notifications'))
+                url=urlparse.urljoin(settings.DOMAIN, 'settings/notifications/')
             )
 
     db.digestnotification.remove({'timestamp': {'$lt': datetime.datetime.utcnow(),
@@ -116,6 +120,7 @@ class TestSendDigest(OsfTestCase):
         assert_equal(len(user_groups), 2)
         assert_equal(user_groups, expected)
 
+    @unittest.skipIf(settings.USE_CELERY, 'Digest emails must be sent synchronously for this test')
     @mock.patch('website.mails.send_mail')
     def test_send_digest_called_with_correct_args(self, mock_send_mail):
         d = DigestNotificationFactory(
@@ -138,6 +143,7 @@ class TestSendDigest(OsfTestCase):
             url=urlparse.urljoin(settings.DOMAIN, web_url_for('user_notifications'))
             )
 
+    @unittest.skipIf(settings.USE_CELERY, 'Digest emails must be sent synchronously for this test')
     def test_send_digest_deletes_sent_digest_notifications(self):
         d = DigestNotificationFactory(
             user_id=UserFactory()._id,
