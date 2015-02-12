@@ -6,29 +6,29 @@ from framework.auth import Auth
 from factory import SubFactory, Sequence, post_generation
 from tests.factories import ModularOdmFactory, UserFactory, ProjectFactory
 
-from website.addons.dropbox.model import (
-    DropboxUserSettings, DropboxNodeSettings, DropboxFile
+from website.addons.gdrive.model import (
+    AddonGdriveUserSettings, AddonGdriveNodeSettings, AddonGdriveGuidFile
 )
 
 
 # TODO(sloria): make an abstract UserSettingsFactory that just includes the owner field
-class DropboxUserSettingsFactory(ModularOdmFactory):
-    FACTORY_FOR = DropboxUserSettings
+class GdriveUserSettingsFactory(ModularOdmFactory):
+    FACTORY_FOR = AddonGdriveUserSettings
 
     owner = SubFactory(UserFactory)
     access_token = Sequence(lambda n: 'abcdef{0}'.format(n))
 
 
-class DropboxNodeSettingsFactory(ModularOdmFactory):
-    FACTORY_FOR = DropboxNodeSettings
+class GdriveNodeSettingsFactory(ModularOdmFactory):
+    FACTORY_FOR = AddonGdriveNodeSettings
 
     owner = SubFactory(ProjectFactory)
-    user_settings = SubFactory(DropboxUserSettingsFactory)
+    user_settings = SubFactory(GdriveUserSettingsFactory)
     folder = 'Camera Uploads'
 
 
-class DropboxFileFactory(ModularOdmFactory):
-    FACTORY_FOR = DropboxFile
+class GdriveFileFactory(ModularOdmFactory):
+    FACTORY_FOR = AddonGdriveGuidFile
 
     node = SubFactory(ProjectFactory)
     path = 'foo.txt'
