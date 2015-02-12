@@ -6,6 +6,7 @@ import mock
 from bson.code import Code
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
+from framework import sentry
 from framework.auth.core import User
 from framework.mongo import database as db
 from website import mails, settings
@@ -27,9 +28,10 @@ def main():
 def send_digest(grouped_digests):
     for group in grouped_digests:
         try:
-            user = User.find_one(Q('_id', 'eq', group['user_id']))
+            user = User.load(group['user_id'])
         except NoResultsFound:
-            # ignore for now, but raise error here
+            sentry.log_exception()
+            sentry.log_message("A user with this username does not exist.")
             user = None
 
         info = group['info']
