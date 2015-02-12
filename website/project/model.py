@@ -1983,7 +1983,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         """
         csl = {
             'id': self._id,
-            'title': self.title,
+            'title': html_parser.unescape(self.title),
             'author': [
                 contributor.csl_name  # method in auth/model.py which parses the names of authors
                 for contributor in self.contributors
