@@ -12,7 +12,7 @@ var Markdown = require('pagedown-ace-converter');
 Markdown.getSanitizingConverter = require('pagedown-ace-sanitizer').getSanitizingConverter;
 require('imports?Markdown=pagedown-ace-converter!pagedown-ace-editor');
 
-var mathrender = require('./mathrender.js');
+var mathrender = require('mathrender');
 
 var editor;
 
