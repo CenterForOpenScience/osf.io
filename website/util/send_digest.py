@@ -27,6 +27,7 @@ def main():
     grouped_digests = group_digest_notifications_by_user()
     print send_digest(grouped_digests)
 
+
 @queued_task
 @app.task
 def send_digest(grouped_digests):
@@ -81,7 +82,6 @@ def group_digest_notifications_by_user():
 
 
 class TestSendDigest(OsfTestCase):
-
     def test_group_digest_notifications_by_user(self):
         user = UserFactory()
         user2 = UserFactory()
@@ -103,20 +103,20 @@ class TestSendDigest(OsfTestCase):
         d2.save()
         user_groups = group_digest_notifications_by_user()
         info = [{
-            u'message': {
-                u'message': u'Hello',
-                u'timestamp': timestamp,
-            },
-            u'node_lineage': [unicode(project._id)]
-        }]
+                u'message': {
+                    u'message': u'Hello',
+                    u'timestamp': timestamp,
+                },
+                u'node_lineage': [unicode(project._id)]
+                }]
         expected = [{
-            u'user_id': user._id,
-            u'info': info
-            },
-            {
-            u'user_id': user2._id,
-            u'info': info
-        }]
+                    u'user_id': user._id,
+                    u'info': info
+                    },
+                    {
+                    u'user_id': user2._id,
+                    u'info': info
+                    }]
         assert_equal(len(user_groups), 2)
         assert_equal(user_groups, expected)
 
@@ -141,7 +141,7 @@ class TestSendDigest(OsfTestCase):
             name=user.fullname,
             message=group_messages(user_groups[2]['info']),
             url=urlparse.urljoin(settings.DOMAIN, web_url_for('user_notifications'))
-            )
+        )
 
     @unittest.skipIf(settings.USE_CELERY, 'Digest emails must be sent synchronously for this test')
     def test_send_digest_deletes_sent_digest_notifications(self):

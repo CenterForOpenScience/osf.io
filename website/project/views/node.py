@@ -4,7 +4,7 @@ import httplib as http
 
 from flask import request
 from modularodm import Q
-from modularodm.exceptions import ModularOdmException, ValidationValueError, NoResultsFound
+from modularodm.exceptions import ModularOdmException, ValidationValueError
 
 from framework import status
 from framework.utils import iso8601format
