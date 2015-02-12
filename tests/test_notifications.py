@@ -3,6 +3,7 @@ from modularodm.exceptions import NoResultsFound
 import mock
 import datetime
 import urlparse
+import collections
 from mako.lookup import Template
 from tests.base import OsfTestCase, capture_signals
 from nose.tools import *  # PEP8 asserts
@@ -102,8 +103,8 @@ class TestRemoveContributor(OsfTestCase):
         self.project.save()
 
         self.subscription = SubscriptionFactory(
-            _id = self.project._id + '_comments',
-            object_id = self.project._id
+            _id=self.project._id + '_comments',
+            object_id=self.project._id
         )
         self.subscription.save()
         self.subscription.email_transactional.append(self.contributor)
@@ -286,8 +287,36 @@ class TestNotificationUtils(OsfTestCase):
 
 
 class TestNotificationsDict(OsfTestCase):
-    def test_notifications_dict_returns_proper_format(self):
-        pass
+    def test_notifications_dict_add_message_returns_proper_format(self):
+        d = utils.NotificationsDict()
+        message = {
+            'message': 'Freddie commented on your project',
+            'timestamp': datetime.datetime.utcnow()
+        }
+        message2 = {
+            'message': 'Mercury commented on your component',
+            'timestamp': datetime.datetime.utcnow()
+        }
+
+        d.add_message(['project'], message)
+        d.add_message(['project', 'node'], message2)
+
+        expected = {
+            'messages': [],
+            'children': collections.defaultdict(
+                utils.NotificationsDict, {
+                    'project': {
+                        'messages': [message],
+                        'children': collections.defaultdict(utils.NotificationsDict, {
+                            'node': {
+                                'messages': [message2],
+                                'children': collections.defaultdict(utils.NotificationsDict, {})
+                            }
+                        })
+                    }
+                }
+            )}
+        assert_equal(d, expected)
 
 
 class TestSendEmails(OsfTestCase):
