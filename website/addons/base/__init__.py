@@ -7,20 +7,31 @@ import glob
 import importlib
 import mimetypes
 from bson import ObjectId
-from mako.lookup import TemplateLookup
+from flask import request
 from modularodm import fields
+from mako.lookup import TemplateLookup
+
+import furl
+import requests
 
 from framework.mongo import StoredObject
 from framework.routing import process_rules
 from framework.guid.model import GuidStoredObject
 
 from website import settings
+from website.addons.base import exceptions
 
 lookup = TemplateLookup(
     directories=[
         settings.TEMPLATES_PATH
     ]
 )
+
+STATUS_EXCEPTIONS = {
+    410: exceptions.FileDeletedError,
+    404: exceptions.FileDoesntExistError
+}
+
 
 def _is_image(filename):
     mtype, _ = mimetypes.guess_type(filename)
@@ -166,16 +177,145 @@ class GuidFile(GuidStoredObject):
     }
 
     @property
-    def file_url(self):
+    def provider(self):
         raise NotImplementedError
+
+    @property
+    def version_identifier(self):
+        raise NotImplementedError
+
+    @property
+    def unique_identifier(self):
+        raise NotImplementedError
+
+    @property
+    def waterbutler_path(self):
+        '''The waterbutler formatted path of the specified file.
+        Must being with a /
+        '''
+        raise NotImplementedError
+
+    @property
+    def guid_url(self):
+        return '/{0}/'.format(self._id)
+
+    @property
+    def name(self):
+        return self._metadata_cache['name']
+
+    @property
+    def file_name(self):
+        if self.revision:
+            return '{0}_{1}.html'.format(self._id, self.revision)
+        return '{0}_{1}.html'.format(self._id, self.unique_identifier)
+
+    @property
+    def joinable_path(self):
+        return self.waterbutler_path.lstrip('/')
+
+    @property
+    def _base_butler_url(self):
+        url = furl.furl(settings.WATERBUTLER_URL)
+
+        url.args.update({
+            'nid': self.node._id,
+            'provider': self.provider,
+            'path': self.waterbutler_path,
+            'cookie': request.cookies.get(settings.COOKIE_NAME)
+        })
+
+        if request.args.get('view_only'):
+            url.args['view_only'] = request.args['view_only']
+
+        if self.revision:
+            url.args[self.version_identifier] = self.revision
+
+        return url
+
+    @property
+    def download_url(self):
+        url = self._base_butler_url
+        url.path.add('file')
+        return url.url
+
+    @property
+    def mfr_download_url(self):
+        url = self._base_butler_url
+        url.path.add('file')
+        url.args['mode'] = 'render'
+        return url.url
+
+    @property
+    def metadata_url(self):
+        url = self._base_butler_url
+        url.path.add('data')
+
+        return url.url
+
+    @property
+    def mfr_cache_path(self):
+        return os.path.join(
+            settings.MFR_CACHE_PATH,
+            self.node._id,
+            self.provider,
+            self.file_name,
+        )
+
+    @property
+    def mfr_temp_path(self):
+        return os.path.join(
+            settings.MFR_TEMP_PATH,
+            self.node._id,
+            self.provider,
+            # Attempt to keep the original extension of the file for MFR detection
+            self.file_name + os.path.splitext(self.path)[1]
+        )
 
     @property
     def deep_url(self):
         if self.node is None:
             raise ValueError('Node field must be defined.')
-        return os.path.join(
-            self.node.deep_url, self.file_url,
+
+        url = os.path.join(
+            self.node.deep_url,
+            'files',
+            self.provider,
+            self.joinable_path
         )
+
+        if url.endswith('/'):
+            return url
+        else:
+            return url + '/'
+
+    @property
+    def revision(self):
+        return getattr(self, '_revision', None)
+
+    def maybe_set_version(self, **kwargs):
+        self._revision = kwargs.get(self.version_identifier)
+
+    def enrich(self, save=True):
+        self._fetch_metadata(should_raise=True)
+
+    def _exception_from_response(self, response):
+        if response.ok:
+            return
+
+        if response.status_code in STATUS_EXCEPTIONS:
+            raise STATUS_EXCEPTIONS[response.status_code]
+
+        raise exceptions.AddonEnrichmentError(response.status_code)
+
+    def _fetch_metadata(self, should_raise=False):
+        # Note: We should look into caching this at some point
+        # Some attributes may change however.
+        resp = requests.get(self.metadata_url)
+
+        if should_raise:
+            self._exception_from_response(resp)
+
+        self._metadata_cache = resp.json()['data']
 
 
 class AddonSettingsBase(StoredObject):
