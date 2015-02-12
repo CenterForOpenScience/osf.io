@@ -117,7 +117,7 @@ var externals = {
     'jquery': 'jQuery',
     'jquery-ui': 'jQuery.ui',
     'raven-js': 'Raven',
-    'MathJax': 'MathJax',
+    'MathJax': 'MathJax'
 };
 
 var plugins = [
