@@ -150,16 +150,18 @@ $(document).ready(function() {
     $('#node-tags_tag').attr('maxlength', '128');
 
     // Render the raw markdown of the wiki
-    var markdownElement = $('#markdown-it-render');
-    var request = $.ajax({
-        url: wikiContentUrl
-    });
-    request.done(function(resp) {
-        var rawText = resp.wiki_content || '*No wiki content*';
-        var renderedText = md.render(rawText);
-        var truncatedText = $.truncate(renderedText, {length: 400});
-        markdownElement.html(truncatedText);
-    });
+    if (!ctx.usePythonRender) {
+        var markdownElement = $('#markdown-it-render');
+        var request = $.ajax({
+            url: wikiContentUrl
+        });
+        request.done(function(resp) {
+            var rawText = resp.wiki_content || '*No wiki content*';
+            var renderedText = md.render(rawText);
+            var truncatedText = $.truncate(renderedText, {length: 400});
+            markdownElement.html(truncatedText);
+        });
+    }
 
     // Remove delete UI if not contributor
     if (!window.contextVars.currentUser.canEdit || window.contextVars.node.isRegistration) {

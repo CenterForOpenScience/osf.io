@@ -151,6 +151,7 @@ def wiki_widget(**kwargs):
     wiki_page = node.get_wiki_page('home')
 
     more = False
+    use_python_render = False
     if wiki_page and wiki_page.html(node):
         wiki_html = wiki_page.html(node)
         if len(wiki_html) > 500:
@@ -159,6 +160,7 @@ def wiki_widget(**kwargs):
         else:
             wiki_html = BeautifulSoup(wiki_html)
             more = False
+        use_python_render = wiki_page.rendered_before_update
     else:
         wiki_html = None
 
@@ -166,6 +168,7 @@ def wiki_widget(**kwargs):
         'complete': True,
         'wiki_content': unicode(wiki_html) if wiki_html else None,
         'wiki_content_url': node.api_url_for('wiki_page_content', wname='home'),
+        'use_python_render': use_python_render,
         'more': more,
         'include': False,
     }
@@ -361,12 +364,14 @@ def project_wiki_page(auth, wname, **kwargs):
     status_code = 200
     version = 'NA'
     is_current = False
+    use_python_render = False
     content = ''
 
     if wiki_page:
         version = wiki_page.version
         is_current = wiki_page.is_current
         content = wiki_page.html(node)
+        use_python_render = wiki_page.rendered_before_update
     elif not wiki_page and wiki_name.lower() != 'home':
         status_code = 404
 
@@ -374,6 +379,7 @@ def project_wiki_page(auth, wname, **kwargs):
         'wiki_id': wiki_page._primary_key if wiki_page else None,
         'wiki_name': wiki_page.page_name if wiki_page else wiki_name,
         'wiki_content': content,
+        'use_python_render': use_python_render,
         'page': wiki_page,
         'version': version,
         'versions': _get_wiki_versions(node, wiki_name, anonymous=anonymous),
