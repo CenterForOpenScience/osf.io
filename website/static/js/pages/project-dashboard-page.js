@@ -21,7 +21,6 @@ var CitationWidget = require('../citations.js');
 var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
 
-
 // Initialize controller for "Add Links" modal
 new pointers.PointerManager('#addPointer', window.contextVars.node.title);
 

@@ -348,8 +348,8 @@ def make_url_map(app):
 
         Rule(
             [
-                '/project/<pid>/citation/<style>/',
-                '/project/<pid>/node/<nid>/citation/<style>/',
+                '/project/<pid>/citation/',
+                '/project/<pid>/node/<nid>/citation/',
             ],
             'get',
             citation_views.node_citation,
