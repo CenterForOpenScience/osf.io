@@ -1,13 +1,19 @@
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
+import mock
+import datetime
+import urlparse
+from mako.lookup import Template
 from tests.base import OsfTestCase
 from nose.tools import *  # PEP8 asserts
-from website.notifications.model import Subscription
+from website.util import web_url_for
+from website.notifications.model import Subscription, DigestNotification
+from website.notifications import emails
 from website.notifications.utils import (get_all_user_subscriptions, get_configured_projects,
                                          get_parent_notification_type, format_data, format_user_subscriptions,
                                          format_user_and_project_subscriptions)
 from website.util import api_url_for
-from website import settings
+from website import settings, mails
 from tests.factories import ProjectFactory, NodeFactory, UserFactory, SubscriptionFactory
 
 
@@ -256,14 +262,164 @@ class TestNotificationsDict(OsfTestCase):
 
 
 class TestSendEmails(OsfTestCase):
-    def test_notify(self):
-        pass
+    def setUp(self):
+        super(TestSendEmails, self).setUp()
+        self.user = UserFactory()
+        self.project = ProjectFactory()
+        self.project_subscription = SubscriptionFactory(
+            _id=self.project._id + '_' + 'comments',
+            object_id=self.project._id,
+            event_name='comments'
+        )
+        self.project_subscription.save()
+        self.project_subscription.email_transactional.append(self.user)
+        self.project_subscription.save()
 
-    def test_check_parent(self):
-        pass
+        self.node = NodeFactory(project=self.project)
+        self.node_subscription = SubscriptionFactory(
+            _id=self.node._id,
+            object_id=self.node._id,
+            event_name='comments'
+        )
+        self.node_subscription.save()
 
-    def test_send_email_transactional(self):
-        pass
+    @mock.patch('website.notifications.emails.send')
+    def test_notify_no_subscription(self, send):
+        node = NodeFactory()
+        emails.notify(node._id, 'comments')
+        assert_false(send.called)
+
+    @mock.patch('website.notifications.emails.send')
+    def test_notify_no_subscribers(self, send):
+        node = NodeFactory()
+        node_subscription = SubscriptionFactory(
+            _id=node._id,
+            object_id=node._id,
+            event_name='comments'
+        )
+        node_subscription.save()
+        emails.notify(node._id, 'comments')
+        assert_false(send.called)
+
+    @mock.patch('website.notifications.emails.send')
+    def test_notify_sends_with_correct_args(self, send):
+        subscribed_users = getattr(self.project_subscription, 'email_transactional')
+        emails.notify(self.project._id, 'comments')
+        assert_true(send.called)
+        send.assert_called_with(subscribed_users, 'email_transactional', self.project._id, 'comments')
+
+    @mock.patch('website.notifications.emails.send')
+    def test_notify_does_not_send_to_users_subscribed_to_none(self, send):
+        node = NodeFactory()
+        node_subscription = SubscriptionFactory(
+            _id=node._id,
+            object_id=node._id,
+            event_name='comments'
+        )
+        node_subscription.save()
+        self.node_subscription.none.append(self.user)
+        self.node_subscription.save()
+        emails.notify(node._id, 'comments')
+        assert_false(send.called)
+
+    @mock.patch('website.notifications.emails.send')
+    def test_check_parent(self, send):
+        emails.check_parent(self.node._id, 'comments', [])
+        assert_true(send.called)
+        send.assert_called_with([self.user], 'email_transactional', self.node._id, 'comments')
+
+    # @mock.patch('website.notifications.emails.email_transactional')
+    # def test_send_calls_correct_mail_function(self, email_transactional):
+    #     emails.send([self.user], 'email_transactional', self.project._id, 'comments',
+    #                 nodeType='project',
+    #                 timestamp=datetime.datetime.utcnow(),
+    #                 commenter='Saman',
+    #                 content='',
+    #                 parent_comment='',
+    #                 title=self.project.title,
+    #                 url=self.project.absolute_url
+    #     )
+    #     assert_true(email_transactional.called)
+
+    @mock.patch('website.mails.send_mail')
+    def test_send_email_transactional(self, send_mail):
+        # assert that send_mail is called with the correct person & args
+        subscribed_users = [self.user]
+
+        emails.email_transactional(
+            subscribed_users, self.project._id, 'comments',
+            nodeType='project',
+            timestamp=datetime.datetime.utcnow(),
+            commenter='Saman',
+            content='',
+            parent_comment='',
+            title=self.project.title,
+            url=self.project.absolute_url
+        )
+        subject = Template(emails.email_templates['comments']['subject']).render(
+            nodeType='project',
+            timestamp=datetime.datetime.utcnow(),
+            commenter='Saman',
+            content='',
+            parent_comment='',
+            title=self.project.title,
+            url=self.project.absolute_url)
+        message = mails.render_message(
+            'comments.txt.mako',
+            nodeType='project',
+            timestamp=datetime.datetime.utcnow(),
+            commenter='Saman',
+            content='',
+            parent_comment='',
+            title=self.project.title,
+            url=self.project.absolute_url)
+
+        assert_true(send_mail.called)
+        send_mail.assert_called_with(
+            to_addr=self.user.username,
+            mail=mails.TRANSACTIONAL,
+            name=self.user.fullname,
+            subject=subject,
+            message=message,
+            url=self.project.absolute_url + 'settings/'
+        )
 
     def test_send_email_digest_creates_digest_notification(self):
-        pass
+        subscribed_users = [self.user]
+        emails.email_digest(subscribed_users, self.project._id, 'comments',
+                            nodeType='project',
+                            timestamp=datetime.datetime.utcnow(),
+                            commenter='Saman',
+                            content='',
+                            parent_comment='',
+                            title=self.project.title,
+                            url=self.project.absolute_url
+        )
+        digests = DigestNotification.find()
+        assert_equal(digests.count(), 1)
+
+    def test_send_email_digest_not_created_for_user_performed_actions(self):
+        subscribed_users = [self.user]
+        emails.email_digest(subscribed_users, self.project._id, 'comments',
+                            nodeType='project',
+                            timestamp=datetime.datetime.utcnow(),
+                            commenter=self.user.fullname,
+                            content='',
+                            parent_comment='',
+                            title=self.project.title,
+                            url=self.project.absolute_url
+        )
+        digests = DigestNotification.find()
+        assert_equal(digests.count(), 0)
+
+    def test_get_settings_url_for_node(self):
+        url = emails.get_settings_url(self.project._id, self.user)
+        assert_equal(url, self.project.absolute_url + 'settings/')
+
+    def test_get_settings_url_for_user(self):
+        url = emails.get_settings_url(self.user._id, self.user)
+        assert_equal(url, urlparse.urljoin(settings.DOMAIN, web_url_for('user_notifications')))
+
+    def test_get_node_lineage(self):
+        node_lineage = emails.get_node_lineage(self.node, [])
+        assert_equal(node_lineage, [self.node._id, self.project._id])

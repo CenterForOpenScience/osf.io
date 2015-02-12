@@ -19,7 +19,8 @@ def notify(uid, event, **context):
         try:
             subscription = Subscription.find_one(Q('_id', 'eq', key))
         except NoResultsFound:
-            subscription = None
+            break
+
         subscribed_users = []
         try:
             subscribed_users = getattr(subscription, notification_type)
@@ -30,7 +31,7 @@ def notify(uid, event, **context):
         for u in subscribed_users:
             direct_subscribers.append(u)
 
-        if notification_type != 'none':
+        if subscribed_users and notification_type != 'none':
             send(subscribed_users, notification_type, uid, event, **context)
 
     check_parent(uid, event, direct_subscribers, **context)
@@ -38,26 +39,24 @@ def notify(uid, event, **context):
 
 def check_parent(uid, event, direct_subscribers, **context):
     node = Node.load(uid)
-    if node:
-        parent = Node.load(uid).node__parent
-        if parent:
-            for p in parent:
-                key = str(p._id + '_' + event)
+    if node and node.node__parent:
+        for p in node.node__parent:
+            key = str(p._id + '_' + event)
+            try:
+                subscription = Subscription.find_one(Q('_id', 'eq', key))
+            except NoResultsFound:
+                return
+
+            for notification_type in notifications.keys():
+                subscribed_users = []
                 try:
-                    subscription = Subscription.find_one(Q('_id', 'eq', key))
-                except NoResultsFound:
-                    return
+                    subscribed_users = getattr(subscription, notification_type)
+                except AttributeError:
+                    pass
 
-                for notification_type in notifications.keys():
-                    subscribed_users = []
-                    try:
-                        subscribed_users = getattr(subscription, notification_type)
-                    except AttributeError:
-                        pass
-
-                    for u in subscribed_users:
-                        if u not in direct_subscribers:
-                            send([u], notification_type, uid, event, **context)
+                for u in subscribed_users:
+                    if u not in direct_subscribers:
+                        send([u], notification_type, uid, event, **context)
 
     return {}
 
