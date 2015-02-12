@@ -43,6 +43,7 @@
 
     ${includes_top()}
     ${self.stylesheets()}
+    <script src="${"/static/public/js/base-page.js" | webpack_asset}"></script>
     ${self.javascript()}
 
     <link href='//fonts.googleapis.com/css?family=Carrois+Gothic|Inika|Patua+One' rel='stylesheet' type='text/css'>
@@ -163,7 +164,6 @@
             </script>
         % endif
 
-        <script src="${"/static/public/js/base-page.js" | webpack_asset}"></script>
 
         ${self.javascript_bottom()}
     </body>
