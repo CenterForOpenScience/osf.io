@@ -77,7 +77,7 @@ def _build_rendered_html(download_url, cache_path, temp_path):
                 rendered = _build_html(render_result)
             except MFRError as err:
                 # Rendered MFR error
-                rendered = _build_html(render_mfr_error(err))
+                rendered = render_mfr_error(err)
 
     # Cache rendered content
     with codecs.open(cache_path, 'w', 'utf-8') as render_result_cache:
