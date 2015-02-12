@@ -1,5 +1,5 @@
-
-/** Initialization code for the project dashboard. */
+/** Initialization code for the project overview page. */
+'use strict';
 
 var $ = require('jquery');
 require('../../vendor/bower_components/jquery.tagsinput/jquery.tagsinput.css');
@@ -16,9 +16,16 @@ var Raven = require('raven-js');
 
 var NodeControl = require('../nodeControl.js');
 
+var CitationList = require('../citationList.js');
+var CitationWidget = require('../citationWidget.js');
 
-var nodeApiUrl = window.contextVars.node.urls.api;
+var mathrender = require('mathrender');
+// Render math in the wiki widget
+mathrender.mathjaxify('#addonWikiWidget');
 
+
+var ctx = window.contextVars;
+var nodeApiUrl = ctx.node.urls.api;
 
 // Initialize controller for "Add Links" modal
 new pointers.PointerManager('#addPointer', window.contextVars.node.title);
@@ -28,9 +35,7 @@ $('body').on('nodeLoad', function(event, data) {
     new LogFeed('#logScope', nodeApiUrl + 'log/');
     // Initialize nodeControl
     new NodeControl('#projectScope', data);
-
 });
-
 
 // Initialize comment pane w/ it's viewmodel
 var $comments = $('#comments');
@@ -40,6 +45,13 @@ if ($comments.length) {
     var hasChildren = window.contextVars.node.hasChildren;
     Comment.init('#commentPane', userName, canComment, hasChildren);
 }
+
+// Initialize CitationWidget if user isn't viewing through an anonymized VOL
+if (!ctx.node.anonymous) {
+    new CitationList('#citationList');
+    new CitationWidget('#citationStyleInput', '#citationText');
+}
+
 
 $(document).ready(function() {
     // Treebeard Files view
@@ -91,7 +103,7 @@ $(document).ready(function() {
                     ];
                 }
 
-                configOption = Fangorn.Utils.resolveconfigOption.call(this, item, 'resolveRows', [item]);
+                var configOption = Fangorn.Utils.resolveconfigOption.call(this, item, 'resolveRows', [item]);
                 return configOption || defaultColumns;
             }
         };
@@ -136,7 +148,7 @@ $(document).ready(function() {
     });
 
     // Limit the maximum length that you can type when adding a tag
-    $('#node-tags_tag').attr("maxlength", "128");
+    $('#node-tags_tag').attr('maxlength', '128');
 
     // Remove delete UI if not contributor
     if (!window.contextVars.currentUser.canEdit || window.contextVars.node.isRegistration) {

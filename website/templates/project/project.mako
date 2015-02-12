@@ -122,7 +122,7 @@
                 % endif
             </div>
         </div>
-        
+
     </header>
 </div>
 
@@ -150,7 +150,7 @@
                 % if addons[addon]['has_widget']:
                     %if addon == 'wiki':
                         %if user['show_wiki_widget']:
-                            <div class="addon-widget-container" mod-meta='{
+                            <div id="addonWikiWidget" class="addon-widget-container" mod-meta='{
                             "tpl": "../addons/wiki/templates/wiki_widget.mako",
                             "uri": "${node['api_url']}wiki/widget/"
                         }'></div>
@@ -172,7 +172,7 @@
         % endif
 
         <div class="addon-widget-container">
-            <div class="addon-widget-header clearfix"> 
+            <div class="addon-widget-header clearfix">
                 <h4>Files</h4>
                 <div class="pull-right">
                    <a href="${node['url']}files/" class="btn"> <i class="icon icon-external-link"></i> </a>
@@ -180,8 +180,8 @@
             </div>
             <div class="addon-widget-body">
                 <div id="treeGrid">
-                    <div class="fangorn-loading"> 
-                        <i class="icon-spinner fangorn-spin"></i> <p class="m-t-sm fg-load-message"> Loading files...  </p> 
+                    <div class="fangorn-loading">
+                        <i class="icon-spinner fangorn-spin"></i> <p class="m-t-sm fg-load-message"> Loading files...  </p>
                     </div>
                 </div>
             </div>
@@ -192,25 +192,30 @@
 
         <!-- Citations -->
         % if not node['anonymous']:
-        <div class="citations addon-widget-container" >
-            <div class="addon-widget-header clearfix"> 
-                <h4>Citation <small>${node['display_absolute_url']}</small></h4>
+
+         <div class="citations addon-widget-container">
+            <div class="addon-widget-header clearfix">
+                <h4>Citation</h4>
                 <div class="pull-right">
-                  <a href="#" class="btn project-toggle"><i class="icon icon-angle-down"></i></a>
+                    <span class="permalink">${node['display_absolute_url']}</span><a href="#" class="btn project-toggle"><i class="icon icon-angle-down"></i></a>
                 </div>
             </div>
-            <div class="addon-widget-body" style="display : none;">
-                <dl class="citation-list">
+            <div class="addon-widget-body" style="display:none">
+                <dl id="citationList" class="citation-list">
                     <dt>APA</dt>
-                        <dd class="citation-text">${node['citations']['apa']}</dd>
+                        <dd class="citation-text" data-bind="text: apa"></dd>
                     <dt>MLA</dt>
-                        <dd class="citation-text">${node['citations']['mla']}</dd>
+                        <dd class="citation-text" data-bind="text: mla"></dd>
                     <dt>Chicago</dt>
-                        <dd class="citation-text">${node['citations']['chicago']}</dd>
+                        <dd class="citation-text" data-bind="text: chicago"></dd>
                 </dl>
-            </div> 
-        </div>
-
+                <p><strong>More</strong></p>
+                <div id="citation-style-panel">
+                    <input id="citationStyleInput" type="hidden" />
+                </div>
+                <pre id="citationText" class="formatted-citation"></pre>
+            </div>
+         </div>
         % endif
 
         <!-- Show child on right if widgets -->
@@ -221,14 +226,14 @@
 
         %if node['tags'] or 'write' in user['permissions']:
          <div class="tags addon-widget-container">
-            <div class="addon-widget-header clearfix"> 
+            <div class="addon-widget-header clearfix">
                 <h4>Tags </h4>
                 <div class="pull-right">
                 </div>
             </div>
             <div class="addon-widget-body">
                 <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node['tags']]) if node['tags'] else ''}" />
-            </div> 
+            </div>
         </div>
 
         %endif
@@ -243,7 +248,7 @@
 <%def name="children()">
 % if node['node_type'] == 'project':
      <div class="components addon-widget-container">
-        <div class="addon-widget-header clearfix"> 
+        <div class="addon-widget-header clearfix">
             <h4>Components </h4>
             <div class="pull-right">
               % if 'write' in user['permissions'] and not node['is_registration']:
@@ -267,7 +272,7 @@
                 <p>No components have been added to this project.</p>
               % endif
 
-        </div> 
+        </div>
     </div>
 % endif
 
@@ -298,7 +303,6 @@ ${parent.javascript_bottom()}
 
 <script type="text/javascript">
     // Hack to allow mako variables to be accessed to JS modules
-
     window.contextVars = $.extend(true, {}, window.contextVars, {
         currentUser: {
             name: '${user_full_name | js_str}',

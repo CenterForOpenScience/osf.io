@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
-import hashlib
+import base64
 import logging
-import urllib
-
-import furl
 
 from modularodm import fields, Q
 from modularodm.exceptions import ModularOdmException
@@ -13,7 +10,6 @@ from framework.auth import Auth
 from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
-from website.addons.dropbox.client import get_node_addon_client
 from website.addons.dropbox.utils import clean_path, DropboxNodeLogger
 
 logger = logging.getLogger(__name__)
@@ -27,90 +23,48 @@ class DropboxFile(GuidFile):
     #: Full path to the file, e.g. 'My Pictures/foo.png'
     path = fields.StringField(required=True, index=True)
 
-    #: Stored metadata from the dropbox API
-    #: See https://www.dropbox.com/developers/core/docs#metadata
-    metadata = fields.DictionaryField(required=False)
-
-    def url(self, guid=True, rev='', *args, **kwargs):
-        """The web url for the file.
-
-        :param bool guid: Whether to return the short URL
-        """
-        # Short URLS must be built 'manually'
-        if guid:
-            # If returning short URL, urlencode the kwargs to build querystring
-            base_url = os.path.join('/', self._primary_key)
-            args = {'rev': rev}
-            args.update(**kwargs)
-            querystring = urllib.urlencode(args)
-            url = '/?'.join([base_url, querystring])
-        else:
-            url = self.node.web_url_for('dropbox_view_file', path=self.path,
-                rev=rev, **kwargs)
-        return url
+    @property
+    def file_name(self):
+        if self.revision:
+            return '{0}_{1}_{2}.html'.format(self._id, self.revision, base64.b64encode(self.folder))
+        return '{0}_{1}_{2}.html'.format(self._id, self.unique_identifier, base64.b64encode(self.folder))
 
     @property
-    def file_url(self):
-        if self.path is None:
-            raise ValueError('Path field must be defined.')
-        return os.path.join('dropbox', 'files', self.path)
+    def waterbutler_path(self):
+        path = '/' + self.path
+        if self.folder == '/':
+            return path
+        return path.replace(self.folder, '', 1)
 
-    def download_url(self, guid=True, rev='', *args, **kwargs):
-        """Return the download url for the file.
+    @property
+    def folder(self):
+        return self.node.get_addon('dropbox').folder
 
-        :param bool guid: Whether to return the short URL
-        """
-        # Short URLS must be built 'manually'
-        if guid:
-            # If returning short URL, urlencode the kwargs to build querystring
-            base_url = os.path.join('/', self._primary_key, 'download/')
-            args = {'rev': rev}
-            args.update(**kwargs)
-            querystring = urllib.urlencode(args)
-            url = '?'.join([base_url, querystring])
-        else:
-            url = self.node.web_url_for('dropbox_download',
-                    path=self.path, _absolute=True, rev=rev, **kwargs)
-        return url
+    @property
+    def provider(self):
+        return 'dropbox'
 
-    def update_metadata(self, client=None, rev=''):
-        cl = client or get_node_addon_client(self.node.get_addon('dropbox'))
-        self.metadata = cl.metadata(self.path, list=False, rev=rev)
+    @property
+    def version_identifier(self):
+        return 'revision'
 
-    def get_metadata(self, client=None, force=False, rev=''):
-        """Gets the file metadata from the Dropbox API (cached)."""
-        if force or (not self.metadata):
-            self.update_metadata(client=client, rev=rev)
-            self.save()
-        return self.metadata
-
-    def get_cache_filename(self, client=None, rev=''):
-        if not rev:
-            metadata = self.get_metadata(client=client, rev=rev, force=True)
-            revision = metadata['rev']
-        else:
-            revision = rev
-        # Note: Use hash of file path instead of file path in case paths are
-        # very long; see https://github.com/CenterForOpenScience/openscienceframework.org/issues/769
-        return '{digest}_{rev}.html'.format(
-            digest=hashlib.md5(self.path).hexdigest(),
-            rev=revision,
-        )
+    @property
+    def unique_identifier(self):
+        return self._metadata_cache['extra']['revisionId']
 
     @classmethod
     def get_or_create(cls, node, path):
         """Get or create a new file record. Return a tuple of the form (obj, created)
         """
-        cleaned_path = clean_path(path)
         try:
             new = cls.find_one(
                 Q('node', 'eq', node) &
-                Q('path', 'eq', cleaned_path)
+                Q('path', 'eq', path)
             )
             created = False
         except ModularOdmException:
             # Create new
-            new = cls(node=node, path=cleaned_path)
+            new = cls(node=node, path=path)
             new.save()
             created = True
         return new, created
@@ -177,6 +131,9 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         """Whether an access token is associated with this node."""
         return bool(self.user_settings and self.user_settings.has_auth)
 
+    def find_or_create_file_guid(self, path):
+        return DropboxFile.get_or_create(self.owner, clean_path(os.path.join(self.folder, path.lstrip('/'))))
+
     def set_folder(self, folder, auth):
         self.folder = folder
         # Add log to node
@@ -222,6 +179,8 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
 
     def create_waterbutler_log(self, auth, action, metadata):
         cleaned_path = clean_path(os.path.join(self.folder, metadata['path']))
+        url = self.owner.web_url_for('addon_view_or_download_file', path=cleaned_path, provider='dropbox')
+
         self.owner.add_log(
             'dropbox_{0}'.format(action),
             auth=auth,
@@ -231,20 +190,11 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
                 'path': cleaned_path,
                 'folder': self.folder,
                 'urls': {
-                    'view': self.owner.web_url_for('dropbox_view_file', path=cleaned_path),
-                    'download': self.owner.web_url_for('dropbox_download', path=cleaned_path),
+                    'view': url,
+                    'download': url + '?action=download'
                 },
             },
         )
-
-    def get_waterbutler_render_url(self, path, rev=None, **kwargs):
-        cleaned_path = clean_path(os.path.join(self.folder, path))
-        url = furl.furl(self.owner.web_url_for('dropbox_view_file', path=cleaned_path))
-
-        if rev:
-            url.args['rev'] = rev
-
-        return url.url
 
     def __repr__(self):
         return u'<DropboxNodeSettings(node_id={self.owner._primary_key!r})>'.format(self=self)

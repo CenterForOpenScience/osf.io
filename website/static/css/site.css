@@ -386,6 +386,14 @@ li.pointer {
     margin-top: 0;
 }
 
+/* Style for Ace wiki editor */
+.wiki-editor {
+    position: relative;
+    height: 300px;
+    border: solid;
+    border-width: 1px;
+}
+
 /* Make wiki images responsive */
 .wiki img{
   vertical-align: middle;
@@ -407,19 +415,6 @@ img.hg-addon-icon {
 }
 
 /* End add-on styles */
-
-.citation-label {
-    font-weight: bold;
-}
-
-/*.citation-list {
-    display: none;
-}*/
-
-.citation-text {
-    text-indent: -3em;
-    margin-left: 3em;
-}
 
 .disabled {
     cursor: default !important;
@@ -1159,7 +1154,7 @@ div.search-result  {
 }
 
 .wmd-button > span {
-    background-image: url(../vendor/pagedown/wmd-buttons.png);
+    background-image: url(../vendor/pagedown-ace/wmd-buttons.png);
     background-repeat: no-repeat;
     background-position: 0px 0px;
     width: 20px;
@@ -1913,7 +1908,7 @@ span#profileFullname{
 
 
 #projectSubnav .navbar-collapse {
-    padding-left: 0; 
+    padding-left: 0;
     padding-right: 0;
 }
 
@@ -1940,7 +1935,7 @@ span#profileFullname{
     .osf-project-navbar li>a {
         padding-left: 30px;
         padding-right: 30px;
-    }   
+    }
     .osf-project-navbar a.project-title {
     }
     .project-nav {
@@ -1963,7 +1958,7 @@ span#profileFullname{
 @media (min-width: 768px) {
     .osf-navbar .navbar-nav>li>a, .osf-project-navbar li>a {
         padding-left: 7px;
-        padding-right: 7px;    
+        padding-right: 7px;
     }
     .navbar .search-query {
     width: 190px;
@@ -1988,7 +1983,7 @@ span#profileFullname{
 @media (min-width: 992px) {
     .osf-navbar .navbar-nav>li>a, .osf-project-navbar li>a {
         padding-left: 10px;
-        padding-right: 10px;    
+        padding-right: 10px;
     }
     .navbar .search-query {
         width: 360px;
@@ -2000,7 +1995,7 @@ span#profileFullname{
 @media (min-width: 1200px) {
     .osf-navbar .navbar-nav>li>a, .osf-project-navbar li>a {
         padding-left: 15px;
-        padding-right: 15px;    
+        padding-right: 15px;
     }
     .navbar .search-query {
     width: 270px;
@@ -2047,21 +2042,32 @@ span#profileFullname{
     color: #738EA2;
 }
 
+.sharejs-info-btn {
+    background: none;
+    outline : 0 !important;
+    box-shadow: none;
+    color: #FFFFFF;
+}
+
+.sharejs-info-btn:hover {
+    color: #D3D3D3;
+    text-decoration: none;
+}
 
 #searchPageFullBar::-webkit-input-placeholder {
    color: #738EA2;
 }
 
 #searchPageFullBar:-moz-placeholder { /* Firefox 18- */
-   color: #738EA2;  
+   color: #738EA2;
 }
 
 #searchPageFullBar::-moz-placeholder {  /* Firefox 19+ */
-   color: #738EA2;  
+   color: #738EA2;
 }
 
-#searchPageFullBar:-ms-input-placeholder {  
-   color: #738EA2;  
+#searchPageFullBar:-ms-input-placeholder {
+   color: #738EA2;
 }
 #searchControls>.row {
     padding-top: 60px;

@@ -46,9 +46,9 @@ cover/
 # Assets
 ########
 .webassets-cache
-website/static/public/*
-website/static/mfr/*
-website/static/vendor/node_modules/*
+website/static/public/
+website/static/mfr/
+website/static/vendor/node_modules/
 website/static/vendor/bower_components/
 node_modules
 # Allow robots.txt to be deployment-specific
@@ -60,11 +60,11 @@ website/static/robots.local.txt
 # Local settings files
 local.py
 
-website/cache/*
-website/settings/uploads/*
-website/uploads/*
-website/mfrcache/*
-website/gpg/*
+website/uploads/
+website/mfrcache/
+website/mfrtemp/
+website/osfstoragecache/
+website/gpg/
 webpack-assets.json
 
 # Built log templates
@@ -73,14 +73,10 @@ website/templates/_log_templates.mako
 # Add-ons
 #########
 .cache/
-osf.sublime-workspace
-osf.sublime-project
 .project
 .pydevproject
 .settings/
-website/addons/figshare/__init__.py.orig
 src/
-Notes.txt
-website/mfrcache/
+website/mfrtemp/
 docs/_build
 website/static/img/badges

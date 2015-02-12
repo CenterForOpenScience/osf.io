@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-import hashlib
+import mock
 
 from nose.tools import *  # noqa (PEP8 asserts)
 
@@ -10,13 +10,75 @@ from website.addons.dropbox.model import (
 )
 from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory
-from website.addons.dropbox.tests.utils import MockDropbox
 from website.addons.dropbox.tests.factories import (
     DropboxUserSettingsFactory, DropboxNodeSettingsFactory,
-    DropboxFileFactory
 )
-from website.util import web_url_for
 from website.addons.base import exceptions
+
+
+class TestFileGuid(OsfTestCase):
+    def setUp(self):
+        super(OsfTestCase, self).setUp()
+        self.user = UserFactory()
+        self.project = ProjectFactory(creator=self.user)
+        self.project.add_addon('dropbox', auth=Auth(self.user))
+        self.node_addon = self.project.get_addon('dropbox')
+        self.node_addon.folder = '/baz'
+        self.node_addon.save()
+
+    def test_provider(self):
+        assert_equal('dropbox', DropboxFile().provider)
+
+    def test_correct_path(self):
+        guid = DropboxFile(node=self.project, path='baz/foo/bar')
+
+        assert_equals(guid.path, 'baz/foo/bar')
+        assert_equals(guid.waterbutler_path, '/foo/bar')
+
+    @mock.patch('website.addons.base.requests.get')
+    def test_unique_identifier(self, mock_get):
+        mock_response = mock.Mock(ok=True, status_code=200)
+        mock_get.return_value = mock_response
+        mock_response.json.return_value = {
+            'data': {
+                'name': 'Morty',
+                'extra': {
+                    'revisionId': 'Ricksy'
+                }
+            }
+        }
+
+        guid = DropboxFile(node=self.project, path='/foo/bar')
+
+        guid.enrich()
+        assert_equals('Ricksy', guid.unique_identifier)
+
+    def test_node_addon_get_or_create(self):
+        guid, created = self.node_addon.find_or_create_file_guid('/foo/bar')
+
+        assert_true(created)
+        assert_equal(guid.path, 'baz/foo/bar')
+        assert_equal(guid.waterbutler_path, '/foo/bar')
+
+    def test_node_addon_get_or_create_finds(self):
+        guid1, created1 = self.node_addon.find_or_create_file_guid('/foo/bar')
+        guid2, created2 = self.node_addon.find_or_create_file_guid('/foo/bar')
+
+        assert_true(created1)
+        assert_false(created2)
+        assert_equals(guid1, guid2)
+
+    def test_node_addon_get_or_create_finds_changed(self):
+        guid1, created1 = self.node_addon.find_or_create_file_guid('/foo/bar')
+
+        self.node_addon.folder = '/baz/foo'
+        self.node_addon.save()
+        self.node_addon.reload()
+        guid2, created2 = self.node_addon.find_or_create_file_guid('/bar')
+
+        assert_true(created1)
+        assert_false(created2)
+        assert_equals(guid1, guid2)
 
 
 class TestUserSettingsModel(OsfTestCase):
@@ -294,75 +356,3 @@ class TestNodeSettingsCallbacks(OsfTestCase):
         self.node_settings.reload()
         assert_true(self.node_settings.user_settings is None)
         assert_true(self.node_settings.folder is None)
-
-
-class TestDropboxGuidFile(OsfTestCase):
-
-    def test_verbose_url(self):
-        project = ProjectFactory()
-        file_obj = DropboxFile(node=project, path='foo.txt')
-        file_obj.save()
-        file_url = file_obj.url(guid=False)
-
-        url = web_url_for('dropbox_view_file',
-            pid=project._primary_key, path=file_obj.path, rev='')
-        assert_equal(url, file_url)
-
-    def test_guid_url(self):
-        file_obj = DropboxFileFactory()
-        result = file_obj.url(guid=True, rev='123')
-        assert_equal(result, '/{guid}/?rev=123'.format(guid=file_obj._primary_key))
-
-    def test_cache_file_name(self):
-        project = ProjectFactory()
-        path = 'My Project/foo.txt'
-        file_obj = DropboxFile(node=project, path=path)
-        mock_client = MockDropbox()
-        file_obj.update_metadata(client=mock_client)
-        file_obj.save()
-
-        result = file_obj.get_cache_filename(client=mock_client)
-        assert_equal(
-            result,
-            '{0}_{1}.html'.format(
-                hashlib.md5(file_obj.path).hexdigest(),
-                file_obj.metadata['rev'],
-            )
-        )
-
-    def test_cache_file_name_encode(self):
-        project = ProjectFactory()
-        path = 'à/ é éà'
-        file_obj = DropboxFile(node=project, path=path)
-        mock_client = MockDropbox()
-        file_obj.update_metadata(client=mock_client)
-        file_obj.save()
-
-        result = file_obj.get_cache_filename(client=mock_client)
-        assert_equal(
-            result,
-            '{0}_{1}.html'.format(
-                hashlib.md5(path).hexdigest(),
-                file_obj.metadata['rev'],
-            )
-        )
-
-    def test_download_url(self):
-        file_obj = DropboxFileFactory()
-        dl_url = file_obj.download_url(guid=False)
-        expected = file_obj.node.web_url_for('dropbox_download', path=file_obj.path,
-            rev='', _absolute=True)
-        assert_equal(dl_url, expected)
-
-    def test_download_url_guid(self):
-        file_obj = DropboxFileFactory()
-        dl_url = file_obj.download_url(guid=True, rev='123')
-        expected = os.path.join('/', file_obj._primary_key, 'download/') + "?rev=123"
-        assert_equal(dl_url, expected)
-
-    def test_update_metadata(self):
-        client = MockDropbox()
-        file_obj = DropboxFileFactory(metadata=None)
-        file_obj.update_metadata(client=client)
-        file_obj.save()
-        assert_equal(file_obj.metadata, client.metadata(file_obj.path, list=False))

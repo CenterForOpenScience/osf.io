@@ -13,7 +13,7 @@ from tests.base import OsfTestCase
 from tests.factories import ProjectFactory
 
 from website.addons.dropbox.tests.factories import DropboxFileFactory
-from website.addons.dropbox.tests.utils import DropboxAddonTestCase, mock_responses
+from website.addons.dropbox.tests.utils import DropboxAddonTestCase
 from website.addons.dropbox import utils
 from website.addons.dropbox.views.config import serialize_folder
 
@@ -60,6 +60,8 @@ def test_is_subdir():
     assert_true(utils.is_subdir('foo', 'foo'))
     assert_true(utils.is_subdir('foo/bar baz', 'foo'))
     assert_true(utils.is_subdir('bar baz/foo', 'bar baz'))
+    assert_true(utils.is_subdir('foo', '/'))
+    assert_true(utils.is_subdir('/', '/'))
 
     assert_false(utils.is_subdir('foo/bar', 'baz'))
     assert_false(utils.is_subdir('foo/bar', 'bar'))
@@ -91,7 +93,7 @@ def test_is_subdir():
 
 
 def test_clean_path():
-    assert_equal(utils.clean_path('/'), '')
+    assert_equal(utils.clean_path('/'), '/')
     assert_equal(utils.clean_path('/foo/bar/baz/'), 'foo/bar/baz')
     assert_equal(utils.clean_path(None), '')
 
@@ -120,31 +122,6 @@ def test_serialize_folder():
     assert_equal(result['name'], 'Dropbox' + metadata['path'])
 
 
-class TestFileResponse(OsfTestCase):
-    def test_make_file_response(self):
-        mockfile = io.BytesIO(b'bohemianrhapsody')
-        metadata = {
-            u'bytes': 123,
-            u'icon': u'file',
-            u'is_dir': False,
-            u'modified': u'Sat, 22 Mar 2014 05:40:29 +0000',
-            u'path': u'foo/song.mp3',
-            u'rev': u'3fed51f002c12fc',
-            u'revision': 67032351,
-            u'root': u'dropbox',
-            u'size': u'0 bytes',
-            u'thumb_exists': False,
-            u'mime_type': u'audio/mpeg',
-        }
-        resp = utils.make_file_response(mockfile, metadata)
-        # It's a response
-        assert_true(isinstance(resp, Response))
-        # Headers are correct
-        disposition = 'attachment; filename=song-{0}.mp3'.format(metadata['rev'])
-        assert_equal(resp.headers['Content-Disposition'], disposition)
-        assert_equal(resp.headers['Content-Type'], metadata['mime_type'])
-
-
 class TestMetadataSerialization(OsfTestCase):
 
     def test_metadata_to_hgrid(self):
@@ -168,27 +145,7 @@ class TestMetadataSerialization(OsfTestCase):
         assert_equal(result['permissions'], permissions)
         filename = utils.get_file_name(metadata['path'])
         assert_equal(result['name'], filename)
-        assert_equal(result['urls'], utils.build_dropbox_urls(metadata, node))
         assert_equal(result['path'], metadata['path'])
         assert_equal(result['ext'], os.path.splitext(filename)[1])
 
 
-class TestBuildDropboxUrls(OsfTestCase):
-
-    def test_build_dropbox_urls_file(self):
-        node = ProjectFactory()
-        fake_metadata = mock_responses['metadata_single']
-        result = utils.build_dropbox_urls(fake_metadata, node)
-        path = utils.clean_path(fake_metadata['path'])
-        assert_equal(
-            result['download'],
-            node.web_url_for('dropbox_download', path=path)
-        )
-        assert_equal(
-            result['view'],
-            node.web_url_for('dropbox_view_file', path=path)
-        )
-        assert_equal(
-            result['delete'],
-            node.api_url_for('dropbox_delete_file', path=path)
-        )

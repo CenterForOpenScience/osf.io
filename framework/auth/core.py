@@ -58,12 +58,28 @@ def validate_history_item(item):
     startYear = item.get('startYear')
     endMonth = item.get('endMonth')
     endYear = item.get('endYear')
+
+    validate_year(startYear)
+    validate_year(endYear)
+
     if startYear and endYear:
         if endYear < startYear:
             raise ValidationValueError('End date must be later than start date.')
         elif endYear == startYear:
             if endMonth and startMonth and endMonth < startMonth:
                 raise ValidationValueError('End date must be later than start date.')
+
+
+def validate_year(item):
+    if item:
+        try:
+            int(item)
+        except ValueError:
+            raise ValidationValueError('Please enter a valid year.')
+        else:
+            if len(item) != 4:
+                raise ValidationValueError('Please enter a valid year.')
+
 
 validate_url = URLValidator()
 def validate_personal_site(value):
@@ -205,6 +221,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     # Tags for internal use
     system_tags = fields.StringField(list=True)
+    security_messages = fields.DictionaryField()
 
     # Per-project unclaimed user data:
     # Format: {
@@ -470,6 +487,13 @@ class User(GuidStoredObject, AddonModelMixin):
         if not self.password or not raw_password:
             return False
         return check_password_hash(self.password, raw_password)
+
+    @property
+    def csl_name(self):
+        return {
+            'family': self.family_name,
+            'given': ' '.join(part for part in [self.given_name, self.middle_names] if part),
+        }
 
     def change_password(self, raw_old_password, raw_new_password, raw_confirm_password):
         """Change the password for this user to the hash of ``raw_new_password``."""

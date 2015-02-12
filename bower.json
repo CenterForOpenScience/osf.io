@@ -6,6 +6,8 @@
     "bootstrap": "~3.3.0",
     "requirejs": "~2.1.11",
     "moment": "~2.7.0",
+    "select2": "~3.5.1",
+    "ace-builds": "~1.1.8",
     "qunit": "~1.14.0",
     "sinon": "~1.10.2",
     "select2": "~3.5.1",
@@ -23,11 +25,14 @@
     "jquery-autosize": "~1.18.15",
     "x-editable": "~1.5.1",
     "slickgrid": "~2.1.0",
+    "reconnectingWebsocket": "#07669519f8",
     "dropzone": "https://github.com/sloria/dropzone.git#accept-directory",
     "treebeard": "https://github.com/caneruguz/treebeard.git#4112b22be4333c9fce35249131632b6b2a37bb87",
     "jquery.cookie": "~1.4.1",
     "hgrid": "~0.2.10",
     "uri.js": "~1.14.1",
-    "xhook": "~1.3.0"
+    "xhook": "~1.3.0",
+    "styles": "https://github.com/lyndsysimon/styles.git#4db9c8e2f5932cad9f23ad3579d1a82c691faf12",
+    "locales": "https://github.com/citation-style-language/locales.git#d2b612f8a6f764cbd66e67238636fac3888a7736"
   }
 }

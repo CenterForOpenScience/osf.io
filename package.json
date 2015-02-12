@@ -5,13 +5,23 @@
   "author": "Center for Open Science",
   "dependencies": {
     "assets-webpack-plugin": "^0.1.0",
+    "async": "^0.9.0",
     "css-loader": "^0.9.1",
     "exports-loader": "^0.6.2",
+    "express": "~4.10.0",
     "file-loader": "^0.8.1",
+    "html-loader": "^0.2.3",
     "imports-loader": "^0.6.3",
+    "livedb": "~0.4.8",
+    "livedb-mongo": "~0.4.1",
+    "morgan": "^1.5.1",
     "object-assign": "^2.0.0",
+    "raven": "^0.7.2",
+    "raw-loader": "^0.5.1",
+    "share": "~0.7.3",
     "style-loader": "^0.8.3",
     "url-loader": "^0.5.5",
-    "webpack": "^1.4.13"
+    "webpack": "^1.4.13",
+    "ws": "~0.4.32"
   }
 }
