@@ -108,6 +108,7 @@ var resolve = {
         'koHelpers': staticPath('js/koHelpers.js'),
         'addonPermissions': staticPath('js/addonPermissions.js'),
         'navbar-control': staticPath('js/navbarControl.js'),
+        'mathrender': staticPath('js/mathrender.js'),
         'citations': staticPath('js/citations.js')
     }
 };
@@ -117,7 +118,8 @@ var externals = {
     //  on the global var jQuery, which is loaded with CDN
     'jquery': 'jQuery',
     'jquery-ui': 'jQuery.ui',
-    'raven-js': 'Raven'
+    'raven-js': 'Raven',
+    'MathJax': 'MathJax'
 };
 
 var plugins = [

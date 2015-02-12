@@ -20,7 +20,7 @@ if (node.isPublic && node.piwikSiteID) {
 }
 
 // Works only with anchors with the id of the element that bootstrap uses
-// Buffer is the amount to leave on top 
+// Buffer is the amount to leave on top
 function replaceAnchorScroll (buffer){
 	buffer = buffer || 100;
 	$(document).on('click', 'a[href^="#"]', function(event){
@@ -28,8 +28,8 @@ function replaceAnchorScroll (buffer){
 			event.preventDefault();
 			// get location of the target
 			var target = $(this).attr('href'),
-			    offset = $(target).offset(); 
-			$(window).scrollTop(offset.top-buffer);			
+			    offset = $(target).offset();
+			$(window).scrollTop(offset.top-buffer);
 		}
 	});
 }
