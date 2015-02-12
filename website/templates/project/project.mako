@@ -150,7 +150,7 @@
                 % if addons[addon]['has_widget']:
                     %if addon == 'wiki':
                         %if user['show_wiki_widget']:
-                            <div class="addon-widget-container" mod-meta='{
+                            <div id="addonWikiWidget" class="addon-widget-container" mod-meta='{
                             "tpl": "../addons/wiki/templates/wiki_widget.mako",
                             "uri": "${node['api_url']}wiki/widget/"
                         }'></div>
