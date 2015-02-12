@@ -128,7 +128,7 @@ class BoxProvider(provider.BaseProvider):
         resp = yield from self.make_request(
             'POST',
             self._build_upload_url('files', 'content'),
-            data=data,
+            data=stream,
             headers={
                 'Content-Length': str(size),
                 'Content-Type': 'multipart/form-data; boundary={0}'.format(boundary.decode()),

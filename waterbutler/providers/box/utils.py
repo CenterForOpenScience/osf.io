@@ -89,9 +89,9 @@ def make_upload_data(stream, **options):
     boundaries = make_boundary_streams(boundary, stream, **options)
     outstream = MultiStream(
         boundaries[0][0],
-        #stream,
         boundaries[1][0],
+        stream,
         boundaries[2][0]
     )
-    size = boundaries[0][1] + boundaries[1][1] + boundaries[2][1] #+ int(stream.size) 
+    size = boundaries[0][1] + boundaries[1][1] + boundaries[2][1] + int(stream.size) 
     return outstream, boundary, size
