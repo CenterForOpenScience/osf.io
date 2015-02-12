@@ -155,7 +155,7 @@ module.exports = {
         loaders: [
             {test: /\.css$/, loaders: ['style', 'css']},
             // url-loader uses DataUrls; files-loader emits files
-            {test: /\.png$/, loader: 'url-loader?limit=100000&minetype=image/png'},
+            {test: /\.png$/, loader: 'url-loader?limit=100000&mimetype=image/png'},
             {test: /\.gif$/, loader: 'url-loader?limit=10000&mimetype=image/gif'},
             {test: /\.jpg$/, loader: 'url-loader?limit=10000&mimetype=image/jpg'},
             {test: /\.woff/, loader: 'url-loader?limit=10000&mimetype=application/font-woff'},
