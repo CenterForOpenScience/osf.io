@@ -231,13 +231,13 @@
                 </div>
             </div>
             <div class="addon-widget-body" style="display:none">
-                <dl class="citation-list">
+                <dl id="citationList" class="citation-list">
                     <dt>APA</dt>
-                        <dd class="citation-text">${node['citations']['apa']}</dd>
+                        <dd class="citation-text" data-bind="text: apa"></dd>
                     <dt>MLA</dt>
-                        <dd class="citation-text">${node['citations']['mla']}</dd>
+                        <dd class="citation-text" data-bind="text: mla"></dd>
                     <dt>Chicago</dt>
-                        <dd class="citation-text">${node['citations']['chicago']}</dd>
+                        <dd class="citation-text" data-bind="text: chicago"></dd>
                 </dl>
                 <p><strong>More</strong></p>
                 <div id="citation-style-panel">

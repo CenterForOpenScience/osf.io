@@ -49,7 +49,8 @@ var entry = {
         'dropzone',
         'knockout-sortable',
         'treebeard',
-        'jquery.cookie'
+        'jquery.cookie',
+        'citations'
     ]
 };
 
@@ -107,7 +108,8 @@ var resolve = {
         'addonHelper': staticPath('js/addonHelper.js'),
         'koHelpers': staticPath('js/koHelpers.js'),
         'addonPermissions': staticPath('js/addonPermissions.js'),
-        'navbar-control': staticPath('js/navbarControl.js')
+        'navbar-control': staticPath('js/navbarControl.js'),
+        'citations': staticPath('js/citations.js')
     }
 };
 

@@ -497,7 +497,7 @@ class User(GuidStoredObject, AddonModelMixin):
     def csl_name(self):
         return {
             'family': self.family_name,
-            'given': self.given_name,
+            'given': ' '.join(part for part in [self.given_name, self.middle_names] if part),
         }
 
     def change_password(self, raw_old_password, raw_new_password, raw_confirm_password):

@@ -26,6 +26,8 @@ class DropboxFile(GuidFile):
     @property
     def waterbutler_path(self):
         path = '/' + self.path
+        if self.folder == '/':
+            return path
         return path.replace(self.folder, '', 1)
 
     @property
