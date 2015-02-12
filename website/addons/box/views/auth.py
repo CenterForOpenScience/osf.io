@@ -5,6 +5,7 @@ import requests
 from urllib import urlencode
 import logging
 from collections import namedtuple
+from datetime import datetime
 
 from flask import request
 from werkzeug.wrappers import BaseResponse
@@ -107,7 +108,7 @@ def box_oauth_finish(auth, **kwargs):
     user.save()
     user_settings = user.get_addon('box')
     user_settings.owner = user
-    user_settings.expires_in = result['expires_in']
+    user_settings.last_refreshed = datetime.utcnow()
     user_settings.restricted_to = result['restricted_to']
     user_settings.token_type = result['token_type']
     user_settings.access_token = result['access_token']

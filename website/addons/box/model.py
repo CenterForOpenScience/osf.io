@@ -3,6 +3,7 @@ import os
 import hashlib
 import logging
 import urllib
+from datetime import datetime
 
 import furl
 
@@ -14,7 +15,7 @@ from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
 from website.addons.box.client import get_node_addon_client
-from website.addons.box.utils import clean_path, BoxNodeLogger
+from website.addons.box.utils import clean_path, BoxNodeLogger, refresh_creds_if_necessary
 from website.addons.box import settings
 
 from box import CredentialsV2
@@ -135,7 +136,8 @@ class BoxUserSettings(AddonUserSettingsBase):
     box_info = fields.DictionaryField(required=False)
     token_type = fields.StringField(required=False)
     restricted_to = fields.DictionaryField(required=False)
-    expires_in = fields.IntegerField(required=False)
+    last_refreshed = fields.DateTimeField(editable=True)
+
 
     # TODO(sloria): The `user` param in unnecessary for AddonUserSettings
     def to_json(self, user=None):
@@ -150,11 +152,12 @@ class BoxUserSettings(AddonUserSettingsBase):
     def token_refreshed_callback(self, access_token, refresh_token):
         self.access_token = access_token
         self.refresh_token = refresh_token
+        self.last_refreshed = datetime.utcnow()
         self.save()
 
     @property
     def has_auth(self):
-        return bool(self.access_token)
+        return bool(self.access_token and refresh_creds_if_necessary(self))
 
     def delete(self, save=True):
         self.clear()
@@ -176,7 +179,7 @@ class BoxUserSettings(AddonUserSettingsBase):
             settings.BOX_KEY,
             settings.BOX_SECRET,
             self.token_refreshed_callback,
-            )
+        )
 
     def __repr__(self):
         return u'<BoxUserSettings(user={self.owner.username!r})>'.format(self=self)
@@ -203,7 +206,7 @@ class BoxNodeSettings(AddonNodeSettingsBase):
     @property
     def has_auth(self):
         """Whether an access token is associated with this node."""
-        return bool(self.user_settings and self.user_settings.has_auth)
+        return bool(self.user_settings and self.user_settings.has_auth and refresh_creds_if_necessary(self.user_settings))
 
     def set_folder(self, folder, folder_id, auth):
         self.folder = folder

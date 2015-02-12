@@ -2,6 +2,7 @@
 import os
 import logging
 import httplib as http
+from datetime import datetime
 
 from flask import make_response
 from boxview.boxview import BoxViewError
@@ -9,8 +10,6 @@ from boxview.boxview import BoxViewError
 from framework.exceptions import HTTPError
 from website.project.utils import get_cache_content
 from website.util import rubeus
-
-from website.addons.box.client import get_node_addon_client
 
 logger = logging.getLogger(__name__)
 
@@ -132,42 +131,6 @@ def make_file_response(fileobject, metadata):
     return resp
 
 
-def render_box_file(file_obj, client=None, rev=None):
-    """Render a BoxFile with the MFR.
-
-    :param BoxFile file_obj: The file's GUID record.
-    :param BoxClient client:
-    :param str rev: Revision ID.
-    :return: The HTML for the rendered file.
-    """
-    # Filename for the cached MFR HTML file
-    cache_file_name = file_obj.get_cache_filename(client=client, rev=rev)
-    node_settings = file_obj.node.get_addon('box')
-    rendered = get_cache_content(node_settings, cache_file_name)
-    if rendered is None:  # not in MFR cache
-        box_client = client or get_node_addon_client(node_settings)
-        try:
-            file_response, metadata = box_client.get_file_and_metadata(
-                file_obj.path, rev=rev)
-        except BoxViewError as err:
-            logger.error(err.body['error'])
-            if err.status == 461:
-                message = ('This file is no longer available due to a takedown request '
-                    'under the Digital Millennium Copyright Act.')
-            else:
-                message = 'This Box file cannot be rendered.'
-            return ''.join(['<p class="text-danger">', message, '</p>'])
-        rendered = get_cache_content(
-            node_settings=node_settings,
-            cache_file_name=cache_file_name,
-            start_render=True,
-            remote_path=file_obj.path,
-            file_content=file_response.read(),
-            download_url=file_obj.download_url(guid=True, rev=rev),
-        )
-    return rendered
-
-
 def ensure_leading_slash(path):
     if not path.startswith('/'):
         return '/' + path
@@ -221,3 +184,16 @@ def get_share_folder_uri(path):
     cleaned = clean_path(path)
     return ('https://box.com/home/{cleaned}'
             '?shareoptions=1&share_subfolder=0&share=1').format(cleaned=cleaned)
+
+
+def refresh_creds_if_necessary(user_settings):
+    """Checks to see if the access token has expired, or will 
+    expire within 6 minutes. Returns the status of a refresh 
+    attempt or True if not required.
+    """   
+    #import ipdb; ipdb.set_trace()
+    diff = (datetime.utcnow() - user_settings.last_refreshed).total_seconds() / 3600
+    if diff > 0.9:
+        return user_settings.get_credentialsv2().refresh()
+    else:
+        return True

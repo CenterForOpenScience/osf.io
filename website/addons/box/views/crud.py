@@ -22,7 +22,6 @@ from framework.exceptions import HTTPError
 from website.addons.box.model import BoxFile
 from website.addons.box.client import get_node_addon_client
 from website.addons.box.utils import (
-    render_box_file,
     get_file_name,
     metadata_to_hgrid,
     clean_path,
