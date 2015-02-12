@@ -211,9 +211,7 @@ class GuidFile(GuidStoredObject):
 
     @property
     def joinable_path(self):
-        if self.waterbutler_path.startswith('/'):
-            return self.waterbutler_path[1:]
-        return self.waterbutler_path
+        return self.waterbutler_path.lstrip('/')
 
     @property
     def _base_butler_url(self):
