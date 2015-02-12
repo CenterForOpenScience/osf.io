@@ -1127,7 +1127,6 @@ div.search-result  {
     margin-bottom: 5px;
     margin-top: 0px;
     padding: 0px;
-    height: 20px;
 }
 
 .wmd-spacer
@@ -1135,8 +1134,6 @@ div.search-result  {
     width: 1px;
     height: 20px;
     margin-left: 14px;
-
-    position: absolute;
     background-color: Silver;
     display: inline-block;
     list-style: none;
@@ -1147,7 +1144,6 @@ div.search-result  {
     height: 20px;
     padding-left: 2px;
     padding-right: 3px;
-    position: absolute;
     display: inline-block;
     list-style: none;
     cursor: pointer;
@@ -2127,8 +2123,9 @@ span#profileFullname{
     font-weight: bold;
 }
 .wiki-panel-body {
-        height: 700px;
+    height: 700px;
     overflow: auto;
+    overflow-x: hidden;
 }
 .wiki-panel-body .navbar-collapse {
     background: #F5F5F5;
