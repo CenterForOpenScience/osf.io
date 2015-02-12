@@ -33,7 +33,8 @@ class OsfStorageFileMetadata(BaseOsfStorageMetadata, metadata.BaseFileMetadata):
     @property
     def extra(self):
         return {
-            'downloads': self.raw['downloads']
+            'version': self.raw['version'],
+            'downloads': self.raw['downloads'],
         }
 
 
@@ -46,3 +47,25 @@ class OsfStorageFolderMetadata(BaseOsfStorageMetadata, metadata.BaseFolderMetada
     @property
     def path(self):
         return self.raw['path']
+
+
+class OsfStorageRevisionMetadata(BaseOsfStorageMetadata, metadata.BaseFileRevisionMetadata):
+
+    @property
+    def modified(self):
+        return self.raw['date']
+
+    @property
+    def version_identifier(self):
+        return 'version'
+
+    @property
+    def version(self):
+        return str(self.raw['index'])
+
+    @property
+    def extra(self):
+        return {
+            'user': self.raw['user'],
+            'downloads': self.raw['downloads'],
+        }
