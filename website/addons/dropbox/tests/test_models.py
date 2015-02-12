@@ -24,6 +24,7 @@ class TestFileGuid(OsfTestCase):
         self.project.add_addon('dropbox', auth=Auth(self.user))
         self.node_addon = self.project.get_addon('dropbox')
         self.node_addon.folder = '/baz'
+        self.node_addon.save()
 
     def test_provider(self):
         assert_equal('dropbox', DropboxFile().provider)
@@ -71,6 +72,8 @@ class TestFileGuid(OsfTestCase):
         guid1, created1 = self.node_addon.find_or_create_file_guid('/foo/bar')
 
         self.node_addon.folder = '/baz/foo'
+        self.node_addon.save()
+        self.node_addon.reload()
         guid2, created2 = self.node_addon.find_or_create_file_guid('/bar')
 
         assert_true(created1)

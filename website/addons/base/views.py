@@ -290,7 +290,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
 
 def addon_view_file(auth, node, node_addon, file_guid, extras):
-    render_url = furl.furl(node.api_url_for('addon_render_file', path=file_guid.waterbutler_path[1:], provider=file_guid.provider))
+    render_url = furl.furl(node.api_url_for('addon_render_file', path=file_guid.waterbutler_path.lstrip('/'), provider=file_guid.provider))
     render_url.args.update(extras)
 
     resp = serialize_node(node, auth, primary=True)

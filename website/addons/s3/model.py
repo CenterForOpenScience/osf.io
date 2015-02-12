@@ -87,8 +87,8 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
     )
 
     def find_or_create_file_guid(self, path):
-        if path.startswith('/'):
-            path = path[1:]
+        path = path.lstrip('/')
+
         try:
             return S3GuidFile.find_one(
                 Q('path', 'eq', path) &
