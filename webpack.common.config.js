@@ -36,6 +36,7 @@ var entry = {
     'search-page': staticPath('js/pages/search-page.js'),
     'user-addon-cfg-page': staticPath('js/pages/user-addon-cfg-page.js'),
     'notifications-config-page': staticPath('js/notifications-config-page.js'),
+    'registration-retraction-page': staticPath('js/pages/registration-retraction-page.js'),
     // Commons chunk
     'vendor': [
         'knockout',

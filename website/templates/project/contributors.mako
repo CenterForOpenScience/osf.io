@@ -143,6 +143,12 @@
             </table>
 
         </div>
+
+        % if node['is_registration'] and node['is_public']:
+            ## NOTE(hrybacki): add web_url_for to direct to /retract_registration/ endpoint
+            <a class="btn btn-danger" href="#">Retract Public Registration</a>
+        % endif
+
     % endif
 
     </div><!-- end col-md -->

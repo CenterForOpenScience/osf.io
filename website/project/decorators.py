@@ -41,6 +41,7 @@ def _kwargs_to_nodes(kwargs):
     return project, node
 
 
+# FIXME(sloria): How often is this called with @must_be_contributor_or_public? -- both have similar beginnings
 def must_be_valid_project(func):
 
     # TODO: Check private link
@@ -49,10 +50,27 @@ def must_be_valid_project(func):
     def wrapped(*args, **kwargs):
 
         kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
+        # TODO(hrybacki):
+        # if kwargs['node'].is_retracted and not the url for the retracted registration (base url):
+        #     return redirect()
         return func(*args, **kwargs)
 
     return wrapped
 
+
+def must_be_public_registration(func):
+
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+
+        project, node = _kwargs_to_nodes(kwargs)
+        node = node or project
+
+        if not node.is_public or not node.is_registration:
+            raise HTTPError(http.BAD_REQUEST)
+        return func(*args, **kwargs)
+
+    return wrapped
 
 def must_not_be_registration(func):
 
@@ -98,7 +116,7 @@ def check_key_expired(key, node, url):
 
     return url
 
-
+# FIXME(sloria): How often is this called with @must_be_valid_project? -- both have similar beginnings
 def _must_be_contributor_factory(include_public):
     """Decorator factory for authorization wrappers. Decorators verify whether
     the current user is a contributor on the current project, or optionally

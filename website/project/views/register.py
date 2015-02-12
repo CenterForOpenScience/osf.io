@@ -13,7 +13,8 @@ from framework.mongo.utils import to_mongo
 
 from website.project.decorators import (
     must_be_valid_project, must_be_contributor_or_public,
-    must_have_permission, must_not_be_registration
+    must_have_permission, must_not_be_registration,
+    must_be_public_registration
 )
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.util.permissions import ADMIN
@@ -43,6 +44,15 @@ def node_register_page(auth, **kwargs):
     out.update(_view_project(node, auth, primary=True))
     return out
 
+@must_be_valid_project
+@must_have_permission(ADMIN)
+@must_be_public_registration
+def node_registration_retraction(auth, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+
+    ret = _view_project(node, auth, primary=True)
+
+    return ret
 
 @must_be_valid_project
 @must_be_contributor_or_public

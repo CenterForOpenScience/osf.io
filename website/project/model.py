@@ -590,6 +590,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     registered_user = fields.ForeignField('user', backref='registered')
     registered_schema = fields.ForeignField('metaschema', backref='registered')
     registered_meta = fields.DictionaryField()
+    is_retracted = fields.BooleanField(default=False)
 
     is_fork = fields.BooleanField(default=False)
     forked_date = fields.DateTimeField()

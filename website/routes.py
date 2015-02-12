@@ -724,6 +724,12 @@ def make_url_map(app):
         ], 'get', project_views.node.node_registrations,
             OsfWebRenderer('project/registrations.mako')),
 
+        Rule([
+            '/project/<pid>/retract_registration/',
+            '/project/<pid>/node/<nid>/retract_registration/',
+        ],  'get', project_views.register.node_registration_retraction,
+             OsfWebRenderer('project/retract_registration.mako')),
+
         # Statistics
         Rule([
             '/project/<pid>/statistics/',
@@ -1107,6 +1113,11 @@ def make_url_map(app):
             '/project/<pid>/register/<template>/',
             '/project/<pid>/node/<nid>/register/<template>/',
         ], 'get', project_views.register.node_register_template_page, json_renderer),
+
+        Rule([
+            '/project/<pid>/retract_registration/',
+            '/project/<pid>/node/<nid>/retract_registration/'
+        ], 'post', project_views.register.node_registration_retraction, json_renderer),
 
         Rule([
             '/project/<pid>/register/<template>/',
