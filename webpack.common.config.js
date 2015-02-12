@@ -10,6 +10,9 @@ var root = path.join(__dirname, 'website', 'static');
 var staticPath = function(dir) {
     return path.join(root, dir);
 };
+var nodePath = function(dir) {
+    return path.join(__dirname, 'node_modules', dir);
+};
 var addonsPath = function(dir) {
     return path.join(__dirname, 'website', 'addons', dir);
 };
@@ -100,6 +103,7 @@ var resolve = {
         'pagedown-ace-converter': addonsPath('wiki/static/pagedown-ace/Markdown.Converter.js'),
         'pagedown-ace-sanitizer': addonsPath('wiki/static/pagedown-ace/Markdown.Sanitizer.js'),
         'pagedown-ace-editor': addonsPath('wiki/static/pagedown-ace/Markdown.Editor.js'),
+        'highlight-css': nodePath('highlight.js/styles/default.css'),
         // Also alias some internal libraries for easy access
         'fangorn': staticPath('js/fangorn.js'),
         'waterbutler': staticPath('js/waterbutler.js'),
