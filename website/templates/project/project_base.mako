@@ -68,6 +68,17 @@ ${next.body()}
     });
 
 </script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]},
+        // Don't automatically typeset the whole page. Must explicitly use MathJax.Hub.Typeset
+        skipStartupTypeset: true
+    });
+</script>
+<script type="text/javascript"
+    src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
 ## NOTE: window.contextVars must be set before loading this script
 <script src=${"/static/public/js/project-base-page.js" | webpack_asset}> </script>
 </%def>

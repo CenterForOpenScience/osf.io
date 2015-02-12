@@ -268,7 +268,7 @@ class GuidFile(GuidStoredObject):
             self.node._id,
             self.provider,
             # Attempt to keep the original extension of the file for MFR detection
-            self.file_name + os.path.splitext(self.path)[1]
+            self.file_name + os.path.splitext(self.waterbutler_path)[1]
         )
 
     @property

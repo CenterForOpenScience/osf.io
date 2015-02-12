@@ -9,6 +9,8 @@ snippet font-italic\n\
 snippet font-bold\n\
 	**${1:text}**\n\
 \n\
+snippet math-inline\n\
+	\$${1:text}\$\n\
 snippet heading-1\n\
 	\n\
 	# ${1:title}\n\
