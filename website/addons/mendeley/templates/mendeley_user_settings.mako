@@ -6,7 +6,7 @@
             <tr>
                 <td data-bind="text: display_name"></td>
                 <td data-bind="text: id"></td>
-                <td><a data-bind="click: $root.askDisconnect" class="btn btn-danger">Remove</a></td>
+                <td><a data-bind="click: $root.askDisconnect" class="text-danger">Delete Access Token</a></td>
             </tr>
         </tbody>
     </table>

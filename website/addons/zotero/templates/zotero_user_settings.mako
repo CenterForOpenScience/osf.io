@@ -4,7 +4,9 @@
     <div data-bind="foreach: accounts">
         <div>
             <span data-bind="text: display_name"></span>
-            <a data-bind="click: $root.askDisconnect" class="pull-right btn btn-danger">Remove</a>
+           <!-- This isn't exactly the correct size for the remove link-->
+            <a data-bind="click: $root.askDisconnect" class="pull-right text-danger">Delete Access Token</a>
+
         </div>
     </div>
     <br>
