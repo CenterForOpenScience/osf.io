@@ -19,6 +19,11 @@ var NodeControl = require('../nodeControl.js');
 var CitationList = require('../citationList.js');
 var CitationWidget = require('../citationWidget.js');
 
+var mathrender = require('mathrender');
+// Render math in the wiki widget
+mathrender.mathjaxify('#addonWikiWidget');
+
+
 var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
 

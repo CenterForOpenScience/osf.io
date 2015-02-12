@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import base64
 import logging
 
 from modularodm import fields, Q
@@ -21,6 +22,12 @@ class DropboxFile(GuidFile):
 
     #: Full path to the file, e.g. 'My Pictures/foo.png'
     path = fields.StringField(required=True, index=True)
+
+    @property
+    def file_name(self):
+        if self.revision:
+            return '{0}_{1}_{2}.html'.format(self._id, self.revision, base64.b64encode(self.folder))
+        return '{0}_{1}_{2}.html'.format(self._id, self.unique_identifier, base64.b64encode(self.folder))
 
     @property
     def waterbutler_path(self):
