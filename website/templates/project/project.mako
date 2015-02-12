@@ -150,7 +150,7 @@
                 % if addons[addon]['has_widget']:
                     %if addon == 'wiki':
                         %if user['show_wiki_widget']:
-                            <div class="addon-widget-container" mod-meta='{
+                            <div id="addonWikiWidget" class="addon-widget-container" mod-meta='{
                             "tpl": "../addons/wiki/templates/wiki_widget.mako",
                             "uri": "${node['api_url']}wiki/widget/"
                         }'></div>
@@ -303,7 +303,6 @@ ${parent.javascript_bottom()}
 
 <script type="text/javascript">
     // Hack to allow mako variables to be accessed to JS modules
-
     window.contextVars = $.extend(true, {}, window.contextVars, {
         currentUser: {
             name: '${user_full_name | js_str}',
