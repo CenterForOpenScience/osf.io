@@ -46,7 +46,7 @@
           </span>
 
 
-          <table class="table" data-bind="if: versioningSupported && revisions.length">
+          <table class="table" data-bind="if: versioningSupported && revisions().length">
             <thead>
               <tr>
                 <th>Version</th>
