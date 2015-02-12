@@ -21,18 +21,24 @@ class FigShareGuidFile(GuidFile):
     file_id = fields.StringField(index=True)
 
     @property
-    def path(self):
-        return '/{}/{}'.format(self.article_id, self.file_id)
+    def waterbutler_path(self):
+        if self.node.get_addon('figshare').figshare_type == 'project':
+            return '/{}/{}'.format(self.article_id, self.file_id)
+        return '/' + str(self.file_id)
 
     @property
     def provider(self):
         return 'figshare'
 
-    def enrich(self):
-        self._fetch_metadata(should_raise=True)
+    def _exception_from_response(self, response):
+        try:
+            if response.json()['data']['extra']['status'] == 'drafts':
+                self._metadata_cache = response.json()['data']
+                raise fig_exceptions.FigshareIsDraftError(self)
+        except KeyError:
+            pass
 
-        if self._metadata_cache['extra']['status'] == 'drafts':
-            raise fig_exceptions.FigshareIsDraftError(self)
+        super(FigShareGuidFile, self)._exception_from_response(response)
 
     @property
     def version_identifier(self):
