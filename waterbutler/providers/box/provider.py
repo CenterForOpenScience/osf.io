@@ -1,5 +1,8 @@
 import os
 import asyncio
+import json
+
+import requests
 
 from waterbutler.core import utils
 from waterbutler.core import streams
@@ -11,7 +14,7 @@ from waterbutler.providers.box.metadata import BoxRevision
 from waterbutler.providers.box.metadata import BoxFileMetadata
 from waterbutler.providers.box.metadata import BoxFolderMetadata
 
-from waterbutler.providers.figshare import utils as box_utils
+from waterbutler.providers.box import utils as box_utils
 
 
 class BoxPath(utils.WaterButlerPath):
@@ -110,34 +113,35 @@ class BoxProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
-        import ipdb; ipdb.set_trace()
+        #import ipdb
         path = BoxPath('/'+self.folder+path)
-        ipdb.set_trace()
         try:
             yield from self.metadata(str(path))
         except exceptions.MetadataError:
             created = True
         else:
             created = False
-        ipdb.set_trace()
         #if created
-        attrs = '{\'name\': ' + path.name + ', \'parent\':{\'id\': ' + path._id + '}'
-        stream, boundary, size = box_utils.make_upload_data(stream, attributes=json.dumps(attrs), filename=path.name)
-        ipdb.set_trace()
+        stream, boundary, size = box_utils.make_upload_data(stream, parent_id=path._id, file=path.name)
+        #streamdata = yield from stream.read()
+        #ipdb.set_trace()
         resp = yield from self.make_request(
             'POST',
             self._build_upload_url('files', 'content'),
-            #headers={'Content-Length': str(stream.size)},
-            #data=attributes='{\'name\': ' + path.name + ', \'parent\':{\'id\': ' + path._id + '}'
-            data=stream,
-            expects=(200, ),
+            data=data,
+            headers={
+                'Content-Length': str(size),
+                'Content-Type': 'multipart/form-data; boundary={0}'.format(boundary.decode()),
+            },
+            expects=(201, ),
             throws=exceptions.UploadError,
         )
+        #ipdb.set_trace()
         #else
         #TODO:
 
-        data = yield from resp.json()
-        ipdb.set_trace()
+        data = yield from resp.read()
+        #ipdb.set_trace()
         return BoxFileMetadata(data, self.folder).serialized(), created
 
     @asyncio.coroutine
