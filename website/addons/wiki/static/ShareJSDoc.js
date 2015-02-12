@@ -55,6 +55,8 @@ var ShareJSDoc = function(selector, url, metadata) {
     var sjs = new sharejs.Connection(socket);
     var doc = sjs.get('docs', metadata.docId);
     var madeConnection = false;
+    var allowRefresh = true;
+    var refreshTriggered = false;
 
     function whenReady() {
 
@@ -88,6 +90,12 @@ var ShareJSDoc = function(selector, url, metadata) {
         socket.send(JSON.stringify(metadata));
     }
 
+    function refreshMaybe() {
+        if (allowRefresh && refreshTriggered) {
+            window.location.reload();
+        }
+    }
+
     // Handle our custom messages separately
     var onmessage = socket.onmessage;
     socket.onmessage = function (message) {
@@ -105,15 +113,20 @@ var ShareJSDoc = function(selector, url, metadata) {
                 viewModel.activeUsers(activeUsers);
                 break;
             case 'lock':
+                allowRefresh = false;
                 editor.setReadOnly(true);
                 permissionsModal.modal({
                     backdrop: 'static',
                     keyboard: false
                 });
+                setTimeout(function() {
+                    allowRefresh = true;
+                    refreshMaybe();
+                }, 3000);
                 break;
             case 'unlock':
-                // TODO: Wait a certain number of seconds so they can read it?
-                window.location.reload();
+                refreshTriggered = true;
+                refreshMaybe();
                 break;
             case 'redirect':
                 editor.setReadOnly(true);

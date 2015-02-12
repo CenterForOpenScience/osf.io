@@ -13,14 +13,16 @@
     </div>
     <div class="col-sm-9">
         <%include file="wiki/templates/status.mako"/>
-        % if not page and wiki_name != 'home':
-            <p><i>This wiki page does not currently exist. Would you like to
-                <a href="edit/">create it</a>?</i></p>
-        % elif not wiki_content:
-            <p><em>No wiki content</em></p>
-        % else:
-            <div>${wiki_content | n}</div>
-        % endif
+        <div id="wikiContent">
+          % if not page and wiki_name != 'home':
+              <p><i>This wiki page does not currently exist. Would you like to
+                  <a href="edit/">create it</a>?</i></p>
+          % elif not wiki_content:
+              <p><em>No wiki content</em></p>
+          % else:
+              ${wiki_content | n}
+          % endif
+        </div>
     </div>
 </div>
 

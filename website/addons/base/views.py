@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import os
+import json
 import codecs
 import httplib
 import functools
@@ -141,7 +143,7 @@ def get_auth(**kwargs):
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    view_only = request.args.get('viewOnly')
+    view_only = request.args.get('view_only')
 
     user = get_user_from_cookie(cookie)
 
@@ -211,7 +213,7 @@ def get_or_start_render(file_guid, start_render=True):
     try:
         file_guid.enrich()
     except exceptions.AddonEnrichmentError as error:
-        return error.renderable_error
+        return error.as_html()
 
     try:
         return codecs.open(file_guid.mfr_cache_path, 'r', 'utf-8').read()
@@ -288,18 +290,20 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
 
 def addon_view_file(auth, node, node_addon, file_guid, extras):
-    render_url = furl.furl(node.api_url_for('addon_render_file', path=file_guid.path[1:], provider=file_guid.provider))
+    render_url = furl.furl(node.api_url_for('addon_render_file', path=file_guid.waterbutler_path.lstrip('/'), provider=file_guid.provider))
     render_url.args.update(extras)
 
     resp = serialize_node(node, auth, primary=True)
     resp.update({
         'provider': file_guid.provider,
-        'render_url': render_url,
-        'file_path': file_guid.path,
+        'render_url': render_url.url,
+        'file_path': file_guid.waterbutler_path,
         'files_url': node.web_url_for('collect_file_trees'),
         'rendered': get_or_start_render(file_guid, extras),
+        # Note: must be called after get_or_start_render. This is really only for github
+        'extra': json.dumps(getattr(file_guid, 'extra', {})),
         #NOTE: get_or_start_render must be called first to populate name
-        'file_name': getattr(file_guid, 'name', ''),
+        'file_name': getattr(file_guid, 'name', os.path.split(file_guid.waterbutler_path)[1]),
     })
 
     return resp
