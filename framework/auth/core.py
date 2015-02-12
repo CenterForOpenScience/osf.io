@@ -489,10 +489,17 @@ class User(GuidStoredObject, AddonModelMixin):
         return check_password_hash(self.password, raw_password)
 
     @property
+    def csl_given_name(self):
+        parts = [self.given_name]
+        if self.middle_names:
+            parts.extend(each[0] for each in re.split(r'\s+', self.middle_names))
+        return ' '.join(parts)
+
+    @property
     def csl_name(self):
         return {
             'family': self.family_name,
-            'given': self.given_name,
+            'given': self.csl_given_name,
         }
 
     def change_password(self, raw_old_password, raw_new_password, raw_confirm_password):

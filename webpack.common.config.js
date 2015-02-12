@@ -49,7 +49,8 @@ var entry = {
         'dropzone',
         'knockout-sortable',
         'treebeard',
-        'jquery.cookie'
+        'jquery.cookie',
+        'citations'
     ]
 };
 
@@ -107,7 +108,9 @@ var resolve = {
         'addonHelper': staticPath('js/addonHelper.js'),
         'koHelpers': staticPath('js/koHelpers.js'),
         'addonPermissions': staticPath('js/addonPermissions.js'),
-        'navbar-control': staticPath('js/navbarControl.js')
+        'navbar-control': staticPath('js/navbarControl.js'),
+        'mathrender': staticPath('js/mathrender.js'),
+        'citations': staticPath('js/citations.js')
     }
 };
 
@@ -116,7 +119,8 @@ var externals = {
     //  on the global var jQuery, which is loaded with CDN
     'jquery': 'jQuery',
     'jquery-ui': 'jQuery.ui',
-    'raven-js': 'Raven'
+    'raven-js': 'Raven',
+    'MathJax': 'MathJax'
 };
 
 var plugins = [
@@ -156,7 +160,7 @@ module.exports = {
         loaders: [
             {test: /\.css$/, loaders: ['style', 'css']},
             // url-loader uses DataUrls; files-loader emits files
-            {test: /\.png$/, loader: 'url-loader?limit=100000&minetype=image/png'},
+            {test: /\.png$/, loader: 'url-loader?limit=100000&mimetype=image/png'},
             {test: /\.gif$/, loader: 'url-loader?limit=10000&mimetype=image/gif'},
             {test: /\.jpg$/, loader: 'url-loader?limit=10000&mimetype=image/jpg'},
             {test: /\.woff/, loader: 'url-loader?limit=10000&mimetype=application/font-woff'},

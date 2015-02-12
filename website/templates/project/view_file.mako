@@ -33,9 +33,11 @@
             <!-- /ko -->
           </ol>
 
-          <a class="btn btn-success btn-md file-download" href="{{ currentVersion().osfDownloadUrl }}" data-bind="click: currentVersion().download">
-            Download <i class="icon-download-alt"></i>
-          </a>
+          <span data-bind="if: currentVersion">
+            <a class="btn btn-success btn-md file-download" href="{{ currentVersion().osfDownloadUrl }}" data-bind="click: currentVersion().download">
+              Download <i class="icon-download-alt"></i>
+            </a>
+          </span>
 
           <span data-bind="if: editable">
             <button class="btn btn-danger btn-md file-delete" data-bind="click: askDelete">
@@ -44,7 +46,7 @@
           </span>
 
 
-          <table class="table" data-bind="if: versioningSupported">
+          <table class="table" data-bind="if: versioningSupported && revisions().length">
             <thead>
               <tr>
                 <th>Version</th>
