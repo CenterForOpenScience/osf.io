@@ -23,14 +23,6 @@ def list_mendeley_accounts_user(auth, user_addon):
         ]
     }
 
-@must_have_permission('write')
-@must_have_addon('mendeley', 'node')
-@must_not_be_registration
-def list_mendeley_accounts_node(pid, auth, node, project, node_addon):
-    accounts = node_addon.get_accounts(auth.user)
-    return {
-        'accounts': [utils.serialize_account(each) for each in accounts],
-    }
 
 @must_have_permission('write')
 @must_have_addon('mendeley', 'node')
@@ -46,6 +38,12 @@ def list_citationlists_node(pid, account_id, auth, node, project, node_addon):
     mendeley.account = account
 
     return {'citation_lists': mendeley.citation_lists}
+
+
+@must_have_permission('write')
+@must_have_addon('mendeley', 'node')
+def mendeley_get_config(auth, node_addon, **kwargs):
+    return node_addon.to_json(auth.user)
 
 
 @must_have_permission('write')

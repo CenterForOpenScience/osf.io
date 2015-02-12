@@ -31,12 +31,12 @@ class AddonMendeleyUserSettings(AddonUserSettingsBase):
         ]
 
     def to_json(self, user):
-        rv = super(AddonMendeleyUserSettings, self).to_json(user)
-        rv['accounts'] = [
+        ret = super(AddonMendeleyUserSettings, self).to_json(user)
+        ret['accounts'] = [
             utils.serialize_account(each)
             for each in self._get_connected_accounts()
         ]
-        return rv
+        return ret
 
 
 class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
@@ -111,9 +111,13 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
         return accounts
 
     def to_json(self, user):
-        rv = super(AddonMendeleyNodeSettings, self).to_json(user)
-        rv['accounts'] = [utils.serialize_account(each) for each in self.get_accounts(user)]
-        return rv
+        ret = super(AddonMendeleyNodeSettings, self).to_json(user)
+        ret.update({
+            'listId': self.mendeley_list_id,
+            'accounts': [utils.serialize_account(each) for each in self.get_accounts(user)],
+            'currentAccount': utils.serialize_account(self.external_account),
+        })
+        return ret
 
 
 class Mendeley(ExternalProvider):
