@@ -1,6 +1,7 @@
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 import mock
+import unittest
 import datetime
 import urlparse
 import collections
@@ -384,7 +385,7 @@ class TestSendEmails(OsfTestCase):
     def test_check_parent(self, send):
         emails.check_parent(self.node._id, 'comments', [])
         assert_true(send.called)
-        send.assert_called_with([self.user], 'email_transactional', self.node._id, 'comments')
+        send.assert_called_with([self.user._id], 'email_transactional', self.node._id, 'comments')
 
     # @mock.patch('website.notifications.emails.email_transactional')
     # def test_send_calls_correct_mail_function(self, email_transactional):
@@ -399,10 +400,11 @@ class TestSendEmails(OsfTestCase):
     #     )
     #     assert_true(email_transactional.called)
 
+    @unittest.skipIf(settings.USE_CELERY, 'Transactional emails must be sent synchronously for this test')
     @mock.patch('website.mails.send_mail')
     def test_send_email_transactional(self, send_mail):
         # assert that send_mail is called with the correct person & args
-        subscribed_users = [self.user]
+        subscribed_users = [self.user._id]
 
         emails.email_transactional(
             subscribed_users, self.project._id, 'comments',

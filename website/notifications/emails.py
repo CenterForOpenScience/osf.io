@@ -3,9 +3,11 @@ import urlparse
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from model import Subscription, DigestNotification
+from framework.tasks import app
+from framework.tasks.handlers import queued_task
 from website import mails, settings
 from website.util import web_url_for
-from website.models import Node
+from website.models import Node, User
 from mako.lookup import Template
 
 
@@ -32,7 +34,7 @@ def notify(uid, event, **context):
             direct_subscribers.append(u)
 
         if subscribed_users and notification_type != 'none':
-            send(subscribed_users, notification_type, uid, event, **context)
+            send([u._id for u in subscribed_users], notification_type, uid, event, **context)
 
     check_parent(uid, event, direct_subscribers, **context)
 
@@ -56,18 +58,19 @@ def check_parent(uid, event, direct_subscribers, **context):
 
                 for u in subscribed_users:
                     if u not in direct_subscribers:
-                        send([u], notification_type, uid, event, **context)
+                        send([u._id], notification_type, uid, event, **context)
 
     return {}
 
 
-def send(subscribed_users, notification_type, uid, event, **context):
-    notifications.get(notification_type)(subscribed_users, uid, event, **context)
+def send(subscribed_user_ids, notification_type, uid, event, **context):
+    notifications.get(notification_type)(subscribed_user_ids, uid, event, **context)
 
-
-def email_transactional(subscribed_users, uid, event, **context):
+@queued_task
+@app.task
+def email_transactional(subscribed_user_ids, uid, event, **context):
     """
-    :param subscribed_users:mod-odm User objects
+    :param subscribed_user_ids: mod-odm User objects
     :param context: context variables for email template
     :return:
     """
@@ -75,7 +78,8 @@ def email_transactional(subscribed_users, uid, event, **context):
     subject = Template(email_templates[event]['subject']).render(**context)
     message = mails.render_message(template, **context)
 
-    for user in subscribed_users:
+    for user_id in subscribed_user_ids:
+        user = User.load(user_id)
         email = user.username
         if context.get('commenter') != user.fullname:
             mails.send_mail(
@@ -95,7 +99,7 @@ def get_settings_url(uid, user):
         return Node.load(uid).absolute_url + 'settings/'
 
 
-def email_digest(subscribed_users, uid, event, **context):
+def email_digest(subscribed_user_ids, uid, event, **context):
     template = event + '.txt.mako'
     message = mails.render_message(template, **context)
 
@@ -106,7 +110,7 @@ def email_digest(subscribed_users, uid, event, **context):
     except NoResultsFound:
         nodes = []
 
-    for user in subscribed_users:
+    for user in subscribed_user_ids:
         if context.get('commenter') != user.fullname:
             digest = DigestNotification(timestamp=datetime.datetime.utcnow(),
                                         event=event,

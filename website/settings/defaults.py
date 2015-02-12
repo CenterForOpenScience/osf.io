@@ -187,6 +187,7 @@ CELERY_IMPORTS = (
     'framework.render.tasks',
     'framework.analytics.tasks',
     'website.mailchimp_utils',
+    'website.notifications.emails'
 )
 
 # Add-ons
