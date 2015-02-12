@@ -24,6 +24,15 @@ class DropboxFile(GuidFile):
     path = fields.StringField(required=True, index=True)
 
     @property
+    def waterbutler_path(self):
+        path = '/' + self.path
+        return path.replace(self.folder, '', 1)
+
+    @property
+    def folder(self):
+        return self.node.get_addon('dropbox').folder
+
+    @property
     def provider(self):
         return 'dropbox'
 
@@ -115,7 +124,7 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         return bool(self.user_settings and self.user_settings.has_auth)
 
     def find_or_create_file_guid(self, path):
-        return DropboxFile.get_or_create(self.owner, path)
+        return DropboxFile.get_or_create(self.owner, clean_path(os.path.join(self.folder, path.lstrip('/'))))
 
     def set_folder(self, folder, auth):
         if self.folder != folder:
@@ -337,9 +346,7 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
                 queue.extend(connection.metadata(content['path'])['contents'])
             else:
                 path = content['path']
-                #print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',path)
-                if not path.startswith('/'):
-                    path = '/' + path
+                path = clean_path(path)
                 try:
                     guid = DropboxFile.find_one(
                         Q('node', 'eq', self.owner) &

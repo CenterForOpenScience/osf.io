@@ -51,8 +51,8 @@ var RevisionsViewModel = function(node, file, editable) {
     self.file = file;
     self.editable = editable;
     self.urls = {
-        delete: waterbutler.buildDeleteUrl(file.path, file.provider, node.id),
-        download: waterbutler.buildDownloadUrl(file.path, file.provider, node.id),
+        delete: waterbutler.buildDeleteUrl(file.path, file.provider, node.id, file.extra),
+        download: waterbutler.buildDownloadUrl(file.path, file.provider, node.id, file.extra),
         revisions: waterbutler.buildRevisionsUrl(file.path, file.provider, node.id),
     };
     self.errorMessage = ko.observable('');
@@ -114,7 +114,7 @@ RevisionsViewModel.prototype.askDelete = function() {
         title: 'Delete file?',
         message: '<p class="overflow">' +
                 'Are you sure you want to delete <strong>' +
-                self.file.name + '</strong>?' +
+                self.file.safeName + '</strong>?' +
             '</p>',
         callback: function(confirm) {
             if (confirm) {

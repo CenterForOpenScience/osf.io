@@ -27,6 +27,12 @@ lookup = TemplateLookup(
     ]
 )
 
+STATUS_EXCEPTIONS = {
+    410: exceptions.FileDeletedError,
+    404: exceptions.FileDoesntExistError
+}
+
+
 def _is_image(filename):
     mtype, _ = mimetypes.guess_type(filename)
     return mtype and mtype.startswith('image')
@@ -183,6 +189,13 @@ class GuidFile(GuidStoredObject):
         raise NotImplementedError
 
     @property
+    def waterbutler_path(self):
+        '''The waterbutler formatted path of the specified file.
+        Must being with a /
+        '''
+        raise NotImplementedError
+
+    @property
     def guid_url(self):
         return '/{0}/'.format(self._id)
 
@@ -198,9 +211,7 @@ class GuidFile(GuidStoredObject):
 
     @property
     def joinable_path(self):
-        if self.path.startswith('/'):
-            return self.path[1:]
-        return self.path
+        return self.waterbutler_path.lstrip('/')
 
     @property
     def _base_butler_url(self):
@@ -208,10 +219,13 @@ class GuidFile(GuidStoredObject):
 
         url.args.update({
             'nid': self.node._id,
-            'path': self.path,
             'provider': self.provider,
+            'path': self.waterbutler_path,
             'cookie': request.cookies.get(settings.COOKIE_NAME)
         })
+
+        if request.args.get('view_only'):
+            url.args['view_only'] = request.args['view_only']
 
         if self.revision:
             url.args[self.version_identifier] = self.revision
@@ -284,14 +298,22 @@ class GuidFile(GuidStoredObject):
     def enrich(self, save=True):
         self._fetch_metadata(should_raise=True)
 
+    def _exception_from_response(self, response):
+        if response.ok:
+            return
+
+        if response.status_code in STATUS_EXCEPTIONS:
+            raise STATUS_EXCEPTIONS[response.status_code]
+
+        raise exceptions.AddonEnrichmentError(response.status_code)
+
     def _fetch_metadata(self, should_raise=False):
         # Note: We should look into caching this at some point
         # Some attributes may change however.
         resp = requests.get(self.metadata_url)
 
         if should_raise:
-            if resp.status_code != 200:
-                raise exceptions.AddonEnrichmentError(resp.status_code)
+            self._exception_from_response(resp)
 
         self._metadata_cache = resp.json()['data']
 

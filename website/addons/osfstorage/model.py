@@ -72,7 +72,7 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
     file_tree = fields.ForeignField('OsfStorageFileTree')
 
     def find_or_create_file_guid(self, path):
-        return OsfStorageGuidFile.get_or_create(self.owner, path), False
+        return OsfStorageGuidFile.get_or_create(self.owner, path.lstrip('/'))
 
     def copy_contents_to(self, dest):
         """Copy file tree and contents to destination. Note: destination must be
@@ -175,12 +175,9 @@ class BaseFileObject(StoredObject):
         :param str path: Path to file or directory
         :param node_settings: Root node settings record
         """
-        if path.endswith('/'):
-            path = path[:-1]
-
         try:
             obj = cls.find_one(
-                Q('path', 'eq', path) &
+                Q('path', 'eq', path.rstrip('/')) &
                 Q('node_settings', 'eq', node_settings._id)
             )
             return obj
@@ -195,8 +192,7 @@ class BaseFileObject(StoredObject):
         :param node_settings: Root node settings record
         :returns: Tuple of (record, created)
         """
-        if path.endswith('/'):
-            path = path[:-1]
+        path = path.rstrip('/')
 
         try:
             obj = cls(path=path, node_settings=node_settings)
@@ -418,6 +414,10 @@ class OsfStorageGuidFile(GuidFile):
 
     path = fields.StringField(required=True, index=True)
 
+    @property
+    def waterbutler_path(self):
+        return '/' + self.path
+
     @classmethod
     def get_or_create(cls, node, path):
         try:
@@ -425,10 +425,12 @@ class OsfStorageGuidFile(GuidFile):
                 Q('node', 'eq', node) &
                 Q('path', 'eq', path)
             )
+            created = False
         except modm_errors.ModularOdmException:
             obj = cls(node=node, path=path)
             obj.save()
-        return obj
+            created = True
+        return obj, created
 
     @classmethod
     def configure_comment(cls, node, path, delete=True):

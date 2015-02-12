@@ -2610,7 +2610,7 @@ class TestFileViews(OsfTestCase):
 
 
 class TestComments(OsfTestCase):
-
+    # TODO add comments to files/wiki/deleted wiki or files
     def setUp(self):
         super(TestComments, self).setUp()
         self.project = ProjectFactory(is_public=True)
