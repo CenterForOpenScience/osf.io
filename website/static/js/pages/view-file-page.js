@@ -24,3 +24,8 @@ if ($comments.length) {
     var name = window.contextVars.file.name;
     Comment.init('.commentPane', 'files', id, name, 'pane', userName, canComment, hasChildren);
 }
+
+// TODO: Workaround for highlighting the Files tab in the project navbar. Rethink.
+$(document).ready(function(){
+    $('.osf-project-navbar li:contains("Files")').addClass('active');
+});
