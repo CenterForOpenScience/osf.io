@@ -114,14 +114,10 @@ var resolve = {
         'addonHelper': staticPath('js/addonHelper.js'),
         'koHelpers': staticPath('js/koHelpers.js'),
         'addonPermissions': staticPath('js/addonPermissions.js'),
-<<<<<<< HEAD
         'navbar-control': staticPath('js/navbarControl.js'),
         'osf-panel': staticPath('vendor/bower_components/osf-panel/dist/jquery-osfPanel.js'),
-
-=======
         'markdown': staticPath('js/markdown.js'),
         'navbar-control': staticPath('js/navbarControl.js')
->>>>>>> a52cb396ac3e877cb284ddb40b0e6a02aebaa206
     }
 };
 

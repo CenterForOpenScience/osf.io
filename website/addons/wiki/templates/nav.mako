@@ -1,21 +1,13 @@
 <%page expression_filter="h"/>
 
 <nav class="">
-    <div class="navbar-collapse">
+    <div class="navbar-collapse text-center">
         <ul class="superlist nav navbar-nav" style="float: none">
-            <li><a href="${urls['web']['page']}">View</a></li>
-            % if not versions or version == 'NA':
-                <li class="disabled"><a>History</a></li>
-            % else:
-                <li><a href="${urls['web']['compare']}">History</a></li>
-            % endif
-
             % if user['can_edit']:
-            <li><a href="#" data-toggle="modal" data-target="#newWiki">New</a></li>
+            <li><a href="#" data-toggle="modal" data-target="#newWiki"> <i class="icon icon-file"> </i>  New Page </a></li>
                 <%include file="add_wiki_page.mako"/>
-            <li><a href="${urls['web']['edit']}">Edit</a></li>
                 % if wiki_id and wiki_name != 'home':
-                <li><a href="#" data-toggle="modal" data-target="#deleteWiki">Delete</a></li>
+                <li><a href="#" data-toggle="modal" data-target="#deleteWiki"><i class="icon icon-trash"> </i> Delete</a></li>
                     <%include file="delete_wiki_page.mako"/>
                 % endif
             % endif

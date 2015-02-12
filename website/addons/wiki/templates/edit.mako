@@ -13,171 +13,125 @@
     </div>
 </div>
 
-<div class="wiki">
-    <div class="row">
-<<<<<<< HEAD
-      <div class="col-md-3" data-osf-panel="Menu" data-osf-panel-col="3">
-              <div class="wiki-panel"> 
-                  <div class="wiki-panel-body"> 
-                    <div class="wiki-panel-header"> <i class="icon-list"> </i>  Menu </div>
-                    <%include file="wiki/templates/nav.mako"/>
-                    <%include file="wiki/templates/toc.mako"/>
-                    </div>
-                  </div>
-          </div>
-      <div class="col-md-5" data-osf-panel="Edit">
-              <div class="wiki-panel"> 
-                <div class="wiki-panel-header"> <i class="icon-edit"> </i>  Edit </div>
-                <div class="wiki-panel-body"> 
-                    <form id="wiki-form" action="${urls['web']['edit']}" method="POST">
-                      <div class="row">
-                      <div class="col-xs-12">
-                        <div class="form-group wmd-panel">
-                            <div class="row">
-                                <div class="col-sm-8">
-                                     <p>
-                                         <em>Changes will be stored but not published until
-                                         you click "Save."</em>
-                                     </p>
-                                </div>
-                                <div class="col-sm-4">
-                                    <ul class="list-inline" data-bind="foreach: activeUsers" style="float: right">
-                                        <!-- ko ifnot: id === '${user_id}' -->
-                                            <li><a data-bind="attr: { href: url }" >
-                                                <img data-bind="attr: {src: gravatar}, tooltip: {title: name, placement: 'bottom'}"
-                                                     style="border: 1px solid black;">
-                                            </a></li>
-                                        <!-- /ko -->
-                                    </ul>
-                                </div>
-                            </div>
-                            <div id="wmd-button-bar"></div>
-
-                            <div class="progress" style="margin-bottom: 5px">
-                                <div role="progressbar"
-                                     data-bind="attr: progressBar"
-                                        >
-                                    <span data-bind="text: statusDisplay"></span>
-                                    <a class="sharejs-info-btn">
-                                        <i class="icon-question-sign icon-large"
-                                           data-toggle="modal"
-                                           data-bind="attr: {data-target: modalTarget}"
-                                                >
-                                        </i>
-                                    </a>
-                                </div>
-                            </div>
-
-                            <div id="editor" class="wmd-input wiki-editor"
-                                 data-bind="ace: currentText">Loading. . .</div>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="row">
-                      <div class="col-xs-12">
-                         <div class="pull-right">
-                            <button id="revert-button"
-                                    class="btn btn-success"
-                                    data-bind="click: loadPublished"
-                                    >Revert</button>
-                            <input type="submit"
-                                   class="btn btn-primary"
-                                   value="Save"
-                                   onclick=$(window).off('beforeunload')>
-                        </div>
-                      </div>
-                    </div>
-                      <!-- Invisible textarea for form submission -->
-                      <textarea name="content" style="visibility: hidden; height: 0px"
-                                data-bind="value: currentText"></textarea>
-                  </form>
-                </div>
+<div class="wiki container">
+  <div class="row wiki-wrapper">
+    <div class="col-sm-3 panel-toggle">
+        <div class="wiki-panel hidden-xs"> 
+              <div class="wiki-panel-header"> <i class="icon-list"> </i>  Menu 
+                <div class="pull-right"> <div class="panel-collapse"> <i class="icon icon-chevron-left"> </i> </div></div>
               </div>
-        </div>
-        <div class="col-md-4" data-osf-panel="Preview">
-            <div class="wiki-panel"> 
-              <div class="wiki-panel-header"> <i class="icon-eye-open"> </i> Preview </div>
-                <div class="wiki-panel-body"> 
-                  <div id="wmd-preview" class="wmd-panel wmd-preview"></div>
+              <div class="wiki-panel-body">
+                <%include file="wiki/templates/nav.mako"/>
+                <%include file="wiki/templates/toc.mako"/>
                 </div>
             </div>
-=======
-        <div class="col-sm-3">
-            <%include file="wiki/templates/nav.mako"/>
-            <%include file="wiki/templates/toc.mako"/>
-        </div>
-        <div class="col-sm-9">
-            <%include file="wiki/templates/status.mako"/>
-            <form id="wikiForm" action="${urls['web']['edit']}" method="POST">
-                <div class="form-group wmd-panel">
-                    <div class="row">
-                        <div class="col-lg-6 col-md-7">
-                            <p>
-                                <em>Changes will be stored but not published until
-                                you click "Save."</em>
-                            </p>
-                            <div id="wmd-button-bar"></div>
-                        </div>
-                        <div class="col-lg-6 col-md-5">
-                            <div data-bind="fadeVisible: throttledStatus() === 'connected'" class="pull-right" style="display: none">
-                                <ul class="list-inline" data-bind="foreach: activeUsers">
-                                    <!-- ko ifnot: id === '${user_id}' -->
-                                        <li>
-                                            <a data-bind="attr: { href: url }">
-                                                <img height="27" width="27" data-bind="attr: {src: gravatar}, tooltip: {title: name, placement: 'bottom'}"
-                                                     style="border: 1px solid black;">
-                                            </a>
-                                        </li>
-                                    <!-- /ko -->
-                                </ul>
-                            </div>
-                            <div data-bind="fadeVisible: throttledStatus() !== 'connected'" style="display: none">
-                                <div class="progress" style="margin-bottom: 5px;">
-                                    <div role="progressbar" data-bind="attr: progressBar">
-                                        <span data-bind="text: statusDisplay"></span>
-                                        <a class="sharejs-info-btn">
-                                            <i class="icon-question-sign icon-large"
-                                               data-toggle="modal"
-                                               data-bind="attr: {data-target: modalTarget}"
-                                            ></i>
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="editor" class="wmd-input wiki-editor"
-                         data-bind="ace: currentText">Loading. . .</div>
+            <div class="wiki-panel visible-xs"> 
+              <div class="wiki-panel-header"> <i class="icon-list"> </i>  Menu </div>
+              <div class="wiki-panel-body ">
+                <%include file="wiki/templates/nav.mako"/>
+                <%include file="wiki/templates/toc.mako"/>
                 </div>
-                <div class="pull-right">
-                    <button class="btn btn-success"
-                            data-bind="click: revertChanges"
-                            >Revert</button>
-                    <input type="submit"
-                           class="btn btn-primary"
-                           value="Save"
-                           onclick=$(window).off('beforeunload')>
+            </div>
+
+        <div class="wiki-panel panel-collapsed hidden-xs text-center" style="display: none;">
+          <div class="wiki-panel-header">
+            <i class="icon-list"> </i>
+            <i class="icon icon-chevron-right"> </i>
+          </div>
+          <div class="wiki-panel-body">
+              <%include file="wiki/templates/nav.mako"/>
+           </div>
+        </div>    
+    </div>
+
+    <div class="col-sm-9 panel-expand">
+      <div class="row">
+        <div class="col-sm-6" data-osf-panel="Edit">
+                <div class="wiki-panel"> 
+                  <div class="wiki-panel-header"> <i class="icon-edit"> </i>  Edit </div>
+                  <div class="wiki-panel-body"> 
+                      <form id="wiki-form" action="${urls['web']['edit']}" method="POST">
+                        <div class="row">
+                        <div class="col-xs-12">
+                          <div class="form-group wmd-panel">
+                              <div class="row">
+                                  <div class="col-sm-8">
+                                       <p>
+                                           <em>Changes will be stored but not published until
+                                           you click "Save."</em>
+                                       </p>
+                                  </div>
+                                  <div class="col-sm-4">
+                                      <ul class="list-inline" data-bind="foreach: activeUsers" style="float: right">
+                                          <!-- ko ifnot: id === '${user_id}' -->
+                                              <li><a data-bind="attr: { href: url }" >
+                                                  <img data-bind="attr: {src: gravatar}, tooltip: {title: name, placement: 'bottom'}"
+                                                       style="border: 1px solid black;">
+                                              </a></li>
+                                          <!-- /ko -->
+                                      </ul>
+                                  </div>
+                              </div>
+                              <div id="wmd-button-bar"></div>
+
+                              <div class="progress" style="margin-bottom: 5px">
+                                  <div role="progressbar"
+                                       data-bind="attr: progressBar"
+                                          >
+                                      <span data-bind="text: statusDisplay"></span>
+                                      <a class="sharejs-info-btn">
+                                          <i class="icon-question-sign icon-large"
+                                             data-toggle="modal"
+                                             data-bind="attr: {data-target: modalTarget}"
+                                                  >
+                                          </i>
+                                      </a>
+                                  </div>
+                              </div>
+
+                              <div id="editor" class="wmd-input wiki-editor"
+                                   data-bind="ace: currentText">Loading. . .</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="row">
+                        <div class="col-xs-12">
+                           <div class="pull-right">
+                              <button id="revert-button"
+                                      class="btn btn-success"
+                                      data-bind="click: loadPublished"
+                                      >Revert</button>
+                              <input type="submit"
+                                     class="btn btn-primary"
+                                     value="Save"
+                                     onclick=$(window).off('beforeunload')>
+                          </div>
+                        </div>
+                      </div>
+                        <!-- Invisible textarea for form submission -->
+                        <textarea name="content" style="visibility: hidden; height: 0px"
+                                  data-bind="value: currentText"></textarea>
+                    </form>
+                  </div>
                 </div>
-                <p class="help-block">Preview</p>
-                <div id="markdown-it-preview" class="wmd-panel wmd-preview"></div>
-                <!-- Invisible textarea for form submission -->
-                <textarea name="content" style="visibility: hidden; height: 0px"
-                          data-bind="value: currentText"></textarea>
-            </form>
->>>>>>> a52cb396ac3e877cb284ddb40b0e6a02aebaa206
-        </div>
-    </div><!-- end row -->
+          </div>
+          <div class="col-sm-6" data-osf-panel="Preview">
+              <div class="wiki-panel"> 
+                <div class="wiki-panel-header"> <i class="icon-eye-open"> </i> Preview </div>
+                  <div class="wiki-panel-body"> 
+                    <div id="markdown-it-preview" class="wmd-panel wmd-preview"></div>
+                  </div>
+              </div>
+          </div>
+      </div><!-- end row -->
+    </div>
+
+  </div>
+
 </div><!-- end wiki -->
 
-<<<<<<< HEAD
 
-
-
-
-<div class="modal fade" id="permissions-modal">
-=======
 <div class="modal fade" id="permissionsModal">
->>>>>>> a52cb396ac3e877cb284ddb40b0e6a02aebaa206
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">

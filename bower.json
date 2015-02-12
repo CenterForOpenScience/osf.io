@@ -31,14 +31,10 @@
     "jquery.cookie": "~1.4.1",
     "hgrid": "~0.2.10",
     "uri.js": "~1.14.1",
-<<<<<<< HEAD
     "xhook": "~1.3.0",
-    "osf-panel": "https://github.com/caneruguz/osf-panel.git#develop"
-=======
+    "osf-panel": "https://github.com/caneruguz/osf-panel.git#develop",
     "markdown-it": "~3.0.5",
     "markdown-it-sanitizer": "~0.2.0",
-    "markdown-it-video": "https://github.com/brianjgeiger/markdown-it-video.git#586dcccb9151e6e15cd1232572f43cadc64296e7",
-    "xhook": "~1.3.0"
->>>>>>> a52cb396ac3e877cb284ddb40b0e6a02aebaa206
+    "markdown-it-video": "https://github.com/brianjgeiger/markdown-it-video.git#586dcccb9151e6e15cd1232572f43cadc64296e7"
   }
 }
