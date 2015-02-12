@@ -2611,6 +2611,7 @@ class TestFileViews(OsfTestCase):
 
 class TestComments(OsfTestCase):
     # TODO add comments to files/wiki/deleted wiki or files
+    # todo view total comments
     def setUp(self):
         super(TestComments, self).setUp()
         self.project = ProjectFactory(is_public=True)
@@ -2635,6 +2636,25 @@ class TestComments(OsfTestCase):
             {
                 'content': content,
                 'isPublic': 'public',
+                'page': 'node',
+                'target': project._id
+            },
+            **kwargs
+        )
+
+    def _add_comment_wiki(self, project, content=None, **kwargs):
+
+        content = content if content is not None else 'the quick brown fox jumps over the lazy dog'
+        url = project.api_url + 'comment/'
+        project.update_node_wiki(name='home', content='home wiki', auth=Auth(project.creator))
+        return self.app.post_json(
+            url,
+            {
+                'content': content,
+                'isPublic': 'public',
+                'page': 'wiki',
+                'target': project.get_wiki_page(name='home', version=1),
+                'root_title': 'home',
             },
             **kwargs
         )
@@ -2768,7 +2788,7 @@ class TestComments(OsfTestCase):
     def test_edit_comment(self):
 
         self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project)
+        comment = CommentFactory(node=self.project, page='node')
 
         url = self.project.api_url + 'comment/{0}/'.format(comment._id)
         res = self.app.put_json(
@@ -2788,7 +2808,7 @@ class TestComments(OsfTestCase):
 
     def test_edit_comment_short(self):
         self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project, content='short')
+        comment = CommentFactory(node=self.project, content='short', page='node')
         url = self.project.api_url + 'comment/{0}/'.format(comment._id)
         res = self.app.put_json(
             url,
@@ -2805,7 +2825,7 @@ class TestComments(OsfTestCase):
 
     def test_edit_comment_toolong(self):
         self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project, content='short')
+        comment = CommentFactory(node=self.project, content='short', page='node')
         url = self.project.api_url + 'comment/{0}/'.format(comment._id)
         res = self.app.put_json(
             url,
@@ -2823,7 +2843,7 @@ class TestComments(OsfTestCase):
     def test_edit_comment_non_author(self):
         "Contributors who are not the comment author cannot edit."
         self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project)
+        comment = CommentFactory(node=self.project, page='node')
         non_author = AuthUserFactory()
         self.project.add_contributor(non_author, auth=self.consolidated_auth)
 
@@ -2843,7 +2863,7 @@ class TestComments(OsfTestCase):
     def test_edit_comment_non_contributor(self):
         "Non-contributors who are not the comment author cannot edit."
         self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project)
+        comment = CommentFactory(node=self.project, page='node')
 
         url = self.project.api_url + 'comment/{0}/'.format(comment._id)
         res = self.app.put_json(
@@ -2861,7 +2881,7 @@ class TestComments(OsfTestCase):
     def test_delete_comment_author(self):
 
         self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project)
+        comment = CommentFactory(node=self.project, page='node')
 
         url = self.project.api_url + 'comment/{0}/'.format(comment._id)
         self.app.delete_json(
@@ -2876,7 +2896,7 @@ class TestComments(OsfTestCase):
     def test_delete_comment_non_author(self):
 
         self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project)
+        comment = CommentFactory(node=self.project, page='node')
 
         url = self.project.api_url + 'comment/{0}/'.format(comment._id)
         res = self.app.delete_json(
@@ -2894,7 +2914,7 @@ class TestComments(OsfTestCase):
     def test_report_abuse(self):
 
         self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project)
+        comment = CommentFactory(node=self.project, page='node')
         reporter = AuthUserFactory()
 
         url = self.project.api_url + 'comment/{0}/report/'.format(comment._id)
@@ -2918,7 +2938,7 @@ class TestComments(OsfTestCase):
     def test_can_view_private_comments_if_contributor(self):
 
         self._configure_project(self.project, 'public')
-        CommentFactory(node=self.project, user=self.project.creator, is_public=False)
+        CommentFactory(node=self.project, user=self.project.creator, is_public=False, page='node')
 
         url = self.project.api_url + 'comments/'
         res = self.app.get(url, auth=self.project.creator.auth)
@@ -2934,7 +2954,7 @@ class TestComments(OsfTestCase):
         link.nodes.append(self.project)
         link.save()
 
-        CommentFactory(node=self.project, user=self.project.creator, is_public=False)
+        CommentFactory(node=self.project, user=self.project.creator, is_public=False, page='node')
 
         url = self.project.api_url + 'comments/'
         res = self.app.get(url, {"view_only": link.key}, auth=user.auth)
@@ -2948,66 +2968,105 @@ class TestComments(OsfTestCase):
     def test_discussion_recursive(self):
 
         self._configure_project(self.project, 'public')
-        comment_l0 = CommentFactory(node=self.project)
+        comment_l0 = CommentFactory(node=self.project, page='node')
 
         user_l1 = UserFactory()
         user_l2 = UserFactory()
-        comment_l1 = CommentFactory(node=self.project, target=comment_l0, user=user_l1)
-        CommentFactory(node=self.project, target=comment_l1, user=user_l2)
+        comment_l1 = CommentFactory(node=self.project, target=comment_l0, user=user_l1, page='node')
+        CommentFactory(node=self.project, target=comment_l1, user=user_l2, page='node')
 
         url = self.project.api_url + 'comments/discussion/'
-        res = self.app.get(url)
+        res = self.app.get(url, {
+            'page': 'node',
+            'target': self.project._primary_key
+        })
 
-        assert_equal(len(res.json['discussion']), 3)
+        assert_equal(len(res.json['discussion_by_frequency']), 3)
 
     def test_discussion_no_repeats(self):
 
         self._configure_project(self.project, 'public')
-        comment_l0 = CommentFactory(node=self.project)
+        comment_l0 = CommentFactory(node=self.project, page='node')
 
-        comment_l1 = CommentFactory(node=self.project, target=comment_l0)
-        CommentFactory(node=self.project, target=comment_l1)
+        comment_l1 = CommentFactory(node=self.project, target=comment_l0, page='node')
+        CommentFactory(node=self.project, target=comment_l1, page='node')
 
         url = self.project.api_url + 'comments/discussion/'
-        res = self.app.get(url)
+        res = self.app.get(url, {
+            'page': 'node',
+            'target': self.project._primary_key
+        })
 
-        assert_equal(len(res.json['discussion']), 1)
+        assert_equal(len(res.json['discussion_by_frequency']), 1)
 
-    def test_discussion_sort(self):
+    def test_discussion_sort_frequency(self):
 
         self._configure_project(self.project, 'public')
 
         user1 = UserFactory()
         user2 = UserFactory()
 
-        CommentFactory(node=self.project)
+        CommentFactory(node=self.project, page='node')
         for _ in range(3):
-            CommentFactory(node=self.project, user=user1)
+            CommentFactory(node=self.project, user=user1, page='node')
         for _ in range(2):
-            CommentFactory(node=self.project, user=user2)
+            CommentFactory(node=self.project, user=user2, page='node')
 
         url = self.project.api_url + 'comments/discussion/'
-        res = self.app.get(url)
+        res = self.app.get(url, {
+            'page': 'node',
+            'target': self.project._primary_key
+        })
 
-        assert_equal(len(res.json['discussion']), 3)
-        observed = [user['id'] for user in res.json['discussion']]
+        assert_equal(len(res.json['discussion_by_frequency']), 3)
+        observed = [user['id'] for user in res.json['discussion_by_frequency']]
         expected = [user1._id, user2._id, self.project.creator._id]
         assert_equal(observed, expected)
 
+    def test_discussion_sort_recency(self):
+
+        self._configure_project(self.project, 'public')
+
+        user1 = UserFactory()
+        user2 = UserFactory()
+
+        for _ in range(3):
+            CommentFactory(node=self.project, user=user1, page='node')
+        for _ in range(2):
+            CommentFactory(node=self.project, user=user2, page='node')
+        CommentFactory(node=self.project, page='node')
+
+        url = self.project.api_url + 'comments/discussion/'
+        res = self.app.get(url, {
+            'page': 'node',
+            'target': self.project._primary_key
+        })
+
+        assert_equal(len(res.json['discussion_by_recency']), 3)
+        observed = [user['id'] for user in res.json['discussion_by_recency']]
+        expected = [self.project.creator._id, user2._id, user1._id]
+        assert_equal(observed, expected)
+
     def test_view_comments_updates_user_comments_view_timestamp(self):
-        CommentFactory(node=self.project)
+        CommentFactory(node=self.project, page='node')
 
         url = self.project.api_url_for('update_comments_timestamp')
-        res = self.app.put_json(url, auth=self.user.auth)
+        res = self.app.put_json(url, {
+            'page':'node',
+            'rootId': self.project._id
+        }, auth=self.user.auth)
         self.user.reload()
 
-        user_timestamp = self.user.comments_viewed_timestamp[self.project._id]
+        user_timestamp = self.user.comments_viewed_timestamp[self.project._id]['node']
         view_timestamp = dt.datetime.utcnow()
         assert_datetime_equal(user_timestamp, view_timestamp)
 
     def test_confirm_non_contrib_viewers_dont_have_pid_in_comments_view_timestamp(self):
         url = self.project.api_url_for('update_comments_timestamp')
-        res = self.app.put_json(url, auth=self.user.auth)
+        res = self.app.put_json(url, {
+            'page':'node',
+            'rootId': self.project._id
+        }, auth=self.user.auth)
 
         self.non_contributor.reload()
         assert_not_in(self.project._id, self.non_contributor.comments_viewed_timestamp)
@@ -3017,24 +3076,36 @@ class TestComments(OsfTestCase):
         self.project.reload()
 
         url = self.project.api_url_for('list_comments')
-        res = self.app.get(url, auth=self.user.auth)
+        res = self.app.get(url, {
+            'page': 'node',
+            'rootId': self.project._id
+        }, auth=self.user.auth)
         assert_equal(res.json.get('nUnread'), 1)
 
         url = self.project.api_url_for('update_comments_timestamp')
-        res = self.app.put_json(url, auth=self.user.auth)
+        res = self.app.put_json(url, {
+            'page': 'node',
+            'rootId': self.project._id
+        }, auth=self.user.auth)
         self.user.reload()
 
         url = self.project.api_url_for('list_comments')
-        res = self.app.get(url, auth=self.user.auth)
+        res = self.app.get(url, {
+            'page': 'node',
+            'rootId': self.project._id
+        }, auth=self.user.auth)
         assert_equal(res.json.get('nUnread'), 0)
 
     def test_n_unread_comments_updates_when_comment_reply(self):
-        comment = CommentFactory(node=self.project, user=self.project.creator)
-        reply = CommentFactory(node=self.project, user=self.user, target=comment)
+        comment = CommentFactory(node=self.project, user=self.project.creator, page='node')
+        reply = CommentFactory(node=self.project, user=self.user, target=comment, page='node')
         self.project.reload()
 
         url = self.project.api_url_for('list_comments')
-        res = self.app.get(url, auth=self.project.creator.auth)
+        res = self.app.get(url, {
+            'page': 'node',
+            'rootId': self.project._id
+        }, auth=self.project.creator.auth)
         assert_equal(res.json.get('nUnread'), 1)
 
 
@@ -3043,12 +3114,18 @@ class TestComments(OsfTestCase):
         self.project.reload()
 
         url = self.project.api_url_for('list_comments')
-        res = self.app.get(url, auth=self.user.auth)
+        res = self.app.get(url, {
+            'page': 'node',
+            'rootId': self.project._id
+        }, auth=self.user.auth)
         assert_equal(res.json.get('nUnread'), 1)
 
     def test_n_unread_comments_is_zero_when_no_comments(self):
         url = self.project.api_url_for('list_comments')
-        res = self.app.get(url, auth=self.project.creator.auth)
+        res = self.app.get(url, {
+            'page': 'node',
+            'rootId': self.project._id
+        }, auth=self.project.creator.auth)
         assert_equal(res.json.get('nUnread'), 0)
 
 

@@ -161,7 +161,7 @@ class Comment(GuidStoredObject):
     user = fields.ForeignField('user', required=True, backref='commented')
     node = fields.ForeignField('node', required=True, backref='comment_owner')
     target = fields.AbstractForeignField(required=True, backref='commented')
-    root_target = fields.AbstractForeignField(required=True, backref='comment_target')
+    root_target = fields.AbstractForeignField(backref='comment_target')
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
