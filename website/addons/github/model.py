@@ -626,9 +626,6 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                     for comment in getattr(github_file, 'comment_target', []):
                         comment.show(save=True)
 
-
-
-
     def delete_hook(self, save=True):
         """
 

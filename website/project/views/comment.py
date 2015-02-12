@@ -100,9 +100,9 @@ def view_comments_single(**kwargs):
     ret = {
         'comment': serialized_comment,
         'comment_target': serialized_comment['page'],
-        'comment_target_id': comment.root_target.page_name \
-            if isinstance(comment.root_target, NodeWikiPage) \
-            else comment.root_target._id
+        'comment_target_id': comment.root_target.page_name
+        if isinstance(comment.root_target, NodeWikiPage)
+        else comment.root_target._id
     }
     ret.update(_view_project(node, auth, primary=True))
     return ret
@@ -143,7 +143,7 @@ def comment_discussion(**kwargs):
         for comment in getattr(node, 'comment_owner', []) or []:
             if not comment.is_deleted or not comment.is_hidden:
                 users[comment.user].append(comment)
-    elif guid is None or guid=='None':
+    elif guid is None or guid == 'None':
         users = collections.defaultdict(list)
         comments = Comment.find(Q('node', 'eq', node) &
                                 Q('page', 'eq', page) &
@@ -370,7 +370,7 @@ def get_files_comments(node):
     files = get_all_files(node)
     for file_obj in files:
         for comment in getattr(file_obj, 'commented', []):
-            if comment.is_hidden: # File is already deleted
+            if comment.is_hidden:  # File is already deleted
                 break
             comments.append(comment)
     return comments
@@ -443,7 +443,6 @@ def _update_comments_timestamp(auth, node, page='node', root_id=None):
             timestamps[page] = dict()
 
         # if updating timestamp on the files/wiki total page...
-        from website.addons.osfstorage.model import OsfStorageGuidFile
         from website.addons.wiki.model import NodeWikiPage
         if root_id is None or root_id == 'None':
             ret = {}

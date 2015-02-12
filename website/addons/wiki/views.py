@@ -431,7 +431,7 @@ def project_wiki_rename(auth, wname, **kwargs):
         wiki_utils.broadcast_to_sharejs('redirect', sharejs_uuid, node, new_wiki_name)
     if auth.user.comments_viewed_timestamp.get(node._id, None) and \
         auth.user.comments_viewed_timestamp[node._id].get('wiki', None) and \
-        auth.user.comments_viewed_timestamp[node._id]['wiki'].get(wiki_name, None):
+            auth.user.comments_viewed_timestamp[node._id]['wiki'].get(wiki_name, None):
         auth.user.comments_viewed_timestamp[node._id]['wiki'][new_wiki_name] = \
             auth.user.comments_viewed_timestamp[node._id]['wiki'][wiki_name]
         auth.user.save()

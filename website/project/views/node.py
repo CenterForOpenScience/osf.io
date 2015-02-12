@@ -837,7 +837,7 @@ def get_all_files(node):
     for addon_name in addons:
         if addon_name in ('figshare', 'dropbox', 's3', 'github', 'osfstorage'):
             addon = node.get_addon(addon_name)
-            if not addon is None:
+            if addon is not None:
                 files.extend(addon.get_existing_files())
     return files
 
@@ -867,7 +867,6 @@ def n_unread_comments(node, user, page, root_id=None):
 
 
 def n_unread_total(node, user, page):
-    from website.addons.osfstorage.model import OsfStorageGuidFile
     from website.addons.wiki.model import NodeWikiPage
     default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
     view_timestamp = user.comments_viewed_timestamp.get(node._id, default_timestamp)
@@ -901,7 +900,6 @@ def n_unread_total(node, user, page):
                             Q('page', 'eq', page)).count()
     return n_unread_total(node, user, 'node') + n_unread_total(node, user, 'wiki') + \
         n_unread_total(node, user, 'files')
-
 
 
 @must_be_valid_project  # returns project
