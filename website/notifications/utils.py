@@ -1,4 +1,5 @@
 import collections
+from framework.auth.signals import contributor_removed
 from website import settings
 from website.models import Node
 from website.notifications.model import Subscription
@@ -19,6 +20,20 @@ class NotificationsDict(dict):
             messages = [messages]
         d_to_use['messages'].extend(messages)
         return True
+
+@contributor_removed.connect
+def remove_contributor_from_subscriptions(contributor, node):
+    user_subscriptions = get_all_user_subscriptions(contributor)
+    node_subscriptions = []
+    for user_subscription in user_subscriptions:
+        if user_subscription.object_id == node._id:
+            node_subscriptions.append(user_subscription)
+
+    for subscription in node_subscriptions:
+        for n in settings.NOTIFICATION_TYPES:
+            if contributor in getattr(subscription, n):
+                getattr(subscription, n).remove(contributor)
+                subscription.save()
 
 
 def get_configured_projects(user):

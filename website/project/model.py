@@ -30,6 +30,7 @@ from framework.mongo import ObjectId
 from framework.mongo import StoredObject
 from framework.addons import AddonModelMixin
 from framework.auth import get_user, User, Auth
+from framework.auth.signals import contributor_removed
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
 from framework.auth.utils import privacy_info_handle
@@ -2236,6 +2237,9 @@ class Node(GuidStoredObject, AddonModelMixin):
             )
 
         self.save()
+
+        #send signal to remove this user from project subscriptions
+        contributor_removed.send(contributor, node=self)
 
         return True
 
