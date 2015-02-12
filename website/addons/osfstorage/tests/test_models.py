@@ -449,13 +449,13 @@ class TestStorageObject(OsfTestCase):
         existing = model.OsfStorageGuidFile(node=self.project, path=self.path)
         existing.save()
         n_objs = model.OsfStorageGuidFile.find().count()
-        result = model.OsfStorageGuidFile.get_or_create(self.project, self.path)
+        result, _ = model.OsfStorageGuidFile.get_or_create(self.project, self.path)
         assert_equal(result, existing)
         assert_equal(n_objs, model.OsfStorageGuidFile.find().count())
 
     def test_get_or_create_does_not_exist(self):
         n_objs = model.OsfStorageGuidFile.find().count()
-        result = model.OsfStorageGuidFile.get_or_create(self.project, self.path)
+        result, _ = model.OsfStorageGuidFile.get_or_create(self.project, self.path)
         assert_equal(result.node, self.project)
         assert_equal(result.path, self.path)
         assert_equal(n_objs + 1, model.OsfStorageGuidFile.find().count())
