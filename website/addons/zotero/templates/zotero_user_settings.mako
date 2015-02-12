@@ -1,15 +1,13 @@
 <!-- Authorization -->
 <div id="zoteroUserSettings">
     <h4 class="addon-title">Zotero</h4>
-    <table class="table">
-        <tbody data-bind="foreach: accounts">
-            <tr>
-                <td data-bind="text: display_name"></td>
-                <td data-bind="text: id"></td>
-                <td><a data-bind="click: $root.askDisconnect" class="btn btn-danger">Remove</a></td>
-            </tr>
-        </tbody>
-    </table>
+    <div data-bind="foreach: accounts">
+        <div>
+            <span data-bind="text: display_name"></span>
+            <a data-bind="click: $root.askDisconnect" class="pull-right btn btn-danger">Remove</a>
+        </div>
+    </div>
+    <br>
     <a data-bind="click: connectAccount" class="btn btn-primary">Connect an account</a>
 </div>
 
