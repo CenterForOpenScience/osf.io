@@ -12,26 +12,12 @@ var Markdown = require('pagedown-ace-converter');
 Markdown.getSanitizingConverter = require('pagedown-ace-sanitizer').getSanitizingConverter;
 require('imports?Markdown=pagedown-ace-converter!pagedown-ace-editor');
 
+var mathrender = require('./mathrender.js');
+
 var editor;
 
 var MATHJAX_THROTTLE = 500;
-function mathjaxify() {
-    var preview = document.getElementById('wmd-preview');
-    if (typeof(typeset) === 'undefined' || typeset === true) {
-        MathJax.Hub.Queue(['Typeset', MathJax.Hub, preview]);
-        typesetStubbornMath();
-    }
-}
-
-function typesetStubbornMath() {
-    $('#wmd-preview').each(function() {
-        if ($(this).text() !== '') {
-            MathJax.Hub.Queue(['Typeset', MathJax.Hub, $(this).attr('id')]);
-        }
-    });
-}
-
-var throttledMathjaxify = $osf.throttle(mathjaxify, MATHJAX_THROTTLE);
+var throttledMathjaxify = $osf.throttle(mathrender.mathjaxify, MATHJAX_THROTTLE);
 
 /**
  * Binding handler that instantiates an ACE editor.
@@ -44,7 +30,7 @@ ko.bindingHandlers.ace = {
 
         // Updates the view model based on changes to the editor
         editor.getSession().on('change', function () {
-            throttledMathjaxify();
+            throttledMathjaxify('#wmd-preview');
             valueAccessor()(editor.getValue());
         });
     },
