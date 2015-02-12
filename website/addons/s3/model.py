@@ -18,7 +18,7 @@ class S3GuidFile(GuidFile):
 
     @property
     def waterbutler_path(self):
-        return self.path
+        return '/' + self.path
 
     @property
     def provider(self):
@@ -87,6 +87,8 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
     )
 
     def find_or_create_file_guid(self, path):
+        if path.startswith('/'):
+            path = path[1:]
         try:
             return S3GuidFile.find_one(
                 Q('path', 'eq', path) &
