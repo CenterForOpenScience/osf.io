@@ -78,4 +78,6 @@ $(document).on('click', '.project-toggle', function() {
     return false;
 });
 
-new NavbarControl('.osf-nav-wrapper');
+$(function() {
+    new NavbarControl('.osf-nav-wrapper');
+});

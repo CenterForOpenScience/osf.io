@@ -19,6 +19,7 @@ from framework.guid.model import GuidStoredObject
 from website import settings
 from website.addons.base import AddonNodeSettingsBase
 from website.addons.wiki import utils as wiki_utils
+from website.project.model import write_permissions_revoked
 
 from .exceptions import (
     NameEmptyError,
@@ -32,13 +33,15 @@ logger = logging.getLogger(__name__)
 
 class AddonWikiNodeSettings(AddonNodeSettingsBase):
 
-    def after_remove_contributor(self, node, removed):
-        # Migrate every page on the node
-        for wiki_name in node.wiki_private_uuids:
-            wiki_utils.migrate_uuid(node, wiki_name)
-
     def to_json(self, user):
         return {}
+
+
+@write_permissions_revoked.connect
+def subscribe_on_write_permissions_revoked(node):
+    # Migrate every page on the node
+    for wiki_name in node.wiki_private_uuids:
+        wiki_utils.migrate_uuid(node, wiki_name)
 
 
 def build_wiki_url(node, label, base, end):

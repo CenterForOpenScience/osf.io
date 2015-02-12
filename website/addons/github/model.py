@@ -17,10 +17,10 @@ from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 from website.addons.base import GuidFile
 
-from website.addons.github import settings as github_settings
-from website.addons.github.exceptions import ApiError, NotFoundError
-from website.addons.github.api import GitHub
 from website.addons.github import utils
+from website.addons.github.api import GitHub
+from website.addons.github import settings as github_settings
+from website.addons.github.exceptions import ApiError, NotFoundError, TooBigToRenderError
 
 
 hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
@@ -29,6 +29,10 @@ hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
 class GithubGuidFile(GuidFile):
 
     path = fields.StringField(index=True)
+
+    @property
+    def waterbutler_path(self):
+        return self.path
 
     @property
     def provider(self):
@@ -41,6 +45,25 @@ class GithubGuidFile(GuidFile):
     @property
     def unique_identifier(self):
         return self._metadata_cache['extra']['fileSha']
+
+    @property
+    def name(self):
+        return os.path.split(self.path)[1]
+
+    @property
+    def extra(self):
+        return {
+            'sha': self._metadata_cache['extra']['fileSha']
+        }
+
+    def _exception_from_response(self, response):
+        try:
+            if response.json()['errors'][0]['code'] == 'too_large':
+                raise TooBigToRenderError(self)
+        except (KeyError, IndexError):
+            pass
+
+        super(GithubGuidFile, self)._exception_from_response(response)
 
 
 class AddonGitHubOauthSettings(StoredObject):
