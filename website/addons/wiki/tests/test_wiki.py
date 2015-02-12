@@ -5,21 +5,24 @@ from copy import deepcopy
 import httplib as http
 
 import mock
+import time
 
 from nose.tools import *  # noqa
 from modularodm.exceptions import ValidationValueError
 
 from tests.base import OsfTestCase, fake
 from tests.factories import (
-    UserFactory, NodeFactory, PointerFactory, ProjectFactory, ApiKeyFactory,
+    UserFactory, NodeFactory, ProjectFactory, ApiKeyFactory,
     AuthUserFactory, NodeWikiFactory,
 )
 
-from framework.forms.utils import sanitize
 from website.addons.wiki import settings
 from website.addons.wiki.views import _serialize_wiki_toc, _get_wiki_web_urls, _get_wiki_api_urls
 from website.addons.wiki.model import NodeWikiPage, render_content
-from website.addons.wiki.utils import get_sharejs_uuid, generate_private_uuid, share_db
+from website.addons.wiki.utils import (
+    get_sharejs_uuid, generate_private_uuid, share_db, delete_share_doc,
+    migrate_uuid,
+)
 from website.addons.wiki.tests.config import EXAMPLE_DOCS, EXAMPLE_OPS
 from framework.auth import Auth
 from framework.mongo.utils import to_mongo_key
@@ -59,10 +62,9 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
 
-    def test_wiki_content_returns_200(self):
-        node = ProjectFactory(is_public=True)
-        url = node.api_url_for('wiki_page_content', wname='somerandomid')
-        res = self.app.get(url)
+    def test_wiki_draft_returns_200(self):
+        url = self.project.api_url_for('wiki_page_content', wname='somerandomid')
+        res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
     def test_wiki_url_for_component_returns_200(self):
@@ -696,8 +698,7 @@ class TestWikiUuid(OsfTestCase):
         fork = self.project.fork_node(Auth(self.user))
         assert_equal(original_uuid, fork.wiki_private_uuids.get(self.wkey))
 
-        wiki_page = self.project.get_wiki_page(self.wkey)
-        wiki_page.migrate_uuid(self.project)
+        migrate_uuid(self.project, self.wname)
 
         assert_not_equal(original_uuid, self.project.wiki_private_uuids.get(self.wkey))
         assert_equal(original_uuid, fork.wiki_private_uuids.get(self.wkey))
@@ -805,7 +806,7 @@ class TestWikiShareJSMongo(OsfTestCase):
 
     @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
     def test_migrate_uuid(self, mock_sharejs):
-        self.wiki_page.migrate_uuid(self.project)
+        migrate_uuid(self.project, self.wname)
         assert_is_none(self.db.docs.find_one({'_id': self.sharejs_uuid}))
         assert_is_none(self.db.docs_ops.find_one({'name': self.sharejs_uuid}))
 
@@ -829,7 +830,7 @@ class TestWikiShareJSMongo(OsfTestCase):
 
         self.project.update_node_wiki(wname, 'Hello world', Auth(self.user))
         wiki_page = self.project.get_wiki_page(wname)
-        wiki_page.migrate_uuid(self.project)
+        migrate_uuid(self.project, wname)
 
         assert_not_equal(share_uuid, self.project.wiki_private_uuids.get(wkey))
         assert_is_none(self.db.docs.find_one({'_id': sharejs_uuid}))
@@ -837,21 +838,73 @@ class TestWikiShareJSMongo(OsfTestCase):
 
     @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
     def test_migrate_uuid_updates_node(self, mock_sharejs):
-        assert_equal(self.private_uuid, self.project.wiki_private_uuids[self.wkey])
-        self.wiki_page.migrate_uuid(self.project)
+        migrate_uuid(self.project, self.wname)
         assert_not_equal(self.private_uuid, self.project.wiki_private_uuids[self.wkey])
 
     @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
+    def test_manage_contributors_updates_uuid(self, mock_sharejs):
+        user = UserFactory()
+        self.project.add_contributor(
+            contributor=user,
+            permissions=['read', 'write', 'admin'],
+            auth=Auth(user=self.user),
+        )
+        self.project.save()
+        assert_equal(self.private_uuid, self.project.wiki_private_uuids[self.wkey])
+        # Removing admin permission does nothing
+        self.project.manage_contributors(
+            user_dicts=[
+                {'id': user._id, 'permission': 'write', 'visible': True},
+                {'id': self.user._id, 'permission': 'admin', 'visible': True},
+            ],
+            auth=Auth(user=self.user),
+            save=True,
+        )
+        assert_equal(self.private_uuid, self.project.wiki_private_uuids[self.wkey])
+        # Removing write permission migrates uuid
+        self.project.manage_contributors(
+            user_dicts=[
+                {'id': user._id, 'permission': 'read', 'visible': True},
+                {'id': self.user._id, 'permission': 'admin', 'visible': True},
+            ],
+            auth=Auth(user=self.user),
+            save=True,
+        )
+        assert_not_equal(self.private_uuid, self.project.wiki_private_uuids[self.wkey])
+
+
+    @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
     def test_delete_share_doc(self, mock_sharejs):
-        self.wiki_page.delete_share_doc(self.project, self.wname)
+        delete_share_doc(self.project, self.wname)
         assert_is_none(self.db.docs.find_one({'_id': self.sharejs_uuid}))
         assert_is_none(self.db.docs_ops.find_one({'name': self.sharejs_uuid}))
 
     @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
     def test_delete_share_doc_updates_node(self, mock_sharejs):
         assert_equal(self.private_uuid, self.project.wiki_private_uuids[self.wkey])
-        self.wiki_page.delete_share_doc(self.project)
+        delete_share_doc(self.project, self.wname)
         assert_not_in(self.wkey, self.project.wiki_private_uuids)
+
+    def test_get_draft(self):
+        # draft is current with latest wiki save
+        current_content = self.wiki_page.get_draft(self.project)
+        assert_equals(current_content, self.wiki_page.content)
+
+        # modify the sharejs wiki page contents and ensure we
+        # return the draft contents
+        new_content = 'I am a teapot'
+        new_time = int(time.time() * 1000) + 10000
+        new_version = self.example_docs[0]['_v'] + 1
+        self.db.docs.update(
+            {'_id': self.sharejs_uuid},
+            {'$set': {
+                '_v': new_version,
+                '_m.mtime': new_time,
+                '_data': new_content
+            }}
+        )
+        current_content = self.wiki_page.get_draft(self.project)
+        assert_equals(current_content, new_content)
 
     def tearDown(self):
         super(TestWikiShareJSMongo, self).tearDown()

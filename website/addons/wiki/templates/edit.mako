@@ -15,6 +15,7 @@
 
 <div class="wiki">
     <div class="row">
+<<<<<<< HEAD
       <div class="col-md-3" data-osf-panel="Menu" data-osf-panel-col="3">
               <div class="wiki-panel"> 
                   <div class="wiki-panel-body"> 
@@ -100,15 +101,83 @@
                   <div id="wmd-preview" class="wmd-panel wmd-preview"></div>
                 </div>
             </div>
+=======
+        <div class="col-sm-3">
+            <%include file="wiki/templates/nav.mako"/>
+            <%include file="wiki/templates/toc.mako"/>
+        </div>
+        <div class="col-sm-9">
+            <%include file="wiki/templates/status.mako"/>
+            <form id="wikiForm" action="${urls['web']['edit']}" method="POST">
+                <div class="form-group wmd-panel">
+                    <div class="row">
+                        <div class="col-lg-6 col-md-7">
+                            <p>
+                                <em>Changes will be stored but not published until
+                                you click "Save."</em>
+                            </p>
+                            <div id="wmd-button-bar"></div>
+                        </div>
+                        <div class="col-lg-6 col-md-5">
+                            <div data-bind="fadeVisible: throttledStatus() === 'connected'" class="pull-right" style="display: none">
+                                <ul class="list-inline" data-bind="foreach: activeUsers">
+                                    <!-- ko ifnot: id === '${user_id}' -->
+                                        <li>
+                                            <a data-bind="attr: { href: url }">
+                                                <img height="27" width="27" data-bind="attr: {src: gravatar}, tooltip: {title: name, placement: 'bottom'}"
+                                                     style="border: 1px solid black;">
+                                            </a>
+                                        </li>
+                                    <!-- /ko -->
+                                </ul>
+                            </div>
+                            <div data-bind="fadeVisible: throttledStatus() !== 'connected'" style="display: none">
+                                <div class="progress" style="margin-bottom: 5px;">
+                                    <div role="progressbar" data-bind="attr: progressBar">
+                                        <span data-bind="text: statusDisplay"></span>
+                                        <a class="sharejs-info-btn">
+                                            <i class="icon-question-sign icon-large"
+                                               data-toggle="modal"
+                                               data-bind="attr: {data-target: modalTarget}"
+                                            ></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="editor" class="wmd-input wiki-editor"
+                         data-bind="ace: currentText">Loading. . .</div>
+                </div>
+                <div class="pull-right">
+                    <button class="btn btn-success"
+                            data-bind="click: revertChanges"
+                            >Revert</button>
+                    <input type="submit"
+                           class="btn btn-primary"
+                           value="Save"
+                           onclick=$(window).off('beforeunload')>
+                </div>
+                <p class="help-block">Preview</p>
+                <div id="markdown-it-preview" class="wmd-panel wmd-preview"></div>
+                <!-- Invisible textarea for form submission -->
+                <textarea name="content" style="visibility: hidden; height: 0px"
+                          data-bind="value: currentText"></textarea>
+            </form>
+>>>>>>> a52cb396ac3e877cb284ddb40b0e6a02aebaa206
         </div>
     </div><!-- end row -->
 </div><!-- end wiki -->
 
+<<<<<<< HEAD
 
 
 
 
 <div class="modal fade" id="permissions-modal">
+=======
+<div class="modal fade" id="permissionsModal">
+>>>>>>> a52cb396ac3e877cb284ddb40b0e6a02aebaa206
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
@@ -121,7 +190,7 @@
   </div>
 </div>
 
-<div class="modal fade" id="rename-modal">
+<div class="modal fade" id="renameModal">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
@@ -134,7 +203,7 @@
   </div>
 </div>
 
-<div class="modal fade" id="delete-modal" tabindex="-1">
+<div class="modal fade" id="deleteModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
@@ -150,56 +219,51 @@
   </div>
 </div>
 
-<div class="modal fade" id="connected-modal" tabindex="-1">
+<div class="modal fade" id="connectingModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h3 class="modal-title">Connected to the Live Editor</h3>
+        <h3 class="modal-title">Connecting to the collaborative wiki</h3>
       </div>
       <div class="modal-body">
         <p>
-            The current wiki is in live editing mode.
-            You and other contributors will be able to see the changes made
-            in real time. All changes you make will be saved as a draft
-            after leaving this page.
+            This page is currently attempting to connect to the collaborative wiki. You may continue to make edits.
+            <strong>Changes will not be saved until you press the "Save" button.</strong>
         </p>
       </div>
     </div>
   </div>
 </div>
 
-<div class="modal fade" id="connecting-modal" tabindex="-1">
+<div class="modal fade" id="disconnectedModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h3 class="modal-title">Connecting to the Live Editor</h3>
+        <h3 class="modal-title">Collaborative wiki is unavailable</h3>
       </div>
       <div class="modal-body">
         <p>
-            This page is currently attempting to connect to the live
-            editor. While you are not yet connected, changes will not be
-            saved after leaving this page unless you press the "Save" button.
+            The collaborative wiki is currently unavailable. You may continue to make edits.
+            <strong>Changes will not be saved until you press the "Save" button.</strong>
         </p>
       </div>
     </div>
   </div>
 </div>
 
-<div class="modal fade" id="disconnected-modal" tabindex="-1">
+<div class="modal fade" id="unsupportedModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h3 class="modal-title">Live Editing is Unavailable</h3>
+        <h3 class="modal-title">Browser unsupported</h3>
       </div>
       <div class="modal-body">
         <p>
-            The live editor is currently unavailable.
-            This means other contributors are not able to see any of your
-            changes, and changes will not be saved after leaving this page
-            unless you press the "Save" button.
+            Your browser does not support collaborative editing. You may continue to make edits.
+            <strong>Changes will not be saved until you press the "Save" button.</strong>
         </p>
       </div>
     </div>
@@ -215,13 +279,13 @@ ${parent.javascript_bottom()}
             content: '${urls['api']['content']}',
             sharejs: '${sharejs_url}'
         },
-        email: '${user_name}',
         metadata: {
             registration: true,
             docId: '${sharejs_uuid}',
             userId: '${user_id}',
             userName: '${user_full_name}',
-            userUrl: '${user_url}'
+            userUrl: '${user_url}',
+            userGravatar: '${urls['gravatar']}'.replace('&amp;', '&')
         }
     };
 </script>

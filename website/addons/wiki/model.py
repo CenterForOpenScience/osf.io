@@ -15,7 +15,6 @@ from modularodm import fields
 
 from framework.forms.utils import sanitize
 from framework.guid.model import GuidStoredObject
-from framework.mongo.utils import to_mongo_key
 
 from website import settings
 from website.addons.base import AddonNodeSettingsBase
@@ -35,9 +34,8 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
 
     def after_remove_contributor(self, node, removed):
         # Migrate every page on the node
-        for wiki_name in node.wiki_pages_current:
-            wiki_page = node.get_wiki_page(wiki_name)
-            wiki_page.migrate_uuid(node)
+        for wiki_name in node.wiki_private_uuids:
+            wiki_utils.migrate_uuid(node, wiki_name)
 
     def to_json(self, user):
         return {}
@@ -123,51 +121,26 @@ class NodeWikiPage(GuidStoredObject):
 
         return sanitize(self.html(node), tags=[], strip=True)
 
-    def delete_share_doc(self, node, save=True):
-        """Deletes share document and removes namespace from model."""
+    def get_draft(self, node):
+        """
+        Return most recently edited version of wiki, whether that is the
+        last saved version or the most recent sharejs draft.
+        """
 
         db = wiki_utils.share_db()
         sharejs_uuid = wiki_utils.get_sharejs_uuid(node, self.page_name)
 
-        db['docs'].remove({'_id': sharejs_uuid})
-        db['docs_ops'].remove({'name': sharejs_uuid})
-
-        wiki_key = to_mongo_key(self.page_name)
-        del node.wiki_private_uuids[wiki_key]
-        node.save()
-
-        if save:
-            self.save()
-
-    def migrate_uuid(self, node, save=True):
-        """Migrates uuid to new namespace."""
-
-        db = wiki_utils.share_db()
-        old_sharejs_uuid = wiki_utils.get_sharejs_uuid(node, self.page_name)
-
-        wiki_utils.broadcast_to_sharejs('lock', old_sharejs_uuid)
-
-        wiki_utils.generate_private_uuid(node, self.page_name)
-        new_sharejs_uuid = wiki_utils.get_sharejs_uuid(node, self.page_name)
-
-        doc_item = db['docs'].find_one({'_id': old_sharejs_uuid})
+        doc_item = db['docs'].find_one({'_id': sharejs_uuid})
         if doc_item:
-            doc_item['_id'] = new_sharejs_uuid
-            db['docs'].insert(doc_item)
-            db['docs'].remove({'_id': old_sharejs_uuid})
+            sharejs_version = doc_item['_v']
+            sharejs_timestamp = doc_item['_m']['mtime']
+            sharejs_timestamp /= 1000   # Convert to appropriate units
+            sharejs_date = datetime.datetime.utcfromtimestamp(sharejs_timestamp)
 
-        ops_items = [item for item in db['docs_ops'].find({'name': old_sharejs_uuid})]
-        if ops_items:
-            for item in ops_items:
-                item['_id'] = item['_id'].replace(old_sharejs_uuid, new_sharejs_uuid)
-                item['name'] = new_sharejs_uuid
-            db['docs_ops'].insert(ops_items)
-            db['docs_ops'].remove({'name': old_sharejs_uuid})
+            if sharejs_version > 1 and sharejs_date > self.date:
+                return doc_item['_data']
 
-        wiki_utils.broadcast_to_sharejs('unlock', old_sharejs_uuid)
-
-        if save:
-            self.save()
+        return self.content
 
     def save(self, *args, **kwargs):
         rv = super(NodeWikiPage, self).save(*args, **kwargs)

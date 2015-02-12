@@ -45,6 +45,7 @@ from website import settings
 from website.util import web_url_for
 from website.util import api_url_for
 from website.exceptions import NodeStateError
+from website.citations.utils import datetime_to_csl
 from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.project.metadata.schemas import OSF_META_SCHEMAS
@@ -603,6 +604,8 @@ class Node(GuidStoredObject, AddonModelMixin):
     files_versions = fields.DictionaryField()
     wiki_pages_current = fields.DictionaryField()
     wiki_pages_versions = fields.DictionaryField()
+    # Dictionary field mapping node wiki page to sharejs private uuid.
+    # {<page_name>: <sharejs_id>}
     wiki_private_uuids = fields.DictionaryField()
 
     creator = fields.ForeignField('user', backref='created')
@@ -1969,6 +1972,30 @@ class Node(GuidStoredObject, AddonModelMixin):
                 )
         logger.error("Node {0} has a parent that is not a project".format(self._id))
 
+    @property
+    def csl(self):  # formats node information into CSL format for citation parsing
+        """a dict in CSL-JSON schema
+
+        For details on this schema, see:
+            https://github.com/citation-style-language/schema#csl-json-schema
+        """
+        csl = {
+            'id': self._id,
+            'title': self.title,
+            'author': [
+                contributor.csl_name  # method in auth/model.py which parses the names of authors
+                for contributor in self.contributors
+            ],
+            'publisher': 'Open Science Framework',
+            'type': 'webpage',
+            'URL': self.display_absolute_url,
+        }
+
+        if self.logs:
+            csl['issued'] = datetime_to_csl(self.logs[-1].date)
+
+        return csl
+
     def author_list(self, and_delim='&'):
         author_names = [
             author.biblio_name
@@ -2314,6 +2341,11 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.contributors = users
 
         if permissions_changed:
+            if ['read'] in permissions_changed.values():
+                from website.addons.wiki.utils import migrate_uuid
+                for wiki_name in self.wiki_private_uuids:
+                    migrate_uuid(self, wiki_name)
+
             self.add_log(
                 action=NodeLog.PERMISSIONS_UPDATED,
                 params={

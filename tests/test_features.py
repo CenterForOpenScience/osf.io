@@ -1,7 +1,10 @@
+import os
 import unittest
+
 from website import settings
 
-requires_search = unittest.skipIf( 
+
+requires_search = unittest.skipIf(
     not settings.SEARCH_ENGINE,
     'search disabled'
 )
@@ -12,4 +15,8 @@ requires_piwik = unittest.skipIf(
 requires_gnupg = unittest.skipIf(
     not settings.USE_GNUPG,
     'gnupg disabled'
+)
+requires_csl_styles = unittest.skipIf(
+    not os.path.exists(os.path.join(settings.CITATION_STYLES_PATH, '.git')),
+    'CSL styles not detected'
 )

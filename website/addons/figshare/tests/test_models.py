@@ -44,14 +44,14 @@ class TestCallbacks(OsfTestCase):
             'type': 'project',
             'id': '313131',
             'title': 'A PROJECT'
-           }
+        }
         self.node_settings.update_fields(newfields, self.project, Auth(self.project.creator))
         #check for updated
         assert_equals(self.node_settings.figshare_id, '313131')
         assert_equals(self.node_settings.figshare_type, 'project')
         assert_equals(self.node_settings.figshare_title, 'A PROJECT')
         # check for log added
-        assert_equals(len(self.project.logs), num_logs+1)
+        assert_equals(len(self.project.logs), num_logs + 1)
 
     def test_update_fields_fileset(self):
         num_logs = len(self.project.logs)
@@ -60,14 +60,14 @@ class TestCallbacks(OsfTestCase):
             'type': 'fileset',
             'id': '313131',
             'title': 'A FILESET'
-           }
+        }
         self.node_settings.update_fields(newfields, self.project, Auth(self.project.creator))
         #check for updated
         assert_equals(self.node_settings.figshare_id, '313131')
         assert_equals(self.node_settings.figshare_type, 'fileset')
         assert_equals(self.node_settings.figshare_title, 'A FILESET')
         # check for log added
-        assert_equals(len(self.project.logs), num_logs+1)
+        assert_equals(len(self.project.logs), num_logs + 1)
 
     def test_update_fields_some_missing(self):
         num_logs = len(self.project.logs)
@@ -76,22 +76,22 @@ class TestCallbacks(OsfTestCase):
             'type': 'project',
             'id': '313131',
             'title': 'A PROJECT'
-           }
+        }
         self.node_settings.update_fields(newfields, self.project, Auth(self.project.creator))
         #check for updated
         assert_equals(self.node_settings.figshare_id, '313131')
         assert_equals(self.node_settings.figshare_title, 'A PROJECT')
         # check for log added
-        assert_equals(len(self.project.logs), num_logs+1)
+        assert_equals(len(self.project.logs), num_logs + 1)
 
     def test_update_fields_invalid(self):
         num_logs = len(self.project.logs)
         # try updating fields
         newfields = {
-            'adad' : 131313,
+            'adad': 131313,
             'i1513': '313131',
             'titladad': 'A PROJECT'
-           }
+        }
         self.node_settings.update_fields(newfields, self.project, Auth(self.project.creator))
         #check for updated
         assert_equals(self.node_settings.figshare_id, '123456')
@@ -143,8 +143,8 @@ class TestCallbacks(OsfTestCase):
         )
 
         assert_in(
-                self.project.project_or_component,
-                msg
+            self.project.project_or_component,
+            msg
         )
         assert_equal(
             self.node_settings.user_settings,

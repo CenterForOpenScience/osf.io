@@ -7,7 +7,7 @@
     "requirejs": "~2.1.11",
     "moment": "~2.7.0",
     "select2": "~3.5.1",
-    "ace-builds": "https://github.com/ajaxorg/ace-builds.git",
+    "ace-builds": "~1.1.8",
     "qunit": "~1.14.0",
     "sinon": "~1.10.2",
     "jquery-mockjax": "1.5.3",
@@ -24,12 +24,21 @@
     "jquery-autosize": "~1.18.15",
     "x-editable": "~1.5.1",
     "slickgrid": "~2.1.0",
+    "reconnectingWebsocket": "#07669519f8",
+    "truncate": "https://github.com/pathable/truncate.git#5da408e2325dd965e0c94c354622ad54645824b9",
     "dropzone": "https://github.com/sloria/dropzone.git#accept-directory",
     "treebeard": "https://github.com/caneruguz/treebeard.git#4112b22be4333c9fce35249131632b6b2a37bb87",
     "jquery.cookie": "~1.4.1",
     "hgrid": "~0.2.10",
     "uri.js": "~1.14.1",
+<<<<<<< HEAD
     "xhook": "~1.3.0",
     "osf-panel": "https://github.com/caneruguz/osf-panel.git#develop"
+=======
+    "markdown-it": "~3.0.5",
+    "markdown-it-sanitizer": "~0.2.0",
+    "markdown-it-video": "https://github.com/brianjgeiger/markdown-it-video.git#586dcccb9151e6e15cd1232572f43cadc64296e7",
+    "xhook": "~1.3.0"
+>>>>>>> a52cb396ac3e877cb284ddb40b0e6a02aebaa206
   }
 }

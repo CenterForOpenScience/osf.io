@@ -205,6 +205,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     # Tags for internal use
     system_tags = fields.StringField(list=True)
+    security_messages = fields.DictionaryField()
 
     # Per-project unclaimed user data:
     # Format: {
@@ -470,6 +471,13 @@ class User(GuidStoredObject, AddonModelMixin):
         if not self.password or not raw_password:
             return False
         return check_password_hash(self.password, raw_password)
+
+    @property
+    def csl_name(self):
+        return {
+            'family': self.family_name,
+            'given': self.given_name,
+        }
 
     def change_password(self, raw_old_password, raw_new_password, raw_confirm_password):
         """Change the password for this user to the hash of ``raw_new_password``."""

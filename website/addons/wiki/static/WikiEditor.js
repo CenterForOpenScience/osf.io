@@ -11,13 +11,22 @@ require('bootstrap-editable');
 var Markdown = require('pagedown-ace-converter');
 Markdown.getSanitizingConverter = require('pagedown-ace-sanitizer').getSanitizingConverter;
 require('imports?Markdown=pagedown-ace-converter!pagedown-ace-editor');
+<<<<<<< HEAD
 require('osf-panel');
+=======
+var md = require('markdown');
+>>>>>>> a52cb396ac3e877cb284ddb40b0e6a02aebaa206
 
 var editor;
 
+/**
+ * Binding handler that instantiates an ACE editor.
+ * The value accessor must be a ko.observable.
+ * Example: <div data-bind="ace: currentText" id="editor"></div>
+ */
 ko.bindingHandlers.ace = {
     init: function(element, valueAccessor) {
-        editor = ace.edit(element.id);
+        editor = ace.edit(element.id); // jshint ignore:line
 
         // Updates the view model based on changes to the editor
         editor.getSession().on('change', function () {
@@ -29,8 +38,10 @@ ko.bindingHandlers.ace = {
         var value = ko.unwrap(valueAccessor()); // Value from view model
 
         // Updates the editor based on changes to the view model
-        if (!editor.getReadOnly() && value !== undefined && content !== value) {
-            editor.setValue(value, -1);
+        if (value !== undefined && content !== value) {
+            var cursorPosition = editor.getCursorPosition();
+            editor.setValue(value);
+            editor.gotoLine(cursorPosition.row + 1, cursorPosition.column);
         }
     }
 };
@@ -41,96 +52,110 @@ function ViewModel(url) {
     self.publishedText = ko.observable('');
     self.currentText = ko.observable('');
     self.activeUsers = ko.observableArray([]);
-    self.status = ko.observable('connecting');
+    self.status = ko.observable('connected');
+    self.throttledStatus = ko.observable(self.status());
 
     self.displayCollaborators = ko.computed(function() {
        return self.activeUsers().length > 1;
     });
 
+    // Throttle the display when updating status.
+    self.updateStatus = function() {
+        self.throttledStatus(self.status());
+    };
+
+    self.throttledUpdateStatus = $osf.throttle(self.updateStatus, 4000, {leading: false});
+
+    self.status.subscribe(function (newValue) {
+        if (newValue === 'disconnected') {
+            self.updateStatus();
+        }
+
+        self.throttledUpdateStatus();
+    });
+
     self.statusDisplay = ko.computed(function() {
-        switch(self.status()) {
-            case 'connected':
-                return 'Live Editing Mode';
+        switch(self.throttledStatus()) {
             case 'connecting':
-                return 'Attempting to Reconnect';
+                return 'Attempting to connect';
+            case 'unsupported':
+                return 'Your browser does not support live editing';
             default:
-                return 'Live Editing Unavailable';
+                return 'Live editing unavailable';
         }
     });
 
     self.progressBar = ko.computed(function() {
-        switch(self.status()) {
-            case 'connected':
-                return {
-                    class: "progress-bar progress-bar-success",
-                    style: "width: 100%"
-                };
+        switch(self.throttledStatus()) {
             case 'connecting':
                 return {
-                    class: "progress-bar progress-bar-warning progress-bar-striped active",
-                    style: "width: 100%"
+                    class: 'progress-bar progress-bar-warning progress-bar-striped active',
+                    style: 'width: 100%'
                 };
             default:
                 return {
-                    class: "progress-bar progress-bar-danger",
-                    style: "width: 100%"
+                    class: 'progress-bar progress-bar-danger',
+                    style: 'width: 100%'
                 };
         }
     });
 
     self.modalTarget = ko.computed(function() {
-        switch(self.status()) {
-            case 'connected':
-                return '#connected-modal';
+        switch(self.throttledStatus()) {
             case 'connecting':
-                return '#connecting-modal';
+                return '#connectingModal';
+            case 'unsupported':
+                return '#unsupportedModal';
             default:
-                return '#disconnected-modal';
+                return '#disconnectedModal';
         }
     });
 
-    self.changed = function() {
+    self.wikisDiffer = function(wiki1, wiki2) {
         // Handle inconsistencies in newline notation
-        var published = typeof self.publishedText() === 'string' ?
-            self.publishedText().replace(/(\r\n|\n|\r)/gm, '\n') : '';
-        var current = typeof self.currentText() === 'string' ?
-            self.currentText().replace(/(\r\n|\n|\r)/gm, '\n') : '';
+        var clean1 = typeof wiki1 === 'string' ?
+            wiki1.replace(/(\r\n|\n|\r)/gm, '\n') : '';
+        var clean2 = typeof wiki2 === 'string' ?
+            wiki2.replace(/(\r\n|\n|\r)/gm, '\n') : '';
 
-        return published !== current;
+        return clean1 !== clean2;
+    };
+
+    self.changed = function() {
+        return self.wikisDiffer(self.publishedText(), self.currentText());
     };
 
     // Fetch initial wiki text
-    self.fetchData = function(callback) {
-        $.ajax({
+    self.fetchData = function() {
+        var request = $.ajax({
             type: 'GET',
             url: url,
-            dataType: 'json',
-            success: function (response) {
-                self.publishedText(response.wiki_content);
-                if (callback) callback(response);
-            },
-            error: function (xhr, textStatus, error) {
-                $.osf.growl('Error','The wiki content could not be loaded.');
-                Raven.captureMessage('Could not GET wiki contents.', {
-                    url: url,
-                    textStatus: textStatus,
-                    error: error
-                });
-            }
+            dataType: 'json'
         });
+        request.done(function (response) {
+            self.publishedText(response.wiki_content);
+        });
+        request.fail(function (xhr, textStatus, error) {
+            $osf.growl('Error','The wiki content could not be loaded.');
+            Raven.captureMessage('Could not GET wiki contents.', {
+                url: url,
+                textStatus: textStatus,
+                error: error
+            });
+        });
+        return request;
     };
 
-    self.loadPublished = function() {
-        self.fetchData(function() {
+    self.revertChanges = function() {
+        return self.fetchData().then(function() {
             self.currentText(self.publishedText());
         });
     };
 
-    self.fetchData();
-
     $(window).on('beforeunload', function() {
         if (self.changed() && self.status() !== 'connected') {
-            return 'There are unsaved changes to your wiki.';
+            return 'There are unsaved changes to your wiki. If you exit ' +
+                'the page now, those changes may be lost.';
         }
     });
 
@@ -146,10 +171,18 @@ function ViewModel(url) {
 
 function WikiEditor(selector, url) {
     this.viewModel = new ViewModel(url);
-    $.osf.applyBindings(this.viewModel, selector);
+    $osf.applyBindings(this.viewModel, selector);
     var mdConverter = Markdown.getSanitizingConverter();
     var mdEditor = new Markdown.Editor(mdConverter);
     mdEditor.run(editor);
+    var previewElement = $('#markdown-it-preview');
+    var renderTimeout;
+    editor.on('change', function() {
+        clearTimeout(renderTimeout);
+        renderTimeout = setTimeout(function() {
+            previewElement.html(md.render(editor.getValue()));
+        }, 500);
+    });
 }
 
 module.exports = WikiEditor;

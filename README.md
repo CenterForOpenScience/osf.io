@@ -336,6 +336,15 @@ $ inv pack -dw
 $ inv assets -dw
 ```
 
+## Downloading citation styles (optional)
+
+To download citation styles, run:
+
+```bash
+$ invoke update_citation_styles
+```
+
+
 ## Setting up addons
 
 To install the python libraries needed to support the enabled addons, run:

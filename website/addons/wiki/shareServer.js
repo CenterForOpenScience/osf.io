@@ -1,30 +1,20 @@
-// Load config file
-var fs = require('fs');
-
-var env = process.env.NODE_ENV || 'development';
-var configFile = './settings/sharejs-' + env + '.json';
-var config = fs.existsSync(configFile) ? require(configFile) : {};
-
-// Server Options
-var serverConfig = config.server || {};
-var port = serverConfig.port || 7007;
-var ssl = serverConfig.ssl || false;
-var sslKey = serverConfig.sslKey || "website/addons/wiki/sharejs.key";
-var sslCert = serverConfig.sslCert || "website/addons/wiki/sharejs.crt";
-
-// Mongo options
-var dbConfig = config.db || {};
-var dbHost = dbConfig.host || "localhost";
-var dbPort = dbConfig.port || 27017;
-var dbName = dbConfig.name || "sharejs";
-
 // Library imports
 var sharejs = require('share');
 var livedb = require('livedb');
 var Duplex = require('stream').Duplex;
 var WebSocketServer = require('ws').Server;
 var express = require('express');
-var http = (ssl) ? require('https') : require('http');
+var http = require('http');
+var async = require('async');
+
+// Server Options
+var host = process.env.SHAREJS_SERVER_HOST || 'localhost';
+var port = process.env.SHAREJS_SERVER_PORT || 7007;
+
+// Mongo options
+var dbHost = process.env.SHAREJS_DB_HOST || 'localhost';
+var dbPort = process.env.SHAREJS_DB_PORT || 27017;
+var dbName = process.env.SHAREJS_DB_NAME || 'sharejs';
 
 // Server setup
 var mongo = require('livedb-mongo')(
@@ -34,12 +24,7 @@ var mongo = require('livedb-mongo')(
 var backend = livedb.client(mongo);
 var share = sharejs.server.createClient({backend: backend});
 var app = express();
-var server = (ssl)
-    ? http.createServer({
-       key: fs.readFileSync(sslKey),
-       cert: fs.readFileSync(sslCert)
-    }, app)
-    : http.createServer(app);
+var server = http.createServer(app);
 var wss = new WebSocketServer({ server: server});
 
 // Local variables
@@ -48,8 +33,8 @@ var locked = {};
 
 // Allow CORS
 app.use(function(req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
     next();
 });
 
@@ -59,22 +44,30 @@ app.use(express.static(sharejs.scriptsDir));
 // Broadcasts message to all clients connected to that doc
 // TODO: Can we access the relevant list without iterating over every client?
 wss.broadcast = function(docId, message) {
-    for (var i in this.clients) {
-        var c = this.clients[i];
-        if (c.userMeta && c.userMeta.docId === docId) {
-            c.send(message);
+    async.each(this.clients, function (client, cb) {
+        if (client.userMeta && client.userMeta.docId === docId) {
+            try {
+                client.send(message);
+            } catch (e) {
+                // ignore errors - connection will likely be closed by library
+            }
         }
-    }
+
+        cb();
+    });
 };
 
 wss.on('connection', function(client) {
-
     var stream = new Duplex({objectMode: true});
 
     stream._read = function() {};
     stream._write = function(chunk, encoding, callback) {
         if (client.state !== 'closed') {
-            client.send(JSON.stringify(chunk));
+            try {
+                client.send(JSON.stringify(chunk));
+            } catch (e) {
+                // ignore errors - connection will likely be closed by library
+            }
         }
         callback();
     };
@@ -83,21 +76,27 @@ wss.on('connection', function(client) {
     stream.remoteAddress = client.upgradeReq.connection.remoteAddress;
 
     client.on('message', function(data) {
-
         if (client.userMeta && locked[client.userMeta.docId]) {
             wss.broadcast(client.userMeta.docId, JSON.stringify({type: 'lock'}));
             return;
         }
 
+        try {
+            data = JSON.parse(data);
+        } catch (e) {
+            console.error('could not parse message data as json');
+            return;
+        }
+
         // Handle our custom messages separately
-        data = JSON.parse(data);
         if (data.registration) {
             var docId = data.docId;
             var userId = data.userId;
 
             // Create a metadata entry for this document
-            if (!docs[docId])
+            if (!docs[docId]) {
                 docs[docId] = {};
+            }
 
             // Add user to metadata
             if (!docs[docId][userId]) {
@@ -117,13 +116,12 @@ wss.on('connection', function(client) {
 
             // Lock client if doc is locked
             if (locked[docId]) {
-                client.send(JSON.stringify({type: 'lock'}));
+                try {
+                    client.send(JSON.stringify({type: 'lock'}));
+                } catch (e) {
+                    // ignore errors - connection will likely be closed by library
+                }
             }
-        } else if (data.publish) {
-            wss.broadcast(data.docId, JSON.stringify({
-                type: 'updatePublished',
-                content: data.content
-            }));
         } else {
             stream.push(data);
         }
@@ -162,41 +160,40 @@ wss.on('connection', function(client) {
 
     // Give the stream to sharejs
     return share.listen(stream);
-
 });
 
 // Lock a document
-app.post('/lock/:id', function lockDoc(req, res, next) {
+app.post('/lock/:id', function (req, res, next) {
     locked[req.params.id] = true;
     wss.broadcast(req.params.id, JSON.stringify({type: 'lock'}));
-    res.send(req.params.id + " was locked.");
+    res.send(req.params.id + ' was locked.');
 });
 
 // Unlock a document
-app.post('/unlock/:id', function lockDoc(req, res, next) {
+app.post('/unlock/:id', function (req, res, next) {
     delete locked[req.params.id];
     wss.broadcast(req.params.id, JSON.stringify({type: 'unlock'}));
-    res.send(req.params.id + " was unlocked.");
+    res.send(req.params.id + ' was unlocked.');
 });
 
 // Redirect from a document
-app.post('/redirect/:id/:redirect', function lockDoc(req, res, next) {
+app.post('/redirect/:id/:redirect', function (req, res, next) {
     wss.broadcast(req.params.id, JSON.stringify({
         type: 'redirect',
         redirect: req.params.redirect
     }));
-    res.send(req.params.id + " was redirected to " + req.params.redirect);
+    res.send(req.params.id + ' was redirected to ' + req.params.redirect);
 });
 
 // Redirect from a deleted document
-app.post('/delete/:id/:redirect', function lockDoc(req, res, next) {
+app.post('/delete/:id/:redirect', function (req, res, next) {
     wss.broadcast(req.params.id, JSON.stringify({
         type: 'delete',
         redirect: req.params.redirect
     }));
-    res.send(req.params.id + " was deleted and redirected to " + req.params.redirect);
+    res.send(req.params.id + ' was deleted and redirected to ' + req.params.redirect);
 });
 
-server.listen(port, function() {
-    console.log('Server running at http://127.0.0.1:' + port);
+server.listen(port, host, function() {
+    console.log('Server running at http://' + host + ':' + port);
 });

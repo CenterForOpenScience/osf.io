@@ -416,19 +416,6 @@ img.hg-addon-icon {
 
 /* End add-on styles */
 
-.citation-label {
-    font-weight: bold;
-}
-
-/*.citation-list {
-    display: none;
-}*/
-
-.citation-text {
-    text-indent: -3em;
-    margin-left: 3em;
-}
-
 .disabled {
     cursor: default !important;
     pointer-events: none;
@@ -1167,7 +1154,7 @@ div.search-result  {
 }
 
 .wmd-button > span {
-    background-image: url(../vendor/pagedown-ace/wmd-buttons.png);
+    background-image: url(../../addons/wiki/static/pagedown-ace/wmd-buttons.png);
     background-repeat: no-repeat;
     background-position: 0px 0px;
     width: 20px;
@@ -1929,7 +1916,7 @@ span#profileFullname{
 
 
 #projectSubnav .navbar-collapse {
-    padding-left: 0; 
+    padding-left: 0;
     padding-right: 0;
 }
 
@@ -1956,7 +1943,7 @@ span#profileFullname{
     .osf-project-navbar li>a {
         padding-left: 30px;
         padding-right: 30px;
-    }   
+    }
     .osf-project-navbar a.project-title {
     }
     .project-nav {
@@ -1979,7 +1966,7 @@ span#profileFullname{
 @media (min-width: 768px) {
     .osf-navbar .navbar-nav>li>a, .osf-project-navbar li>a {
         padding-left: 7px;
-        padding-right: 7px;    
+        padding-right: 7px;
     }
     .navbar .search-query {
     width: 190px;
@@ -2004,7 +1991,7 @@ span#profileFullname{
 @media (min-width: 992px) {
     .osf-navbar .navbar-nav>li>a, .osf-project-navbar li>a {
         padding-left: 10px;
-        padding-right: 10px;    
+        padding-right: 10px;
     }
     .navbar .search-query {
         width: 360px;
@@ -2016,7 +2003,7 @@ span#profileFullname{
 @media (min-width: 1200px) {
     .osf-navbar .navbar-nav>li>a, .osf-project-navbar li>a {
         padding-left: 15px;
-        padding-right: 15px;    
+        padding-right: 15px;
     }
     .navbar .search-query {
     width: 270px;
@@ -2080,15 +2067,15 @@ span#profileFullname{
 }
 
 #searchPageFullBar:-moz-placeholder { /* Firefox 18- */
-   color: #738EA2;  
+   color: #738EA2;
 }
 
 #searchPageFullBar::-moz-placeholder {  /* Firefox 19+ */
-   color: #738EA2;  
+   color: #738EA2;
 }
 
-#searchPageFullBar:-ms-input-placeholder {  
-   color: #738EA2;  
+#searchPageFullBar:-ms-input-placeholder {
+   color: #738EA2;
 }
 #searchControls>.row {
     padding-top: 60px;
@@ -2160,3 +2147,4 @@ span#profileFullname{
         margin-bottom: 20px;
     }
 }
+

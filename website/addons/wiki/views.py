@@ -14,6 +14,7 @@ from framework.flask import redirect
 
 from website.addons.wiki import settings
 from website.addons.wiki import utils as wiki_utils
+from website.profile.utils import get_gravatar
 from website.project.views.node import _view_project
 from website.project import show_diff
 from website.project.model import has_anonymous_link
@@ -103,6 +104,7 @@ def _get_wiki_api_urls(node, name, additional_urls=None):
         'base': node.api_url_for('project_wiki_home'),
         'delete': node.api_url_for('project_wiki_delete', wname=name),
         'rename': node.api_url_for('project_wiki_rename', wname=name),
+        'content': node.api_url_for('wiki_page_content', wname=name),
     }
     if additional_urls:
         urls.update(additional_urls)
@@ -162,7 +164,8 @@ def wiki_widget(**kwargs):
 
     ret = {
         'complete': True,
-        'content': unicode(wiki_html) if wiki_html else None,
+        'wiki_content': unicode(wiki_html) if wiki_html else None,
+        'wiki_content_url': node.api_url_for('wiki_page_content', wname='home'),
         'more': more,
         'include': False,
     }
@@ -213,15 +216,16 @@ def project_wiki_compare(auth, wname, wver, **kwargs):
 
 
 @must_be_valid_project
-@must_be_contributor_or_public
+@must_have_permission('write')
 @must_have_addon('wiki', 'node')
 def wiki_page_content(wname, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    wiki_name = wname.strip()
-    wiki_page = node.get_wiki_page(wiki_name)
+    wiki_page = node.get_wiki_page(wname)
 
     return {
-        'wiki_content': wiki_page.content if wiki_page else ''
+        'wiki_content': wiki_page.content if wiki_page else '',
+        'wiki_draft': (wiki_page.get_draft(node) if wiki_page
+                       else wiki_utils.get_sharejs_content(node, wname)),
     }
 
 
@@ -291,6 +295,7 @@ def project_wiki_edit(auth, wname, **kwargs):
                 'page': wiki_page_api_url
             }),
             'web': _get_wiki_web_urls(node, wiki_name),
+            'gravatar': get_gravatar(auth.user, 32),
         },
     }
     ret.update(_view_project(node, auth, primary=True))

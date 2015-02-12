@@ -1,5 +1,5 @@
-
-/** Initialization code for the project dashboard. */
+/** Initialization code for the project overview page. */
+'use strict';
 
 var $ = require('jquery');
 require('../../vendor/bower_components/jquery.tagsinput/jquery.tagsinput.css');
@@ -16,9 +16,14 @@ var Raven = require('raven-js');
 
 var NodeControl = require('../nodeControl.js');
 
+var CitationWidget = require('../citations.js');
 
-var nodeApiUrl = window.contextVars.node.urls.api;
+var md = require('markdown');
+require('truncate');
 
+var ctx = window.contextVars;
+var nodeApiUrl = ctx.node.urls.api;
+var wikiContentUrl = ctx.urls.wikiContent;
 
 // Initialize controller for "Add Links" modal
 new pointers.PointerManager('#addPointer', window.contextVars.node.title);
@@ -40,6 +45,12 @@ if ($comments.length) {
     var hasChildren = window.contextVars.node.hasChildren;
     Comment.init('#commentPane', userName, canComment, hasChildren);
 }
+
+// Initialize CitationWidget if user isn't viewing through an anonymized VOL
+if (!ctx.node.anonymous) {
+    new CitationWidget('#citationStyleInput', '#citationText');
+}
+
 
 $(document).ready(function() {
     // Treebeard Files view
@@ -91,7 +102,7 @@ $(document).ready(function() {
                     ];
                 }
 
-                configOption = Fangorn.Utils.resolveconfigOption.call(this, item, 'resolveRows', [item]);
+                var configOption = Fangorn.Utils.resolveconfigOption.call(this, item, 'resolveRows', [item]);
                 return configOption || defaultColumns;
             }
         };
@@ -136,7 +147,19 @@ $(document).ready(function() {
     });
 
     // Limit the maximum length that you can type when adding a tag
-    $('#node-tags_tag').attr("maxlength", "128");
+    $('#node-tags_tag').attr('maxlength', '128');
+
+    // Render the raw markdown of the wiki
+    var markdownElement = $('#markdown-it-render');
+    var request = $.ajax({
+        url: wikiContentUrl
+    });
+    request.done(function(resp) {
+        var rawText = resp.wiki_content || '*No wiki content*';
+        var renderedText = md.render(rawText);
+        var truncatedText = $.truncate(renderedText, {length: 400});
+        markdownElement.html(truncatedText);
+    });
 
     // Remove delete UI if not contributor
     if (!window.contextVars.currentUser.canEdit || window.contextVars.node.isRegistration) {
