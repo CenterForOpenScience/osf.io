@@ -16,6 +16,11 @@ class TestFileGuid(OsfTestCase):
         super(OsfTestCase, self).setUp()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
+        self.project.add_addon('figshare', auth=Auth(self.user))
+        self.node_addon = self.project.get_addon('figshare')
+        self.node_addon.figshare_id = 8
+        self.node_addon.figshare_type = 'project'
+        self.node_addon.save()
 
     def test_provider(self):
         assert_equal(
@@ -23,8 +28,16 @@ class TestFileGuid(OsfTestCase):
             model.FigShareGuidFile().provider
         )
 
-    def test_correct_path(self):
-        guid = model.FigShareGuidFile(file_id=2, article_id=4)
+    def test_correct_path_article(self):
+        self.node_addon.figshare_type = 'fileset'
+        self.node_addon.save()
+        self.node_addon.reload()
+
+        guid = model.FigShareGuidFile(file_id=2, article_id=4, node=self.project)
+        assert_equal(guid.waterbutler_path, '/2')
+
+    def test_correct_path_project(self):
+        guid = model.FigShareGuidFile(file_id=2, article_id=4, node=self.project)
         assert_equal(guid.waterbutler_path, '/4/2')
 
     def test_unique_identifier(self):
@@ -88,25 +101,18 @@ class TestFileGuid(OsfTestCase):
         assert_equal(guid.name, 'Morty')
 
     def test_node_addon_get_or_create(self):
-        self.project.add_addon('figshare', auth=Auth(self.user))
-        node_addon = self.project.get_addon('figshare')
-        node_addon.figshare_id = 8
-        guid, _ = node_addon.find_or_create_file_guid('/4/2')
+        guid, _ = self.node_addon.find_or_create_file_guid('/4/2')
         assert_equal(guid.waterbutler_path, '/4/2')
         assert_equal(guid.file_id, '2')
         assert_equal(guid.article_id, '4')
 
     def test_node_addon_get_or_create_finds(self):
-        self.project.add_addon('figshare', auth=Auth(self.user))
-        node_addon = self.project.get_addon('figshare')
-        node_addon.figshare_id = 8
-        guid, created = node_addon.find_or_create_file_guid('/4/2')
+        guid, created = self.node_addon.find_or_create_file_guid('/4/2')
         assert_true(created)
 
-        other, other_created = node_addon.find_or_create_file_guid('/4/2')
+        other, other_created = self.node_addon.find_or_create_file_guid('/4/2')
         assert_false(other_created)
         assert_equal(guid, other)
-
 
 class TestCallbacks(OsfTestCase):
 
