@@ -6,8 +6,8 @@ var MathJax = require('MathJax');
 /**
  * Render math with MathJax within a given element.
  * */
-function mathjaxify(previewSelector) {
-    var $elem = $(previewSelector);
+function mathjaxify(selector) {
+    var $elem = $(selector);
     function typesetStubbornMath() {
         $elem.each(function() {
             if ($(this).text() !== '') {
@@ -16,7 +16,7 @@ function mathjaxify(previewSelector) {
         });
     }
     var preview = $elem[0];
-    if (typeof(typeset) === 'undefined' || typeset === true) {
+    if (typeof(window.typeset) === 'undefined' || window.typeset === true) {
         MathJax.Hub.Queue(['Typeset', MathJax.Hub, preview]);
         typesetStubbornMath();
     }
