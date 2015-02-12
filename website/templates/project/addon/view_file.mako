@@ -45,9 +45,6 @@
         <script type="text/javascript">
             window.contextVars = window.contextVars || {};
             window.contextVars.renderURL = '${render_url}';
-            $(document).ready(function(){
-                $('.osf-project-navbar li:contains("Files")').addClass('active');
-            }); 
         </script>
         <script src=${"/static/public/js/view-file-page.js" | webpack_asset}></script>
     % endif
