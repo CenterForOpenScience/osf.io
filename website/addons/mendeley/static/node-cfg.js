@@ -1,3 +1,5 @@
+'use strict';
+
 var $ = require('jquery');
 var ko = require('knockout');
 var $osf = require('osfHelpers');

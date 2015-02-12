@@ -9,6 +9,7 @@
         "osfstorage",
         "s3",
         "twofactor",
-        "wiki"
+        "wiki",
+        "zotero"
     ]
 }

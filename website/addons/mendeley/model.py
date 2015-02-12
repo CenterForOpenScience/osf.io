@@ -62,7 +62,6 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
 
     def grant_oauth_access(self, user, external_account, metadata=None):
         """Grant OAuth access, updates metadata on user settings
-
         :param User user:
         :param ExternalAccount external_account:
         :param dict metadata:
@@ -84,7 +83,6 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
 
     def verify_oauth_access(self, external_account, list_id):
         """Determine if access to the ExternalAccount has been granted
-
         :param ExternalAccount external_account:
         :param str list_id: ID of the Mendeley list requested
         :rtype bool:
@@ -192,7 +190,6 @@ class Mendeley(ExternalProvider):
 
     def get_list(self, list_id=None):
         """Get a single CitationList
-
         :param str list_id: ID for a Mendeley folder. Optional.
         :return CitationList: CitationList for the folder, or for all documents
         """
@@ -215,7 +212,6 @@ class Mendeley(ExternalProvider):
 
     def _citation_for_mendeley_document(self, document):
         """Mendeley document to ``website.citations.models.Citation``
-
         :param BaseDocument document:
             An instance of ``mendeley.models.base_document.BaseDocument``
         :return Citation:
