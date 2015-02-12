@@ -389,7 +389,7 @@ li.pointer {
 /* Style for Ace wiki editor */
 .wiki-editor {
     position: relative;
-    height: 300px;
+    height: 450px;
     border: solid;
     border-width: 1px;
 }
@@ -2126,8 +2126,13 @@ span#profileFullname{
     background: #EFEFEF;
     font-weight: bold;
 }
+.wiki-panel-body {
+        height: 700px;
+    overflow: auto;
+}
 .wiki-panel-body .navbar-collapse {
     background: #F5F5F5;
+    padding: 0px;
 }
 .wiki-panel-header {
     background: #efefef;
@@ -2135,16 +2140,20 @@ span#profileFullname{
     font-size: 16px;
     font-weight: 300;
 }
+
 #wiki-form {
     padding: 10px;
 }
 
-#wmd-preview {
+#markdown-it-preview {
     padding: 10px;
 }
 @media (max-width: 991px) {
     .wiki-panel {
         margin-bottom: 20px;
     }
+}
+.panel-collapsed {
+    background: #F5F5F5;
 }
 
