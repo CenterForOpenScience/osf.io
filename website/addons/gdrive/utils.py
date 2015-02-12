@@ -3,9 +3,9 @@
 """
 import logging
 from website.util import web_url_for
-import settings
 
 logger = logging.getLogger(__name__)
+
 
 class GoogleDriveNodeLogger(object):
     """Helper class for adding correctly-formatted Google Drive logs to nodes.
@@ -56,13 +56,14 @@ class GoogleDriveNodeLogger(object):
         if save:
             self.node.save()
 
+
 def serialize_urls(node_settings):
     node = node_settings.owner
     urls = {
-        'create' : node.api_url_for('drive_oauth_start'),
+        'create': node.api_url_for('drive_oauth_start'),
         'importAuth': node.api_url_for('gdrive_import_user_auth'),
         'deauthorize': node.api_url_for('gdrive_deauthorize'),
-        'get_folders' : node.api_url_for('gdrive_folders', foldersOnly=1),
+        'get_folders': node.api_url_for('gdrive_folders', foldersOnly=1),
         'config': node.api_url_for('gdrive_config_put'),
         'files': node.web_url_for('collect_file_trees')
     }
@@ -85,12 +86,13 @@ def serialize_settings(node_settings, current_user):
         'urls': serialize_urls(node_settings)
     }
     if node_settings.has_auth:
-    # Add owner's profile URL
+        # Add owner's profile URL
         rv['urls']['owner'] = web_url_for('profile_view_id',
                                                uid=user_settings.owner._primary_key)
         rv['ownerName'] = user_settings.owner.fullname
         rv['access_token'] = user_settings.access_token
     return rv
+
 
 def clean_path(path):
     """Ensure a path is formatted correctly for url_for."""
@@ -104,20 +106,22 @@ def clean_path(path):
     #     else:
     #         tempPath = tempPath + '/' + parts[i]
     # cleaned_path = tempPath
-    cleaned_path = parts[len(parts)-1]
+    cleaned_path = parts[len(parts) - 1]
 
     return cleaned_path
 
+
 def build_gdrive_urls(item, node, path):
-    newpath=clean_path(path['path'])
+    newpath = clean_path(path['path'])
     return{
-    'get_folders': node.api_url_for('gdrive_folders', folderId=item['id'], path=newpath, foldersOnly=1),
-    'fetch': node.api_url_for('gdrive_folders', folderId=item['id'])
+        'get_folders': node.api_url_for('gdrive_folders', folderId=item['id'], path=newpath, foldersOnly=1),
+        'fetch': node.api_url_for('gdrive_folders', folderId=item['id'])
     }
+
 
 def to_hgrid(item, node, path):
     """
-    :param result: contents returned from Google Drive API
+    :param item: contents returned from Google Drive API
     :return: results formatted as required for Hgrid display
     """
     path = {
@@ -130,7 +134,7 @@ def to_hgrid(item, node, path):
         'id': item['id'],
         'kind': 'folder',
         'urls': build_gdrive_urls(item, node, path=path),
-        'path': path # as required for waterbutler path
+        'path': path  # as required for waterbutler path
 
     }
     return serialized

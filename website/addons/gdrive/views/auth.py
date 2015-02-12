@@ -7,22 +7,20 @@ from ..utils import serialize_settings
 from flask import request
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in, collect_auth
-from framework.flask import redirect # VOL-aware redirect
+from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message as flash
 from framework.sessions import session
 from website.project.model import Node
 from website.util import web_url_for
 from oauth2client.client import OAuth2WebServerFlow
-from website.project.decorators import (must_be_valid_project,
-    must_have_addon, must_have_permission
-)
+from website.project.decorators import (must_have_addon, must_have_permission)
 
 
 @must_be_logged_in
 def drive_oauth_start(auth, **kwargs):
     """View function that does OAuth Authorization
     and returns access token"""
-   # Run through the OAuth flow and retrieve credentials
+    # Run through the OAuth flow and retrieve credentials
     user = auth.user
     if not user:
         raise HTTPError(http.FORBIDDEN)
@@ -35,7 +33,8 @@ def drive_oauth_start(auth, **kwargs):
     if user.has_addon('gdrive') and user.get_addon('gdrive').has_auth:
         flash('You have already authorized Google Drive for this account', 'warning')
         return redirect(web_url_for('user_addons'))
-    flow = OAuth2WebServerFlow(settings.CLIENT_ID, settings.CLIENT_SECRET, settings.OAUTH_SCOPE, redirect_uri = settings.REDIRECT_URI)
+    flow = OAuth2WebServerFlow(settings.CLIENT_ID, settings.CLIENT_SECRET,
+                               settings.OAUTH_SCOPE, redirect_uri=settings.REDIRECT_URI)
     authorize_url = flow.step1_get_authorize_url()
     return{'url': authorize_url}
 
@@ -56,7 +55,8 @@ def drive_oauth_finish(auth, **kwargs):
     if code is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    flow = OAuth2WebServerFlow(settings.CLIENT_ID, settings.CLIENT_SECRET, settings.OAUTH_SCOPE, redirect_uri = settings.REDIRECT_URI)
+    flow = OAuth2WebServerFlow(settings.CLIENT_ID, settings.CLIENT_SECRET,
+                               settings.OAUTH_SCOPE, redirect_uri=settings.REDIRECT_URI)
     credentials = flow.step2_exchange(code)
     http_service = httplib2.Http()
     http_service = credentials.authorize(http_service)

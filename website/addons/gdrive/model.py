@@ -11,7 +11,6 @@ from website.addons.base import exceptions
 
 
 class AddonGdriveGuidFile(GuidFile):
-
     path = fields.StringField(index=True)
 
     @property
@@ -19,6 +18,7 @@ class AddonGdriveGuidFile(GuidFile):
         if self.path is None:
             raise ValueError('Path field must be defined.')
         return os.path.join('gdrive', 'file', self.path)
+
     @property
     def provider(self):
         return 'gdrive'
@@ -49,6 +49,7 @@ class AddonGdriveGuidFile(GuidFile):
             created = True
         return new, created
 
+
 class AddonGdriveUserSettings(AddonUserSettingsBase):
     """Stores user-specific information, including the Oauth access
     token.
@@ -64,14 +65,14 @@ class AddonGdriveUserSettings(AddonUserSettingsBase):
         self.access_token = None
         return self
 
-class AddonGdriveNodeSettings(AddonNodeSettingsBase):
 
+class AddonGdriveNodeSettings(AddonNodeSettingsBase):
     user_settings = fields.ForeignField(
         'addongdriveusersettings', backref='authorized'
     )
 
     folder = fields.StringField(default=None)
-    folderId= fields.StringField(default=None)
+    folderId = fields.StringField(default=None)
 
     @property
     def has_auth(self):
@@ -92,14 +93,13 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
             nodelogger = GoogleDriveNodeLogger(node=node, auth=auth)
             nodelogger.log(action="gdrive_node_deauthorized", extra=extra, save=True)
 
-
     def set_folder(self, folder, auth):
         self.folder = folder
         # Add log to node
         nodelogger = GoogleDriveNodeLogger(node=self.owner, auth=auth)
         nodelogger.log(action="folder_selected", save=True)
 
-    def set_user_auth(self, user_settings):
+    def set_user_auth(self, user_settings, auth):
         """Import a user's GDrive authentication and create a NodeLog.
 
         :param AddonGdriveUserSettings user_settings: The user settings to link.
@@ -142,7 +142,7 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
     def find_or_create_file_guid(self, path):
         return AddonGdriveGuidFile.get_or_create(self.owner, path)
 
-    ##### Callback overrides #####
+    # #### Callback overrides #####
 
     def before_register_message(self, node, user):
         """Return warning text to display if user auth will be copied to a
@@ -224,10 +224,10 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
             message = 'Google Drive authorization copied to fork.'
         else:
             message = ('Google Drive authorization not copied to forked {cat}. You may '
-                        'authorize this fork on the <a href="{url}">Settings</a>'
-                        'page.').format(
-                        url=fork.web_url_for('node_setting'),
-                        cat=fork.project_or_component
+                       'authorize this fork on the <a href="{url}">Settings</a>'
+                       'page.').format(
+                url=fork.web_url_for('node_setting'),
+                cat=fork.project_or_component
             )
         if save:
             clone.save()

@@ -1,4 +1,4 @@
-from website.addons.gdrive import routes, views, model, views
+from website.addons.gdrive import routes, model, views
 
 
 MODELS = [
@@ -17,7 +17,7 @@ FULL_NAME = 'Google Drive'
 OWNERS = ['user', 'node']  # can include any of ['user', 'node']
 
 VIEWS = []  # page, widget
-CONFIGS = ['user','node']  # any of ['user', 'node']
+CONFIGS = ['user', 'node']  # any of ['user', 'node']
 
 CATEGORIES = ['storage']
 
