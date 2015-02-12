@@ -211,7 +211,7 @@ function _fangornUploadProgress(treebeard, file, progress) {
 
     if(treebeard.options.placement === 'dashboard'){
         column = null;
-        msgText += file.name + '  : ';
+        msgText += file.name.slice(0,25) + '... : ';
     } else {
         column = 1;
     }
