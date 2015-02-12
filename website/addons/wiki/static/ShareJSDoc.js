@@ -1,5 +1,4 @@
 var $ = require('jquery');
-require('bootstrap');
 
 var WikiEditor = require('./WikiEditor.js');
 var LanguageTools = ace.require('ace/ext/language_tools');

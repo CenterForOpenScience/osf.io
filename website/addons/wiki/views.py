@@ -232,6 +232,21 @@ def wiki_page_content(wname, **kwargs):
     }
 
 
+@must_be_valid_project
+@must_be_contributor_or_public
+@must_have_addon('wiki', 'node')
+def wiki_version_content(wname, wver, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    wiki_page = node.get_wiki_page(wname, version=wver)
+    use_python_render = wiki_page.rendered_before_update
+
+    return {
+        'wiki_content': wiki_page.content if wiki_page else '',
+        # Only return rendered version if page was saved before wiki change
+        'wiki_rendered': wiki_page.html(node) if use_python_render else '',
+    }
+
+
 @must_be_valid_project  # injects project
 @must_have_permission('write')  # injects user, project
 @must_not_be_registration
@@ -250,14 +265,15 @@ def project_wiki_delete(auth, wname, **kwargs):
 
 
 @must_be_valid_project  # returns project
-@must_have_permission('write')  # returns user, project
-@must_not_be_registration
+@must_be_contributor_or_public
 @must_have_addon('wiki', 'node')
 def project_wiki_edit(auth, wname, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    wiki_name = wname.strip()
+    anonymous = has_anonymous_link(node, auth)
+    wiki_name = (wname or '').strip()
     wiki_key = to_mongo_key(wiki_name)
     wiki_page = node.get_wiki_page(wiki_name)
+    toc = _serialize_wiki_toc(node, auth=auth)
 
     # ensure home is always lower case since it cannot be renamed
     if wiki_name.lower() == 'home':
@@ -266,29 +282,31 @@ def project_wiki_edit(auth, wname, **kwargs):
     if wiki_page:
         version = wiki_page.version
         is_current = wiki_page.is_current
-        content = wiki_page.content
+        content = wiki_page.html(node)
+        use_python_render = wiki_page.rendered_before_update
         wiki_page_api_url = node.api_url_for('project_wiki_page', wname=wiki_name)
     else:
         version = 'NA'
         is_current = False
         content = ''
+        use_python_render = False
         wiki_page_api_url = None
 
     if wiki_key not in node.wiki_private_uuids:
         wiki_utils.generate_private_uuid(node, wiki_name)
 
-    # TODO: Remove duplication with project_wiki_page
-    toc = _serialize_wiki_toc(node, auth=auth)
     ret = {
         'wiki_id': wiki_page._primary_key if wiki_page else None,
         'wiki_name': wiki_page.page_name if wiki_page else wiki_name,
         'wiki_content': content,
+        'use_python_render': use_python_render,
+        'page': wiki_page,
         'version': version,
-        'versions': _get_wiki_versions(node, wiki_name),
+        'versions': _get_wiki_versions(node, wiki_name, anonymous=anonymous),
         'sharejs_uuid': wiki_utils.get_sharejs_uuid(node, wiki_name),
         'sharejs_url': settings.SHAREJS_URL,
         'is_current': is_current,
-        'is_edit': True,
+        'is_edit': False, # TODO @rliebz
         'pages_current': _get_wiki_pages_current(node),
         'toc': toc,
         'category': node.category,
