@@ -10,10 +10,7 @@ from framework.auth.signals import contributor_removed
 from framework.auth import Auth
 from website.util import web_url_for
 from website.notifications.model import Subscription, DigestNotification
-from website.notifications import emails
-from website.notifications.utils import (get_all_user_subscriptions, get_configured_projects,
-                                         get_parent_notification_type, format_data, format_user_subscriptions,
-                                         format_user_and_project_subscriptions, remove_contributor_from_subscriptions)
+from website.notifications import emails, utils
 from website.util import api_url_for
 from website import settings, mails
 from tests.factories import ProjectFactory, NodeFactory, UserFactory, SubscriptionFactory
@@ -115,7 +112,7 @@ class TestRemoveContributor(OsfTestCase):
 
     def test_removed_contributor_is_removed_from_subscriptions(self):
         assert_in(self.contributor, self.subscription.email_transactional)
-        remove_contributor_from_subscriptions(self.contributor, self.project)
+        utils.remove_contributor_from_subscriptions(self.contributor, self.project)
         assert_not_in(self.contributor, self.subscription.email_transactional)
 
     def test_remove_contributor_signal_called_when_contributor_is_removed(self):
@@ -158,16 +155,16 @@ class TestNotificationUtils(OsfTestCase):
         self.user_subscription.save()
 
     def test_get_all_user_subscriptions(self):
-        user_subscriptions = get_all_user_subscriptions(self.user)
+        user_subscriptions = utils.get_all_user_subscriptions(self.user)
         assert_in(self.project_subscription, user_subscriptions)
         assert_in(self.node_subscription, user_subscriptions)
         assert_in(self.user_subscription, user_subscriptions)
-        assert_equal(len(get_all_user_subscriptions(self.user)), 3)
+        assert_equal(len(utils.get_all_user_subscriptions(self.user)), 3)
 
     def test_get_configured_project_ids_does_not_return_user_or_node_ids(self):
-        assert_in(self.project._id, get_configured_projects(self.user))
-        assert_not_in(self.node._id, get_configured_projects(self.user))
-        assert_not_in(self.user._id, get_configured_projects(self.user))
+        assert_in(self.project._id, utils.get_configured_projects(self.user))
+        assert_not_in(self.node._id, utils.get_configured_projects(self.user))
+        assert_not_in(self.user._id, utils.get_configured_projects(self.user))
 
     def test_get_configured_project_ids_excludes_deleted_projects(self):
         project = ProjectFactory()
@@ -180,28 +177,28 @@ class TestNotificationUtils(OsfTestCase):
         subscription.save()
         project.is_deleted = True
         project.save()
-        assert_not_in(self.node._id, get_configured_projects(self.user))
+        assert_not_in(self.node._id, utils.get_configured_projects(self.user))
 
     def test_get_parent_notification_type(self):
-        nt = get_parent_notification_type(self.node._id, 'comments', self.user)
+        nt = utils.get_parent_notification_type(self.node._id, 'comments', self.user)
         assert_equal(nt, 'email_transactional')
 
     def test_get_parent_notification_type_no_parent_subscriptions(self):
         node = NodeFactory()
-        nt = get_parent_notification_type(node._id, 'comments', self.user)
+        nt = utils.get_parent_notification_type(node._id, 'comments', self.user)
         assert_equal(nt, None)
 
     def test_get_parent_notification_type_no_parent(self):
         project = ProjectFactory()
-        nt = get_parent_notification_type(project._id, 'comments', self.user)
+        nt = utils.get_parent_notification_type(project._id, 'comments', self.user)
         assert_equal(nt, None)
 
     def test_get_parent_notification_type_handles_user_id(self):
-        nt = get_parent_notification_type(self.user._id, 'comments', self.user)
+        nt = utils.get_parent_notification_type(self.user._id, 'comments', self.user)
         assert_equal(nt, None)
 
     def test_format_data_project_settings(self):
-        data = format_data(self.user, [self.project._id], [])
+        data = utils.format_data(self.user, [self.project._id], [])
         expected = [
             {
                 'node_id': self.project._id,
@@ -239,7 +236,7 @@ class TestNotificationUtils(OsfTestCase):
         assert_equal(data, expected)
 
     def test_format_data_node_settings(self):
-        data = format_data(self.user, [self.node._id], [])
+        data = utils.format_data(self.user, [self.node._id], [])
         expected = [{
                         'node_id': self.node._id,
                         'title': self.node.title,
@@ -259,7 +256,7 @@ class TestNotificationUtils(OsfTestCase):
         assert_equal(data, expected)
 
     def test_format_user_subscriptions(self):
-        data = format_user_subscriptions(self.user, [])
+        data = utils.format_user_subscriptions(self.user, [])
         expected = [{
                         'title': 'comment_replies',
                         'description': settings.USER_SUBSCRIPTIONS_AVAILABLE['comment_replies'],
@@ -270,19 +267,19 @@ class TestNotificationUtils(OsfTestCase):
         assert_equal(data, expected)
 
     def test_format_data_user_settings(self):
-        data = format_user_and_project_subscriptions(self.user)
+        data = utils.format_user_and_project_subscriptions(self.user)
         expected = [
             {
                 'title': 'User Notifications',
                 'node_id': self.user._id,
                 'kind': 'heading',
-                'children': format_user_subscriptions(self.user, [])
+                'children': utils.format_user_subscriptions(self.user, [])
             },
             {
                 'title': 'Project Notifications',
                 'node_id': '',
                 'kind': 'heading',
-                'children': format_data(self.user, get_configured_projects(self.user), [])
+                'children': utils.format_data(self.user, utils.get_configured_projects(self.user), [])
             }]
 
         assert_equal(data, expected)
