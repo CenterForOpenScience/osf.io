@@ -543,6 +543,7 @@ def clear_sessions(months=1, dry_run=False):
 
 @task
 def clear_mfr_cache():
+    run('rm -rf {0}/*'.format(settings.MFR_TEMP_PATH), echo=True)
     run('rm -rf {0}/*'.format(settings.MFR_CACHE_PATH), echo=True)
 
 

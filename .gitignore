@@ -62,6 +62,7 @@ local.py
 
 website/uploads/
 website/mfrcache/
+website/mfrtemp/
 website/osfstoragecache/
 website/gpg/
 webpack-assets.json
