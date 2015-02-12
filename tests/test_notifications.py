@@ -386,6 +386,7 @@ class TestSendEmails(OsfTestCase):
 
     def test_send_email_digest_creates_digest_notification(self):
         subscribed_users = [self.user]
+        digest_count_before = DigestNotification.find().count()
         emails.email_digest(subscribed_users, self.project._id, 'comments',
                             nodeType='project',
                             timestamp=datetime.datetime.utcnow(),
@@ -395,11 +396,12 @@ class TestSendEmails(OsfTestCase):
                             title=self.project.title,
                             url=self.project.absolute_url
         )
-        digests = DigestNotification.find()
-        assert_equal(digests.count(), 1)
+        digest_count = DigestNotification.find().count()
+        assert_equal((digest_count - digest_count_before), 1)
 
     def test_send_email_digest_not_created_for_user_performed_actions(self):
         subscribed_users = [self.user]
+        digest_count_before = DigestNotification.find().count()
         emails.email_digest(subscribed_users, self.project._id, 'comments',
                             nodeType='project',
                             timestamp=datetime.datetime.utcnow(),
@@ -409,8 +411,8 @@ class TestSendEmails(OsfTestCase):
                             title=self.project.title,
                             url=self.project.absolute_url
         )
-        digests = DigestNotification.find()
-        assert_equal(digests.count(), 0)
+        digest_count = DigestNotification.find().count()
+        assert_equal(digest_count_before, digest_count)
 
     def test_get_settings_url_for_node(self):
         url = emails.get_settings_url(self.project._id, self.user)
