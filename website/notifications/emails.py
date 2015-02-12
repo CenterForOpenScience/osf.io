@@ -110,7 +110,8 @@ def email_digest(subscribed_user_ids, uid, event, **context):
     except NoResultsFound:
         nodes = []
 
-    for user in subscribed_user_ids:
+    for user_id in subscribed_user_ids:
+        user = User.load(user_id)
         if context.get('commenter') != user.fullname:
             digest = DigestNotification(timestamp=datetime.datetime.utcnow(),
                                         event=event,
