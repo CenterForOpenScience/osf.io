@@ -115,7 +115,8 @@ var externals = {
     //  on the global var jQuery, which is loaded with CDN
     'jquery': 'jQuery',
     'jquery-ui': 'jQuery.ui',
-    'raven-js': 'Raven'
+    'raven-js': 'Raven',
+    'MathJax': 'MathJax',
 };
 
 var plugins = [

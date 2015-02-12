@@ -1,6 +1,7 @@
 'use strict';
 
 var $ = require('jquery');
+var MathJax = require('MathJax');
 
 /**
  * Render math with MathJax within a given element.
