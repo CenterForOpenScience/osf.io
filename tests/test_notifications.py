@@ -4,14 +4,16 @@ import mock
 import datetime
 import urlparse
 from mako.lookup import Template
-from tests.base import OsfTestCase
+from tests.base import OsfTestCase, capture_signals
 from nose.tools import *  # PEP8 asserts
+from framework.auth.signals import contributor_removed
+from framework.auth import Auth
 from website.util import web_url_for
 from website.notifications.model import Subscription, DigestNotification
 from website.notifications import emails
 from website.notifications.utils import (get_all_user_subscriptions, get_configured_projects,
                                          get_parent_notification_type, format_data, format_user_subscriptions,
-                                         format_user_and_project_subscriptions)
+                                         format_user_and_project_subscriptions, remove_contributor_from_subscriptions)
 from website.util import api_url_for
 from website import settings, mails
 from tests.factories import ProjectFactory, NodeFactory, UserFactory, SubscriptionFactory
@@ -90,6 +92,36 @@ class TestSubscriptionView(OsfTestCase):
         # assert that user is removed from the subscription entirely
         for n in settings.NOTIFICATION_TYPES:
             assert_false(node.creator in getattr(s, n))
+
+
+class TestRemoveContributor(OsfTestCase):
+    def setUp(self):
+        super(OsfTestCase, self).setUp()
+        self.contributor = UserFactory()
+        self.contributor2 = UserFactory()
+        self.project = ProjectFactory()
+        self.project.add_contributor(self.contributor)
+        self.project.add_contributor(self.contributor2)
+        self.project.save()
+
+        self.subscription = SubscriptionFactory(
+            _id = self.project._id + '_comments',
+            object_id = self.project._id
+        )
+        self.subscription.save()
+        self.subscription.email_transactional.append(self.contributor)
+        self.subscription.email_transactional.append(self.contributor2)
+        self.subscription.save()
+
+    def test_removed_contributor_is_removed_from_subscriptions(self):
+        assert_in(self.contributor, self.subscription.email_transactional)
+        remove_contributor_from_subscriptions(self.contributor, self.project)
+        assert_not_in(self.contributor, self.subscription.email_transactional)
+
+    def test_remove_contributor_signal_called_when_contributor_is_removed(self):
+        with capture_signals() as mock_signals:
+            self.project.remove_contributor(self.contributor2, auth=Auth(self.project.creator))
+        assert_equal(mock_signals.signals_sent(), set([contributor_removed]))
 
 
 class TestNotificationUtils(OsfTestCase):
