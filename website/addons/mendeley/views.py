@@ -45,9 +45,7 @@ def list_citationlists_node(pid, account_id, auth, node, project, node_addon):
     mendeley = Mendeley()
     mendeley.account = account
 
-    return {
-        'citation_lists': [each.json for each in mendeley.citation_lists]
-    }
+    return {'citation_lists': mendeley.citation_lists}
 
 
 @must_have_permission('write')
