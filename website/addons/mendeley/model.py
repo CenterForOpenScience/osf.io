@@ -1,18 +1,25 @@
+# -*- coding: utf-8 -*-
+
 import time
 
 import mendeley
 from modularodm import fields
 
-
 from website import settings
 from website.addons.base import AddonNodeSettingsBase
 from website.addons.base import AddonUserSettingsBase
-from website.citations.models import Citation
-from website.citations.models import CitationList
 from website.oauth.models import ExternalProvider
 
 from . import utils
 from .api import APISession
+
+
+def serialize_folder(name, account_id, list_id=None):
+    return {
+        'name': name,
+        'provider_account_id': account_id,
+        'provider_list_id': list_id,
+    }
 
 
 class AddonMendeleyUserSettings(AddonUserSettingsBase):
@@ -165,19 +172,19 @@ class Mendeley(ExternalProvider):
 
         # TODO: Verify OAuth access to each folder
 
-        # fake object to represent the user's whole account
-        all_documents = [
-            CitationList(
-                name="All Documents",
-                provider_list_id=None,
-                provider_account_id=self.account.provider_id
+        all_documents = serialize_folder(
+            'All Documents',
+            account_id=self.account.provider_id,
+        )
+        serialized_folders = [
+            serialize_folder(
+                each.name,
+                account_id=self.account.provider_id,
+                list_id=each.json['id'],
             )
+            for each in folders
         ]
-
-        return all_documents + [
-            self._mendeley_folder_to_citation_list(folder)
-            for folder in folders
-        ]
+        return [all_documents] + serialized_folders
 
     def get_list(self, list_id=None):
         """Get a single CitationList
@@ -189,13 +196,6 @@ class Mendeley(ExternalProvider):
         if folder:
             return self._citations_for_mendeley_folder(folder)
         return self._citations_for_mendeley_user()
-
-    def _mendeley_folder_to_citation_list(self, folder):
-        return CitationList(
-            name=folder.name,
-            provider_account_id=self.account.provider_id,
-            provider_list_id=folder.json['id'],
-        )
 
     def _citations_for_mendeley_folder(self, folder):
         return (
@@ -250,4 +250,4 @@ class Mendeley(ExternalProvider):
             if idents.get('doi'):
                 csl['DOI'] = idents.get('doi')
 
-        return Citation(**csl)
+        return csl
