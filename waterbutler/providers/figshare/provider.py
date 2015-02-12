@@ -276,8 +276,8 @@ class FigshareArticleProvider(BaseFigshareProvider):
         download_url = file_metadata['extra']['downloadUrl']
         if download_url is None:
             raise exceptions.DownloadError('Cannot download private files', code=403)
-        if accept_url:
-            return download_url
+        # if accept_url:
+        #     return download_url
         return (yield from aiohttp.request('GET', download_url))
 
     @asyncio.coroutine
