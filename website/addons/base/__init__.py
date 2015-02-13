@@ -240,9 +240,18 @@ class GuidFile(GuidStoredObject):
 
     @property
     def mfr_download_url(self):
-        url = self._base_butler_url
-        url.path.add('file')
+        if settings.DEBUG_MODE:
+            # If in debug mode we're running in a single thread and need to go to
+            # the offload domain to prevent deadlocking the server
+            url = furl.furl(settings.OFFLOAD_DOMAIN)
+        else:
+            url = furl.furl(settings.DOMAIN)
+
+        url.path.add(self._id)
         url.args['mode'] = 'render'
+        url.args['action'] = 'download'
+        url.args['accept_url'] = 'false'
+
         return url.url
 
     @property
