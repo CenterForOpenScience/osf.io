@@ -140,3 +140,99 @@ class HashStreamWriter:
 
     def close(self):
         pass
+
+
+class MultiStream(asyncio.StreamReader):
+    """Concatenate a series of `StreamReader` objects into a single stream.
+    Reads from the current stream until exhausted, then continues to the next,
+    etc. Used to build streaming form data for Figshare uploads.
+    """
+    def __init__(self, *streams):
+        self._streams = streams
+        self.streams = list(streams)
+        self.cycle()
+
+    def cycle(self):
+        try:
+            self.stream = self.streams.pop(0)
+        except IndexError:
+            self.stream = None
+
+    @asyncio.coroutine
+    def read(self, n=-1):
+        if not self.stream:
+            return b''
+        chunk = yield from self.stream.read(n)
+        if len(chunk) == n and n != -1:
+            return chunk
+        self.cycle()
+        nextn = -1 if n == -1 else n - len(chunk)
+        chunk += (yield from self.read(nextn))
+        return chunk
+
+
+class FormDataStream(MultiStream):
+    """Concatenate a series of `StreamReader` objects into a single stream.
+    Reads from the current stream until exhausted, then continues to the next,
+    etc. Used to build streaming form data for Figshare uploads.
+    """
+
+    @classmethod
+    def make_boundary(self):
+        return uuid.uuid4().hex.encode('utf-8')
+
+    @classmethod
+    def make_header(key, value):
+        return b'Content-Disposition: form-data; name="{1}"\r\n\r\n'.format(key, value)
+
+    def __init__(self, **fields):
+        streams = [self.make_boundary_stream()]
+
+        for key, value in fields:
+            stream += self.make_header(key, value)
+
+        super().__init__(*streams)
+
+    def make_boundary_stream(self):
+        return StringStream(b'--{}\r\n'.format(self.boundary))
+
+    @property
+    def end_boundary(self):
+        return StringStream(b'--{}--\r\n'.format(self.boundary))
+
+
+class StringStream(asyncio.StreamReader):
+    def __init__(self, data):
+        self.size = len(data)
+        self.feed_data(data)
+        self.feed_eof()
+
+
+def make_headers(**options):
+    fields = '; '.join('{0}="{1}"'.format(key, value) for key, value in options.items())
+    return 'Content-Disposition: form-data; {0}\r\n\r\n'.format(fields).encode('utf-8')
+
+
+def make_boundary_streams(boundary, **options):
+    headers = make_headers(**options)
+    return (
+        wrap_stream(b'--' + boundary + b'\r\n' + headers),
+        wrap_stream(b'\r\n--' + boundary + b'--\r\n'),
+    )
+
+
+def make_upload_data(stream, **options):
+    """Prepare upload form data stream for Figshare. Wraps input stream in form
+    data boundary streams.
+
+    :returns: Tuple of (<stream>, <boundary>, <size>)
+    """
+    boundary = make_boundary()
+    boundaries = make_boundary_streams(boundary, **options)
+    outstream = MultiStream(
+        boundaries[0][0],
+        stream,
+        boundaries[1][0],
+    )
+    size = boundaries[0][1] + int(stream.size) + boundaries[1][1]
+    return outstream, boundary, size
