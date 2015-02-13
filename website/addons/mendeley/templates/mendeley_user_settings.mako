@@ -4,8 +4,8 @@
     <div data-bind="foreach: accounts">
         <div>
             <span>{{ name }}</span>
-            <a 
-                    data-bind="click: $root.askDisconnect" 
+            <a
+                    data-bind="click: $root.askDisconnect"
                     class="pull-right text-danger"
                 >Delete Access Token</a>
         </div>

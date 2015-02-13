@@ -95,4 +95,8 @@ def mendeley_widget(node_addon, project, node, pid, auth):
 @must_have_addon('mendeley', 'node')
 def mendeley_citation_list(node_addon, project, node, pid, auth):
     citations = node_addon.api.get_list(node_addon.mendeley_list_id)
-    return {each['id']: each for each in citations}
+    return [
+        {'kind': 'file', 'csl': citation}
+        for citation in citations
+    ]
+    # return {each['id']: each for each in citations}
