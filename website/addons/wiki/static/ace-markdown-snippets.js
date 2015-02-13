@@ -9,16 +9,22 @@ snippet font-italic\n\
 snippet font-bold\n\
 	**${1:text}**\n\
 \n\
+snippet math-inline\n\
+	\$${1:text}\$\n\
 snippet heading-1\n\
+	\n\
 	# ${1:title}\n\
 \n\
 snippet heading-2\n\
+	\n\
 	## ${1:title}\n\
 \n\
 snippet heading-3\n\
+	\n\
 	### ${1:title}\n\
 \n\
 snippet heading-4\n\
+	\n\
 	#### ${1:title}\n\
 \n\
 snippet horizontal-rule\n\
@@ -27,9 +33,11 @@ snippet horizontal-rule\n\
 	\n\
 \n\
 snippet blockquote\n\
+	\n\
 	> ${1:quote}\n\
 \n\
 snippet codeblock\n\
+	\n\
 	```\n\
 	${1:snippet}\n\
 	```\n\
@@ -43,9 +51,11 @@ snippet hyperlink\n\
 	[${1:linktext}](${2:url} \"${3:title}\")\n\
 \n\
 snippet numbered-list\n\
+	\n\
 	1. ${1:item}\n\
 \n\
 snippet bulleted-list\n\
+	\n\
 	* ${1:item}\n\
 \n\
 ";

@@ -243,7 +243,7 @@ def mongorestore(path, drop=False):
 
 
 @task
-def sharejs(host=None, port=None, db_host=None, db_port=None, db_name=None):
+def sharejs(host=None, port=None, db_host=None, db_port=None, db_name=None, cors_allow_origin=None):
     """Start a local ShareJS server."""
     if host:
         os.environ['SHAREJS_SERVER_HOST'] = host
@@ -255,6 +255,8 @@ def sharejs(host=None, port=None, db_host=None, db_port=None, db_name=None):
         os.environ['SHAREJS_DB_PORT'] = db_port
     if db_name:
         os.environ['SHAREJS_DB_NAME'] = db_name
+    if cors_allow_origin:
+        os.environ['SHAREJS_CORS_ALLOW_ORIGIN'] = cors_allow_origin
 
     if settings.SENTRY_DSN:
         os.environ['SHAREJS_SENTRY_DSN'] = settings.SENTRY_DSN
@@ -543,6 +545,7 @@ def clear_sessions(months=1, dry_run=False):
 
 @task
 def clear_mfr_cache():
+    run('rm -rf {0}/*'.format(settings.MFR_TEMP_PATH), echo=True)
     run('rm -rf {0}/*'.format(settings.MFR_CACHE_PATH), echo=True)
 
 
