@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import base64
 import hashlib
 import logging
 import urllib
@@ -28,83 +29,37 @@ class BoxFile(GuidFile):
     file's detail page.
     """
 
-    #: Full path to the file/folder, e.g. 'files/{file id}/'
+    #: Full path to the file, e.g. 'My Pictures/foo.png'
     path = fields.StringField(required=True, index=True)
 
-    #: UID of the file/folder, e.g. '11446498'
-    uid = fields.IntegerField(required=True)
-
-    #: Type of file/folder, e.g. 'file' or 'folder'
-
-    #: Stored metadata from the box API
-    #: See https://www.box.com/developers/core/docs#metadata
-    metadata = fields.DictionaryField(required=False)
-
-    def url(self, guid=True, rev='', *args, **kwargs):
-        """The web url for the file.
-
-        :param bool guid: Whether to return the short URL
-        """
-        # Short URLS must be built 'manually'
-        if guid:
-            # If returning short URL, urlencode the kwargs to build querystring
-            base_url = os.path.join('/', self._primary_key)
-            args = {'rev': rev}
-            args.update(**kwargs)
-            querystring = urllib.urlencode(args)
-            url = '/?'.join([base_url, querystring])
-        else:
-            url = self.node.web_url_for('box_view_file', path=self.path,
-                rev=rev, **kwargs)
-        return url
+    @property
+    def file_name(self):
+        if self.revision:
+            return '{0}_{1}_{2}.html'.format(self._id, self.revision, base64.b64encode(self.folder))
+        return '{0}_{1}_{2}.html'.format(self._id, self.unique_identifier, base64.b64encode(self.folder))
 
     @property
-    def file_url(self):
-        if self.path is None:
-            raise ValueError('Path field must be defined.')
-        return os.path.join('box', 'files', self.path)
+    def waterbutler_path(self):
+        path = self.path
+        if self.folder == '/':
+            return path
+        return path.replace(self.folder, '', 1)
 
-    def download_url(self, guid=True, rev='', *args, **kwargs):
-        """Return the download url for the file.
+    @property
+    def folder(self):
+        return self.node.get_addon('box').folder
 
-        :param bool guid: Whether to return the short URL
-        """
-        # Short URLS must be built 'manually'
-        if guid:
-            # If returning short URL, urlencode the kwargs to build querystring
-            base_url = os.path.join('/', self._primary_key, 'download/')
-            args = {'rev': rev}
-            args.update(**kwargs)
-            querystring = urllib.urlencode(args)
-            url = '?'.join([base_url, querystring])
-        else:
-            url = self.node.web_url_for('box_download',
-                    path=self.path, _absolute=True, rev=rev, **kwargs)
-        return url
+    @property
+    def provider(self):
+        return 'box'
 
-    def update_metadata(self, client=None, rev=''):
-        cl = client or get_node_addon_client(self.node.get_addon('box'))
-        self.metadata = cl.metadata(self.path, list=False, rev=rev)
+    @property
+    def version_identifier(self):
+        return 'revision'
 
-    def get_metadata(self, client=None, force=False, rev=''):
-        """Gets the file metadata from the Box API (cached)."""
-        if force or (not self.metadata):
-            self.update_metadata(client=client, rev=rev)
-            self.save()
-        return self.metadata
-
-    def get_cache_filename(self, client=None, rev=''):
-        if not rev:
-            metadata = self.get_metadata(client=client, rev=rev, force=True)
-            revision = metadata['rev']
-        else:
-            revision = rev
-        # Note: Use hash of file path instead of file path in case paths are
-        # very long; see https://github.com/CenterForOpenScience/openscienceframework.org/issues/769
-        return '{digest}_{rev}.html'.format(
-            digest=hashlib.md5(self.path).hexdigest(),
-            rev=revision,
-        )
+    @property
+    def unique_identifier(self):
+        return self.path.split('/')[1][-5] #self._metadata_cache['extra']['revisionId']
 
     @classmethod
     def get_or_create(cls, node, path):
@@ -224,6 +179,9 @@ class BoxNodeSettings(AddonNodeSettingsBase):
         nodelogger = BoxNodeLogger(node=self.owner, auth=Auth(user_settings.owner))
         nodelogger.log(action="node_authorized", save=True)
 
+    def find_or_create_file_guid(self, path):
+        return BoxFile.get_or_create(self.owner, clean_path(os.path.join(self.folder, path.lstrip('/'))))
+
     # TODO: Is this used? If not, remove this and perhaps remove the 'deleted' field
     def delete(self, save=True):
         self.deauthorize(add_log=False)
@@ -331,26 +289,6 @@ class BoxNodeSettings(AddonNodeSettingsBase):
 
     # backwards compatibility
     before_remove_contributor = before_remove_contributor_message
-
-    # Note: Registering Box content is disabled for now; leaving this code
-    # here in case we enable registrations later on.
-    # @jmcarp
-    # def after_register(self, node, registration, user, save=True):
-    #     """After registering a node, copy the user settings and save the
-    #     chosen folder.
-    #
-    #     :return: A tuple of the form (cloned_settings, message)
-    #     """
-    #     clone, message = super(BoxNodeSettings, self).after_register(
-    #         node, registration, user, save=False
-    #     )
-    #     # Copy user_settings and add registration data
-    #     if self.has_auth and self.folder is not None:
-    #         clone.user_settings = self.user_settings
-    #         clone.registration_data['folder'] = self.folder
-    #     if save:
-    #         clone.save()
-    #     return clone, message
 
     def after_fork(self, node, fork, user, save=True):
         """After forking, copy user settings if the user is the one who authorized
