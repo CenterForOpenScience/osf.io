@@ -64,10 +64,11 @@ def attach_handlers(app, settings):
     # Needed to allow the offload server and main server to properly interact
     # without cors issues. See @jmcarp, @chrisseto, or @icereval for more detail
     if settings.DEBUG_MODE:
-        @app.after_request
         def add_cors_headers(response):
             response.headers['Access-Control-Allow-Origin'] = '*'
             return response
+
+        add_handlers(app, {'after_request': add_cors_headers})
 
     return app
 
