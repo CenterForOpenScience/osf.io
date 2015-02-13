@@ -161,7 +161,7 @@ def add_comment(**kwargs):
            event="comment_replies" if is_reply(target) else "comments",
            timestamp=datetime.utcnow(),
            commenter=auth.user.fullname,
-           gravatar_url= auth.user.gravatar_url,
+           gravatar_url=auth.user.gravatar_url,
            content=content,
            parent_comment=target.content if is_reply(target) else "",
            title=node.title,
