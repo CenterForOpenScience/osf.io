@@ -29,7 +29,7 @@ def credentials():
 
 @pytest.fixture
 def settings():
-    return {'folder': '/Photos'}
+    return {'folder': '/1234567890'}
 
 
 @pytest.fixture
@@ -55,58 +55,110 @@ def file_stream(file_like):
 @pytest.fixture
 def folder_metadata():
     return {
-        "size": "0 bytes",
-        "hash": "37eb1ba1849d4b0fb0b28caf7ef3af52",
-        "bytes": 0,
-        "thumb_exists": False,
-        "rev": "714f029684fe",
-        "modified": "Wed, 27 Apr 2011 22:18:51 +0000",
-        "path": "/Photos",
-        "is_dir": True,
-        "icon": "folder",
-        "root": "box",
-        "contents": [
+        "total_count": 24,
+        "entries": [
             {
-                "size": "2.3 MB",
-                "rev": "38af1b183490",
-                "thumb_exists": True,
-                "bytes": 2453963,
-                "modified": "Mon, 07 Apr 2014 23:13:16 +0000",
-                "client_mtime": "Thu, 29 Aug 2013 01:12:02 +0000",
-                "path": "/Photos/flower.jpg",
-                "photo_info": {
-                "lat_long": [
-                    37.77256666666666,
-                    -122.45934166666667
-                ],
-                "time_taken": "Wed, 28 Aug 2013 18:12:02 +0000"
-                },
-                "is_dir": False,
-                "icon": "page_white_picture",
-                "root": "box",
-                "mime_type": "image/jpeg",
-                "revision": 14511
+                "type": "folder",
+                "id": "192429928",
+                "sequence_id": "1",
+                "etag": "1",
+                "name": "Stephen Curry Three Pointers"
+            },
+            {
+                "type": "file",
+                "id": "818853862",
+                "sequence_id": "0",
+                "etag": "0",
+                "name": "Warriors.jpg"
             }
         ],
-        "revision": 29007
+        "offset": 0,
+        "limit": 2,
+        "order": [
+            {
+                "by": "type",
+                "direction": "ASC"
+            },
+            {
+                "by": "name",
+                "direction": "ASC"
+            }
+        ]
     }
 
 
 @pytest.fixture
 def file_metadata():
     return {
-        "size": "225.4KB",
-        "rev": "35e97029684fe",
-        "thumb_exists": False,
-        "bytes": 230783,
-        "modified": "Tue, 19 Jul 2011 21:55:38 +0000",
-        "client_mtime": "Mon, 18 Jul 2011 18:04:35 +0000",
-        "path": "/Photos/Getting_Started.pdf",
-        "is_dir": False,
-        "icon": "page_white_acrobat",
-        "root": "box",
-        "mime_type": "application/pdf",
-        "revision": 220823
+        "type": "file",
+        "id": "5000948880",
+        "sequence_id": "3",
+        "etag": "3",
+        "sha1": "134b65991ed521fcfe4724b7d814ab8ded5185dc",
+        "name": "tigers.jpeg",
+        "description": "a picture of tigers",
+        "size": 629644,
+        "path_collection": {
+            "total_count": 2,
+            "entries": [
+                {
+                    "type": "folder",
+                    "id": "0",
+                    "sequence_id": null,
+                    "etag": null,
+                    "name": "All Files"
+                },
+                {
+                    "type": "folder",
+                    "id": "11446498",
+                    "sequence_id": "1",
+                    "etag": "1",
+                    "name": "Pictures"
+                }
+            ]
+        },
+        "created_at": "2012-12-12T10:55:30-08:00",
+        "modified_at": "2012-12-12T11:04:26-08:00",
+        "created_by": {
+            "type": "user",
+            "id": "17738362",
+            "name": "sean rose",
+            "login": "sean@box.com"
+        },
+        "modified_by": {
+            "type": "user",
+            "id": "17738362",
+            "name": "sean rose",
+            "login": "sean@box.com"
+        },
+        "owned_by": {
+            "type": "user",
+            "id": "17738362",
+            "name": "sean rose",
+            "login": "sean@box.com"
+        },
+        "shared_link": {
+            "url": "https://www.box.com/s/rh935iit6ewrmw0unyul",
+            "download_url": "https://www.box.com/shared/static/rh935iit6ewrmw0unyul.jpeg",
+            "vanity_url": null,
+            "is_password_enabled": false,
+            "unshared_at": null,
+            "download_count": 0,
+            "preview_count": 0,
+            "access": "open",
+            "permissions": {
+                "can_download": true,
+                "can_preview": true
+            }
+        },
+        "parent": {
+            "type": "folder",
+            "id": "11446498",
+            "sequence_id": "1",
+            "etag": "1",
+            "name": "Pictures"
+        },
+        "item_status": "active"
     }
 
 
@@ -115,8 +167,8 @@ class TestCRUD:
     @async
     @pytest.mark.aiohttpretty
     def test_download(self, provider):
-        path = BoxPath(provider.folder, '/triangles.txt')
-        url = provider._build_content_url('files', 'auto', path.full_path)
+        path = BoxPath(provider.folder + '/triangles.txt')
+        url = provider._build_url('files', path._id, 'content')
         aiohttpretty.register_uri('GET', url, body=b'better')
         result = yield from provider.download(str(path))
         content = yield from result.response.read()
@@ -126,8 +178,8 @@ class TestCRUD:
     @async
     @pytest.mark.aiohttpretty
     def test_download_not_found(self, provider):
-        path = BoxPath(provider.folder, '/vectors.txt')
-        url = provider._build_content_url('files', 'auto', path.full_path)
+        path = BoxPath(provider.folder + '/vectors.txt')
+        url = provider._build_url('files', path._id, 'content')
         aiohttpretty.register_uri('GET', url, status=404)
 
         with pytest.raises(exceptions.DownloadError):
@@ -136,9 +188,9 @@ class TestCRUD:
     @async
     @pytest.mark.aiohttpretty
     def test_upload(self, provider, file_metadata, file_stream, settings):
-        path = BoxPath(provider.folder, '/phile')
-        url = provider._build_content_url('files_put', 'auto', path.full_path)
-        metadata_url = provider.build_url('metadata', 'auto', path.full_path)
+        path = BoxPath(provider.folder + '/phile')
+        url = provider._build_upload_url('files', 'content')
+        metadata_url = provider.build_url('folders', uid, 'items')
         aiohttpretty.register_uri('GET', metadata_url, status=404)
         aiohttpretty.register_json_uri('PUT', url, status=200, body=file_metadata)
         metadata, created = yield from provider.upload(file_stream, str(path))
@@ -151,10 +203,10 @@ class TestCRUD:
     @async
     @pytest.mark.aiohttpretty
     def test_delete_file(self, provider, file_metadata):
-        path = BoxPath(provider.folder, '/The past')
-        url = provider.build_url('fileops', 'delete')
-        data = {'root': 'auto', 'path': path.full_path}
-        file_url = provider.build_url('metadata', 'auto', path.full_path)
+        path = BoxPath(provider.folder +'/ThePast')
+        url = provider.build_url('files', path._id)
+        data = {'root': 'auto', 'path': path}
+        file_url = provider.build_url('files', path._id, 'content')
         aiohttpretty.register_json_uri('GET', file_url, body=file_metadata)
         aiohttpretty.register_uri('POST', url, status=200)
         yield from provider.delete(str(path))
@@ -168,29 +220,29 @@ class TestMetadata:
     @async
     @pytest.mark.aiohttpretty
     def test_metadata(self, provider, folder_metadata):
-        path = BoxPath(provider.folder, '/')
-        url = provider.build_url('metadata', 'auto', path.full_path)
+        path = BoxPath(provider.folder + '/')
+        url = provider.build_url('folders', provide.folder, 'items')
         aiohttpretty.register_json_uri('GET', url, body=folder_metadata)
         result = yield from provider.metadata(str(path))
 
         assert isinstance(result, list)
         assert len(result) == 1
-        assert result[0]['kind'] == 'file'
-        assert result[0]['name'] == 'flower.jpg'
-        assert result[0]['path'] == '/flower.jpg'
+        assert result['type'] == 'file'
+        assert result['name'] == 'Warriors.jpg'
+        assert result['path'] == '/818853862/Warriors.jpg'
 
     @async
     @pytest.mark.aiohttpretty
     def test_metadata_root_file(self, provider, file_metadata):
-        path = BoxPath(provider.folder, '/pfile')
-        url = provider.build_url('metadata', 'auto', path.full_path)
+        path = BoxPath(provider.folder + '/pfile')
+        url = provider.build_url('folders', provide.folder, 'items')
         aiohttpretty.register_json_uri('GET', url, body=file_metadata)
         result = yield from provider.metadata(str(path))
 
         assert isinstance(result, dict)
-        assert result['kind'] == 'file'
+        assert result['type'] == 'file'
         assert result['name'] == 'Getting_Started.pdf'
-        assert result['path'] == '/Getting_Started.pdf'
+        assert result['path'] == '/11446498/Getting_Started.pdf'
 
     @async
     @pytest.mark.aiohttpretty
