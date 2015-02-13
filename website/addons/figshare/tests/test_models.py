@@ -30,6 +30,7 @@ class TestFileGuid(OsfTestCase):
 
     def test_correct_path_article(self):
         guid = model.FigShareGuidFile(file_id=2, article_id=4, node=self.project)
+        guid._metadata_cache = {'name': 'shigfare.io'}
         tpath = guid.mfr_temp_path
         cpath = guid.mfr_cache_path
 
