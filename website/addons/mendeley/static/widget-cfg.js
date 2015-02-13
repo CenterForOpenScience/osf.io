@@ -38,18 +38,13 @@ require('./citations_widget.css');
 ////////////////
 
 function CitationsWidget(selector) {
+    var url = window.contextVars.node.urls.api + 'mendeley/citations/';
     this.grid = new CitationGrid(selector, url);
-    // var self = this;
-    // self.selector = selector;
-    // self.$element = $(selector);
-    // self.viewModel = new CitationsWidgetViewModel();
-    // self.init();
 }
 
 CitationsWidget.prototype.init = function() {
     var self = this;
     ko.applyBindings(self.viewModel, self.$element[0]);
 };
-
 //module.exports = MendeleySettings;
 new CitationsWidget('#mendeleyWidget');
