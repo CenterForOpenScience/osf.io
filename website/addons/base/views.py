@@ -220,7 +220,12 @@ def get_or_start_render(file_guid, start_render=True):
     except IOError:
         if start_render:
             # Start rendering job if requested
-            build_rendered_html(file_guid.mfr_download_url, file_guid.mfr_cache_path, file_guid.mfr_temp_path)
+            build_rendered_html(
+                file_guid.mfr_download_url,
+                file_guid.mfr_cache_path,
+                file_guid.mfr_temp_path,
+                file_guid.public_download_url
+            )
     return None
 
 
