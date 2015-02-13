@@ -284,7 +284,10 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     file_guid.maybe_set_version(**extras)
 
     if action == 'download':
-        return redirect(file_guid.download_url)
+        download_url = furl.furl(file_guid.download_url)
+        if extras.get('mode') == 'render':
+            download_url.args['accept_url'] = 'false'
+        return redirect(download_url.url)
 
     return addon_view_file(auth, node, node_addon, file_guid, extras)
 
