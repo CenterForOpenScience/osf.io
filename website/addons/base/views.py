@@ -209,18 +209,18 @@ def create_waterbutler_log(payload, **kwargs):
     return {'status': 'success'}
 
 
-def get_or_start_render(file_guid, start_render=True):
-    try:
-        file_guid.enrich()
-    except exceptions.AddonEnrichmentError as error:
-        return error.as_html()
-
+def get_or_start_render(file_guid, name=None, start_render=True):
     try:
         return codecs.open(file_guid.mfr_cache_path, 'r', 'utf-8').read()
     except IOError:
         if start_render:
             # Start rendering job if requested
-            build_rendered_html(file_guid.mfr_download_url, file_guid.mfr_cache_path, file_guid.mfr_temp_path)
+            build_rendered_html(
+                file_guid.mfr_download_url,
+                file_guid.mfr_cache_path,
+                file_guid.mfr_temp_path(name),
+                file_guid.public_download_url,
+            )
     return None
 
 
@@ -281,12 +281,12 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     if file_guid.guid_url != request.path:
         return redirect(file_guid.guid_url)
 
-    file_guid.maybe_set_version(**extras)
+    versioned = file_guid.maybe_versioned(**extras)
 
     if action == 'download':
-        return redirect(file_guid.download_url)
+        return redirect(versioned.download_url)
 
-    return addon_view_file(auth, node, node_addon, file_guid, extras)
+    return addon_view_file(auth, node, node_addon, versioned, extras)
 
 
 def addon_view_file(auth, node, node_addon, file_guid, extras):
@@ -295,15 +295,10 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
 
     resp = serialize_node(node, auth, primary=True)
     resp.update({
-        'provider': file_guid.provider,
         'render_url': render_url.url,
+        'provider': file_guid.provider,
         'file_path': file_guid.waterbutler_path,
-        'files_url': node.web_url_for('collect_file_trees'),
-        'rendered': get_or_start_render(file_guid, extras),
-        # Note: must be called after get_or_start_render. This is really only for github
-        'extra': json.dumps(getattr(file_guid, 'extra', {})),
-        #NOTE: get_or_start_render must be called first to populate name
-        'file_name': getattr(file_guid, 'name', os.path.split(file_guid.waterbutler_path)[1]),
+        'files_url': node.web_url_for('collect_file_trees')
     })
 
     return resp
@@ -324,6 +319,6 @@ def addon_render_file(auth, path, provider, **kwargs):
 
     file_guid, created = node_addon.find_or_create_file_guid(path)
 
-    file_guid.maybe_set_version(**request.args.to_dict())
+    versioned = file_guid.maybe_versioned(**request.args.to_dict())
 
-    return get_or_start_render(file_guid)
+    return get_or_start_render(versioned, name=request.args.get('name'))

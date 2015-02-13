@@ -197,14 +197,13 @@ class GuidFile(GuidStoredObject):
 
     @property
     def guid_url(self):
-        return '/{0}/'.format(self._id)
-
-    @property
-    def name(self):
-        return self._metadata_cache['name']
+        if not self.is_versioned:
+            return '/{}/'.format(self._id)
+        return '/{}/?{}={}'.format(self._id, self.version_identifier, self.revision)
 
     @property
     def file_name(self):
+        import ipdb; ipdb.set_trace()
         if self.revision:
             return '{0}_{1}.html'.format(self._id, self.revision)
         return '{0}_{1}.html'.format(self._id, self.unique_identifier)
@@ -240,6 +239,17 @@ class GuidFile(GuidStoredObject):
 
     @property
     def mfr_download_url(self):
+        url = self._base_butler_url
+        url.path.add('file')
+        url.args['mode'] = 'render'
+
+        if self.revision:
+            url.args[self.version_identifier] = self.revision
+
+        return url.url
+
+    @property
+    def public_download_url(self):
         if settings.DEBUG_MODE:
             # If in debug mode we're running in a single thread and need to go to
             # the offload domain to prevent deadlocking the server
@@ -257,13 +267,6 @@ class GuidFile(GuidStoredObject):
         return url.url
 
     @property
-    def metadata_url(self):
-        url = self._base_butler_url
-        url.path.add('data')
-
-        return url.url
-
-    @property
     def mfr_cache_path(self):
         return os.path.join(
             settings.MFR_CACHE_PATH,
@@ -272,14 +275,15 @@ class GuidFile(GuidStoredObject):
             self.file_name,
         )
 
-    @property
-    def mfr_temp_path(self):
+    def mfr_temp_path(self, name=None):
+        name = name or self.waterbutler_path
+
         return os.path.join(
             settings.MFR_TEMP_PATH,
             self.node._id,
             self.provider,
             # Attempt to keep the original extension of the file for MFR detection
-            self.file_name + os.path.splitext(self.name)[1]
+            self.file_name + os.path.splitext(name)[1]
         )
 
     @property
@@ -303,30 +307,20 @@ class GuidFile(GuidStoredObject):
     def revision(self):
         return getattr(self, '_revision', None)
 
-    def maybe_set_version(self, **kwargs):
-        self._revision = kwargs.get(self.version_identifier)
+    @property
+    def is_versioned(self):
+        return getattr(self, '_revision', None) is not None
 
-    def enrich(self, save=True):
-        self._fetch_metadata(should_raise=True)
+    def set_version(self, version):
+        self._revision = version
 
-    def _exception_from_response(self, response):
-        if response.ok:
-            return
-
-        if response.status_code in STATUS_EXCEPTIONS:
-            raise STATUS_EXCEPTIONS[response.status_code]
-
-        raise exceptions.AddonEnrichmentError(response.status_code)
-
-    def _fetch_metadata(self, should_raise=False):
-        # Note: We should look into caching this at some point
-        # Some attributes may change however.
-        resp = requests.get(self.metadata_url)
-
-        if should_raise:
-            self._exception_from_response(resp)
-
-        self._metadata_cache = resp.json()['data']
+    def maybe_versioned(self, **kwargs):
+        version = kwargs.get(self.version_identifier)
+        if version:
+            new = self.__class__.load(self._id)
+            new.set_version(version)
+            return new
+        return self
 
 
 class AddonSettingsBase(StoredObject):
