@@ -1,6 +1,42 @@
 var m = require('mithril');
 var $osf = require('osfHelpers');
+var bootbox = require('bootbox');
 var waterbutler = require('waterbutler');
+
+var jsonOrXhr = function(xhr) {
+    //https://lhorie.github.io/mithril/mithril.request.html#using-variable-data-formats
+    return xhr.status === 200 ? xhr.responseText : xhr;
+};
+
+var deserialize = function(xhrorjson) {
+    if (typeof xhrorjson.onreadystatechange === 'function') {
+        return xhrorjson;
+    }
+    return JSON.parse(xhrorjson);
+};
+
+var ExceptionsToErrorMessage = {
+    404: m('.alert.alert-info[role=alert]',
+           'The requested file either does not exist or no longer exists.'),
+    410: m('.alert.alert-info[role=alert]',
+           'The requested file has been deleted.')
+};
+
+//https://github.com/janl/mustache.js/blob/master/mustache.js#L43
+var entityMap = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    '\'': '&#39;',
+    '/': '&#x2F;'
+};
+
+function escapeHtml(string) {
+    return String(string).replace(/[&<>"'\/]/g, function (s) {
+        return entityMap[s];
+    });
+}
 
 var RevisionsBar = {};
 
@@ -61,30 +97,41 @@ FileRenderBlock.controller = function(pagevm) {
     self.vm = pagevm;
     self.attempts = 0;
     self.allowedAttempts = 5;
-    self.renderFailured = false;
+    self.renderFailed = false;
     self.renderComplete = false;
     self.renderFailureMessage = m('span', 'The was an issue when attempting to render this file.');
 
     self.render = function(result) {
-        self.renderComplete = true;
-        self.rawHtml = result;
+        if (result === null) {
+            self.throttledRetry();
+        } else{
+            self.rawHtml = result;
+            self.renderComplete = true;
+        }
     };
 
     self.retry = function(data) {
         self.attempts++;
         if (self.attempts > self.allowedAttempts) {
-            self.renderFailured = true;
+            self.renderFailed = true;
+            self.renderComplete = true;
 
         } else {
             m.request({
                 method: 'GET',
-                url: self.vm.file.urls.render
-            }).then(self.render, self.retry);
+                extract: jsonOrXhr,
+                deserialize: deserialize,
+                url: self.vm.urls.render
+            }).then(self.render, self.throttledRetry);
         }
     };
 
+    self.throttledRetry = $osf.throttle(self.retry, 10000);
+
     m.request({
         method: 'GET',
+        extract: jsonOrXhr,
+        deserialize: deserialize,
         url: self.vm.urls.render
     }).then(self.render, self.retry);
 };
@@ -98,7 +145,7 @@ FileActionBlock.view = function(ctrl) {
         m('a.btn.btn-success.btn-md', {href: ctrl.downloadUrl()}, [
             'Download ', m('i.icon-download-alt')
         ]),
-        m('button.btn.btn-danger.btn-md', ['Delete ', m('i.icon-trash')])
+        m('button.btn.btn-danger.btn-md', {onclick: ctrl.delete}, ['Delete ', m('i.icon-trash')])
     ]);
 };
 
@@ -116,7 +163,30 @@ FileActionBlock.controller = function(pagevm) {
         return self.vm.revision ? self.vm.revision.downloadUrl : '?action=download';
     };
 
+    self.realDelete = function() {
+        m.request({
+            method: 'DELETE',
+            url: self.vm.urls.delete,
+        }).then(function() {
+            window.location = self.vm.node.urls.files;
+        }, function() {
+            $osf.growl('Error', 'Could not delete file.');
+        });
+    };
+
     self.delete = function() {
+        bootbox.confirm({
+            title: 'Delete file?',
+            message: '<p class="overflow">' +
+                    'Are you sure you want to delete <strong>' +
+                    escapeHtml(self.vm.file.name) + '</strong>?' +
+                '</p>',
+            callback: function(confirm) {
+                if (confirm) {
+                    self.realDelete();
+                }
+            }
+        });
     };
 
     self.breadcrumbs = function() {
@@ -175,8 +245,12 @@ FileViewPage.ViewModel = function() {
     self.fileLoadedFailed = false;
     self.revisionsLoadedFailed = false;
 
-    self.revisionErrorMessage = 'Unable to fetch versions.';
-    self.fileErrorMessage = 'Unable to retrieve file information.';
+    self.revisionErrorMessage = m('Unable to fetch versions.');
+    self.fileErrorMessage = m('.alert.alert-info[role=alert]', [
+        'This file is currently unable to be rendered.', m('br'),
+        'If this should not have occurred and the issue persists, ',
+        'please report it to ', m('a[href=mailto:support@osf.io]', 'support@osf.io')
+    ]);
 
     self.fileCanBeDeleted = true;
     self.fileCanBeDownloaded = true;
@@ -186,6 +260,7 @@ FileViewPage.ViewModel = function() {
     self.provider = window.contextVars.file.provider;
     self.urls = {
         render: window.contextVars.renderUrl,
+        delete: waterbutler.buildDeleteUrl(self.filePath, self.provider, self.node.id),
         metadata: waterbutler.buildMetadataUrl(self.filePath, self.provider, self.node.id),
         revisions: waterbutler.buildRevisionsUrl(self.filePath, self.provider, self.node.id),
     };
@@ -196,6 +271,13 @@ FileViewPage.ViewModel = function() {
         self.file = new FileViewPage.File(data.data);
 
         document.title = 'OSF | ' + self.file.name;
+
+        m.request({
+            method: 'GET',
+            extract: jsonOrXhr,
+            deserialize: deserialize,
+            url: self.urls.revisions,
+        }).then(self.loadRevisions, self.loadRevisionsFail);
 
         self.fileRenderBlockCtrl = new FileRenderBlock.controller(self);
         self.fileActionBlockCtrl = new FileActionBlock.controller(self);
@@ -220,26 +302,24 @@ FileViewPage.ViewModel = function() {
         self.revisionsBarCtrl = new RevisionsBar.controller(self);
     };
 
-    self.loadFileFail = function(data) {
+    self.loadFileFail = function(xhr) {
+        self.fileLoaded = true;
         self.fileLoadedFailed = true;
+        self.fileErrorMessage = ExceptionsToErrorMessage[xhr.status] || self.fileErrorMessage;
     };
 
     self.loadRevisionsFail = function(data) {
+        self.revisionsLoaded = true;
         self.revisionsLoadedFailed = true;
     };
 
     self.init = function() {
         m.request({
             method: 'GET',
-            url: self.urls.metadata
-        }).then(self.loadFile, self.loadFileFail).then(function() {
-            m.request({
-                method: 'GET',
-                url: self.urls.revisions
-            }).then(self.loadRevisions, self.loadRevisionsFail);
-        }
-    );
-
+            extract: jsonOrXhr,
+            url: self.urls.metadata,
+            deserialize: deserialize,
+        }).then(self.loadFile, self.loadFileFail);
     };
 };
 
@@ -252,6 +332,10 @@ FileViewPage.controller = function() {
 FileViewPage.view = function(ctrl) {
     if (!ctrl.vm.fileLoaded) {
         return m('img[src=/static/img/loading.gif]');
+    }
+
+    if (ctrl.vm.fileLoadedFailed) {
+        return ctrl.vm.fileErrorMessage;
     }
 
     return [
