@@ -163,6 +163,15 @@ class TestNotificationUtils(OsfTestCase):
         assert_in(self.user_subscription, user_subscriptions)
         assert_equal(len(utils.get_all_user_subscriptions(self.user)), 3)
 
+    def test_get_all_node_subscriptions_given_user_subscriptions(self):
+        user_subscriptions = utils.get_all_user_subscriptions(self.user)
+        node_subscriptions = utils.get_all_node_subscriptions(self.user, self.node, user_subscriptions=user_subscriptions)
+        assert_equal(node_subscriptions, [self.node_subscription])
+
+    def test_get_all_node_subscriptions_given_user_and_node(self):
+        node_subscriptions = utils.get_all_node_subscriptions(self.user, self.node)
+        assert_equal(node_subscriptions, [self.node_subscription])
+
     def test_get_configured_project_ids_does_not_return_user_or_node_ids(self):
         assert_in(self.project._id, utils.get_configured_projects(self.user))
         assert_not_in(self.node._id, utils.get_configured_projects(self.user))

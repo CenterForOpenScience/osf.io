@@ -24,12 +24,7 @@ class NotificationsDict(dict):
 
 @contributor_removed.connect
 def remove_contributor_from_subscriptions(contributor, node):
-    user_subscriptions = get_all_user_subscriptions(contributor)
-    node_subscriptions = []
-    for user_subscription in user_subscriptions:
-        if user_subscription.object_id == node._id:
-            node_subscriptions.append(user_subscription)
-
+    node_subscriptions = get_all_node_subscriptions(contributor, node)
     for subscription in node_subscriptions:
         for n in settings.NOTIFICATION_TYPES:
             if contributor in getattr(subscription, n):
@@ -64,7 +59,19 @@ def get_all_user_subscriptions(user):
     return user_subscriptions
 
 
+def get_all_node_subscriptions(user, node, user_subscriptions=None):
+    if not user_subscriptions:
+        user_subscriptions = get_all_user_subscriptions(user)
+    node_subscriptions = []
+    for s in user_subscriptions:
+        if s.object_id == node._id:
+            node_subscriptions.append(s)
+
+    return node_subscriptions
+
+
 def format_data(user, node_ids, data, subscriptions_available=settings.SUBSCRIPTIONS_AVAILABLE):
+    user_subscriptions = get_all_user_subscriptions(user)
     for idx, node_id in enumerate(node_ids):
         node = Node.load(node_id)
         index = len(data)
@@ -75,12 +82,7 @@ def format_data(user, node_ids, data, subscriptions_available=settings.SUBSCRIPT
                      'children': []
                      })
 
-        user_subscriptions = get_all_user_subscriptions(user)
-        node_subscriptions = []
-        for user_subscription in user_subscriptions:
-            if user_subscription.object_id == node_id:
-                node_subscriptions.append(user_subscription)  # xyz_comments
-
+        node_subscriptions = get_all_node_subscriptions(user, node, user_subscriptions=user_subscriptions)
         for s in subscriptions_available:
             event = {
                 'title': s,
