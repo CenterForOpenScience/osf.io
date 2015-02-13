@@ -155,22 +155,34 @@ class BoxProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def revisions(self, path, **kwargs):  
-        # Chris's PR touches revisions/rendering. TODO: update this after his is merged?
         #from https://developers.box.com/docs/#files-view-versions-of-a-file :
         #Alert: Versions are only tracked for Box users with premium accounts.
-        path = BoxPath(self.folder, path)
+        #Most users won't have a premium account, fail quietly if not
+        path = BoxPath(path)
         response = yield from self.make_request(
             'GET',
-            self.build_url('revisions', 'auto', path.path),
+            self.build_url('files', path._id, 'versions'),
             expects=(200, ),
-            throws=exceptions.RevisionError
+            throws=exceptions.RevisionsError
         )
         data = yield from response.json()
 
-        return [
-            BoxRevision(item).serialized()
-            for item in data
-        ]
+        idx = 1
+        ret = []
+        curr = yield from self.metadata(str(path))
+        ret.append(BoxRevision(curr, folder=self.folder).serialized())
+        import ipdb; ipdb.set_trace()
+        while(data['entries']):
+            item = data['entries'].pop()
+            item['revision'] = idx
+            idx += 1
+            ret.append(BoxRevision(item, folder=self.folder).serialized())
+
+        return ret
+#        return [
+#            BoxRevision(item, folder=self.folder).serialized()
+#            for item in data['entries']
+#        ]
 
     def can_intra_copy(self, dest_provider):
         return type(self) == type(dest_provider)

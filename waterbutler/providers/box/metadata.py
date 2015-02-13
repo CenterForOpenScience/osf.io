@@ -77,13 +77,32 @@ class BoxRevision(BaseBoxMetadata, metadata.BaseFileRevisionMetadata):
         return self.raw['size']
 
     @property
+    def kind(self):
+        return 'file'
+
+    @property
+    def name(self):
+        return self.raw['name'] 
+
+    @property
+    def version(self):
+        return self.raw['revision']
+
+    @property
+    def version_identifier(self):
+        return self.raw['id']
+
+    @property
+    def path(self):
+        return '/{0}/{1}'.format(self.raw['id'], self.raw['name'])
+
+    @property
     def modified(self):
         return self.raw['modified_at']
 
     @property
     def revision(self):
         return self.raw['etag']
-
 
     @property
     def extra(self):
