@@ -29,3 +29,5 @@ if ($comments.length) {
 $(document).ready(function(){
     $('.osf-project-navbar li:contains("Files")').addClass('active');
 });
+
+FileRenderer.start(window.contextVars.renderURL, '#fileRendered');
