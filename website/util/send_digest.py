@@ -19,7 +19,7 @@ from website.notifications.model import DigestNotification
 from website.notifications.utils import NotificationsDict
 from tests.base import OsfTestCase
 from tests.factories import DigestNotificationFactory, UserFactory, ProjectFactory
-from nose.tools import *  # PEP8 asserts
+import nose.tools
 
 
 def main():
@@ -117,8 +117,8 @@ class TestSendDigest(OsfTestCase):
                     u'user_id': user2._id,
                     u'info': info
                     }]
-        assert_equal(len(user_groups), 2)
-        assert_equal(user_groups, expected)
+        nose.tools.assert_equal(len(user_groups), 2)
+        nose.tools.assert_equal(user_groups, expected)
 
     @unittest.skipIf(settings.USE_CELERY, 'Digest emails must be sent synchronously for this test')
     @mock.patch('website.mails.send_mail')
@@ -132,7 +132,7 @@ class TestSendDigest(OsfTestCase):
         d.save()
         user_groups = group_digest_notifications_by_user()
         send_digest(user_groups)
-        assert_true(mock_send_mail.called)
+        nose.tools.assert_true(mock_send_mail.called)
 
         user = User.load(user_groups[2]['user_id'])
         mock_send_mail.assert_called_with(
@@ -154,7 +154,7 @@ class TestSendDigest(OsfTestCase):
         id = d._id
         user_groups = group_digest_notifications_by_user()
         send_digest(user_groups)
-        with assert_raises(NoResultsFound):
+        with nose.tools.assert_raises(NoResultsFound):
             DigestNotification.find_one(Q('_id', 'eq', id))
 
 

@@ -144,5 +144,3 @@ email_templates = {
         'subject': '${commenter} replied to your comment on "${title}".'
     }
 }
-
-
