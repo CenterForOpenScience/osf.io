@@ -12,7 +12,6 @@ var md = require('markdown');
 var ctx = window.contextVars;  // mako context variables
 
 // Render the raw markdown of the wiki
-console.log(ctx.usePythonRender);
 if (!ctx.usePythonRender) {
     var markdownElement = $('#markdown-it-render');
     var request = $.ajax({

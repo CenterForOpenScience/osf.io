@@ -1,13 +1,8 @@
-/**
-* Initializes the pagedown editor and prompts the user if
-* leaving the page with unsaved changes.
-*/
 'use strict';
 var ko = require('knockout');
 var $ = require('jquery');
 var $osf = require('osfHelpers');
 var Raven = require('raven-js');
-require('bootstrap-editable');
 var Markdown = require('pagedown-ace-converter');
 Markdown.getSanitizingConverter = require('pagedown-ace-sanitizer').getSanitizingConverter;
 require('imports?Markdown=pagedown-ace-converter!pagedown-ace-editor');

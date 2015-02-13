@@ -27,7 +27,7 @@
     "reconnectingWebsocket": "#07669519f8",   
     "markdown-it": "~3.0.5",
     "markdown-it-sanitizer": "~0.2.0",
-    "markdown-it-video": "https://github.com/brianjgeiger/markdown-it-video.git#586dcccb9151e6e15cd1232572f43cadc64296e7",
+    "markdown-it-video": "https://github.com/brianjgeiger/markdown-it-video.git#c5499b302d7d65db53e52952d17e884dc5b5a472",
     "truncate": "https://github.com/pathable/truncate.git#5da408e2325dd965e0c94c354622ad54645824b9",
     "dropzone": "https://github.com/sloria/dropzone.git#accept-directory",
     "treebeard": "https://github.com/caneruguz/treebeard.git#4112b22be4333c9fce35249131632b6b2a37bb87",

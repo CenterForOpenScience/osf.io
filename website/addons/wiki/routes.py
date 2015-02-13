@@ -94,6 +94,13 @@ api_routes = {
             '/project/<pid>/node/<nid>/wiki/<wname>/content/',
         ], 'get', views.wiki_page_content, json_renderer),
 
+        # Version : GET
+        # <wver> refers to a wiki page's version number
+        Rule([
+            '/project/<pid>/wiki/<wname>/content/<int:wver>/',
+            '/project/<pid>/node/<nid>/wiki/<wname>/content/<int:wver>/',
+        ], 'get', views.wiki_version_content, json_renderer),
+
         # Validate | GET
         Rule([
             '/project/<pid>/wiki/<wname>/validate/',

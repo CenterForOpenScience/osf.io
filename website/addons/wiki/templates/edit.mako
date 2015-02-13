@@ -1,6 +1,6 @@
 <%page expression_filter="h"/>
 <%inherit file="project/project_base.mako"/>
-<%def name="title()">${node['title'] | n} Wiki (Edit)</%def>
+<%def name="title()">${node['title'] | n} Wiki</%def>
 
 <div class="row">
     <div class="col-xs-6">
@@ -46,7 +46,7 @@
 
     <div class="col-sm-9 panel-expand">
       <div class="row">
-        <div class="col-sm-6" data-osf-panel="Edit">
+        <div class="col-sm-4" data-osf-panel="Edit">
                 <div class="wiki-panel"> 
                   <div class="wiki-panel-header"> <i class="icon-edit"> </i>  Edit </div>
                   <div class="wiki-panel-body"> 
@@ -115,19 +115,46 @@
                   </div>
                 </div>
           </div>
-          <div class="col-sm-6" data-osf-panel="Preview">
+          <div class="col-sm-4" data-osf-panel="View">
               <div class="wiki-panel"> 
-                <div class="wiki-panel-header"> <i class="icon-eye-open"> </i> Preview </div>
-                  <div class="wiki-panel-body"> 
+                <div class="wiki-panel-header">
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <i class="icon-eye-open"> </i>  View
+                        </div>
+                        <div class="col-sm-6">
+                            <!-- Version Picker -->
+                            <select id="viewSelect" class="pull-right">
+                                <option value="preview">Preview</option>
+                                <option value="current">Current</option>
+                                % for version in versions:
+                                    <option value="${version['version']}">Version ${version['version']}</option>
+                                % endfor
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="wiki-panel-body">
                     <div id="markdown-it-preview" class="wmd-panel wmd-preview"></div>
                   </div>
               </div>
+          </div>
+          <div class="col-sm-4" data-osf-panel="Compare">
+            <div class="wiki-panel">
+              <div class="wiki-panel-header">
+                  <i class="icon-exchange"> </i>  Compare
+              </div>
+              <div class="wiki-panel-body">
+                <div class="row">
+                    <div class="col-xs-12"> ... coming soon </div>
+                </div>
+              </div>
+            </div>
           </div>
       </div><!-- end row -->
     </div>
 
   </div>
-
 </div><!-- end wiki -->
 
 
@@ -225,12 +252,28 @@
 </div>
 
 <%def name="javascript_bottom()">
+<% import json %>
 ${parent.javascript_bottom()}
 <script>
+
+    var canEditPageName = ${json.dumps(
+        all([
+            'write' in user['permissions'],
+            not is_edit,
+            wiki_id,
+            wiki_name != 'home',
+            not node['is_registration']
+        ])
+    )};
+
     window.contextVars = window.contextVars || {};
     window.contextVars.wiki = {
+        canEditPageName: canEditPageName,
+        usePythonRender: ${json.dumps(use_python_render)},
         urls: {
             content: '${urls['api']['content']}',
+            rename: '${urls['api']['rename']}',
+            base: '${urls['web']['base']}',
             sharejs: '${sharejs_url}'
         },
         metadata: {
