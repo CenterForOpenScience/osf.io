@@ -1,5 +1,6 @@
 from modularodm import fields
 from framework.mongo import StoredObject, ObjectId
+from website import settings
 
 
 class Subscription(StoredObject):
@@ -10,6 +11,12 @@ class Subscription(StoredObject):
     email_transactional = fields.ForeignField('user', list=True, backref='email_transactional')
     email_digest = fields.ForeignField('user', list=True, backref='email_digest')
     none = fields.ForeignField('user', list=True, backref='none')
+
+    def remove_user_from_subscription(self, user):
+        for n in settings.NOTIFICATION_TYPES:
+            if user in getattr(self, n):
+                getattr(self, n).remove(user)
+                self.save()
 
 
 class DigestNotification(StoredObject):

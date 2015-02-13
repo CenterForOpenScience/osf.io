@@ -26,10 +26,7 @@ class NotificationsDict(dict):
 def remove_contributor_from_subscriptions(contributor, node):
     node_subscriptions = get_all_node_subscriptions(contributor, node)
     for subscription in node_subscriptions:
-        for n in settings.NOTIFICATION_TYPES:
-            if contributor in getattr(subscription, n):
-                getattr(subscription, n).remove(contributor)
-                subscription.save()
+        subscription.remove_user_from_subscription(contributor)
 
 
 def get_configured_projects(user):

@@ -20,13 +20,8 @@ def subscribe(auth):
         try:
             s = Subscription.find_one(Q('_id', 'eq', event_id))
         except NoResultsFound:
-            s = None
-
-        if s:
-            for n in settings.NOTIFICATION_TYPES:
-                if user in getattr(s, n):
-                    getattr(s, n).remove(user)
-                    s.save()
+            return
+        s.remove_user_from_subscription(user)
 
     else:
         try:
