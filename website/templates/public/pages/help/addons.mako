@@ -1,17 +1,17 @@
 
 <span id="Add Ons" class="anchor"></span>
 <p class="gs-header">How to Set Up Your Add-Ons</p>
- <p>The OSF makes integrating your various research workflows easy. We are always developing add-on connections to services you already use. These tools make your life easier and your research better, and now you can connect them all in one place 
+ <p>The OSF makes integrating your various research workflows easy. We are always developing add-on connections to services you already use. These tools make your life easier and your research better, and now you can connect them all in one place
  </p>
  <p>There are two steps to adding an Add-On: authentication and application. Make sure to authenticate the Add-On for your entire account before you apply it to your project.</p>
- <p> First, go to your account settings by clicking the gear in the top right. Then navigate to “Configure Add -Ons” Select the add on you want to add to your account. Then click submit. You will see a box entitled “Configure Add Ons”below the Add-On selection box. Either create an access token or fill in the information. Follow the instructions to authenticate the add on for your account. This gives your account access but it does not apply the Add-On to your project. 
- </p> 
- <p> Second, simply navigate to the project where you want to use an Add-On, find the project’s settings. Click the box to add the Add-On to that project. Clicking “Submit” opens a dialogue box that will tell you about the specifics of the Add-On in question. Click okay to authorize. Then, In the “Configure Add-On” box you will be able to select folders or repositories that you want to add to your project. </pr>
+ <p> First, go to your account settings by clicking the gear in the top right. Then navigate to "Configure Add -Ons" Select the add on you want to add to your account. Then click submit. You will see a box entitled "Configure Add Ons" below the Add-On selection box. Either create an access token or fill in the information. Follow the instructions to authenticate the add on for your account. This gives your account access but it does not apply the Add-On to your project.
+ </p>
+ <p> Second, simply navigate to the project where you want to use an Add-On, find the project's settings. Click the box to add the Add-On to that project. Clicking "Submit" opens a dialogue box that will tell you about the specifics of the Add-On in question. Click okay to authorize. Then, In the "Configure Add-On" box you will be able to select folders or repositories that you want to add to your project. </pr>
 
 <div class="gs-video embed-responsive embed-responsive-16by9">
     <div class="embed-responsive-item youtube-loader" id="rtruzdEs8oc"></div>
 </div>
-<p> Now you’re all set up and ready to go! </p>
+<p> Now you're all set up and ready to go! </p>
 
 
 <span id="dropbox" class="anchor"></span>
@@ -23,7 +23,7 @@
 
 <span id="github" class="anchor"></span>
 <p class="gs-header">GitHub Add-on</p>
-<p>GitHub is a commonly used web based Git repository hosting service. After linking your OSF project to GitHub, you can add files to your GitHub repository and those files can be accessed via the OSF. Likewise, files added to the GitHub repository in your OSF account will update your GitHub account with that file. </p> 
+<p>GitHub is a commonly used web based Git repository hosting service. After linking your OSF project to GitHub, you can add files to your GitHub repository and those files can be accessed via the OSF. Likewise, files added to the GitHub repository in your OSF account will update your GitHub account with that file. </p>
 <p> To link a GitHub repository to a project/component, visit your profile settings by clicking the gear in the top right of the page. Check "GitHub" under "Select Add-ons" to enable the add-on.</p>
 <p>Then, authenticate with GitHub by clicking the "Create Access Token" button and following the instructions on the GitHub page. Once you have created the access token in your user profile, you will not need to follow those first few steps again. </p>
 <p>After creating the access token for your user profile, visit the project you want to add a GitHub repository to. Click on the project name then go to "Settings" in the grey navigation bar. Select the GitHub add-on by clicking "OK" on the pop-up, then submitting. </p>
