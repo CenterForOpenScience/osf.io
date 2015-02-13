@@ -363,3 +363,6 @@ class CommentFactory(ModularOdmFactory):
 
 class ExternalAccountFactory(ModularOdmFactory):
     FACTORY_FOR = ExternalAccount
+
+    provider = 'fakeprovider'
+    provider_id = Sequence(lambda n: 'user-{0}'.format(n))

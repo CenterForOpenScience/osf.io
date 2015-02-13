@@ -1,4 +1,7 @@
+import httplib as http
+import json
 import responses
+import time
 import urlparse
 from nose.tools import *
 
@@ -10,10 +13,12 @@ from website.oauth.models import ExternalAccount
 from website.oauth.models import ExternalProvider
 from website.oauth.models import OAUTH1
 from website.oauth.models import OAUTH2
+from website.util import api_url_for
 from website.util import web_url_for
 
 from tests.base import OsfTestCase
 from tests.factories import ExternalAccountFactory
+from tests.factories import AuthUserFactory
 from tests.factories import UserFactory
 
 
@@ -51,6 +56,127 @@ class MockOAuth2Provider(ExternalProvider):
         }
 
 
+def _prepare_mock_oauth2_handshake_response(expires_in=3600):
+
+    responses.add(
+        responses.POST,
+        'https://mock2.com/callback',
+        body=json.dumps({
+            'access_token': 'mock_access_token',
+            'expires_at': time.time() + expires_in,
+            'expires_in': expires_in,
+            'refresh_token': 'mock_refresh_token',
+            'scope': ['all'],
+            'token_type': 'bearer',
+        }),
+        status=200,
+        content_type='application/json',
+    )
+
+
+class TestExternalAccount(OsfTestCase):
+    """Test the ExternalAccount object and associated views.
+
+    Functionality not specific to the OAuth version used by the
+    ExternalProvider should go here.
+    """
+
+    def setUp(self):
+        super(TestExternalAccount, self).setUp()
+        self.user = AuthUserFactory()
+        self.provider = MockOAuth2Provider()
+
+    def tearDown(self):
+        ExternalAccount._clear_caches()
+        ExternalAccount.remove()
+        self.user.remove()
+        super(TestExternalAccount, self).tearDown()
+
+    def test_disconnect(self):
+        """Disconnect an external account from a user"""
+        external_account = ExternalAccountFactory(
+            provider='mock2',
+            provider_id='mock_provider_id',
+        )
+        self.user.external_accounts.append(external_account)
+        self.user.save()
+
+        # If the external account isn't attached, this test has no meaning
+        assert_equal(ExternalAccount.find().count(), 1)
+        assert_in(
+            external_account,
+            self.user.external_accounts,
+        )
+
+        response = self.app.delete(
+            api_url_for('oauth_disconnect',
+                        external_account_id=external_account._id),
+            auth=self.user.auth
+        )
+
+        # Request succeeded
+        assert_equal(
+            response.status_code,
+            http.OK,
+        )
+
+        self.user.reload()
+        # external_account.reload()
+
+        # External account has been disassociated with the user
+        assert_not_in(
+            external_account,
+            self.user.external_accounts,
+        )
+
+        # External account is still in the database
+        assert_equal(ExternalAccount.find().count(), 1)
+
+    def test_disconnect_with_multiple_connected(self):
+        """Disconnect an account connected to multiple users from one user"""
+        external_account = ExternalAccountFactory(
+            provider='mock2',
+            provider_id='mock_provider_id',
+        )
+        self.user.external_accounts.append(external_account)
+        self.user.save()
+
+        other_user = UserFactory()
+        other_user.external_accounts.append(external_account)
+        other_user.save()
+
+        response = self.app.delete(
+            api_url_for('oauth_disconnect',
+                        external_account_id=external_account._id),
+            auth=self.user.auth
+        )
+
+        # Request succeeded
+        assert_equal(
+            response.status_code,
+            http.OK,
+        )
+
+        self.user.reload()
+
+        # External account has been disassociated with the user
+        assert_not_in(
+            external_account,
+            self.user.external_accounts,
+        )
+
+        # External account is still in the database
+        assert_equal(ExternalAccount.find().count(), 1)
+
+        other_user.reload()
+
+        # External account is still associated with the other user
+        assert_in(
+            external_account,
+            other_user.external_accounts,
+        )
+
+
 class TestExternalProviderOAuth1(OsfTestCase):
     """Test functionality of the ExternalProvider class, for OAuth 1.0a"""
 
@@ -66,7 +192,7 @@ class TestExternalProviderOAuth1(OsfTestCase):
 
     @responses.activate
     def test_start_flow(self):
-        """Request temporary credentials from the provider"""
+        """Request temporary credentials from provider, provide auth redirect"""
         responses.add(responses.POST, 'http://mock1a.com/request',
                   body='{"oauth_token_secret": "temp_secret", '
                        '"oauth_token": "temp_token", '
@@ -93,7 +219,6 @@ class TestExternalProviderOAuth1(OsfTestCase):
             creds = session.data['oauth_states'][self.provider.short_name]
             assert_equal(creds['token'], 'temp_token')
             assert_equal(creds['secret'], 'temp_secret')
-
 
     @responses.activate
     def test_callback(self):
@@ -137,10 +262,18 @@ class TestExternalProviderOAuth1(OsfTestCase):
         assert_equal(account.oauth_secret, 'perm_secret')
         assert_equal(account.provider_id, 'mock_provider_id')
 
-
     @responses.activate
     def test_callback_wrong_user(self):
-        """Do not accept temporary credentials not assigned to the user"""
+        """Reject temporary credentials not assigned to the user
+
+        This prohibits users from associating their external account with
+        another user's OSF account by using XSS or similar attack vector to
+        complete the OAuth flow using the logged-in user but their own account
+        on the external service.
+
+        If the OSF were to allow login via OAuth with the provider in question,
+        this would allow attackers to hijack OSF accounts with a simple script
+        injection."""
 
         # mock a successful call to the provider to exchange temp keys for
         #   permanent keys
@@ -188,6 +321,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         self.provider = MockOAuth2Provider()
 
     def tearDown(self):
+        ExternalAccount._clear_caches()
         ExternalAccount.remove()
         self.user.remove()
         super(TestExternalProviderOAuth2, self).tearDown()
@@ -240,10 +374,96 @@ class TestExternalProviderOAuth2(OsfTestCase):
                 "https://mock2.com/auth",
             )
 
-        def test_multiple_users_associated(self):
-            """Only one ExternalAccount is created for multiple OSF users"""
-            assert_true(False)
+    @responses.activate
+    def test_callback(self):
+        """Exchange temporary credentials for permanent credentials"""
 
-        def test_multiple_users_disconnect(self):
-            """One users removes ExternalAccount, other users still attached"""
-            assert_true(False)
+        # Mock the exchange of the code for an access token
+        _prepare_mock_oauth2_handshake_response()
+
+        user = UserFactory()
+
+        # Fake a request context for the callback
+        with self.app.app.test_request_context(
+                path="/oauth/callback/mock2/",
+                query_string="code=mock_code&state=mock_state"
+        ) as ctx:
+
+            # make sure the user is logged in
+            authenticate(user=user, response=None)
+
+            session = get_session()
+            session.data['oauth_states'] = {
+                self.provider.short_name: {
+                    'state': 'mock_state',
+                },
+            }
+            session.save()
+
+            # do the key exchange
+            self.provider.auth_callback(user=user)
+
+        account = ExternalAccount.find_one()
+        assert_equal(account.oauth_key, 'mock_access_token')
+        assert_equal(account.provider_id, 'mock_provider_id')
+
+
+    @responses.activate
+    def test_multiple_users_associated(self):
+        """Create only one ExternalAccount for multiple OSF users
+
+        For some providers (ex: GitHub), the act of completing the OAuth flow
+        revokes previously generated credentials. In addition, there is often no
+        way to know the user's id on the external service until after the flow
+        has completed.
+
+        Having only one ExternalAccount instance per account on the external
+        service means that connecting subsequent OSF users to the same external
+        account will not invalidate the credentials used by the OSF for users
+        already associated."""
+        user_a = UserFactory()
+        external_account = ExternalAccountFactory(
+            provider='mock2',
+            provider_id='mock_provider_id',
+        )
+        user_a.external_accounts.append(external_account)
+        user_a.save()
+
+        user_b = UserFactory()
+
+        # Mock the exchange of the code for an access token
+        _prepare_mock_oauth2_handshake_response()
+
+        # Fake a request context for the callback
+        with self.app.app.test_request_context(
+                path="/oauth/callback/mock2/",
+                query_string="code=mock_code&state=mock_state"
+        ) as ctx:
+
+            # make sure the user is logged in
+            authenticate(user=user_b, response=None)
+
+            session = get_session()
+            session.data['oauth_states'] = {
+                self.provider.short_name: {
+                    'state': 'mock_state',
+                },
+            }
+            session.save()
+
+            # do the key exchange
+            self.provider.auth_callback(user=user_b)
+
+        user_a.reload()
+        user_b.reload()
+        external_account.reload()
+
+        assert_equal(
+            user_a.external_accounts,
+            user_b.external_accounts,
+        )
+
+        assert_equal(
+            ExternalAccount.find().count(),
+            1
+        )
