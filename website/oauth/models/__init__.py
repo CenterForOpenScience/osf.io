@@ -259,21 +259,3 @@ class ExternalProvider(object):
 
     def handle_callback(self, response):
         return {}
-
-
-class Zotero(ExternalProvider):
-    name = 'Zotero'
-    short_name = 'zotero'
-
-    client_id = settings.ZOTERO_CLIENT_ID
-    client_secret = settings.ZOTERO_CLIENT_SECRET
-
-    _oauth_version = OAUTH1
-    auth_url_base = 'https://www.zotero.org/oauth/authorize'
-    request_token_url = 'https://www.zotero.org/oauth/request'
-    callback_url = 'https://www.zotero.org/oauth/access'
-
-    def handle_callback(self, data):
-        return {
-            'provider_id': data['userID'],
-        }
