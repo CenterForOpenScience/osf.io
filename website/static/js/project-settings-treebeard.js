@@ -4,6 +4,8 @@ var bootbox = require('bootbox');
 require('../vendor/bower_components/slickgrid/lib/jquery.event.drag-2.2.js');
 var m = require('mithril');
 var Treebeard = require('treebeard');
+require('../css/fangorn.css');
+
 
 function resolveToggle(item) {
         var toggleMinus = m('i.icon-minus', ' '),
