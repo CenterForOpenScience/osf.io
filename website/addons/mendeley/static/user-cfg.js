@@ -1,3 +1,4 @@
+'use strict';
 
-var CitationUserSettings = require('../../../static/citation-settings');
-new CitationUserSettings('mendeley');
+var CitationUserSettings = require('../../../static/js/citation-settings');
+new CitationUserSettings('mendeley', '#mendeleyUserSettings');

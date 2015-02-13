@@ -1,15 +1,16 @@
 <!-- Authorization -->
 <div id="mendeleyUserSettings">
     <h4 class="addon-title">Mendeley</h4>
-    <table class="table">
-        <tbody data-bind="foreach: accounts">
-            <tr>
-                <td data-bind="text: display_name"></td>
-                <td data-bind="text: id"></td>
-                <td><a data-bind="click: $root.askDisconnect" class="text-danger">Delete Access Token</a></td>
-            </tr>
-        </tbody>
-    </table>
+    <div data-bind="foreach: accounts">
+        <div>
+            <span>{{ name }}</span>
+            <a 
+                    data-bind="click: $root.askDisconnect" 
+                    class="pull-right text-danger"
+                >Delete Access Token</a>
+        </div>
+        <br />
+    </div>
     <a data-bind="click: connectAccount" class="btn btn-primary">Connect an account</a>
 </div>
 
