@@ -36,6 +36,6 @@ FileRenderer = {
         } else {
             self.getCachedFromServer();
         }
-    }, 3000)
+    }, 1000)
 };
 module.exports = FileRenderer;
