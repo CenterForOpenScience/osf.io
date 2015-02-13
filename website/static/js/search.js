@@ -192,6 +192,20 @@ var ViewModel = function(params) {
         self.search();
     };
 
+    self.share_search = function(noPush, validate) {
+        var jsonData = {'query': self.fullQuery(), 'from': self.currentIndex(), 'size': self.resultsPerPage()};
+        var url = '/api/v1/share/';
+
+        $osf.postJSON(url, jsonData).success(function(data) {
+            self.results.removeAll();
+
+            data.results.forEach(function(result) {
+                self.results.push(result);
+            });
+
+        }).fail(console.log("You're shit out of luck"))
+    };
+
     self.search = function(noPush, validate) {
 
         var jsonData = {'query': self.fullQuery(), 'from': self.currentIndex(), 'size': self.resultsPerPage()};
@@ -206,6 +220,7 @@ var ViewModel = function(params) {
             self.categories.removeAll();
 
             data.results.forEach(function(result){
+                console.log(result);
                 if(result.category === 'user'){
                     self.results.push(new User(result));
                 }
@@ -226,6 +241,8 @@ var ViewModel = function(params) {
                 }
                 self.categories.push(new Category(key, value, data.typeAliases[key]));
             });
+            
+            
             self.categories(self.categories().sort(self.sortCategories));
 
             // If our category is named attempt to load its total else set it to the total total
@@ -250,7 +267,11 @@ var ViewModel = function(params) {
             if (!noPush) {
                 self.pushState();
             }
-
+            /*var share_count = 0
+            $osf.postJSON('/api/v1/share/count/', jsonData).success(function(data) {
+                share_count = data;
+                self.categories.push(new Category('SHARE', share_count, 'SHARE')); 
+            }); */
         }).fail(function(response){
             self.totalResults(0);
             self.currentPage(0);
