@@ -290,7 +290,7 @@ class TestCRUD:
         aiohttpretty.register_json_uri('GET', article_metadata_url, body=article_metadata)
         aiohttpretty.register_uri('GET', download_url, body=body)
         result = yield from project_provider.download(path)
-        content = yield from result.read()
+        content = yield from result.response.read()
         assert content == body
 
     # disabled due to figshare not sending https url's when download files form their service.
@@ -333,7 +333,7 @@ class TestCRUD:
         aiohttpretty.register_json_uri('GET', article_metadata_url, body=article_metadata)
         aiohttpretty.register_uri('GET', download_url, body=body)
         result = yield from article_provider.download(path)
-        content = yield from result.read()
+        content = yield from result.response.read()
         assert content == body
 
     @async
