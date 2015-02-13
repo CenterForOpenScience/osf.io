@@ -21,3 +21,7 @@ SPECIAL_CASES = {}
 USERNAME = 'changeme'
 API_KEY = 'changeme'
 REGION = 'changeme'
+
+AWS_ACCESS_KEY = 'changeme'
+AWS_SECRET_KEY = 'changeme'
+AUDIT_TEMP_PATH = 'audit'

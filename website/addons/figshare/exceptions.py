@@ -1,10 +1,15 @@
-from website.addons.base.exceptions import AddonEnrichmentError
 from website.util.sanitize import escape_html
+from website.addons.base.exceptions import AddonEnrichmentError
+
 
 class FigshareIsDraftError(AddonEnrichmentError):
 
     def __init__(self, file_guid):
         self.file_guid = file_guid
+
+    @property
+    def can_delete(self):
+        return True
 
     @property
     def renderable_error(self):
