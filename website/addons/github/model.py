@@ -5,7 +5,6 @@ import urlparse
 import itertools
 import httplib as http
 
-import requests
 from github3 import GitHubError
 from modularodm import fields, Q
 from modularodm.exceptions import ModularOdmException
@@ -32,6 +31,10 @@ class GithubGuidFile(GuidFile):
     path = fields.StringField(index=True)
 
     @property
+    def waterbutler_path(self):
+        return self.path
+
+    @property
     def provider(self):
         return 'github'
 
@@ -47,19 +50,20 @@ class GithubGuidFile(GuidFile):
     def name(self):
         return os.path.split(self.path)[1]
 
-    def enrich(self):
-        resp = requests.get(self.metadata_url)
+    @property
+    def extra(self):
+        return {
+            'sha': self._metadata_cache['extra']['fileSha']
+        }
 
-        if resp.status_code != 200:
-            try:
-                if resp.json()['errors'][0]['code'] == 'too_large':
-                    raise TooBigToRenderError(self)
-            except (KeyError, IndexError):
-                pass
+    def _exception_from_response(self, response):
+        try:
+            if response.json()['errors'][0]['code'] == 'too_large':
+                raise TooBigToRenderError(self)
+        except (KeyError, IndexError):
+            pass
 
-            raise exceptions.AddonEnrichmentError(resp.status_code)
-        else:
-            self._metadata_cache = resp.json()['data']
+        super(GithubGuidFile, self)._exception_from_response(response)
 
 
 class AddonGitHubOauthSettings(StoredObject):

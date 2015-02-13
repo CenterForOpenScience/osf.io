@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import os
+import json
 import codecs
 import httplib
 import functools
@@ -211,14 +213,19 @@ def get_or_start_render(file_guid, start_render=True):
     try:
         file_guid.enrich()
     except exceptions.AddonEnrichmentError as error:
-        return error.renderable_error
+        return error.as_html()
 
     try:
         return codecs.open(file_guid.mfr_cache_path, 'r', 'utf-8').read()
     except IOError:
         if start_render:
             # Start rendering job if requested
-            build_rendered_html(file_guid.mfr_download_url, file_guid.mfr_cache_path, file_guid.mfr_temp_path)
+            build_rendered_html(
+                file_guid.mfr_download_url,
+                file_guid.mfr_cache_path,
+                file_guid.mfr_temp_path,
+                file_guid.public_download_url
+            )
     return None
 
 
@@ -263,7 +270,7 @@ def addon_view_or_download_file_legacy(**kwargs):
 @must_be_contributor_or_public
 def addon_view_or_download_file(auth, path, provider, **kwargs):
     extras = request.args.to_dict()
-    mode = extras.pop('action', 'view')
+    action = extras.pop('action', 'view')
     node = kwargs.get('node') or kwargs['project']
 
     node_addon = node.get_addon(provider)
@@ -281,25 +288,30 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     file_guid.maybe_set_version(**extras)
 
-    if mode == 'download':
-        return redirect(file_guid.download_url)
+    if action == 'download':
+        download_url = furl.furl(file_guid.download_url)
+        if extras.get('mode') == 'render':
+            download_url.args['accept_url'] = 'false'
+        return redirect(download_url.url)
 
     return addon_view_file(auth, node, node_addon, file_guid, extras)
 
 
 def addon_view_file(auth, node, node_addon, file_guid, extras):
-    render_url = furl.furl(node.api_url_for('addon_render_file', path=file_guid.path[1:], provider=file_guid.provider))
+    render_url = furl.furl(node.api_url_for('addon_render_file', path=file_guid.waterbutler_path.lstrip('/'), provider=file_guid.provider))
     render_url.args.update(extras)
 
     resp = serialize_node(node, auth, primary=True)
     resp.update({
         'provider': file_guid.provider,
-        'render_url': render_url,
-        'file_path': file_guid.path,
+        'render_url': render_url.url,
+        'file_path': file_guid.waterbutler_path,
         'files_url': node.web_url_for('collect_file_trees'),
         'rendered': get_or_start_render(file_guid, extras),
+        # Note: must be called after get_or_start_render. This is really only for github
+        'extra': json.dumps(getattr(file_guid, 'extra', {})),
         #NOTE: get_or_start_render must be called first to populate name
-        'file_name': getattr(file_guid, 'name', ''),
+        'file_name': getattr(file_guid, 'name', os.path.split(file_guid.waterbutler_path)[1]),
     })
 
     return resp
