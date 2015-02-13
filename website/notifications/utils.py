@@ -1,4 +1,5 @@
 import collections
+from framework.auth.signals import contributor_removed
 from website import settings
 from website.models import Node
 from website.notifications.model import Subscription
@@ -21,6 +22,13 @@ class NotificationsDict(dict):
         return True
 
 
+@contributor_removed.connect
+def remove_contributor_from_subscriptions(contributor, node):
+    node_subscriptions = get_all_node_subscriptions(contributor, node)
+    for subscription in node_subscriptions:
+        subscription.remove_user_from_subscription(contributor)
+
+
 def get_configured_projects(user):
     configured_project_ids = []
     user_subscriptions = get_all_user_subscriptions(user)
@@ -32,7 +40,7 @@ def get_configured_projects(user):
             pass
 
         if node and node.project_or_component == 'project' and not node.is_deleted and subscription.object_id not in configured_project_ids:
-                configured_project_ids.append(subscription.object_id)
+            configured_project_ids.append(subscription.object_id)
 
     return configured_project_ids
 
@@ -48,8 +56,19 @@ def get_all_user_subscriptions(user):
     return user_subscriptions
 
 
-def format_data(user, node_ids, data, subscriptions_available=settings.SUBSCRIPTIONS_AVAILABLE):
+def get_all_node_subscriptions(user, node, user_subscriptions=None):
+    if not user_subscriptions:
+        user_subscriptions = get_all_user_subscriptions(user)
+    node_subscriptions = []
+    for s in user_subscriptions:
+        if s.object_id == node._id:
+            node_subscriptions.append(s)
 
+    return node_subscriptions
+
+
+def format_data(user, node_ids, data, subscriptions_available=settings.SUBSCRIPTIONS_AVAILABLE):
+    user_subscriptions = get_all_user_subscriptions(user)
     for idx, node_id in enumerate(node_ids):
         node = Node.load(node_id)
         index = len(data)
@@ -58,14 +77,9 @@ def format_data(user, node_ids, data, subscriptions_available=settings.SUBSCRIPT
                      'kind': 'folder' if not node.node__parent else 'node',
                      'nodeUrl': node.url,
                      'children': []
-                    })
+                     })
 
-        user_subscriptions = get_all_user_subscriptions(user)
-        node_subscriptions = []
-        for user_subscription in user_subscriptions:
-            if user_subscription.object_id == node_id:
-                node_subscriptions.append(user_subscription) #xyz_comments
-
+        node_subscriptions = get_all_node_subscriptions(user, node, user_subscriptions=user_subscriptions)
         for s in subscriptions_available:
             event = {
                 'title': s,
@@ -83,7 +97,7 @@ def format_data(user, node_ids, data, subscriptions_available=settings.SUBSCRIPT
             if event['notificationType'] == 'adopt_parent':
                 event['parent_notification_type'] = get_parent_notification_type(node_id, s, user)
             else:
-                event['parent_notification_type'] = None #only get nt if node = adopt_parent for display purposes
+                event['parent_notification_type'] = None  # only get nt if node = adopt_parent for display purposes
 
             data[index]['children'].append(event)
 
@@ -129,12 +143,12 @@ def format_user_subscriptions(user, data):
     user_subscriptions = [s for s in Subscription.find(Q('object_id', 'eq', user._id))]
     for s in settings.USER_SUBSCRIPTIONS_AVAILABLE:
         event = {
-                'title': s,
-                'description': settings.USER_SUBSCRIPTIONS_AVAILABLE[s],
-                'kind': 'event',
-                'notificationType': 'none',
-                'children': []
-                }
+            'title': s,
+            'description': settings.USER_SUBSCRIPTIONS_AVAILABLE[s],
+            'kind': 'event',
+            'notificationType': 'none',
+            'children': []
+        }
         for subscription in user_subscriptions:
             if subscription.event_name == s:
                 for notification_type in settings.NOTIFICATION_TYPES:

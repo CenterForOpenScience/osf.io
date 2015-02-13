@@ -8,6 +8,11 @@ var Raven = require('raven-js');
 var $osf = require('osfHelpers');
 require('bootstrap-editable');
 
+var mathrender = require('mathrender');
+
+// Typeset math on the page
+mathrender.mathjaxify('#wikiContent');
+
 var ctx = window.contextVars;  // mako context variables
 
 // Apply an empty ViewModel to the #wikiName element so that

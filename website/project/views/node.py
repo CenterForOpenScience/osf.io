@@ -4,7 +4,7 @@ import httplib as http
 
 from flask import request
 from modularodm import Q
-from modularodm.exceptions import ModularOdmException, ValidationValueError, NoResultsFound
+from modularodm.exceptions import ModularOdmException, ValidationValueError
 
 from framework import status
 from framework.utils import iso8601format
@@ -724,11 +724,6 @@ def _view_project(node, auth, primary=False):
             'redirect_url': redirect_url,
             'display_absolute_url': node.display_absolute_url,
             'in_dashboard': in_dashboard,
-            'citations': {
-                'apa': node.citation_apa,
-                'mla': node.citation_mla,
-                'chicago': node.citation_chicago,
-            } if not anonymous else '',
             'is_public': node.is_public,
             'date_created': iso8601format(node.date_created),
             'date_modified': iso8601format(node.logs[-1].date) if node.logs else '',
