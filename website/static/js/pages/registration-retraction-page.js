@@ -7,7 +7,14 @@ var $ = require('jquery');
 
 var RegistrationRetraction = require('../registrationRetraction.js');
 
-new RegistrationRetraction('#registrationRetraction', '/api/v1/retract_registration/');
+// TODO(hrybacki): Handle /project/<pid>/node/<nid>/ URL construction
+var getSubmitUrl = function() {
+    return '/api/v1/project/' + contextVars.node.id + '/retract_registration/'
+};
+
+new RegistrationRetraction('#registrationRetraction', getSubmitUrl());
+
+console.log(getSubmitUrl());
 
 $( document ).ready(function() {
     $('#justificationInput').focus()

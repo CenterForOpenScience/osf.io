@@ -730,6 +730,8 @@ def _view_project(node, auth, primary=False):
             'tags': [tag._primary_key for tag in node.tags],
             'children': bool(node.nodes),
             'is_registration': node.is_registration,
+            'is_retracted': node.is_retracted,
+            'retracted_justification': node.retracted_justification,
             'registered_from_url': node.registered_from.url if node.is_registration else '',
             'registered_date': iso8601format(node.registered_date) if node.is_registration else '',
             'registered_meta': [

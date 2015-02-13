@@ -50,9 +50,15 @@ def must_be_valid_project(func):
     def wrapped(*args, **kwargs):
 
         kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
-        # TODO(hrybacki):
-        # if kwargs['node'].is_retracted and not the url for the retracted registration (base url):
-        #     return redirect()
+
+        # Handle retracted registrations
+        if kwargs['project'].is_retracted:  # TODO(hrybacki): Expand this to check the node as well
+
+            # Redirect requests not directed toward the retracted view
+            if 'retracted_registration' not in request.url:
+                url = '/project/' + kwargs['pid'] + '/retracted_registration/'
+                return redirect(url)
+
         return func(*args, **kwargs)
 
     return wrapped

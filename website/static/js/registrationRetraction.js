@@ -31,11 +31,11 @@ var RegistrationRetractionViewModel = function(submitUrl) {
         minLength: 1
     });
 
+    // TODO(hrybacki): look into contextVars to determine how do grab the project/node title for use here...
     self.confirmationText = ko.observable('').extend({
         required: true,
         mustEqual: 'retract registration'
     });
-
 
     // Preserve object of validated fields for use in `submit`
     var validatedFields = {
@@ -56,12 +56,20 @@ var RegistrationRetractionViewModel = function(submitUrl) {
 
     self.submit = function() {
         // Show errors if invalid
-        if (!self.is_valid()) {
+        if (!self.isValid()) {
             alert('Fix yo shit...');
         }
 
-        //else Submit
-        console.log(submitUrl);
+        // Else Submit
+        $osf.postJSON(
+            submitUrl,
+            ko.toJS(self)
+        ).done(function(response){
+                $( location ).attr("href", response.redirectUrl);
+            }
+        ).fail(
+            console.log('Unsuccessful submission')
+        );
     };
 
 };

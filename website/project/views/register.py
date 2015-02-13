@@ -17,7 +17,8 @@ from website.project.decorators import (
     must_be_public_registration
 )
 from website.project.metadata.schemas import OSF_META_SCHEMAS
-from website.util.permissions import ADMIN
+from website.project.utils import serialize_node
+from website.util.permissions import ADMIN, READ
 from website.models import MetaSchema
 from website import language
 
@@ -48,10 +49,36 @@ def node_register_page(auth, **kwargs):
 @must_have_permission(ADMIN)
 @must_be_public_registration
 def node_registration_retraction(auth, **kwargs):
+    """ Handles retraction of public registrations
+
+    :param auth: Authentication object for User
+
+    :return: Template for GET, redirect URL for successful POST
+    """
+
     node = kwargs['node'] or kwargs['project']
 
-    ret = _view_project(node, auth, primary=True)
+    if request.method == 'POST':
 
+        data = request.json
+        node.is_retracted = True
+        node.retracted_justification = data['justification']
+        node.save()
+
+        url = '/project/{0}/'.format(node._id)
+        ret = {'redirectUrl': url}
+        return ret
+
+    ret = _view_project(node, auth, primary=True)
+    return ret
+
+@must_be_valid_project
+@must_have_permission(READ)
+def node_registration_retracted(auth, **kwargs):
+    """ Handles view of retracted public registrations """
+
+    node = kwargs['node'] or kwargs['project']
+    ret = serialize_node(node, auth=auth)
     return ret
 
 @must_be_valid_project
