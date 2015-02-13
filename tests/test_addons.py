@@ -1,30 +1,55 @@
 # -*- coding: utf-8 -*-
 
 import mock
-import webtest
 import unittest
-from nose.tools import *
-
-from tests.base import OsfTestCase
-from tests.factories import AuthUserFactory, ProjectFactory
-
 import time
+from nose.tools import *  # noqa
 
+import webtest
 import furl
 import itsdangerous
+from modularodm import storage
 
 from framework.auth import signing
 from framework.auth.core import Auth
 from framework.exceptions import HTTPError
 from framework.sessions.model import Session
+from framework.mongo import set_up_storage
 
 from website import settings
 from website.util import api_url_for
-from website.addons.base import exceptions
+from website.addons.base import exceptions, GuidFile
 from website.project import new_private_link
 from website.project.utils import serialize_node
 from website.addons.base import AddonConfig, AddonNodeSettingsBase, views
 from website.addons.github.model import AddonGitHubOauthSettings
+from tests.base import OsfTestCase
+from tests.factories import AuthUserFactory, ProjectFactory
+
+
+class DummyGuidFile(GuidFile):
+
+    file_name = 'foo.md'
+    name = 'bar.md'
+
+    @property
+    def provider(self):
+        return 'dummy'
+
+    @property
+    def version_identifier(self):
+        return 'versionidentifier'
+
+    @property
+    def unique_identifier(self):
+        return 'dummyid'
+
+    @property
+    def waterbutler_path(self):
+        return '/path/to/file/'
+
+    def enrich(self):
+        pass
 
 
 class TestAddonConfig(unittest.TestCase):
@@ -294,22 +319,32 @@ class TestCheckAuth(OsfTestCase):
         assert_equal(exc_info.exception.code, 401)
 
 
-class TestAddonFileViewHelpers(OsfTestCase):
+class OsfFileTestCase(OsfTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super(OsfTestCase, cls).setUpClass()
+        set_up_storage([DummyGuidFile], storage.MongoStorage)
+
+
+class TestAddonFileViewHelpers(OsfFileTestCase):
 
     @mock.patch('website.addons.base.views.codecs.open')
     @mock.patch('website.addons.base.views.build_rendered_html')
     def test_get_or_start_starts(self, mock_render, mock_open):
-        file_guid = mock.Mock()
+        file_guid = DummyGuidFile(node=ProjectFactory())
+        file_guid.save()
         mock_open.side_effect = IOError
 
-        file_guid.mfr_cache_path = 'at last'
-        file_guid.mfr_download_url = 'val jean'
-        file_guid.mfr_temp_path = 'we see each other plain'
-
         views.get_or_start_render(file_guid)
+        mock_render.assert_called_once_with(
+            file_guid.mfr_download_url,
+            file_guid.mfr_cache_path,
+            file_guid.mfr_temp_path,
+            file_guid.public_download_url
+        )
 
-        mock_render.assert_called_once_with('val jean', 'at last', 'we see each other plain')
-
+    # TODO: Use DummyGuidFile for the below tests instead of Mock
     @mock.patch('website.addons.base.views.codecs.open')
     @mock.patch('website.addons.base.views.build_rendered_html')
     def test_get_or_start_respects_start_render(self, mock_render, mock_open):

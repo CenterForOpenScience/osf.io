@@ -260,7 +260,7 @@ class GuidFile(GuidStoredObject):
         else:
             url = furl.furl(settings.DOMAIN)
 
-        url.path.add(self._id)
+        url.path.add(self._id + '/')
         url.args['mode'] = 'render'
         url.args['action'] = 'download'
 
