@@ -49,7 +49,7 @@ var RevisionsViewModel = function(node, file, editable) {
 
     self.node = node;
     self.file = file;
-    self.editable = editable;
+    self.editable = ko.observable(editable);
     self.urls = {
         delete: waterbutler.buildDeleteUrl(file.path, file.provider, node.id, file.extra),
         download: waterbutler.buildDownloadUrl(file.path, file.provider, node.id, file.extra),
@@ -93,6 +93,19 @@ RevisionsViewModel.prototype.fetch = function() {
             'Unable to fetch versions';
 
         self.errorMessage(err);
+
+        // Hack for Figshare
+        // only figshare will error on a revisions request
+        // so dont allow downloads and set a fake current version
+        self.editable(false);
+        self.currentVersion({
+            osfViewUrl: '',
+            osfDownloadUrl: '?action=download',
+            download: function() {
+                window.location = self.urls.download + '&' + $.param({displayName: self.file.name});
+                return false;
+            }
+        });
     });
 };
 

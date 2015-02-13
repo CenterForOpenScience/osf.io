@@ -290,6 +290,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     if action == 'download':
         download_url = furl.furl(file_guid.download_url)
+        download_url.args.update(extras)
         if extras.get('mode') == 'render':
             download_url.args['accept_url'] = 'false'
         return redirect(download_url.url)
