@@ -265,7 +265,7 @@ def addon_view_or_download_file_legacy(**kwargs):
 @must_be_contributor_or_public
 def addon_view_or_download_file(auth, path, provider, **kwargs):
     extras = request.args.to_dict()
-    mode = extras.pop('action', 'view')
+    action = extras.pop('action', 'view')
     node = kwargs.get('node') or kwargs['project']
 
     node_addon = node.get_addon(provider)
@@ -283,7 +283,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     file_guid.maybe_set_version(**extras)
 
-    if mode == 'download':
+    if action == 'download':
         return redirect(file_guid.download_url)
 
     return addon_view_file(auth, node, node_addon, file_guid, extras)
