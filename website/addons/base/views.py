@@ -284,7 +284,9 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     file_guid, created = node_addon.find_or_create_file_guid(path)
 
     if file_guid.guid_url != request.path:
-        return redirect(file_guid.guid_url)
+        guid_url = furl.furl(file_guid.guid_url)
+        guid_url.args.update(extras)
+        return redirect(guid_url)
 
     file_guid.maybe_set_version(**extras)
 
