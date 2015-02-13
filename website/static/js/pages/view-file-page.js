@@ -24,12 +24,13 @@ var RevisionsBar = {};
 
 RevisionsBar.controller = function(pagevm) {
     var self = this;
+    self.vm = pagevm;
 
     self.renderRevision = function(rev) {
-        return m('tr', [
+        return m(self.vm.revision === rev ? 'tr.info' : 'tr', [
             m('td', m('a', {href: rev.viewUrl}, rev.shortVersion)),
             m('td', rev.displayDate),
-            m('td', 'downloadCount'),
+            m('td', rev.extra.downloads > -1 ? m('.badge', rev.extra.downloads) : ''),
             m('td', [
                 m('a.btn.btn-primary.btn-sm',
                   {href: rev.downloadUrl},
@@ -37,8 +38,6 @@ RevisionsBar.controller = function(pagevm) {
             ]),
         ]);
     };
-
-    self.vm = pagevm;
 };
 
 RevisionsBar.view = function(ctrl) {
@@ -64,31 +63,75 @@ RevisionsBar.view = function(ctrl) {
 
 
 var FileRenderBlock = {};
-FileRenderBlock.view = function(ctrl){};
-FileRenderBlock.controller = function(){};
+
+FileRenderBlock.view = function(ctrl) {
+    if (!ctrl.renderComplete) {
+        return m('img[src=/static/img/loading.gif]');
+    }
+    if (ctrl.renderFailed) {
+        return ctrl.renderFailureMessage;
+    }
+    return m('.mfr.mfr-file', m.trust(ctrl.rawHtml));
+};
+
+FileRenderBlock.controller = function(pagevm) {
+    var self = this;
+    self.vm = pagevm;
+    self.attempts = 0;
+    self.allowedAttempts = 5;
+    self.renderFailured = false;
+    self.renderComplete = false;
+    self.renderFailureMessage = m('span', 'The was an issue when attempting to render this file.');
+
+    self.render = function(result) {
+        self.renderComplete = true;
+        self.rawHtml = result;
+    };
+
+    self.retry = function(data) {
+        self.attempts++;
+        if (self.attempts > self.allowedAttempts) {
+            self.renderFailured = true;
+
+        } else {
+            m.request({
+                method: 'GET',
+                url: self.vm.file.urls.render
+            }).then(self.render, self.retry);
+        }
+    };
+
+    m.request({
+        method: 'GET',
+        url: self.vm.urls.render
+    }).then(self.render, self.retry);
+};
 
 
 var FileActionBlock = {};
 
 FileActionBlock.view = function(ctrl) {
-    return [
+    return m('.btn-toolbar', [
         m('ol.breadcrumb', ctrl.breadcrumbs()),
-        m('a.btn.btn-success.btn-mid', {href: self.revision.downloadUrl}, [
+        m('a.btn.btn-success.btn-md', {href: ctrl.downloadUrl()}, [
             'Download ', m('i.icon-download-alt')
         ]),
-        m('button.btn.btn-danger.btn-mid', ['Delete ', m('i.icon-trash')])
-    ];
+        m('button.btn.btn-danger.btn-md', ['Delete ', m('i.icon-trash')])
+    ]);
 };
 
-FileActionBlock.controller = function(node, file, revision) {
+FileActionBlock.controller = function(pagevm) {
     var self = this;
-    self.node = node;
-    self.revision = revision;
-    self.pathSegments = [file.provider].concat(file.path.split('/').slice(1));
+    self.vm = pagevm;
+    self.pathSegments = [self.vm.file.provider].concat(self.vm.file.path.split('/').slice(1));
 
     self.download = function() {
-        document.location = self.revision.waterbutlerDownloadUrl;
+        document.location = self.vm.revision.waterbutlerDownloadUrl || self.vm.file.urls.download;
         return false;
+    };
+
+    self.downloadUrl = function() {
+        return self.vm.revision ? self.vm.revision.downloadUrl : '?action=download';
     };
 
     self.delete = function() {
@@ -96,7 +139,7 @@ FileActionBlock.controller = function(node, file, revision) {
 
     self.breadcrumbs = function() {
         return [
-            m('li', m('a', {href: node.urls.files}, node.title))
+            m('li', m('a', {href: self.vm.node.urls.files}, self.vm.node.title))
         ].concat(self.pathSegments.map(function(segment) {
             return m('li.active.overflow', segment);
         }));
@@ -117,6 +160,9 @@ FileViewPage.Revision = function(index, data, file, node) {
     var self = this;
 
     $.extend(self, data);
+
+    ops[self.versionIdentifier] = self.version;
+    self.shortVersion = self.version.substring(0, 8);
 
     self.date = new $osf.FormattableDate(data.modified);
     self.displayDate = self.date.local !== 'Invalid date' ?
@@ -157,22 +203,36 @@ FileViewPage.ViewModel = function() {
     self.filePath = window.contextVars.file.path;
     self.provider = window.contextVars.file.provider;
     self.urls = {
+        render: window.contextVars.renderUrl,
         metadata: waterbutler.buildMetadataUrl(self.filePath, self.provider, self.node.id),
         revisions: waterbutler.buildRevisionsUrl(self.filePath, self.provider, self.node.id),
     };
 
     self.loadFile = function(data) {
-        self.fileLoadedFailed = true;
+        self.fileLoaded = true;
+
         self.file = new FileViewPage.File(data.data);
 
-        self.fileRenderBlockCtrl = new FileRenderBlock.controller();
-        self.fileActionBlockCtrl = new FileActionBlock.controller(self.node, self.file, self.revisionsBarCtrl);
+        self.fileRenderBlockCtrl = new FileRenderBlock.controller(self);
+        self.fileActionBlockCtrl = new FileActionBlock.controller(self);
     };
 
     self.loadRevisions = function(data) {
+        self.revisionsLoaded = true;
+
+        self.revision = undefined;
+
         self.revisions = data.data.map(function(item, index) {
+            if ($osf.urlParams()[item.versionIdentifier] === item.version) {
+                self.revision = new FileViewPage.Revision(index, item, self.file, self.node);
+                return self.revision;
+            }
+
             return new FileViewPage.Revision(index, item, self.file, self.node);
         });
+
+        self.revision = self.revision || self.revisions[0];
+
         self.revisionsBarCtrl = new RevisionsBar.controller(self);
     };
 
@@ -214,7 +274,7 @@ FileViewPage.view = function(ctrl) {
         m('h2', ctrl.vm.file.name),
         m('hr'),
         m('.row', [
-            m('.col-md-8', FileRenderBlock.view(ctrl.vm.fileRenderCtrl)),
+            m('.col-md-8', FileRenderBlock.view(ctrl.vm.fileRenderBlockCtrl)),
             m('.col-md-4', [
                 FileActionBlock.view(ctrl.vm.fileActionBlockCtrl),
                 RevisionsBar.view(ctrl.vm.revisionsBarCtrl)

@@ -1,6 +1,8 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${file_name | h}</%def>
 
+    <div id="mithril"></div>
+
     <div>
         <h2 class="break-word">
             ${file_name | h}
@@ -113,6 +115,7 @@
         %else:
             renderURL: undefined,
         %endif
+            renderUrl: '${render_url | js_str}',
             file: {
                 extra: ${extra},
                 name: '${file_name | js_str}',
