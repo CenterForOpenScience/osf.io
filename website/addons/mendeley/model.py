@@ -178,6 +178,7 @@ class Mendeley(ExternalProvider):
         
         serialized = serialize_folder(folder[0].name, self.account.provider_id)
         serialized['children'] = [self._folder_tree(flat_map[f], flat_map) for f in folder[1]]
+        serialized['kind'] = 'folder'
         return serialized
 
     @property
@@ -201,7 +202,9 @@ class Mendeley(ExternalProvider):
                 account_id=self.account.provider_id,        
             )
         ]
+        import pdb; pdb.set_trace()
         tree[0]['children'] = [self._folder_tree(flat_map[f], flat_map) for f in flat_map['root'][1]]
+        tree[0]['kind'] = 'folder'
         return tree
         
 

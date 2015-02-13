@@ -3,6 +3,7 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var $osf = require('osfHelpers');
+var folderPicker = require('folderpicker');
 require('./node-cfg.css');
 
 var ctx = window.contextVars;
