@@ -15,7 +15,6 @@ from framework.mongo.utils import from_mongo
 
 from website import language
 
-from website.addons.osfstorage.model import OsfStorageGuidFile
 from website.util import paths
 from website.util import rubeus
 from website.exceptions import NodeStateError
