@@ -843,6 +843,8 @@ def get_all_files(node):
 
 def n_unread_comments(node, user, page, root_id=None):
     """Return the number of unread comments on a node for a user."""
+    if not node.is_contributor(user):
+        return 0
     if root_id is None or root_id == 'None' or page == 'node':
         return n_unread_total(node, user, page)
     root_target = Guid.load(root_id)
@@ -866,6 +868,8 @@ def n_unread_comments(node, user, page, root_id=None):
 
 
 def n_unread_total(node, user, page):
+    if not node.is_contributor(user):
+        return 0
     from website.addons.wiki.model import NodeWikiPage
     default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
     view_timestamp = user.comments_viewed_timestamp.get(node._id, default_timestamp)

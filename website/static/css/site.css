@@ -371,6 +371,15 @@ li.pointer {
     position: relative;
 }
 
+.comment-link-icon a {
+    color: #999999;
+}
+
+.comment-link-icon a:hover {
+    color: #000000;
+    text-decoration: none;
+}
+
 .unread-comments-count {
     font-size: small;
     background-color: #428bca;

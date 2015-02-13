@@ -76,6 +76,12 @@
                                 <a data-toggle="tooltip" data-bind="attr: {title: prettyDateModified()}">*</a>
                             </span>
                             <span data-bind="text: prettyDateCreated"></span>
+                            &nbsp;
+                            <span class="comment-link-icon" data-bind="if: mode == 'widget'">
+                                <a data-bind="attr:{href: '/'+id()}">
+                                    <i data-toggle="tooltip" data-placement="bottom" title="Link to comment" class="icon-link"></i>
+                                </a>
+                            </span>
                         </span>
                     </form>
                 </div>
