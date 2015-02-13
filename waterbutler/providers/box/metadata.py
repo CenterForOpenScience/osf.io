@@ -74,7 +74,10 @@ class BoxRevision(BaseBoxMetadata, metadata.BaseFileRevisionMetadata):
 
     @property
     def size(self):
-        return self.raw['size']
+        try:
+            return self.raw['size']
+        except KeyError:
+            return None
 
     @property
     def kind(self):
@@ -82,7 +85,7 @@ class BoxRevision(BaseBoxMetadata, metadata.BaseFileRevisionMetadata):
 
     @property
     def name(self):
-        return self.raw['name'] 
+        return self.raw['name']
 
     @property
     def version(self):
@@ -90,15 +93,24 @@ class BoxRevision(BaseBoxMetadata, metadata.BaseFileRevisionMetadata):
 
     @property
     def version_identifier(self):
-        return self.raw['id']
+        try:
+            return self.raw['id']
+        except KeyError:
+            return self.raw['path'].split('/')[1]
 
     @property
     def path(self):
-        return '/{0}/{1}'.format(self.raw['id'], self.raw['name'])
+        try:
+            return '/{0}/{1}'.format(self.raw['id'], self.raw['name'])
+        except KeyError:
+            return self.raw['path']
 
     @property
     def modified(self):
-        return self.raw['modified_at']
+        try:
+            return self.raw['modified_at']
+        except KeyError:
+            return seld.raw['modified']
 
     @property
     def revision(self):

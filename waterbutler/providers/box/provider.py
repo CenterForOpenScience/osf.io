@@ -169,14 +169,17 @@ class BoxProvider(provider.BaseProvider):
 
         idx = 1
         ret = []
-        curr = yield from self.metadata(str(path))
-        ret.append(BoxRevision(curr, folder=self.folder).serialized())
-        import ipdb; ipdb.set_trace()
         while(data['entries']):
             item = data['entries'].pop()
             item['revision'] = idx
             idx += 1
             ret.append(BoxRevision(item, folder=self.folder).serialized())
+
+        curr = yield from self.metadata(str(path))
+        curr['revision'] = idx
+        ret.append(BoxRevision(curr, folder=self.folder).serialized())
+
+        #import ipdb; ipdb.set_trace()
 
         return ret
 #        return [
