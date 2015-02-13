@@ -70,6 +70,83 @@ class TestCrudHandler(utils.HandlerTestCase):
 
     @mock.patch('waterbutler.core.utils.make_provider')
     @testing.gen_test
+    def test_download_accept_url_false(self, mock_make_provider):
+        stream = asyncio.StreamReader()
+        data = b'freddie brian john roger'
+        stream.feed_data(data)
+        stream.feed_eof()
+        stream.size = len(data)
+        stream.content_type = 'application/octet-stream'
+        mock_provider = utils.mock_provider_method(mock_make_provider, 'download', stream)
+        resp = yield self.http_client.fetch(
+            self.get_url('/file?provider=queenhub&path=freddie.png&accept_url=false'),
+        )
+        assert resp.body == data
+        calls = mock_provider.download.call_args_list
+        assert len(calls) == 1
+        args, kwargs = calls[0]
+        assert kwargs.get('action') == 'download'
+        assert kwargs.get('accept_url') is False
+
+    @mock.patch('waterbutler.core.utils.make_provider')
+    @testing.gen_test
+    def test_download_accept_url_default(self, mock_make_provider):
+        stream = asyncio.StreamReader()
+        data = b'freddie brian john roger'
+        stream.feed_data(data)
+        stream.feed_eof()
+        stream.size = len(data)
+        stream.content_type = 'application/octet-stream'
+        mock_provider = utils.mock_provider_method(mock_make_provider, 'download', stream)
+        resp = yield self.http_client.fetch(
+            self.get_url('/file?provider=queenhub&path=freddie.png'),
+        )
+        assert resp.body == data
+        calls = mock_provider.download.call_args_list
+        assert len(calls) == 1
+        args, kwargs = calls[0]
+        assert kwargs.get('action') == 'download'
+        assert kwargs.get('accept_url') is True
+
+    @mock.patch('waterbutler.core.utils.make_provider')
+    @testing.gen_test
+    def test_download_accept_url_true(self, mock_make_provider):
+        stream = asyncio.StreamReader()
+        data = b'freddie brian john roger'
+        stream.feed_data(data)
+        stream.feed_eof()
+        stream.size = len(data)
+        stream.content_type = 'application/octet-stream'
+        mock_provider = utils.mock_provider_method(mock_make_provider, 'download', stream)
+        resp = yield self.http_client.fetch(
+            self.get_url('/file?provider=queenhub&path=freddie.png&accept_url=true'),
+        )
+        assert resp.body == data
+        calls = mock_provider.download.call_args_list
+        assert len(calls) == 1
+        args, kwargs = calls[0]
+        assert kwargs.get('action') == 'download'
+        assert kwargs.get('accept_url') is True
+
+    @mock.patch('waterbutler.core.utils.make_provider')
+    @testing.gen_test
+    def test_download_accept_url_invalid(self, mock_make_provider):
+        stream = asyncio.StreamReader()
+        data = b'freddie brian john roger'
+        stream.feed_data(data)
+        stream.feed_eof()
+        stream.size = len(data)
+        stream.content_type = 'application/octet-stream'
+        mock_provider = utils.mock_provider_method(mock_make_provider, 'download', stream)
+        with pytest.raises(httpclient.HTTPError) as exc:
+            yield self.http_client.fetch(
+                self.get_url('/file?provider=queenhub&path=freddie.png&accept_url=teapot'),
+            )
+        assert exc.value.code == 400
+        assert not mock_provider.called
+
+    @mock.patch('waterbutler.core.utils.make_provider')
+    @testing.gen_test
     def test_download_not_found(self, mock_make_provider):
         utils.mock_provider_method(mock_make_provider, 'download', side_effect=exceptions.DownloadError('missing'))
         with pytest.raises(httpclient.HTTPError) as exc:

@@ -7,6 +7,7 @@ import aiohttp
 import oauthlib.oauth1
 
 from waterbutler.core import utils
+from waterbutler.core import streams
 from waterbutler.core import provider
 from waterbutler.core import exceptions
 
@@ -278,7 +279,10 @@ class FigshareArticleProvider(BaseFigshareProvider):
             raise exceptions.DownloadError('Cannot download private files', code=403)
         # if accept_url:
         #     return download_url
-        return (yield from aiohttp.request('GET', download_url))
+
+        resp = yield from aiohttp.request('GET', download_url)
+
+        return streams.ResponseStreamReader(resp)
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
