@@ -1,29 +1,21 @@
 <% from website.models import Node %>
-<%
-def print_message(d, indent=0):
-    message = ''
-    for key in d['children']:
-        message += '\t' * indent + ' - ' + Node.load(key).title + ':'
-        if d['children'][key]['messages']:
-            for m in d['children'][key]['messages']:
-                message += '\n' +'\t' * (indent+1) + ' - '+ m
 
-        if isinstance(d['children'][key]['children'], dict):
-            message += '\n' + print_message(d['children'][key], indent+1)
 
-    return message
-%>
-
-<%def name="build_message(d, indent=0)">
+<%def name="build_message(d), parent=None">
 %for key in d['children']:
-    ${'\t' * indent + Node.load(key).title + ':'}
     %if d['children'][key]['messages']:
+        <h3> 
+            ${Node.load(key).title}  
+            %if parent :
+                <small> in ${Noad.load(parent).title} </small>
+            %endif 
+        </h3> 
         %for m in d['children'][key]['messages']:
-        ${'\t' * indent + '- ' + m['message'] + ' ' + m['timestamp'].strftime("%H:%M")}
+            ${m['message']}
         %endfor
     %endif
     %if isinstance(d['children'][key]['children'], dict):
-        ${build_message(d['children'][key], indent+1)}
+        ${build_message(d['children'][key], key )}
     %endif
 %endfor
 </%def>
