@@ -12,7 +12,12 @@ var Markdown = require('pagedown-ace-converter');
 Markdown.getSanitizingConverter = require('pagedown-ace-sanitizer').getSanitizingConverter;
 require('imports?Markdown=pagedown-ace-converter!pagedown-ace-editor');
 
+var mathrender = require('mathrender');
+
 var editor;
+
+var MATHJAX_THROTTLE = 500;
+var throttledMathjaxify = $osf.throttle(mathrender.mathjaxify, MATHJAX_THROTTLE);
 
 /**
  * Binding handler that instantiates an ACE editor.
@@ -25,6 +30,7 @@ ko.bindingHandlers.ace = {
 
         // Updates the view model based on changes to the editor
         editor.getSession().on('change', function () {
+            throttledMathjaxify('#wmd-preview');
             valueAccessor()(editor.getValue());
         });
     },
