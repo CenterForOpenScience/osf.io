@@ -117,9 +117,6 @@ class BoxProvider(provider.BaseProvider):
         try:
             meta = yield from self.metadata(str(path))
         except exceptions.MetadataError:
-            pass
-
-        if not meta:
             created = True
             data = yield from self._upload_create(stream, path)
         else:
@@ -157,7 +154,10 @@ class BoxProvider(provider.BaseProvider):
 
 
     @asyncio.coroutine
-    def revisions(self, path, **kwargs): ## Chris's PR touches revisions/rendering.
+    def revisions(self, path, **kwargs):  
+        # Chris's PR touches revisions/rendering. TODO: update this after his is merged?
+        #from https://developers.box.com/docs/#files-view-versions-of-a-file :
+        #Alert: Versions are only tracked for Box users with premium accounts.
         path = BoxPath(self.folder, path)
         response = yield from self.make_request(
             'GET',
@@ -193,7 +193,7 @@ class BoxProvider(provider.BaseProvider):
                 if item['name']==path.name:
                     return BoxFileMetadata(item, self.folder).serialized()
         
-        return None
+        raise exceptions.MetadataError('Unable to find file.')
 
     def _get_folder_meta(self, uid, path): # ✓
         resp = yield from self.make_request(
@@ -223,7 +223,7 @@ class BoxProvider(provider.BaseProvider):
                 'Content-Length': str(size),
                 'Content-Type': 'multipart/form-data; boundary={0}'.format(boundary.decode()),
             },
-            expects=(201, ),
+            expects=(200, 201, ),
             throws=exceptions.UploadError,
         )
         data = yield from resp.json()
@@ -241,7 +241,7 @@ class BoxProvider(provider.BaseProvider):
                 'Content-Length': str(size),
                 'Content-Type': 'multipart/form-data; boundary={0}'.format(boundary.decode()),
             },
-            expects=(200, ),
+            expects=(200, 201, ),
             throws=exceptions.UploadError,
         )
         data = yield from resp.json()
