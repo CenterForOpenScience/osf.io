@@ -516,6 +516,15 @@ def validate_title(value):
     return True
 
 
+def validated_retracted_justification(value):
+    """Validator for Node#retraction_justifcation. Ensures that the
+    value is not none if is_retracted is True.
+    """
+    if value is None or not value.strip():
+        raise ValidationValueError('Registration retraction justification cannot be blank.')
+    return True
+
+
 def validate_user(value):
     if value != {}:
         user_id = value.iterkeys().next()
@@ -591,6 +600,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     registered_schema = fields.ForeignField('metaschema', backref='registered')
     registered_meta = fields.DictionaryField()
     is_retracted = fields.BooleanField(default=False)
+    retracted_justification = fields.StringField(validate=validated_retracted_justification)
 
     is_fork = fields.BooleanField(default=False)
     forked_date = fields.DateTimeField()
