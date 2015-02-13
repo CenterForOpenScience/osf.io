@@ -220,7 +220,12 @@ def get_or_start_render(file_guid, start_render=True):
     except IOError:
         if start_render:
             # Start rendering job if requested
-            build_rendered_html(file_guid.mfr_download_url, file_guid.mfr_cache_path, file_guid.mfr_temp_path)
+            build_rendered_html(
+                file_guid.mfr_download_url,
+                file_guid.mfr_cache_path,
+                file_guid.mfr_temp_path,
+                file_guid.public_download_url
+            )
     return None
 
 
@@ -285,6 +290,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     if action == 'download':
         download_url = furl.furl(file_guid.download_url)
+        download_url.args.update(extras)
         if extras.get('mode') == 'render':
             download_url.args['accept_url'] = 'false'
         return redirect(download_url.url)

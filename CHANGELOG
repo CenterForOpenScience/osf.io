@@ -2,6 +2,20 @@
 Changelog
 *********
 
+0.25.0 (unreleased)
+===================
+
+- Wiki: Real-time collaborative editing powered by ShareJS.
+- Wiki: Markdown snippets support.
+- Wiki: Add MathJax support.
+- Files: File versions are retrieved from Waterbutler.
+- Files: Extensive refactor to unify file detail pages.
+- CiteProc-compliant citation widget. Add an extra input to select from
+hundreds of citation styles.
+- Developers: CSS is now loaded within JS modules using webpack. Webassets is
+removed.
+- Various UI fixes.
+
 0.24.0 (2014-01-29)
 ===================
 
