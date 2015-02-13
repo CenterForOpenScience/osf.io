@@ -43,6 +43,9 @@ def init_addons(settings, routes=True):
             settings.ADDONS_AVAILABLE_DICT[addon.short_name] = addon
     settings.ADDON_CAPABILITIES = render_addon_capabilities(settings.ADDONS_AVAILABLE)
 
+def add_cors_headers(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
 
 def attach_handlers(app, settings):
     """Add callback handlers to ``app`` in the correct order."""
@@ -64,10 +67,6 @@ def attach_handlers(app, settings):
     # Needed to allow the offload server and main server to properly interact
     # without cors issues. See @jmcarp, @chrisseto, or @icereval for more detail
     if settings.DEBUG_MODE:
-        def add_cors_headers(response):
-            response.headers['Access-Control-Allow-Origin'] = '*'
-            return response
-
         add_handlers(app, {'after_request': add_cors_headers})
 
     return app
