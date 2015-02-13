@@ -46,7 +46,7 @@ def render_mfr_error(err):
 
 # TODO only allow one task at a time
 @app.task(ignore_result=True, timeout=settings.MFR_TIMEOUT)
-def _build_rendered_html(download_url, cache_path, temp_path):
+def _build_rendered_html(download_url, cache_path, temp_path, public_download_url):
     """
     :param str download_url: The url to download the file to be rendered
     :param str cache_path: Location to cache the rendered file
@@ -72,12 +72,12 @@ def _build_rendered_html(download_url, cache_path, temp_path):
         with codecs.open(temp_path) as temp_file:
             # Try to render file
             try:
-                render_result = mfr.render(temp_file, src=download_url)
+                render_result = mfr.render(temp_file, src=public_download_url)
                 # Rendered result
                 rendered = _build_html(render_result)
             except MFRError as err:
                 # Rendered MFR error
-                rendered = _build_html(render_mfr_error(err))
+                rendered = render_mfr_error(err)
 
     # Cache rendered content
     with codecs.open(cache_path, 'w', 'utf-8') as render_result_cache:

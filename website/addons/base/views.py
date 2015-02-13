@@ -220,7 +220,12 @@ def get_or_start_render(file_guid, start_render=True):
     except IOError:
         if start_render:
             # Start rendering job if requested
-            build_rendered_html(file_guid.mfr_download_url, file_guid.mfr_cache_path, file_guid.mfr_temp_path)
+            build_rendered_html(
+                file_guid.mfr_download_url,
+                file_guid.mfr_cache_path,
+                file_guid.mfr_temp_path,
+                file_guid.public_download_url
+            )
     return None
 
 
@@ -265,7 +270,7 @@ def addon_view_or_download_file_legacy(**kwargs):
 @must_be_contributor_or_public
 def addon_view_or_download_file(auth, path, provider, **kwargs):
     extras = request.args.to_dict()
-    mode = extras.pop('action', 'view')
+    action = extras.pop('action', 'view')
     node = kwargs.get('node') or kwargs['project']
 
     node_addon = node.get_addon(provider)
@@ -283,8 +288,11 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     file_guid.maybe_set_version(**extras)
 
-    if mode == 'download':
-        return redirect(file_guid.download_url)
+    if action == 'download':
+        download_url = furl.furl(file_guid.download_url)
+        if extras.get('mode') == 'render':
+            download_url.args['accept_url'] = 'false'
+        return redirect(download_url.url)
 
     return addon_view_file(auth, node, node_addon, file_guid, extras)
 

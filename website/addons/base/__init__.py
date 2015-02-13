@@ -242,7 +242,31 @@ class GuidFile(GuidStoredObject):
     def mfr_download_url(self):
         url = self._base_butler_url
         url.path.add('file')
+
         url.args['mode'] = 'render'
+        url.args['action'] = 'download'
+
+        if self.revision:
+            url.args[self.version_identifier] = self.revision
+
+        return url.url
+
+    @property
+    def public_download_url(self):
+        if settings.DEBUG_MODE:
+            # If in debug mode we're running in a single thread and need to go to
+            # the offload domain to prevent deadlocking the server
+            url = furl.furl(settings.OFFLOAD_DOMAIN)
+        else:
+            url = furl.furl(settings.DOMAIN)
+
+        url.path.add(self._id)
+        url.args['mode'] = 'render'
+        url.args['action'] = 'download'
+
+        if self.revision:
+            url.args[self.version_identifier] = self.revision
+
         return url.url
 
     @property
@@ -268,7 +292,7 @@ class GuidFile(GuidStoredObject):
             self.node._id,
             self.provider,
             # Attempt to keep the original extension of the file for MFR detection
-            self.file_name + os.path.splitext(self.waterbutler_path)[1]
+            self.file_name + os.path.splitext(self.name)[1]
         )
 
     @property
