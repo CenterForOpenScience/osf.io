@@ -60,6 +60,15 @@ def attach_handlers(app, settings):
     # framework.session's before_request handler must go after
     # prepare_private_key, else view-only links won't work
     add_handlers(app, {'before_request': framework.sessions.before_request})
+
+    # Needed to allow the offload server and main server to properly interact
+    # without cors issues. See @jmcarp, @chrisseto, or @icereval for more detail
+    if settings.DEBUG_MODE:
+        @app.after_request
+        def add_cors_headers(response):
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            return response
+
     return app
 
 
