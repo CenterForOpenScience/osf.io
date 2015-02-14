@@ -65,7 +65,7 @@ def node_key_history(**kwargs):
     auth = kwargs['auth']
     node_to_use = kwargs['node'] or kwargs['project']
 
-    rv = {
+    ret = {
         'key': api_key._id,
         'label': api_key.label,
         'route': '/settings',
@@ -79,5 +79,5 @@ def node_key_history(**kwargs):
         ]
     }
 
-    rv.update(_view_project(node_to_use, auth))
-    return rv
+    ret.update(_view_project(node_to_use, auth))
+    return ret

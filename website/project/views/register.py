@@ -31,7 +31,7 @@ def node_register_page(auth, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
 
-    out = {
+    ret = {
         'options': [
             {
                 'template_name': metaschema['name'],
@@ -40,8 +40,8 @@ def node_register_page(auth, **kwargs):
             for metaschema in OSF_META_SCHEMAS
         ]
     }
-    out.update(_view_project(node, auth, primary=True))
-    return out
+    ret.update(_view_project(node, auth, primary=True))
+    return ret
 
 
 @must_be_valid_project
@@ -96,7 +96,7 @@ def node_register_template_page(auth, **kwargs):
 
     # TODO: Notify if some components will not be registered
 
-    rv = {
+    ret = {
         'template_name': template_name,
         'schema': json.dumps(schema),
         'metadata_version': meta_schema.metadata_version,
@@ -105,8 +105,8 @@ def node_register_template_page(auth, **kwargs):
         'payload': payload,
         'children_ids': node.nodes._to_primary_keys(),
     }
-    rv.update(_view_project(node, auth, primary=True))
-    return rv
+    ret.update(_view_project(node, auth, primary=True))
+    return ret
 
 
 @must_be_valid_project  # returns project
