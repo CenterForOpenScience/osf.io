@@ -22,10 +22,10 @@ def collect_file_trees(**kwargs):
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
 
-    serialized = _view_project(node, auth, primary=True)
+    ret = _view_project(node, auth, primary=True)
     # Add addon static assets
-    serialized.update(rubeus.collect_addon_assets(node))
-    return serialized
+    ret.update(rubeus.collect_addon_assets(node))
+    return ret
 
 @must_be_contributor_or_public
 def grid_data(**kwargs):
