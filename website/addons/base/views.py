@@ -303,7 +303,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
                 version = request.user_agent.version and int(request.user_agent.version.split('.')[0])
                 if version == 11:
                     resp = requests.get(download_url, allow_redirects=False)
-                    if resp.status == 302:
+                    if resp.status_code == 302:
                         return redirect(resp.headers['Location'])
                     else:
                         return make_response(resp.body())
