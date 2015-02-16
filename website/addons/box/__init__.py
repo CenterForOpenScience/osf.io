@@ -5,7 +5,7 @@ MODELS = [model.BoxUserSettings, model.BoxNodeSettings, model.BoxFile]
 USER_SETTINGS_MODEL = model.BoxUserSettings
 NODE_SETTINGS_MODEL = model.BoxNodeSettings
 
-ROUTES = [routes.auth_routes, routes.web_routes, routes.api_routes]
+ROUTES = [routes.auth_routes, routes.api_routes]
 
 SHORT_NAME = 'box'
 FULL_NAME = 'Box'

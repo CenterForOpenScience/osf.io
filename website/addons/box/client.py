@@ -6,7 +6,6 @@ from box import BoxClient
 
 
 def get_client(user):
-    #from website.addons.box.utils import refresh_creds_if_necessary
     """Return a :class:`boxview.boxview.BoxView`, using a user's
     access token.
 
@@ -16,14 +15,14 @@ def get_client(user):
     user_settings = user.get_addon('box')
     if not user_settings:
         raise AddonError('User does not have the Box addon enabled.')
-    if refresh_creds_if_necessary(user_settings):
-        return BoxClient(user_settings.get_credentialsv2())
-    raise AddonError('Box credentials for this user have expired.')
+    return get_client_from_user_settings(user_settings)
 
 
 def get_client_from_user_settings(settings_obj):
     """Same as get client, except its argument is a BoxUserSettingsObject."""
-    return get_client(settings_obj.owner)
+    if refresh_creds_if_necessary(settings_obj):
+        return BoxClient(settings_obj.get_credentialsv2())
+    raise AddonError('Box credentials for this user have expired.')
 
 
 def get_node_client(node):

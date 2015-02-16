@@ -222,23 +222,11 @@ class BoxNodeSettings(AddonNodeSettingsBase):
                 'path': cleaned_path,
                 'folder': self.folder,
                 'urls': {
-                    'view': self.owner.web_url_for('box_view_file', path=cleaned_path),
-                    'download': self.owner.web_url_for('box_download', path=cleaned_path),
+                    'view': self.owner.web_url_for('addon_download_or_view_file', provider='box', action='view', path=cleaned_path),
+                    'download': self.owner.web_url_for('addon_download_or_view_file', provider='box', action='download', path=cleaned_path),
                 },
             },
         )
-
-    def get_waterbutler_render_url(self, path, rev=None, **kwargs):
-        cleaned_path = clean_path(os.path.join(self.folder, path))
-        url = furl.furl(self.owner.web_url_for('box_view_file', path=cleaned_path))
-
-        if rev:
-            url.args['rev'] = rev
-
-        return url.url
-
-    def __repr__(self):
-        return u'<BoxNodeSettings(node_id={self.owner._primary_key!r})>'.format(self=self)
 
     ##### Callback overrides #####
 

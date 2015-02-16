@@ -52,34 +52,6 @@ auth_routes = {
     'prefix': '/api/v1'
 }
 
-web_routes = {
-    'rules': [
-
-        ##### View file #####
-        Rule(
-            [
-                '/project/<pid>/box/files/<path:path>',
-                '/project/<pid>/node/<nid>/box/files/<path:path>',
-            ],
-            'get',
-            views.crud.box_view_file,
-            OsfWebRenderer('../addons/box/templates/box_view_file.mako'),
-        ),
-
-
-        ##### Download file #####
-        Rule(
-            [
-                '/project/<pid>/box/files/<path:path>/download/',
-                '/project/<pid>/node/<nid>/box/files/<path:path>/download/',
-            ],
-            'get',
-            views.crud.box_download,
-            notemplate,
-        ),
-    ],
-}
-
 api_routes = {
     'rules': [
 
@@ -122,54 +94,6 @@ api_routes = {
             '/project/<pid>/node/<nid>/box/config/share/'],
             'get',
             views.config.box_get_share_emails,
-            json_renderer
-        ),
-
-        ##### CRUD #####
-
-        # Delete
-        Rule(
-            [
-                '/project/<pid>/box/files/<path:path>',
-                '/project/<pid>/node/<nid>/box/files/<path:path>',
-            ],
-            'delete',
-            views.crud.box_delete_file,
-            json_renderer
-        ),
-
-        # Upload
-        Rule(
-            [
-                '/project/<pid>/box/files/',
-                '/project/<pid>/box/files/<path:path>',
-                '/project/<pid>/node/<nid>/box/files/',
-                '/project/<pid>/node/<nid>/box/files/<path:path>',
-            ],
-            'post',
-            views.crud.box_upload,
-            json_renderer
-        ),
-
-        ##### File rendering #####
-        Rule(
-            [
-                '/project/<pid>/box/files/<path:path>/render/',
-                '/project/<pid>/node/<nid>/box/files/<path:path>/render/',
-            ],
-            'get',
-            views.crud.box_render_file,
-            json_renderer
-        ),
-
-        ##### Revisions #####
-        Rule(
-            [
-                '/project/<pid>/box/files/<path:path>/revisions/',
-                '/project/<pid>/node/<nid>/box/files/<path:path>/revisions/',
-            ],
-            'get',
-            views.crud.box_get_revisions,
             json_renderer
         ),
 

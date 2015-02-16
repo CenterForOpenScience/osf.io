@@ -48,10 +48,7 @@ def box_hgrid_data_contents(node_addon, auth, **kwargs):
                                                    'at this time.'))
 
     try:
-        
-        #import ipdb; ipdb.set_trace()
         metadata = client.get_folder(folder_id)
-        #ipdb.set_trace()
     except AttributeError:
             raise file_not_found
     except MaxRetryError:
@@ -87,8 +84,6 @@ def box_addon_folder(node_settings, auth, **kwargs):
         nodeUrl=node.url,
         nodeApiUrl=node.api_url,
         urls={
-            'upload': node.api_url_for('box_upload',
-                path=path),
             'fetch': node.api_url_for('box_hgrid_data_contents',
                 path=path)
         }
