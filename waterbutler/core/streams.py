@@ -285,5 +285,9 @@ class FormDataStream(MultiStream):
             StringStream(self.FORM_DATA_HEADER.format(key) + value + '\r\n')
         ])
 
+    def add_fields(self, **fields):
+        for key, value in fields.items():
+            self.add_field(key, value)
+
     def _make_boundary_stream(self):
         return StringStream('--{}\r\n'.format(self.boundary))
