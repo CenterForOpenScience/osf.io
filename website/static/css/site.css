@@ -2142,7 +2142,7 @@ span#profileFullname{
     padding: 10px;
 }
 
-#markdown-it-preview {
+.markdown-it-view {
     padding: 10px;
 }
 @media (max-width: 991px) {

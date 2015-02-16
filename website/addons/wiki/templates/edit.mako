@@ -135,8 +135,19 @@
                     </div>
                 </div>
                 <div class="wiki-panel-body">
-                    <div id="markdown-it-preview" class="wmd-panel wmd-preview"></div>
-                  </div>
+                    <!-- Live preview from editor -->
+                    <div id="viewPreview" class="markdown-it-view">
+                        <div id="markdown-it-preview" ></div>
+                    </div>
+                    <!-- Version view -->
+                    <div id="viewVersion" class="markdown-it-view" style="display: none;">
+                        % if not page and wiki_name != 'home': ## TODO: Is this used?
+                            <p><i>This wiki page does not currently exist.</i></p>
+                        % else:
+                            <div id="markdown-it-render">${wiki_content | n}</div>
+                        % endif
+                    </div>
+                </div>
               </div>
           </div>
           <div class="col-sm-4" data-osf-panel="Compare">
