@@ -48,7 +48,7 @@ class GoogleDriveFileMetadata(BaseGoogleDriveMetadata, metadata.BaseFileMetadata
 
     @property
     def path(self):
-        return'/{0}/{1}/{2}'.format(self.raw['id'], self.raw['title'], self.raw['path'])
+        return self.raw['path']
 
     @property
     def size(self):

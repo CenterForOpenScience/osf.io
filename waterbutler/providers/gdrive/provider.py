@@ -1,6 +1,8 @@
 import os
 import asyncio
+import json
 from flask import request
+from urllib.parse import urlparse
 
 from waterbutler.core import utils
 from waterbutler.core import streams
@@ -17,25 +19,35 @@ from waterbutler.providers.gdrive.metadata import GoogleDriveFolderMetadata
 
 class GoogleDrivePath(utils.WaterButlerPath):
 
-    def __init__(self, path, folder, prefix=True, suffix=False):
+    def __init__(self, path, folder, isUpload=False, prefix=True, suffix=False):
         super().__init__(path, prefix=prefix, suffix=suffix)
 
         parts = path.strip('/').split('/')
-        name = parts[1]  # TODO : Remove this later if of no use
-        folderId = parts[0]
-        self._folderId = folderId
-        if folderId == folder['id']:
-            full_path = folder['name']
-        else:
-            tempPath = ''
-            for i in range(2, len(parts)):
-                if tempPath == '':
-                    tempPath = parts[i]
-                else:
-                    tempPath = tempPath + '/' + parts[i]
-            self._path = tempPath
-            full_path = tempPath
-        self._full_path = self._format_path(full_path)
+        if len(parts) > 1:
+            name = parts[1]  # TODO : Remove this later if of no use
+            folderId = parts[0]
+            self._folderId = folderId
+            if folderId == folder['id']:
+                full_path = folder['name']
+            else:
+                tempPath = ''
+                for i in range(2, len(parts)):
+                    if tempPath == '':
+                        tempPath = parts[i]
+                    else:
+                        tempPath = tempPath + '/' + parts[i]
+                self._path = tempPath
+                full_path = tempPath
+            self._full_path = self._format_path(full_path)
+        self._uploadFileName = ""
+        if isUpload:
+
+            #this is VERY HACKISH. MUST be fixed once other code is fixed.
+            folder_plus_name = parts[-1:][0]
+            folder_name =folder['path']['path'].split('/')[-1:][0]
+            start_index=folder_plus_name.find(folder_name)
+            self._uploadFileName = folder_plus_name[start_index+len(folder_name):]
+
 
     def __repr__(self):
         return "{}({!r}, {!r})".format(self.__class__.__name__, self._folderId, self._orig_path)
@@ -85,26 +97,82 @@ class GoogleDriveProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
-        path = path.get('id', path)
+
+
+        path = GoogleDrivePath(path, self.folder, isUpload=True)
         try:
-            yield from self.metadata(path)
+            yield from self.metadata(str(path))
+
+
         except exceptions.MetadataError:
             created = True
         else:
             created = False
 
+        content = yield from stream.read()
+        #content = base64.b64encode(content)
+        #content = content.decode('utf-8')
+
+
+
+        metadata = {
+            "parents" :   [
+                {
+                    "kind": "drive#parentReference",
+                    "id": path._folderId
+                },
+            ],
+
+            "title": path._uploadFileName,
+            #"Content-Type": "image/png",
+
+        }
+
+
+
+
+        #Step 1 - Start a resumable session
         resp = yield from self.make_request(
             'POST',
-            self._build_content_url('files', path, uploadType='media'),
-            headers={'Content-Length': str(stream.size)
-                     },
-            data=stream,
+            self._build_content_url("files", uploadType='resumable'),
+            headers={'Content-Length': str(len(json.dumps(metadata))),
+                     'Content-Type': 'application/json; charset=UTF-8',
+                     #'X-Upload-Content-Type': 'image/jpeg',#hardcoded in for testing
+                     'X-Upload-Content-Length' : str(stream.size)
+                },
+            data=json.dumps(metadata),
+            expects=(200, ),
+            throws=exceptions.UploadError
+
+        )
+
+        #Step 2 - Save the resumable session URI
+
+        yield from resp.json()
+
+        location = resp.headers['LOCATION']
+
+        query_params = urlparse(location).query
+        #todo:make this proper
+        upload_id = query_params.split("=")[2]
+
+
+        #Step 3 - Upload the file
+
+        resp = yield from self.make_request(
+            'PUT',
+            self._build_content_url("files", uploadType='resumable', upload_id=upload_id),
+            headers={'Content-Length': str(stream.size),
+                     #'Content-Type': 'image/jpeg',#todo: hardcoded in for testing
+                },
+            data=content,
             expects=(200, ),
             throws=exceptions.UploadError,
         )
 
         data = yield from resp.json()
         return GoogleDriveFileMetadata(data, self.folder).serialized(), created
+
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
@@ -134,10 +202,11 @@ class GoogleDriveProvider(provider.BaseProvider):
         if data['kind'] == "drive#fileList":
             ret = []
             for item in data['items']:
-                item['path'] = os.path.join(path.full_path, item['title'])  # custom add, not obtained from API
                 if item['mimeType'] == 'application/vnd.google-apps.folder':
+                    item['path'] = os.path.join(path.full_path, item['title'])  # custom add, not obtained from API
                     ret.append(GoogleDriveFolderMetadata(item, self.folder).serialized())
                 else:
+                    item['path'] = '/'+item['title']  # custom add, n   ot obtained from API
                     ret.append(GoogleDriveFileMetadata(item, self.folder).serialized())
             return ret
         return GoogleDriveFileMetadata(data, self.folder).serialized()
