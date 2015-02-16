@@ -63,6 +63,7 @@ var RevisionsViewModel = function(node, file, editable) {
     self.urls = {
         delete: waterbutler.buildDeleteUrl(file.path, file.provider, node.id, fileExtra),
         download: waterbutler.buildDownloadUrl(file.path, file.provider, node.id, fileExtra),
+        metadata: waterbutler.buildMetadataUrl(file.path, file.provider, node.id, revisionsOptions),
         revisions: waterbutler.buildRevisionsUrl(file.path, file.provider, node.id, revisionsOptions)
     };
     self.errorMessage = ko.observable('');
@@ -103,10 +104,24 @@ RevisionsViewModel.prototype.fetch = function() {
 
         self.errorMessage(err);
 
-        // Hack for Figshare
-        // only figshare will error on a revisions request
-        // so dont allow downloads and set a fake current version
-        self.editable(false);
+        if (self.file.provider === 'figshare') {
+            // Hack for Figshare
+            // only figshare will error on a revisions request
+            // so dont allow downloads and set a fake current version
+            $.ajax({
+                method: 'GET',
+                url: self.urls.metadata,
+            }).done(function(data) {
+                if (data.data.extra.status === 'drafts') {
+                    self.editable(true);
+                } else {
+                    self.editable(false);
+                }
+            }).fail(function(xhr) {
+                self.editable(false);
+            });
+        }
+
         self.currentVersion({
             osfViewUrl: '',
             osfDownloadUrl: '?action=download',
