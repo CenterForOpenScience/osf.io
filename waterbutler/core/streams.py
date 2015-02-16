@@ -273,7 +273,8 @@ class FormDataStream(MultiStream):
                     transcoding
                 )
             ),
-            file_stream
+            file_stream,
+            StringStream('\r\n')
         ])
 
     def add_field(self, key, value):
