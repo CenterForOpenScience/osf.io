@@ -16,12 +16,13 @@ invoke server
 ### startup commands
 
 ```bash
+# Make sure that you are using >= python3.3
 pip install -U -r requirements.txt
 python setup.py develop
 invoke server
 ```
 
-### testing configuration
+### testing configuration (optional)
 
 ```bash
 vim ~/.cos/waterbutler-test.json

@@ -7,6 +7,7 @@ import aiohttp
 import oauthlib.oauth1
 
 from waterbutler.core import utils
+from waterbutler.core import streams
 from waterbutler.core import provider
 from waterbutler.core import exceptions
 
@@ -210,6 +211,10 @@ class FigshareProjectProvider(BaseFigshareProvider):
             return (yield from self._project_metadata_contents())
         return (yield from self._get_project_metadata())
 
+    @asyncio.coroutine
+    def revisions(self, path, **kwargs):
+        raise exceptions.ProviderError({'message': 'Figshare does not support file revisions.'}, code=405)
+
 
 class FigshareArticleProvider(BaseFigshareProvider):
 
@@ -272,9 +277,12 @@ class FigshareArticleProvider(BaseFigshareProvider):
         download_url = file_metadata['extra']['downloadUrl']
         if download_url is None:
             raise exceptions.DownloadError('Cannot download private files', code=403)
-        if accept_url:
-            return download_url
-        return (yield from aiohttp.request('GET', download_url))
+        # if accept_url:
+        #     return download_url
+
+        resp = yield from aiohttp.request('GET', download_url)
+
+        return streams.ResponseStreamReader(resp)
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
@@ -318,3 +326,7 @@ class FigshareArticleProvider(BaseFigshareProvider):
             ]
             return [each for each in serialized if each]
         return self._serialize_item(article_json, parent=article_json)
+
+    @asyncio.coroutine
+    def revisions(self, path, **kwargs):
+        raise exceptions.ProviderError({'message': 'Figshare does not support file revisions.'}, code=405)

@@ -177,10 +177,10 @@ def folder_empty_metadata():
 @pytest.fixture
 def file_metadata():
     return {
-            'Content-Length': 9001,
-            'Last-Modified': 'SomeTime',
-            'Content-Type': 'binary/octet-stream',
-            'ETag': '"fba9dede5f27731c9771645a39863328"'
+        'Content-Length': 9001,
+        'Last-Modified': 'SomeTime',
+        'Content-Type': 'binary/octet-stream',
+        'ETag': '"fba9dede5f27731c9771645a39863328"'
     }
 
 
@@ -431,7 +431,7 @@ class TestOperations:
     @async
     @pytest.mark.aiohttpretty
     def test_version_metadata(self, provider, version_metadata):
-        path = S3Path('/my-image')
+        path = S3Path('/my-image.jpg')
         url = provider.bucket.generate_url(100, 'GET', query_parameters={'versions': ''})
         aiohttpretty.register_uri('GET', url, status=200, body=version_metadata)
 
@@ -441,9 +441,9 @@ class TestOperations:
         assert len(data) == 3
 
         for item in data:
-            assert 'size' in item
             assert 'extra' in item
-            assert 'revision' in item
+            assert 'version' in item
+            assert 'versionIdentifier' in item
 
         assert aiohttpretty.has_call(method='GET', uri=url)
 
