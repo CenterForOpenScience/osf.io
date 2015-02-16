@@ -7,6 +7,7 @@ import aiohttp
 import oauthlib.oauth1
 
 from waterbutler.core import utils
+from waterbutler.core import streams
 from waterbutler.core import provider
 from waterbutler.core import exceptions
 
@@ -294,17 +295,19 @@ class FigshareArticleProvider(BaseFigshareProvider):
     def upload(self, stream, path, **kwargs):
         figshare_path = FigshareArticlePath(path)
         article_json = yield from self._get_article_json()
-        stream, boundary, size = figshare_utils.make_upload_data(stream, name='filedata', filename=figshare_path.file_id)
+
+        stream = streams.FormDataStream(
+            filedata=(stream, figshare_path.file_id)
+        )
+
         response = yield from self.make_request(
             'PUT',
             self.build_url('articles', self.article_id, 'files'),
             data=stream,
-            headers={
-                'Content-Length': str(size),
-                'Content-Type': 'multipart/form-data; boundary={0}'.format(boundary.decode()),
-            },
             expects=(200, ),
+            headers=stream.headers,
         )
+
         data = yield from response.json()
         return metadata.FigshareFileMetadata(data, parent=article_json, child=self.child).serialized(), True
 
