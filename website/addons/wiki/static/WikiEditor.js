@@ -6,6 +6,7 @@ var Raven = require('raven-js');
 var Markdown = require('pagedown-ace-converter');
 Markdown.getSanitizingConverter = require('pagedown-ace-sanitizer').getSanitizingConverter;
 require('imports?Markdown=pagedown-ace-converter!pagedown-ace-editor');
+require('osf-panel');
 var md = require('markdown');
 
 var editor;
@@ -16,7 +17,7 @@ var editor;
  * Example: <div data-bind="ace: currentText" id="editor"></div>
  */
 ko.bindingHandlers.ace = {
-    init: function(element, valueAccessor) {
+    init: function (element, valueAccessor) {
         editor = ace.edit(element.id); // jshint ignore:line
 
         // Updates the view model based on changes to the editor
@@ -148,6 +149,32 @@ function ViewModel(url) {
             return 'There are unsaved changes to your wiki. If you exit ' +
                 'the page now, those changes may be lost.';
         }
+    });
+
+    $(document).ready(function () {
+        $('*[data-osf-panel]').osfPanel({
+            buttonElement : '.switch',
+            onSize : 'md',
+            'onclick' : function () { console.log(editor); editor.resize(); }
+        });
+
+        var panelToggle = $('.panel-toggle'),
+            panelExpand = $('.panel-expand');
+        $('.panel-collapse').on('click', function () {
+            var el = $(this).closest('.panel-toggle');
+            el.children('.wiki-panel.hidden-xs').hide();
+            panelToggle.removeClass('col-sm-3').addClass('col-sm-1');
+            panelExpand.removeClass('col-sm-9').addClass('col-sm-11');
+            el.children('.panel-collapsed').show();
+        });
+        $('.panel-collapsed').on('click', function () {
+            var el = $(this),
+                toggle = el.closest('.panel-toggle');
+            toggle.children('.wiki-panel').show();
+            el.hide();
+            panelToggle.removeClass('col-sm-1').addClass('col-sm-3');
+            panelExpand.removeClass('col-sm-11').addClass('col-sm-9');
+        });
     });
 }
 

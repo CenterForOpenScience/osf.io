@@ -2,13 +2,21 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${node['title'] | n} Wiki (History)</%def>
 
-<div class="row">
-    <div class="col-sm-3">
-        <%include file="wiki/templates/nav.mako"/>
-        <%include file="wiki/templates/toc.mako"/>
-    </div>
-    <div class="col-sm-9">
+<div>
         <%include file="wiki/templates/status.mako"/>
+</div>
+
+<div class="row">
+    <div class="col-sm-3 col-md-4">
+            <div class="wiki-panel"> 
+                <div class="wiki-panel-body"> 
+
+                    <%include file="wiki/templates/nav.mako"/>
+                    <%include file="wiki/templates/toc.mako"/>
+                </div>
+            </div>
+    </div>
+    <div class="col-sm-9 col-md-8">
         <div class="row">
             <div class="col-sm-8 wiki">
                 ${wiki_content | n}

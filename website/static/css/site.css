@@ -5,7 +5,7 @@ html, body {
 }
 
 body {
-    padding-top: 70px; /* body padding for fixed top nav */
+    padding-top: 50px; /* body padding for fixed top nav */
     position: relative; /* for bootstrap affix */
 }
 
@@ -389,7 +389,7 @@ li.pointer {
 /* Style for Ace wiki editor */
 .wiki-editor {
     position: relative;
-    height: 300px;
+    height: 450px;
     border: solid;
     border-width: 1px;
 }
@@ -1127,7 +1127,6 @@ div.search-result  {
     margin-bottom: 5px;
     margin-top: 0px;
     padding: 0px;
-    height: 20px;
 }
 
 .wmd-spacer
@@ -1135,8 +1134,6 @@ div.search-result  {
     width: 1px;
     height: 20px;
     margin-left: 14px;
-
-    position: absolute;
     background-color: Silver;
     display: inline-block;
     list-style: none;
@@ -1147,7 +1144,6 @@ div.search-result  {
     height: 20px;
     padding-left: 2px;
     padding-right: 3px;
-    position: absolute;
     display: inline-block;
     list-style: none;
     cursor: pointer;
@@ -1221,8 +1217,6 @@ div.search-result  {
   padding-top:    10px;
   padding-bottom: 10px;
   text-shadow: 0 1px 0 #fff;
-  background-color: #f7f5fa;
-  border-radius: 5px;
 }
 
 /* All levels of nav */
@@ -1288,6 +1282,16 @@ div.search-result  {
     display: inline-block;
     float: none;
 }
+.superlist li a {
+    padding: 15px 10px;
+}
+
+@media (max-width: 768px) {
+ .superlist.navbar-nav {
+    margin: 0;
+ }
+}
+
 
 @media (min-width: 1200px) {
   /* Widen the fixed sidebar again */
@@ -1942,11 +1946,11 @@ span#profileFullname{
         overflow: hidden;
     }
     .osf-search {
-        margin-top: -30px;
+        margin-top: -8px;
         z-index: 1028;
     }
     #searchControls > .osf-search {
-        margin-top: -30px;
+        margin-top: -8px;
         z-index: 99;
     }
     .osf-xs-search {
@@ -1975,7 +1979,7 @@ span#profileFullname{
         z-index: 1028; /* should be less than 1030 to not cover navbar */
     }
     #searchControls > .osf-search {
-        margin-top: -30px;
+        margin-top: -8px;
     }
 
 }
@@ -2015,7 +2019,7 @@ span#profileFullname{
     left: 0;
 }
 #searchControls > .osf-search {
-    margin-top: -30px;
+    margin-top: -8px;
 }
 .osf-search-input {
     background: none;
@@ -2109,3 +2113,44 @@ span#profileFullname{
 .modal-backdrop {
     position: fixed;
 }
+
+/* Wiki additions */
+.wiki-panel {
+    border: 1px solid #ccc;
+}
+.superlist li.active {
+    background: #EFEFEF;
+    font-weight: bold;
+}
+.wiki-panel-body {
+    height: 700px;
+    overflow: auto;
+    overflow-x: hidden;
+}
+.wiki-panel-body .navbar-collapse {
+    background: #F5F5F5;
+    padding: 0px;
+}
+.wiki-panel-header {
+    background: #efefef;
+    padding: 10px;
+    font-size: 16px;
+    font-weight: 300;
+}
+
+#wiki-form {
+    padding: 10px;
+}
+
+#markdown-it-preview {
+    padding: 10px;
+}
+@media (max-width: 991px) {
+    .wiki-panel {
+        margin-bottom: 20px;
+    }
+}
+.panel-collapsed {
+    background: #F5F5F5;
+}
+
