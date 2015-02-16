@@ -164,26 +164,38 @@ class MultiStream(asyncio.StreamReader):
     Originally written by @jmcarp
     """
     def __init__(self, *streams):
-        self.streams = list(streams)
-        self.cycle()
+        self.stream = []
+        self._streams = []
+        self.add_streams(*streams)
 
-    def cycle(self):
-        try:
-            self.stream = self.streams.pop(0)
-        except IndexError:
-            self.stream = None
+    @property
+    def streams(self):
+        return self._streams
+
+    def add_streams(self, *streams):
+        self._streams.extend(streams)
+
+        if not self.stream:
+            self._cycle()
 
     @asyncio.coroutine
     def read(self, n=-1):
         if not self.stream:
-            return b''
+                return b''
+
         chunk = yield from self.stream.read(n)
         if len(chunk) == n and n != -1:
             return chunk
-        self.cycle()
+        self._cycle()
         nextn = -1 if n == -1 else n - len(chunk)
         chunk += (yield from self.read(nextn))
         return chunk
+
+    def _cycle(self):
+        try:
+            self.stream = self.streams.pop(0)
+        except IndexError:
+            self.stream = None
 
 
 class FormDataStream(MultiStream):
@@ -205,7 +217,7 @@ class FormDataStream(MultiStream):
     FILE_HEADER = 'Content-Disposition: file; name="{}"{}\r\nContent-Type: {}\r\nContent-Transfer-Encoding: {}\r\n\r\n'
 
     @classmethod
-    def make_boundary(self):
+    def make_boundary(cls):
         """Creates a randomeque boundary for
         form data seperator
         """
@@ -248,12 +260,12 @@ class FormDataStream(MultiStream):
         return super().read(n=n)
 
     def finalize(self):
+        assert self.stream, 'Must add at least one stream to finalize'
+
         if self.can_add_more:
-            if not self.stream and self.streams:
-                self.cycle()
             self.can_add_more = False
-            self.streams.append(self.end_boundary)
-            self.size = sum([int(x.size) for x in self.streams])
+            self.add_streams(self.end_boundary)
+            self.size = sum([int(x.size) for x in self.streams]) + self.stream.size
 
     def add_file(self, field_name, file_stream, file_name=None, mime='application/octet-stream', transcoding='binary'):
         assert self.can_add_more, 'Cannot add more fields after calling finalize or read'
@@ -263,7 +275,7 @@ class FormDataStream(MultiStream):
         else:
             file_name = ''
 
-        self.streams.extend([
+        self.add_streams(
             self._make_boundary_stream(),
             StringStream(
                 self.FILE_HEADER.format(
@@ -275,15 +287,15 @@ class FormDataStream(MultiStream):
             ),
             file_stream,
             StringStream('\r\n')
-        ])
+        )
 
     def add_field(self, key, value):
         assert self.can_add_more, 'Cannot add more fields after calling finalize or read'
 
-        self.streams.extend([
+        self.add_streams(
             self._make_boundary_stream(),
             StringStream(self.FORM_DATA_HEADER.format(key) + value + '\r\n')
-        ])
+        )
 
     def add_fields(self, **fields):
         for key, value in fields.items():
