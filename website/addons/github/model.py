@@ -30,6 +30,13 @@ class GithubGuidFile(GuidFile):
 
     path = fields.StringField(index=True)
 
+    def maybe_set_version(self, **kwargs):
+        # branches are always required for file requests, if not specified
+        # file server will assume default branch. e.g. master or develop
+        if not kwargs.get('ref'):
+            kwargs['ref'] = kwargs.pop('branch', None)
+        super(GithubGuidFile, self).maybe_set_version(**kwargs)
+
     @property
     def waterbutler_path(self):
         return self.path
@@ -53,7 +60,7 @@ class GithubGuidFile(GuidFile):
     @property
     def extra(self):
         return {
-            'sha': self._metadata_cache['extra']['fileSha']
+            'sha': self._metadata_cache['extra']['fileSha'],
         }
 
     def _exception_from_response(self, response):

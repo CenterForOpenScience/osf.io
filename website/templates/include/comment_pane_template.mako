@@ -1,4 +1,4 @@
-<div class="commentPane hidden-xs">
+<div class="scripted commentPane hidden-xs">
 
     <div class="cp-handle pull-right" data-bind="click:removeCount" data-toggle="tooltip" data-placement="bottom" title="Discussion Pane">
         <span data-bind="if: unreadComments() !== 0">

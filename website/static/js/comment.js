@@ -631,7 +631,7 @@ var init = function(selector, host_page, host_name, title, mode, userName, canCo
     if (!$elm.length) {
         throw('No results found for selector');
     }
-    ko.applyBindings(viewModel, $elm[0]);
+    osfHelpers.applyBindings(viewModel, $elm[0]);
     viewModel.initListeners();
 
     return viewModel;
