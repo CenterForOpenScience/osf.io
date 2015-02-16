@@ -97,23 +97,16 @@ class GoogleDriveProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
-
-
-        path = GoogleDrivePath(path, self.folder, isUpload=True)
         try:
             yield from self.metadata(str(path))
-
-
         except exceptions.MetadataError:
             created = True
         else:
             created = False
-
+        path = GoogleDrivePath(path, self.folder)
         content = yield from stream.read()
         #content = base64.b64encode(content)
         #content = content.decode('utf-8')
-
-
 
         metadata = {
             "parents" :   [
@@ -127,10 +120,6 @@ class GoogleDriveProvider(provider.BaseProvider):
             #"Content-Type": "image/png",
 
         }
-
-
-
-
         #Step 1 - Start a resumable session
         resp = yield from self.make_request(
             'POST',
@@ -202,11 +191,11 @@ class GoogleDriveProvider(provider.BaseProvider):
         if data['kind'] == "drive#fileList":
             ret = []
             for item in data['items']:
+                item['path'] = os.path.join(path.full_path, item['title'])  # custom add, not obtained from API
                 if item['mimeType'] == 'application/vnd.google-apps.folder':
-                    item['path'] = os.path.join(path.full_path, item['title'])  # custom add, not obtained from API
                     ret.append(GoogleDriveFolderMetadata(item, self.folder).serialized())
                 else:
-                    item['path'] = '/'+item['title']  # custom add, n   ot obtained from API
+                    # item['path'] = '/'+item['title']  # custom add, n   ot obtained from API
                     ret.append(GoogleDriveFileMetadata(item, self.folder).serialized())
             return ret
         return GoogleDriveFileMetadata(data, self.folder).serialized()
