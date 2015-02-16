@@ -19,6 +19,7 @@ if (ctx.canEdit) {
     require('ace-mode-markdown');
     require('ace-ext-language_tools');
     require('addons/wiki/static/ace-markdown-snippets.js');
+    var editor = ace.edit('editor');
 
     var ShareJSDoc = require('addons/wiki/static/ShareJSDoc.js');
     ShareJSDoc('.wiki', ctx.urls.draft, ctx.metadata);
@@ -125,7 +126,7 @@ $(document).ready(function () {
     $('*[data-osf-panel]').osfPanel({
         buttonElement : '.switch',
         onSize : 'md',
-        'onclick' : function () { editor.resize(); }
+        'onclick' : function () { if (editor) { editor.resize(); } }
     });
 
     var panelToggle = $('.panel-toggle'),
