@@ -301,13 +301,12 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
 
 def addon_view_file(auth, node, node_addon, file_guid, extras):
-    render_url = furl.furl(node.api_url_for('addon_render_file', path=file_guid.waterbutler_path.lstrip('/'), provider=file_guid.provider))
-    render_url.args.update(extras)
+    render_url = node.api_url_for('addon_render_file', path=file_guid.waterbutler_path.lstrip('/'), provider=file_guid.provider, **extras)
 
     resp = serialize_node(node, auth, primary=True)
     resp.update({
         'provider': file_guid.provider,
-        'render_url': render_url.url,
+        'render_url': render_url,
         'file_path': file_guid.waterbutler_path,
         'files_url': node.web_url_for('collect_file_trees'),
         'rendered': get_or_start_render(file_guid, extras),
