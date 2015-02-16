@@ -27,6 +27,7 @@ ROOT = os.path.join(BASE_PATH, '..')
 
 # Hours before email confirmation tokens expire
 EMAIL_TOKEN_EXPIRATION = 24
+CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_components', 'styles')
 
 LOAD_BALANCER = False
 PROXY_ADDRS = []
@@ -102,6 +103,7 @@ MFR_TIMEOUT = 30000
 
 # TODO: Override in local.py in production
 USE_TOKU_MX = True
+DB_HOST = 'localhost'
 DB_PORT = os_env.get('OSF_DB_PORT', 27017)
 DB_NAME = 'osf20130903'
 DB_USER = None

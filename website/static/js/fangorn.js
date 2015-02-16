@@ -3,12 +3,17 @@
  * For Treebeard and _item API's check: https://github.com/caneruguz/treebeard/wiki
  */
 
+
 var $ = require('jquery');
 var m = require('mithril');
 var Treebeard = require('treebeard');
+var URI = require('uri.js/src/URI.js');
 var waterbutler = require('waterbutler');
 
 var $osf = require('osfHelpers');
+
+// CSS
+require('../css/fangorn.css');
 
 var tbOptions;
 
@@ -273,9 +278,6 @@ function _fangornAddedFile(treebeard, file) {
         tmpID: tmpID
     };
     treebeard.createItem(blankItem, item.id);
-
-
-
     return configOption || null;
 }
 
@@ -334,12 +336,12 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
         item,
         revisedItem,
         child;
-    for(var i = 0; i < parent.children.length; i++) {
+    for (var i = 0; i < parent.children.length; i++) {
         child = parent.children[i];
-        if(!child.data.tmpID){
+        if (!child.data.tmpID){
             continue;
         }
-        if(child.data.tmpID === file.tmpID) {
+        if (child.data.tmpID === file.tmpID) {
             item = child;
         }
     }
@@ -354,17 +356,17 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
         item.data = response;
         inheritFromParent(item, item.parent());
     }
-    if(item.data.tmpID) {
+    if (item.data.tmpID) {
         item.data.tmpID = null;
     }
-    // Check and remove duplicates
-    if(parent.children.length  > 0 ) {
-        for (var j = 0; j < parent.children.length; j++){
-            var o = parent.children[j];
-            if(o.data.name === item.data.name && o.id !== item.id){
-                o.removeSelf();
+    // Remove duplicates if file was updated
+    var status = file.xhr.status;
+    if (status === 200) {
+        parent.children.forEach(function(child) {
+            if (child.data.name === item.data.name && child.id !== item.id) {
+                child.removeSelf();
             }
-        }
+        });
     }
     treebeard.redraw();
 }
@@ -391,12 +393,12 @@ function _fangornDropzoneError(treebeard, file, message) {
     var item;
     var child;
     var destroyItem = false;
-    for(var i = 0; i < parent.children.length; i++) {
+    for (var i = 0; i < parent.children.length; i++) {
         child = parent.children[i];
-        if(!child.data.tmpID){
+        if (!child.data.tmpID) {
             continue;
         }
-        if(child.data.tmpID === file.tmpID) {
+        if (child.data.tmpID === file.tmpID) {
             item = child;
             treebeard.deleteNode(parent.id, item.id);
         }
@@ -656,15 +658,9 @@ function _fangornTitleColumn(item, col) {
     if (item.kind === 'file' && item.data.permissions.view) {
         return m('span',{
             onclick: function() {
-                var params = $.param(
-                    $.extend({
-                        provider: item.data.provider,
-                        path: item.data.path.substring(1)
-                    },
-                        item.data.extra || {}
-                    )
-                );
-                window.location = item.data.nodeApiUrl + 'waterbutler/files/?' + params;
+                var redir = new URI(item.data.nodeUrl);
+                redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
+                window.location = redir.toString() + '/';
             },
             'data-toggle' : 'tooltip', title : 'View file', 'data-placement': 'right'
         }, item.data.name);

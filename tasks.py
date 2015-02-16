@@ -18,6 +18,8 @@ from website import settings
 logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+WHEELHOUSE_PATH = os.environ.get('WHEELHOUSE')
+
 
 def get_bin_path():
     """Get parent path of current python binary.
@@ -240,6 +242,29 @@ def mongorestore(path, drop=False):
     run(cmd, echo=True)
 
 
+@task
+def sharejs(host=None, port=None, db_host=None, db_port=None, db_name=None, cors_allow_origin=None):
+    """Start a local ShareJS server."""
+    if host:
+        os.environ['SHAREJS_SERVER_HOST'] = host
+    if port:
+        os.environ['SHAREJS_SERVER_PORT'] = port
+    if db_host:
+        os.environ['SHAREJS_DB_HOST'] = db_host
+    if db_port:
+        os.environ['SHAREJS_DB_PORT'] = db_port
+    if db_name:
+        os.environ['SHAREJS_DB_NAME'] = db_name
+    if cors_allow_origin:
+        os.environ['SHAREJS_CORS_ALLOW_ORIGIN'] = cors_allow_origin
+
+    if settings.SENTRY_DSN:
+        os.environ['SHAREJS_SENTRY_DSN'] = settings.SENTRY_DSN
+
+    share_server = os.path.join(settings.ADDON_PATH, 'wiki', 'shareServer.js')
+    run("node {0}".format(share_server))
+
+
 @task(aliases=['celery'])
 def celery_worker(level="debug"):
     """Run the Celery process."""
@@ -293,6 +318,8 @@ def flake8():
 def requirements(all=False, download_cache=None):
     """Install dependencies."""
     cmd = "pip install --upgrade -r dev-requirements.txt"
+    if WHEELHOUSE_PATH:
+        cmd += ' --use-wheel --find-links {}'.format(WHEELHOUSE_PATH)
     if download_cache:
         cmd += ' --download-cache {0}'.format(download_cache)
     run(bin_prefix(cmd), echo=True)
@@ -345,6 +372,20 @@ def test_all(flake=False):
     test_osf()
     test_addons()
 
+
+@task
+def wheelhouse(repo, path):
+    version = '.'.join([str(i) for i in sys.version_info[0:2]])
+    run('pip install wheel --upgrade', pty=False)
+    name = 'wheelhouse-{}.tar.gz'.format(version)
+    url = '{}/archive/{}.tar.gz'.format(repo, version)
+    # download and extract the wheelhouse github repository archive
+    run('mkdir {}'.format(path), pty=False)
+    run('curl -o {} -L {}'.format(name, url), pty=False)
+    run('tar -xvf {} --strip 1 -C {}'.format(name, path), pty=False)
+    run('rm -f {}'.format(name), pty=False)
+
+
 @task
 def addon_requirements(download_cache=None):
     """Install all addon requirements."""
@@ -356,6 +397,8 @@ def addon_requirements(download_cache=None):
                 open(requirements_file)
                 print('Installing requirements for {0}'.format(directory))
                 cmd = 'pip install --upgrade -r {0}'.format(requirements_file)
+                if WHEELHOUSE_PATH:
+                    cmd += ' --use-wheel --find-links {}'.format(WHEELHOUSE_PATH)
                 if download_cache:
                     cmd += ' --download-cache {0}'.format(download_cache)
                 run(bin_prefix(cmd))
@@ -502,6 +545,7 @@ def clear_sessions(months=1, dry_run=False):
 
 @task
 def clear_mfr_cache():
+    run('rm -rf {0}/*'.format(settings.MFR_TEMP_PATH), echo=True)
     run('rm -rf {0}/*'.format(settings.MFR_CACHE_PATH), echo=True)
 
 
@@ -686,3 +730,9 @@ def generate_self_signed(domain):
         ' -keyout {0}.key -out {0}.crt'
     ).format(domain)
     run(cmd)
+
+@task
+def update_citation_styles():
+    from scripts import parse_citation_styles
+    total = parse_citation_styles.main()
+    print("Parsed {} styles".format(total))
