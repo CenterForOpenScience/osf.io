@@ -2610,8 +2610,7 @@ class TestFileViews(OsfTestCase):
 
 
 class TestComments(OsfTestCase):
-    # TODO add comments to files/wiki/deleted wiki or files
-    # todo view total comments
+
     def setUp(self):
         super(TestComments, self).setUp()
         self.project = ProjectFactory(is_public=True)
@@ -2642,19 +2641,40 @@ class TestComments(OsfTestCase):
             **kwargs
         )
 
-    def _add_comment_wiki(self, project, content=None, **kwargs):
+    def _add_comment_wiki(self, project, content=None, name='home', **kwargs):
 
         content = content if content is not None else 'the quick brown fox jumps over the lazy dog'
         url = project.api_url + 'comment/'
-        project.update_node_wiki(name='home', content='home wiki', auth=Auth(project.creator))
+        project.update_node_wiki(name=name, content='a wiki page', auth=Auth(project.creator))
         return self.app.post_json(
             url,
             {
                 'content': content,
                 'isPublic': 'public',
                 'page': 'wiki',
-                'target': project.get_wiki_page(name='home', version=1),
+                'target': 'home',
                 'root_title': 'home',
+            },
+            **kwargs
+        )
+
+    def _add_comment_files(self, project, content=None, path=None, provider='osfstorage', **kwargs):
+        project.add_addon(provider, auth=Auth(self.user))
+        path = path if path is not None else 'mudhouse_coffee.txt'
+        addon = project.get_addon(provider)
+        if provider == 'dropbox':
+            addon.folder = '/'
+        guid, _ = addon.find_or_create_file_guid('/' + path)
+        content = content if content is not None else 'large hot mocha'
+        url = project.api_url + 'comment/'
+        return self.app.post_json(
+            url,
+            {
+                'content': content,
+                'isPublic': 'public',
+                'page': 'files',
+                'target': guid._id,
+                'root_title': path
             },
             **kwargs
         )
@@ -3071,6 +3091,14 @@ class TestComments(OsfTestCase):
         self.non_contributor.reload()
         assert_not_in(self.project._id, self.non_contributor.comments_viewed_timestamp)
 
+    def test_view_comments_updates_user_comments_view_timestamp_wiki(self):
+        # todo
+        pass
+
+    def test_view_comments_updates_user_comments_view_timestamp_files(self):
+        # todo
+        pass
+
     def test_n_unread_comments_updates_when_comment_is_added(self):
         self._add_comment(self.project, auth=self.project.creator.auth)
         self.project.reload()
@@ -3127,6 +3155,71 @@ class TestComments(OsfTestCase):
             'rootId': self.project._id
         }, auth=self.project.creator.auth)
         assert_equal(res.json.get('nUnread'), 0)
+
+    def test_n_unread_comments_overview(self):
+        self._add_comment(self.project, auth=self.project.creator.auth)
+        res = _view_project(self.project, auth=Auth(user=self.user))
+        assert_equal(res['user']['unread_comments']['node'], 1)
+
+    def test_n_unread_comments_files(self):
+        self._add_comment_files(self.project, auth=self.project.creator.auth)
+        self._add_comment_files(
+            self.project,
+            content=None,
+            path=None,
+            provider='github',
+            auth=self.project.creator.auth
+        )
+        self._add_comment_files(
+            self.project,
+            content='I failed my test',
+            path='transcript.pdf',
+            provider='dropbox',
+            auth=self.project.creator.auth
+        )
+        res = _view_project(self.project, auth=Auth(user=self.user))
+        assert_equal(res['user']['unread_comments']['files'], 3)
+
+    def test_n_unread_comments_wiki(self):
+        self._add_comment_wiki(self.project, auth=self.project.creator.auth)
+        self._add_comment_wiki(self.project, content='yellow', name='Cold play', auth=self.project.creator.auth)
+        res = _view_project(self.project, auth=Auth(user=self.user))
+        assert_equal(res['user']['unread_comments']['wiki'], 2)
+
+    def test_n_unread_comments_total(self):
+
+        user1 = AuthUserFactory()
+        user2 = AuthUserFactory()
+
+        self._add_comment_files(self.project, auth=self.project.creator.auth)
+
+        self.project.add_contributor(user1, permissions='write', auth=Auth(self.project.creator))
+
+        self._add_comment(self.project, auth=user1.auth)
+        self._add_comment_wiki(self.project, content='yellow', name='Cold play', auth=Auth(user1))
+        self._add_comment_files(
+            self.project,
+            content=None,
+            path=None,
+            provider='github',
+            auth=self.user1.auth
+        )
+
+        self.project.add_contributor(user2, permissions='write', auth=Auth(self.project.creator))
+
+        self._add_comment_wiki(self.project, auth=Auth(user2))
+        self._add_comment_files(
+            self.project,
+            content='I failed my test',
+            path='transcript.pdf',
+            provider='dropbox',
+            auth=self.user2.auth
+        )
+
+        res = _view_project(self.project, auth=Auth(user=self.user))['user']['unread_comments']
+        assert_equal(res['node'], 1)
+        assert_equal(res['wiki'], 2)
+        assert_equal(res['files'], 3)
 
 
 class TestTagViews(OsfTestCase):
