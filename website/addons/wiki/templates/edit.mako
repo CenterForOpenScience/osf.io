@@ -46,6 +46,8 @@
 
     <div class="col-sm-9 panel-expand">
       <div class="row">
+
+        % if can_edit:
         <div class="col-sm-4" data-osf-panel="Edit">
                 <div class="wiki-panel"> 
                   <div class="wiki-panel-header"> <i class="icon-edit"> </i>  Edit </div>
@@ -116,6 +118,8 @@
                   </div>
                 </div>
           </div>
+          % endif
+      
           <div class="col-sm-4" data-osf-panel="View">
               <div class="wiki-panel"> 
                 <div class="wiki-panel-header">
@@ -126,9 +130,11 @@
                         <div class="col-sm-6">
                             <!-- Version Picker -->
                             <select id="viewSelect" class="pull-right">
-                                <option value="preview">Preview</option>
+                                % if can_edit:
+                                    <option value="preview">Preview</option>
+                                % endif
                                 <option value="current">Current</option>
-                                % for version in versions:
+                                % for version in versions[1:]:
                                     <option value="${version['version']}">Version ${version['version']}</option>
                                 % endfor
                             </select>
@@ -142,7 +148,7 @@
                     </div>
                     <!-- Version view -->
                     <div id="viewVersion" class="markdown-it-view" style="display: none;">
-                        % if not page and wiki_name != 'home': ## TODO: Is this used?
+                        % if not page and wiki_name != 'home':
                             <p><i>This wiki page does not currently exist.</i></p>
                         % else:
                             <div id="markdown-it-render">${wiki_content | n}</div>
@@ -268,21 +274,19 @@
 ${parent.javascript_bottom()}
 <script>
 
-    var canEditPageName = ${json.dumps(
-        all([
-            'write' in user['permissions'],
-            not is_edit,
-            wiki_id,
-            wiki_name != 'home',
-            not node['is_registration']
-        ])
+    var canEdit = ${json.dumps(can_edit)};
+
+    var canEditPageName = canEdit && ${json.dumps(
+        wiki_id and wiki_name != 'home'
     )};
 
     window.contextVars = window.contextVars || {};
     window.contextVars.wiki = {
+        canEdit: canEdit,
         canEditPageName: canEditPageName,
         usePythonRender: ${json.dumps(use_python_render)},
         urls: {
+            draft: '${urls['api']['draft']}',
             content: '${urls['api']['content']}',
             rename: '${urls['api']['rename']}',
             base: '${urls['web']['base']}',
