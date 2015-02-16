@@ -111,29 +111,29 @@
       document.domain = 'osf.io';
     </script>
     %endif
-        <script type="text/javascript">
-          window.contextVars = $.extend(true, {}, window.contextVars, {
-        %if rendered is None:
-            renderURL: '${render_url | js_str}',
-        %else:
-            renderURL: undefined,
-        %endif
-            file: {
-                extra: ${extra},
-                name: '${file_name | js_str}',
-                path: '${file_path | js_str}',
-                provider: '${provider | js_str}',
-                safeName: '${file_name | h,js_str}'
-            },
-            node: {
-              urls: {
-                files: '${files_url | js_str}'
-              }
-            },
-            currentUser: {
-              canEdit: ${int(user['can_edit'])}
-            }
-          });
-        </script>
-        <script src=${"/static/public/js/view-file-page.js" | webpack_asset}></script>
+    <script type="text/javascript">
+      window.contextVars = $.extend(true, {}, window.contextVars, {
+    %if rendered is None:
+        renderURL: '${render_url | js_str}',
+    %else:
+        renderURL: undefined,
+    %endif
+        file: {
+            extra: ${extra},
+            name: '${file_name | js_str}',
+            path: '${file_path | js_str}',
+            provider: '${provider | js_str}',
+            safeName: '${file_name | h,js_str}'
+        },
+        node: {
+          urls: {
+            files: '${files_url | js_str}'
+          }
+        },
+        currentUser: {
+          canEdit: ${int(user['can_edit'])}
+        }
+      });
+    </script>
+    <script src=${"/static/public/js/view-file-page.js" | webpack_asset}></script>
 </%def>
