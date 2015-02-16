@@ -105,10 +105,10 @@
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
-    % if 'staging.osf.io' in domain:
-      <script>
-      // IE10 Same Origin (CORS) fix
-      document.domain = 'osf.io';
+    % if 'osf.io' in domain:
+    <script>
+        // IE10 Same Origin (CORS) fix
+        document.domain = 'osf.io';
     </script>
     %endif
     <script type="text/javascript">
