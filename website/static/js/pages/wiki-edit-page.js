@@ -40,8 +40,8 @@ if (!ctx.usePythonRender) {
     });
     request.done(function(resp) {
         var rawText = resp.wiki_content || '*No wiki content*';
-        versions['current'] = md.render(rawText);
-        setWikiViewContent(versions['current']);
+        versions.current = md.render(rawText);
+        setWikiViewContent(versions.current);
     });
 }
 
@@ -60,15 +60,15 @@ selectElement.change(function() {
             });
             request.done(function(resp) {
                 if (resp.wiki_rendered) {
-                    // Use prerendered python, if provided. Don't mathjaxify
+                    // Use pre-rendered python, if provided. Don't mathjaxify
                     markdownElement.html(resp.wiki_rendered);
+                    versions[version] = resp.wiki_rendered;
                 } else {
                     // Render raw markdown
                     var wikiText = md.render(resp.wiki_content);
                     setWikiViewContent(wikiText);
+                    versions[version] = wikiText;
                 }
-                // Cache rendered markdown
-                versions[version] = wikiText;
             });
         }
     }
