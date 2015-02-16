@@ -430,7 +430,7 @@ class TestAddonFileViews(OsfTestCase):
         resp = self.app.get(guid.guid_url + '?action=download', auth=self.user.auth)
 
         assert_equals(resp.status_code, 302)
-        assert_equals(resp.headers['Location'], guid.download_url)
+        assert_equals(resp.headers['Location'], guid.download_url + '&action=download')
 
     @mock.patch('website.addons.base.views.addon_view_file')
     def test_action_view_calls_view_file(self, mock_view_file):
@@ -445,7 +445,7 @@ class TestAddonFileViews(OsfTestCase):
 
         args, kwargs = mock_view_file.call_args
         assert_equals(kwargs, {})
-        assert_equals(args[-1], {})
+        assert_equals(args[-1], {'action': 'view'})
         assert_equals(args[1], self.project)
         assert_equals(args[0].user, self.user)
         assert_equals(args[2], self.node_addon)
@@ -486,6 +486,32 @@ class TestAddonFileViews(OsfTestCase):
         assert_true(guid)
         assert_false(created)
         assert_equals(guid.waterbutler_path, '/' + path)
+
+    @mock.patch('website.addons.base.views.request')
+    @mock.patch('website.addons.base.views.requests.get')
+    @mock.patch('website.addons.base.requests.get')
+    def test_ie11_get_redirect(self, _, mock_get, mock_request):
+        path = 'the little engine that couldnt'
+        guid, _ = self.node_addon.find_or_create_file_guid('/' + path)
+
+        mock_request.args.to_dict.return_value = {
+            'mode': 'render',
+            'action': 'download'
+        }
+
+        mock_request.path = guid.guid_url
+        mock_request.user_agent.browser = 'msie'
+        mock_request.user_agent.version = '11.0'
+
+        mock_get.return_value = mock.MagicMock(status_code=302, headers={'Location': 'lul'})
+
+        resp = self.app.get(
+            '{}?action=download&mode=render'.format(guid.guid_url),
+            auth=self.user.auth,
+        )
+
+        assert_equals(resp.status_code, 302)
+        assert_equals(resp.headers['Location'], 'http://localhost:80/lul')
 
 
 def assert_urls_equal(url1, url2):
@@ -567,6 +593,36 @@ class TestLegacyViews(OsfTestCase):
         expected_url = self.project.web_url_for(
             'addon_view_or_download_file',
             version=3,
+            path=self.path,
+            action='download',
+            provider='osfstorage',
+        )
+        assert_urls_equal(res.location, expected_url)
+
+    def test_no_provider_name(self):
+        url = '/{0}/files/{1}'.format(
+            self.project._id,
+            self.path,
+        )
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 301)
+        expected_url = self.project.web_url_for(
+            'addon_view_or_download_file',
+            action='view',
+            path=self.path,
+            provider='osfstorage',
+        )
+        assert_urls_equal(res.location, expected_url)
+
+    def test_action_as_param(self):
+        url = '/{}/osfstorage/files/{}/?action=download'.format(
+            self.project._id,
+            self.path,
+        )
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 301)
+        expected_url = self.project.web_url_for(
+            'addon_view_or_download_file',
             path=self.path,
             action='download',
             provider='osfstorage',
