@@ -13,6 +13,7 @@ import logging
 
 import pyrax
 from boto.glacier.layer2 import Layer2
+from modularodm import Q
 
 from website.app import init_app
 from website.addons.osfstorage import model
@@ -91,7 +92,7 @@ def ensure_backups(version, dry_run):
 
 
 def get_targets():
-    return model.OsfStorageFileVersion.find()
+    return model.OsfStorageFileVersion.find(Q('location.object', 'exists', True))
 
 
 def main(dry_run):
