@@ -143,6 +143,20 @@ class HashStreamWriter:
         pass
 
 
+class StringStream(asyncio.StreamReader):
+    def __init__(self, data):
+        super().__init__()
+        if isinstance(data, str):
+            data = data.encode('UTF-8')
+        elif not isinstance(data, bytes):
+            raise TypeError('Data must be either str or bytes, found {!r}'.format(type(data)))
+
+        self.feed_data(data)
+        self.size = len(data)
+
+        self.feed_eof()
+
+
 class MultiStream(asyncio.StreamReader):
     """Concatenate a series of `StreamReader` objects into a single stream.
     Reads from the current stream until exhausted, then continues to the next,
@@ -195,6 +209,10 @@ class FormDataStream(MultiStream):
                 self.add_file(key, value)
             else:
                 self.add_field(key, value)
+
+    @property
+    def end_boundary(self):
+        return StringStream('--{}--\r\n'.format(self.boundary))
 
     @property
     def headers(self):
@@ -250,21 +268,3 @@ class FormDataStream(MultiStream):
 
     def _make_boundary_stream(self):
         return StringStream('--{}\r\n'.format(self.boundary))
-
-    @property
-    def end_boundary(self):
-        return StringStream('--{}--\r\n'.format(self.boundary))
-
-
-class StringStream(asyncio.StreamReader):
-    def __init__(self, data):
-        super().__init__()
-        if isinstance(data, str):
-            data = data.encode('UTF-8')
-        elif not isinstance(data, bytes):
-            raise TypeError('Data must be either str or bytes, found {!r}'.format(type(data)))
-
-        self.feed_data(data)
-        self.size = len(data)
-
-        self.feed_eof()
