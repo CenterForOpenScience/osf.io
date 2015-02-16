@@ -11,7 +11,4 @@
             data-bind="tooltip: {title: 'Note: Home page cannot be renamed.'}"
         % endif
     >${wiki_name if wiki_name != 'home' else 'Home'}</span>
-    % if is_edit:
-        (Draft)
-    % endif
 </h3>

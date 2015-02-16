@@ -221,7 +221,7 @@ def project_wiki_compare(auth, wname, wver, **kwargs):
 @must_be_valid_project
 @must_have_permission('write')
 @must_have_addon('wiki', 'node')
-def wiki_page_content(wname, **kwargs):
+def wiki_page_draft(wname, **kwargs):
     node = kwargs['node'] or kwargs['project']
     wiki_page = node.get_wiki_page(wname)
 
@@ -235,7 +235,7 @@ def wiki_page_content(wname, **kwargs):
 @must_be_valid_project
 @must_be_contributor_or_public
 @must_have_addon('wiki', 'node')
-def wiki_version_content(wname, wver, **kwargs):
+def wiki_page_content(wname, wver=None, **kwargs):
     node = kwargs['node'] or kwargs['project']
     wiki_page = node.get_wiki_page(wname, version=wver)
     use_python_render = wiki_page.rendered_before_update
@@ -274,6 +274,7 @@ def project_wiki_edit(auth, wname, **kwargs):
     wiki_key = to_mongo_key(wiki_name)
     wiki_page = node.get_wiki_page(wiki_name)
     toc = _serialize_wiki_toc(node, auth=auth)
+    can_edit = node.has_permission(auth.user, 'write') and not node.is_registration
 
     # ensure home is always lower case since it cannot be renamed
     if wiki_name.lower() == 'home':
@@ -292,8 +293,10 @@ def project_wiki_edit(auth, wname, **kwargs):
         use_python_render = False
         wiki_page_api_url = None
 
-    if wiki_key not in node.wiki_private_uuids:
-        wiki_utils.generate_private_uuid(node, wiki_name)
+    if can_edit and wiki_key not in node.wiki_private_uuids:
+        sharejs_uuid = wiki_utils.generate_private_uuid(node, wiki_name)
+    else:
+        sharejs_uuid = wiki_utils.get_sharejs_uuid(node, wiki_name)
 
     ret = {
         'wiki_id': wiki_page._primary_key if wiki_page else None,
@@ -303,16 +306,17 @@ def project_wiki_edit(auth, wname, **kwargs):
         'page': wiki_page,
         'version': version,
         'versions': _get_wiki_versions(node, wiki_name, anonymous=anonymous),
-        'sharejs_uuid': wiki_utils.get_sharejs_uuid(node, wiki_name),
+        'sharejs_uuid': sharejs_uuid if sharejs_uuid and can_edit else '',
         'sharejs_url': settings.SHAREJS_URL,
         'is_current': is_current,
-        'is_edit': False, # TODO @rliebz
+        'can_edit': can_edit,
         'pages_current': _get_wiki_pages_current(node),
         'toc': toc,
         'category': node.category,
         'urls': {
             'api': _get_wiki_api_urls(node, wiki_name, {
                 'content': node.api_url_for('wiki_page_content', wname=wiki_name),
+                'draft': node.api_url_for('wiki_page_draft', wname=wiki_name),
                 'page': wiki_page_api_url
             }),
             'web': _get_wiki_web_urls(node, wiki_name),

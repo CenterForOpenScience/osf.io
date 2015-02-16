@@ -88,18 +88,20 @@ api_routes = {
             '/project/<pid>/node/<nid>/wiki/<wname>/',
         ], 'get', views.project_wiki_page, json_renderer),
 
+        # Draft : GET
+        Rule([
+            '/project/<pid>/wiki/<wname>/draft/',
+            '/project/<pid>/node/<nid>/wiki/<wname>/draft/',
+        ], 'get', views.wiki_page_draft, json_renderer),
+
         # Content : GET
+        # <wver> refers to a wiki page's version number
         Rule([
             '/project/<pid>/wiki/<wname>/content/',
             '/project/<pid>/node/<nid>/wiki/<wname>/content/',
-        ], 'get', views.wiki_page_content, json_renderer),
-
-        # Version : GET
-        # <wver> refers to a wiki page's version number
-        Rule([
             '/project/<pid>/wiki/<wname>/content/<int:wver>/',
             '/project/<pid>/node/<nid>/wiki/<wname>/content/<int:wver>/',
-        ], 'get', views.wiki_version_content, json_renderer),
+        ], 'get', views.wiki_page_content, json_renderer),
 
         # Validate | GET
         Rule([
