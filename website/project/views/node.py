@@ -154,10 +154,6 @@ def folder_new_post(auth, nid, **kwargs):
     }, http.CREATED
 
 
-def rename_folder(**kwargs):
-    pass
-
-
 @collect_auth
 def add_folder(**kwargs):
     auth = kwargs['auth']
