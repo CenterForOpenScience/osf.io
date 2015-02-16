@@ -12,7 +12,6 @@ from website.util import rubeus
 
 from website.addons.dropbox.client import get_node_client
 from website.addons.dropbox.utils import (
-    clean_path,
     metadata_to_hgrid,
     abort_if_not_subdir,
     is_authorizer,
@@ -77,18 +76,11 @@ def dropbox_addon_folder(node_settings, auth, **kwargs):
     if not node_settings.has_auth or not node_settings.folder:
         return None
     node = node_settings.owner
-    path = clean_path(node_settings.folder)
     root = rubeus.build_addon_root(
         node_settings=node_settings,
         name=node_settings.folder,
         permissions=auth,
         nodeUrl=node.url,
         nodeApiUrl=node.api_url,
-        urls={
-            'upload': node.api_url_for('dropbox_upload',
-                path=path),
-            'fetch': node.api_url_for('dropbox_hgrid_data_contents',
-                path=path)
-        }
     )
     return [root]

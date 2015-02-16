@@ -1,3 +1,5 @@
+<%page args="scripted" />
+
 ### Included where the LogsViewModel is used ###
 <div id="logProgressBar" class="progress progress-striped active">
     <div class="progress-bar"  role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">
@@ -33,7 +35,7 @@
 
                 <dl class="dl-horizontal activity-log" data-bind="foreach: {data: logs, as: 'log'}">
                     <dt><span class="date log-date" data-bind="text: log.date.local, tooltip: {title: log.date.utc}"></span></dt>
-                    <dd class="log-content">
+                    <dd class="log-content break-word">
 
                         <!-- ko if: log.hasTemplate() -->
                         <span data-bind="if:log.anonymous">

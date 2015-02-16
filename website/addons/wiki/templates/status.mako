@@ -24,5 +24,8 @@
         % if wiki_name == 'home' and not node['is_registration']:
             data-bind="tooltip: {title: 'Note: Home page cannot be renamed.'}"
         % endif
-        >${wiki_name if wiki_name != 'home' else 'Home'}</span>
+    >${wiki_name if wiki_name != 'home' else 'Home'}</span>
+    % if is_edit:
+        (Draft)
+    % endif
 </h3>

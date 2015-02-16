@@ -1,11 +1,6 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Dashboard</%def>
 
-<%def name="stylesheets()">
-<link rel="stylesheet" href="/static/css/typeahead.css">
-<link rel="stylesheet" href="/static/css/onboarding.css">
-</%def>
-
 <%def name="content()">
 % if disk_saving_mode:
     <div class="alert alert-info"><strong>NOTICE: </strong>Forks, registrations, and uploads will be temporarily disabled while the OSF undergoes a hardware upgrade. These features will return shortly. Thank you for your patience.</div>
@@ -16,16 +11,15 @@
             <h3>Projects</h3>
             <hr />
         </div><!-- end div -->
-        <link rel="stylesheet" href="/static/css/projectorganizer.css">
 
         <div class="project-organizer" id="projectOrganizerScope">
             <%include file="projectGridTemplates.html"/>
-            <div class="project-details"> 
-            </div>    
+            <div class="project-details">
+            </div>
 
 
             <div id="project-grid"></div>
-            <div id="organizer-legends"> 
+            <div id="organizer-legends">
                 <span class='organizer-legend'><img alt="Folder" src="/static/img/hgrid/folder.png">Folder</span>
                 <span class='organizer-legend'><img alt="Smart Folder" src="/static/img/hgrid/smart-folder.png">Smart Folder</span>
                 <span class='organizer-legend'><img alt="Project" src="/static/img/hgrid/project.png">Project</span>

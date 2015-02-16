@@ -26,6 +26,9 @@ ${next.body()}
 
 <%def name="javascript_bottom()">
 
+<script src="/static/vendor/citeproc-js/xmldom.js"></script>
+<script src="/static/vendor/citeproc-js/citeproc.js"></script>
+
 <script>
 
     <% import json %>
@@ -57,11 +60,23 @@ ${next.body()}
             urls: {api: nodeApiUrl},
             isPublic: ${json.dumps(node.get('is_public', False))},
             piwikSiteID: ${json.dumps(node.get('piwik_site_id', None))},
-            piwikHost: ${json.dumps(piwik_host)}
+            piwikHost: ${json.dumps(piwik_host)},
+            anonymous: ${json.dumps(node['anonymous'])}
         }
     });
 
 </script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]},
+        // Don't automatically typeset the whole page. Must explicitly use MathJax.Hub.Typeset
+        skipStartupTypeset: true
+    });
+</script>
+<script type="text/javascript"
+    src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
 ## NOTE: window.contextVars must be set before loading this script
 <script src=${"/static/public/js/project-base-page.js" | webpack_asset}> </script>
 </%def>
