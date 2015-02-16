@@ -6,6 +6,12 @@ from tests.utils import async
 
 from waterbutler.core import streams
 
+@pytest.fixture(autouse=True)
+def boundary(monkeypatch):
+    boundary = 'thisisaknownvalue'
+    monkeypatch.setattr(streams.FormDataStream, 'make_boundary', lambda _: boundary)
+    return boundary
+
 
 class TestFormDataStream:
 
@@ -28,7 +34,6 @@ class TestFormDataStream:
     @async
     def test_add_field(self):
         stream = streams.FormDataStream()
-        stream.boundary = 'thisisaknownvalue'
         stream.add_field('Master of the house', 'Isnt worth my spit')
 
         data = yield from stream.read()
@@ -46,7 +51,6 @@ class TestFormDataStream:
     @async
     def test_add_fields(self):
         stream = streams.FormDataStream()
-        stream.boundary = 'thisisaknownvalue'
         stream.add_fields(**{
             'Master of the house': 'Isnt worth my spit',
             'Comforter, Philosopher': 'A life long prick'
@@ -73,7 +77,6 @@ class TestFormDataStream:
     @async
     def test_content_length(self):
         stream = streams.FormDataStream()
-        stream.boundary = 'thisisaknownvalue'
         stream.add_field('Master of the house', 'Isnt worth my spit')
 
         expected_length = int(stream.headers['Content-Length'])
@@ -85,7 +88,6 @@ class TestFormDataStream:
 
     @async
     def test_file(self):
-        streams.FormDataStream.make_boundary = lambda _: 'thisisaknownvalue'
         stream = streams.FormDataStream(file=streams.StringStream('Empty chairs at empty tables'))
 
         data = yield from stream.read()
@@ -93,8 +95,39 @@ class TestFormDataStream:
         expected = '\r\n'.join([
             '--thisisaknownvalue',
             'Content-Disposition: file; name="file"',
+            'Content-Type: application/octet-stream',
+            'Content-Transfer-Encoding: binary',
             '',
             'Empty chairs at empty tables',
+            '--thisisaknownvalue--'
+        ]).encode('utf-8')
+
+        assert expected == data
+
+    def test_finalize_empty(self):
+        stream = streams.FormDataStream()
+
+        with pytest.raises(AssertionError):
+            stream.finalize()
+
+    @async
+    def test_add_field_is_ordered(self):
+        stream = streams.FormDataStream()
+        stream.boundary = 'thisisaknownvalue'
+        stream.add_field('Master of the house', 'Isnt worth my spit')
+        stream.add_field('Comforter, Philosopher', 'A life long prick')
+
+        data = yield from stream.read()
+
+        expected = '\r\n'.join([
+            '--thisisaknownvalue',
+            'Content-Disposition: form-data; name="Master of the house"',
+            '',
+            'Isnt worth my spit',
+            '--thisisaknownvalue',
+            'Content-Disposition: form-data; name="Comforter, Philosopher"',
+            '',
+            'A life long prick',
             '--thisisaknownvalue--'
         ]).encode('utf-8')
 
