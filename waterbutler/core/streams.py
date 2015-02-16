@@ -186,18 +186,32 @@ class MultiStream(asyncio.StreamReader):
 
 
 class FormDataStream(MultiStream):
-    """Concatenate a series of `StreamReader` objects into a single stream.
-    Reads from the current stream until exhausted, then continues to the next,
-    etc. Used to build streaming form data for Figshare uploads.
+    """A child of MultiSteam used to create stream friendly multipart form data requests.
+    Usage:
+        >>> stream = FormDataStream(key1='value1', file=FileStream(...))
+    Or:
+        >>> stream = FormDataStream()
+        >>> stream.add_field('key1', 'value1')
+        >>> stream.add_file('file', FileStream(...), mime='text/plain')
+    Additional options for files can be passed as a tuple ordered as:
+        >>> FormDataStream(fileName=(FileStream(...), 'fieldName', 'Mime', 'encoding'))
+
+    Auto generates boundarys and properly concatenates them
+    Use FormDataStream.headers to get the proper headers to be included with requests
+    Namely Content-Length, Content-Type
     """
     FORM_DATA_HEADER = 'Content-Disposition: form-data; name="{}"\r\n\r\n'
     FILE_HEADER = 'Content-Disposition: file; {}filename="{}"\r\nContent-Type: {}\r\nContent-Transfer-Encoding: {}\r\n\r\n'
 
     @classmethod
     def make_boundary(self):
+        """Creates a randomeque boundary for
+        form data seperator
+        """
         return uuid.uuid4().hex
 
     def __init__(self, **fields):
+        """:param dict fields: A dict of fieldname: value to create the body of the stream"""
         self.can_add_more = True
         self.boundary = self.make_boundary()
         super().__init__()
