@@ -183,7 +183,7 @@ class S3Provider(provider.BaseProvider):
             throws=exceptions.MetadataError,
         )
         content = yield from resp.read_and_close()
-        versions = xmltodict.parse(content)['ListVersionsResult'].get('Version')
+        versions = xmltodict.parse(content)['ListVersionsResult'].get('Version') or []
 
         if isinstance(versions, dict):
             versions = [versions]
