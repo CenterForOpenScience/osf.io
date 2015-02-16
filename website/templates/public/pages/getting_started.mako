@@ -100,7 +100,7 @@
                     <p class="gs-header">Projects</p>
                     <p>Projects are the largest form of categorization that the OSF supports. A project could be an experiment, a lab group, or a paper–anything that has contributing members and files or explanatory texts/images.</p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
-                        <div class="embed-responsive-item youtube-loader" id="u9MZ8q04HrE"></div>
+                        <div class="embed-responsive-item youtube-loader" id="Qx4MNTz3HMk"></div>
                     </div>
                     <p>When you click on a project to open it, you are taken to the Project Overview page. This page provides access to the features of the project via a gray navigation bar, as well as an overview of the components, files, tags, history, and wiki associated with the project.</p>
             
@@ -114,7 +114,7 @@
                     <p>To delete a component or project, visit its page and go to "Settings" in the grey navigation bar under the component's title. This will also delete that component's wiki.</p>
                     <p>A particular project and component structure that is useful for multiple projects can be used as a template when creating new projects.</p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
-                        <div class="embed-responsive-item youtube-loader" id="lmnCQpzQsMc"></div>
+                        <div class="embed-responsive-item youtube-loader" id="N1Jk7ax2UHs"></div>
                     </div>
                     
                     <span id="files" class="anchor"></span>
@@ -122,7 +122,7 @@
                     <p>Each project and component can have its own set of files. This allows you to organize your files into meaningful groups like datasets or background research.</p>
                     <p>To upload a file, click on "Files" in the grey navigation bar under the Project/Component's title. Here you can drag the file from your desktop on to the screen to upload, or click on the upload button in the actions column.</p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
-                        <div class="embed-responsive-item youtube-loader" id="k-8Nn9hTK-A"></div>
+                        <div class="embed-responsive-item youtube-loader" id="_8-nrjOWpfE"></div>
                     </div>
                     <p>Each file is given a unique URL.</p>
                     <p>To download a file from a project, click the download button in the actions column.</p>
@@ -136,7 +136,7 @@
                     <p>Linking is useful if you want to reference another's work or indicate that something is part of a larger project, while still allowing it to exist independently.</p>
                     <p>A link can be by visiting the project you want to add the link to. Click "Add Links" in the components section of your project dashboard and search for the project you wish to link to.</p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
-                        <div class="embed-responsive-item youtube-loader" id="QGUlMcHO46c"></div>
+                        <div class="embed-responsive-item youtube-loader" id="zqZfScxCWLg"></div>
                     </div>
                    
                     <span id="forks" class="anchor"></span>
@@ -149,9 +149,7 @@
                         <div class="embed-responsive-item youtube-loader" id="lTmoL-ftfPM"></div>
                     </div>
                     <p>A <a href="#links">linked</a> project can also easily be turned into a fork. If you were originally linking to a project but would like to make edits to the linked project, from your project dashboard you can find the linked project and hit the small fork button.</p>
-                    <div class="gs-video embed-responsive embed-responsive-16by9">
-                        <div class="embed-responsive-item youtube-loader" id="6oYGc-qagx0"></div>
-                    </div>
+                   
                     <span id="registrations" class="anchor"></span>
                     
                     <p class="gs-header">Registrations</p>
