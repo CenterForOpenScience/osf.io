@@ -95,7 +95,8 @@ def format_data(user, node_ids, data, subscriptions_available=settings.SUBSCRIPT
                             event['notificationType'] = notification_type
 
             if event['notificationType'] == 'adopt_parent':
-                event['parent_notification_type'] = get_parent_notification_type(node_id, s, user)
+                parent_nt = get_parent_notification_type(node_id, s, user)
+                event['parent_notification_type'] = parent_nt if parent_nt else 'none'
             else:
                 event['parent_notification_type'] = None  # only get nt if node = adopt_parent for display purposes
 
