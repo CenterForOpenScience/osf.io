@@ -7,7 +7,7 @@ var $ = require('jquery');
 var Raven = require('raven-js');
 var $osf = require('osfHelpers');
 require('bootstrap-editable');
-var md = require('markdown');
+var md = require('markdown').full;
 
 var mathrender = require('mathrender');
 
