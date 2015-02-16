@@ -24,7 +24,6 @@ var settings = {
     sentryDSN: process.env.SHAREJS_SENTRY_DSN
 };
 
-debugger;
 var client = new raven.Client(settings.sentryDSN);
 
 if (!settings.debug) {
