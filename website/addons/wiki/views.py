@@ -238,7 +238,7 @@ def wiki_page_draft(wname, **kwargs):
 def wiki_page_content(wname, wver=None, **kwargs):
     node = kwargs['node'] or kwargs['project']
     wiki_page = node.get_wiki_page(wname, version=wver)
-    use_python_render = wiki_page.rendered_before_update
+    use_python_render = wiki_page.rendered_before_update if wiki_page else False
 
     return {
         'wiki_content': wiki_page.content if wiki_page else '',
