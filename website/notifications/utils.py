@@ -116,7 +116,7 @@ def get_parent_notification_type(uid, event, user):
             try:
                 subscription = Subscription.find_one(Q('_id', 'eq', key))
             except NoResultsFound:
-                return
+                return get_parent_notification_type(p._id, event, user)
 
             for notification_type in settings.NOTIFICATION_TYPES:
                 if user in getattr(subscription, notification_type):
