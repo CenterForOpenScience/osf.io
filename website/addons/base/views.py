@@ -246,12 +246,10 @@ def addon_view_or_download_file_legacy(**kwargs):
     else:
         provider = kwargs['provider']
 
-    if 'download' in request.path:
+    action = query_params.pop('action', 'view')
+
+    if 'download' in request.path or request.path.startswith('/api/v1/'):
         action = 'download'
-    elif '/api/v1/' in request.path:
-        action = 'download'
-    else:
-        action = 'view'
 
     if kwargs.get('vid'):
         query_params['version'] = kwargs['vid']
