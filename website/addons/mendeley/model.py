@@ -14,12 +14,16 @@ from . import utils
 from .api import APISession
 
 
-def serialize_folder(name, account_id, list_id=None):
-    return {
+def serialize_folder(name, account_id, parent_id=None, list_id=None):
+    retval = {
         'name': name,
         'provider_account_id': account_id,
         'provider_list_id': list_id,
     }
+    if parent_id:
+        retval['parent_list_id'] = parent_id
+
+    return retval
 
 
 class AddonMendeleyUserSettings(AddonUserSettingsBase):
@@ -183,6 +187,7 @@ class Mendeley(ExternalProvider):
                 each.name,
                 account_id=self.account.provider_id,
                 list_id=each.json['id'],
+                parent_id=each.json.get('parent_id'),
             )
             for each in folders
         ]

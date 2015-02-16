@@ -93,6 +93,43 @@ def mendeley_widget(node_addon, project, node, pid, auth):
 
 @must_be_contributor_or_public
 @must_have_addon('mendeley', 'node')
-def mendeley_citation_list(node_addon, project, node, pid, auth):
-    citations = node_addon.api.get_list(node_addon.mendeley_list_id)
-    return {each['id']: each for each in citations}
+def mendeley_citation_list(node_addon, project, node, pid, auth, mendeley_list_id=None):
+
+    attached_list_id = node_addon.mendeley_list_id
+    list_id = mendeley_list_id or attached_list_id
+
+    account_folders = node_addon.api.citation_lists
+
+    # verify this list is the attached list or its descendant
+    if list_id != attached_list_id and attached_list_id is not None:
+        folders = {
+            each['provider_list_id']: each
+            for each in account_folders
+        }
+        ancestor_id = folders[list_id].get('parent_list_id')
+
+        while ancestor_id != attached_list_id:
+            if ancestor_id is None:
+                raise HTTPError(http.FORBIDDEN)
+            ancestor_id = folders[ancestor_id].get('parent_list_id')
+
+    child_lists = [
+        {
+            'data': each,
+            'kind': 'folder',
+        }
+        for each in account_folders
+        if each.get('parent_list_id') == list_id
+    ]
+
+    citations = [
+        {
+            'csl': each,
+            'kind': 'item',
+        }
+        for each in node_addon.api.get_list(list_id)
+    ]
+
+    return {
+        'contents': child_lists + citations
+    }

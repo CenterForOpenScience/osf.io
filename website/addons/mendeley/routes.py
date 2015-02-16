@@ -59,6 +59,8 @@ api_routes = {
             [
                 '/project/<pid>/mendeley/citations/',
                 '/project/<pid>/node/<nid>/mendeley/citations/',
+                '/project/<pid>/mendeley/citations/<mendeley_list_id>/',
+                '/project/<pid>/node/<nid>/mendeley/citations/<mendeley_list_id>/',
             ],
             'get',
             views.mendeley_citation_list,
