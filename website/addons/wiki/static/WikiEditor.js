@@ -6,7 +6,8 @@ var Raven = require('raven-js');
 var Markdown = require('pagedown-ace-converter');
 Markdown.getSanitizingConverter = require('pagedown-ace-sanitizer').getSanitizingConverter;
 require('imports?Markdown=pagedown-ace-converter!pagedown-ace-editor');
-var md = require('markdown');
+var md = require('markdown').full;
+var md_quick = require('markdown').quick;
 var mathrender = require('mathrender');
 
 var editor;
@@ -164,6 +165,9 @@ function WikiEditor(selector, url) {
     var previewElement = $('#markdown-it-preview');
     var renderTimeout;
     editor.on('change', function() {
+        // Quick render
+        previewElement.html(md_quick.render(editor.getValue()));
+        // Full render
         clearTimeout(renderTimeout);
         renderTimeout = setTimeout(function() {
             previewElement.html(md.render(editor.getValue()));

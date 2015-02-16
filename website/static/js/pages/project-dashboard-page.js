@@ -24,7 +24,7 @@ var mathrender = require('mathrender');
 mathrender.mathjaxify('#addonWikiWidget');
 
 
-var md = require('markdown');
+var md = require('markdown').full;
 require('truncate');
 
 var ctx = window.contextVars;

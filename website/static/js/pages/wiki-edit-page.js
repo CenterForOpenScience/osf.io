@@ -3,7 +3,7 @@ var Raven = require('raven-js');
 var $osf = require('osfHelpers');
 require('bootstrap-editable');
 require('osf-panel');
-var md = require('markdown');
+var md = require('markdown').full;
 var mathrender = require('mathrender');
 var wikEdDiff = require('wik-ed-diff');
 

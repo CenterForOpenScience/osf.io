@@ -31,5 +31,7 @@ var markdown_quick = new MarkdownIt(('commonmark'), {
     .use(require('markdown-it-sanitizer'))
     .disable('image');
 
-module.exports = markdown;
-module.exports = markdown_quick;
+module.exports = {
+    full: markdown,
+    quick: markdown_quick
+};
