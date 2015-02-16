@@ -195,14 +195,14 @@ class FormDataStream(MultiStream):
         >>> stream.add_field('key1', 'value1')
         >>> stream.add_file('file', FileStream(...), mime='text/plain')
     Additional options for files can be passed as a tuple ordered as:
-        >>> FormDataStream(fileName=(FileStream(...), 'fieldName', 'Mime', 'encoding'))
+        >>> FormDataStream(fieldName=(FileStream(...), 'fileName', 'Mime', 'encoding'))
 
     Auto generates boundarys and properly concatenates them
     Use FormDataStream.headers to get the proper headers to be included with requests
     Namely Content-Length, Content-Type
     """
     FORM_DATA_HEADER = 'Content-Disposition: form-data; name="{}"\r\n\r\n'
-    FILE_HEADER = 'Content-Disposition: file; {}filename="{}"\r\nContent-Type: {}\r\nContent-Transfer-Encoding: {}\r\n\r\n'
+    FILE_HEADER = 'Content-Disposition: file; name="{}"{}\r\nContent-Type: {}\r\nContent-Transfer-Encoding: {}\r\n\r\n'
 
     @classmethod
     def make_boundary(self):
@@ -253,15 +253,15 @@ class FormDataStream(MultiStream):
                 self.cycle()
             self.can_add_more = False
             self.streams.append(self.end_boundary)
-            self.size = sum([x.size for x in self.streams])
+            self.size = sum([int(x.size) for x in self.streams])
 
-    def add_file(self, file_name, file_stream, field_name=None, mime='application/octet-stream', transcoding='binary'):
+    def add_file(self, field_name, file_stream, file_name=None, mime='application/octet-stream', transcoding='binary'):
         assert self.can_add_more, 'Cannot add more fields after calling finalize or read'
 
-        if field_name:
-            field_name = 'name="{}"; '.format(field_name)
+        if file_name:
+            file_name = '; filename="{}"'.format(file_name)
         else:
-            field_name = ''
+            file_name = ''
 
         self.streams.extend([
             self._make_boundary_stream(),
