@@ -157,6 +157,15 @@ class Mendeley(ExternalProvider):
 
         return self._client
 
+    def _get_folders(self):
+        """Get a list of a user's folders"""
+
+        client = self.client
+
+        return client.folders.list().items
+
+
+
     @property
     def client(self):
         """An API session with Mendeley"""
@@ -169,18 +178,50 @@ class Mendeley(ExternalProvider):
             })
         return self._client
 
+    def _folder_tree(self, folder, flat_map):
+        
+        serialized = serialize_folder(folder[0].name, self.account.provider_id)
+        serialized['children'] = [self._folder_tree(flat_map[f], flat_map) for f in folder[1]]
+        serialized['kind'] = 'folder'
+        return serialized
+
+    @property
+    def citation_folder_tree(self):
+        """Nested list structure of serialized folders"""
+        
+        folders = self._get_folders()        
+        flat_map = {
+            folder.id: (folder, [])
+            for folder in folders            
+        }
+        flat_map['root'] = (None, [])
+        for folder in folders:
+            if folder.parent_id:
+                flat_map[folder.parent_id][1].append(folder.id)
+            else:
+                flat_map['root'][1].append(folder.id)
+        tree = [
+            serialize_folder(
+                'All Documents',
+                account_id=self.account.provider_id,        
+            )
+        ]
+        import pdb; pdb.set_trace()
+        tree[0]['children'] = [self._folder_tree(flat_map[f], flat_map) for f in flat_map['root'][1]]
+        tree[0]['kind'] = 'folder'
+        return tree
+        
+
     @property
     def citation_lists(self):
         """List of CitationList objects, derived from Mendeley folders"""
-        client = self.client
 
-        folders = client.folders.list().items
-
+        folders = self._get_folders()
+        
         # TODO: Verify OAuth access to each folder
-
         all_documents = serialize_folder(
             'All Documents',
-            account_id=self.account.provider_id,
+            account_id=self.account.provider_id,        
         )
         serialized_folders = [
             serialize_folder(
@@ -210,6 +251,7 @@ class Mendeley(ExternalProvider):
         )
 
     def _citations_for_mendeley_user(self):
+        import pdb; pdb.set_trace()
         return (
             self._citation_for_mendeley_document(document)
             for document in self.client.documents.list().items
