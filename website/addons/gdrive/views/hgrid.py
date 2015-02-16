@@ -136,6 +136,6 @@ def gdrive_addon_folder(node_settings, auth, **kwargs):
         permissions=auth,
         nodeUrl=node.url,
         nodeApiUrl=node.api_url,
-        path='/{0}/{1}'.format(path['id'], path['path'])
+        path='/{0}/{1}/{2}'.format(path['id'],node_settings.folder['name'], path['path'])
     )
     return [root]

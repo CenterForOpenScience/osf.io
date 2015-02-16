@@ -59,7 +59,7 @@ def drive_oauth_finish(auth, **kwargs):
     credentials = flow.step2_exchange(code)
     http_service = httplib2.Http()
     http_service = credentials.authorize(http_service)
-    import pdb; pdb.set_trace()
+
     user_settings.access_token = credentials.access_token
     user_settings.save()
     if node_settings:
