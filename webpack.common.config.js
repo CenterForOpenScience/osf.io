@@ -116,7 +116,8 @@ var resolve = {
         'addonPermissions': staticPath('js/addonPermissions.js'),
         'navbar-control': staticPath('js/navbarControl.js'),
         'osf-panel': staticPath('vendor/bower_components/osf-panel/dist/jquery-osfPanel.js'),
-        'markdown': staticPath('js/markdown.js')
+        'markdown': staticPath('js/markdown.js'),
+        'wik-ed-diff': staticPath('vendor/bower_components/wik-ed-diff/wikEdDiff.js')
     }
 };
 

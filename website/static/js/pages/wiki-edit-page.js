@@ -8,6 +8,7 @@ require('ace-noconflict');
 require('ace-mode-markdown');
 require('ace-ext-language_tools');
 require('addons/wiki/static/ace-markdown-snippets.js');
+var diff = require('wik-ed-diff')();
 
 var ShareJSDoc = require('addons/wiki/static/ShareJSDoc.js');
 
