@@ -23,12 +23,10 @@ def notify(uid, event, **context):
         except NoResultsFound:
             break
 
-        subscribed_users = []
         try:
             subscribed_users = getattr(subscription, notification_type)
-        # TODO: handle this error
         except AttributeError:
-            pass
+            subscribed_users = []
 
         for u in subscribed_users:
             direct_subscribers.append(u)
@@ -50,11 +48,10 @@ def check_parent(uid, event, direct_subscribers, **context):
                 return
 
             for notification_type in notifications.keys():
-                subscribed_users = []
                 try:
                     subscribed_users = getattr(subscription, notification_type)
                 except AttributeError:
-                    pass
+                    subscribed_users = []
 
                 for u in subscribed_users:
                     if u not in direct_subscribers:
