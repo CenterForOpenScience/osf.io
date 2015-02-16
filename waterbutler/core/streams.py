@@ -161,6 +161,7 @@ class MultiStream(asyncio.StreamReader):
     """Concatenate a series of `StreamReader` objects into a single stream.
     Reads from the current stream until exhausted, then continues to the next,
     etc. Used to build streaming form data for Figshare uploads.
+    Originally written by @jmcarp
     """
     def __init__(self, *streams):
         self.streams = list(streams)
