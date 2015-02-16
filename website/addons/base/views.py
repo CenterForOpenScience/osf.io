@@ -272,7 +272,7 @@ def addon_view_or_download_file_legacy(**kwargs):
 @must_be_contributor_or_public
 def addon_view_or_download_file(auth, path, provider, **kwargs):
     extras = request.args.to_dict()
-    action = extras.pop('action', 'view')
+    action = extras.get('action', 'view')
     node = kwargs.get('node') or kwargs['project']
 
     node_addon = node.get_addon(provider)
@@ -323,7 +323,7 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
         'render_url': render_url,
         'file_path': file_guid.waterbutler_path,
         'files_url': node.web_url_for('collect_file_trees'),
-        'rendered': get_or_start_render(file_guid, extras),
+        'rendered': get_or_start_render(file_guid),
         # Note: must be called after get_or_start_render. This is really only for github
         'extra': json.dumps(getattr(file_guid, 'extra', {})),
         #NOTE: get_or_start_render must be called first to populate name
