@@ -51,7 +51,7 @@ def _push_archive_complete(self, version_id, callback_url, metadata):
         data = signing.sign_data(
             signer,
             {
-                'version_id': version_id,
+                'version': version_id,
                 'metadata': metadata,
             },
         )
@@ -63,8 +63,9 @@ def _push_archive_complete(self, version_id, callback_url, metadata):
         )
         loop = asyncio.get_event_loop()
         response = loop.run_until_complete(future)
+
         if response.status != http.client.OK:
-            raise Exception
+            raise Exception('Failed to report archive completion, got status code {}'.format(response.status))
 
 
 @async_retry(retries=5, backoff=5)
