@@ -243,8 +243,10 @@ def addon_view_or_download_file_legacy(**kwargs):
 
     if 'osffiles' in request.path:
         provider = 'osfstorage'
-    else:
+    elif 'provider' in kwargs:
         provider = kwargs['provider']
+    else:
+        provider = 'osfstorage'
 
     if 'download' in request.path:
         action = 'download'
