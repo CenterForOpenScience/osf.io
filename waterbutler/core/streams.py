@@ -197,7 +197,7 @@ class FormDataStream(MultiStream):
     Additional options for files can be passed as a tuple ordered as:
         >>> FormDataStream(fieldName=(FileStream(...), 'fileName', 'Mime', 'encoding'))
 
-    Auto generates boundarys and properly concatenates them
+    Auto generates boundaries and properly concatenates them
     Use FormDataStream.headers to get the proper headers to be included with requests
     Namely Content-Length, Content-Type
     """
