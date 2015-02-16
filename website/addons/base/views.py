@@ -236,17 +236,13 @@ def addon_view_or_download_file_legacy(**kwargs):
     query_params = request.args.to_dict()
     node = kwargs.get('node') or kwargs['project']
 
+    action = query_params.pop('action', 'view')
+    provider = kwargs.get('provider', 'osfstorage')
+
     if kwargs.get('path'):
         path = kwargs['path']
     elif kwargs.get('fid'):
         path = kwargs['fid']
-
-    if 'osffiles' in request.path:
-        provider = 'osfstorage'
-    else:
-        provider = kwargs['provider']
-
-    action = query_params.pop('action', 'view')
 
     if 'download' in request.path or request.path.startswith('/api/v1/'):
         action = 'download'
