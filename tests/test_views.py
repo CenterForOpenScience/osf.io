@@ -3146,6 +3146,63 @@ class TestComments(OsfTestCase):
         }, auth=self.user.auth)
         assert_equal(res.json.get('nUnread'), 0)
 
+    def test_n_unread_comments_updates_when_comment_is_added_files(self):
+        path = 'gingertea.txt'
+        self._add_comment_files(
+            self.project,
+            content='Ginger tea rocks',
+            path=path,
+            provider='osfstorage',
+            auth=self.project.creator.auth
+        )
+        self.project.reload()
+
+        addon = self.project.get_addon('osfstorage')
+        guid, _ = addon.find_or_create_file_guid('/' + path)
+
+        url = self.project.api_url_for('list_comments')
+        res = self.app.get(url, {
+            'page': 'files',
+            'rootId': guid._id
+        }, auth=self.user.auth)
+        assert_equal(res.json.get('nUnread'), 1)
+
+        url_timestamp = self.project.api_url_for('update_comments_timestamp')
+        res = self.app.put_json(url_timestamp, {
+            'page': 'files',
+            'rootId': guid._id
+        }, auth=self.user.auth)
+        self.user.reload()
+
+        res = self.app.get(url, {
+            'page': 'node',
+            'rootId': guid._id
+        }, auth=self.user.auth)
+        assert_equal(res.json.get('nUnread'), 0)
+
+    def test_n_unread_comments_updates_when_comment_is_added_wiki(self):
+        self._add_comment_wiki(self.project, 'hello world', 'home', auth=self.project.creator.auth)
+
+        url = self.project.api_url_for('list_comments')
+        res = self.app.get(url, {
+            'page': 'wiki',
+            'rootId': 'home'
+        }, auth=self.user.auth)
+        assert_equal(res.json.get('nUnread'), 1)
+
+        url_timestamp = self.project.api_url_for('update_comments_timestamp')
+        res = self.app.put_json(url_timestamp, {
+            'page': 'wiki',
+            'rootId': 'home'
+        }, auth=self.user.auth)
+        self.user.reload()
+
+        res = self.app.get(url, {
+            'page': 'wiki',
+            'rootId': 'home'
+        }, auth=self.user.auth)
+        assert_equal(res.json.get('nUnread'), 0)
+
     def test_n_unread_comments_updates_when_comment_reply(self):
         comment = CommentFactory(node=self.project, user=self.project.creator, page='node')
         reply = CommentFactory(node=self.project, user=self.user, target=comment, page='node')
