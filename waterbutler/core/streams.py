@@ -268,25 +268,3 @@ class StringStream(asyncio.StreamReader):
         self.size = len(data)
 
         self.feed_eof()
-
-
-def make_headers(**options):
-    fields = '; '.join('{0}="{1}"'.format(key, value) for key, value in options.items())
-    return 'Content-Disposition: form-data; {0}\r\n\r\n'.format(fields).encode('utf-8')
-
-
-def make_upload_data(stream, **options):
-    """Prepare upload form data stream for Figshare. Wraps input stream in form
-    data boundary streams.
-
-    :returns: Tuple of (<stream>, <boundary>, <size>)
-    """
-    boundary = make_boundary()
-    boundaries = make_boundary_streams(boundary, **options)
-    outstream = MultiStream(
-        boundaries[0][0],
-        stream,
-        boundaries[1][0],
-    )
-    size = boundaries[0][1] + int(stream.size) + boundaries[1][1]
-    return outstream, boundary, size
