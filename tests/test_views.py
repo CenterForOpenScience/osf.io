@@ -2652,8 +2652,8 @@ class TestComments(OsfTestCase):
                 'content': content,
                 'isPublic': 'public',
                 'page': 'wiki',
-                'target': 'home',
-                'root_title': 'home',
+                'target': name,
+                'root_title': name,
             },
             **kwargs
         )
@@ -3092,12 +3092,34 @@ class TestComments(OsfTestCase):
         assert_not_in(self.project._id, self.non_contributor.comments_viewed_timestamp)
 
     def test_view_comments_updates_user_comments_view_timestamp_wiki(self):
-        # todo
-        pass
+        self.project.update_node_wiki(name='home', content='a wiki page', auth=Auth(self.project.creator))
+        url = self.project.api_url_for('update_comments_timestamp')
+        res = self.app.put_json(url, {
+            'page': 'wiki',
+            'rootId': 'home'
+        }, auth=self.user.auth)
+        self.user.reload()
+
+        user_timestamp = self.user.comments_viewed_timestamp[self.project._id]['wiki']['home']
+        view_timestamp = dt.datetime.utcnow()
+        assert_datetime_equal(user_timestamp, view_timestamp)
 
     def test_view_comments_updates_user_comments_view_timestamp_files(self):
-        # todo
-        pass
+        path = 'skittles.txt'
+        self._add_comment_files(self.project, 'Red orange yellow skittles', path, 'osfstorage', auth=self.project.creator.auth)
+        addon = self.project.get_addon('osfstorage')
+        guid, _ = addon.find_or_create_file_guid('/' + path)
+
+        url = self.project.api_url_for('update_comments_timestamp')
+        res = self.app.put_json(url, {
+            'page': 'files',
+            'rootId': guid._id
+        }, auth=self.user.auth)
+        self.user.reload()
+
+        user_timestamp = self.user.comments_viewed_timestamp[self.project._id]['files'][guid._id]
+        view_timestamp = dt.datetime.utcnow()
+        assert_datetime_equal(user_timestamp, view_timestamp)
 
     def test_n_unread_comments_updates_when_comment_is_added(self):
         self._add_comment(self.project, auth=self.project.creator.auth)
@@ -3188,32 +3210,30 @@ class TestComments(OsfTestCase):
 
     def test_n_unread_comments_total(self):
 
-        user1 = AuthUserFactory()
-        user2 = AuthUserFactory()
-
         self._add_comment_files(self.project, auth=self.project.creator.auth)
 
-        self.project.add_contributor(user1, permissions='write', auth=Auth(self.project.creator))
-
-        self._add_comment(self.project, auth=user1.auth)
-        self._add_comment_wiki(self.project, content='yellow', name='Cold play', auth=Auth(user1))
+        self._add_comment(self.project, auth=self.project.creator.auth)
+        self._add_comment_wiki(
+            self.project,
+            content='yellow',
+            name='Cold play',
+            auth=self.project.creator.auth
+        )
         self._add_comment_files(
             self.project,
             content=None,
             path=None,
             provider='github',
-            auth=self.user1.auth
+            auth=self.project.creator.auth
         )
 
-        self.project.add_contributor(user2, permissions='write', auth=Auth(self.project.creator))
-
-        self._add_comment_wiki(self.project, auth=Auth(user2))
+        self._add_comment_wiki(self.project, auth=self.project.creator.auth)
         self._add_comment_files(
             self.project,
             content='I failed my test',
             path='transcript.pdf',
             provider='dropbox',
-            auth=self.user2.auth
+            auth=self.project.creator.auth
         )
 
         res = _view_project(self.project, auth=Auth(user=self.user))['user']['unread_comments']
