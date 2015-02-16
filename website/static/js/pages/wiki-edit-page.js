@@ -4,6 +4,7 @@ var $osf = require('osfHelpers');
 require('bootstrap-editable');
 require('osf-panel');
 var md = require('markdown');
+var mathrender = require('mathrender');
 
 var ctx = window.contextVars.wiki;  // mako context variables
 
@@ -25,7 +26,12 @@ if (ctx.canEdit) {
 }
 
 var versions = {};  // Cache fetched wiki versions
-var currentWiki = '';
+
+// Set wiki content and mathjaxify
+var setWikiViewContent = function(content) {
+    markdownElement.html(content);
+    mathrender.mathjaxify(markdownElement);
+};
 
 // Render the raw markdown of the wiki
 if (!ctx.usePythonRender) {
@@ -34,8 +40,8 @@ if (!ctx.usePythonRender) {
     });
     request.done(function(resp) {
         var rawText = resp.wiki_content || '*No wiki content*';
-        currentWiki = md.render(rawText);
-        markdownElement.html(currentWiki);
+        versions['current'] = md.render(rawText);
+        setWikiViewContent(versions['current']);
     });
 }
 
@@ -46,23 +52,22 @@ selectElement.change(function() {
     versionElement.toggle(!preview);
     if (!preview) {
         var version = this.value;
-        if (version === 'current') {
-            markdownElement.html(currentWiki);
-        } else if (version in versions) {
-            markdownElement.html(versions[version]);
-        } else {
+        if (version in versions) {
+            setWikiViewContent(versions[version]);
+        } else if (version !== 'current') {
             var request = $.ajax({
                 url: ctx.urls.content + this.value
             });
             request.done(function(resp) {
-                var wikiText;
                 if (resp.wiki_rendered) {
-                    wikiText = resp.wiki_rendered;
+                    // Use prerendered python, if provided. Don't mathjaxify
+                    markdownElement.html(resp.wiki_rendered);
                 } else {
-                    var rawText = resp.wiki_content;
-                    wikiText = md.render(rawText);
+                    // Render raw markdown
+                    var wikiText = md.render(resp.wiki_content);
+                    setWikiViewContent(wikiText);
                 }
-                markdownElement.html(wikiText);
+                // Cache rendered markdown
                 versions[version] = wikiText;
             });
         }
