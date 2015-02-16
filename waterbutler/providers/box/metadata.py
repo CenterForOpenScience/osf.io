@@ -1,5 +1,3 @@
-import os
-
 from waterbutler.core import metadata
 
 
@@ -7,7 +5,6 @@ class BaseBoxMetadata(metadata.BaseMetadata):
 
     def __init__(self, raw, folder):
         super().__init__(raw)
-        self._folder = folder
 
     @property
     def provider(self):
@@ -41,24 +38,15 @@ class BoxFileMetadata(BaseBoxMetadata, metadata.BaseFileMetadata):
 
     @property
     def size(self):
-        try:
-            return self.raw['size']
-        except KeyError:
-            return None
+        return self.raw.get('size')
 
     @property
     def modified(self):
-        try:
-            return self.raw['modified_at']
-        except KeyError:
-            return None 
+        return self.raw.get('modified_at')
 
     @property
     def parent(self):
-        try:
-            return self.raw['parent']['id']
-        except KeyError:
-            return None 
+        return self.raw.get('parent').get('id')
 
     @property
     def folder(self):
@@ -69,15 +57,11 @@ class BoxFileMetadata(BaseBoxMetadata, metadata.BaseFileMetadata):
         return self.raw['type']
 
 
-# TODO dates!
-class BoxRevision(BaseBoxMetadata, metadata.BaseFileRevisionMetadata):
+class BoxRevision(metadata.BaseFileRevisionMetadata):
 
     @property
     def size(self):
-        try:
-            return self.raw['size']
-        except KeyError:
-            return None
+        return self.raw.get('size')
 
     @property
     def kind(self):
@@ -89,14 +73,15 @@ class BoxRevision(BaseBoxMetadata, metadata.BaseFileRevisionMetadata):
 
     @property
     def version(self):
-        return self.raw['revision']
-
-    @property
-    def version_identifier(self):
+        #return self.raw['revision']
         try:
             return self.raw['id']
         except KeyError:
             return self.raw['path'].split('/')[1]
+
+    @property
+    def version_identifier(self):
+        return 'revision'
 
     @property
     def path(self):
@@ -110,7 +95,7 @@ class BoxRevision(BaseBoxMetadata, metadata.BaseFileRevisionMetadata):
         try:
             return self.raw['modified_at']
         except KeyError:
-            return seld.raw['modified']
+            return self.raw['modified']
 
     @property
     def revision(self):
