@@ -5,6 +5,7 @@ require('bootstrap-editable');
 require('osf-panel');
 var md = require('markdown');
 var mathrender = require('mathrender');
+var wikEdDiff = require('wik-ed-diff');
 
 var ctx = window.contextVars.wiki;  // mako context variables
 
@@ -12,7 +13,7 @@ var selectElement = $('#viewSelect');
 var previewElement = $('#viewPreview');
 var versionElement = $('#viewVersion');
 var markdownElement = $('#markdown-it-render');
-var diff = require('wik-ed-diff')();
+
 
 // Collaborative editor
 if (ctx.canEdit) {
