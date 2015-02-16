@@ -227,7 +227,7 @@ class FormDataStream(MultiStream):
 
     @property
     def end_boundary(self):
-        return StringStream('--{}--\r\n'.format(self.boundary))
+        return StringStream('--{}--'.format(self.boundary))
 
     @property
     def headers(self):
