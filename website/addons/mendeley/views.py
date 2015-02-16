@@ -8,13 +8,14 @@ from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
-from website.utils import api_url_for
+from website.util import api_url_for, web_url_for
 
 from . import utils
 from .model import Mendeley
 
 def serialize_urls(node_settings):
     
+    node = node_settings.owner
     return {
         'config': node.api_url_for('mendeley_set_config'),
         'deauthorize': api_url_for('oauth_disconnect', 
@@ -27,20 +28,21 @@ def serialize_urls(node_settings):
         'settings': web_url_for('user_addons')
     }
 
-def serialize_settings(node_settings, current_user, client=None):
+def serialize_settings(node_settings, current_user):
     
     node_account = node_settings.external_account
     user_accounts = [account for account in current_user.external_accounts 
                      if account.provider == 'mendeley']
 
-    user_is_owner = node_account.provider_id in [account.id for account in user_accounts]
+    user_is_owner = node_account.provider_id in [account.provider_id for account in user_accounts]
     user_has_auth = True if len(user_accounts) else False
+    user_settings = node_settings.associated_user_settings[0]
 
     result = {        
         'nodeHasAuth': node_settings.has_auth,
         'userIsOwner': user_is_owner,
         'userHasAuth': user_has_auth,
-        'validCredentials': node_settings.verify_oauth_access,
+        'validCredentials': node_settings.verify_oauth_access(node_account, node_settings.mendeley_list_id),
         'urls': serialize_urls(node_settings),
     }
     result['urls']['owner'] = web_url_for('profile_view_id',
@@ -83,7 +85,9 @@ def list_citationlists_node(pid, account_id, auth, node, project, node_addon):
 @must_have_permission('write')
 @must_have_addon('mendeley', 'node')
 def mendeley_get_config(auth, node_addon, **kwargs):
-    return node_addon.to_json(auth.user)
+    result = node_addon.to_json(auth.user)
+    result.update(serialize_settings(node_addon, auth.user))
+    return result
 
 
 @must_have_permission('write')
