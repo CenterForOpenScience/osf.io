@@ -73,19 +73,20 @@
                                   </div>
                               </div>
                               <div id="wmd-button-bar"></div>
-
-                              <div class="progress" style="margin-bottom: 5px">
-                                  <div role="progressbar"
-                                       data-bind="attr: progressBar"
-                                          >
-                                      <span data-bind="text: statusDisplay"></span>
-                                      <a class="sharejs-info-btn">
-                                          <i class="icon-question-sign icon-large"
-                                             data-toggle="modal"
-                                             data-bind="attr: {data-target: modalTarget}"
-                                                  >
-                                          </i>
-                                      </a>
+                              <div data-bind="fadeVisible: throttledStatus() !== 'connected'" style="display: none">
+                                  <div class="progress" style="margin-bottom: 5px">
+                                      <div role="progressbar"
+                                           data-bind="attr: progressBar"
+                                              >
+                                          <span data-bind="text: statusDisplay"></span>
+                                          <a class="sharejs-info-btn">
+                                              <i class="icon-question-sign icon-large"
+                                                 data-toggle="modal"
+                                                 data-bind="attr: {data-target: modalTarget}"
+                                                      >
+                                              </i>
+                                          </a>
+                                      </div>
                                   </div>
                               </div>
 

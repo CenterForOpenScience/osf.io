@@ -155,7 +155,7 @@ function ViewModel(url) {
         $('*[data-osf-panel]').osfPanel({
             buttonElement : '.switch',
             onSize : 'md',
-            'onclick' : function () { console.log(editor); editor.resize(); }
+            'onclick' : function () { editor.resize(); }
         });
 
         var panelToggle = $('.panel-toggle'),
