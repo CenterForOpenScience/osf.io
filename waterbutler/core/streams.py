@@ -238,7 +238,7 @@ class FormDataStream(MultiStream):
 
         return {
             'Content-Length': str(self.size),
-            'Content-Type': 'multipart/form-data, boundry={}'.format(self.boundary)
+            'Content-Type': 'multipart/form-data; boundary={}'.format(self.boundary)
         }
 
     @asyncio.coroutine
