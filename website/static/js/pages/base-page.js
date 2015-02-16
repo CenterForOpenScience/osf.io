@@ -54,25 +54,13 @@ var SlideInViewModel = function (){
         } catch (e) {
             $.cookie('slide', '0', { expires: 1, path: '/'});
         }
+        self.trackClick('Dismiss');
+    };
+    // Google Analytics click event tracking
+    self.trackClick = function(source) {
+        ga('send', 'event', 'button', 'click', source);
     };
 };
-var NO_FOOTER_PATHS = ['/login/', '/getting-started/', '/register/'];
-if ($(sliderSelector).length > 0 &&
-        $.inArray(window.location.pathname, NO_FOOTER_PATHS) === -1) {
-    $osf.applyBindings(new SlideInViewModel(), sliderSelector);
-
-    // Click event bindings for Google Analytics
-    $('#footerSlideInLoginBtn').on('click', function() {
-        ga('send', 'event', 'button', 'click', 'slidein-nav-create-account');
-    });
-    $('#footerSlideInLearnMoreBtn').on('click', function() {
-        ga('send', 'event', 'button', 'click', 'slidein-nav-learn-more');
-    });
-    $('#footerSlideInDismissBtn, #footerSlideInCloseBtn').on('click', function() {
-        ga('send', 'event', 'button', 'click', 'slidein-nav-dismiss');
-    });
-}
-
 
 $(document).on('click', '.project-toggle', function() {
     var widget = $(this).closest('.addon-widget-container');
@@ -89,6 +77,11 @@ $(document).on('click', '.project-toggle', function() {
     return false;
 });
 
+var NO_FOOTER_PATHS = ['/login/', '/getting-started/', '/register/'];
 $(function() {
+    if ($(sliderSelector).length > 0 &&
+            $.inArray(window.location.pathname, NO_FOOTER_PATHS) === -1) {
+        $osf.applyBindings(new SlideInViewModel(), sliderSelector);
+    }
     new NavbarControl('.osf-nav-wrapper');
 });

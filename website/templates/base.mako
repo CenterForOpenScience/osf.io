@@ -84,13 +84,13 @@
                 <img class="logo" src="/static/img/circle_logo.png"></img>
             </div>
             <div class='col-sm-10 col-xs-12'>
-                <a id="footerSlideInCloseBtn" data-bind="click: dismiss" class="close" href="#">&times;</a>
+                <a data-bind="click: dismiss" class="close" href="#">&times;</a>
                 <h1>Start managing your projects on the OSF today.</h1>
                 <p>Free and easy to use, the Open Science Framework supports the entire research lifecycle: planning, execution, reporting, archiving, and discovery.</p>
                 <div>
-                    <a id="footerSlideInLoginBtn" class="btn btn-primary" href="/login/">Create an Account</a>
-                    <a id="footerSlideInLearnMoreBtn" class="btn btn-primary" href="/getting-started/">Learn More</a>
-                    <a id="footerSlideInDismissBtn" data-bind="click: dismiss">Hide this message</a>
+                    <a data-bind="click: trackClick.bind($data, 'Create Account')" class="btn btn-primary" href="/login/">Create an Account</a>
+                    <a data-bind="click: trackClick.bind($data, 'Learn More')" class="btn btn-primary" href="/getting-started/">Learn More</a>
+                    <a data-bind="click: dismiss" >Hide this message</a>
                 </div>
             </div>
         </div>
