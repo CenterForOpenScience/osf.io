@@ -8,10 +8,47 @@ from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
+from website.utils import api_url_for
 
 from . import utils
 from .model import Mendeley
 
+def serialize_urls(node_settings):
+    
+    return {
+        'config': node.api_url_for('mendeley_set_config'),
+        'deauthorize': api_url_for('oauth_disconnect', 
+                                   external_account_id=node_settings.external_account.provider_id),
+        'auth': api_url_for('oauth_connect', 
+                            service_name='mendeley'),
+        # Endpoint for fetching only folders (including root)
+        'folders': node.api_url_for('mendeley_citation_list', 
+                                    mendeley_list_id=node_settings.mendeley_list_id),
+        'settings': web_url_for('user_addons')
+    }
+
+def serialize_settings(node_settings, current_user, client=None):
+    
+    node_account = node_settings.external_account
+    user_accounts = [account for account in current_user.external_accounts 
+                     if account.provider == 'mendeley']
+
+    user_is_owner = node_account.provider_id in [account.id for account in user_accounts]
+    user_has_auth = True if len(user_accounts) else False
+
+    result = {        
+        'nodeHasAuth': node_settings.has_auth,
+        'userIsOwner': user_is_owner,
+        'userHasAuth': user_has_auth,
+        'validCredentials': node_settings.verify_oauth_access,
+        'urls': serialize_urls(node_settings),
+    }
+    result['urls']['owner'] = web_url_for('profile_view_id',
+                                          uid=user_settings.owner._primary_key)
+    result['ownerName'] = user_settings.owner.fullname
+    # TODO cache folder name (model.py)
+    result['folder'] = node_settings.mendeley_list_id
+    return result
 
 @must_have_addon('mendeley', 'user')
 def list_mendeley_accounts_user(auth, user_addon):

@@ -64,6 +64,10 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
             self._api.account = self.external_account
         return self._api
 
+    @property
+    def has_auth(self):
+        return True if (self.external_account) else False        
+
     def grant_oauth_access(self, user, external_account, metadata=None):
         """Grant OAuth access, updates metadata on user settings
         :param User user:
