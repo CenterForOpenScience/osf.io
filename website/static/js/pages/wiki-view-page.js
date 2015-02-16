@@ -9,6 +9,11 @@ var $osf = require('osfHelpers');
 require('bootstrap-editable');
 var md = require('markdown');
 
+var mathrender = require('mathrender');
+
+// Typeset math on the page
+mathrender.mathjaxify('#wikiContent');
+
 var ctx = window.contextVars;  // mako context variables
 
 // Render the raw markdown of the wiki

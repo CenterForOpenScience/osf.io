@@ -4,6 +4,7 @@ var $osf = require('osfHelpers');
 require('bootstrap-editable');
 require('osf-panel');
 var md = require('markdown');
+var mathrender = require('mathrender');
 
 var ctx = window.contextVars.wiki;  // mako context variables
 
@@ -35,6 +36,7 @@ if (!ctx.usePythonRender) {
         var rawText = resp.wiki_content || '*No wiki content*';
         currentWiki = md.render(rawText);
         markdownElement.html(currentWiki);
+        mathrender.mathjaxify(markdownElement);
     });
 }
 
@@ -47,8 +49,10 @@ selectElement.change(function() {
         var version = this.value;
         if (version === 'current') {
             markdownElement.html(currentWiki);
+            mathrender.mathjaxify(markdownElement);
         } else if (version in versions) {
             markdownElement.html(versions[version]);
+            mathrender.mathjaxify(markdownElement);
         } else {
             var request = $.ajax({
                 url: ctx.urls.content + this.value
@@ -57,11 +61,13 @@ selectElement.change(function() {
                 var wikiText;
                 if (resp.wiki_rendered) {
                     wikiText = resp.wiki_rendered;
+                    markdownElement.html(wikiText);
                 } else {
                     var rawText = resp.wiki_content;
                     wikiText = md.render(rawText);
+                    markdownElement.html(wikiText);
+                    mathrender.mathjaxify(markdownElement);
                 }
-                markdownElement.html(wikiText);
                 versions[version] = wikiText;
             });
         }

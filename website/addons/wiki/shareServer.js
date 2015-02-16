@@ -11,7 +11,7 @@ var morgan = require('morgan');
 var async = require('async');
 
 var settings = {
-    debug: process.env.SHAREJS_DEBUG ? Boolean(process.env.SHAREJS_DEBUG) : true,
+    debug: process.env.SHAREJS_DEBUG ? process.env.SHAREJS_DEBUG === 'true' : true,
     // Server Options
     host: process.env.SHAREJS_SERVER_HOST || 'localhost',
     port: process.env.SHAREJS_SERVER_PORT || 7007,

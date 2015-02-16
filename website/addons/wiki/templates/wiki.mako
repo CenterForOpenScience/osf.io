@@ -21,12 +21,14 @@
         </div>
     </div>
     <div class="col-sm-9 col-md-8">
-        % if not page and wiki_name != 'home':
-            <p><i>This wiki page does not currently exist. Would you like to
-                <a href="edit/">create it</a>?</i></p>
-        % else:
-            <div id="markdown-it-render">${wiki_content | n}</div>
-        % endif
+        <div id="wikiContent">
+            % if not page and wiki_name != 'home':
+                <p><i>This wiki page does not currently exist. Would you like to
+                    <a href="edit/">create it</a>?</i></p>
+            % else:
+                <div id="markdown-it-render">${wiki_content | n}</div>
+            % endif
+        </div>
     </div>
 </div>
 

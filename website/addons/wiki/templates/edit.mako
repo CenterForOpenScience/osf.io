@@ -75,7 +75,7 @@
                                   </div>
                               </div>
                               <div id="wmd-button-bar"></div>
-                              <div data-bind="fadeVisible: throttledStatus() !== 'connected'" style="display: none">
+                              <div data-bind="fadeVisible: throttledStatus() !== 'connected'" class="scripted">
                                   <div class="progress" style="margin-bottom: 5px">
                                       <div role="progressbar"
                                            data-bind="attr: progressBar"

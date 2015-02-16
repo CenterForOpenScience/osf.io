@@ -1,6 +1,5 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${file_name | h}</%def>
-
     <div>
         <h2 class="break-word">
             ${file_name | h}
@@ -33,9 +32,11 @@
             <!-- /ko -->
           </ol>
 
-          <a class="btn btn-success btn-md file-download" href="{{ currentVersion().osfDownloadUrl }}" data-bind="click: currentVersion().download">
-            Download <i class="icon-download-alt"></i>
-          </a>
+          <span data-bind="if: currentVersion">
+            <a class="btn btn-success btn-md file-download" href="{{ currentVersion().osfDownloadUrl }}" data-bind="click: currentVersion().download">
+              Download <i class="icon-download-alt"></i>
+            </a>
+          </span>
 
           <span data-bind="if: editable">
             <button class="btn btn-danger btn-md file-delete" data-bind="click: askDelete">
@@ -44,7 +45,7 @@
           </span>
 
 
-          <table class="table" data-bind="if: versioningSupported">
+          <table class="table" data-bind="if: versioningSupported && revisions().length">
             <thead>
               <tr>
                 <th>Version</th>
@@ -104,29 +105,35 @@
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
-        <script type="text/javascript">
-          window.contextVars = $.extend(true, {}, window.contextVars, {
-        %if rendered is None:
-            renderURL: '${render_url | js_str}',
-        %else:
-            renderURL: undefined,
-        %endif
-            file: {
-                extra: ${extra},
-                name: '${file_name | js_str}',
-                path: '${file_path | js_str}',
-                provider: '${provider | js_str}',
-                safeName: '${file_name | h,js_str}',
-            },
-            node: {
-              urls: {
-                files: '${files_url | js_str}'
-              }
-            },
-            currentUser: {
-              canEdit: ${int(user['can_edit'])}
-            }
-          });
-        </script>
-        <script src=${"/static/public/js/view-file-page.js" | webpack_asset}></script>
+    % if 'osf.io' in domain:
+    <script>
+        // IE10 Same Origin (CORS) fix
+        document.domain = 'osf.io';
+    </script>
+    %endif
+    <script type="text/javascript">
+      window.contextVars = $.extend(true, {}, window.contextVars, {
+    %if rendered is None:
+        renderURL: '${render_url | js_str}',
+    %else:
+        renderURL: undefined,
+    %endif
+        file: {
+            extra: ${extra},
+            name: '${file_name | js_str}',
+            path: '${file_path | js_str}',
+            provider: '${provider | js_str}',
+            safeName: '${file_name | h,js_str}'
+        },
+        node: {
+          urls: {
+            files: '${files_url | js_str}'
+          }
+        },
+        currentUser: {
+          canEdit: ${int(user['can_edit'])}
+        }
+      });
+    </script>
+    <script src=${"/static/public/js/view-file-page.js" | webpack_asset}></script>
 </%def>

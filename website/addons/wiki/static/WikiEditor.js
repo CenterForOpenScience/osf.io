@@ -7,8 +7,12 @@ var Markdown = require('pagedown-ace-converter');
 Markdown.getSanitizingConverter = require('pagedown-ace-sanitizer').getSanitizingConverter;
 require('imports?Markdown=pagedown-ace-converter!pagedown-ace-editor');
 var md = require('markdown');
+var mathrender = require('mathrender');
 
 var editor;
+
+var MATHJAX_THROTTLE = 500;
+var throttledMathjaxify = $osf.throttle(mathrender.mathjaxify, MATHJAX_THROTTLE);
 
 /**
  * Binding handler that instantiates an ACE editor.
@@ -163,6 +167,7 @@ function WikiEditor(selector, url) {
         clearTimeout(renderTimeout);
         renderTimeout = setTimeout(function() {
             previewElement.html(md.render(editor.getValue()));
+            throttledMathjaxify('#markdown-it-preview');
         }, 500);
     });
 }
