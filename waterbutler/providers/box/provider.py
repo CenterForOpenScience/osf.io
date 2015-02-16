@@ -26,8 +26,6 @@ class BoxPath(utils.WaterButlerPath):
         else:
             self._id = path
 
-    def __repr__(self):
-        return "{}({!r})".format(self.__class__.__name__, self._orig_path)
 
 class BoxProvider(provider.BaseProvider):
 
@@ -66,7 +64,7 @@ class BoxProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
-        path = BoxPath(os.path.join(self.folder, path))
+        path = BoxPath('/{}{}'.format(self.folder, path))
         try:
             meta = yield from self.metadata(str(path))
         except exceptions.MetadataError:
