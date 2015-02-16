@@ -73,7 +73,6 @@ class BoxRevision(metadata.BaseFileRevisionMetadata):
 
     @property
     def version(self):
-        #return self.raw['revision']
         try:
             return self.raw['id']
         except KeyError:
@@ -92,10 +91,7 @@ class BoxRevision(metadata.BaseFileRevisionMetadata):
 
     @property
     def modified(self):
-        try:
-            return self.raw['modified_at']
-        except KeyError:
-            return self.raw['modified']
+        return self.raw.get('modified_at')
 
     @property
     def revision(self):
