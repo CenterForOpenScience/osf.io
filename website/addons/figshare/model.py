@@ -61,11 +61,11 @@ class AddonFigShareUserSettings(AddonUserSettingsBase):
         return self.oauth_access_token is not None
 
     def to_json(self, user):
-        rv = super(AddonFigShareUserSettings, self).to_json(user)
-        rv.update({
+        ret = super(AddonFigShareUserSettings, self).to_json(user)
+        ret.update({
             'authorized': self.has_auth,
         })
-        return rv
+        return ret
 
     def remove_auth(self, save=False):
         self.oauth_access_token = None
@@ -254,11 +254,11 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             )
 
     def to_json(self, user):
-        rv = super(AddonFigShareNodeSettings, self).to_json(user)
+        ret = super(AddonFigShareNodeSettings, self).to_json(user)
 
         figshare_user = user.get_addon('figshare')
 
-        rv.update({
+        ret.update({
             'figshare_id': self.figshare_id or '',
             'figshare_type': self.figshare_type or '',
             'figshare_title': self.figshare_title or '',
@@ -268,13 +268,13 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             'is_registration': self.owner.is_registration,
         })
         if self.has_auth:
-            rv.update({
+            ret.update({
                 'authorized_user': self.user_settings.owner.fullname,
                 'owner_url': self.user_settings.owner.url,
                 'is_owner': user == self.user_settings.owner
             })
 
-        return rv
+        return ret
 
     #############
     # Callbacks #
