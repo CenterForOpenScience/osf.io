@@ -231,10 +231,13 @@ class FormDataStream(MultiStream):
 
     @property
     def headers(self):
-        assert not self.can_add_more, 'Must call finalize or read before getting headers.'
+        """The headers required to make a proper multipart form request
+        Implcitly calls finalize as accessing headers will often indicate sending of the request
+        Meaning nothing else will be added to the stream"""
+        self.finalize()
 
         return {
-            'Content-Length': self.size,
+            'Content-Length': str(self.size),
             'Content-Type': 'multipart/form-data, boundry={}'.format(self.boundry)
         }
 
