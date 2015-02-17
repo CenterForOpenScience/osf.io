@@ -1,7 +1,5 @@
-/**
-*
-*/
 'use strict';
+
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
@@ -156,7 +154,6 @@ DateMixin.prototype.unserialize = function(data) {
     self.startMonth(startMonth);
     self.endMonth(endMonth);
 
-
     return self;
 };
 
@@ -191,9 +188,7 @@ TrackedMixin.prototype.restoreOriginal = function () {
     }
 };
 
-
 var BaseViewModel = function(urls, modes) {
-
     var self = this;
 
     self.urls = urls;
@@ -230,8 +225,6 @@ var BaseViewModel = function(urls, modes) {
     this.message = ko.observable();
     this.messageClass = ko.observable();
     this.showMessages = ko.observable(false);
-
-
 };
 
 BaseViewModel.prototype.changeMessage = function(text, css, timeout) {
@@ -336,20 +329,16 @@ BaseViewModel.prototype.submit = function() {
     }
 };
 
-
 var NameViewModel = function(urls, modes) {
-
     var self = this;
     BaseViewModel.call(self, urls, modes);
     TrackedMixin.call(self);
 
-    self.full = koHelpers.sanitizedObservable().extend({
-        required: true
-    });
-    self.given = koHelpers.sanitizedObservable();
-    self.middle = koHelpers.sanitizedObservable();
-    self.family = koHelpers.sanitizedObservable();
-    self.suffix = koHelpers.sanitizedObservable();
+    self.full = koHelpers.sanitizedObservable().extend({required: true, trimmed: true});
+    self.given = koHelpers.sanitizedObservable().extend({trimmed: true});
+    self.middle = koHelpers.sanitizedObservable().extend({trimmed: true});
+    self.family = koHelpers.sanitizedObservable().extend({trimmed: true});
+    self.suffix = koHelpers.sanitizedObservable().extend({trimmed: true});
 
     self.trackedProperties = [
         self.full,
@@ -412,6 +401,7 @@ var NameViewModel = function(urls, modes) {
     self.citeApa = ko.computed(function() {
         var cite = self.family();
         var given = $.trim(self.given() + ' ' + self.middle());
+
         if (given) {
             cite = cite + ', ' + initials(given);
         }
@@ -436,18 +426,14 @@ var NameViewModel = function(urls, modes) {
     });
 
     self.fetch();
-
 };
 NameViewModel.prototype = Object.create(BaseViewModel.prototype);
-$.extend(NameViewModel.prototype,
-            SerializeMixin.prototype,
-            TrackedMixin.prototype);
+$.extend(NameViewModel.prototype, SerializeMixin.prototype, TrackedMixin.prototype);
 
 /*
-    * Custom observable for use with external services.
-    */
+ * Custom observable for use with external services.
+ */
 var extendLink = function(obs, $parent, label, baseUrl) {
-
     obs.url = ko.computed(function($data, event) {
         // Prevent click from submitting form
         event && event.preventDefault();
@@ -468,11 +454,9 @@ var extendLink = function(obs, $parent, label, baseUrl) {
     };
 
     return obs;
-
 };
 
 var SocialViewModel = function(urls, modes) {
-
     var self = this;
     BaseViewModel.call(self, urls, modes);
     TrackedMixin.call(self);
@@ -483,37 +467,38 @@ var SocialViewModel = function(urls, modes) {
         // Note: Apply extenders in reverse order so that `ensureHttp` is
         // applied before `url`.
         ko.observable().extend({
+            trimmed: true,
             url: true,
             ensureHttp: true
         }),
         self, 'personal'
     );
     self.orcid = extendLink(
-        ko.observable().extend({cleanup: cleanByRule(socialRules.orcid)}),
+        ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.orcid)}),
         self, 'orcid', 'http://orcid.org/'
     );
     self.researcherId = extendLink(
-        ko.observable().extend({cleanup: cleanByRule(socialRules.researcherId)}),
+        ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.researcherId)}),
         self, 'researcherId', 'http://researcherId.com/rid/'
     );
     self.twitter = extendLink(
-        ko.observable().extend({cleanup: cleanByRule(socialRules.twitter)}),
+        ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.twitter)}),
         self, 'twitter', 'https://twitter.com/'
     );
     self.scholar = extendLink(
-        ko.observable().extend({cleanup: cleanByRule(socialRules.scholar)}),
+        ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.scholar)}),
         self, 'scholar', 'http://scholar.google.com/citations?user='
     );
     self.linkedIn = extendLink(
-        ko.observable().extend({cleanup: cleanByRule(socialRules.linkedIn)}),
+        ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.linkedIn)}),
         self, 'linkedIn', 'https://www.linkedin.com/profile/view?id='
     );
     self.impactStory = extendLink(
-        ko.observable().extend({cleanup: cleanByRule(socialRules.impactStory)}),
+        ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.impactStory)}),
         self, 'impactStory', 'https://www.impactstory.org/'
     );
     self.github = extendLink(
-        ko.observable().extend({cleanup: cleanByRule(socialRules.github)}),
+        ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.github)}),
         self, 'github', 'https://github.com/'
     );
 
@@ -558,7 +543,6 @@ var SocialViewModel = function(urls, modes) {
     });
 
     self.fetch();
-
 };
 SocialViewModel.prototype = Object.create(BaseViewModel.prototype);
 $.extend(SocialViewModel.prototype, SerializeMixin.prototype, TrackedMixin.prototype);
@@ -686,16 +670,13 @@ ListViewModel.prototype.serialize = function() {
 };
 
 var JobViewModel = function() {
-
     var self = this;
     DateMixin.call(self);
     TrackedMixin.call(self);
 
-    self.institution = ko.observable('').extend({
-        required: true
-    });
-    self.department = ko.observable('');
-    self.title = ko.observable('');
+    self.institution = ko.observable('').extend({required: true, trimmed: true});
+    self.department = ko.observable('').extend({trimmed: true});
+    self.title = ko.observable('').extend({trimmed: true});
 
     self.trackedProperties = [
         self.institution,
@@ -711,22 +692,17 @@ var JobViewModel = function() {
     self.isValid = ko.computed(function() {
         return validated.isValid();
     });
-
 };
 $.extend(JobViewModel.prototype, DateMixin.prototype, TrackedMixin.prototype);
 
-
 var SchoolViewModel = function() {
-
     var self = this;
     DateMixin.call(self);
     TrackedMixin.call(self);
 
-    self.institution = ko.observable('').extend({
-        required: true
-    });
-    self.department = ko.observable('');
-    self.degree = ko.observable('');
+    self.institution = ko.observable('').extend({required: true, trimmed: true});
+    self.department = ko.observable('').extend({trimmed: true});
+    self.degree = ko.observable('').extend({trimmed: true});
 
     self.trackedProperties = [
         self.institution,
@@ -742,30 +718,22 @@ var SchoolViewModel = function() {
     self.isValid = ko.computed(function() {
         return validated.isValid();
     });
-
 };
 $.extend(SchoolViewModel.prototype, DateMixin.prototype, TrackedMixin.prototype);
 
 var JobsViewModel = function(urls, modes) {
-
     var self = this;
     ListViewModel.call(self, JobViewModel, urls, modes);
 
     self.fetch();
-
-
 };
-
 JobsViewModel.prototype = Object.create(ListViewModel.prototype);
 
-
 var SchoolsViewModel = function(urls, modes) {
-
     var self = this;
     ListViewModel.call(self, SchoolViewModel, urls, modes);
 
     self.fetch();
-
 };
 SchoolsViewModel.prototype = Object.create(ListViewModel.prototype);
 
