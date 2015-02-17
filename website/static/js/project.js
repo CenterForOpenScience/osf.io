@@ -241,7 +241,6 @@ $(document).ready(function() {
         trigger: 'hover'
     });
 
-
     ////////////////////
     // Event Handlers //
     ////////////////////
