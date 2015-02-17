@@ -1,12 +1,6 @@
 # -*- coding: utf-8 -*-
-import os
-import base64
-import hashlib
 import logging
-import urllib
 from datetime import datetime
-
-import furl
 
 from modularodm import fields, Q
 from modularodm.exceptions import ModularOdmException
@@ -15,7 +9,6 @@ from framework.auth import Auth
 from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
-from website.addons.box.client import get_node_addon_client
 from website.addons.box.utils import BoxNodeLogger
 from website.addons.box import settings
 
@@ -46,7 +39,7 @@ class BoxFile(GuidFile):
 
     @property
     def unique_identifier(self):
-        return self.path.split('/')[1][-5] #self._metadata_cache['extra']['revisionId']
+        return self.path.split('/')[1][-5]
 
     @classmethod
     def get_or_create(cls, node, path):
@@ -78,7 +71,6 @@ class BoxUserSettings(AddonUserSettingsBase):
     token_type = fields.StringField(required=False)
     restricted_to = fields.DictionaryField(required=False)
     last_refreshed = fields.DateTimeField(editable=True)
-
 
     # TODO(sloria): The `user` param in unnecessary for AddonUserSettings
     def to_json(self, user=None):
@@ -115,24 +107,23 @@ class BoxUserSettings(AddonUserSettingsBase):
 
     def get_credentialsv2(self):
         return CredentialsV2(
-            self.access_token, 
-            self.refresh_token, 
+            self.access_token,
+            self.refresh_token,
             settings.BOX_KEY,
             settings.BOX_SECRET,
             self.token_refreshed_callback,
         )
 
     def refresh_creds_if_necessary(self):
-        """Checks to see if the access token has expired, or will 
-        expire within 6 minutes. Returns the status of a refresh 
+        """Checks to see if the access token has expired, or will
+        expire within 6 minutes. Returns the status of a refresh
         attempt or True if not required.
-        """   
+        """
         diff = (datetime.utcnow() - self.last_refreshed).total_seconds() / 3600
         if diff > 0.9:
             return self.get_credentialsv2().refresh()
         else:
             return True
-
 
     def __repr__(self):
         return u'<BoxUserSettings(user={self.owner.username!r})>'.format(self=self)
@@ -145,7 +136,6 @@ class BoxNodeSettings(AddonNodeSettingsBase):
     )
 
     folder_id = fields.IntegerField(default=None)
-
 
     @property
     def display_name(self):
@@ -204,6 +194,7 @@ class BoxNodeSettings(AddonNodeSettingsBase):
         return {'folder': self.folder_id}
 
     def create_waterbutler_log(self, auth, action, metadata):
+        path = metadata['path']
         self.owner.add_log(
             'box_{0}'.format(action),
             auth=auth,

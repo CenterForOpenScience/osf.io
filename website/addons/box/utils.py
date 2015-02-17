@@ -1,14 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import logging
-import httplib as http
-from datetime import datetime
 
-from flask import make_response
-from boxview.boxview import BoxViewError
-
-from framework.exceptions import HTTPError
-from website.project.utils import get_cache_content
 from website.util import rubeus
 
 logger = logging.getLogger(__name__)
@@ -56,14 +49,13 @@ class BoxNodeLogger(object):
         # If logging a file-related action, add the file's view and download URLs
         if self.file_obj or self.path:
             path = self.file_obj.path if self.file_obj else self.path
-            cleaned_path = clean_path(path)
             params.update({
                 'urls': {
-                    'view': self.node.web_url_for('box_view_file', path=cleaned_path),
+                    'view': self.node.web_url_for('box_view_file', path=path),
                     'download': self.node.web_url_for(
-                        'box_download', path=cleaned_path)
+                        'box_download', path=path)
                 },
-                'path': cleaned_path,
+                'path': path,
             })
         if extra:
             params.update(extra)
@@ -106,8 +98,8 @@ def ensure_leading_slash(path):
 
 def build_box_urls(item, node):
     assert item['type'] == 'folder', 'Can only build urls for box folders'
-    path = clean_path(item['path'])  # Strip trailing and leading slashes
-    if item['type']==u'folder':
+    path = item['path']
+    if item['type'] == u'folder':
         return {
             # Endpoint for fetching all of a folder's contents
             'fetch': node.api_url_for('box_hgrid_data_contents', path=path),
@@ -128,7 +120,7 @@ def metadata_to_hgrid(item, node, permissions):
         'permissions': permissions,
         'name': item['name'],
         'ext': os.path.splitext(filename)[-1],
-        rubeus.KIND: rubeus.FOLDER if item['type']==u'folder' else rubeus.FILE,
+        rubeus.KIND: rubeus.FOLDER if item['type'] == u'folder' else rubeus.FILE,
         #'urls': build_box_urls(item, node),
         'path': item['name'],
         'id': item['id']

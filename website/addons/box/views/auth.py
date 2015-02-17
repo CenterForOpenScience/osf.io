@@ -4,12 +4,10 @@ import httplib as http
 import requests
 from urllib import urlencode
 import logging
-from collections import namedtuple
 from datetime import datetime
 
 from flask import request
 from werkzeug.wrappers import BaseResponse
-from box import BoxClient, CredentialsV2
 
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
@@ -49,10 +47,13 @@ def finish_auth():
     """
     if 'code' in request.args:
         code = request.args['code']
-        url_state = request.args['state']
+#        url_state = request.args['state']
     elif 'error' in request.args:
         box_error_handle(error=request.args['error'], msg=request.args['error_description'])
 
+    # This can be used for added security. A 'state' is passed to box, and it will return
+    # the same state after authorization. It may return a different or no state if the
+    # request has been hijacked
 #    if url_state is not 'security_token_needed':
 #        raise HTTPError(http.INTERNAL_SERVER_ERROR)
 

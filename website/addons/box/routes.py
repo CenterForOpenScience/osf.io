@@ -3,7 +3,6 @@
 from framework.routing import Rule, json_renderer
 
 from website.addons.box import views
-from website.routes import OsfWebRenderer, notemplate
 
 
 auth_routes = {

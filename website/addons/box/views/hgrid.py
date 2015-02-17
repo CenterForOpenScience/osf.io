@@ -10,10 +10,7 @@ from website.project.decorators import must_be_contributor_or_public, must_have_
 from website.util import rubeus
 
 from website.addons.box.client import get_node_client
-from website.addons.box.utils import (
-    metadata_to_hgrid,
-    is_authorizer,
-)
+from website.addons.box.utils import metadata_to_hgrid
 
 
 @must_be_contributor_or_public
