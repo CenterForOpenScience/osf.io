@@ -23,7 +23,6 @@ var mathrender = require('mathrender');
 // Render math in the wiki widget
 mathrender.mathjaxify('#addonWikiWidget');
 
-
 var md = require('markdown').full;
 require('truncate');
 

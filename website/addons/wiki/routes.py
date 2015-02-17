@@ -35,13 +35,13 @@ page_routes = {
         Rule([
             '/project/<pid>/wiki/',
             '/project/<pid>/node/<nid>/wiki/',
-        ], 'get', views.project_wiki_home, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'wiki.mako'))),
+        ], 'get', views.project_wiki_home, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'))),
 
         # View (Id) | GET
         Rule([
             '/project/<pid>/wiki/id/<wid>/',
             '/project/<pid>/node/<nid>/wiki/id/<wid>/',
-        ], 'get', views.project_wiki_id_page, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'wiki.mako'))),
+        ], 'get', views.project_wiki_id_page, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'))),
 
         # Edit | GET
         Rule([
@@ -51,7 +51,7 @@ page_routes = {
             '/project/<pid>/node/<nid>/wiki/<wname>/edit/',
             '/project/<pid>/wiki/<wname>/compare/<int:wver>/',
             '/project/<pid>/node/<nid>/wiki/<wname>/compare/<int:wver>/',
-        ], 'get', views.project_wiki_view, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'wiki.mako'))),
+        ], 'get', views.project_wiki_view, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'))),
 
         # Edit | POST
         Rule([
@@ -61,7 +61,7 @@ page_routes = {
             '/project/<pid>/node/<nid>/wiki/<wname>/edit/',
             '/project/<pid>/wiki/<wname>/compare/<int:wver>/',
             '/project/<pid>/node/<nid>/wiki/<wname>/compare/<int:wver>/',
-        ], 'post', views.project_wiki_edit_post, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'wiki.mako'))),
+        ], 'post', views.project_wiki_edit_post, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'))),
 
     ]
 

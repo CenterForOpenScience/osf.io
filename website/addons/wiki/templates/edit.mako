@@ -16,8 +16,8 @@
 <div class="wiki container">
   <div class="row wiki-wrapper">
     <div class="col-sm-3 panel-toggle">
-        <div class="wiki-panel hidden-xs"> 
-              <div class="wiki-panel-header"> <i class="icon-list"> </i>  Menu 
+        <div class="wiki-panel hidden-xs">
+              <div class="wiki-panel-header"> <i class="icon-list"> </i>  Menu
                 <div class="pull-right"> <div class="panel-collapse"> <i class="icon icon-chevron-left"> </i> </div></div>
               </div>
               <div class="wiki-panel-body">
@@ -25,7 +25,7 @@
                 <%include file="wiki/templates/toc.mako"/>
                 </div>
             </div>
-            <div class="wiki-panel visible-xs"> 
+            <div class="wiki-panel visible-xs">
               <div class="wiki-panel-header"> <i class="icon-list"> </i>  Menu </div>
               <div class="wiki-panel-body ">
                 <%include file="wiki/templates/nav.mako"/>
@@ -33,7 +33,7 @@
                 </div>
             </div>
 
-        <div class="wiki-panel panel-collapsed hidden-xs text-center" style="display: none;">
+        <div class="wiki-panel panel-collapsed hidden-xs text-center" class="scripted">
           <div class="wiki-panel-header">
             <i class="icon-list"> </i>
             <i class="icon icon-chevron-right"> </i>
@@ -41,7 +41,7 @@
           <div class="wiki-panel-body">
               <%include file="wiki/templates/nav.mako"/>
            </div>
-        </div>    
+        </div>
     </div>
 
     <div class="col-sm-9 panel-expand">
@@ -49,9 +49,9 @@
 
         % if can_edit:
         <div class="col-sm-4" data-osf-panel="Edit">
-                <div class="wiki-panel"> 
+                <div class="wiki-panel">
                   <div class="wiki-panel-header"> <i class="icon-edit"> </i>  Edit </div>
-                  <div class="wiki-panel-body"> 
+                  <div class="wiki-panel-body">
                       <form id="wiki-form" action="${urls['web']['edit']}" method="POST">
                         <div class="row">
                         <div class="col-xs-12">
@@ -64,7 +64,7 @@
                                        </p>
                                   </div>
                                   <div class="col-sm-4">
-                                      <ul class="list-inline" data-bind="foreach: activeUsers" style="float: right">
+                                      <ul class="list-inline" data-bind="foreach: activeUsers" class="pull-right">
                                           <!-- ko ifnot: id === '${user_id}' -->
                                               <li><a data-bind="attr: { href: url }" >
                                                   <img data-bind="attr: {src: gravatar}, tooltip: {title: name, placement: 'bottom'}"
@@ -119,9 +119,9 @@
                 </div>
           </div>
           % endif
-      
+
           <div class="col-sm-4" data-osf-panel="View">
-              <div class="wiki-panel"> 
+              <div class="wiki-panel">
                 <div class="wiki-panel-header">
                     <div class="row">
                         <div class="col-sm-6">
@@ -144,11 +144,11 @@
                 <div class="wiki-panel-body">
                     <!-- Live preview from editor -->
                     <div id="viewPreview" class="markdown-it-view">
-                        <div id="markdown-it-preview" ></div>
+                        <div id="markdownItPreview"></div>
                     </div>
                     <!-- Version view -->
                     <div id="viewVersion" class="markdown-it-view" style="display: none;">
-                            <div id="markdownItRender">${wiki_content | n}</div>
+                        <div id="markdownItRender">${wiki_content | n}</div>
                     </div>
                 </div>
               </div>
@@ -183,7 +183,6 @@
 
   </div>
 </div><!-- end wiki -->
-
 
 <div class="modal fade" id="permissionsModal">
   <div class="modal-dialog">
@@ -313,5 +312,5 @@ ${parent.javascript_bottom()}
 </script>
 <script src="//${sharejs_url}/text.js"></script>
 <script src="//${sharejs_url}/share.js"></script>
-<script src=${"/static/public/js/wiki-page.js" | webpack_asset}></script>
+<script src=${"/static/public/js/wiki-edit-page.js" | webpack_asset}></script>
 </%def>
