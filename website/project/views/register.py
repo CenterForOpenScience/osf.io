@@ -61,12 +61,17 @@ def node_registration_retraction(auth, **kwargs):
     if request.method == 'POST':
 
         data = request.json
-        node.is_retracted = True
-        node.retracted_justification = data['justification']
-        node.save()
 
+        try:
+            node.retracted_justification = data['justification']
+        except KeyError:
+            raise HTTPError(http.BAD_REQUEST)
+
+        node.is_retracted = True
+        node.save()
         url = '/project/{0}/'.format(node._id)
         ret = {'redirectUrl': url}
+
         return ret
 
     ret = _view_project(node, auth, primary=True)
