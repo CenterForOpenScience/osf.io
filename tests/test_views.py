@@ -1014,7 +1014,7 @@ class TestUserProfile(OsfTestCase):
         assert_equal(self.user.jobs, jobs)
 
     def test_unserialize_names(self):
-        fake_fullname_w_spaces = fake.name()
+        fake_fullname_w_spaces = '    {}    '.format(fake.name())
         names = {
             'full': fake_fullname_w_spaces,
             'given': 'Tea',
