@@ -514,6 +514,7 @@ def serialize_schools(auth, uid=None, **kwargs):
 def unserialize_names(**kwargs):
     user = kwargs['auth'].user
     json_data = escape_html(request.get_json())
+    # json get can return None, use `or` here to ensure we always strip a string
     user.fullname = (json_data.get('full') or '').strip()
     user.given_name = (json_data.get('given') or '').strip()
     user.middle_names = (json_data.get('middle') or '').strip()
