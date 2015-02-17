@@ -124,10 +124,10 @@ def project_new_from_template(**kwargs):
 @must_be_logged_in
 def folder_new(**kwargs):
     node_id = kwargs['nid']
-    return_value = {}
+    ret = {}
     if node_id is not None:
-        return_value = {'node_id': node_id}
-    return return_value
+        ret = {'node_id': node_id}
+    return ret
 
 
 @must_be_logged_in
@@ -355,9 +355,9 @@ def node_contributors(**kwargs):
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
 
-    rv = _view_project(node, auth, primary=True)
-    rv['contributors'] = utils.serialize_contributors(node.contributors, node)
-    return rv
+    ret = _view_project(node, auth, primary=True)
+    ret['contributors'] = utils.serialize_contributors(node.contributors, node)
+    return ret
 
 
 @must_have_permission('admin')
