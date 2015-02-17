@@ -15,7 +15,7 @@ from modularodm import exceptions as modm_errors
 
 from framework.auth import Auth
 
-from website.models import NodeLog
+from website.models import NodeLog, Comment
 
 from website.addons.osfstorage import model
 from website.addons.osfstorage import errors
@@ -113,6 +113,23 @@ class TestNodeSettingsModel(StorageTestCase):
         assert_equal(cloned_record.versions, record.versions)
         assert_true(registration_node_settings.file_tree)
 
+    def test_get_existing_files(self):
+        path1 = 'jazz/dreamers-ball.mp3'
+        file1, _ = model.OsfStorageGuidFile.get_or_create(self.project, path1)
+        path2 = 'jazz/horror-ball.wma'
+        file2, _ = model.OsfStorageGuidFile.get_or_create(self.project, path2)
+        files = self.node_settings.get_existing_files()
+        assert_equal(len(files), 2)
+        files = sorted(
+            files,
+            key=lambda item: item.path,  # sort alphabetically
+            reverse=False,
+        )
+        assert_equal(files[0].path, path1)
+        assert_equal(files[1].path, path2)
+        file3, _ = model.OsfStorageGuidFile.get_or_create(self.project, path1)
+        files = self.node_settings.get_existing_files()
+        assert_equal(len(files), 2)
 
 class TestOsfStorageFileTree(OsfTestCase):
 
@@ -304,6 +321,28 @@ class TestOsfStorageFileRecord(StorageTestCase):
         assert_true(self.record.is_deleted)
         assert_equal(len(self.project.logs), nlogs)
 
+    def test_delete_record_hides_comments(self):
+        # Add comment
+        self.project.reload()
+        path = self.path
+        if not path.startswith('/'):
+            path = '/' + path
+        guid, _ = model.OsfStorageGuidFile.get_or_create(self.project, path)
+        comment = Comment.create(
+            auth=self.auth_obj,
+            node=self.project,
+            target=guid,
+            user=self.user,
+            page='files',
+            content='...',
+            root_title=path.split('/')[-1],
+        )
+        # Delete record
+        self.record.delete(auth=self.auth_obj)
+        self.project.reload()
+        # See if comment is hidden
+        assert_true(comment.is_hidden)
+
     def test_undelete_record(self):
         nlogs = len(self.project.logs)
         self.record.is_deleted = True
@@ -325,6 +364,33 @@ class TestOsfStorageFileRecord(StorageTestCase):
         self.project.reload()
         assert_false(self.record.is_deleted)
         assert_equal(len(self.project.logs), nlogs)
+
+    def test_undelete_record_shows_comments(self):
+        # Add comment
+        self.project.reload()
+        path = self.path
+        if not path.startswith('/'):
+            path = '/' + path
+        guid, _ = model.OsfStorageGuidFile.get_or_create(self.project, path)
+        comment = Comment.create(
+            auth=self.auth_obj,
+            node=self.project,
+            target=guid,
+            user=self.user,
+            page='files',
+            content='...',
+            root_title=path.split('/')[-1],
+        )
+        # Delete record
+        self.record.delete(auth=self.auth_obj)
+        self.project.reload()
+        # See if comment is hidden
+        assert_true(comment.is_hidden)
+        # Undelete record
+        self.record.undelete(auth=self.auth_obj)
+        self.project.reload()
+        # See if comment is hidden
+        assert_false(comment.is_hidden)
 
     def test_update_metadata_found(self):
         self.record.versions = [
