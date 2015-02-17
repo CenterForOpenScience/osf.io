@@ -37,10 +37,10 @@
                                 ></i>
                         </th>
                         <th class="col-md-3">
-                            Visibility
+                            Bibliographic Contributor
                             <i class="icon-question-sign visibility-info"
                                     data-toggle="popover"
-                                    data-title="Visibility Information"
+                                    data-title="Bibliographic Contributor Information"
                                     data-container="body"
                                     data-placement="right"
                                     data-html="true"
