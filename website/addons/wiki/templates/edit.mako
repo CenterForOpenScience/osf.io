@@ -148,11 +148,7 @@
                     </div>
                     <!-- Version view -->
                     <div id="viewVersion" class="markdown-it-view" style="display: none;">
-                        % if not page and wiki_name != 'home':
-                            <p><i>This wiki page does not currently exist.</i></p>
-                        % else:
-                            <div id="markdown-it-render">${wiki_content | n}</div>
-                        % endif
+                        <div id="markdown-it-render">${wiki_content | n}</div>
                     </div>
                 </div>
               </div>
