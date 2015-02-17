@@ -1986,7 +1986,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             'title': html_parser.unescape(self.title),
             'author': [
                 contributor.csl_name  # method in auth/model.py which parses the names of authors
-                for contributor in self.contributors
+                for contributor in self.visible_contributors
             ],
             'publisher': 'Open Science Framework',
             'type': 'webpage',
