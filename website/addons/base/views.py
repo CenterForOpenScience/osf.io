@@ -7,9 +7,11 @@ import httplib
 import functools
 
 import furl
+import requests
 import itsdangerous
 from flask import request
 from flask import redirect
+from flask import make_response
 
 from framework.auth import Auth
 from framework.sessions import Session
@@ -234,22 +236,16 @@ def addon_view_or_download_file_legacy(**kwargs):
     query_params = request.args.to_dict()
     node = kwargs.get('node') or kwargs['project']
 
+    action = query_params.pop('action', 'view')
+    provider = kwargs.get('provider', 'osfstorage')
+
     if kwargs.get('path'):
         path = kwargs['path']
     elif kwargs.get('fid'):
         path = kwargs['fid']
 
-    if 'osffiles' in request.path:
-        provider = 'osfstorage'
-    else:
-        provider = kwargs['provider']
-
-    if 'download' in request.path:
+    if 'download' in request.path or request.path.startswith('/api/v1/'):
         action = 'download'
-    elif '/api/v1/' in request.path:
-        action = 'download'
-    else:
-        action = 'view'
 
     if kwargs.get('vid'):
         query_params['version'] = kwargs['vid']
@@ -270,7 +266,7 @@ def addon_view_or_download_file_legacy(**kwargs):
 @must_be_contributor_or_public
 def addon_view_or_download_file(auth, path, provider, **kwargs):
     extras = request.args.to_dict()
-    action = extras.pop('action', 'view')
+    action = extras.get('action', 'view')
     node = kwargs.get('node') or kwargs['project']
 
     node_addon = node.get_addon(provider)
@@ -294,23 +290,29 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         download_url = furl.furl(file_guid.download_url)
         download_url.args.update(extras)
         if extras.get('mode') == 'render':
-            download_url.args['accept_url'] = 'false'
+            # Temp fix for IE, return a redirect to s3 or cloudfiles (one hop)
+            # Or just send back the entire body
+            resp = requests.get(download_url, allow_redirects=False)
+            if resp.status_code == 302:
+                return redirect(resp.headers['Location'])
+            else:
+                return make_response(resp.content)
+
         return redirect(download_url.url)
 
     return addon_view_file(auth, node, node_addon, file_guid, extras)
 
 
 def addon_view_file(auth, node, node_addon, file_guid, extras):
-    render_url = furl.furl(node.api_url_for('addon_render_file', path=file_guid.waterbutler_path.lstrip('/'), provider=file_guid.provider))
-    render_url.args.update(extras)
+    render_url = node.api_url_for('addon_render_file', path=file_guid.waterbutler_path.lstrip('/'), provider=file_guid.provider, **extras)
 
     resp = serialize_node(node, auth, primary=True)
     resp.update({
         'provider': file_guid.provider,
-        'render_url': render_url.url,
+        'render_url': render_url,
         'file_path': file_guid.waterbutler_path,
         'files_url': node.web_url_for('collect_file_trees'),
-        'rendered': get_or_start_render(file_guid, extras),
+        'rendered': get_or_start_render(file_guid),
         # Note: must be called after get_or_start_render. This is really only for github
         'extra': json.dumps(getattr(file_guid, 'extra', {})),
         #NOTE: get_or_start_render must be called first to populate name
