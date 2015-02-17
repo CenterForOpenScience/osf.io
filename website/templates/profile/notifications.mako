@@ -48,7 +48,7 @@
         </div>
         <div class="panel panel-default">
             <div class="panel-heading"><h3 class="panel-title">Configure Notification Preferences</h3></div>
-                <form id="selectNotifications">
+                <form id="selectNotifications" class="osf-treebeard-minimal">
                     <div id="grid"></div>
                 </form>
         </div>

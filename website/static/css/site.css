@@ -2110,37 +2110,21 @@ span#profileFullname{
     position: fixed;
 }
 
-/* Treebeard in Configure Notifications, project settings page */
-#notificationSettings #tb-tbody {
+
+/* Minimal Treebeard for Configure Notifications in project and user settings */
+.osf-treebeard-minimal #tb-tbody {
     border: none;
-}
-#notificationSettings .tb-row-titles {
-    border: none;
-    background: none;
 }
 
-#notificationSettings .tb-head {
+.osf-treebeard-minimal .tb-row-titles {
+    border: none;
+}
+
+.osf-treebeard-minimal .tb-head {
     display: none;
 }
 
-#notificationSettings .form-control {
-    height: 32px;
-}
-
-/* Treebeard in Configure Notifications, project settings page */
-#selectNotifications #tb-tbody {
-    border: none;
-}
-
-#selectNotifications .tb-row-titles {
-    border: none;
-}
-
-#selectNotifications .tb-head {
-    display: none;
-}
-
-#selectNotifications .form-control {
+.osf-treebeard-minimal .form-control {
     height: 32px;
 }
 
@@ -2151,4 +2135,3 @@ span#profileFullname{
 .tb-no-icon .title-text {
     line-height : 2.2;
 }
-

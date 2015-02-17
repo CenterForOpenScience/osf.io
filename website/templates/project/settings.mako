@@ -106,7 +106,7 @@
                     <h3 class="panel-title">Configure Notifications</h3>
                 </div>
 
-                <form id="notificationSettings">
+                <form id="notificationSettings" class="osf-treebeard-minimal">
                     <div id="grid"></div>
                 </form>
             </div>
