@@ -4,62 +4,37 @@ var $ = require('jquery');
 var m = require('mithril');
 var Treebeard = require('treebeard');
 var citations = require('./citations');
+
+var apaStyle = require('raw!styles/apa.csl');
+
 require('../vendor/bower_components/treebeard/dist/treebeard.css');
 require('../css/fangorn.css');
-var style = require('raw!styles/apa.csl');
 
-
-/**
- * Returns custom folder toggle icons for OSF
- * @param {Object} item A Treebeard _item object. Node information is inside item.data
- * @this Treebeard.controller
- * @returns {string} Returns a mithril template with m() function, or empty string.
- * @private
- */
 function resolveToggle(item) {
-    var toggleMinus = m('i.icon-minus', ' '),
-        togglePlus = m('i.icon-plus', ' ');
-    // check if folder has children whether it's lazyloaded or not.
+    var toggleMinus = m('i.icon-minus', ' ');
+    var togglePlus = m('i.icon-plus', ' ');
     if (item.kind === 'folder') {
-        if (item.open) {
-            return toggleMinus;
-        }
-        return togglePlus;
+        return item.open ? toggleMinus : togglePlus;
+    } else {
+        return '';
     }
-    return '';
 }
 
-/**
- * Returns custom icons for OSF depending on the type of item
- * @param {Object} item A Treebeard _item object. Node information is inside item.data
- * @this Treebeard.controller
- * @returns {Object}  Returns a mithril template with the m() function.
- * @private
- */
 function resolveIcon(item) {
     var privateFolder = m('img', {
             src: '/static/img/hgrid/fatcowicons/folder_delete.png'
-        }),
-        pointerFolder = m('i.icon-link', ' '),
-        openFolder = m('i.icon-folder-open', ' '),
-        closedFolder = m('i.icon-folder-close', ' '),
-        configOption = item.data.provider ? resolveconfigOption.call(this, item, 'folderIcon', [item]) : undefined,
-        ext,
-        extensions;
+        });
+    var openFolder = m('i.icon-folder-open', ' ');
+    var closedFolder = m('i.icon-folder-close', ' ');
 
     if (item.kind === 'folder') {
-        if (item.open) {
-            return configOption || openFolder;
-        }
-        return configOption || closedFolder;
-    }
-    if (item.data.icon) {
+        return item.open ? openFolder : closedFolder;
+    } else if (item.data.icon) {
         return m('i.fa.' + item.data.icon, ' ');
+    } else {
+        return m('i.icon-file-alt');
     }
-
-    return m('i.icon-file-alt');
 }
-
 
 var utils = {
     reduce: function(array, dst, fn) {
@@ -78,89 +53,156 @@ var utils = {
     }
 };
 
-var getColumns = function() {
-    return [{
-        title: 'Citation',
-        sort: false
-    }];
+var objectify = function(array, key) {
+    key = key || 'id';
+    return utils.reduce(
+        array,
+        {},
+        function(item, acc) {
+            return acc[item[key]] = item;
+        }
+    );
 };
 
-var getRow = function(item) {
-    return [{
-        data: 'csl',
-        custom: function(item) {
-            if (item.kind === 'folder') {
-		return item.data.name;
-            }
-            return item.data.citation;
-        },
-        folderIcons: true
-    }];
+var formatResult = function(state) {
+    return '<div class="citation-result-title">' + state.title + '</div>';
 };
-var citationsApiUrl = window.contextVars.node.urls.api + 'mendeley/citations/';
-var parent = {
-    kind: 'folder',
-    urls: {
-        fetch: citationsApiUrl
+
+var formatSelection = function(state) {
+    return state.title;
+};
+
+var treebeardOptions = {
+    lazyLoad: true,
+    showFilter: false,
+    resolveIcon: resolveIcon,
+    resolveToggle: resolveToggle,
+    lazyLoadPreprocess: function(res) {
+        return res.contents;
     },
-    children: []
+    columnTitles: function() {
+        return [
+            {
+                title: 'Citation',
+                sort: false
+            }
+        ];
+    }
 };
-var citeproc;
 
-var CitationGrid = function(selector, url) {
+var CitationGrid = function(gridSelector, styleSelector, apiUrl) {
+    var self = this;
 
-        var options = {
-            divID: selector.replace('#', ''),
-            columnTitles: getColumns,
-            resolveRows: getRow,
-            filesData: citationsApiUrl,
-            //filesData: [parent],
+    self.gridSelector = gridSelector;
+    self.styleSelector = styleSelector;
+    self.apiUrl = apiUrl;
+
+    self.style = apaStyle;
+    self.bibliographies = {};
+
+    self.initTreebeard();
+    self.initStyleSelect();
+};
+
+CitationGrid.prototype.initTreebeard = function() {
+    var self = this;
+    var options = $.extend(
+        {
+            divID: self.gridSelector.replace('#', ''),
+            filesData: self.apiUrl,
             resolveLazyloadUrl: function(item) {
-		return citationsApiUrl + item.data.id + '/';
+                return self.apiUrl + item.data.id + '/';
             },
-            lazyLoad: true,
-            lazyLoadPreprocess: function(res) {
-		var data = res;
-		if (typeof res.contents !== 'undefined'){
-		    data = res.contents;
-		}
-		if (!Array.isArray(data)){
-		    data = [data];
-		}
-		var citationObj = utils.reduce(
-                    data.filter(
-			function(item){
-			    return item.kind === 'item';
-			}
-		    ).map(
-			function(item) {				
-			    return item.csl;
-			}
-		    ), {},
-                    function(item, dst) {
-			dst[item.id] = item;
-                    });		
-                citeproc = citations.makeCiteproc(style, citationObj, 'text');
-                var bibliography = citeproc.makeBibliography();
-                var combinedData = utils.reduce(
-                    utils.zip(bibliography[0].entry_ids, bibliography[1]), {},
-                    function(tup, dst) {
-                        return dst[tup[0][0]] = tup[1];
-                    }
-                );
-		data = data.map(function(item){
-		    if (item.kind === 'item'){
-			item.citation = combinedData[item.csl.id];
-		    }
-		    return item;
-		});
-		return data;
+            resolveRows: function(item) {
+                // Treebeard calls `resolveRows` with itself passed as `this`; wrap custom
+                // callback in closure to preserve correct `this`
+                return self.resolveRowAux.call(self, item);
             },
-	    resolveIcon: resolveIcon,
-	    resolveToggle: resolveToggle
-	};
-    
-    var treebeard = new Treebeard(options);
+        },
+        treebeardOptions
+    );
+    self.treebeard = new Treebeard(options);
+};
+
+CitationGrid.prototype.initStyleSelect = function() {
+    var self = this;
+    var $input = $(self.styleSelector);
+    $input.select2({
+        allowClear: true,
+        formatResult: formatResult,
+        formatSelection: formatSelection,
+        placeholder: 'Citation Style (e.g. "APA")',
+        minimumInputLength: 1,
+        ajax: {
+            url: '/api/v1/citations/styles/',
+            quietMillis: 200,
+            data: function(term, page) {
+                return {q: term};
+            },
+            results: function(data, page) {
+                return {results: data.styles};
+            },
+            cache: true
+        }
+    }).on('select2-selecting', function(event) {
+        var styleUrl = '/static/vendor/bower_components/styles/' + event.val + '.csl';
+        $.get(styleUrl).done(function(style) {
+            self.updateStyle(style);
+        }).fail(function(jqxhr, status, error) {
+            console.log('Failed to load style');
+        });
+    });
+};
+
+CitationGrid.prototype.updateStyle = function(style) {
+    this.style = style;
+    this.bibliographies = {};
+    this.treebeard.tbController.redraw();
+};
+
+CitationGrid.prototype.makeBibliography = function(folder) {
+    var data = objectify(
+        folder.children.filter(function(child) {
+            return child.kind === 'item';
+        }).map(function(child) {
+            return child.data.csl;
+        })
+    );
+    var citeproc = citations.makeCiteproc(this.style, data, 'text');
+    var bibliography = citeproc.makeBibliography();
+    if (bibliography[0].entry_ids) {
+        return utils.reduce(
+            utils.zip(bibliography[0].entry_ids, bibliography[1]),
+            {},
+            function(pair, acc) {
+                return acc[pair[0][0]] = pair[1];
+            }
+        );
+    }
+    return {};
+};
+
+CitationGrid.prototype.getBibliography = function(folder) {
+    this.bibliographies[folder.id] = this.bibliographies[folder.id] || this.makeBibliography(folder);
+    return this.bibliographies[folder.id];
+};
+
+CitationGrid.prototype.resolveRowAux = function(item) {
+    var self = this;
+    return [
+        {
+            data: 'csl',
+            folderIcons: true,
+            custom: function(item) {
+                if (item.kind === 'folder') {
+                    return item.data.name;
+                } else {
+                    var bibliography = self.getBibliography(item.parent());
+                    return bibliography[item.data.csl.id];
+                }
+            }
+        }
+    ];
 };
 
 module.exports = CitationGrid;

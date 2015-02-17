@@ -37,9 +37,9 @@ require('./citations_widget.css');
 // Public API //
 ////////////////
 
-function CitationsWidget(selector) {
-    var url = window.contextVars.node.urls.api + 'mendeley/citations/';
-    this.grid = new CitationGrid(selector, url);
+function CitationsWidget(gridSelector, styleSelector) {
+    var apiUrl = window.contextVars.node.urls.api + 'mendeley/citations/';
+    this.grid = new CitationGrid(gridSelector, styleSelector, apiUrl);
 }
 
 CitationsWidget.prototype.init = function() {
@@ -47,4 +47,4 @@ CitationsWidget.prototype.init = function() {
     ko.applyBindings(self.viewModel, self.$element[0]);
 };
 //module.exports = MendeleySettings;
-new CitationsWidget('#mendeleyWidget');
+new CitationsWidget('#mendeleyWidget', '#mendeleyStyleSelect');

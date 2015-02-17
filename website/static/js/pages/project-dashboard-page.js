@@ -101,7 +101,7 @@ $(document).ready(function() {
                 return configOption || defaultColumns;
             }
         };
-        var filebrowser = new Fangorn(fangornOpts);
+        // var filebrowser = new Fangorn(fangornOpts);
     });
 
     // Tooltips
