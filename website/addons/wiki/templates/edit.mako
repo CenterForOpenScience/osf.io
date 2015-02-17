@@ -129,7 +129,7 @@
                         </div>
                         <div class="col-sm-6">
                             <!-- Version Picker -->
-                            <select id="viewSelect" class="pull-right">
+                            <select id="viewVersionSelect" class="pull-right">
                                 % if can_edit:
                                     <option value="preview">Preview</option>
                                 % endif
@@ -148,7 +148,7 @@
                     </div>
                     <!-- Version view -->
                     <div id="viewVersion" class="markdown-it-view" style="display: none;">
-                        <div id="markdown-it-render">${wiki_content | n}</div>
+                            <div id="markdownItRender">${wiki_content | n}</div>
                     </div>
                 </div>
               </div>
@@ -156,7 +156,20 @@
           <div class="col-sm-4" data-osf-panel="Compare">
             <div class="wiki-panel">
               <div class="wiki-panel-header">
-                  <i class="icon-exchange"> </i>  Compare
+                  <div class="row">
+                      <div class="col-sm-6">
+                          <i class="icon-exchange"> </i>  Compare
+                      </div>
+                      <div class="col-sm-6">
+                            <!-- Version Picker -->
+                            <select id="compareVersionSelect" class="pull-right">
+                                <option value="current">Current</option>
+                                % for version in versions[1:]:
+                                    <option value="${version['version']}">Version ${version['version']}</option>
+                                % endfor
+                            </select>
+                      </div>
+                  </div>
               </div>
               <div class="wiki-panel-body">
                 <div class="row">

@@ -5,13 +5,16 @@ require('bootstrap-editable');
 require('osf-panel');
 var md = require('markdown').full;
 var mathrender = require('mathrender');
+var wikEdDiff = require('wik-ed-diff');
 
 var ctx = window.contextVars.wiki;  // mako context variables
 
-var selectElement = $('#viewSelect');
+var selectViewVersion = $('#viewVersionSelect');
+var selectCompareVersion = $('#compareVersionSelect');
 var previewElement = $('#viewPreview');
 var versionElement = $('#viewVersion');
-var markdownElement = $('#markdown-it-render');
+var markdownElement = $('#markdownItRender');
+
 
 // Collaborative editor
 if (ctx.canEdit) {
@@ -25,12 +28,19 @@ if (ctx.canEdit) {
     ShareJSDoc('.wiki', ctx.urls.draft, ctx.metadata);
 }
 
-var versions = {};  // Cache fetched wiki versions
+var renderedVersions = {};  // Cache fetched rendered wiki versions
+var rawVersions = {};  // Cache fetched raw wiki versions
 
-// Set wiki content and mathjaxify
-var setWikiViewContent = function(content) {
+// Set wiki content
+var setWikiViewContent = function(content, useMathjax) {
     markdownElement.html(content);
-    mathrender.mathjaxify(markdownElement);
+    if (useMathjax) {
+        mathrender.mathjaxify(markdownElement);
+    }
+};
+
+var getRenderedWikiViewContent = function() {
+    return markdownElement.html();
 };
 
 // Render the raw markdown of the wiki
@@ -40,42 +50,73 @@ if (!ctx.usePythonRender) {
     });
     request.done(function(resp) {
         var rawText = resp.wiki_content || '*No wiki content*';
-        versions.current = md.render(rawText);
-        setWikiViewContent(versions.current);
+        rawVersions.current = rawText;
+        setWikiViewContent(md.render(rawText), true);
+        renderedVersions.current = getRenderedWikiViewContent();
     });
 }
 
+var getRawWikiContent = function(version) {
+    if (version in rawVersions) {
+        return(rawVersions[version]);
+    } else if (version !== 'current') {
+        var request = $.ajax({
+            url: ctx.urls.content + version
+        });
+        request.done(function (resp) {
+            var rawVersion = resp.wiki_content;
+            rawVersions[version] = rawVersion;
+            return(rawVersion);
+        });
+    }
+};
+
+var renderWikiContent = function(version) {
+    var request;
+    if (version in renderedVersions) {
+        setWikiViewContent(renderedVersions[version]);
+    } else {
+        if (version === 'current') {
+            request = $.ajax({
+                url: ctx.urls.content
+            });
+        } else {
+            request = $.ajax({
+                url: ctx.urls.content + version
+            });
+        }
+        request.done(function (resp) {
+            var rawContent = resp.wiki_content;
+            if(!(version in rawVersions)) {
+                rawVersions[version] = rawContent;
+            }
+            if (resp.wiki_rendered) {
+                // Use pre-rendered python, if provided. Don't mathjaxify
+                setWikiViewContent(resp.wiki_rendered, false);
+                renderedVersions[version] = getRenderedWikiViewContent();
+            } else {
+                // Render raw markdown
+                var wikiText = md.render(rawContent);
+                setWikiViewContent(wikiText, true);
+                renderedVersions[version] = getRenderedWikiViewContent();
+            }
+        });
+    }
+};
+
 // Wiki version selection
-selectElement.change(function() {
+selectViewVersion.change(function() {
     var preview = (this.value === 'preview');
     previewElement.toggle(preview);
     versionElement.toggle(!preview);
     if (!preview) {
         var version = this.value;
-        if (version in versions) {
-            setWikiViewContent(versions[version]);
-        } else if (version !== 'current') {
-            var request = $.ajax({
-                url: ctx.urls.content + this.value
-            });
-            request.done(function(resp) {
-                if (resp.wiki_rendered) {
-                    // Use pre-rendered python, if provided. Don't mathjaxify
-                    markdownElement.html(resp.wiki_rendered);
-                    versions[version] = resp.wiki_rendered;
-                } else {
-                    // Render raw markdown
-                    var wikiText = md.render(resp.wiki_content);
-                    setWikiViewContent(wikiText);
-                    versions[version] = wikiText;
-                }
-            });
-        }
+        renderWikiContent(version);
     }
 });
 
 // Default view will vary based on permissions/url. Trigger manually once
-selectElement.trigger('change');
+selectViewVersion.trigger('change');
 
 // Edit wiki page name
 if (ctx.canEditPageName) {
