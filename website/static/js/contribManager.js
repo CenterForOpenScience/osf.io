@@ -49,13 +49,15 @@ var setupEditable = function(elm, data) {
     });
 };
 
-var ContributorModel = function(contributor, manager, pageOwner, isRegistration, isAdmin) {
+// TODO: We shouldn't need both pageOwner (the current user) and currentUserCanEdit. Separate
+// out the permissions-related functions and remove currentUserCanEdit.
+var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRegistration, isAdmin) {
 
     var self = this;
     $.extend(self, contributor);
 
     self.deleteStaged = false;
-    self.manager = manager;
+    self.currentUserCanEdit = currentUserCanEdit;
     self.isAdmin = isAdmin;
     self.visible = ko.observable(contributor.visible);
     self.permission = ko.observable(contributor.permission);
@@ -63,14 +65,11 @@ var ContributorModel = function(contributor, manager, pageOwner, isRegistration,
     self.removeContributor = 'Remove contributor';
     self.pageOwner = pageOwner;
     self.serialize = function() {
-        serialized = ko.toJS(self);
-        // Must delete reference to manager to avoid circular references
-        delete serialized.manager;
-        return serialized;
+        return ko.toJS(self);
     };
 
     self.canEdit = ko.computed(function() {
-      return self.manager.canEdit() && !self.isAdmin;
+      return self.currentUserCanEdit && !self.isAdmin;
     });
 
     self.remove = function() {
@@ -172,6 +171,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
     self.adminContributors = adminContributors;
 
     self.user = ko.observable(user);
+    // TODO: Does this need to be an observable?
     self.userIsAdmin  = ko.observable($.inArray('admin', user.permissions) !== -1);
     self.canEdit = ko.computed(function() {
         return (self.userIsAdmin()) && !isRegistration;
@@ -258,10 +258,10 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
     self.init = function() {
         self.messages([]);
         self.contributors(self.original().map(function(item) {
-            return new ContributorModel(item, self, self.user(), isRegistration);
+            return new ContributorModel(item, self.canEdit(), self.user(), isRegistration);
         }));
         self.adminContributors = adminContributors.map(function(contributor) {
-          return new ContributorModel(contributor, self, self.user(), isRegistration, true);
+          return new ContributorModel(contributor, self.canEdit(), self.user(), isRegistration, true);
         });
     };
 
