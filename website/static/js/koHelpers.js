@@ -1,5 +1,6 @@
 'use strict';
 
+var $ = require('jquery');
 var ko = require('knockout');
 
 var makeExtender = function(interceptor) {
@@ -51,6 +52,10 @@ addExtender('ensureHttp', function(value) {
         return value;
     }
     return 'http://' + value;
+});
+
+addExtender('trimmed', function(value) {
+    return $.trim(value);
 });
 
 var sanitize = function(value) {
