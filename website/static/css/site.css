@@ -837,10 +837,28 @@ h1.node-title, h1.node-parent-title {
     }
 }
 
+.wiki-panel-header .icon-angle-right, .wiki-panel-header .icon-angle-left {
+    cursor: pointer;
+} 
+.wiki-panel-header .icon-list {
+    color: #808080;
+}
 
+
+.wiki-panel-body .superlist li {
+    display: block;
+    font-size: 20px;
+}
 .wiki-title-container {
     display: inline-block;
     width:60%;
+}
+.wiki-nav-closed .icon-stack-base {
+    font-size: 20px;
+}
+.wiki-nav-closed .icon-plus {
+    margin-left: -14px;
+    font-size: 12px;
 }
 
 .wiki-component {
@@ -1224,7 +1242,7 @@ div.search-result  {
   display: block;
   /*color: #716b7a;*/
   color: #006699;
-  padding: 5px 20px;
+  padding: 5px;
   font-weight: bold;
 }
 .osf-sidenav .nav > li > a:hover,
@@ -2153,4 +2171,38 @@ span#profileFullname{
 .panel-collapsed {
     background: #F5F5F5;
 }
-
+.wiki-sidenav h4, .wiki-sidenav li>ul>.btn,  .osf-sidenav.wiki-sidenav ul>li .row{
+    padding: 8px 15px;
+    margin-top: 2px;
+}
+.wiki-sidenav h4 {
+    margin-top:20px;
+    margin-bottom: 0;
+}
+.osf-sidenav.wiki-sidenav ul>li a:hover {
+    background: transparent;
+}
+.osf-sidenav.wiki-sidenav ul>li:hover {
+    background: #f5f5f5;
+}
+.osf-sidenav.wiki-sidenav ul>li.active a {
+    line-height: 26px;
+}
+.osf-sidenav.wiki-sidenav ul>li.active, .osf-sidenav.wiki-sidenav ul>li.active:hover {
+    background: #f5f5f5;
+    border-left: 2px solid #337AB7;
+}
+.osf-sidenav.wiki-sidenav ul>li.active a {
+        border-right: none;
+        color: #337AB7;
+    }
+.osf-sidenav.wiki-sidenav ul>li a:hover {
+    text-decoration: none;
+}
+/* Changes to default icons to be consistent with the grey look of many new ui items */
+.btn-default-alt {
+    background: #EFEFEF;
+}
+.btn-success-alt {
+    background: #D9E8D9;
+}
