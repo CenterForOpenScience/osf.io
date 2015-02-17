@@ -1552,6 +1552,12 @@ class Node(GuidStoredObject, AddonModelMixin):
         :template: Template name
         :data: Form data
         """
+        # NOTE: Admins can register child nodes even if they don't have write access them
+        if not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user):
+            raise PermissionsError(
+                'User {} does not have permission '
+                'to register this node'.format(auth.user._id)
+            )
         if self.is_folder:
             raise NodeStateError("Folders may not be registered")
 

@@ -2138,6 +2138,25 @@ class TestProject(OsfTestCase):
         reg = to_reg.register_node(None, Auth(user=to_reg.creator), '', None)
         assert_false(reg.is_registration_of(project))
 
+    def test_raises_permissions_error_if_not_a_contributor(self):
+        project = ProjectFactory()
+        user = UserFactory()
+        with assert_raises(PermissionsError):
+            project.register_node(None, Auth(user=user), '', None)
+
+    def test_admin_can_register_private_children(self):
+        user = UserFactory()
+        project = ProjectFactory(creator=user)
+        project.set_permissions(user, ['admin', 'write', 'read'])
+        child = NodeFactory(project=project, is_public=False)
+        assert_false(child.can_edit(auth=Auth(user=user)))  # sanity check
+
+        registration = project.register_node(None, Auth(user=user), '', None)
+
+        # child was registered
+        child_registration = registration.nodes[0]
+        assert_equal(child_registration.registered_from, child)
+
     def test_is_registration_of_no_registered_from(self):
         project = ProjectFactory()
         assert_false(project.is_registration_of(self.project))
@@ -2660,7 +2679,6 @@ class TestRegisterNode(OsfTestCase):
         assert_equal(registration1.registered_user, self.user)
         assert_equal(len(registration1.registered_meta), 1)
         assert_equal(len(registration1.private_links), 0)
-
 
         # Create a registration from a project
         user2 = UserFactory()
