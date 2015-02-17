@@ -9,7 +9,7 @@ from modularodm.exceptions import NoResultsFound
 
 class NotificationsDict(dict):
     def __init__(self):
-        super(dict, self).__init__()
+        super(NotificationsDict, self).__init__()
         self.update(messages=[], children=collections.defaultdict(NotificationsDict))
 
     def add_message(self, keys, messages):
