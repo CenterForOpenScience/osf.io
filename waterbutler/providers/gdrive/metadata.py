@@ -19,6 +19,12 @@ class BaseGoogleDriveMetadata(metadata.BaseMetadata):
             path = path[len(self._folder):]
         return super().build_path(path)
 
+    @property
+    def extra(self):
+        return {
+            'revisionId': self.raw['version']
+        }
+
 
 class GoogleDriveFolderMetadata(BaseGoogleDriveMetadata, metadata.BaseFolderMetadata):
 
@@ -68,26 +74,16 @@ class GoogleDriveFileMetadata(BaseGoogleDriveMetadata, metadata.BaseFileMetadata
 
 
 # TODO dates!
-class GoogleDriveRevision(BaseGoogleDriveMetadata, metadata.BaseFileRevisionMetadata):
+class GoogleDriveRevision(metadata.BaseFileRevisionMetadata):
 
     @property
-    def size(self):
-        return self.raw['bytes']
+    def version_identifier(self):
+        return 'revision'
+
+    @property
+    def version(self):
+        return self.raw['id']
 
     @property
     def modified(self):
-        return self.raw['modified']
-
-    @property
-    def revision(self):
-        return self.raw['rev']
-
-    @property
-    def content_type(self):
-        return self.raw['mime_type']
-
-    @property
-    def extra(self):
-        return {
-            'revisionNumber': self.raw['revision']
-        }
+        return self.raw['modifiedDate']

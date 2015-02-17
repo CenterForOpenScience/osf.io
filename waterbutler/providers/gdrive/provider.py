@@ -77,7 +77,6 @@ class GoogleDriveProvider(provider.BaseProvider):
     def download(self, path, revision=None, **kwargs):
 
         path = GoogleDrivePath(path, self.folder)
-        import pdb; pdb.set_trace()
         resp = yield from self.make_request(
             'GET',
             self.build_url('files', path._folderId),
@@ -97,13 +96,14 @@ class GoogleDriveProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
+
         try:
             yield from self.metadata(str(path))
         except exceptions.MetadataError:
             created = True
         else:
             created = False
-        path = GoogleDrivePath(path, self.folder)
+        path = GoogleDrivePath(path, self.folder, isUpload=True)
         content = yield from stream.read()
         #content = base64.b64encode(content)
         #content = content.decode('utf-8')
@@ -160,6 +160,7 @@ class GoogleDriveProvider(provider.BaseProvider):
         )
 
         data = yield from resp.json()
+        data['path'] = os.path.join(path.full_path, metadata['title'])
         return GoogleDriveFileMetadata(data, self.folder).serialized(), created
 
 
@@ -188,35 +189,45 @@ class GoogleDriveProvider(provider.BaseProvider):
             throws=exceptions.MetadataError
         )
         data = yield from resp.json()
-        if data['kind'] == "drive#fileList":
+
+        # Check to see if returned data is a file or folder
+        if len(data['items']) == 0:  # File
+            resp = yield from self.make_request(
+            'GET',
+            self.build_url('files', path._folderId),
+            expects=(200, ),
+            throws=exceptions.MetadataError
+            )
+            data = yield from resp.json()
+            data['path'] = os.path.join(path.full_path, data['title'])
+
+        else:
             ret = []
             for item in data['items']:
                 item['path'] = os.path.join(path.full_path, item['title'])  # custom add, not obtained from API
                 if item['mimeType'] == 'application/vnd.google-apps.folder':
                     ret.append(GoogleDriveFolderMetadata(item, self.folder).serialized())
                 else:
-                    # item['path'] = '/'+item['title']  # custom add, n   ot obtained from API
                     ret.append(GoogleDriveFileMetadata(item, self.folder).serialized())
             return ret
+
         return GoogleDriveFileMetadata(data, self.folder).serialized()
 
 
     @asyncio.coroutine
     def revisions(self, path, **kwargs):
-        pass
-        # path = DropboxPath(self.folder, path)
-        # response = yield from self.make_request(
-        #     'GET',
-        #     self.build_url('revisions', 'auto', path.full_path),
-        #     expects=(200, ),
-        #     throws=exceptions.RevisionError
-        # )
-        # data = yield from response.json()
-        #
-        # return [
-        #     DropboxRevision(item).serialized()
-        #     for item in data
-        # ]
+        path = GoogleDrivePath(path, self.folder)
+        response = yield from self.make_request(
+            'GET',
+            self.build_url('files', path._folderId, 'revisions'),
+            expects=(200, ),
+            throws=exceptions.RevisionsError
+        )
+        data = yield from response.json()
+        return [
+            GoogleDriveRevision(item).serialized()
+            for item in data['items']
+        ]
 
     def _build_content_url(self, *segments, **query):
         return provider.build_url(settings.BASE_CONTENT_URL, *segments, **query)
