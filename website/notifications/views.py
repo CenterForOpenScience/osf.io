@@ -7,6 +7,7 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from modularodm.storage.mongostorage import KeyExistsException
 from website.notifications.constants import NOTIFICATION_TYPES
+from website.notifications import utils
 
 @must_be_logged_in
 def configure_subscription(auth):
@@ -21,7 +22,7 @@ def configure_subscription(auth):
         )
 
     uid = subscription.get('id')
-    event_id = uid + "_" + event
+    event_id = utils.to_subscription_key(uid, event)
 
     if notification_type == 'adopt_parent':
         try:

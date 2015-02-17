@@ -22,6 +22,18 @@ class NotificationsDict(dict):
         return True
 
 
+def to_subscription_key(uid, event):
+    return str(uid + '_' + event)
+
+
+def from_subscription_key(key):
+    parsed_key = key.split("_", 1)
+    return {
+        'uid': parsed_key[0],
+        'event': parsed_key[1]
+    }
+
+
 @contributor_removed.connect
 def remove_contributor_from_subscriptions(contributor, node):
     node_subscriptions = get_all_node_subscriptions(contributor, node)
@@ -112,7 +124,7 @@ def get_parent_notification_type(uid, event, user):
     node = Node.load(uid)
     if node and node.node__parent:
         for p in node.node__parent:
-            key = str(p._id + '_' + event)
+            key = to_subscription_key(p._id, event)
             try:
                 subscription = Subscription.find_one(Q('_id', 'eq', key))
             except NoResultsFound:

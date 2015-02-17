@@ -183,6 +183,17 @@ class TestNotificationUtils(OsfTestCase):
         self.user_subscription.email_transactional.append(self.user)
         self.user_subscription.save()
 
+    def test_to_subscription_key(self):
+        key = utils.to_subscription_key('xyz', 'comments')
+        assert_equal(key, 'xyz_comments')
+
+    def test_from_subscription_key(self):
+        parsed_key = utils.from_subscription_key('xyz_comment_replies')
+        assert_equal(parsed_key, {
+            'uid': 'xyz',
+            'event': 'comment_replies'
+        })
+
     def test_get_all_user_subscriptions(self):
         user_subscriptions = utils.get_all_user_subscriptions(self.user)
         assert_in(self.project_subscription, user_subscriptions)

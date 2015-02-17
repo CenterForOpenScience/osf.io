@@ -9,10 +9,11 @@ from website import mails, settings
 from website.util import web_url_for
 from website.models import Node, User
 from mako.lookup import Template
+from website.notifications import utils
 
 
 def notify(uid, event, **context):
-    key = str(uid + '_' + event)
+    key = utils.to_subscription_key(uid, event)
 
     direct_subscribers = []
 
@@ -41,7 +42,7 @@ def check_parent(uid, event, direct_subscribers, **context):
     node = Node.load(uid)
     if node and node.node__parent:
         for p in node.node__parent:
-            key = str(p._id + '_' + event)
+            key = utils.to_subscription_key(p._id, event)
             try:
                 subscription = Subscription.find_one(Q('_id', 'eq', key))
             except NoResultsFound:
