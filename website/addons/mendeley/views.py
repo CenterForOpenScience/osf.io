@@ -175,5 +175,5 @@ def mendeley_citation_list(node_addon, project, node, pid, auth, mendeley_list_i
     ]
 
     return {
-        'contents': child_lists + citations
+        'data': child_lists + citations
     }
