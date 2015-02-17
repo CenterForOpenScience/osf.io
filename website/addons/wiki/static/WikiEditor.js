@@ -45,7 +45,7 @@ ko.bindingHandlers.ace = {
 function ViewModel(url) {
     var self = this;
 
-    self.publishedText = ko.observable('');
+    self.initText = ko.observable('');
     self.currentText = ko.observable('');
     self.activeUsers = ko.observableArray([]);
     self.status = ko.observable('connected');
@@ -118,7 +118,7 @@ function ViewModel(url) {
     };
 
     self.changed = function() {
-        return self.wikisDiffer(self.publishedText(), self.currentText());
+        return self.wikisDiffer(self.initText(), self.currentText());
     };
 
     // Fetch initial wiki text
@@ -129,7 +129,8 @@ function ViewModel(url) {
             dataType: 'json'
         });
         request.done(function (response) {
-            self.publishedText(response.wiki_content);
+            // Most recent version, whether saved or in mongo
+            self.initText(response.wiki_draft);
         });
         request.fail(function (xhr, textStatus, error) {
             $osf.growl('Error','The wiki content could not be loaded.');
@@ -142,9 +143,12 @@ function ViewModel(url) {
         return request;
     };
 
+    // Revert to last saved version, even if draft is more recent
     self.revertChanges = function() {
-        return self.fetchData().then(function() {
-            self.currentText(self.publishedText());
+        return self.fetchData().then(function(response) {
+            // Dirty check now covers last saved version
+            self.initText(response.wiki_content);
+            self.currentText(response.wiki_content);
         });
     };
 
