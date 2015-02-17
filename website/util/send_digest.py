@@ -1,5 +1,6 @@
 """Script for sending OSF email digests to subscribed users and removing the records once sent."""
 
+import logging
 import datetime
 import urlparse
 import mock
@@ -21,11 +22,17 @@ from tests.base import OsfTestCase
 from tests.factories import DigestNotificationFactory, UserFactory, ProjectFactory
 import nose.tools
 
+from scripts import utils as script_utils
+
+logger = logging.getLogger(__name__)
+script_utils.add_file_logger(logger, __file__)
+logging.basicConfig(level=logging.DEBUG)
+
 
 def main():
     init_app(routes=False)
     grouped_digests = group_digest_notifications_by_user()
-    print send_digest(grouped_digests)
+    send_digest(grouped_digests)
 
 
 @queued_task
@@ -43,6 +50,7 @@ def send_digest(grouped_digests):
         sorted_messages = group_messages(info)
 
         if user and sorted_messages:
+            logger.info('Sending email digest to user {0!r}'.format(user))
             mails.send_mail(
                 to_addr=user.username,
                 mail=mails.DIGEST,
