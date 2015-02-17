@@ -274,6 +274,9 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     if not path or not node_addon:
         raise HTTPError(httplib.BAD_REQUEST)
 
+    if not node_addon.has_auth:
+        raise HTTPError(httplib.FORBIDDEN)
+
     if not path.startswith('/'):
         path = '/' + path
 
@@ -331,6 +334,9 @@ def addon_render_file(auth, path, provider, **kwargs):
 
     if not path or not node_addon:
         raise HTTPError(httplib.BAD_REQUEST)
+
+    if not node_addon.has_auth:
+        raise HTTPError(httplib.UNAUTHORIZED)
 
     if not path.startswith('/'):
         path = '/' + path
