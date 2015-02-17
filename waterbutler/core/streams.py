@@ -239,9 +239,11 @@ class FormDataStream(MultiStream):
             if value is not None
         ])
 
+        header += '\r\n'
+
         if additional:
-            header += '\r\n'
             header += additional
+            header += '\r\n'
 
         return header + '\r\n'
 
