@@ -12,7 +12,10 @@ from website.addons.wiki import settings as wiki_settings
 
 
 def generate_private_uuid(node, wname):
-    """Generate private uuid for use in sharejs namespacing"""
+    """
+    Generate private uuid for internal use in sharejs namespacing.
+    Note that this will NEVER be passed to to the client or sharejs.
+    """
 
     private_uuid = str(uuid.uuid1())
     wiki_key = to_mongo_key(wname)

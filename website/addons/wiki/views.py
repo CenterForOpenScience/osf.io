@@ -162,7 +162,7 @@ def wiki_widget(**kwargs):
 
     ret = {
         'complete': True,
-        'wiki_content': unicode(wiki_html) if wiki_html else '',
+        'wiki_content': unicode(wiki_html) if wiki_html else None,
         'wiki_content_url': node.api_url_for('wiki_page_content', wname='home'),
         'use_python_render': use_python_render,
         'more': more,
@@ -246,9 +246,9 @@ def project_wiki_view(auth, wname, **kwargs):
         use_python_render = False
 
     if can_edit and wiki_key not in node.wiki_private_uuids:
-        sharejs_uuid = wiki_utils.generate_private_uuid(node, wiki_name)
-    else:
-        sharejs_uuid = wiki_utils.get_sharejs_uuid(node, wiki_name)
+        wiki_utils.generate_private_uuid(node, wiki_name)
+
+    sharejs_uuid = wiki_utils.get_sharejs_uuid(node, wiki_name)
 
     ret = {
         'wiki_id': wiki_page._primary_key if wiki_page else None,

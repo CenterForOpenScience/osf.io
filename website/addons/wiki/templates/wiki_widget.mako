@@ -1,7 +1,13 @@
 <%inherit file="project/addon/widget.mako"/>
 <%page expression_filter="h"/>
 
-<div id="markdown-it-render">${wiki_content | n}</div>
+<div id="markdown-it-render">
+    % if wiki_content:
+        ${wiki_content | n}
+    % else:
+        <p><em>No wiki content</em></p>
+    % endif
+</div>
 
 <% import json %>
 <script>
