@@ -216,7 +216,6 @@ class GuidFile(GuidStoredObject):
     @property
     def _base_butler_url(self):
         url = furl.furl(settings.WATERBUTLER_URL)
-
         url.args.update({
             'nid': self.node._id,
             'provider': self.provider,
@@ -334,7 +333,6 @@ class GuidFile(GuidStoredObject):
 
         if should_raise:
             self._exception_from_response(resp)
-
         self._metadata_cache = resp.json()['data']
 
 

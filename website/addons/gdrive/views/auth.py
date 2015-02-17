@@ -14,6 +14,7 @@ from website.project.model import Node
 from website.util import web_url_for
 from oauth2client.client import OAuth2WebServerFlow
 from website.project.decorators import (must_have_addon, must_have_permission)
+from apiclient.discovery import build
 
 
 @must_be_logged_in
@@ -67,6 +68,12 @@ def drive_oauth_finish(auth, **kwargs):
         # # previously connected to GDrive?
         node_settings.save()
         return redirect(os.path.join(node.url, 'settings'))
+    else:
+        service = build('drive', 'v2', http_service)
+        about = service.about().get().execute()
+        username = '{0}/{1}'.format(about['name'], about['user']['emailAddress'])
+        user_settings.username = username
+        user_settings.save()
     return redirect(web_url_for('user_addons'))
 
 

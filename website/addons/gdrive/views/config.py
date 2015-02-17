@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 from flask import request
 from framework.auth.core import _get_current_user
-from framework.auth.decorators import must_be_logged_in
+from framework.auth.decorators import must_be_logged_in, collect_auth
 import httplib as http
 from website.project.decorators import (must_be_valid_project,
                                         must_have_addon, must_not_be_registration, must_be_addon_authorizer)
 from website.util import api_url_for
 from ..utils import serialize_settings, serialize_urls
 
-# TODO
+@collect_auth
 @must_be_valid_project
 @must_have_addon('gdrive', 'node')
 def gdrive_config_get(node_addon, **kwargs):
@@ -56,6 +56,7 @@ def drive_user_config_get(user_addon, auth, **kwargs):
     return {
         'result': {
             'userHasAuth': user_addon.has_auth,
-            'urls': urls
+            'urls': urls,
+            'username': user_addon.username
         },
     }, http.OK

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Factory boy factories for the Dropbox addon."""
+"""Factory boy factories for the Google Drive addon."""
 
 from framework.auth import Auth
 
@@ -15,6 +15,7 @@ from website.addons.gdrive.model import (
 class GdriveUserSettingsFactory(ModularOdmFactory):
     FACTORY_FOR = AddonGdriveUserSettings
 
+    username = 'name/email Address'
     owner = SubFactory(UserFactory)
     access_token = Sequence(lambda n: 'abcdef{0}'.format(n))
 
@@ -34,6 +35,6 @@ class GdriveFileFactory(ModularOdmFactory):
     path = 'foo.txt'
 
     @post_generation
-    def add_dropbox_addon(self, created, extracted):
-        self.node.add_addon('dropbox', auth=Auth(user=self.node.creator))
+    def add_gdrive_addon(self, created, extracted):
+        self.node.add_addon('gdrive', auth=Auth(user=self.node.creator))
         self.node.save()

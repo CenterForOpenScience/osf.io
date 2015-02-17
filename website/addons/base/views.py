@@ -268,7 +268,6 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     extras = request.args.to_dict()
     action = extras.get('action', 'view')
     node = kwargs.get('node') or kwargs['project']
-
     node_addon = node.get_addon(provider)
 
     if not path or not node_addon:
@@ -276,14 +275,11 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     if not path.startswith('/'):
         path = '/' + path
-
     file_guid, created = node_addon.find_or_create_file_guid(path)
-
     if file_guid.guid_url != request.path:
         guid_url = furl.furl(file_guid.guid_url)
         guid_url.args.update(extras)
         return redirect(guid_url)
-
     file_guid.maybe_set_version(**extras)
 
     if action == 'download':
@@ -309,8 +305,8 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
 
 def addon_view_file(auth, node, node_addon, file_guid, extras):
+    print extras
     render_url = node.api_url_for('addon_render_file', path=file_guid.waterbutler_path.lstrip('/'), provider=file_guid.provider, **extras)
-
     resp = serialize_node(node, auth, primary=True)
     resp.update({
         'provider': file_guid.provider,
@@ -323,13 +319,13 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
         #NOTE: get_or_start_render must be called first to populate name
         'file_name': getattr(file_guid, 'name', os.path.split(file_guid.waterbutler_path)[1]),
     })
-
     return resp
 
 
 @must_be_valid_project
 @must_be_contributor_or_public
 def addon_render_file(auth, path, provider, **kwargs):
+
     node = kwargs.get('node') or kwargs['project']
 
     node_addon = node.get_addon(provider)
@@ -343,3 +339,5 @@ def addon_render_file(auth, path, provider, **kwargs):
     file_guid.maybe_set_version(**request.args.to_dict())
 
     return get_or_start_render(file_guid)
+
+

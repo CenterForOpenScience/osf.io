@@ -2,6 +2,7 @@
 """Persistence layer for the gdrive addon.
 """
 import os
+import base64
 from modularodm.exceptions import ModularOdmException
 from framework.auth import Auth
 from modularodm import fields, Q
@@ -14,10 +15,26 @@ class AddonGdriveGuidFile(GuidFile):
     path = fields.StringField(index=True)
 
     @property
-    def file_url(self):
-        if self.path is None:
-            raise ValueError('Path field must be defined.')
-        return os.path.join('gdrive', 'file', self.path)
+    def file_name(self):
+        folder_name = '/' + clean_path(self.path)
+        if self.revision:
+            return '{0}_{1}_{2}.html'.format(self._id, self.revision, base64.b64encode(folder_name))
+        return '{0}_{1}_{2}.html'.format(self._id, self.unique_identifier, base64.b64encode(folder_name))
+
+    # @property
+    # def file_url(self):
+    #     if self.path is None:
+    #         raise ValueError('Path field must be defined.')
+    #     return os.path.join('gdrive', 'file', self.path)
+
+    @property
+    def folder(self):
+        return self.node.get_addon('gdrive').folder
+
+    @property
+    def waterbutler_path(self):
+        path = self.path
+        return path
 
     @property
     def provider(self):
@@ -35,7 +52,6 @@ class AddonGdriveGuidFile(GuidFile):
     def get_or_create(cls, node, path):
         """Get or create a new file record. Return a tuple of the form (obj, created)
         """
-        path = clean_path(path)
         try:
             new = cls.find_one(
                 Q('node', 'eq', node) &
@@ -55,15 +71,25 @@ class AddonGdriveUserSettings(AddonUserSettingsBase):
     token.
     """
     access_token = fields.StringField(required=False)
-    # TODO
-
+    username = fields.StringField(required=False)
     @property
     def has_auth(self):
         return bool(self.access_token)
 
-    def clear(self):
+    def clear(self):  # TODO : check for all the nodes (see dropbox)
         self.access_token = None
+
+        for node_settings in self.addongdrivenodesettings__authorized:
+            node_settings.deauthorize(Auth(self.owner))
+            node_settings.save()
         return self
+
+    def delete(self, save=True):
+        self.clear()
+        super(AddonGdriveUserSettings, self).delete(save)
+
+    def __repr__(self):
+        return u'<AddonGdriveUserSettings(user={self.owner.username!r})>'.format(self=self)
 
 
 class AddonGdriveNodeSettings(AddonNodeSettingsBase):
@@ -72,7 +98,7 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
     )
 
     folder = fields.StringField(default=None)
-    folderId = fields.StringField(default=None)
+    # folderId = fields.StringField(default=None)  # TODO Remove, if not used
 
     @property
     def has_auth(self):
@@ -81,7 +107,6 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
 
     def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""
-        # TODO: Any other addon-specific settings should be removed here.
         node = self.owner
         folder = self.folder
 
@@ -91,7 +116,7 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
         if add_log:
             extra = {'folder': folder}
             nodelogger = GoogleDriveNodeLogger(node=node, auth=auth)
-            nodelogger.log(action="gdrive_node_deauthorized", extra=extra, save=True)
+            nodelogger.log(action="node_deauthorized", extra=extra, save=True)
 
     def set_folder(self, folder, auth):
         self.folder = folder
@@ -99,14 +124,14 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
         nodelogger = GoogleDriveNodeLogger(node=self.owner, auth=auth)
         nodelogger.log(action="folder_selected", save=True)
 
-    def set_user_auth(self, user_settings, auth):
+    def set_user_auth(self, user_settings):
         """Import a user's GDrive authentication and create a NodeLog.
 
         :param AddonGdriveUserSettings user_settings: The user settings to link.
         """
         self.user_settings = user_settings
-        nodelogger = GoogleDriveNodeLogger(node=self.owner, auth=auth)
-        nodelogger.log(action="gdrive_node_authorized", save=True)
+        nodelogger = GoogleDriveNodeLogger(node=self.owner, auth=Auth(user_settings.owner))
+        nodelogger.log(action="node_authorized", save=True)
 
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
@@ -119,17 +144,15 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
         return {'folder': self.folder}
 
     def create_waterbutler_log(self, auth, action, metadata):
-
-        cleaned_path = clean_path(metadata['path'])
-        url = self.owner.web_url_for('addon_view_or_download_file', path=cleaned_path, provider='gdrive')
-
+        # cleaned_path = clean_path(metadata['path'])
+        url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='gdrive')
         self.owner.add_log(
             'gdrive_{0}'.format(action),
             auth=auth,
             params={
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
-                'path': cleaned_path,
+                'path': metadata['path'],
                 'folder': self.folder,
 
                 'urls': {

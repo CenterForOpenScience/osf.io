@@ -13,28 +13,30 @@ from apiclient import errors
 @must_be_contributor_or_public
 @must_have_addon('gdrive', 'node')
 def gdrive_folders(node_addon, **kwargs):
-
-    node = node_addon.owner  # TODO change variable names
+    """ Returns all the subsequent folders under the folder id passed """
+    node_owner = node_addon.owner
     nid = kwargs.get('nid') or kwargs.get('pid')
-    node_addon = Node.load(nid)
-    node_settings = node_addon.get_addon('gdrive')
+    node = Node.load(nid)
+    node_settings = node.get_addon('gdrive')
     # Get service using Access token
     if node_settings:
         user_settings = node_settings.user_settings
-        credentials = AccessTokenCredentials(user_settings.access_token, request.headers.get('User-Agent'))
         http_service = httplib2.Http()
+        credentials = AccessTokenCredentials(user_settings.access_token, request.headers.get('User-Agent'))
         http_service = credentials.authorize(http_service)
         service = build('drive', 'v2', http_service)
 
-    if request.args.get('foldersOnly'):
-        folderid = request.args.get('folderId')
     path = request.args.get('path') or ''
-    result = retrieve_all_files(service, folderid)
-    contents = [to_hgrid(item, node, path=path)
+    folderid = request.args.get('folderId')
+    if request.args.get('foldersOnly'):
+        result = retrieve_all_files(service, folderid=folderid, foldersonly=1)
+    else:
+        result = retrieve_all_files(service, folderid=folderid, foldersonly=0)
+    contents = [to_hgrid(item, node_owner, path=path)
                 for item in result]
     return contents
 
-def retrieve_all_files(service, folderId):
+def retrieve_all_files(service, folderid=None, foldersonly=0):
     """Retrieve a list of File resources.
 
     Args:
@@ -43,19 +45,18 @@ def retrieve_all_files(service, folderId):
     List of File resources.
 """
     result = []
-    page_token = None
-    folderId = folderId or 'root'
+    folderId = folderid or 'root'
     while True:
         try:
-            param = {}
-            if page_token:
-                param['pageToken'] = page_token
             if service:
-                folders = service.files().list(q=" '%s' in parents and trashed = false and"
-                                            " mimeType = 'application/vnd.google-apps.folder'" % folderId).execute()
+                if foldersonly:
+                    folders = service.files().list(q=" '%s' in parents and trashed = false and "
+                                                   "mimeType = 'application/vnd.google-apps.folder' "
+                                                   % folderId).execute()
+                else:
+                    folders = service.files().list(q=" '%s' in parents and trashed = false" % folderId).execute()
+
                 result.extend(folders['items'])
-            page_token = folders.get('nextPageToken')
-            if not page_token:
                 break
         except errors.HttpError:
             break
