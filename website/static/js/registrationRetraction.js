@@ -26,52 +26,40 @@ var RegistrationRetractionViewModel = function(submitUrl) {
     };
     ko.validation.registerExtenders();
 
-    self.justification = ko.observable('').extend({
+    self.registrationTitle = ko.observable(contextVars.node.title);
+    self.justification = ko.observable().extend({
         required: true,
-        minLength: 1
+        minLength: 10
+    });
+    self.confirmationText = ko.observable().extend({
+        required: true,
+        mustEqual: self.registrationTitle
     });
 
-    // TODO(hrybacki): look into contextVars to determine how do grab the project/node title for use here...
-    self.confirmationText = ko.observable('').extend({
-        required: true,
-        mustEqual: 'retract registration'
-    });
-
-    // Preserve object of validated fields for use in `submit`
-    var validatedFields = {
-        justification: self.justfication,
-        confirmationText: self.confirmationText
-    };
-
-    // Collect validated fields
-    self.validatedFields = ko.validatedObservable($.extend({}, validatedFields));
-
-    self.submitted = ko.observable(false);
-
-    // FIXME(hrybacki): not working correctly -- once validated, if user deletes
-    // data from a field (making it invalid), is_valid is still true...
     self.isValid = ko.computed(function() {
-        return self.validatedFields.isValid();
+        return self.justification.isValid() && self.confirmationText.isValid();
     });
 
     self.submit = function() {
         // Show errors if invalid
         if (!self.isValid()) {
-            alert('Fix yo shit...');
+            var errors = ko.validation.group(self);
+            errors.showAllMessages();
+
+            return false;
+        } else {
+            // Else Submit
+            $osf.postJSON(
+                submitUrl,
+                ko.toJS(self)
+            ).done(function (response) {
+                    $(location).attr("href", response.redirectUrl);
+                }
+            ).fail(
+                console.log('Unsuccessful submission')
+            );
         }
-
-        // Else Submit
-        $osf.postJSON(
-            submitUrl,
-            ko.toJS(self)
-        ).done(function(response){
-                $( location ).attr("href", response.redirectUrl);
-            }
-        ).fail(
-            console.log('Unsuccessful submission')
-        );
     };
-
 };
 
 var RegistrationRetraction = function(selector, submitUrl) {

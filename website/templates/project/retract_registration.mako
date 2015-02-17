@@ -24,7 +24,7 @@
             <hr />
 
             <div class="form-group">
-                <label class="control-label">Type "retract registration" if you are sure you want to continue.</label>
+                <label class="control-label">Type '<span data-bind="text: registrationTitle"></span>' if you are sure you want to continue.</label>
                 <textarea
                         class="form-control"
                         data-bind="textInput: confirmationText"
