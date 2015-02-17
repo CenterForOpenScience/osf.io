@@ -47,10 +47,11 @@ def serialize_settings(node_settings, current_user):
         user_is_owner = node_account in user_accounts        
     user_has_auth = True if len(user_accounts) else False
     user_settings = None
+    '''
+    if node_account is not None:#len(node_settings.associated_user_settings):
+        user_settings = node_account.disx#node_settings.associated_user_settings[0]
+    '''
     user_account_id = None
-    if len(node_settings.associated_user_settings):
-        user_settings = node_settings.associated_user_settings[0]
-
     validCredentials = False
     if user_has_auth:
         user_account_id = user_accounts[0]._id
@@ -64,10 +65,13 @@ def serialize_settings(node_settings, current_user):
         'urls': serialize_urls(node_settings, user_accounts),
         'userAccountId': user_account_id
     }
+    '''
     if user_settings is not None:
         result['urls']['owner'] = web_url_for('profile_view_id',
                                               uid=user_settings.owner._primary_key)
-        result['ownerName'] = user_settings.owner.fullname
+    '''
+    if node_account:
+        result['ownerName'] = node_account.display_name #user_settings.owner.fullname
     # TODO cache folder name (model.py)
     result['folder'] = node_settings.mendeley_list_id
     return result
@@ -118,6 +122,8 @@ def mendeley_add_user_auth(auth, user_addon, node_addon, **kwargs):
     external_account = ExternalAccount.load(
         request.json['external_account_id']
     )
+    if external_account not in auth.user.external_accounts:
+        raise HTTPError(http.FORBIDDEN)
     node_addon.grant_oauth_access(user_addon.owner, external_account)
     node_addon.external_account = external_account
     node_addon.save()
@@ -178,7 +184,7 @@ def mendeley_citation_list(node_addon, project, node, pid, auth, mendeley_list_i
     attached_list_id = node_addon.mendeley_list_id
     # We should discuss the consequences of this, but needed for
     # nodeSettings page
-    list_id = mendeley_list_id or None # attached_list_id
+    list_id = mendeley_list_id # attached_list_id
 
     account_folders = node_addon.api.citation_lists
 
