@@ -37,12 +37,7 @@ def get_configured_projects(user):
     configured_project_ids = []
     user_subscriptions = get_all_user_subscriptions(user)
     for subscription in user_subscriptions:
-        try:
-            node = Node.load(subscription.object_id)
-        except NoResultsFound:
-            # handle case where object_id for the subscription is NOT a project, but a user
-            pass
-
+        node = Node.load(subscription.object_id)
         if node and node.project_or_component == 'project' and not node.is_deleted and subscription.object_id not in configured_project_ids:
             configured_project_ids.append(subscription.object_id)
 
