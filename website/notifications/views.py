@@ -15,7 +15,7 @@ def configure_subscription(auth):
     event = subscription.get('event')
     notification_type = subscription.get('notification_type')
 
-    if not event or notification_type:
+    if not event or not notification_type:
         raise HTTPError(http.BAD_REQUEST, data=dict(
             message_long="Must provide an event and notification type for subscription.")
         )
