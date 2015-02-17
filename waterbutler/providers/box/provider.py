@@ -14,8 +14,6 @@ from waterbutler.providers.box.metadata import BoxRevision
 from waterbutler.providers.box.metadata import BoxFileMetadata
 from waterbutler.providers.box.metadata import BoxFolderMetadata
 
-from waterbutler.providers.box import utils as box_utils
-
 
 class BoxPath(utils.WaterButlerPath):
 
@@ -47,16 +45,13 @@ class BoxProvider(provider.BaseProvider):
     def download(self, path, revision=None, **kwargs):
         path = BoxPath(path)
         if revision and revision != path._id:
-            resp = yield from self.make_request(
-                'GET',
-                self.build_url('files', path._id, 'content', version=revision),
-                expects=(200, ),
-                throws=exceptions.DownloadError,
-            )
-            return streams.ResponseStreamReader(resp)
+            url = self.build_url('files', path._id, 'content', version=revision)
+        else:
+            url = self.build_url('files', path._id, 'content')
+
         resp = yield from self.make_request(
             'GET',
-            self.build_url('files', path._id, 'content'),
+            url,
             expects=(200, ),
             throws=exceptions.DownloadError,
         )
@@ -154,22 +149,15 @@ class BoxProvider(provider.BaseProvider):
         return ret
 
     def _upload_create(self, stream, path):
-        stream, boundary, size = box_utils.make_upload_data(stream, parent_id=path._id, file=path.name)
-        #attrs = {'name': path.name, 'parent': {'id': path._id}}
-        #datastream = streams.FormDataStream(
-        #    attributes=json.dumps(attrs),
-        #    file=(stream, path._id)
-        #)
-
+        data_stream = streams.FormDataStream(
+            attributes=json.dumps({'name': path.name, 'parent': {'id': path._id}}),
+        )
+        data_stream.add_file('file', stream, path.name, disposition='form-data')
         resp = yield from self.make_request(
             'POST',
             self._build_upload_url('files', 'content'),
-            data=stream,
-            #headers=datastream.headers,
-            headers={
-                'Content-Length': str(size),
-                'Content-Type': 'multipart/form-data; boundary={0}'.format(boundary.decode()),
-            },
+            data=data_stream,
+            headers=data_stream.headers,
             expects=(200, 201, ),
             throws=exceptions.UploadError,
         )
@@ -179,15 +167,15 @@ class BoxProvider(provider.BaseProvider):
     def _upload_update(self, stream, path, meta):
         #'etag' of the file can be included as an ‘If-Match’ header to prevent race conditions
         meta_path = BoxPath(meta['path'])
-        stream, boundary, size = box_utils.make_upload_data(stream, parent_id=path._id, file=path.name)
+        data_stream = streams.FormDataStream(
+            attributes=json.dumps({'name': path.name, 'parent': {'id': path._id}}),
+        )
+        data_stream.add_file('file', stream, path.name, disposition='form-data')
         resp = yield from self.make_request(
             'POST',
             self._build_upload_url('files', meta_path._id, 'content'),
-            data=stream,
-            headers={
-                'Content-Length': str(size),
-                'Content-Type': 'multipart/form-data; boundary={0}'.format(boundary.decode()),
-            },
+            data=data_stream,
+            headers=data_stream.headers,
             expects=(200, 201, ),
             throws=exceptions.UploadError,
         )

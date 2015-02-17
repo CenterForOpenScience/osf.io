@@ -21,10 +21,6 @@ class BoxFolderMetadata(BaseBoxMetadata, metadata.BaseFolderMetadata):
     def path(self):
         return '/{}/'.format(self.raw['id'])
 
-    @property
-    def content_type(self):
-        return self.raw['type']
-
 
 class BoxFileMetadata(BaseBoxMetadata, metadata.BaseFileMetadata):
 
@@ -45,31 +41,15 @@ class BoxFileMetadata(BaseBoxMetadata, metadata.BaseFileMetadata):
         return self.raw.get('modified_at')
 
     @property
-    def parent(self):
-        return self.raw.get('parent').get('id')
-
-    @property
     def folder(self):
         return self.settings['folder']
 
     @property
     def content_type(self):
-        return self.raw['type']
+        return None
 
 
 class BoxRevision(metadata.BaseFileRevisionMetadata):
-
-    @property
-    def size(self):
-        return self.raw.get('size')
-
-    @property
-    def kind(self):
-        return 'file'
-
-    @property
-    def name(self):
-        return self.raw['name']
 
     @property
     def version(self):
@@ -87,11 +67,14 @@ class BoxRevision(metadata.BaseFileRevisionMetadata):
         try:
             return '/{0}/{1}'.format(self.raw['id'], self.raw['name'])
         except KeyError:
-            return self.raw['path']
+            return self.raw.get('path')
 
     @property
     def modified(self):
-        return self.raw.get('modified_at')
+        try:
+            return self.raw['modified_at']
+        except KeyError:
+            return self.raw.get('modified')
 
     @property
     def revision(self):
