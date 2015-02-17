@@ -14,11 +14,12 @@ from . import utils
 from .api import APISession
 
 
-def serialize_folder(name, account_id, parent_id=None, list_id=None):
+def serialize_folder(name, account_id, parent_id=None, list_id=None, id=None):
     retval = {
         'name': name,
         'provider_account_id': account_id,
         'provider_list_id': list_id,
+        'id': id
     }
     if parent_id:
         retval['parent_list_id'] = parent_id
@@ -232,6 +233,7 @@ class Mendeley(ExternalProvider):
                 account_id=self.account.provider_id,
                 list_id=each.json['id'],
                 parent_id=each.json.get('parent_id'),
+                id=each.json.get('id')
             )
             for each in folders
         ]

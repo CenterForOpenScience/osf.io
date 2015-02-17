@@ -161,6 +161,8 @@ def mendeley_citation_list(node_addon, project, node, pid, auth, mendeley_list_i
         {
             'data': each,
             'kind': 'folder',
+            'name': each['name'],
+            'id': each['id']
         }
         for each in account_folders
         if each.get('parent_list_id') == list_id
@@ -170,10 +172,11 @@ def mendeley_citation_list(node_addon, project, node, pid, auth, mendeley_list_i
         {
             'csl': each,
             'kind': 'item',
+            'id': each['id']
         }
         for each in node_addon.api.get_list(list_id)
     ]
 
     return {
-        'data': child_lists + citations
+        'contents': child_lists + citations
     }

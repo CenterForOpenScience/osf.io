@@ -1,26 +1,138 @@
-<form role="form" id="addonSettings${addon_short_name.capitalize()}" data-addon="${addon_short_name}" class="container-fluid">
-    <div class="row">
-        <h4 class="addon-title">Mendeley</h4>
+
+<link rel="stylesheet" href="/static/addons/mendeley/node-cfg.css">
+<div id="mendeleyScope" class="scripted">
+    <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
+    <h4 class="addon-title">
+        Mendeley
+        <small class="authorized-by">
+            <span data-bind="if: nodeHasAuth">
+                authorized by <a data-bind="attr.href: urls().owner">
+                    {{ownerName}}
+                </a>
+                % if not is_registration:
+                    <a data-bind="click: deauthorize"
+                        class="text-danger pull-right addon-auth">Deauthorize</a>
+                % endif
+            </span>
+
+             <!-- Import Access Token Button -->
+            <span data-bind="if: showImport">
+                <a data-bind="click: importAuth" href="#" class="text-primary pull-right addon-auth">
+                    Import Access Token
+                </a>
+            </span>
+
+            <!-- Oauth Start Button -->
+            <span data-bind="if: showTokenCreateButton">
+                <a data-bind="attr.href: urls().auth" class="text-primary pull-right addon-auth">
+                    Create Access Token
+                </a>
+            </span>
+        </small>
+    </h4>
+
+
+    <!-- Settings Pane -->
+    <div class="mendeley-settings" data-bind='if: showSettings'>
+        <div class="row">
+            <div class="col-md-12">
+                <p>
+                    <strong>Current Folder:</strong>
+                    <a data-bind="attr.href: urls().files">
+		      			                             {{folderName}}
+                    </a>
+                    <span data-bind="if: folder().path === null" class="text-muted">
+                        None
+                    </span>
+
+                </p>
+
+                <!-- Folder buttons -->
+                <div class="btn-group" data-bind="visible: userIsOwner()">
+                    <button data-bind="visible: validCredentials,
+                                        click: togglePicker,
+                                        css: {active: currentDisplay() === PICKER}"
+                            class="btn btn-sm btn-mendeley"><i class="icon-edit"></i> Change</button>
+                    <button data-bind="attr.disabled: disableShare,
+                                        visible: validCredentials,
+                                        click: toggleShare,
+                                        css: {active: currentDisplay() === SHARE}"
+                        class="btn btn-sm btn-mendeley"><i class="icon-share-alt"></i> Share on mendeley
+                            <span data-bind="visible: folder().path === '/'">(Cannot share root folder)</span>
+                        </button>
+                </div>
+
+
+                <!-- Folder picker -->
+                <div class="mendeley-widget">
+                    <p class="text-muted text-center mendeley-loading-text" data-bind="visible: loading">
+                    Loading folders...</p>
+
+                    <div data-bind="visible: currentDisplay() === PICKER">
+                        <div id="mendeleyGrid"
+                             class="filebrowser hgrid mendeley-folder-picker"></div>
+                    </div>
+
+                    <!-- Share -->
+                    <div data-bind="visible: currentDisplay() === SHARE && emails().length === 0"
+                        class="help-block">
+                        <p>No contributors to share with.</p>
+                    </div>
+
+                    <div data-bind="visible: currentDisplay() === SHARE && emails().length">
+                        <div class="help-block">
+                            <p>To share this folder with other mendeley users on this project, copy
+                            the email addresses of the contributors (listed below) into the
+                            "Share Folder" dialog on mendeley.</p>
+                        </div>
+
+                        <label for="contrib-emails">Copy these:</label>
+                        <div class="input-group">
+                            <textarea name="contrib-emails"
+                                    class="form-control" rows="3" id="contribEmails"
+                             data-bind="value: emailList,
+                                        attr.autofocus: currentDisplay() === SHARE">
+                            </textarea>
+                            <span data-clipboard-target="contribEmails"
+                                class="input-group-addon pointer"
+                                id="copyBtn">
+                                <i class="icon-paste"></i>
+                            </span>
+                        </div>
+
+                        <div class="input-group pull-right">
+                            <a target="_blank" data-bind="attr.href: urls().share"
+                                class="btn btn-link"><i class="icon-share-alt"></i> Continue to mendeley...</a>
+                        </div>
+                    </div>
+
+                    <!-- Queued selection -->
+                    <div class="mendeley-confirm-selection"
+                        data-bind="visible: currentDisplay() == PICKER && selected()">
+                        <form data-bind="submit: submitSettings">
+
+                            <h4 data-bind="if: selected" class="mendeley-confirm-dlg">
+                                Connect &ldquo;{{ selectedFolderName }}&rdquo;?
+                            </h4>
+                            <div class="pull-right">
+                                <button class="btn btn-default"
+                                        data-bind="click: cancelSelection">
+                                    Cancel
+                                </button>
+                                <input type="submit"
+                                       class="btn btn-primary"
+                                       value="Submit" />
+                            </div>
+                        </form>
+                    </div><!-- end .mendeley-confirm-selection -->
+
+                </div>
+            </div><!-- end col -->
+        </div><!-- end row -->
+    </div><!-- end .mendeley-settings -->
+
+    <!-- Flashed Messages -->
+    <div class="help-block">
+        <p data-bind="html: message, attr.class: messageClass"></p>
     </div>
-
-    <div class="row">
-        <div class="form-group">
-            <label>User</label>
-            <select class="form-control" data-bind="foreach: accounts, value: selectedAccountId">
-                    <option data-bind="text: display_name, value: id"></option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label>Folder</label>
-            <select class="form-control" data-bind="foreach: citationLists, value: selectedCitationList">
-                    <option data-bind="text: name, value: provider_list_id"></option>
-            </select>
-        </div>
-        <div>
-            <a class="btn btn-primary" data-bind="click: save">Save</a>
-            <span data-bind="text: message"></span>
-        </div>
-    </div>
-
-
-</form>
+</div><!-- end #mendeleyScope -->

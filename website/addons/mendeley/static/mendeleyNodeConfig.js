@@ -74,23 +74,14 @@ var ViewModel = function(url, selector, folderPicker) {
         * Update the view model from data returned from the server.
         */
     self.updateFromData = function(data) {
-	debugger;
         self.ownerName(data.ownerName);
         self.nodeHasAuth(data.nodeHasAuth);
-	// TODO: fix this
-        self.userIsOwner(true);
-	/////////////////
+        self.userIsOwner(data.userIsOwner);
         self.userHasAuth(data.userHasAuth);
-	/* TODO: fixme
         self.validCredentials(data.validCredentials);
-	*/
-	self.validCredentials(true);
         // Make sure folder has name and path properties defined
-	// TODO: fixme
-        // self.folder(data.folder || {name: null, path: null});
-	//////////////
-	self.folder('');
-	// AND THIS
+        self.folder(data.folder || {name: null, path: null});
+        self.urls(data.urls);
     };
 
     self.fetchFromServer = function() {
@@ -163,49 +154,38 @@ var ViewModel = function(url, selector, folderPicker) {
 
 
     /**
-        * Whether or not to show the Import Access Token Button
-        */
+     * Whether or not to show the Import Access Token Button
+     */
     self.showImport = ko.computed(function() {
-	/* TODO: implement me? 	   
         // Invoke the observables to ensure dependency tracking
         var userHasAuth = self.userHasAuth();
         var nodeHasAuth = self.nodeHasAuth();
         var loaded = self.loadedSettings();
         return userHasAuth && !nodeHasAuth && loaded;
-	*/
 	return false;
     });
 
     /** Whether or not to show the full settings pane. */
     self.showSettings = ko.computed(function() {
-	/* TODO: implement me
         return self.nodeHasAuth();
-	*/
-	return true;
     });
 
     /** Whether or not to show the Create Access Token button */
     self.showTokenCreateButton = ko.computed(function() {
-	/* TODO: implement me
         // Invoke the observables to ensure dependency tracking
         var userHasAuth = self.userHasAuth();
         var nodeHasAuth = self.nodeHasAuth();
         var loaded = self.loadedSettings();
         return !userHasAuth && !nodeHasAuth && loaded;
-	*/
-	return false;
     });
 
     /** Computed functions for the linked and selected folders' display text.*/
 
     self.folderName = ko.computed(function() {
-	/* TODO: implement me
         // Invoke the observables to ensure dependency tracking
         var nodeHasAuth = self.nodeHasAuth();
         var folder = self.folder();
         return (nodeHasAuth && folder) ? folder.name : '';
-	*/
-	return self.folder().name;
     });
 
     self.selectedFolderName = ko.computed(function() {
@@ -351,13 +331,23 @@ var ViewModel = function(url, selector, folderPicker) {
                 initialFolderName : self.folderName(),
                 initialFolderPath : 'mendeley',
                 // Fetch mendeley folders with AJAX
-                filesData: self.urls().folders, // URL for fetching folders
+                filesData: [{
+		    id: self.folder(),
+		    name: self.folder(),
+		    urls: {
+			fetch: self.urls().folders
+		    },
+		    kind: 'folder'
+		}],
+		//self.urls().folders, // URL for fetching folders
                 // Lazy-load each folder's contents
                 // Each row stores its url for fetching the folders it contains
-
                 resolveLazyloadUrl : function(item){
                     return item.data.urls.folders;
                 },
+		lazyLoadPreprocess: function(data){
+		    return data.contents;
+		},
                 oddEvenClass : {
                     odd : 'mendeley-folderpicker-odd',
                     even : 'mendeley-folderpicker-even'
@@ -376,8 +366,6 @@ var ViewModel = function(url, selector, folderPicker) {
                 folderPickerOnload: function() {
                     // Hide loading indicator
                     self.loading(false);
-                    // Set flag to prevent repeated requests
-                    self.loadedFolders(true);
                 }
             });
         }
