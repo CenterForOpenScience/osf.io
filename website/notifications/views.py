@@ -57,3 +57,5 @@ def configure_subscription(auth):
                 if getattr(s, nt) and user in getattr(s, nt):
                     getattr(s, nt).remove(user)
                     s.save()
+
+        return {'message': 'Successfully added ' + repr(user) + ' to ' + notification_type + ' list on ' + event_id}, 200
