@@ -11,7 +11,6 @@ from website.addons.gdrive.tests.factories import (
     GdriveNodeSettingsFactory, GdriveUserSettingsFactory
 )
 from website.addons.base import exceptions
-from website.addons.gdrive.utils import clean_path
 
 
 class TestGdriveUserSettingsModel(OsfTestCase):
@@ -214,7 +213,7 @@ class TestGdriveNodeSettingsModel(OsfTestCase):
         )
         assert_equal(
             self.project.logs[-1].params['path'],
-            clean_path(path),
+            path,
         )
 
 
