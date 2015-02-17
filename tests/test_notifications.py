@@ -12,6 +12,7 @@ from framework.auth.signals import contributor_removed, node_deleted
 from framework.auth import Auth
 from website.util import web_url_for
 from website.notifications.model import Subscription, DigestNotification
+from website.notifications.constants import SUBSCRIPTIONS_AVAILABLE, NOTIFICATION_TYPES, USER_SUBSCRIPTIONS_AVAILABLE
 from website.notifications import emails, utils
 from website.util import api_url_for
 from website import settings, mails
@@ -89,7 +90,7 @@ class TestSubscriptionView(OsfTestCase):
         s.reload()
 
         # assert that user is removed from the subscription entirely
-        for n in settings.NOTIFICATION_TYPES:
+        for n in NOTIFICATION_TYPES:
             assert_false(node.creator in getattr(s, n))
 
 
@@ -245,7 +246,7 @@ class TestNotificationUtils(OsfTestCase):
                 'children': [
                     {
                         'title': 'comments',
-                        'description': settings.SUBSCRIPTIONS_AVAILABLE['comments'],
+                        'description': SUBSCRIPTIONS_AVAILABLE['comments'],
                         'kind': 'event',
                         'notificationType': 'email_transactional',
                         'children': [],
@@ -259,7 +260,7 @@ class TestNotificationUtils(OsfTestCase):
                         'children': [
                             {
                                 'title': 'comments',
-                                'description': settings.SUBSCRIPTIONS_AVAILABLE['comments'],
+                                'description': SUBSCRIPTIONS_AVAILABLE['comments'],
                                 'kind': 'event',
                                 'notificationType': 'email_transactional',
                                 'children': [],
@@ -282,7 +283,7 @@ class TestNotificationUtils(OsfTestCase):
                         'children': [
                             {
                                 'title': 'comments',
-                                'description': settings.SUBSCRIPTIONS_AVAILABLE['comments'],
+                                'description': SUBSCRIPTIONS_AVAILABLE['comments'],
                                 'kind': 'event',
                                 'notificationType': 'email_transactional',
                                 'children': [],
@@ -296,7 +297,7 @@ class TestNotificationUtils(OsfTestCase):
         data = utils.format_user_subscriptions(self.user, [])
         expected = [{
                         'title': 'comment_replies',
-                        'description': settings.USER_SUBSCRIPTIONS_AVAILABLE['comment_replies'],
+                        'description': USER_SUBSCRIPTIONS_AVAILABLE['comment_replies'],
                         'kind': 'event',
                         'notificationType': 'email_transactional',
                         'children': []

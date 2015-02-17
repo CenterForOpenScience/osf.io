@@ -6,7 +6,7 @@ from flask import request
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from modularodm.storage.mongostorage import KeyExistsException
-from website import settings
+from website.notifications.constants import NOTIFICATION_TYPES
 
 @must_be_logged_in
 def configure_subscription(auth):
@@ -51,7 +51,7 @@ def configure_subscription(auth):
             getattr(s, notification_type).append(user)
             s.save()
 
-        for nt in settings.NOTIFICATION_TYPES:
+        for nt in NOTIFICATION_TYPES:
             if nt != notification_type:
                 if getattr(s, nt) and user in getattr(s, nt):
                     getattr(s, nt).remove(user)

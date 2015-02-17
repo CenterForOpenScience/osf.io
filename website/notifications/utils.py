@@ -1,8 +1,8 @@
 import collections
 from framework.auth.signals import contributor_removed, node_deleted
-from website import settings
 from website.models import Node
 from website.notifications.model import Subscription
+from website.notifications.constants import SUBSCRIPTIONS_AVAILABLE, NOTIFICATION_TYPES, USER_SUBSCRIPTIONS_AVAILABLE
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
@@ -46,7 +46,7 @@ def get_configured_projects(user):
 
 def get_all_user_subscriptions(user):
     user_subscriptions = []
-    for notification_type in settings.NOTIFICATION_TYPES:
+    for notification_type in NOTIFICATION_TYPES:
         if getattr(user, notification_type, []):
             for subscription in getattr(user, notification_type, []):
                 if subscription:
@@ -66,7 +66,7 @@ def get_all_node_subscriptions(user, node, user_subscriptions=None):
     return node_subscriptions
 
 
-def format_data(user, node_ids, data, subscriptions_available=settings.SUBSCRIPTIONS_AVAILABLE):
+def format_data(user, node_ids, data, subscriptions_available=SUBSCRIPTIONS_AVAILABLE):
     user_subscriptions = get_all_user_subscriptions(user)
     for idx, node_id in enumerate(node_ids):
         node = Node.load(node_id)
@@ -89,7 +89,7 @@ def format_data(user, node_ids, data, subscriptions_available=settings.SUBSCRIPT
             }
             for subscription in node_subscriptions:
                 if subscription.event_name == s:
-                    for notification_type in settings.NOTIFICATION_TYPES:
+                    for notification_type in NOTIFICATION_TYPES:
                         if user in getattr(subscription, notification_type):
                             event['notificationType'] = notification_type
 
@@ -118,7 +118,7 @@ def get_parent_notification_type(uid, event, user):
             except NoResultsFound:
                 return get_parent_notification_type(p._id, event, user)
 
-            for notification_type in settings.NOTIFICATION_TYPES:
+            for notification_type in NOTIFICATION_TYPES:
                 if user in getattr(subscription, notification_type):
                     return notification_type
 
@@ -141,17 +141,17 @@ def format_user_and_project_subscriptions(user):
 
 def format_user_subscriptions(user, data):
     user_subscriptions = [s for s in Subscription.find(Q('object_id', 'eq', user._id))]
-    for s in settings.USER_SUBSCRIPTIONS_AVAILABLE:
+    for s in USER_SUBSCRIPTIONS_AVAILABLE:
         event = {
             'title': s,
-            'description': settings.USER_SUBSCRIPTIONS_AVAILABLE[s],
+            'description': USER_SUBSCRIPTIONS_AVAILABLE[s],
             'kind': 'event',
             'notificationType': 'none',
             'children': []
         }
         for subscription in user_subscriptions:
             if subscription.event_name == s:
-                for notification_type in settings.NOTIFICATION_TYPES:
+                for notification_type in NOTIFICATION_TYPES:
                     if user in getattr(subscription, notification_type):
                         event['notificationType'] = notification_type
 
