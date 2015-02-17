@@ -1,32 +1,26 @@
 <%page expression_filter="h"/>
 
-<nav class="">
+<nav class="wiki-nav">
     <div class="navbar-collapse text-center">
         <ul class="superlist nav navbar-nav" style="float: none">
             % if user['can_edit']:
-            <li><a href="#" data-toggle="modal" data-target="#newWiki"> <i class="icon icon-file"> </i>  New Page </a></li>
+            <li><a id="openNewWiki" href="#" data-toggle="modal" data-target="#newWiki"> 
+                    <span class="wiki-nav-closed">
+                        <span class="icon-stack">
+                          <i class="icon-file icon-stack-base"></i>
+                          <i class="icon-plus"></i>
+                        </span>
+                    </span> 
+                </a></li>
                 <%include file="add_wiki_page.mako"/>
                 % if wiki_id and wiki_name != 'home':
-                <li><a href="#" data-toggle="modal" data-target="#deleteWiki"><i class="icon icon-trash"> </i> Delete</a></li>
+                <li><a href="#" data-toggle="modal" data-target="#deleteWiki"> 
+                    <span class="wiki-nav-closed"><i class="icon icon-trash" > </i></span> 
+
+                    </a></li>
                     <%include file="delete_wiki_page.mako"/>
                 % endif
             % endif
         </ul>
     </div>
 </nav>
-
-<script type="text/javascript">
-    $(document).ready(function () {
-        // special characters can be encoded differently between server/client.
-        var pathname = decodeURIComponent(window.location.pathname);
-
-        $(".navbar-nav li").each(function () {
-            var $this = $(this);
-            var href = decodeURIComponent($this.find('a').attr('href'));
-
-            if (href === pathname) {
-                $this.addClass('active');
-            }
-        });
-    });
-</script>

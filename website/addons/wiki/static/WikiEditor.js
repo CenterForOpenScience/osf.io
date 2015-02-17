@@ -166,15 +166,18 @@ function ViewModel(url) {
             panelToggle.removeClass('col-sm-3').addClass('col-sm-1');
             panelExpand.removeClass('col-sm-9').addClass('col-sm-11');
             el.children('.panel-collapsed').show();
+            $('.wiki-nav').show();
         });
-        $('.panel-collapsed').on('click', function () {
-            var el = $(this),
+        $('.panel-collapsed .wiki-panel-header').on('click', function () {
+            var el = $(this).parent(),
                 toggle = el.closest('.panel-toggle');
             toggle.children('.wiki-panel').show();
             el.hide();
             panelToggle.removeClass('col-sm-1').addClass('col-sm-3');
             panelExpand.removeClass('col-sm-11').addClass('col-sm-9');
+            $('.wiki-nav').hide();
         });
+
     });
 }
 

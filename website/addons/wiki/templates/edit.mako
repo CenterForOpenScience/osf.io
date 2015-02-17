@@ -13,22 +13,20 @@
     </div>
 </div>
 
-<div class="wiki container">
+<div class="wiki">
   <div class="row wiki-wrapper">
     <div class="col-sm-3 panel-toggle">
         <div class="wiki-panel hidden-xs"> 
               <div class="wiki-panel-header"> <i class="icon-list"> </i>  Menu 
-                <div class="pull-right"> <div class="panel-collapse"> <i class="icon icon-chevron-left"> </i> </div></div>
+                <div class="pull-right"> <div class="panel-collapse"> <i class="icon icon-angle-left"> </i> </div></div>
               </div>
               <div class="wiki-panel-body">
-                <%include file="wiki/templates/nav.mako"/>
                 <%include file="wiki/templates/toc.mako"/>
                 </div>
             </div>
             <div class="wiki-panel visible-xs"> 
               <div class="wiki-panel-header"> <i class="icon-list"> </i>  Menu </div>
               <div class="wiki-panel-body ">
-                <%include file="wiki/templates/nav.mako"/>
                 <%include file="wiki/templates/toc.mako"/>
                 </div>
             </div>
@@ -36,7 +34,7 @@
         <div class="wiki-panel panel-collapsed hidden-xs text-center" style="display: none;">
           <div class="wiki-panel-header">
             <i class="icon-list"> </i>
-            <i class="icon icon-chevron-right"> </i>
+            <i class="icon icon-angle-right"> </i>
           </div>
           <div class="wiki-panel-body">
               <%include file="wiki/templates/nav.mako"/>
