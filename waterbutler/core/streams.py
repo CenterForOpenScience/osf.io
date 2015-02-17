@@ -224,7 +224,7 @@ class FormDataStream(MultiStream):
     @classmethod
     def make_header(cls, name, disposition='form-data', additional_headers=None, **extra):
         additional_headers = additional_headers or {}
-        header = 'Content-Disposition: {}; name="{}"\r\n'.format(disposition, name)
+        header = 'Content-Disposition: {}; name="{}"'.format(disposition, name)
 
         header += ''.join([
             '; {}="{}"'.format(key, value)
