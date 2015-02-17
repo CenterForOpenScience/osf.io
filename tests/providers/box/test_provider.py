@@ -89,77 +89,79 @@ def folder_metadata():
 
 @pytest.fixture
 def file_metadata():
-    return {
-        "type": "file",
-        "id": "5000948880",
-        "sequence_id": "3",
-        "etag": "3",
-        "sha1": "134b65991ed521fcfe4724b7d814ab8ded5185dc",
-        "name": "tigers.jpeg",
-        "description": "a picture of tigers",
-        "size": 629644,
-        "path_collection": {
-            "total_count": 2,
-            "entries": [
-                {
-                    "type": "folder",
-                    "id": "0",
-                    "sequence_id": null,
-                    "etag": null,
-                    "name": "All Files"
+    return {'entries': [{
+                "type": "file",
+                "id": "5000948880",
+                "sequence_id": "3",
+                "etag": "3",
+                "sha1": "134b65991ed521fcfe4724b7d814ab8ded5185dc",
+                "name": "tigers.jpeg",
+                "description": "a picture of tigers",
+                "size": 629644,
+                "path_collection": {
+                    "total_count": 2,
+                    "entries": [
+                        {
+                            "type": "folder",
+                            "id": "0",
+                            "sequence_id": None,
+                            "etag": None,
+                            "name": "All Files"
+                        },
+                        {
+                            "type": "folder",
+                            "id": "11446498",
+                            "sequence_id": "1",
+                            "etag": "1",
+                            "name": "Pictures"
+                        }
+                    ]
                 },
-                {
+                "created_at": "2012-12-12T10:55:30-08:00",
+                "modified_at": "2012-12-12T11:04:26-08:00",
+                "created_by": {
+                    "type": "user",
+                    "id": "17738362",
+                    "name": "sean rose",
+                    "login": "sean@box.com"
+                },
+                "modified_by": {
+                    "type": "user",
+                    "id": "17738362",
+                    "name": "sean rose",
+                    "login": "sean@box.com"
+                },
+                "owned_by": {
+                    "type": "user",
+                    "id": "17738362",
+                    "name": "sean rose",
+                    "login": "sean@box.com"
+                },
+                "shared_link": {
+                    "url": "https://www.box.com/s/rh935iit6ewrmw0unyul",
+                    "download_url": "https://www.box.com/shared/static/rh935iit6ewrmw0unyul.jpeg",
+                    "vanity_url": None,
+                    "is_password_enabled": False,
+                    "unshared_at": None,
+                    "download_count": 0,
+                    "preview_count": 0,
+                    "access": "open",
+                    "permissions": {
+                        "can_download": True,
+                        "can_preview": True
+                    }
+                },
+                "parent": {
                     "type": "folder",
                     "id": "11446498",
                     "sequence_id": "1",
                     "etag": "1",
                     "name": "Pictures"
-                }
-            ]
-        },
-        "created_at": "2012-12-12T10:55:30-08:00",
-        "modified_at": "2012-12-12T11:04:26-08:00",
-        "created_by": {
-            "type": "user",
-            "id": "17738362",
-            "name": "sean rose",
-            "login": "sean@box.com"
-        },
-        "modified_by": {
-            "type": "user",
-            "id": "17738362",
-            "name": "sean rose",
-            "login": "sean@box.com"
-        },
-        "owned_by": {
-            "type": "user",
-            "id": "17738362",
-            "name": "sean rose",
-            "login": "sean@box.com"
-        },
-        "shared_link": {
-            "url": "https://www.box.com/s/rh935iit6ewrmw0unyul",
-            "download_url": "https://www.box.com/shared/static/rh935iit6ewrmw0unyul.jpeg",
-            "vanity_url": null,
-            "is_password_enabled": false,
-            "unshared_at": null,
-            "download_count": 0,
-            "preview_count": 0,
-            "access": "open",
-            "permissions": {
-                "can_download": true,
-                "can_preview": true
-            }
-        },
-        "parent": {
-            "type": "folder",
-            "id": "11446498",
-            "sequence_id": "1",
-            "etag": "1",
-            "name": "Pictures"
-        },
-        "item_status": "active"
-    }
+                },
+                "item_status": "active"
+            }]
+        }
+
 
 
 class TestCRUD:
@@ -168,7 +170,7 @@ class TestCRUD:
     @pytest.mark.aiohttpretty
     def test_download(self, provider):
         path = BoxPath(provider.folder + '/triangles.txt')
-        url = provider._build_url('files', path._id, 'content')
+        url = provider.build_url('files', path._id, 'content')
         aiohttpretty.register_uri('GET', url, body=b'better')
         result = yield from provider.download(str(path))
         content = yield from result.response.read()
@@ -179,7 +181,7 @@ class TestCRUD:
     @pytest.mark.aiohttpretty
     def test_download_not_found(self, provider):
         path = BoxPath(provider.folder + '/vectors.txt')
-        url = provider._build_url('files', path._id, 'content')
+        url = provider.build_url('files', path._id, 'content')
         aiohttpretty.register_uri('GET', url, status=404)
 
         with pytest.raises(exceptions.DownloadError):
@@ -190,29 +192,27 @@ class TestCRUD:
     def test_upload(self, provider, file_metadata, file_stream, settings):
         path = BoxPath(provider.folder + '/phile')
         url = provider._build_upload_url('files', 'content')
-        metadata_url = provider.build_url('folders', uid, 'items')
-        aiohttpretty.register_uri('GET', metadata_url, status=404)
-        aiohttpretty.register_json_uri('PUT', url, status=200, body=file_metadata)
-        metadata, created = yield from provider.upload(file_stream, str(path))
-        expected = BoxFileMetadata(file_metadata, provider.folder).serialized()
+        metadata_folder_url = provider.build_url('folders', path._id, 'items')
+        metadata_file_url = provider.build_url('files', path._id)
+        aiohttpretty.register_uri('GET', metadata_folder_url, status=404)
+        aiohttpretty.register_uri('GET', metadata_file_url, status=404)
+        aiohttpretty.register_json_uri('POST', url, status=200, body=file_metadata)
+        metadata, created = yield from provider.upload(file_stream, '/{}'.format(path.name))
+        expected = BoxFileMetadata(file_metadata['entries'][0], provider.folder).serialized()
 
         assert metadata == expected
         assert created == True
-        assert aiohttpretty.has_call(method='PUT', uri=url)
+        assert aiohttpretty.has_call(method='POST', uri=url)
 
     @async
     @pytest.mark.aiohttpretty
     def test_delete_file(self, provider, file_metadata):
         path = BoxPath(provider.folder +'/ThePast')
         url = provider.build_url('files', path._id)
-        data = {'root': 'auto', 'path': path}
-        file_url = provider.build_url('files', path._id, 'content')
-        aiohttpretty.register_json_uri('GET', file_url, body=file_metadata)
-        aiohttpretty.register_uri('POST', url, status=200)
+        aiohttpretty.register_uri('DELETE', url, status=204)
         yield from provider.delete(str(path))
 
-        assert aiohttpretty.has_call(method='GET', uri=file_url)
-        assert aiohttpretty.has_call(method='POST', uri=url, data=data)
+        assert aiohttpretty.has_call(method='DELETE', uri=url)
 
 
 class TestMetadata:
@@ -221,44 +221,35 @@ class TestMetadata:
     @pytest.mark.aiohttpretty
     def test_metadata(self, provider, folder_metadata):
         path = BoxPath(provider.folder + '/')
-        url = provider.build_url('folders', provide.folder, 'items')
+        url = provider.build_url('folders', provider.folder, 'items')
         aiohttpretty.register_json_uri('GET', url, body=folder_metadata)
         result = yield from provider.metadata(str(path))
 
         assert isinstance(result, list)
-        assert len(result) == 1
-        assert result['type'] == 'file'
-        assert result['name'] == 'Warriors.jpg'
-        assert result['path'] == '/818853862/Warriors.jpg'
+        assert len(result) == 2
+        assert result[1]['kind'] == 'file'
+        assert result[1]['name'] == 'Warriors.jpg'
+        assert result[1]['path'] == '/818853862/Warriors.jpg'
 
     @async
     @pytest.mark.aiohttpretty
     def test_metadata_root_file(self, provider, file_metadata):
         path = BoxPath(provider.folder + '/pfile')
-        url = provider.build_url('folders', provide.folder, 'items')
-        aiohttpretty.register_json_uri('GET', url, body=file_metadata)
+        url = provider.build_url('files', path._id)
+        aiohttpretty.register_json_uri('GET', url, body=file_metadata['entries'][0])
         result = yield from provider.metadata(str(path))
 
         assert isinstance(result, dict)
-        assert result['type'] == 'file'
-        assert result['name'] == 'Getting_Started.pdf'
-        assert result['path'] == '/11446498/Getting_Started.pdf'
+        assert result['kind'] == 'file'
+        assert result['name'] == 'tigers.jpeg'
+        assert result['path'] == '/5000948880/tigers.jpeg'
 
     @async
     @pytest.mark.aiohttpretty
     def test_metadata_missing(self, provider):
-        path = BoxPath(provider.folder, '/pfile')
-        url = provider.build_url('metadata', 'auto', path.full_path)
+        path = BoxPath(provider.folder + '/pfile')
+        url = provider.build_url('files', path._id)
         aiohttpretty.register_uri('GET', url, status=404)
 
         with pytest.raises(exceptions.MetadataError):
             yield from provider.metadata(str(path))
-
-
-class TestOperations:
-
-    def test_can_intra_copy(self, provider):
-        assert provider.can_intra_copy(provider)
-
-    def test_can_intra_move(self, provider):
-        assert provider.can_intra_move(provider)
