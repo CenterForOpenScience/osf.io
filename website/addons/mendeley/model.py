@@ -87,7 +87,7 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
             external_account=external_account,
             metadata=metadata,
         )
-
+        
         user_settings.save()
 
     def verify_oauth_access(self, external_account, list_id):
@@ -168,7 +168,6 @@ class Mendeley(ExternalProvider):
         client = self.client
 
         return client.folders.list().items
-
 
 
     @property
@@ -256,7 +255,6 @@ class Mendeley(ExternalProvider):
         )
 
     def _citations_for_mendeley_user(self):
-        import pdb; pdb.set_trace()
         return (
             self._citation_for_mendeley_document(document)
             for document in self.client.documents.list().items

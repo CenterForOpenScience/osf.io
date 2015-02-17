@@ -43,7 +43,15 @@ api_routes = {
             views.mendeley_set_config,
             json_renderer,
         ),
-
+        Rule(
+            [
+                '/project/<pid>/mendeley/user_auth/',
+                '/project/<pid>/node/<nid>/mendeley/user_auth/',
+            ],
+            'post',
+            views.mendeley_add_user_auth,
+            json_renderer,
+        ),
         Rule(
             [
                 '/project/<pid>/mendeley/widget/',

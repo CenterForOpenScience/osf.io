@@ -38,8 +38,8 @@
             <div class="col-md-12">
                 <p>
                     <strong>Current Folder:</strong>
-                    <a data-bind="attr.href: urls().files">
-		      			                             {{folderName}}
+                    <a data-bind="">
+                             {{folder}}
                     </a>
                     <span data-bind="if: folder().path === null" class="text-muted">
                         None
@@ -53,11 +53,6 @@
                                         click: togglePicker,
                                         css: {active: currentDisplay() === PICKER}"
                             class="btn btn-sm btn-mendeley"><i class="icon-edit"></i> Change</button>
-                    <button data-bind="attr.disabled: disableShare,
-                                        visible: validCredentials,
-                                        click: toggleShare,
-                                        css: {active: currentDisplay() === SHARE}"
-                        class="btn btn-sm btn-mendeley"><i class="icon-share-alt"></i> Share on mendeley
                             <span data-bind="visible: folder().path === '/'">(Cannot share root folder)</span>
                         </button>
                 </div>
@@ -71,39 +66,6 @@
                     <div data-bind="visible: currentDisplay() === PICKER">
                         <div id="mendeleyGrid"
                              class="filebrowser hgrid mendeley-folder-picker"></div>
-                    </div>
-
-                    <!-- Share -->
-                    <div data-bind="visible: currentDisplay() === SHARE && emails().length === 0"
-                        class="help-block">
-                        <p>No contributors to share with.</p>
-                    </div>
-
-                    <div data-bind="visible: currentDisplay() === SHARE && emails().length">
-                        <div class="help-block">
-                            <p>To share this folder with other mendeley users on this project, copy
-                            the email addresses of the contributors (listed below) into the
-                            "Share Folder" dialog on mendeley.</p>
-                        </div>
-
-                        <label for="contrib-emails">Copy these:</label>
-                        <div class="input-group">
-                            <textarea name="contrib-emails"
-                                    class="form-control" rows="3" id="contribEmails"
-                             data-bind="value: emailList,
-                                        attr.autofocus: currentDisplay() === SHARE">
-                            </textarea>
-                            <span data-clipboard-target="contribEmails"
-                                class="input-group-addon pointer"
-                                id="copyBtn">
-                                <i class="icon-paste"></i>
-                            </span>
-                        </div>
-
-                        <div class="input-group pull-right">
-                            <a target="_blank" data-bind="attr.href: urls().share"
-                                class="btn btn-link"><i class="icon-share-alt"></i> Continue to mendeley...</a>
-                        </div>
                     </div>
 
                     <!-- Queued selection -->

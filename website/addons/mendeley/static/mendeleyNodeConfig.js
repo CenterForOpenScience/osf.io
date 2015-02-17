@@ -30,6 +30,7 @@ var ViewModel = function(url, selector, folderPicker) {
     self.userHasAuth = ko.observable(false);
     // whether the auth token is valid
     self.validCredentials = ko.observable(true);
+    self.userAccountId = ko.observable('');
     // Currently linked folder, an Object of the form {name: ..., path: ...}
     self.folder = ko.observable({name: null, path: null});
     self.ownerName = ko.observable('');
@@ -39,15 +40,12 @@ var ViewModel = function(url, selector, folderPicker) {
     self.messageClass = ko.observable('text-info');
     // Display names
     self.PICKER = 'picker';
-    self.SHARE = 'share';
     // Current folder display
     self.currentDisplay = ko.observable(null);
     // CSS selector for the folder picker div
     self.folderPicker = folderPicker;
     // Currently selected folder, an Object of the form {name: ..., path: ...}
     self.selected = ko.observable(null);
-    // Emails of contributors, can only be populated by activating the share dialog
-    self.emails = ko.observableArray([]);
     self.loading = ko.observable(false);
     // Whether the initial data has been fetched form the server. Used for
     // error handling.
@@ -58,18 +56,6 @@ var ViewModel = function(url, selector, folderPicker) {
     // Whether the mendeley folders have been loaded from the server/mendeley API
     self.loadedFolders = ko.observable(false);
 
-    // List of contributor emails as a comma-separated values
-    self.emailList = ko.computed(function() {
-        return self.emails().join([', ']);
-    });
-
-    self.disableShare = ko.computed(function() {
-	/* TODO: implement me
-        return !self.urls().share;
-	*/
-	return false;
-    });
-
     /**
         * Update the view model from data returned from the server.
         */
@@ -78,7 +64,8 @@ var ViewModel = function(url, selector, folderPicker) {
         self.nodeHasAuth(data.nodeHasAuth);
         self.userIsOwner(data.userIsOwner);
         self.userHasAuth(data.userHasAuth);
-        self.validCredentials(data.validCredentials);
+        //self.validCredentials(data.validCredentials);
+	self.userAccountId(data.userAccountId);
         // Make sure folder has name and path properties defined
         self.folder(data.folder || {name: null, path: null});
         self.urls(data.urls);
@@ -90,7 +77,7 @@ var ViewModel = function(url, selector, folderPicker) {
             success: function(response) {
                 self.updateFromData(response);
                 self.loadedSettings(true);
-                if (!self.validCredentials()){
+                //if (!self.validCredentials()){
                     if (self.userIsOwner()) {
                         self.changeMessage('Could not retrieve mendeley settings at ' +
                         'this time. The mendeley addon credentials may no longer be valid.' +
@@ -103,7 +90,7 @@ var ViewModel = function(url, selector, folderPicker) {
                         ' Contact ' + self.ownerName() + ' to verify.',
                         'text-warning');
                     }
-                }
+		//}
             },
             error: function(xhr, textStatus, error) {
                 self.changeMessage('Could not retrieve mendeley settings at ' +
@@ -123,36 +110,6 @@ var ViewModel = function(url, selector, folderPicker) {
     // Initial fetch from server
     self.fetchFromServer();
 
-    self.toggleShare = function() {
-        if (self.currentDisplay() === self.SHARE) {
-            self.currentDisplay(null);
-        } else {
-            // Clear selection
-            self.cancelSelection();
-            self.currentDisplay(self.SHARE);
-            self.activateShare();
-        }
-    };
-
-
-    function onGetEmailsSuccess(response) {
-        var emails = response.result.emails;
-        self.emails(emails);
-        self.loadedEmails(true);
-    }
-
-    self.activateShare = function() {
-        if (!self.loadedEmails()) {
-            $.ajax({
-                url: self.urls().emails, type: 'GET', dataType: 'json',
-                success: onGetEmailsSuccess
-            });
-        }
-        var $copyBtn = $('#copyBtn');
-        new ZeroClipboard($copyBtn);
-    };
-
-
     /**
      * Whether or not to show the Import Access Token Button
      */
@@ -162,7 +119,6 @@ var ViewModel = function(url, selector, folderPicker) {
         var nodeHasAuth = self.nodeHasAuth();
         var loaded = self.loadedSettings();
         return userHasAuth && !nodeHasAuth && loaded;
-	return false;
     });
 
     /** Whether or not to show the full settings pane. */
@@ -299,8 +255,10 @@ var ViewModel = function(url, selector, folderPicker) {
             message: 'Are you sure you want to authorize this project with your mendeley access token?',
             callback: function(confirmed) {
                 if (confirmed) {
-                    return $osf.putJSON(self.urls().importAuth, {})
-                        .done(onImportSuccess)
+                    return $osf.postJSON(self.urls().importAuth, {
+			external_account_id: self.userAccountId()
+		    })
+			.done(onImportSuccess)
                         .fail(onImportError);
                 }
             }
@@ -331,22 +289,17 @@ var ViewModel = function(url, selector, folderPicker) {
                 initialFolderName : self.folderName(),
                 initialFolderPath : 'mendeley',
                 // Fetch mendeley folders with AJAX
-                filesData: [{
-		    id: self.folder(),
-		    name: self.folder(),
-		    urls: {
-			fetch: self.urls().folders
-		    },
-		    kind: 'folder'
-		}],
+                filesData: self.urls().folders,
 		//self.urls().folders, // URL for fetching folders
                 // Lazy-load each folder's contents
                 // Each row stores its url for fetching the folders it contains
                 resolveLazyloadUrl : function(item){
-                    return item.data.urls.folders;
+		    return self.urls().folders + item.data.id + '/';
                 },
 		lazyLoadPreprocess: function(data){
-		    return data.contents;
+		    return data.contents.filter(function(item){
+			return item.kind === 'folder';
+		    });
 		},
                 oddEvenClass : {
                     odd : 'mendeley-folderpicker-odd',

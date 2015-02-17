@@ -13,18 +13,26 @@ from website.util import api_url_for, web_url_for
 from . import utils
 from .model import Mendeley
 
-def serialize_urls(node_settings):
-    
-    node = node_settings.owner
+def serialize_urls(node_settings, user_accounts):
+
+    node = node_settings.owner    
+
+    importAuth = None
+    if len(user_accounts):
+        importAuth = node.api_url_for('mendeley_add_user_auth')
+
+    deauthorize = None
+    if node_settings.external_account:
+        deauthorize = api_url_for('oauth_disconnect', 
+                                 external_account_id=node_settings.external_account.provider_id)
     return {
         'config': node.api_url_for('mendeley_set_config'),
-        'deauthorize': api_url_for('oauth_disconnect', 
-                                   external_account_id=node_settings.external_account.provider_id),
+        'deauthorize': deauthorize,
         'auth': api_url_for('oauth_connect', 
                             service_name='mendeley'),
+        'importAuth': importAuth,
         # Endpoint for fetching only folders (including root)
-        'folders': node.api_url_for('mendeley_citation_list', 
-                                    mendeley_list_id=node_settings.mendeley_list_id),
+        'folders': node.api_url_for('mendeley_citation_list'),
         'settings': web_url_for('user_addons')
     }
 
@@ -34,20 +42,32 @@ def serialize_settings(node_settings, current_user):
     user_accounts = [account for account in current_user.external_accounts 
                      if account.provider == 'mendeley']
 
-    user_is_owner = node_account.provider_id in [account.provider_id for account in user_accounts]
+    user_is_owner = False    
+    if node_account is not None:        
+        user_is_owner = node_account in user_accounts        
     user_has_auth = True if len(user_accounts) else False
-    user_settings = node_settings.associated_user_settings[0]
+    user_settings = None
+    user_account_id = None
+    if len(node_settings.associated_user_settings):
+        user_settings = node_settings.associated_user_settings[0]
+
+    validCredentials = False
+    if user_has_auth:
+        user_account_id = user_accounts[0]._id
+        #validCredentials = node_settings.verify_oauth_access(user_accounts[0], node_settings.mendeley_list_id)
 
     result = {        
         'nodeHasAuth': node_settings.has_auth,
         'userIsOwner': user_is_owner,
         'userHasAuth': user_has_auth,
-        'validCredentials': node_settings.verify_oauth_access(node_account, node_settings.mendeley_list_id),
-        'urls': serialize_urls(node_settings),
+        # 'validCredentials': validCredentials,
+        'urls': serialize_urls(node_settings, user_accounts),
+        'userAccountId': user_account_id
     }
-    result['urls']['owner'] = web_url_for('profile_view_id',
-                                          uid=user_settings.owner._primary_key)
-    result['ownerName'] = user_settings.owner.fullname
+    if user_settings is not None:
+        result['urls']['owner'] = web_url_for('profile_view_id',
+                                              uid=user_settings.owner._primary_key)
+        result['ownerName'] = user_settings.owner.fullname
     # TODO cache folder name (model.py)
     result['folder'] = node_settings.mendeley_list_id
     return result
@@ -88,6 +108,22 @@ def mendeley_get_config(auth, node_addon, **kwargs):
     result = node_addon.to_json(auth.user)
     result.update(serialize_settings(node_addon, auth.user))
     return result
+
+
+@must_have_permission('write')
+@must_have_addon('mendeley', 'node')
+@must_have_addon('mendeley', 'user')
+@must_not_be_registration
+def mendeley_add_user_auth(auth, user_addon, node_addon, **kwargs):
+    external_account = ExternalAccount.load(
+        request.json['external_account_id']
+    )
+    node_addon.grant_oauth_access(user_addon.owner, external_account)
+    node_addon.external_account = external_account
+    node_addon.save()
+    result = node_addon.to_json(auth.user)
+    result.update(serialize_settings(node_addon, auth.user))
+    return {'result': result}
 
 
 @must_have_permission('write')
@@ -140,7 +176,9 @@ def mendeley_widget(node_addon, project, node, pid, auth):
 def mendeley_citation_list(node_addon, project, node, pid, auth, mendeley_list_id=None):
 
     attached_list_id = node_addon.mendeley_list_id
-    list_id = mendeley_list_id or attached_list_id
+    # We should discuss the consequences of this, but needed for
+    # nodeSettings page
+    list_id = mendeley_list_id or None # attached_list_id
 
     account_folders = node_addon.api.citation_lists
 
