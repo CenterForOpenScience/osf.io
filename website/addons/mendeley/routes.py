@@ -34,7 +34,6 @@ api_routes = {
             views.mendeley_get_config,
             json_renderer,
         ),
-
         Rule(
             [
                 '/project/<pid>/mendeley/settings/',

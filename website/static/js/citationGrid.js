@@ -85,16 +85,12 @@ var getColumns = function() {
     }];
 };
 
-var getRowCallback = function(item) {
-
-};
-
 var getRow = function(item) {
     return [{
         data: 'csl',
         custom: function(item) {
             if (item.kind === 'folder') {
-                return 'FOLDER';
+		return item.data.name;
             }
             return item.data.citation;
         },
@@ -117,32 +113,45 @@ var CitationGrid = function(selector, url) {
             divID: selector.replace('#', ''),
             columnTitles: getColumns,
             resolveRows: getRow,
-            // filesData: citationsApiUrl,
-            filesData: [parent],
+            filesData: citationsApiUrl,
+            //filesData: [parent],
             resolveLazyloadUrl: function(item) {
-                return item.data.urls.fetch;
+		return citationsApiUrl + item.data.id + '/';
             },
             lazyLoad: true,
-            lazyloadPreprocess: function(data) {
+            lazyLoadPreprocess: function(res) {
+		var data = res;
+		if (typeof res.contents !== 'undefined'){
+		    data = res.contents;
+		}
+		if (!Array.isArray(data)){
+		    data = [data];
+		}
 		var citationObj = utils.reduce(
-                    data.map(
-			function(item) {
-                            return item.csl;
-                       }
-                   ), {},
-                   function(item, dst) {
-                       dst[item.id] = item;
-                    });
+                    data.filter(
+			function(item){
+			    return item.kind === 'item';
+			}
+		    ).map(
+			function(item) {				
+			    return item.csl;
+			}
+		    ), {},
+                    function(item, dst) {
+			dst[item.id] = item;
+                    });		
                 citeproc = citations.makeCiteproc(style, citationObj, 'text');
                 var bibliography = citeproc.makeBibliography();
                 var combinedData = utils.reduce(
                     utils.zip(bibliography[0].entry_ids, bibliography[1]), {},
                     function(tup, dst) {
-                        return dst[tup[0][0]] = tup[1]
+                        return dst[tup[0][0]] = tup[1];
                     }
                 );
 		data = data.map(function(item){
-		    item.citation = combinedData[item.csl.id];
+		    if (item.kind === 'item'){
+			item.citation = combinedData[item.csl.id];
+		    }
 		    return item;
 		});
 		return data;
