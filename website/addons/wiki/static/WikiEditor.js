@@ -26,7 +26,6 @@ ko.bindingHandlers.ace = {
 
         // Updates the view model based on changes to the editor
         editor.getSession().on('change', function () {
-            throttledMathjaxify('#wmd-preview');
             valueAccessor()(editor.getValue());
         });
     },
