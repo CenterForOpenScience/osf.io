@@ -5,7 +5,7 @@
 Run dry run: python -m scripts.migrate_names_cleanup dry
 Run migration: python -m scripts.migrate_names_cleanup
 
-Log:
+Log: Run by sloria on 2015-02-17. A log was saved to /opt/data/migration-logs.
 """
 import sys
 import logging
@@ -24,23 +24,23 @@ logging.basicConfig(level=logging.INFO)
 
 def migrate_user(user, dry_run):
     if user.fullname and user.fullname != user.fullname.strip():
-        logger.info('Updated User: {}, fullname: "{}"'.format(user._id, user.fullname))
+        logger.info(u'Updated User: {}, fullname: "{}"'.format(user._id, user.fullname))
         user.fullname = user.fullname.strip()
 
     if user.given_name and user.given_name != user.given_name.strip():
-        logger.info('Updated User: {}, given_name: "{}"'.format(user._id, user.given_name))
+        logger.info(u'Updated User: {}, given_name: "{}"'.format(user._id, user.given_name))
         user.given_name = user.given_name.strip()
 
     if user.middle_names and user.middle_names != user.middle_names.strip():
-        logger.info('Updated User: {}, middle_names: "{}"'.format(user._id, user.middle_names))
+        logger.info(u'Updated User: {}, middle_names: "{}"'.format(user._id, user.middle_names))
         user.middle_names = user.middle_names.strip()
 
     if user.family_name and user.family_name != user.family_name.strip():
-        logger.info('Updated User: {}, family_name: "{}"'.format(user._id, user.family_name))
+        logger.info(u'Updated User: {}, family_name: "{}"'.format(user._id, user.family_name))
         user.family_name = user.family_name.strip()
 
     if user.suffix and user.suffix != user.suffix.strip():
-        logger.info('Updated User: {}, suffix: "{}"'.format(user._id, user.suffix))
+        logger.info(u'Updated User: {}, suffix: "{}"'.format(user._id, user.suffix))
         user.suffix = user.suffix.strip()
 
     if not dry_run:
