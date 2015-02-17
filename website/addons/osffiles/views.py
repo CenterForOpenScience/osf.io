@@ -343,15 +343,15 @@ def view_file(auth, **kwargs):
         file_content=None, download_path=download_url,
     )
 
-    rv = {
+    ret = {
         'file_name': file_name,
         'render_url': render_url,
         'rendered': rendered,
         'info_url': info_url,
     }
 
-    rv.update(_view_project(node, auth))
-    return rv
+    ret.update(_view_project(node, auth))
+    return ret
 
 FILE_NOT_FOUND_ERROR = HTTPError(http.NOT_FOUND, data=dict(
     message_short='File not found',
