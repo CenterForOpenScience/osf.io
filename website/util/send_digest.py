@@ -51,8 +51,8 @@ def send_digest(grouped_digests):
                 url=urlparse.urljoin(settings.DOMAIN, 'settings/notifications/')
             )
 
-    db.digestnotification.remove({'timestamp': {'$lt': datetime.datetime.utcnow(),
-                                                '$gte': datetime.datetime.utcnow() - datetime.timedelta(hours=24)}})
+    DigestNotification.remove(Q('timestamp', 'lt', datetime.datetime.utcnow()) &
+                              Q('timestamp', 'gte', datetime.datetime.utcnow() - datetime.timedelta(hours=24)))
 
 
 def group_messages(notifications):
