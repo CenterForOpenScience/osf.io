@@ -818,7 +818,7 @@ class TestUserProfile(OsfTestCase):
 
     def test_sanitization_of_edit_profile(self):
         url = api_url_for('edit_profile', uid=self.user._id)
-        post_data = {'name': 'fullname', 'value': 'new<b> name</b>'}
+        post_data = {'name': 'fullname', 'value': 'new<b> name</b>     '}
         request = self.app.post(url, post_data, auth=self.user.auth)
         assert_equal('new name', request.json['name'])
 
@@ -1012,6 +1012,26 @@ class TestUserProfile(OsfTestCase):
         self.user.reload()
         # jobs field is updated
         assert_equal(self.user.jobs, jobs)
+
+    def test_unserialize_names(self):
+        fake_fullname_w_spaces = fake.name()
+        names = {
+            'full': fake_fullname_w_spaces,
+            'given': 'Tea',
+            'middle': 'Gray',
+            'family': 'Pot',
+            'suffix': 'Ms.',
+        }
+        url = api_url_for('unserialize_names')
+        res = self.app.put_json(url, names, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        self.user.reload()
+        # user is updated
+        assert_equal(self.user.fullname, fake_fullname_w_spaces.strip())
+        assert_equal(self.user.given_name, names['given'])
+        assert_equal(self.user.middle_names, names['middle'])
+        assert_equal(self.user.family_name, names['family'])
+        assert_equal(self.user.suffix, names['suffix'])
 
     def test_unserialize_schools(self):
         schools = [
