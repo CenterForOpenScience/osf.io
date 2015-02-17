@@ -104,7 +104,6 @@ $(document).ready(function() {
         var filebrowser = new Fangorn(fangornOpts);
     });
 
-
     // Tooltips
     $('[data-toggle="tooltip"]').tooltip();
 

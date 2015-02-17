@@ -37,7 +37,10 @@ def list_citationlists_node(pid, account_id, auth, node, project, node_addon):
     mendeley = Mendeley()
     mendeley.account = account
 
-    return {'citation_lists': mendeley.citation_lists}
+    return {
+        'citation_lists': mendeley.citation_lists,
+        'citation_tree': mendeley.citation_folder_tree
+    }
 
 
 @must_have_permission('write')
