@@ -43,7 +43,8 @@ class TestFormDataStream:
             'Content-Disposition: form-data; name="Master of the house"',
             '',
             'Isnt worth my spit',
-            '--thisisaknownvalue--'
+            '--thisisaknownvalue--',
+            ''
         ]).encode('utf-8')
 
         assert data == expected
@@ -67,7 +68,8 @@ class TestFormDataStream:
             'Content-Disposition: form-data; name="Master of the house"',
             '',
             'Isnt worth my spit',
-            '--thisisaknownvalue--'
+            '--thisisaknownvalue--',
+            ''
         ]))
 
         to_compare = '\r\n'.join(sorted(data.decode('utf-8').split('\r\n')))
@@ -92,17 +94,20 @@ class TestFormDataStream:
 
         data = yield from stream.read()
 
-        expected = '\r\n'.join([
+        expected = sorted([
             '--thisisaknownvalue',
             'Content-Disposition: file; name="file"',
             'Content-Type: application/octet-stream',
             'Content-Transfer-Encoding: binary',
             '',
             'Empty chairs at empty tables',
-            '--thisisaknownvalue--'
-        ]).encode('utf-8')
+            '--thisisaknownvalue--',
+            ''
+        ])
 
-        assert expected == data
+        actual = sorted(data.decode('utf-8').split('\r\n'))
+
+        assert expected == actual
 
     def test_finalize_empty(self):
         stream = streams.FormDataStream()
@@ -128,7 +133,8 @@ class TestFormDataStream:
             'Content-Disposition: form-data; name="Comforter, Philosopher"',
             '',
             'A life long prick',
-            '--thisisaknownvalue--'
+            '--thisisaknownvalue--',
+            ''
         ]).encode('utf-8')
 
         assert expected == data
