@@ -1,3 +1,5 @@
+import httplib as http
+from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
 from model import Subscription
 from flask import request
@@ -12,6 +14,11 @@ def configure_subscription(auth):
     subscription = request.json
     event = subscription.get('event')
     notification_type = subscription.get('notification_type')
+
+    if not event or notification_type:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_long="Must provide an event and notification type for subscription.")
+        )
 
     uid = subscription.get('id')
     event_id = uid + "_" + event
