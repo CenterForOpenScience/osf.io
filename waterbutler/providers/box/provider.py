@@ -64,7 +64,7 @@ class BoxProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
-        path = BoxPath('/{}{}'.format(self.folder, path))
+        path = BoxPath('/{}{}'.format(self.folder.lstrip('/'), path))
         try:
             meta = yield from self.metadata(str(path))
         except exceptions.MetadataError:
@@ -79,16 +79,11 @@ class BoxProvider(provider.BaseProvider):
     @asyncio.coroutine 
     def delete(self, path, **kwargs):
         #'etag' of the file can be included as an ‘If-Match’ header to prevent race conditions
-
         path = BoxPath(path)
-        # A metadata call will verify the path specified is actually the
-        # requested file or folder.
-        yield from self.metadata(str(path))
 
         yield from self.make_request(
             'DELETE',
             self.build_url('files', path._id),
-            #data={'root': 'auto', 'path': path.path},
             expects=(204, ),
             throws=exceptions.DeleteError,
         )
@@ -117,15 +112,11 @@ class BoxProvider(provider.BaseProvider):
         )
         data = yield from response.json()
 
-        idx = 1
         ret = []
         curr = yield from self.metadata(str(path))
-        curr['revision'] = idx
         ret.append(BoxRevision(curr).serialized())
 
         for item in data['entries']:
-            idx += 1
-            item['revision'] = idx
             ret.append(BoxRevision(item).serialized())
 
         return ret
@@ -164,10 +155,17 @@ class BoxProvider(provider.BaseProvider):
 
     def _upload_create(self, stream, path):
         stream, boundary, size = box_utils.make_upload_data(stream, parent_id=path._id, file=path.name)
+        #attrs = {'name': path.name, 'parent': {'id': path._id}}
+        #datastream = streams.FormDataStream(
+        #    attributes=json.dumps(attrs),
+        #    file=(stream, path._id)
+        #)
+
         resp = yield from self.make_request(
             'POST',
             self._build_upload_url('files', 'content'),
             data=stream,
+            #headers=datastream.headers,
             headers={
                 'Content-Length': str(size),
                 'Content-Type': 'multipart/form-data; boundary={0}'.format(boundary.decode()),

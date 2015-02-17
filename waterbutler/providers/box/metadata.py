@@ -96,9 +96,3 @@ class BoxRevision(metadata.BaseFileRevisionMetadata):
     @property
     def revision(self):
         return self.raw['etag']
-
-    @property
-    def extra(self):
-        return {
-            'revisionNumber': self.raw['revision']
-        }
