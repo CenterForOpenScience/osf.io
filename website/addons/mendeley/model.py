@@ -210,7 +210,6 @@ class Mendeley(ExternalProvider):
                 account_id=self.account.provider_id,        
             )
         ]
-        import pdb; pdb.set_trace()
         tree[0]['children'] = [self._folder_tree(flat_map[f], flat_map) for f in flat_map['root'][1]]
         tree[0]['kind'] = 'folder'
         return tree
