@@ -8,12 +8,6 @@ var Raven = require('raven-js');
 var $osf = require('osfHelpers');
 require('bootstrap-editable');
 var md = require('markdown').full;
-
-var mathrender = require('mathrender');
-
-// Typeset math on the page
-mathrender.mathjaxify('#wikiContent');
-
 var mathrender = require('mathrender');
 
 // Typeset math on the page

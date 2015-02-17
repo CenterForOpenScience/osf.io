@@ -10,8 +10,6 @@ var md = require('markdown').full;
 var md_quick = require('markdown').quick;
 var mathrender = require('mathrender');
 
-var mathrender = require('mathrender');
-
 var editor;
 
 var MATHJAX_THROTTLE = 500;
@@ -28,6 +26,7 @@ ko.bindingHandlers.ace = {
 
         // Updates the view model based on changes to the editor
         editor.getSession().on('change', function () {
+            throttledMathjaxify('#wmd-preview');
             valueAccessor()(editor.getValue());
         });
     },
