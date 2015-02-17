@@ -659,7 +659,7 @@ function _fangornTitleColumn(item, col) {
         return m('span',{
             onclick: function() {
                 var redir = new URI(item.data.nodeUrl);
-                redir.segment('files').segment(item.data.provider).segment(item.data.path.substring(1));
+                redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
                 window.location = redir.toString() + '/';
             },
             'data-toggle' : 'tooltip', title : 'View file', 'data-placement': 'right'

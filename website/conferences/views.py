@@ -136,9 +136,11 @@ def _render_conference_node(node, idx):
             if not each.is_deleted,
         )
         download_count = record.get_download_count()
+
         download_url = node.web_url_for(
-            'osf_storage_view_file',
+            'addon_view_or_download_file',
             path=record.path,
+            provider='osfstorage',
             action='download',
             _absolute=True,
         )

@@ -35,7 +35,8 @@
     "osf-panel": "https://github.com/caneruguz/osf-panel.git#develop",
     "markdown-it": "~3.0.5",
     "markdown-it-sanitizer": "~0.2.0",
-    "markdown-it-video": "https://github.com/brianjgeiger/markdown-it-video.git#586dcccb9151e6e15cd1232572f43cadc64296e7",
+    "markdown-it-video": "https://github.com/brianjgeiger/markdown-it-video.git#b8b1cccb505a6773c30f8919a31b34092bac8e60",
+    "wik-ed-diff": "git+https://github.com/chennan47/wik-ed-diff.git#6e00f6219973c8cd9d06ee770b26d51b29e0ee12",
     "styles": "https://github.com/lyndsysimon/styles.git#4db9c8e2f5932cad9f23ad3579d1a82c691faf12",
     "locales": "https://github.com/citation-style-language/locales.git#d2b612f8a6f764cbd66e67238636fac3888a7736"
   }

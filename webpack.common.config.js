@@ -30,7 +30,6 @@ var entry = {
     'project-dashboard': staticPath('js/pages/project-dashboard-page.js'),
     'project-base-page': staticPath('js/pages/project-base-page.js'),
     'wiki-edit-page': staticPath('js/pages/wiki-edit-page.js'),
-    'wiki-view-page': staticPath('js/pages/wiki-view-page.js'),
     'files-page': staticPath('js/pages/files-page.js'),
     'profile-settings-page': staticPath('js/pages/profile-settings-page.js'),
     'register_1-page': staticPath('js/pages/register_1-page.js'),
@@ -54,7 +53,8 @@ var entry = {
         'dropzone',
         'knockout-sortable',
         'treebeard',
-        'jquery.cookie'
+        'jquery.cookie',
+        'citations'
     ]
 };
 
@@ -117,7 +117,9 @@ var resolve = {
         'navbar-control': staticPath('js/navbarControl.js'),
         'osf-panel': staticPath('vendor/bower_components/osf-panel/dist/jquery-osfPanel.js'),
         'markdown': staticPath('js/markdown.js'),
-        'navbar-control': staticPath('js/navbarControl.js')
+        'wik-ed-diff': staticPath('vendor/bower_components/wik-ed-diff/wikEdDiff.js'),
+        'mathrender': staticPath('js/mathrender.js'),
+        'citations': staticPath('js/citations.js')
     }
 };
 
@@ -126,7 +128,8 @@ var externals = {
     //  on the global var jQuery, which is loaded with CDN
     'jquery': 'jQuery',
     'jquery-ui': 'jQuery.ui',
-    'raven-js': 'Raven'
+    'raven-js': 'Raven',
+    'MathJax': 'MathJax'
 };
 
 var plugins = [
