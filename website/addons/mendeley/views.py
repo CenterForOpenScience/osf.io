@@ -174,6 +174,7 @@ def mendeley_set_config(pid, auth, node, project, node_addon):
 def mendeley_widget(node_addon, project, node, pid, auth):
     response = node_addon.config.to_json()
     response['complete'] = True
+    response['list_id'] = node_addon.mendeley_list_id
     return response
 
 
