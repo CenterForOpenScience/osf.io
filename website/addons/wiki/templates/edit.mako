@@ -33,7 +33,7 @@
                 </div>
             </div>
 
-        <div class="wiki-panel panel-collapsed hidden-xs text-center" style="display: none;">
+        <div class="wiki-panel panel-collapsed hidden-xs text-center" class="scripted">
           <div class="wiki-panel-header">
             <i class="icon-list"> </i>
             <i class="icon icon-chevron-right"> </i>
@@ -64,7 +64,7 @@
                                        </p>
                                   </div>
                                   <div class="col-sm-4">
-                                      <ul class="list-inline" data-bind="foreach: activeUsers" style="float: right">
+                                      <ul class="list-inline" data-bind="foreach: activeUsers" class="pull-right">
                                           <!-- ko ifnot: id === '${user_id}' -->
                                               <li><a data-bind="attr: { href: url }" >
                                                   <img data-bind="attr: {src: gravatar}, tooltip: {title: name, placement: 'bottom'}"
@@ -183,7 +183,6 @@
 
   </div>
 </div><!-- end wiki -->
-
 
 <div class="modal fade" id="permissionsModal">
   <div class="modal-dialog">
