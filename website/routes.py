@@ -1230,7 +1230,7 @@ def make_url_map(app):
         Rule(
             '/settings/subscribe/',
             'post',
-            notification_views.subscribe,
+            notification_views.configure_subscription,
             json_renderer,
         ),
 

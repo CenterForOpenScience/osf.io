@@ -7,7 +7,7 @@ from modularodm.storage.mongostorage import KeyExistsException
 from website import settings
 
 @must_be_logged_in
-def subscribe(auth):
+def configure_subscription(auth):
     user = auth.user
     subscription = request.json
     event = subscription.get('event')

@@ -26,7 +26,7 @@ class TestSubscriptionView(OsfTestCase):
             'event': 'comments',
             'notification_type': 'email_transactional'
         }
-        url = api_url_for('subscribe')
+        url = api_url_for('configure_subscription')
         self.app.post_json(url, payload, auth=node.creator.auth)
 
         # check that subscription was created
@@ -44,7 +44,7 @@ class TestSubscriptionView(OsfTestCase):
             'event': 'comments',
             'notification_type': 'email_digest'
         }
-        url = api_url_for('subscribe')
+        url = api_url_for('configure_subscription')
         self.app.post_json(url, new_payload, auth=node.creator.auth)
         s.reload()
         assert_false(node.creator in getattr(s, payload['notification_type']))
@@ -57,7 +57,7 @@ class TestSubscriptionView(OsfTestCase):
             'event': 'comments',
             'notification_type': 'adopt_parent'
         }
-        url = api_url_for('subscribe')
+        url = api_url_for('configure_subscription')
         self.app.post_json(url, payload, auth=node.creator.auth)
         event_id = node._id + '_' + 'comments'
         # confirm subscription was not created
@@ -71,7 +71,7 @@ class TestSubscriptionView(OsfTestCase):
             'event': 'comments',
             'notification_type': 'email_transactional'
         }
-        url = api_url_for('subscribe')
+        url = api_url_for('configure_subscription')
         self.app.post_json(url, payload, auth=node.creator.auth)
 
         # check that subscription was created
@@ -84,7 +84,7 @@ class TestSubscriptionView(OsfTestCase):
             'event': 'comments',
             'notification_type': 'adopt_parent'
         }
-        url = api_url_for('subscribe')
+        url = api_url_for('configure_subscription')
         self.app.post_json(url, new_payload, auth=node.creator.auth)
         s.reload()
 
