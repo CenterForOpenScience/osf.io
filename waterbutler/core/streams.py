@@ -214,7 +214,7 @@ class FormDataStream(MultiStream):
     Namely Content-Length, Content-Type
     """
     FORM_DATA_HEADER = 'Content-Disposition: form-data; name="{}"\r\n\r\n'
-    FILE_HEADER = 'Content-Disposition: file; name="{}"{}\r\nContent-Type: {}\r\nContent-Transfer-Encoding: {}\r\n\r\n'
+    FILE_HEADER = 'Content-Disposition: form-data; name="{}"{}\r\nContent-Type: {}\r\nContent-Transfer-Encoding: {}\r\n\r\n'
 
     @classmethod
     def make_boundary(cls):
@@ -222,6 +222,30 @@ class FormDataStream(MultiStream):
         form data seperator
         """
         return uuid.uuid4().hex
+
+    @classmethod
+    def make_header(cls, name, disposition='form-data', additional_headers=None, **extra):
+        additional_headers = additional_headers or {}
+        header = 'Content-Disposition: {}; name="{}"\r\n'.format(disposition, name)
+
+        header += ''.join([
+            '; {}="{}"'.format(key, value)
+            for key, value
+            in extra.items()
+            if value is not None
+        ])
+
+        additional = '\r\n'.join([
+            '{}: {}'.format(key, value)
+            for key, value in additional_headers.items()
+            if value is not None
+        ])
+
+        if additional:
+            header += '\r\n'
+            header += additional
+
+        return header + '\r\n'
 
     def __init__(self, **fields):
         """:param dict fields: A dict of fieldname: value to create the body of the stream"""
@@ -239,7 +263,7 @@ class FormDataStream(MultiStream):
 
     @property
     def end_boundary(self):
-        return StringStream('--{}--'.format(self.boundary))
+        return StringStream('--{}--\r\n'.format(self.boundary))
 
     @property
     def headers(self):
@@ -267,39 +291,37 @@ class FormDataStream(MultiStream):
             self.add_streams(self.end_boundary)
             self.size = sum([int(x.size) for x in self.streams]) + self.stream.size
 
-    def add_file(self, field_name, file_stream, file_name=None, mime='application/octet-stream', transcoding='binary'):
-        assert self.can_add_more, 'Cannot add more fields after calling finalize or read'
-
-        if file_name:
-            file_name = '; filename="{}"'.format(file_name)
-        else:
-            file_name = ''
-
-        self.add_streams(
-            self._make_boundary_stream(),
-            StringStream(
-                self.FILE_HEADER.format(
-                    field_name,
-                    file_name,
-                    mime,
-                    transcoding
-                )
-            ),
-            file_stream,
-            StringStream('\r\n')
-        )
+    def add_fields(self, **fields):
+        for key, value in fields.items():
+            self.add_field(key, value)
 
     def add_field(self, key, value):
         assert self.can_add_more, 'Cannot add more fields after calling finalize or read'
 
         self.add_streams(
             self._make_boundary_stream(),
-            StringStream(self.FORM_DATA_HEADER.format(key) + value + '\r\n')
+            StringStream(self.make_header(key) + value + '\r\n')
         )
 
-    def add_fields(self, **fields):
-        for key, value in fields.items():
-            self.add_field(key, value)
+    def add_file(self, field_name, file_stream, file_name=None, mime='application/octet-stream', disposition='file', transcoding='binary'):
+        assert self.can_add_more, 'Cannot add more fields after calling finalize or read'
+
+        header = self.make_header(
+            field_name,
+            disposition=disposition,
+            filename=file_name,
+            additional_headers={
+                'Content-Type': mime,
+                'Content-Transfer-Encoding': transcoding
+            }
+        )
+
+        self.add_streams(
+            self._make_boundary_stream(),
+            StringStream(header),
+            file_stream,
+            StringStream('\r\n')
+        )
 
     def _make_boundary_stream(self):
         return StringStream('--{}\r\n'.format(self.boundary))
