@@ -162,7 +162,7 @@ def wiki_widget(**kwargs):
 
     ret = {
         'complete': True,
-        'wiki_content': unicode(wiki_html) if wiki_html else None,
+        'wiki_content': unicode(wiki_html) if wiki_html else '',
         'wiki_content_url': node.api_url_for('wiki_page_content', wname='home'),
         'use_python_render': use_python_render,
         'more': more,
