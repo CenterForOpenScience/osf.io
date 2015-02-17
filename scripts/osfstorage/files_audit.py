@@ -13,6 +13,7 @@ import logging
 
 import pyrax
 from boto.glacier.layer2 import Layer2
+from modularodm import Q
 
 from website.app import init_app
 from website.addons.osfstorage import model
@@ -28,7 +29,7 @@ vault = None
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
-
+logging.getLogger('boto').setLevel(logging.CRITICAL)
 
 def download_from_cloudfiles(version):
     path = os.path.join(storage_settings.AUDIT_TEMP_PATH, version.location['object'])
@@ -91,16 +92,19 @@ def ensure_backups(version, dry_run):
 
 
 def get_targets():
-    return model.OsfStorageFileVersion.find()
+    return model.OsfStorageFileVersion.find(Q('location.object', 'exists', True))
 
 
-def main(dry_run):
+def main(nworkers, worker_id, dry_run):
     for version in get_targets():
-        ensure_backups(version, dry_run)
+        if hash(version._id) % nworkers == worker_id:
+            ensure_backups(version, dry_run)
 
 
 if __name__ == '__main__':
     import sys
+    nworkers = int(sys.argv[1])
+    worker_id = int(sys.argv[2])
     dry_run = 'dry' in sys.argv
 
     # Set up storage backends
@@ -125,9 +129,9 @@ if __name__ == '__main__':
 
     # Log to file
     if not dry_run:
-        scripts_utils.add_file_logger(logger, __file__)
+        scripts_utils.add_file_logger(logger, __file__, suffix=worker_id)
 
-    main(dry_run=dry_run)
+    main(nworkers, worker_id, dry_run=dry_run)
 
 
 import mock
