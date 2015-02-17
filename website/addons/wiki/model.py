@@ -46,7 +46,7 @@ def subscribe_on_write_permissions_revoked(node):
 
 
 def build_wiki_url(node, label, base, end):
-    return node.web_url_for('project_wiki_page', wname=label)
+    return node.web_url_for('project_wiki_view', wname=label)
 
 
 def validate_page_name(value):

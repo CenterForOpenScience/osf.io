@@ -106,9 +106,8 @@ def broadcast_to_sharejs(action, sharejs_uuid, node=None, wiki_name='home'):
     )
 
     if action == 'redirect' or action == 'delete':
-        page = 'project_wiki_edit' if action == 'redirect' else 'project_wiki_page'
         redirect_url = urllib.quote(
-            node.web_url_for(page, wname=wiki_name, _guid=True),
+            node.web_url_for('project_wiki_view', wname=wiki_name, _guid=True),
             safe='',
         )
         url = os.path.join(url, redirect_url)

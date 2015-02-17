@@ -187,7 +187,7 @@ class TestWikiViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
     def test_wiki_edit_get_home(self):
-        url = self.project.web_url_for('project_wiki_edit', wname='home')
+        url = self.project.web_url_for('project_wiki_view', wname='home')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
@@ -207,7 +207,7 @@ class TestWikiViews(OsfTestCase):
         # Regression test for:
         # https://github.com/CenterForOpenScience/openscienceframework.org/issues/1080
         # wname has a trailing space
-        url = self.project.web_url_for('project_wiki_edit', wname='cupcake ')
+        url = self.project.web_url_for('project_wiki_view', wname='cupcake ')
         res = self.app.post(url, {'content': 'blah'}, auth=self.user.auth).follow()
         assert_equal(res.status_code, 200)
 
@@ -320,7 +320,7 @@ class TestViewHelpers(OsfTestCase):
         urls = _get_wiki_web_urls(self.project, self.wname)
         assert_equal(urls['compare'], self.project.web_url_for('project_wiki_compare',
                 wname=self.wname, wver=1, _guid=True))
-        assert_equal(urls['edit'], self.project.web_url_for('project_wiki_edit', wname=self.wname, _guid=True))
+        assert_equal(urls['edit'], self.project.web_url_for('project_wiki_view', wname=self.wname, _guid=True))
         assert_equal(urls['home'], self.project.web_url_for('project_wiki_home', _guid=True))
         assert_equal(urls['page'], self.project.web_url_for('project_wiki_page', wname=self.wname, _guid=True))
 
@@ -626,7 +626,7 @@ class TestWikiUuid(OsfTestCase):
 
     def test_uuid_generated_once(self):
         assert_is_none(self.project.wiki_private_uuids.get(self.wkey))
-        url = self.project.web_url_for('project_wiki_edit', wname=self.wname)
+        url = self.project.web_url_for('project_wiki_view', wname=self.wname)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
@@ -644,12 +644,12 @@ class TestWikiUuid(OsfTestCase):
 
     def test_uuids_differ_between_pages(self):
         wname1 = 'foo.bar'
-        url1 = self.project.web_url_for('project_wiki_edit', wname=wname1)
+        url1 = self.project.web_url_for('project_wiki_view', wname=wname1)
         res1 = self.app.get(url1, auth=self.user.auth)
         assert_equal(res1.status_code, 200)
 
         wname2 = 'bar.baz'
-        url2 = self.project.web_url_for('project_wiki_edit', wname=wname2)
+        url2 = self.project.web_url_for('project_wiki_view', wname=wname2)
         res2 = self.app.get(url2, auth=self.user.auth)
         assert_equal(res2.status_code, 200)
 
@@ -664,14 +664,14 @@ class TestWikiUuid(OsfTestCase):
         assert_not_in(uuid2, res1)
 
     def test_uuids_differ_between_forks(self):
-        url = self.project.web_url_for('project_wiki_edit', wname=self.wname)
+        url = self.project.web_url_for('project_wiki_view', wname=self.wname)
         project_res = self.app.get(url, auth=self.user.auth)
         assert_equal(project_res.status_code, 200)
         self.project.reload()
 
         fork = self.project.fork_node(Auth(self.user))
         assert_true(fork.is_fork_of(self.project))
-        fork_url = fork.web_url_for('project_wiki_edit', wname=self.wname)
+        fork_url = fork.web_url_for('project_wiki_view', wname=self.wname)
         fork_res = self.app.get(fork_url, auth=self.user.auth)
         assert_equal(fork_res.status_code, 200)
         fork.reload()
@@ -711,7 +711,7 @@ class TestWikiUuid(OsfTestCase):
         self.project.update_node_wiki(self.wname, 'Hello world', Auth(self.user))
 
         # Visit wiki edit page
-        edit_url = self.project.web_url_for('project_wiki_edit', wname=self.wname)
+        edit_url = self.project.web_url_for('project_wiki_view', wname=self.wname)
         res = self.app.get(edit_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         self.project.reload()
@@ -744,7 +744,7 @@ class TestWikiUuid(OsfTestCase):
         wiki_page = self.project.get_wiki_page(self.wname)
 
         # Visit wiki edit page
-        original_edit_url = self.project.web_url_for('project_wiki_edit', wname=self.wname)
+        original_edit_url = self.project.web_url_for('project_wiki_view', wname=self.wname)
         res = self.app.get(original_edit_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         self.project.reload()
