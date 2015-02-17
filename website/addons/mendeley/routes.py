@@ -61,7 +61,6 @@ api_routes = {
             views.mendeley_widget,
             json_renderer,
         ),
-
         Rule(
             [
                 '/project/<pid>/mendeley/citations/',

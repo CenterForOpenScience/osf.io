@@ -38,9 +38,7 @@
             <div class="col-md-12">
                 <p>
                     <strong>Current Folder:</strong>
-                    <a data-bind="">
-                             {{folder}}
-                    </a>
+                             {{folder}}		
                     <span data-bind="if: folder().path === null" class="text-muted">
                         None
                     </span>

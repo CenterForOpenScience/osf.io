@@ -69,6 +69,14 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
     def has_auth(self):
         return self.external_account is not None    
 
+    @property
+    def selected_folder_name(self):
+        if self.mendeley_list_id and self.mendeley_list_id != 'ROOT':    
+            folder = self.api._folder_metadata(self.mendeley_list_id)
+            return folder.name
+        else:
+            return 'All Documents'
+
     def grant_oauth_access(self, user, external_account, metadata=None):
         """Grant OAuth access, updates metadata on user settings
         :param User user:
@@ -208,6 +216,7 @@ class Mendeley(ExternalProvider):
             serialize_folder(
                 'All Documents',
                 account_id=self.account.provider_id,        
+                id='ROOT'
             )
         ]
         tree[0]['children'] = [self._folder_tree(flat_map[f], flat_map) for f in flat_map['root'][1]]
@@ -224,7 +233,9 @@ class Mendeley(ExternalProvider):
         # TODO: Verify OAuth access to each folder
         all_documents = serialize_folder(
             'All Documents',
-            account_id=self.account.provider_id,        
+            account_id=self.account.provider_id,                    
+            id='ROOT',
+            parent_id='__'
         )
         serialized_folders = [
             serialize_folder(
@@ -238,15 +249,29 @@ class Mendeley(ExternalProvider):
         ]
         return [all_documents] + serialized_folders
 
-    def get_list(self, list_id=None):
+    def get_list(self, list_id='ROOT'):
         """Get a single CitationList
         :param str list_id: ID for a Mendeley folder. Optional.
         :return CitationList: CitationList for the folder, or for all documents
-        """
-        folder = self.client.folders.get(list_id) if list_id else None
+        """        
+        folder = self.client.folders.get(list_id) if (list_id != 'ROOT') else None
         if folder:
             return self._citations_for_mendeley_folder(folder)
         return self._citations_for_mendeley_user()
+
+    def get_root_folder(self):
+        root = serialize_folder(
+            'All Documents',
+            account_id=self.account.provider_id,                    
+            id='ROOT',
+            parent_id='__'
+        )
+        root['kind'] = 'folder'
+        return [root]
+
+    def _folder_metadata(self, folder_id):
+        folder = self.client.folders.get(folder_id)
+        return folder
 
     def _citations_for_mendeley_folder(self, folder):
         return (
