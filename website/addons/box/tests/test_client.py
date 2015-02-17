@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from nose.tools import *  # noqa (PEP8 asserts)
-from boxview.boxview import BoxView
+from box import BoxClient
+from datetime import datetime
 
 from tests.base import OsfTestCase
 from tests.factories import UserFactory
@@ -30,6 +31,7 @@ class TestCore(OsfTestCase):
 
         self.settings = self.user.get_addon('box')
         self.settings.access_token = '12345'
+        self.settings.last_refreshed = datetime.utcnow()
         self.settings.save()
 
     def test_get_addon_returns_box_user_settings(self):
@@ -50,7 +52,7 @@ class TestClientHelpers(OsfTestCase):
 
     def test_get_client_returns_a_box_client(self):
         client = get_client(self.user)
-        assert_true(isinstance(client, BoxView))
+        assert_true(isinstance(client, BoxClient))
 
     def test_get_client_raises_addon_error_if_user_doesnt_have_addon_enabled(self):
         user_no_box = UserFactory()
@@ -59,12 +61,12 @@ class TestClientHelpers(OsfTestCase):
 
     def test_get_node_addon_client(self):
         client = get_node_addon_client(self.node_settings)
-        assert_true(isinstance(client, BoxView))
+        assert_true(isinstance(client, BoxClient))
 
     def test_get_node_client(self):
         client = get_node_client(self.node)
-        assert_true(isinstance(client, BoxView))
+        assert_true(isinstance(client, BoxClient))
 
     def test_get_client_from_user_settings(self):
         client = get_client_from_user_settings(self.user_settings)
-        assert_true(isinstance(client, BoxView))
+        assert_true(isinstance(client, BoxClient))

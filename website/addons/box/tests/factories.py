@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Factory boy factories for the Box addon."""
+from datetime import datetime
 
 from framework.auth import Auth
 
@@ -16,6 +17,7 @@ class BoxUserSettingsFactory(ModularOdmFactory):
 
     owner = SubFactory(UserFactory)
     access_token = Sequence(lambda n: 'abcdef{0}'.format(n))
+    last_refreshed = datetime.utcnow()
 
 
 class BoxNodeSettingsFactory(ModularOdmFactory):
