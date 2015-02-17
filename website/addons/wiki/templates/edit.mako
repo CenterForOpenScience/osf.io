@@ -144,11 +144,11 @@
                 <div class="wiki-panel-body">
                     <!-- Live preview from editor -->
                     <div id="viewPreview" class="markdown-it-view">
-                        <div id="markdown-it-preview" ></div>
+                        <div id="markdownItPreview"></div>
                     </div>
                     <!-- Version view -->
                     <div id="viewVersion" class="markdown-it-view" style="display: none;">
-                            <div id="markdownItRender">${wiki_content | n}</div>
+                        <div id="markdownItRender">${wiki_content | n}</div>
                     </div>
                 </div>
               </div>

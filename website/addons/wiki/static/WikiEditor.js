@@ -28,7 +28,6 @@ ko.bindingHandlers.ace = {
 
         // Updates the view model based on changes to the editor
         editor.getSession().on('change', function () {
-            throttledMathjaxify('#wmd-preview');
             valueAccessor()(editor.getValue());
         });
     },
@@ -165,7 +164,7 @@ function WikiEditor(selector, url) {
     var mdConverter = Markdown.getSanitizingConverter();
     var mdEditor = new Markdown.Editor(mdConverter);
     mdEditor.run(editor);
-    var previewElement = $('#markdown-it-preview');
+    var previewElement = $('#markdownItPreview');
     var renderTimeout;
     editor.on('change', function() {
         // Quick render
@@ -174,7 +173,7 @@ function WikiEditor(selector, url) {
         clearTimeout(renderTimeout);
         renderTimeout = setTimeout(function() {
             previewElement.html(md.render(editor.getValue()));
-            throttledMathjaxify('#markdown-it-preview');
+            throttledMathjaxify('#markdownItPreview');
         }, 500);
     });
 }
