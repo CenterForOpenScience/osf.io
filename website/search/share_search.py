@@ -22,5 +22,10 @@ def count(query):
         del query['from']
     if query.get('size') is not None:
         del query['size']
+
     count = share_es.count(index='share', body=query)
-    return count['count']
+
+    return {
+        'results': [],
+        'count': count['count']
+    }
