@@ -194,4 +194,38 @@ $(document).ready(function () {
         panelExpand.removeClass('col-sm-11').addClass('col-sm-9');
         $('.wiki-nav').hide();
     });
+
+    var options = ctx.viewSettings;
+    var menu = 'menu' in options;
+    var edit = 'edit' in options;
+    var compare = 'compare' in options;
+    var view = 'view' in options;
+    // TODO: toggle menu based on url
+    // TODO: Change version select on toggle
+
+    if (edit) {
+        selectViewVersion.val('preview');
+        selectViewVersion.change();
+    } else {
+        $('.switch .btn:contains("Edit")').click();
+    }
+
+    if (compare) {
+        // Check if an int was specified
+        if (parseInt(options.compare) === options.compare) {
+            selectCompareVersion.val(options.compare);
+            selectCompareVersion.change();
+        }
+    } else {
+        $('.switch .btn:contains("Compare")').click();
+    }
+
+    if (view) {
+        if (parseInt(options.view) === options.view) {
+            selectViewVersion.val(options.view);
+            selectViewVersion.change();
+        }
+    } else if (edit && compare) {
+        $('.switch .btn:contains("View")').click();
+    }
 });

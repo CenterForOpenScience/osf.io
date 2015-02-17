@@ -131,7 +131,7 @@
                                 % if can_edit:
                                     <option value="preview">Preview</option>
                                 % endif
-                                <option value="current">Current</option>
+                                <option value="current" selected>Current</option>
                                 % for version in versions[1:]:
                                     <option value="${version['version']}">Version ${version['version']}</option>
                                 % endfor
@@ -297,6 +297,7 @@ ${parent.javascript_bottom()}
         canEdit: canEdit,
         canEditPageName: canEditPageName,
         usePythonRender: ${json.dumps(use_python_render)},
+        viewSettings: ${json.dumps(view_settings) | n},
         urls: {
             draft: '${urls['api']['draft']}',
             content: '${urls['api']['content']}',

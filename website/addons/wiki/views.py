@@ -221,7 +221,7 @@ def project_wiki_delete(auth, wname, **kwargs):
 @must_be_valid_project  # returns project
 @must_be_contributor_or_public
 @must_have_addon('wiki', 'node')
-def project_wiki_view(auth, wname, **kwargs):
+def project_wiki_view(auth, wname, path=None, **kwargs):
     node = kwargs['node'] or kwargs['project']
     anonymous = has_anonymous_link(node, auth)
     wiki_name = (wname or '').strip()
@@ -229,6 +229,20 @@ def project_wiki_view(auth, wname, **kwargs):
     wiki_page = node.get_wiki_page(wiki_name)
     toc = _serialize_wiki_toc(node, auth=auth)
     can_edit = node.has_permission(auth.user, 'write') and not node.is_registration
+    versions = _get_wiki_versions(node, wiki_name, anonymous=anonymous)
+
+    # Parse URL to determine default view settings
+    view_settings = {}
+    param_list = path.lower().split('/') if path else []
+    for i, param in enumerate(param_list):
+        configurable = param == 'view' or param == 'compare'
+        if configurable and i+1 < len(param_list) and (param_list[i+1]).isdigit():
+            version_number = int(param_list.pop(i+1))
+            if version_number >= len(versions):
+                raise WIKI_PAGE_NOT_FOUND_ERROR
+            view_settings[param] = version_number
+        else:
+            view_settings[param] = True
 
     # ensure home is always lower case since it cannot be renamed
     if wiki_name.lower() == 'home':
@@ -257,11 +271,12 @@ def project_wiki_view(auth, wname, **kwargs):
         'use_python_render': use_python_render,
         'page': wiki_page,
         'version': version,
-        'versions': _get_wiki_versions(node, wiki_name, anonymous=anonymous),
+        'versions': versions,
         'sharejs_uuid': sharejs_uuid if sharejs_uuid and can_edit else '',
         'sharejs_url': settings.SHAREJS_URL,
         'is_current': is_current,
         'can_edit': can_edit,
+        'view_settings': view_settings,
         'pages_current': _get_wiki_pages_current(node),
         'toc': toc,
         'category': node.category,
@@ -271,7 +286,7 @@ def project_wiki_view(auth, wname, **kwargs):
                 'draft': node.api_url_for('wiki_page_draft', wname=wiki_name),
             }),
             'web': _get_wiki_web_urls(node, wiki_name),
-            'gravatar': get_gravatar(auth.user, 32),
+            'gravatar': get_gravatar(auth.user, 25),
         },
     }
     ret.update(_view_project(node, auth, primary=True))
