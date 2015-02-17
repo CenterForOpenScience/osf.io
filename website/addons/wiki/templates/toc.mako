@@ -2,8 +2,10 @@
 
 <div class="osf-sidenav hidden-print wiki-sidenav" role="complementary">
 
-    <h4 class="node-category"> ${node['category'].title()} Wiki Pages</h4>
+    <h4 class="node-category"> ${node['category'].title()} Wiki Pages <a href="#" data-toggle="modal" class="btn btn-success-alt btn-sm" data-target="#newWiki" > <i class="icon-plus"></i> New</a>
+ </h4> 
 
+    
         <ul class="nav bs-sidenav" style="margin: 0;">
             <li
                 %if wiki_name == 'home':
@@ -41,16 +43,7 @@
                     </li>
                 % endif
             %endfor
-            <li> 
-                <div class="row btn-success-alt">
-                    <div class="col-xs-12">
-                        <a href="#" data-toggle="modal" data-target="#newWiki" class="" style="margin-top: 15px;"> 
-                            <i class="icon-plus"></i>
-                            <span> Add New Page </span>  
-                        </a>
-                    </div>  
-                </div>
-            </li> 
+           
         </ul>
         % if category == 'project':
         <hr />

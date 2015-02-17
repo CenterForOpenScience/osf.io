@@ -2192,11 +2192,13 @@ span#profileFullname{
     background: #f5f5f5;
     border-left: 2px solid #337AB7;
 }
-.osf-sidenav.wiki-sidenav ul>li.active .a {
+.osf-sidenav.wiki-sidenav ul>li.active a {
         border-right: none;
         color: #337AB7;
-        text-decoration: none;
     }
+.osf-sidenav.wiki-sidenav ul>li a:hover {
+    text-decoration: none;
+}
 /* Changes to default icons to be consistent with the grey look of many new ui items */
 .btn-default-alt {
     background: #EFEFEF;
