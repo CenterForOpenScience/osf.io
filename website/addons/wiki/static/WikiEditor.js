@@ -157,12 +157,17 @@ function ViewModel(url) {
             onSize : 'md',
             'onclick' : function () { editor.resize(); }
         });
-
+        $('.openNewWiki').click(function () {
+            $('#newWiki').modal('show');
+        });
+        $('.openDeleteWiki').click(function () {
+            $('#deleteWiki').modal('show');
+        });
         var panelToggle = $('.panel-toggle'),
             panelExpand = $('.panel-expand');
         $('.panel-collapse').on('click', function () {
             var el = $(this).closest('.panel-toggle');
-            el.children('.wiki-panel.hidden-xs').hide();
+            el.children('.wiki-panel.hidden-xs').hide(  );
             panelToggle.removeClass('col-sm-3').addClass('col-sm-1');
             panelExpand.removeClass('col-sm-9').addClass('col-sm-11');
             el.children('.panel-collapsed').show();

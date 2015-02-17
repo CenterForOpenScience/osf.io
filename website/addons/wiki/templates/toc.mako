@@ -2,7 +2,7 @@
 
 <div class="osf-sidenav hidden-print wiki-sidenav" role="complementary">
 
-    <h4 class="node-category"> ${node['category'].title()} Wiki Pages <a href="#" data-toggle="modal" class="btn btn-success-alt btn-sm" data-target="#newWiki" > <i class="icon-plus"></i> New</a>
+    <h4 class="node-category"> ${node['category'].title()} Wiki Pages <a href="#" data-toggle="modal" data-target="#newWiki" class=" btn btn-success-alt btn-sm"> <i class="icon-plus"></i> New</a>
  </h4> 
 
     

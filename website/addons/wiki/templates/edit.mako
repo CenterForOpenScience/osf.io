@@ -168,6 +168,16 @@
 </div><!-- end wiki -->
 
 
+
+<!-- Wiki modals should also be placed here! --> 
+  <%include file="wiki/templates/add_wiki_page.mako"/>
+% if wiki_id and wiki_name != 'home':
+  <%include file="wiki/templates/delete_wiki_page.mako"/>
+% endif
+
+
+
+
 <div class="modal fade" id="permissionsModal">
   <div class="modal-dialog">
     <div class="modal-content">
