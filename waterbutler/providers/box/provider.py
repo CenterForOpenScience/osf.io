@@ -1,8 +1,5 @@
-import os
 import asyncio
 import json
-
-import requests
 
 from waterbutler.core import utils
 from waterbutler.core import streams
@@ -41,7 +38,7 @@ class BoxProvider(provider.BaseProvider):
             'Authorization': 'Bearer {}'.format(self.token),
         }
 
-    @asyncio.coroutine 
+    @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
         path = BoxPath(path)
         if revision and revision != path._id:
@@ -71,9 +68,10 @@ class BoxProvider(provider.BaseProvider):
 
         return BoxFileMetadata(data['entries'][0], self.folder).serialized(), created
 
-    @asyncio.coroutine 
+    @asyncio.coroutine
     def delete(self, path, **kwargs):
-        #'etag' of the file can be included as an ‘If-Match’ header to prevent race conditions
+        #'etag' of the file can be included as an ‘If-Match’
+        #header to prevent race conditions
         path = BoxPath(path)
 
         yield from self.make_request(
@@ -92,9 +90,8 @@ class BoxProvider(provider.BaseProvider):
         else:
             return self._get_folder_meta(path)
 
-
     @asyncio.coroutine
-    def revisions(self, path, **kwargs):  
+    def revisions(self, path, **kwargs):
         #from https://developers.box.com/docs/#files-view-versions-of-a-file :
         #Alert: Versions are only tracked for Box users with premium accounts.
         #Few users will have a premium account, return only current if not
@@ -127,7 +124,7 @@ class BoxProvider(provider.BaseProvider):
         data = yield from resp.json()
         if data:
             return BoxFileMetadata(data, self.folder).serialized()
-        
+
         raise exceptions.MetadataError('Unable to find file.')
 
     def _get_folder_meta(self, path):
@@ -165,7 +162,8 @@ class BoxProvider(provider.BaseProvider):
         return data
 
     def _upload_update(self, stream, path, meta):
-        #'etag' of the file can be included as an ‘If-Match’ header to prevent race conditions
+        #'etag' of the file can be included as an ‘If-Match’
+        #header to prevent race conditions
         meta_path = BoxPath(meta['path'])
         data_stream = streams.FormDataStream(
             attributes=json.dumps({'name': path.name, 'parent': {'id': path._id}}),
@@ -182,6 +180,5 @@ class BoxProvider(provider.BaseProvider):
         data = yield from resp.json()
         return data
 
-
-    def _build_upload_url(self, *segments, **query): # ✓
+    def _build_upload_url(self, *segments, **query):
         return provider.build_url(settings.BASE_UPLOAD_URL, *segments, **query)
