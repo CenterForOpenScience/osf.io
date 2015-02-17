@@ -81,7 +81,6 @@ class BaseFileRevisionMetadata(metaclass=abc.ABCMeta):
             'versionIdentifier': self.version_identifier,
         }
 
-
     @abc.abstractproperty
     def modified(self):
         pass

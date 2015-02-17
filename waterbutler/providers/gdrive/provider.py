@@ -1,7 +1,6 @@
 import os
 import asyncio
 import json
-from flask import request
 from urllib.parse import urlparse
 
 from waterbutler.core import utils
@@ -15,8 +14,6 @@ from waterbutler.providers.gdrive.metadata import GoogleDriveFileMetadata
 from waterbutler.providers.gdrive.metadata import GoogleDriveFolderMetadata
 
 
-
-
 class GoogleDrivePath(utils.WaterButlerPath):
 
     def __init__(self, path, folder, isUpload=False, prefix=True, suffix=False):
@@ -27,6 +24,7 @@ class GoogleDrivePath(utils.WaterButlerPath):
             name = parts[1]  # TODO : Remove this later if of no use
             folderId = parts[0]
             self._folderId = folderId
+            self._name = name
             if folderId == folder['id']:
                 full_path = folder['name']
             else:
@@ -44,10 +42,9 @@ class GoogleDrivePath(utils.WaterButlerPath):
 
             #this is VERY HACKISH. MUST be fixed once other code is fixed.
             folder_plus_name = parts[-1:][0]
-            folder_name =folder['path']['path'].split('/')[-1:][0]
-            start_index=folder_plus_name.find(folder_name)
-            self._uploadFileName = folder_plus_name[start_index+len(folder_name):]
-
+            folder_name = folder['path']['path'].split('/')[-1:][0]
+            start_index = folder_plus_name.find(folder_name)
+            self._uploadFileName = folder_plus_name[start_index + len(folder_name):]
 
     def __repr__(self):
         return "{}({!r}, {!r})".format(self.__class__.__name__, self._folderId, self._orig_path)
@@ -109,7 +106,7 @@ class GoogleDriveProvider(provider.BaseProvider):
         #content = content.decode('utf-8')
 
         metadata = {
-            "parents" :   [
+            "parents": [
                 {
                     "kind": "drive#parentReference",
                     "id": path._folderId
@@ -127,8 +124,8 @@ class GoogleDriveProvider(provider.BaseProvider):
             headers={'Content-Length': str(len(json.dumps(metadata))),
                      'Content-Type': 'application/json; charset=UTF-8',
                      #'X-Upload-Content-Type': 'image/jpeg',#hardcoded in for testing
-                     'X-Upload-Content-Length' : str(stream.size)
-                },
+                     'X-Upload-Content-Length': str(stream.size)
+                     },
             data=json.dumps(metadata),
             expects=(200, ),
             throws=exceptions.UploadError
@@ -145,7 +142,6 @@ class GoogleDriveProvider(provider.BaseProvider):
         #todo:make this proper
         upload_id = query_params.split("=")[2]
 
-
         #Step 3 - Upload the file
 
         resp = yield from self.make_request(
@@ -153,7 +149,7 @@ class GoogleDriveProvider(provider.BaseProvider):
             self._build_content_url("files", uploadType='resumable', upload_id=upload_id),
             headers={'Content-Length': str(stream.size),
                      #'Content-Type': 'image/jpeg',#todo: hardcoded in for testing
-                },
+                     },
             data=content,
             expects=(200, ),
             throws=exceptions.UploadError,
@@ -162,7 +158,6 @@ class GoogleDriveProvider(provider.BaseProvider):
         data = yield from resp.json()
         data['path'] = os.path.join(path.full_path, metadata['title'])
         return GoogleDriveFileMetadata(data, self.folder).serialized(), created
-
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
@@ -193,10 +188,10 @@ class GoogleDriveProvider(provider.BaseProvider):
         # Check to see if returned data is a file or folder
         if len(data['items']) == 0:  # File
             resp = yield from self.make_request(
-            'GET',
-            self.build_url('files', path._folderId),
-            expects=(200, ),
-            throws=exceptions.MetadataError
+                'GET',
+                self.build_url('files', path._folderId),
+                expects=(200, ),
+                throws=exceptions.MetadataError
             )
             data = yield from resp.json()
             data['path'] = os.path.join(path.full_path, data['title'])
@@ -212,7 +207,6 @@ class GoogleDriveProvider(provider.BaseProvider):
             return ret
 
         return GoogleDriveFileMetadata(data, self.folder).serialized()
-
 
     @asyncio.coroutine
     def revisions(self, path, **kwargs):

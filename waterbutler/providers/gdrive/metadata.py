@@ -1,4 +1,3 @@
-import os
 
 from waterbutler.core import metadata
 
@@ -27,7 +26,6 @@ class BaseGoogleDriveMetadata(metadata.BaseMetadata):
 
 
 class GoogleDriveFolderMetadata(BaseGoogleDriveMetadata, metadata.BaseFolderMetadata):
-
 
     @property
     def id(self):
