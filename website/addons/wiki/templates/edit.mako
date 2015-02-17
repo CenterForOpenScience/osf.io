@@ -102,7 +102,7 @@
                            <div class="pull-right">
                               <button id="revert-button"
                                       class="btn btn-success"
-                                      data-bind="click: loadPublished"
+                                      data-bind="click: revertChanges"
                                       >Revert</button>
                               <input type="submit"
                                      class="btn btn-primary"
@@ -148,11 +148,7 @@
                     </div>
                     <!-- Version view -->
                     <div id="viewVersion" class="markdown-it-view" style="display: none;">
-                        % if not page and wiki_name != 'home':
-                            <p><i>This wiki page does not currently exist.</i></p>
-                        % else:
                             <div id="markdownItRender">${wiki_content | n}</div>
-                        % endif
                     </div>
                 </div>
               </div>

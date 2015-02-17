@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import difflib
 import httplib as http
 import logging
 
@@ -16,7 +15,6 @@ from website.addons.wiki import settings
 from website.addons.wiki import utils as wiki_utils
 from website.profile.utils import get_gravatar
 from website.project.views.node import _view_project
-from website.project import show_diff
 from website.project.model import has_anonymous_link
 from website.project.decorators import (
     must_be_contributor_or_public,
@@ -78,7 +76,6 @@ def _get_wiki_versions(node, name, anonymous=False):
             'version': version.version,
             'user_fullname': privacy_info_handle(version.user.fullname, anonymous, name=True),
             'date': version.date.replace(microsecond=0),
-            'compare_web_url': node.web_url_for('project_wiki_compare', wname=name, wver=version.version, _guid=True),
         }
         for version in reversed(versions)
     ]
@@ -88,7 +85,7 @@ def _get_wiki_pages_current(node):
     return [
         {
             'name': sorted_page.page_name,
-            'url': node.web_url_for('project_wiki_page', wname=sorted_page.page_name, _guid=True)
+            'url': node.web_url_for('project_wiki_view', wname=sorted_page.page_name, _guid=True)
         }
         for sorted_page in [
             node.get_wiki_page(sorted_key)
@@ -114,10 +111,9 @@ def _get_wiki_api_urls(node, name, additional_urls=None):
 def _get_wiki_web_urls(node, key, version=1, additional_urls=None):
     urls = {
         'base': node.web_url_for('project_wiki_home', _guid=True),
-        'compare': node.web_url_for('project_wiki_compare', wname=key, wver=version, _guid=True),
-        'edit': node.web_url_for('project_wiki_edit', wname=key, _guid=True),
+        'edit': node.web_url_for('project_wiki_view', wname=key, _guid=True),
         'home': node.web_url_for('project_wiki_home', _guid=True),
-        'page': node.web_url_for('project_wiki_page', wname=key, _guid=True),
+        'page': node.web_url_for('project_wiki_view', wname=key, _guid=True),
     }
     if additional_urls:
         urls.update(additional_urls)
@@ -131,7 +127,7 @@ def _serialize_wiki_toc(project, auth):
             'title': child.title,
             'category': child.category,
             'pages_current': _get_wiki_pages_current(child),
-            'url': child.web_url_for('project_wiki_page', wname='home', _guid=True),
+            'url': child.web_url_for('project_wiki_view', wname='home', _guid=True),
             'is_pointer': not child.primary,
             'link': auth.private_key
         }
@@ -166,7 +162,7 @@ def wiki_widget(**kwargs):
 
     ret = {
         'complete': True,
-        'wiki_content': unicode(wiki_html) if wiki_html else None,
+        'wiki_content': unicode(wiki_html) if wiki_html else '',
         'wiki_content_url': node.api_url_for('wiki_page_content', wname='home'),
         'use_python_render': use_python_render,
         'more': more,
@@ -174,48 +170,6 @@ def wiki_widget(**kwargs):
     }
     ret.update(wiki.config.to_json())
     return ret
-
-
-@must_be_valid_project  # injects project
-@must_be_contributor_or_public  # injects user, project
-@must_have_addon('wiki', 'node')
-def project_wiki_compare(auth, wname, wver, **kwargs):
-    node = kwargs['node'] or kwargs['project']
-    anonymous = has_anonymous_link(node, auth)
-    wiki_name = wname.strip()
-    wiki_page = node.get_wiki_page(wiki_name)
-    toc = _serialize_wiki_toc(node, auth=auth)
-
-    if not wiki_page:
-        raise HTTPError(http.NOT_FOUND)
-
-    comparison_page = node.get_wiki_page(wiki_name, wver)
-    if comparison_page:
-        current = wiki_page.content
-        comparison = comparison_page.content
-        sm = difflib.SequenceMatcher(None, comparison, current)
-        content = show_diff(sm)
-        content = content.replace('\n', '<br />')
-        ret = {
-            'wiki_id': wiki_page._primary_key,
-            'wiki_name': wiki_page.page_name,
-            'wiki_content': content,
-            'versions': _get_wiki_versions(node, wiki_name, anonymous),
-            'is_current': True,
-            'is_edit': False,
-            'version': wiki_page.version,
-            'compare_version': wver,
-            'pages_current': _get_wiki_pages_current(node),
-            'toc': toc,
-            'category': node.category,
-            'urls': {
-                'api': _get_wiki_api_urls(node, wiki_name),
-                'web': _get_wiki_web_urls(node, wiki_name, wver),
-            },
-        }
-        ret.update(_view_project(node, auth, primary=True))
-        return ret
-    raise HTTPError(http.NOT_FOUND)
 
 
 @must_be_valid_project
@@ -267,7 +221,7 @@ def project_wiki_delete(auth, wname, **kwargs):
 @must_be_valid_project  # returns project
 @must_be_contributor_or_public
 @must_have_addon('wiki', 'node')
-def project_wiki_edit(auth, wname, **kwargs):
+def project_wiki_view(auth, wname, **kwargs):
     node = kwargs['node'] or kwargs['project']
     anonymous = has_anonymous_link(node, auth)
     wiki_name = (wname or '').strip()
@@ -285,13 +239,11 @@ def project_wiki_edit(auth, wname, **kwargs):
         is_current = wiki_page.is_current
         content = wiki_page.html(node)
         use_python_render = wiki_page.rendered_before_update
-        wiki_page_api_url = node.api_url_for('project_wiki_page', wname=wiki_name)
     else:
         version = 'NA'
         is_current = False
         content = ''
         use_python_render = False
-        wiki_page_api_url = None
 
     if can_edit and wiki_key not in node.wiki_private_uuids:
         sharejs_uuid = wiki_utils.generate_private_uuid(node, wiki_name)
@@ -317,7 +269,6 @@ def project_wiki_edit(auth, wname, **kwargs):
             'api': _get_wiki_api_urls(node, wiki_name, {
                 'content': node.api_url_for('wiki_page_content', wname=wiki_name),
                 'draft': node.api_url_for('wiki_page_draft', wname=wiki_name),
-                'page': wiki_page_api_url
             }),
             'web': _get_wiki_web_urls(node, wiki_name),
             'gravatar': get_gravatar(auth.user, 32),
@@ -335,7 +286,7 @@ def project_wiki_edit_post(auth, wname, **kwargs):
     node = kwargs['node'] or kwargs['project']
     wiki_name = wname.strip()
     wiki_page = node.get_wiki_page(wiki_name)
-    redirect_url = node.web_url_for('project_wiki_page', wname=wiki_name, _guid=True)
+    redirect_url = node.web_url_for('project_wiki_view', wname=wiki_name, _guid=True)
     form_wiki_content = request.form['content']
 
     # ensure home is always lower case since it cannot be renamed
@@ -360,7 +311,7 @@ def project_wiki_edit_post(auth, wname, **kwargs):
 @must_have_addon('wiki', 'node')
 def project_wiki_home(**kwargs):
     node = kwargs['node'] or kwargs['project']
-    return redirect(node.web_url_for('project_wiki_page', wname='home', _guid=True))
+    return redirect(node.web_url_for('project_wiki_view', wname='home', _guid=True))
 
 
 @must_be_valid_project  # injects project
@@ -370,54 +321,9 @@ def project_wiki_id_page(auth, wid, **kwargs):
     node = kwargs['node'] or kwargs['project']
     wiki_page = node.get_wiki_page(id=wid)
     if wiki_page:
-        return redirect(node.web_url_for('project_wiki_page', wname=wiki_page.page_name, _guid=True))
+        return redirect(node.web_url_for('project_wiki_view', wname=wiki_page.page_name, _guid=True))
     else:
         raise WIKI_PAGE_NOT_FOUND_ERROR
-
-@must_be_valid_project  # injects project
-@must_be_contributor_or_public
-@must_have_addon('wiki', 'node')
-def project_wiki_page(auth, wname, **kwargs):
-    node = kwargs['node'] or kwargs['project']
-    anonymous = has_anonymous_link(node, auth)
-    wiki_name = (wname or '').strip()
-    wiki_page = node.get_wiki_page(name=wiki_name)
-
-    status_code = 200
-    version = 'NA'
-    is_current = False
-    use_python_render = False
-    content = ''
-
-    if wiki_page:
-        version = wiki_page.version
-        is_current = wiki_page.is_current
-        content = wiki_page.html(node)
-        use_python_render = wiki_page.rendered_before_update
-    elif not wiki_page and wiki_name.lower() != 'home':
-        status_code = 404
-
-    ret = {
-        'wiki_id': wiki_page._primary_key if wiki_page else None,
-        'wiki_name': wiki_page.page_name if wiki_page else wiki_name,
-        'wiki_content': content,
-        'use_python_render': use_python_render,
-        'page': wiki_page,
-        'version': version,
-        'versions': _get_wiki_versions(node, wiki_name, anonymous=anonymous),
-        'is_current': is_current,
-        'is_edit': False,
-        'pages_current': _get_wiki_pages_current(node),
-        'toc': _serialize_wiki_toc(node, auth=auth),
-        'category': node.category,
-        'urls': {
-            'api': _get_wiki_api_urls(node, wiki_name),
-            'web': _get_wiki_web_urls(node, wiki_name),
-        },
-    }
-
-    ret.update(_view_project(node, auth, primary=True))
-    return ret, status_code
 
 
 @must_not_be_registration
