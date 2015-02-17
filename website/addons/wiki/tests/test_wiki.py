@@ -959,3 +959,146 @@ class TestWikiUtils(OsfTestCase):
         self.project.reload()
         assert_not_equal(share_uuid, new_uuid)
         assert_equal(self.project.wiki_private_uuids[wkey], new_uuid)
+
+
+class TestWikiComments(OsfTestCase):
+
+    def setUp(self):
+        super(TestWikiComments, self).setUp()
+
+        self.project = ProjectFactory()
+        api_key = ApiKeyFactory()
+        self.project.creator.api_keys.append(api_key)
+        self.project.creator.save()
+        self.consolidate_auth = Auth(user=self.project.creator, api_key=api_key)
+        self.auth = ('test', api_key._primary_key)
+        self.project.update_node_wiki('Snow', 'It\'s snow day!', self.consolidate_auth)
+
+    @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
+    def test_delete_wiki_see_comments_hidden(self, mock_sharejs):
+        assert_in('snow', self.project.wiki_pages_current)
+
+        # create comment
+        url = self.project.api_url_for('add_comment')
+        res = self.app.post_json(
+            url,
+            {
+                'content': 'it is snowy',
+                'isPublic': 'public',
+                'page': 'wiki',
+                'target': 'snow',
+                'root_title': 'Snow',
+            },
+            auth=self.auth
+        )
+
+        # delete wiki
+        url = self.project.api_url_for(
+            'project_wiki_delete',
+            wname='snow'
+        )
+        self.app.delete(
+            url,
+            auth=self.auth
+        )
+        self.project.reload()
+        assert_not_in('snow', self.project.wiki_pages_current)
+
+        # check comment hidden
+        url = self.project.api_url_for('list_comments')
+        res = self.app.get(url, {
+            'page': 'wiki',
+            'target': 'snow',
+            'rootId': 'snow'
+        }, auth=self.auth)
+        data = res.json.get('comments')
+        assert_true(data[0]['isHidden'])
+
+    @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
+    def test_delete_and_rewrite(self, mock_sharejs):
+        assert_in('snow', self.project.wiki_pages_current)
+
+        # create comment
+        url = self.project.api_url_for('add_comment')
+        self.app.post_json(
+            url,
+            {
+                'content': 'it is snowy',
+                'isPublic': 'public',
+                'page': 'wiki',
+                'target': 'snow',
+                'root_title': 'Snow',
+            },
+            auth=self.auth
+        )
+
+        # delete wiki
+        url = self.project.api_url_for(
+            'project_wiki_delete',
+            wname='snow'
+        )
+        self.app.delete(
+            url,
+            auth=self.auth
+        )
+        self.project.reload()
+        assert_not_in('snow', self.project.wiki_pages_current)
+
+        # rewrite wiki
+        url = self.project.web_url_for(
+            'project_wiki_edit_post',
+            wname='snow'
+        )
+        self.app.post(url, {'content': 'Snow day!'}, auth=self.auth)
+        self.project.reload()
+        assert_in('snow', self.project.wiki_pages_current)
+
+        # check comment not hidden
+        url = self.project.api_url_for('list_comments')
+        res = self.app.get(url, {
+            'page': 'wiki',
+            'target': 'snow',
+            'rootId': 'snow'
+        }, auth=self.auth)
+        data = res.json.get('comments')
+        assert_false(data[0]['isHidden'])
+
+    @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
+    def test_remame_wiki_see_comments_exists(self, mock_sharejs):
+        assert_in('snow', self.project.wiki_pages_current)
+
+        # create comment
+        url = self.project.api_url_for('add_comment')
+        self.app.post_json(
+            url,
+            {
+                'content': 'it is snowy',
+                'isPublic': 'public',
+                'page': 'wiki',
+                'target': 'snow',
+                'root_title': 'Snow',
+            },
+            auth=self.auth
+        )
+
+        # rename wiki
+        self.url = self.project.api_url_for(
+            'project_wiki_rename',
+            wname='snow',
+        )
+        self.app.put_json(
+            self.url,
+            {'value': 'Sun'},
+            auth=self.auth
+        )
+        self.project.reload()
+
+        # check comment exists
+        url = self.project.api_url_for('list_comments')
+        res = self.app.get(url, {
+            'page': 'wiki',
+            'target': 'sun',
+            'rootId': 'sun'
+        }, auth=self.auth)
+        data = res.json.get('comments')
+        assert_not_equal(len(data), 0)
