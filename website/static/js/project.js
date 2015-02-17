@@ -241,15 +241,6 @@ $(document).ready(function() {
         trigger: 'hover'
     });
 
-    var adminInfoHtml = 'These users are not contributors on this component, ' +
-        'but can view it because they are administrators on a parent project.';
-
-    $('.admin-info').attr(
-        'data-content', adminInfoHtml
-    ).popover({
-        trigger: 'hover'
-    });
-
     ////////////////////
     // Event Handlers //
     ////////////////////

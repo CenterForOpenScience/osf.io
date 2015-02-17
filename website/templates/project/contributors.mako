@@ -67,6 +67,9 @@
                     <h3>
                       Users with Read Access
                       <i class="icon-question-sign admin-info"
+                              data-content="These users are not contributors on
+                                this component but can view it because they
+                                are administrators on a parent project."
                               data-toggle="popover"
                               data-title="Visibility Information"
                               data-container="body"
