@@ -300,5 +300,5 @@ ${parent.javascript_bottom()}
 </script>
 <script src="//${sharejs_url}/text.js"></script>
 <script src="//${sharejs_url}/share.js"></script>
-<script src=${"/static/public/js/wiki-page.js" | webpack_asset}></script>
+<script src=${"/static/public/js/wiki-edit-page.js" | webpack_asset}></script>
 </%def>
