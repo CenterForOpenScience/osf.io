@@ -11,9 +11,7 @@ from website.util import rubeus
 
 from website.addons.box.client import get_node_client
 from website.addons.box.utils import (
-    clean_path,
     metadata_to_hgrid,
-    abort_if_not_subdir,
     is_authorizer,
 )
 
@@ -32,8 +30,8 @@ def box_hgrid_data_contents(node_addon, auth, **kwargs):
     node = node_addon.owner
     folder_id = kwargs.get('folder_id', 0)
     # Verify that path is a subdirectory of the node's shared folder
-    if not is_authorizer(auth, node_addon):
-        abort_if_not_subdir(path, node_addon.folder)
+    #if not is_authorizer(auth, node_addon):
+    #    abort_if_not_subdir(path, node_addon.folder)
     permissions = {
         'edit': node.can_edit(auth) and not node.is_registration,
         'view': node.can_view(auth)
@@ -76,7 +74,6 @@ def box_addon_folder(node_settings, auth, **kwargs):
     if not node_settings.has_auth or not node_settings.folder:
         return None
     node = node_settings.owner
-    path = clean_path(node_settings.folder)
     root = rubeus.build_addon_root(
         node_settings=node_settings,
         name=node_settings.folder,
@@ -85,7 +82,7 @@ def box_addon_folder(node_settings, auth, **kwargs):
         nodeApiUrl=node.api_url,
         urls={
             'fetch': node.api_url_for('box_hgrid_data_contents',
-                path=path)
+                path=node_settings.folder)
         }
     )
     return [root]

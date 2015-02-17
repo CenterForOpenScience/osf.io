@@ -91,44 +91,11 @@ def is_authorizer(auth, node_addon):
     return auth.user == node_addon.user_settings.owner
 
 
-def abort_if_not_subdir(path, directory):
-    """Check if path is a subdirectory of directory. If not, abort the current
-    request with a 403 error.
-    """
-    if not is_subdir(clean_path(path), clean_path(directory)):
-        raise HTTPError(http.FORBIDDEN)
-    return True
-
-
 def get_file_name(path):
     """Given a path, get just the base filename.
     Handles "/foo/bar/baz.txt/" -> "baz.txt"
     """
     return os.path.basename(path.strip('/'))
-
-
-def clean_path(path):
-    """Ensure a path is formatted correctly for url_for."""
-    if path is None:
-        return ''
-    return path.strip('/')
-
-
-def make_file_response(fileobject, metadata):
-    """Builds a response from a file-like object and metadata returned by
-    a Box client.
-    """
-    resp = make_response(fileobject.read())
-    filename = get_file_name(metadata['path'])
-    rev = metadata.get('rev')
-    if rev:
-        # add revision to filename
-        # foo.mp3 -> foo-abc123.mp3
-        filename = '-{rev}'.format(rev=rev).join(os.path.splitext(filename))
-    disposition = 'attachment; filename={0}'.format(filename)
-    resp.headers['Content-Disposition'] = disposition
-    resp.headers['Content-Type'] = metadata.get('mime_type', 'application/octet-stream')
-    return resp
 
 
 def ensure_leading_slash(path):
@@ -138,10 +105,10 @@ def ensure_leading_slash(path):
 
 
 def build_box_urls(item, node):
+    assert item['type'] == 'folder', 'Can only build urls for box folders'
     path = clean_path(item['path'])  # Strip trailing and leading slashes
     if item['type']==u'folder':
         return {
-            'upload': node.api_url_for('box_upload', path=path),
             # Endpoint for fetching all of a folder's contents
             'fetch': node.api_url_for('box_hgrid_data_contents', path=path),
             # Add extra endpoint for fetching folders only (used by node settings page)
@@ -149,13 +116,6 @@ def build_box_urls(item, node):
             'folders': node.api_url_for('box_hgrid_data_contents',
                 path=path, foldersOnly=1)
         }
-    else:
-        return {
-            'download': node.web_url_for('box_download', path=path),
-            'view': node.web_url_for('box_view_file', path=path),
-            'delete': node.api_url_for('box_delete_file', path=path)
-        }
-
 
 def metadata_to_hgrid(item, node, permissions):
     """Serializes a dictionary of metadata (returned from the BoxClient)
@@ -174,26 +134,3 @@ def metadata_to_hgrid(item, node, permissions):
         'id': item['id']
     }
     return serialized
-
-
-def get_share_folder_uri(path):
-    """Return the URI for sharing a folder through the box interface.
-    This is not exposed through Box's REST API, so need to build the URI
-    "manually".
-    """
-    cleaned = clean_path(path)
-    return ('https://box.com/home/{cleaned}'
-            '?shareoptions=1&share_subfolder=0&share=1').format(cleaned=cleaned)
-
-
-def refresh_creds_if_necessary(user_settings):
-    """Checks to see if the access token has expired, or will 
-    expire within 6 minutes. Returns the status of a refresh 
-    attempt or True if not required.
-    """   
-    #import ipdb; ipdb.set_trace()
-    diff = (datetime.utcnow() - user_settings.last_refreshed).total_seconds() / 3600
-    if diff > 0.9:
-        return user_settings.get_credentialsv2().refresh()
-    else:
-        return True

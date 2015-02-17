@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from website.addons.base.exceptions import AddonError
-from website.addons.box.utils import refresh_creds_if_necessary
 from box import BoxClient
 
 
@@ -20,7 +19,7 @@ def get_client(user):
 
 def get_client_from_user_settings(settings_obj):
     """Same as get client, except its argument is a BoxUserSettingsObject."""
-    if refresh_creds_if_necessary(settings_obj):
+    if settings_obj.has_auth():
         return BoxClient(settings_obj.get_credentialsv2())
     raise AddonError('Box credentials for this user have expired.')
 

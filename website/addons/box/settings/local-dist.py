@@ -3,5 +3,5 @@
 these settings.
 """
 # Get an app key and secret at https://www.box.com/developers/apps
-BOX_KEY = 'changeme'
-BOX_SECRET = 'changeme'
+BOX_KEY = None
+BOX_SECRET = None

@@ -16,7 +16,7 @@ from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
 from website.addons.box.client import get_node_addon_client
-from website.addons.box.utils import clean_path, BoxNodeLogger, refresh_creds_if_necessary
+from website.addons.box.utils import BoxNodeLogger
 from website.addons.box import settings
 
 from box import CredentialsV2
@@ -33,21 +33,8 @@ class BoxFile(GuidFile):
     path = fields.StringField(required=True, index=True)
 
     @property
-    def file_name(self):
-        if self.revision:
-            return '{0}_{1}_{2}.html'.format(self._id, self.revision, base64.b64encode(self.folder))
-        return '{0}_{1}_{2}.html'.format(self._id, self.unique_identifier, base64.b64encode(self.folder))
-
-    @property
     def waterbutler_path(self):
-        path = self.path
-        if self.folder == '/':
-            return path
-        return path.replace(self.folder, '', 1)
-
-    @property
-    def folder(self):
-        return self.node.get_addon('box').folder
+        return self.path
 
     @property
     def provider(self):
@@ -65,16 +52,15 @@ class BoxFile(GuidFile):
     def get_or_create(cls, node, path):
         """Get or create a new file record. Return a tuple of the form (obj, created)
         """
-        cleaned_path = clean_path(path)
         try:
             new = cls.find_one(
                 Q('node', 'eq', node) &
-                Q('path', 'eq', cleaned_path)
+                Q('path', 'eq', path)
             )
             created = False
         except ModularOdmException:
             # Create new
-            new = cls(node=node, path=cleaned_path)
+            new = cls(node=node, path=path)
             new.save()
             created = True
         return new, created
@@ -112,7 +98,7 @@ class BoxUserSettings(AddonUserSettingsBase):
 
     @property
     def has_auth(self):
-        return bool(self.access_token and refresh_creds_if_necessary(self))
+        return bool(self.access_token and self.refresh_creds_if_necessary())
 
     def delete(self, save=True):
         self.clear()
@@ -136,6 +122,18 @@ class BoxUserSettings(AddonUserSettingsBase):
             self.token_refreshed_callback,
         )
 
+    def refresh_creds_if_necessary(self):
+        """Checks to see if the access token has expired, or will 
+        expire within 6 minutes. Returns the status of a refresh 
+        attempt or True if not required.
+        """   
+        diff = (datetime.utcnow() - self.last_refreshed).total_seconds() / 3600
+        if diff > 0.9:
+            return self.get_credentialsv2().refresh()
+        else:
+            return True
+
+
     def __repr__(self):
         return u'<BoxUserSettings(user={self.owner.username!r})>'.format(self=self)
 
@@ -146,12 +144,7 @@ class BoxNodeSettings(AddonNodeSettingsBase):
         'boxusersettings', backref='authorized'
     )
 
-    folder = fields.StringField(default=None)
     folder_id = fields.IntegerField(default=None)
-
-    #: Information saved at the time of registration
-    #: Note: This is unused right now
-    registration_data = fields.DictionaryField()
 
 
     @property
@@ -161,10 +154,9 @@ class BoxNodeSettings(AddonNodeSettingsBase):
     @property
     def has_auth(self):
         """Whether an access token is associated with this node."""
-        return bool(self.user_settings and self.user_settings.has_auth and refresh_creds_if_necessary(self.user_settings))
+        return bool(self.user_settings and self.user_settings.has_auth)
 
     def set_folder(self, folder, folder_id, auth):
-        self.folder = folder
         self.folder_id = folder_id
         # Add log to node
         nodelogger = BoxNodeLogger(node=self.owner, auth=auth)
@@ -180,7 +172,7 @@ class BoxNodeSettings(AddonNodeSettingsBase):
         nodelogger.log(action="node_authorized", save=True)
 
     def find_or_create_file_guid(self, path):
-        return BoxFile.get_or_create(self.owner, clean_path(os.path.join(self.folder, path.lstrip('/'))))
+        return BoxFile.get_or_create(self.owner, path)
 
     # TODO: Is this used? If not, remove this and perhaps remove the 'deleted' field
     def delete(self, save=True):
@@ -212,18 +204,17 @@ class BoxNodeSettings(AddonNodeSettingsBase):
         return {'folder': self.folder_id}
 
     def create_waterbutler_log(self, auth, action, metadata):
-        cleaned_path = clean_path(os.path.join(self.folder, metadata['path']))
         self.owner.add_log(
             'box_{0}'.format(action),
             auth=auth,
             params={
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
-                'path': cleaned_path,
+                'path': path,
                 'folder': self.folder,
                 'urls': {
-                    'view': self.owner.web_url_for('addon_download_or_view_file', provider='box', action='view', path=cleaned_path),
-                    'download': self.owner.web_url_for('addon_download_or_view_file', provider='box', action='download', path=cleaned_path),
+                    'view': self.owner.web_url_for('addon_download_or_view_file', provider='box', action='view', path=path),
+                    'download': self.owner.web_url_for('addon_download_or_view_file', provider='box', action='download', path=path),
                 },
             },
         )
