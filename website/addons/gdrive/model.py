@@ -106,7 +106,7 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
         )
 
     def get_waterbutler_render_url(self, path, rev=None, **kwargs):
-
+        import pdb; pdb.set_trace()
         url = furl.furl(self.owner.web_url_for('gdrive_view_file', path=path))
 
         if rev:

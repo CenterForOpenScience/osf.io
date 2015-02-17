@@ -18,6 +18,7 @@ var osfHelpers = require('osfHelpers');
         self.userHasAuth = ko.observable(false);
         self.loaded = ko.observable(false);
         self.urls = ko.observable();
+        self.username = ko.observable();
 
         //Helper-class variables
         self.message = ko.observable('')
@@ -29,6 +30,7 @@ var osfHelpers = require('osfHelpers');
             success: function(response) {
                 var data =response.result;
                 self.userHasAuth(data.userHasAuth);
+                self.username(data.username)
                 self.urls(data.urls);
                 self.loaded(true);
             },

@@ -1,116 +1,47 @@
 # -*- coding: utf-8 -*-
-import os
-import mock
-
 from nose.tools import *  # noqa (PEP8 asserts)
 
 from framework.auth import Auth
-from website.addons.dropbox.model import (
-    DropboxUserSettings, DropboxNodeSettings, DropboxFile
+from website.addons.gdrive.model import (
+    AddonGdriveUserSettings, AddonGdriveNodeSettings
 )
 from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory
-from website.addons.dropbox.tests.factories import (
-    DropboxUserSettingsFactory, DropboxNodeSettingsFactory,
+from website.addons.gdrive.tests.factories import (
+    GdriveNodeSettingsFactory, GdriveUserSettingsFactory
 )
 from website.addons.base import exceptions
 
 
-class TestFileGuid(OsfTestCase):
-    def setUp(self):
-        super(OsfTestCase, self).setUp()
-        self.user = UserFactory()
-        self.project = ProjectFactory(creator=self.user)
-        self.project.add_addon('dropbox', auth=Auth(self.user))
-        self.node_addon = self.project.get_addon('dropbox')
-        self.node_addon.folder = '/baz'
-        self.node_addon.save()
-
-    def test_provider(self):
-        assert_equal('dropbox', DropboxFile().provider)
-
-    def test_correct_path(self):
-        guid = DropboxFile(node=self.project, path='baz/foo/bar')
-
-        assert_equals(guid.path, 'baz/foo/bar')
-        assert_equals(guid.waterbutler_path, '/foo/bar')
-
-    @mock.patch('website.addons.base.requests.get')
-    def test_unique_identifier(self, mock_get):
-        mock_response = mock.Mock(ok=True, status_code=200)
-        mock_get.return_value = mock_response
-        mock_response.json.return_value = {
-            'data': {
-                'name': 'Morty',
-                'extra': {
-                    'revisionId': 'Ricksy'
-                }
-            }
-        }
-
-        guid = DropboxFile(node=self.project, path='/foo/bar')
-
-        guid.enrich()
-        assert_equals('Ricksy', guid.unique_identifier)
-
-    def test_node_addon_get_or_create(self):
-        guid, created = self.node_addon.find_or_create_file_guid('/foo/bar')
-
-        assert_true(created)
-        assert_equal(guid.path, 'baz/foo/bar')
-        assert_equal(guid.waterbutler_path, '/foo/bar')
-
-    def test_node_addon_get_or_create_finds(self):
-        guid1, created1 = self.node_addon.find_or_create_file_guid('/foo/bar')
-        guid2, created2 = self.node_addon.find_or_create_file_guid('/foo/bar')
-
-        assert_true(created1)
-        assert_false(created2)
-        assert_equals(guid1, guid2)
-
-    def test_node_addon_get_or_create_finds_changed(self):
-        guid1, created1 = self.node_addon.find_or_create_file_guid('/foo/bar')
-
-        self.node_addon.folder = '/baz/foo'
-        self.node_addon.save()
-        self.node_addon.reload()
-        guid2, created2 = self.node_addon.find_or_create_file_guid('/bar')
-
-        assert_true(created1)
-        assert_false(created2)
-        assert_equals(guid1, guid2)
-
-
-class TestUserSettingsModel(OsfTestCase):
+class TestGdriveUserSettingsModel(OsfTestCase):
 
     def setUp(self):
-        super(TestUserSettingsModel, self).setUp()
+        super(TestGdriveUserSettingsModel, self).setUp()
         self.user = UserFactory()
 
     def test_fields(self):
-        user_settings = DropboxUserSettings(
+        user_settings = AddonGdriveUserSettings(
             access_token='12345',
-            dropbox_id='abc',
-            owner=self.user)
+            owner=self.user,
+            username='name/email')
         user_settings.save()
-        retrieved = DropboxUserSettings.load(user_settings._primary_key)
+        retrieved = AddonGdriveUserSettings.load(user_settings._primary_key)
         assert_true(retrieved.access_token)
-        assert_true(retrieved.dropbox_id)
         assert_true(retrieved.owner)
+        assert_true(retrieved.username)
 
     def test_has_auth(self):
-        user_settings = DropboxUserSettingsFactory(access_token=None)
+        user_settings = GdriveUserSettingsFactory(access_token=None)
         assert_false(user_settings.has_auth)
         user_settings.access_token = '12345'
         user_settings.save()
         assert_true(user_settings.has_auth)
 
     def test_clear_clears_associated_node_settings(self):
-        node_settings = DropboxNodeSettingsFactory.build()
-        user_settings = DropboxUserSettingsFactory()
+        node_settings = GdriveNodeSettingsFactory.build()
+        user_settings = GdriveUserSettingsFactory()
         node_settings.user_settings = user_settings
         node_settings.save()
-
         user_settings.clear()
         user_settings.save()
 
@@ -119,9 +50,8 @@ class TestUserSettingsModel(OsfTestCase):
         assert_is(node_settings.folder, None)
 
     def test_clear(self):
-        node_settings = DropboxNodeSettingsFactory.build()
-        user_settings = DropboxUserSettingsFactory(access_token='abcde',
-            dropbox_id='abc')
+        node_settings = GdriveNodeSettingsFactory.build()
+        user_settings = GdriveUserSettingsFactory(access_token='abcde')
         node_settings.user_settings = user_settings
         node_settings.save()
 
@@ -129,20 +59,18 @@ class TestUserSettingsModel(OsfTestCase):
         user_settings.clear()
         user_settings.save()
         assert_false(user_settings.access_token)
-        assert_false(user_settings.dropbox_id)
 
     def test_delete(self):
-        user_settings = DropboxUserSettingsFactory()
+        user_settings = GdriveUserSettingsFactory()
         assert_true(user_settings.has_auth)
         user_settings.delete()
         user_settings.save()
         assert_false(user_settings.access_token)
-        assert_false(user_settings.dropbox_id)
         assert_true(user_settings.deleted)
 
     def test_delete_clears_associated_node_settings(self):
-        node_settings = DropboxNodeSettingsFactory.build()
-        user_settings = DropboxUserSettingsFactory()
+        node_settings = GdriveNodeSettingsFactory.build()
+        user_settings = GdriveUserSettingsFactory()
         node_settings.user_settings = user_settings
         node_settings.save()
 
@@ -154,41 +82,35 @@ class TestUserSettingsModel(OsfTestCase):
         assert_is(node_settings.folder, None)
         assert_false(node_settings.deleted)
 
-    def test_to_json(self):
-        user_settings = DropboxUserSettingsFactory()
-        result = user_settings.to_json()
-        assert_equal(result['has_auth'], user_settings.has_auth)
 
-
-class TestDropboxNodeSettingsModel(OsfTestCase):
+class TestGdriveNodeSettingsModel(OsfTestCase):
 
     def setUp(self):
-        super(TestDropboxNodeSettingsModel, self).setUp()
+        super(TestGdriveNodeSettingsModel, self).setUp()
         self.user = UserFactory()
-        self.user.add_addon('dropbox')
+        self.user.add_addon('gdrive')
         self.user.save()
-        self.user_settings = self.user.get_addon('dropbox')
+        self.user_settings = self.user.get_addon('gdrive')
         self.project = ProjectFactory()
-        self.node_settings = DropboxNodeSettingsFactory(
+        self.node_settings = GdriveNodeSettingsFactory(
             user_settings=self.user_settings,
-            owner=self.project
+            owner=self.project,
         )
 
     def test_fields(self):
-        node_settings = DropboxNodeSettings(user_settings=self.user_settings)
+        node_settings = AddonGdriveNodeSettings(user_settings=self.user_settings)
         node_settings.save()
         assert_true(node_settings.user_settings)
         assert_equal(node_settings.user_settings.owner, self.user)
         assert_true(hasattr(node_settings, 'folder'))
-        assert_true(hasattr(node_settings, 'registration_data'))
 
     def test_folder_defaults_to_none(self):
-        node_settings = DropboxNodeSettings(user_settings=self.user_settings)
+        node_settings = AddonGdriveNodeSettings(user_settings=self.user_settings)
         node_settings.save()
         assert_is_none(node_settings.folder)
 
     def test_has_auth(self):
-        settings = DropboxNodeSettings(user_settings=self.user_settings)
+        settings = AddonGdriveNodeSettings(user_settings=self.user_settings)
         settings.save()
         assert_false(settings.has_auth)
 
@@ -196,22 +118,17 @@ class TestDropboxNodeSettingsModel(OsfTestCase):
         settings.user_settings.save()
         assert_true(settings.has_auth)
 
-    def test_to_json(self):
-        settings = self.node_settings
-        user = UserFactory()
-        result = settings.to_json(user)
-        assert_equal(result['addon_short_name'], 'dropbox')
-
-    def test_delete(self):
-        assert_true(self.node_settings.user_settings)
-        assert_true(self.node_settings.folder)
-        old_logs = self.project.logs
-        self.node_settings.delete()
-        self.node_settings.save()
-        assert_is(self.node_settings.user_settings, None)
-        assert_is(self.node_settings.folder, None)
-        assert_true(self.node_settings.deleted)
-        assert_equal(self.project.logs, old_logs)
+    # TODO use this test if delete function is used in gdrive/model
+    # def test_delete(self):
+    #     assert_true(self.node_settings.user_settings)
+    #     assert_true(self.node_settings.folder)
+    #     old_logs = self.project.logs
+    #     self.node_settings.delete()
+    #     self.node_settings.save()
+    #     assert_is(self.node_settings.user_settings, None)
+    #     assert_is(self.node_settings.folder, None)
+    #     assert_true(self.node_settings.deleted)
+    #     assert_equal(self.project.logs, old_logs)
 
     def test_deauthorize(self):
         assert_true(self.node_settings.user_settings)
@@ -222,7 +139,7 @@ class TestDropboxNodeSettingsModel(OsfTestCase):
         assert_is(self.node_settings.folder, None)
 
         last_log = self.project.logs[-1]
-        assert_equal(last_log.action, 'dropbox_node_deauthorized')
+        assert_equal(last_log.action, 'gdrive_node_deauthorized')
         params = last_log.params
         assert_in('node', params)
         assert_in('project', params)
@@ -236,11 +153,11 @@ class TestDropboxNodeSettingsModel(OsfTestCase):
         assert_equal(self.node_settings.folder, folder_name)
         # Log was saved
         last_log = self.project.logs[-1]
-        assert_equal(last_log.action, 'dropbox_folder_selected')
+        assert_equal(last_log.action, 'gdrive_folder_selected')
 
     def test_set_user_auth(self):
-        node_settings = DropboxNodeSettingsFactory()
-        user_settings = DropboxUserSettingsFactory()
+        node_settings = GdriveNodeSettingsFactory()
+        user_settings = GdriveUserSettingsFactory()
 
         node_settings.set_user_auth(user_settings)
         node_settings.save()
@@ -249,7 +166,7 @@ class TestDropboxNodeSettingsModel(OsfTestCase):
         assert_equal(node_settings.user_settings, user_settings)
         # A log was saved
         last_log = node_settings.owner.logs[-1]
-        assert_equal(last_log.action, 'dropbox_node_authorized')
+        assert_equal(last_log.action, 'gdrive_node_authorized')
         log_params = last_log.params
         assert_equal(log_params['folder'], node_settings.folder)
         assert_equal(log_params['node'], node_settings.owner._primary_key)
@@ -281,7 +198,7 @@ class TestDropboxNodeSettingsModel(OsfTestCase):
 
     def test_create_log(self):
         action = 'file_added'
-        path = 'pizza.nii'
+        path = '12345/camera uploads/pizza.nii'
         nlog = len(self.project.logs)
         self.node_settings.create_waterbutler_log(
             auth=Auth(user=self.user),
@@ -292,11 +209,11 @@ class TestDropboxNodeSettingsModel(OsfTestCase):
         assert_equal(len(self.project.logs), nlog + 1)
         assert_equal(
             self.project.logs[-1].action,
-            'dropbox_{0}'.format(action),
+            'gdrive_{0}'.format(action),
         )
         assert_equal(
             self.project.logs[-1].params['path'],
-            os.path.join(self.node_settings.folder, path),
+            path,
         )
 
 
@@ -305,8 +222,8 @@ class TestNodeSettingsCallbacks(OsfTestCase):
     def setUp(self):
         super(TestNodeSettingsCallbacks, self).setUp()
         # Create node settings with auth
-        self.user_settings = DropboxUserSettingsFactory(access_token='123abc')
-        self.node_settings = DropboxNodeSettingsFactory(
+        self.user_settings = GdriveUserSettingsFactory(access_token='123abc', username='name/email')
+        self.node_settings = GdriveNodeSettingsFactory(
             user_settings=self.user_settings,
             folder='',
         )
@@ -314,14 +231,14 @@ class TestNodeSettingsCallbacks(OsfTestCase):
         self.project = self.node_settings.owner
         self.user = self.user_settings.owner
 
-    def test_after_fork_by_authorized_dropbox_user(self):
+    def test_after_fork_by_authorized_gdrive_user(self):
         fork = ProjectFactory()
         clone, message = self.node_settings.after_fork(
             node=self.project, fork=fork, user=self.user_settings.owner
         )
         assert_equal(clone.user_settings, self.user_settings)
 
-    def test_after_fork_by_unauthorized_dropbox_user(self):
+    def test_after_fork_by_unauthorized_gdrive_user(self):
         fork = ProjectFactory()
         user = UserFactory()
         clone, message = self.node_settings.after_fork(
@@ -343,7 +260,7 @@ class TestNodeSettingsCallbacks(OsfTestCase):
         assert_in(self.user.fullname, message)
         assert_in(self.project.project_or_component, message)
 
-    def test_after_remove_authorized_dropbox_user(self):
+    def test_after_remove_authorized_gdrive_user(self):
         message = self.node_settings.after_remove_contributor(
             self.project, self.user_settings.owner)
         self.node_settings.save()

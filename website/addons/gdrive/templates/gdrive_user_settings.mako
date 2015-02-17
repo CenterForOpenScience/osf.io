@@ -6,6 +6,8 @@
     <small>
         <!-- Delete Access Token Button-->
         <span data-bind="if: userHasAuth() && loaded()">
+            authorized
+            <span data-bind="if: username()">by {{ username }}</span>
             <a data-bind="click:deleteKey" class="text-danger pull-right addon-auth">
                 Delete Access Token
             </a>
@@ -24,3 +26,5 @@
         <p data-bind="html: message, attr: {class: messageClass}"></p>
     </div>
 </div>
+
+<%include file="profile/addon_permissions.mako" />

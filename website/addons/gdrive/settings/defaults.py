@@ -11,9 +11,4 @@ REDIRECT_URI = 'http://localhost:5000/api/v1/addons/gdrive/callback/'
 
 OAUTH_ACCESS_TOKEN = 'changeme'
 
-SERVICE =[]
-
-
-
-
-
+SERVICE = []
