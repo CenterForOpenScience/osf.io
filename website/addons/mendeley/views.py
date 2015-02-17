@@ -98,6 +98,8 @@ def mendeley_widget(node_addon, project, node, pid, auth):
 @must_have_addon('mendeley', 'node')
 def mendeley_citation_list(node_addon, project, node, pid, auth, mendeley_list_id=None):
 
+    view_param = request.args.get('view', 'all')
+
     attached_list_id = node_addon.mendeley_list_id
     list_id = mendeley_list_id or attached_list_id
 
@@ -116,23 +118,28 @@ def mendeley_citation_list(node_addon, project, node, pid, auth, mendeley_list_i
                 raise HTTPError(http.FORBIDDEN)
             ancestor_id = folders[ancestor_id].get('parent_list_id')
 
-    child_lists = [
-        {
-            'data': each,
-            'kind': 'folder',
-        }
-        for each in account_folders
-        if each.get('parent_list_id') == list_id
-    ]
 
-    citations = [
-        {
-            'csl': each,
-            'kind': 'item',
-        }
-        for each in node_addon.api.get_list(list_id)
-    ]
+    contents = []
+
+    if view_param in ('all', 'folders'):
+        contents += [
+            {
+                'data': each,
+                'kind': 'folder',
+            }
+            for each in account_folders
+            if each.get('parent_list_id') == list_id
+        ]
+
+    if view_param in ('all', 'citations'):
+        contents += [
+            {
+                'csl': each,
+                'kind': 'item',
+            }
+            for each in node_addon.api.get_list(list_id)
+        ]
 
     return {
-        'contents': child_lists + citations
+        'contents': contents
     }
