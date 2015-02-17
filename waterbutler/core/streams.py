@@ -213,8 +213,6 @@ class FormDataStream(MultiStream):
     Use FormDataStream.headers to get the proper headers to be included with requests
     Namely Content-Length, Content-Type
     """
-    FORM_DATA_HEADER = 'Content-Disposition: form-data; name="{}"\r\n\r\n'
-    FILE_HEADER = 'Content-Disposition: form-data; name="{}"{}\r\nContent-Type: {}\r\nContent-Transfer-Encoding: {}\r\n\r\n'
 
     @classmethod
     def make_boundary(cls):
