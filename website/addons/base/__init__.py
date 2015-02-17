@@ -447,6 +447,11 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         'abstract': True,
     }
 
+    @property
+    def has_auth(self):
+        """Whether the node has added credentials for this addon."""
+        return False
+
     def to_json(self, user):
         ret = super(AddonNodeSettingsBase, self).to_json(user)
         ret.update({

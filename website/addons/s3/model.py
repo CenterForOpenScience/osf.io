@@ -203,7 +203,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
 
     @property
     def has_auth(self):
-        return self.user_settings and self.user_settings.has_auth
+        return bool(self.user_settings and self.user_settings.has_auth)
         #TODO Update callbacks
 
     def before_register(self, node, user):

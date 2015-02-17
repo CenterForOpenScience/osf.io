@@ -200,6 +200,10 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
     registration_data = fields.DictionaryField()
 
+    @property
+    def has_auth(self):
+        return bool(self.user_settings and self.user_settings.has_auth)
+
     def find_or_create_file_guid(self, path):
         try:
             return GithubGuidFile.find_one(
