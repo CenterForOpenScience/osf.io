@@ -13,11 +13,13 @@ import logging
 
 import pyrax
 from boto.glacier.layer2 import Layer2
+from modularodm import Q
 
 from website.app import init_app
 from website.addons.osfstorage import model
 
-from scripts.osfstorage import utils as script_utils
+from scripts import utils as scripts_utils
+from scripts.osfstorage import utils as storage_utils
 from scripts.osfstorage import settings as storage_settings
 
 
@@ -32,7 +34,7 @@ logging.basicConfig(level=logging.INFO)
 def download_from_cloudfiles(version):
     path = os.path.join(storage_settings.AUDIT_TEMP_PATH, version.location['object'])
     if os.path.exists(path):
-        return
+        return path
     obj = container_primary.get_object(version.location['object'])
     obj.download(storage_settings.AUDIT_TEMP_PATH)
     return path
@@ -72,7 +74,7 @@ def ensure_parity(version, dry_run):
     if dry_run:
         return
     file_path = download_from_cloudfiles(version)
-    parity_paths = script_utils.create_parity_files(file_path)
+    parity_paths = storage_utils.create_parity_files(file_path)
     for parity_path in parity_paths:
         container_parity.create(parity_path)
         os.remove(parity_path)
@@ -90,20 +92,23 @@ def ensure_backups(version, dry_run):
 
 
 def get_targets():
-    return model.OsfStorageFileVersion.find()
+    return model.OsfStorageFileVersion.find(Q('location.object', 'exists', True))
 
 
-def main(dry_run):
+def main(nworkers, worker_id, dry_run):
     for version in get_targets():
-        ensure_backups(version, dry_run)
+        if hash(version._id) % nworkers == worker_id:
+            ensure_backups(version, dry_run)
 
 
 if __name__ == '__main__':
     import sys
+    nworkers = int(sys.argv[1])
+    worker_id = int(sys.argv[2])
     dry_run = 'dry' in sys.argv
 
     # Set up storage backends
-    init_app()
+    init_app(set_backends=True, routes=False)
 
     # Authenticate to Rackspace
     pyrax.settings.set('identity_type', 'rackspace')
@@ -124,9 +129,9 @@ if __name__ == '__main__':
 
     # Log to file
     if not dry_run:
-        script_utils.add_file_logger(logger, __file__)
+        scripts_utils.add_file_logger(logger, __file__, suffix=worker_id)
 
-    main(dry_run=dry_run)
+    main(nworkers, worker_id, dry_run=dry_run)
 
 
 import mock
@@ -178,7 +183,7 @@ class TestFilesAudit(OsfTestCase):
         assert_false(mock_vault.upload_archive.called)
 
     @mock.patch('os.remove')
-    @mock.patch('scripts.osfstorage.files_audit.script_utils.create_parity_files')
+    @mock.patch('scripts.osfstorage.files_audit.storage_utils.create_parity_files')
     @mock.patch('scripts.osfstorage.files_audit.download_from_cloudfiles')
     @mock.patch('scripts.osfstorage.files_audit.container_parity')
     def test_ensure_parity(self, mock_container, mock_download, mock_create_parity, mock_remove):
@@ -188,7 +193,7 @@ class TestFilesAudit(OsfTestCase):
         ensure_parity(version, dry_run=False)
         assert_equal(len(mock_container.create.call_args_list), 8)
 
-    @mock.patch('scripts.osfstorage.files_audit.script_utils.create_parity_files')
+    @mock.patch('scripts.osfstorage.files_audit.storage_utils.create_parity_files')
     @mock.patch('scripts.osfstorage.files_audit.download_from_cloudfiles')
     @mock.patch('scripts.osfstorage.files_audit.container_parity')
     def test_ensure_parity_exists(self, mock_container, mock_download, mock_create_parity):

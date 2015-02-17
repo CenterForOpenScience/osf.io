@@ -286,19 +286,14 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         download_url = furl.furl(file_guid.download_url)
         download_url.args.update(extras)
         if extras.get('mode') == 'render':
-
-            # Temp fix for ie 11, return a redirect to s3 or cloudfiles (one hop)
+            # Temp fix for IE, return a redirect to s3 or cloudfiles (one hop)
             # Or just send back the entire body
-            if request.user_agent.browser == 'msie':
-                version = request.user_agent.version and int(request.user_agent.version.split('.')[0])
-                if version == 11:
-                    resp = requests.get(download_url, allow_redirects=False)
-                    if resp.status_code == 302:
-                        return redirect(resp.headers['Location'])
-                    else:
-                        return make_response(resp.body())
+            resp = requests.get(download_url, allow_redirects=False)
+            if resp.status_code == 302:
+                return redirect(resp.headers['Location'])
+            else:
+                return make_response(resp.content)
 
-            download_url.args['accept_url'] = 'false'
         return redirect(download_url.url)
 
     return addon_view_file(auth, node, node_addon, file_guid, extras)
