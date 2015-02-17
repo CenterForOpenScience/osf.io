@@ -236,8 +236,8 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     param_list = path.lower().split('/') if path else []
     for i, param in enumerate(param_list):
         configurable = param == 'view' or param == 'compare'
-        if configurable and i+1 < len(param_list) and (param_list[i+1]).isdigit():
-            version_number = int(param_list.pop(i+1))
+        if configurable and i + 1 < len(param_list) and (param_list[i + 1]).isdigit():
+            version_number = int(param_list.pop(i + 1))
             if version_number >= len(versions):
                 raise WIKI_PAGE_NOT_FOUND_ERROR
             view_settings[param] = version_number
