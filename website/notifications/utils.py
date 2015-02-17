@@ -1,5 +1,5 @@
 import collections
-from framework.auth.signals import contributor_removed
+from framework.auth.signals import contributor_removed, node_deleted
 from website import settings
 from website.models import Node
 from website.notifications.model import Subscription
@@ -27,6 +27,10 @@ def remove_contributor_from_subscriptions(contributor, node):
     node_subscriptions = get_all_node_subscriptions(contributor, node)
     for subscription in node_subscriptions:
         subscription.remove_user_from_subscription(contributor)
+
+@node_deleted.connect
+def remove_subscription(node):
+    Subscription.remove(Q('object_id', 'eq', node._id))
 
 
 def get_configured_projects(user):
