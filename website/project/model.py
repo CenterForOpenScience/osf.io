@@ -444,7 +444,6 @@ class Pointer(StoredObject):
     """A link to a Node. The Pointer delegates all but a few methods to its
     contained Node. Forking and registration are overridden such that the
     link is cloned, but its contained Node is not.
-
     """
     #: Whether this is a pointer or not
     primary = False
@@ -713,13 +712,22 @@ class Node(GuidStoredObject, AddonModelMixin):
             or is_api_node
         )
 
+    def is_admin_parent(self, user):
+        if self.has_permission(user, 'admin', check_parent=False):
+            return True
+        if self.parent_node:
+            return self.parent_node.is_admin_parent(user)
+        return False
+
     def can_view(self, auth):
         if not auth and not self.is_public:
             return False
 
-        return self.is_public or auth.user \
-            and self.has_permission(auth.user, 'read') \
-            or auth.private_key in self.private_link_keys_active
+        return (
+            self.is_public or
+            (auth.user and self.has_permission(auth.user, 'read')) or
+            auth.private_key in self.private_link_keys_active
+        )
 
     def is_expanded(self, user=None):
         """Return if a user is has expanded the folder in the dashboard view.
@@ -815,21 +823,21 @@ class Node(GuidStoredObject, AddonModelMixin):
         if save:
             self.save()
 
-    def has_permission(self, user, permission):
+    def has_permission(self, user, permission, check_parent=True):
         """Check whether user has permission.
 
         :param User user: User to test
         :param str permission: Required permission
         :returns: User has required permission
-
         """
         if user is None:
             logger.warn('User is ``None``.')
             return False
-        try:
-            return permission in self.permissions[user._id]
-        except KeyError:
-            return False
+        if permission in self.permissions.get(user._id, []):
+            return True
+        if permission == 'read' and check_parent:
+            return self.is_admin_parent(user)
+        return False
 
     def get_permissions(self, user):
         """Get list of permissions for user.
@@ -837,7 +845,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param User user: User to check
         :returns: List of permissions
         :raises: ValueError if user not found in permissions
-
         """
         return self.permissions.get(user._id, [])
 
@@ -852,6 +859,31 @@ class Node(GuidStoredObject, AddonModelMixin):
             User.load(_id)
             for _id in self.visible_contributor_ids
         ]
+
+    @property
+    def parents(self):
+        if self.parent_node:
+            return [self.parent_node] + self.parent_node.parents
+        return []
+
+    @property
+    def admin_contributor_ids(self, contributors=None):
+        contributor_ids = self.contributors._to_primary_keys()
+        admin_ids = set()
+        for parent in self.parents:
+            admins = [
+                user for user, perms in parent.permissions.iteritems()
+                if 'admin' in perms
+            ]
+            admin_ids.update(set(admins).difference(contributor_ids))
+        return admin_ids
+
+    @property
+    def admin_contributors(self):
+        return sorted(
+            [User.load(_id) for _id in self.admin_contributor_ids],
+            key=lambda user: user.family_name,
+        )
 
     def get_visible(self, user):
         if not self.is_contributor(user):
@@ -1537,11 +1569,13 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param auth: All the auth information including user, API key.
         :template: Template name
         :data: Form data
-
         """
-        if not self.can_edit(auth):
-            return
-
+        # NOTE: Admins can register child nodes even if they don't have write access them
+        if not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user):
+            raise PermissionsError(
+                'User {} does not have permission '
+                'to register this node'.format(auth.user._id)
+            )
         if self.is_folder:
             raise NodeStateError("Folders may not be registered")
 
