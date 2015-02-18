@@ -8,7 +8,8 @@
     margin-top:15px;
     margin-bottom:0px;
 }
-#citation-style-panel .select2-container {
+
+.citation-picker .select2-container {
     width:100%;
 }
 
