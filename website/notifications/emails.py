@@ -86,7 +86,7 @@ def email_transactional(subscribed_user_ids, uid, event, **context):
                 to_addr=email,
                 mail=mails.TRANSACTIONAL,
                 name=user.fullname,
-                node_title= context.get('title'),
+                node_title=context.get('title'),
                 subject=subject,
                 message=message,
                 url=get_settings_url(uid, user)
