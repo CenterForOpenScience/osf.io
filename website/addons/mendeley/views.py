@@ -225,7 +225,7 @@ def mendeley_citation_list(node_addon, project, node, pid, auth,
             ancestor_id = folders[list_id].get('parent_list_id')
 
         while ancestor_id != attached_list_id:
-            if ancestor_id is None:
+            if ancestor_id is '__':
                 raise HTTPError(http.FORBIDDEN)
             ancestor_id = folders[ancestor_id].get('parent_list_id')
 
