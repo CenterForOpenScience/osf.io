@@ -1,5 +1,5 @@
 
-<link rel="stylesheet" href="/static/addons/mendeley/node-cfg.css">
+<!--<link rel="stylesheet" href="/static/addons/mendeley/node-cfg.css">-->
 <div id="mendeleyScope" class="scripted">
     <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
     <h4 class="addon-title">
@@ -48,7 +48,7 @@
                     <button data-bind="visible: validCredentials,
                                         click: togglePicker,
                                         css: {active: currentDisplay() === PICKER}"
-                            class="btn btn-sm btn-mendeley"><i class="icon-edit"></i> Change</button>
+                            class="btn btn-sm btn-addon"><i class="icon-edit"></i> Change</button>
                             <span data-bind="visible: folder().path === '/'">(Cannot share root folder)</span>
                         </button>
                 </div>
