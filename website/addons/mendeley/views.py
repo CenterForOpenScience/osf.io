@@ -89,8 +89,7 @@ def list_citationlists_node(pid, account_id, auth, node, project, node_addon):
     mendeley.account = account
 
     return {
-        'citation_lists': mendeley.citation_lists,
-        'citation_tree': mendeley.citation_folder_tree,
+        'citation_lists': mendeley.citation_lists
     }
 
 
