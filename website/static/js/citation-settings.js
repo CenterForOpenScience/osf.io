@@ -16,15 +16,15 @@ var CitationAccount = function(name, id) {
     this.id = id;
 };
 
-var SettingsViewModel = function (name) {
+var SettingsViewModel = function(name) {
     this.name = name;
     this.accounts = ko.observableArray();
 };
 
 $.extend(SettingsViewModel.prototype, {
-    connectAccount: function () {
+    connectAccount: function() {
         var self = this;
-        window.oauthComplete = function () {
+        window.oauthComplete = function() {
             self.updateAccounts();
         };
         window.open('/oauth/connect/' + self.name + '/');
@@ -37,7 +37,7 @@ $.extend(SettingsViewModel.prototype, {
                 'Are you sure you want to delete account <strong>' +
                 account.name + '</strong>?' +
                 '</p>',
-            callback: function (confirm) {
+            callback: function(confirm) {
                 if (confirm) {
                     self.disconnectAccount(account);
                 }
