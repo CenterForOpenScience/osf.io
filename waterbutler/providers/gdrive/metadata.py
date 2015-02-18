@@ -1,4 +1,4 @@
-
+import os
 from waterbutler.core import metadata
 
 
@@ -37,7 +37,7 @@ class GoogleDriveFolderMetadata(BaseGoogleDriveMetadata, metadata.BaseFolderMeta
 
     @property
     def path(self):
-        return'/{0}/{1}/{2}'.format(self.raw['id'], self.raw['title'], self.raw['path'])
+        return os.path.join(self.raw['id'], self.raw['title'], self.raw['path'])
 
 
 class GoogleDriveFileMetadata(BaseGoogleDriveMetadata, metadata.BaseFileMetadata):
@@ -52,7 +52,7 @@ class GoogleDriveFileMetadata(BaseGoogleDriveMetadata, metadata.BaseFileMetadata
 
     @property
     def path(self):
-        return '/{0}/{1}/{2}'.format(self.raw['id'], self.raw['title'], self.raw['path'])
+        return os.path.join(self.raw['id'], self.raw['title'], self.raw['path'])
 
     @property
     def size(self):
@@ -60,18 +60,17 @@ class GoogleDriveFileMetadata(BaseGoogleDriveMetadata, metadata.BaseFileMetadata
         try:
             return self.raw['fileSize']
         except KeyError:
-            return '0'
+            return None
 
     @property
     def modified(self):
-        #return self.raw['modified']
-        pass
+        return self.raw['modifiedDate']
+
     @property
     def content_type(self):
         return self.raw['mimeType']
 
 
-# TODO dates!
 class GoogleDriveRevision(metadata.BaseFileRevisionMetadata):
 
     @property

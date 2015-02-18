@@ -57,7 +57,7 @@ class GoogleDrivePath(utils.WaterButlerPath):
 class GoogleDriveProvider(provider.BaseProvider):
 
     BASE_URL = settings.BASE_URL
-    BASE_CONTENT_URL = settings.BASE_CONTENT_URL
+    BASE_UPLOAD_URL = settings.BASE_UPLOAD_URL
 
     def __init__(self, auth, credentials, settings):
         super().__init__(auth, credentials, settings)
@@ -79,9 +79,9 @@ class GoogleDriveProvider(provider.BaseProvider):
         }
         url = 'https://www.googleapis.com/oauth2/v3/token'
         response = requests.post(url, params=params)
-        refresh_token = response.json()['access_token']
+        new_access_token = response.json()['access_token']
         return {
-            'authorization': 'Bearer {}'.format(refresh_token),
+            'authorization': 'Bearer {}'.format(new_access_token),
         }
 
     @asyncio.coroutine
@@ -96,14 +96,14 @@ class GoogleDriveProvider(provider.BaseProvider):
         )
         data = yield from resp.json()
         download_url = data['downloadUrl']
-        downloadResp = yield from self.make_request(
+        download_resp = yield from self.make_request(
             'GET',
             download_url,
             expects=(200, ),
             throws=exceptions.DownloadError,
         )
 
-        return streams.ResponseStreamReader(downloadResp)
+        return streams.ResponseStreamReader(download_resp)
 
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
@@ -134,7 +134,7 @@ class GoogleDriveProvider(provider.BaseProvider):
         #Step 1 - Start a resumable session
         resp = yield from self.make_request(
             'POST',
-            self._build_content_url("files", uploadType='resumable'),
+            self._build_upload_url("files", uploadType='resumable'),
             headers={'Content-Length': str(len(json.dumps(metadata))),
                      'Content-Type': 'application/json; charset=UTF-8',
                      #'X-Upload-Content-Type': 'image/jpeg',#hardcoded in for testing
@@ -160,7 +160,7 @@ class GoogleDriveProvider(provider.BaseProvider):
 
         resp = yield from self.make_request(
             'PUT',
-            self._build_content_url("files", uploadType='resumable', upload_id=upload_id),
+            self._build_upload_url("files", uploadType='resumable', upload_id=upload_id),
             headers={'Content-Length': str(stream.size),
                      #'Content-Type': 'image/jpeg',#todo: hardcoded in for testing
                      },
@@ -182,8 +182,7 @@ class GoogleDriveProvider(provider.BaseProvider):
         yield from self.make_request(
             'DELETE',
             self.build_url('files', path._folderId),
-            # data={'root': 'auto', 'path': path.full_path},
-            expects=(200, 204),
+            expects=(204, ),
             throws=exceptions.DeleteError,
         )
 
@@ -198,8 +197,8 @@ class GoogleDriveProvider(provider.BaseProvider):
         )
         data = yield from resp.json()
 
-        # Check to see if returned data is a file or folder
-        if len(data['items']) == 0:  # File
+        # Check to see if request was made for file or folder
+        if len(data['items']) == 0:  # No subitems indicates a File
             resp = yield from self.make_request(
                 'GET',
                 self.build_url('files', path._folderId),
@@ -209,7 +208,7 @@ class GoogleDriveProvider(provider.BaseProvider):
             data = yield from resp.json()
             data['path'] = os.path.join(path.full_path, data['title'])
 
-        else:
+        else:  # Folder
             ret = []
             for item in data['items']:
                 item['path'] = os.path.join(path.full_path, item['title'])  # custom add, not obtained from API
@@ -236,5 +235,5 @@ class GoogleDriveProvider(provider.BaseProvider):
             for item in data['items']
         ]
 
-    def _build_content_url(self, *segments, **query):
-        return provider.build_url(settings.BASE_CONTENT_URL, *segments, **query)
+    def _build_upload_url(self, *segments, **query):
+        return provider.build_url(settings.BASE_UPLOAD_URL, *segments, **query)
