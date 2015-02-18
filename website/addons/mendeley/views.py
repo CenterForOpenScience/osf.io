@@ -17,7 +17,7 @@ from website.util import api_url_for, web_url_for
 from . import utils
 from .model import Mendeley
 
-def serialize_urls(node_settings, user_accounts):
+def serialize_urls(node_settings):
 
     node = node_settings.owner
 
@@ -60,7 +60,7 @@ def serialize_settings(node_settings, current_user):
         'nodeHasAuth': node_settings.has_auth,
         'userIsOwner': user_is_owner,
         'userHasAuth': user_has_auth,
-        'urls': serialize_urls(node_settings, user_accounts),
+        'urls': serialize_urls(node_settings),
         'userAccountId': user_account_id,
     }
     if node_account is not None:

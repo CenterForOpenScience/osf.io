@@ -41,31 +41,51 @@ class MendeleyViewsTestCase(OsfTestCase):
         super(MendeleyViewsTestCase, self).setUp()
         self.account = MendeleyAccountFactory()
         self.user = AuthUserFactory(external_accounts=[self.account])
+        self.account.display_name = self.user.fullname
+        self.account.save()
         self.user_addon = MendeleyUserSettingsFactory(owner=self.user)
         self.project = ProjectFactory(creator=self.user)
         self.node_addon = MendeleyNodeSettingsFactory(owner=self.project, external_account=self.account)
         self.node_addon.grant_oauth_access(self.user, self.account, metadata={'lists': 'list'})
 
     def test_serialize_settings_authorizer(self):
-        """dict: a serialized version of user-specific addon settings"""
-        res = serialize_settings(self.node_addon, self.user.auth)        
+        #"""dict: a serialized version of user-specific addon settings"""
+        res = serialize_settings(self.node_addon, self.user)
         expected = {
             'nodeHasAuth': True,
             'userIsOwner': True,
             'userHasAuth': True,
-            'urls': serialize_urls(self.node_addon, self.user),
-            'userAccountId': filter(lambda a: a.provider == 'mendeley', user.external_accounts)[0]._id,
+            'urls': serialize_urls(self.node_addon),
+            'userAccountId': filter(lambda a: a.provider == 'mendeley', self.user.external_accounts)[0]._id,
             'folder': '',
             'ownerName': self.user.fullname            
         }
-        assert_equal(res, expected)
-
+        assert_dict_equal(res, expected)
+        
 
     def test_serialize_settings_non_authorizer(self):
-        """dict: a serialized version of user-specific addon settings"""
+        #"""dict: a serialized version of user-specific addon settings"""
         non_authorizing_user = AuthUserFactory()
         self.project.add_contributor(non_authorizing_user, save=True)    
-        res = serialize_settings(self.node_addon, non_authorizing_user.auth)
+        res = serialize_settings(self.node_addon, non_authorizing_user)
+        expected = {
+            'nodeHasAuth': True,
+            'userIsOwner': False,
+            'userHasAuth': False,
+            'urls': serialize_urls(self.node_addon),
+            'userAccountId': None,
+            'folder': '',
+            'ownerName': self.user.fullname            
+        }
+        assert_dict_equal(res, expected)
+
+
+    def test_serialize_urls_authorizer(self):
+        res = serialize_urls
+
+
+    def test_serialize_urls_non_authorize(self):
+        pass
         
 
     def test_user_folders(self):
