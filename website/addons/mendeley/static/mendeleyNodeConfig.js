@@ -44,7 +44,7 @@ var ViewModel = function(url, selector, folderPicker) {
     // Display names
     self.PICKER = 'picker';
     // Current folder display
-    self.currentDisplay = ko.observable(null);
+    self.currentDisplay = ko.observable(false);
     // CSS selector for the folder picker div
     self.folderPicker = folderPicker;
     // Currently selected folder, an Object of the form {name: ..., path: ...}
@@ -123,7 +123,7 @@ var ViewModel = function(url, selector, folderPicker) {
         this.id = id;
     };
 
-    self.updateAccounts = function() {
+    self.updateAccounts = function(callback) {
         var url = '/api/v1/settings/mendeley/accounts/';
         var request = $.get(url);
 
@@ -131,10 +131,7 @@ var ViewModel = function(url, selector, folderPicker) {
             self.accounts(data.accounts.map(function(account) {
                 return new CitationAccount(account.display_name, account.id);
             }));
-            $osf.postJSON(
-                self.urls().importAuth,
-                {external_account_id: self.accounts()[0].id}
-            ).then(onImportSuccess, onImportError);
+            callback();
         });
 
         request.fail(function(xhr, textStatus, error) {
@@ -159,9 +156,21 @@ var ViewModel = function(url, selector, folderPicker) {
             var msg = 'Successfully created a Mendeley Access Token';
             // Update view model based on response
             self.changeMessage(msg, 'text-success', 3000);
-            self.updateAccounts();
+            self.updateAccounts(function() {
+                $osf.postJSON(
+                    self.urls().importAuth,
+                    {external_account_id: self.accounts()[0].id}
+                ).then(onImportSuccess, onImportError);
+            });
         };
         window.open('/oauth/connect/mendeley/');
+    };
+
+    self.connectExistingAccount = function(account_id) {
+        $osf.postJSON(
+            self.urls().importAuth,
+            {external_account_id: account_id}
+        ).then(onImportSuccess, onImportError);
     };
 
     /**
@@ -317,19 +326,42 @@ var ViewModel = function(url, selector, folderPicker) {
      * Send PUT request to import access token from user profile.
      */
     self.importAuth = function() {
-        bootbox.confirm({
-            title: 'Import mendeley Access Token?',
-            message: 'Are you sure you want to authorize this project with your mendeley access token?',
-            callback: function(confirmed) {
-                if (confirmed) {
-                    return $osf.postJSON(self.urls().importAuth, {
-                            external_account_id: self.userAccountId()
-                        })
-                        .done(onImportSuccess)
-                        .fail(onImportError);
-                }
+
+        self.updateAccounts(function() {
+
+            if(self.accounts().length > 1) {
+                bootbox.prompt({
+                    title: 'Choose Mendeley Access Token to Import',
+                    inputType: 'select',
+                    inputOptions: ko.utils.arrayMap(
+                        self.accounts(),
+                        function(item) { return {text: item.name, value: item.id } }
+                    ),
+                    value: self.accounts()[0].id,
+                    callback: self.connectExistingAccount
+                });
+            } else {
+                bootbox.confirm({
+                    title: 'Import Mendeley Access Token?',
+                    message: 'Are you sure you want to authorize this project with your mendeley access token?',
+                    callback: function(confirmed) {
+                        if (confirmed) {
+                            self.connectExistingAccount(self.accounts()[0].id);
+                        }
+                    }
+                });
             }
+
+
+
+
         });
+
+
+
+
+
+
     };
 
     /** Callback for chooseFolder action.
@@ -356,7 +388,6 @@ var ViewModel = function(url, selector, folderPicker) {
             self.loading(true);
             $(self.folderPicker).folderpicker({
                 onPickFolder: onPickFolder,
-                initialFolderName: 'All Documents',
                 initialFolderPath: 'mendeley',
                 // Fetch mendeley folders with AJAX
                 filesData: self.urls().folders,
