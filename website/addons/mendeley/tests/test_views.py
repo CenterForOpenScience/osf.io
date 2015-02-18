@@ -190,14 +190,29 @@ class MendeleyViewsTestCase(OsfTestCase):
         """Can set config to an account/folder that was previous associated"""
         pass
 
-    def test_widget_view_complete(self):
+    def test_mendeley_widget_view_complete(self):
         """JSON: everything a widget needs"""
-        assert_true(False)
 
-    def test_widget_view_incomplete(self):
+        self.node_addon.mendeley_list_id = 'ROOT'
+        self.node_addon.save()
+        
+        res = self.app.get(
+            self.project.api_url_for('mendeley_widget'),
+            auth=self.user.auth
+        )
+        assert_equal(res.json['complete'], 'ROOT')
+        
+
+    def test_mendeley_widget_view_incomplete(self):
         #"""JSON: tell the widget when it hasn't been configured"""
-        assert_true(False)
 
+        res = self.app.get(
+            self.project.api_url_for('mendeley_widget'),
+            auth=self.user.auth
+        )        
+        assert_is_none(res.json['complete'])
+            
+    
     @responses.activate
     def test_mendeley_citation_list_root(self):
 
