@@ -45,7 +45,7 @@ def serialize_settings(node_settings, current_user):
     user_is_owner = node_account and node_account in user_accounts
 
     user_settings = current_user.get_addon('mendeley')
-    user_has_auth = user_settings and user_accounts
+    user_has_auth = bool(user_settings and user_accounts)
 
     user_account_id = None
     if user_has_auth:
@@ -100,9 +100,9 @@ def mendeley_get_config(auth, node_addon, **kwargs):
     """Serialize node addon settings and relevant urls
     (see serialize_settings/serialize_urls)
     """
-    result = node_addon.to_json(auth.user)
-    result.update(serialize_settings(node_addon, auth.user))
-    return result
+    ret = node_addon.to_json(auth.user)
+    ret.update(serialize_settings(node_addon, auth.user))
+    return ret
 
 
 @must_have_permission('write')

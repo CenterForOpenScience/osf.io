@@ -21,5 +21,8 @@ CitationsWidget.prototype.init = function() {
     var self = this;
     ko.applyBindings(self.viewModel, self.$element[0]);
 };
-//module.exports = MendeleySettings;
-new CitationsWidget('#mendeleyWidget', '#mendeleyStyleSelect');
+
+// Skip if widget is not correctly configured
+if ($('#mendeleyWidget').length) {
+    new CitationsWidget('#mendeleyWidget', '#mendeleyStyleSelect');
+}
