@@ -334,4 +334,8 @@ class Mendeley(ExternalProvider):
             if idents.get('doi'):
                 csl['DOI'] = idents.get('doi')
 
+        urls = document.json.get('websites', [])
+        if urls:
+            csl['URL'] = urls[0]
+
         return csl
