@@ -19,7 +19,7 @@ from website.notifications.model import DigestNotification
 from website.notifications.utils import NotificationsDict
 # from tests.base import OsfTestCase
 # from tests.factories import DigestNotificationFactory, UserFactory, ProjectFactory
-from nose.tools import *  # PEP8 asserts
+import nose.tools
 
 
 def main():
@@ -52,8 +52,8 @@ def send_digest(grouped_digests):
                 url=urlparse.urljoin(settings.DOMAIN, 'settings/notifications/')
             )
 
-    db.digestnotification.remove({'timestamp': {'$lt': datetime.datetime.utcnow(),
-                                                '$gte': datetime.datetime.utcnow() - datetime.timedelta(hours=24)}})
+    DigestNotification.remove(Q('timestamp', 'lt', datetime.datetime.utcnow()) &
+                              Q('timestamp', 'gte', datetime.datetime.utcnow() - datetime.timedelta(hours=24)))
 
 
 def group_messages(notifications):
@@ -80,7 +80,6 @@ def group_digest_notifications_by_user():
                             result.info.push(info);
                     };
                     """))
-
 
 # class TestSendDigest(OsfTestCase):
 #     def test_group_digest_notifications_by_user(self):
@@ -157,6 +156,7 @@ def group_digest_notifications_by_user():
 #         send_digest(user_groups)
 #         with assert_raises(NoResultsFound):
 #             DigestNotification.find_one(Q('_id', 'eq', id))
+
 
 
 if __name__ == '__main__':

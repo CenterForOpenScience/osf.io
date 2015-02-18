@@ -8,7 +8,7 @@ import collections
 from mako.lookup import Template
 from tests.base import OsfTestCase, capture_signals
 from nose.tools import *  # PEP8 asserts
-from framework.auth.signals import contributor_removed
+from framework.auth.signals import contributor_removed, node_deleted
 from framework.auth import Auth
 from website.util import web_url_for
 from website.notifications.model import Subscription, DigestNotification
@@ -121,6 +121,32 @@ class TestRemoveContributor(OsfTestCase):
         with capture_signals() as mock_signals:
             self.project.remove_contributor(self.contributor2, auth=Auth(self.project.creator))
         assert_equal(mock_signals.signals_sent(), set([contributor_removed]))
+
+
+class TestRemoveNodeSignal(OsfTestCase):
+        def test_node_subscriptions_and_backrefs_removed_when_node_is_deleted(self):
+            project = ProjectFactory()
+            subscription = SubscriptionFactory(
+                _id=project._id + '_comments',
+                object_id=project._id
+            )
+            subscription.save()
+            subscription.email_transactional.append(project.creator)
+            subscription.save()
+
+            s = getattr(project.creator, 'email_transactional', [])
+            assert_equal(len(s), 1)
+
+            with capture_signals() as mock_signals:
+                project.remove_node(auth=Auth(project.creator))
+            assert_true(project.is_deleted)
+            assert_equal(mock_signals.signals_sent(), set([node_deleted]))
+
+            s = getattr(project.creator, 'email_transactional', [])
+            assert_equal(len(s), 0)
+
+            with assert_raises(NoResultsFound):
+                Subscription.find_one(Q('object_id', 'eq', project._id))
 
 
 class TestNotificationUtils(OsfTestCase):

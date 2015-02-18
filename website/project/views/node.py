@@ -21,6 +21,7 @@ from website.exceptions import NodeStateError
 from website.project import clean_template_name, new_node, new_private_link
 from website.project.decorators import (
     must_be_contributor_or_public,
+    must_be_contributor,
     must_be_valid_project,
     must_have_permission,
     must_not_be_registration,
@@ -295,6 +296,7 @@ def node_forks(**kwargs):
 @must_be_valid_project
 @must_not_be_registration
 @must_be_logged_in
+@must_be_contributor
 def node_setting(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
 

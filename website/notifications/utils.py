@@ -1,5 +1,5 @@
 import collections
-from framework.auth.signals import contributor_removed
+from framework.auth.signals import contributor_removed, node_deleted
 from website import settings
 from website.models import Node
 from website.notifications.model import Subscription
@@ -28,17 +28,16 @@ def remove_contributor_from_subscriptions(contributor, node):
     for subscription in node_subscriptions:
         subscription.remove_user_from_subscription(contributor)
 
+@node_deleted.connect
+def remove_subscription(node):
+    Subscription.remove(Q('object_id', 'eq', node._id))
+
 
 def get_configured_projects(user):
     configured_project_ids = []
     user_subscriptions = get_all_user_subscriptions(user)
     for subscription in user_subscriptions:
-        try:
-            node = Node.load(subscription.object_id)
-        except NoResultsFound:
-            # handle case where object_id for the subscription is NOT a project, but a user
-            pass
-
+        node = Node.load(subscription.object_id)
         if node and node.project_or_component == 'project' and not node.is_deleted and subscription.object_id not in configured_project_ids:
             configured_project_ids.append(subscription.object_id)
 
@@ -95,7 +94,8 @@ def format_data(user, node_ids, data, subscriptions_available=settings.SUBSCRIPT
                             event['notificationType'] = notification_type
 
             if event['notificationType'] == 'adopt_parent':
-                event['parent_notification_type'] = get_parent_notification_type(node_id, s, user)
+                parent_nt = get_parent_notification_type(node_id, s, user)
+                event['parent_notification_type'] = parent_nt if parent_nt else 'none'
             else:
                 event['parent_notification_type'] = None  # only get nt if node = adopt_parent for display purposes
 
@@ -116,7 +116,7 @@ def get_parent_notification_type(uid, event, user):
             try:
                 subscription = Subscription.find_one(Q('_id', 'eq', key))
             except NoResultsFound:
-                return
+                return get_parent_notification_type(p._id, event, user)
 
             for notification_type in settings.NOTIFICATION_TYPES:
                 if user in getattr(subscription, notification_type):

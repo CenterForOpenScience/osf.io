@@ -40,18 +40,27 @@ function expandOnLoad() {
 }
 
 function expandChildren(tb, children) {
+    var openParent = false;
     for (var i = 0; i < children.length; i++) {
         var child = children[i];
-        if (child.data.kind !== 'event') {
-            for (var j = 0; j < child.children.length; j++) {
-                if (child.children[j].data.notificationType !== "adopt_parent") {
-                    tb.updateFolder(null, child);
-                }
-                if (child.children.length > 0) {
-                    expandChildren(tb, child.children);
-                }
-            }
+        var parent = children[i].parent();
+        if (child.data.kind === 'event' && child.data.notificationType !== "adopt_parent") {
+            openParent = true;
         }
+        if (child.children.length > 0) {
+            expandChildren(tb, child.children);
+        }
+    }
+    if (openParent) {
+        openAncestors(tb, children[0]);
+    }
+}
+
+function openAncestors (tb, item) {
+    var parent = item.parent();
+    if(parent && parent.id > 0) {
+        tb.updateFolder(null, parent);
+        openAncestors(tb, parent);
     }
 }
 

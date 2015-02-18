@@ -2123,6 +2123,10 @@ span#profileFullname{
     display: none;
 }
 
+#notificationSettings .form-control {
+    height: 32px;
+}
+
 /* Treebeard in Configure Notifications, project settings page */
 #selectNotifications #tb-tbody {
     border: none;
@@ -2135,6 +2139,16 @@ span#profileFullname{
 #selectNotifications .tb-head {
     display: none;
 }
+
+#selectNotifications .form-control {
+    height: 32px;
+}
+
 .tb-no-icon .tb-expand-icon-holder {
     width : 0;
 }
+
+.tb-no-icon .title-text {
+    line-height : 2.2;
+}
+
