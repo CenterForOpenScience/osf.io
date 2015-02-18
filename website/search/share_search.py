@@ -29,3 +29,34 @@ def count(query):
         'results': [],
         'count': count['count']
     }
+
+def stats():
+    body = {
+        "size": 0,
+        "aggs": {
+            "sources": {
+                "terms": {
+                    "field": "source",
+                    "size": 0,
+                    "exclude": "of|and|or"
+                }
+            },
+            "doisMissing": {
+                "filter": {
+                    "missing": {
+                        "field": "id.doi"
+                    }
+                },
+                "aggs": {
+                    "sources": {
+                        "terms": {
+                            "field": "source",
+                            "size": 0
+                        }
+                    }
+                }
+            }
+        }
+    }
+    results = share_es.search(index='share', body=body)
+    return results['aggregations']

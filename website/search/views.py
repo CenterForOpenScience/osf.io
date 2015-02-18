@@ -209,3 +209,7 @@ def search_share():
 
     results['time'] = round(time.time() - tick, 2)
     return results
+
+
+def search_share_stats():
+    return search.share_stats()

@@ -57,3 +57,6 @@ def search_share(query):
 
 def count_share(query):
     return share_search.count(query)
+
+def share_stats():
+    return share_search.stats()
