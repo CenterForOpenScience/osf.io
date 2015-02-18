@@ -25,7 +25,7 @@ if (ctx.canEdit) {
     var editor = ace.edit('editor');
 
     var ShareJSDoc = require('addons/wiki/static/ShareJSDoc.js');
-    ShareJSDoc('.wiki', ctx.urls.draft, ctx.metadata);
+    ShareJSDoc('#wikiEditorContext', ctx.urls.draft, ctx.metadata);
 }
 
 var renderedVersions = {};  // Cache fetched rendered wiki versions

@@ -48,7 +48,7 @@
       <div class="row">
 
         % if can_edit:
-        <div class="col-sm-4" data-osf-panel="Edit">
+        <div id="wikiEditorContext" class="col-sm-4" data-osf-panel="Edit">
                 <div class="wiki-panel">
                   <div class="wiki-panel-header"> <i class="icon-edit"> </i>  Edit </div>
                   <div class="wiki-panel-body">
@@ -172,9 +172,7 @@
                   </div>
               </div>
               <div class="wiki-panel-body">
-                <div class="row">
-                    <div class="col-xs-12"> ... coming soon </div>
-                </div>
+                  <div id="wikiCompareView"></div>
               </div>
             </div>
           </div>
