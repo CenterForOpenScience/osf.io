@@ -40,6 +40,7 @@ def remove_contributor_from_subscriptions(contributor, node):
     for subscription in node_subscriptions:
         subscription.remove_user_from_subscription(contributor)
 
+
 @node_deleted.connect
 def remove_subscription(node):
     Subscription.remove(Q('object_id', 'eq', node._id))
@@ -83,12 +84,15 @@ def format_data(user, node_ids, data, subscriptions_available=SUBSCRIPTIONS_AVAI
     for idx, node_id in enumerate(node_ids):
         node = Node.load(node_id)
         index = len(data)
-        data.append({'node_id': node_id,
-                     'title': node.title,
-                     'kind': 'folder' if not node.node__parent else 'node',
-                     'nodeUrl': node.url,
-                     'children': []
-                     })
+        data.append({
+            'node': {
+                    'id': node_id,
+                    'url': node.url,
+                    'title': node.title,
+                    },
+            'kind': 'folder' if not node.node__parent else 'node',
+            'children': []
+        })
 
         node_subscriptions = get_all_node_subscriptions(user, node, user_subscriptions=user_subscriptions)
         for subscription in subscriptions_available:
@@ -113,24 +117,26 @@ def format_user_subscriptions(user, data):
 
 def serialize_event(user, subscription, subscriptions_available, user_subscriptions, node=None):
     event = {
-        'title': subscription,
-        'description': subscriptions_available[subscription],
+        'event': {
+            'title': subscription,
+            'description': subscriptions_available[subscription],
+            'notificationType': 'adopt_parent' if node and node.node__parent else 'none',
+        },
         'kind': 'event',
-        'notificationType': 'adopt_parent' if node and node.node__parent else 'none',
         'children': []
     }
     for s in user_subscriptions:
         if s.event_name == subscription:
             for notification_type in NOTIFICATION_TYPES:
                 if user in getattr(s, notification_type):
-                    event['notificationType'] = notification_type
+                    event['event']['notificationType'] = notification_type
 
     if node:
-        if event['notificationType'] == 'adopt_parent':
-                parent_nt = get_parent_notification_type(node._id, subscription, user)
-                event['parent_notification_type'] = parent_nt if parent_nt else 'none'
+        if event['event']['notificationType'] == 'adopt_parent':
+            parent_nt = get_parent_notification_type(node._id, subscription, user)
+            event['event']['parent_notification_type'] = parent_nt if parent_nt else 'none'
         else:
-            event['parent_notification_type'] = None  # only get nt if node = adopt_parent for display purposes
+            event['event']['parent_notification_type'] = None  # only get nt if node = adopt_parent for display purposes
 
     return event
 
@@ -155,14 +161,18 @@ def get_parent_notification_type(uid, event, user):
 def format_user_and_project_subscriptions(user):
     return [
         {
-            'title': 'User Notifications',
-            'node_id': user._id,
+            'node': {
+                'id': user._id,
+                'title': 'Project Notifications',
+            },
             'kind': 'heading',
             'children': format_user_subscriptions(user, [])
         },
         {
-            'title': 'Project Notifications',
-            'node_id': '',
+            'node': {
+                'id': '',
+                'title': 'Project Notifications',
+            },
             'kind': 'heading',
             'children': format_data(user, get_configured_projects(user), [])
         }]

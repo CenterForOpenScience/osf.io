@@ -46,7 +46,7 @@ function expandChildren(tb, children) {
     for (var i = 0; i < children.length; i++) {
         var child = children[i];
         var parent = children[i].parent();
-        if (child.data.kind === 'event' && child.data.notificationType !== 'adopt_parent') {
+        if (child.data.kind === 'event' && child.data.event.notificationType !== 'adopt_parent') {
             openParent = true;
         }
         if (child.children.length > 0) {
@@ -145,7 +145,7 @@ function ProjectNotifications(data) {
                     sortInclude : false,
                     custom : function() {
                         return m("div[style='padding-left:5px']",
-                                [m('b', [m('p', item.data.title + ':')])
+                                [m('b', [m('p', item.data.node.title + ':')])
                                 ])
                     }
                 });
@@ -157,7 +157,7 @@ function ProjectNotifications(data) {
                     filter : true,
                     sortInclude : false,
                     custom : function() {
-                        return m('a', { href : item.data.nodeUrl, target : '_blank' }, item.data.title );
+                        return m('a', { href : item.data.node.url, target : '_blank' }, item.data.node.title );
                     }
                 });
             }
@@ -170,7 +170,7 @@ function ProjectNotifications(data) {
                     css : iconcss,
                     sortInclude : false,
                     custom : function(item, col) {
-                        return item.data.description;
+                        return item.data.event.description;
 
                     }
                 },
@@ -183,12 +183,12 @@ function ProjectNotifications(data) {
                             [m('select.form-control', {
                                 onchange: function(ev) {
                                     item.data.notificationType = ev.target.value;
-                                    subscribe(item.parent().data.node_id, item.data.title, item.data.notificationType)
+                                    subscribe(item.parent().data.node.id, item.data.event.title, item.data.event.notificationType)
                                 }},
                                 [
-                                    m('option', {value: 'none', selected : item.data.notificationType === 'none' ? 'selected': ''}, 'None'),
-                                    m('option', {value: 'email_transactional', selected : item.data.notificationType === 'email_transactional' ? 'selected': ''}, 'Emails'),
-                                    m('option', {value: 'email_digest', selected : item.data.notificationType === 'email_digest' ? 'selected': ''}, 'Email Digest')
+                                    m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'None'),
+                                    m('option', {value: 'email_transactional', selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Emails'),
+                                    m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, 'Email Digest')
                             ])
                         ]);
                     }
@@ -203,7 +203,7 @@ function ProjectNotifications(data) {
                     css : iconcss,
                     sortInclude : false,
                     custom : function() {
-                        return item.data.description;
+                        return item.data.event.description;
 
                     }
                 },
@@ -215,16 +215,16 @@ function ProjectNotifications(data) {
                         return  m("div[style='padding-right:10px']",
                             [m('select.form-control', {
                                 onchange: function(ev) {
-                                    item.data.notificationType = ev.target.value;
-                                    subscribe(item.parent().data.node_id, item.data.title, item.data.notificationType)
+                                    item.data.event.notificationType = ev.target.value;
+                                    subscribe(item.parent().data.node.id, item.data.event.title, item.data.event.notificationType)
                                 }},
                                 [
                                     m('option', {value: 'adopt_parent',
-                                                 selected: item.data.notificationType === 'adopt_parent' ? 'selected' : ''},
+                                                 selected: item.data.event.notificationType === 'adopt_parent' ? 'selected' : ''},
                                                  'Adopt setting from parent project ' + displayParentNotificationType(item)),
-                                    m('option', {value: 'none', selected : item.data.notificationType === 'none' ? 'selected': ''}, 'None'),
-                                    m('option', {value: 'email_transactional',  selected : item.data.notificationType === 'email_transactional' ? 'selected': ''}, 'Emails'),
-                                    m('option', {value: 'email_digest', selected : item.data.notificationType === 'email_digest' ? 'selected': ''}, 'Email Digest')
+                                    m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'None'),
+                                    m('option', {value: 'email_transactional',  selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Emails'),
+                                    m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, 'Email Digest')
                             ])
                         ])
                     }
