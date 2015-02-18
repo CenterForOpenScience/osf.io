@@ -61,8 +61,12 @@ class ExternalProvider(object):
 
     __metaclass__ = ExternalProviderMeta
 
-    account = None
     _oauth_version = OAUTH2
+
+    def __init__(self):
+        super(ExternalProvider, self).__init__()
+
+        self.account = None
 
     def __repr__(self):
         return '<{name}: {status}>'.format(
