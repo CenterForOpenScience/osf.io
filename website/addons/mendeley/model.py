@@ -69,6 +69,10 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
         return self.external_account is not None
 
     @property
+    def complete(self):
+        return self.has_auth and self.mendeley_list_id
+
+    @property
     def selected_folder_name(self):
         if self.mendeley_list_id is None:
             return ''
