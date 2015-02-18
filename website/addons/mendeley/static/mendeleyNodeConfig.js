@@ -76,40 +76,44 @@ var ViewModel = function(url, selector, folderPicker) {
     };
 
     self.fetchFromServer = function() {
-        $.ajax({
+        var request = $.ajax({
             url: url,
             type: 'GET',
-            dataType: 'json',
-            success: function(response) {
-                self.updateFromData(response);
-                self.loadedSettings(true);
-                /*if (!self.validCredentials()){
-                    if (self.userIsOwner()) {
-                        self.changeMessage('Could not retrieve Mendeley settings at ' +
-                        'this time. The mendeley addon credentials may no longer be valid.' +
-                        ' Try deauthorizing and reauthorizing mendeley on your <a href="' +
-                            self.urls().settings + '">account settings page</a>.',
-                        'text-warning');
-                    } else {
-                        self.changeMessage('Could not retrieve Mendeley settings at ' +
-                        'this time. The mendeley addon credentials may no longer be valid.' +
-                        ' Contact ' + self.ownerName() + ' to verify.',
-                        'text-warning');
-                    }
-		}*/
-            },
-            error: function(xhr, textStatus, error) {
-                self.changeMessage('Could not retrieve Mendeley settings at ' +
-                    'this time. Please refresh ' +
-                    'the page. If the problem persists, email ' +
-                    '<a href="mailto:support@osf.io">support@osf.io</a>.',
+            dataType: 'json'
+        });
+
+        request.done(function(response) {
+            self.updateFromData(response);
+            self.loadedSettings(true);
+            /*
+            if (!self.validCredentials()){
+                if (self.userIsOwner()) {
+                    self.changeMessage('Could not retrieve Mendeley settings at ' +
+                    'this time. The mendeley addon credentials may no longer be valid.' +
+                    ' Try deauthorizing and reauthorizing mendeley on your <a href="' +
+                        self.urls().settings + '">account settings page</a>.',
                     'text-warning');
-                Raven.captureMessage('Could not GET mendeley settings', {
-                    url: url,
-                    textStatus: textStatus,
-                    error: error
-                });
+                } else {
+                    self.changeMessage('Could not retrieve Mendeley settings at ' +
+                    'this time. The mendeley addon credentials may no longer be valid.' +
+                    ' Contact ' + self.ownerName() + ' to verify.',
+                    'text-warning');
+                }
             }
+            */
+        });
+
+        request.fail(function(xhr, textStatus, error) {
+            self.changeMessage('Could not retrieve Mendeley settings at ' +
+                'this time. Please refresh ' +
+                'the page. If the problem persists, email ' +
+                '<a href="mailto:support@osf.io">support@osf.io</a>.',
+                'text-warning');
+            Raven.captureMessage('Could not GET mendeley settings', {
+                url: url,
+                textStatus: textStatus,
+                error: error
+            });
         });
     };
 
@@ -122,17 +126,30 @@ var ViewModel = function(url, selector, folderPicker) {
     };
 
     self.updateAccounts = function() {
-        $.get('/api/v1/settings/mendeley/accounts/').done(function(data) {
+        var url = '/api/v1/settings/mendeley/accounts/';
+        var request = $.get(url);
+
+        request.done(function(data) {
             self.accounts(data.accounts.map(function(account) {
                 return new CitationAccount(account.display_name, account.id);
             }));
-            $osf.postJSON(self.urls().importAuth, {
-                    external_account_id: self.accounts()[0].id
-                })
-                .done(onImportSuccess)
-                .fail(onImportError);
-        }).fail(function() {
-            console.log('fail');
+            $osf.postJSON(
+                self.urls().importAuth,
+                {external_account_id: self.accounts()[0].id}
+            ).then(onImportSuccess, onImportError);
+        });
+
+        request.fail(function(xhr, textStatus, error) {
+            self.changeMessage('Could not retrieve Mendeley account list at ' +
+                'this time. Please refresh ' +
+                'the page. If the problem persists, email ' +
+                '<a href="mailto:support@osf.io">support@osf.io</a>.',
+                'text-warning');
+            Raven.captureMessage('Could not GET mendeley accounts for user', {
+                url: url,
+                textStatus: textStatus,
+                error: error
+            });
         });
     };
     /**
@@ -201,7 +218,7 @@ var ViewModel = function(url, selector, folderPicker) {
      * Send a PUT request to change the linked mendeley folder.
      */
     self.submitSettings = function() {
-        $osf.postJSON(self.urls().config, {
+        $osf.putJSON(self.urls().config, {
                 external_account_id: self.userAccountId(),
                 external_list_id: self.selected().id
             })
@@ -235,21 +252,32 @@ var ViewModel = function(url, selector, folderPicker) {
      * Send DELETE request to deauthorize this node.
      */
     function sendDeauth() {
-        return $.ajax({
+        var request = $.ajax({
             url: self.urls().deauthorize,
-            type: 'DELETE',
-            success: function() {
-                // Update observables
-                self.nodeHasAuth(false);
-                self.cancelSelection();
-                self.currentDisplay(null);
-                self.changeMessage('Deauthorized mendeley.', 'text-warning', 3000);
-            },
-            error: function() {
-                self.changeMessage('Could not deauthorize because of an error. Please try again later.',
-                    'text-danger');
-            }
+            type: 'DELETE'
         });
+
+        request.done(function() {
+            // Update observables
+            self.nodeHasAuth(false);
+            self.cancelSelection();
+            self.currentDisplay(null);
+            self.changeMessage('Deauthorized mendeley.', 'text-warning', 3000);
+        });
+
+        request.fail(function(xhr, textStatus, error) {
+            self.changeMessage(
+                'Could not deauthorize because of an error. Please try again later.',
+                'text-danger'
+            );
+            Raven.captureMessage('Could not deauthorize mendeley account from node', {
+                url: self.urls().deauthorize,
+                textStatus: textStatus,
+                error: error
+            });
+        });
+
+        return request;
     }
 
     /** Pop up a confirmation to deauthorize mendeley from this node.
