@@ -72,6 +72,80 @@ var formatSelection = function(state) {
     return state.title;
 };
 
+var makeButtons = function(item, col, buttons) {
+    return buttons.map(function(button) {
+        var self = this;
+        return m(
+            'span',
+            {'data-col': item.id},
+            [
+                m(
+                    'i',
+                    {
+                        title: button.tooltip,
+                        style: button.style,
+                        'class': button.css,
+                        'data-toggle': 'tooltip',
+                        'data-placement': 'bottom',
+                        'onclick': function(event) {
+                            button.onclick.call(self, event, item, col);
+                        }
+                    },
+                    [
+                        m(
+                            'span',
+                            {class: button.icon},
+                            button.name
+                        )
+                    ]
+                )
+            ]
+        );
+    });
+};
+
+var buildExternalUrl = function(csl) {
+    if (csl.DOI) {
+        return 'http://dx.doi.org/' + csl.DOI;
+    } else if (csl.PMID) {
+        return 'http://www.ncbi.nlm.nih.gov/pubmed/' + csl.PMID;
+    }
+    return null;
+};
+
+var renderActions = function(item, col) {
+    var self = this;
+    var buttons = [];
+    if (item.kind === 'item') {
+        // Add link to external document
+        var externalUrl = buildExternalUrl(item.data.csl);
+        if (externalUrl) {
+            buttons.push({
+                name: '',
+                css: 'btn btn-info btn-xs',
+                icon: 'icon-external-link',
+                tooltip: 'View original document',
+                onclick: function(event) {
+                    window.open(externalUrl);
+                }
+            });
+        }
+        // Add link to document on reference management service
+        if (item.data.serviceUrl) {
+            buttons.push({
+                name: '',
+                css: 'btn btn-info btn-xs',
+                icon: 'icon-link',
+                tooltip: 'View on ' + self.provider,
+                onclick: function(event) {
+                    window.open(item.data.serviceUrl);
+                }
+            });
+        }
+    }
+    return makeButtons(item, col, buttons);
+};
+
 var treebeardOptions = {
     lazyLoad: true,
     showFilter: false,
@@ -84,15 +158,22 @@ var treebeardOptions = {
         return [
             {
                 title: 'Citation',
+                width: '80%',
+                sort: false
+            },
+            {
+                title: 'Actions',
+                width: '20%',
                 sort: false
             }
         ];
     }
 };
 
-var CitationGrid = function(gridSelector, styleSelector, apiUrl) {
+var CitationGrid = function(provider, gridSelector, styleSelector, apiUrl) {
     var self = this;
 
+    self.provider = provider;
     self.gridSelector = gridSelector;
     self.styleSelector = styleSelector;
     self.apiUrl = apiUrl;
@@ -113,10 +194,9 @@ CitationGrid.prototype.initTreebeard = function() {
             resolveLazyloadUrl: function(item) {
                 return self.apiUrl + item.data.id + '/';
             },
-            resolveRows: function(item) {
-                // Treebeard calls `resolveRows` with itself passed as `this`; wrap custom
-                // callback in closure to preserve correct `this`
-                return self.resolveRowAux.call(self, item);
+            // Wrap callback in closure to preserve intended `this`
+            resolveRows: function() {
+                return self.resolveRowAux.call(self, arguments);
             },
         },
         treebeardOptions
@@ -200,6 +280,12 @@ CitationGrid.prototype.resolveRowAux = function(item) {
                     var bibliography = self.getBibliography(item.parent());
                     return bibliography[item.data.csl.id];
                 }
+            }
+        },
+        {
+            // Wrap callback in closure to preserve intended `this`
+            custom: function() {
+                return renderActions.apply(self, arguments);
             }
         }
     ];
