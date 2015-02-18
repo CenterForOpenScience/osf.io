@@ -44,7 +44,7 @@ var ViewModel = function(url, selector, folderPicker) {
     // Display names
     self.PICKER = 'picker';
     // Current folder display
-    self.currentDisplay = ko.observable(null);
+    self.currentDisplay = ko.observable(false);
     // CSS selector for the folder picker div
     self.folderPicker = folderPicker;
     // Currently selected folder, an Object of the form {name: ..., path: ...}
@@ -388,7 +388,6 @@ var ViewModel = function(url, selector, folderPicker) {
             self.loading(true);
             $(self.folderPicker).folderpicker({
                 onPickFolder: onPickFolder,
-                initialFolderName: 'All Documents',
                 initialFolderPath: 'mendeley',
                 // Fetch mendeley folders with AJAX
                 filesData: self.urls().folders,
