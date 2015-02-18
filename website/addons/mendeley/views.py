@@ -3,6 +3,7 @@ import httplib as http
 from flask import request
 
 from framework.exceptions import HTTPError
+from framework.auth.decorators import must_be_logged_in
 from website.oauth.models import ExternalAccount
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_permission
@@ -66,8 +67,9 @@ def serialize_settings(node_settings, current_user):
         
     return result
 
-@must_have_addon('mendeley', 'user')
-def list_mendeley_accounts_user(auth, user_addon):
+#@must_have_addon('mendeley', 'user')
+@must_be_logged_in
+def list_mendeley_accounts_user(auth):
     return {
         'accounts': [
             utils.serialize_account(each)
@@ -127,9 +129,8 @@ def mendeley_add_user_auth(auth, user_addon, node_addon, **kwargs):
 
 @must_have_permission('write')
 @must_have_addon('mendeley', 'node')
-@must_have_addon('mendeley', 'user')
 @must_not_be_registration
-def mendeley_remove_user_auth(auth, user_addon, node_addon, **kwargs):
+def mendeley_remove_user_auth(auth, node_addon, **kwargs):
     node_addon.external_account = None
     node_addon.mendeley_list_id = None
     node_addon.save()    
@@ -183,7 +184,7 @@ def mendeley_widget(node_addon, project, node, pid, auth):
     # Check that node addon still has authorization
     if node_addon.external_account is None:
         response['complete'] = False
-    else:    
+    else:            
         response['complete'] = True
     response['list_id'] = node_addon.mendeley_list_id
     return response
