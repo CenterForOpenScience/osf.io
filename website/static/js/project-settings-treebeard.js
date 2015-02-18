@@ -73,7 +73,7 @@ function subscribe(id, event, notification_type) {
         'notification_type': notification_type
     };
     $osf.postJSON(
-        '/api/v1/settings/subscribe/',
+        '/api/v1/subscriptions/',
         payload
     ).fail(function() {
         bootbox.alert('Could not update notification preferences.');
