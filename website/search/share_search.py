@@ -36,7 +36,7 @@ def stats():
         "aggs": {
             "sources": {
                 "terms": {
-                    "field": "source",
+                    "field": "_type",
                     "size": 0,
                     "exclude": "of|and|or"
                 }
@@ -50,7 +50,22 @@ def stats():
                 "aggs": {
                     "sources": {
                         "terms": {
-                            "field": "source",
+                            "field": "_type",
+                            "size": 0
+                        }
+                    }
+                }
+            },
+            "dois": {
+                "filter": {
+                    "exists": {
+                        "field": "id.doi"
+                    }
+                },
+                "aggs": {
+                    "sources": {
+                        "terms": {
+                            "field": "_type",
                             "size": 0
                         }
                     }
