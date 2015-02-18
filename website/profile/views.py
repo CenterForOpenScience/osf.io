@@ -28,7 +28,6 @@ from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
 from website.profile import utils as profile_utils
 from website import settings
-from website.notifications.utils import format_user_and_project_subscriptions
 
 logger = logging.getLogger(__name__)
 
