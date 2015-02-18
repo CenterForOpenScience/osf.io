@@ -1,15 +1,15 @@
-<table class="comment-row" border="0" cellpadding="10" cellspacing="0" width="100%" style="margin-left: 20px;margin-top:10px;"> 
-    <tr> 
-        <td width="40" class="icon"> <i class="fa fa-comment"></i></td>
-        <td> 
-            <span class="person"><img src="${gravatar_url}" > ${commenter} </span>
-            <span class="text"> commented on your ${nodeType} </span>
-            <span class="project"> "${title}" </span> 
-            <span class="timestamp"> at 1:40PM on Saturday, June 12</span>
-            <span class="content"> "${content}"</span>
+
+<table class="comment-row" border="0" cellpadding="8" cellspacing="0" width="100%" align="center">
+    <tr>
+        <td width="40" class="icon" valign="middle"> <img class="avatar" src="${gravatar_url}" width="48" alt="avatar" /> </td>
+        <td style="line-height: 17px;">
+            <span class="person">${commenter} </span>
+            <span class="text"> commented on your ${nodeType}</span>
+            <span class="timestamp"> at ${timestamp}: </span>
+            <span class="content">"${content}"</span>
         </td>
-        <td style="font-size: 16px"> 
-            <a href="${url}">Open <i class="fa fa-chevron-right"></i></a> 
+        <td class="link text-center" width="25">
+            <a href="${url}">&#10095;</a>
         </td>
     </tr>
 </table>
