@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 """Persistence layer for the gdrive addon.
 """
-import os
 import base64
 from modularodm.exceptions import ModularOdmException
 from framework.auth import Auth
 from modularodm import fields, Q
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
-from .utils import clean_path, GoogleDriveNodeLogger
+from .utils import clean_path, GoogleDriveNodeLogger, check_access_token
 from website.addons.base import exceptions
-
+from .import settings
+import time
 
 class AddonGdriveGuidFile(GuidFile):
     path = fields.StringField(index=True)
@@ -73,13 +73,14 @@ class AddonGdriveUserSettings(AddonUserSettingsBase):
     access_token = fields.StringField(required=False)
     username = fields.StringField(required=False)
     refresh_token = fields.StringField(required=False)
+    token_expiry = fields.IntegerField(required=False)
+
     @property
     def has_auth(self):
         return bool(self.access_token)
 
     def clear(self):  # TODO : check for all the nodes (see dropbox)
         self.access_token = None
-        self.refresh_token=None
 
         for node_settings in self.addongdrivenodesettings__authorized:
             node_settings.deauthorize(Auth(self.owner))
@@ -92,6 +93,8 @@ class AddonGdriveUserSettings(AddonUserSettingsBase):
 
     def __repr__(self):
         return u'<AddonGdriveUserSettings(user={self.owner.username!r})>'.format(self=self)
+
+
 
 
 class AddonGdriveNodeSettings(AddonNodeSettingsBase):
@@ -128,6 +131,7 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
 
     def set_user_auth(self, user_settings):
         """Import a user's GDrive authentication and create a NodeLog.
+
         :param AddonGdriveUserSettings user_settings: The user settings to link.
         """
         self.user_settings = user_settings
@@ -137,13 +141,12 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
             raise exceptions.AddonError('Addon is not authorized')
-        return {'token': self.user_settings.access_token,
-                'refresh_token': self.user_settings.refresh_token}
+        check_access_token(self.user_settings)
+        return {'token': self.user_settings.access_token}
 
     def serialize_waterbutler_settings(self):
         if not self.folder:
             raise exceptions.AddonError('Folder is not configured')
-        import pdb; pdb.set_trace()
         return {'folder': self.folder}
 
     def create_waterbutler_log(self, auth, action, metadata):
@@ -167,6 +170,8 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
 
     def find_or_create_file_guid(self, path):
         return AddonGdriveGuidFile.get_or_create(self.owner, path)
+
+
 
     # #### Callback overrides #####
 
@@ -221,6 +226,7 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
     def after_register(self, node, registration, user, save=True):
         """After registering a node, copy the user settings and save the
         chosen folder.
+
         :return: A tuple of the form (cloned_settings, message)
         """
         clone, message = super(AddonGdriveNodeSettings, self).after_register(
@@ -237,6 +243,7 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
     def after_fork(self, node, fork, user, save=True):
         """After forking, copy user settings if the user is the one who authorized
         the addon.
+
         :return: A tuple of the form (cloned_settings, message)
         """
         clone, _ = super(AddonGdriveNodeSettings, self).after_fork(

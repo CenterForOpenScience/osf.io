@@ -37,11 +37,11 @@ ko.punches.enableAll();
         self.folder = ko.observable({name: null, path: null});
         self.loadedFolders = ko.observable(false);
         self.loading = ko.observable(false);
+        self.currentFolder = ko.observable("None");
 
         //Folderpicker specific
         self.folderPicker =  folderPicker;
         self.selected = ko.observable(null);
-        self.selectedName = ko.observable("No folder selected yet !");
         self.showFileTypes = ko.observable(false);
         var setOwner;
 
@@ -62,6 +62,10 @@ ko.punches.enableAll();
             self.ownerName(response.result.ownerName);
             self.owner(response.result.urls.owner);
             self.access_token (response.result.access_token);
+            self.currentFolder(response.result.currentFolder);
+
+            if(self.currentFolder() == null)
+                self.currentFolder('None');
             self.loadedSettings(true);
         }
         function onFetchError(xhr, textstatus, error) {
@@ -88,6 +92,7 @@ ko.punches.enableAll();
                 }, timeout);
             }
         };
+
 
         /** Whether or not to show the Create Access Token button */
         self.showTokenCreateButton = ko.computed(function() {
@@ -194,8 +199,7 @@ ko.punches.enableAll();
         */
         function onPickFolder(evt, item) {
                 evt.preventDefault();
-                self.selected({name: 'Google Drive' + item.data.path.path, path: item.data.path, id: item.data.id});
-                self.selectedName(self.selected().name);
+                self.selected({name:item.data.path.path, path: item.data.path, id: item.data.id});
                 return false; // Prevent event propagation
         }
 
@@ -230,7 +234,6 @@ ko.punches.enableAll();
                     });
 
         }
-
 
 
         self.showFolders = ko.computed(function(){

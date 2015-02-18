@@ -34,7 +34,7 @@
     <div id="currentFolder" data-bind="if:showFolders()">
        <p>
         <strong> Current folder:</strong>
-        <span data-bind = "text:selectedName, style:{color: selectedName() == 'No folder selected yet !' ? 'red' : 'black'}"> </span>
+        <span data-bind = "text:currentFolder"> None </span>
        </p>
 
         <div class="btn-group" >

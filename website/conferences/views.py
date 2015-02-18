@@ -174,11 +174,11 @@ def conference_data(meeting):
         Q('is_deleted', 'eq', False)
     )
 
-    data = [
+    ret = [
         _render_conference_node(each, idx)
         for idx, each in enumerate(nodes)
     ]
-    return data
+    return ret
 
 
 def conference_results(meeting):

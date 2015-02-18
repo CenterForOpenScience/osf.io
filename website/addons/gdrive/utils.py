@@ -3,6 +3,9 @@
 """
 import logging
 from website.util import web_url_for
+from . import settings
+import requests
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -91,8 +94,7 @@ def serialize_settings(node_settings, current_user):
                                                uid=user_settings.owner._primary_key)
         rv['ownerName'] = user_settings.owner.fullname
         rv['access_token'] = user_settings.access_token
-        rv['refresh_token'] = user_settings.refresh_token
-
+        rv['currentFolder'] = node_settings.folder['name'] if node_settings.folder else None
     return rv
 
 
@@ -108,15 +110,16 @@ def clean_path(path):
     #     else:
     #         tempPath = tempPath + '/' + parts[i]
     # cleaned_path = tempPath
+    if len(parts) <= 1:
+        cleaned_path = '/' + parts[len(parts) - 1]
     cleaned_path = parts[len(parts) - 1]
 
     return cleaned_path
 
 
 def build_gdrive_urls(item, node, path):
-    newpath = clean_path(path['path'])
     return{
-        'get_folders': node.api_url_for('gdrive_folders', folderId=item['id'], path=newpath, foldersOnly=1),
+        'get_folders': node.api_url_for('gdrive_folders', folderId=item['id'], path=path['path'], foldersOnly=1),
         'fetch': node.api_url_for('gdrive_folders', folderId=item['id'])
     }
 
@@ -126,6 +129,7 @@ def to_hgrid(item, node, path):
     :param item: contents returned from Google Drive API
     :return: results formatted as required for Hgrid display
     """
+
     path = {
         'path': path + '/' + item['title'],
         'id': item['id']
@@ -140,3 +144,29 @@ def to_hgrid(item, node, path):
 
     }
     return serialized
+
+
+
+def check_access_token(user_settings):
+    cur_time_in_millis = int(round(time.time() * 1000))
+    if cur_time_in_millis >= user_settings.token_expiry:
+        refresh_access_token(user_settings)
+
+def refresh_access_token(user_settings):
+    try:
+        params = {
+                'client_id': settings.CLIENT_ID,
+                'client_secret': settings.CLIENT_SECRET,
+                'refresh_token': user_settings.refresh_token,
+                'grant_type': 'refresh_token'
+        }
+        url = 'https://www.googleapis.com/oauth2/v3/token'
+        response = requests.post(url, params=params)
+        json_response = response.json()
+        refreshed_access_token = json_response['access_token']
+        user_settings.access_token = refreshed_access_token
+        cur_time_in_millis = int(round(time.time() * 1000)) # shadow cur_time_in_millis because of time lapse from post request.
+        user_settings.token_expiry = cur_time_in_millis + int(json_response['expires_in'])*1000
+        user_settings.save()
+    except:
+        pass

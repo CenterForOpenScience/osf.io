@@ -1,13 +1,15 @@
 
 import httplib2
-from flask import request
+import requests
 
+from flask import request
+from ..import settings
 from website.project.model import Node
 from website.util import rubeus
 from website.project.decorators import must_be_contributor_or_public, must_have_addon
 from oauth2client.client import AccessTokenCredentials
 from apiclient.discovery import build
-from ..utils import to_hgrid, clean_path
+from ..utils import to_hgrid, check_access_token
 from apiclient import errors
 
 @must_be_contributor_or_public
@@ -18,11 +20,17 @@ def gdrive_folders(node_addon, **kwargs):
     nid = kwargs.get('nid') or kwargs.get('pid')
     node = Node.load(nid)
     node_settings = node.get_addon('gdrive')
+
     # Get service using Access token
     if node_settings:
         user_settings = node_settings.user_settings
+
+        #check if token is expired. If so, update it.
+        check_access_token(user_settings)
+
+        # Get service using oauth client
         http_service = httplib2.Http()
-        credentials = AccessTokenCredentials(user_settings.access_token, request.headers.get('User-Agent'))
+        credentials = AccessTokenCredentials(user_settings.refresh_token, request.headers.get('User-Agent'))
         http_service = credentials.authorize(http_service)
         service = build('drive', 'v2', http_service)
 
@@ -35,6 +43,14 @@ def gdrive_folders(node_addon, **kwargs):
     contents = [to_hgrid(item, node_owner, path=path)
                 for item in result]
     return contents
+
+
+
+
+
+
+
+
 
 def retrieve_all_files(service, folderid=None, foldersonly=0):
     """Retrieve a list of File resources.
@@ -70,7 +86,7 @@ def gdrive_addon_folder(node_settings, auth, **kwargs):
         return None
     node = node_settings.owner
     path = {
-        'path': clean_path(node_settings.folder['name']),
+        'path': node_settings.folder['name'],
         'id': node_settings.folder['id']
     }
     # path = clean_path(node_settings.folder['name'])
@@ -80,6 +96,6 @@ def gdrive_addon_folder(node_settings, auth, **kwargs):
         permissions=auth,
         nodeUrl=node.url,
         nodeApiUrl=node.api_url,
-        path='/{0}/{1}/{2}'.format(path['id'], node_settings.folder['name'], path['path'].lstrip('/'))
+        path='/{0}{1}/{2}'.format(path['id'], node_settings.folder['name'], path['path'].lstrip('/'))
     )
     return [root]
