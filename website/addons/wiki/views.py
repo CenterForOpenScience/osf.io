@@ -180,7 +180,7 @@ def wiki_page_draft(wname, **kwargs):
     wiki_page = node.get_wiki_page(wname)
 
     return {
-        'wiki_content': wiki_page.content if wiki_page else '',
+        'wiki_content': wiki_page.content if wiki_page else None,
         'wiki_draft': (wiki_page.get_draft(node) if wiki_page
                        else wiki_utils.get_sharejs_content(node, wname)),
     }
@@ -231,7 +231,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     can_edit = node.has_permission(auth.user, 'write') and not node.is_registration
     versions = _get_wiki_versions(node, wiki_name, anonymous=anonymous)
 
-    # Parse URL to determine default view settings
+    # Parse URL to determine default panel display
     view_settings = {}
     param_list = path.lower().split('/') if path else []
     for i, param in enumerate(param_list):
@@ -243,6 +243,18 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
             view_settings[param] = version_number
         else:
             view_settings[param] = True
+
+    # Build styles for default panel display
+    panels = ['view', 'edit', 'compare']
+    panels_used = [panel for panel in view_settings if panel in panels]
+    # Always display view, except if edit, compare, and not view are specified
+    if len(panels_used) < 2 and 'view' not in panels_used:
+        panels_used.append('view')
+    panel_class = 'class="col-sm-{0}"'.format(12 / len(panels_used))
+    panel_settings = {}
+    for panel in panels:
+        panel_display = '' if panel in panels_used else 'style="display: none"'
+        panel_settings[panel] = '{0} {1}'.format(panel_class, panel_display)
 
     # ensure home is always lower case since it cannot be renamed
     if wiki_name.lower() == 'home':
@@ -259,10 +271,13 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         content = ''
         use_python_render = False
 
-    if can_edit and wiki_key not in node.wiki_private_uuids:
-        wiki_utils.generate_private_uuid(node, wiki_name)
-
-    sharejs_uuid = wiki_utils.get_sharejs_uuid(node, wiki_name)
+    if can_edit:
+        if wiki_key not in node.wiki_private_uuids:
+            wiki_utils.generate_private_uuid(node, wiki_name)
+        sharejs_uuid = wiki_utils.get_sharejs_uuid(node, wiki_name)
+    else:
+        # TODO: Hide content from deleted wikis
+        sharejs_uuid = None
 
     ret = {
         'wiki_id': wiki_page._primary_key if wiki_page else None,
@@ -272,7 +287,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         'page': wiki_page,
         'version': version,
         'versions': versions,
-        'sharejs_uuid': sharejs_uuid if sharejs_uuid and can_edit else '',
+        'sharejs_uuid': sharejs_uuid or '',
         'sharejs_url': settings.SHAREJS_URL,
         'is_current': is_current,
         'can_edit': can_edit,
@@ -280,6 +295,11 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         'pages_current': _get_wiki_pages_current(node),
         'toc': toc,
         'category': node.category,
+        'style': {
+            'view': panel_settings['view'],
+            'edit': panel_settings['edit'],
+            'compare': panel_settings['compare'],
+        },
         'urls': {
             'api': _get_wiki_api_urls(node, wiki_name, {
                 'content': node.api_url_for('wiki_page_content', wname=wiki_name),

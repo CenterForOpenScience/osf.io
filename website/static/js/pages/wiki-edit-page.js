@@ -86,7 +86,7 @@ var renderWikiContent = function(version) {
             });
         }
         request.done(function (resp) {
-            var rawContent = resp.wiki_content;
+            var rawContent = resp.wiki_content || '*No wiki content*';
             if(!(version in rawVersions)) {
                 rawVersions[version] = rawContent;
             }
@@ -206,26 +206,15 @@ $(document).ready(function () {
     if (edit) {
         selectViewVersion.val('preview');
         selectViewVersion.change();
-    } else {
-        $('.switch .btn:contains("Edit")').click();
     }
 
-    if (compare) {
-        // Check if an int was specified
-        if (parseInt(options.compare) === options.compare) {
-            selectCompareVersion.val(options.compare);
-            selectCompareVersion.change();
-        }
-    } else {
-        $('.switch .btn:contains("Compare")').click();
+    if (compare && parseInt(options.compare) === options.compare) {
+        selectCompareVersion.val(options.compare);
+        selectCompareVersion.change();
     }
 
     if (view) {
-        if (parseInt(options.view) === options.view) {
-            selectViewVersion.val(options.view);
-            selectViewVersion.change();
-        }
-    } else if (edit && compare) {
-        $('.switch .btn:contains("View")').click();
+        selectViewVersion.val(options.view);
+        selectViewVersion.change();
     }
 });
