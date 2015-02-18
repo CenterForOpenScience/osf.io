@@ -72,12 +72,14 @@ class AddonGdriveUserSettings(AddonUserSettingsBase):
     """
     access_token = fields.StringField(required=False)
     username = fields.StringField(required=False)
+    refresh_token = fields.StringField(required=False)
     @property
     def has_auth(self):
         return bool(self.access_token)
 
     def clear(self):  # TODO : check for all the nodes (see dropbox)
         self.access_token = None
+        self.refresh_token=None
 
         for node_settings in self.addongdrivenodesettings__authorized:
             node_settings.deauthorize(Auth(self.owner))
@@ -135,11 +137,13 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
             raise exceptions.AddonError('Addon is not authorized')
-        return {'token': self.user_settings.access_token}
+        return {'token': self.user_settings.access_token,
+                'refresh_token': self.user_settings.refresh_token}
 
     def serialize_waterbutler_settings(self):
         if not self.folder:
             raise exceptions.AddonError('Folder is not configured')
+        import pdb; pdb.set_trace()
         return {'folder': self.folder}
 
     def create_waterbutler_log(self, auth, action, metadata):

@@ -91,6 +91,8 @@ def serialize_settings(node_settings, current_user):
                                                uid=user_settings.owner._primary_key)
         rv['ownerName'] = user_settings.owner.fullname
         rv['access_token'] = user_settings.access_token
+        rv['refresh_token'] = user_settings.refresh_token
+
     return rv
 
 
