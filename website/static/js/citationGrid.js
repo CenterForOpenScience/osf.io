@@ -186,7 +186,7 @@ CitationGrid.prototype.initTreebeard = function() {
             divID: self.gridSelector.replace('#', ''),
             filesData: self.apiUrl,
             resolveLazyloadUrl: function(item) {
-                return self.apiUrl + item.data.id + '/';
+                return item.data.urls.fetch;
             },
             // Wrap callback in closure to preserve intended `this`
             resolveRows: function() {
