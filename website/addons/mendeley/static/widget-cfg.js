@@ -13,7 +13,7 @@ require('./citations_widget.css');
 ////////////////
 
 function CitationsWidget(gridSelector, styleSelector) {
-    var apiUrl = window.contextVars.node.urls.api + 'mendeley/citations/';
+    var apiUrl = window.contextVars.node.urls.api + 'mendeley/citations/' + window.contextVars.mendeley.folder_id + '/';
     this.grid = new CitationGrid('Mendeley', gridSelector, styleSelector, apiUrl);
 }
 

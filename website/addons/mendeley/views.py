@@ -246,6 +246,11 @@ def mendeley_citation_list(node_addon, project, node, pid, auth,
                     'kind': 'folder',
                     'name': each['name'],
                     'id': each['id'],
+                    'urls': {
+                        'fetch': node_addon.owner.api_url_for(
+                            'mendeley_citation_list',
+                            mendeley_list_id=each['id']),
+                    },
                 }
                 for each in account_folders
                 if each.get('parent_list_id') == list_id
