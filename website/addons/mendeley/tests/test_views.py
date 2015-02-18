@@ -48,6 +48,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         self.node_addon = MendeleyNodeSettingsFactory(owner=self.project, external_account=self.account)
         self.node_addon.grant_oauth_access(self.user, self.account, metadata={'lists': 'list'})
 
+
     def test_serialize_settings_authorizer(self):
         #"""dict: a serialized version of user-specific addon settings"""
         res = serialize_settings(self.node_addon, self.user)
@@ -192,14 +193,30 @@ class MendeleyViewsTestCase(OsfTestCase):
         assert_true(False)
 
     def test_widget_view_incomplete(self):
-        """JSON: tell the widget when it hasn't been configured"""
+        #"""JSON: tell the widget when it hasn't been configured"""
         assert_true(False)
 
-    def test_citation_list(self):
-        """JSON: list of formatted citations for the associated Mendeley folder
-        """
+    def test_mendeley_citation_list_root(self):
+        res = self.app.get(
+            api_url_for('mendeley_citation_list'),
+            auth=self.user.auth
+        )
+            
+
+        assert_true(False)
+
+    def test_mendeley_citation_list_non_root(self):
+
+        assert_true(False)
+
+    def test_mendeley_citation_list_no_list_id(self):
+
+        assert_true(False)
+
+    def test_mendeley_citation_list_unauthorized(self):
+        
         assert_true(False)
 
     def test_citation_list_bibtex(self):
-        """JSON: list of formatted citations in BibTeX style"""
+        #"""JSON: list of formatted citations in BibTeX style"""
         assert_true(False)

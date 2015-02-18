@@ -18,7 +18,6 @@ from .api import APISession
 def serialize_folder(name, account_id, parent_id=None, list_id=None, id=None):
     retval = {
         'name': name,
-        'provider_account_id': account_id,
         'provider_list_id': list_id,
         'id': id
     }
