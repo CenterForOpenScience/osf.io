@@ -144,8 +144,8 @@ def search_projects_by_title(**kwargs):
         ).limit(max_results - my_project_count)
 
     results = list(my_projects) + list(public_projects)
-    out = process_project_search_results(results, **kwargs)
-    return out
+    ret = process_project_search_results(results, **kwargs)
+    return ret
 
 
 @must_be_logged_in
@@ -157,7 +157,7 @@ def process_project_search_results(results, **kwargs):
     """
     user = kwargs['auth'].user
 
-    out = []
+    ret = []
 
     for project in results:
         authors = get_node_contributors_abbrev(project=project, auth=kwargs['auth'])
@@ -168,7 +168,7 @@ def process_project_search_results(results, **kwargs):
             authors_html += author['separator'] + ' '
         authors_html += ' ' + authors['others_count']
 
-        out.append({
+        ret.append({
             'id': project._id,
             'label': project.title,
             'value': project.title,
@@ -176,7 +176,7 @@ def process_project_search_results(results, **kwargs):
             'authors': authors_html,
         })
 
-    return out
+    return ret
 
 
 @collect_auth
@@ -209,3 +209,7 @@ def search_share():
 
     results['time'] = round(time.time() - tick, 2)
     return results
+
+
+def search_share_stats():
+    return search.share_stats()
