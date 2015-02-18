@@ -1,9 +1,12 @@
+# -*- coding: utf-8 -*-
+
 import httplib as http
 
 from flask import request
 
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
+
 from website.oauth.models import ExternalAccount
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_permission
@@ -16,7 +19,7 @@ from .model import Mendeley
 
 def serialize_urls(node_settings, user_accounts):
 
-    node = node_settings.owner    
+    node = node_settings.owner
 
     deauthorize = None
     if node_settings.external_account:
@@ -25,7 +28,7 @@ def serialize_urls(node_settings, user_accounts):
     return {
         'config': node.api_url_for('mendeley_set_config'),
         'deauthorize': deauthorize,
-        'auth': api_url_for('oauth_connect', 
+        'auth': api_url_for('oauth_connect',
                             service_name='mendeley'),
         'importAuth': node.api_url_for('mendeley_add_user_auth'),
         # Endpoint for fetching only folders (including root)
@@ -33,19 +36,18 @@ def serialize_urls(node_settings, user_accounts):
         'settings': web_url_for('user_addons')
     }
 
+
 def serialize_settings(node_settings, current_user):
-    
+
     node_account = node_settings.external_account
-    user_accounts = [account for account in current_user.external_accounts 
+    user_accounts = [account for account in current_user.external_accounts
                      if account.provider == 'mendeley']
 
-    user_is_owner = False 
-    validCredentials = False   
-    if node_account is not None:        
-        user_is_owner = node_account in user_accounts        
-        
+    user_is_owner = False
+    if node_account is not None:
+        user_is_owner = node_account in user_accounts
+
     user_has_auth = True if len(user_accounts) else False
-    user_settings = None
     '''
     if node_account is not None:#len(node_settings.associated_user_settings):
         user_settings = node_account.disx#node_settings.associated_user_settings[0]
@@ -54,7 +56,7 @@ def serialize_settings(node_settings, current_user):
     if user_has_auth:
         user_account_id = user_accounts[0]._id
 
-    result = {        
+    result = {
         'nodeHasAuth': node_settings.has_auth,
         'userIsOwner': user_is_owner,
         'userHasAuth': user_has_auth,
@@ -63,11 +65,12 @@ def serialize_settings(node_settings, current_user):
     }
     if node_account is not None:
         result['folder'] = node_settings.selected_folder_name
-        result['ownerName'] = node_account.display_name 
-        
+        result['ownerName'] = node_account.display_name
+
     return result
 
-#@must_have_addon('mendeley', 'user')
+
+# @must_have_addon('mendeley', 'user')
 @must_be_logged_in
 def list_mendeley_accounts_user(auth):
     return {
@@ -84,7 +87,6 @@ def list_mendeley_accounts_user(auth):
 @must_not_be_registration
 def list_citationlists_node(pid, account_id, auth, node, project, node_addon):
 
-
     account = ExternalAccount.load(account_id)
     if not account:
         raise HTTPError(http.NOT_FOUND)
@@ -94,7 +96,7 @@ def list_citationlists_node(pid, account_id, auth, node, project, node_addon):
 
     return {
         'citation_lists': mendeley.citation_lists,
-        'citation_tree': mendeley.citation_folder_tree
+        'citation_tree': mendeley.citation_folder_tree,
     }
 
 
@@ -133,11 +135,10 @@ def mendeley_add_user_auth(auth, user_addon, node_addon, **kwargs):
 def mendeley_remove_user_auth(auth, node_addon, **kwargs):
     node_addon.external_account = None
     node_addon.mendeley_list_id = None
-    node_addon.save()    
+    node_addon.save()
     result = node_addon.to_json(auth.user)
-    result.update(serialize_settings(node_addon, auth.user))    
+    result.update(serialize_settings(node_addon, auth.user))
     return {'result': result}
-
 
 
 @must_have_permission('write')
@@ -184,7 +185,7 @@ def mendeley_widget(node_addon, project, node, pid, auth):
     # Check that node addon still has authorization
     if node_addon.external_account is None:
         response['complete'] = False
-    else:            
+    else:
         response['complete'] = True
     response['list_id'] = node_addon.mendeley_list_id
     return response
@@ -192,11 +193,12 @@ def mendeley_widget(node_addon, project, node, pid, auth):
 
 @must_be_contributor_or_public
 @must_have_addon('mendeley', 'node')
-def mendeley_citation_list(node_addon, project, node, pid, auth, mendeley_list_id=None):
+def mendeley_citation_list(node_addon, project, node, pid, auth,
+                           mendeley_list_id=None):
     '''
-    This function collects a listing of folders and citations based on the passed 
-    mendeley_list_id. If mendeley_list_id is None, then all of the authorizer's folders     
-    and citations are listed
+    This function collects a listing of folders and citations based on the
+    passed mendeley_list_id. If mendeley_list_id is None, then all of the
+    authorizer's folders and citations are listed
     '''
 
     view_param = request.args.get('view', 'all')
@@ -206,16 +208,16 @@ def mendeley_citation_list(node_addon, project, node, pid, auth, mendeley_list_i
 
     account_folders = node_addon.api.citation_lists
     '''
-    Folders with a None type 'parent_list_id' are children of 'All Documents'    
+    Folders with a None type 'parent_list_id' are children of 'All Documents'
     '''
     for folder in account_folders:
         if folder.get('parent_list_id') is None:
             folder['parent_list_id'] = 'ROOT'
 
     node_account = node_addon.external_account
-    user_accounts = [account for account in auth.user.external_accounts 
+    user_accounts = [account for account in auth.user.external_accounts
                      if account.provider == 'mendeley']
-    user_is_owner = node_account in user_accounts        
+    user_is_owner = node_account in user_accounts
 
     # verify this list is the attached list or its descendant
     if not user_is_owner and (list_id != attached_list_id and attached_list_id is not None):
@@ -223,12 +225,11 @@ def mendeley_citation_list(node_addon, project, node, pid, auth, mendeley_list_i
             (each['provider_list_id'] or 'ROOT'): each
             for each in account_folders
         }
-        ancestor_id = None
         if list_id is None:
             ancestor_id = 'ROOT'
         else:
             ancestor_id = folders[list_id].get('parent_list_id')
-                    
+
         while ancestor_id != attached_list_id:
             if ancestor_id is None:
                 raise HTTPError(http.FORBIDDEN)
@@ -249,7 +250,7 @@ def mendeley_citation_list(node_addon, project, node, pid, auth, mendeley_list_i
                 for each in account_folders
                 if each.get('parent_list_id') == list_id
             ]
-                    
+
         if view_param in ('all', 'citations'):
             contents += [
                 {
@@ -257,7 +258,7 @@ def mendeley_citation_list(node_addon, project, node, pid, auth, mendeley_list_i
                     'kind': 'item',
                     'id': each['id'],
                 }
-            for each in node_addon.api.get_list(list_id)
+                for each in node_addon.api.get_list(list_id)
             ]
 
     return {
