@@ -353,7 +353,7 @@ class TestNotificationUtils(OsfTestCase):
             'description': SUBSCRIPTIONS_AVAILABLE['comments'],
             'kind': 'event',
             'notificationType': 'email_transactional',
-            'parentNotificationType': None,
+            'parent_notification_type': None,
             'children': []
         }
         assert_equal(data, expected)
