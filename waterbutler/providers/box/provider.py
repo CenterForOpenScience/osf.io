@@ -128,9 +128,12 @@ class BoxProvider(provider.BaseProvider):
         raise exceptions.MetadataError('Unable to find file.')
 
     def _get_folder_meta(self, path):
+        if str(path) == '/':
+            path = BoxPath('/{}/'.format(self.folder))
+
         resp = yield from self.make_request(
             'GET',
-            self.build_url('folders', self.folder, 'items'),
+            self.build_url('folders', path._id, 'items'),
             expects=(200, ),
             throws=exceptions.MetadataError
         )
