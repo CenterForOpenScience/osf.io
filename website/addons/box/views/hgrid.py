@@ -11,6 +11,7 @@ from website.util import rubeus
 
 from website.addons.box.client import get_node_client
 from website.addons.box.utils import metadata_to_hgrid
+from box.client import BoxClientException
 
 
 @must_be_contributor_or_public
@@ -21,6 +22,12 @@ def box_hgrid_data_contents(node_addon, auth, **kwargs):
     Takes optional query parameters `foldersOnly` (only return folders) and
     `includeRoot` (include the root folder).
     """
+
+    if not node_addon.has_auth:
+        raise HTTPError(http.FORBIDDEN, data=dict(message_short='Forbidden',
+                                                  message_long='You do not have'
+                                                  ' permission to view this.'))
+
     # No folder, just return an empty list of data
     if node_addon.folder is None and not request.args.get('foldersOnly'):
         return {'data': []}
@@ -44,7 +51,7 @@ def box_hgrid_data_contents(node_addon, auth, **kwargs):
 
     try:
         metadata = client.get_folder(folder_id)
-    except AttributeError:
+    except BoxClientException:
             raise file_not_found
     except MaxRetryError:
         raise max_retry_error

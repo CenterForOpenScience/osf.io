@@ -16,7 +16,7 @@ from website.util import web_url_for
 
 from website.addons.box import utils
 from website.addons.box.client import get_client_from_user_settings
-
+from box.client import BoxClientException
 
 @collect_auth
 @must_be_valid_project
@@ -60,11 +60,11 @@ def get_folders(client):
 
 def serialize_urls(node_settings):
     node = node_settings.owner
-    if node_settings.folder and node_settings.folder != '/':
-        # The link to share a the folder with other Box users
-        share_url = utils.get_share_folder_uri(node_settings.folder)
-    else:
-        share_url = None
+    #if node_settings.folder and node_settings.folder != '/':
+    #    # The link to share a the folder with other Box users
+    #    share_url = utils.get_share_folder_uri(node_settings.folder)
+    #else:
+    share_url = None
 
     urls = {
         'config': node.api_url_for('box_config_put'),
@@ -100,8 +100,8 @@ def serialize_settings(node_settings, current_user, client=None):
             client.get_user_info()
 #        except BoxAuthenticationException as error:
 #            TODO: reauthorize
-        except Exception as error:
-            if error.status == 401:
+        except BoxClientException as error:
+            if error.status_code == 401:
                 valid_credentials = False
             else:
                 raise HTTPError(http.BAD_REQUEST)
@@ -140,10 +140,8 @@ def box_config_put(node_addon, user_addon, auth, **kwargs):
     """View for changing a node's linked box folder."""
     folder = request.json.get('selected')
     path = folder['path']
-    #import ipdb; ipdb.set_trace()
     uid = folder['id']
-    node_addon.set_folder(path, uid, auth=auth)
-    node_addon.save()
+    node_addon.set_folder(uid, auth=auth)
     return {
         'result': {
             'folder': {
@@ -195,6 +193,6 @@ def box_get_share_emails(auth, user_addon, node_addon, **kwargs):
         'emails': [contrib.username
                     for contrib in node_addon.owner.contributors
                         if contrib != auth.user],
-        'url': utils.get_share_folder_uri(node_addon.folder)
+        #'url': utils.get_share_folder_uri(node_addon.folder)
     }
     return {'result': result}, http.OK

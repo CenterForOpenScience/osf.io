@@ -13,6 +13,7 @@ from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, Gu
 
 from website.addons.box.utils import BoxNodeLogger
 from website.addons.box import settings
+from website.addons.box.client import get_client_from_user_settings
 
 from box import CredentialsV2
 
@@ -142,6 +143,13 @@ class BoxNodeSettings(AddonNodeSettingsBase):
     folder_id = fields.IntegerField(default=None)
 
     @property
+    def folder(self):
+        if not self.folder_id:
+            return None
+        cl = get_client_from_user_settings(self.user_settings)
+        return cl.get_folder(self.folder_id)['name']
+
+    @property
     def display_name(self):
         return '{0}: {1}'.format(self.config.full_name, self.folder_id)
 
@@ -152,6 +160,7 @@ class BoxNodeSettings(AddonNodeSettingsBase):
 
     def set_folder(self, folder_id, auth):
         self.folder_id = folder_id
+        self.save()
         # Add log to node
         nodelogger = BoxNodeLogger(node=self.owner, auth=auth)
         nodelogger.log(action="folder_selected", save=True)

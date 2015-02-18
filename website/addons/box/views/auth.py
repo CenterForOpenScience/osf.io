@@ -21,8 +21,9 @@ from website.util import web_url_for
 from website.project.model import Node
 from website.project.decorators import must_have_addon
 
+from box.client import BoxClientException
 from website.addons.box import settings
-from website.addons.box.client import get_client_from_user_settings
+from website.addons.box.client import get_client_from_user_settings, disable_access_token
 
 logger = logging.getLogger(__name__)
 debug = logger.debug
@@ -135,10 +136,9 @@ def box_oauth_finish(auth, **kwargs):
 def box_oauth_delete_user(user_addon, auth, **kwargs):
     """View for deauthorizing Box."""
     try:
-        client = get_client_from_user_settings(user_addon)
-        client.disable_access_token()
-    except Exception as error:
-        if error.status == 401:
+        disable_access_token(user_addon)
+    except BoxClientException as error:
+        if error.status_code == 401:
             pass
         else:
             raise HTTPError(http.BAD_REQUEST)
@@ -165,8 +165,8 @@ def box_user_config_get(user_addon, auth, **kwargs):
         try:
             client = get_client_from_user_settings(user_addon)
             client.get_user_info()
-        except Exception as error:
-            if error.status == 401:
+        except BoxClientException as error:
+            if error.status_code == 401:
                 valid_credentials = False
             else:
                 HTTPError(http.BAD_REQUEST)

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Factory boy factories for the Box addon."""
+import mock
 from datetime import datetime
 
 from framework.auth import Auth
@@ -25,7 +26,8 @@ class BoxNodeSettingsFactory(ModularOdmFactory):
 
     owner = SubFactory(ProjectFactory)
     user_settings = SubFactory(BoxUserSettingsFactory)
-    folder = 'Camera Uploads'
+    with mock.patch('website.addons.box.model.BoxNodeSettings.folder') as mock_folder:
+        mock_folder.__get__ = mock.Mock(return_value='Camera Uploads')
 
 
 class BoxFileFactory(ModularOdmFactory):

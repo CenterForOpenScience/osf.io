@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import requests
 from website.addons.base.exceptions import AddonError
 from box import BoxClient
 
@@ -36,3 +36,11 @@ def get_node_addon_client(node_addon):
         else:
             raise AddonError('Node is not authorized')
     raise AddonError('Node does not have the Box addon enabled.')
+
+def disable_access_token(settings_obj):
+    creds = get_client_from_user_settings(settings_obj).credentials
+    url = 'https://www.box.com/api/oauth2/revoke/?client_id={0}&client_secret={1}&token={2}'.format(creds._client_id, creds._client_secret, creds._access_token)
+    response = requests.request(
+        'POST',
+        url,)
+    return response

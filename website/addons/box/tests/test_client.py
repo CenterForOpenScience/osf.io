@@ -46,7 +46,7 @@ class TestClientHelpers(OsfTestCase):
         super(TestClientHelpers, self).setUp()
 
         self.user_settings = BoxUserSettingsFactory()
-        self.node_settings = BoxNodeSettingsFactory(user_settings=self.user_settings)
+        self.node_settings = BoxNodeSettingsFactory(user_settings=self.user_settings,)
         self.user = self.user_settings.owner
         self.node = self.node_settings.owner
 

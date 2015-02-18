@@ -5,17 +5,18 @@ import unittest
 from nose.tools import *  # noqa (PEP8 asserts)
 import mock
 import httplib
-import datetime
+from datetime import datetime
 
 from werkzeug import FileStorage
 from webtest import Upload
 from framework.auth import Auth
 from website.util import api_url_for, web_url_for
 from website.project.model import NodeLog
-from boxview.boxview import BoxViewError
 from urllib3.exceptions import MaxRetryError
+from box.client import BoxClientException
 from tests.base import OsfTestCase, assert_is_redirect
-from tests.factories import AuthUserFactory
+from tests.factories import AuthUserFactory 
+from website.addons.box.tests.factories import BoxUserSettingsFactory
 
 from website.addons.box.tests.utils import (
     BoxAddonTestCase, mock_responses, MockBox, patch_client
@@ -39,24 +40,31 @@ class TestAuthViews(OsfTestCase):
         url = api_url_for('box_oauth_start_user')
         res = self.app.get(url)
         assert_is_redirect(res)
-        assert_in('&force_reapprove=true', res.location)
 
-    @mock.patch('website.addons.box.views.auth.BoxOAuth2Flow.finish')
+    @mock.patch('website.addons.box.views.auth.box_oauth_finish')
+    @mock.patch('website.addons.box.views.auth.finish_auth')
     @mock.patch('website.addons.box.views.auth.get_client_from_user_settings')
-    def test_box_oauth_finish(self, mock_get, mock_finish):
+    def test_box_oauth_finish(self, mock_get, mock_finish, mock_oauth):
         mock_client = mock.MagicMock()
-        mock_client.account_info.return_value = {'display_name': 'Mr. Drop Box'}
+        mock_client.get_user_info.return_value = {'display_name': 'Mr. Box', 'id': '1234567890'}
         mock_get.return_value = mock_client
-        mock_finish.return_value = ('mytoken123', 'myboxid', 'done')
+        mock_finish.return_value = {
+            'restricted_to': 'something',
+            'token_type': 'something',
+            'access_token': 'something',
+            'refresh_token': 'something'
+            }
+        mock_oauth.return_value = ('mytoken123', 'myboxid', 'done')
         url = api_url_for('box_oauth_finish')
         res = self.app.get(url)
         assert_is_redirect(res)
 
-    @mock.patch('website.addons.box.client.BoxClient.disable_access_token')
+    @mock.patch('website.addons.box.views.auth.disable_access_token')
     def test_box_oauth_delete_user(self, mock_disable_access_token):
         self.user.add_addon('box')
         settings = self.user.get_addon('box')
         settings.access_token = '12345abc'
+        settings.last_refreshed = datetime.utcnow()
         settings.save()
         assert_true(settings.has_auth)
         self.user.save()
@@ -65,17 +73,16 @@ class TestAuthViews(OsfTestCase):
         settings.reload()
         assert_false(settings.has_auth)
 
-    @mock.patch('website.addons.box.client.BoxClient.disable_access_token')
+    @mock.patch('website.addons.box.views.auth.disable_access_token')
     def test_box_oauth_delete_user_with_invalid_credentials(self, mock_disable_access_token):
         self.user.add_addon('box')
         settings = self.user.get_addon('box')
         settings.access_token = '12345abc'
+        settings.last_refreshed = datetime.utcnow()
         settings.save()
         assert_true(settings.has_auth)
 
-        mock_response = mock.Mock()
-        mock_response.status = 401
-        mock_disable_access_token.side_effect = BoxViewError(mock_response, "The given OAuth 2 access token doesn't exist or has expired.")
+        mock_disable_access_token.side_effect = BoxClientException(401, "The given OAuth 2 access token doesn't exist or has expired.")
 
         self.user.save()
         url = api_url_for('box_oauth_delete_user')
@@ -86,7 +93,17 @@ class TestAuthViews(OsfTestCase):
 
 class TestConfigViews(BoxAddonTestCase):
 
-    def test_box_user_config_get_has_auth_info(self):
+    def setUp(self):
+        super(TestConfigViews, self).setUp()
+        self.user.add_addon('box')
+        settings = self.user.get_addon('box')
+        settings.access_token = '12345abc'
+        settings.last_refreshed = datetime.utcnow()
+        settings.save()
+
+    @mock.patch('website.addons.box.client.BoxClient.get_user_info')
+    def test_box_user_config_get_has_auth_info(self, mock_account_info):
+        mock_account_info.return_value = {'display_name': 'Mr. Box'}
         url = api_url_for('box_user_config_get')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -94,9 +111,9 @@ class TestConfigViews(BoxAddonTestCase):
         result = res.json['result']
         assert_true(result['userHasAuth'])
 
-    @mock.patch('website.addons.box.client.BoxClient.account_info')
+    @mock.patch('website.addons.box.client.BoxClient.get_user_info')
     def test_box_user_config_get_has_valid_credentials(self, mock_account_info):
-        mock_account_info.return_value = {'display_name': 'Mr. Drop Box'}
+        mock_account_info.return_value = {'display_name': 'Mr. Box'}
         url = api_url_for('box_user_config_get')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -104,11 +121,9 @@ class TestConfigViews(BoxAddonTestCase):
         result = res.json['result']
         assert_true(result['validCredentials'])
 
-    @mock.patch('website.addons.box.client.BoxClient.account_info')
+    @mock.patch('website.addons.box.client.BoxClient.get_user_info')
     def test_box_user_config_get_has_invalid_credentials(self, mock_account_info):
-        mock_response = mock.Mock()
-        mock_response.status = 401
-        mock_account_info.side_effect = BoxViewError(mock_response, "The given OAuth 2 access token doesn't exist or has expired.")
+        mock_account_info.side_effect = BoxClientException(401, "The given OAuth 2 access token doesn't exist or has expired.")
         url = api_url_for('box_user_config_get')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -116,7 +131,9 @@ class TestConfigViews(BoxAddonTestCase):
         result = res.json['result']
         assert_false(result['validCredentials'])
 
-    def test_box_user_config_get_returns_correct_urls(self):
+    @mock.patch('website.addons.box.client.BoxClient.get_user_info')
+    def test_box_user_config_get_returns_correct_urls(self, mock_account_info):
+        mock_account_info.return_value = {'display_name': 'Mr. Box'}
         url = api_url_for('box_user_config_get')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -125,7 +142,9 @@ class TestConfigViews(BoxAddonTestCase):
         assert_equal(urls['delete'], api_url_for('box_oauth_delete_user'))
         assert_equal(urls['create'], api_url_for('box_oauth_start_user'))
 
-    def test_serialize_settings_helper_returns_correct_urls(self):
+    @mock.patch('website.addons.box.model.BoxNodeSettings.folder')
+    def test_serialize_settings_helper_returns_correct_urls(self, mock_folder):
+        mock_folder.__get__ = mock.Mock(return_value='Camera Uploads')
         result = serialize_settings(self.node_settings, self.user, client=mock_client)
         urls = result['urls']
 
@@ -134,46 +153,56 @@ class TestConfigViews(BoxAddonTestCase):
         assert_equal(urls['auth'], self.project.api_url_for('box_oauth_start'))
         assert_equal(urls['importAuth'], self.project.api_url_for('box_import_user_auth'))
         assert_equal(urls['files'], self.project.web_url_for('collect_file_trees'))
-        assert_equal(urls['share'], utils.get_share_folder_uri(self.node_settings.folder))
+        # assert_equal(urls['share'], utils.get_share_folder_uri(self.node_settings.folder))
         # Includes endpoint for fetching folders only
         # NOTE: Querystring params are in camelCase
         assert_equal(urls['folders'],
             self.project.api_url_for('box_hgrid_data_contents', foldersOnly=1, includeRoot=1))
         assert_equal(urls['settings'], web_url_for('user_addons'))
 
-    def test_serialize_settings_helper_returns_correct_auth_info(self):
+    @mock.patch('website.addons.box.model.BoxNodeSettings.folder')
+    def test_serialize_settings_helper_returns_correct_auth_info(self, mock_folder):
+        mock_folder.__get__ = mock.Mock(return_value='Camera Uploads')
         result = serialize_settings(self.node_settings, self.user, client=mock_client)
         assert_equal(result['nodeHasAuth'], self.node_settings.has_auth)
         assert_true(result['userHasAuth'])
         assert_true(result['userIsOwner'])
 
-    def test_serialize_settings_for_user_no_auth(self):
+    @mock.patch('website.addons.box.model.BoxNodeSettings.folder')
+    def test_serialize_settings_for_user_no_auth(self, mock_folder):
+        mock_folder.__get__ = mock.Mock(return_value='Camera Uploads')
         no_addon_user = AuthUserFactory()
         result = serialize_settings(self.node_settings, no_addon_user, client=mock_client)
         assert_false(result['userIsOwner'])
         assert_false(result['userHasAuth'])
 
-    @mock.patch('website.addons.box.client.BoxClient.account_info')
-    def test_serialize_settings_valid_credentials(self, mock_account_info):
-        mock_account_info.return_value = {'display_name': 'Mr. Drop Box'}
+    @mock.patch('website.addons.box.model.BoxNodeSettings.folder')
+    def test_serialize_settings_valid_credentials(self, mock_folder):
+        mock_folder.__get__ = mock.Mock(return_value='Camera Uploads')
         result = serialize_settings(self.node_settings, self.user, client=mock_client)
         assert_true(result['validCredentials'])
 
-    @mock.patch('website.addons.box.client.BoxClient.account_info')
-    def test_serialize_settings_invalid_credentials(self, mock_account_info):
-        mock_response = mock.Mock()
-        mock_response.status = 401
-        mock_account_info.side_effect = BoxViewError(mock_response, "The given OAuth 2 access token doesn't exist or has expired.")
+    @mock.patch('website.addons.box.model.BoxNodeSettings.folder')
+    @mock.patch('website.addons.box.client.BoxClient.get_user_info')
+    def test_serialize_settings_invalid_credentials(self, mock_account_info, mock_folder):
+        mock_folder.__get__ = mock.Mock(return_value='Camera Uploads')
+        mock_account_info.side_effect = BoxClientException(401, "The given OAuth 2 access token doesn't exist or has expired.")
         result = serialize_settings(self.node_settings, self.user)
         assert_false(result['validCredentials'])
 
-    def test_serialize_settings_helper_returns_correct_folder_info(self):
+    @mock.patch('website.addons.box.model.BoxNodeSettings.folder')
+    def test_serialize_settings_helper_returns_correct_folder_info(self, mock_folder):
+        mock_folder.__get__ = mock.Mock(return_value='Camera Uploads')
         result = serialize_settings(self.node_settings, self.user, client=mock_client)
         folder = result['folder']
         assert_equal(folder['name'], 'Box' + self.node_settings.folder)
         assert_equal(folder['path'], self.node_settings.folder)
 
-    def test_box_config_get(self):
+    @mock.patch('website.addons.box.model.BoxNodeSettings.folder')
+    @mock.patch('website.addons.box.client.BoxClient.get_user_info')
+    def test_box_config_get(self, mock_account_info, mock_folder):
+        mock_folder.__get__ = mock.Mock(return_value='Camera Uploads')
+        mock_account_info.return_value = {'display_name': 'Mr. Box'}
         self.user_settings.save()
 
         url = api_url_for('box_config_get', pid=self.project._primary_key)
@@ -186,11 +215,14 @@ class TestConfigViews(BoxAddonTestCase):
         assert_equal(result['urls']['config'],
             api_url_for('box_config_put', pid=self.project._primary_key))
 
-    def test_box_config_put(self):
+    @mock.patch('website.addons.box.model.BoxNodeSettings.folder')
+    def test_box_config_put(self, mock_folder):
+        mock_folder.__get__ = mock.Mock(return_value='My test folder')
         url = api_url_for('box_config_put', pid=self.project._primary_key)
         # Can set folder through API call
         res = self.app.put_json(url, {'selected': {'path': 'My test folder',
-            'name': 'Box/My test folder'}},
+            'name': 'Box/My test folder',
+            'id': '1234567890'}},
             auth=self.user.auth)
         assert_equal(res.status_code, 200)
         self.node_settings.reload()
@@ -202,29 +234,33 @@ class TestConfigViews(BoxAddonTestCase):
         last_log = self.project.logs[-1]
         assert_equal(last_log.action, 'box_folder_selected')
         params = last_log.params
-        assert_equal(params['folder'], 'My test folder')
+        assert_equal(params['folder_id'], '1234567890')
 
-    def test_box_deauthorize(self):
+    @mock.patch('website.addons.box.model.BoxNodeSettings.folder')
+    def test_box_deauthorize(self, mock_folder):
+        mock_folder.__get__ = mock.Mock(return_value='Camera Uploads')
         url = api_url_for('box_deauthorize', pid=self.project._primary_key)
-        saved_folder = self.node_settings.folder
+        saved_folder = self.node_settings.folder_id
         self.app.delete(url, auth=self.user.auth)
         self.project.reload()
         self.node_settings.reload()
 
         assert_false(self.node_settings.has_auth)
         assert_is(self.node_settings.user_settings, None)
-        assert_is(self.node_settings.folder, None)
+        assert_is(self.node_settings.folder_id, None)
 
         # A log event was saved
         last_log = self.project.logs[-1]
         assert_equal(last_log.action, 'box_node_deauthorized')
         log_params = last_log.params
         assert_equal(log_params['node'], self.project._primary_key)
-        assert_equal(log_params['folder'], saved_folder)
+        assert_equal(log_params['folder_id'], saved_folder)
 
-    @mock.patch('website.addons.box.client.BoxClient.account_info')
-    def test_box_import_user_auth_returns_serialized_settings(self, mock_account_info):
-        mock_account_info.return_value = {'display_name': 'Mr. Drop Box'}
+    @mock.patch('website.addons.box.model.BoxNodeSettings.folder')
+    @mock.patch('website.addons.box.client.BoxClient.get_user_info')
+    def test_box_import_user_auth_returns_serialized_settings(self, mock_account_info, mock_folder):
+        mock_folder.__get__ = mock.Mock(return_value='Camera Uploads')
+        mock_account_info.return_value = {'display_name': 'Mr. Box'}
         # Node does not have user settings
         self.node_settings.user_settings = None
         self.node_settings.save()
@@ -238,7 +274,11 @@ class TestConfigViews(BoxAddonTestCase):
         result = res.json['result']
         assert_equal(result, expected_result)
 
-    def test_box_import_user_auth_adds_a_log(self):
+    @mock.patch('website.addons.box.model.BoxNodeSettings.folder')
+    @mock.patch('website.addons.box.client.BoxClient.get_user_info')
+    def test_box_import_user_auth_adds_a_log(self, mock_account_info, mock_folder):
+        mock_folder.__get__ = mock.Mock(return_value='Camera Uploads')
+        mock_account_info.return_value = {'display_name': 'Mr. Box'}
         # Node does not have user settings
         self.node_settings.user_settings = None
         self.node_settings.save()
@@ -263,7 +303,6 @@ class TestConfigViews(BoxAddonTestCase):
         result = res.json['result']
         assert_equal(result['emails'], [u.username for u in self.project.contributors
                                         if u != self.user])
-        assert_equal(result['url'], utils.get_share_folder_uri(self.node_settings.folder))
 
     def test_box_get_share_emails_returns_error_if_not_authorizer(self):
         contrib = AuthUserFactory()
@@ -288,24 +327,38 @@ class TestConfigViews(BoxAddonTestCase):
 
 class TestFilebrowserViews(BoxAddonTestCase):
 
+    def setUp(self):
+        super(TestFilebrowserViews, self).setUp()
+        self.user.add_addon('box')
+        settings = self.user.get_addon('box')
+        settings.access_token = '12345abc'
+        settings.last_refreshed = datetime.utcnow()
+        settings.save()
+        self.patcher = mock.patch('website.addons.box.model.BoxNodeSettings.folder')
+        self.patcher.__get__ = mock.Mock(return_value='Camera Uploads')
+        self.patcher.start()
+
+    def tearDown(self):
+        self.patcher.stop()
+
     def test_box_hgrid_data_contents(self):
         with patch_client('website.addons.box.views.hgrid.get_node_client'):
             url = api_url_for(
                 'box_hgrid_data_contents',
-                path=self.node_settings.folder,
+                path=self.node_settings.folder_id,
                 pid=self.project._primary_key,
             )
             res = self.app.get(url, auth=self.user.auth)
-            contents = mock_client.metadata('', list=True)['contents']
+            contents = mock_client.get_folder('', list=True)['item_collection']['entries']
             assert_equal(len(res.json), len(contents))
             first = res.json[0]
             assert_in('kind', first)
-            assert_equal(first['path'], contents[0]['path'])
+            assert_equal(first['name'], contents[0]['name'])
 
-    def test_box_hgrid_data_contents_if_folder_is_none(self):
+    @mock.patch('website.addons.box.model.BoxNodeSettings.folder')
+    def test_box_hgrid_data_contents_if_folder_is_none(self, mock_folder):
         # If folder is set to none, no data are returned
-        self.node_settings.folder = None
-        self.node_settings.save()
+        mock_folder.__get__ = mock.Mock(return_value=None)
         url = api_url_for('box_hgrid_data_contents', pid=self.project._primary_key)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.json['data'], [])
@@ -317,8 +370,8 @@ class TestFilebrowserViews(BoxAddonTestCase):
             url = api_url_for('box_hgrid_data_contents',
                 pid=self.project._primary_key, foldersOnly=True)
             res = self.app.get(url, auth=self.user.auth)
-            contents = mock_client.metadata('', list=True)['contents']
-            expected = [each for each in contents if each['is_dir']]
+            contents = mock_client.get_folder('', list=True)['item_collection']['entries']
+            expected = [each for each in contents if each['type']=='folder']
             assert_equal(len(res.json), len(expected))
 
     def test_box_hgrid_data_contents_folders_only(self):
@@ -326,17 +379,16 @@ class TestFilebrowserViews(BoxAddonTestCase):
             url = api_url_for('box_hgrid_data_contents',
                 pid=self.project._primary_key, foldersOnly=True)
             res = self.app.get(url, auth=self.user.auth)
-            contents = mock_client.metadata('', list=True)['contents']
-            expected = [each for each in contents if each['is_dir']]
+            contents = mock_client.get_folder('', list=True)['item_collection']['entries']
+            expected = [each for each in contents if each['type']=='folder']
             assert_equal(len(res.json), len(expected))
 
-    @mock.patch('website.addons.box.client.BoxClient.metadata')
-    def test_box_hgrid_data_contents_include_root(self, mock_metadata):
+    def test_box_hgrid_data_contents_include_root(self):
         with patch_client('website.addons.box.views.hgrid.get_node_client'):
             url = api_url_for('box_hgrid_data_contents',
                 pid=self.project._primary_key, includeRoot=1)
             res = self.app.get(url, auth=self.user.auth)
-            contents = mock_client.metadata('', list=True)['contents']
+            contents = mock_client.get_folder('', list=True)['item_collection']['entries']
             assert_equal(len(res.json), len(contents) + 1)
             first_elem = res.json[0]
             assert_equal(first_elem['path'], '/')
@@ -358,7 +410,7 @@ class TestFilebrowserViews(BoxAddonTestCase):
             node_settings=self.node_settings, auth=self.user.auth)
         assert_is_none(root)
 
-    @mock.patch('website.addons.box.client.BoxClient.metadata')
+    @mock.patch('website.addons.box.client.BoxClient.get_folder')
     def test_box_hgrid_data_contents_deleted(self, mock_metadata):
         # Example metadata for a deleted folder
         mock_metadata.return_value = {
@@ -380,15 +432,14 @@ class TestFilebrowserViews(BoxAddonTestCase):
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.NOT_FOUND)
 
-    @mock.patch('website.addons.box.client.BoxClient.metadata')
+    @mock.patch('website.addons.box.client.BoxClient.get_folder')
     def test_box_hgrid_data_contents_returns_error_if_invalid_path(self, mock_metadata):
-        mock_response = mock.Mock()
-        mock_metadata.side_effect = BoxViewError(mock_response, body='File not found')
+        mock_metadata.side_effect = BoxClientException(status_code=404, message='File not found')
         url = self.project.api_url_for('box_hgrid_data_contents')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.NOT_FOUND)
 
-    @mock.patch('website.addons.box.client.BoxClient.metadata')
+    @mock.patch('website.addons.box.client.BoxClient.get_folder')
     def test_box_hgrid_data_contents_handles_max_retry_error(self, mock_metadata):
         mock_response = mock.Mock()
         url = self.project.api_url_for('box_hgrid_data_contents')
@@ -408,56 +459,24 @@ class TestRestrictions(BoxAddonTestCase):
         self.project.add_contributor(self.contrib, auth=Auth(self.user))
         self.project.save()
 
-        # Set shared folder
-        self.node_settings.folder = 'foo bar/bar'
-        self.node_settings.save()
+        self.user.add_addon('box')
+        settings = self.user.get_addon('box')
+        settings.access_token = '12345abc'
+        settings.last_refreshed = datetime.utcnow()
+        settings.save()
 
-    @mock.patch('website.addons.box.client.BoxClient.file_delete')
-    def test_restricted_deletion(self, mock_file_delete):
-        # Tries to delete a file in a parent folder of the shared folder (foo bar)
-        url = api_url_for('box_delete_file', 'box_delete_file',
-            pid=self.project._primary_key, path='foo bar/secret.txt')
-        # gets 403 error
-        res = self.app.delete(url=url, auth=self.contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, httplib.FORBIDDEN)
+        self.patcher = mock.patch('website.addons.box.model.BoxNodeSettings.folder')
+        self.patcher.__get__ = mock.Mock(return_value='foo bar/baz')
+        self.patcher.start()
 
-    @mock.patch('website.addons.box.client.BoxClient.put_file')
-    def test_restricted_uploads(self, mock_put_file):
-        mock_put_file.return_value = mock_responses['put_file']
-        # tries to uplaod file to a parent folder of shared folder
-        url = api_url_for('box_upload', pid=self.project._primary_key,
-            path='foo bar')
-        payload = {'file': Upload('myfile.rst', b'baz', 'text/x-rst')}
-        res = self.app.post(url, payload, auth=self.contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, httplib.FORBIDDEN)
 
-    @mock.patch('website.addons.box.client.BoxClient.metadata')
-    def test_restricted_hgrid_data_contents(self, mock_metadata):
-        mock_metadata.return_value = mock_responses['metadata_list']
-
+    @mock.patch('website.addons.box.model.BoxNodeSettings.has_auth')
+    def test_restricted_hgrid_data_contents(self, mock_auth):
+        mock_auth.__get__ = mock.Mock(return_value=False)
+        
         # tries to access a parent folder
         url = self.project.api_url_for('box_hgrid_data_contents',
             path='foo bar')
-        res = self.app.get(url, auth=self.contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, httplib.FORBIDDEN)
-
-    def test_restricted_view_file(self):
-        url = web_url_for('box_view_file',
-            pid=self.project._primary_key,
-            path='foo bar/baz.txt')
-        res = self.app.get(url, auth=self.contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, httplib.FORBIDDEN)
-
-    def test_restricted_get_revisions(self):
-        path = 'foo bar/baz.rst'
-        url = api_url_for('box_get_revisions', path=path,
-            pid=self.project._primary_key)
-        res = self.app.get(url, auth=self.contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, httplib.FORBIDDEN)
-
-    def test_restricted_download(self):
-        path = 'foo bar/baz.rst'
-        url = web_url_for('box_download', path=path, pid=self.project._primary_key)
         res = self.app.get(url, auth=self.contrib.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.FORBIDDEN)
 
@@ -476,238 +495,3 @@ class TestRestrictions(BoxAddonTestCase):
         res = self.app.put_json(url, {'selected': {'path': 'foo'}},
             auth=self.contrib.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.FORBIDDEN)
-
-
-class TestCRUDViews(BoxAddonTestCase):
-
-    @mock.patch('website.addons.box.client.BoxClient.put_file')
-    def test_upload_file_to_folder(self, mock_put_file):
-        mock_put_file.return_value = mock_responses['put_file']
-        payload = {'file': Upload('myfile.rst', b'baz', 'text/x-rst')}
-        url = api_url_for('box_upload', pid=self.project._primary_key,
-            path='foo')
-        res = self.app.post(url, payload, auth=self.user.auth)
-        assert_equal(res.status_code, httplib.CREATED)
-        mock_put_file.assert_called_once()
-        first_argument = mock_put_file.call_args[0][0]
-        second_arg = mock_put_file.call_args[0][1]
-        assert_equal(first_argument, '{0}/{1}'.format('foo', 'myfile.rst'))
-        assert_true(isinstance(second_arg, FileStorage))
-
-    @mock.patch('website.addons.box.client.BoxClient.put_file')
-    def test_upload_file_to_root(self, mock_put_file):
-        mock_put_file.return_value = mock_responses['put_file']
-        payload = {'file': Upload('rootfile.rst', b'baz', 'text/x-rst')}
-        url = api_url_for('box_upload',
-                pid=self.project._primary_key,
-                path='')
-        res = self.app.post(url, payload, auth=self.user.auth)
-        assert_equal(res.status_code, httplib.CREATED)
-        mock_put_file.assert_called_once()
-        first_argument = mock_put_file.call_args[0][0]
-        node_settings = self.project.get_addon('box')
-        expected_path = os.path.join(node_settings.folder, 'rootfile.rst')
-        assert_equal(first_argument, expected_path)
-
-    @mock.patch('website.addons.box.client.BoxClient.put_file')
-    def test_upload_file_with_invalid_credentials_throws_error(self, mock_put_file):
-        mock_response = mock.Mock()
-        mock_response.status = 401
-        mock_put_file.side_effect = BoxViewError(mock_response, "The given OAuth 2 access token doesn't exist or has expired.")
-
-        payload = {'file': Upload('foobar.rst', b'baz', 'text/x-rst')}
-        url = api_url_for('box_upload',
-                pid=self.project._primary_key,
-                path='')
-        res = self.app.post(url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, httplib.UNAUTHORIZED)
-
-    @mock.patch('website.addons.box.client.BoxClient.put_file')
-    def test_upload_file_non_401_errors_thrown_as_400(self, mock_put_file):
-        mock_response = mock.Mock()
-        mock_response.status = 404
-        mock_put_file.side_effect = BoxViewError(mock_response, "Bad Request.")
-        payload = {'file': Upload('fizzbuzz.rst', b'baz', 'text/x-rst')}
-        url = api_url_for('box_upload',
-                pid=self.project._primary_key,
-                path='')
-        res = self.app.post(url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, httplib.BAD_REQUEST)
-
-    @mock.patch('website.addons.box.client.BoxClient.file_delete')
-    def test_delete_file(self, mock_file_delete):
-        path = 'foo'
-        self.app.delete(
-            url=api_url_for('box_delete_file',
-                       pid=self.project._primary_key, path=path),
-            auth=self.user.auth,
-        )
-
-        mock_file_delete.assert_called_once()
-        assert_equal(path, mock_file_delete.call_args[0][0])
-
-    @unittest.skip('Finish this')
-    def test_download_file(self):
-        assert 0, 'finish me'
-
-    @unittest.skip('Finish this')
-    def test_render_file(self):
-        assert 0, 'finish me'
-
-    @unittest.skip('Finish this')
-    def test_build_box_urls(self):
-        assert 0, 'finish me'
-
-    @mock.patch('website.addons.box.client.BoxClient.put_file')
-    def test_box_upload_saves_a_log(self, mock_put_file):
-        mock_put_file.return_value = mock_responses['put_file']
-        payload = {'file': Upload('rootfile.rst', b'baz', 'text/x-rst')}
-        url = api_url_for('box_upload', pid=self.project._primary_key, path='foo')
-        self.app.post(url, payload, auth=self.user.auth)
-        self.project.reload()
-        last_log = self.project.logs[-1]
-
-        assert_equal(last_log.action, 'box_' + NodeLog.FILE_ADDED)
-        params = last_log.params
-        assert_in('project', params)
-        assert_in('node', params)
-        path = os.path.join('foo', 'rootfile.rst')
-
-        assert_equal(params['path'], path)
-        view_url = web_url_for('box_view_file', path=path, pid=self.project._primary_key)
-        assert_equal(params['urls']['view'], view_url)
-        download_url = web_url_for('box_download', path=path, pid=self.project._primary_key)
-        assert_equal(params['urls']['download'], download_url)
-
-    def test_box_delete_file_adds_log(self):
-        with patch_client('website.addons.box.views.crud.get_node_addon_client'):
-            path = 'foo'
-            url = self.project.api_url_for('box_delete_file', path=path)
-            self.app.delete(url, auth=self.user.auth)
-            self.project.reload()
-            last_log = self.project.logs[-1]
-            assert_equal(last_log.action, 'box_' + NodeLog.FILE_REMOVED)
-            params = last_log.params
-            assert_in('project', params)
-            assert_in('node', params)
-            assert_equal(params['path'], path)
-
-    def test_get_revisions(self):
-        with patch_client('website.addons.box.views.crud.get_node_addon_client'):
-            path = 'foo.rst'
-            url = self.project.api_url_for('box_get_revisions', path=path)
-            res = self.app.get(url, auth=self.user.auth)
-            json_data = res.json
-            result = json_data['result']
-            expected = [
-                rev for rev in mock_responses['revisions']
-                if not rev.get('is_deleted')
-            ]
-            assert_equal(len(result), len(expected))
-            for each in result:
-                download_link = each['download']
-                assert_equal(
-                    download_link,
-                    web_url_for(
-                        'box_download',
-                        pid=self.project._primary_key,
-                        path=path, rev=each['rev']
-                    )
-                )
-                view_link = each['view']
-                assert_equal(
-                    view_link,
-                    web_url_for(
-                        'box_view_file',
-                        pid=self.project._primary_key,
-                        path=path, rev=each['rev']
-                    )
-                )
-
-    @mock.patch('website.addons.box.client.BoxClient.revisions')
-    def test_get_revisions_does_not_return_deleted_revisions(self, mock_revisions):
-        mock_revisions.return_value = [
-            {'path': 'foo.txt', 'rev': '123'},
-            {'path': 'foo.txt', 'rev': '456', 'is_deleted': True}
-        ]
-        url = self.project.api_url_for('box_get_revisions', path='foo.txt')
-        res = self.app.get(url, auth=self.user.auth)
-        res_data = res.json['result']
-        # Deleted revision was excluded
-        assert_equal(len(res_data), 1)
-
-    @mock.patch('website.addons.box.client.BoxClient.revisions')
-    def test_get_revisions_returns_registration_date(self, mock_revisions):
-        mock_revisions.return_value = [
-            {'path': 'foo.txt', 'rev': '123'},
-            {'path': 'foo.txt', 'rev': '456', 'is_deleted': True}
-        ]
-        # Make project a registration
-        self.project.is_registration = True
-        self.project.registered_date = datetime.datetime.utcnow()
-        self.project.save()
-        url = self.project.api_url_for('box_get_revisions', path='foo.txt')
-        res = self.app.get(url, auth=self.user.auth)
-        assert_true(res.json['registered'])
-        # Compare with second precision
-        assert_equal(
-            res.json['registered'][:19],
-            self.project.registered_date.isoformat()[:19]
-        )
-
-    @mock.patch('website.addons.box.client.BoxClient.revisions')
-    def test_get_revisions_returns_path_and_links(self, mock_revisions):
-        mock_revisions.return_value = [
-            {'path': 'foo.txt', 'rev': '123'},
-            {'path': 'foo.txt', 'rev': '456', 'is_deleted': True}
-        ]
-        url = self.project.api_url_for('box_get_revisions', path='foo.txt')
-        res = self.app.get(url, auth=self.user.auth)
-        res_data = res.json
-
-        download_url = self.project.web_url_for('box_download', path='foo.txt')
-        assert_equal(res_data['urls']['download'], download_url)
-
-        delete_url = self.project.api_url_for('box_delete_file', path='foo.txt')
-        assert_equal(res_data['urls']['delete'], delete_url)
-
-        view_url = self.project.web_url_for('box_view_file', path='foo.txt')
-        assert_equal(res_data['urls']['view'], view_url)
-
-        files_url = self.project.web_url_for('collect_file_trees')
-        assert_equal(res_data['urls']['files'], files_url)
-
-        assert_equal(res_data['path'], 'foo.txt')
-        assert_equal(res_data['node']['title'], self.project.title)
-        assert_equal(res_data['node']['id'], self.project._id)
-
-    @mock.patch('website.addons.box.views.crud.render_box_file')
-    def test_box_view_file(self, mock_render_file):
-        mock_render_file.return_value = 'rendered'
-        url = self.project.web_url_for('box_view_file', path='foo')
-        res = self.app.get(
-            url,
-            auth=self.user.auth,
-        ).follow(
-            auth=self.user.auth,
-        )
-        assert_equal(res.status_code, 200)
-        assert_in('Download', res)
-        assert_in('Delete', res)
-
-    @mock.patch('website.addons.box.views.crud.render_box_file')
-    def test_box_view_file_non_contributor(self, mock_render_file):
-        mock_render_file.return_value = 'rendered'
-        self.project.is_public = True
-        self.project.save()
-        user2 = AuthUserFactory()
-        url = self.project.web_url_for('box_view_file', path='foo')
-        res = self.app.get(
-            url,
-            auth=user2.auth,
-        ).follow(
-            auth=user2.auth,
-        )
-        assert_equal(res.status_code, 200)
-        assert_in('Download', res)
-        assert_not_in('Delete', res)

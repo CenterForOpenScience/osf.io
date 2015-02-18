@@ -23,10 +23,25 @@ class BoxAddonTestCase(AddonTestCase):
         settings.box_id = 'myboxid'
 
     def set_node_settings(self, settings):
-        settings.folder = 'foo'
+        settings.folder_id = '1234567890'
 
 
 mock_responses = {
+    'folder': {
+        'item_collection': {
+            'entries': [
+                {
+                    'name': 'anything', 'type': 'file', 'id': 'anything'
+                },
+                {
+                    'name': 'anything', 'type': 'folder', 'id': 'anything'
+                },
+                {
+                    'name': 'anything', 'type': 'anything', 'id': 'anything'
+                },
+            ]
+        }
+    },
     'put_file': {
         'bytes': 77,
         'icon': 'page_white_text',
@@ -96,30 +111,30 @@ mock_responses = {
         u'thumb_exists': False
     },
     'revisions': [{u'bytes': 0,
-        u'client_mtime': u'Wed, 31 Dec 1969 23:59:59 +0000',
-        u'icon': u'page_white_picture',
-        u'is_deleted': True,
-        u'is_dir': False,
-        u'mime_type': u'image/png',
-        u'modified': u'Tue, 25 Mar 2014 03:39:13 +0000',
-        u'path': u'/svs-v-barks.png',
-        u'rev': u'3fed741002c12fc',
-        u'revision': 67032897,
-        u'root': u'box',
-        u'size': u'0 bytes',
-        u'thumb_exists': True},
-        {u'bytes': 151164,
-        u'client_mtime': u'Sat, 13 Apr 2013 21:56:36 +0000',
-        u'icon': u'page_white_picture',
-        u'is_dir': False,
-        u'mime_type': u'image/png',
-        u'modified': u'Tue, 25 Mar 2014 01:45:51 +0000',
-        u'path': u'/svs-v-barks.png',
-        u'rev': u'3fed61a002c12fc',
-        u'revision': 67032602,
-        u'root': u'box',
-        u'size': u'147.6 KB',
-        u'thumb_exists': True}]
+                   u'client_mtime': u'Wed, 31 Dec 1969 23:59:59 +0000',
+                   u'icon': u'page_white_picture',
+                   u'is_deleted': True,
+                   u'is_dir': False,
+                   u'mime_type': u'image/png',
+                   u'modified': u'Tue, 25 Mar 2014 03:39:13 +0000',
+                   u'path': u'/svs-v-barks.png',
+                   u'rev': u'3fed741002c12fc',
+                   u'revision': 67032897,
+                   u'root': u'box',
+                   u'size': u'0 bytes',
+                   u'thumb_exists': True},
+                  {u'bytes': 151164,
+                   u'client_mtime': u'Sat, 13 Apr 2013 21:56:36 +0000',
+                   u'icon': u'page_white_picture',
+                   u'is_dir': False,
+                   u'mime_type': u'image/png',
+                   u'modified': u'Tue, 25 Mar 2014 01:45:51 +0000',
+                   u'path': u'/svs-v-barks.png',
+                   u'rev': u'3fed61a002c12fc',
+                   u'revision': 67032602,
+                   u'root': u'box',
+                   u'size': u'147.6 KB',
+                   u'thumb_exists': True}]
 }
 
 
@@ -129,13 +144,16 @@ class MockBox(object):
         return mock_responses['put_file']
 
     def metadata(self, path, list=True, file_limit=25000, hash=None, rev=None,
-            include_deleted=False):
+                 include_deleted=False):
         if list:
             ret = mock_responses['metadata_list']
         else:
             ret = mock_responses['metadata_single']
             ret['path'] = path
         return ret
+
+    def get_folder(*args, **kwargs):
+        return mock_responses['folder']
 
     def get_file_and_metadata(*args, **kwargs):
         pass
@@ -149,8 +167,9 @@ class MockBox(object):
             each['path'] = path
         return ret
 
-    def account_info(self):
-        return {'display_name': 'Mr. Drop Box'}
+    def get_user_info(self):
+        return {'display_name': 'Mr. Box'}
+
 
 @contextmanager
 def patch_client(target, mock_client=None):

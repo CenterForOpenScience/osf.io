@@ -230,7 +230,7 @@ class TestBoxNodeSettingsModel(OsfTestCase):
         last_log = node_settings.owner.logs[-1]
         assert_equal(last_log.action, 'box_node_authorized')
         log_params = last_log.params
-        assert_equal(log_params['folder'], node_settings.folder)
+        assert_equal(log_params['folder_id'], node_settings.folder_id)
         assert_equal(log_params['node'], node_settings.owner._primary_key)
         assert_equal(last_log.user, user_settings.owner)
 
@@ -288,7 +288,6 @@ class TestNodeSettingsCallbacks(OsfTestCase):
         self.user_settings = BoxUserSettingsFactory(access_token='123abc')
         self.node_settings = BoxNodeSettingsFactory(
             user_settings=self.user_settings,
-            folder='',
         )
 
         self.project = self.node_settings.owner
