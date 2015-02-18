@@ -9,6 +9,7 @@ from website import settings
 from website.addons.base import AddonNodeSettingsBase
 from website.addons.base import AddonUserSettingsBase
 from website.oauth.models import ExternalProvider
+from website.util import web_url_for
 
 from . import utils
 from .api import APISession
@@ -167,7 +168,9 @@ class Mendeley(ExternalProvider):
             partial = mendeley.Mendeley(
                 client_id=self.client_id,
                 client_secret=self.client_secret,
-                redirect_uri='http://cos.ngrok.com/oauth/callback/mendeley/',
+                redirect_uri=web_url_for('oauth_callback',
+                                         service_name='mendeley',
+                                         _absolute=True),
             )
             self._client = APISession(partial, credentials)
 
