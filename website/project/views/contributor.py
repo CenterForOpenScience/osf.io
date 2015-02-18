@@ -33,7 +33,7 @@ from website.project.decorators import (must_have_permission, must_be_valid_proj
 
 
 @collect_auth
-@must_be_valid_project
+@must_be_valid_project(are_retractions_valid=True)
 def get_node_contributors_abbrev(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
 
@@ -80,7 +80,7 @@ def get_node_contributors_abbrev(auth, **kwargs):
 
 
 @collect_auth
-@must_be_valid_project
+@must_be_valid_project(are_retractions_valid=True)
 def get_contributors(auth, **kwargs):
 
     # Can set limit to only receive a specified number of contributors in a call to this route

@@ -893,6 +893,7 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
         'primary': primary,
         'is_registration': node.is_registration,
         'is_fork': node.is_fork,
+        'is_retracted': node.is_retracted,
     }
 
     if node.can_view(auth):
@@ -936,7 +937,7 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
 
 
 @collect_auth
-@must_be_valid_project
+@must_be_valid_project(are_retractions_valid=True)
 def get_summary(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     rescale_ratio = kwargs.get('rescale_ratio')

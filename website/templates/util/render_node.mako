@@ -17,6 +17,9 @@
             % if not summary['is_public']:
                 <span class="icon icon-lock" data-toggle="tooltip" title="This project is private"></span>
             % endif
+            % if summary['is_retracted']:
+                <span class="label label-danger"><strong>Retracted</strong></span> |
+            % endif
             <a href="${summary['url']}">${summary['title']}</a>
 
             % if summary['is_registration']:

@@ -12,6 +12,7 @@ from framework.exceptions import HTTPError
 from framework.auth.decorators import collect_auth
 
 from website.models import Node
+from website.util import is_json_request
 
 
 def _kwargs_to_nodes(kwargs):
@@ -41,27 +42,27 @@ def _kwargs_to_nodes(kwargs):
     return project, node
 
 
-# FIXME(sloria): How often is this called with @must_be_contributor_or_public? -- both have similar beginnings
-def must_be_valid_project(func):
+def must_be_valid_project(func=None, are_retractions_valid=False):
 
     # TODO: Check private link
+    def must_be_valid_project_inner(func):
 
-    @functools.wraps(func)
-    def wrapped(*args, **kwargs):
+        @functools.wraps(func)
+        def wrapped(*args, **kwargs):
 
-        kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
-
-        # Handle retracted registrations
-        if kwargs['project'].is_retracted:  # TODO(hrybacki): Expand this to check the node as well
-
-            # Redirect requests not directed toward the retracted view
-            if 'retracted_registration' not in request.url:
-                url = '/project/' + kwargs['pid'] + '/retracted_registration/'
+            kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
+            if not are_retractions_valid and kwargs['project'].is_retracted:
+                url = kwargs['project'].web_url_for('node_registration_retracted')
                 return redirect(url)
+            else:
+                return func(*args, **kwargs)
 
-        return func(*args, **kwargs)
+        return wrapped
 
-    return wrapped
+    if func:
+        return must_be_valid_project_inner(func)
+
+    return must_be_valid_project_inner
 
 
 def must_be_public_registration(func):
