@@ -54,6 +54,25 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
 
+    def test_wiki_url_404_with_no_write_permission(self):
+        url = self.project.web_url_for('project_wiki_view', wname='somerandomid')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
+    def test_wiki_deleted_404_with_no_write_permission(self, mock_sharejs):
+        self.project.update_node_wiki('funpage', 'Version 1', Auth(self.user))
+        self.project.save()
+        url = self.project.web_url_for('project_wiki_view', wname='funpage')
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        delete_url = self.project.api_url_for('project_wiki_delete', wname='funpage')
+        self.app.delete(delete_url, auth=self.user.auth)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
     def test_wiki_url_for_pointer_returns_200(self):
         # TODO: explain how this tests a pointer
         project = ProjectFactory(is_public=True)

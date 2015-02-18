@@ -279,7 +279,8 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
             wiki_utils.generate_private_uuid(node, wiki_name)
         sharejs_uuid = wiki_utils.get_sharejs_uuid(node, wiki_name)
     else:
-        # TODO: Hide content from deleted wikis
+        if wiki_key not in node.wiki_pages_current and wiki_key != 'home':
+            raise WIKI_PAGE_NOT_FOUND_ERROR
         sharejs_uuid = None
 
     ret = {
