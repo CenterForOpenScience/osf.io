@@ -254,7 +254,7 @@ def mendeley_citation_list(node_addon, project, node, pid, auth,
             contents += [
                 {
                     'csl': each,
-                    'kind': 'item',
+                    'kind': 'file',
                     'id': each['id'],
                 }
                 for each in node_addon.api.get_list(list_id)
