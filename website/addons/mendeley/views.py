@@ -47,7 +47,13 @@ def serialize_settings(node_settings, current_user):
     if node_account is not None:
         user_is_owner = node_account in user_accounts
 
-    user_has_auth = True if len(user_accounts) else False
+    user_settings = current_user.get_addon('mendeley')
+
+    if user_settings is not None and len(user_accounts) > 0:
+        user_has_auth = True
+    else:
+        user_has_auth = False
+
     '''
     if node_account is not None:#len(node_settings.associated_user_settings):
         user_settings = node_account.disx#node_settings.associated_user_settings[0]
