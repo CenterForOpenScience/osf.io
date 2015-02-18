@@ -184,6 +184,7 @@ var ViewModel = function(url, selector, folderPicker) {
     function onSubmitSuccess(response) {
         self.changeMessage('Successfully linked "' + self.selected().name + '".',
 			   'text-success', 5000);
+	self.folder(self.selected().name);
         self.cancelSelection();
     }
 
