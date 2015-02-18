@@ -225,6 +225,9 @@ class TestWikiViews(OsfTestCase):
         url = self.project.web_url_for('project_wiki_view', wname='home', path='view/3')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
+        url = self.project.web_url_for('project_wiki_view', wname='home', path='view/0')
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
 
     def test_project_wiki_compare_returns_200(self):
         self.project.update_node_wiki('home', 'updated content', Auth(self.user))
@@ -241,6 +244,9 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         url = self.project.web_url_for('project_wiki_view', wname='home', path='compare/3')
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+        url = self.project.web_url_for('project_wiki_view', wname='home', path='compare/0')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
@@ -672,6 +678,39 @@ class TestWikiUuid(OsfTestCase):
         assert_equal(res.status_code, 200)
         self.project.reload()
         assert_equal(private_uuid, self.project.wiki_private_uuids.get(self.wkey))
+
+    def test_uuid_not_visible_without_write_permission(self):
+        self.project.update_node_wiki(self.wname, 'some content', Auth(self.user))
+        self.project.save()
+
+        assert_is_none(self.project.wiki_private_uuids.get(self.wkey))
+        url = self.project.web_url_for('project_wiki_view', wname=self.wname)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+        self.project.reload()
+        private_uuid = self.project.wiki_private_uuids.get(self.wkey)
+        assert_true(private_uuid)
+        assert_not_in(private_uuid, res.body)
+        assert_in(get_sharejs_uuid(self.project, self.wname), res.body)
+
+        # Users without write permission should not be able to access
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_not_in(get_sharejs_uuid(self.project, self.wname), res.body)
+
+    def test_uuid_not_generated_without_write_permission(self):
+        self.project.update_node_wiki(self.wname, 'some content', Auth(self.user))
+        self.project.save()
+
+        assert_is_none(self.project.wiki_private_uuids.get(self.wkey))
+        url = self.project.web_url_for('project_wiki_view', wname=self.wname)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+
+        self.project.reload()
+        private_uuid = self.project.wiki_private_uuids.get(self.wkey)
+        assert_is_none(private_uuid)
 
     def test_uuids_differ_between_pages(self):
         wname1 = 'foo.bar'
