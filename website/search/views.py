@@ -198,7 +198,7 @@ def search_share():
     is_count = request.args.get('count') is not None
 
     if request.method == 'POST':
-        results = search.count_share(request.json()) if is_count else search.search_share(request.get_json())
+        results = search.count_share(request.get_json()) if is_count else search.search_share(request.get_json())
     elif request.method == 'GET':
         q = request.args.get('q', '*')
         # TODO Match javascript params?
