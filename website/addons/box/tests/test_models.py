@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
 import mock
+import hashlib
+from datetime import datetime
 
 from nose.tools import *  # noqa (PEP8 asserts)
 
@@ -23,58 +25,32 @@ class TestFileGuid(OsfTestCase):
         self.project = ProjectFactory(creator=self.user)
         self.project.add_addon('box', auth=Auth(self.user))
         self.node_addon = self.project.get_addon('box')
-        self.node_addon.folder = '/baz'
-        self.node_addon.save()
 
     def test_provider(self):
         assert_equal('box', BoxFile().provider)
 
     def test_correct_path(self):
-        guid = BoxFile(node=self.project, path='baz/foo/bar')
+        guid = BoxFile(node=self.project, path='1234567890/foo/bar')
 
-        assert_equals(guid.path, 'baz/foo/bar')
-        assert_equals(guid.waterbutler_path, '/foo/bar')
+        assert_equals(guid.path, '1234567890/foo/bar')
+        assert_equals(guid.waterbutler_path, '/1234567890/foo/bar')
 
     @mock.patch('website.addons.base.requests.get')
     def test_unique_identifier(self, mock_get):
-        mock_response = mock.Mock(ok=True, status_code=200)
-        mock_get.return_value = mock_response
-        mock_response.json.return_value = {
-            'data': {
-                'name': 'Morty',
-                'extra': {
-                    'revisionId': 'Ricksy'
-                }
-            }
-        }
-
-        guid = BoxFile(node=self.project, path='/foo/bar')
-
-        guid.enrich()
-        assert_equals('Ricksy', guid.unique_identifier)
+        guid = BoxFile(node=self.project, path='1234567890/foo/bar')
+        uid = 'e463e2fbf0e07ffaf9796b36acf867c0'
+        assert_equals(uid, guid.unique_identifier)
 
     def test_node_addon_get_or_create(self):
-        guid, created = self.node_addon.find_or_create_file_guid('/foo/bar')
+        guid, created = self.node_addon.find_or_create_file_guid('1234567890/foo/bar')
 
         assert_true(created)
-        assert_equal(guid.path, 'baz/foo/bar')
-        assert_equal(guid.waterbutler_path, '/foo/bar')
+        assert_equal(guid.path, '1234567890/foo/bar')
+        assert_equal(guid.waterbutler_path, '/1234567890/foo/bar')
 
     def test_node_addon_get_or_create_finds(self):
         guid1, created1 = self.node_addon.find_or_create_file_guid('/foo/bar')
         guid2, created2 = self.node_addon.find_or_create_file_guid('/foo/bar')
-
-        assert_true(created1)
-        assert_false(created2)
-        assert_equals(guid1, guid2)
-
-    def test_node_addon_get_or_create_finds_changed(self):
-        guid1, created1 = self.node_addon.find_or_create_file_guid('/foo/bar')
-
-        self.node_addon.folder = '/baz/foo'
-        self.node_addon.save()
-        self.node_addon.reload()
-        guid2, created2 = self.node_addon.find_or_create_file_guid('/bar')
 
         assert_true(created1)
         assert_false(created2)
@@ -91,7 +67,8 @@ class TestUserSettingsModel(OsfTestCase):
         user_settings = BoxUserSettings(
             access_token='12345',
             box_id='abc',
-            owner=self.user)
+            owner=self.user,
+            last_refreshed=datetime.utcnow())
         user_settings.save()
         retrieved = BoxUserSettings.load(user_settings._primary_key)
         assert_true(retrieved.access_token)
@@ -99,7 +76,7 @@ class TestUserSettingsModel(OsfTestCase):
         assert_true(retrieved.owner)
 
     def test_has_auth(self):
-        user_settings = BoxUserSettingsFactory(access_token=None)
+        user_settings = BoxUserSettingsFactory(access_token=None, last_refreshed=datetime.utcnow())
         assert_false(user_settings.has_auth)
         user_settings.access_token = '12345'
         user_settings.save()
@@ -116,7 +93,7 @@ class TestUserSettingsModel(OsfTestCase):
 
         # Node settings no longer associated with user settings
         assert_is(node_settings.user_settings, None)
-        assert_is(node_settings.folder, None)
+        assert_is(node_settings.folder_id, None)
 
     def test_clear(self):
         node_settings = BoxNodeSettingsFactory.build()
@@ -151,7 +128,7 @@ class TestUserSettingsModel(OsfTestCase):
 
         # Node settings no longer associated with user settings
         assert_is(node_settings.user_settings, None)
-        assert_is(node_settings.folder, None)
+        assert_is(node_settings.folder_id, None)
         assert_false(node_settings.deleted)
 
     def test_to_json(self):
@@ -168,9 +145,11 @@ class TestBoxNodeSettingsModel(OsfTestCase):
         self.user.add_addon('box')
         self.user.save()
         self.user_settings = self.user.get_addon('box')
+        self.user_settings.last_refreshed = datetime.utcnow()
         self.project = ProjectFactory()
         self.node_settings = BoxNodeSettingsFactory(
             user_settings=self.user_settings,
+            folder_id = '1234567890',
             owner=self.project
         )
 
@@ -179,16 +158,16 @@ class TestBoxNodeSettingsModel(OsfTestCase):
         node_settings.save()
         assert_true(node_settings.user_settings)
         assert_equal(node_settings.user_settings.owner, self.user)
-        assert_true(hasattr(node_settings, 'folder'))
-        assert_true(hasattr(node_settings, 'registration_data'))
+        assert_true(hasattr(node_settings, 'folder_id'))
+        assert_true(hasattr(node_settings, 'user_settings'))
 
     def test_folder_defaults_to_none(self):
         node_settings = BoxNodeSettings(user_settings=self.user_settings)
         node_settings.save()
-        assert_is_none(node_settings.folder)
+        assert_is_none(node_settings.folder_id)
 
     def test_has_auth(self):
-        settings = BoxNodeSettings(user_settings=self.user_settings)
+        settings = BoxNodeSettings(user_settings=self.user_settings, )
         settings.save()
         assert_false(settings.has_auth)
 
@@ -204,36 +183,36 @@ class TestBoxNodeSettingsModel(OsfTestCase):
 
     def test_delete(self):
         assert_true(self.node_settings.user_settings)
-        assert_true(self.node_settings.folder)
+        assert_true(self.node_settings.folder_id)
         old_logs = self.project.logs
         self.node_settings.delete()
         self.node_settings.save()
         assert_is(self.node_settings.user_settings, None)
-        assert_is(self.node_settings.folder, None)
+        assert_is(self.node_settings.folder_id, None)
         assert_true(self.node_settings.deleted)
         assert_equal(self.project.logs, old_logs)
 
     def test_deauthorize(self):
         assert_true(self.node_settings.user_settings)
-        assert_true(self.node_settings.folder)
+        assert_true(self.node_settings.folder_id)
         self.node_settings.deauthorize(auth=Auth(self.user))
         self.node_settings.save()
         assert_is(self.node_settings.user_settings, None)
-        assert_is(self.node_settings.folder, None)
+        assert_is(self.node_settings.folder_id, None)
 
         last_log = self.project.logs[-1]
         assert_equal(last_log.action, 'box_node_deauthorized')
         params = last_log.params
         assert_in('node', params)
         assert_in('project', params)
-        assert_in('folder', params)
+        assert_in('folder_id', params)
 
     def test_set_folder(self):
-        folder_name = 'queen/freddie'
-        self.node_settings.set_folder(folder_name, auth=Auth(self.user))
+        folder_id = 1234567890
+        self.node_settings.set_folder(folder_id, auth=Auth(self.user))
         self.node_settings.save()
         # Folder was set
-        assert_equal(self.node_settings.folder, folder_name)
+        assert_equal(self.node_settings.folder_id, folder_id)
         # Log was saved
         last_log = self.project.logs[-1]
         assert_equal(last_log.action, 'box_folder_selected')
@@ -257,6 +236,7 @@ class TestBoxNodeSettingsModel(OsfTestCase):
 
     def test_serialize_credentials(self):
         self.user_settings.access_token = 'secret'
+        self.user_settings.last_refreshed = datetime.utcnow()
         self.user_settings.save()
         credentials = self.node_settings.serialize_waterbutler_credentials()
         expected = {'token': self.node_settings.user_settings.access_token}
@@ -270,11 +250,11 @@ class TestBoxNodeSettingsModel(OsfTestCase):
 
     def test_serialize_settings(self):
         settings = self.node_settings.serialize_waterbutler_settings()
-        expected = {'folder': self.node_settings.folder}
+        expected = {'folder_id': self.node_settings.folder_id}
         assert_equal(settings, expected)
 
     def test_serialize_settings_not_configured(self):
-        self.node_settings.folder = None
+        self.node_settings.folder_id = None
         self.node_settings.save()
         with assert_raises(exceptions.AddonError):
             self.node_settings.serialize_waterbutler_settings()
@@ -296,7 +276,7 @@ class TestBoxNodeSettingsModel(OsfTestCase):
         )
         assert_equal(
             self.project.logs[-1].params['path'],
-            os.path.join(self.node_settings.folder, path),
+            os.path.join(self.node_settings.folder_id, path),
         )
 
 
@@ -355,4 +335,4 @@ class TestNodeSettingsCallbacks(OsfTestCase):
         # Ensure that changes to node settings have been saved
         self.node_settings.reload()
         assert_true(self.node_settings.user_settings is None)
-        assert_true(self.node_settings.folder is None)
+        assert_true(self.node_settings.folder_id is None)

@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
+import os
 import logging
+import hashlib
 from datetime import datetime
 
 from modularodm import fields, Q
@@ -27,6 +29,8 @@ class BoxFile(GuidFile):
 
     @property
     def waterbutler_path(self):
+        if not self.path.startswith('/'):
+            return '/{}'.format(self.path)
         return self.path
 
     @property
@@ -39,7 +43,7 @@ class BoxFile(GuidFile):
 
     @property
     def unique_identifier(self):
-        return self.path.split('/')[1][-5]
+        return hashlib.md5(self.waterbutler_path).hexdigest()
 
     @classmethod
     def get_or_create(cls, node, path):
@@ -139,14 +143,14 @@ class BoxNodeSettings(AddonNodeSettingsBase):
 
     @property
     def display_name(self):
-        return '{0}: {1}'.format(self.config.full_name, self.folder)
+        return '{0}: {1}'.format(self.config.full_name, self.folder_id)
 
     @property
     def has_auth(self):
         """Whether an access token is associated with this node."""
         return bool(self.user_settings and self.user_settings.has_auth)
 
-    def set_folder(self, folder, folder_id, auth):
+    def set_folder(self, folder_id, auth):
         self.folder_id = folder_id
         # Add log to node
         nodelogger = BoxNodeLogger(node=self.owner, auth=auth)
@@ -172,16 +176,16 @@ class BoxNodeSettings(AddonNodeSettingsBase):
     def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""
         node = self.owner
-        folder = self.folder
 
-        self.folder = None
+        if add_log:
+            extra = {'folder_id': self.folder_id}
+            nodelogger = BoxNodeLogger(node=node, auth=auth)
+            nodelogger.log(action="node_deauthorized", extra=extra, save=True)
+
         self.folder_id = None
         self.user_settings = None
 
-        if add_log:
-            extra = {'folder': folder}
-            nodelogger = BoxNodeLogger(node=node, auth=auth)
-            nodelogger.log(action="node_deauthorized", extra=extra, save=True)
+        self.save()
 
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
@@ -191,7 +195,7 @@ class BoxNodeSettings(AddonNodeSettingsBase):
     def serialize_waterbutler_settings(self):
         if not self.folder_id:
             raise exceptions.AddonError('Folder is not configured')
-        return {'folder': self.folder_id}
+        return {'folder_id': self.folder_id}
 
     def create_waterbutler_log(self, auth, action, metadata):
         path = metadata['path']
@@ -201,11 +205,11 @@ class BoxNodeSettings(AddonNodeSettingsBase):
             params={
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
-                'path': path,
-                'folder': self.folder,
+                'path': os.path.join(self.folder_id, path),
+                'folder': self.folder_id,
                 'urls': {
-                    'view': self.owner.web_url_for('addon_download_or_view_file', provider='box', action='view', path=path),
-                    'download': self.owner.web_url_for('addon_download_or_view_file', provider='box', action='download', path=path),
+                    'view': self.owner.web_url_for('addon_view_or_download_file', provider='box', action='view', path=path),
+                    'download': self.owner.web_url_for('addon_view_or_download_file', provider='box', action='download', path=path),
                 },
             },
         )
