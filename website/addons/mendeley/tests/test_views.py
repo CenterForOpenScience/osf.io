@@ -19,6 +19,8 @@ from website.util import api_url_for
 from website.addons.mendeley import utils
 from website.addons.mendeley.views import serialize_settings, serialize_urls
 
+from utils import mock_responses
+
 API_URL = 'https://api.mendeley.com'
 
 FOLDER_LIST_JSON = [
@@ -196,26 +198,83 @@ class MendeleyViewsTestCase(OsfTestCase):
         #"""JSON: tell the widget when it hasn't been configured"""
         assert_true(False)
 
+    @responses.activate
     def test_mendeley_citation_list_root(self):
+
+        responses.add(
+            responses.GET,
+            urlparse.urljoin(API_URL, 'folders'),
+            body=mock_responses['folders'],
+            content_type='application/json'
+        )
+        
         res = self.app.get(
-            api_url_for('mendeley_citation_list'),
+            self.project.api_url_for('mendeley_citation_list'),
             auth=self.user.auth
         )
-            
 
-        assert_true(False)
+        root = res.json['contents'][0]
+        assert_equal(root['kind'], 'folder')
+        assert_equal(root['id'], 'ROOT')
+        assert_equal(root['parent_list_id'], '__')
 
+    @responses.activate
     def test_mendeley_citation_list_non_root(self):
 
-        assert_true(False)
+        responses.add(
+            responses.GET,
+            urlparse.urljoin(API_URL, 'folders'),
+            body=mock_responses['folders'],
+            content_type='application/json'
+        )
 
-    def test_mendeley_citation_list_no_list_id(self):
+        responses.add(
+            responses.GET,
+            urlparse.urljoin(API_URL, 'documents'),
+            body=mock_responses['documents'],
+            content_type='application/json'
+        )            
+    
+        res = self.app.get(
+            self.project.api_url_for('mendeley_citation_list', mendeley_list_id='ROOT'),
+            auth=self.user.auth
+        )
 
-        assert_true(False)
+        children = res.json['contents']
+        assert_equal(len(children), 7)
+        assert_equal(children[0]['kind'], 'folder')
+        assert_equal(children[1]['kind'], 'item')
+        assert_true(children[1].get('csl') is not None)
 
-    def test_mendeley_citation_list_unauthorized(self):
+    @responses.activate
+    def test_mendeley_citation_list_non_linked_or_child_non_authorizer(self):
+
+        non_authorizing_user = AuthUserFactory()
+        self.project.add_contributor(non_authorizing_user, save=True)
         
-        assert_true(False)
+        self.node_addon.mendeley_list_id = 'e843da05-8818-47c2-8c37-41eebfc4fe3f'
+        self.node_addon.save()
+
+        responses.add(
+            responses.GET,
+            urlparse.urljoin(API_URL, 'folders'),
+            body=mock_responses['folders'],
+            content_type='application/json'
+        )
+
+        responses.add(
+            responses.GET,
+            urlparse.urljoin(API_URL, 'documents'),
+            body=mock_responses['documents'],
+            content_type='application/json'
+        )            
+    
+        res = self.app.get(
+            self.project.api_url_for('mendeley_citation_list', mendeley_list_id='ROOT'),
+            auth=non_authorizing_user.auth,
+            expect_errors=True            
+        )
+        assert_equal(res.status_code, 403)
 
     def test_citation_list_bibtex(self):
         #"""JSON: list of formatted citations in BibTeX style"""

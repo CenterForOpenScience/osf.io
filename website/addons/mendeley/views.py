@@ -36,7 +36,7 @@ def serialize_urls(node_settings):
         # Endpoint for fetching only folders (including root)
         'folders': node.api_url_for('mendeley_citation_list'),
         'settings': web_url_for('user_addons'),
-        }
+    }
 
     if external_account and external_account.profile_url:
         ret['owner'] = external_account.profile_url
@@ -232,7 +232,7 @@ def mendeley_citation_list(node_addon, project, node, pid, auth,
             ancestor_id = folders[list_id].get('parent_list_id')
 
         while ancestor_id != attached_list_id:
-            if ancestor_id is None:
+            if ancestor_id is '__':
                 raise HTTPError(http.FORBIDDEN)
             ancestor_id = folders[ancestor_id].get('parent_list_id')
 

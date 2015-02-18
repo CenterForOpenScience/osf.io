@@ -2,7 +2,6 @@ var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
 var $osf = require('osfHelpers');
-require('./../css/addonsettings.css');
 
 var ProjectSettings = {};
 
