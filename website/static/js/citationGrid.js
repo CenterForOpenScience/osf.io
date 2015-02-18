@@ -141,6 +141,14 @@ var renderActions = function(item, col) {
     var self = this;
     var buttons = [];
     if (item.kind === 'file') {
+        buttons.push({
+            name: '',
+            icon: 'icon-copy',
+            css: 'btn btn-default btn-xs',
+            tooltip: 'Copy citation',
+            clipboard: self.getCitation(item),
+            config: makeClipboardConfig()
+        });
         // Add link to external document
         var externalUrl = buildExternalUrl(item.data.csl);
         if (externalUrl) {
@@ -166,19 +174,11 @@ var renderActions = function(item, col) {
                 }
             });
         }
-        buttons.push({
-            name: '',
-            icon: 'icon-copy',
-            css: 'btn btn-default btn-xs',
-            tooltip: 'Copy citation',
-            clipboard: self.getCitation(item),
-            config: makeClipboardConfig()
-        });
     } else if (item.kind === 'folder' && item.open && item.children.length) {
         buttons.push({
             name: '',
             icon: 'icon-copy',
-            css: 'btn btn-info btn-xs',
+            css: 'btn btn-default btn-xs',
             tooltip: 'Copy citations',
             config: makeClipboardConfig(function() {
                 return self.getCitations(item).join('\n');
