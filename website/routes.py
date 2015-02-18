@@ -1228,11 +1228,32 @@ def make_url_map(app):
         ),
 
         Rule(
+            '/subscriptions/',
+            'get',
+            notification_views.get_subscriptions,
+            json_renderer,
+        ),
+
+        Rule(
             '/settings/subscribe/',
             'post',
             notification_views.configure_subscription,
             json_renderer,
         ),
+
+        # Rule(
+        #     '/settings/subscribe/',
+        #     'put',
+        #     notification_views.configure_subscription,
+        #     json_renderer,
+        # ),
+        #
+        # Rule(
+        #     '/settings/subscribe/',
+        #     'delete',
+        #     notification_views.configure_subscription,
+        #     json_renderer,
+        # ),
 
         Rule(
             [

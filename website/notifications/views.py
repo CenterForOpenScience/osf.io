@@ -10,6 +10,10 @@ from website.notifications.constants import NOTIFICATION_TYPES
 from website.notifications import utils
 
 @must_be_logged_in
+def get_subscriptions(auth):
+    return utils.format_user_and_project_subscriptions(auth.user)
+
+@must_be_logged_in
 def configure_subscription(auth):
     user = auth.user
     subscription = request.json
