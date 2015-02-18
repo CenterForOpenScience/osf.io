@@ -3,6 +3,7 @@
 import abc
 import logging
 import datetime
+import httplib as http
 
 import pymongo
 from flask import request
@@ -12,12 +13,14 @@ from modularodm.storage.base import KeyExistsException
 from requests_oauthlib import OAuth1Session
 from requests_oauthlib import OAuth2Session
 
+from framework.exceptions import HTTPError
+from framework.exceptions import PermissionsError
 from framework.mongo import ObjectId
 from framework.mongo import StoredObject
 from framework.sessions import get_session
-from framework.exceptions import PermissionsError
 
 from website.util import web_url_for
+from oauthlib.oauth2.rfc6749.errors import MissingTokenError
 from website.oauth.utils import PROVIDER_LOOKUP
 
 
@@ -195,18 +198,21 @@ class ExternalProvider(object):
             if cached_credentials.get('state') != state:
                 raise PermissionsError("Request token does not match")
 
-            response = OAuth2Session(
-                self.client_id,
-                redirect_uri=web_url_for(
-                    'oauth_callback',
-                    service_name=self.short_name,
-                    _absolute=True
-                ),
-            ).fetch_token(
-                self.callback_url,
-                client_secret=self.client_secret,
-                code=request.args.get('code'),
-            )
+            try:
+                response = OAuth2Session(
+                    self.client_id,
+                    redirect_uri=web_url_for(
+                        'oauth_callback',
+                        service_name=self.short_name,
+                        _absolute=True
+                    ),
+                ).fetch_token(
+                    self.callback_url,
+                    client_secret=self.client_secret,
+                    code=request.args.get('code'),
+                )
+            except MissingTokenError:
+                raise HTTPError(http.SERVICE_UNAVAILABLE)
 
         info = self._default_handle_callback(response)
         info.update(self.handle_callback(response))
