@@ -295,11 +295,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         'pages_current': _get_wiki_pages_current(node),
         'toc': toc,
         'category': node.category,
-        'style': {
-            'view': panel_settings['view'],
-            'edit': panel_settings['edit'],
-            'compare': panel_settings['compare'],
-        },
+        'style': panel_settings,
         'urls': {
             'api': _get_wiki_api_urls(node, wiki_name, {
                 'content': node.api_url_for('wiki_page_content', wname=wiki_name),
