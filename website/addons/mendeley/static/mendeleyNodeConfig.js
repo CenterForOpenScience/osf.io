@@ -304,9 +304,15 @@ var ViewModel = function(url, selector, folderPicker) {
         self.activatePicker();
     }
 
-    function onImportError() {
+    function onImportError(xhr, textStatus, error) {
         self.message('Error occurred while importing access token.');
         self.messageClass('text-danger');
+
+        Raven.captureMessage('Failed to import Mendeley access token', {
+            url: self.urls().importAuth,
+            textStatus: textStatus,
+            error: error
+        });
     }
 
     /**
