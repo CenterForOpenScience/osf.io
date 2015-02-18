@@ -44,16 +44,16 @@ class BoxNodeLogger(object):
         params = {
             'project': self.node.parent_id,
             'node': self.node._primary_key,
-            'folder': self.node.get_addon('box', deleted=True).folder
+            'folder_id': self.node.get_addon('box', deleted=True).folder_id
         }
         # If logging a file-related action, add the file's view and download URLs
         if self.file_obj or self.path:
             path = self.file_obj.path if self.file_obj else self.path
             params.update({
                 'urls': {
-                    'view': self.node.web_url_for('box_view_file', path=path),
+                    'view': self.node.web_url_for('addon_view_or_download_file', path=path, provider='box'),
                     'download': self.node.web_url_for(
-                        'box_download', path=path)
+                        'addon_view_or_download_file', path=path, provider='box')
                 },
                 'path': path,
             })
@@ -114,15 +114,15 @@ def metadata_to_hgrid(item, node, permissions):
     to the format expected by Rubeus/HGrid.
     """
     #import ipdb; ipdb.set_trace()
-    filename = item['name']  # get_file_name(item['path'])
+    filename = item['name']
     serialized = {
         'addon': 'box',
         'permissions': permissions,
-        'name': item['name'],
+        'name': filename,
         'ext': os.path.splitext(filename)[-1],
         rubeus.KIND: rubeus.FOLDER if item['type'] == u'folder' else rubeus.FILE,
         #'urls': build_box_urls(item, node),
-        'path': item['name'],
+        'path': item['path'],
         'id': item['id']
     }
     return serialized
