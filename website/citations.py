@@ -17,7 +17,6 @@ class CitationList(list):
     def __repr__(self):
         return '<CitationList: {}>'.format(self.name or '[anonymous]')
 
-
     @property
     def _get_citations(self):
         """Unbound callable that returns a list of Citation instances
@@ -58,5 +57,3 @@ class CitationList(list):
             'provider_list_id': self.provider_list_id,
             'provider_account_id': self.provider_account_id,
         }
-
-

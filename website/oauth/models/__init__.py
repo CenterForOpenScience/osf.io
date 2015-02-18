@@ -13,7 +13,6 @@ from framework.exceptions import PermissionsError
 from framework.mongo import ObjectId
 from framework.mongo import StoredObject
 from framework.sessions import get_session
-from website import settings
 from website.oauth.utils import PROVIDER_LOOKUP
 from website.util import web_url_for
 
@@ -25,7 +24,7 @@ OAUTH2 = 2
 
 
 class ExternalAccount(StoredObject):
-    _id = fields.StringField(default=lambda: str(ObjectId()))
+    _id = fields.StringField(default=lambda: str(ObjectId()), primary=True)
 
     oauth_key = fields.StringField()
     oauth_secret = fields.StringField()
@@ -62,8 +61,12 @@ class ExternalProvider(object):
 
     __metaclass__ = ExternalProviderMeta
 
-    account = None
     _oauth_version = OAUTH2
+
+    def __init__(self):
+        super(ExternalProvider, self).__init__()
+
+        self.account = None
 
     def __repr__(self):
         return '<{name}: {status}>'.format(

@@ -27,8 +27,8 @@ function resolveToggle(item) {
 
 function resolveIcon(item) {
     var privateFolder = m('img', {
-            src: '/static/img/hgrid/fatcowicons/folder_delete.png'
-        });
+        src: '/static/img/hgrid/fatcowicons/folder_delete.png'
+    });
     var openFolder = m('i.icon-folder-open', ' ');
     var closedFolder = m('i.icon-folder-close', ' ');
 
@@ -61,8 +61,7 @@ var utils = {
 var objectify = function(array, key) {
     key = key || 'id';
     return utils.reduce(
-        array,
-        {},
+        array, {},
         function(item, acc) {
             return acc[item[key]] = item;
         }
@@ -81,12 +80,11 @@ var makeButtons = function(item, col, buttons) {
     return buttons.map(function(button) {
         var self = this;
         return m(
-            'span',
-            {'data-col': item.id},
-            [
+            'span', {
+                'data-col': item.id
+            }, [
                 m(
-                    'i',
-                    {
+                    'i', {
                         title: button.tooltip,
                         style: button.style,
                         class: button.css,
@@ -102,8 +100,9 @@ var makeButtons = function(item, col, buttons) {
                     },
                     [
                         m(
-                            'span',
-                            {class: button.icon},
+                            'span', {
+                                class: button.icon
+                            },
                             button.name
                         )
                     ]
@@ -186,18 +185,15 @@ var treebeardOptions = {
         $('[data-toggle="tooltip"]').tooltip();
     },
     columnTitles: function() {
-        return [
-            {
-                title: 'Citation',
-                width: '80%',
-                sort: false
-            },
-            {
-                title: 'Actions',
-                width: '20%',
-                sort: false
-            }
-        ];
+        return [{
+            title: 'Citation',
+            width: '80%',
+            sort: false
+        }, {
+            title: 'Actions',
+            width: '20%',
+            sort: false
+        }];
     }
 };
 
@@ -218,8 +214,7 @@ var CitationGrid = function(provider, gridSelector, styleSelector, apiUrl) {
 
 CitationGrid.prototype.initTreebeard = function() {
     var self = this;
-    var options = $.extend(
-        {
+    var options = $.extend({
             divID: self.gridSelector.replace('#', ''),
             filesData: self.apiUrl,
             resolveLazyloadUrl: function(item) {
@@ -248,10 +243,14 @@ CitationGrid.prototype.initStyleSelect = function() {
             url: '/api/v1/citations/styles/',
             quietMillis: 200,
             data: function(term, page) {
-                return {q: term};
+                return {
+                    q: term
+                };
             },
             results: function(data, page) {
-                return {results: data.styles};
+                return {
+                    results: data.styles
+                };
             },
             cache: true
         }
@@ -283,8 +282,7 @@ CitationGrid.prototype.makeBibliography = function(folder) {
     var bibliography = citeproc.makeBibliography();
     if (bibliography[0].entry_ids) {
         return utils.reduce(
-            utils.zip(bibliography[0].entry_ids, bibliography[1]),
-            {},
+            utils.zip(bibliography[0].entry_ids, bibliography[1]), {},
             function(pair, acc) {
                 return acc[pair[0][0]] = pair[1];
             }

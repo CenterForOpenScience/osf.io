@@ -23,10 +23,8 @@
             </span>
 
             <!-- Oauth Start Button -->
-            <span data-bind="if: showTokenCreateButton">
-                <a data-bind="attr.href: urls().auth" class="text-primary pull-right addon-auth">
-                    Create Access Token
-                </a>
+            <span data-bind="if: showTokenCreateButton">	
+	        <a data-bind="click: connectAccount" class="text-primary pull-right addon-auth">Create Access Token</a>	
             </span>
         </small>
     </h4>
@@ -38,9 +36,7 @@
             <div class="col-md-12">
                 <p>
                     <strong>Current Folder:</strong>
-                    <a data-bind="">
-                             {{folder}}
-                    </a>
+                             {{folder}}		
                     <span data-bind="if: folder().path === null" class="text-muted">
                         None
                     </span>
