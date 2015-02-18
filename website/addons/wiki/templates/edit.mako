@@ -21,7 +21,7 @@
                             <div id="wmd-button-bar"></div>
                         </div>
                         <div class="col-lg-6 col-md-5">
-                            <div data-bind="fadeVisible: throttledStatus() === 'connected'" class="pull-right" style="display: none">
+                            <div data-bind="fadeVisible: throttledStatus() === 'connected'" class="pull-right scripted">
                                 <ul class="list-inline" data-bind="foreach: activeUsers">
                                     <!-- ko ifnot: id === '${user_id}' -->
                                         <li>
@@ -33,7 +33,7 @@
                                     <!-- /ko -->
                                 </ul>
                             </div>
-                            <div data-bind="fadeVisible: throttledStatus() !== 'connected'" style="display: none">
+                            <div data-bind="fadeVisible: throttledStatus() !== 'connected'" class="scripted">
                                 <div class="progress" style="margin-bottom: 5px;">
                                     <div role="progressbar" data-bind="attr: progressBar">
                                         <span data-bind="text: statusDisplay"></span>

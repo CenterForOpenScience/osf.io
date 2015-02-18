@@ -11,5 +11,3 @@ new FileRevisions(
     window.contextVars.file,
     window.contextVars.currentUser.canEdit
 );
-
-FileRenderer.start(window.contextVars.renderURL, '#fileRendered');
