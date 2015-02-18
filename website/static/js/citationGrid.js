@@ -147,7 +147,7 @@ var renderActions = function(item, col) {
             buttons.push({
                 name: '',
                 icon: 'icon-external-link',
-                css: 'btn btn-info btn-xs',
+                css: 'btn btn-default btn-xs',
                 tooltip: 'View original document',
                 onclick: function(event) {
                     window.open(externalUrl);
@@ -159,7 +159,7 @@ var renderActions = function(item, col) {
             buttons.push({
                 name: '',
                 icon: 'icon-link',
-                css: 'btn btn-info btn-xs',
+                css: 'btn btn-default btn-xs',
                 tooltip: 'View on ' + self.provider,
                 onclick: function(event) {
                     window.open(item.data.serviceUrl);
@@ -169,7 +169,7 @@ var renderActions = function(item, col) {
         buttons.push({
             name: '',
             icon: 'icon-copy',
-            css: 'btn btn-info btn-xs',
+            css: 'btn btn-default btn-xs',
             tooltip: 'Copy citation',
             clipboard: self.getCitation(item),
             config: makeClipboardConfig()
