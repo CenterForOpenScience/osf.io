@@ -17,7 +17,7 @@ from website.addons.mendeley.tests.factories import (
 
 from website.util import api_url_for
 from website.addons.mendeley import utils
-
+from website.addons.mendeley.views import serialize_settings, serialize_urls
 
 API_URL = 'https://api.mendeley.com'
 
@@ -45,6 +45,28 @@ class MendeleyViewsTestCase(OsfTestCase):
         self.project = ProjectFactory(creator=self.user)
         self.node_addon = MendeleyNodeSettingsFactory(owner=self.project, external_account=self.account)
         self.node_addon.grant_oauth_access(self.user, self.account, metadata={'lists': 'list'})
+
+    def test_serialize_settings_authorizer(self):
+        """dict: a serialized version of user-specific addon settings"""
+        res = serialize_settings(self.node_addon, self.user.auth)        
+        expected = {
+            'nodeHasAuth': True,
+            'userIsOwner': True,
+            'userHasAuth': True,
+            'urls': serialize_urls(self.node_addon, self.user),
+            'userAccountId': filter(lambda a: a.provider == 'mendeley', user.external_accounts)[0]._id,
+            'folder': '',
+            'ownerName': self.user.fullname            
+        }
+        assert_equal(res, expected)
+
+
+    def test_serialize_settings_non_authorizer(self):
+        """dict: a serialized version of user-specific addon settings"""
+        non_authorizing_user = AuthUserFactory()
+        self.project.add_contributor(non_authorizing_user, save=True)    
+        res = serialize_settings(self.node_addon, non_authorizing_user.auth)
+        
 
     def test_user_folders(self):
         """JSON: a list of user's Mendeley folders"""
