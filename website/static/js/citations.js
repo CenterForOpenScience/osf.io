@@ -12,13 +12,17 @@ var makeCiteproc = function(style, citations, format) {
             return locale;
         }
     };
-    var citeproc = new CSL.Engine(sys, style);  // jshint ignore:line
+    var citeproc = new CSL.Engine(sys, style); // jshint ignore:line
     citeproc.setOutputFormat(format);
     citeproc.appendCitationCluster({
         citationItems: Object.keys(citations).map(function(key) {
-            return {id: key};
+            return {
+                id: key
+            };
         }),
-        properties: {noteIndex: 0}
+        properties: {
+            noteIndex: 0
+        }
     });
     return citeproc;
 };

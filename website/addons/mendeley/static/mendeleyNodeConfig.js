@@ -1,7 +1,7 @@
 /**
-* Module that controls the mendeley node settings. Includes Knockout view-model
-* for syncing data, and HGrid-folderpicker for selecting a folder.
-*/
+ * Module that controls the mendeley node settings. Includes Knockout view-model
+ * for syncing data, and HGrid-folderpicker for selecting a folder.
+ */
 'use strict';
 
 var ko = require('knockout');
@@ -17,8 +17,8 @@ var $osf = require('osfHelpers');
 
 ko.punches.enableAll();
 /**
-    * Knockout view model for the mendeley node settings widget.
-    */
+ * Knockout view model for the mendeley node settings widget.
+ */
 var ViewModel = function(url, selector, folderPicker) {
     var self = this;
     self.selector = selector;
@@ -34,7 +34,10 @@ var ViewModel = function(url, selector, folderPicker) {
     self.validCredentials = ko.observable(true);
     self.userAccountId = ko.observable('');
     // Currently linked folder, an Object of the form {name: ..., path: ...}
-    self.folder = ko.observable({name: null, path: null});
+    self.folder = ko.observable({
+        name: null,
+        path: null
+    });
     self.ownerName = ko.observable('');
     self.urls = ko.observable({});
     // Flashed messages
@@ -59,14 +62,14 @@ var ViewModel = function(url, selector, folderPicker) {
     self.loadedFolders = ko.observable(false);
 
     /**
-        * Update the view model from data returned from the server.
-        */
+     * Update the view model from data returned from the server.
+     */
     self.updateFromData = function(data) {
         self.ownerName(data.ownerName);
         self.nodeHasAuth(data.nodeHasAuth);
         self.userIsOwner(data.userIsOwner);
         self.userHasAuth(data.userHasAuth);
-	self.userAccountId(data.userAccountId);
+        self.userAccountId(data.userAccountId);
         // Make sure folder has name and path properties defined
         self.folder(data.folder || 'None');
         self.urls(data.urls);
@@ -74,7 +77,9 @@ var ViewModel = function(url, selector, folderPicker) {
 
     self.fetchFromServer = function() {
         $.ajax({
-            url: url, type: 'GET', dataType: 'json',
+            url: url,
+            type: 'GET',
+            dataType: 'json',
             success: function(response) {
                 self.updateFromData(response);
                 self.loadedSettings(true);
@@ -112,35 +117,35 @@ var ViewModel = function(url, selector, folderPicker) {
     self.fetchFromServer();
 
     var CitationAccount = function(name, id) {
-	this.name = name;
-	this.id = id;
+        this.name = name;
+        this.id = id;
     };
 
-    self.updateAccounts = function(){
-	$.get('/api/v1/settings/mendeley/accounts/').done(function(data) {
+    self.updateAccounts = function() {
+        $.get('/api/v1/settings/mendeley/accounts/').done(function(data) {
             self.accounts(data.accounts.map(function(account) {
-		return new CitationAccount(account.display_name, account.id);
+                return new CitationAccount(account.display_name, account.id);
             }));
-	    $osf.postJSON(self.urls().importAuth, {
-		external_account_id: self.accounts()[0].id
-	    })
-		.done(onImportSuccess)
-                .fail(onImportError);            	    
-	}).fail(function() {
+            $osf.postJSON(self.urls().importAuth, {
+                    external_account_id: self.accounts()[0].id
+                })
+                .done(onImportSuccess)
+                .fail(onImportError);
+        }).fail(function() {
             console.log('fail');
-	});
+        });
     };
     /**
      * Allows a user to create a Menedeley access token from the nodeSettings page
      */
-    self.connectAccount = function () {
+    self.connectAccount = function() {
         var self = this;
- 	window.oauthComplete = function (res) {
-	    var msg =  'Successfully created a Mendeley Access Token';
+        window.oauthComplete = function(res) {
+            var msg = 'Successfully created a Mendeley Access Token';
             // Update view model based on response
             self.changeMessage(msg, 'text-success', 3000);
-	    self.updateAccounts();
-	};
+            self.updateAccounts();
+        };
         window.open('/oauth/connect/mendeley/');
     };
 
@@ -183,8 +188,8 @@ var ViewModel = function(url, selector, folderPicker) {
 
     function onSubmitSuccess(response) {
         self.changeMessage('Successfully linked "' + self.selected().name + '".',
-			   'text-success', 5000);
-	self.folder(self.selected().name);
+            'text-success', 5000);
+        self.folder(self.selected().name);
         self.cancelSelection();
     }
 
@@ -193,20 +198,20 @@ var ViewModel = function(url, selector, folderPicker) {
     }
 
     /**
-        * Send a PUT request to change the linked mendeley folder.
-        */
+     * Send a PUT request to change the linked mendeley folder.
+     */
     self.submitSettings = function() {
         $osf.postJSON(self.urls().config, {
-	    external_account_id: self.userAccountId(),
-	    external_list_id: self.selected().id
-	})
-	    .done(onSubmitSuccess)
-	    .fail(onSubmitError);
+                external_account_id: self.userAccountId(),
+                external_list_id: self.selected().id
+            })
+            .done(onSubmitSuccess)
+            .fail(onSubmitError);
     };
 
     /**
-        * Must be used to update radio buttons and knockout view model simultaneously
-        */
+     * Must be used to update radio buttons and knockout view model simultaneously
+     */
     self.cancelSelection = function() {
         self.selected(null);
         // $(selector + ' input[type="radio"]').prop('checked', false);
@@ -227,8 +232,8 @@ var ViewModel = function(url, selector, folderPicker) {
     };
 
     /**
-        * Send DELETE request to deauthorize this node.
-        */
+     * Send DELETE request to deauthorize this node.
+     */
     function sendDeauth() {
         return $.ajax({
             url: self.urls().deauthorize,
@@ -248,8 +253,8 @@ var ViewModel = function(url, selector, folderPicker) {
     }
 
     /** Pop up a confirmation to deauthorize mendeley from this node.
-        *  Send DELETE request if confirmed.
-        */
+     *  Send DELETE request if confirmed.
+     */
     self.deauthorize = function() {
         bootbox.confirm({
             title: 'Deauthorize mendeley?',
@@ -277,8 +282,8 @@ var ViewModel = function(url, selector, folderPicker) {
     }
 
     /**
-        * Send PUT request to import access token from user profile.
-        */
+     * Send PUT request to import access token from user profile.
+     */
     self.importAuth = function() {
         bootbox.confirm({
             title: 'Import mendeley Access Token?',
@@ -286,9 +291,9 @@ var ViewModel = function(url, selector, folderPicker) {
             callback: function(confirmed) {
                 if (confirmed) {
                     return $osf.postJSON(self.urls().importAuth, {
-			external_account_id: self.userAccountId()
-		    })
-			.done(onImportSuccess)
+                            external_account_id: self.userAccountId()
+                        })
+                        .done(onImportSuccess)
                         .fail(onImportError);
                 }
             }
@@ -296,18 +301,21 @@ var ViewModel = function(url, selector, folderPicker) {
     };
 
     /** Callback for chooseFolder action.
-    *   Just changes the ViewModel's self.selected observable to the selected
-    *   folder.
-    */
+     *   Just changes the ViewModel's self.selected observable to the selected
+     *   folder.
+     */
     function onPickFolder(evt, item) {
         evt.preventDefault();
-        self.selected({name: item.data.name, id: item.data.id});
+        self.selected({
+            name: item.data.name,
+            id: item.data.id
+        });
         return false; // Prevent event propagation
     }
 
     /**
-        * Activates the HGrid folder picker.
-        */
+     * Activates the HGrid folder picker.
+     */
     self.activatePicker = function() {
         self.currentDisplay(self.PICKER);
         // Only load folders if they haven't already been requested
@@ -316,29 +324,29 @@ var ViewModel = function(url, selector, folderPicker) {
             self.loading(true);
             $(self.folderPicker).folderpicker({
                 onPickFolder: onPickFolder,
-                initialFolderName : 'All Documents',
-                initialFolderPath : 'mendeley',
+                initialFolderName: 'All Documents',
+                initialFolderPath: 'mendeley',
                 // Fetch mendeley folders with AJAX
-                filesData: self.urls().folders, 
+                filesData: self.urls().folders,
                 // Lazy-load each folder's contents
                 // Each row stores its url for fetching the folders it contains
-                resolveLazyloadUrl : function(item){
-		    return self.urls().folders + item.data.id + '/?view=folders';
+                resolveLazyloadUrl: function(item) {
+                    return self.urls().folders + item.data.id + '/?view=folders';
                 },
-		lazyLoadPreprocess: function(data){
-		    return data.contents.filter(function(item){
-			return item.kind === 'folder';
-		    });
-		},
-                oddEvenClass : {
-                    odd : 'mendeley-folderpicker-odd',
-                    even : 'mendeley-folderpicker-even'
+                lazyLoadPreprocess: function(data) {
+                    return data.contents.filter(function(item) {
+                        return item.kind === 'folder';
+                    });
+                },
+                oddEvenClass: {
+                    odd: 'mendeley-folderpicker-odd',
+                    even: 'mendeley-folderpicker-even'
                 },
                 ajaxOptions: {
                     error: function(xhr, textStatus, error) {
                         self.loading(false);
                         self.changeMessage('Could not connect to Mendeley at this time. ' +
-                                            'Please try again later.', 'text-warning');
+                            'Please try again later.', 'text-warning');
                         Raven.captureMessage('Could not GET get Mendeley contents.', {
                             textStatus: textStatus,
                             error: error
