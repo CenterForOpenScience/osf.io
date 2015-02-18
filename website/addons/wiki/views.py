@@ -238,7 +238,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         configurable = param == 'view' or param == 'compare'
         if configurable and i + 1 < len(param_list) and (param_list[i + 1]).isdigit():
             version_number = int(param_list.pop(i + 1))
-            if version_number > len(versions):
+            if version_number > len(versions) or version_number < 1:
                 raise WIKI_PAGE_NOT_FOUND_ERROR
             elif version_number == len(versions):
                 view_settings[param] = True
