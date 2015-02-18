@@ -552,6 +552,7 @@ class TestSendEmails(OsfTestCase):
             to_addr=self.user.username,
             mail=mails.TRANSACTIONAL,
             name=self.user.fullname,
+            node_title=self.project.title,
             subject=subject,
             message=message,
             url=self.project.absolute_url + 'settings/'
