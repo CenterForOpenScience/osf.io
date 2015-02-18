@@ -38,26 +38,15 @@ def serialize_urls(node_settings):
 
 
 def serialize_settings(node_settings, current_user):
-
     node_account = node_settings.external_account
     user_accounts = [account for account in current_user.external_accounts
                      if account.provider == 'mendeley']
 
-    user_is_owner = False
-    if node_account is not None:
-        user_is_owner = node_account in user_accounts
+    user_is_owner = node_account and node_account in user_accounts
 
     user_settings = current_user.get_addon('mendeley')
+    user_has_auth = user_settings and user_accounts
 
-    if user_settings is not None and len(user_accounts) > 0:
-        user_has_auth = True
-    else:
-        user_has_auth = False
-
-    '''
-    if node_account is not None:#len(node_settings.associated_user_settings):
-        user_settings = node_account.disx#node_settings.associated_user_settings[0]
-    '''
     user_account_id = None
     if user_has_auth:
         user_account_id = user_accounts[0]._id
@@ -76,7 +65,6 @@ def serialize_settings(node_settings, current_user):
     return result
 
 
-# @must_have_addon('mendeley', 'user')
 @must_be_logged_in
 def list_mendeley_accounts_user(auth):
     return {
@@ -109,9 +97,9 @@ def list_citationlists_node(pid, account_id, auth, node, project, node_addon):
 @must_have_permission('write')
 @must_have_addon('mendeley', 'node')
 def mendeley_get_config(auth, node_addon, **kwargs):
-    '''
-    Serializes node addon settings and relevant urls (see serialize_settings/serialize_urls)
-    '''
+    """Serialize node addon settings and relevant urls
+    (see serialize_settings/serialize_urls)
+    """
     result = node_addon.to_json(auth.user)
     result.update(serialize_settings(node_addon, auth.user))
     return result
@@ -189,42 +177,40 @@ def mendeley_set_config(pid, auth, node, project, node_addon):
 @must_be_contributor_or_public
 @must_have_addon('mendeley', 'node')
 def mendeley_widget(node_addon, project, node, pid, auth):
-    response = node_addon.config.to_json()
-    # Check that node addon still has authorization
-    if node_addon.external_account is None:
-        response['complete'] = False
-    else:
-        response['complete'] = True
-    response['list_id'] = node_addon.mendeley_list_id
-    return response
+    ret = node_addon.config.to_json()
+    ret.update({
+        'complete': node_addon.complete,
+        'list_id': node_addon.mendeley_list_id,
+    })
+    return ret
 
 
 @must_be_contributor_or_public
 @must_have_addon('mendeley', 'node')
 def mendeley_citation_list(node_addon, project, node, pid, auth,
                            mendeley_list_id=None):
-    '''
+    """
     This function collects a listing of folders and citations based on the
     passed mendeley_list_id. If mendeley_list_id is None, then all of the
     authorizer's folders and citations are listed
-    '''
-
+    """
     view_param = request.args.get('view', 'all')
 
     attached_list_id = node_addon.mendeley_list_id
     list_id = mendeley_list_id
 
     account_folders = node_addon.api.citation_lists
-    '''
-    Folders with a None type 'parent_list_id' are children of 'All Documents'
-    '''
+
+    # Folders with a None type 'parent_list_id' are children of 'All Documents'
     for folder in account_folders:
         if folder.get('parent_list_id') is None:
             folder['parent_list_id'] = 'ROOT'
 
     node_account = node_addon.external_account
-    user_accounts = [account for account in auth.user.external_accounts
-                     if account.provider == 'mendeley']
+    user_accounts = [
+        account for account in auth.user.external_accounts
+        if account.provider == 'mendeley'
+    ]
     user_is_owner = node_account in user_accounts
 
     # verify this list is the attached list or its descendant
