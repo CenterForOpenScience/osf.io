@@ -116,10 +116,12 @@ class MendeleyViewsTestCase(OsfTestCase):
             self.project.api_url_for('list_citationlists_node', account_id=self.account._id),
             auth=self.user.auth,
         )
-        import ipdb; ipdb.set_trace()
-        assert_equal(
-            res.json['citation_lists'],
-            [each.json for each in self.node_addon.api.citation_lists],
+        lists = [each for each in self.node_addon.api.citation_lists]
+        assert_dict_equal(
+            res.json,
+            {
+                'citation_lists': lists
+            }
         )
 
     def test_node_citation_lists_not_found(self):
