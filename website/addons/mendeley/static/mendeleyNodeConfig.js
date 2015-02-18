@@ -356,7 +356,6 @@ var ViewModel = function(url, selector, folderPicker) {
             self.loading(true);
             $(self.folderPicker).folderpicker({
                 onPickFolder: onPickFolder,
-                initialFolderName: 'All Documents',
                 initialFolderPath: 'mendeley',
                 // Fetch mendeley folders with AJAX
                 filesData: self.urls().folders,
