@@ -4,11 +4,16 @@ var $ = require('jquery');
 var m = require('mithril');
 var Treebeard = require('treebeard');
 var citations = require('./citations');
+var ZeroClipboard = require('zeroclipboard');
 
 var apaStyle = require('raw!styles/apa.csl');
 
 require('../vendor/bower_components/treebeard/dist/treebeard.css');
 require('../css/fangorn.css');
+
+ZeroClipboard.config({
+    swfPath: '/static/vendor/bower_components/zeroclipboard/dist/ZeroClipboard.swf'
+});
 
 function resolveToggle(item) {
     var toggleMinus = m('i.icon-minus', ' ');
@@ -84,12 +89,16 @@ var makeButtons = function(item, col, buttons) {
                     {
                         title: button.tooltip,
                         style: button.style,
-                        'class': button.css,
+                        class: button.css,
+                        config: button.config,
                         'data-toggle': 'tooltip',
                         'data-placement': 'bottom',
-                        'onclick': function(event) {
-                            button.onclick.call(self, event, item, col);
-                        }
+                        'data-clipboard-text': button.clipboard,
+                        onclick: button.onclick ?
+                            function(event) {
+                                button.onclick.call(self, event, item, col);
+                            } :
+                            null
                     },
                     [
                         m(
@@ -142,6 +151,25 @@ var renderActions = function(item, col) {
                 }
             });
         }
+        buttons.push({
+            name: '',
+            css: 'btn btn-info btn-xs',
+            icon: 'icon-copy',
+            tooltip: 'Copy citation',
+            clipboard: self.getCitation(item),
+            config: function(elm, isInit, ctx) {
+                var $elm = $(elm);
+                if (!elm._client) {
+                    elm._client = new ZeroClipboard(elm);
+                    elm._client.on('aftercopy', function() {
+                        $elm.tooltip('hide');
+                    });
+                }
+                ctx.onunload = function() {
+                    elm._client && elm._client.destroy();
+                };
+            }
+        });
     }
     return makeButtons(item, col, buttons);
 };
@@ -153,6 +181,9 @@ var treebeardOptions = {
     resolveToggle: resolveToggle,
     lazyLoadPreprocess: function(res) {
         return res.contents;
+    },
+    ontogglefolder: function() {
+        $('[data-toggle="tooltip"]').tooltip();
     },
     columnTitles: function() {
         return [
@@ -267,6 +298,12 @@ CitationGrid.prototype.getBibliography = function(folder) {
     return this.bibliographies[folder.id];
 };
 
+CitationGrid.prototype.getCitation = function(item) {
+    var bibliography = this.getBibliography(item.parent());
+    return bibliography[item.data.csl.id];
+};
+
+
 CitationGrid.prototype.resolveRowAux = function(item) {
     var self = this;
     return [
@@ -274,12 +311,7 @@ CitationGrid.prototype.resolveRowAux = function(item) {
             data: 'csl',
             folderIcons: true,
             custom: function(item) {
-                if (item.kind === 'folder') {
-                    return item.data.name;
-                } else {
-                    var bibliography = self.getBibliography(item.parent());
-                    return bibliography[item.data.csl.id];
-                }
+                return item.kind === 'folder' ? item.data.name : self.getCitation(item);
             }
         },
         {
