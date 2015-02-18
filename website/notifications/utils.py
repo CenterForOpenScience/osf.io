@@ -148,6 +148,8 @@ def get_parent_notification_type(uid, event, user):
             for notification_type in NOTIFICATION_TYPES:
                 if user in getattr(subscription, notification_type):
                     return notification_type
+            else:
+                return get_parent_notification_type(p._id, event, user)
 
 
 def format_user_and_project_subscriptions(user):
