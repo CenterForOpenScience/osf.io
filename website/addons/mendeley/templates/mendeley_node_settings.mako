@@ -1,7 +1,4 @@
-
-<link rel="stylesheet" href="/static/addons/mendeley/node-cfg.css">
 <div id="mendeleyScope" class="scripted">
-    <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
     <h4 class="addon-title">
         Mendeley
         <small class="authorized-by">
@@ -61,7 +58,7 @@
 
                     <div data-bind="visible: currentDisplay() === PICKER">
                         <div id="mendeleyGrid"
-                             class="filebrowser hgrid mendeley-folder-picker"></div>
+                             class="filebrowser mendeley-folder-picker"></div>
                     </div>
 
                     <!-- Queued selection -->
