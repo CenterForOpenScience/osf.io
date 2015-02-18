@@ -13,32 +13,33 @@ from website.util import api_url_for, web_url_for
 from . import utils
 from .model import Mendeley
 
+
 def serialize_urls(node_settings):
-    
     node = node_settings.owner
     return {
         'config': node.api_url_for('mendeley_set_config'),
-        'deauthorize': api_url_for('oauth_disconnect', 
+        'deauthorize': api_url_for('oauth_disconnect',
                                    external_account_id=node_settings.external_account.provider_id),
-        'auth': api_url_for('oauth_connect', 
+        'auth': api_url_for('oauth_connect',
                             service_name='mendeley'),
         # Endpoint for fetching only folders (including root)
-        'folders': node.api_url_for('mendeley_citation_list', 
+        'folders': node.api_url_for('mendeley_citation_list',
                                     mendeley_list_id=node_settings.mendeley_list_id),
         'settings': web_url_for('user_addons')
     }
 
+
 def serialize_settings(node_settings, current_user):
-    
+
     node_account = node_settings.external_account
-    user_accounts = [account for account in current_user.external_accounts 
+    user_accounts = [account for account in current_user.external_accounts
                      if account.provider == 'mendeley']
 
     user_is_owner = node_account.provider_id in [account.provider_id for account in user_accounts]
     user_has_auth = True if len(user_accounts) else False
     user_settings = node_settings.associated_user_settings[0]
 
-    result = {        
+    result = {
         'nodeHasAuth': node_settings.has_auth,
         'userIsOwner': user_is_owner,
         'userHasAuth': user_has_auth,

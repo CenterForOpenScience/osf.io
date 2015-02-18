@@ -13,7 +13,6 @@ from framework.exceptions import PermissionsError
 from framework.mongo import ObjectId
 from framework.mongo import StoredObject
 from framework.sessions import get_session
-from website import settings
 from website.oauth.utils import PROVIDER_LOOKUP
 from website.util import web_url_for
 

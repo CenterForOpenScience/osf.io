@@ -104,7 +104,7 @@ class AddonZoteroNodeSettings(AddonNodeSettingsBase):
             if list_id in granted.get('lists', []):
                 return True
         return False
-    
+
     def to_json(self, user):
         accounts = {
             account for account
