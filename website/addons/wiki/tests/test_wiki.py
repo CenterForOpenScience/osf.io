@@ -73,6 +73,40 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 404)
 
+    def test_wiki_url_with_path_get_returns_200(self):
+        self.project.update_node_wiki('funpage', 'Version 1', Auth(self.user))
+        self.project.update_node_wiki('funpage', 'Version 2', Auth(self.user))
+        self.project.save()
+
+        url = self.project.web_url_for(
+            'project_wiki_view',
+            wname='funpage',
+            path='view/compare/1/edit',
+        )
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_wiki_url_with_edit_get_returns_404_with_no_write_permission(self):
+        self.project.update_node_wiki('funpage', 'Version 1', Auth(self.user))
+        self.project.update_node_wiki('funpage', 'Version 2', Auth(self.user))
+        self.project.save()
+
+        url = self.project.web_url_for(
+            'project_wiki_view',
+            wname='funpage',
+            path='view/compare/1',
+        )
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+
+        url = self.project.web_url_for(
+            'project_wiki_view',
+            wname='funpage',
+            path='view/compare/1/edit',
+        )
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
     def test_wiki_url_for_pointer_returns_200(self):
         # TODO: explain how this tests a pointer
         project = ProjectFactory(is_public=True)
@@ -90,6 +124,24 @@ class TestWikiViews(OsfTestCase):
         url = self.project.api_url_for('wiki_page_content', wname='somerandomid')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
+
+    @mock.patch('website.addons.wiki.model.NodeWikiPage.rendered_before_update', new_callable=mock.PropertyMock)
+    def test_wiki_content_use_python_render(self, mock_rendered_before_update):
+        content = 'Some content'
+        self.project.update_node_wiki('somerandomid', content, Auth(self.user))
+        self.project.save()
+
+        mock_rendered_before_update.return_value = True
+        url = self.project.api_url_for('wiki_page_content', wname='somerandomid')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(content, res.json['wiki_content'])
+        assert_in(content, res.json['wiki_rendered'])
+
+        mock_rendered_before_update.return_value = False
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(content, res.json['wiki_content'])
+        assert_equal('', res.json['wiki_rendered'])
+
 
     def test_wiki_url_for_component_returns_200(self):
         component = NodeFactory(project=self.project, is_public=True)
