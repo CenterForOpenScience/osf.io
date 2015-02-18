@@ -4,11 +4,9 @@ window.contextVars = $.extend(true, {}, window.contextVars, {
     mendeley: {
         folder_id: '${list_id | js_str}'
     }
- });
+});
 </script>
+<link rel="stylesheet" href="/static/addons/mendeley/citations_widget.css">
 <input id="mendeleyStyleSelect" type="hidden" />
 <div id="mendeleyWidget">
-    <ul data-bind="foreach: citations">
-        <li data-bind="text: $data"></li>
-    </ul>
 </div>
