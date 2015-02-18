@@ -23,10 +23,8 @@
             </span>
 
             <!-- Oauth Start Button -->
-            <span data-bind="if: showTokenCreateButton">
-                <a data-bind="attr.href: urls().auth" class="text-primary pull-right addon-auth">
-                    Create Access Token
-                </a>
+            <span data-bind="if: showTokenCreateButton">	
+	        <a data-bind="click: connectAccount" class="text-primary pull-right addon-auth">Create Access Token</a>	
             </span>
         </small>
     </h4>

@@ -17,10 +17,6 @@ def serialize_urls(node_settings, user_accounts):
 
     node = node_settings.owner    
 
-    importAuth = None
-    if len(user_accounts):
-        importAuth = node.api_url_for('mendeley_add_user_auth')
-
     deauthorize = None
     if node_settings.external_account:
         deauthorize = node.api_url_for('mendeley_remove_user_auth')
@@ -30,7 +26,7 @@ def serialize_urls(node_settings, user_accounts):
         'deauthorize': deauthorize,
         'auth': api_url_for('oauth_connect', 
                             service_name='mendeley'),
-        'importAuth': importAuth,
+        'importAuth': node.api_url_for('mendeley_add_user_auth'),
         # Endpoint for fetching only folders (including root)
         'folders': node.api_url_for('mendeley_citation_list'),
         'settings': web_url_for('user_addons')
@@ -63,15 +59,10 @@ def serialize_settings(node_settings, current_user):
         'userHasAuth': user_has_auth,
         'urls': serialize_urls(node_settings, user_accounts),
         'userAccountId': user_account_id,
-        'folder': node_settings.selected_folder_name
     }
-    '''
-    if user_settings is not None:
-        result['urls']['owner'] = web_url_for('profile_view_id',
-                                              uid=user_settings.owner._primary_key)
-    '''
-    if node_account:
-        result['ownerName'] = node_account.display_name #user_settings.owner.fullname
+    if node_account is not None:
+        result['folder'] = node_settings.selected_folder_name
+        result['ownerName'] = node_account.display_name 
         
     return result
 
@@ -90,7 +81,7 @@ def list_mendeley_accounts_user(auth, user_addon):
 @must_have_addon('mendeley', 'node')
 @must_not_be_registration
 def list_citationlists_node(pid, account_id, auth, node, project, node_addon):
-    # TODO: clean up signature
+
 
     account = ExternalAccount.load(account_id)
     if not account:
@@ -108,6 +99,9 @@ def list_citationlists_node(pid, account_id, auth, node, project, node_addon):
 @must_have_permission('write')
 @must_have_addon('mendeley', 'node')
 def mendeley_get_config(auth, node_addon, **kwargs):
+    '''
+    Serializes node addon settings and relevant urls (see serialize_settings/serialize_urls)
+    '''
     result = node_addon.to_json(auth.user)
     result.update(serialize_settings(node_addon, auth.user))
     return result
@@ -186,7 +180,11 @@ def mendeley_set_config(pid, auth, node, project, node_addon):
 @must_have_addon('mendeley', 'node')
 def mendeley_widget(node_addon, project, node, pid, auth):
     response = node_addon.config.to_json()
-    response['complete'] = True
+    # Check that node addon still has authorization
+    if node_addon.external_account is None:
+        response['complete'] = False
+    else:    
+        response['complete'] = True
     response['list_id'] = node_addon.mendeley_list_id
     return response
 
@@ -199,6 +197,7 @@ def mendeley_citation_list(node_addon, project, node, pid, auth, mendeley_list_i
     mendeley_list_id. If mendeley_list_id is None, then all of the authorizer's folders     
     and citations are listed
     '''
+
     view_param = request.args.get('view', 'all')
 
     attached_list_id = node_addon.mendeley_list_id

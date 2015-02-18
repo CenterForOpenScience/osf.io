@@ -22,6 +22,8 @@ ko.punches.enableAll();
 var ViewModel = function(url, selector, folderPicker) {
     var self = this;
     self.selector = selector;
+    // Accounts
+    self.accounts = ko.observableArray([]);
     // Auth information
     self.nodeHasAuth = ko.observable(false);
     // whether current user is authorizer of the addon
@@ -109,6 +111,39 @@ var ViewModel = function(url, selector, folderPicker) {
     // Initial fetch from server
     self.fetchFromServer();
 
+    var CitationAccount = function(name, id) {
+	this.name = name;
+	this.id = id;
+    };
+
+    self.updateAccounts = function(){
+	$.get('/api/v1/settings/mendeley/accounts/').done(function(data) {
+            self.accounts(data.accounts.map(function(account) {
+		return new CitationAccount(account.display_name, account.id);
+            }));
+	    $osf.postJSON(self.urls().importAuth, {
+		external_account_id: self.accounts()[0].id
+	    })
+		.done(onImportSuccess)
+                .fail(onImportError);            	    
+	}).fail(function() {
+            console.log('fail');
+	});
+    };
+    /**
+     * Allows a user to create a Menedeley access token from the nodeSettings page
+     */
+    self.connectAccount = function () {
+        var self = this;
+ 	window.oauthComplete = function (res) {
+	    var msg =  'Successfully created a Mendeley Access Token';
+            // Update view model based on response
+            self.changeMessage(msg, 'text-success', 3000);
+	    self.updateAccounts();
+	};
+        window.open('/oauth/connect/mendeley/');
+    };
+
     /**
      * Whether or not to show the Import Access Token Button
      */
@@ -133,11 +168,8 @@ var ViewModel = function(url, selector, folderPicker) {
         var loaded = self.loadedSettings();
         return !userHasAuth && !nodeHasAuth && loaded;
     });
-
     /** Computed functions for the linked and selected folders' display text.*/
-
     self.folderName = ko.computed(function() {
-        // Invoke the observables to ensure dependency tracking
         var nodeHasAuth = self.nodeHasAuth();
         var folder = self.folder();
         return (nodeHasAuth && folder) ? folder.name : '';
@@ -150,13 +182,8 @@ var ViewModel = function(url, selector, folderPicker) {
     });
 
     function onSubmitSuccess(response) {
-        self.changeMessage('Successfully linked "' + self.selected().name +
-            '". Go to the <a href="' +
-            self.urls().files + '">Files page</a> to view your files.',
-            'text-success', 5000);
-        // Update folder in ViewModel
-        //self.folder(response.result.folder);
-        //self.urls(response.result.urls);
+        self.changeMessage('Successfully linked "' + self.selected().name + '".',
+			   'text-success', 5000);
         self.cancelSelection();
     }
 
@@ -292,7 +319,6 @@ var ViewModel = function(url, selector, folderPicker) {
                 initialFolderPath : 'mendeley',
                 // Fetch mendeley folders with AJAX
                 filesData: self.urls().folders, 
-		//self.urls().folders, // URL for fetching folders
                 // Lazy-load each folder's contents
                 // Each row stores its url for fetching the folders it contains
                 resolveLazyloadUrl : function(item){
@@ -327,8 +353,8 @@ var ViewModel = function(url, selector, folderPicker) {
     };
 
     /**
-        * Toggles the visibility of the folder picker.
-        */
+     * Toggles the visibility of the folder picker.
+     */
     self.togglePicker = function() {
         // Toggle visibility of folder picker
         var shown = self.currentDisplay() === self.PICKER;
