@@ -78,14 +78,6 @@ class MendeleyViewsTestCase(OsfTestCase):
             'ownerName': self.user.fullname            
         }
         assert_dict_equal(res, expected)
-
-
-    def test_serialize_urls_authorizer(self):
-        res = serialize_urls
-
-
-    def test_serialize_urls_non_authorize(self):
-        pass
         
 
     def test_user_folders(self):
