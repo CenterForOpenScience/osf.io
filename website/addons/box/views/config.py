@@ -14,7 +14,6 @@ from website.project.decorators import (
 )
 from website.util import web_url_for
 
-from website.addons.box import utils
 from website.addons.box.client import get_client_from_user_settings
 from box.client import BoxClientException
 
