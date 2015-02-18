@@ -82,6 +82,11 @@ class TestWikiViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
     def test_wiki_draft_returns_200(self):
+        url = self.project.api_url_for('wiki_page_draft', wname='somerandomid')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_wiki_content_returns_200(self):
         url = self.project.api_url_for('wiki_page_content', wname='somerandomid')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -379,6 +384,17 @@ class TestWikiViews(OsfTestCase):
         mock_rendered_before_update.return_value = True
         res = self.app.get(url, auth=self.user.auth)
         assert_true(res.json['use_python_render'])
+
+    def test_read_only_users_cannot_view_edit_pane(self):
+        url = self.project.web_url_for('project_wiki_view', wname='home')
+        # No write permissions
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_not_in('data-osf-panel="Edit"', res.text)
+        # Write permissions
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_in('data-osf-panel="Edit"', res.text)
 
 
 class TestViewHelpers(OsfTestCase):
