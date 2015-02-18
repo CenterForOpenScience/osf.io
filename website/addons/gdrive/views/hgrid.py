@@ -9,7 +9,7 @@ from website.util import rubeus
 from website.project.decorators import must_be_contributor_or_public, must_have_addon
 from oauth2client.client import AccessTokenCredentials
 from apiclient.discovery import build
-from ..utils import to_hgrid, clean_path
+from ..utils import to_hgrid
 from apiclient import errors
 
 @must_be_contributor_or_public
@@ -21,16 +21,15 @@ def gdrive_folders(node_addon, **kwargs):
     node = Node.load(nid)
     node_settings = node.get_addon('gdrive')
 
-
     # Get service using Access token
     if node_settings:
         user_settings = node_settings.user_settings
         #Retrieve Access token using Refresh token
         params = {
-        'client_id': settings.CLIENT_ID,
-        'client_secret': settings.CLIENT_SECRET,
-        'refresh_token': user_settings.refresh_token,
-        'grant_type': 'refresh_token'
+            'client_id': settings.CLIENT_ID,
+            'client_secret': settings.CLIENT_SECRET,
+            'refresh_token': user_settings.refresh_token,
+            'grant_type': 'refresh_token'
         }
         url = 'https://www.googleapis.com/oauth2/v3/token'
         response = requests.post(url, params=params)

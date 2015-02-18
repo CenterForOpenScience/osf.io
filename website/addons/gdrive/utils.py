@@ -108,7 +108,7 @@ def clean_path(path):
     #         tempPath = tempPath + '/' + parts[i]
     # cleaned_path = tempPath
     if len(parts) <= 1:
-        cleaned_path = '/' + parts[len(parts)-1]
+        cleaned_path = '/' + parts[len(parts) - 1]
     cleaned_path = parts[len(parts) - 1]
 
     return cleaned_path

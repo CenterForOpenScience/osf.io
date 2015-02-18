@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Persistence layer for the gdrive addon.
 """
-import os
 import base64
 from modularodm.exceptions import ModularOdmException
 from framework.auth import Auth
