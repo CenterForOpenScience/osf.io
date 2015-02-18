@@ -101,7 +101,7 @@ def get_settings_url(uid, user):
 
 
 def email_digest(subscribed_user_ids, uid, event, **context):
-    template = event + '.txt.mako'
+    template = event + '.html.mako'
     message = mails.render_message(template, **context)
 
     try:

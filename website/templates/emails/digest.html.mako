@@ -1,7 +1,5 @@
 <% from website.models import Node %>
-
-
-<%def name="build_message(d), parent=None">
+<%def name="build_message(d, parent=None)">
 %for key in d['children']:
     %if d['children'][key]['messages']:
         <h3> 

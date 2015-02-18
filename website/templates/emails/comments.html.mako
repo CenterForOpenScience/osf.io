@@ -2,7 +2,7 @@
     <tr> 
         <td width="40" class="icon"> <i class="fa fa-comment"></i></td>
         <td> 
-            <span class="person">${commenter} </span>
+            <span class="person"><img src="${gravatar_url}" > ${commenter} </span>
             <span class="text"> commented on your ${nodeType} </span>
             <span class="project"> "${title}" </span> 
             <span class="timestamp"> at 1:40PM on Saturday, June 12</span>

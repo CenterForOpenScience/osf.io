@@ -17,8 +17,8 @@ from website.app import init_app
 from website.util import web_url_for
 from website.notifications.model import DigestNotification
 from website.notifications.utils import NotificationsDict
-from tests.base import OsfTestCase
-from tests.factories import DigestNotificationFactory, UserFactory, ProjectFactory
+# from tests.base import OsfTestCase
+# from tests.factories import DigestNotificationFactory, UserFactory, ProjectFactory
 from nose.tools import *  # PEP8 asserts
 
 
@@ -45,6 +45,7 @@ def send_digest(grouped_digests):
         if user and sorted_messages:
             mails.send_mail(
                 to_addr=user.username,
+                mimetype='html',
                 mail=mails.DIGEST,
                 name=user.fullname,
                 message=sorted_messages,
