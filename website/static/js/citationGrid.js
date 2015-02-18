@@ -249,7 +249,7 @@ CitationGrid.prototype.initStyleSelect = function() {
     var self = this;
     var $input = $(self.styleSelector);
     $input.select2({
-        allowClear: true,
+        allowClear: false,
         formatResult: formatResult,
         formatSelection: formatSelection,
         placeholder: 'Citation Style (e.g. "APA")',
@@ -258,14 +258,10 @@ CitationGrid.prototype.initStyleSelect = function() {
             url: '/api/v1/citations/styles/',
             quietMillis: 200,
             data: function(term, page) {
-                return {
-                    q: term
-                };
+                return {q: term};
             },
             results: function(data, page) {
-                return {
-                    results: data.styles
-                };
+                return {results: data.styles};
             },
             cache: true
         }
