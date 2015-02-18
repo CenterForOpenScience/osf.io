@@ -250,32 +250,42 @@ class TestNotificationUtils(OsfTestCase):
         data = utils.format_data(self.user, [self.project._id], [])
         expected = [
             {
-                'node_id': self.project._id,
-                'title': self.project.title,
+                'node': {
+                    'id': self.project._id,
+                    'title': self.project.title,
+                    'url': self.project.url,
+                },
                 'kind': 'folder' if not self.project.node__parent else 'node',
-                'nodeUrl': self.project.url,
                 'children': [
                     {
-                        'title': 'comments',
-                        'description': SUBSCRIPTIONS_AVAILABLE['comments'],
+                        'event': {
+                            'title': 'comments',
+                            'description': SUBSCRIPTIONS_AVAILABLE['comments'],
+                            'notificationType': 'email_transactional',
+                            'parent_notification_type': None
+                        },
+
                         'kind': 'event',
-                        'notificationType': 'email_transactional',
-                        'children': [],
-                        'parent_notification_type': None
+                        'children': []
                     },
                     {
-                        'node_id': self.node._id,
-                        'title': self.node.title,
+                        'node': {
+                            'id': self.node._id,
+                            'title': self.node.title,
+                            'url': self.node.url,
+                        },
+
                         'kind': 'folder' if not self.node.node__parent else 'node',
-                        'nodeUrl': self.node.url,
                         'children': [
                             {
-                                'title': 'comments',
-                                'description': SUBSCRIPTIONS_AVAILABLE['comments'],
+                                'event': {
+                                    'title': 'comments',
+                                    'description': SUBSCRIPTIONS_AVAILABLE['comments'],
+                                    'notificationType': 'email_transactional',
+                                    'parent_notification_type': None
+                                },
                                 'kind': 'event',
-                                'notificationType': 'email_transactional',
                                 'children': [],
-                                'parent_notification_type': None
                             }
                         ]
                     }
@@ -287,19 +297,23 @@ class TestNotificationUtils(OsfTestCase):
     def test_format_data_node_settings(self):
         data = utils.format_data(self.user, [self.node._id], [])
         expected = [{
-                        'node_id': self.node._id,
+                    'node': {
+                        'id': self.node._id,
                         'title': self.node.title,
-                        'kind': 'folder' if not self.node.node__parent else 'node',
-                        'nodeUrl': self.node.url,
-                        'children': [
-                            {
+                        'url': self.node.url,
+                    },
+                    'kind': 'folder' if not self.node.node__parent else 'node',
+                    'children': [
+                        {
+                            'event': {
                                 'title': 'comments',
                                 'description': SUBSCRIPTIONS_AVAILABLE['comments'],
-                                'kind': 'event',
                                 'notificationType': 'email_transactional',
-                                'children': [],
                                 'parent_notification_type': None
-                            }
+                            },
+                            'kind': 'event',
+                            'children': [],
+                        }
                         ]
                     }]
         assert_equal(data, expected)
@@ -307,11 +321,13 @@ class TestNotificationUtils(OsfTestCase):
     def test_format_user_subscriptions(self):
         data = utils.format_user_subscriptions(self.user, [])
         expected = [{
+                    'event': {
                         'title': 'comment_replies',
                         'description': USER_SUBSCRIPTIONS_AVAILABLE['comment_replies'],
-                        'kind': 'event',
                         'notificationType': 'email_transactional',
-                        'children': []
+                    },
+                    'kind': 'event',
+                    'children': [],
                     }]
         assert_equal(data, expected)
 
@@ -319,14 +335,18 @@ class TestNotificationUtils(OsfTestCase):
         data = utils.format_user_and_project_subscriptions(self.user)
         expected = [
             {
-                'title': 'User Notifications',
-                'node_id': self.user._id,
+                'node': {
+                    'id': self.user._id,
+                    'title': 'User Notifications'
+            },
                 'kind': 'heading',
                 'children': utils.format_user_subscriptions(self.user, [])
             },
             {
-                'title': 'Project Notifications',
-                'node_id': '',
+                'node': {
+                    'id': '',
+                    'title': 'Project Notifications'
+                },
                 'kind': 'heading',
                 'children': utils.format_data(self.user, utils.get_configured_projects(self.user), [])
             }]
@@ -337,24 +357,28 @@ class TestNotificationUtils(OsfTestCase):
         user_subscriptions = utils.get_all_user_subscriptions(self.user)
         data = utils.serialize_event(self.user, 'comment_replies', USER_SUBSCRIPTIONS_AVAILABLE, user_subscriptions)
         expected = {
-                    'title': 'comment_replies',
-                    'description': USER_SUBSCRIPTIONS_AVAILABLE['comment_replies'],
-                    'kind': 'event',
-                    'notificationType': 'email_transactional',
-                    'children': [],
-                    }
+            'event': {
+                'title': 'comment_replies',
+                'description': USER_SUBSCRIPTIONS_AVAILABLE['comment_replies'],
+                'notificationType': 'email_transactional',
+            },
+            'kind': 'event',
+            'children': []
+                }
         assert_equal(data, expected)
 
     def test_serialize_node_level_event(self):
         node_subscriptions = utils.get_all_node_subscriptions(self.user, self.node)
         data = utils.serialize_event(self.user, 'comments', SUBSCRIPTIONS_AVAILABLE, node_subscriptions, self.node)
         expected = {
-            'title': 'comments',
-            'description': SUBSCRIPTIONS_AVAILABLE['comments'],
+            'event': {
+                'title': 'comments',
+                'description': SUBSCRIPTIONS_AVAILABLE['comments'],
+                'notificationType': 'email_transactional',
+                'parent_notification_type': None
+            },
             'kind': 'event',
-            'notificationType': 'email_transactional',
-            'parent_notification_type': None,
-            'children': []
+            'children': [],
         }
         assert_equal(data, expected)
 
@@ -364,12 +388,14 @@ class TestNotificationUtils(OsfTestCase):
         node_subscriptions = utils.get_all_node_subscriptions(user, self.node)
         data = utils.serialize_event(user, 'comments', SUBSCRIPTIONS_AVAILABLE, node_subscriptions, self.node)
         expected = {
-            'title': 'comments',
-            'description': SUBSCRIPTIONS_AVAILABLE['comments'],
+            'event': {
+                'title': 'comments',
+                'description': SUBSCRIPTIONS_AVAILABLE['comments'],
+                'notificationType': 'adopt_parent',
+                'parent_notification_type': 'email_transactional'
+            },
             'kind': 'event',
-            'notificationType': 'adopt_parent',
-            'parent_notification_type': 'email_transactional',
-            'children': []
+            'children': [],
         }
         assert_equal(data, expected)
 

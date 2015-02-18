@@ -163,7 +163,7 @@ def format_user_and_project_subscriptions(user):
         {
             'node': {
                 'id': user._id,
-                'title': 'Project Notifications',
+                'title': 'User Notifications',
             },
             'kind': 'heading',
             'children': format_user_subscriptions(user, [])
