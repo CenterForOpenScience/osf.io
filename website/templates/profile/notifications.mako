@@ -50,6 +50,9 @@
             <div class="panel-heading"><h3 class="panel-title">Configure Notification Preferences</h3></div>
                 <form id="selectNotifications" class="osf-treebeard-minimal">
                     <div id="grid"></div>
+                    <div class="help-block" style="padding-left: 15px">
+                            <p id="configureNotificationsMessage"></p>
+                    </div>
                 </form>
         </div>
     </div>

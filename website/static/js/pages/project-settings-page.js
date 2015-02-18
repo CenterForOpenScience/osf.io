@@ -19,7 +19,7 @@ $.ajax({
         },
         error: function() {
             $notificationsMsg.addClass('text-danger');
-            $notificationsMsg.text('Could not retrieve settings information.');
+            $notificationsMsg.text('Could not retrieve notification settings.');
         }
 });
 

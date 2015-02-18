@@ -6,6 +6,7 @@ new NotificationsConfig('#selectLists', window.contextVars.mailingList);
 
 //initialize treebeard for notification subscriptions
 var ProjectNotifications = require('../project-settings-treebeard.js');
+var $notificationsMsg = $('#configureNotificationsMessage');
 
 $.ajax({
         url: '/api/v1/subscriptions',
@@ -15,7 +16,7 @@ $.ajax({
             new ProjectNotifications(response);
         },
         error: function() {
-            var message = 'Could not retrieve settings information.';
-            self.changeMessage(message, 'text-danger', 5000);
+            $notificationsMsg.addClass('text-danger');
+            $notificationsMsg.text('Could not retrieve notification settings.');
         }
 });
