@@ -1,3 +1,5 @@
+# This dict is built through the metaclass applied to ExternalProvider.
+#   It is intentionally empty here, and should remain empty.
 PROVIDER_LOOKUP = dict()
 
 
