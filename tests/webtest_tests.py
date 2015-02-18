@@ -316,8 +316,7 @@ class TestAUser(OsfTestCase):
             project._primary_key,
             'not a real page yet',
         ), auth=self.auth, expect_errors=True)
-        assert_in('This wiki page does not currently exist.', res)
-        assert_equal(res.status_code, 404)
+        assert_in('No wiki content', res)
 
     def test_sees_own_profile(self):
         res = self.app.get('/profile/', auth=self.auth)

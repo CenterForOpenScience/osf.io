@@ -31,7 +31,7 @@
                 </div>
             </div>
 
-        <div class="wiki-panel panel-collapsed hidden-xs text-center" class="scripted">
+        <div class="wiki-panel panel-collapsed hidden-xs text-center" style="display: none;">
           <div class="wiki-panel-header">
             <i class="icon-list"> </i>
             <i class="icon icon-angle-right"> </i>
@@ -46,7 +46,7 @@
       <div class="row">
 
         % if can_edit:
-        <div id="wikiEditorContext" class="col-sm-4" data-osf-panel="Edit">
+        <div data-osf-panel="Edit" ${style['edit'] | n}>
                 <div class="wiki-panel">
                   <div class="wiki-panel-header"> <i class="icon-edit"> </i>  Edit </div>
                   <div class="wiki-panel-body">
@@ -118,7 +118,7 @@
           </div>
           % endif
 
-          <div class="col-sm-4" data-osf-panel="View">
+          <div data-osf-panel="View" ${style['view'] | n} >
               <div class="wiki-panel">
                 <div class="wiki-panel-header">
                     <div class="row">
@@ -146,12 +146,12 @@
                     </div>
                     <!-- Version view -->
                     <div id="viewVersion" class="markdown-it-view" style="display: none;">
-                        <div id="markdownItRender">${wiki_content | n}</div>
+                        <div id="markdownItRender">${wiki_content or '<em>No wiki content</em>' | n}</div>
                     </div>
                 </div>
               </div>
           </div>
-          <div class="col-sm-4" data-osf-panel="Compare">
+          <div data-osf-panel="Compare" ${style['compare'] | n}>
             <div class="wiki-panel">
               <div class="wiki-panel-header">
                   <div class="row">

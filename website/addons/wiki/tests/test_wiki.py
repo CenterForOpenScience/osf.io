@@ -191,6 +191,35 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
+    def test_project_wiki_view_scope(self):
+        self.project.update_node_wiki('home', 'Version 1', Auth(self.user))
+        self.project.update_node_wiki('home', 'Version 2', Auth(self.user))
+        self.project.save()
+        url = self.project.web_url_for('project_wiki_view', wname='home', path='view/2')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        url = self.project.web_url_for('project_wiki_view', wname='home', path='view/3')
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_project_wiki_compare_returns_200(self):
+        self.project.update_node_wiki('home', 'updated content', Auth(self.user))
+        self.project.save()
+        url = self.project.web_url_for('project_wiki_view', wname='home', path='compare')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_project_wiki_compare_scope(self):
+        self.project.update_node_wiki('home', 'Version 1', Auth(self.user))
+        self.project.update_node_wiki('home', 'Version 2', Auth(self.user))
+        self.project.save()
+        url = self.project.web_url_for('project_wiki_view', wname='home', path='compare/2')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        url = self.project.web_url_for('project_wiki_view', wname='home', path='compare/3')
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
     def test_wiki_page_creation_strips_whitespace(self):
         # Regression test for:
         # https://github.com/CenterForOpenScience/openscienceframework.org/issues/1080
