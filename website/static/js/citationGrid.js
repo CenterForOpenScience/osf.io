@@ -113,7 +113,9 @@ var makeButtons = function(item, col, buttons) {
 };
 
 var buildExternalUrl = function(csl) {
-    if (csl.DOI) {
+    if (csl.URL) {
+        return csl.URL;
+    } else if (csl.DOI) {
         return 'http://dx.doi.org/' + csl.DOI;
     } else if (csl.PMID) {
         return 'http://www.ncbi.nlm.nih.gov/pubmed/' + csl.PMID;

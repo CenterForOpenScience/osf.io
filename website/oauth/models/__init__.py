@@ -1,20 +1,24 @@
-import abc
-import datetime
-import logging
+# -*- coding: utf-8 -*-
 
+import abc
+import logging
+import datetime
+
+import pymongo
 from flask import request
-from modularodm import fields
 from modularodm import Q
-from modularodm.exceptions import NoResultsFound
+from modularodm import fields
+from modularodm.storage.base import KeyExistsException
 from requests_oauthlib import OAuth1Session
 from requests_oauthlib import OAuth2Session
 
-from framework.exceptions import PermissionsError
 from framework.mongo import ObjectId
 from framework.mongo import StoredObject
 from framework.sessions import get_session
-from website.oauth.utils import PROVIDER_LOOKUP
+from framework.exceptions import PermissionsError
+
 from website.util import web_url_for
+from website.oauth.utils import PROVIDER_LOOKUP
 
 
 logger = logging.getLogger(__name__)
@@ -24,6 +28,15 @@ OAUTH2 = 2
 
 
 class ExternalAccount(StoredObject):
+    __indices__ = [
+        {
+            'key_or_list': [
+                ('provider', pymongo.ASCENDING),
+                ('provider_id', pymongo.ASCENDING),
+            ],
+            'unique': True,
+        }
+    ]
     _id = fields.StringField(default=lambda: str(ObjectId()), primary=True)
 
     oauth_key = fields.StringField()
@@ -198,13 +211,17 @@ class ExternalProvider(object):
         info.update(self.handle_callback(response))
 
         try:
+            self.account = ExternalAccount(
+                provider=self.short_name,
+                provider_id=info['provider_id'],
+            )
+            self.account.save()
+        except KeyExistsException:
             self.account = ExternalAccount.find_one(
                 Q('provider', 'eq', self.short_name) &
                 Q('provider_id', 'eq', info['provider_id'])
             )
-        except NoResultsFound:
-            self.account = ExternalAccount(provider=self.short_name,
-                                           provider_id=info['provider_id'])
+            assert self.account is not None
 
         # required
         self.account.oauth_key = info['key']
