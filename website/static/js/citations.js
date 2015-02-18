@@ -1,6 +1,6 @@
 'use strict';
 
-var locale = require('html!../vendor/bower_components/locales/locales-en-US.xml');
+var locale = require('raw!../vendor/bower_components/locales/locales-en-US.xml');
 
 var makeCiteproc = function(style, citations, format) {
     format = format || 'html';

@@ -1,5 +1,3 @@
-
-<!--<link rel="stylesheet" href="/static/addons/dropbox/dropbox.css">-->
 <div id="dropboxScope" class="scripted">
     <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
     <h4 class="addon-title">

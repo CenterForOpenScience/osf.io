@@ -6,7 +6,58 @@ from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory
 
 from framework.auth import Auth
-from website.addons.s3.model import AddonS3NodeSettings, AddonS3UserSettings
+from website.addons.s3.model import AddonS3NodeSettings, AddonS3UserSettings, S3GuidFile
+
+
+class TestFileGuid(OsfTestCase):
+    def setUp(self):
+        super(OsfTestCase, self).setUp()
+        self.user = UserFactory()
+        self.project = ProjectFactory(creator=self.user)
+        self.project.add_addon('s3', auth=Auth(self.user))
+        self.node_addon = self.project.get_addon('s3')
+
+    def test_provider(self):
+        assert_equal('s3', S3GuidFile().provider)
+
+    def test_correct_path(self):
+        guid = S3GuidFile(node=self.project, path='baz/foo/bar')
+
+        assert_equals(guid.path, 'baz/foo/bar')
+        assert_equals(guid.waterbutler_path, '/baz/foo/bar')
+
+    @mock.patch('website.addons.base.requests.get')
+    def test_unique_identifier(self, mock_get):
+        mock_response = mock.Mock(ok=True, status_code=200)
+        mock_get.return_value = mock_response
+        mock_response.json.return_value = {
+            'data': {
+                'name': 'Morty',
+                'extra': {
+                    'md5': 'Terran it up'
+                }
+            }
+        }
+
+        guid = S3GuidFile(node=self.project, path='/foo/bar')
+
+        guid.enrich()
+        assert_equals('Terran it up', guid.unique_identifier)
+
+    def test_node_addon_get_or_create(self):
+        guid, created = self.node_addon.find_or_create_file_guid('baz/foo/bar')
+
+        assert_true(created)
+        assert_equal(guid.path, 'baz/foo/bar')
+        assert_equal(guid.waterbutler_path, '/baz/foo/bar')
+
+    def test_node_addon_get_or_create_finds(self):
+        guid1, created1 = self.node_addon.find_or_create_file_guid('/foo/bar')
+        guid2, created2 = self.node_addon.find_or_create_file_guid('/foo/bar')
+
+        assert_true(created1)
+        assert_false(created2)
+        assert_equals(guid1, guid2)
 
 
 class TestCallbacks(OsfTestCase):

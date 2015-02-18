@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import base64
 import logging
 
 from modularodm import fields, Q
@@ -21,6 +22,23 @@ class DropboxFile(GuidFile):
 
     #: Full path to the file, e.g. 'My Pictures/foo.png'
     path = fields.StringField(required=True, index=True)
+
+    @property
+    def file_name(self):
+        if self.revision:
+            return '{0}_{1}_{2}.html'.format(self._id, self.revision, base64.b64encode(self.folder))
+        return '{0}_{1}_{2}.html'.format(self._id, self.unique_identifier, base64.b64encode(self.folder))
+
+    @property
+    def waterbutler_path(self):
+        path = '/' + self.path
+        if self.folder == '/':
+            return path
+        return path.replace(self.folder, '', 1)
+
+    @property
+    def folder(self):
+        return self.node.get_addon('dropbox').folder
 
     @property
     def provider(self):
@@ -114,7 +132,7 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         return bool(self.user_settings and self.user_settings.has_auth)
 
     def find_or_create_file_guid(self, path):
-        return DropboxFile.get_or_create(self.owner, path)
+        return DropboxFile.get_or_create(self.owner, clean_path(os.path.join(self.folder, path.lstrip('/'))))
 
     def set_folder(self, folder, auth):
         self.folder = folder
