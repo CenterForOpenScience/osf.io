@@ -333,6 +333,46 @@ class TestNotificationUtils(OsfTestCase):
 
         assert_equal(data, expected)
 
+    def test_serialize_user_level_event(self):
+        user_subscriptions = utils.get_all_user_subscriptions(self.user)
+        data = utils.serialize_event(self.user, 'comment_replies', USER_SUBSCRIPTIONS_AVAILABLE, user_subscriptions)
+        expected = {
+                    'title': 'comment_replies',
+                    'description': USER_SUBSCRIPTIONS_AVAILABLE['comment_replies'],
+                    'kind': 'event',
+                    'notificationType': 'email_transactional',
+                    'children': [],
+                    }
+        assert_equal(data, expected)
+
+    def test_serialize_node_level_event(self):
+        node_subscriptions = utils.get_all_node_subscriptions(self.user, self.node)
+        data = utils.serialize_event(self.user, 'comments', SUBSCRIPTIONS_AVAILABLE, node_subscriptions, self.node)
+        expected = {
+            'title': 'comments',
+            'description': SUBSCRIPTIONS_AVAILABLE['comments'],
+            'kind': 'event',
+            'notificationType': 'email_transactional',
+            'parentNotificationType': None,
+            'children': []
+        }
+        assert_equal(data, expected)
+
+    def test_serialize_node_level_event_that_adopts_parent_settings(self):
+        user = UserFactory()
+        self.project_subscription.email_transactional.append(user)
+        node_subscriptions = utils.get_all_node_subscriptions(user, self.node)
+        data = utils.serialize_event(user, 'comments', SUBSCRIPTIONS_AVAILABLE, node_subscriptions, self.node)
+        expected = {
+            'title': 'comments',
+            'description': SUBSCRIPTIONS_AVAILABLE['comments'],
+            'kind': 'event',
+            'notificationType': 'adopt_parent',
+            'parent_notification_type': 'email_transactional',
+            'children': []
+        }
+        assert_equal(data, expected)
+
 
 class TestNotificationsDict(OsfTestCase):
     def test_notifications_dict_add_message_returns_proper_format(self):

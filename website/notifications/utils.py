@@ -91,26 +91,8 @@ def format_data(user, node_ids, data, subscriptions_available=SUBSCRIPTIONS_AVAI
                      })
 
         node_subscriptions = get_all_node_subscriptions(user, node, user_subscriptions=user_subscriptions)
-        for s in subscriptions_available:
-            event = {
-                'title': s,
-                'description': subscriptions_available[s],
-                'kind': 'event',
-                'notificationType': 'none' if not node.node__parent else 'adopt_parent',
-                'children': []
-            }
-            for subscription in node_subscriptions:
-                if subscription.event_name == s:
-                    for notification_type in NOTIFICATION_TYPES:
-                        if user in getattr(subscription, notification_type):
-                            event['notificationType'] = notification_type
-
-            if event['notificationType'] == 'adopt_parent':
-                parent_nt = get_parent_notification_type(node_id, s, user)
-                event['parent_notification_type'] = parent_nt if parent_nt else 'none'
-            else:
-                event['parent_notification_type'] = None  # only get nt if node = adopt_parent for display purposes
-
+        for subscription in subscriptions_available:
+            event = serialize_event(user, subscription, subscriptions_available, node_subscriptions, node)
             data[index]['children'].append(event)
 
         if node.nodes:
@@ -118,6 +100,39 @@ def format_data(user, node_ids, data, subscriptions_available=SUBSCRIPTIONS_AVAI
             format_data(user, [n._id for n in authorized_nodes], data[index]['children'])
 
     return data
+
+
+def format_user_subscriptions(user, data):
+    user_subscriptions = [s for s in Subscription.find(Q('object_id', 'eq', user._id))]
+    for subscription in USER_SUBSCRIPTIONS_AVAILABLE:
+        event = serialize_event(user, subscription, USER_SUBSCRIPTIONS_AVAILABLE, user_subscriptions)
+        data.append(event)
+
+    return data
+
+
+def serialize_event(user, subscription, subscriptions_available, user_subscriptions, node=None):
+    event = {
+        'title': subscription,
+        'description': subscriptions_available[subscription],
+        'kind': 'event',
+        'notificationType': 'adopt_parent' if node and node.node__parent else 'none',
+        'children': []
+    }
+    for s in user_subscriptions:
+        if s.event_name == subscription:
+            for notification_type in NOTIFICATION_TYPES:
+                if user in getattr(s, notification_type):
+                    event['notificationType'] = notification_type
+
+    if node:
+        if event['notificationType'] == 'adopt_parent':
+                parent_nt = get_parent_notification_type(node._id, subscription, user)
+                event['parent_notification_type'] = parent_nt if parent_nt else 'none'
+        else:
+            event['parent_notification_type'] = None  # only get nt if node = adopt_parent for display purposes
+
+    return event
 
 
 def get_parent_notification_type(uid, event, user):
@@ -149,24 +164,3 @@ def format_user_and_project_subscriptions(user):
             'kind': 'heading',
             'children': format_data(user, get_configured_projects(user), [])
         }]
-
-
-def format_user_subscriptions(user, data):
-    user_subscriptions = [s for s in Subscription.find(Q('object_id', 'eq', user._id))]
-    for s in USER_SUBSCRIPTIONS_AVAILABLE:
-        event = {
-            'title': s,
-            'description': USER_SUBSCRIPTIONS_AVAILABLE[s],
-            'kind': 'event',
-            'notificationType': 'none',
-            'children': []
-        }
-        for subscription in user_subscriptions:
-            if subscription.event_name == s:
-                for notification_type in NOTIFICATION_TYPES:
-                    if user in getattr(subscription, notification_type):
-                        event['notificationType'] = notification_type
-
-        data.append(event)
-
-    return data
