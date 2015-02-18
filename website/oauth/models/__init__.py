@@ -53,6 +53,7 @@ class ExternalAccount(StoredObject):
     provider_id = fields.StringField()
 
     display_name = fields.StringField()
+    profile_url = fields.StringField()
 
     def __repr__(self):
         return '<ExternalAccount: {}/{}>'.format(self.provider,
@@ -235,6 +236,7 @@ class ExternalProvider(object):
 
         # additional information
         self.account.display_name = info.get('display_name')
+        self.account.profile_url = info.get('profile_url')
 
         self.account.save()
 
