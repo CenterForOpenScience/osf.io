@@ -207,7 +207,8 @@ class TestRubeus(OsfTestCase):
         user = UserFactory()
         auth = Auth(user=user)
         public = ProjectFactory.build(is_public=True)
-        public.add_contributor(user)
+        # Add contributor with write permissions to avoid admin permission cascade
+        public.add_contributor(user, permissions=['read', 'write'])
         public.save()
         private = ProjectFactory(project=public, is_public=False)
         NodeFactory(project=private)

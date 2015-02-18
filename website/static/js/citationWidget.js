@@ -5,9 +5,9 @@
 
 var $ = require('jquery');
 var Raven = require('raven-js');
-
 var $osf = require('osfHelpers');
 var citations = require('./citations');
+
 require('select2');
 require('../css/citations.css');
 

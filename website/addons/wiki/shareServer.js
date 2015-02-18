@@ -1,4 +1,6 @@
 // Library imports
+var util = require('util');
+var http = require('http');
 var raven = require('raven');
 var sharejs = require('share');
 var livedb = require('livedb');
@@ -6,14 +8,14 @@ var Duplex = require('stream').Duplex;
 var WebSocketServer = require('ws').Server;
 var express = require('express');
 var morgan = require('morgan');
-var http = require('http');
 var async = require('async');
 
 var settings = {
-    debug: process.env.SHAREJS_DEBUG ? Boolean(process.env.SHAREJS_DEBUG) : true,
+    debug: process.env.SHAREJS_DEBUG ? process.env.SHAREJS_DEBUG === 'true' : true,
     // Server Options
     host: process.env.SHAREJS_SERVER_HOST || 'localhost',
     port: process.env.SHAREJS_SERVER_PORT || 7007,
+    corsAllowOrigin: process.env.SHAREJS_CORS_ALLOW_ORIGIN || 'http://localhost:5000',
     // Mongo options
     dbHost: process.env.SHAREJS_DB_HOST || 'localhost',
     dbPort: process.env.SHAREJS_DB_PORT || 27017,
@@ -39,7 +41,7 @@ if (!settings.debug) {
 
 // Server setup
 var mongo = require('livedb-mongo')(
-    'mongodb://' + settings.dbHost + ':' + settings.dbPort + '/' + settings.dbName,
+    util.format('mongodb://%s:%s/%s', settings.dbHost, settings.dbPort, settings.dbName),
     {safe:true}
 );
 var backend = livedb.client(mongo);
@@ -61,7 +63,7 @@ app.use(morgan('common'));
 
 // Allow CORS
 app.use(function(req, res, next) {
-    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Origin', settings.corsAllowOrigin);
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
     next();
 });
@@ -157,7 +159,12 @@ wss.on('connection', function(client) {
     });
 
     client.on('close', function(reason) {
-        console.info('[Connection Closed] docId: %s, userId: %s, reason: %s', client.userMeta.docId, client.userMeta.userId, reason);
+        if (client.userMeta) {
+            console.info('[Connection Closed] docId: %s, userId: %s, reason: %s', client.userMeta.docId, client.userMeta.userId, reason);
+        } else {
+            console.info('[Connection Closed] reason: %s', reason);
+        }
+
         if (client.userMeta) {
             var docId = client.userMeta.docId;
             var userId = client.userMeta.userId;
@@ -198,7 +205,7 @@ app.post('/lock/:id', function (req, res, next) {
     locked[req.params.id] = true;
     wss.broadcast(req.params.id, JSON.stringify({type: 'lock'}));
     console.info('[Document Locked] docId: %s', req.params.id);
-    res.send(req.params.id + ' was locked.');
+    res.send(util.format('%s was locked.', req.params.id));
 });
 
 // Unlock a document
@@ -206,7 +213,7 @@ app.post('/unlock/:id', function (req, res, next) {
     delete locked[req.params.id];
     wss.broadcast(req.params.id, JSON.stringify({type: 'unlock'}));
     console.info('[Document Unlocked] docId: %s', req.params.id);
-    res.send(req.params.id + ' was unlocked.');
+    res.send(util.format('%s was unlocked.', req.params.id));
 });
 
 // Redirect from a document
@@ -216,7 +223,7 @@ app.post('/redirect/:id/:redirect', function (req, res, next) {
         redirect: req.params.redirect
     }));
     console.info('[Document Redirect] docId: %s, redirect: %s', req.params.id, req.params.redirect);
-    res.send(req.params.id + ' was redirected to ' + req.params.redirect);
+    res.send(util.format('%s was redirected to %s', req.params.id, req.params.redirect));
 });
 
 // Redirect from a deleted document
@@ -226,9 +233,9 @@ app.post('/delete/:id/:redirect', function (req, res, next) {
         redirect: req.params.redirect
     }));
     console.info('[Document Delete] docId: %s, redirect: %s', req.params.id, req.params.redirect);
-    res.send(req.params.id + ' was deleted and redirected to ' + req.params.redirect);
+    res.send(util.format('%s was deleted and redirected to %s', req.params.id, req.params.redirect));
 });
 
 server.listen(settings.port, settings.host, function() {
-    console.log('Server running at http://' + settings.host + ':' + settings.port);
+    console.log('Server running at http://%s:%s', settings.host, settings.port);
 });

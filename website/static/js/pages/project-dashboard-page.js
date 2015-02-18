@@ -16,7 +16,12 @@ var Raven = require('raven-js');
 
 var NodeControl = require('../nodeControl.js');
 
+var CitationList = require('../citationList.js');
 var CitationWidget = require('../citationWidget.js');
+
+var mathrender = require('mathrender');
+// Render math in the wiki widget
+mathrender.mathjaxify('#addonWikiWidget');
 
 var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
@@ -31,7 +36,6 @@ $('body').on('nodeLoad', function(event, data) {
     new NodeControl('#projectScope', data);
 });
 
-
 // Initialize comment pane w/ it's viewmodel
 var $comments = $('#comments');
 if ($comments.length) {
@@ -43,9 +47,9 @@ if ($comments.length) {
 
 // Initialize CitationWidget if user isn't viewing through an anonymized VOL
 if (!ctx.node.anonymous) {
+    new CitationList('#citationList');
     new CitationWidget('#citationStyleInput', '#citationText');
 }
-
 
 $(document).ready(function() {
     // Treebeard Files view

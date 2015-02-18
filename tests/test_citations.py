@@ -4,6 +4,7 @@ import datetime
 from nose.tools import *  # noqa
 
 from scripts import parse_citation_styles
+from framework.auth.core import Auth
 from website.util import api_url_for
 from website.citations.utils import datetime_to_csl
 from website.models import Node, User
@@ -79,6 +80,19 @@ class CitationsNodeTestCase(OsfTestCase):
             },
         )
 
+    def test_non_visible_contributors_arent_included_in_csl(self):
+        node = ProjectFactory()
+        visible = UserFactory()
+        node.add_contributor(visible, auth=Auth(node.creator))
+        invisible = UserFactory()
+        node.add_contributor(invisible, auth=Auth(node.creator), visible=False)
+        node.save()
+        assert_equal(len(node.csl['author']), 2)
+        expected_authors = [
+            contrib.csl_name for contrib in [node.creator, visible]
+        ]
+
+        assert_equal(node.csl['author'], expected_authors)
 
 class CitationsUserTestCase(OsfTestCase):
     def setUp(self):
