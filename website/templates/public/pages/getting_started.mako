@@ -146,7 +146,7 @@
                     <p>Forks will automatically reference the original project as a functional citation.  Over time, the network of forks trace the evolution of project materials.</p>
                     <p>To fork a project, visit the project and click the button at the top right of the page. This will give you several options on how you can duplicate a project. Click "Fork" and a fork will be created. It is important to note that the fork will contain only public components, or those for which you are a contributor. Private components that you do not have access to will not be forked.</p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
-                        <div class="embed-responsive-item youtube-loader" id="lTmoL-ftfPM"></div>
+                        <div class="embed-responsive-item youtube-loader" id="RVFTg0iT2gg"></div>
                     </div>
                     <p>A <a href="#links">linked</a> project can also easily be turned into a fork. If you were originally linking to a project but would like to make edits to the linked project, from your project dashboard you can find the linked project and hit the small fork button.</p>
                     
@@ -156,9 +156,10 @@
                     <p>Registrations are permanent, read only copies of a project. Registration saves the state of a project at a particular point in time - such as right before data collection, or right when a manuscript is submitted.</p>
                     <p>To register a project, click on the button in the grey navigation bar. Click on "New Registration", select a meta-data template, fill it out, and then confirm the registration.</p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
-                        <div class="embed-responsive-item youtube-loader" id="sYeXn2Uxpz8"></div>
+                        <div class="embed-responsive-item youtube-loader" id="rj89AgTdIvA"></div>
                     </div>
                     <p>A registration exists at a separate, permanent URL that is linked to the project.  Then, you can continue editing and revising the project.</p>
+                   
                     <span id="organizer" class="anchor"></span>
                     <p class="gs-header">Project Organizer and Folders</p>
                     <p> The Project Organizer displays your projects, components, and registrations; and makes it easy for you to arrange your projects and components into folders that make sense for your application. Your projects and registrations will be all be shown in Smart Folders called “All My Registrations” and “All My Projects.” Other folders can be created to help you organize projects or components you might like to see grouped in a different way. For example, you may have many projects and find the list overwhelming. It will be helpful for you to have a folder containing only projects or components you work with most often. Alternatively, you might want to be able to easily access all of your analysis scripts from all of your projects. You can create a folder and add to it only analysis scripts components. </p>
@@ -192,7 +193,7 @@
                     <p>Components you have added can have their own privacy settings. Making the project public does not make all of its components public. For example, you can make your methodology component public, but leave the data in a private component.</p>
                     <p>Once you make a project public, you can gain more feedback about the impact of your work by tracking how many people that are visiting your projects and downloading or forking your research materials. You can also create a watchlist of other projects that interest you. </p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
-                        <div class="embed-responsive-item youtube-loader" id="G2p3CmnsDTM"></div>
+                        <div class="embed-responsive-item youtube-loader" id="hmWjJ4En33Q"></div>
                     </div>
 
                     <%include file="/public/pages/help/view_only.mako"/>
@@ -230,7 +231,7 @@
                     <p>Every project comes with a statistics page where you can view information on how often people are visiting your project and where they are being referred from.</p>
                     <P>The information displayed on the statistics page can be changed. From the statistics page of your project (found by clicking "Statistics" in the grey navigation bar), click on "Widgets & Dashboard." Select the widget you wish to add by clicking on the orange arrow to the right of the widget's name.</P>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
-                        <div class="embed-responsive-item youtube-loader" id="je4G4Ga03aA"></div>
+                        <div class="embed-responsive-item youtube-loader" id="AfnET4zKNBw"></div>
                     </div>
                 </div>
             </div>
