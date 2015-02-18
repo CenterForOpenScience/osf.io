@@ -90,7 +90,7 @@
                 <div>
                     <a data-bind="click: trackClick.bind($data, 'Create Account')" class="btn btn-primary" href="/login/">Create an Account</a>
                     <a data-bind="click: trackClick.bind($data, 'Learn More')" class="btn btn-primary" href="/getting-started/">Learn More</a>
-                    <a data-bind="click: dismiss" >Hide this message</a>
+                    <a data-bind="click: dismiss">Hide this message</a>
                 </div>
             </div>
         </div>
