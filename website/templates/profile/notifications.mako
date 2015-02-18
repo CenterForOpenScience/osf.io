@@ -61,10 +61,7 @@
     <% import json %>
     ${parent.javascript()}
     <script type="text/javascript">
-        window.contextVars = $.extend({}, window.contextVars, {'mailingList': '${website.settings.MAILCHIMP_GENERAL_LIST}',
-                                                               'notificationsData': ${json.dumps(notifications_data)}
-        });
-
+        window.contextVars = $.extend({}, window.contextVars, {'mailingList': '${website.settings.MAILCHIMP_GENERAL_LIST}'});
     </script>
 </%def>
 

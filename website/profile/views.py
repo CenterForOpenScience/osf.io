@@ -220,8 +220,7 @@ def user_notifications(auth, **kwargs):
     if not settings.ENABLE_EMAIL_SUBSCRIPTIONS:
         raise HTTPError(http.BAD_REQUEST)
     return {
-        'mailing_lists': auth.user.mailing_lists,
-        'notifications_data': format_user_and_project_subscriptions(auth.user)
+        'mailing_lists': auth.user.mailing_lists
     }
 
 
