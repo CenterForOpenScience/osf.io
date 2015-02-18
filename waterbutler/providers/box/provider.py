@@ -30,7 +30,7 @@ class BoxProvider(provider.BaseProvider):
     def __init__(self, auth, credentials, settings):
         super().__init__(auth, credentials, settings)
         self.token = self.credentials['token']
-        self.folder = self.settings['folder']
+        self.folder = self.settings['folder_id']
 
     @property
     def default_headers(self):
