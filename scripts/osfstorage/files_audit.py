@@ -29,7 +29,7 @@ vault = None
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
-
+logging.getLogger('boto').setLevel(logging.CRITICAL)
 
 def download_from_cloudfiles(version):
     path = os.path.join(storage_settings.AUDIT_TEMP_PATH, version.location['object'])

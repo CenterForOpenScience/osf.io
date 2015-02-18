@@ -23,12 +23,12 @@ def github_widget(**kwargs):
             complete = True
 
     if github:
-        rv = {
+        ret = {
             'complete': complete,
             'short_url': github.short_url,
         }
-        rv.update(github.config.to_json())
-        return rv
+        ret.update(github.config.to_json())
+        return ret
     raise HTTPError(http.NOT_FOUND)
 
 
