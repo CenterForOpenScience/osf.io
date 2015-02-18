@@ -22,6 +22,8 @@ ko.punches.enableAll();
 var ViewModel = function(url, selector, folderPicker) {
     var self = this;
     self.selector = selector;
+    // Accounts
+    self.accounts = ko.observableArray([]);
     // Auth information
     self.nodeHasAuth = ko.observable(false);
     // whether current user is authorizer of the addon
@@ -30,6 +32,7 @@ var ViewModel = function(url, selector, folderPicker) {
     self.userHasAuth = ko.observable(false);
     // whether the auth token is valid
     self.validCredentials = ko.observable(true);
+    self.userAccountId = ko.observable('');
     // Currently linked folder, an Object of the form {name: ..., path: ...}
     self.folder = ko.observable({name: null, path: null});
     self.ownerName = ko.observable('');
@@ -39,15 +42,12 @@ var ViewModel = function(url, selector, folderPicker) {
     self.messageClass = ko.observable('text-info');
     // Display names
     self.PICKER = 'picker';
-    self.SHARE = 'share';
     // Current folder display
     self.currentDisplay = ko.observable(null);
     // CSS selector for the folder picker div
     self.folderPicker = folderPicker;
     // Currently selected folder, an Object of the form {name: ..., path: ...}
     self.selected = ko.observable(null);
-    // Emails of contributors, can only be populated by activating the share dialog
-    self.emails = ko.observableArray([]);
     self.loading = ko.observable(false);
     // Whether the initial data has been fetched form the server. Used for
     // error handling.
@@ -58,18 +58,6 @@ var ViewModel = function(url, selector, folderPicker) {
     // Whether the mendeley folders have been loaded from the server/mendeley API
     self.loadedFolders = ko.observable(false);
 
-    // List of contributor emails as a comma-separated values
-    self.emailList = ko.computed(function() {
-        return self.emails().join([', ']);
-    });
-
-    self.disableShare = ko.computed(function() {
-	/* TODO: implement me
-        return !self.urls().share;
-	*/
-	return false;
-    });
-
     /**
         * Update the view model from data returned from the server.
         */
@@ -78,9 +66,9 @@ var ViewModel = function(url, selector, folderPicker) {
         self.nodeHasAuth(data.nodeHasAuth);
         self.userIsOwner(data.userIsOwner);
         self.userHasAuth(data.userHasAuth);
-        self.validCredentials(data.validCredentials);
+	self.userAccountId(data.userAccountId);
         // Make sure folder has name and path properties defined
-        self.folder(data.folder || {name: null, path: null});
+        self.folder(data.folder || 'None');
         self.urls(data.urls);
     };
 
@@ -90,23 +78,23 @@ var ViewModel = function(url, selector, folderPicker) {
             success: function(response) {
                 self.updateFromData(response);
                 self.loadedSettings(true);
-                if (!self.validCredentials()){
+                /*if (!self.validCredentials()){
                     if (self.userIsOwner()) {
-                        self.changeMessage('Could not retrieve mendeley settings at ' +
+                        self.changeMessage('Could not retrieve Mendeley settings at ' +
                         'this time. The mendeley addon credentials may no longer be valid.' +
                         ' Try deauthorizing and reauthorizing mendeley on your <a href="' +
                             self.urls().settings + '">account settings page</a>.',
                         'text-warning');
                     } else {
-                        self.changeMessage('Could not retrieve mendeley settings at ' +
+                        self.changeMessage('Could not retrieve Mendeley settings at ' +
                         'this time. The mendeley addon credentials may no longer be valid.' +
                         ' Contact ' + self.ownerName() + ' to verify.',
                         'text-warning');
                     }
-                }
+		}*/
             },
             error: function(xhr, textStatus, error) {
-                self.changeMessage('Could not retrieve mendeley settings at ' +
+                self.changeMessage('Could not retrieve Mendeley settings at ' +
                     'this time. Please refresh ' +
                     'the page. If the problem persists, email ' +
                     '<a href="mailto:support@osf.io">support@osf.io</a>.',
@@ -123,35 +111,38 @@ var ViewModel = function(url, selector, folderPicker) {
     // Initial fetch from server
     self.fetchFromServer();
 
-    self.toggleShare = function() {
-        if (self.currentDisplay() === self.SHARE) {
-            self.currentDisplay(null);
-        } else {
-            // Clear selection
-            self.cancelSelection();
-            self.currentDisplay(self.SHARE);
-            self.activateShare();
-        }
+    var CitationAccount = function(name, id) {
+	this.name = name;
+	this.id = id;
     };
 
-
-    function onGetEmailsSuccess(response) {
-        var emails = response.result.emails;
-        self.emails(emails);
-        self.loadedEmails(true);
-    }
-
-    self.activateShare = function() {
-        if (!self.loadedEmails()) {
-            $.ajax({
-                url: self.urls().emails, type: 'GET', dataType: 'json',
-                success: onGetEmailsSuccess
-            });
-        }
-        var $copyBtn = $('#copyBtn');
-        new ZeroClipboard($copyBtn);
+    self.updateAccounts = function(){
+	$.get('/api/v1/settings/mendeley/accounts/').done(function(data) {
+            self.accounts(data.accounts.map(function(account) {
+		return new CitationAccount(account.display_name, account.id);
+            }));
+	    $osf.postJSON(self.urls().importAuth, {
+		external_account_id: self.accounts()[0].id
+	    })
+		.done(onImportSuccess)
+                .fail(onImportError);            	    
+	}).fail(function() {
+            console.log('fail');
+	});
     };
-
+    /**
+     * Allows a user to create a Menedeley access token from the nodeSettings page
+     */
+    self.connectAccount = function () {
+        var self = this;
+ 	window.oauthComplete = function (res) {
+	    var msg =  'Successfully created a Mendeley Access Token';
+            // Update view model based on response
+            self.changeMessage(msg, 'text-success', 3000);
+	    self.updateAccounts();
+	};
+        window.open('/oauth/connect/mendeley/');
+    };
 
     /**
      * Whether or not to show the Import Access Token Button
@@ -162,7 +153,6 @@ var ViewModel = function(url, selector, folderPicker) {
         var nodeHasAuth = self.nodeHasAuth();
         var loaded = self.loadedSettings();
         return userHasAuth && !nodeHasAuth && loaded;
-	return false;
     });
 
     /** Whether or not to show the full settings pane. */
@@ -178,11 +168,8 @@ var ViewModel = function(url, selector, folderPicker) {
         var loaded = self.loadedSettings();
         return !userHasAuth && !nodeHasAuth && loaded;
     });
-
     /** Computed functions for the linked and selected folders' display text.*/
-
     self.folderName = ko.computed(function() {
-        // Invoke the observables to ensure dependency tracking
         var nodeHasAuth = self.nodeHasAuth();
         var folder = self.folder();
         return (nodeHasAuth && folder) ? folder.name : '';
@@ -195,13 +182,8 @@ var ViewModel = function(url, selector, folderPicker) {
     });
 
     function onSubmitSuccess(response) {
-        self.changeMessage('Successfully linked "' + self.selected().name +
-            '". Go to the <a href="' +
-            self.urls().files + '">Files page</a> to view your files.',
-            'text-success', 5000);
-        // Update folder in ViewModel
-        self.folder(response.result.folder);
-        self.urls(response.result.urls);
+        self.changeMessage('Successfully linked "' + self.selected().name + '".',
+			   'text-success', 5000);
         self.cancelSelection();
     }
 
@@ -213,9 +195,12 @@ var ViewModel = function(url, selector, folderPicker) {
         * Send a PUT request to change the linked mendeley folder.
         */
     self.submitSettings = function() {
-        $osf.putJSON(self.urls().config, ko.toJS(self))
-            .done(onSubmitSuccess)
-            .fail(onSubmitError);
+        $osf.postJSON(self.urls().config, {
+	    external_account_id: self.userAccountId(),
+	    external_list_id: self.selected().id
+	})
+	    .done(onSubmitSuccess)
+	    .fail(onSubmitError);
     };
 
     /**
@@ -299,8 +284,10 @@ var ViewModel = function(url, selector, folderPicker) {
             message: 'Are you sure you want to authorize this project with your mendeley access token?',
             callback: function(confirmed) {
                 if (confirmed) {
-                    return $osf.putJSON(self.urls().importAuth, {})
-                        .done(onImportSuccess)
+                    return $osf.postJSON(self.urls().importAuth, {
+			external_account_id: self.userAccountId()
+		    })
+			.done(onImportSuccess)
                         .fail(onImportError);
                 }
             }
@@ -312,10 +299,10 @@ var ViewModel = function(url, selector, folderPicker) {
     *   folder.
     */
     function onPickFolder(evt, item) {
-            evt.preventDefault();
-            self.selected({name: 'mendeley' + item.data.path, path: item.data.path});
-            return false; // Prevent event propagation
-        }
+        evt.preventDefault();
+        self.selected({name: item.data.name, id: item.data.id});
+        return false; // Prevent event propagation
+    }
 
     /**
         * Activates the HGrid folder picker.
@@ -328,25 +315,19 @@ var ViewModel = function(url, selector, folderPicker) {
             self.loading(true);
             $(self.folderPicker).folderpicker({
                 onPickFolder: onPickFolder,
-                initialFolderName : self.folderName(),
+                initialFolderName : 'All Documents',
                 initialFolderPath : 'mendeley',
                 // Fetch mendeley folders with AJAX
-                filesData: [{
-		    id: self.folder(),
-		    name: self.folder(),
-		    urls: {
-			fetch: self.urls().folders
-		    },
-		    kind: 'folder'
-		}],
-		//self.urls().folders, // URL for fetching folders
+                filesData: self.urls().folders, 
                 // Lazy-load each folder's contents
                 // Each row stores its url for fetching the folders it contains
                 resolveLazyloadUrl : function(item){
-                    return item.data.urls.folders;
+		    return self.urls().folders + item.data.id + '/?view=folders';
                 },
 		lazyLoadPreprocess: function(data){
-		    return data.contents;
+		    return data.contents.filter(function(item){
+			return item.kind === 'folder';
+		    });
 		},
                 oddEvenClass : {
                     odd : 'mendeley-folderpicker-odd',
@@ -355,9 +336,9 @@ var ViewModel = function(url, selector, folderPicker) {
                 ajaxOptions: {
                     error: function(xhr, textStatus, error) {
                         self.loading(false);
-                        self.changeMessage('Could not connect to mendeley at this time. ' +
+                        self.changeMessage('Could not connect to Mendeley at this time. ' +
                                             'Please try again later.', 'text-warning');
-                        Raven.captureMessage('Could not GET get mendeley contents.', {
+                        Raven.captureMessage('Could not GET get Mendeley contents.', {
                             textStatus: textStatus,
                             error: error
                         });
@@ -372,8 +353,8 @@ var ViewModel = function(url, selector, folderPicker) {
     };
 
     /**
-        * Toggles the visibility of the folder picker.
-        */
+     * Toggles the visibility of the folder picker.
+     */
     self.togglePicker = function() {
         // Toggle visibility of folder picker
         var shown = self.currentDisplay() === self.PICKER;

@@ -14,7 +14,6 @@ api_routes = {
             views.list_mendeley_accounts_user,
             json_renderer,
         ),
-
         Rule(
             [
                 '/project/<pid>/mendeley/<account_id>/lists/',
@@ -24,7 +23,6 @@ api_routes = {
             views.list_citationlists_node,
             json_renderer,
         ),
-
         Rule(
             [
                 '/project/<pid>/mendeley/settings/',
@@ -43,7 +41,24 @@ api_routes = {
             views.mendeley_set_config,
             json_renderer,
         ),
-
+        Rule(
+            [
+                '/project/<pid>/mendeley/user_auth/',
+                '/project/<pid>/node/<nid>/mendeley/user_auth/',
+            ],
+            'post',
+            views.mendeley_add_user_auth,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/mendeley/user_auth/',
+                '/project/<pid>/node/<nid>/mendeley/user_auth/',
+            ],
+            'delete',
+            views.mendeley_remove_user_auth,
+            json_renderer,
+        ),
         Rule(
             [
                 '/project/<pid>/mendeley/widget/',
@@ -53,7 +68,6 @@ api_routes = {
             views.mendeley_widget,
             json_renderer,
         ),
-
         Rule(
             [
                 '/project/<pid>/mendeley/citations/',

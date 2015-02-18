@@ -98,6 +98,7 @@ var getRow = function(item) {
     }];
 };
 var citationsApiUrl = window.contextVars.node.urls.api + 'mendeley/citations/';
+var citationsInitUrl = citationsApiUrl + window.contextVars.mendeley.folder_id + '/';
 var parent = {
     kind: 'folder',
     urls: {
@@ -113,7 +114,7 @@ var CitationGrid = function(selector, url) {
             divID: selector.replace('#', ''),
             columnTitles: getColumns,
             resolveRows: getRow,
-            filesData: citationsApiUrl,
+            filesData: citationsInitUrl,
             //filesData: [parent],
             resolveLazyloadUrl: function(item) {
 		return citationsApiUrl + item.data.id + '/';

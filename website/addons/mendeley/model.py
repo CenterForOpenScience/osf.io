@@ -28,7 +28,6 @@ def serialize_folder(name, account_id, parent_id=None, list_id=None, id=None):
 
 
 class AddonMendeleyUserSettings(AddonUserSettingsBase):
-
     def _get_connected_accounts(self):
         """Get user's connected Mendeley accounts"""
         return [
@@ -51,7 +50,7 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
     mendeley_list_id = fields.StringField()
 
     # Keep track of all user settings that have been associated with this
-    #   instance. This is so OAuth grants can be checked, even if the grant is
+    # instance. This is so OAuth grants can be checked, even if the grant is
     #   not currently being used.
     associated_user_settings = fields.AbstractForeignField(list=True)
 
@@ -69,6 +68,16 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
     def has_auth(self):
         return self.external_account is not None
 
+    @property
+    def selected_folder_name(self):
+        if self.mendeley_list_id is None:
+            return ''
+        elif self.mendeley_list_id != 'ROOT':
+            folder = self.api._folder_metadata(self.mendeley_list_id)
+            return folder.name
+        else:
+            return 'All Documents'
+
     def grant_oauth_access(self, user, external_account, metadata=None):
         """Grant OAuth access, updates metadata on user settings
         :param User user:
@@ -85,7 +94,7 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
         user_settings.grant_oauth_access(
             node=self.owner,
             external_account=external_account,
-            metadata=metadata,
+            metadata=metadata or {},
         )
 
         user_settings.save()
@@ -98,7 +107,8 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
         """
         for user_settings in self.associated_user_settings:
             try:
-                granted = user_settings.oauth_grants[self.owner._id][external_account._id]
+                granted = user_settings.oauth_grants[self.owner._id][
+                    external_account._id]
             except KeyError:
                 # no grant for this node, move along
                 continue
@@ -121,7 +131,8 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
         ret = super(AddonMendeleyNodeSettings, self).to_json(user)
         ret.update({
             'listId': self.mendeley_list_id,
-            'accounts': [utils.serialize_account(each) for each in self.get_accounts(user)],
+            'accounts': [utils.serialize_account(each) for each in
+                         self.get_accounts(user)],
             'currentAccount': utils.serialize_account(self.external_account),
         })
         return ret
@@ -184,7 +195,8 @@ class Mendeley(ExternalProvider):
     def _folder_tree(self, folder, flat_map):
 
         serialized = serialize_folder(folder[0].name, self.account.provider_id)
-        serialized['children'] = [self._folder_tree(flat_map[f], flat_map) for f in folder[1]]
+        serialized['children'] = [self._folder_tree(flat_map[f], flat_map) for f
+                                  in folder[1]]
         serialized['kind'] = 'folder'
         return serialized
 
@@ -207,9 +219,11 @@ class Mendeley(ExternalProvider):
             serialize_folder(
                 'All Documents',
                 account_id=self.account.provider_id,
+                id='ROOT'
             )
         ]
-        tree[0]['children'] = [self._folder_tree(flat_map[f], flat_map) for f in flat_map['root'][1]]
+        tree[0]['children'] = [self._folder_tree(flat_map[f], flat_map) for f in
+                               flat_map['root'][1]]
         tree[0]['kind'] = 'folder'
         return tree
 
@@ -223,6 +237,8 @@ class Mendeley(ExternalProvider):
         all_documents = serialize_folder(
             'All Documents',
             account_id=self.account.provider_id,
+            id='ROOT',
+            parent_id='__'
         )
         serialized_folders = [
             serialize_folder(
@@ -236,15 +252,33 @@ class Mendeley(ExternalProvider):
         ]
         return [all_documents] + serialized_folders
 
-    def get_list(self, list_id=None):
+    def get_list(self, list_id='ROOT'):
         """Get a single CitationList
         :param str list_id: ID for a Mendeley folder. Optional.
         :return CitationList: CitationList for the folder, or for all documents
         """
-        folder = self.client.folders.get(list_id) if list_id else None
+        if list_id == 'ROOT':
+            folder = None
+        else:
+            folder = self.client.folders.get(list_id)
+
         if folder:
             return self._citations_for_mendeley_folder(folder)
         return self._citations_for_mendeley_user()
+
+    def get_root_folder(self):
+        root = serialize_folder(
+            'All Documents',
+            account_id=self.account.provider_id,
+            id='ROOT',
+            parent_id='__'
+        )
+        root['kind'] = 'folder'
+        return [root]
+
+    def _folder_metadata(self, folder_id):
+        folder = self.client.folders.get(folder_id)
+        return folder
 
     def _citations_for_mendeley_folder(self, folder):
         return (
