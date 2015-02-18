@@ -119,14 +119,16 @@ def mendeley_get_config(auth, node_addon, **kwargs):
 
 @must_have_permission('write')
 @must_have_addon('mendeley', 'node')
-@must_have_addon('mendeley', 'user')
 @must_not_be_registration
-def mendeley_add_user_auth(auth, user_addon, node_addon, **kwargs):
+def mendeley_add_user_auth(auth, node_addon, **kwargs):
     external_account = ExternalAccount.load(
         request.json['external_account_id']
     )
     if external_account not in auth.user.external_accounts:
         raise HTTPError(http.FORBIDDEN)
+
+    user_addon = auth.user.get_or_add_addon('mendeley')
+
     node_addon.grant_oauth_access(user_addon.owner, external_account)
     node_addon.external_account = external_account
     node_addon.save()
