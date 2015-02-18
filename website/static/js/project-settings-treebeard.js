@@ -110,6 +110,7 @@ function ProjectNotifications(data) {
         paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.
         uploads : false,         // Turns dropzone on/off.
         resolveIcon : resolveIcon,
+        hideColumnTitles: true,
         onload: function () {
             var tb = this;
             expandOnLoad.call(tb);
