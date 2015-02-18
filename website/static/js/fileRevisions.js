@@ -59,6 +59,7 @@ var RevisionsViewModel = function(node, file, editable) {
 
     self.node = node;
     self.file = file;
+    self.path = file.path;
     self.editable = ko.observable(editable);
     self.urls = {
         delete: waterbutler.buildDeleteUrl(file.path, file.provider, node.id, fileExtra),
@@ -66,6 +67,11 @@ var RevisionsViewModel = function(node, file, editable) {
         metadata: waterbutler.buildMetadataUrl(file.path, file.provider, node.id, revisionsOptions),
         revisions: waterbutler.buildRevisionsUrl(file.path, file.provider, node.id, revisionsOptions)
     };
+
+    // Below is only for Google Drive
+    if((self.file.path.split('/').length) > 2)
+        self.path = '/' + self.file.path.split('/')[(self.file.path.split('/').length) -1]
+
     self.errorMessage = ko.observable('');
     self.currentVersion = ko.observable({});
     self.revisions = ko.observableArray([]);

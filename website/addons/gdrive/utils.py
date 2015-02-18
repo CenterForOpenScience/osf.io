@@ -91,6 +91,7 @@ def serialize_settings(node_settings, current_user):
                                                uid=user_settings.owner._primary_key)
         rv['ownerName'] = user_settings.owner.fullname
         rv['access_token'] = user_settings.access_token
+        rv['currentFolder'] = node_settings.folder['name'] if node_settings.folder else None
     return rv
 
 
@@ -106,15 +107,16 @@ def clean_path(path):
     #     else:
     #         tempPath = tempPath + '/' + parts[i]
     # cleaned_path = tempPath
+    if len(parts) <= 1:
+        cleaned_path = '/' + parts[len(parts)-1]
     cleaned_path = parts[len(parts) - 1]
 
     return cleaned_path
 
 
 def build_gdrive_urls(item, node, path):
-    newpath = clean_path(path['path'])
     return{
-        'get_folders': node.api_url_for('gdrive_folders', folderId=item['id'], path=newpath, foldersOnly=1),
+        'get_folders': node.api_url_for('gdrive_folders', folderId=item['id'], path=path['path'], foldersOnly=1),
         'fetch': node.api_url_for('gdrive_folders', folderId=item['id'])
     }
 
@@ -124,6 +126,7 @@ def to_hgrid(item, node, path):
     :param item: contents returned from Google Drive API
     :return: results formatted as required for Hgrid display
     """
+
     path = {
         'path': path + '/' + item['title'],
         'id': item['id']

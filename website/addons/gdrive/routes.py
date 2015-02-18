@@ -11,16 +11,6 @@ from . import views
 web_routes = {
     'rules': [
 
-        ##### View file #####
-        Rule(
-            [
-                '/project/<pid>/gdrive/files/<path:path>',
-                '/project/<pid>/node/<nid>/gdrive/files/<path:path>',
-            ],
-            'get',
-            views.crud.gdrive_view_file,
-            OsfWebRenderer('../addons/gdrive/templates/gdrive_view_file.mako'),
-        ),
     ],
 }
 

@@ -176,8 +176,10 @@ class TestGdriveNodeSettingsModel(OsfTestCase):
         self.user_settings.access_token = 'secret'
         self.user_settings.save()
         credentials = self.node_settings.serialize_waterbutler_credentials()
-        expected = {'token': self.node_settings.user_settings.access_token}
-        assert_equal(credentials, expected)
+        expected = {'token': self.node_settings.user_settings.access_token,
+                    'refresh_token': self.node_settings.user_settings.refresh_token}
+        assert_equal(credentials['token'], expected['token'])
+        assert_equal(credentials['refresh_token'], expected['refresh_token'])
 
     def test_serialize_credentials_not_authorized(self):
         self.node_settings.user_settings = None

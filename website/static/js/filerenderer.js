@@ -19,6 +19,7 @@ FileRenderer = {
         $.ajax({
             url: self.url
         }).done(function(data) {
+            console.log(data)
             if (data) {
                 self.element.html(data);
             } else {

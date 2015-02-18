@@ -1,7 +1,9 @@
 
 import httplib2
-from flask import request
+import requests
 
+from flask import request
+from ..import settings
 from website.project.model import Node
 from website.util import rubeus
 from website.project.decorators import must_be_contributor_or_public, must_have_addon
@@ -18,11 +20,24 @@ def gdrive_folders(node_addon, **kwargs):
     nid = kwargs.get('nid') or kwargs.get('pid')
     node = Node.load(nid)
     node_settings = node.get_addon('gdrive')
+
+
     # Get service using Access token
     if node_settings:
         user_settings = node_settings.user_settings
+        #Retrieve Access token using Refresh token
+        params = {
+        'client_id': settings.CLIENT_ID,
+        'client_secret': settings.CLIENT_SECRET,
+        'refresh_token': user_settings.refresh_token,
+        'grant_type': 'refresh_token'
+        }
+        url = 'https://www.googleapis.com/oauth2/v3/token'
+        response = requests.post(url, params=params)
+        refreshed_acces_token = response.json()['access_token']
+        # Get service using oauth client
         http_service = httplib2.Http()
-        credentials = AccessTokenCredentials(user_settings.access_token, request.headers.get('User-Agent'))
+        credentials = AccessTokenCredentials(refreshed_acces_token, request.headers.get('User-Agent'))
         http_service = credentials.authorize(http_service)
         service = build('drive', 'v2', http_service)
 
@@ -70,7 +85,7 @@ def gdrive_addon_folder(node_settings, auth, **kwargs):
         return None
     node = node_settings.owner
     path = {
-        'path': clean_path(node_settings.folder['name']),
+        'path': node_settings.folder['name'],
         'id': node_settings.folder['id']
     }
     # path = clean_path(node_settings.folder['name'])
@@ -80,6 +95,6 @@ def gdrive_addon_folder(node_settings, auth, **kwargs):
         permissions=auth,
         nodeUrl=node.url,
         nodeApiUrl=node.api_url,
-        path='/{0}/{1}/{2}'.format(path['id'], node_settings.folder['name'], path['path'].lstrip('/'))
+        path='/{0}{1}/{2}'.format(path['id'], node_settings.folder['name'], path['path'].lstrip('/'))
     )
     return [root]

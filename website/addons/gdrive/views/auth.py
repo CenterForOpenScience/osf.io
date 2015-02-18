@@ -62,6 +62,7 @@ def drive_oauth_finish(auth, **kwargs):
     http_service = httplib2.Http()
     http_service = credentials.authorize(http_service)
     user_settings.access_token = credentials.access_token
+    user_settings.refresh_token = credentials.refresh_token
     user_settings.save()
     if node_settings:
         node_settings.user_settings = user_settings
@@ -71,7 +72,7 @@ def drive_oauth_finish(auth, **kwargs):
     else:
         service = build('drive', 'v2', http_service)
         about = service.about().get().execute()
-        username = '{0}/{1}'.format(about['name'], about['user']['emailAddress'])
+        username = about['name']
         user_settings.username = username
         user_settings.save()
     return redirect(web_url_for('user_addons'))

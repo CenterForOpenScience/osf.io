@@ -9,6 +9,7 @@ from modularodm import fields, Q
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 from .utils import clean_path, GoogleDriveNodeLogger
 from website.addons.base import exceptions
+from .import settings
 
 
 class AddonGdriveGuidFile(GuidFile):
@@ -72,6 +73,8 @@ class AddonGdriveUserSettings(AddonUserSettingsBase):
     """
     access_token = fields.StringField(required=False)
     username = fields.StringField(required=False)
+    refresh_token = fields.StringField(required=False)
+
     @property
     def has_auth(self):
         return bool(self.access_token)
@@ -136,7 +139,10 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
             raise exceptions.AddonError('Addon is not authorized')
-        return {'token': self.user_settings.access_token}
+        return {'token': self.user_settings.access_token,
+                'refresh_token': self.user_settings.refresh_token,
+                'client_id': settings.CLIENT_ID,
+                'client_secret': settings.CLIENT_SECRET}
 
     def serialize_waterbutler_settings(self):
         if not self.folder:
