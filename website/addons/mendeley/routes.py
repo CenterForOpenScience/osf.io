@@ -14,6 +14,8 @@ api_routes = {
             views.list_mendeley_accounts_user,
             json_renderer,
         ),
+        '''
+        TODO delete?, see comments in views.py
         Rule(
             [
                 '/project/<pid>/mendeley/<account_id>/lists/',
@@ -23,6 +25,7 @@ api_routes = {
             views.list_citationlists_node,
             json_renderer,
         ),
+        '''
         Rule(
             [
                 '/project/<pid>/mendeley/settings/',

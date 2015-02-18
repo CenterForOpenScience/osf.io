@@ -18,7 +18,7 @@ from . import utils
 from .model import Mendeley
 
 def serialize_urls(node_settings):
-
+    """ Collects and serializes urls needed for AJAX calls """
     node = node_settings.owner
 
     external_account = node_settings.external_account
@@ -45,6 +45,7 @@ def serialize_urls(node_settings):
 
 
 def serialize_settings(node_settings, current_user):
+    """ Collects and serializes parameters for building UI for widget and settings pages """
     node_account = node_settings.external_account
     user_accounts = [account for account in current_user.external_accounts
                      if account.provider == 'mendeley']
@@ -74,6 +75,7 @@ def serialize_settings(node_settings, current_user):
 
 @must_be_logged_in
 def list_mendeley_accounts_user(auth):
+    """ Returns the list of all of the current user's authorized Mendeley accounts """
     return {
         'accounts': [
             utils.serialize_account(each)
@@ -82,11 +84,16 @@ def list_mendeley_accounts_user(auth):
         ]
     }
 
+'''
+TODO delete?
+- This exposes a potential privacy concern, as it would allow someone to see
+  a full listing of the authorizers Mendeley folders
 
 @must_have_permission('write')
 @must_have_addon('mendeley', 'node')
 @must_not_be_registration
 def list_citationlists_node(pid, account_id, auth, node, project, node_addon):
+    """ Returns a list of folders """
 
     account = ExternalAccount.load(account_id)
     if not account:
@@ -98,12 +105,13 @@ def list_citationlists_node(pid, account_id, auth, node, project, node_addon):
     return {
         'citation_lists': mendeley.citation_lists
     }
+'''
 
 
 @must_have_permission('write')
 @must_have_addon('mendeley', 'node')
 def mendeley_get_config(auth, node_addon, **kwargs):
-    """Serialize node addon settings and relevant urls
+    """ Serialize node addon settings and relevant urls
     (see serialize_settings/serialize_urls)
     """
     ret = node_addon.to_json(auth.user)
@@ -115,6 +123,7 @@ def mendeley_get_config(auth, node_addon, **kwargs):
 @must_have_addon('mendeley', 'node')
 @must_not_be_registration
 def mendeley_add_user_auth(auth, node_addon, **kwargs):
+    """ Allows for importing existing auth to MendeleyNodeSettings """
     external_account = ExternalAccount.load(
         request.json['external_account_id']
     )
@@ -135,6 +144,7 @@ def mendeley_add_user_auth(auth, node_addon, **kwargs):
 @must_have_addon('mendeley', 'node')
 @must_not_be_registration
 def mendeley_remove_user_auth(auth, node_addon, **kwargs):
+    """ Removes auth from MendeleyNodeSettings """
     node_addon.external_account = None
     node_addon.mendeley_list_id = None
     node_addon.save()
@@ -147,6 +157,7 @@ def mendeley_remove_user_auth(auth, node_addon, **kwargs):
 @must_have_addon('mendeley', 'node')
 @must_not_be_registration
 def mendeley_set_config(pid, auth, node, project, node_addon):
+    """ Updates MendeleyNodeSettings based on submitted account and folder information """
     # Ensure request has all required information
     try:
         external_account = ExternalAccount.load(
@@ -183,6 +194,7 @@ def mendeley_set_config(pid, auth, node, project, node_addon):
 @must_be_contributor_or_public
 @must_have_addon('mendeley', 'node')
 def mendeley_widget(node_addon, project, node, pid, auth):
+    """ Collects and serializes settting needed to build the widget """
     ret = node_addon.config.to_json()
     ret.update({
         'complete': node_addon.complete,
