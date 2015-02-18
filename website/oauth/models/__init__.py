@@ -24,7 +24,7 @@ OAUTH2 = 2
 
 
 class ExternalAccount(StoredObject):
-    _id = fields.StringField(default=lambda: str(ObjectId()))
+    _id = fields.StringField(default=lambda: str(ObjectId()), primary=True)
 
     oauth_key = fields.StringField()
     oauth_secret = fields.StringField()

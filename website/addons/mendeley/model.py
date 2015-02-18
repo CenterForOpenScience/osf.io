@@ -5,12 +5,12 @@ import time
 import mendeley
 from modularodm import fields
 
-from website import settings
 from website.addons.base import AddonNodeSettingsBase
 from website.addons.base import AddonUserSettingsBase
 from website.oauth.models import ExternalProvider
 from website.util import web_url_for
 
+from . import settings
 from . import utils
 from .api import APISession
 
@@ -140,8 +140,8 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
 
 
 class Mendeley(ExternalProvider):
-    name = "Mendeley"
-    short_name = "mendeley"
+    name = 'Mendeley'
+    short_name = 'mendeley'
 
     client_id = settings.MENDELEY_CLIENT_ID
     client_secret = settings.MENDELEY_CLIENT_SECRET
