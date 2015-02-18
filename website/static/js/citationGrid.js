@@ -4,16 +4,12 @@ var $ = require('jquery');
 var m = require('mithril');
 var Treebeard = require('treebeard');
 var citations = require('./citations');
-var ZeroClipboard = require('zeroclipboard');
+var clipboard = require('./clipboard');
 
 var apaStyle = require('raw!styles/apa.csl');
 
 require('../vendor/bower_components/treebeard/dist/treebeard.css');
 require('../css/fangorn.css');
-
-ZeroClipboard.config({
-    swfPath: '/static/vendor/bower_components/zeroclipboard/dist/ZeroClipboard.swf'
-});
 
 function resolveToggle(item) {
     var toggleMinus = m('i.icon-minus', ' ');
@@ -154,18 +150,12 @@ var renderActions = function(item, col) {
         }
         buttons.push({
             name: '',
-            css: 'btn btn-info btn-xs',
+            css: 'btn btn-info btn-xs copy-button',
             icon: 'icon-copy',
             tooltip: 'Copy citation',
             clipboard: self.getCitation(item),
             config: function(elm, isInit, ctx) {
-                var $elm = $(elm);
-                if (!elm._client) {
-                    elm._client = new ZeroClipboard(elm);
-                    elm._client.on('aftercopy', function() {
-                        $elm.tooltip('hide');
-                    });
-                }
+                elm._client = elm._client || clipboard(elm);
                 ctx.onunload = function() {
                     elm._client && elm._client.destroy();
                 };
