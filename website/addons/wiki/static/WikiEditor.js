@@ -158,6 +158,7 @@ function ViewModel(url) {
                 'the page now, those changes may be lost.';
         }
     });
+
 }
 
 function WikiEditor(selector, url) {

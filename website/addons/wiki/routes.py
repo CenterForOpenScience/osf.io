@@ -47,10 +47,8 @@ page_routes = {
         Rule([
             '/project/<pid>/wiki/<wname>/',
             '/project/<pid>/node/<nid>/wiki/<wname>/',
-            '/project/<pid>/wiki/<wname>/edit/',
-            '/project/<pid>/node/<nid>/wiki/<wname>/edit/',
-            '/project/<pid>/wiki/<wname>/compare/<int:wver>/',
-            '/project/<pid>/node/<nid>/wiki/<wname>/compare/<int:wver>/',
+            '/project/<pid>/wiki/<wname>/<path:path>/',
+            '/project/<pid>/node/<nid>/wiki/<wname>/<path:path>/',
         ], 'get', views.project_wiki_view, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'))),
 
         # Edit | POST
