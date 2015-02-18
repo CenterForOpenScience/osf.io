@@ -324,6 +324,43 @@ class TestWikiViews(OsfTestCase):
         page_name_elem = res.html.find('span', {'id': 'pageName'})
         assert_in('Home', page_name_elem.text)
 
+    def test_wiki_widget_no_content(self):
+        url = self.project.api_url_for('wiki_widget', wid='home')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_is_none(res.json['wiki_content'])
+
+    def test_wiki_widget_short_content_no_cutoff(self):
+        short_content = 'a' * 150
+        self.project.update_node_wiki('home', short_content, Auth(self.user))
+        url = self.project.api_url_for('wiki_widget', wid='home')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_in(short_content, res.json['wiki_content'])
+        assert_not_in('...', res.json['wiki_content'])
+        assert_false(res.json['more'])
+
+    def test_wiki_widget_long_content_cutoff(self):
+        long_content = 'a' * 600
+        self.project.update_node_wiki('home', long_content, Auth(self.user))
+        url = self.project.api_url_for('wiki_widget', wid='home')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_less(len(res.json['wiki_content']), 520)  # wiggle room for closing tags
+        assert_in('...', res.json['wiki_content'])
+        assert_true(res.json['more'])
+
+    @mock.patch('website.addons.wiki.model.NodeWikiPage.rendered_before_update', new_callable=mock.PropertyMock)
+    def test_wiki_widget_use_python_render(self, mock_rendered_before_update):
+        # New pages use js renderer
+        mock_rendered_before_update.return_value = False
+        self.project.update_node_wiki('home', 'updated content', Auth(self.user))
+        url = self.project.api_url_for('wiki_widget', wid='home')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_false(res.json['use_python_render'])
+
+        # Old pages use python renderer
+        mock_rendered_before_update.return_value = True
+        res = self.app.get(url, auth=self.user.auth)
+        assert_true(res.json['use_python_render'])
+
 
 class TestViewHelpers(OsfTestCase):
 
