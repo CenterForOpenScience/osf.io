@@ -163,7 +163,8 @@ class Mendeley(ExternalProvider):
 
         return {
             'provider_id': profile.id,
-            'display_name': profile.display_name
+            'display_name': profile.display_name,
+            'profile_url': profile.link,
         }
 
     def _get_client(self, credentials):

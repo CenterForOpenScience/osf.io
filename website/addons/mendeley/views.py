@@ -21,11 +21,13 @@ def serialize_urls(node_settings):
 
     node = node_settings.owner
 
+    external_account = node_settings.external_account
+
     deauthorize = None
-    if node_settings.external_account:
+    if external_account:
         deauthorize = node.api_url_for('mendeley_remove_user_auth')
 
-    return {
+    ret = {
         'config': node.api_url_for('mendeley_set_config'),
         'deauthorize': deauthorize,
         'auth': api_url_for('oauth_connect',
@@ -33,8 +35,13 @@ def serialize_urls(node_settings):
         'importAuth': node.api_url_for('mendeley_add_user_auth'),
         # Endpoint for fetching only folders (including root)
         'folders': node.api_url_for('mendeley_citation_list'),
-        'settings': web_url_for('user_addons')
+        'settings': web_url_for('user_addons'),
     }
+
+    if external_account and external_account.profile_url:
+        ret['owner'] = external_account.profile_url
+
+    return ret
 
 
 def serialize_settings(node_settings, current_user):
