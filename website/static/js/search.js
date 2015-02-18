@@ -161,7 +161,7 @@ var ViewModel = function(params) {
         self.currentPage(1);
         self.category(alias);
         if (alias.name === 'SHARE') {
-            self.share_search();
+            document.location = '/share/?' + $.param({q: self.query()});
         } else {
             self.search();
         }
@@ -194,20 +194,6 @@ var ViewModel = function(params) {
         self.totalResults(0);
         self.currentPage(1);
         self.search();
-    };
-
-    self.share_search = function(noPush, validate) {
-        var jsonData = {'query': self.fullQuery(), 'from': self.currentIndex(), 'size': self.resultsPerPage()};
-        var url = '/api/v1/share/';
-
-        $osf.postJSON(url, jsonData).success(function(data) {
-            self.results.removeAll();
-            data.results.forEach(function(result) {
-                result.category = "SHARE";
-                self.results.push(result);
-            });
-
-        })
     };
 
     self.search = function(noPush, validate) {
@@ -269,10 +255,8 @@ var ViewModel = function(params) {
             if (!noPush) {
                 self.pushState();
             }
-            var share_count = 0
-            $osf.postJSON('/api/v1/share/count/', jsonData).success(function(data) {
-                share_count = data;
-                self.categories.push(new Category('SHARE', share_count, 'SHARE')); 
+            $osf.postJSON('/api/v1/share/?count', jsonData).success(function(data) {
+                self.categories.push(new Category('SHARE', data.count, 'SHARE'));
             });
         }).fail(function(response){
             self.totalResults(0);
