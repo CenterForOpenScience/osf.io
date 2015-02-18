@@ -5,6 +5,7 @@ to the specified project.
 
 import bson
 import datetime
+from cStringIO import StringIO
 
 import pymongo
 from dateutil.relativedelta import relativedelta
@@ -55,7 +56,9 @@ def main():
     user = models.User.load(USER_ID)
     cutoff = datetime.datetime.utcnow() - TIME_OFFSET
     result = run_map_reduce(query={'date': {'$gt': cutoff}})
-    sio = utils.make_csv(
+    sio = StringIO()
+    utils.make_csv(
+        sio,
         (
             (row['_id'], row['value'])
             for row in result.find().sort([('value', pymongo.DESCENDING)])
