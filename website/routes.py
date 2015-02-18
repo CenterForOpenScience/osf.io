@@ -614,6 +614,7 @@ def make_url_map(app):
 
         Rule('/search/', 'get', {}, OsfWebRenderer('search.mako')),
         Rule('/share/', 'get', {}, OsfWebRenderer('share_search.mako')),
+        Rule('/share_dashboard/', 'get', {}, OsfWebRenderer('share_dashboard.mako')),
 
         Rule('/api/v1/user/search/', 'get', search_views.search_contributor, json_renderer),
 
