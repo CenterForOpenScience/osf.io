@@ -54,6 +54,15 @@ api_routes = {
         ),
         Rule(
             [
+                '/project/<pid>/mendeley/user_auth/',
+                '/project/<pid>/node/<nid>/mendeley/user_auth/',
+            ],
+            'delete',
+            views.mendeley_remove_user_auth,
+            json_renderer,
+        ),
+        Rule(
+            [
                 '/project/<pid>/mendeley/widget/',
                 '/project/<pid>/node/<nid>/mendeley/widget/',
             ],

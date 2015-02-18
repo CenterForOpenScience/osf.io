@@ -71,7 +71,9 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
 
     @property
     def selected_folder_name(self):
-        if self.mendeley_list_id and self.mendeley_list_id != 'ROOT':    
+        if self.mendeley_list_id is None:
+            return ''
+        elif self.mendeley_list_id != 'ROOT':    
             folder = self.api._folder_metadata(self.mendeley_list_id)
             return folder.name
         else:
@@ -93,7 +95,7 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
         user_settings.grant_oauth_access(
             node=self.owner,
             external_account=external_account,
-            metadata=metadata,
+            metadata=metadata or {},
         )
         
         user_settings.save()

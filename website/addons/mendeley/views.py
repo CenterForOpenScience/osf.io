@@ -23,8 +23,8 @@ def serialize_urls(node_settings, user_accounts):
 
     deauthorize = None
     if node_settings.external_account:
-        deauthorize = api_url_for('oauth_disconnect', 
-                                 external_account_id=node_settings.external_account.provider_id)
+        deauthorize = node.api_url_for('mendeley_remove_user_auth')
+
     return {
         'config': node.api_url_for('mendeley_set_config'),
         'deauthorize': deauthorize,
@@ -57,7 +57,6 @@ def serialize_settings(node_settings, current_user):
     if user_has_auth:
         user_account_id = user_accounts[0]._id
 
-        
     result = {        
         'nodeHasAuth': node_settings.has_auth,
         'userIsOwner': user_is_owner,
@@ -130,6 +129,20 @@ def mendeley_add_user_auth(auth, user_addon, node_addon, **kwargs):
     result = node_addon.to_json(auth.user)
     result.update(serialize_settings(node_addon, auth.user))
     return {'result': result}
+
+
+@must_have_permission('write')
+@must_have_addon('mendeley', 'node')
+@must_have_addon('mendeley', 'user')
+@must_not_be_registration
+def mendeley_remove_user_auth(auth, user_addon, node_addon, **kwargs):
+    node_addon.external_account = None
+    node_addon.mendeley_list_id = None
+    node_addon.save()    
+    result = node_addon.to_json(auth.user)
+    result.update(serialize_settings(node_addon, auth.user))    
+    return {'result': result}
+
 
 
 @must_have_permission('write')
