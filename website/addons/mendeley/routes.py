@@ -37,7 +37,7 @@ api_routes = {
                 '/project/<pid>/mendeley/settings/',
                 '/project/<pid>/node/<nid>/mendeley/settings/',
             ],
-            'post',
+            'put',
             views.mendeley_set_config,
             json_renderer,
         ),

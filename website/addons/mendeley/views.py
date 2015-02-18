@@ -1,9 +1,12 @@
+# -*- coding: utf-8 -*-
+
 import httplib as http
 
 from flask import request
 
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
+
 from website.oauth.models import ExternalAccount
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_permission
@@ -93,7 +96,7 @@ def list_citationlists_node(pid, account_id, auth, node, project, node_addon):
 
     return {
         'citation_lists': mendeley.citation_lists,
-        'citation_tree': mendeley.citation_folder_tree
+        'citation_tree': mendeley.citation_folder_tree,
     }
 
 
