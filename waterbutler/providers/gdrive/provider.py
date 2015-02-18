@@ -1,6 +1,7 @@
 import os
 import asyncio
 import json
+import requests
 from urllib.parse import urlparse
 
 from waterbutler.core import utils
@@ -18,7 +19,6 @@ class GoogleDrivePath(utils.WaterButlerPath):
 
     def __init__(self, path, folder, isUpload=False, prefix=True, suffix=False):
         super().__init__(path, prefix=prefix, suffix=suffix)
-
         parts = path.strip('/').split('/')
         if len(parts) > 1:
             name = parts[1]  # TODO : Remove this later if of no use
@@ -26,7 +26,7 @@ class GoogleDrivePath(utils.WaterButlerPath):
             self._folderId = folderId
             self._name = name
             if folderId == folder['id']:
-                full_path = folder['name']
+                full_path = folder['name'].lstrip('/')
             else:
                 tempPath = ''
                 for i in range(2, len(parts)):
@@ -62,12 +62,26 @@ class GoogleDriveProvider(provider.BaseProvider):
     def __init__(self, auth, credentials, settings):
         super().__init__(auth, credentials, settings)
         self.token = self.credentials['token']
+        self.refresh_token = self.credentials['refresh_token']
+        self.client_id = self.credentials['client_id']
+        self.client_secret = self.credentials['client_secret']
         self.folder = self.settings['folder']
 
     @property
     def default_headers(self):
+
+        # Refesh access_token before making any calls
+        params = {
+            'client_id': self.client_id,
+            'client_secret': self.client_secret,
+            'refresh_token': self.refresh_token,
+            'grant_type': 'refresh_token'
+        }
+        url = 'https://www.googleapis.com/oauth2/v3/token'
+        response = requests.post(url, params=params)
+        refresh_token = response.json()['access_token']
         return {
-            'authorization': 'Bearer {}'.format(self.token),
+            'authorization': 'Bearer {}'.format(refresh_token),
         }
 
     @asyncio.coroutine
@@ -176,7 +190,6 @@ class GoogleDriveProvider(provider.BaseProvider):
     @asyncio.coroutine
     def metadata(self, path, **kwargs):
         path = GoogleDrivePath(path, self.folder)
-
         resp = yield from self.make_request(
             'GET',
             self.build_url('files', q="'%s' in parents and trashed = false" % path._folderId, alt="json"),
