@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from framework.mongo import database as proxy_database
+from pymongo.errors import OperationFailure
 
 
 def begin(database=None):
@@ -10,7 +11,10 @@ def begin(database=None):
 
 def rollback(database=None):
     database = database or proxy_database
-    database.command('rollbackTransaction')
+    try:
+        database.command('rollbackTransaction')
+    except OperationFailure:
+        pass
 
 
 def commit(database=None):
