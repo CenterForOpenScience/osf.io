@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from datetime import datetime
 from nose.tools import *  # noqa (PEP8 asserts)
 
 from website.util import api_url_for, web_url_for
@@ -20,6 +21,7 @@ class TestBoxIntegration(OsfTestCase):
         self.user.save()
         settings = self.user.get_addon('box')
         settings.access_token = 'abc123foobarbaz'
+        settings.last_refreshed = datetime.utcnow()
         settings.save()
         assert_true(self.user.get_addon('box').has_auth)
         # Tries to start oauth again

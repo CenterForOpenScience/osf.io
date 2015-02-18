@@ -90,16 +90,11 @@ def test_is_subdir():
 #             result = utils.render_box_file(f, client=mock_client)
 
 
-def test_clean_path():
-    assert_equal(utils.clean_path('/'), '')
-    assert_equal(utils.clean_path('/foo/bar/baz/'), 'foo/bar/baz')
-    assert_equal(utils.clean_path(None), '')
-
-
-def test_get_share_folder_uri():
-    expected = 'https://box.com/home/foo?shareoptions=1&share_subfolder=0&share=1'
-    assert_equal(utils.get_share_folder_uri('/foo/'), expected)
-    assert_equal(utils.get_share_folder_uri('foo'), expected)
+# TODO(mfraezz): Add support for folder sharing urls
+# def test_get_share_folder_uri():
+#     expected = 'https://box.com/home/foo?shareoptions=1&share_subfolder=0&share=1'
+#     assert_equal(utils.get_share_folder_uri('/foo/'), expected)
+#     assert_equal(utils.get_share_folder_uri('foo'), expected)
 
 
 def test_serialize_folder():
@@ -120,44 +115,18 @@ def test_serialize_folder():
     assert_equal(result['name'], 'Box' + metadata['path'])
 
 
-class TestFileResponse(OsfTestCase):
-    def test_make_file_response(self):
-        mockfile = io.BytesIO(b'bohemianrhapsody')
-        metadata = {
-            u'bytes': 123,
-            u'icon': u'file',
-            u'is_dir': False,
-            u'modified': u'Sat, 22 Mar 2014 05:40:29 +0000',
-            u'path': u'foo/song.mp3',
-            u'rev': u'3fed51f002c12fc',
-            u'revision': 67032351,
-            u'root': u'box',
-            u'size': u'0 bytes',
-            u'thumb_exists': False,
-            u'mime_type': u'audio/mpeg',
-        }
-        resp = utils.make_file_response(mockfile, metadata)
-        # It's a response
-        assert_true(isinstance(resp, Response))
-        # Headers are correct
-        disposition = 'attachment; filename=song-{0}.mp3'.format(metadata['rev'])
-        assert_equal(resp.headers['Content-Disposition'], disposition)
-        assert_equal(resp.headers['Content-Type'], metadata['mime_type'])
-
-
 class TestMetadataSerialization(OsfTestCase):
 
     def test_metadata_to_hgrid(self):
         metadata = {
-            u'bytes': 123,
-            u'icon': u'file',
-            u'is_dir': False,
+            u'name': 'baz.mp3',
+            u'type': u'file',
             u'modified': u'Sat, 22 Mar 2014 05:40:29 +0000',
             u'path': u'/foo/bar/baz.mp3',
             u'rev': u'3fed51f002c12fc',
             u'revision': 67032351,
             u'root': u'box',
-            u'size': u'0 bytes',
+            u'id': u'1234567890',
             u'thumb_exists': False,
             u'mime_type': u'audio/mpeg',
         }
@@ -168,7 +137,6 @@ class TestMetadataSerialization(OsfTestCase):
         assert_equal(result['permissions'], permissions)
         filename = utils.get_file_name(metadata['path'])
         assert_equal(result['name'], filename)
-        assert_equal(result['urls'], utils.build_box_urls(metadata, node))
         assert_equal(result['path'], metadata['path'])
         assert_equal(result['ext'], os.path.splitext(filename)[1])
 
@@ -178,17 +146,15 @@ class TestBuildBoxUrls(OsfTestCase):
     def test_build_box_urls_file(self):
         node = ProjectFactory()
         fake_metadata = mock_responses['metadata_single']
+        fake_metadata['type'] = 'folder'
         result = utils.build_box_urls(fake_metadata, node)
-        path = utils.clean_path(fake_metadata['path'])
+        path = fake_metadata['path']
         assert_equal(
-            result['download'],
-            node.web_url_for('box_download', path=path)
+            result['fetch'],
+            node.api_url_for('box_hgrid_data_contents', path=path)
         )
         assert_equal(
-            result['view'],
-            node.web_url_for('box_view_file', path=path)
-        )
-        assert_equal(
-            result['delete'],
-            node.api_url_for('box_delete_file', path=path)
+            result['folders'],
+            node.api_url_for('box_hgrid_data_contents',
+                path=path, foldersOnly=1)
         )
