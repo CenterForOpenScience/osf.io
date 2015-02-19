@@ -119,17 +119,43 @@ var buildExternalUrl = function(csl) {
     return null;
 };
 
+var makeClipboardConfig = function(getText) {
+    return function(elm, isInit, ctx) {
+        var $elm = $(elm);
+        if (!elm._client) {
+            elm._client = clipboard(elm);
+            // Attach `beforecopy` handler to ensure updated clipboard text
+            if (getText) {
+                elm._client.on('beforecopy', function() {
+                    $elm.attr('data-clipboard-text', getText());
+                });
+            }
+        }
+        ctx.onunload = function() {
+            elm._client && elm._client.destroy();
+        };
+    };
+};
+
 var renderActions = function(item, col) {
     var self = this;
     var buttons = [];
-    if (item.kind === 'item') {
+    if (item.kind === 'file') {
+        buttons.push({
+            name: '',
+            icon: 'icon-copy',
+            css: 'btn btn-default btn-xs',
+            tooltip: 'Copy citation',
+            clipboard: self.getCitation(item),
+            config: makeClipboardConfig()
+        });
         // Add link to external document
         var externalUrl = buildExternalUrl(item.data.csl);
         if (externalUrl) {
             buttons.push({
                 name: '',
-                css: 'btn btn-info btn-xs',
                 icon: 'icon-external-link',
+                css: 'btn btn-default btn-xs',
                 tooltip: 'View original document',
                 onclick: function(event) {
                     window.open(externalUrl);
@@ -140,26 +166,23 @@ var renderActions = function(item, col) {
         if (item.data.serviceUrl) {
             buttons.push({
                 name: '',
-                css: 'btn btn-info btn-xs',
                 icon: 'icon-link',
+                css: 'btn btn-default btn-xs',
                 tooltip: 'View on ' + self.provider,
                 onclick: function(event) {
                     window.open(item.data.serviceUrl);
                 }
             });
         }
+    } else if (item.kind === 'folder' && item.open && item.children.length) {
         buttons.push({
             name: '',
-            css: 'btn btn-info btn-xs copy-button',
             icon: 'icon-copy',
-            tooltip: 'Copy citation',
-            clipboard: self.getCitation(item),
-            config: function(elm, isInit, ctx) {
-                elm._client = elm._client || clipboard(elm);
-                ctx.onunload = function() {
-                    elm._client && elm._client.destroy();
-                };
-            }
+            css: 'btn btn-default btn-xs',
+            tooltip: 'Copy citations',
+            config: makeClipboardConfig(function() {
+                return self.getCitations(item).join('\n');
+            })
         });
     }
     return makeButtons(item, col, buttons);
@@ -265,7 +288,7 @@ CitationGrid.prototype.updateStyle = function(style) {
 CitationGrid.prototype.makeBibliography = function(folder) {
     var data = objectify(
         folder.children.filter(function(child) {
-            return child.kind === 'item';
+            return child.kind === 'file';
         }).map(function(child) {
             return child.data.csl;
         })
@@ -293,6 +316,14 @@ CitationGrid.prototype.getCitation = function(item) {
     return bibliography[item.data.csl.id];
 };
 
+CitationGrid.prototype.getCitations = function(folder) {
+    var self = this;
+    return folder.children.filter(function(child) {
+        return child.kind === 'file';
+    }).map(function(child) {
+        return self.getCitation(child);
+    });
+};
 
 CitationGrid.prototype.resolveRowAux = function(item) {
     var self = this;

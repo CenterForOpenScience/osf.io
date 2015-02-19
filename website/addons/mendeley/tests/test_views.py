@@ -275,7 +275,3 @@ class MendeleyViewsTestCase(OsfTestCase):
             expect_errors=True            
         )
         assert_equal(res.status_code, 403)
-
-    def test_citation_list_bibtex(self):
-        #"""JSON: list of formatted citations in BibTeX style"""
-        assert_true(False)
