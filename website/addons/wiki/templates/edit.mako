@@ -138,7 +138,7 @@
                         </div>
                     </div>
                 </div>
-                <div data-bind="html: renderedView, mathjaxify: {throttle: 500}" class="wiki-panel-body">
+                <div data-bind="html: renderedView, mathjaxify: {throttle: 500}" class="wiki-panel-body markdown-it-view">
 
                 </div>
               </div>
@@ -161,7 +161,7 @@
                       </div>
                   </div>
               </div>
-              <div data-bind="html: renderedCompare" class="wiki-panel-body">
+              <div data-bind="html: renderedCompare" class="wiki-panel-body wiki-compare-view">
 
               </div>
             </div>

@@ -33,12 +33,13 @@ function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathj
     self.editor = editor;
     self.allowFullRender = ko.observable(false);
     self.renderTimeout = null;
+    self.displaySource = ko.observable('');
 
     self.renderMarkdown = function(rawContent){
         if(self.allowFullRender()) {
-            return(md.render(rawContent));
+            return md.render(rawContent);
         } else {
-            return(mdQuick.render(rawContent));
+            return mdQuick.render(rawContent);
         }
     };
 
@@ -62,7 +63,7 @@ function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathj
         if (typeof self.version() !== 'undefined') {
             if (self.version() === 'preview') {
                 self.rendered(self.renderMarkdown(self.viewText()));
-                return self.viewText();
+                self.displaySource(self.viewText());
             } else {
                 if (self.version() === 'current') {
                     requestURL = contentURL;
@@ -88,11 +89,11 @@ function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathj
                             self.rendered(self.renderMarkdown(rawContent));
                         }
                     }
-                    return(rawContent);
+                    self.displaySource(rawContent);
                 });
             }
         } else {
-            return ('');
+            self.displaySource('');
         }
     });
 }
@@ -105,37 +106,31 @@ function CompareWidget(visible, compareVersion, currentText, rendered, contentUR
     self.currentText = currentText;
     self.rendered = rendered;
     self.visible = visible;
+    self.contentURL = contentURL;
+    self.compareSource = ko.observable('');
 
     self.compareText = ko.computed(function() {
         var requestURL;
         if (self.compareVersion() === 'current') {
-            requestURL = contentURL;
+            requestURL = self.contentURL;
         } else {
-            requestURL= contentURL + self.compareVersion();
+            requestURL= self.contentURL + self.compareVersion();
         }
         var request = $.ajax({
             url: requestURL
         });
         request.done(function (resp) {
-            return(resp.wiki_content);
+            var rawText = resp.wiki_content;
+            self.compareSource(rawText);
         });
 
     });
 
     self.compareOutput = ko.computed(function() {
-        var current = '';
-        var compare = '';
-
-        current = self.currentText();
-        compare = self.compareText();
-
-        console.log("Current: " + current);
-        console.log("Compare: " + compare);
-
-        var output = diffTool.diff(current, compare);
+        var output = diffTool.diff(self.compareSource(), self.currentText());
         self.rendered(output);
-        return(output);
-    });
+        return output;
+    }).extend({ notify: 'always' });
 
 }
 
@@ -180,7 +175,7 @@ function ViewModel(options){
         self.editVM = new ShareJSDoc(self.draftURL, self.editorMetadata, self.viewText, self.editor);
     }
     self.viewVM = new ViewWidget(self.viewVis, self.viewVersion, self.viewText, self.renderedView, self.contentURL, self.allowMathjaxification, self.editor);
-    self.compareVM = new CompareWidget(self.compareVis, self.compareVersion, self.viewVM.displayText, self.renderedCompare, self.contentURL);
+    self.compareVM = new CompareWidget(self.compareVis, self.compareVersion, self.viewVM.displaySource, self.renderedCompare, self.contentURL);
 }
 
 

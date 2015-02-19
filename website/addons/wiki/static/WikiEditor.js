@@ -7,7 +7,6 @@ var Markdown = require('pagedown-ace-converter');
 Markdown.getSanitizingConverter = require('pagedown-ace-sanitizer').getSanitizingConverter;
 require('imports?Markdown=pagedown-ace-converter!pagedown-ace-editor');
 
-var editor;
 
 /**
  * Binding handler that instantiates an ACE editor.
@@ -15,15 +14,18 @@ var editor;
  * Example: <div data-bind="ace: currentText" id="editor"></div>
  */
 ko.bindingHandlers.ace = {
-    init: function (element, valueAccessor, vm) {
-        editor = vm.editor; // jshint ignore:line
+    init: function (element, valueAccessor, allBindingsAccessor, data, context) {
+        var vm = context.$data;
+        var editor = vm.editor; // jshint ignore:line
 
         // Updates the view model based on changes to the editor
         editor.getSession().on('change', function () {
             valueAccessor()(editor.getValue());
         });
     },
-    update: function (element, valueAccessor) {
+    update: function (element, valueAccessor, allBindingsAccessor, data, context) {
+        var vm = context.$data;
+        var editor = vm.editor; // jshint ignore:line
         var content = editor.getValue();        // Content of ace editor
         var value = ko.unwrap(valueAccessor()); // Value from view model
 
