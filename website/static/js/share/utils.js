@@ -1,6 +1,12 @@
 var m = require('mithril');
 
 
+var callbacks = [];
+
+var onSearch = function(fb) {
+    callbacks.push(fb);
+};
+
 var loadingIcon = m('img[src=/static/img/loading.gif]',{style: {margin: 'auto', display: 'block'}});
 
 var loadMore = function(vm) {
@@ -13,7 +19,11 @@ var loadMore = function(vm) {
     m.request({
         method: 'get',
         background: true,
-        url: '/api/v1/share/?sort=dateUpdated&from=' + page + '&q=' + vm.query(),
+        url: '/api/v1/share/?' + $.param({
+            from: page,
+            q: vm.query(),
+            sort: 'dateUpdated',
+        })
     }).then(function(data) {
         vm.time = data.time;
         vm.count = data.count;
@@ -21,7 +31,9 @@ var loadMore = function(vm) {
         vm.results.push.apply(vm.results, data.results);
 
         vm.resultsLoading(false);
-    }).then(m.redraw);
+    }).then(m.redraw).then(function() {
+        callbacks.map(function(cb) {cb();});
+    });
 };
 
 var search = function(vm) {
@@ -47,8 +59,10 @@ var maybeQuashEvent = function(event) {
     }
 };
 
+
 module.exports = {
     search: search,
+    onSearch: onSearch,
     loadMore: loadMore,
     loadingIcon: loadingIcon,
     maybeQuashEvent: maybeQuashEvent
