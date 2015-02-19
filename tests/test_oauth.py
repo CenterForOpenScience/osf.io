@@ -455,7 +455,6 @@ class TestExternalProviderOAuth2(OsfTestCase):
                 error_raised.exception.code,
                 503,
             )
-        print('asdf')
 
 
     @responses.activate
