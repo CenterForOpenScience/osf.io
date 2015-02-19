@@ -89,9 +89,9 @@ function displayParentNotificationType(item){
         'none': 'None'
     };
 
-    if (item.data.parent_notification_type) {
+    if (item.data.event.parent_notification_type) {
         if (item.parent().parent().parent() === undefined) {
-            return '(' + notificationTypeDescriptions[item.data.parent_notification_type] + ')';
+            return '(' + notificationTypeDescriptions[item.data.event.parent_notification_type] + ')';
         }
     }
     return '';
