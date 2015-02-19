@@ -12,3 +12,7 @@
     background-color: #ebebeb;
     border-color: #adadad;
 }
+
+.filebrowser #tb-tbody {
+    height: 300px;
+}
