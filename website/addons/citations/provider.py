@@ -1,4 +1,7 @@
 import abc
+import http
+
+from framework.exceptions import HTTPError
 
 from website.oauth.models import ExternalAccount
 

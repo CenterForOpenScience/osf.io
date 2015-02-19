@@ -1,3 +1,7 @@
+import http
+
+from framework.exceptions import HTTPError
+
 from website.addons.citations import provider
 from .model import AddonMendeleyNodeSettings
 from website.addons.citations import utils
