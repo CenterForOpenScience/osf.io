@@ -248,7 +248,7 @@
                 <tr>
                     <td style="border-collapse: collapse;">
                         <p class="small text-center" style="text-align: center;font-size: 12px;">Copyright &copy; 2015 Center For Open Science, All rights reserved. </p>
-                        <p class="small text-center" style="text-align: center;font-size: 12px;"><a href="#" style="padding: 0;margin: 0;border: none;list-style: none;color: #008de5;text-decoration: none;">View this email in a browser </a> |  <a href="#" style="padding: 0;margin: 0;border: none;list-style: none;color: #008de5;text-decoration: none;">update subscription preferences</a></p>
+                        <p class="small text-center" style="text-align: center;font-size: 12px; line-height: 20px;">You received this email because you were subscribed to email notifications. <br /><a href="http://localhost:5000/prh5z/settings/" style="padding: 0;margin: 0;border: none;list-style: none;color: #008de5;text-decoration: none; font-weight: bold;">Update Subscription Preferences</a></p>
                     </td>
                 </tr>
                 </tbody>
