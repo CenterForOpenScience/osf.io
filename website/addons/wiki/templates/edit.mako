@@ -170,9 +170,7 @@
                   </div>
               </div>
               <div class="wiki-panel-body">
-                <div class="row">
-                    <div class="col-xs-12"> ... coming soon </div>
-                </div>
+                <div id="viewCompare" class="wiki-compare-view"></div>
               </div>
             </div>
           </div>

@@ -5,7 +5,7 @@ require('bootstrap-editable');
 require('osf-panel');
 var md = require('markdown').full;
 var mathrender = require('mathrender');
-var wikEdDiff = require('wik-ed-diff');
+var differ = require('wikiDiff');
 
 var ctx = window.contextVars.wiki;  // mako context variables
 
@@ -14,7 +14,7 @@ var selectCompareVersion = $('#compareVersionSelect');
 var previewElement = $('#viewPreview');
 var versionElement = $('#viewVersion');
 var markdownElement = $('#markdownItRender');
-
+var compareElement = $('#viewCompare');
 
 // Collaborative editor
 if (ctx.canEdit) {

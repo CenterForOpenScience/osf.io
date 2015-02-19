@@ -2163,6 +2163,12 @@ span#profileFullname{
 .markdown-it-view {
     padding: 10px;
 }
+
+.wiki-compare-view {
+    white-space: pre-wrap;
+    padding: 10px;
+}
+
 @media (max-width: 991px) {
     .wiki-panel {
         margin-bottom: 20px;
