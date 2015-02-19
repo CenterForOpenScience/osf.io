@@ -4,20 +4,6 @@ from framework.routing import Rule, json_renderer
 
 from website.addons.mendeley import views
 
-'''
-        TODO delete?, see comments in views.py
-        Rule(
-            [
-                '/project/<pid>/mendeley/<account_id>/lists/',
-                '/project/<pid>/node/<nid>/mendeley/<account_id>/lists/',
-            ],
-            'get',
-            views.list_citationlists_node,
-            json_renderer,
-        ),
-'''
-
-
 api_routes = {
     'rules': [
         Rule(

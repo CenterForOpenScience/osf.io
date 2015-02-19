@@ -131,16 +131,9 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
             accounts.append(self.external_account)
         return accounts
 
+    # TODO deprecated
     def to_json(self, user):
-        ret = super(AddonMendeleyNodeSettings, self).to_json(user)
-        ret.update({
-            'listId': self.mendeley_list_id,
-            'accounts': [utils.serialize_account(each) for each in
-                         self.get_accounts(user)],
-            'currentAccount': utils.serialize_account(self.external_account),
-        })
-        return ret
-
+        return {}
 
 class Mendeley(ExternalProvider):
     name = 'Mendeley'
