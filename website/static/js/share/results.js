@@ -112,12 +112,11 @@ Results.controller = function(vm) {
 
 
     self.loadMore = function() {
-        self.vm.page++;
-        var page = (self.vm.page + 1) * 10;
+        var page = self.vm.page++ * 10;
 
         m.request({
             method: 'get',
-            url: '/api/v1/share/?from=' + page + '&q=' + self.vm.query(),
+            url: '/api/v1/share/?sort=dateUpdated&from=' + page + '&q=' + self.vm.query(),
         }).then(function(data) {
             self.vm.time = data.time;
             self.vm.count = data.count;

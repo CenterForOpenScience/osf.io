@@ -51,8 +51,7 @@ SearchBar.controller = function(vm) {
     self.vm.showStats = true;
 
     self.loadMore = function() {
-        self.vm.page++;
-        var page = (self.vm.page + 1) * 10;
+        var page = self.vm.page++ * 10;
 
         m.request({
             method: 'get',
