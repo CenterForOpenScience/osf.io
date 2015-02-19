@@ -18,6 +18,20 @@ function getSourcesOneCol(raw_data) {
     return chart_list;
 }
 
+function doughnutGraph (data) {
+    var chart2 = c3.generate({
+        bindto: '#shareDoughnutGraph',
+        data: {
+            columns: getSourcesOneCol(data),
+            type : 'donut',
+        },
+        donut: {
+            title: 'SHARE Providers'
+        }
+    });
+}
+
+
 Stats.view = function(ctrl) {
     return [
         m('.row', {style: {color: 'darkgrey'}}, [
@@ -31,7 +45,9 @@ Stats.view = function(ctrl) {
                     m('h1.about-share-header', {
                         class: 'animated fadeInUp'
                     },'What is SHARE?'),
-                    m('div[id=shareDoughnutGraph]', {config: ctrl.drawDoughnutGraph})
+                    !ctrl.vm.statsLoaded ? m('img[src=/static/img/loading.gif]') : [
+                        m('div[id=shareDoughnutGraph]', {config: ctrl.drawGraph(doughnutGraph)})
+                    ]
                 ]))
             ]),
         ] : []),
@@ -45,6 +61,9 @@ Stats.view = function(ctrl) {
     ];
 };
 
+
+
+
 Stats.controller = function(vm) {
     var self = this;
 
@@ -53,38 +72,33 @@ Stats.controller = function(vm) {
 
     self.vm.totalCount = 0;
     self.vm.showStats = true;
+    self.vm.statsLoaded = false;
     self.vm.latestDate = undefined;
 
-    self.drawDoughnutGraph = function(e, i) {
-        if (i) return;
-
-        var chart2 = c3.generate({
-            bindto: '#shareDoughnutGraph',
-            data: {
-                columns: getSourcesOneCol(self.vm.statsData),
-                type : 'donut',
-            },
-            donut: {
-                title: 'SHARE Providers'
-            }
-        });
+    self.drawGraph = function(graphFunction) {
+        return function(e, i) {
+            if (i) return;
+            graphFunction(self.vm.statsData);
+        };
     };
 
     m.request({
         method: 'GET',
+        background: true,
         url: '/api/v1/share/?size=1',
-        background: true
     }).then(function(data) {
         self.vm.totalCount = data.count;
         self.vm.latestDate = new $osf.FormattableDate(data.results[0].dateUpdated).local;
-    });
+    }).then(m.redraw);
 
     m.request({
         method: 'GET',
-        url: '/api/v1/share/stats/'
+        url: '/api/v1/share/stats/',
+        background: true
     }).then(function(data) {
         self.vm.statsData = data;
-    });
+        self.vm.statsLoaded = true;
+    }).then(m.redraw);
 };
 
 module.exports = Stats;
