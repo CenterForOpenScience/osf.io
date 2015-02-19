@@ -29,7 +29,8 @@ var diff = function(beforeText, afterText) {
         fragment.appendChild(span);
     });
 
-    return fragment;
+    var output = $('<div>').append(fragment).html();
+    return output;
 };
 
 module.exports = {
