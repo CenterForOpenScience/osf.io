@@ -213,4 +213,7 @@ def search_share():
 
 
 def search_share_stats():
-    return search.share_stats()
+    q = request.args.get('q')
+    query = build_query(q, 0, 0) if q else {}
+
+    return search.share_stats(query=query)

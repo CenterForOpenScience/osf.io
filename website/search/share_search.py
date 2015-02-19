@@ -30,63 +30,61 @@ def count(query):
         'count': count['count']
     }
 
-def stats():
-    body = {
-        "size": 0,
-        "aggs": {
-            "sources": {
-                "terms": {
-                    "field": "_type",
-                    "size": 0,
-                    "exclude": "of|and|or"
+def stats(query=dict()):
+    query['aggs'] = {
+        "sources": {
+            "terms": {
+                "field": "_type",
+                "size": 0,
+                "exclude": "of|and|or"
+            }
+        },
+        "doisMissing": {
+            "filter": {
+                "missing": {
+                    "field": "id.doi"
                 }
             },
-            "doisMissing": {
-                "filter": {
-                    "missing": {
-                        "field": "id.doi"
-                    }
-                },
-                "aggs": {
-                    "sources": {
-                        "terms": {
-                            "field": "_type",
-                            "size": 0
-                        }
+            "aggs": {
+                "sources": {
+                    "terms": {
+                        "field": "_type",
+                        "size": 0
                     }
                 }
-            },
-            "dois": {
-                "filter": {
-                    "exists": {
-                        "field": "id.doi"
-                    }
-                },
-                "aggs": {
-                    "sources": {
-                        "terms": {
-                            "field": "_type",
-                            "size": 0
-                        }
-                    }
+            }
+        },
+        "dois": {
+            "filter": {
+                "exists": {
+                    "field": "id.doi"
                 }
             },
-            "date_chunks": {
-                "terms": {
-                    "field": "_type",
-                    "size": 0,
-                    "exclude": "of|and|or"
-                },
-                "aggs": {
-                    "articles_over_time": {
-                        "date_histogram": {
-                            "field": "dateUpdated",
-                            "interval": "month"
-                        }
+            "aggs": {
+                "sources": {
+                    "terms": {
+                        "field": "_type",
+                        "size": 0
+                    }
+                }
+            }
+        },
+        "date_chunks": {
+            "terms": {
+                "field": "_type",
+                "size": 0,
+                "exclude": "of|and|or"
+            },
+            "aggs": {
+                "articles_over_time": {
+                    "date_histogram": {
+                        "field": "dateUpdated",
+                        "interval": "month"
                     }
                 }
             }
         }
     }
-    results = share_es.search(index='share', body=body)
+
+    results = share_es.search(index='share', body=query)
     return results['aggregations']
