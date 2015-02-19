@@ -70,7 +70,7 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
 
     @property
     def complete(self):
-        return self.has_auth and self.mendeley_list_id
+        return bool(self.has_auth and self.mendeley_list_id)
 
     @property
     def selected_folder_name(self):

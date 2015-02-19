@@ -18,7 +18,7 @@ from website.addons.mendeley.tests.factories import (
 
 from website.util import api_url_for
 from website.addons.mendeley import utils
-from website.addons.mendeley.views import serialize_settings, serialize_urls
+from website.addons.mendeley import views
 
 from utils import mock_responses
 
@@ -37,6 +37,25 @@ FOLDER_LIST_JSON = [
     },
 ]
 
+class MockNode(object):
+    
+    addon = None
+
+    @property
+    def is_deleted(self):
+        return False
+
+    @property
+    def is_public(self):
+        return True
+
+    def get_addon(self, name):
+        if name == 'mendeley':
+            return self.addon
+        return None
+    
+    
+
 
 class MendeleyViewsTestCase(OsfTestCase):
 
@@ -50,6 +69,8 @@ class MendeleyViewsTestCase(OsfTestCase):
         self.project = ProjectFactory(creator=self.user)
         self.node_addon = MendeleyNodeSettingsFactory(owner=self.project, external_account=self.account)
         self.node_addon.grant_oauth_access(self.user, self.account, metadata={'lists': 'list'})
+        self.node = MockNode()
+        self.node.addon = self.node_addon
         self.id_patcher = mock.patch('website.addons.mendeley.model.Mendeley.client_id')
         self.secret_patcher = mock.patch('website.addons.mendeley.model.Mendeley.client_secret')
         self.id_patcher.__get__ = mock.Mock(return_value='1234567890asdf')
@@ -64,12 +85,12 @@ class MendeleyViewsTestCase(OsfTestCase):
 
     def test_serialize_settings_authorizer(self):
         #"""dict: a serialized version of user-specific addon settings"""
-        res = serialize_settings(self.node_addon, self.user)
+        res = views.serialize_settings(self.node_addon, self.user)
         expected = {
             'nodeHasAuth': True,
             'userIsOwner': True,
             'userHasAuth': True,
-            'urls': serialize_urls(self.node_addon),
+            'urls': views.serialize_urls(self.node_addon),
             'userAccountId': filter(lambda a: a.provider == 'mendeley', self.user.external_accounts)[0]._id,
             'folder': '',
             'ownerName': self.user.fullname            
@@ -81,12 +102,12 @@ class MendeleyViewsTestCase(OsfTestCase):
         #"""dict: a serialized version of user-specific addon settings"""
         non_authorizing_user = AuthUserFactory()
         self.project.add_contributor(non_authorizing_user, save=True)    
-        res = serialize_settings(self.node_addon, non_authorizing_user)
+        res = views.serialize_settings(self.node_addon, non_authorizing_user)
         expected = {
             'nodeHasAuth': True,
             'userIsOwner': False,
             'userHasAuth': False,
-            'urls': serialize_urls(self.node_addon),
+            'urls': views.serialize_urls(self.node_addon),
             'userAccountId': None,
             'folder': '',
             'ownerName': self.user.fullname            
@@ -191,10 +212,19 @@ class MendeleyViewsTestCase(OsfTestCase):
     def test_widget_view_complete(self):
         """JSON: everything a widget needs"""
         #assert_true(False)
-        pass
+        assert_equal(self.node_addon.complete, False)
+        assert_equal(self.node_addon.mendeley_list_id, None)
+        self.node_addon.mendeley_list_id = 1234567890
+        res = views.mendeley_widget(node_addon=self.node_addon, 
+                                    project=self.project, 
+                                    node=self.node, 
+                                    pid=self.project._id, 
+                                    auth=self.user.auth)
+        assert_equal(res['complete'], True)
+        assert_equal(res['list_id'], 1234567890)
 
     def test_widget_view_incomplete(self):
-        #"""JSON: tell the widget when it hasn't been configured"""
+        """JSON: tell the widget when it hasn't been configured"""
         #assert_true(False)
         pass
 
