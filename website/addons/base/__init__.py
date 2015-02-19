@@ -581,13 +581,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         :returns: Tuple of cloned settings and alert message
 
         """
-        clone = self.clone()
-        clone.owner = registration
-
-        if save:
-            clone.save()
-
-        return clone, None
+        return None, None
 
     def after_delete(self, node, user):
         """
