@@ -4,7 +4,7 @@ var bootbox = require('bootbox');
 var ProjectSettings = require('../projectSettings.js');
 
 var $osf = require('osfHelpers');
-require('./../css/addonsettings.css');
+require('../../css/addonsettings.css');
 
 var ctx = window.contextVars;
 
