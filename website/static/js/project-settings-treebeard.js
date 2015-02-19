@@ -182,7 +182,7 @@ function ProjectNotifications(data) {
                         return m("div[style='padding-right:10px']",
                             [m('select.form-control', {
                                 onchange: function(ev) {
-                                    item.data.notificationType = ev.target.value;
+                                    item.data.event.notificationType = ev.target.value;
                                     subscribe(item.parent().data.node.id, item.data.event.title, item.data.event.notificationType)
                                 }},
                                 [
