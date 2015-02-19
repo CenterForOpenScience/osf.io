@@ -70,6 +70,21 @@ def stats():
                         }
                     }
                 }
+            },
+            "date_chunks": {
+                "terms": {
+                    "field": "_type",
+                    "size": 0,
+                    "exclude": "of|and|or"
+                },
+                "aggs": {
+                    "articles_over_time": {
+                        "date_histogram": {
+                            "field": "dateUpdated",
+                            "interval": "month"
+                        }
+                    }
+                }
             }
         }
     }
