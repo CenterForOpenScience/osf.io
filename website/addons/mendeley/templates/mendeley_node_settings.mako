@@ -1,7 +1,4 @@
-
-<link rel="stylesheet" href="/static/addons/mendeley/node-cfg.css">
 <div id="mendeleyScope" class="scripted">
-    <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
     <h4 class="addon-title">
         Mendeley
         <small class="authorized-by">
@@ -24,9 +21,7 @@
 
             <!-- Oauth Start Button -->
             <span data-bind="if: showTokenCreateButton">
-                <a data-bind="attr.href: urls().auth" class="text-primary pull-right addon-auth">
-                    Create Access Token
-                </a>
+            <a data-bind="click: connectAccount" class="text-primary pull-right addon-auth">Create Access Token</a>
             </span>
         </small>
     </h4>
@@ -38,9 +33,7 @@
             <div class="col-md-12">
                 <p>
                     <strong>Current Folder:</strong>
-                    <a data-bind="attr.href: urls().files">
-		      			                             {{folderName}}
-                    </a>
+                             {{folder}}
                     <span data-bind="if: folder().path === null" class="text-muted">
                         None
                     </span>
@@ -52,12 +45,7 @@
                     <button data-bind="visible: validCredentials,
                                         click: togglePicker,
                                         css: {active: currentDisplay() === PICKER}"
-                            class="btn btn-sm btn-mendeley"><i class="icon-edit"></i> Change</button>
-                    <button data-bind="attr.disabled: disableShare,
-                                        visible: validCredentials,
-                                        click: toggleShare,
-                                        css: {active: currentDisplay() === SHARE}"
-                        class="btn btn-sm btn-mendeley"><i class="icon-share-alt"></i> Share on mendeley
+                            class="btn btn-sm btn-addon"><i class="icon-edit"></i> Change</button>
                             <span data-bind="visible: folder().path === '/'">(Cannot share root folder)</span>
                         </button>
                 </div>
@@ -70,40 +58,7 @@
 
                     <div data-bind="visible: currentDisplay() === PICKER">
                         <div id="mendeleyGrid"
-                             class="filebrowser hgrid mendeley-folder-picker"></div>
-                    </div>
-
-                    <!-- Share -->
-                    <div data-bind="visible: currentDisplay() === SHARE && emails().length === 0"
-                        class="help-block">
-                        <p>No contributors to share with.</p>
-                    </div>
-
-                    <div data-bind="visible: currentDisplay() === SHARE && emails().length">
-                        <div class="help-block">
-                            <p>To share this folder with other mendeley users on this project, copy
-                            the email addresses of the contributors (listed below) into the
-                            "Share Folder" dialog on mendeley.</p>
-                        </div>
-
-                        <label for="contrib-emails">Copy these:</label>
-                        <div class="input-group">
-                            <textarea name="contrib-emails"
-                                    class="form-control" rows="3" id="contribEmails"
-                             data-bind="value: emailList,
-                                        attr.autofocus: currentDisplay() === SHARE">
-                            </textarea>
-                            <span data-clipboard-target="contribEmails"
-                                class="input-group-addon pointer"
-                                id="copyBtn">
-                                <i class="icon-paste"></i>
-                            </span>
-                        </div>
-
-                        <div class="input-group pull-right">
-                            <a target="_blank" data-bind="attr.href: urls().share"
-                                class="btn btn-link"><i class="icon-share-alt"></i> Continue to mendeley...</a>
-                        </div>
+                             class="filebrowser mendeley-folder-picker"></div>
                     </div>
 
                     <!-- Queued selection -->

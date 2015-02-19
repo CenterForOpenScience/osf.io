@@ -153,10 +153,6 @@ def folder_new_post(auth, nid, **kwargs):
     }, http.CREATED
 
 
-def rename_folder(**kwargs):
-    pass
-
-
 @collect_auth
 def add_folder(**kwargs):
     auth = kwargs['auth']
@@ -353,14 +349,12 @@ def node_choose_addons(**kwargs):
 
 @must_be_valid_project
 @must_have_permission('read')
-def node_contributors(**kwargs):
-
-    auth = kwargs['auth']
+def node_contributors(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
-
-    rv = _view_project(node, auth, primary=True)
-    rv['contributors'] = utils.serialize_contributors(node.contributors, node)
-    return rv
+    ret = _view_project(node, auth, primary=True)
+    ret['contributors'] = utils.serialize_contributors(node.contributors, node)
+    ret['adminContributors'] = utils.serialize_contributors(node.admin_contributors, node, admin=True)
+    return ret
 
 
 @must_have_permission('admin')
@@ -722,11 +716,6 @@ def _view_project(node, auth, primary=False):
             'redirect_url': redirect_url,
             'display_absolute_url': node.display_absolute_url,
             'in_dashboard': in_dashboard,
-            'citations': {
-                'apa': node.citation_apa,
-                'mla': node.citation_mla,
-                'chicago': node.citation_chicago,
-            } if not anonymous else '',
             'is_public': node.is_public,
             'date_created': iso8601format(node.date_created),
             'date_modified': iso8601format(node.logs[-1].date) if node.logs else '',
@@ -945,9 +934,7 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
 
 @collect_auth
 @must_be_valid_project
-def get_summary(**kwargs):
-
-    auth = kwargs['auth']
+def get_summary(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     rescale_ratio = kwargs.get('rescale_ratio')
     if rescale_ratio is None and request.args.get('rescale_ratio'):

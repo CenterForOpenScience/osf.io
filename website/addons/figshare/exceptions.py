@@ -8,6 +8,10 @@ class FigshareIsDraftError(AddonEnrichmentError):
         self.file_guid = file_guid
 
     @property
+    def can_delete(self):
+        return True
+
+    @property
     def renderable_error(self):
         return '''
         <div class="alert alert-info" role="alert">

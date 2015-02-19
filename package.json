@@ -17,6 +17,7 @@
     "morgan": "^1.5.1",
     "object-assign": "^2.0.0",
     "raven": "^0.7.2",
+    "raw-loader": "^0.5.1",
     "share": "~0.7.3",
     "style-loader": "^0.8.3",
     "url-loader": "^0.5.5",

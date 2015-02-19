@@ -211,7 +211,7 @@ function _fangornUploadProgress(treebeard, file, progress) {
 
     if(treebeard.options.placement === 'dashboard'){
         column = null;
-        msgText += file.name + '  : ';
+        msgText += file.name.slice(0,25) + '... : ';
     } else {
         column = 1;
     }
@@ -659,7 +659,7 @@ function _fangornTitleColumn(item, col) {
         return m('span',{
             onclick: function() {
                 var redir = new URI(item.data.nodeUrl);
-                redir.segment('files').segment(item.data.provider).segment(item.data.path.substring(1));
+                redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
                 window.location = redir.toString() + '/';
             },
             'data-toggle' : 'tooltip', title : 'View file', 'data-placement': 'right'
@@ -679,7 +679,6 @@ function _fangornResolveRows(item) {
     var default_columns = [];
     var configOption;
     item.css = '';
-
     if(item.data.tmpID){
         return [
         {

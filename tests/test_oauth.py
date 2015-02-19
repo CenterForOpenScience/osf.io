@@ -86,11 +86,10 @@ def _prepare_mock_500_error():
 
 
 class TestExternalAccount(OsfTestCase):
-    """Test the ExternalAccount object and associated views.
-
-    Functionality not specific to the OAuth version used by the
-    ExternalProvider should go here.
-    """
+    # Test the ExternalAccount object and associated views.
+    #
+    # Functionality not specific to the OAuth version used by the
+    # ExternalProvider should go here.
 
     def setUp(self):
         super(TestExternalAccount, self).setUp()
@@ -104,7 +103,7 @@ class TestExternalAccount(OsfTestCase):
         super(TestExternalAccount, self).tearDown()
 
     def test_disconnect(self):
-        """Disconnect an external account from a user"""
+        # Disconnect an external account from a user
         external_account = ExternalAccountFactory(
             provider='mock2',
             provider_id='mock_provider_id',
@@ -144,7 +143,7 @@ class TestExternalAccount(OsfTestCase):
         assert_equal(ExternalAccount.find().count(), 1)
 
     def test_disconnect_with_multiple_connected(self):
-        """Disconnect an account connected to multiple users from one user"""
+        # Disconnect an account connected to multiple users from one user
         external_account = ExternalAccountFactory(
             provider='mock2',
             provider_id='mock_provider_id',
@@ -189,7 +188,7 @@ class TestExternalAccount(OsfTestCase):
 
 
 class TestExternalProviderOAuth1(OsfTestCase):
-    """Test functionality of the ExternalProvider class, for OAuth 1.0a"""
+    # Test functionality of the ExternalProvider class, for OAuth 1.0a
 
     def setUp(self):
         super(TestExternalProviderOAuth1, self).setUp()
@@ -203,7 +202,7 @@ class TestExternalProviderOAuth1(OsfTestCase):
 
     @responses.activate
     def test_start_flow(self):
-        """Request temporary credentials from provider, provide auth redirect"""
+        # Request temporary credentials from provider, provide auth redirect
         responses.add(responses.POST, 'http://mock1a.com/request',
                   body='{"oauth_token_secret": "temp_secret", '
                        '"oauth_token": "temp_token", '
@@ -233,7 +232,7 @@ class TestExternalProviderOAuth1(OsfTestCase):
 
     @responses.activate
     def test_callback(self):
-        """Exchange temporary credentials for permanent credentials"""
+        # Exchange temporary credentials for permanent credentials
 
         # mock a successful call to the provider to exchange temp keys for
         #   permanent keys
@@ -275,16 +274,16 @@ class TestExternalProviderOAuth1(OsfTestCase):
 
     @responses.activate
     def test_callback_wrong_user(self):
-        """Reject temporary credentials not assigned to the user
-
-        This prohibits users from associating their external account with
-        another user's OSF account by using XSS or similar attack vector to
-        complete the OAuth flow using the logged-in user but their own account
-        on the external service.
-
-        If the OSF were to allow login via OAuth with the provider in question,
-        this would allow attackers to hijack OSF accounts with a simple script
-        injection."""
+        # Reject temporary credentials not assigned to the user
+        #
+        # This prohibits users from associating their external account with
+        # another user's OSF account by using XSS or similar attack vector to
+        # complete the OAuth flow using the logged-in user but their own account
+        # on the external service.
+        #
+        # If the OSF were to allow login via OAuth with the provider in question,
+        # this would allow attackers to hijack OSF accounts with a simple script
+        # injection.
 
         # mock a successful call to the provider to exchange temp keys for
         #   permanent keys
@@ -324,7 +323,7 @@ class TestExternalProviderOAuth1(OsfTestCase):
 
 
 class TestExternalProviderOAuth2(OsfTestCase):
-    """Test functionality of the ExternalProvider class, for OAuth 2.0"""
+    # Test functionality of the ExternalProvider class, for OAuth 2.0
 
     def setUp(self):
         super(TestExternalProviderOAuth2, self).setUp()
@@ -338,11 +337,11 @@ class TestExternalProviderOAuth2(OsfTestCase):
         super(TestExternalProviderOAuth2, self).tearDown()
 
     def test_oauth_version_default(self):
-        """OAuth 2.0 is the default version"""
+        # OAuth 2.0 is the default version
         assert_is(self.provider._oauth_version, OAUTH2)
 
     def test_start_flow(self):
-        """Generate the appropriate URL and state token"""
+        # Generate the appropriate URL and state token
 
         with self.app.app.test_request_context("/oauth/connect/mock2/") as ctx:
 
@@ -388,7 +387,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
 
     @responses.activate
     def test_callback(self):
-        """Exchange temporary credentials for permanent credentials"""
+        # Exchange temporary credentials for permanent credentials
 
         # Mock the exchange of the code for an access token
         _prepare_mock_oauth2_handshake_response()
@@ -459,17 +458,17 @@ class TestExternalProviderOAuth2(OsfTestCase):
 
     @responses.activate
     def test_multiple_users_associated(self):
-        """Create only one ExternalAccount for multiple OSF users
-
-        For some providers (ex: GitHub), the act of completing the OAuth flow
-        revokes previously generated credentials. In addition, there is often no
-        way to know the user's id on the external service until after the flow
-        has completed.
-
-        Having only one ExternalAccount instance per account on the external
-        service means that connecting subsequent OSF users to the same external
-        account will not invalidate the credentials used by the OSF for users
-        already associated."""
+        # Create only one ExternalAccount for multiple OSF users
+        #
+        # For some providers (ex: GitHub), the act of completing the OAuth flow
+        # revokes previously generated credentials. In addition, there is often no
+        # way to know the user's id on the external service until after the flow
+        # has completed.
+        #
+        # Having only one ExternalAccount instance per account on the external
+        # service means that connecting subsequent OSF users to the same external
+        # account will not invalidate the credentials used by the OSF for users
+        # already associated.
         user_a = UserFactory()
         external_account = ExternalAccountFactory(
             provider='mock2',

@@ -116,9 +116,9 @@ class TestUserValidation(OsfTestCase):
             'department': 'Fancy Patter',
             'title': 'Lover Boy',
             'startMonth': 1,
-            'startYear': 1970,
+            'startYear': '1970',
             'endMonth': 1,
-            'endYear': 1980,
+            'endYear': '1980',
         }]
         self.user.save()
 
@@ -134,12 +134,13 @@ class TestUserValidation(OsfTestCase):
             'department': fake.bs(),
             'position': fake.catch_phrase(),
             'startMonth': 1,
-            'startYear': 1970,
+            'startYear': '1970',
             'endMonth': 1,
-            'endYear': 1960,
+            'endYear': '1960',
         }]
         with assert_raises(ValidationValueError):
             self.user.save()
+
 
     def test_validate_schools_bad_end_date(self):
         # end year is < start year
@@ -148,12 +149,42 @@ class TestUserValidation(OsfTestCase):
             'institution': fake.company(),
             'department': fake.bs(),
             'startMonth': 1,
-            'startYear': 1970,
+            'startYear': '1970',
             'endMonth': 1,
-            'endYear': 1960,
+            'endYear': '1960',
         }]
         with assert_raises(ValidationValueError):
             self.user.save()
+
+    def test_validate_jobs_bad_year(self):
+        start_year = ['hi', '20507', '99', '67.34']
+        for year in start_year:
+            self.user.jobs = [{
+                'institution': fake.company(),
+                'department': fake.bs(),
+                'position': fake.catch_phrase(),
+                'startMonth': 1,
+                'startYear': year,
+                'endMonth': 1,
+                'endYear': '1960',
+            }]
+            with assert_raises(ValidationValueError):
+                self.user.save()
+
+    def test_validate_schools_bad_year(self):
+        start_year = ['hi', '20507', '99', '67.34']
+        for year in start_year:
+            self.user.schools = [{
+                'degree': fake.catch_phrase(),
+                'institution': fake.company(),
+                'department': fake.bs(),
+                'startMonth': 1,
+                'startYear': year,
+                'endMonth': 1,
+                'endYear': '1960',
+            }]
+            with assert_raises(ValidationValueError):
+                self.user.save()
 
 
 class TestUser(OsfTestCase):
@@ -2004,6 +2035,39 @@ class TestProject(OsfTestCase):
         other_guy_auth.private_key = link.key
         assert_true(self.project.can_view(other_guy_auth))
 
+    def test_is_admin_parent_target_admin(self):
+        assert_true(self.project.is_admin_parent(self.project.creator))
+
+    def test_is_admin_parent_parent_admin(self):
+        user = UserFactory()
+        node = NodeFactory(project=self.project, creator=user)
+        assert_true(node.is_admin_parent(self.project.creator))
+
+    def test_is_admin_parent_parent_write(self):
+        user = UserFactory()
+        node = NodeFactory(project=self.project, creator=user)
+        self.project.set_permissions(self.project.creator, ['read', 'write'])
+        assert_false(node.is_admin_parent(self.project.creator))
+
+    def test_has_permission_read_parent_admin(self):
+        user = UserFactory()
+        node = NodeFactory(project=self.project, creator=user)
+        assert_true(node.has_permission(self.project.creator, 'read'))
+        assert_false(node.has_permission(self.project.creator, 'admin'))
+
+    def test_can_view_parent_admin(self):
+        user = UserFactory()
+        node = NodeFactory(project=self.project, creator=user)
+        assert_true(node.can_view(Auth(user=self.project.creator)))
+        assert_false(node.can_edit(Auth(user=self.project.creator)))
+
+    def test_can_view_parent_write(self):
+        user = UserFactory()
+        node = NodeFactory(project=self.project, creator=user)
+        self.project.set_permissions(self.project.creator, ['read', 'write'])
+        assert_false(node.can_view(Auth(user=self.project.creator)))
+        assert_false(node.can_edit(Auth(user=self.project.creator)))
+
     def test_creator_cannot_edit_project_if_they_are_removed(self):
         creator = UserFactory()
         project = ProjectFactory(creator=creator)
@@ -2032,6 +2096,38 @@ class TestProject(OsfTestCase):
         assert_true(self.project.can_view(self.consolidate_auth))
         assert_true(self.project.can_view(contributor_auth))
         assert_true(self.project.can_view(other_guy_auth))
+
+    def test_parents(self):
+        child1 = ProjectFactory(project=self.project)
+        child2 = ProjectFactory(project=child1)
+        assert_equal(self.project.parents, [])
+        assert_equal(child1.parents, [self.project])
+        assert_equal(child2.parents, [child1, self.project])
+
+    def test_admin_contributor_ids(self):
+        assert_equal(self.project.admin_contributor_ids, set())
+        child1 = ProjectFactory(project=self.project)
+        child2 = ProjectFactory(project=child1)
+        assert_equal(child1.admin_contributor_ids, {self.project.creator._id})
+        assert_equal(child2.admin_contributor_ids, {self.project.creator._id, child1.creator._id})
+        self.project.set_permissions(self.project.creator, ['read', 'write'])
+        self.project.save()
+        assert_equal(child1.admin_contributor_ids, set())
+        assert_equal(child2.admin_contributor_ids, {child1.creator._id})
+
+    def test_admin_contributors(self):
+        assert_equal(self.project.admin_contributors, [])
+        child1 = ProjectFactory(project=self.project)
+        child2 = ProjectFactory(project=child1)
+        assert_equal(child1.admin_contributors, [self.project.creator])
+        assert_equal(
+            child2.admin_contributors,
+            sorted([self.project.creator, child1.creator], key=lambda user: user.family_name)
+        )
+        self.project.set_permissions(self.project.creator, ['read', 'write'])
+        self.project.save()
+        assert_equal(child1.admin_contributors, [])
+        assert_equal(child2.admin_contributors, [child1.creator])
 
     def test_is_contributor(self):
         contributor = UserFactory()
@@ -2072,6 +2168,25 @@ class TestProject(OsfTestCase):
         to_reg = ProjectFactory()
         reg = to_reg.register_node(None, Auth(user=to_reg.creator), '', None)
         assert_false(reg.is_registration_of(project))
+
+    def test_raises_permissions_error_if_not_a_contributor(self):
+        project = ProjectFactory()
+        user = UserFactory()
+        with assert_raises(PermissionsError):
+            project.register_node(None, Auth(user=user), '', None)
+
+    def test_admin_can_register_private_children(self):
+        user = UserFactory()
+        project = ProjectFactory(creator=user)
+        project.set_permissions(user, ['admin', 'write', 'read'])
+        child = NodeFactory(project=project, is_public=False)
+        assert_false(child.can_edit(auth=Auth(user=user)))  # sanity check
+
+        registration = project.register_node(None, Auth(user=user), '', None)
+
+        # child was registered
+        child_registration = registration.nodes[0]
+        assert_equal(child_registration.registered_from, child)
 
     def test_is_registration_of_no_registered_from(self):
         project = ProjectFactory()
@@ -2596,7 +2711,6 @@ class TestRegisterNode(OsfTestCase):
         assert_equal(len(registration1.registered_meta), 1)
         assert_equal(len(registration1.private_links), 0)
 
-
         # Create a registration from a project
         user2 = UserFactory()
         self.project.add_contributor(user2)
@@ -2697,30 +2811,26 @@ class TestRegisterNode(OsfTestCase):
             assert_not_in(node, self.project.nodes)
             assert_true(node.is_registration)
 
-    def test_partial_contributor_registration(self):
+    def test_private_contributor_registration(self):
 
         # Create some nodes
         self.component = NodeFactory(
             creator=self.user,
             project=self.project,
-            title='Not Registered',
         )
         self.subproject = ProjectFactory(
             creator=self.user,
             project=self.project,
-            title='Not Registered',
         )
 
         # Create some nodes to share
         self.shared_component = NodeFactory(
             creator=self.user,
             project=self.project,
-            title='Registered',
         )
         self.shared_subproject = ProjectFactory(
             creator=self.user,
             project=self.project,
-            title='Registered',
         )
 
         # Share the project and some nodes
@@ -2733,11 +2843,9 @@ class TestRegisterNode(OsfTestCase):
         registration = RegistrationFactory(project=self.project, user=user2)
 
         # The correct subprojects were registered
-        assert_equal(len(registration.nodes), 2)
-        assert_not_in(
-            'Not Registered',
-            [node.title for node in registration.nodes],
-        )
+        assert_equal(len(registration.nodes), len(self.project.nodes))
+        for idx in range(len(registration.nodes)):
+            assert_true(registration.nodes[idx].is_registration_of(self.project.nodes[idx]))
 
     def test_is_registration(self):
         assert_true(self.registration.is_registration)

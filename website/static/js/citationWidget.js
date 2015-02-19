@@ -5,9 +5,9 @@
 
 var $ = require('jquery');
 var Raven = require('raven-js');
-
 var $osf = require('osfHelpers');
 var citations = require('./citations');
+
 require('select2');
 require('../css/citations.css');
 
@@ -42,10 +42,14 @@ CitationWidget.prototype.init = function() {
             url: '/api/v1/citations/styles/',
             quietMillis: 200,
             data: function(term, page) {
-                return {q: term};
+                return {
+                    q: term
+                };
             },
             results: function(data, page) {
-                return {results: data.styles};
+                return {
+                    results: data.styles
+                };
             },
             cache: true
         }
@@ -70,7 +74,7 @@ CitationWidget.prototype.init = function() {
                 error: error
             });
         });
-    }).on('select2-removed', function (e) {
+    }).on('select2-removed', function(e) {
         self.$citationElement.slideUp().text();
     });
 
