@@ -74,7 +74,14 @@ var ViewModel = function(params) {
     self.resultsPerPage = ko.observable(10);
     self.categories = ko.observableArray([]);
     self.searchStarted = ko.observable(false);
+    self.showSearch = true;
+    self.showClose = false;
+    self.searchCSS = ko.observable('active');
+    self.onSearchPage = true; 
 
+    // Maintain compatibility with hiding search bar elsewhere on the site
+    self.toggleSearch = function() {
+    };
 
     self.totalCount = ko.computed(function() {
         if (self.categories().length === 0 || self.categories()[0] === undefined) {
@@ -153,7 +160,11 @@ var ViewModel = function(params) {
         self.searchStarted(false);
         self.currentPage(1);
         self.category(alias);
-        self.search();
+        if (alias.name === 'SHARE') {
+            document.location = '/share/?' + $.param({q: self.query()});
+        } else {
+            self.search();
+        }
     };
 
     self.addTag = function(name) {
@@ -219,6 +230,7 @@ var ViewModel = function(params) {
                 }
                 self.categories.push(new Category(key, value, data.typeAliases[key]));
             });
+
             self.categories(self.categories().sort(self.sortCategories));
 
             // If our category is named attempt to load its total else set it to the total total
@@ -243,7 +255,9 @@ var ViewModel = function(params) {
             if (!noPush) {
                 self.pushState();
             }
-
+            $osf.postJSON('/api/v1/share/?count', jsonData).success(function(data) {
+                self.categories.push(new Category('SHARE', data.count, 'SHARE'));
+            });
         }).fail(function(response){
             self.totalResults(0);
             self.currentPage(0);

@@ -6,6 +6,8 @@ These settings can be overridden in local.py.
 
 import os
 import json
+import hashlib
+
 
 
 os_env = os.environ
@@ -19,14 +21,16 @@ BASE_PATH = parent_dir(HERE)  # website/ directory
 APP_PATH = parent_dir(BASE_PATH)
 ADDON_PATH = os.path.join(BASE_PATH, 'addons')
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
-STATIC_URL_PATH = "/static"
+STATIC_URL_PATH = '/static'
 ASSET_HASH_PATH = os.path.join(APP_PATH, 'webpack-assets.json')
 ROOT = os.path.join(BASE_PATH, '..')
 
 # Hours before email confirmation tokens expire
 EMAIL_TOKEN_EXPIRATION = 24
+CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_components', 'styles')
 
 LOAD_BALANCER = False
+PROXY_ADDRS = []
 
 LOG_PATH = os.path.join(APP_PATH, 'logs')
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
@@ -47,6 +51,7 @@ ALLOW_LOGIN = True
 SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
 ELASTIC_URI = 'localhost:9200'
 ELASTIC_TIMEOUT = 10
+SHARE_ELASTIC_URI = ELASTIC_URI
 # Sessions
 # TODO: Override SECRET_KEY in local.py in production
 COOKIE_NAME = 'osf'
@@ -68,6 +73,11 @@ FROM_EMAIL = 'openscienceframework-noreply@osf.io'
 MAIL_SERVER = 'smtp.sendgrid.net'
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = ''  # Set this in local.py
+
+# Mandrill
+MANDRILL_USERNAME = None
+MANDRILL_PASSWORD = None
+MANDRILL_MAIL_SERVER = None
 
 # Mailchimp
 MAILCHIMP_API_KEY = None
@@ -94,6 +104,7 @@ MFR_TIMEOUT = 30000
 
 # TODO: Override in local.py in production
 USE_TOKU_MX = True
+DB_HOST = 'localhost'
 DB_PORT = os_env.get('OSF_DB_PORT', 27017)
 DB_NAME = 'osf20130903'
 DB_USER = None
@@ -217,3 +228,8 @@ GOOGLE_SITE_VERIFICATION = None
 
 # Pingdom
 PINGDOM_ID = None
+
+DEFAULT_HMAC_SECRET = 'changeme'
+DEFAULT_HMAC_ALGORITHM = hashlib.sha256
+WATERBUTLER_URL = 'http://localhost:7777'
+WATERBUTLER_ADDRS = ['127.0.0.1']

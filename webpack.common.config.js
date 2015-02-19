@@ -16,6 +16,7 @@ var staticPath = function(dir) {
  * to website/static/public/
  */
 var entry = {
+    // JS
     'base-page': staticPath('js/pages/base-page.js'),
     'home-page': staticPath('js/pages/home-page.js'),
     'dashboard-page': staticPath('js/pages/dashboard-page.js'),
@@ -33,6 +34,8 @@ var entry = {
     'new-folder-page': staticPath('js/pages/new-folder-page.js'),
     'project-settings-page': staticPath('js/pages/project-settings-page.js'),
     'search-page': staticPath('js/pages/search-page.js'),
+    'share-search-page': staticPath('js/pages/share-search-page.js'),
+    'share-dashboard': staticPath('js/pages/share-dashboard.js'),
     'user-addon-cfg-page': staticPath('js/pages/user-addon-cfg-page.js'),
     'notifications-config-page': staticPath('js/notifications-config-page.js'),
     // Commons chunk
@@ -42,14 +45,13 @@ var entry = {
         'bootstrap',
         'bootbox',
         'select2',
-        'hgrid',
         'osfHelpers',
         'knockout-punches',
         'dropzone',
         'knockout-sortable',
-        'dropzonePatch',
-        'rubeus',
-        'jquery.cookie'
+        'treebeard',
+        'jquery.cookie',
+        'citations'
     ]
 };
 
@@ -89,17 +91,28 @@ var resolve = {
         // Needed for knockout-sortable
         'jquery.ui.sortable': staticPath('vendor/bower_components/jquery-ui/ui/jquery.ui.sortable.js'),
         // Dropzone doesn't have a proper 'main' entry in its bower.json
-        'dropzone': staticPath('vendor/bower_components/dropzone/downloads/dropzone.js'),
+        'dropzone': staticPath('vendor/bower_components/dropzone/dist/dropzone.js'),
+        // Needed for ace code editor in wiki
+        'ace-noconflict': staticPath('vendor/bower_components/ace-builds/src-noconflict/ace.js'),
+        'ace-ext-language_tools': staticPath('vendor/bower_components/ace-builds/src-noconflict/ext-language_tools.js'),
+        'ace-mode-markdown': staticPath('vendor/bower_components/ace-builds/src-noconflict/mode-markdown.js'),
+        'pagedown-ace-converter': staticPath('vendor/pagedown-ace/Markdown.Converter.js'),
+        'pagedown-ace-sanitizer': staticPath('vendor/pagedown-ace/Markdown.Sanitizer.js'),
+        'pagedown-ace-editor': staticPath('vendor/pagedown-ace/Markdown.Editor.js'),
+        'c3': staticPath('vendor/bower_components/c3/c3.js'),
         // Also alias some internal libraries for easy access
-        'dropzonePatch': staticPath('js/dropzonePatch.js'),
-        'rubeus': staticPath('js/rubeus.js'),
+        'fangorn': staticPath('js/fangorn.js'),
+        'waterbutler': staticPath('js/waterbutler.js'),
         'folderpicker': staticPath('js/folderPicker.js'),
         'osfHelpers': staticPath('js/osfHelpers.js'),
         'osfLanguage': staticPath('js/osfLanguage.js'),
         'addons': path.join(__dirname, 'website', 'addons'),
         'addonHelper': staticPath('js/addonHelper.js'),
         'koHelpers': staticPath('js/koHelpers.js'),
-        'addonPermissions': staticPath('js/addonPermissions.js')
+        'addonPermissions': staticPath('js/addonPermissions.js'),
+        'navbar-control': staticPath('js/navbarControl.js'),
+        'mathrender': staticPath('js/mathrender.js'),
+        'citations': staticPath('js/citations.js')
     }
 };
 
@@ -109,8 +122,7 @@ var externals = {
     'jquery': 'jQuery',
     'jquery-ui': 'jQuery.ui',
     'raven-js': 'Raven',
-    'hgrid': 'HGrid',
-    'dropzone': 'Dropzone'
+    'MathJax': 'MathJax'
 };
 
 var plugins = [
@@ -136,7 +148,8 @@ var plugins = [
 var output = {
     path: './website/static/public/js/',
     // publicPath: '/static/', // used to generate urls to e.g. images
-    filename: '[name].[chunkhash].js'
+    filename: '[name].[chunkhash].js',
+    sourcePrefix: ''
 };
 
 module.exports = {
@@ -144,5 +157,18 @@ module.exports = {
     resolve: resolve,
     externals: externals,
     plugins: plugins,
-    output: output
+    output: output,
+    module: {
+        loaders: [
+            {test: /\.css$/, loaders: ['style', 'css']},
+            // url-loader uses DataUrls; files-loader emits files
+            {test: /\.png$/, loader: 'url-loader?limit=100000&mimetype=image/png'},
+            {test: /\.gif$/, loader: 'url-loader?limit=10000&mimetype=image/gif'},
+            {test: /\.jpg$/, loader: 'url-loader?limit=10000&mimetype=image/jpg'},
+            {test: /\.woff/, loader: 'url-loader?limit=10000&mimetype=application/font-woff'},
+            {test: /\.svg/, loader: 'file-loader'},
+            {test: /\.eot/, loader: 'file-loader'},
+            {test: /\.ttf/, loader: 'file-loader'}
+        ]
+    }
 };

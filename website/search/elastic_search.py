@@ -86,7 +86,7 @@ def get_counts(count_query, clean=True):
         }
     }
 
-    res = es.search(index='_all', doc_type=None, search_type='count', body=count_query)
+    res = es.search(index='website', doc_type=None, search_type='count', body=count_query)
 
     counts = {x['key']: x['doc_count'] for x in res['aggregations']['counts']['buckets'] if x['key'] in ALIASES.keys()}
 
@@ -164,7 +164,8 @@ def format_result(result, parent_id=None):
     formatted_result = {
         'contributors': result['contributors'],
         'wiki_link': result['url'] + 'wiki/',
-        'title': result['title'],
+        # TODO: Remove when html safe comes in
+        'title': result['title'].replace('&amp;', '&'),
         'url': result['url'],
         'is_component': False if parent_info is None else True,
         'parent_title': parent_info.get('title') if parent_info is not None else None,
