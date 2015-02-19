@@ -159,8 +159,9 @@ var ViewModel = function(url, selector, folderPicker) {
             self.changeMessage(msg, 'text-success', 3000);
             self.updateAccounts(function() {
                 $osf.postJSON(
-                    self.urls().importAuth,
-                    {external_account_id: self.accounts()[0].id}
+                    self.urls().importAuth, {
+                        external_account_id: self.accounts()[0].id
+                    }
                 ).then(onImportSuccess, onImportError);
             });
         };
@@ -169,8 +170,9 @@ var ViewModel = function(url, selector, folderPicker) {
 
     self.connectExistingAccount = function(account_id) {
         $osf.postJSON(
-            self.urls().importAuth,
-            {external_account_id: account_id}
+            self.urls().importAuth, {
+                external_account_id: account_id
+            }
         ).then(onImportSuccess, onImportError);
     };
 
@@ -330,13 +332,18 @@ var ViewModel = function(url, selector, folderPicker) {
 
         self.updateAccounts(function() {
 
-            if(self.accounts().length > 1) {
+            if (self.accounts().length > 1) {
                 bootbox.prompt({
                     title: 'Choose Mendeley Access Token to Import',
                     inputType: 'select',
                     inputOptions: ko.utils.arrayMap(
                         self.accounts(),
-                        function(item) { return {text: item.name, value: item.id } }
+                        function(item) {
+                            return {
+                                text: item.name,
+                                value: item.id
+                            }
+                        }
                     ),
                     value: self.accounts()[0].id,
                     callback: self.connectExistingAccount
@@ -437,16 +444,81 @@ function MendeleyNodeConfig(selector, url, folderPicker) {
     var self = this;
     self.url = url;
     self.folderPicker = folderPicker;
+    var CitationAccount = function(name, id) {
+        this.name = name;
+        this.id = id;
+    };
+
     self.viewModel = new FolderPickerViewModel('mendeley', url, selector, folderPicker, {
-	resolveLazyloadUrl: function(item){
-	    return this.urls().folders + item.data.id + '/?view=folders';
-	},	
-	unpackSettings: function(res){
-	    return res;
-	},
-	lazyLoadPreprocess: function(res){
-	    return res.contents;
-	}
+        resolveLazyloadUrl: function(item) {
+            return this.urls().folders + item.data.id + '/?view=folders';
+        },
+        unpackSettings: function(res) {
+            return res;
+        },
+        lazyLoadPreprocess: function(res) {
+            res.contents.accounts = [];
+            return res.contents;
+        },
+        resolveName: function(item) {
+            return item.data.name;
+        },
+        resolvePath: function(item) {
+            return item.data.path;
+        },
+        resolveId: function(item) {
+            return item.data.id;
+        },
+        serialize: function() {
+            return {
+                external_account_id: this.externalAccountId(),
+                external_list_id: this.selected().id
+            }
+        },
+        connectAccount: function() {
+            var self = this;
+            window.oauthComplete = function(res) {
+                var msg = 'Successfully created a Mendeley Access Token';
+                // Update view model based on response
+                self.changeMessage(msg, 'text-success', 3000);
+                self.updateAccounts(function() {
+                    $osf.postJSON(
+                        self.urls().importAuth, {
+                            external_account_id: self.accounts()[0].id
+                        }
+                    ).then(onImportSuccess, onImportError);
+                });
+            };
+            window.open('/oauth/connect/mendeley/');
+        },
+        updateAccounts: function(callback) {
+            var self = this;
+            var url = '/api/v1/settings/mendeley/accounts/';
+            $.get(url)
+                .done(function(data) {
+                    console.log(data);
+                    self.accounts(data.accounts.map(function(account) {
+                        return {
+                            name: account.display_name,
+                            id: account.id
+                        };
+                    }));
+                    callback();
+                })
+                .fail(function(xhr, textStatus, error) {
+                    self.changeMessage('Could not retrieve Mendeley account list at ' +
+                        'this time. Please refresh ' +
+                        'the page. If the problem persists, email ' +
+                        '<a href="mailto:support@osf.io">support@osf.io</a>.',
+                        'text-warning');
+                    Raven.captureMessage('Could not GET mendeley accounts for user', {
+                        url: url,
+                        textStatus: textStatus,
+                        error: error
+                    });
+                });
+        },
+	extraData: ['externalAccountId']
     });
     $osf.applyBindings(self.viewModel, selector);
 }

@@ -23,7 +23,7 @@ def list_mendeley_accounts_user(auth):
     """ Returns the list of all of the current user's authorized Mendeley accounts """
     
     provider = MendeleyCitationsProvider()    
-    return provider.user_accounts(user)
+    return provider.user_accounts(auth.user)
     
 
 @must_have_permission('write')

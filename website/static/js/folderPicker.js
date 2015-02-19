@@ -14,10 +14,12 @@
  */
 'use strict';
 var ko = require('knockout');
+var kom = require('knockout-mapping');
 require('knockout-punches');
 var m = require('mithril');
 var Treebeard = require('treebeard');
 var $ = require('jquery');
+var $osf = require('osfHelpers');
 
 ko.punches.enableAll();
 
@@ -253,27 +255,44 @@ function FolderPickerViewModel(name, url, selector, folderPicker, opts) {
     // Display name for Addon
     self.properName = name.charAt(0).toUpperCase() + name.slice(1);
 
-    self.unpackSettings = function(res){
-	return res.result;
+    self.unpackSettings = function(res) {
+        return res.result;
     };
-    self.lazyLoadPreprocess = function(res){
-	return res;
+    self.lazyLoadPreprocess = function(res) {
+        return res;
     };
-    self.resolveLazyloadUrl = function(item){
+    self.resolveLazyloadUrl = function(item) {
         return item.data.urls.folders;
     };
+    self.resolveName = function(item) {
+        return item.data.name;
+    };
+    self.resolvePath = function(item) {
+        return item.data.path;
+    };
+    self.serialize = function() {
+        return ko.toJS(self);
+    };
+    self.submitSuccessCallback = function(res){
+	return {};
+    };
 
-    if (typeof opts !== 'undefined'){	
-	var keys = Object.keys(opts);
-	for (var i = 0; i < keys.length; i++){
-	    var key = keys[i];
-	    if (typeof opts[key] === 'function'){
-		self[key] = opts[key].bind(self);
-	    }
-	    else{
-		self[key] = opts[key];
-	    }	   
-	}
+    if (typeof opts !== 'undefined') {
+        var keys = Object.keys(opts);
+        for (var i = 0; i < keys.length; i++) {
+            var key = keys[i];
+            if (key === 'extraData') {
+                for (var j = 0; j < opts[key].length; j++) {
+                    self[opts[key][j]] = ko.observable(null);
+                }
+                continue;
+            }
+            if (typeof opts[key] === 'function') {
+                self[key] = opts[key].bind(self);
+            } else {
+                self[key] = opts[key];
+            }
+        }
     }
 
     // List of contributor emails as a comma-separated values
@@ -289,6 +308,7 @@ function FolderPickerViewModel(name, url, selector, folderPicker, opts) {
      * Update the view model from data returned from the server.
      */
     self.updateFromData = function(data) {
+        // creates observables for the contents of data
         self.ownerName(data.ownerName);
         self.nodeHasAuth(data.nodeHasAuth);
         self.userIsOwner(data.userIsOwner);
@@ -300,6 +320,11 @@ function FolderPickerViewModel(name, url, selector, folderPicker, opts) {
             path: null
         });
         self.urls(data.urls);
+	if (typeof opts['extraData'] !== 'undefined'){
+	    for(var i = 0; i < opts['extraData'].length; i++){
+		self[opts['extraData'][i]](data[opts['extraData'][i]]);
+	    }
+	}
     };
 
     self.fetchFromServer = function() {
@@ -307,8 +332,8 @@ function FolderPickerViewModel(name, url, selector, folderPicker, opts) {
             url: url,
             type: 'GET',
             dataType: 'json',
-            success: function(response) {		
-		var data = self.unpackSettings(response);
+            success: function(response) {
+                var data = self.unpackSettings(response);
                 self.updateFromData(data);
                 self.loadedSettings(true);
                 if (!self.validCredentials()) {
@@ -417,12 +442,10 @@ function FolderPickerViewModel(name, url, selector, folderPicker, opts) {
 
     function onSubmitSuccess(response) {
         self.changeMessage('Successfully linked "' + self.selected().name +
-            '". Go to the <a href="' +
-            self.urls().files + '">Files page</a> to view your files.',
+            '". Go <a href="' + self.urls().files + '">here</a> to view your recently linked content.',
             'text-success', 5000);
         // Update folder in ViewModel
-        self.folder(response.result.folder);
-        self.urls(response.result.urls);
+	self.sumbitSuccessCallback(response);
         self.cancelSelection();
     }
 
@@ -431,10 +454,10 @@ function FolderPickerViewModel(name, url, selector, folderPicker, opts) {
     }
 
     /**
-     * Send a PUT request to change the linked Dropbox folder.
+     * Send a PUT request to change the linked content
      */
     self.submitSettings = function() {
-        $osf.putJSON(self.urls().config, ko.toJS(self))
+        $osf.putJSON(self.urls().config, self.serialize())
             .done(onSubmitSuccess)
             .fail(onSubmitError);
     };
@@ -527,6 +550,15 @@ function FolderPickerViewModel(name, url, selector, folderPicker, opts) {
         });
     };
 
+    self.connectExistingAccount = function(account_id) {
+        $osf.postJSON(
+            self.urls().importAuth, {
+                external_account_id: account_id
+            }
+        ).then(onImportSuccess, onImportError);
+    };
+
+
     /** Callback for chooseFolder action.
      *   Just changes the ViewModel's self.selected observable to the selected
      *   folder.
@@ -534,8 +566,9 @@ function FolderPickerViewModel(name, url, selector, folderPicker, opts) {
     function onPickFolder(evt, item) {
         evt.preventDefault();
         self.selected({
-            name: self.properName + item.data.path,
-            path: item.data.path
+            name: self.resolveName(item),
+            path: self.resolvePath(item),
+            id: self.resolveId(item)
         });
         return false; // Prevent event propagation
     }
@@ -557,7 +590,7 @@ function FolderPickerViewModel(name, url, selector, folderPicker, opts) {
                 filesData: self.urls().folders, // URL for fetching folders
                 // Lazy-load each folder's contents
                 // Each row stores its url for fetching the folders it contains
-		resolveLazyloadUrl: self.resolveLazyloadUrl,
+                resolveLazyloadUrl: self.resolveLazyloadUrl,
                 oddEvenClass: {
                     odd: 'addon-folderpicker-odd',
                     even: 'addon-folderpicker-even'
@@ -579,7 +612,7 @@ function FolderPickerViewModel(name, url, selector, folderPicker, opts) {
                     // Set flag to prevent repeated requests
                     self.loadedFolders(true);
                 },
-		lazyLoadPreprocess: self.lazyLoadPreprocess
+                lazyLoadPreprocess: self.lazyLoadPreprocess
             });
         }
     };

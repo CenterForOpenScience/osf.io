@@ -26,6 +26,7 @@ class CitationsProvider(object):
             'auth': api_url_for('oauth_connect',
                                 service_name=self.provider_name),
             'settings': web_url_for('user_addons'),
+            'files': node.url
         }
         if external_account and external_account.profile_url:
             ret['owner'] = external_account.profile_url
@@ -59,7 +60,7 @@ class CitationsProvider(object):
             'userIsOwner': user_is_owner,
             'userHasAuth': user_has_auth,
             'urls': self._serialize_urls(node_settings),            
-            'userAccountId': user_account_id,
+            'externalAccountId': user_account_id,
             'validCredentials': True
         }
         if node_account is not None:
@@ -97,8 +98,9 @@ class CitationsProvider(object):
                 metadata={'lists': external_list_id},
             )            
         else: # User doesn't own the ExternalAccount
+            import ipdb; ipdb.set_trace()
             # Make sure the node has previously been granted access
-            if not node_addon.verify_oauth_access(external_account, list_id):
+            if not node_addon.verify_oauth_access(external_account, external_list_id):
                 raise HTTPError(http.FORBIDDEN)
         return external_account
                 
