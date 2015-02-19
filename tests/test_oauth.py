@@ -16,6 +16,7 @@ from website.oauth.models import OAUTH2
 from website.util import api_url_for
 from website.util import web_url_for
 
+from framework.exceptions import PermissionsError, HTTPError
 from tests.base import OsfTestCase
 from tests.factories import ExternalAccountFactory
 from tests.factories import AuthUserFactory
@@ -72,6 +73,16 @@ def _prepare_mock_oauth2_handshake_response(expires_in=3600):
         status=200,
         content_type='application/json',
     )
+
+def _prepare_mock_500_error():
+    responses.add(
+        responses.POST,
+        'https://mock2.com/callback',
+        body='{"error": "not found"}',
+        status=503,
+        content_type='application/json',
+    )
+
 
 
 class TestExternalAccount(OsfTestCase):
@@ -373,6 +384,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
                 "https://mock2.com/auth",
             )
 
+
     @responses.activate
     def test_callback(self):
         # Exchange temporary credentials for permanent credentials
@@ -400,11 +412,49 @@ class TestExternalProviderOAuth2(OsfTestCase):
             session.save()
 
             # do the key exchange
+
             self.provider.auth_callback(user=user)
 
         account = ExternalAccount.find_one()
         assert_equal(account.oauth_key, 'mock_access_token')
         assert_equal(account.provider_id, 'mock_provider_id')
+
+
+    @responses.activate
+    def test_provider_down(self):
+
+        # Create a 500 error
+        _prepare_mock_500_error()
+
+        user = UserFactory()
+
+        # Fake a request context for the callback
+        with self.app.app.test_request_context(
+                path="/oauth/callback/mock2/",
+                query_string="code=mock_code&state=mock_state"
+        ) as ctx:
+
+            # make sure the user is logged in
+            authenticate(user=user, response=None)
+
+            session = get_session()
+            session.data['oauth_states'] = {
+                self.provider.short_name: {
+                    'state': 'mock_state',
+                },
+            }
+            session.save()
+
+            # do the key exchange
+
+            with assert_raises(HTTPError) as error_raised:
+                self.provider.auth_callback(user=user)
+
+            assert_equal(
+                error_raised.exception.code,
+                503,
+            )
+        print('asdf')
 
 
     @responses.activate
