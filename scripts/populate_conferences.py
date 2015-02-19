@@ -97,7 +97,7 @@ MEETING_DATA = {
         'active': True,
         'admins': [
             'meetings@spsp.org',
-            'andrew@cos.io',
+            'KatyCain526@gmail.com',
         ],
     },
     'aps2015': {
