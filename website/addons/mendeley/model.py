@@ -5,6 +5,8 @@ import time
 import mendeley
 from modularodm import fields
 
+from framework.exceptions import PermissionsError
+
 from website.addons.base import AddonNodeSettingsBase
 from website.addons.base import AddonUserSettingsBase
 from website.oauth.models import ExternalProvider
@@ -28,11 +30,47 @@ def serialize_folder(name, account_id, parent_id=None, list_id=None, id=None):
 
 
 class AddonMendeleyUserSettings(AddonUserSettingsBase):
+    oauth_grants = fields.DictionaryField()
+
     def _get_connected_accounts(self):
         """Get user's connected Mendeley accounts"""
         return [
             x for x in self.owner.external_accounts if x.provider == 'mendeley'
         ]
+
+    def grant_oauth_access(self, node, external_account, metadata=None):
+        metadata = metadata or {}
+
+        # create an entry for the node, if necessary
+        if node._id not in self.oauth_grants:
+            self.oauth_grants[node._id] = {}
+
+        # create an entry for the external account on the node, if necessary
+        if external_account._id not in self.oauth_grants[node._id]:
+            self.oauth_grants[node._id][external_account._id] = {}
+
+        # update the metadata with the supplied values
+        for key, value in metadata.iteritems():
+            self.oauth_grants[node._id][external_account._id][key] = value
+
+        self.save()
+
+    def verify_oauth_access(self, node, external_account, metadata=None):
+        metadata = metadata or {}
+
+        # ensure the grant exists
+        try:
+            grants = self.oauth_grants[node._id][external_account._id]
+        except KeyError:
+            return False
+
+        # Verify every key/value pair is in the grants dict
+        for key, value in metadata.iteritems():
+            if grants[key] != value:
+                return False
+
+        return True
+
 
     def to_json(self, user):
         ret = super(AddonMendeleyUserSettings, self).to_json(user)
@@ -49,10 +87,7 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
 
     mendeley_list_id = fields.StringField()
 
-    # Keep track of all user settings that have been associated with this
-    # instance. This is so OAuth grants can be checked, even if the grant is
-    #   not currently being used.
-    associated_user_settings = fields.AbstractForeignField(list=True)
+    user_settings = fields.ForeignField('addonmendeleyusersettings')
 
     _api = None
 
@@ -82,44 +117,58 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
         else:
             return 'All Documents'
 
-    def grant_oauth_access(self, user, external_account, metadata=None):
-        """Grant OAuth access, updates metadata on user settings
-        :param User user:
-        :param ExternalAccount external_account:
-        :param dict metadata:
+    def set_auth(self, external_account, user):
+        """Connect the node addon to a user's external account.
         """
-        user_settings = user.get_addon('mendeley')
+        # external account must be the user's
+        if external_account not in user.external_accounts:
+            raise PermissionsError("Invalid ExternalAccount for User")
 
-        # associate the user settings with this node's settings
-        if user_settings not in self.associated_user_settings:
-            self.associated_user_settings.append(user_settings)
-            self.save()
-
+        # tell the user's addon settings that this node is connected to it
+        user_settings = user.get_or_add_addon('mendeley')
         user_settings.grant_oauth_access(
             node=self.owner,
-            external_account=external_account,
-            metadata=metadata or {},
+            external_account=external_account
+            # no metadata, because the node has access to no folders
         )
-
         user_settings.save()
 
-    def verify_oauth_access(self, external_account, list_id):
-        """Determine if access to the ExternalAccount has been granted
-        :param ExternalAccount external_account:
-        :param str list_id: ID of the Mendeley list requested
-        :rtype bool:
-        """
-        for user_settings in self.associated_user_settings:
-            try:
-                granted = user_settings.oauth_grants[self.owner._id][
-                    external_account._id]
-            except KeyError:
-                # no grant for this node, move along
-                continue
+        # update this instance
+        self.user_settings = user_settings
+        self.external_account = external_account
 
-            if list_id in granted.get('lists', []):
-                return True
-        return False
+        # ensure no list is associated, as we're attaching new credentials.
+        self.mendeley_list_id = None
+
+        self.save()
+
+    def clear_auth(self):
+        """Disconnect the node settings from the user settings"""
+
+        self.external_account = None
+        self.mendeley_list_id = None
+        self.user_settings = None
+        self.save()
+
+    def set_target_folder(self, mendeley_list_id):
+        """Configure this addon to point to a Mendeley folder
+
+        :param str mendeley_list_id:
+        :param ExternalAccount external_account:
+        :param User user:
+        """
+
+        # Tell the user's addon settings that this node is connecting
+        self.user_settings.grant_oauth_access(
+            node=self.owner,
+            external_account=self.external_account,
+            metadata={'folder': mendeley_list_id}
+        )
+        self.user_settings.save()
+
+        # update this instance
+        self.mendeley_list_id = mendeley_list_id
+        self.save()
 
     def get_accounts(self, user):
         accounts = [
