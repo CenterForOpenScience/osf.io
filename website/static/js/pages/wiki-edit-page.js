@@ -89,12 +89,17 @@ $(document).ready(function () {
         buttonElement : '.switch',
         onSize : 'md',
         'onclick' : function (title, thisbtn, event ) {
-            // this = all the lements, columns , an array
+            // this = all the column elements; an array
             // title = Text of the button
             // thisbtn = $(this);
-            //thisbtn.hasClass('btn-primary')
+            // thisbtn.hasClass('btn-primary')
 
-            if (editor) { editor.resize(); }
+            $('body').trigger('togglePanel', [
+                title.toLowerCase(),
+                thisbtn.hasClass('btn-primary')
+            ]);
+
+            if (typeof editor !== 'undefined') { editor.resize(); }
 
         }
     });

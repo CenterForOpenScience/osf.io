@@ -176,6 +176,20 @@ function ViewModel(options){
     }
     self.viewVM = new ViewWidget(self.viewVis, self.viewVersion, self.viewText, self.renderedView, self.contentURL, self.allowMathjaxification, self.editor);
     self.compareVM = new CompareWidget(self.compareVis, self.compareVersion, self.viewVM.displaySource, self.renderedCompare, self.contentURL);
+
+    $('body').on('togglePanel', function (event, panel, display) {
+        // Update self.editVis, self.viewVis, or self.compareVis in viewmodel
+        self[panel + 'Vis'](display);
+
+        // Switch view to correct version
+        if (panel === 'edit') {
+            if (display) {
+                self.version('preview');
+            } else if (self.version() === 'preview') {
+                self.version('current');
+            }
+        }
+    });
 }
 
 
@@ -196,6 +210,3 @@ module.exports = WikiPage;
 //    };
 
 
-//$('body').on('editEnabled', function () {
-//    self.version('preview');
-//});
