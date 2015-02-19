@@ -288,6 +288,7 @@ ${parent.javascript_bottom()}
         canEditPageName: canEditPageName,
         usePythonRender: ${json.dumps(use_python_render)},
         viewSettings: ${json.dumps(view_settings) | n},
+        panelsUsed: ${json.dumps(panels_used) | n},
         urls: {
             draft: '${urls['api']['draft']}',
             content: '${urls['api']['content']}',

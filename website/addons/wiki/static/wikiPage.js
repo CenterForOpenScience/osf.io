@@ -53,6 +53,8 @@ function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathj
                 self.allowFullRender(true);
             }, THROTTLE);
         });
+    } else {
+        self.allowFullRender(true);
     }
 
     self.displayText =  ko.computed(function() {
@@ -103,6 +105,7 @@ function CompareWidget(visible, compareVersion, currentText, rendered, contentUR
     self.currentText = currentText;
     self.rendered = rendered;
     self.visible = visible;
+
     self.compareText = ko.computed(function() {
         var requestURL;
         if (self.compareVersion() === 'current') {
@@ -123,12 +126,15 @@ function CompareWidget(visible, compareVersion, currentText, rendered, contentUR
         var current = '';
         var compare = '';
 
-
         current = self.currentText();
         compare = self.compareText();
 
+        console.log("Current: " + current);
+        console.log("Compare: " + compare);
+
         var output = diffTool.diff(current, compare);
         self.rendered(output);
+        return(output);
     });
 
 }
@@ -165,8 +171,6 @@ function ViewModel(options){
     self.renderedView = ko.observable('');
     self.renderedCompare = ko.observable('');
     self.allowMathjaxification = ko.observable(false);
-
-
 
 
     if(self.canEdit) {
