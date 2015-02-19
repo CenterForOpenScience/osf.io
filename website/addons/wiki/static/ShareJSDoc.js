@@ -6,8 +6,8 @@ var LanguageTools = ace.require('ace/ext/language_tools');
 var activeUsers = [];
 var collaborative = (typeof WebSocket !== 'undefined' && typeof sharejs !== 'undefined');
 
-var ShareJSDoc = function(selector, url, metadata) {
-    var wikiEditor = new WikiEditor(selector, url);
+var ShareJSDoc = function(url, metadata, viewText, editor) {
+    var wikiEditor = new WikiEditor(url, viewText, editor);
     var viewModel = wikiEditor.viewModel;
     var deleteModal = $('#deleteModal');
     var renameModal = $('#renameModal');

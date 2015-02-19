@@ -6,14 +6,8 @@ var Raven = require('raven-js');
 var Markdown = require('pagedown-ace-converter');
 Markdown.getSanitizingConverter = require('pagedown-ace-sanitizer').getSanitizingConverter;
 require('imports?Markdown=pagedown-ace-converter!pagedown-ace-editor');
-var md = require('markdown').full;
-var md_quick = require('markdown').quick;
-var mathrender = require('mathrender');
 
 var editor;
-
-var MATHJAX_THROTTLE = 500;
-var throttledMathjaxify = $osf.throttle(mathrender.mathjaxify, MATHJAX_THROTTLE);
 
 /**
  * Binding handler that instantiates an ACE editor.
@@ -21,8 +15,8 @@ var throttledMathjaxify = $osf.throttle(mathrender.mathjaxify, MATHJAX_THROTTLE)
  * Example: <div data-bind="ace: currentText" id="editor"></div>
  */
 ko.bindingHandlers.ace = {
-    init: function (element, valueAccessor) {
-        editor = ace.edit(element.id); // jshint ignore:line
+    init: function (element, valueAccessor, vm) {
+        editor = vm.editor; // jshint ignore:line
 
         // Updates the view model based on changes to the editor
         editor.getSession().on('change', function () {
@@ -42,11 +36,11 @@ ko.bindingHandlers.ace = {
     }
 };
 
-function ViewModel(url) {
+function ViewModel(url, viewText) {
     var self = this;
 
     self.initText = ko.observable('');
-    self.currentText = ko.observable('');
+    self.currentText = viewText; //from wikiPage's VM
     self.activeUsers = ko.observableArray([]);
     self.status = ko.observable('connected');
     self.throttledStatus = ko.observable(self.status());
@@ -161,24 +155,12 @@ function ViewModel(url) {
 
 }
 
-function WikiEditor(selector, url) {
-    this.viewModel = new ViewModel(url);
-    $osf.applyBindings(this.viewModel, selector);
+function WikiEditor(url, viewText, editor) {
+    this.viewModel = new ViewModel(url, viewText);
     var mdConverter = Markdown.getSanitizingConverter();
     var mdEditor = new Markdown.Editor(mdConverter);
     mdEditor.run(editor);
-    var previewElement = $('#markdownItPreview');
-    var renderTimeout;
-    editor.on('change', function() {
-        // Quick render
-        previewElement.html(md_quick.render(editor.getValue()));
-        // Full render
-        clearTimeout(renderTimeout);
-        renderTimeout = setTimeout(function() {
-            previewElement.html(md.render(editor.getValue()));
-            throttledMathjaxify('#markdownItPreview');
-        }, 500);
-    });
+
 }
 
 module.exports = WikiEditor;
