@@ -76,7 +76,7 @@ var makeButtons = function(item, col, buttons) {
     return buttons.map(function(button) {
         var self = this;
         return m(
-            'span', {
+            'a', {
                 'data-col': item.id
             }, [
                 m(
@@ -184,6 +184,18 @@ var renderActions = function(item, col) {
                 return self.getCitations(item).join('\n');
             })
         });
+        buttons.push({
+            name: '',
+            icon: 'icon-download',
+            css: 'btn btn-default btn-xs',
+            tooltip: 'Download citations',
+            config: function(elm, isInit, ctx) {
+                var text = self.getCitations(item).join('\n');
+                $(elm).parent('a')
+                    .attr('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text))
+                    .attr('download', item.data.name + '-' + self.styleName + '.txt');
+            }
+        });
     }
     return makeButtons(item, col, buttons);
 };
@@ -197,7 +209,7 @@ var treebeardOptions = {
         return res.contents;
     },
     ontogglefolder: function() {
-        $('[data-toggle="tooltip"]').tooltip();
+        $('[data-toggle="tooltip"]').tooltip({container: 'body'});
     },
     columnTitles: function() {
         return [{
@@ -220,7 +232,8 @@ var CitationGrid = function(provider, gridSelector, styleSelector, apiUrl) {
     self.styleSelector = styleSelector;
     self.apiUrl = apiUrl;
 
-    self.style = apaStyle;
+    self.styleName = 'apa';
+    self.styleXml = apaStyle;
     self.bibliographies = {};
 
     self.initTreebeard();
@@ -267,16 +280,17 @@ CitationGrid.prototype.initStyleSelect = function() {
         }
     }).on('select2-selecting', function(event) {
         var styleUrl = '/static/vendor/bower_components/styles/' + event.val + '.csl';
-        $.get(styleUrl).done(function(style) {
-            self.updateStyle(style);
+        $.get(styleUrl).done(function(xml) {
+            self.updateStyle(event.val, xml);
         }).fail(function(jqxhr, status, error) {
             console.log('Failed to load style');
         });
     });
 };
 
-CitationGrid.prototype.updateStyle = function(style) {
-    this.style = style;
+CitationGrid.prototype.updateStyle = function(name, xml) {
+    this.styleName = name;
+    this.styleXml = xml;
     this.bibliographies = {};
     this.treebeard.tbController.redraw();
 };
@@ -289,7 +303,7 @@ CitationGrid.prototype.makeBibliography = function(folder) {
             return child.data.csl;
         })
     );
-    var citeproc = citations.makeCiteproc(this.style, data, 'text');
+    var citeproc = citations.makeCiteproc(this.styleXml, data, 'text');
     var bibliography = citeproc.makeBibliography();
     if (bibliography[0].entry_ids) {
         return utils.reduce(

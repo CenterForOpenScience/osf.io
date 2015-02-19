@@ -109,7 +109,7 @@ $(document).ready(function() {
     });
 
     // Tooltips
-    $('[data-toggle="tooltip"]').tooltip();
+    $('[data-toggle="tooltip"]').tooltip({container: 'body'});
 
     // Tag input
     $('#node-tags').tagsInput({
