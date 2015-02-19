@@ -10,6 +10,7 @@
     "ace-builds": "~1.1.8",
     "qunit": "~1.14.0",
     "sinon": "~1.10.2",
+    "select2": "~3.5.1",
     "jquery-mockjax": "1.5.3",
     "raven-js": "~1.1.16",
     "sinon-qunit": "~1.0.0",
