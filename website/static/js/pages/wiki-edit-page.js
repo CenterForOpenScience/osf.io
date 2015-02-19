@@ -20,10 +20,9 @@ var versionElement = $('#viewVersion');
 var markdownElement = $('#markdownItRender');
 var compareElement = $('#viewCompare');
 
-var editable = 'edit' in ctx.panelsUsed;
-var viewable = 'view' in ctx.panelsUsed;
-var comparable = 'compare' in ctx.panelsUsed;
-
+var editable = (ctx.panelsUsed.indexOf('edit') !== -1);
+var viewable = (ctx.panelsUsed.indexOf('view') !== -1);
+var comparable = (ctx.panelsUsed.indexOf('compare') !== -1);
 
 var wikiPageOptions = {
     editVisible: editable,
