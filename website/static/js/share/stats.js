@@ -1,6 +1,7 @@
 var c3 = require('c3');
 var m = require('mithril');
 var $osf = require('osfHelpers');
+var utils = require('./utils.js');
 
 var Stats = {};
 
@@ -45,7 +46,7 @@ Stats.view = function(ctrl) {
                     m('h1.about-share-header', {
                         class: 'animated fadeInUp'
                     },'What is SHARE?'),
-                    !ctrl.vm.statsLoaded ? m('img[src=/static/img/loading.gif]') : [
+                    !ctrl.vm.statsLoaded() ? utils.loadingIcon : [
                         ctrl.drawGraph('shareDoughnutGraph', doughnutGraph)
                     ]
                 ]))
@@ -72,14 +73,27 @@ Stats.controller = function(vm) {
 
     self.vm.totalCount = 0;
     self.vm.showStats = true;
-    self.vm.statsLoaded = false;
     self.vm.latestDate = undefined;
+    self.vm.statsLoaded = m.prop(false);
 
     self.drawGraph = function(divId, graphFunction) {
         return m('div', {id: divId, config: function(e, i) {
             if (i) return;
             graphFunction(self.vm.statsData);
         }});
+    };
+
+    self.loadStats = function() {
+        self.vm.statsLoaded(false);
+
+        m.request({
+            method: 'GET',
+            url: '/api/v1/share/stats/',
+            background: true
+        }).then(function(data) {
+            self.vm.statsData = data;
+            self.vm.statsLoaded(true);
+        }).then(m.redraw);
     };
 
     m.request({
@@ -91,14 +105,7 @@ Stats.controller = function(vm) {
         self.vm.latestDate = new $osf.FormattableDate(data.results[0].dateUpdated).local;
     }).then(m.redraw);
 
-    m.request({
-        method: 'GET',
-        url: '/api/v1/share/stats/',
-        background: true
-    }).then(function(data) {
-        self.vm.statsData = data;
-        self.vm.statsLoaded = true;
-    }).then(m.redraw);
+    self.loadStats();
 };
 
 module.exports = Stats;

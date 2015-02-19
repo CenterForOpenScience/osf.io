@@ -1,5 +1,6 @@
 var m = require('mithril');
 var $osf = require('osfHelpers');
+var utils = require('./utils.js');
 
 var SearchBar = {};
 
@@ -31,7 +32,7 @@ SearchBar.view = function(ctrl) {
                         onchange: m.withAttr('value', ctrl.vm.query),
                     }),
                     m('span.input-group-btn', [
-                        m('button.btn.osf-search-btn', {onclick: ctrl.search}, m('i.icon-circle-arrow-right.icon-lg')),
+                        m('button.btn.osf-search-btn', m('i.icon-circle-arrow-right.icon-lg')),
                     ])
                 ])
             ])
@@ -50,53 +51,12 @@ SearchBar.controller = function(vm) {
     self.vm.latestDate = undefined;
     self.vm.showStats = true;
 
-    self.loadMore = function() {
-        if (self.vm.query().length === 0) {
-            return;
-        }
-
-        var page = self.vm.page++ * 10;
-
-        self.vm.resultsLoading(true);
-
-        m.request({
-            method: 'get',
-            background: true,
-            url: '/api/v1/share/?sort=dateUpdated&from=' + page + '&q=' + self.vm.query(),
-        }).then(function(data) {
-            self.vm.time = data.time;
-            self.vm.count = data.count;
-
-            // push.apply is the same as extend in python
-            self.vm.results.push.apply(self.vm.results, data.results);
-
-            self.vm.resultsLoading(false);
-        }).then(m.redraw);
-    };
-
     self.search = function(e) {
-        if (e !== undefined) {
-            try {
-                e.stopPropagation();
-            } catch (e) {
-                window.event.cancelBubble = true;
-            }
-        }
-
-        if (self.vm.query().length === 0) {
-            return;
-        }
-
-        self.vm.page = 0;
-        self.vm.results = [];
-        self.vm.showStats = false;
-        self.loadMore();
-
-        return false;
+        utils.maybeQuashEvent(e);
+        utils.search(self.vm);
     };
 
     self.search();
-
 };
 
 

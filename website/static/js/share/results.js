@@ -1,6 +1,7 @@
 var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('osfHelpers');
+var utils = require('./utils.js');
 
 var ProviderMap = {
     arxiv_oai: {name: 'ArXiv', link: 'http://arxiv.org'},
@@ -36,7 +37,7 @@ var Results = {};
 Results.view = function(ctrl) {
     return m('.row', [
         m('.col-md-12', ctrl.vm.results.map(ctrl.renderResult)),
-        m('.col-md-12', ctrl.vm.resultsLoading() ? m('img[src=/static/img/loading.gif]') : [])
+        m('.col-md-12', ctrl.vm.resultsLoading() ? utils.loadingIcon : [])
     ]);
 
 };
@@ -109,36 +110,13 @@ Results.controller = function(vm) {
         ]);
     };
 
-
-    self.loadMore = function() {
-        if (self.vm.query().length === 0) {
-            return;
-        }
-        var page = self.vm.page++ * 10;
-        self.vm.resultsLoading(true);
-
-        m.request({
-            method: 'get',
-            background: true,
-            url: '/api/v1/share/?sort=dateUpdated&from=' + page + '&q=' + self.vm.query(),
-        }).then(function(data) {
-            self.vm.time = data.time;
-            self.vm.count = data.count;
-
-            // push.apply is the same as extend in python
-            self.vm.results.push.apply(self.vm.results, data.results);
-
-            self.vm.resultsLoading(false);
-        }).then(m.redraw);
-    };
-
     $(window).scroll(function() {
         if  ($(window).scrollTop() === $(document).height() - $(window).height()){
-            self.loadMore();
+            utils.loadMore(self.vm);
         }
     });
 
-    self.loadMore();
+    utils.loadMore(self.vm);
 };
 
 module.exports = Results;
