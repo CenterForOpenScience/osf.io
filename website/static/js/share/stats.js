@@ -88,13 +88,15 @@ Stats.controller = function(vm) {
 
         m.request({
             method: 'GET',
-            url: '/api/v1/share/stats/',
+            url: '/api/v1/share/stats/?' + $.param({q: self.vm.query()}),
             background: true
         }).then(function(data) {
             self.vm.statsData = data;
             self.vm.statsLoaded(true);
         }).then(m.redraw);
     };
+
+    utils.onSearch(self.loadStats);
 
     m.request({
         method: 'GET',
