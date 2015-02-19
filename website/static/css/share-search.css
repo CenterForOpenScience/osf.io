@@ -10,6 +10,9 @@
   text-align: center;
   font-family: yanonekaffeesatz;
   -webkit-animation-delay: 0.5s;
+  margin-left: 10px;
+  font-size: 4.5em;
+  vertical-align: middle;
 }
 
 .share-search-input:focus {

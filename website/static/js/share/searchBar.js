@@ -8,17 +8,22 @@ var SearchBar = {};
 SearchBar.view = function(ctrl) {
     return [
         m('.row', [
-            m('.col-md-12', [
-                m('img[src=/static/img/share-logo-icon.png]', {
+            m('.col-md-12', {
                     style: {
                         margin: 'auto',
-                        height: 'auto',
                         display: 'block',
-                        'max-width': '40%',
+                        'text-align': 'center'
+                    }
+                }, [
+                m('img[src=/static/img/share-logo-icon.png]', {
+                    style: {
+                        height: 'auto',
+                        'max-width': '15%',
                         '-webkit-animation-duration': '3s'
                     },
-                    class: 'animated pulse'
+                    // class: 'animated pulse'
                 }),
+                m('span.about-share-header', 'SHARE'),
                 m('br')
             ])
         ]),

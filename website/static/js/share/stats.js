@@ -9,7 +9,7 @@ function get_source_length(elastic_data) {
 
     sources = elastic_data.raw_aggregations.sources.buckets;
     source_names = [];
-    for (i = 0; i < sources.length; i++) { 
+    for (i = 0; i < sources.length; i++) {
         source_names.push(sources[i]);
     }
 
@@ -68,10 +68,7 @@ Stats.view = function(ctrl) {
         m('.row', ctrl.vm.showStats ? [
             m('.col-md-12', [
                 m('.row', m('.col-md-12', [
-                    m('h1.about-share-header', {
-                        class: 'animated fadeInUp'
-                    },'What is SHARE?'),
-                    !ctrl.vm.statsLoaded ? m('img[src=/static/img/loading.gif]') : [
+                    !ctrl.vm.statsLoaded() ? m('img[src=/static/img/loading.gif]') : [
                         m('.row', [
                             m('.col-md-3', ctrl.drawGraph('shareDoughnutGraph', doughnutGraph)),
                             m('.col-md-9', ctrl.drawGraph('shareTimeGraph', timeGraph))
