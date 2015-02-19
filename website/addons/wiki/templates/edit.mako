@@ -13,7 +13,7 @@
     </div>
 </div>
 
-<div class="wiki">
+<div class="wiki" id="wikiPageContext">
   <div class="row wiki-wrapper">
     <div class="col-sm-3 panel-toggle">
         <div class="wiki-panel hidden-xs"> 
@@ -44,9 +44,8 @@
 
     <div class="col-sm-9 panel-expand">
       <div class="row">
-
         % if can_edit:
-        <div data-osf-panel="Edit" ${style['edit'] | n}>
+            <div data-bind="with: editVM.wikiEditor.viewModel" data-osf-panel="Edit" ${style['edit'] | n}>
                 <div class="wiki-panel">
                   <div class="wiki-panel-header"> <i class="icon-edit"> </i>  Edit </div>
                   <div class="wiki-panel-body">
@@ -127,7 +126,7 @@
                         </div>
                         <div class="col-sm-6">
                             <!-- Version Picker -->
-                            <select id="viewVersionSelect" class="pull-right">
+                            <select data-bind="value:viewVersion" id="viewVersionSelect" class="pull-right">
                                 % if can_edit:
                                     <option value="preview">Preview</option>
                                 % endif
@@ -139,15 +138,8 @@
                         </div>
                     </div>
                 </div>
-                <div class="wiki-panel-body">
-                    <!-- Live preview from editor -->
-                    <div id="viewPreview" class="markdown-it-view">
-                        <div id="markdownItPreview"></div>
-                    </div>
-                    <!-- Version view -->
-                    <div id="viewVersion" class="markdown-it-view" style="display: none;">
-                        <div id="markdownItRender">${wiki_content or '<em>No wiki content</em>' | n}</div>
-                    </div>
+                <div data-bind="html: renderedView, mathjaxify: {throttle: 500}" class="wiki-panel-body">
+
                 </div>
               </div>
           </div>
@@ -160,7 +152,7 @@
                       </div>
                       <div class="col-sm-6">
                             <!-- Version Picker -->
-                            <select id="compareVersionSelect" class="pull-right">
+                            <select data-bind="value: compareVersion" id="compareVersionSelect" class="pull-right">
                                 <option value="current">Current</option>
                                 % for version in versions[1:]:
                                     <option value="${version['version']}">Version ${version['version']}</option>
@@ -169,8 +161,8 @@
                       </div>
                   </div>
               </div>
-              <div class="wiki-panel-body">
-                <div id="viewCompare" class="wiki-compare-view"></div>
+              <div data-bind="html: renderedCompare" class="wiki-panel-body">
+
               </div>
             </div>
           </div>
