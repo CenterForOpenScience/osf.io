@@ -23,20 +23,6 @@ from utils import mock_responses
 
 API_URL = 'https://api.mendeley.com'
 
-FOLDER_LIST_JSON = [
-    {
-        "id": "68624820-2f4c-438d-ae54-ae2bc431cee3",
-        "name": "API Related Papers",
-        "created": "2014-04-08T10:11:40.000Z",
-    },
-    {
-        "id": "1cb47377-e3a1-40dd-bd82-11aff83a46eb",
-        "name": "MapReduce",
-        "created": "2014-07-02T13:19:36.000Z",
-    },
-]
-
-
 class MendeleyViewsTestCase(OsfTestCase):
 
     def setUp(self):
@@ -98,12 +84,15 @@ class MendeleyViewsTestCase(OsfTestCase):
         }
         assert_equal(res.json, expected)
 
+    '''
+    TODO delete?
     def test_node_mendeley_accounts(self):
         """JSON: a list of Mendeley accounts associated with the node"""
         res = self.app.get(
             self.project.api_url_for('list_mendeley_accounts_node'),
             auth=self.user.auth
         )
+        import ipdb; ipdb.set_trace()
         expected = {
             'accounts': [
                 utils.serialize_account(each)
@@ -111,6 +100,7 @@ class MendeleyViewsTestCase(OsfTestCase):
             ]
         }
         assert_equal(res.json, expected)
+    '''
 
     @responses.activate
     def test_node_citation_lists(self):
@@ -118,16 +108,20 @@ class MendeleyViewsTestCase(OsfTestCase):
         responses.add(
             responses.GET,
             urlparse.urljoin(API_URL, 'folders'),
-            body=json.dumps(FOLDER_LIST_JSON),
+            body=mock_responses['folders'],
             content_type='application/json',
         )
+        
         res = self.app.get(
             self.project.api_url_for('list_citationlists_node', account_id=self.account._id),
             auth=self.user.auth,
         )
-        assert_equal(
-            res.json['citation_lists'],
-            [each.json for each in self.node_addon.api.citation_lists],
+        lists = [each for each in self.node_addon.api.citation_lists]
+        assert_dict_equal(
+            res.json,
+            {
+                'citation_lists': lists
+            }
         )
 
     def test_node_citation_lists_not_found(self):
@@ -142,7 +136,7 @@ class MendeleyViewsTestCase(OsfTestCase):
     def test_set_config_unauthorized(self):
         """Cannot associate a MendeleyAccount the user doesn't own"""
         account = MendeleyAccountFactory()
-        res = self.app.post_json(
+        res = self.app.put_json(
             self.project.api_url_for('mendeley_set_config'),
             {
                 'external_account_id': account._id,
@@ -157,7 +151,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         """Settings config updates node settings"""
         self.node_addon.associated_user_settings = []
         self.node_addon.save()
-        res = self.app.post_json(
+        res = self.app.put_json(
             self.project.api_url_for('mendeley_set_config'),
             {
                 'external_account_id': self.account._id,
@@ -174,7 +168,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         user.add_addon('mendeley')
         self.project.add_contributor(user)
         self.project.save()
-        res = self.app.post_json(
+        res = self.app.put_json(
             self.project.api_url_for('mendeley_set_config'),
             {
                 'external_account_id': self.account._id,
@@ -190,14 +184,31 @@ class MendeleyViewsTestCase(OsfTestCase):
         """Can set config to an account/folder that was previous associated"""
         pass
 
-    def test_widget_view_complete(self):
+        
+
+    def test_mendeley_widget_view_complete(self):
         """JSON: everything a widget needs"""
-        assert_true(False)
 
-    def test_widget_view_incomplete(self):
+        self.node_addon.mendeley_list_id = 'ROOT'
+        self.node_addon.save()
+        
+        res = self.app.get(
+            self.project.api_url_for('mendeley_widget'),
+            auth=self.user.auth
+        )
+        assert_equal(res.json['complete'], 'ROOT')
+        
+
+    def test_mendeley_widget_view_incomplete(self):
         #"""JSON: tell the widget when it hasn't been configured"""
-        assert_true(False)
 
+        res = self.app.get(
+            self.project.api_url_for('mendeley_widget'),
+            auth=self.user.auth
+        )        
+        assert_is_none(res.json['complete'])
+            
+    
     @responses.activate
     def test_mendeley_citation_list_root(self):
 
@@ -243,7 +254,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         children = res.json['contents']
         assert_equal(len(children), 7)
         assert_equal(children[0]['kind'], 'folder')
-        assert_equal(children[1]['kind'], 'item')
+        assert_equal(children[1]['kind'], 'file')
         assert_true(children[1].get('csl') is not None)
 
     @responses.activate

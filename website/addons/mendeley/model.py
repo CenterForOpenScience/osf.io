@@ -66,11 +66,10 @@ class AddonMendeleyUserSettings(AddonUserSettingsBase):
 
         # Verify every key/value pair is in the grants dict
         for key, value in metadata.iteritems():
-            if grants[key] != value:
+            if key not in grants or grants[key] != value:
                 return False
 
         return True
-
 
     def to_json(self, user):
         ret = super(AddonMendeleyUserSettings, self).to_json(user)
@@ -190,16 +189,11 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
             accounts.append(self.external_account)
         return accounts
 
+    # TODO deprecated
     def to_json(self, user):
-        ret = super(AddonMendeleyNodeSettings, self).to_json(user)
-        ret.update({
-            'listId': self.mendeley_list_id,
-            'accounts': [utils.serialize_account(each) for each in
-                         self.get_accounts(user)],
-            'currentAccount': utils.serialize_account(self.external_account),
-        })
-        return ret
 
+        ret = super(AddonMendeleyNodeSettings, self).to_json(user)
+        return ret
 
 class Mendeley(ExternalProvider):
     name = 'Mendeley'
@@ -257,41 +251,6 @@ class Mendeley(ExternalProvider):
                 'token_type': 'bearer',
             })
         return self._client
-
-    def _folder_tree(self, folder, flat_map):
-
-        serialized = serialize_folder(folder[0].name, self.account.provider_id)
-        serialized['children'] = [self._folder_tree(flat_map[f], flat_map) for f
-                                  in folder[1]]
-        serialized['kind'] = 'folder'
-        return serialized
-
-    @property
-    def citation_folder_tree(self):
-        """Nested list structure of serialized folders"""
-
-        folders = self._get_folders()
-        flat_map = {
-            folder.id: (folder, [])
-            for folder in folders
-        }
-        flat_map['root'] = (None, [])
-        for folder in folders:
-            if folder.parent_id:
-                flat_map[folder.parent_id][1].append(folder.id)
-            else:
-                flat_map['root'][1].append(folder.id)
-        tree = [
-            serialize_folder(
-                'All Documents',
-                account_id=self.account.provider_id,
-                id='ROOT'
-            )
-        ]
-        tree[0]['children'] = [self._folder_tree(flat_map[f], flat_map) for f in
-                               flat_map['root'][1]]
-        tree[0]['kind'] = 'folder'
-        return tree
 
     @property
     def citation_lists(self):
