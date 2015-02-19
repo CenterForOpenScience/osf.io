@@ -1,8 +1,5 @@
 % if complete:
-
-    <h3 class="addon-widget-header">
-        Dataverse
-    </h3>
+<%inherit file="project/addon/widget.mako"/>
 
     <div id="dataverseScope" class="scripted">
 

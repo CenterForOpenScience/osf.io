@@ -44,13 +44,7 @@ $ invoke setup
 ```
 
 
-- Optionally, you may install the requirements for the Modular File Renderer:
-
-```bash
-$ invoke mfr_requirements
-```
-
-and for addons:
+- Optionally, you may install the requirements for addons:
 
 ```bash
 $ invoke addon_requirements
@@ -90,6 +84,12 @@ $ invoke mongo
 
 ```bash
 $ invoke server
+```
+
+- Run your local sharejs server.
+
+```bash
+$ invoke sharejs
 ```
 
 ## Running the shell
@@ -335,6 +335,15 @@ $ inv pack -dw
 ```bash
 $ inv assets -dw
 ```
+
+## Downloading citation styles (optional)
+
+To download citation styles, run:
+
+```bash
+$ invoke update_citation_styles
+```
+
 
 ## Setting up addons
 

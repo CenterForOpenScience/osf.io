@@ -58,12 +58,28 @@ def validate_history_item(item):
     startYear = item.get('startYear')
     endMonth = item.get('endMonth')
     endYear = item.get('endYear')
+
+    validate_year(startYear)
+    validate_year(endYear)
+
     if startYear and endYear:
         if endYear < startYear:
             raise ValidationValueError('End date must be later than start date.')
         elif endYear == startYear:
             if endMonth and startMonth and endMonth < startMonth:
                 raise ValidationValueError('End date must be later than start date.')
+
+
+def validate_year(item):
+    if item:
+        try:
+            int(item)
+        except ValueError:
+            raise ValidationValueError('Please enter a valid year.')
+        else:
+            if len(item) != 4:
+                raise ValidationValueError('Please enter a valid year.')
+
 
 validate_url = URLValidator()
 def validate_personal_site(value):
@@ -205,6 +221,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     # Tags for internal use
     system_tags = fields.StringField(list=True)
+    security_messages = fields.DictionaryField()
 
     # Per-project unclaimed user data:
     # Format: {
@@ -471,6 +488,20 @@ class User(GuidStoredObject, AddonModelMixin):
             return False
         return check_password_hash(self.password, raw_password)
 
+    @property
+    def csl_given_name(self):
+        parts = [self.given_name]
+        if self.middle_names:
+            parts.extend(each[0] for each in re.split(r'\s+', self.middle_names))
+        return ' '.join(parts)
+
+    @property
+    def csl_name(self):
+        return {
+            'family': self.family_name,
+            'given': self.csl_given_name,
+        }
+
     def change_password(self, raw_old_password, raw_new_password, raw_confirm_password):
         """Change the password for this user to the hash of ``raw_new_password``."""
         raw_old_password = (raw_old_password or '').strip()
@@ -551,8 +582,13 @@ class User(GuidStoredObject, AddonModelMixin):
         """Return whether or not a confirmation token is valid for this user.
         :rtype: bool
         """
-        if token in self.email_verifications.keys():
-            return self.email_verifications.get(token)['expiration'] > dt.datetime.utcnow()
+        if token in self.email_verifications:
+            verification = self.email_verifications[token]
+            # Not all tokens are guaranteed to have expiration dates
+            if 'expiration' in verification:
+                return verification['expiration'] > dt.datetime.utcnow()
+            else:
+                return True
         return False
 
     def verify_claim_token(self, token, project_id):

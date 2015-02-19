@@ -4,19 +4,24 @@
 <%include file="project/modal_generate_private_link.mako"/>
 <%include file="project/modal_add_contributor.mako"/>
 
-<div class="row">
-    <div class="col-md-12">
+<div class="page-header  visible-xs">
+  <h2 class="text-300">Contributors</h2>
+</div>
 
-        <h2>Contributors</h2>
-            % if 'admin' in user['permissions']:
-                <p>Drag and drop contributors to change listing order.</p>
-            % endif
+<div class="row">
+    <div class="col-md-10 col-md-offset-1">
+
             <div id="manageContributors" class="scripted">
-            <!-- ko if: canEdit -->
-            <a href="#addContributors" data-toggle="modal" class="btn btn-primary">
-                Add Contributors
-            </a>
-            <!-- /ko -->
+                <h3> Contributors
+                    <!-- ko if: canEdit -->
+                        <a href="#addContributors" data-toggle="modal" class="btn btn-success btn-sm" style="margin-left:20px;margin-top: -3px">
+                          <i class="icon icon-plus"> </i>Add
+                        </a>
+                    <!-- /ko -->
+                </h3>
+                % if 'admin' in user['permissions'] and not node['is_registration']:
+                    <p>Drag and drop contributors to change listing order.</p>
+                % endif
                 <table id="manageContributorsTable" class="table">
                     <thead>
                         <tr>
@@ -62,7 +67,7 @@
 
 
     % if 'admin' in user['permissions']:
-        <h2>View-only Links</h2>
+        <h3>View-only Links</h3>
         <div class="text-align">Create a link to share this project so those who have the link can view&mdash;but not edit&mdash;the project</div>
         <div class="scripted" id="linkScope">
 
@@ -122,7 +127,10 @@
                             <a data-bind="text: creator.fullname, attr: {href: creator.url}" class="overflow-block" style="width: 300px"></a>
                         </td>
                         <td class="col-sm-1">
-                            <span data-bind="text: anonymousDisplay"></span>
+                            <span data-bind="html: anonymousDisplay"></span>
+                            <!-- ko if: $root.nodeIsPublic && anonymous -->
+                            <i data-bind="tooltip: {title: 'Public projects are not anonymized.'}" class="icon-question-sign icon-sm"></i>
+                            <!-- /ko -->
                         </td>
                         <td class="col-sm-0">
                             <a data-bind="click: $root.removeLink, tooltip: {title: removeLink}">

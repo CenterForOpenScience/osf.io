@@ -145,7 +145,6 @@ var MessageModel = function(text, level) {
     self.cssClass = ko.computed(function() {
         var out = classes[self.level()];
         if (out === undefined) {
-            console.log('Unrecognized message level ' + self.level());
             out = '';
         }
         return out;

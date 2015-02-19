@@ -8,7 +8,7 @@ MODELS = [
 USER_SETTINGS_MODEL = model.AddonFigShareUserSettings
 NODE_SETTINGS_MODEL = model.AddonFigShareNodeSettings
 
-ROUTES = [routes.settings_routes, routes.page_routes, routes.api_routes]
+ROUTES = [routes.settings_routes, routes.api_routes]
 
 SHORT_NAME = 'figshare'
 FULL_NAME = 'FigShare'
@@ -26,7 +26,9 @@ CATEGORIES = ['storage']
 INCLUDE_JS = {
     'widget': [],
     'page': [],
+    'files': [],
 }
+
 
 INCLUDE_CSS = {
     'widget': [],

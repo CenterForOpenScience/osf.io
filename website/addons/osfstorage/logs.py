@@ -3,16 +3,14 @@
 
 
 def build_log_urls(node, path):
+    url = node.web_url_for(
+        'addon_view_or_download_file',
+        path=path,
+        provider='osfstorage'
+    )
     return {
-        'view': node.web_url_for(
-            'osf_storage_view_file',
-            path=path,
-        ),
-        'download': node.web_url_for(
-            'osf_storage_view_file',
-            path=path,
-            action='download',
-        ),
+        'view': url,
+        'download': url + '?action=download'
     }
 
 

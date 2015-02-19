@@ -5,20 +5,22 @@ import urlparse
 import itertools
 import httplib as http
 
-from modularodm import fields
 from github3 import GitHubError
+from modularodm import fields, Q
+from modularodm.exceptions import ModularOdmException
 
 from framework.auth import Auth
 from framework.mongo import StoredObject
 
 from website import settings
+from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 from website.addons.base import GuidFile
 
-from website.addons.github import settings as github_settings
-from website.addons.github.exceptions import ApiError, NotFoundError
-from website.addons.github.api import GitHub
 from website.addons.github import utils
+from website.addons.github.api import GitHub
+from website.addons.github import settings as github_settings
+from website.addons.github.exceptions import ApiError, NotFoundError, TooBigToRenderError
 
 
 hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
@@ -28,11 +30,47 @@ class GithubGuidFile(GuidFile):
 
     path = fields.StringField(index=True)
 
+    def maybe_set_version(self, **kwargs):
+        # branches are always required for file requests, if not specified
+        # file server will assume default branch. e.g. master or develop
+        if not kwargs.get('ref'):
+            kwargs['ref'] = kwargs.pop('branch', None)
+        super(GithubGuidFile, self).maybe_set_version(**kwargs)
+
     @property
-    def file_url(self):
-        if self.path is None:
-            raise ValueError('Path field must be defined.')
-        return os.path.join('github', 'file', self.path)
+    def waterbutler_path(self):
+        return self.path
+
+    @property
+    def provider(self):
+        return 'github'
+
+    @property
+    def version_identifier(self):
+        return 'ref'
+
+    @property
+    def unique_identifier(self):
+        return self._metadata_cache['extra']['fileSha']
+
+    @property
+    def name(self):
+        return os.path.split(self.path)[1]
+
+    @property
+    def extra(self):
+        return {
+            'sha': self._metadata_cache['extra']['fileSha'],
+        }
+
+    def _exception_from_response(self, response):
+        try:
+            if response.json()['errors'][0]['code'] == 'too_large':
+                raise TooBigToRenderError(self)
+        except (KeyError, IndexError):
+            pass
+
+        super(GithubGuidFile, self)._exception_from_response(response)
 
 
 class AddonGitHubOauthSettings(StoredObject):
@@ -162,6 +200,20 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
     registration_data = fields.DictionaryField()
 
+    def find_or_create_file_guid(self, path):
+        try:
+            return GithubGuidFile.find_one(
+                Q('path', 'eq', path) &
+                Q('node', 'eq', self.owner)
+            ), False
+        except ModularOdmException:
+            pass
+
+        # Create new
+        new = GithubGuidFile(node=self.owner, path=path)
+        new.save()
+        return new, True
+
     def authorize(self, user_settings, save=False):
         self.user_settings = user_settings
         self.owner.add_log(
@@ -257,6 +309,50 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                 'is_owner': owner == user,
             })
         return rv
+
+    def serialize_waterbutler_credentials(self):
+        if not self.complete or not self.repo:
+            raise exceptions.AddonError('Addon is not authorized')
+        return {'token': self.user_settings.oauth_access_token}
+
+    def serialize_waterbutler_settings(self):
+        if not self.complete:
+            raise exceptions.AddonError('Repo is not configured')
+        return {
+            'owner': self.user,
+            'repo': self.repo,
+        }
+
+    def create_waterbutler_log(self, auth, action, metadata):
+        path = metadata['path']
+
+        url = self.owner.web_url_for('addon_view_or_download_file', path=path, provider='github')
+
+        if not metadata.get('extra'):
+            sha = None
+            urls = {}
+        else:
+            sha = metadata['extra']['commit']['sha']
+            urls = {
+                'view': '{0}?ref={1}'.format(url, sha),
+                'download': '{0}?action=download&ref={1}'.format(url, sha)
+            }
+
+        self.owner.add_log(
+            'github_{0}'.format(action),
+            auth=auth,
+            params={
+                'project': self.owner.parent_id,
+                'node': self.owner._id,
+                'path': path,
+                'urls': urls,
+                'github': {
+                    'user': self.user,
+                    'repo': self.repo,
+                    'sha': sha,
+                },
+            },
+        )
 
     #############
     # Callbacks #

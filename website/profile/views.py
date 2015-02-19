@@ -57,6 +57,16 @@ def get_public_components(uid=None, user=None):
     ])
 
 
+@must_be_logged_in
+def current_user_gravatar(size=None, **kwargs):
+    user_id = kwargs['auth'].user._id
+    return get_gravatar(user_id, size=size)
+
+
+def get_gravatar(uid, size=None):
+    return {'gravatar_url': profile_utils.get_gravatar(User.load(uid), size=size)}
+
+
 def date_or_none(date):
     try:
         return parse_date(date)
@@ -125,7 +135,7 @@ def edit_profile(**kwargs):
 
     response_data = {'response': 'success'}
     if form.get('name') == 'fullname' and form.get('value', '').strip():
-        user.fullname = strip_html(form['value'])
+        user.fullname = strip_html(form['value']).strip()
         user.save()
         response_data['name'] = user.fullname
     return response_data
@@ -504,11 +514,12 @@ def serialize_schools(auth, uid=None, **kwargs):
 def unserialize_names(**kwargs):
     user = kwargs['auth'].user
     json_data = escape_html(request.get_json())
-    user.fullname = json_data.get('full')
-    user.given_name = json_data.get('given')
-    user.middle_names = json_data.get('middle')
-    user.family_name = json_data.get('family')
-    user.suffix = json_data.get('suffix')
+    # json get can return None, use `or` here to ensure we always strip a string
+    user.fullname = (json_data.get('full') or '').strip()
+    user.given_name = (json_data.get('given') or '').strip()
+    user.middle_names = (json_data.get('middle') or '').strip()
+    user.family_name = (json_data.get('family') or '').strip()
+    user.suffix = (json_data.get('suffix') or '').strip()
     user.save()
 
 

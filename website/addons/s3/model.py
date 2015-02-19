@@ -1,19 +1,13 @@
-'''
-Created on Jan 7, 2014
+# -*- coding: utf-8 -*-
 
-@author: seto
-'''
-"""
-
-"""
-
-import os
+from modularodm import fields, Q
+from modularodm.exceptions import ModularOdmException
 
 from boto.exception import BotoServerError
-from modularodm import fields
 
 from framework.auth.core import Auth
 
+from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 from website.addons.s3.utils import get_bucket_drop_down, remove_osf_user
 
@@ -23,10 +17,20 @@ class S3GuidFile(GuidFile):
     path = fields.StringField(index=True)
 
     @property
-    def file_url(self):
-        if self.path is None:
-            raise ValueError('Path field must be defined.')
-        return os.path.join('s3', self.path)
+    def waterbutler_path(self):
+        return '/' + self.path
+
+    @property
+    def provider(self):
+        return 's3'
+
+    @property
+    def version_identifier(self):
+        return 'version'
+
+    @property
+    def unique_identifier(self):
+        return self._metadata_cache['extra']['md5']
 
 
 class AddonS3UserSettings(AddonUserSettingsBase):
@@ -82,6 +86,26 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         'addons3usersettings', backref='authorized'
     )
 
+    def find_or_create_file_guid(self, path):
+        path = path.lstrip('/')
+
+        try:
+            return S3GuidFile.find_one(
+                Q('path', 'eq', path) &
+                Q('node', 'eq', self.owner)
+            ), False
+        except ModularOdmException:
+            pass
+
+        # Create new
+        new = S3GuidFile(node=self.owner, path=path)
+        new.save()
+        return new, True
+
+    @property
+    def display_name(self):
+        return u'{0}: {1}'.format(self.config.full_name, self.bucket)
+
     def authorize(self, user_settings, save=False):
         self.user_settings = user_settings
         self.owner.add_log(
@@ -115,6 +139,37 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
     def delete(self, save=True):
         self.deauthorize(log=False, save=False)
         super(AddonS3NodeSettings, self).delete(save=save)
+
+    def serialize_waterbutler_credentials(self):
+        if not self.has_auth:
+            raise exceptions.AddonError('Cannot serialize credentials for S3 addon')
+        return {
+            'access_key': self.user_settings.access_key,
+            'secret_key': self.user_settings.secret_key,
+        }
+
+    def serialize_waterbutler_settings(self):
+        if not self.bucket:
+            raise exceptions.AddonError('Cannot serialize settings for S3 addon')
+        return {'bucket': self.bucket}
+
+    def create_waterbutler_log(self, auth, action, metadata):
+        url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='s3')
+
+        self.owner.add_log(
+            's3_{0}'.format(action),
+            auth=auth,
+            params={
+                'project': self.owner.parent_id,
+                'node': self.owner._id,
+                'path': metadata['path'],
+                'bucket': self.bucket,
+                'urls': {
+                    'view': url,
+                    'download': url + '?action=download'
+                }
+            },
+        )
 
     def to_json(self, user):
         rv = super(AddonS3NodeSettings, self).to_json(user)

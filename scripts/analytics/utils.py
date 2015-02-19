@@ -2,14 +2,11 @@
 
 import os
 import csv
-import datetime
 from bson import ObjectId
-from cStringIO import StringIO
 
-import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-import seaborn as sns
+import seaborn as sns  # noqa
 
 import requests
 
@@ -44,26 +41,21 @@ def plot_dates(dates, *args, **kwargs):
     return fig
 
 
-def make_csv(rows, headers=None):
-    sio = StringIO()
-    writer = csv.writer(sio)
+def make_csv(fp, rows, headers=None):
+    writer = csv.writer(fp)
     if headers:
         writer.writerow(headers)
     writer.writerows(rows)
-    nchar = sio.tell()
-    sio.seek(0)
-    return sio, nchar
 
 
-def send_file(app, name, content_type, file_like, nchar, node, user):
+def send_file(app, name, content_type, file_like, node, user):
     """Upload file to OSF."""
+    file_like.seek(0)
     with app.test_request_context():
-        upload_url = storage_utils.get_upload_url(
-            node,
+        upload_url = storage_utils.get_waterbutler_upload_url(
             user,
-            nchar,
-            content_type,
-            name,
+            node,
+            path=name,
         )
     requests.put(
         upload_url,

@@ -110,16 +110,15 @@ class TestUserValidation(OsfTestCase):
         self.user.save()
         assert_equal(self.user.social_links, {})
 
-
     def test_validate_jobs_valid(self):
         self.user.jobs = [{
             'institution': 'School of Lover Boys',
             'department': 'Fancy Patter',
             'title': 'Lover Boy',
             'startMonth': 1,
-            'startYear': 1970,
+            'startYear': '1970',
             'endMonth': 1,
-            'endYear': 1980,
+            'endYear': '1980',
         }]
         self.user.save()
 
@@ -135,12 +134,13 @@ class TestUserValidation(OsfTestCase):
             'department': fake.bs(),
             'position': fake.catch_phrase(),
             'startMonth': 1,
-            'startYear': 1970,
+            'startYear': '1970',
             'endMonth': 1,
-            'endYear': 1960,
+            'endYear': '1960',
         }]
         with assert_raises(ValidationValueError):
             self.user.save()
+
 
     def test_validate_schools_bad_end_date(self):
         # end year is < start year
@@ -149,12 +149,42 @@ class TestUserValidation(OsfTestCase):
             'institution': fake.company(),
             'department': fake.bs(),
             'startMonth': 1,
-            'startYear': 1970,
+            'startYear': '1970',
             'endMonth': 1,
-            'endYear': 1960,
+            'endYear': '1960',
         }]
         with assert_raises(ValidationValueError):
             self.user.save()
+
+    def test_validate_jobs_bad_year(self):
+        start_year = ['hi', '20507', '99', '67.34']
+        for year in start_year:
+            self.user.jobs = [{
+                'institution': fake.company(),
+                'department': fake.bs(),
+                'position': fake.catch_phrase(),
+                'startMonth': 1,
+                'startYear': year,
+                'endMonth': 1,
+                'endYear': '1960',
+            }]
+            with assert_raises(ValidationValueError):
+                self.user.save()
+
+    def test_validate_schools_bad_year(self):
+        start_year = ['hi', '20507', '99', '67.34']
+        for year in start_year:
+            self.user.schools = [{
+                'degree': fake.catch_phrase(),
+                'institution': fake.company(),
+                'department': fake.bs(),
+                'startMonth': 1,
+                'startYear': year,
+                'endMonth': 1,
+                'endYear': '1960',
+            }]
+            with assert_raises(ValidationValueError):
+                self.user.save()
 
 
 class TestUser(OsfTestCase):
@@ -408,6 +438,18 @@ class TestUser(OsfTestCase):
         manual_expiration = datetime.datetime.utcnow() - datetime.timedelta(0, 10)
         u._set_email_token_expiration(valid_token, expiration=manual_expiration)
         assert_false(u.verify_confirmation_token(valid_token))
+
+    def test_verify_confirmation_token_when_token_has_no_expiration(self):
+        # A user verification token may not have an expiration
+        email = fake.email()
+        u = UserFactory.build()
+        u.add_email_verification(email)
+        token = u.get_confirmation_token(email)
+        # manually remove expiration to simulate legacy user
+        del u.email_verifications[token]['expiration']
+        u.save()
+
+        assert_true(u.verify_confirmation_token(token))
 
     def test_factory(self):
         # Clear users

@@ -1,24 +1,20 @@
 <div class="addon-widget" name="${short_name}">
 
-    <h3 class="addon-widget-header">
-        % if has_page:
-            <a href="${node['url']}${short_name}/">${full_name}</a>
-        % else:
-            <span>${full_name}</span>
-        % endif
-    </h3>
+            <div class="addon-widget-header clearfix"> 
+                <h4>${full_name}</h4>
+                <div class="pull-right">
+                    % if has_page:
+                       <a href="${node['url']}${short_name}/" class="btn">  <i class="icon icon-external-link"></i> </a>
+                   % endif
+
+                </div>
+            </div>
 
     % if complete:
 
-        <div class="addon-content">
+        <div class="addon-widget-body">
             ${self.body()}
         </div>
-
-        % if has_page and more:
-            <div>
-                <a href="${node['url']}${short_name}/">More</a>
-            </div>
-        % endif
 
     % else:
 
