@@ -58,8 +58,9 @@ class CitationsProvider(object):
             'nodeHasAuth': node_settings.has_auth,
             'userIsOwner': user_is_owner,
             'userHasAuth': user_has_auth,
-            'urls': self._serialize_urls(node_settings),
+            'urls': self._serialize_urls(node_settings),            
             'userAccountId': user_account_id,
+            'validCredentials': True
         }
         if node_account is not None:
             result['folder'] = node_settings.selected_folder_name

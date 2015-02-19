@@ -10,13 +10,14 @@ var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
 
-var FolderPicker = require('folderpicker');
+var FolderPickerViewModel = require('folderpicker');
 var $osf = require('osfHelpers');
 
 ko.punches.enableAll();
 /**
  * Knockout view model for the mendeley node settings widget.
  */
+
 var ViewModel = function(url, selector, folderPicker) {
     var self = this;
     self.selector = selector;
@@ -351,17 +352,7 @@ var ViewModel = function(url, selector, folderPicker) {
                     }
                 });
             }
-
-
-
-
         });
-
-
-
-
-
-
     };
 
     /** Callback for chooseFolder action.
@@ -446,7 +437,17 @@ function MendeleyNodeConfig(selector, url, folderPicker) {
     var self = this;
     self.url = url;
     self.folderPicker = folderPicker;
-    self.viewModel = new ViewModel(url, selector, folderPicker);
+    self.viewModel = new FolderPickerViewModel('mendeley', url, selector, folderPicker, {
+	resolveLazyloadUrl: function(item){
+	    return this.urls().folders + item.data.id + '/?view=folders';
+	},	
+	unpackSettings: function(res){
+	    return res;
+	},
+	lazyLoadPreprocess: function(res){
+	    return res.contents;
+	}
+    });
     $osf.applyBindings(self.viewModel, selector);
 }
 
