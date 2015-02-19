@@ -679,7 +679,6 @@ function _fangornResolveRows(item) {
     var default_columns = [];
     var configOption;
     item.css = '';
-
     if(item.data.tmpID){
         return [
         {

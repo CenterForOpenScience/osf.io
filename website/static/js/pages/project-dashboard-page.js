@@ -23,7 +23,6 @@ var mathrender = require('mathrender');
 // Render math in the wiki widget
 mathrender.mathjaxify('#addonWikiWidget');
 
-
 var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
 
@@ -51,7 +50,6 @@ if (!ctx.node.anonymous) {
     new CitationList('#citationList');
     new CitationWidget('#citationStyleInput', '#citationText');
 }
-
 
 $(document).ready(function() {
     // Treebeard Files view
@@ -109,7 +107,6 @@ $(document).ready(function() {
         };
         var filebrowser = new Fangorn(fangornOpts);
     });
-
 
     // Tooltips
     $('[data-toggle="tooltip"]').tooltip();

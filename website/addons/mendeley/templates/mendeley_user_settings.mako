@@ -1,0 +1,20 @@
+<!-- Authorization -->
+<div id="mendeleyUserSettings">
+    <h4 class="addon-title">Mendeley</h4>
+    <div data-bind="foreach: accounts">
+        <div>
+            <span>{{ name }}</span>
+            <a
+                    data-bind="click: $root.askDisconnect"
+                    class="pull-right text-danger"
+                >Delete Access Token</a>
+        </div>
+        <br />
+    </div>
+    <a data-bind="click: connectAccount" class="btn btn-primary">Connect an account</a>
+</div>
+
+<%def name="submit_btn()"></%def>
+<%def name="on_submit()"></%def>
+
+<%include file="profile/addon_permissions.mako" />
