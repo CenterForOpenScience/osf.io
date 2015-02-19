@@ -302,6 +302,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         'toc': toc,
         'category': node.category,
         'style': panel_settings,
+        'panels_used': panels_used,
         'urls': {
             'api': _get_wiki_api_urls(node, wiki_name, {
                 'content': node.api_url_for('wiki_page_content', wname=wiki_name),
