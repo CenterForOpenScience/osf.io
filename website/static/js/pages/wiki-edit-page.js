@@ -31,8 +31,7 @@ var wikiPageOptions = {
     canEdit: ctx.canEdit,
     viewVersion: 'current',
     compareVersion: 'current',
-    contentURL: ctx.urls.content,
-    draftURL: ctx.urls.draft,
+    urls: ctx.urls,
     metadata: ctx.metadata
 };
 

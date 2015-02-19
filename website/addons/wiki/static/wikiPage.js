@@ -142,8 +142,11 @@ var defaultOptions = {
     canEdit: true,
     viewVersion: 'current',
     compareVersion: 'current',
-    contentURL: '',
-    draftURL: '',
+    urls: {
+        content: '',
+        draft: '',
+        page: ''
+    },
     metadata: {}
 };
 
@@ -157,8 +160,9 @@ function ViewModel(options){
 
     self.compareVersion = ko.observable(options.compareVersion);
     self.viewVersion = ko.observable(options.viewVersion);
-    self.draftURL = options.draftURL;
-    self.contentURL = options.contentURL;
+    self.draftURL = options.urls.draft;
+    self.contentURL = options.urls.content;
+    self.pageURL = options.urls.page;
     self.editorMetadata = options.metadata;
     self.canEdit = options.canEdit;
 
@@ -189,6 +193,21 @@ function ViewModel(options){
                 self.viewVersion('current');
             }
         }
+
+        var url = self.pageURL;
+
+        if (self.editVis()) {
+            url += 'edit/'
+        }
+        if (self.viewVis() && self.editVis() && self.compareVis()) {
+            url += 'view/'
+        }
+        if (self.compareVis()) {
+            url += 'compare/'
+        }
+
+        history.replaceState({}, "", url);
+
     });
 }
 

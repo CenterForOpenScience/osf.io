@@ -293,6 +293,7 @@ ${parent.javascript_bottom()}
             draft: '${urls['api']['draft']}',
             content: '${urls['api']['content']}',
             rename: '${urls['api']['rename']}',
+            page: '${urls['web']['page']}',
             base: '${urls['web']['base']}',
             sharejs: '${sharejs_url}'
         },
