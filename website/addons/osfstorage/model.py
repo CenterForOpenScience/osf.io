@@ -93,11 +93,12 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
         return clone, message
 
     def after_register(self, node, registration, user, save=True):
-        clone, message = super(OsfStorageNodeSettings, self).after_register(
-            node=node, registration=registration, user=user, save=False
-        )
+        clone = self.clone()
+        clone.owner = registration
         self.copy_contents_to(clone)
-        return clone, message
+        if save:
+            clone.save()
+        return clone, None
 
     def serialize_waterbutler_settings(self):
         ret = {
