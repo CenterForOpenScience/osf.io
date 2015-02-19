@@ -5,15 +5,26 @@ var utils = require('./utils.js');
 
 var Stats = {};
 
+function get_source_length(elastic_data) {
+
+    sources = elastic_data.raw_aggregations.sources.buckets;
+    source_names = [];
+    for (i = 0; i < sources.length; i++) { 
+        source_names.push(sources[i]);
+    }
+
+    return source_names.length;
+}
+
 function doughnutGraph (elastic_data) {
     var donutgraph = c3.generate({
         bindto: '#shareDoughnutGraph',
         data: {
-            columns: elastic_data['for_charts']['donut_chart'],
+            columns: elastic_data.for_charts.donut_chart,
             type : 'donut',
         },
         donut: {
-            title: 
+            title: get_source_length(elastic_data) + ' Providers'
         },
         legend: {
             show: false
