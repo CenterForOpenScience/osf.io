@@ -299,6 +299,15 @@ class TestDropboxNodeSettingsModel(OsfTestCase):
             os.path.join(self.node_settings.folder, path),
         )
 
+    def test_does_not_get_copied_to_registrations(self):
+        registration = self.project.register_node(
+            schema=None,
+            auth=Auth(user=self.project.creator),
+            template='Template1',
+            data='hodor'
+        )
+        assert_false(registration.has_addon('dropbox'))
+
 
 class TestNodeSettingsCallbacks(OsfTestCase):
 
