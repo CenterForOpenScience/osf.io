@@ -288,6 +288,7 @@ class TestSendDigest(OsfTestCase):
         mock_send_mail.assert_called_with(
             to_addr=user.username,
             mail=mails.DIGEST,
+            mimetype='html',
             name=user.fullname,
             message=group_messages(user_groups[2]['info']),
             url=urlparse.urljoin(settings.DOMAIN, web_url_for('user_notifications'))
