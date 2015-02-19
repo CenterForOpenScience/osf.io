@@ -3,17 +3,19 @@
 import mock
 from nose.tools import *  # noqa
 
+from framework.exceptions import PermissionsError
+
 from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory
 from website.addons.mendeley.tests.factories import (
     MendeleyAccountFactory, MendeleyUserSettingsFactory,
+    ExternalAccountFactory,
     MendeleyNodeSettingsFactory
 )
 
 import datetime
 
 from website.addons.mendeley import model
-from website.citations.models import CitationList
 
 
 class MendeleyProviderTestCase(OsfTestCase):
@@ -112,61 +114,26 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
 
     def setUp(self):
         super(MendeleyNodeSettingsTestCase, self).setUp()
-        self.node_addon = model.AddonMendeleyNodeSettings()
-        self.node_addon.save()
+        self.node = ProjectFactory()
+        self.node_settings = model.AddonMendeleyNodeSettings(owner=self.node)
+        self.node_settings.save()
+        self.user = self.node.creator
+        self.user_settings = self.user.get_or_add_addon('mendeley')
 
     @mock.patch('website.addons.mendeley.model.Mendeley')
     def test_api_not_cached(self, mock_mendeley):
         """The first call to .api returns a new object"""
-        api = self.node_addon.api
+        api = self.node_settings.api
         mock_mendeley.assert_called_once()
         assert_equal(api, mock_mendeley())
 
     @mock.patch('website.addons.mendeley.model.Mendeley')
     def test_api_cached(self, mock_mendeley):
         """Repeated calls to .api returns the same object"""
-        self.node_addon._api = 'testapi'
-        api = self.node_addon.api
+        self.node_settings._api = 'testapi'
+        api = self.node_settings.api
         assert_false(mock_mendeley.called)
         assert_equal(api, 'testapi')
-
-    def test_grant_oauth(self):
-        """Grant the node access to a single folder in a Mendeley account"""
-        account = MendeleyAccountFactory()
-        user_addon = MendeleyUserSettingsFactory()
-        node_addon = MendeleyNodeSettingsFactory()
-        node_addon.grant_oauth_access(user_addon.owner, account, metadata=None)
-        assert_in(user_addon, node_addon.associated_user_settings)
-        assert_equal(user_addon.oauth_grants[node_addon.owner._id][account._id], None)
-
-    def test_verify_oauth_current_user(self):
-        """Confirm access to a Mendeley account attached to the current user"""
-        account = MendeleyAccountFactory()
-        user = UserFactory()
-        user_addon = MendeleyUserSettingsFactory(owner=user)
-        node_addon = MendeleyNodeSettingsFactory(owner=ProjectFactory(creator=user))
-        node_addon.grant_oauth_access(user_addon.owner, account, metadata={'lists': 'testlist'})
-        assert_true(node_addon.verify_oauth_access(account, 'testlist'))
-
-    def test_verify_oauth_other_user(self):
-        """Verify access to a Mendeley account's folder beloning to another user
-        """
-        account = MendeleyAccountFactory()
-        user_addon = MendeleyUserSettingsFactory()
-        node_addon = MendeleyNodeSettingsFactory()
-        node_addon.grant_oauth_access(user_addon.owner, account, metadata={'lists': 'testlist'})
-        assert_true(node_addon.verify_oauth_access(account, 'testlist'))
-
-    def test_verify_oauth_other_user_failed(self):
-        """Verify access to a Mendeley account's folder where the account is
-        associated with the node, but the folder is not
-        """
-        account = MendeleyAccountFactory()
-        user = UserFactory()
-        user_addon = MendeleyUserSettingsFactory(owner=user)
-        node_addon = MendeleyNodeSettingsFactory(owner=ProjectFactory(creator=user))
-        node_addon.grant_oauth_access(user_addon.owner, account, metadata={'lists': 'testlist'})
-        assert_false(node_addon.verify_oauth_access(account, 'privatelist'))
 
     def test_to_json(self):
         """All values are passed to the node settings view"""
@@ -185,6 +152,96 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
                 },
                 res['accounts'],
             )
+
+    def test_set_auth(self):
+        external_account = ExternalAccountFactory()
+        self.user.external_accounts.append(external_account)
+        self.user.save()
+
+        # this should be reset after the call
+        self.node_settings.mendeley_list_id = 'anything'
+
+        self.node_settings.set_auth(
+            external_account=external_account,
+            user=self.user
+        )
+
+        # this instance is updated
+        assert_equal(
+            self.node_settings.external_account,
+            external_account
+        )
+        assert_equal(
+            self.node_settings.user_settings,
+            self.user_settings
+        )
+        assert_is_none(
+            self.node_settings.mendeley_list_id
+        )
+
+        # user_settings was updated
+        # TODO: The call to grant_oauth_access in set_auth should be mocked
+        assert_true(
+            self.user_settings.verify_oauth_access(
+                node=self.node,
+                external_account=external_account,
+            )
+        )
+
+    def test_set_auth_wrong_user(self):
+        external_account = ExternalAccountFactory()
+        self.user.external_accounts.append(external_account)
+        self.user.save()
+
+        with assert_raises(PermissionsError):
+            self.node_settings.set_auth(
+                external_account=external_account,
+                user=UserFactory()
+            )
+
+    def test_clear_auth(self):
+        self.node_settings.external_account = ExternalAccountFactory()
+        self.node_settings.mendeley_list_id = 'something'
+        self.node_settings.user_settings = self.user_settings
+        self.node_settings.save()
+
+        self.node_settings.clear_auth()
+
+        assert_is_none(self.node_settings.external_account)
+        assert_is_none(self.node_settings.mendeley_list_id)
+        assert_is_none(self.node_settings.user_settings)
+
+    def test_set_target_folder(self):
+        external_account = ExternalAccountFactory()
+        self.user.external_accounts.append(external_account)
+        self.user.save()
+
+        self.node_settings.set_auth(
+            external_account=external_account,
+            user=self.user
+        )
+
+        assert_is_none(self.node_settings.mendeley_list_id)
+
+        self.node_settings.set_target_folder('fake-folder-id')
+
+        # instance was updated
+        assert_equal(
+            self.node_settings.mendeley_list_id,
+            'fake-folder-id',
+        )
+
+        # user_settings was updated
+        # TODO: the call to grant_oauth_access should be mocked
+        assert_true(
+            self.user_settings.verify_oauth_access(
+                node=self.node,
+                external_account=external_account,
+                metadata={'folder': 'fake-folder-id'}
+            )
+        )
+
+
 
 
 class MendeleyUserSettingsTestCase(OsfTestCase):
@@ -210,3 +267,96 @@ class MendeleyUserSettingsTestCase(OsfTestCase):
                 },
                 res['accounts'],
             )
+
+    def _prep_oauth_case(self):
+        self.node = ProjectFactory()
+        self.user = self.node.creator
+
+        self.external_account = ExternalAccountFactory()
+
+        self.user.external_accounts.append(self.external_account)
+        self.user.save()
+
+        self.user_settings = self.user.get_or_add_addon('mendeley')
+
+    def test_grant_oauth_access_no_metadata(self):
+        self._prep_oauth_case()
+
+        self.user_settings.grant_oauth_access(
+            node=self.node,
+            external_account=self.external_account,
+        )
+        self.user_settings.save()
+
+        assert_equal(
+            self.user_settings.oauth_grants,
+            {self.node._id: {self.external_account._id: {}}},
+        )
+
+    def test_grant_oauth_access_metadata(self):
+        self._prep_oauth_case()
+
+        self.user_settings.grant_oauth_access(
+            node=self.node,
+            external_account=self.external_account,
+            metadata={'folder': 'fake_folder_id'}
+        )
+        self.user_settings.save()
+
+        assert_equal(
+            self.user_settings.oauth_grants,
+            {
+                self.node._id: {
+                    self.external_account._id: {'folder': 'fake_folder_id'}
+                },
+            }
+        )
+
+    def test_verify_oauth_access_no_metadata(self):
+        self._prep_oauth_case()
+
+        self.user_settings.grant_oauth_access(
+            node=self.node,
+            external_account=self.external_account,
+        )
+        self.user_settings.save()
+
+        assert_true(
+            self.user_settings.verify_oauth_access(
+                node=self.node,
+                external_account=self.external_account
+            )
+        )
+
+        assert_false(
+            self.user_settings.verify_oauth_access(
+                node=self.node,
+                external_account=ExternalAccountFactory()
+            )
+        )
+
+    def test_verify_oauth_access_metadata(self):
+        self._prep_oauth_case()
+
+        self.user_settings.grant_oauth_access(
+            node=self.node,
+            external_account=self.external_account,
+            metadata={'folder': 'fake_folder_id'}
+        )
+        self.user_settings.save()
+
+        assert_true(
+            self.user_settings.verify_oauth_access(
+                node=self.node,
+                external_account=self.external_account,
+                metadata={'folder': 'fake_folder_id'}
+            )
+        )
+
+        assert_false(
+            self.user_settings.verify_oauth_access(
+                node=self.node,
+                external_account=self.external_account,
+                metadata={'folder': 'another_folder_id'}
+            )
+        )

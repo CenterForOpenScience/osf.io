@@ -7,7 +7,7 @@ from modularodm import storage
 from framework.mongo import set_up_storage
 
 from website.addons.base.testing import AddonTestCase
-from website.addons.dropbox import MODELS
+from website.addons.mendeley import MODELS
 
 from json import dumps
 

@@ -9,7 +9,6 @@ var $osf = require('osfHelpers');
 var citations = require('./citations');
 
 require('select2');
-require('../css/citations.css');
 
 var ctx = window.contextVars;
 
