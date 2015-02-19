@@ -30,7 +30,8 @@ def count(query):
         'count': count['count']
     }
 
-def stats(query=dict()):
+def stats(query=None):
+    query = query or {}
     query['aggs'] = {
         "sources": {
             "terms": {
