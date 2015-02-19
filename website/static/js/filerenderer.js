@@ -17,7 +17,7 @@ FileRenderer = {
     getCachedFromServer: function() {
         var self = this;
         $.ajax({
-            url: self.url,
+            url: self.url
         }).done(function(data) {
             if (data) {
                 self.element.html(data);
