@@ -221,12 +221,24 @@ class TestNotificationUtils(OsfTestCase):
             _id=project._id + '_' + 'comments',
             object_id=project._id
         )
-        subscription.email_transactional.append(self.user)
         subscription.save()
+        subscription.email_transactional.append(self.user)
         subscription.save()
         project.is_deleted = True
         project.save()
-        assert_not_in(self.node._id, utils.get_configured_projects(self.user))
+        assert_not_in(project._id, utils.get_configured_projects(self.user))
+
+    def test_get_configured_project_ids_excludes_node_with_project_category(self):
+        node = NodeFactory(project=self.project, category='project')
+        node_subscription = SubscriptionFactory(
+            _id=node._id + '_' + 'comments',
+            object_id=node._id,
+            event_name='comments'
+        )
+        node_subscription.save()
+        node_subscription.email_transactional.append(self.user)
+        node_subscription.save()
+        assert_not_in(node._id, utils.get_configured_projects(self.user))
 
     def test_get_parent_notification_type(self):
         nt = utils.get_parent_notification_type(self.node._id, 'comments', self.user)
@@ -316,6 +328,78 @@ class TestNotificationUtils(OsfTestCase):
                         }
                         ]
                     }]
+        assert_equal(data, expected)
+
+    def test_format_includes_admin_view_only_component_subscriptions(self):
+        """ Test private components in which parent project admins are not contributors still appear in their
+            notifications settings.
+        """
+        node = NodeFactory(project=self.project)
+        data = utils.format_data(self.user, [self.project._id], [])
+        expected = [
+            {
+                'node': {
+                    'id': self.project._id,
+                    'title': self.project.title,
+                    'url': self.project.url,
+                },
+                'kind': 'folder' if not self.project.node__parent else 'node',
+                'children': [
+                    {
+                        'event': {
+                            'title': 'comments',
+                            'description': SUBSCRIPTIONS_AVAILABLE['comments'],
+                            'notificationType': 'email_transactional',
+                            'parent_notification_type': None
+                        },
+                        'kind': 'event',
+                        'children': []
+                    },
+                    {
+                        'node': {
+                            'id': self.node._id,
+                            'title': self.node.title,
+                            'url': self.node.url,
+                        },
+
+                        'kind': 'folder' if not self.node.node__parent else 'node',
+                        'children': [
+                            {
+                                'event': {
+                                    'title': 'comments',
+                                    'description': SUBSCRIPTIONS_AVAILABLE['comments'],
+                                    'notificationType': 'email_transactional',
+                                    'parent_notification_type': None
+                                },
+                                'kind': 'event',
+                                'children': [],
+                            }
+                        ]
+                    },
+                    {
+                        'node': {
+                            'id': node._id,
+                            'title': node.title,
+                            'url': node.url,
+                        },
+
+                        'kind': 'folder' if not node.node__parent else 'node',
+                        'children': [
+                            {
+                                'event': {
+                                    'title': 'comments',
+                                    'description': SUBSCRIPTIONS_AVAILABLE['comments'],
+                                    'notificationType': 'adopt_parent',
+                                    'parent_notification_type': 'email_transactional'
+                                },
+                                'kind': 'event',
+                                'children': [],
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
         assert_equal(data, expected)
 
     def test_format_user_subscriptions(self):
