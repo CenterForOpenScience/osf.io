@@ -34,18 +34,17 @@ var ProviderMap = {
 var Results = {};
 
 Results.view = function(ctrl) {
-    if (!ctrl.vm.resultsLoaded) {
-        return m('img[src=/static/img/spinner.gif');
-    }
-
-    return m('.row', m('.col-md-12', ctrl.vm.results.map(ctrl.renderResult)));
+    return m('.row', [
+        m('.col-md-12', ctrl.vm.results.map(ctrl.renderResult)),
+        m('.col-md-12', ctrl.vm.resultsLoading() ? m('img[src=/static/img/loading.gif]') : [])
+    ]);
 
 };
 
 Results.controller = function(vm) {
     var self = this;
     self.vm = vm;
-    self.vm.resultsLoaded = false;
+    self.vm.resultsLoading = m.prop(false);
 
     self.renderResult = function(result, index) {
         return m( '.animated.fadeInUp', [
@@ -112,10 +111,15 @@ Results.controller = function(vm) {
 
 
     self.loadMore = function() {
+        if (self.vm.query().length === 0) {
+            return;
+        }
         var page = self.vm.page++ * 10;
+        self.vm.resultsLoading(true);
 
         m.request({
             method: 'get',
+            background: true,
             url: '/api/v1/share/?sort=dateUpdated&from=' + page + '&q=' + self.vm.query(),
         }).then(function(data) {
             self.vm.time = data.time;
@@ -124,8 +128,8 @@ Results.controller = function(vm) {
             // push.apply is the same as extend in python
             self.vm.results.push.apply(self.vm.results, data.results);
 
-            self.vm.resultsLoaded = true;
-        });
+            self.vm.resultsLoading(false);
+        }).then(m.redraw);
     };
 
     $(window).scroll(function() {

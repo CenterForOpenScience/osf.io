@@ -51,10 +51,17 @@ SearchBar.controller = function(vm) {
     self.vm.showStats = true;
 
     self.loadMore = function() {
+        if (self.vm.query().length === 0) {
+            return;
+        }
+
         var page = self.vm.page++ * 10;
+
+        self.vm.resultsLoading(true);
 
         m.request({
             method: 'get',
+            background: true,
             url: '/api/v1/share/?sort=dateUpdated&from=' + page + '&q=' + self.vm.query(),
         }).then(function(data) {
             self.vm.time = data.time;
@@ -63,8 +70,8 @@ SearchBar.controller = function(vm) {
             // push.apply is the same as extend in python
             self.vm.results.push.apply(self.vm.results, data.results);
 
-            self.vm.resultsLoaded = true;
-        });
+            self.vm.resultsLoading(false);
+        }).then(m.redraw);
     };
 
     self.search = function(e) {
@@ -83,7 +90,6 @@ SearchBar.controller = function(vm) {
         self.vm.page = 0;
         self.vm.results = [];
         self.vm.showStats = false;
-        self.vm.resultsLoaded = false;
         self.loadMore();
 
         return false;
