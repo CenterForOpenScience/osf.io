@@ -122,11 +122,11 @@ def mendeley_add_user_auth(auth, node_addon, **kwargs):
     if external_account not in auth.user.external_accounts:
         raise HTTPError(http.FORBIDDEN)
 
-    user_addon = auth.user.get_or_add_addon('mendeley')
+    node_addon.set_auth(
+        external_account=external_account,
+        user=auth.user,
+    )
 
-    node_addon.grant_oauth_access(user_addon.owner, external_account)
-    node_addon.external_account = external_account
-    node_addon.save()
     result = node_addon.to_json(auth.user)
     result.update(serialize_settings(node_addon, auth.user))
     return {'result': result}
@@ -136,9 +136,8 @@ def mendeley_add_user_auth(auth, node_addon, **kwargs):
 @must_have_addon('mendeley', 'node')
 @must_not_be_registration
 def mendeley_remove_user_auth(auth, node_addon, **kwargs):
-    node_addon.external_account = None
-    node_addon.mendeley_list_id = None
-    node_addon.save()
+    node_addon.clear_auth()
+
     result = node_addon.to_json(auth.user)
     result.update(serialize_settings(node_addon, auth.user))
     return {'result': result}
@@ -149,34 +148,11 @@ def mendeley_remove_user_auth(auth, node_addon, **kwargs):
 @must_not_be_registration
 def mendeley_set_config(pid, auth, node, project, node_addon):
     # Ensure request has all required information
-    try:
-        external_account = ExternalAccount.load(
-            request.json['external_account_id']
-        )
-        list_id = request.json['external_list_id']
-    except KeyError:
+    list_id = request.json.get('external_list_id')
+    if not list_id:
         raise HTTPError(http.BAD_REQUEST)
 
-    user = auth.user
-
-    # User is an owner of this ExternalAccount
-    if external_account in user.external_accounts:
-        # grant access to the node for the Mendeley list
-        node_addon.grant_oauth_access(
-            user=user,
-            external_account=external_account,
-            metadata={'lists': list_id},
-        )
-    # User doesn't own the ExternalAccount
-    else:
-        # Make sure the node has previously been granted access
-        if not node_addon.verify_oauth_access(external_account, list_id):
-            raise HTTPError(http.FORBIDDEN)
-
-    # associate the list with the node
-    node_addon.external_account = external_account
-    node_addon.mendeley_list_id = list_id
-    node_addon.save()
+    node_addon.set_target_folder(list_id)
 
     return {}
 

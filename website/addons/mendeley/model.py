@@ -101,11 +101,21 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
 
     @property
     def has_auth(self):
-        return self.external_account is not None
+        if not (self.user_settings and self.external_account):
+            return False
+
+        return self.user_settings.verify_oauth_access(
+            node=self.owner,
+            external_account=self.external_account
+        )
 
     @property
     def complete(self):
-        return self.has_auth and self.mendeley_list_id
+        return self.has_auth and self.user_settings.verify_oauth_access(
+            node=self.owner,
+            external_account=self.external_account,
+            metadata={'folder': self.mendeley_list_id},
+        )
 
     @property
     def selected_folder_name(self):
