@@ -49,7 +49,7 @@ function timeGraph (elastic_data) {
         },
         axis: {
             x: {
-                type: 'category'
+                type: 'category',
             }
         },
         legend: {
