@@ -293,7 +293,7 @@ var ViewModel = function(url, selector, folderPicker) {
     self.deauthorize = function() {
         bootbox.confirm({
             title: 'Deauthorize mendeley?',
-            message: 'Are you sure you want to remove this mendeley authorization?',
+            message: 'Are you sure you want to remove this Mendeley authorization?',
             callback: function(confirmed) {
                 if (confirmed) {
                     return sendDeauth();
@@ -335,7 +335,7 @@ var ViewModel = function(url, selector, folderPicker) {
                     inputType: 'select',
                     inputOptions: ko.utils.arrayMap(
                         self.accounts(),
-                        function(item) { return {text: item.name, value: item.id } }
+                        function(item) { return {text: item.name, value: item.id }; }
                     ),
                     value: self.accounts()[0].id,
                     callback: self.connectExistingAccount
@@ -343,7 +343,7 @@ var ViewModel = function(url, selector, folderPicker) {
             } else {
                 bootbox.confirm({
                     title: 'Import Mendeley Access Token?',
-                    message: 'Are you sure you want to authorize this project with your mendeley access token?',
+                    message: 'Are you sure you want to authorize this project with your Mendeley access token?',
                     callback: function(confirmed) {
                         if (confirmed) {
                             self.connectExistingAccount(self.accounts()[0].id);
