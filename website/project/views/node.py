@@ -323,8 +323,6 @@ def node_setting(auth, **kwargs):
         'level': node.comment_level,
     }
 
-    # ret['subscriptions'] = format_data(auth.user, [node._id], [])
-
     return ret
 
 
@@ -769,6 +767,7 @@ def _view_project(node, auth, primary=False):
             'is_contributor': node.is_contributor(user),
             'can_edit': (node.can_edit(auth)
                          and not node.is_registration),
+            'has_read_permissions': node.has_permission(user, 'read'),
             'permissions': node.get_permissions(user) if user else [],
             'is_watching': user.is_watching(node) if user else False,
             'piwik_token': user.piwik_token if user else '',

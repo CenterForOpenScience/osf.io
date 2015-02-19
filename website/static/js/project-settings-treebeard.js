@@ -89,9 +89,9 @@ function displayParentNotificationType(item){
         'none': 'None'
     };
 
-    if (item.data.parent_notification_type) {
+    if (item.data.event.parent_notification_type) {
         if (item.parent().parent().parent() === undefined) {
-            return '(' + notificationTypeDescriptions[item.data.parent_notification_type] + ')';
+            return '(' + notificationTypeDescriptions[item.data.event.parent_notification_type] + ')';
         }
     }
     return '';
@@ -182,7 +182,7 @@ function ProjectNotifications(data) {
                         return m("div[style='padding-right:10px']",
                             [m('select.form-control', {
                                 onchange: function(ev) {
-                                    item.data.notificationType = ev.target.value;
+                                    item.data.event.notificationType = ev.target.value;
                                     subscribe(item.parent().data.node.id, item.data.event.title, item.data.event.notificationType)
                                 }},
                                 [

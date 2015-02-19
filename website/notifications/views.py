@@ -8,13 +8,13 @@ from modularodm.exceptions import NoResultsFound
 from modularodm.storage.mongostorage import KeyExistsException
 from website.notifications.constants import NOTIFICATION_TYPES
 from website.notifications import utils
-from website.project.decorators import must_be_contributor
+from website.project.decorators import must_be_valid_project
 
 @must_be_logged_in
 def get_subscriptions(auth):
     return utils.format_user_and_project_subscriptions(auth.user)
 
-@must_be_contributor
+@must_be_valid_project
 @must_be_logged_in
 def get_node_subscriptions(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']

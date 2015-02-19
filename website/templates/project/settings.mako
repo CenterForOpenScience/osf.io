@@ -98,7 +98,7 @@
 
         % endif
 
-        % if not node['is_registration']:
+        % if not node['is_registration'] and user['has_read_permissions']:
             <div class="panel panel-default">
                 <span id="configureNotifications" class="anchor"></span>
 

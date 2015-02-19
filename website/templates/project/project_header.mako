@@ -53,7 +53,7 @@
                         % if user['is_contributor']:
                             <li><a href="${node['url']}contributors/">Sharing</a></li>
                         % endif
-                        % if not node['is_registration'] and user['is_contributor']:
+                        % if not node['is_registration'] and user['has_read_permissions']:
                             <li><a href="${node['url']}settings/">Settings</a></li>
                         % endif
                     </ul>
