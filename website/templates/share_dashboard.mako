@@ -5,6 +5,8 @@
   <div id="shareDashboard1"></div>
   <div id="shareDashboard2"></div>
   <div id="shareDashboard3"></div>
+  <div id="shareDashboard4"></div>
+
 
 </%def>
 
