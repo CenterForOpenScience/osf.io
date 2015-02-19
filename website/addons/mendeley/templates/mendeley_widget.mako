@@ -10,5 +10,5 @@ window.contextVars = $.extend(true, {}, window.contextVars, {
 <div class="citation-picker" style="padding-bottom: 6px;">
     <input id="mendeleyStyleSelect" type="hidden" />
 </div>
-<div id="mendeleyWidget">
+<div id="mendeleyWidget" class="citation-widget">
 </div>
