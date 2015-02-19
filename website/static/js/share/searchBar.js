@@ -13,7 +13,7 @@ SearchBar.view = function(ctrl) {
                         margin: 'auto',
                         height: 'auto',
                         display: 'block',
-                        'max-width': '45%',
+                        'max-width': '40%',
                         '-webkit-animation-duration': '3s'
                     },
                     class: 'animated pulse'
