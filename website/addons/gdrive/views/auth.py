@@ -1,7 +1,8 @@
 import os
 import httplib as http
 import httplib2
-
+import time
+import datetime
 from ..import settings
 from ..utils import serialize_settings
 from flask import request
@@ -36,11 +37,13 @@ def drive_oauth_start(auth, **kwargs):
         return redirect(web_url_for('user_addons'))
     flow = OAuth2WebServerFlow(settings.CLIENT_ID, settings.CLIENT_SECRET,
                                settings.OAUTH_SCOPE, redirect_uri=settings.REDIRECT_URI)
+    flow.params['approval_prompt'] = 'force'
     authorize_url = flow.step1_get_authorize_url()
     return{'url': authorize_url}
 
 @collect_auth
 def drive_oauth_finish(auth, **kwargs):
+    print "vghvhjbhjbhjbjbhjhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh"
     """View called when the Oauth flow is completed. Adds a new AddonGdriveUserSettings
     record to the user and saves the user's access token and account info.
     """
@@ -63,7 +66,14 @@ def drive_oauth_finish(auth, **kwargs):
     http_service = credentials.authorize(http_service)
     user_settings.access_token = credentials.access_token
     user_settings.refresh_token = credentials.refresh_token
+    curr_time_in_millis = time.mktime(datetime.datetime.utcnow().timetuple())
+    token_expiry_in_millis = time.mktime(credentials.token_expiry.timetuple())
+    import pdb; pdb.set_trace()
+    # Add No. of seconds left for token to expire into current utc time
+    user_settings.token_expiry = token_expiry_in_millis
     user_settings.save()
+    print "Current Oauth Time : ", curr_time_in_millis
+    print "Token Expiry Oauth :", user_settings.token_expiry
     if node_settings:
         node_settings.user_settings = user_settings
         # # previously connected to GDrive?
@@ -76,6 +86,11 @@ def drive_oauth_finish(auth, **kwargs):
         user_settings.username = username
         user_settings.save()
     return redirect(web_url_for('user_addons'))
+
+
+
+# def get_token_expiry_time(access_token):
+
 
 
 @must_be_logged_in

@@ -2,6 +2,10 @@
 """Utility functions for the Google Drive add-on.
 """
 import logging
+import time
+import datetime
+import requests
+from .import settings
 from website.util import web_url_for
 
 logger = logging.getLogger(__name__)
@@ -91,7 +95,7 @@ def serialize_settings(node_settings, current_user):
                                                uid=user_settings.owner._primary_key)
         rv['ownerName'] = user_settings.owner.fullname
         rv['access_token'] = user_settings.access_token
-        rv['currentFolder'] = node_settings.folder['name'] if node_settings.folder else None
+        rv['currentFolder'] = node_settings.folder  # if node_settings.folder else None
     return rv
 
 
@@ -112,6 +116,20 @@ def clean_path(path):
     cleaned_path = parts[len(parts) - 1]
 
     return cleaned_path
+
+
+def get_path_from_waterbutler_path(waterbutler_path):
+    if waterbutler_path is None:
+        return ''
+    parts = waterbutler_path.strip('/').split('/')
+    tempPath = ''
+    for i in range(2, len(parts)):
+        if tempPath == '':
+            tempPath = parts[i]
+        else:
+            tempPath = tempPath + '/' + parts[i]
+    path = '/' + tempPath
+    return path
 
 
 def build_gdrive_urls(item, node, path):
@@ -141,3 +159,36 @@ def to_hgrid(item, node, path):
 
     }
     return serialized
+
+
+def check_access_token(user_settings):
+    cur_time_in_millis = time.mktime(datetime.datetime.utcnow().timetuple())
+    print "Current Time : ", cur_time_in_millis
+    print "Token Time  :", user_settings.token_expiry
+    if user_settings.token_expiry <= cur_time_in_millis:
+        refresh_access_token(user_settings)
+
+
+def refresh_access_token(user_settings):
+    try:
+        params = {
+                'client_id': settings.CLIENT_ID,
+                'client_secret': settings.CLIENT_SECRET,
+                'refresh_token': user_settings.refresh_token,
+                'grant_type': 'refresh_token'
+        }
+        url = 'https://www.googleapis.com/oauth2/v3/token'
+        response = requests.post(url, params=params)
+        json_response = response.json()
+        refreshed_access_token = json_response['access_token']
+        user_settings.access_token = refreshed_access_token
+        # shadow cur_time_in_millis because of time lapse from post request
+        cur_time_in_millis = time.mktime(datetime.datetime.utcnow().timetuple())
+        user_settings.token_expiry = cur_time_in_millis + json_response['expires_in']
+        print "New Current time : %s" %cur_time_in_millis
+        print "New token Expiry", user_settings.token_expiry, 'anything'
+        user_settings.save()
+    except:
+        #TODO handle exceptions
+        print "in exception"
+        pass
