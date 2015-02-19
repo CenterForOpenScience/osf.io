@@ -3,6 +3,20 @@
 <%def name="content()">
   <div id="shareSearch"></div>
   <style>
+    @font-face {
+      font-family: yanonekaffeesatz;
+      src: url(/static/css/font/share/YanoneKaffeesatz-Regular.ttf);
+      font-weight: 400;
+
+    }
+
+    .about-share-header {
+      color: lightgrey;
+      text-align: center;
+      font-family: yanonekaffeesatz;
+      -webkit-animation-delay: 0.5s;
+    }
+
     .share-search-input:focus {
       outline: 0 !important;
       box-shadow: none;
