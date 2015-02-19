@@ -1,36 +1,3 @@
-
-<% from website.models import Node %>
-<%def name="build_message(d, parent=None)">
-%for key in d['children']:
-    %if d['children'][key]['messages']:
-        <table class="block" width="100%" border="0" cellpadding="15" cellspacing="0" align="center" >
-            <thead class="block-head">
-            <th colspan="2">
-                <h3>
-                ${Node.load(key).title}  
-                %if parent :
-                    <small> in ${Node.load(parent).title} </small>
-                %endif 
-                </h3>
-            </th>
-            </thead>
-            <tbody>
-            <tr>
-                <td >
-                    %for m in d['children'][key]['messages']:
-                        ${m['message']}
-                    %endfor                             
-                </td>
-            </tr>
-            </tbody>
-        </table>
-    %endif
-    %if isinstance(d['children'][key]['children'], dict):
-        ${build_message(d['children'][key], key )}
-    %endif
-%endfor
-</%def>
-
 <!doctype html>
 <html class="no-js" lang="">
 <head>
