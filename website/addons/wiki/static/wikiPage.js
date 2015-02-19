@@ -184,9 +184,9 @@ function ViewModel(options){
         // Switch view to correct version
         if (panel === 'edit') {
             if (display) {
-                self.version('preview');
-            } else if (self.version() === 'preview') {
-                self.version('current');
+                self.viewVersion('preview');
+            } else if (self.viewVersion() === 'preview') {
+                self.viewVersion('current');
             }
         }
     });

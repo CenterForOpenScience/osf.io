@@ -45,7 +45,7 @@
     <div class="col-sm-9 panel-expand">
       <div class="row">
         % if can_edit:
-            <div data-bind="with: editVM.wikiEditor.viewModel" data-osf-panel="Edit" ${style['edit'] | n}>
+            <div data-bind="with: $root.editVM.wikiEditor.viewModel" data-osf-panel="Edit" ${style['edit'] | n}>
                 <div class="wiki-panel">
                   <div class="wiki-panel-header"> <i class="icon-edit"> </i>  Edit </div>
                   <div class="wiki-panel-body">

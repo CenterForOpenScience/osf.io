@@ -13,19 +13,17 @@ require('imports?Markdown=pagedown-ace-converter!pagedown-ace-editor');
  * The value accessor must be a ko.observable.
  * Example: <div data-bind="ace: currentText" id="editor"></div>
  */
+var editor;
 ko.bindingHandlers.ace = {
-    init: function (element, valueAccessor, allBindingsAccessor, data, context) {
-        var vm = context.$data;
-        var editor = vm.editor; // jshint ignore:line
+    init: function (element, valueAccessor) {
+        editor = ace.edit(element.id);
 
         // Updates the view model based on changes to the editor
         editor.getSession().on('change', function () {
             valueAccessor()(editor.getValue());
         });
     },
-    update: function (element, valueAccessor, allBindingsAccessor, data, context) {
-        var vm = context.$data;
-        var editor = vm.editor; // jshint ignore:line
+    update: function (element, valueAccessor) {
         var content = editor.getValue();        // Content of ace editor
         var value = ko.unwrap(valueAccessor()); // Value from view model
 
