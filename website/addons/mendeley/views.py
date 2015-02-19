@@ -7,12 +7,11 @@ from flask import request
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
 
-from website.oauth.models import ExternalAccount
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
-from website.util import api_url_for, web_url_for
+
 
 from . import utils
 from .model import Mendeley
@@ -34,8 +33,8 @@ def mendeley_get_config(auth, node_addon, **kwargs):
     (see serialize_settings/serialize_urls)
     """
     
-    provider = MendeleyCitationsProvider()    
-    return provider.serialize_settings()
+    provider = MendeleyCitationsProvider()
+    return provider.serialize_settings(node_addon, auth.user)
 
 @must_have_permission('write')
 @must_have_addon('mendeley', 'node')
@@ -44,7 +43,7 @@ def mendeley_set_config(pid, auth, node, project, node_addon):
     """ Updates MendeleyNodeSettings based on submitted account and folder information """
 
     provider = MendeleyCitationsProvider()
-    external_account_id = request.json('external_account_id')
+    external_account_id = request.json.get('external_account_id')
     external_list_id = request.json.get('external_list_id')    
     return provider.set_config(
         node_addon,

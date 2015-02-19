@@ -133,7 +133,9 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
 
     # TODO deprecated
     def to_json(self, user):
-        return {}
+        
+        ret = super(AddonMendeleyNodeSettings, self).to_json(user)
+        return ret
 
 class Mendeley(ExternalProvider):
     name = 'Mendeley'

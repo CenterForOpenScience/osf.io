@@ -1,5 +1,10 @@
 import abc
 
+from website.oauth.models import ExternalAccount
+
+from website.util import api_url_for, web_url_for
+from . import utils
+
 class CitationsProvider(object):
 
     __metaclass__ = abc.ABCMeta
@@ -9,9 +14,11 @@ class CitationsProvider(object):
         self.provider_name = provider_name
         
     @abc.abstractmethod
-    def _serialize_urls(self, node_settings):
+    def _serialize_urls(self, node_addon):
         """ Collects and serializes urls needed for AJAX calls """
-        node = node_settings.owner                
+
+        external_account = node_addon.external_account
+        node = node_addon.owner                
         ret = {
             'auth': api_url_for('oauth_connect',
                                 service_name=self.provider_name),
@@ -64,7 +71,7 @@ class CitationsProvider(object):
         return {
             'accounts': [
                 utils.serialize_account(each)
-                for each in auth.user.external_accounts
+                for each in user.external_accounts
                 if each.provider == self.provider_name
             ]
         }
@@ -89,7 +96,7 @@ class CitationsProvider(object):
             # Make sure the node has previously been granted access
             if not node_addon.verify_oauth_access(external_account, list_id):
                 raise HTTPError(http.FORBIDDEN)
-
+        return external_account
                 
     def add_user_auth(self, node_addon, user, external_account_id):
         

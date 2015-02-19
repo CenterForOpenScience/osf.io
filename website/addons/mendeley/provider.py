@@ -1,6 +1,6 @@
 from website.addons.citations import provider
 from .model import AddonMendeleyNodeSettings
-from . import utils
+from website.addons.citations import utils
 
 
 class MendeleyCitationsProvider(provider.CitationsProvider):
@@ -13,18 +13,19 @@ class MendeleyCitationsProvider(provider.CitationsProvider):
         ret = super(AddonMendeleyNodeSettings, node_addon).to_json(user)
         ret.update({
             'listId': node_addon.mendeley_list_id,
-            'accounts': [utils.serialize_account(each) for each in
-                         self.user_accounts(user)],
+            'accounts': self.user_accounts(user),
             'currentAccount': utils.serialize_account(node_addon.external_account),
         })
         return ret
         
 
-    def _serialize_urls(self, node_settings):
+    def _serialize_urls(self, node_addon):
+    
+        ret = super(MendeleyCitationsProvider, self)._serialize_urls(node_addon)
 
-        ret = super(MendeleyCitationsProvider, self)._serialize_urls(node_settings)
-
-        external_account = node_addon.external_account        
+        node = node_addon.owner
+        
+        external_account = node_addon.external_account
         deauthorize = None
         if external_account:
             deauthorize = node.api_url_for('mendeley_remove_user_auth')
@@ -41,11 +42,11 @@ class MendeleyCitationsProvider(provider.CitationsProvider):
         
     def set_config(self, node_addon, user, external_account_id, external_list_id):
 
-        super(MendeleyCitationsProvider, self).set_config(node_addon, user, external_account_id, external_list_id)
+        external_account = super(MendeleyCitationsProvider, self).set_config(node_addon, user, external_account_id, external_list_id)
         
         # associate the list with the node
         node_addon.external_account = external_account
-        node_addon.mendeley_list_id = list_id
+        node_addon.mendeley_list_id = external_list_id
         node_addon.save()
         
         return {}
