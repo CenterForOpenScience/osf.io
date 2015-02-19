@@ -46,7 +46,7 @@ Stats.view = function(ctrl) {
                         class: 'animated fadeInUp'
                     },'What is SHARE?'),
                     !ctrl.vm.statsLoaded ? m('img[src=/static/img/loading.gif]') : [
-                        m('div[id=shareDoughnutGraph]', {config: ctrl.drawGraph(doughnutGraph)})
+                        ctrl.drawGraph('shareDoughnutGraph', doughnutGraph)
                     ]
                 ]))
             ]),
@@ -75,11 +75,11 @@ Stats.controller = function(vm) {
     self.vm.statsLoaded = false;
     self.vm.latestDate = undefined;
 
-    self.drawGraph = function(graphFunction) {
-        return function(e, i) {
+    self.drawGraph = function(divId, graphFunction) {
+        return m('div', {id: divId, config: function(e, i) {
             if (i) return;
             graphFunction(self.vm.statsData);
-        };
+        }});
     };
 
     m.request({
