@@ -73,6 +73,12 @@ $(document).on('click', '.project-toggle', function() {
     return false;
 });
 
+$(function() {
+  if(/MSIE 9.0/.test(navigator.userAgent) || /MSIE 8.0/.test(navigator.userAgent) ||/MSIE 7.0/.test(navigator.userAgent) ||/MSIE 6.0/.test(navigator.userAgent)) {
+    $('.placeholder-replace').show();
+  }
+});
+
 var NO_FOOTER_PATHS = ['/login/', '/getting-started/', '/register/'];
 $(function() {
     if ($(sliderSelector).length > 0 &&
