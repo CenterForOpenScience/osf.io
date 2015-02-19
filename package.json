@@ -1,7 +1,8 @@
 {
   "name": "OSF",
   "version": "0.0.0",
-  "description": "",
+  "description": "Facilitating Open Science",
+  "repository": "https://github.com/CenterForOpenScience/osf.io",
   "author": "Center for Open Science",
   "dependencies": {
     "assets-webpack-plugin": "^0.1.0",

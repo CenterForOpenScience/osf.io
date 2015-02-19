@@ -107,6 +107,7 @@ class TestNodeSettingsModel(StorageTestCase):
             '',
             {},
         )
+        assert_true(registration.has_addon('osfstorage'))
         registration_node_settings = registration.get_addon('osfstorage')
         registration_node_settings.reload()
         cloned_record = model.OsfStorageFileRecord.find_by_path(path, registration_node_settings)
