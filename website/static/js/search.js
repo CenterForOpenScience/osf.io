@@ -160,7 +160,11 @@ var ViewModel = function(params) {
         self.searchStarted(false);
         self.currentPage(1);
         self.category(alias);
-        self.search();
+        if (alias.name === 'SHARE') {
+            document.location = '/share/?' + $.param({q: self.query()});
+        } else {
+            self.search();
+        }
     };
 
     self.addTag = function(name) {
@@ -226,6 +230,7 @@ var ViewModel = function(params) {
                 }
                 self.categories.push(new Category(key, value, data.typeAliases[key]));
             });
+
             self.categories(self.categories().sort(self.sortCategories));
 
             // If our category is named attempt to load its total else set it to the total total
@@ -250,7 +255,9 @@ var ViewModel = function(params) {
             if (!noPush) {
                 self.pushState();
             }
-
+            $osf.postJSON('/api/v1/share/?count', jsonData).success(function(data) {
+                self.categories.push(new Category('SHARE', data.count, 'SHARE'));
+            });
         }).fail(function(response){
             self.totalResults(0);
             self.currentPage(0);
