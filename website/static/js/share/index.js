@@ -2,7 +2,6 @@ var m = require('mithril');
 var $osf = require('osfHelpers');
 var Stats = require('../share/stats.js');
 var Results = require('../share/results.js');
-var SideBar = require('../share/sideBar.js');
 var SearchBar = require('../share/searchBar.js');
 
 
