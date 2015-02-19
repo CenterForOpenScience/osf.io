@@ -1,5 +1,6 @@
 var $ = require('jquery');
 var m = require('mithril');
+var $osf = require('osfHelpers');
 
 var ProviderMap = {
     arxiv_oai: {name: 'ArXiv', link: 'http://arxiv.org'},
@@ -30,7 +31,6 @@ var ProviderMap = {
     waynestate: {name: 'DigitalCommons@WayneState', link: 'http://digitalcommons.wayne.edu/'},
 };
 
-
 var Results = {};
 
 Results.view = function(ctrl) {
@@ -38,13 +38,7 @@ Results.view = function(ctrl) {
         return m('img[src=/static/img/spinner.gif');
     }
 
-    return m('.row', [
-        m('.col-md-10.col-md-offset-1', [
-            m('.row', [
-                m('.col-md-12', ctrl.vm.results.map(ctrl.renderResult))
-            ])
-        ])
-    ]);
+    return m('.row', m('.col-md-12', ctrl.vm.results.map(ctrl.renderResult)));
 
 };
 
@@ -53,27 +47,58 @@ Results.controller = function(vm) {
     self.vm = vm;
     self.vm.resultsLoaded = false;
 
-    self.renderResult = function(result) {
-        return m('div', [
+    self.renderResult = function(result, index) {
+        return m('div.animated.' + (index % 2 === 0 ? 'fadeInRight': 'fadeInLeft'), [
             m('div', [
                 m('h4', [
                     m('a[href=' + result.id.url + ']', result.title),
                     m('br'),
                     (function(){
-                        if (result.description.length > 250) {
+                        if (result.description.length > 350) {
                             return m('small.pointer',
                                 {onclick:function(){result.showAll = result.showAll ? false : true;}},
-                                result.showAll ? result.description : result.description.substring(0, 250) + '...'
+                                result.showAll ? result.description : result.description.substring(0, 350).trimRight() + '...'
                             );
                         }
                         return m('small', result.description);
                     }()),
                 ]),
+                m('.row', [
+                    m('.col-md-7', m('span.pull-left', (function(){
+                        var renderPeople = function(people) {
+                            return m('span', people.map(function(person) {
+                                return person.given + ' ' + person.family;
+                            }).join(' - '));
+                        };
+
+                        return m('span.pull-left', {style: {'text-align': 'center'}, class: result.contributors.length > 8 ? 'pointer' : '',
+                            onclick:function(){result.showAllContrib = result.showAllContrib ? false : true;}},
+                            result.showAllContrib || result.contributors.length < 8 ?
+                                renderPeople(result.contributors) :
+                                m('span', [
+                                    renderPeople(result.contributors.slice(0, 7)),
+                                    m('br'),
+                                    m('a', 'See All')
+                                ])
+                        );
+                    }()))),
+                    m('.col-md-5',
+                        m('.pull-right', {style: {'text-align': 'center'}, class: result.tags.length > 5 ? 'pointer' : '',
+                          onclick: function() {result.showAllTags = result.showAllTags ? false : true;}},
+                          result.showAllTags || result.tags.length < 5 ?
+                            result.tags.map(function(tag) {return m('.badge', tag);}) :
+                            m('span', [
+                                result.tags.slice(0, 5).map(function(tag){return m('.badge', tag);}),
+                                m('br'),
+                                m('div', m('a', 'See All'))
+                            ])
+                         )
+                     )
+                ]),
+                m('br'),
                 m('br'),
                 m('div', [
-                    m('span', result.contributors.map(function(person) {
-                        return person.given + ' ' + person.family;
-                    }).join(' - ')),
+                    m('span', 'Released on ' + new $osf.FormattableDate(result.dateUpdated).local),
                     m('span.pull-right', [
                         m('img', {src: '/static/img/share/' + result.source + '_favicon.ico'}),
                         ' ',
