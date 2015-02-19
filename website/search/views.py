@@ -189,3 +189,27 @@ def search_contributor(auth):
     size = int(bleach.clean(request.args.get('size', '5'), tags=[], strip=True))
     return search.search_contributor(query=query, page=page, size=size,
                                      exclude=exclude, current_user=user)
+
+
+def search_share():
+    tick = time.time()
+    results = {}
+
+    is_count = request.args.get('count') is not None
+
+    if request.method == 'POST':
+        results = search.count_share(request.get_json()) if is_count else search.search_share(request.get_json())
+    elif request.method == 'GET':
+        q = request.args.get('q', '*')
+        # TODO Match javascript params?
+        start = request.args.get('from', '0')
+        size = request.args.get('size', '10')
+        query = build_query(q, start, size)
+        results = search.count_share(query) if is_count else search.search_share(query)
+
+    results['time'] = round(time.time() - tick, 2)
+    return results
+
+
+def search_share_stats():
+    return search.share_stats()
