@@ -41,6 +41,20 @@ function timeGraph (data) {
     });
 }
 
+function doughnutGraph (data) {
+    var chart2 = c3.generate({
+        bindto: '#shareDoughnutGraph',
+        data: {
+            columns: getSourcesOneCol(data),
+            type : 'donut',
+        },
+        donut: {
+            title: 'SHARE Providers'
+        }
+    });
+}
+
+
 Stats.view = function(ctrl) {
     return [
         m('.row', {style: {color: 'darkgrey'}}, [
