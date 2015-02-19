@@ -159,7 +159,7 @@ function _treebeardOnload() {
             tb.options.folderPath = null;
         } else {
             if (folderPath) {
-                tb.options.folderPath = folderName.replace(folderPath, ''); 
+                tb.options.folderPath = folderName.replace(folderPath, ''); //folderName.replace('Dropbox', '');
             }
             folderArray = folderName.trim().split('/');
             if (folderArray[folderArray.length - 1] === "") {
@@ -504,13 +504,13 @@ function FolderPickerViewModel(name, url, selector, folderPicker, opts) {
         });
     }
 
-    /** Pop up a confirmation to deauthorize this node.
+    /** Pop up a confirmation to deauthorize Dropbox from this node.
      *  Send DELETE request if confirmed.
      */
     self.deauthorize = function() {
         bootbox.confirm({
             title: 'Deauthorize ' + self.properName + '?',
-            message: 'Are you sure you want to remove this ' + self.properName + ' authorization?',
+            message: 'Are you sure you want to remove this Dropbox authorization?',
             callback: function(confirmed) {
                 if (confirmed) {
                     return sendDeauth();
@@ -539,7 +539,7 @@ function FolderPickerViewModel(name, url, selector, folderPicker, opts) {
     self.importAuth = function() {
         bootbox.confirm({
             title: 'Import ' + self.properName + ' Access Token?',
-            message: 'Are you sure you want to authorize this project with your ' + self.properName + ' access token?',
+            message: 'Are you sure you want to authorize this project with your Dropbox access token?',
             callback: function(confirmed) {
                 if (confirmed) {
                     return $osf.putJSON(self.urls().importAuth, {})
@@ -586,7 +586,7 @@ function FolderPickerViewModel(name, url, selector, folderPicker, opts) {
                 onPickFolder: onPickFolder,
                 initialFolderName: self.folderName(),
                 initialFolderPath: self.properName,
-                // Fetch folders with AJAX
+                // Fetch Dropbox folders with AJAX
                 filesData: self.urls().folders, // URL for fetching folders
                 // Lazy-load each folder's contents
                 // Each row stores its url for fetching the folders it contains

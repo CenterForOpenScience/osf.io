@@ -254,7 +254,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         children = res.json['contents']
         assert_equal(len(children), 7)
         assert_equal(children[0]['kind'], 'folder')
-        assert_equal(children[1]['kind'], 'item')
+        assert_equal(children[1]['kind'], 'file')
         assert_true(children[1].get('csl') is not None)
 
     @responses.activate
@@ -286,10 +286,3 @@ class MendeleyViewsTestCase(OsfTestCase):
             expect_errors=True            
         )
         assert_equal(res.status_code, 403)
-
-    '''
-    TODO
-    def test_citation_list_bibtex(self):
-        #"""JSON: list of formatted citations in BibTeX style"""
-        assert_true(False)
-    '''

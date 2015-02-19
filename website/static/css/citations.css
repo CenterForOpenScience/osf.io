@@ -1,18 +1,23 @@
 .citations .addon-widget-header .permalink {
-    vertical-align:middle;
-    color:#777;
+    vertical-align: middle;
+    color: #777;
 }
 
 #citationText {
     display: none;
-    margin-top:15px;
-    margin-bottom:0px;
+    margin-top: 15px;
+    margin-bottom: 0px;
 }
-#citation-style-panel .select2-container {
-    width:100%;
+
+.citation-picker .select2-container {
+    width: 100%;
 }
 
 .formatted-citation {
     white-space: pre-wrap;
     word-break: keep-all;
+}
+
+.citation-widget #tb-tbody {
+    height: 300px;
 }

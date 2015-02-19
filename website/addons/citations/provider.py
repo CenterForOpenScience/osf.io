@@ -2,6 +2,7 @@ import abc
 import http
 
 from framework.exceptions import HTTPError
+from framework.exceptions import PermissionsError
 
 from website.oauth.models import ExternalAccount
 
@@ -11,17 +12,16 @@ from . import utils
 class CitationsProvider(object):
 
     __metaclass__ = abc.ABCMeta
-    
+
     def __init__(self, provider_name):
-        
+
         self.provider_name = provider_name
-        
+
     @abc.abstractmethod
     def _serialize_urls(self, node_addon):
-        """ Collects and serializes urls needed for AJAX calls """
+        """Collects and serializes urls needed for AJAX calls"""
 
         external_account = node_addon.external_account
-        node = node_addon.owner                
         ret = {
             'auth': api_url_for('oauth_connect',
                                 service_name=self.provider_name),
@@ -30,18 +30,17 @@ class CitationsProvider(object):
         }
         if external_account and external_account.profile_url:
             ret['owner'] = external_account.profile_url
-            
-        return ret    
 
+        return ret
 
     @abc.abstractmethod
     def _serialize_model(self, node_addon, user):
-        
+
         return {}
-        
-        
+
     def serialize_settings(self, node_settings, current_user):
-        """ Collects and serializes parameters for building UI for widget and settings pages """
+        """Serializes parameters for building UI for widget and settings pages
+        """
         node_account = node_settings.external_account
         user_accounts = [account for account in current_user.external_accounts
                          if account.provider == 'mendeley']
@@ -67,10 +66,9 @@ class CitationsProvider(object):
             result['folder'] = node_settings.selected_folder_name
             result['ownerName'] = node_account.display_name
 
-        result.update(self._serialize_model(node_settings, current_user))        
+        result.update(self._serialize_model(node_settings, current_user))
         return result
 
-        
     def user_accounts(self, user):
         """ Gets a list of the accounts authorized by 'user' """
         return {
@@ -80,7 +78,6 @@ class CitationsProvider(object):
                 if each.provider == self.provider_name
             ]
         }
-
 
     def set_config(self, node_addon, user, external_account_id, external_list_id):
         # Ensure request has all required information
@@ -106,30 +103,28 @@ class CitationsProvider(object):
                 
     def add_user_auth(self, node_addon, user, external_account_id):
         
-        external_account = ExternalAccount.load(external_account_id)        
+        external_account = ExternalAccount.load(external_account_id)
+        
         if external_account not in user.external_accounts:
             raise HTTPError(http.FORBIDDEN)
 
-        user_addon = user.get_or_add_addon(self.provider_name)
-
-        node_addon.grant_oauth_access(user_addon.owner, external_account)
-        node_addon.external_account = external_account
-        node_addon.save()
+        try:
+            node_addon.set_auth(external_account, user)
+        except PermissionsError:
+            raise HTTPError(http.FORBIDDEN)
+        
         result = self.serialize_settings(node_addon, user)
         return {'result': result}
 
-        
     @abc.abstractmethod
     def remove_user_auth(self, node_addon, user):
 
-        node_addon.external_account = None
-        node_addon.save() 
+        node_addon.clear_auth()
         result = self.serialize_settings(node_addon, user)
         return {'result': result}
 
-        
     def widget(self, node_addon):
-        
+
         ret = node_addon.config.to_json()
         ret.update({
             'complete': node_addon.complete,
@@ -140,4 +135,3 @@ class CitationsProvider(object):
     def citation_list(self, node_addon, user, list_id, show='all'):
 
         return {}
-    
