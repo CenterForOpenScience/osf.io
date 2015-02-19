@@ -1,3 +1,9 @@
+from time import gmtime
+from calendar import timegm
+from datetime import datetime
+
+from dateutil.relativedelta import relativedelta
+
 from elasticsearch import Elasticsearch
 
 from website import settings
@@ -29,6 +35,7 @@ def count(query):
         'results': [],
         'count': count['count']
     }
+
 
 def stats(query=dict()):
     query['aggs'] = {
@@ -82,8 +89,8 @@ def stats(query=dict()):
                         "interval": "month",
                         "min_doc_count": 0,
                         "extended_bounds": {
-                            "min": 1401580800000,
-                            "max": 1424371269000
+                            "min": timegm((datetime.now() + relativedelta(months=-3)).timetuple()) * 1000,
+                            "max": timegm(gmtime()) * 1000
                         }
                     }
                 }
