@@ -6,6 +6,7 @@ var $osf = require('osfHelpers');
 var mathrender = require('mathrender');
 var md = require('markdown').full;
 var mdQuick = require('markdown').quick;
+var diffTool = require('wikiDiff');
 
 var THROTTLE = 500;
 
@@ -21,12 +22,6 @@ ko.bindingHandlers.mathjaxify = {
     }
 };
 
-function EditWidget(visible, viewText, draftURL, metadata) {
-    var self = this;
-    self.viewText = viewText;
-
-
-}
 
 function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathjaxification, editor) {
     var self = this;
@@ -47,16 +42,18 @@ function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathj
         }
     };
 
-    self.editor.on('change', function() {
-        // Quick render
-        self.allowFullRender(false);
-        // Full render
-        clearTimeout(self.renderTimeout);
+    if (typeof self.editor !== 'undefined') {
+        self.editor.on('change', function () {
+            // Quick render
+            self.allowFullRender(false);
+            // Full render
+            clearTimeout(self.renderTimeout);
 
-        self.renderTimeout = setTimeout(function() {
-            self.allowFullRender(true);
-        }, THROTTLE);
-    });
+            self.renderTimeout = setTimeout(function () {
+                self.allowFullRender(true);
+            }, THROTTLE);
+        });
+    }
 
     self.displayText =  ko.computed(function() {
         var requestURL;
@@ -123,8 +120,17 @@ function CompareWidget(visible, compareVersion, currentText, rendered, contentUR
     });
 
     self.compareOutput = ko.computed(function() {
-        //TODO: Diffing
-        var output = 'Coming soon.';
+        var current = 'One';
+        var compare = 'Two';
+
+        //if(typeof self.currentText() !== 'undefined'){
+        //    current = self.currentText();
+        //}
+        //
+        //if(typeof self.compareText() !== 'undefined'){
+        //    compare = self.compareText();
+        //}
+        var output = diffTool.diff(current, compare);
         self.rendered(output);
     });
 
@@ -164,9 +170,11 @@ function ViewModel(options){
     self.allowMathjaxification = ko.observable(false);
 
 
-    self.editor = ace.edit('editor');
+
 
     if(self.canEdit) {
+        self.editor = ace.edit('editor');
+
         var ShareJSDoc = require('addons/wiki/static/ShareJSDoc.js');
         self.editVM = new ShareJSDoc(self.draftURL, self.editorMetadata, self.viewText, self.editor);
     }

@@ -45,7 +45,7 @@
     <div class="col-sm-9 panel-expand">
       <div class="row">
         % if can_edit:
-            <div data-osf-panel="Edit" ${style['edit'] | n}>
+            <div data-bind="with: editVM.wikiEditor.viewModel" data-osf-panel="Edit" ${style['edit'] | n}>
                 <div class="wiki-panel">
                   <div class="wiki-panel-header"> <i class="icon-edit"> </i>  Edit </div>
                   <div class="wiki-panel-body">
@@ -72,16 +72,16 @@
                                   </div>
                               </div>
                               <div id="wmd-button-bar"></div>
-                              <div data-bind="fadeVisible: editVM.throttledStatus() !== 'connected'" class="scripted">
+                              <div data-bind="fadeVisible: throttledStatus() !== 'connected'" class="scripted">
                                   <div class="progress" style="margin-bottom: 5px">
                                       <div role="progressbar"
-                                           data-bind="attr: editVM.progressBar"
+                                           data-bind="attr: progressBar"
                                               >
-                                          <span data-bind="text: editVM.statusDisplay"></span>
+                                          <span data-bind="text: statusDisplay"></span>
                                           <a class="sharejs-info-btn">
                                               <i class="icon-question-sign icon-large"
                                                  data-toggle="modal"
-                                                 data-bind="attr: {data-target: editVM.modalTarget}"
+                                                 data-bind="attr: {data-target: modalTarget}"
                                                       >
                                               </i>
                                           </a>
