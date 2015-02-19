@@ -51,7 +51,7 @@ def get_configured_projects(user):
     user_subscriptions = get_all_user_subscriptions(user)
     for subscription in user_subscriptions:
         node = Node.load(subscription.object_id)
-        if node and node.project_or_component == 'project' and not node.is_deleted and subscription.object_id not in configured_project_ids:
+        if node and not node.node__parent and not node.is_deleted and subscription.object_id not in configured_project_ids:
             configured_project_ids.append(subscription.object_id)
 
     return configured_project_ids
@@ -100,7 +100,7 @@ def format_data(user, node_ids, data, subscriptions_available=SUBSCRIPTIONS_AVAI
             data[index]['children'].append(event)
 
         if node.nodes:
-            authorized_nodes = [n for n in node.nodes if user in n.contributors and not n.is_deleted]
+            authorized_nodes = [n for n in node.nodes if n.has_permission(user, 'read') and not n.is_deleted]
             format_data(user, [n._id for n in authorized_nodes], data[index]['children'])
 
     return data
