@@ -100,7 +100,7 @@ function CompareWidget(visible, compareVersion, currentText, rendered, contentUR
     var self = this;
 
     self.compareVersion = compareVersion;
-    self.curentText = currentText;
+    self.currentText = currentText;
     self.rendered = rendered;
     self.visible = visible;
     self.compareText = ko.computed(function() {
@@ -120,16 +120,13 @@ function CompareWidget(visible, compareVersion, currentText, rendered, contentUR
     });
 
     self.compareOutput = ko.computed(function() {
-        var current = 'One';
-        var compare = 'Two';
+        var current = '';
+        var compare = '';
 
-        //if(typeof self.currentText() !== 'undefined'){
-        //    current = self.currentText();
-        //}
-        //
-        //if(typeof self.compareText() !== 'undefined'){
-        //    compare = self.compareText();
-        //}
+
+        current = self.currentText();
+        compare = self.compareText();
+
         var output = diffTool.diff(current, compare);
         self.rendered(output);
     });
