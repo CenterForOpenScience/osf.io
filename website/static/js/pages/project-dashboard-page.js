@@ -23,9 +23,12 @@ var mathrender = require('mathrender');
 // Render math in the wiki widget
 mathrender.mathjaxify('#addonWikiWidget');
 
+var md = require('markdown').full;
+require('truncate');
 
 var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
+var wikiContentUrl = ctx.urls.wikiContent;
 
 // Initialize controller for "Add Links" modal
 new pointers.PointerManager('#addPointer', window.contextVars.node.title);
@@ -149,6 +152,20 @@ $(document).ready(function() {
 
     // Limit the maximum length that you can type when adding a tag
     $('#node-tags_tag').attr('maxlength', '128');
+
+    // Render the raw markdown of the wiki
+    if (!ctx.usePythonRender) {
+        var markdownElement = $('#markdown-it-render');
+        var request = $.ajax({
+            url: wikiContentUrl
+        });
+        request.done(function(resp) {
+            var rawText = resp.wiki_content || '*No wiki content*';
+            var renderedText = md.render(rawText);
+            var truncatedText = $.truncate(renderedText, {length: 400});
+            markdownElement.html(truncatedText);
+        });
+    }
 
     // Remove delete UI if not contributor
     if (!window.contextVars.currentUser.canEdit || window.contextVars.node.isRegistration) {

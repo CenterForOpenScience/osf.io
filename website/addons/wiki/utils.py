@@ -12,7 +12,10 @@ from website.addons.wiki import settings as wiki_settings
 
 
 def generate_private_uuid(node, wname):
-    """Generate private uuid for use in sharejs namespacing"""
+    """
+    Generate private uuid for internal use in sharejs namespacing.
+    Note that this will NEVER be passed to to the client or sharejs.
+    """
 
     private_uuid = str(uuid.uuid1())
     wiki_key = to_mongo_key(wname)
@@ -106,9 +109,8 @@ def broadcast_to_sharejs(action, sharejs_uuid, node=None, wiki_name='home'):
     )
 
     if action == 'redirect' or action == 'delete':
-        page = 'project_wiki_edit' if action == 'redirect' else 'project_wiki_page'
         redirect_url = urllib.quote(
-            node.web_url_for(page, wname=wiki_name, _guid=True),
+            node.web_url_for('project_wiki_view', wname=wiki_name, _guid=True),
             safe='',
         )
         url = os.path.join(url, redirect_url)
