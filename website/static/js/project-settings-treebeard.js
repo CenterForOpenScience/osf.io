@@ -239,8 +239,7 @@ function ProjectNotifications(data) {
         },
         showFilter : false,     // Gives the option to filter by showing the filter box.
         allowMove : false,       // Turn moving on or off.
-        hoverClass : 'fangorn-hover',
-        hideColumnTitles : true
+        hoverClass : 'fangorn-hover'
     };
     var grid = new Treebeard(tbOptions);
 }
