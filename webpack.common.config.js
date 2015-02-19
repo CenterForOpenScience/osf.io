@@ -34,6 +34,8 @@ var entry = {
     'new-folder-page': staticPath('js/pages/new-folder-page.js'),
     'project-settings-page': staticPath('js/pages/project-settings-page.js'),
     'search-page': staticPath('js/pages/search-page.js'),
+    'share-search-page': staticPath('js/pages/share-search-page.js'),
+    'share-dashboard': staticPath('js/pages/share-dashboard.js'),
     'user-addon-cfg-page': staticPath('js/pages/user-addon-cfg-page.js'),
     'notifications-config-page': staticPath('js/notifications-config-page.js'),
     // Commons chunk
@@ -97,6 +99,7 @@ var resolve = {
         'pagedown-ace-converter': staticPath('vendor/pagedown-ace/Markdown.Converter.js'),
         'pagedown-ace-sanitizer': staticPath('vendor/pagedown-ace/Markdown.Sanitizer.js'),
         'pagedown-ace-editor': staticPath('vendor/pagedown-ace/Markdown.Editor.js'),
+        'c3': staticPath('vendor/bower_components/c3/c3.js'),
         // Also alias some internal libraries for easy access
         'fangorn': staticPath('js/fangorn.js'),
         'waterbutler': staticPath('js/waterbutler.js'),
