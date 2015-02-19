@@ -48,7 +48,7 @@ Results.controller = function(vm) {
     self.vm.resultsLoaded = false;
 
     self.renderResult = function(result, index) {
-        return m('div.animated.' + (index % 2 === 0 ? 'fadeInRight': 'fadeInLeft'), [
+        return m( '.animated.fadeInUp', [
             m('div', [
                 m('h4', [
                     m('a[href=' + result.id.url + ']', result.title),
