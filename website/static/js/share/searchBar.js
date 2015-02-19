@@ -68,10 +68,6 @@ SearchBar.controller = function(vm) {
     };
 
     self.search = function(e) {
-        if (self.vm.query().length === 0) {
-            return;
-        }
-
         if (e !== undefined) {
             try {
                 e.stopPropagation();
@@ -79,6 +75,11 @@ SearchBar.controller = function(vm) {
                 window.event.cancelBubble = true;
             }
         }
+
+        if (self.vm.query().length === 0) {
+            return;
+        }
+
         self.vm.page = 0;
         self.vm.results = [];
         self.vm.showStats = false;
