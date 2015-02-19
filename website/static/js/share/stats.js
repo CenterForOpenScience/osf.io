@@ -1,21 +1,44 @@
 var c3 = require('c3');
 var m = require('mithril');
 var $osf = require('osfHelpers');
+var utils = require('./utils.js');
 
 var Stats = {};
 
-function getSourcesOneCol(raw_data) {
-    var source_data = raw_data['sources']['buckets'];
-    var chart_list = [];
+function doughnutGraph (data) {
+    var donutgraph = c3.generate({
+        bindto: '#shareDoughnutGraph',
+        data: {
+            columns: data['for_charts']['donut_chart'],
+            type : 'donut',
+        },
+        donut: {
+            title: 'SHARE Providers'
+        },
+        legend: {
+            show: false
+        }
+    });
+}
 
-    for (i = 0; i < source_data.length; i++){
-        var new_item = [];
-        new_item.push(source_data[i]['key']);
-        new_item.push(source_data[i]['doc_count']);
-        chart_list.push(new_item);
-    }
-
-    return chart_list;
+function timeGraph (data) {
+    var timegraph = c3.generate({
+        bindto: '#shareTimeGraph',
+        data: {
+            x: 'x',
+            columns: data['for_charts']['date_totals']['date_numbers'],
+            type: 'area-spline',
+            groups: [data['for_charts']['date_totals']['group_names']]
+        },
+        axis: {
+            x: {
+                type: 'category'
+            }
+        },
+        legend: {
+            show: false
+        }
+    });
 }
 
 Stats.view = function(ctrl) {
@@ -26,12 +49,17 @@ Stats.view = function(ctrl) {
             m('.col-md-4', m('p.text-center', ctrl.vm.providers + ' content providers'))
         ]),
         m('.row', ctrl.vm.showStats ? [
-            m('col-md-12', [
+            m('.col-md-12', [
                 m('.row', m('.col-md-12', [
                     m('h1.about-share-header', {
                         class: 'animated fadeInUp'
                     },'What is SHARE?'),
-                    m('div[id=shareDoughnutGraph]', {config: ctrl.drawDoughnutGraph})
+                    !ctrl.vm.statsLoaded ? m('img[src=/static/img/loading.gif]') : [
+                        m('.row', [
+                            m('.col-md-3', ctrl.drawGraph('shareDoughnutGraph', doughnutGraph)),
+                            m('.col-md-9', ctrl.drawGraph('shareTimeGraph', timeGraph))
+                        ])
+                    ]
                 ]))
             ]),
         ] : []),
@@ -45,6 +73,9 @@ Stats.view = function(ctrl) {
     ];
 };
 
+
+
+
 Stats.controller = function(vm) {
     var self = this;
 
@@ -54,37 +85,40 @@ Stats.controller = function(vm) {
     self.vm.totalCount = 0;
     self.vm.showStats = true;
     self.vm.latestDate = undefined;
+    self.vm.statsLoaded = m.prop(false);
 
-    self.drawDoughnutGraph = function(e, i) {
-        if (i) return;
-
-        var chart2 = c3.generate({
-            bindto: '#shareDoughnutGraph',
-            data: {
-                columns: getSourcesOneCol(self.vm.statsData),
-                type : 'donut',
-            },
-            donut: {
-                title: 'SHARE Providers'
-            }
-        });
+    self.drawGraph = function(divId, graphFunction) {
+        return m('div', {id: divId, config: function(e, i) {
+            if (i) return;
+            graphFunction(self.vm.statsData);
+        }});
     };
+
+    self.loadStats = function() {
+        self.vm.statsLoaded(false);
+
+        m.request({
+            method: 'GET',
+            url: '/api/v1/share/stats/?' + $.param({q: self.vm.query()}),
+            background: true
+        }).then(function(data) {
+            self.vm.statsData = data;
+            self.vm.statsLoaded(true);
+        }).then(m.redraw);
+    };
+
+    utils.onSearch(self.loadStats);
 
     m.request({
         method: 'GET',
+        background: true,
         url: '/api/v1/share/?size=1',
-        background: true
     }).then(function(data) {
         self.vm.totalCount = data.count;
         self.vm.latestDate = new $osf.FormattableDate(data.results[0].dateUpdated).local;
-    });
+    }).then(m.redraw);
 
-    m.request({
-        method: 'GET',
-        url: '/api/v1/share/stats/'
-    }).then(function(data) {
-        self.vm.statsData = data;
-    });
+    self.loadStats();
 };
 
 module.exports = Stats;

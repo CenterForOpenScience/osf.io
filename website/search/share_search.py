@@ -30,8 +30,7 @@ def count(query):
         'count': count['count']
     }
 
-def stats(query=None):
-    query = query or {}
+def stats(query=dict()):
     query['aggs'] = {
         "sources": {
             "terms": {
@@ -80,7 +79,12 @@ def stats(query=None):
                 "articles_over_time": {
                     "date_histogram": {
                         "field": "dateUpdated",
-                        "interval": "month"
+                        "interval": "month",
+                        "min_doc_count": 0,
+                        "extended_bounds": {
+                            "min": 1401580800000,
+                            "max": 1424371269000
+                        }
                     }
                 }
             }
@@ -88,4 +92,45 @@ def stats(query=None):
     }
 
     results = share_es.search(index='share', body=query)
-    return results['aggregations']
+
+    chart_results = data_for_charts(results)
+
+    return chart_results
+
+
+def data_for_charts(elastic_results):
+    source_data = elastic_results['aggregations']['sources']['buckets']
+    for_charts = {}
+
+    ## for the donut graph list of many lists, source and count
+    source_and_counts = [[item['key'], item['doc_count']] for item in source_data]
+    for_charts['donut_chart'] = source_and_counts
+
+    all_date_data = []
+    # for the date aggregations
+    chunk_data = elastic_results['aggregations']['date_chunks']['buckets']
+    date_names = ['x']
+    for entry in chunk_data[0]['articles_over_time']['buckets']:
+        date_names.append(entry['key_as_string'].replace('T00:00:00.000Z', ''))
+
+    all_date_data.append(date_names)
+
+    all_source_names = []
+    for bucket in chunk_data:
+        provider_row = [bucket['key']]
+        all_source_names.append(bucket['key'])
+        for internal in bucket['articles_over_time']['buckets']:
+            provider_row.append(internal['doc_count'])
+        provider_cumulitive = [sum(provider_row[1:i+2]) for i in range(len(provider_row[1:]))]
+        provider_cumulitive = [bucket['key']] + provider_cumulitive
+        all_date_data.append(provider_cumulitive)
+
+    for_charts['date_totals'] = {}
+    for_charts['date_totals']['date_numbers'] = all_date_data
+    for_charts['date_totals']['group_names'] = ['x'] + all_source_names
+
+    all_data = {}
+    all_data['raw_aggregations'] = elastic_results['aggregations']
+    all_data['for_charts'] = for_charts
+
+    return all_data

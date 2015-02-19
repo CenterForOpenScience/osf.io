@@ -1,5 +1,6 @@
 var m = require('mithril');
 var $osf = require('osfHelpers');
+var utils = require('./utils.js');
 
 var SearchBar = {};
 
@@ -13,7 +14,7 @@ SearchBar.view = function(ctrl) {
                         margin: 'auto',
                         height: 'auto',
                         display: 'block',
-                        'max-width': '45%',
+                        'max-width': '40%',
                         '-webkit-animation-duration': '3s'
                     },
                     class: 'animated pulse'
@@ -31,7 +32,7 @@ SearchBar.view = function(ctrl) {
                         onchange: m.withAttr('value', ctrl.vm.query),
                     }),
                     m('span.input-group-btn', [
-                        m('button.btn.osf-search-btn', {onclick: ctrl.search}, m('i.icon-circle-arrow-right.icon-lg')),
+                        m('button.btn.osf-search-btn', m('i.icon-circle-arrow-right.icon-lg')),
                     ])
                 ])
             ])
@@ -50,39 +51,12 @@ SearchBar.controller = function(vm) {
     self.vm.latestDate = undefined;
     self.vm.showStats = true;
 
-    self.loadMore = function() {
-        self.vm.page++;
-        var page = (self.vm.page + 1) * 10;
-
-        m.request({
-            method: 'get',
-            url: '/api/v1/share/?sort=dateUpdated&from=' + page + '&q=' + self.vm.query(),
-        }).then(function(data) {
-            self.vm.time = data.time;
-            self.vm.count = data.count;
-
-            // push.apply is the same as extend in python
-            self.vm.results.push.apply(self.vm.results, data.results);
-
-            self.vm.resultsLoaded = true;
-        });
-    };
-
     self.search = function(e) {
-        try {
-            e.stopPropagation();
-        } catch (e) {
-            window.event.cancelBubble = true;
-        }
-        self.vm.page = 0;
-        self.vm.results = [];
-        self.vm.showStats = false;
-        self.vm.resultsLoaded = false;
-        self.loadMore();
-
-        return false;
+        utils.maybeQuashEvent(e);
+        utils.search(self.vm);
     };
 
+    self.search();
 };
 
 
