@@ -54,6 +54,59 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
 
+    def test_wiki_url_404_with_no_write_permission(self):
+        url = self.project.web_url_for('project_wiki_view', wname='somerandomid')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
+    def test_wiki_deleted_404_with_no_write_permission(self, mock_sharejs):
+        self.project.update_node_wiki('funpage', 'Version 1', Auth(self.user))
+        self.project.save()
+        url = self.project.web_url_for('project_wiki_view', wname='funpage')
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        delete_url = self.project.api_url_for('project_wiki_delete', wname='funpage')
+        self.app.delete(delete_url, auth=self.user.auth)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_wiki_url_with_path_get_returns_200(self):
+        self.project.update_node_wiki('funpage', 'Version 1', Auth(self.user))
+        self.project.update_node_wiki('funpage', 'Version 2', Auth(self.user))
+        self.project.save()
+
+        url = self.project.web_url_for(
+            'project_wiki_view',
+            wname='funpage',
+            path='view/compare/1/edit',
+        )
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_wiki_url_with_edit_get_returns_404_with_no_write_permission(self):
+        self.project.update_node_wiki('funpage', 'Version 1', Auth(self.user))
+        self.project.update_node_wiki('funpage', 'Version 2', Auth(self.user))
+        self.project.save()
+
+        url = self.project.web_url_for(
+            'project_wiki_view',
+            wname='funpage',
+            path='view/compare/1',
+        )
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+
+        url = self.project.web_url_for(
+            'project_wiki_view',
+            wname='funpage',
+            path='view/compare/1/edit',
+        )
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
     def test_wiki_url_for_pointer_returns_200(self):
         # TODO: explain how this tests a pointer
         project = ProjectFactory(is_public=True)
@@ -63,9 +116,32 @@ class TestWikiViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
     def test_wiki_draft_returns_200(self):
+        url = self.project.api_url_for('wiki_page_draft', wname='somerandomid')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_wiki_content_returns_200(self):
         url = self.project.api_url_for('wiki_page_content', wname='somerandomid')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
+
+    @mock.patch('website.addons.wiki.model.NodeWikiPage.rendered_before_update', new_callable=mock.PropertyMock)
+    def test_wiki_content_use_python_render(self, mock_rendered_before_update):
+        content = 'Some content'
+        self.project.update_node_wiki('somerandomid', content, Auth(self.user))
+        self.project.save()
+
+        mock_rendered_before_update.return_value = True
+        url = self.project.api_url_for('wiki_page_content', wname='somerandomid')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(content, res.json['wiki_content'])
+        assert_in(content, res.json['wiki_rendered'])
+
+        mock_rendered_before_update.return_value = False
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(content, res.json['wiki_content'])
+        assert_equal('', res.json['wiki_rendered'])
+
 
     def test_wiki_url_for_component_returns_200(self):
         component = NodeFactory(project=self.project, is_public=True)
@@ -201,6 +277,9 @@ class TestWikiViews(OsfTestCase):
         url = self.project.web_url_for('project_wiki_view', wname='home', path='view/3')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
+        url = self.project.web_url_for('project_wiki_view', wname='home', path='view/0')
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
 
     def test_project_wiki_compare_returns_200(self):
         self.project.update_node_wiki('home', 'updated content', Auth(self.user))
@@ -217,6 +296,9 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         url = self.project.web_url_for('project_wiki_view', wname='home', path='compare/3')
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+        url = self.project.web_url_for('project_wiki_view', wname='home', path='compare/0')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
@@ -323,6 +405,54 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth).follow(auth=self.user.auth)
         page_name_elem = res.html.find('span', {'id': 'pageName'})
         assert_in('Home', page_name_elem.text)
+
+    def test_wiki_widget_no_content(self):
+        url = self.project.api_url_for('wiki_widget', wid='home')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_is_none(res.json['wiki_content'])
+
+    def test_wiki_widget_short_content_no_cutoff(self):
+        short_content = 'a' * 150
+        self.project.update_node_wiki('home', short_content, Auth(self.user))
+        url = self.project.api_url_for('wiki_widget', wid='home')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_in(short_content, res.json['wiki_content'])
+        assert_not_in('...', res.json['wiki_content'])
+        assert_false(res.json['more'])
+
+    def test_wiki_widget_long_content_cutoff(self):
+        long_content = 'a' * 600
+        self.project.update_node_wiki('home', long_content, Auth(self.user))
+        url = self.project.api_url_for('wiki_widget', wid='home')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_less(len(res.json['wiki_content']), 520)  # wiggle room for closing tags
+        assert_in('...', res.json['wiki_content'])
+        assert_true(res.json['more'])
+
+    @mock.patch('website.addons.wiki.model.NodeWikiPage.rendered_before_update', new_callable=mock.PropertyMock)
+    def test_wiki_widget_use_python_render(self, mock_rendered_before_update):
+        # New pages use js renderer
+        mock_rendered_before_update.return_value = False
+        self.project.update_node_wiki('home', 'updated content', Auth(self.user))
+        url = self.project.api_url_for('wiki_widget', wid='home')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_false(res.json['use_python_render'])
+
+        # Old pages use python renderer
+        mock_rendered_before_update.return_value = True
+        res = self.app.get(url, auth=self.user.auth)
+        assert_true(res.json['use_python_render'])
+
+    def test_read_only_users_cannot_view_edit_pane(self):
+        url = self.project.web_url_for('project_wiki_view', wname='home')
+        # No write permissions
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_not_in('data-osf-panel="Edit"', res.text)
+        # Write permissions
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_in('data-osf-panel="Edit"', res.text)
 
 
 class TestViewHelpers(OsfTestCase):
@@ -600,6 +730,39 @@ class TestWikiUuid(OsfTestCase):
         assert_equal(res.status_code, 200)
         self.project.reload()
         assert_equal(private_uuid, self.project.wiki_private_uuids.get(self.wkey))
+
+    def test_uuid_not_visible_without_write_permission(self):
+        self.project.update_node_wiki(self.wname, 'some content', Auth(self.user))
+        self.project.save()
+
+        assert_is_none(self.project.wiki_private_uuids.get(self.wkey))
+        url = self.project.web_url_for('project_wiki_view', wname=self.wname)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+        self.project.reload()
+        private_uuid = self.project.wiki_private_uuids.get(self.wkey)
+        assert_true(private_uuid)
+        assert_not_in(private_uuid, res.body)
+        assert_in(get_sharejs_uuid(self.project, self.wname), res.body)
+
+        # Users without write permission should not be able to access
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_not_in(get_sharejs_uuid(self.project, self.wname), res.body)
+
+    def test_uuid_not_generated_without_write_permission(self):
+        self.project.update_node_wiki(self.wname, 'some content', Auth(self.user))
+        self.project.save()
+
+        assert_is_none(self.project.wiki_private_uuids.get(self.wkey))
+        url = self.project.web_url_for('project_wiki_view', wname=self.wname)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+
+        self.project.reload()
+        private_uuid = self.project.wiki_private_uuids.get(self.wkey)
+        assert_is_none(private_uuid)
 
     def test_uuids_differ_between_pages(self):
         wname1 = 'foo.bar'

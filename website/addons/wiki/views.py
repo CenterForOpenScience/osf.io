@@ -238,7 +238,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         configurable = param == 'view' or param == 'compare'
         if configurable and i + 1 < len(param_list) and (param_list[i + 1]).isdigit():
             version_number = int(param_list.pop(i + 1))
-            if version_number > len(versions):
+            if version_number > len(versions) or version_number < 1:
                 raise WIKI_PAGE_NOT_FOUND_ERROR
             elif version_number == len(versions):
                 view_settings[param] = True
@@ -279,7 +279,10 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
             wiki_utils.generate_private_uuid(node, wiki_name)
         sharejs_uuid = wiki_utils.get_sharejs_uuid(node, wiki_name)
     else:
-        # TODO: Hide content from deleted wikis
+        if wiki_key not in node.wiki_pages_current and wiki_key != 'home':
+            raise WIKI_PAGE_NOT_FOUND_ERROR
+        if 'edit' in view_settings:
+            raise HTTPError(http.FORBIDDEN)
         sharejs_uuid = None
 
     ret = {

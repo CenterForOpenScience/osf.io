@@ -118,7 +118,7 @@ var resolve = {
         'navbar-control': staticPath('js/navbarControl.js'),
         'osf-panel': staticPath('vendor/bower_components/osf-panel/dist/jquery-osfPanel.js'),
         'markdown': staticPath('js/markdown.js'),
-        'wik-ed-diff': staticPath('vendor/bower_components/wik-ed-diff/wikEdDiff.js'),
+        'wikiDiff': staticPath('js/wikiDiff.js'),
         'mathrender': staticPath('js/mathrender.js'),
         'citations': staticPath('js/citations.js')
     }

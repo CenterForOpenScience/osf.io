@@ -18,6 +18,7 @@ var selectCompareVersion = $('#compareVersionSelect');
 var previewElement = $('#viewPreview');
 var versionElement = $('#viewVersion');
 var markdownElement = $('#markdownItRender');
+var compareElement = $('#viewCompare');
 
 var editable = 'edit' in ctx.viewSettings;
 
