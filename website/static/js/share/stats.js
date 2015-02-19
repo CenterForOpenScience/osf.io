@@ -19,6 +19,9 @@ function get_source_length(elastic_data) {
 function doughnutGraph (elastic_data) {
     var donutgraph = c3.generate({
         bindto: '#shareDoughnutGraph',
+        size: {
+            height: 240
+        },
         data: {
             columns: elastic_data.for_charts.donut_chart,
             type : 'donut',
@@ -35,6 +38,9 @@ function doughnutGraph (elastic_data) {
 function timeGraph (elastic_data) {
     var timegraph = c3.generate({
         bindto: '#shareTimeGraph',
+        size: {
+            height: 240
+        },
         data: {
             x: 'x',
             columns: elastic_data['for_charts']['date_totals']['date_numbers'],
