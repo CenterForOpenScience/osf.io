@@ -351,17 +351,7 @@ var ViewModel = function(url, selector, folderPicker) {
                     }
                 });
             }
-
-
-
-
         });
-
-
-
-
-
-
     };
 
     /** Callback for chooseFolder action.
