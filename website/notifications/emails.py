@@ -74,7 +74,7 @@ def email_transactional(subscribed_user_ids, uid, event, **context):
     :param context: context variables for email template
     :return:
     """
-    template = event + '.txt.mako'
+    template = event + '.html.mako'
     subject = Template(email_templates[event]['subject']).render(**context)
     message = mails.render_message(template, **context)
 
@@ -85,6 +85,7 @@ def email_transactional(subscribed_user_ids, uid, event, **context):
             mails.send_mail(
                 to_addr=email,
                 mail=mails.TRANSACTIONAL,
+                mimetype='html',
                 name=user.fullname,
                 node_title=context.get('title'),
                 subject=subject,
@@ -101,7 +102,7 @@ def get_settings_url(uid, user):
 
 
 def email_digest(subscribed_user_ids, uid, event, **context):
-    template = event + '.txt.mako'
+    template = event + '.html.mako'
     message = mails.render_message(template, **context)
 
     try:

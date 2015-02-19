@@ -1,426 +1,260 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html>
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<% from website.models import Node %>
+<%def name="build_message(d, parent=None)">
+%for key in d['children']:
+    %if d['children'][key]['messages']:
+        <table class="block" width="100%" border="0" cellpadding="15" cellspacing="0" align="center" >
+            <thead class="block-head">
+            <th colspan="2">
+                <h3>
+                ${Node.load(key).title}  
+                %if parent :
+                    <small> in ${Node.load(parent).title} </small>
+                %endif 
+                </h3>
+            </th>
+            </thead>
+            <tbody>
+            <tr>
+                <td >
+                    %for m in d['children'][key]['messages']:
+                        ${m['message']}
+                    %endfor                             
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    %endif
+    %if isinstance(d['children'][key]['children'], dict):
+        ${build_message(d['children'][key], key )}
+    %endif
+%endfor
+</%def>
 
-        <!-- Facebook sharing information tags -->
-        <meta property="og:title" content="*|MC:SUBJECT|*" />
+<!doctype html>
+<html class="no-js" lang="">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>COS Email Notification Template</title>
+    <meta name="description" content="Center for Open Science Notifications">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        /* Client-specific Styles */
+        #outlook a{padding:0;} /* Force Outlook to provide a "view in browser" button. */
+        body{width:100% !important;} .ReadMsgBody{width:100%;} .ExternalClass{width:100%;} /* Force Hotmail to display emails at full width */
+        body{-webkit-text-size-adjust:none;} /* Prevent Webkit platforms from changing default text sizes. */
 
-        <title>OSF Email Digest</title>
-		<style type="text/css">
-			/* Client-specific Styles */
-			#outlook a{padding:0;} /* Force Outlook to provide a "view in browser" button. */
-			body{width:100% !important;} .ReadMsgBody{width:100%;} .ExternalClass{width:100%;} /* Force Hotmail to display emails at full width */
-			body{-webkit-text-size-adjust:none;} /* Prevent Webkit platforms from changing default text sizes. */
+        /* Reset Styles */
+        img{border:0; height:auto; line-height:100%; outline:none; text-decoration:none;}
+        table td{border-collapse:collapse;}
+        #backgroundTable{height:100% !important; margin:0; padding:0; width:100% !important;}
+        body, ul, h1, h2, h3, h4, h5, a, button, div {
+            padding: 0;
+            margin: 0;
+            border: none;
+            list-style: none;
+        }
+        h3 {
+            margin: 30px 0 0 0;
+        }
+        body {
+            font-family: 'Helvetica', sans-serif;
+            background: #eeeeee ;
+        }
+        .text-center {
+            text-align: center;
+        }
+        #header-logo {
+            margin: 0 auto;
+            padding: 0px
+        }
+        #header-logo h2 {
+            font-weight: 300;
+            font-size: 20px;
+            text-align: left;
+        }
+        .div-center {
+            margin: 0 auto;
+        }
+        a {
+            color: #008de5;
+            text-decoration: none;
+        }
+        .comment-block h3 {
+            text-transform: uppercase;
+            font-size: 16px;
+            color: #214762;
+            padding: 20px 0 10px 0;
+            font-weight: 400;
+        }
+        h1, h2, h3, h4 {
+            font-weight: 300;
+        }
+        .block-head th {
+            border-bottom: 1px solid #eee;
+            text-align: left;
+            padding: 5px 15px;
+        }
+        small {
+            font-size: 14px;
+            color: #999;
+        }
+        .line {
+            height: 4px;
+            border-bottom: 1px solid #ddd;
+            width: 80%;
+            margin: 15px auto;
+        }
+        .comment-row {
+            font-size: 13px;
+            background: #fff;
+            padding: 0px !important;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            margin-bottom: 10px;
 
-			/* Reset Styles */
-			body{margin:0; padding:0;}
-			img{border:0; height:auto; line-height:100%; outline:none; text-decoration:none;}
-			table td{border-collapse:collapse;}
-			#backgroundTable{height:100% !important; margin:0; padding:0; width:100% !important;}
+        }
+        .icon {
+            font-size: 24px;
+            color: #999;
+        }
+        .person {
+            font-weight: bold;
+        }
+        .text{
 
-			/* Template Styles */
+        }
+        .project {
+            font-weight: bold;
+        }
+        .timestamp {
+            color: grey;
+        }
+        .content {
+            display: block;
+            padding: 6px 5px 0px 8px;
+            font-size: 14px;
+        }
+        p.small {
+            font-size: 12px;
+        }
+        p.medium {
+            font-size: 14px;
+        }
+        .indent {
+            padding-left: 20px;
+        }
+        .btn {
+            padding: 8px;
+            font-size: 14px;
+            border-radius: 3px;
+            text-align: center;
+            color: white;
+            display: inline-block;
+            margin: 3px;
+        }
+        .btn-primary {
+            background: #337AB7;
+        }
+        .btn-success {
+            background: #5CB85C;
+        }
+        .btn-info {
+            background: #5BC0DE;
+        }
+        .btn-warning {
+            background: #F0AD4E;
+        }
+        .btn-danger {
+            background: #D9534F;
+        }
+        .banner {
+            background:#214762;
+            color: white;
+        }
+        #content {
+            margin: 30px auto 0 auto;
+            background: white;
+            box-shadow: 0 0 2px #ccc;
+        }
+        .footer {
+            margin-top: 45px;
+            padding: 25px 0 35px;
+            background-color: rgb(244, 244, 244);
+            border-top: 1px solid #E5E5E5;
+            border-bottom: 1px solid #E5E5E5;
+            width: 100%;
+            color: #555
+        }
+        .link {
+            font-size: 18px;
+            border-left: 1px solid #ddd;
+        }
+        .link a {
+        }
+        .avatar {
+            border-radius: 25px;
+        }
 
-			/* /\/\/\/\/\/\/\/\/\/\ STANDARD STYLING: COMMON PAGE ELEMENTS /\/\/\/\/\/\/\/\/\/\ */
-
-			/**
-			* @tab Page
-			* @section background color
-			* @tip Set the background color for your email. You may want to choose one that matches your company's branding.
-			* @theme page
-			*/
-			body, #backgroundTable{
-				/*@editable*/ background-color:#FAFAFA;
-			}
-
-			/**
-			* @tab Page
-			* @section email border
-			* @tip Set the border for your email.
-			*/
-			#templateContainer{
-				/*@editable*/ border: 1px solid #DDDDDD;
-			}
-
-			/**
-			* @tab Page
-			* @section heading 1
-			* @tip Set the styling for all first-level headings in your emails. These should be the largest of your headings.
-			* @style heading 1
-			*/
-			h1, .h1{
-				/*@editable*/ color:#202020;
-				display:block;
-				/*@editable*/ font-family:Arial;
-				/*@editable*/ font-size:34px;
-				/*@editable*/ font-weight:bold;
-				/*@editable*/ line-height:100%;
-				margin-top:0;
-				margin-right:0;
-				margin-bottom:10px;
-				margin-left:0;
-				/*@editable*/ text-align:left;
-			}
-
-			/**
-			* @tab Page
-			* @section heading 2
-			* @tip Set the styling for all second-level headings in your emails.
-			* @style heading 2
-			*/
-			h2, .h2{
-				/*@editable*/ color:#202020;
-				display:block;
-				/*@editable*/ font-family:Arial;
-				/*@editable*/ font-size:30px;
-				/*@editable*/ font-weight:bold;
-				/*@editable*/ line-height:100%;
-				margin-top:0;
-				margin-right:0;
-				margin-bottom:10px;
-				margin-left:0;
-				/*@editable*/ text-align:left;
-			}
-
-			/**
-			* @tab Page
-			* @section heading 3
-			* @tip Set the styling for all third-level headings in your emails.
-			* @style heading 3
-			*/
-			h3, .h3{
-				/*@editable*/ color:#202020;
-				display:block;
-				/*@editable*/ font-family:Arial;
-				/*@editable*/ font-size:26px;
-				/*@editable*/ font-weight:bold;
-				/*@editable*/ line-height:100%;
-				margin-top:0;
-				margin-right:0;
-				margin-bottom:10px;
-				margin-left:0;
-				/*@editable*/ text-align:left;
-			}
-
-			/**
-			* @tab Page
-			* @section heading 4
-			* @tip Set the styling for all fourth-level headings in your emails. These should be the smallest of your headings.
-			* @style heading 4
-			*/
-			h4, .h4{
-				/*@editable*/ color:#202020;
-				display:block;
-				/*@editable*/ font-family:Arial;
-				/*@editable*/ font-size:22px;
-				/*@editable*/ font-weight:bold;
-				/*@editable*/ line-height:100%;
-				margin-top:0;
-				margin-right:0;
-				margin-bottom:10px;
-				margin-left:0;
-				/*@editable*/ text-align:left;
-			}
-
-			/* /\/\/\/\/\/\/\/\/\/\ STANDARD STYLING: HEADER /\/\/\/\/\/\/\/\/\/\ */
-
-			/**
-			* @tab Header
-			* @section header style
-			* @tip Set the background color and border for your email's header area.
-			* @theme header
-			*/
-			#templateHeader{
-				/*@editable*/ background-color:#FFFFFF;
-				/*@editable*/ border-bottom:0;
-			}
-
-			/**
-			* @tab Header
-			* @section header text
-			* @tip Set the styling for your email's header text. Choose a size and color that is easy to read.
-			*/
-			.headerContent{
-				/*@editable*/ color:#202020;
-				/*@editable*/ font-family:Arial;
-				/*@editable*/ font-size:34px;
-				/*@editable*/ font-weight:bold;
-				/*@editable*/ line-height:100%;
-				/*@editable*/ padding:0;
-				/*@editable*/ text-align:center;
-				/*@editable*/ vertical-align:middle;
-			}
-
-			/**
-			* @tab Header
-			* @section header link
-			* @tip Set the styling for your email's header links. Choose a color that helps them stand out from your text.
-			*/
-			.headerContent a:link, .headerContent a:visited, /* Yahoo! Mail Override */ .headerContent a .yshortcuts /* Yahoo! Mail Override */{
-				/*@editable*/ color:#336699;
-				/*@editable*/ font-weight:normal;
-				/*@editable*/ text-decoration:underline;
-			}
-
-			#headerImage{
-				height:auto;
-				max-width:600px !important;
-			}
-
-			/* /\/\/\/\/\/\/\/\/\/\ STANDARD STYLING: MAIN BODY /\/\/\/\/\/\/\/\/\/\ */
-
-			/**
-			* @tab Body
-			* @section body style
-			* @tip Set the background color for your email's body area.
-			*/
-			#templateContainer, .bodyContent{
-				/*@editable*/ background-color:#FFFFFF;
-			}
-
-			/**
-			* @tab Body
-			* @section body text
-			* @tip Set the styling for your email's main content text. Choose a size and color that is easy to read.
-			* @theme main
-			*/
-			.bodyContent div{
-				/*@editable*/ color:#505050;
-				/*@editable*/ font-family:Arial;
-				/*@editable*/ font-size:14px;
-				/*@editable*/ line-height:150%;
-				/*@editable*/ text-align:left;
-			}
-
-			/**
-			* @tab Body
-			* @section body link
-			* @tip Set the styling for your email's main content links. Choose a color that helps them stand out from your text.
-			*/
-			.bodyContent div a:link, .bodyContent div a:visited, /* Yahoo! Mail Override */ .bodyContent div a .yshortcuts /* Yahoo! Mail Override */{
-				/*@editable*/ color:#336699;
-				/*@editable*/ font-weight:normal;
-				/*@editable*/ text-decoration:underline;
-			}
-
-			/**
-			* @tab Body
-			* @section button style
-			* @tip Set the styling for your email's button. Choose a style that draws attention.
-			*/
-			.templateButton{
-				-moz-border-radius:3px;
-				-webkit-border-radius:3px;
-				/*@editable*/ background-color:#336699;
-				/*@editable*/ border:0;
-				border-collapse:separate !important;
-				border-radius:3px;
-			}
-
-			/**
-			* @tab Body
-			* @section button style
-			* @tip Set the styling for your email's button. Choose a style that draws attention.
-			*/
-			.templateButton, .templateButton a:link, .templateButton a:visited, /* Yahoo! Mail Override */ .templateButton a .yshortcuts /* Yahoo! Mail Override */{
-				/*@editable*/ color:#FFFFFF;
-				/*@editable*/ font-family:Arial;
-				/*@editable*/ font-size:15px;
-				/*@editable*/ font-weight:bold;
-				/*@editable*/ letter-spacing:-.5px;
-				/*@editable*/ line-height:100%;
-				text-align:center;
-				text-decoration:none;
-			}
-
-			.bodyContent img{
-				display:inline;
-				height:auto;
-			}
-
-			/* /\/\/\/\/\/\/\/\/\/\ STANDARD STYLING: FOOTER /\/\/\/\/\/\/\/\/\/\ */
-
-			/**
-			* @tab Footer
-			* @section footer style
-			* @tip Set the background color and top border for your email's footer area.
-			* @theme footer
-			*/
-			#templateFooter{
-				/*@editable*/ background-color:#FFFFFF;
-				/*@editable*/ border-top:0;
-			}
-
-			/**
-			* @tab Footer
-			* @section footer text
-			* @tip Set the styling for your email's footer text. Choose a size and color that is easy to read.
-			* @theme footer
-			*/
-			.footerContent div{
-				/*@editable*/ color:#707070;
-				/*@editable*/ font-family:Arial;
-				/*@editable*/ font-size:12px;
-				/*@editable*/ line-height:125%;
-				/*@editable*/ text-align:center;
-			}
-
-			/**
-			* @tab Footer
-			* @section footer link
-			* @tip Set the styling for your email's footer links. Choose a color that helps them stand out from your text.
-			*/
-			.footerContent div a:link, .footerContent div a:visited, /* Yahoo! Mail Override */ .footerContent div a .yshortcuts /* Yahoo! Mail Override */{
-				/*@editable*/ color:#336699;
-				/*@editable*/ font-weight:normal;
-				/*@editable*/ text-decoration:underline;
-			}
-
-			.footerContent img{
-				display:inline;
-			}
-
-			/**
-			* @tab Footer
-			* @section utility bar style
-			* @tip Set the background color and border for your email's footer utility bar.
-			* @theme footer
-			*/
-			#utility{
-				/*@editable*/ background-color:#FFFFFF;
-				/*@editable*/ border:0;
-			}
-
-			/**
-			* @tab Footer
-			* @section utility bar style
-			* @tip Set the background color and border for your email's footer utility bar.
-			*/
-			#utility div{
-				/*@editable*/ text-align:center;
-			}
-
-			#monkeyRewards img{
-				max-width:190px;
-			}
-		</style>
-	</head>
-    <body leftmargin="0" marginwidth="0" topmargin="0" marginheight="0" offset="0">
-    	<center>
-        	<table border="0" cellpadding="0" cellspacing="0" height="100%" width="100%" id="backgroundTable">
-            	<tr>
-                	<td align="center" valign="top" style="padding-top:20px;">
-                    	<table border="0" cellpadding="0" cellspacing="0" width="600" id="templateContainer">
-                        	<tr>
-                            	<td align="center" valign="top">
-                                    <!-- // Begin Template Header \\ -->
-                                	<table border="0" cellpadding="0" cellspacing="0" width="600" id="templateHeader">
-                                        <tr>
-                                            <td class="headerContent">
-
-                                            	<!-- // Begin Module: Standard Header Image \\ -->
-                                            	<img src="http://i1.wp.com/www.r-users.com/wp-content/uploads/company_logos/2014/11/cos_center_logo_small.png?fit=250%2C250" style="max-width:600px;" id="headerImage campaign-icon" mc:label="header_image" mc:edit="header_image" mc:allowdesigner mc:allowtext />
-                                            	<!-- // End Module: Standard Header Image \\ -->
-
-                                            </td>
-                                        </tr>
-                                    </table>
-                                    <!-- // End Template Header \\ -->
+    </style>
+</head>
+<body leftmargin="0" marginwidth="0" topmargin="0" marginheight="0" offset="0" style="-webkit-text-size-adjust: none;font-family: 'Helvetica', sans-serif;background: #eeeeee;padding: 0;margin: 0;border: none;list-style: none;width: 100% !important;">
+<table id="layout-table" width="100%" border="0" cellpadding="0" cellspacing="0">
+    <tr>
+        <td style="border-collapse: collapse;">
+            <table id="layout-table" width="100%" border="0" cellpadding="10" cellspacing="0" height="100%">
+                <tbody>
+                <tr class="banner" style="background: #214762;color: white;">
+                    <td class="text-center" style="border-collapse: collapse;text-align: center;">
+                        <table id="header-logo" border="0" style="margin: 0 auto;padding: 0px;">
+                            <tr>
+                                <td style="border-collapse: collapse;">
+                                    <img src="https://osf.io/static/img/cos-white2.png" alt="COS logo" width="36" style="border: 0;height: auto;line-height: 100%;outline: none;text-decoration: none;">
                                 </td>
-                            </tr>
-                        	<tr>
-                            	<td align="center" valign="top">
-                                    <!-- // Begin Template Body \\ -->
-                                	<table border="0" cellpadding="0" cellspacing="0" width="600" id="templateBody">
-                                    	<tr>
-                                            <td valign="top">
-
-                                                <!-- // Begin Module: Standard Content \\ -->
-                                                <table border="0" cellpadding="20" cellspacing="0" width="100%">
-                                                    <tr>
-                                                        <td valign="top" class="bodyContent">
-                                                            <div>
-
-                                                                <h4 class="h4">There has been recent activity on your OSF projects!</h4>
-                                                                <br/>
-                                                                <div>
-                                                                <b>Open Science:</b>
-                                                                    <li>Jeff commented on your project "Open Science": "Great Project!" at 3:15PM<br/>
-                                                                    </li>
-                                                                    <li>Jeff commented on your project "Open Science": "How can I get involved?" at 3:16PM</li>
-                                                                </div>
-                                                                <div style="padding-left: 25px">
-                                                                        <b>Materials:</b>
-                                                                            <li style="padding-left: 25px">Sarah commented on your component "Materials": "Check out the protocol I just uploaded." at 1:40PM</li>
-
-                                                                        <b>Data:</b>
-                                                                            <li style="padding-left: 25px">Tim commented on your component "Data": "When will you begin data collection?" at 5:13PM</li>
-                                                                </div>
-                                                                <br>
-                                                                <b>Investigating the Universe:</b>
-                                                                    <li> Katy commented on your project "Investigating the Universe": "Working on data analysis now." at 6:37PM</li>
-                                                                   <li> Katy commented on your project "Investigating the Universe": "Completed data analysis! Can you look it over?." at 9:12PM</li>
-
-                                                                </div>
-                                                                <br />
-
-                                                                <br />
-                                                            </div>
-														</td>
-                                                    </tr>
-
-                                                </table>
-                                                <!-- // End Module: Standard Content \\ -->
-
-                                            </td>
-                                        </tr>
-                                    </table>
-                                    <!-- // End Template Body \\ -->
-                                </td>
-                            </tr>
-                        	<tr>
-                            	<td align="center" valign="top">
-                                    <!-- // Begin Template Footer \\ -->
-                                	<table border="0" cellpadding="10" cellspacing="0" width="600" id="templateFooter">
-                                    	<tr>
-                                        	<td valign="top" class="footerContent">
-
-                                                <!-- // Begin Module: Transactional Footer \\ -->
-                                                <table border="0" cellpadding="10" cellspacing="0" width="100%">
-                                                    <tr>
-                                                        <td valign="top">
-                                                            <div edit="std_footer">
-																<em>Copyright &copy; 2015 *Center For Open Science*, All rights reserved.</em>
-																<br />
-
-																<br />
-																<strong>Our mailing address is: contact@osf.io</strong>
-																<br />
-
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td valign="middle" id="utility">
-                                                            <div edit="std_utility">
-                                                                &nbsp;<a href="*|ARCHIVE|*" target="_blank">view this in your browser</a> | <a href="*|UNSUB|*">unsubscribe from this list</a> | <a href="*|UPDATE_PROFILE|*">update subscription preferences</a>&nbsp;
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                </table>
-                                                <!-- // End Module: Transactional Footer \\ -->
-
-                                            </td>
-                                        </tr>
-                                    </table>
-                                    <!-- // End Template Footer \\ -->
+                                <td style="border-collapse: collapse;">
+                                    <h2 style="padding: 0;margin: 0;border: none;list-style: none;font-weight: 300;font-size: 20px;text-align: left;">Open Science Framework</h2>
                                 </td>
                             </tr>
                         </table>
-                        <br />
                     </td>
                 </tr>
+                </tbody>
             </table>
-        </center>
-    </body>
+        </td>
+    </tr>
+    <tr>
+        <td style="border-collapse: collapse;">
+            <table id="content" width="600" border="0" cellpadding="25" cellspacing="0" align="center" style="margin: 30px auto 0 auto;background: white;box-shadow: 0 0 2px #ccc;">
+                <tbody>
+                <tr>
+                    <td style="border-collapse: collapse;">
+                        <h3 class="text-center" style="padding: 0;margin: 30px 0 0 0;border: none;list-style: none;font-weight: 300;text-align: center;">You have new notifications </h3>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="border-collapse: collapse;">
+                        ${build_message(message)}
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td style="border-collapse: collapse;">
+            <table width="80%" border="0" cellpadding="10" cellspacing="0" align="center" class="footer" style="margin-top: 45px;padding: 25px 0 35px;background-color: rgb(244, 244, 244);border-top: 1px solid #E5E5E5;border-bottom: 1px solid #E5E5E5;width: 100%;color: #555;">
+                <tbody>
+                <tr>
+                    <td style="border-collapse: collapse;">
+                        <p class="small text-center" style="text-align: center;font-size: 12px;">Copyright &copy; 2015 Center For Open Science, All rights reserved. </p>
+                        <p class="small text-center" style="text-align: center;font-size: 12px; line-height: 20px;">You received this email because you were subscribed to email notifications. <br /><a href="${url}" style="padding: 0;margin: 0;border: none;list-style: none;color: #008de5;text-decoration: none; font-weight: bold;">Update Subscription Preferences</a></p>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
 </html>
