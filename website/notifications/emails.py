@@ -9,12 +9,13 @@ from website import mails, settings
 from website.util import web_url_for
 from website.models import Node, User
 from mako.lookup import Template
+from website.notifications import utils
 
 
 def notify(uid, event, **context):
-    key = str(uid + '_' + event)
+    key = utils.to_subscription_key(uid, event)
 
-    direct_subscribers = []
+    node_subscribers = []
 
     for notification_type in notifications.keys():
 
@@ -29,24 +30,25 @@ def notify(uid, event, **context):
             subscribed_users = []
 
         for u in subscribed_users:
-            direct_subscribers.append(u)
+            node_subscribers.append(u)
 
         if subscribed_users and notification_type != 'none':
             send([u._id for u in subscribed_users], notification_type, uid, event, **context)
 
-    check_parent(uid, event, direct_subscribers, **context)
+    check_parent(uid, event, node_subscribers, **context)
 
 
-def check_parent(uid, event, direct_subscribers, **context):
+def check_parent(uid, event, node_subscribers, **context):
     node = Node.load(uid)
     if node and node.node__parent:
         for p in node.node__parent:
-            key = str(p._id + '_' + event)
+            key = utils.to_subscription_key(p._id, event)
             try:
                 subscription = Subscription.find_one(Q('_id', 'eq', key))
             except NoResultsFound:
-                return
+                return check_parent(p._id, event, node_subscribers, **context)
 
+            parent_subscribers = []
             for notification_type in notifications.keys():
                 try:
                     subscribed_users = getattr(subscription, notification_type)
@@ -54,10 +56,11 @@ def check_parent(uid, event, direct_subscribers, **context):
                     subscribed_users = []
 
                 for u in subscribed_users:
-                    if u not in direct_subscribers:
+                    if u not in node_subscribers:
+                        parent_subscribers.append(u)
                         send([u._id], notification_type, uid, event, **context)
 
-    return {}
+            return check_parent(p._id, event, parent_subscribers, **context)
 
 
 def send(subscribed_user_ids, notification_type, uid, event, **context):
@@ -84,6 +87,7 @@ def email_transactional(subscribed_user_ids, uid, event, **context):
                 mail=mails.TRANSACTIONAL,
                 mimetype='html',
                 name=user.fullname,
+                node_title=context.get('title'),
                 subject=subject,
                 message=message,
                 url=get_settings_url(uid, user)

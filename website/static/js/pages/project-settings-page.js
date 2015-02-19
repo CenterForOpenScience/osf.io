@@ -9,7 +9,19 @@ var ctx = window.contextVars;
 
 // Initialize treebeard grid
 var ProjectNotifications = require('../project-settings-treebeard.js');
-new ProjectNotifications(window.contextVars.node.subscriptions);
+var $notificationsMsg = $('#configureNotificationsMessage');
+$.ajax({
+        url: ctx.node.urls.api  + 'subscriptions/',
+        type: 'GET',
+        dataType: 'json',
+        success: function(response) {
+            new ProjectNotifications(response);
+        },
+        error: function() {
+            $notificationsMsg.addClass('text-danger');
+            $notificationsMsg.text('Could not retrieve notification settings.');
+        }
+});
 
 
 $(document).ready(function() {

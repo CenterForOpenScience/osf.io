@@ -28,7 +28,6 @@ from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
 from website.profile import utils as profile_utils
 from website import settings
-from website.notifications.utils import format_user_and_project_subscriptions
 
 logger = logging.getLogger(__name__)
 
@@ -220,8 +219,7 @@ def user_notifications(auth, **kwargs):
     if not settings.ENABLE_EMAIL_SUBSCRIPTIONS:
         raise HTTPError(http.BAD_REQUEST)
     return {
-        'mailing_lists': auth.user.mailing_lists,
-        'notifications_data': format_user_and_project_subscriptions(auth.user)
+        'mailing_lists': auth.user.mailing_lists
     }
 
 

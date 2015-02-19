@@ -48,8 +48,11 @@
         </div>
         <div class="panel panel-default">
             <div class="panel-heading"><h3 class="panel-title">Configure Notification Preferences</h3></div>
-                <form id="selectNotifications">
+                <form id="selectNotifications" class="osf-treebeard-minimal">
                     <div id="grid"></div>
+                    <div class="help-block" style="padding-left: 15px">
+                            <p id="configureNotificationsMessage"></p>
+                    </div>
                 </form>
         </div>
     </div>
@@ -61,15 +64,11 @@
     <% import json %>
     ${parent.javascript()}
     <script type="text/javascript">
-        window.contextVars = $.extend({}, window.contextVars, {'mailingList': '${website.settings.MAILCHIMP_GENERAL_LIST}',
-                                                               'notificationsData': ${json.dumps(notifications_data)}
-        });
-
+        window.contextVars = $.extend({}, window.contextVars, {'mailingList': '${website.settings.MAILCHIMP_GENERAL_LIST}'});
     </script>
 </%def>
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
     <script src="${"/static/public/js/notifications-config-page.js" | webpack_asset}"></script>
-    <script src="${"/static/public/js/osf-notifications-config-page.js" | webpack_asset}"></script>
 </%def>

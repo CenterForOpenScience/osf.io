@@ -106,8 +106,11 @@
                     <h3 class="panel-title">Configure Notifications</h3>
                 </div>
 
-                <form id="notificationSettings">
+                <form id="notificationSettings" class="osf-treebeard-minimal">
                     <div id="grid"></div>
+                    <div class="help-block" style="padding-left: 15px">
+                            <p id="configureNotificationsMessage"></p>
+                    </div>
                 </form>
             </div>
          % endif
@@ -214,7 +217,6 @@
       window.contextVars = window.contextVars || {};
       window.contextVars.node = window.contextVars.node || {};
       window.contextVars.node.nodeType = '${node['node_type']}';
-      window.contextVars.node.subscriptions = ${json.dumps(subscriptions)};
     </script>
 
     <script type="text/javascript" src=${"/static/public/js/project-settings-page.js" | webpack_asset}></script>

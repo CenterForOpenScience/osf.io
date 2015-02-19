@@ -1,20 +1,39 @@
+import httplib as http
+from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
 from model import Subscription
 from flask import request
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from modularodm.storage.mongostorage import KeyExistsException
-from website import settings
+from website.notifications.constants import NOTIFICATION_TYPES
+from website.notifications import utils
+from website.project.decorators import must_be_contributor
 
 @must_be_logged_in
-def subscribe(auth):
+def get_subscriptions(auth):
+    return utils.format_user_and_project_subscriptions(auth.user)
+
+@must_be_contributor
+@must_be_logged_in
+def get_node_subscriptions(auth, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    return utils.format_data(auth.user, [node._id], [])
+
+@must_be_logged_in
+def configure_subscription(auth):
     user = auth.user
     subscription = request.json
     event = subscription.get('event')
     notification_type = subscription.get('notification_type')
 
+    if not event or not notification_type:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_long="Must provide an event and notification type for subscription.")
+        )
+
     uid = subscription.get('id')
-    event_id = uid + "_" + event
+    event_id = utils.to_subscription_key(uid, event)
 
     if notification_type == 'adopt_parent':
         try:
@@ -44,8 +63,10 @@ def subscribe(auth):
             getattr(s, notification_type).append(user)
             s.save()
 
-        for nt in settings.NOTIFICATION_TYPES:
+        for nt in NOTIFICATION_TYPES:
             if nt != notification_type:
                 if getattr(s, nt) and user in getattr(s, nt):
                     getattr(s, nt).remove(user)
                     s.save()
+
+        return {'message': 'Successfully added ' + repr(user) + ' to ' + notification_type + ' list on ' + event_id}, 200

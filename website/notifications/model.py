@@ -1,6 +1,6 @@
 from modularodm import fields
 from framework.mongo import StoredObject, ObjectId
-from website import settings
+from website.notifications.constants import NOTIFICATION_TYPES
 
 
 class Subscription(StoredObject):
@@ -13,7 +13,7 @@ class Subscription(StoredObject):
     none = fields.ForeignField('user', list=True, backref='none')
 
     def remove_user_from_subscription(self, user):
-        for n in settings.NOTIFICATION_TYPES:
+        for n in NOTIFICATION_TYPES:
             if user in getattr(self, n):
                 getattr(self, n).remove(user)
                 self.save()

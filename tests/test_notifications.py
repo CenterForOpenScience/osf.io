@@ -12,6 +12,7 @@ from framework.auth.signals import contributor_removed, node_deleted
 from framework.auth import Auth
 from website.util import web_url_for
 from website.notifications.model import Subscription, DigestNotification
+from website.notifications.constants import SUBSCRIPTIONS_AVAILABLE, NOTIFICATION_TYPES, USER_SUBSCRIPTIONS_AVAILABLE
 from website.notifications import emails, utils
 from website.util import api_url_for
 from website import settings, mails
@@ -26,7 +27,7 @@ class TestSubscriptionView(OsfTestCase):
             'event': 'comments',
             'notification_type': 'email_transactional'
         }
-        url = api_url_for('subscribe')
+        url = api_url_for('configure_subscription')
         self.app.post_json(url, payload, auth=node.creator.auth)
 
         # check that subscription was created
@@ -44,7 +45,7 @@ class TestSubscriptionView(OsfTestCase):
             'event': 'comments',
             'notification_type': 'email_digest'
         }
-        url = api_url_for('subscribe')
+        url = api_url_for('configure_subscription')
         self.app.post_json(url, new_payload, auth=node.creator.auth)
         s.reload()
         assert_false(node.creator in getattr(s, payload['notification_type']))
@@ -57,7 +58,7 @@ class TestSubscriptionView(OsfTestCase):
             'event': 'comments',
             'notification_type': 'adopt_parent'
         }
-        url = api_url_for('subscribe')
+        url = api_url_for('configure_subscription')
         self.app.post_json(url, payload, auth=node.creator.auth)
         event_id = node._id + '_' + 'comments'
         # confirm subscription was not created
@@ -71,7 +72,7 @@ class TestSubscriptionView(OsfTestCase):
             'event': 'comments',
             'notification_type': 'email_transactional'
         }
-        url = api_url_for('subscribe')
+        url = api_url_for('configure_subscription')
         self.app.post_json(url, payload, auth=node.creator.auth)
 
         # check that subscription was created
@@ -84,12 +85,12 @@ class TestSubscriptionView(OsfTestCase):
             'event': 'comments',
             'notification_type': 'adopt_parent'
         }
-        url = api_url_for('subscribe')
+        url = api_url_for('configure_subscription')
         self.app.post_json(url, new_payload, auth=node.creator.auth)
         s.reload()
 
         # assert that user is removed from the subscription entirely
-        for n in settings.NOTIFICATION_TYPES:
+        for n in NOTIFICATION_TYPES:
             assert_false(node.creator in getattr(s, n))
 
 
@@ -182,6 +183,17 @@ class TestNotificationUtils(OsfTestCase):
         self.user_subscription.email_transactional.append(self.user)
         self.user_subscription.save()
 
+    def test_to_subscription_key(self):
+        key = utils.to_subscription_key('xyz', 'comments')
+        assert_equal(key, 'xyz_comments')
+
+    def test_from_subscription_key(self):
+        parsed_key = utils.from_subscription_key('xyz_comment_replies')
+        assert_equal(parsed_key, {
+            'uid': 'xyz',
+            'event': 'comment_replies'
+        })
+
     def test_get_all_user_subscriptions(self):
         user_subscriptions = utils.get_all_user_subscriptions(self.user)
         assert_in(self.project_subscription, user_subscriptions)
@@ -238,32 +250,42 @@ class TestNotificationUtils(OsfTestCase):
         data = utils.format_data(self.user, [self.project._id], [])
         expected = [
             {
-                'node_id': self.project._id,
-                'title': self.project.title,
+                'node': {
+                    'id': self.project._id,
+                    'title': self.project.title,
+                    'url': self.project.url,
+                },
                 'kind': 'folder' if not self.project.node__parent else 'node',
-                'nodeUrl': self.project.url,
                 'children': [
                     {
-                        'title': 'comments',
-                        'description': settings.SUBSCRIPTIONS_AVAILABLE['comments'],
+                        'event': {
+                            'title': 'comments',
+                            'description': SUBSCRIPTIONS_AVAILABLE['comments'],
+                            'notificationType': 'email_transactional',
+                            'parent_notification_type': None
+                        },
+
                         'kind': 'event',
-                        'notificationType': 'email_transactional',
-                        'children': [],
-                        'parent_notification_type': None
+                        'children': []
                     },
                     {
-                        'node_id': self.node._id,
-                        'title': self.node.title,
+                        'node': {
+                            'id': self.node._id,
+                            'title': self.node.title,
+                            'url': self.node.url,
+                        },
+
                         'kind': 'folder' if not self.node.node__parent else 'node',
-                        'nodeUrl': self.node.url,
                         'children': [
                             {
-                                'title': 'comments',
-                                'description': settings.SUBSCRIPTIONS_AVAILABLE['comments'],
+                                'event': {
+                                    'title': 'comments',
+                                    'description': SUBSCRIPTIONS_AVAILABLE['comments'],
+                                    'notificationType': 'email_transactional',
+                                    'parent_notification_type': None
+                                },
                                 'kind': 'event',
-                                'notificationType': 'email_transactional',
                                 'children': [],
-                                'parent_notification_type': None
                             }
                         ]
                     }
@@ -275,19 +297,23 @@ class TestNotificationUtils(OsfTestCase):
     def test_format_data_node_settings(self):
         data = utils.format_data(self.user, [self.node._id], [])
         expected = [{
-                        'node_id': self.node._id,
+                    'node': {
+                        'id': self.node._id,
                         'title': self.node.title,
-                        'kind': 'folder' if not self.node.node__parent else 'node',
-                        'nodeUrl': self.node.url,
-                        'children': [
-                            {
+                        'url': self.node.url,
+                    },
+                    'kind': 'folder' if not self.node.node__parent else 'node',
+                    'children': [
+                        {
+                            'event': {
                                 'title': 'comments',
-                                'description': settings.SUBSCRIPTIONS_AVAILABLE['comments'],
-                                'kind': 'event',
+                                'description': SUBSCRIPTIONS_AVAILABLE['comments'],
                                 'notificationType': 'email_transactional',
-                                'children': [],
                                 'parent_notification_type': None
-                            }
+                            },
+                            'kind': 'event',
+                            'children': [],
+                        }
                         ]
                     }]
         assert_equal(data, expected)
@@ -295,11 +321,13 @@ class TestNotificationUtils(OsfTestCase):
     def test_format_user_subscriptions(self):
         data = utils.format_user_subscriptions(self.user, [])
         expected = [{
+                    'event': {
                         'title': 'comment_replies',
-                        'description': settings.USER_SUBSCRIPTIONS_AVAILABLE['comment_replies'],
-                        'kind': 'event',
+                        'description': USER_SUBSCRIPTIONS_AVAILABLE['comment_replies'],
                         'notificationType': 'email_transactional',
-                        'children': []
+                    },
+                    'kind': 'event',
+                    'children': [],
                     }]
         assert_equal(data, expected)
 
@@ -307,18 +335,68 @@ class TestNotificationUtils(OsfTestCase):
         data = utils.format_user_and_project_subscriptions(self.user)
         expected = [
             {
-                'title': 'User Notifications',
-                'node_id': self.user._id,
+                'node': {
+                    'id': self.user._id,
+                    'title': 'User Notifications'
+            },
                 'kind': 'heading',
                 'children': utils.format_user_subscriptions(self.user, [])
             },
             {
-                'title': 'Project Notifications',
-                'node_id': '',
+                'node': {
+                    'id': '',
+                    'title': 'Project Notifications'
+                },
                 'kind': 'heading',
                 'children': utils.format_data(self.user, utils.get_configured_projects(self.user), [])
             }]
 
+        assert_equal(data, expected)
+
+    def test_serialize_user_level_event(self):
+        user_subscriptions = utils.get_all_user_subscriptions(self.user)
+        data = utils.serialize_event(self.user, 'comment_replies', USER_SUBSCRIPTIONS_AVAILABLE, user_subscriptions)
+        expected = {
+            'event': {
+                'title': 'comment_replies',
+                'description': USER_SUBSCRIPTIONS_AVAILABLE['comment_replies'],
+                'notificationType': 'email_transactional',
+            },
+            'kind': 'event',
+            'children': []
+                }
+        assert_equal(data, expected)
+
+    def test_serialize_node_level_event(self):
+        node_subscriptions = utils.get_all_node_subscriptions(self.user, self.node)
+        data = utils.serialize_event(self.user, 'comments', SUBSCRIPTIONS_AVAILABLE, node_subscriptions, self.node)
+        expected = {
+            'event': {
+                'title': 'comments',
+                'description': SUBSCRIPTIONS_AVAILABLE['comments'],
+                'notificationType': 'email_transactional',
+                'parent_notification_type': None
+            },
+            'kind': 'event',
+            'children': [],
+        }
+        assert_equal(data, expected)
+
+    def test_serialize_node_level_event_that_adopts_parent_settings(self):
+        user = UserFactory()
+        self.project_subscription.email_transactional.append(user)
+        node_subscriptions = utils.get_all_node_subscriptions(user, self.node)
+        data = utils.serialize_event(user, 'comments', SUBSCRIPTIONS_AVAILABLE, node_subscriptions, self.node)
+        expected = {
+            'event': {
+                'title': 'comments',
+                'description': SUBSCRIPTIONS_AVAILABLE['comments'],
+                'notificationType': 'adopt_parent',
+                'parent_notification_type': 'email_transactional'
+            },
+            'kind': 'event',
+            'children': [],
+        }
         assert_equal(data, expected)
 
 
@@ -474,6 +552,7 @@ class TestSendEmails(OsfTestCase):
             to_addr=self.user.username,
             mail=mails.TRANSACTIONAL,
             name=self.user.fullname,
+            node_title=self.project.title,
             subject=subject,
             message=message,
             url=self.project.absolute_url + 'settings/'

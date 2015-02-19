@@ -1,3 +1,5 @@
+'use strict';
+
 var $ = require('jquery');
 var $osf = require('osfHelpers');
 var bootbox = require('bootbox');
@@ -8,25 +10,25 @@ require('../css/fangorn.css');
 
 
 function resolveToggle(item) {
-        var toggleMinus = m('i.icon-minus', ' '),
-            togglePlus = m('i.icon-plus', ' ');
+    var toggleMinus = m('i.icon-minus', ' '),
+        togglePlus = m('i.icon-plus', ' ');
 
-        if (item.children.length > 0) {
-            if (item.open) {
-                return toggleMinus;
-            }
-            return togglePlus;
+    if (item.children.length > 0) {
+        if (item.open) {
+            return toggleMinus;
         }
-        item.open = true;
-        return '';
+        return togglePlus;
     }
+    item.open = true;
+    return '';
+}
 
 function resolveIcon(item) {
     if (item.children.length > 0) {
         if (item.open) {
-            return m("i.icon.icon-folder-open", " ");
+            return m('i.icon.icon-folder-open', ' ');
         }
-        return m("i.icon.icon-folder-close", " ");
+        return m('i.icon.icon-folder-close', ' ');
     }
 }
 
@@ -44,7 +46,7 @@ function expandChildren(tb, children) {
     for (var i = 0; i < children.length; i++) {
         var child = children[i];
         var parent = children[i].parent();
-        if (child.data.kind === 'event' && child.data.notificationType !== "adopt_parent") {
+        if (child.data.kind === 'event' && child.data.event.notificationType !== 'adopt_parent') {
             openParent = true;
         }
         if (child.children.length > 0) {
@@ -66,15 +68,15 @@ function openAncestors (tb, item) {
 
 function subscribe(id, event, notification_type) {
     var payload = {
-                'id': id,
-                'event': event,
-                'notification_type': notification_type
+        'id': id,
+        'event': event,
+        'notification_type': notification_type
     };
     $osf.postJSON(
-        '/api/v1/settings/subscribe/',
+        '/api/v1/subscriptions/',
         payload
     ).fail(function() {
-        bootbox.alert('Could not update notification preferences.')
+        bootbox.alert('Could not update notification preferences.');
     });
 }
 
@@ -89,10 +91,10 @@ function displayParentNotificationType(item){
 
     if (item.data.parent_notification_type) {
         if (item.parent().parent().parent() === undefined) {
-            return "(" + notificationTypeDescriptions[item.data.parent_notification_type] + ")";
+            return '(' + notificationTypeDescriptions[item.data.parent_notification_type] + ')';
         }
     }
-    return "";
+    return '';
 }
 
 
@@ -108,6 +110,7 @@ function ProjectNotifications(data) {
         paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.
         uploads : false,         // Turns dropzone on/off.
         resolveIcon : resolveIcon,
+        hideColumnTitles: true,
         onload: function () {
             var tb = this;
             expandOnLoad.call(tb);
@@ -115,51 +118,51 @@ function ProjectNotifications(data) {
         columnTitles : function notificationColumnTitles(item, col) {
             return [
                 {
-                    title: "Project",
-                    width: "60%",
-                    sortType : "text",
+                    title: 'Project',
+                    width: '60%',
+                    sortType : 'text',
                     sort : false
                 },
                 {
-                    title: "Notification Type",
-                    width : "40%",
+                    title: 'Notification Type',
+                    width : '40%',
                     sort : false
 
                 }
             ]},
         resolveRows : function notificationResolveRows(item){
-            var default_columns = [];
+            var columns = [];
             var iconcss = 'test';
             // check if should not get icon
             if(item.children.length < 1 ){
                 iconcss = 'tb-no-icon';
             }
             if (item.data.kind === 'heading') {
-                 default_columns.push({
+                 columns.push({
                     data : 'project',  // Data field name
                     folderIcons : false,
                     filter : true,
                     sortInclude : false,
                     custom : function() {
                         return m("div[style='padding-left:5px']",
-                                [m('b', [m("p", item.data.title + ':')])
+                                [m('b', [m('p', item.data.node.title + ':')])
                                 ])
                     }
                 });
             }
             else if (item.data.kind === 'folder' || item.data.kind === 'node') {
-                default_columns.push({
+                columns.push({
                     data : 'project',  // Data field name
                     folderIcons : true,
                     filter : true,
                     sortInclude : false,
                     custom : function() {
-                        return m('a', { href : item.data.nodeUrl, target : '_blank' }, item.data.title );
+                        return m('a', { href : item.data.node.url, target : '_blank' }, item.data.node.title );
                     }
                 });
             }
             else if (item.parent().data.kind === 'folder' || item.parent().data.kind === 'heading' && item.data.kind === 'event') {
-                default_columns.push(
+                columns.push(
                 {
                     data : 'project',  // Data field name
                     folderIcons : true,
@@ -167,7 +170,7 @@ function ProjectNotifications(data) {
                     css : iconcss,
                     sortInclude : false,
                     custom : function(item, col) {
-                        return item.data.description;
+                        return item.data.event.description;
 
                     }
                 },
@@ -177,22 +180,22 @@ function ProjectNotifications(data) {
                     filter : false,
                     custom : function(item, col) {
                         return m("div[style='padding-right:10px']",
-                            [m("select.form-control", {
+                            [m('select.form-control', {
                                 onchange: function(ev) {
                                     item.data.notificationType = ev.target.value;
-                                    subscribe(item.parent().data.node_id, item.data.title, item.data.notificationType)
+                                    subscribe(item.parent().data.node.id, item.data.event.title, item.data.event.notificationType)
                                 }},
                                 [
-                                    m("option", {value: "none", selected : item.data.notificationType === "none" ? "selected": ""}, "None"),
-                                    m("option", {value: "email_transactional", selected : item.data.notificationType === "email_transactional" ? "selected": ""}, "Emails"),
-                                    m("option", {value: "email_digest", selected : item.data.notificationType === "email_digest" ? "selected": ""}, "Email Digest")
+                                    m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'None'),
+                                    m('option', {value: 'email_transactional', selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Emails'),
+                                    m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, 'Email Digest')
                             ])
                         ]);
                     }
                 });
             }
             else {
-                default_columns.push(
+                columns.push(
                 {
                     data : 'project',  // Data field name
                     folderIcons : true,
@@ -200,7 +203,7 @@ function ProjectNotifications(data) {
                     css : iconcss,
                     sortInclude : false,
                     custom : function() {
-                        return item.data.description;
+                        return item.data.event.description;
 
                     }
                 },
@@ -210,25 +213,25 @@ function ProjectNotifications(data) {
                     filter : false,
                     custom : function() {
                         return  m("div[style='padding-right:10px']",
-                            [m("select.form-control", {
+                            [m('select.form-control', {
                                 onchange: function(ev) {
-                                    item.data.notificationType = ev.target.value;
-                                    subscribe(item.parent().data.node_id, item.data.title, item.data.notificationType)
+                                    item.data.event.notificationType = ev.target.value;
+                                    subscribe(item.parent().data.node.id, item.data.event.title, item.data.event.notificationType)
                                 }},
                                 [
-                                    m("option", {value: "adopt_parent",
-                                                 selected: item.data.notificationType === "adopt_parent" ? "selected" : ""},
-                                                 "Adopt setting from parent project " + displayParentNotificationType(item)),
-                                    m("option", {value: "none", selected : item.data.notificationType === "none" ? "selected": ""}, "None"),
-                                    m("option", {value: "email_transactional",  selected : item.data.notificationType === "email_transactional" ? "selected": ""}, "Emails"),
-                                    m("option", {value: "email_digest", selected : item.data.notificationType === "email_digest" ? "selected": ""}, "Email Digest")
+                                    m('option', {value: 'adopt_parent',
+                                                 selected: item.data.event.notificationType === 'adopt_parent' ? 'selected' : ''},
+                                                 'Adopt setting from parent project ' + displayParentNotificationType(item)),
+                                    m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'None'),
+                                    m('option', {value: 'email_transactional',  selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Emails'),
+                                    m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, 'Email Digest')
                             ])
                         ])
                     }
                 });
             }
 
-            return default_columns;
+            return columns;
         },
         sortButtonSelector : {
             up : 'i.icon-chevron-up',

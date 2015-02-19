@@ -74,21 +74,6 @@ MAIL_SERVER = 'smtp.sendgrid.net'
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = ''  # Set this in local.py
 
-# Notification options
-SUBSCRIPTIONS_AVAILABLE = {
-    'comments': 'Comments Added'
-}
-
-USER_SUBSCRIPTIONS_AVAILABLE = {
-    'comment_replies': 'Replies to your comments'
-}
-
-NOTIFICATION_TYPES = {
-    'email_transactional': 'Email when a change occurs',
-    'email_digest': 'Daily email digest of all changes to this project',
-    'none': 'None'
-}
-
 # Mandrill
 MANDRILL_USERNAME = None
 MANDRILL_PASSWORD = None

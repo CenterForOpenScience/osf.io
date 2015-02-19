@@ -1,9 +1,8 @@
 """Script for sending OSF email digests to subscribed users and removing the records once sent."""
 
+import logging
 import datetime
 import urlparse
-import mock
-import unittest
 from bson.code import Code
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
@@ -14,7 +13,6 @@ from framework.tasks import app
 from framework.tasks.handlers import queued_task
 from website import mails, settings
 from website.app import init_app
-from website.util import web_url_for
 from website.notifications.model import DigestNotification
 from website.notifications.utils import NotificationsDict
 # from tests.base import OsfTestCase
@@ -22,10 +20,18 @@ from website.notifications.utils import NotificationsDict
 import nose.tools
 
 
+from scripts import utils as script_utils
+
+logger = logging.getLogger(__name__)
+script_utils.add_file_logger(logger, __file__)
+logging.basicConfig(level=logging.DEBUG)
+>>>>>>> 0cfd52186f6ab22f8e9ff5478184e4736ee3593c
+
+
 def main():
     init_app(routes=False)
     grouped_digests = group_digest_notifications_by_user()
-    print send_digest(grouped_digests)
+    send_digest(grouped_digests)
 
 
 @queued_task
@@ -43,6 +49,7 @@ def send_digest(grouped_digests):
         sorted_messages = group_messages(info)
 
         if user and sorted_messages:
+            logger.info('Sending email digest to user {0!r}'.format(user))
             mails.send_mail(
                 to_addr=user.username,
                 mimetype='html',
@@ -156,8 +163,6 @@ def group_digest_notifications_by_user():
 #         send_digest(user_groups)
 #         with assert_raises(NoResultsFound):
 #             DigestNotification.find_one(Q('_id', 'eq', id))
-
-
 
 if __name__ == '__main__':
     main()

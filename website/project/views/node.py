@@ -35,7 +35,6 @@ from website.views import _render_nodes, find_dashboard
 from website.profile import utils
 from website.project import new_folder
 from website.util.sanitize import strip_html
-from website.notifications.utils import format_data
 
 
 logger = logging.getLogger(__name__)
@@ -328,7 +327,7 @@ def node_setting(auth, **kwargs):
         'level': node.comment_level,
     }
 
-    ret['subscriptions'] = format_data(auth.user, [node._id], [])
+    # ret['subscriptions'] = format_data(auth.user, [node._id], [])
 
     return ret
 
