@@ -12,6 +12,7 @@ var Raven = require('raven-js');
 
 var FolderPicker = require('folderpicker');
 var $osf = require('osfHelpers');
+var ctx = window.contextVars;
 
 ko.punches.enableAll();
 /**
@@ -211,8 +212,10 @@ var ViewModel = function(url, selector, folderPicker) {
     });
 
     function onSubmitSuccess(response) {
-        self.changeMessage('Successfully linked "' + self.selected().name + '".',
-            'text-success', 5000);
+        var overviewURL = ctx.node.urls.web;
+        var msg = 'Successfully linked "' + self.selected().name + '". Go to the <a href="' +
+            overviewURL + '">Overview page</a> to view your citations.';
+        self.changeMessage(msg, 'text-success', 5000);
         self.folder(self.selected().name);
         self.cancelSelection();
     }
