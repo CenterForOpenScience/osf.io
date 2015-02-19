@@ -204,7 +204,8 @@ def search_share():
         # TODO Match javascript params?
         start = request.args.get('from', '0')
         size = request.args.get('size', '10')
-        query = build_query(q, start, size)
+        sort = request.args.get('sort')
+        query = build_query(q, start, size, sort=sort)
         results = search.count_share(query) if is_count else search.search_share(query)
 
     results['time'] = round(time.time() - tick, 2)
