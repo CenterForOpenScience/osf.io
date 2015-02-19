@@ -5,15 +5,15 @@ var utils = require('./utils.js');
 
 var Stats = {};
 
-function doughnutGraph (data) {
+function doughnutGraph (elastic_data) {
     var donutgraph = c3.generate({
         bindto: '#shareDoughnutGraph',
         data: {
-            columns: data['for_charts']['donut_chart'],
+            columns: elastic_data['for_charts']['donut_chart'],
             type : 'donut',
         },
         donut: {
-            title: 'SHARE Providers'
+            title: 
         },
         legend: {
             show: false
@@ -21,14 +21,14 @@ function doughnutGraph (data) {
     });
 }
 
-function timeGraph (data) {
+function timeGraph (elastic_data) {
     var timegraph = c3.generate({
         bindto: '#shareTimeGraph',
         data: {
             x: 'x',
-            columns: data['for_charts']['date_totals']['date_numbers'],
+            columns: elastic_data['for_charts']['date_totals']['date_numbers'],
             type: 'area-spline',
-            groups: [data['for_charts']['date_totals']['group_names']]
+            groups: [elastic_data['for_charts']['date_totals']['group_names']]
         },
         axis: {
             x: {
