@@ -231,16 +231,15 @@ $(document).ready(function() {
         trigger: 'hover'
     });
 
-    var visibilityInfoHtml = 'Only visible contributors will be displayed ' +
-        'in the Contributors list and in project citations. Non-visible ' +
-        'contributors can read and modify the project as normal.';
+    var bibliographicContribInfoHtml = 'Only bibliographic contributors will be displayed ' +
+           'in the Contributors list and in project citations. Non-bibliographic contributors ' +
+            'can read and modify the project as normal.';
 
     $('.visibility-info').attr(
-        'data-content', visibilityInfoHtml
+        'data-content', bibliographicContribInfoHtml
     ).popover({
         trigger: 'hover'
     });
-
 
     ////////////////////
     // Event Handlers //
