@@ -35,11 +35,10 @@ class GoogleDrivePath(utils.WaterButlerPath):
         start_index = folder_plus_name.find(folder_name)
         upload_file_name = folder_plus_name[start_index + len(folder_name):]
         self.upload_file_name = upload_file_name
-        upload_path = os.path.join(
+        return os.path.join(
             self.full_path.rstrip(upload_file_name),
             upload_file_name,
         )
-        return upload_path
 
     @property
     def full_path(self):
@@ -57,9 +56,6 @@ class GoogleDrivePath(utils.WaterButlerPath):
 
 class GoogleDriveProvider(provider.BaseProvider):
 
-    BASE_URL = settings.BASE_URL
-    BASE_UPLOAD_URL = settings.BASE_UPLOAD_URL
-
     def __init__(self, auth, credentials, settings):
         super().__init__(auth, credentials, settings)
         self.token = self.credentials['token']
@@ -71,7 +67,6 @@ class GoogleDriveProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
-
         path = GoogleDrivePath(path, self.folder)
         resp = yield from self.make_request(
             'GET',
@@ -97,7 +92,6 @@ class GoogleDriveProvider(provider.BaseProvider):
         try:
             yield from self.metadata(str(path_for_metadata))
         except exceptions.MetadataError:
-            print("in exception")
             created = True
         else:
             created = False
