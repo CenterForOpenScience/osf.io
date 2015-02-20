@@ -261,7 +261,7 @@ ko.punches.enableAll();
         }
 
         /**
-            * Send a PUT request to change the linked Dropbox folder.
+            * Send a PUT request to change the linked Google Drive folder.
             */
         self.submitSettings = function() {
             $osf.putJSON(self.urls().config, ko.toJS(self))

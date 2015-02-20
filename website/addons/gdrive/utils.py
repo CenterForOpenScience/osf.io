@@ -163,19 +163,18 @@ def to_hgrid(item, node, path):
 
 def check_access_token(user_settings):
     cur_time_in_millis = time.mktime(datetime.datetime.utcnow().timetuple())
-    print "Current Time : ", cur_time_in_millis
-    print "Token Time  :", user_settings.token_expiry
     if user_settings.token_expiry <= cur_time_in_millis:
         refresh_access_token(user_settings)
-
+        # return{'status': 'token_expired'}
+    return{'status': 'token_valid'}
 
 def refresh_access_token(user_settings):
     try:
         params = {
-                'client_id': settings.CLIENT_ID,
-                'client_secret': settings.CLIENT_SECRET,
-                'refresh_token': user_settings.refresh_token,
-                'grant_type': 'refresh_token'
+            'client_id': settings.CLIENT_ID,
+            'client_secret': settings.CLIENT_SECRET,
+            'refresh_token': user_settings.refresh_token,
+            'grant_type': 'refresh_token'
         }
         url = 'https://www.googleapis.com/oauth2/v3/token'
         response = requests.post(url, params=params)
@@ -185,10 +184,7 @@ def refresh_access_token(user_settings):
         # shadow cur_time_in_millis because of time lapse from post request
         cur_time_in_millis = time.mktime(datetime.datetime.utcnow().timetuple())
         user_settings.token_expiry = cur_time_in_millis + json_response['expires_in']
-        print "New Current time : %s" %cur_time_in_millis
-        print "New token Expiry", user_settings.token_expiry, 'anything'
         user_settings.save()
+        return{'status': 'token_refreshed'}
     except:
-        #TODO handle exceptions
-        print "in exception"
-        pass
+        return{'status': 'token cannot be refreshed at this moment'}

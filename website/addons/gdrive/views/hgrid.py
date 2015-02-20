@@ -1,9 +1,7 @@
 
 import httplib2
-import requests
 
 from flask import request
-from ..import settings
 from website.project.model import Node
 from website.util import rubeus
 from website.project.decorators import must_be_contributor_or_public, must_have_addon

@@ -24,7 +24,7 @@ class TestGdriveUserSettingsModel(OsfTestCase):
             access_token='12345',
             owner=self.user,
             username='name',
-            token_expiry=123456)
+            token_expiry='123456')
         user_settings.save()
         retrieved = AddonGdriveUserSettings.load(user_settings._primary_key)
         assert_true(retrieved.access_token)
@@ -195,6 +195,8 @@ class TestGdriveNodeSettingsModel(OsfTestCase):
             self.node_settings.serialize_waterbutler_credentials()
 
     def test_serialize_settings(self):
+        self.node_settings.waterbutler_folder = 'camera uploads/pizza.nii'
+        self.node_settings.save()
         settings = self.node_settings.serialize_waterbutler_settings()
         expected = {'folder': self.node_settings.waterbutler_folder}
         assert_equal(settings, expected)

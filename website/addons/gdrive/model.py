@@ -162,7 +162,6 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
             },
         )
 
-
     def find_or_create_file_guid(self, path):
         return AddonGdriveGuidFile.get_or_create(self.owner, path)
 
