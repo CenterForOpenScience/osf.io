@@ -136,12 +136,9 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
             raise exceptions.AddonError('Addon is not authorized')
         check_access_token(self.user_settings)
         return {'token': self.user_settings.access_token}
-                # 'refresh_token': self.user_settings.refresh_token,
-                # 'client_id': settings.CLIENT_ID,
-                # 'client_secret': settings.CLIENT_SECRET}
 
     def serialize_waterbutler_settings(self):
-        if not self.folder:
+        if not self.waterbutler_folder:
             raise exceptions.AddonError('Folder is not configured')
         return {'folder': self.waterbutler_folder}
 
