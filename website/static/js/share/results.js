@@ -1,6 +1,7 @@
 var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('osfHelpers');
+var utils = require('./utils.js');
 
 var ProviderMap = {
     arxiv_oai: {name: 'ArXiv', link: 'http://arxiv.org'},
@@ -34,18 +35,21 @@ var ProviderMap = {
 var Results = {};
 
 Results.view = function(ctrl) {
-    if (!ctrl.vm.resultsLoaded) {
-        return m('img[src=/static/img/spinner.gif');
-    }
-
-    return m('.row', m('.col-md-12', ctrl.vm.results.map(ctrl.renderResult)));
+    return m('.row', [
+        m('.row', m('.col-md-12', ctrl.vm.results.map(ctrl.renderResult))),
+        m('.row', m('.col-md-12', ctrl.vm.resultsLoading() ? utils.loadingIcon : [])),
+        m('.row', m('.col-md-12', m('div', {style: {display: 'block', margin: 'auto', 'text-align': 'center'}},
+            ctrl.vm.results.length > 0 && ctrl.vm.results.length < ctrl.vm.count ?
+            m('a.btn.btn-md.btn-default', {onclick: function(){utils.loadMore(ctrl.vm);}}, 'More') : [])
+         ))
+    ]);
 
 };
 
 Results.controller = function(vm) {
     var self = this;
     self.vm = vm;
-    self.vm.resultsLoaded = false;
+    self.vm.resultsLoading = m.prop(false);
 
     self.renderResult = function(result, index) {
         return m( '.animated.fadeInUp', [
@@ -66,43 +70,58 @@ Results.controller = function(vm) {
                 m('.row', [
                     m('.col-md-7', m('span.pull-left', (function(){
                         var renderPeople = function(people) {
-                            return m('span', people.map(function(person) {
-                                return person.given + ' ' + person.family;
-                            }).join(' - '));
+                            return people.map(function(person, index) {
+                                return m('span', [
+                                    m('span', index !== 0 ? ' · ' : ''),
+                                    m('a', {
+                                        onclick: function() {
+                                            utils.appendSearch(self.vm, '(contributors.family:' + person.family + ' AND contributors.given:' + person.given + ')');
+                                        }
+                                    }, person.given + ' ' + person.family)
+                                ]);
+                            });
                         };
 
-                        return m('span.pull-left', {style: {'text-align': 'center'}, class: result.contributors.length > 8 ? 'pointer' : '',
-                            onclick:function(){result.showAllContrib = result.showAllContrib ? false : true;}},
+                        return m('span.pull-left', {style: {'text-align': 'left'}},
                             result.showAllContrib || result.contributors.length < 8 ?
                                 renderPeople(result.contributors) :
                                 m('span', [
                                     renderPeople(result.contributors.slice(0, 7)),
                                     m('br'),
-                                    m('a', 'See All')
+                                    m('a', {onclick: function(){result.showAllContrib = result.showAllContrib ? false : true;}}, 'See All')
                                 ])
                         );
                     }()))),
                     m('.col-md-5',
-                        m('.pull-right', {style: {'text-align': 'center'}, class: result.tags.length > 5 ? 'pointer' : '',
-                          onclick: function() {result.showAllTags = result.showAllTags ? false : true;}},
-                          result.showAllTags || result.tags.length < 5 ?
-                            result.tags.map(function(tag) {return m('.badge', tag);}) :
-                            m('span', [
-                                result.tags.slice(0, 5).map(function(tag){return m('.badge', tag);}),
-                                m('br'),
-                                m('div', m('a', 'See All'))
-                            ])
-                         )
-                     )
+                        m('.pull-right', {style: {'text-align': 'right'}},
+                            (function(){
+                                var renderTag = function(tag) {
+                                    return [
+                                        m('.badge.pointer', {onclick: function(){
+                                            utils.appendSearch(self.vm, 'tags:' + tag);
+                                        }}, tag.length < 50 ? tag : tag.substring(0, 47) + '...'),
+                                        ' '
+                                    ];
+                                };
+
+                                if (result.showAllTags || result.tags.length < 5) {
+                                    return result.tags.map(renderTag);
+                                }
+                                return m('span', [
+                                    result.tags.slice(0, 5).map(renderTag),
+                                    m('br'),
+                                    m('div', m('a', {onclick: function() {result.showAllTags = result.showAllTags ? false : true;}},'See All'))
+                                ]);
+                            }())))
                 ]),
                 m('br'),
                 m('br'),
                 m('div', [
                     m('span', 'Released on ' + new $osf.FormattableDate(result.dateUpdated).local),
                     m('span.pull-right', [
-                        m('img', {src: '/static/img/share/' + result.source + '_favicon.ico'}),
+                        m('img', {src: '/static/img/share/' + result.source + '_favicon.ico', style: {width: '16px', height: '16px'}}),
                         ' ',
-                        m('a', {href: ProviderMap[result.source].link}, ProviderMap[result.source].name)
+                        m('a', {onclick: function() {utils.appendSearch(self.vm, 'source:' + result.source);}}, ProviderMap[result.source].name)
                     ])
                 ])
             ]),
@@ -110,32 +129,14 @@ Results.controller = function(vm) {
         ]);
     };
 
+    // Uncomment for infinite scrolling!
+    // $(window).scroll(function() {
+    //     if  ($(window).scrollTop() === $(document).height() - $(window).height()){
+    //         utils.loadMore(self.vm);
+    //     }
+    // });
 
-    self.loadMore = function() {
-        self.vm.page++;
-        var page = (self.vm.page + 1) * 10;
-
-        m.request({
-            method: 'get',
-            url: '/api/v1/share/?from=' + page + '&q=' + self.vm.query(),
-        }).then(function(data) {
-            self.vm.time = data.time;
-            self.vm.count = data.count;
-
-            // push.apply is the same as extend in python
-            self.vm.results.push.apply(self.vm.results, data.results);
-
-            self.vm.resultsLoaded = true;
-        });
-    };
-
-    $(window).scroll(function() {
-        if  ($(window).scrollTop() === $(document).height() - $(window).height()){
-            self.loadMore();
-        }
-    });
-
-    self.loadMore();
+    utils.loadMore(self.vm);
 };
 
 module.exports = Results;

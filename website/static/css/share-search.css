@@ -5,11 +5,24 @@
 
 }
 
+.share-link {
+  color: darkgrey;
+  border-bottom-style: dotted;
+  border-bottom-width: 1px;
+}
+
+.share-link:hover {
+  border-bottom-width: 0px;
+}
+
 .about-share-header {
   color: lightgrey;
   text-align: center;
   font-family: yanonekaffeesatz;
   -webkit-animation-delay: 0.5s;
+  margin-left: 10px;
+  font-size: 4.5em;
+  vertical-align: middle;
 }
 
 .share-search-input:focus {
@@ -62,3 +75,17 @@
   border: 1px solid transparent;
   /* border-top-color: #e4e4e4 */
 }
+
+
+.c3 path, .c3 line {
+fill: none;
+stroke: #BAB5B5;
+}
+
+.c3 .c3-axis-x path, .c3 .c3-axis-x line {
+    stroke: lightgrey;
+}
+.c3 .c3-axis-y path, .c3 .c3-axis-y line {
+    stroke: lightgrey;
+}
+
