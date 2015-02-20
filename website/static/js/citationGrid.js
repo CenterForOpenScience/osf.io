@@ -72,6 +72,31 @@ var formatSelection = function(state) {
     return state.title;
 };
 
+var mergeConfigs = function() {
+    var unloads = [];
+    var args = Array.prototype.slice.call(arguments);
+    return function(elm, isInit, ctx) {
+        for (var i=0; i<args.length; i++) {
+            args[i] && args[i](elm, isInit, ctx);
+            ctx.onunload && unloads.push(ctx.onunload);
+            ctx.onunload = null;
+        }
+        ctx.onunload = function() {
+            for (var i=0; i<unloads.length; i++) {
+                unloads[i]();
+            }
+        };
+    };
+};
+
+var tooltipConfig = function(elm, isInit, ctx) {
+    var $elm = $(elm);
+    $elm.tooltip({container: 'body'});
+    ctx.onunload = function() {
+        $elm.tooltip('destroy');
+    };
+};
+
 var makeButtons = function(item, col, buttons) {
     return buttons.map(function(button) {
         var self = this;
@@ -84,10 +109,10 @@ var makeButtons = function(item, col, buttons) {
                         title: button.tooltip,
                         style: button.style,
                         class: button.css,
-                        config: button.config,
                         'data-toggle': 'tooltip',
                         'data-placement': 'bottom',
                         'data-clipboard-text': button.clipboard,
+                        config: mergeConfigs(button.config, tooltipConfig),
                         onclick: button.onclick ?
                             function(event) {
                                 button.onclick.call(self, event, item, col);
@@ -201,15 +226,13 @@ var renderActions = function(item, col) {
 };
 
 var treebeardOptions = {
+    rowHeight: 30,
     lazyLoad: true,
     showFilter: false,
     resolveIcon: resolveIcon,
     resolveToggle: resolveToggle,
     lazyLoadPreprocess: function(res) {
         return res.contents;
-    },
-    ontogglefolder: function() {
-        $('[data-toggle="tooltip"]').tooltip({container: 'body'});
     },
     columnTitles: function() {
         return [{
