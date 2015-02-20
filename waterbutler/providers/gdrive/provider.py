@@ -30,8 +30,8 @@ class GoogleDrivePath(utils.WaterButlerPath):
     # If a slash can be included before file.name while building uploadUrl
     # in waterbutler.js then this part won't be necessary
     def upload_path(self):
-        folder_plus_name = self.path_parts[-1:][0]
-        folder_name = self.folder['path']['path'].split('/')[-1:][0]
+        folder_plus_name = self.path_parts[-1]
+        folder_name = self.folder['path']['path'].split('/')[-1]
         start_index = folder_plus_name.find(folder_name)
         upload_file_name = folder_plus_name[start_index + len(folder_name):]
         self.upload_file_name = upload_file_name
@@ -63,9 +63,6 @@ class GoogleDriveProvider(provider.BaseProvider):
     def __init__(self, auth, credentials, settings):
         super().__init__(auth, credentials, settings)
         self.token = self.credentials['token']
-        # self.refresh_token = self.credentials['refresh_token']
-        # self.client_id = self.credentials['client_id']
-        # self.client_secret = self.credentials['client_secret']
         self.folder = self.settings['folder']
 
     @property
@@ -163,7 +160,6 @@ class GoogleDriveProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def metadata(self, path, **kwargs):
-        # import pdb; pdb.set_trace()
         path = GoogleDrivePath(path, self.folder)
 
         resp = yield from self.make_request(
