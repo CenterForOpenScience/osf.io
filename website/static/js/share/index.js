@@ -1,7 +1,7 @@
 var m = require('mithril');
+var $osf = require('osfHelpers');
 var Stats = require('../share/stats.js');
 var Results = require('../share/results.js');
-var SideBar = require('../share/sideBar.js');
 var SearchBar = require('../share/searchBar.js');
 
 
@@ -14,7 +14,7 @@ ShareApp.ViewModel = function() {
     self.page = 0;
     self.count = 0;
     self.results = [];
-    self.query = m.prop('');
+    self.query = m.prop($osf.urlParams().q || '');
 };
 
 
@@ -23,7 +23,6 @@ ShareApp.view = function(ctrl) {
         m('.col-md-offset-1.col-md-10', [
             SearchBar.view(ctrl.searchBarController),
             Stats.view(ctrl.statsController),
-            m('br'),
             m('br'),
             Results.view(ctrl.resultsController)
         ])
