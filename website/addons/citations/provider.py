@@ -62,6 +62,7 @@ class CitationsProvider(object):
             'externalAccountId': user_account_id,
             'validCredentials': True
         }
+        
         if node_account is not None:
             result['folder'] = node_settings.selected_folder_name
             result['ownerName'] = node_account.display_name

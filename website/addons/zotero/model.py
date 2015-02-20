@@ -115,7 +115,7 @@ class AddonZoteroNodeSettings(AddonNodeSettingsBase):
             return ''
         elif self.zotero_list_id != 'ROOT':
             folder = self.api._folder_metadata(self.zotero_list_id)
-            return folder.name
+            return folder['data'].get('name')
         else:
             return 'All Documents'
 
@@ -287,6 +287,10 @@ class Zotero(ExternalProvider):
         ]
 
         return [all_documents] + serialized_folders
+
+    def _folder_metadata(self, folder_id):
+        collection = self.client.collection(folder_id)
+        return collection
 
     def get_list(self, list_id=None):
         """Get a single CitationList
