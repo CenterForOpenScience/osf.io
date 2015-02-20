@@ -1,7 +1,6 @@
 import os
 import asyncio
 import json
-import requests
 from urllib.parse import urlparse
 
 from waterbutler.core import utils
@@ -68,20 +67,7 @@ class GoogleDriveProvider(provider.BaseProvider):
 
     @property
     def default_headers(self):
-
-        # # Refesh access_token before making any calls
-        # params = {
-        #     'client_id': self.client_id,
-        #     'client_secret': self.client_secret,
-        #     'refresh_token': self.refresh_token,
-        #     'grant_type': 'refresh_token'
-        # }
-        # url = 'https://www.googleapis.com/oauth2/v3/token'
-        # response = requests.post(url, params=params)
-        # new_access_token = response.json()['access_token']
-        return {
-            'authorization': 'Bearer {}'.format(self.token),
-        }
+        return {'authorization': 'Bearer {}'.format(self.token)}
 
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
