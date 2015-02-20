@@ -210,7 +210,7 @@ class GoogleDriveProvider(provider.BaseProvider):
         data = yield from response.json()
         return [
             GoogleDriveRevision(item).serialized()
-            for item in data['items']
+            for item in reversed(data['items'])
         ]
 
     def _build_upload_url(self, *segments, **query):
