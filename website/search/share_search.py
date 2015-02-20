@@ -37,7 +37,8 @@ def count(query):
     }
 
 
-def stats(query=dict()):
+def stats(query=None):
+    query = query or {"query": {"match_all": {}}}
     three_months_ago = timegm((datetime.now() + relativedelta(months=-3)).timetuple()) * 1000
     query['aggs'] = {
         "sources": {
@@ -77,6 +78,22 @@ def stats(query=dict()):
                 }
             }
         },
+    }
+    date_histogram_query = {
+        'query': {
+            'filtered': {
+                'query': query['query'],
+                'filter': {
+                    'range': {
+                        'dateUpdated': {
+                            'gt': three_months_ago
+                        }
+                    }
+                }
+            }
+        }
+    }
+    date_histogram_query['aggs'] = {
         "date_chunks": {
             "terms": {
                 "field": "_type",
@@ -93,34 +110,22 @@ def stats(query=dict()):
                             "min": three_months_ago,
                             "max": timegm(gmtime()) * 1000
                         }
-                    },
-                    "aggs": {
-                        "date_filter": {
-                            "filter": {
-                                "range": {
-                                    "dateUpdated": {
-                                        "lt": three_months_ago
-                                    }
-                                }
-                            }
-                        }
                     }
                 }
             }
         }
     }
 
-
     results = share_es.search(index='share', body=query)
+    results2 = share_es.search(index='share', body=date_histogram_query)
+    results['aggregations']['date_chunks'] = results2['aggregations']['date_chunks']
 
     chart_results = data_for_charts(results)
-
     return chart_results
 
 
+
 def data_for_charts(elastic_results):
-    import json
-    with open('results.json', 'w') as f: f.write(json.dumps(elastic_results, indent=4))
     source_data = elastic_results['aggregations']['sources']['buckets']
     for_charts = {}
 
