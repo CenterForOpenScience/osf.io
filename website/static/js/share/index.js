@@ -24,7 +24,6 @@ ShareApp.view = function(ctrl) {
             SearchBar.view(ctrl.searchBarController),
             Stats.view(ctrl.statsController),
             m('br'),
-            m('br'),
             Results.view(ctrl.resultsController)
         ])
     ]);
