@@ -56,6 +56,8 @@ class GoogleDrivePath(utils.WaterButlerPath):
 
 class GoogleDriveProvider(provider.BaseProvider):
 
+    BASE_URL = settings.BASE_URL
+
     def __init__(self, auth, credentials, settings):
         super().__init__(auth, credentials, settings)
         self.token = self.credentials['token']
@@ -75,7 +77,11 @@ class GoogleDriveProvider(provider.BaseProvider):
             throws=exceptions.DownloadError,
         )
         data = yield from resp.json()
-        download_url = data['downloadUrl']
+        # TODO: Add map from document type to export url key @kushg
+        try:
+            download_url = data['downloadUrl']
+        except KeyError:
+            download_url = data['exportLinks']['application/pdf']
         download_resp = yield from self.make_request(
             'GET',
             download_url,
@@ -189,8 +195,8 @@ class GoogleDriveProvider(provider.BaseProvider):
 
         # Check to see if request was made for file or folder
         if data['items']:
-            return (yield from self._folder_metadata(path, data))
-        return self._file_metadata(path, data)
+            return self._folder_metadata(path, data)
+        return (yield from self._file_metadata(path, data))
 
     @asyncio.coroutine
     def revisions(self, path, **kwargs):
