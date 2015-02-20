@@ -7,6 +7,16 @@ var onSearch = function(fb) {
     callbacks.push(fb);
 };
 
+var tags = ['div', 'i', 'b', 'sup', 'p', 'span', 'sub', 'bold', 'strong', 'italic', 'a', 'small'];
+
+var scrubHTML = function(text) {
+    tags.forEach(function(tag) {
+        text = text.replace(new RegExp('<' + tag + '>', 'g'), '');
+        text = text.replace(new RegExp('</' + tag + '>', 'g'), '');
+    });
+    return text;
+};
+
 var loadingIcon = m('img[src=/static/img/loading.gif]',{style: {margin: 'auto', display: 'block'}});
 
 var loadMore = function(vm) {
@@ -27,6 +37,10 @@ var loadMore = function(vm) {
     }).then(function(data) {
         vm.time = data.time;
         vm.count = data.count;
+        data.results.forEach(function(result) {
+            result.title = scrubHTML(result.title);
+            result.description = scrubHTML(result.description);
+        });
 
         vm.results.push.apply(vm.results, data.results);
 
