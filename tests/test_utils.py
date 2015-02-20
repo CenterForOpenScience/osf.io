@@ -283,14 +283,16 @@ class TestSendDigest(OsfTestCase):
         user_groups = group_digest_notifications_by_user()
         send_digest(user_groups)
         assert_true(mock_send_mail.called)
+        assert_equals(mock_send_mail.call_count, len(user_groups))
 
-        user = User.load(user_groups[2]['user_id'])
+        last_user_index = len(user_groups) - 1
+        user = User.load(user_groups[last_user_index]['user_id'])
         mock_send_mail.assert_called_with(
             to_addr=user.username,
             mail=mails.DIGEST,
             mimetype='html',
             name=user.fullname,
-            message=group_messages(user_groups[2]['info']),
+            message=group_messages(user_groups[last_user_index]['info']),
             url=urlparse.urljoin(settings.DOMAIN, web_url_for('user_notifications'))
         )
 
