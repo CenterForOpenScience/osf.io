@@ -293,6 +293,9 @@ class Zotero(ExternalProvider):
         :param str list_id: ID for a Zotero collection. Optional.
         :return CitationList: CitationList for the collection, or for all documents
         """
+        if list_id == 'ROOT':
+            list_id = None
+
         collection = self.client.collection(list_id) if list_id else None
         collection_items = self.client.collection_items(list_id, content='csljson') if list_id else None
 
