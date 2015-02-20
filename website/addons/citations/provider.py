@@ -43,11 +43,11 @@ class CitationsProvider(object):
         """
         node_account = node_settings.external_account
         user_accounts = [account for account in current_user.external_accounts
-                         if account.provider == 'mendeley']
+                         if account.provider == self.provider_name]
 
         user_is_owner = node_account and node_account in user_accounts
 
-        user_settings = current_user.get_addon('mendeley')
+        user_settings = current_user.get_addon(self.provider_name)
         user_has_auth = bool(user_settings and user_accounts)
 
         user_account_id = None
@@ -85,26 +85,25 @@ class CitationsProvider(object):
             external_account = ExternalAccount.load(external_account_id)
         except KeyError:
             raise HTTPError(http.BAD_REQUEST)
-            
+
         # User is an owner of this ExternalAccount
         if external_account in user.external_accounts:
-            # grant access to the node for the Mendeley list
+            # grant access to the node for the Provider list
             node_addon.grant_oauth_access(
                 user=user,
                 external_account=external_account,
                 metadata={'lists': external_list_id},
-            )            
-        else: # User doesn't own the ExternalAccount
-            import ipdb; ipdb.set_trace()
+            )
+        else:
             # Make sure the node has previously been granted access
             if not node_addon.verify_oauth_access(external_account, external_list_id):
                 raise HTTPError(http.FORBIDDEN)
         return external_account
-                
+
     def add_user_auth(self, node_addon, user, external_account_id):
-        
+
         external_account = ExternalAccount.load(external_account_id)
-        
+
         if external_account not in user.external_accounts:
             raise HTTPError(http.FORBIDDEN)
 
@@ -112,7 +111,7 @@ class CitationsProvider(object):
             node_addon.set_auth(external_account, user)
         except PermissionsError:
             raise HTTPError(http.FORBIDDEN)
-        
+
         result = self.serialize_settings(node_addon, user)
         return {'result': result}
 
