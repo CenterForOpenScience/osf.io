@@ -1,3 +1,9 @@
+from time import gmtime
+from calendar import timegm
+from datetime import datetime
+
+from dateutil.relativedelta import relativedelta
+
 from elasticsearch import Elasticsearch
 
 from website import settings
@@ -30,14 +36,16 @@ def count(query):
         'count': count['count']
     }
 
+
 def stats(query=None):
-    query = query or {}
+    query = query or {"query": {"match_all": {}}}
+    three_months_ago = timegm((datetime.now() + relativedelta(months=-3)).timetuple()) * 1000
     query['aggs'] = {
         "sources": {
             "terms": {
                 "field": "_type",
                 "size": 0,
-                "exclude": "of|and|or"
+                "min_doc_count": 0,
             }
         },
         "doisMissing": {
@@ -70,6 +78,40 @@ def stats(query=None):
                 }
             }
         },
+        "earlier_documents": {
+            "filter": {
+                "range": {
+                    "dateUpdated": {
+                        "lt": three_months_ago
+                    }
+                }
+            },
+            "aggs": {
+                "sources": {
+                    "terms": {
+                        "field": "_type",
+                        "size": 0,
+                        "min_doc_count": 0
+                    }
+                }
+            }
+        }
+    }
+    date_histogram_query = {
+        'query': {
+            'filtered': {
+                'query': query['query'],
+                'filter': {
+                    'range': {
+                        'dateUpdated': {
+                            'gt': three_months_ago
+                        }
+                    }
+                }
+            }
+        }
+    }
+    date_histogram_query['aggs'] = {
         "date_chunks": {
             "terms": {
                 "field": "_type",
@@ -80,7 +122,12 @@ def stats(query=None):
                 "articles_over_time": {
                     "date_histogram": {
                         "field": "dateUpdated",
-                        "interval": "month"
+                        "interval": "week",
+                        "min_doc_count": 0,
+                        "extended_bounds": {
+                            "min": three_months_ago,
+                            "max": timegm(gmtime()) * 1000
+                        }
                     }
                 }
             }
@@ -88,4 +135,83 @@ def stats(query=None):
     }
 
     results = share_es.search(index='share', body=query)
-    return results['aggregations']
+    date_results = share_es.search(index='share', body=date_histogram_query)
+    results['aggregations']['date_chunks'] = date_results['aggregations']['date_chunks']
+
+    chart_results = data_for_charts(results)
+    return chart_results
+
+
+def data_for_charts(elastic_results):
+    source_data = elastic_results['aggregations']['sources']['buckets']
+    for_charts = {}
+
+    ## for the donut graph list of many lists, source and count
+    source_and_counts = [[item['key'], item['doc_count']] for item in source_data]
+    for_charts['shareDonutGraph'] = source_and_counts
+
+    stats = {}
+    for bucket in elastic_results['aggregations']['sources']['buckets']:
+        stats[bucket['key']] = {
+            'doc_count': bucket['doc_count'],
+        }
+
+    for bucket in elastic_results['aggregations']['earlier_documents']['sources']['buckets']:
+        stats[bucket['key']]['earlier_documents'] = bucket['doc_count']
+
+    default_buckets = []
+    for bucket in elastic_results['aggregations']['date_chunks']['buckets']:
+        default_buckets = bucket['articles_over_time']['buckets']
+        stats[bucket['key']]['articles_over_time'] = bucket['articles_over_time']['buckets']
+
+    for key, value in stats.iteritems():
+        if not stats[key].get('earlier_documents'):
+            stats[key]['earlier_documents'] = 0
+        if not stats[key].get('articles_over_time'):
+            stats[key]['articles_over_time'] = [
+                {
+                    'key_as_string': item['key_as_string'],
+                    'key': item['key'],
+                    'doc_count': 0
+                }
+                for item in default_buckets
+            ]
+
+    names = ['x']
+    numbers = [['x']]
+    for date in stats[stats.keys()[0]]['articles_over_time']:
+        numbers[0].append(' ')
+
+    for key, value in stats.iteritems():
+        try:
+            names.append(key)
+            x = [item['doc_count'] for item in value['articles_over_time']]
+            x[0] += stats[key].get('earlier_documents', 0)
+            numbers.append([key] + [sum(x[0:i + 1]) for i in range(len(x[0:]))])
+        except IndexError:
+            pass
+
+    date_totals = {
+        'date_numbers': numbers,
+        'group_names': names
+    }
+
+    for_charts['date_totals'] = date_totals
+
+    all_data = {}
+    all_data['raw_aggregations'] = elastic_results['aggregations']
+
+    all_data['charts'] = {
+        'shareDonutGraph': {
+            'type': 'donut',
+            'columns': for_charts['shareDonutGraph']
+        },
+        'shareTimeGraph': {
+            'x': 'x',
+            'type': 'area-spline',
+            'columns': for_charts['date_totals']['date_numbers'],
+            'groups': [for_charts['date_totals']['group_names']]
+        }
+    }
+
+    return all_data
