@@ -602,12 +602,14 @@ class TestSendEmails(OsfTestCase):
     def test_send_email_transactional(self, send_mail):
         # assert that send_mail is called with the correct person & args
         subscribed_users = [self.user._id]
+        timestamp = (datetime.datetime.utcnow() - datetime.timedelta(hours=1)).replace(microsecond=0)
 
         emails.email_transactional(
             subscribed_users, self.project._id, 'comments',
             nodeType='project',
-            timestamp=datetime.datetime.utcnow(),
+            timestamp=timestamp,
             commenter='Saman',
+            gravatar_url=self.user.gravatar_url,
             content='',
             parent_comment='',
             title=self.project.title,
@@ -615,17 +617,19 @@ class TestSendEmails(OsfTestCase):
         )
         subject = Template(emails.email_templates['comments']['subject']).render(
             nodeType='project',
-            timestamp=datetime.datetime.utcnow(),
+            timestamp=timestamp,
             commenter='Saman',
+            gravatar_url=self.user.gravatar_url,
             content='',
             parent_comment='',
             title=self.project.title,
             url=self.project.absolute_url)
         message = mails.render_message(
-            'comments.txt.mako',
+            'comments.html.mako',
             nodeType='project',
-            timestamp=datetime.datetime.utcnow(),
+            timestamp=timestamp,
             commenter='Saman',
+            gravatar_url=self.user.gravatar_url,
             content='',
             parent_comment='',
             title=self.project.title,
@@ -635,6 +639,7 @@ class TestSendEmails(OsfTestCase):
         send_mail.assert_called_with(
             to_addr=self.user.username,
             mail=mails.TRANSACTIONAL,
+            mimetype='html',
             name=self.user.fullname,
             node_title=self.project.title,
             subject=subject,
@@ -649,6 +654,7 @@ class TestSendEmails(OsfTestCase):
                             nodeType='project',
                             timestamp=datetime.datetime.utcnow(),
                             commenter='Saman',
+                            gravatar_url=self.user.gravatar_url,
                             content='',
                             parent_comment='',
                             title=self.project.title,
@@ -664,6 +670,7 @@ class TestSendEmails(OsfTestCase):
                             nodeType='project',
                             timestamp=datetime.datetime.utcnow(),
                             commenter=self.user.fullname,
+                            gravatar_url=self.user.gravatar_url,
                             content='',
                             parent_comment='',
                             title=self.project.title,
