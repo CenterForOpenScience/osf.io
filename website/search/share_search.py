@@ -122,7 +122,7 @@ def stats(query=None):
                 "articles_over_time": {
                     "date_histogram": {
                         "field": "dateUpdated",
-                        "interval": "month",
+                        "interval": "week",
                         "min_doc_count": 0,
                         "extended_bounds": {
                             "min": three_months_ago,
@@ -166,13 +166,13 @@ def data_for_charts(elastic_results):
     names = ['x']
     numbers = [['x']]
     for date in stats[stats.keys()[0]]['articles_over_time']:
-        numbers[0].append(date['key_as_string'].replace('T00:00:00.000Z', ''))
+        numbers[0].append(' ')
 
     for key, value in stats.iteritems():
         names.append(key)
-        numbers.append([key] + [
-            item['doc_count'] for item in value['articles_over_time']
-        ])
+        x = [item['doc_count'] for item in value['articles_over_time']]
+        x[0] += stats[key].get('earlier_documents', 0)
+        numbers.append([key] + [sum(x[0:i+1]) for i in range(len(x[0:]))])
 
     date_totals = {
         'date_numbers': numbers,
