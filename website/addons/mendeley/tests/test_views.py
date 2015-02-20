@@ -64,9 +64,10 @@ class MendeleyViewsTestCase(OsfTestCase):
         self.user = AuthUserFactory(external_accounts=[self.account])
         self.account.display_name = self.user.fullname
         self.account.save()
-        self.user_addon = MendeleyUserSettingsFactory(owner=self.user)
+        self.user_addon = MendeleyUserSettingsFactory(owner=self.user, external_account=self.account)
         self.project = ProjectFactory(creator=self.user)
-        self.node_addon = MendeleyNodeSettingsFactory(owner=self.project, external_account=self.account)
+        self.node_addon = MendeleyNodeSettingsFactory(owner=self.project)
+        self.node_addon.set_auth(external_account=self.account, user=self.user)
         self.user_addon.grant_oauth_access(self.node_addon, self.account, metadata={'lists': 'list'})
         self.node = MockNode()
         self.node.addon = self.node_addon
@@ -84,7 +85,7 @@ class MendeleyViewsTestCase(OsfTestCase):
 
     def test_serialize_settings_authorizer(self):
         #"""dict: a serialized version of user-specific addon settings"""
-        res = views.serialize_settings(self.node_addon, self.user)
+        res = views.mendeley_get_config(self.user.auth, self.node_addon, project=self.project, node=self.node)
         expected = {
             'nodeHasAuth': True,
             'userIsOwner': True,
@@ -140,7 +141,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         )
         
         res = self.app.get(
-            self.project.api_url_for('list_citationlists_node', account_id=self.account._id),
+            self.project.api_url_for('mendeley_citation_list', account_id=self.account._id),
             auth=self.user.auth,
         )
         assert_equal(
@@ -151,7 +152,7 @@ class MendeleyViewsTestCase(OsfTestCase):
     def test_node_citation_lists_not_found(self):
         """JSON: a list of citation lists for all associated accounts"""
         res = self.app.get(
-            self.project.api_url_for('list_citationlists_node', account_id=self.account._id[::-1]),
+            self.project.api_url_for('mendeley_citation_list', account_id=self.account._id[::-1]),
             auth=self.user.auth,
             expect_errors=True,
         )
@@ -265,7 +266,8 @@ class MendeleyViewsTestCase(OsfTestCase):
         self.node_addon.mendeley_list_id = 'ROOT'
         res = views.mendeley_widget(node_addon=self.node_addon, 
                                     project=self.project, 
-                                    node=self.node, 
+                                    node=self.node,
+                                    nid=self.node_addon._id,
                                     pid=self.project._id, 
                                     auth=self.user.auth)
         assert_true(res['complete'])
@@ -275,9 +277,11 @@ class MendeleyViewsTestCase(OsfTestCase):
         """JSON: tell the widget when it hasn't been configured"""
         assert_false(self.node_addon.complete)
         assert_equal(self.node_addon.mendeley_list_id, None)
+        import ipdb; ipdb.set_trace()
         res = views.mendeley_widget(node_addon=self.node_addon, 
                                     project=self.project, 
                                     node=self.node, 
+                                    nid=self.node_addon._id,
                                     pid=self.project._id, 
                                     auth=self.user.auth)
         assert_false(res['complete'])
