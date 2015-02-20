@@ -12,11 +12,6 @@ class BaseGoogleDriveMetadata(metadata.BaseMetadata):
     def provider(self):
         return 'gdrive'
 
-    def build_path(self, path):
-        # TODO write a test for this
-        if path.lower().startswith(self._folder.lower()):
-            path = path[len(self._folder):]
-        return super().build_path(path)
 
     @property
     def extra(self):

@@ -1,8 +1,7 @@
 import os
 import asyncio
 import json
-import requests
-from urllib.parse import urlparse
+import furl
 
 from waterbutler.core import utils
 from waterbutler.core import streams
@@ -31,8 +30,8 @@ class GoogleDrivePath(utils.WaterButlerPath):
     # If a slash can be included before file.name while building uploadUrl
     # in waterbutler.js then this part won't be necessary
     def upload_path(self):
-        folder_plus_name = self.path_parts[-1:][0]
-        folder_name = self.folder['path']['path'].split('/')[-1:][0]
+        folder_plus_name = self.path_parts[-1]
+        folder_name = self.folder['path']['path'].split('/')[-1]
         start_index = folder_plus_name.find(folder_name)
         upload_file_name = folder_plus_name[start_index + len(folder_name):]
         self.upload_file_name = upload_file_name
@@ -61,27 +60,46 @@ class GoogleDriveProvider(provider.BaseProvider):
     def __init__(self, auth, credentials, settings):
         super().__init__(auth, credentials, settings)
         self.token = self.credentials['token']
-        # self.refresh_token = self.credentials['refresh_token']
-        # self.client_id = self.credentials['client_id']
-        # self.client_secret = self.credentials['client_secret']
         self.folder = self.settings['folder']
 
     @property
     def default_headers(self):
-
-        # # Refesh access_token before making any calls
-        # params = {
-        #     'client_id': self.client_id,
-        #     'client_secret': self.client_secret,
-        #     'refresh_token': self.refresh_token,
-        #     'grant_type': 'refresh_token'
-        # }
-        # url = 'https://www.googleapis.com/oauth2/v3/token'
-        # response = requests.post(url, params=params)
-        # new_access_token = response.json()['access_token']
         return {
             'authorization': 'Bearer {}'.format(self.token),
         }
+
+    def upload_step1(self, metadata, stream):
+        resp = yield from self.make_request(
+            'POST',
+            self._build_upload_url("files", uploadType='resumable'),
+            headers={'Content-Length': str(len(json.dumps(metadata))),
+                     'Content-Type': 'application/json; charset=UTF-8',
+                     #'X-Upload-Content-Type': 'image/jpeg',#hardcoded in for testing
+                     'X-Upload-Content-Length': str(stream.size)
+                     },
+            data=json.dumps(metadata),
+            expects=(200, ),
+            throws=exceptions.UploadError
+        )
+        return resp
+
+    def upload_step2(self, step1_resp):
+        yield from step1_resp.json()
+        parsed_url = furl.furl(step1_resp.headers['LOCATION'])
+        upload_id = parsed_url.args['upload_id']
+        return upload_id
+
+    def upload_step3(self, upload_id, stream):
+        resp = yield from self.make_request(
+            'PUT',
+            self._build_upload_url("files", uploadType='resumable', upload_id=upload_id),
+            headers={'Content-Length': str(stream.size)},
+            data=stream,
+            expects=(200, ),
+            throws=exceptions.UploadError,
+        )
+        data = yield from resp.json()
+        return data
 
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
@@ -111,11 +129,9 @@ class GoogleDriveProvider(provider.BaseProvider):
         try:
             yield from self.metadata(str(path_for_metadata))
         except exceptions.MetadataError:
-            print("in exception")
-            created = True
+            created = False
         else:
             created = False
-        content = yield from stream.read()
         metadata = {
             "parents": [
                 {
@@ -125,37 +141,9 @@ class GoogleDriveProvider(provider.BaseProvider):
             ],
             "title": path.upload_file_name,
         }
-        #Step 1 - Start a resumable session
-        resp = yield from self.make_request(
-            'POST',
-            self._build_upload_url("files", uploadType='resumable'),
-            headers={'Content-Length': str(len(json.dumps(metadata))),
-                     'Content-Type': 'application/json; charset=UTF-8',
-                     #'X-Upload-Content-Type': 'image/jpeg',#hardcoded in for testing
-                     'X-Upload-Content-Length': str(stream.size)
-                     },
-            data=json.dumps(metadata),
-            expects=(200, ),
-            throws=exceptions.UploadError
-        )
-        #Step 2 - Save the resumable session URI
-        yield from resp.json()
-        location = resp.headers['LOCATION']
-        query_params = urlparse(location).query
-        #todo:make this proper
-        upload_id = query_params.split("=")[2]
-        #Step 3 - Upload the file
-        resp = yield from self.make_request(
-            'PUT',
-            self._build_upload_url("files", uploadType='resumable', upload_id=upload_id),
-            headers={'Content-Length': str(stream.size),
-                     #'Content-Type': 'image/jpeg',#todo: hardcoded in for testing
-                     },
-            data=content,
-            expects=(200, ),
-            throws=exceptions.UploadError,
-        )
-        data = yield from resp.json()
+        step1_resp = yield from self.upload_step1(metadata, stream)
+        upload_id = yield from self.upload_step2(step1_resp)
+        data = yield from self.upload_step3(upload_id, stream)
         data['path'] = path.upload_path()
         return GoogleDriveFileMetadata(data, self.folder).serialized(), created
 
@@ -174,7 +162,6 @@ class GoogleDriveProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def metadata(self, path, **kwargs):
-        # import pdb; pdb.set_trace()
         path = GoogleDrivePath(path, self.folder)
 
         resp = yield from self.make_request(
