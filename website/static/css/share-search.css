@@ -76,6 +76,12 @@
   /* border-top-color: #e4e4e4 */
 }
 
+
+.c3 path, .c3 line {
+fill: none;
+stroke: #BAB5B5;
+}
+
 .c3 .c3-axis-x path, .c3 .c3-axis-x line {
     stroke: lightgrey;
 }
@@ -83,15 +89,3 @@
     stroke: lightgrey;
 }
 
-.c3 .c3-axis-y path, .c3 .c3-axis-y-label line {
-    stroke: lightgrey;
-}
-
-/* .tick { */
-/*   stroke: darkgrey; */
-/*   fill: none; */
-/* } */
-/* .c3 path, .c3 line { */
-/* fill: none; */
-/* stroke: #BAB5B5; */
-/* } */

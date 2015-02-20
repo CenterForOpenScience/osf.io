@@ -41,7 +41,7 @@ function timeGraph (data) {
         data: data.charts.shareTimeGraph,
         axis: {
             x: {
-                type: 'category'
+                type: 'category',
             }
         },
         legend: {
