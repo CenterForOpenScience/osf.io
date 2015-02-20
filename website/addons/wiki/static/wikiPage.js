@@ -14,6 +14,8 @@ var THROTTLE = 500;
 ko.bindingHandlers.mathjaxify = {
     update: function(element, valueAccessor, allBindingsAccessor, data, context) {
         var vm = context.$data;
+        //Need to unwrap the data in order for KO to know it's changed.
+        ko.unwrap(valueAccessor());
 
         if(vm.allowMathjaxification() && vm.allowFullRender()) {
             mathrender.mathjaxify('#' + element.id);
@@ -58,6 +60,7 @@ function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathj
     }
 
     self.displayText =  ko.computed(function() {
+        self.allowFullRender();
         var requestURL;
         if (typeof self.version() !== 'undefined') {
             if (self.version() === 'preview') {

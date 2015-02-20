@@ -138,7 +138,7 @@
                         </div>
                     </div>
                 </div>
-                <div id = "wikiViewRender" data-bind="html: renderedView, mathjaxify" class="wiki-panel-body markdown-it-view">
+                <div id = "wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView" class="wiki-panel-body markdown-it-view">
 
                 </div>
               </div>
