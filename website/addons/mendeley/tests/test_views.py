@@ -54,8 +54,6 @@ class MockNode(object):
         if name == 'mendeley':
             return self.addon
         return None
-    
-    
 
 
 class MendeleyViewsTestCase(OsfTestCase):
@@ -69,7 +67,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         self.user_addon = MendeleyUserSettingsFactory(owner=self.user)
         self.project = ProjectFactory(creator=self.user)
         self.node_addon = MendeleyNodeSettingsFactory(owner=self.project, external_account=self.account)
-        self.node_addon.grant_oauth_access(self.user, self.account, metadata={'lists': 'list'})
+        self.user_addon.grant_oauth_access(self.node_addon, self.account, metadata={'lists': 'list'})
         self.node = MockNode()
         self.node.addon = self.node_addon
         self.id_patcher = mock.patch('website.addons.mendeley.model.Mendeley.client_id')
@@ -137,9 +135,10 @@ class MendeleyViewsTestCase(OsfTestCase):
         responses.add(
             responses.GET,
             urlparse.urljoin(API_URL, 'folders'),
-            body=json.dumps(FOLDER_LIST_JSON),
+            body=mock_responses['folders'],
             content_type='application/json',
         )
+        
         res = self.app.get(
             self.project.api_url_for('list_citationlists_node', account_id=self.account._id),
             auth=self.user.auth,
@@ -157,7 +156,6 @@ class MendeleyViewsTestCase(OsfTestCase):
             expect_errors=True,
         )
         assert_equal(res.status_code, 404)
-
 
     def test_set_config_unauthorized(self):
         """Cannot associate a MendeleyAccount the user doesn't own"""
@@ -258,34 +256,33 @@ class MendeleyViewsTestCase(OsfTestCase):
         )
         self.node_addon.reload()
         assert_in(self.user_addon, self.node_addon.associated_user_settings)
-        assert_equal(res.json, {})
+        assert_equal(res.json, {})      
 
-    def test_widget_view_complete(self):
+    def test_mendeley_widget_view_complete(self):
         """JSON: everything a widget needs"""
-        #assert_true(False)
-        assert_equal(self.node_addon.complete, False)
+        assert_false(self.node_addon.complete)
         assert_equal(self.node_addon.mendeley_list_id, None)
-        self.node_addon.mendeley_list_id = 1234567890
+        self.node_addon.mendeley_list_id = 'ROOT'
         res = views.mendeley_widget(node_addon=self.node_addon, 
                                     project=self.project, 
                                     node=self.node, 
                                     pid=self.project._id, 
                                     auth=self.user.auth)
-        assert_equal(res['complete'], True)
-        assert_equal(res['list_id'], 1234567890)
+        assert_true(res['complete'])
+        assert_equal(res['list_id'], 'ROOT')
 
     def test_widget_view_incomplete(self):
         """JSON: tell the widget when it hasn't been configured"""
-        assert_equal(self.node_addon.complete, False)
+        assert_false(self.node_addon.complete)
         assert_equal(self.node_addon.mendeley_list_id, None)
         res = views.mendeley_widget(node_addon=self.node_addon, 
                                     project=self.project, 
                                     node=self.node, 
                                     pid=self.project._id, 
                                     auth=self.user.auth)
-        assert_equal(res['complete'], False)
-        assert_equal(res['list_id'], None)
-
+        assert_false(res['complete'])
+        assert_is_none(res['list_id'])
+    
     @responses.activate
     def test_mendeley_citation_list_root(self):
 
@@ -305,7 +302,6 @@ class MendeleyViewsTestCase(OsfTestCase):
         assert_equal(root['kind'], 'folder')
         assert_equal(root['id'], 'ROOT')
         assert_equal(root['parent_list_id'], '__')
-
 
     @responses.activate
     def test_mendeley_citation_list_non_root(self):
