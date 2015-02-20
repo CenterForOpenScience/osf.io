@@ -114,7 +114,8 @@ Stats.controller = function(vm) {
             Object.keys(self.graphs).map(function(type) {
                 self.vm.statsData.charts[type].unload = true;
                 if(type === 'shareDonutGraph') {
-                    $('.c3-chart-arcs-title').text(data.raw_aggregations.sources.buckets.length + ' Provider');
+                    var count = data.charts.shareDonutGraph.columns.filter(function(val){return val[1] > 0;}).length;
+                    $('.c3-chart-arcs-title').text(count + ' Provider' + (count > 1 ? 's' : ''));
                 }
                 self.graphs[type].load(self.vm.statsData.charts[type]);
             });
