@@ -35,7 +35,10 @@ class GoogleDrivePath(utils.WaterButlerPath):
         start_index = folder_plus_name.find(folder_name)
         upload_file_name = folder_plus_name[start_index + len(folder_name):]
         self.upload_file_name = upload_file_name
-        upload_path =os.path.join(self.full_path.rstrip(upload_file_name), upload_file_name)
+        upload_path = os.path.join(
+            self.full_path.rstrip(upload_file_name),
+            upload_file_name,
+        )
         return upload_path
 
     @property
