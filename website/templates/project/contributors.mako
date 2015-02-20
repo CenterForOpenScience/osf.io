@@ -64,19 +64,19 @@
                   </table>
 
                 <div data-bind="if: adminContributors.length">
-                    <h3>
-                      Users with Read Access
+                    <h4>
+                      Admins on Parent Projects
                       <i class="icon-question-sign admin-info"
                               data-content="These users are not contributors on
-                                this component but can view it because they
+                              this component but can view and register it because they
                                 are administrators on a parent project."
                               data-toggle="popover"
-                              data-title="Visibility Information"
+                              data-title="Admins on Parent Projects"
                               data-container="body"
                               data-placement="right"
                               data-html="true"
                           ></i>
-                    </h3>
+                    </h4>
                     <table class="table">
                         <thead>
                             <tr>
