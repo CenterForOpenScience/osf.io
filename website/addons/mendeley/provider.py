@@ -36,6 +36,7 @@ class MendeleyCitationsProvider(provider.CitationsProvider):
             'folders': node.api_url_for('mendeley_citation_list'),
             'config': node.api_url_for('mendeley_set_config'),
             'deauthorize': deauthorize,
+            'accounts': node.api_url_for('list_mendeley_accounts_user')
         }
         ret.update(specific)
         return ret
