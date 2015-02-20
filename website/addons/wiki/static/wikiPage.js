@@ -172,7 +172,6 @@ function ViewModel(options){
     self.allowFullRender = ko.observable(true);
 
     self.currentURL = ko.computed(function() {
-        console.log("ping");
         var url = self.pageURL;
 
         if (self.editVis()) {
@@ -187,10 +186,9 @@ function ViewModel(options){
         if (self.compareVis()) {
             url += 'compare/';
             if(self.compareVersion() !== 'current'){
-                url += self.compareVesion() + '/';
+                url += self.compareVersion() + '/';
             }
         }
-        console.log(url);
 
         history.replaceState({}, '', url);
     });
