@@ -64,7 +64,7 @@ function timeGraph (data) {
 Stats.view = function(ctrl) {
     return [
         m('.row', {style: {color: 'darkgrey'}}, [
-            m('.col-md-4', m('p.text-center', ctrl.vm.latestDate ? utils.formatNumber(ctrl.vm.totalCount) + ' events as of ' + ctrl.vm.latestDate : '')),
+            m('.col-md-4', m('p.text-center', ctrl.vm.latestDate ? utils.formatNumber(ctrl.vm.totalCount) + ' events as of ' + new Date().toDateString() : '')),
             m('.col-md-4', m('p.text-center', ctrl.vm.query().length > 0 ? 'Found ' + utils.formatNumber(ctrl.vm.count) + ' events in ' + ctrl.vm.time + ' seconds' : '')),
             m('.col-md-4', m('p.text-center', ctrl.vm.providers + ' content providers'))
         ]),
