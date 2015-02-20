@@ -49,7 +49,7 @@ function timeGraph (data) {
             },
             y: {
                 label: {
-                   text: 'Records',
+                   text: 'Number of Events',
                    position: 'outer-middle'
                 }
             }
@@ -126,7 +126,7 @@ Stats.controller = function(vm) {
                 self.vm.statsData.charts[type].unload = true;
                 if(type === 'shareDonutGraph') {
                     var count = data.charts.shareDonutGraph.columns.filter(function(val){return val[1] > 0;}).length;
-                    $('.c3-chart-arcs-title').text(count + ' Provider' + (count > 1 ? 's' : ''));
+                    $('.c3-chart-arcs-title').text(count + ' Provider' + (count !== 1 ? 's' : ''));
                 }
                 self.graphs[type].load(self.vm.statsData.charts[type]);
             });
