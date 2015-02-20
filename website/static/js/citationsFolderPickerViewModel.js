@@ -15,10 +15,45 @@ ko.punches.enableAll();
 var CitationsFolderPickerViewModel = function(name, url, selector, folderPicker) {
     var self = this;
 
+    self.url = url;
     self.properName = name.charAt(0).toUpperCase() + name.slice(1);
     self.selector = selector;
     // CSS selector for the folder picker div
     self.folderPicker = folderPicker;
+
+    // DEFAULTS
+    self.accounts = ko.observableArray([]);
+    // Auth information
+    self.nodeHasAuth = ko.observable(false);
+    // whether current user is authorizer of the addon
+    self.userIsOwner = ko.observable(false);
+    // whether current user has an auth token
+    self.userHasAuth = ko.observable(false);
+    // whether the auth token is valid
+    self.validCredentials = ko.observable(true);
+    self.userAccountId = ko.observable('');
+    // Currently linked folder, an Object of the form {name: ..., id: ...}
+    self.folder = ko.observable({
+        name: '',
+        id: ''
+    });
+    self.ownerName = ko.observable('');
+    self.urls = ko.observable({});
+    // Flashed messages
+    self.message = ko.observable('');
+    self.messageClass = ko.observable('text-info');
+    // Display names
+    self.PICKER = 'picker';
+    // Current folder display
+    self.currentDisplay = ko.observable(false);
+    // Currently selected folder name
+    self.selected = ko.observable(false);
+    self.loading = ko.observable(false);
+    // Whether the initial data has been fetched form the server. Used for
+    // error handling.
+    self.loadedSettings = ko.observable(false);
+    // Whether the mendeley folders have been loaded from the server/mendeley API
+    self.loadedFolders = ko.observable(false);
 
     self.messages = {
         INVALID_CRED_OWNER: ko.computed(function() {
@@ -54,7 +89,7 @@ var CitationsFolderPickerViewModel = function(name, url, selector, folderPicker)
         }),
         SUBMIT_SETTINGS_SUCCESS: ko.computed(function() {
             var overviewURL = window.contextVars.node.urls.web;
-            return 'Successfully linked "' + self.selected().name + '". Go to the <a href="' +
+            return 'Successfully linked "' + self.folder() + '". Go to the <a href="' +
                 overviewURL + '">Overview page</a> to view your citations.';
         }),
         SUBMIT_SETTINGS_ERROR: ko.computed(function() {
@@ -63,49 +98,16 @@ var CitationsFolderPickerViewModel = function(name, url, selector, folderPicker)
         CONFIRM_DEAUTH: ko.computed(function() {
             return 'Are you sure you want to remove this ' + self.properName + ' authorization?';
         }),
-	CONFIRM_AUTH: ko.computed(function() {
-	    return 'Are you sure you want to authorize this project with your ' + self.properName + ' access token?',
-	}),
+        CONFIRM_AUTH: ko.computed(function() {
+            return 'Are you sure you want to authorize this project with your ' + self.properName + ' access token?';
+        }),
         TOKEN_IMPORT_ERROR: ko.computed(function() {
             return 'Error occurred while importing access token.';
         }),
-	CONNECT_ERROR: ko.computed(function(){
-	    return 'Could not connect to ' + self.properName + ' at this time. Please try again later.';
-	})
+        CONNECT_ERROR: ko.computed(function() {
+            return 'Could not connect to ' + self.properName + ' at this time. Please try again later.';
+        })
     };
-    // DEFAULTS
-    self.accounts = ko.observableArray([]);
-    // Auth information
-    self.nodeHasAuth = ko.observable(false);
-    // whether current user is authorizer of the addon
-    self.userIsOwner = ko.observable(false);
-    // whether current user has an auth token
-    self.userHasAuth = ko.observable(false);
-    // whether the auth token is valid
-    self.validCredentials = ko.observable(true);
-    self.userAccountId = ko.observable('');
-    // Currently linked folder, an Object of the form {name: ..., id: ...}
-    self.folder = ko.observable({
-        name: '',
-        id: ''
-    });
-    self.ownerName = ko.observable('');
-    self.urls = ko.observable({});
-    // Flashed messages
-    self.message = ko.observable('');
-    self.messageClass = ko.observable('text-info');
-    // Display names
-    self.PICKER = 'picker';
-    // Current folder display
-    self.currentDisplay = ko.observable(false);
-    // Currently selected folder name
-    self.selected = ko.observable(null);
-    self.loading = ko.observable(false);
-    // Whether the initial data has been fetched form the server. Used for
-    // error handling.
-    self.loadedSettings = ko.observable(false);
-    // Whether the mendeley folders have been loaded from the server/mendeley API
-    self.loadedFolders = ko.observable(false);
 
     /**
      * Whether or not to show the Import Access Token Button
@@ -152,7 +154,7 @@ var CitationsFolderPickerViewModel = function(name, url, selector, folderPicker)
 
 
 /** Change the flashed message. */
-self.prototype.changeMessage = function(text, css, timeout) {
+CitationsFolderPickerViewModel.prototype.changeMessage = function(text, css, timeout) {
     var self = this;
 
     self.message(text);
@@ -186,7 +188,7 @@ CitationsFolderPickerViewModel.prototype.updateFromData = function(data) {
 CitationsFolderPickerViewModel.prototype.fetchFromServer = function() {
     var self = this;
     var request = $.ajax({
-        url: url,
+        url: self.url,
         type: 'GET',
         dataType: 'json'
     });
@@ -196,16 +198,16 @@ CitationsFolderPickerViewModel.prototype.fetchFromServer = function() {
         self.loadedSettings(true);
         if (!self.validCredentials()) {
             if (self.userIsOwner()) {
-                self.changeMessage(messages.INVALID_CRED_OWNER(), 'text-warning');
+                self.changeMessage(self.messages.INVALID_CRED_OWNER(), 'text-warning');
             } else {
-                self.changeMessage(messages.INVALID_CRED_NOT_OWNER(), 'text-warning');
+                self.changeMessage(self.messages.INVALID_CRED_NOT_OWNER(), 'text-warning');
             }
         }
     });
     request.fail(function(xhr, textStatus, error) {
-        self.changeMessage(messages.CANT_RETRIEVE_SETTINGS(), 'text-warning');
+        self.changeMessage(self.messages.CANT_RETRIEVE_SETTINGS(), 'text-warning');
         Raven.captureMessage('Could not GET Mendeley settings', {
-            url: url,
+            url: self.url,
             textStatus: textStatus,
             error: error
         });
@@ -218,14 +220,17 @@ CitationsFolderPickerViewModel.prototype.updateAccounts = function(callback) {
     var request = $.get(self.urls().accounts);
     request.done(function(data) {
         self.accounts(data.accounts.map(function(account) {
-            return new CitationAccount(account.display_name, account.id);
+            return {
+                name: account.display_name,
+                id: account.id
+            };
         }));
         callback();
     });
     request.fail(function(xhr, textStatus, error) {
-        self.changeMessage(messages.UPDATE_ACCOUNTS_ERROR(), 'text-warning');
+        self.changeMessage(self.messages.UPDATE_ACCOUNTS_ERROR(), 'text-warning');
         Raven.captureMessage('Could not GET mendeley accounts for user', {
-            url: url,
+            url: self.url,
             textStatus: textStatus,
             error: error
         });
@@ -245,7 +250,7 @@ CitationsFolderPickerViewModel.prototype.connectAccount = function() {
                 self.urls().importAuth, {
                     external_account_id: self.accounts()[0].id
                 }
-            ).then(onImportSuccess, onImportError);
+            ).then(self.onImportSuccess, self.onImportError);
         });
     };
     window.open(self.urls().auth);
@@ -258,7 +263,7 @@ CitationsFolderPickerViewModel.prototype.connectExistingAccount = function(accou
         self.urls().importAuth, {
             external_account_id: account_id
         }
-    ).then(onImportSuccess, onImportError);
+    ).then(self.onImportSuccess, self.onImportError);
 };
 
 
@@ -340,29 +345,34 @@ CitationsFolderPickerViewModel.prototype.deauthorize = function() {
     });
 };
 
+
+// Callback for when PUT request to import user access token
+CitationsFolderPickerViewModel.prototype.onImportSuccess = function(response) {
+    var self = this;
+
+    var msg = response.message || 'Successfully imported access token from profile.';
+    // Update view model based on response
+    self.changeMessage(msg, 'text-success', 3000);
+    self.updateFromData(response.result);
+    self.activatePicker();
+};
+
+CitationsFolderPickerViewModel.prototype.onImportError = function(xhr, textStatus, error) {
+    var self = this;
+
+    self.changeMessage(self.messages.TOKEN_IMPORT_ERROR, 'text-danger');
+    Raven.captureMessage('Failed to import Mendeley access token', {
+        url: self.urls().importAuth,
+        textStatus: textStatus,
+        error: error
+    });
+};
+
 /**
  * Send PUT request to import access token from user profile.
  */
 CitationsFolderPickerViewModel.prototype.importAuth = function() {
     var self = this;
-
-    // Callback for when PUT request to import user access token
-    function onImportSuccess(response) {
-        var msg = response.message || 'Successfully imported access token from profile.';
-        // Update view model based on response
-        self.changeMessage(msg, 'text-success', 3000);
-        self.updateFromData(response.result);
-        self.activatePicker();
-    }
-
-    function onImportError(xhr, textStatus, error) {
-        self.changeMessage(self.messages.TOKEN_IMPORT_ERROR, 'text-danger');
-        Raven.captureMessage('Failed to import Mendeley access token', {
-            url: self.urls().importAuth,
-            textStatus: textStatus,
-            error: error
-        });
-    }
 
     self.updateAccounts(function() {
         if (self.accounts().length > 1) {
@@ -375,7 +385,7 @@ CitationsFolderPickerViewModel.prototype.importAuth = function() {
                         return {
                             text: item.name,
                             value: item.id
-                        }
+                        };
                     }
                 ),
                 value: self.accounts()[0].id,
@@ -414,8 +424,6 @@ CitationsFolderPickerViewModel.prototype.activatePicker = function() {
         });
         return false; // Prevent event propagation
     }
-
-
 
     self.currentDisplay(self.PICKER);
     // Only load folders if they haven't already been requested

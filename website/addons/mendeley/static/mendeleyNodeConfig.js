@@ -1,4 +1,5 @@
-var ViewModel = require('citationsFolderPickerViewModel');
+var $osf = require('osfHelpers');
+var ViewModel = require('../../../static/js/citationsFolderPickerViewModel');
 
 // Public API
 function MendeleyNodeConfig(selector, url, folderPicker) {
