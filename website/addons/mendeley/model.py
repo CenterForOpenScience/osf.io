@@ -62,7 +62,7 @@ class AddonMendeleyUserSettings(AddonUserSettingsBase):
     def to_json(self, user):
         ret = super(AddonMendeleyUserSettings, self).to_json(user)
         ret['accounts'] = [
-            utils.serialize_account(each)
+            serialize_account(each)
             for each in self._get_connected_accounts()
         ]
         return ret

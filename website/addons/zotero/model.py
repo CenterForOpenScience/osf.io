@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from framework.exceptions import PermissionsError
 
 from website.addons.base import AddonUserSettingsBase
 
@@ -13,12 +14,6 @@ from website.addons.citations.utils import serialize_account, serialize_folder
 from . import settings
 
 class AddonZoteroUserSettings(AddonUserSettingsBase):
-
-    def _get_connected_accounts(self):
-        """Get user's connected Zotero accounts"""
-        return [
-            x for x in self.owner.external_accounts if x.provider == 'zotero'
-        ]
 
     def _get_connected_accounts(self):
         """Get user's connected Zotero accounts"""
