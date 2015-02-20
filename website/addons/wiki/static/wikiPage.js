@@ -10,20 +10,19 @@ var diffTool = require('wikiDiff');
 
 var THROTTLE = 500;
 
-//<div id="preview" data-bind="mathjaxify: {throttle: 500}>
+//<div id="preview" data-bind="mathjaxify">
 ko.bindingHandlers.mathjaxify = {
-    init: function(element, valueAccessor, allBindingsAccessor, data, context) {
-        var opts = valueAccessor();
+    update: function(element, valueAccessor, allBindingsAccessor, data, context) {
         var vm = context.$data;
 
-        if(vm.allowMathjaxification() && vm.viewVM.allowFullRender()) {
-            mathrender.mathjaxify(element.id);
+        if(vm.allowMathjaxification() && vm.allowFullRender()) {
+            mathrender.mathjaxify('#' + element.id);
         }
     }
 };
 
 
-function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathjaxification, editor) {
+function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathjaxification, allowFullRender, editor) {
     var self = this;
     self.version = version;
     self.viewText = viewText; // comes from EditWidget.viewText
@@ -31,7 +30,7 @@ function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathj
     self.visible = visible;
     self.allowMathjaxification = allowMathjaxification;
     self.editor = editor;
-    self.allowFullRender = ko.observable(false);
+    self.allowFullRender = allowFullRender;
     self.renderTimeout = null;
     self.displaySource = ko.observable('');
 
@@ -169,7 +168,32 @@ function ViewModel(options){
     self.viewText = ko.observable('');
     self.renderedView = ko.observable('');
     self.renderedCompare = ko.observable('');
-    self.allowMathjaxification = ko.observable(false);
+    self.allowMathjaxification = ko.observable(true);
+    self.allowFullRender = ko.observable(true);
+
+    self.currentURL = ko.computed(function() {
+        console.log("ping");
+        var url = self.pageURL;
+
+        if (self.editVis()) {
+            url += 'edit/';
+        }
+        if (self.viewVis() && ((self.editVis() && self.compareVis()) || (self.viewVersion() !== 'current' && self.viewVersion() !== 'preview'))) {
+            url += 'view/';
+            if(self.viewVersion() !== 'current' && self.viewVersion() !== 'preview'){
+                url += self.viewVersion() + '/';
+            }
+        }
+        if (self.compareVis()) {
+            url += 'compare/';
+            if(self.compareVersion() !== 'current'){
+                url += self.compareVesion() + '/';
+            }
+        }
+        console.log(url);
+
+        history.replaceState({}, '', url);
+    });
 
 
     if(self.canEdit) {
@@ -178,12 +202,15 @@ function ViewModel(options){
         var ShareJSDoc = require('addons/wiki/static/ShareJSDoc.js');
         self.editVM = new ShareJSDoc(self.draftURL, self.editorMetadata, self.viewText, self.editor);
     }
-    self.viewVM = new ViewWidget(self.viewVis, self.viewVersion, self.viewText, self.renderedView, self.contentURL, self.allowMathjaxification, self.editor);
+    self.viewVM = new ViewWidget(self.viewVis, self.viewVersion, self.viewText, self.renderedView, self.contentURL, self.allowMathjaxification, self.allowFullRender, self.editor);
     self.compareVM = new CompareWidget(self.compareVis, self.compareVersion, self.viewVM.displaySource, self.renderedCompare, self.contentURL);
 
     $('body').on('togglePanel', function (event, panel, display) {
         // Update self.editVis, self.viewVis, or self.compareVis in viewmodel
         self[panel + 'Vis'](display);
+
+        //URL needs to be a computed observable, and this should just update the panel states, which will feed URL
+
 
         // Switch view to correct version
         if (panel === 'edit') {
@@ -193,23 +220,9 @@ function ViewModel(options){
                 self.viewVersion('current');
             }
         }
-
-        var url = self.pageURL;
-
-        if (self.editVis()) {
-            url += 'edit/'
-        }
-        if (self.viewVis() && self.editVis() && self.compareVis()) {
-            url += 'view/'
-        }
-        if (self.compareVis()) {
-            url += 'compare/'
-        }
-
-        history.replaceState({}, "", url);
-
     });
 }
+
 
 
 var WikiPage = function(selector, options) {
