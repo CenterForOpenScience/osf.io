@@ -4,20 +4,13 @@ from website.addons.base import AddonUserSettingsBase
 
 from modularodm import fields
 
-from website import settings
 from website.addons.base import AddonNodeSettingsBase
 from website.oauth.models import ExternalProvider
 from pyzotero import zotero
 
+from website.addons.citations.utils import serialize_account, serialize_folder
 
-# TODO: Move to utilities @jmcarp
-def serialize_folder(name, account_id, list_id=None):
-    return {
-        'name': name,
-        'provider_account_id': account_id,
-        'provider_list_id': list_id,
-    }
-
+from . import settings
 
 class AddonZoteroUserSettings(AddonUserSettingsBase):
 
@@ -26,6 +19,45 @@ class AddonZoteroUserSettings(AddonUserSettingsBase):
         return [
             x for x in self.owner.external_accounts if x.provider == 'zotero'
         ]
+
+    def _get_connected_accounts(self):
+        """Get user's connected Mendeley accounts"""
+        return [
+            x for x in self.owner.external_accounts if x.provider == 'mendeley'
+        ]
+
+    def grant_oauth_access(self, node, external_account, metadata=None):
+        metadata = metadata or {}
+
+        # create an entry for the node, if necessary
+        if node._id not in self.oauth_grants:
+            self.oauth_grants[node._id] = {}
+
+        # create an entry for the external account on the node, if necessary
+        if external_account._id not in self.oauth_grants[node._id]:
+            self.oauth_grants[node._id][external_account._id] = {}
+
+        # update the metadata with the supplied values
+        for key, value in metadata.iteritems():
+            self.oauth_grants[node._id][external_account._id][key] = value
+
+        self.save()
+
+    def verify_oauth_access(self, node, external_account, metadata=None):
+        metadata = metadata or {}
+
+        # ensure the grant exists
+        try:
+            grants = self.oauth_grants[node._id][external_account._id]
+        except KeyError:
+            return False
+
+        # Verify every key/value pair is in the grants dict
+        for key, value in metadata.iteritems():
+            if key not in grants or grants[key] != value:
+                return False
+
+        return True
 
     def to_json(self, user):
         rv = super(AddonZoteroUserSettings, self).to_json(user)
@@ -38,15 +70,6 @@ class AddonZoteroUserSettings(AddonUserSettingsBase):
         ]
         return rv
 
-
-def serialize_account(account):
-    return {
-        'id': account._id,
-        'provider_id': account.provider_id,
-        'display_name': account.display_name,
-    }
-
-
 class AddonZoteroNodeSettings(AddonNodeSettingsBase):
     external_account = fields.ForeignField('externalaccount',
                                            backref='connected')
@@ -56,7 +79,7 @@ class AddonZoteroNodeSettings(AddonNodeSettingsBase):
     # Keep track of all user settings that have been associated with this
     #   instance. This is so OAuth grants can be checked, even if the grant is
     #   not currently being used.
-    associated_user_settings = fields.AbstractForeignField(list=True)
+    user_settings = fields.ForeignField('addonzoterousersettings')
 
     _api = None
 
@@ -67,6 +90,44 @@ class AddonZoteroNodeSettings(AddonNodeSettingsBase):
             self._api = Zotero()
             self._api.account = self.external_account
         return self._api
+
+    @property
+    def has_auth(self):
+        if not (self.user_settings and self.external_account):
+            return False
+
+        return self.user_settings.verify_oauth_access(
+            node=self.owner,
+            external_account=self.external_account
+        )
+
+    @property
+    def complete(self):
+        return self.has_auth and self.user_settings.verify_oauth_access(
+            node=self.owner,
+            external_account=self.external_account,
+            metadata={'folder': self.zotero_list_id},
+        )
+
+    @property
+    def selected_folder_name(self):
+        if self.zotero_list_id is None:
+            return ''
+        elif self.zotero_list_id != 'ROOT':
+            folder = self.api._folder_metadata(self.zotero_list_id)
+            return folder.name
+        else:
+            return 'All Documents'
+
+    @property
+    def root_folder(self):
+        root = serialize_folder(
+            'All Documents',
+            id='ROOT',
+            parent_id='__'
+        )
+        root['kind'] = 'folder'
+        return root
 
     def grant_oauth_access(self, user, external_account, metadata=None):
         """Grant OAuth access, updates metadata on user settings
@@ -87,6 +148,59 @@ class AddonZoteroNodeSettings(AddonNodeSettingsBase):
         )
 
         user_settings.save()
+
+    def set_auth(self, external_account, user):
+        """Connect the node addon to a user's external account.
+        """
+        # external account must be the user's
+        if external_account not in user.external_accounts:
+            raise PermissionsError("Invalid ExternalAccount for User")
+
+        # tell the user's addon settings that this node is connected to it
+        user_settings = user.get_or_add_addon('zotero')
+        user_settings.grant_oauth_access(
+            node=self.owner,
+            external_account=external_account
+            # no metadata, because the node has access to no folders
+        )
+        user_settings.save()
+
+        # update this instance
+        self.user_settings = user_settings
+        self.external_account = external_account
+
+        # ensure no list is associated, as we're attaching new credentials.
+        self.zotero_list_id = None
+
+        self.save()
+
+    def clear_auth(self):
+        """Disconnect the node settings from the user settings"""
+
+        self.external_account = None
+        self.zotero_list_id = None
+        self.user_settings = None
+        self.save()
+
+    def set_target_folder(self, mendeley_list_id):
+        """Configure this addon to point to a Mendeley folder
+
+        :param str mendeley_list_id:
+        :param ExternalAccount external_account:
+        :param User user:
+        """
+
+        # Tell the user's addon settings that this node is connecting
+        self.user_settings.grant_oauth_access(
+            node=self.owner,
+            external_account=self.external_account,
+            metadata={'folder': zotero_list_id}
+        )
+        self.user_settings.save()
+
+        # update this instance
+        self.zotero_list_id = zotero_list_id
+        self.save()
 
     def verify_oauth_access(self, external_account, list_id):
         """Determine if access to the ExternalAccount has been granted
@@ -164,14 +278,16 @@ class Zotero(ExternalProvider):
 
         all_documents = serialize_folder(
             'All Documents',
-            account_id=self.account.provider_id,
+            id='ROOT',
+            parent_id='__'
         )
 
         serialized_folders = [
             serialize_folder(
-                each['data']['name'],
-                account_id=self.account.provider_id,
-                list_id=each['data']['key'],
+                each['data'].get('name'),
+                list_id=each['data'].get('key'),
+                parent_id=each['data'].get('parentCollection'),
+                id=each['data'].get('key')
             )
             for each in collections
         ]
