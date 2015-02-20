@@ -78,6 +78,24 @@ def stats(query=None):
                 }
             }
         },
+        "earlier_documents": {
+            "filter": {
+                "range": {
+                    "dateUpdated": {
+                        "lt": three_months_ago
+                    }
+                }
+            },
+            "aggs": {
+                "sources": {
+                    "terms": {
+                        "field": "_type",
+                        "size": 0,
+                        "min_doc_count": 0
+                    }
+                }
+            }
+        }
     }
     date_histogram_query = {
         'query': {
@@ -117,8 +135,8 @@ def stats(query=None):
     }
 
     results = share_es.search(index='share', body=query)
-    results2 = share_es.search(index='share', body=date_histogram_query)
-    results['aggregations']['date_chunks'] = results2['aggregations']['date_chunks']
+    date_results = share_es.search(index='share', body=date_histogram_query)
+    results['aggregations']['date_chunks'] = date_results['aggregations']['date_chunks']
 
     chart_results = data_for_charts(results)
     return chart_results
