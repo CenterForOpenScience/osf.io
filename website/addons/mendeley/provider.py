@@ -42,11 +42,6 @@ class MendeleyCitationsProvider(provider.CitationsProvider):
 
     def set_config(self, node_addon, user, external_account_id, external_list_id):
 
-        external_account = super(MendeleyCitationsProvider, self).set_config(
-            node_addon, user, external_account_id, external_list_id
-        )
-
-        # associate the list with the node
         node_addon.set_target_folder(external_list_id)
 
         return {}

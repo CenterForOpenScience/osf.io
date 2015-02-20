@@ -33,7 +33,7 @@ def mendeley_get_config(auth, node_addon, **kwargs):
 @must_have_permission('write')
 @must_have_addon('mendeley', 'node')
 @must_not_be_registration
-def mendeley_set_config(pid, auth, node, project, node_addon):
+def mendeley_set_config(pid, nid, auth, node, project, node_addon):
     """ Updates MendeleyNodeSettings based on submitted account and folder information """
 
     provider = MendeleyCitationsProvider()
@@ -70,7 +70,7 @@ def mendeley_remove_user_auth(auth, node_addon, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('mendeley', 'node')
-def mendeley_widget(node_addon, project, node, pid, auth):
+def mendeley_widget(node_addon, project, node, pid, nid, auth):
     """ Collects and serializes settting needed to build the widget """
 
     provider = MendeleyCitationsProvider()
@@ -79,7 +79,7 @@ def mendeley_widget(node_addon, project, node, pid, auth):
 
 @must_be_contributor_or_public
 @must_have_addon('mendeley', 'node')
-def mendeley_citation_list(node_addon, project, node, pid, auth,
+def mendeley_citation_list(node_addon, project, node, pid, nid, auth,
                            mendeley_list_id=None):
     """
     This function collects a listing of folders and citations based on the
