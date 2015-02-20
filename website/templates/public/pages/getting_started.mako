@@ -202,7 +202,7 @@
                     <p class="gs-header">Comments</p>
                     <p>Commenting can be enabled for any OSF project. To leave a comment on a project, if the administrators have allowed chat, you will see blue speech bubbles in the top right corner of your screen. Click on those speech bubbles and add your comment in the text box.</p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
-                        <div class="embed-responsive-item youtube-loader" id="B3VPkkgjKeU"></div>
+                        <div class="embed-responsive-item youtube-loader" id="ut0ofij_cFA"></div>
                     </div>
                     <p>You may find that you can view comments but not leave one. That is the administrator's choice, and it reflects their decision to only allow contributors to comment on the project.</p>
                     <p>To change your project's comment settings, visit "Settings" in the grey navigation bar below the project title. Select your preference under "Configure Commenting" and submit your changes. </p>
@@ -224,7 +224,7 @@
                     <p>Every project, component, file, and user has a unique URL on the OSF. This means that anything you upload and make public on the OSF can be cited, giving you credit for your work.</p>
                     <p>To find a pre-formatted citation for a project, look directly below the grey navigation bar on the project's page and you will see the URL to be cited. If you click "more" then you ill see the APA, MLA, and Chicago citations.</p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
-                        <div class="embed-responsive-item youtube-loader" id="LKJGN_tVDcQ"></div>
+                        <div class="embed-responsive-item youtube-loader" id="Ow7YoAHrflo"></div>
                     </div>
                     <span id="statistics" class="anchor"></span>
                     <p class="gs-header">Statistics</p>
