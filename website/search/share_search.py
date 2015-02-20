@@ -151,28 +151,35 @@ def data_for_charts(elastic_results):
     source_and_counts = [[item['key'], item['doc_count']] for item in source_data]
     for_charts['shareDonutGraph'] = source_and_counts
 
-    all_date_data = []
-    # for the date aggregations
-    chunk_data = elastic_results['aggregations']['date_chunks']['buckets']
-    date_names = ['x']
-    for entry in chunk_data[0]['articles_over_time']['buckets']:
-        date_names.append(entry['key_as_string'].replace('T00:00:00.000Z', ''))
+    stats = {}
+    for bucket in elastic_results['aggregations']['sources']['buckets']:
+        stats[bucket['key']] = {
+            'doc_count': bucket['doc_count'],
+        }
 
-    all_date_data.append(date_names)
+    for bucket in elastic_results['aggregations']['earlier_documents']['sources']['buckets']:
+        stats[bucket['key']]['earlier_documents'] = bucket['doc_count']
 
-    all_source_names = []
-    for bucket in chunk_data:
-        provider_row = [bucket['key']]
-        all_source_names.append(bucket['key'])
-        for internal in bucket['articles_over_time']['buckets']:
-            provider_row.append(internal['doc_count'])
-        provider_cumulative = [sum(provider_row[1:i+2]) for i in range(len(provider_row[1:]))]
-        provider_cumulative = [bucket['key']] + provider_cumulative
-        all_date_data.append(provider_cumulative)
+    for bucket in elastic_results['aggregations']['date_chunks']['buckets']:
+        stats[bucket['key']]['articles_over_time'] = bucket['articles_over_time']['buckets']
 
-    for_charts['date_totals'] = {}
-    for_charts['date_totals']['date_numbers'] = all_date_data
-    for_charts['date_totals']['group_names'] = ['x'] + all_source_names
+    names = ['x']
+    numbers = [['x']]
+    for date in stats[stats.keys()[0]]['articles_over_time']:
+        numbers[0].append(date['key_as_string'].replace('T00:00:00.000Z', ''))
+
+    for key, value in stats.iteritems():
+        names.append(key)
+        numbers.append([key] + [
+            item['doc_count'] for item in value['articles_over_time']
+        ])
+
+    date_totals = {
+        'date_numbers': numbers,
+        'group_names': names
+    }
+
+    for_charts['date_totals'] = date_totals
 
     all_data = {}
     all_data['raw_aggregations'] = elastic_results['aggregations']
