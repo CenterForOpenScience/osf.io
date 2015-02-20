@@ -96,7 +96,7 @@ class MendeleyCitationsProvider(provider.CitationsProvider):
 
         contents = []
         if list_id is None:
-            contents = node_addon.api.get_root_folder()
+            contents = [node_addon.root_folder]
         else:
             if show in ('all', 'folders'):
                 contents += [
