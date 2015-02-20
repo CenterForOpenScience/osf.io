@@ -61,7 +61,7 @@ Results.controller = function(vm) {
                         if (result.description.length > 350) {
                             return m('small.pointer',
                                 {onclick:function(){result.showAll = result.showAll ? false : true;}},
-                                result.showAll ? result.description : result.description.substring(0, 350).trimRight() + '...'
+                                result.showAll ? result.description : $.trim(result.description.substring(0, 350)) + '...'
                             );
                         }
                         return m('small', result.description);
