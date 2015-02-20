@@ -149,7 +149,7 @@ def data_for_charts(elastic_results):
 
     ## for the donut graph list of many lists, source and count
     source_and_counts = [[item['key'], item['doc_count']] for item in source_data]
-    for_charts['donut_chart'] = source_and_counts
+    for_charts['shareDonutGraph'] = source_and_counts
 
     all_date_data = []
     # for the date aggregations
@@ -176,6 +176,18 @@ def data_for_charts(elastic_results):
 
     all_data = {}
     all_data['raw_aggregations'] = elastic_results['aggregations']
-    all_data['for_charts'] = for_charts
+
+    all_data['charts'] = {
+        'shareDonutGraph': {
+            'type': 'donut',
+            'columns': for_charts['shareDonutGraph']
+        },
+        'shareTimeGraph': {
+            'x': 'x',
+            'type': 'area-spline',
+            'columns': for_charts['date_totals']['date_numbers'],
+            'groups': [for_charts['date_totals']['group_names']]
+        }
+    }
 
     return all_data

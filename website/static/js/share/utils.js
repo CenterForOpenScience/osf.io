@@ -43,9 +43,15 @@ var search = function(vm) {
 
     vm.page = 0;
     vm.results = [];
-    vm.showStats = false;
+    // vm.showStats = false;
 
     loadMore(vm);
+};
+
+var appendSearch = function(vm, addendum) {
+    vm.query(vm.query() + (vm.query().trim().length > 0 ? ' AND ' : '') + addendum);
+    $(document.body).scrollTop(0);
+    search(vm);
 };
 
 var maybeQuashEvent = function(event) {
@@ -65,5 +71,6 @@ module.exports = {
     onSearch: onSearch,
     loadMore: loadMore,
     loadingIcon: loadingIcon,
+    appendSearch: appendSearch,
     maybeQuashEvent: maybeQuashEvent
 };
