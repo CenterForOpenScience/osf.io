@@ -66,43 +66,54 @@ Results.controller = function(vm) {
                 m('.row', [
                     m('.col-md-7', m('span.pull-left', (function(){
                         var renderPeople = function(people) {
-                            return m('span', people.map(function(person) {
-                                return person.given + ' ' + person.family;
-                            }).join(' - '));
+                            return people.map(function(person, index) {
+                                return m('span', [
+                                    m('span', index !== 0 ? ' · ' : ''),
+                                    m('a', {
+                                        onclick: function() {
+                                            utils.appendSearch(self.vm, '(contributors.family:' + person.family + ' AND contributors.given:' + person.given + ')');
+                                        }
+                                    }, person.given + ' ' + person.family)
+                                ]);
+                            });
                         };
 
-                        return m('span.pull-left', {style: {'text-align': 'center'}, class: result.contributors.length > 8 ? 'pointer' : '',
-                            onclick:function(){result.showAllContrib = result.showAllContrib ? false : true;}},
+                        return m('span.pull-left', {style: {'text-align': 'center'}},
                             result.showAllContrib || result.contributors.length < 8 ?
                                 renderPeople(result.contributors) :
                                 m('span', [
                                     renderPeople(result.contributors.slice(0, 7)),
                                     m('br'),
-                                    m('a', 'See All')
+                                    m('a', {onclick: function(){result.showAllContrib = result.showAllContrib ? false : true;}}, 'See All')
                                 ])
                         );
                     }()))),
                     m('.col-md-5',
-                        m('.pull-right', {style: {'text-align': 'center'}, class: result.tags.length > 5 ? 'pointer' : '',
-                          onclick: function() {result.showAllTags = result.showAllTags ? false : true;}},
-                          result.showAllTags || result.tags.length < 5 ?
-                            result.tags.map(function(tag) {return m('.badge', tag);}) :
-                            m('span', [
-                                result.tags.slice(0, 5).map(function(tag){return m('.badge', tag);}),
-                                m('br'),
-                                m('div', m('a', 'See All'))
-                            ])
-                         )
-                     )
+                        m('.pull-right', {style: {'text-align': 'center'}, class: result.tags.length > 5 ? 'pointer' : ''},
+                            (function(){
+                                var renderTag = function(tag) {
+                                    return m('.badge.pointer', {onclick: function(){
+                                        utils.appendSearch(self.vm, 'tags:' + tag);
+                                    }}, tag.length < 50 ? tag : tag.substring(0, 47) + '...');
+                                };
+                                if (result.showAllTags || result.tags.length < 5) {
+                                    return result.tags.map(renderTag);
+                                }
+                                return m('span', [
+                                    result.tags.slice(0, 5).map(function(tag){return m('.badge', tag);}),
+                                    m('br'),
+                                    m('div', m('a', {onclick: function() {result.showAllTags = result.showAllTags ? false : true;}},'See All'))
+                                ]);
+                            }())))
                 ]),
                 m('br'),
                 m('br'),
                 m('div', [
                     m('span', 'Released on ' + new $osf.FormattableDate(result.dateUpdated).local),
                     m('span.pull-right', [
-                        m('img', {src: '/static/img/share/' + result.source + '_favicon.ico'}),
+                        m('img', {src: '/static/img/share/' + result.source + '_favicon.ico', style: {width: '16px', height: '16px'}}),
                         ' ',
-                        m('a', {href: ProviderMap[result.source].link}, ProviderMap[result.source].name)
+                        m('a', {onclick: function() {utils.appendSearch(self.vm, 'source:' + result.source);}}, ProviderMap[result.source].name)
                     ])
                 ])
             ]),

@@ -14,7 +14,7 @@ SearchBar.view = function(ctrl) {
                         display: 'block',
                         'text-align': 'center'
                     }
-                }, [
+            }, [
                 m('img[src=/static/img/share-logo-icon.png]', {
                     style: {
                         height: 'auto',
@@ -32,12 +32,12 @@ SearchBar.view = function(ctrl) {
                 m('form.input-group', {
                     onsubmit: ctrl.search,
                 },[
-                    m('input.share-search-input.form-control[type=text][placeholder=Discover][autofocus]', {
+                    m('input.share-search-input.form-control[type=text][placeholder=Search][autofocus]', {
                         value: ctrl.vm.query(),
                         onchange: m.withAttr('value', ctrl.vm.query),
                     }),
                     m('span.input-group-btn', [
-                        m('button.btn.osf-search-btn', m('i.icon-circle-arrow-right.icon-lg')),
+                        m('button.btn.osf-search-btn', m('i.icon-search.icon-lg')),
                     ])
                 ])
             ])

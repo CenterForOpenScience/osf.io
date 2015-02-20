@@ -16,18 +16,15 @@ function get_source_length(elastic_data) {
     return source_names.length;
 }
 
-function doughnutGraph (elastic_data) {
-    var donutgraph = c3.generate({
-        bindto: '#shareDoughnutGraph',
+function donutGraph (data) {
+    return c3.generate({
+        bindto: '#shareDonutGraph',
         size: {
             height: 240
         },
-        data: {
-            columns: elastic_data.for_charts.donut_chart,
-            type : 'donut',
-        },
+        data: data.charts.shareDonutGraph,
         donut: {
-            title: get_source_length(elastic_data) + ' Providers'
+            title: get_source_length(data) + ' Providers'
         },
         legend: {
             show: false
@@ -35,18 +32,13 @@ function doughnutGraph (elastic_data) {
     });
 }
 
-function timeGraph (elastic_data) {
-    var timegraph = c3.generate({
+function timeGraph (data) {
+    return c3.generate({
         bindto: '#shareTimeGraph',
         size: {
             height: 240
         },
-        data: {
-            x: 'x',
-            columns: elastic_data['for_charts']['date_totals']['date_numbers'],
-            type: 'area-spline',
-            groups: [elastic_data['for_charts']['date_totals']['group_names']]
-        },
+        data: data.charts.shareTimeGraph,
         axis: {
             x: {
                 type: 'category'
@@ -70,8 +62,8 @@ Stats.view = function(ctrl) {
                 m('.row', m('.col-md-12', [
                     !ctrl.vm.statsLoaded() ? m('img[src=/static/img/loading.gif]') : [
                         m('.row', [
-                            m('.col-md-3', ctrl.drawGraph('shareDoughnutGraph', doughnutGraph)),
-                            m('.col-md-9', ctrl.drawGraph('shareTimeGraph', timeGraph))
+                            m('.col-sm-3', ctrl.drawGraph('shareDonutGraph', donutGraph)),
+                            m('.col-sm-9', ctrl.drawGraph('shareTimeGraph', timeGraph))
                         ])
                     ]
                 ]))
@@ -96,6 +88,8 @@ Stats.controller = function(vm) {
     self.vm = vm;
     self.vm.providers = 26;
 
+    self.graphs = {};
+
     self.vm.totalCount = 0;
     self.vm.showStats = true;
     self.vm.latestDate = undefined;
@@ -104,7 +98,7 @@ Stats.controller = function(vm) {
     self.drawGraph = function(divId, graphFunction) {
         return m('div', {id: divId, config: function(e, i) {
             if (i) return;
-            graphFunction(self.vm.statsData);
+            self.graphs[divId] = graphFunction(self.vm.statsData);
         }});
     };
 
@@ -117,6 +111,13 @@ Stats.controller = function(vm) {
             background: true
         }).then(function(data) {
             self.vm.statsData = data;
+            Object.keys(self.graphs).map(function(type) {
+                self.vm.statsData.charts[type].unload = true;
+                if(type === 'shareDonutGraph') {
+                    $('.c3-chart-arcs-title').text(data.raw_aggregations.sources.buckets.length + ' Provider');
+                }
+                self.graphs[type].load(self.vm.statsData.charts[type]);
+            });
             self.vm.statsLoaded(true);
         }).then(m.redraw);
     };
