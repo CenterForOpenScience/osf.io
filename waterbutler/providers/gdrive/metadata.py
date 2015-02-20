@@ -37,7 +37,7 @@ class GoogleDriveFolderMetadata(BaseGoogleDriveMetadata, metadata.BaseFolderMeta
 
     @property
     def path(self):
-        return os.path.join(self.raw['id'], self.raw['title'], self.raw['path'])
+        return os.path.join('/', self.raw['id'], self.raw['title'], self.raw['path'])
 
 
 class GoogleDriveFileMetadata(BaseGoogleDriveMetadata, metadata.BaseFileMetadata):
@@ -52,7 +52,8 @@ class GoogleDriveFileMetadata(BaseGoogleDriveMetadata, metadata.BaseFileMetadata
 
     @property
     def path(self):
-        return os.path.join(self.raw['id'], self.raw['title'], self.raw['path'])
+        print("Upload/download", os.path.join('/', self.raw['id'], self.raw['title'], self.raw['path']))
+        return os.path.join('/', self.raw['id'], self.raw['title'], self.raw['path'])
 
     @property
     def size(self):

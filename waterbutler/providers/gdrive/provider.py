@@ -17,41 +17,40 @@ from waterbutler.providers.gdrive.metadata import GoogleDriveFolderMetadata
 
 class GoogleDrivePath(utils.WaterButlerPath):
 
-    def __init__(self, path, folder, isUpload=False, prefix=True, suffix=False):
+    def __init__(self, path, folder, prefix=True, suffix=False):
         super().__init__(path, prefix=prefix, suffix=suffix)
-        parts = path.strip('/').split('/')
-        if len(parts) > 1:
-            name = parts[1]  # TODO : Remove this later if of no use
-            folderId = parts[0]
-            self._folderId = folderId
-            self._name = name
-            if folderId == folder['id']:
-                full_path = folder['name'].lstrip('/')
-            else:
-                tempPath = ''
-                for i in range(2, len(parts)):
-                    if tempPath == '':
-                        tempPath = parts[i]
-                    else:
-                        tempPath = tempPath + '/' + parts[i]
-                self._path = tempPath
-                full_path = tempPath
-            self._full_path = self._format_path(full_path)
-        self._uploadFileName = ""
-        if isUpload:
 
-            #this is VERY HACKISH. MUST be fixed once other code is fixed.
-            folder_plus_name = parts[-1:][0]
-            folder_name = folder['path']['path'].split('/')[-1:][0]
-            start_index = folder_plus_name.find(folder_name)
-            self._uploadFileName = folder_plus_name[start_index + len(folder_name):]
+        self.path_parts = path.strip('/').split('/')
+        self.folder = folder
+        self.upload_file_name = ''
 
-    def __repr__(self):
-        return "{}({!r}, {!r})".format(self.__class__.__name__, self._folderId, self._orig_path)
+        if len(self.path_parts) > 1:
+            self.folder_id = self.path_parts[0]
+            self.folder_name = self.path_parts[1]
+
+    # If a slash can be included before file.name while building uploadUrl
+    # in waterbutler.js then this part won't be necessary
+    def upload_path(self):
+        folder_plus_name = self.path_parts[-1:][0]
+        folder_name = self.folder['path']['path'].split('/')[-1:][0]
+        start_index = folder_plus_name.find(folder_name)
+        upload_file_name = folder_plus_name[start_index + len(folder_name):]
+        self.upload_file_name = upload_file_name
+        upload_path =os.path.join(self.full_path.rstrip(upload_file_name), upload_file_name)
+        return upload_path
 
     @property
     def full_path(self):
-        return self._full_path
+        path = ''
+        for i in range(2, len(self.path_parts)):
+            if path == '':
+                path = self.path_parts[i]
+            else:
+                path = path + '/' + self.path_parts[i]
+        return path
+
+    def __repr__(self):
+        return "{}({!r}, {!r})".format(self.__class__.__name__, self.folder_id, self._orig_path)
 
 
 class GoogleDriveProvider(provider.BaseProvider):
@@ -62,26 +61,26 @@ class GoogleDriveProvider(provider.BaseProvider):
     def __init__(self, auth, credentials, settings):
         super().__init__(auth, credentials, settings)
         self.token = self.credentials['token']
-        self.refresh_token = self.credentials['refresh_token']
-        self.client_id = self.credentials['client_id']
-        self.client_secret = self.credentials['client_secret']
+        # self.refresh_token = self.credentials['refresh_token']
+        # self.client_id = self.credentials['client_id']
+        # self.client_secret = self.credentials['client_secret']
         self.folder = self.settings['folder']
 
     @property
     def default_headers(self):
 
-        # Refesh access_token before making any calls
-        params = {
-            'client_id': self.client_id,
-            'client_secret': self.client_secret,
-            'refresh_token': self.refresh_token,
-            'grant_type': 'refresh_token'
-        }
-        url = 'https://www.googleapis.com/oauth2/v3/token'
-        response = requests.post(url, params=params)
-        new_access_token = response.json()['access_token']
+        # # Refesh access_token before making any calls
+        # params = {
+        #     'client_id': self.client_id,
+        #     'client_secret': self.client_secret,
+        #     'refresh_token': self.refresh_token,
+        #     'grant_type': 'refresh_token'
+        # }
+        # url = 'https://www.googleapis.com/oauth2/v3/token'
+        # response = requests.post(url, params=params)
+        # new_access_token = response.json()['access_token']
         return {
-            'authorization': 'Bearer {}'.format(new_access_token),
+            'authorization': 'Bearer {}'.format(self.token),
         }
 
     @asyncio.coroutine
@@ -90,7 +89,7 @@ class GoogleDriveProvider(provider.BaseProvider):
         path = GoogleDrivePath(path, self.folder)
         resp = yield from self.make_request(
             'GET',
-            self.build_url('files', path._folderId),
+            self.build_url('files', path.folder_id),
             expects=(200, ),
             throws=exceptions.DownloadError,
         )
@@ -107,29 +106,24 @@ class GoogleDriveProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
-
+        path = GoogleDrivePath(path, self.folder)
+        path_for_metadata = os.path.join('/', path.folder_id, path.upload_file_name, path.upload_path())
         try:
-            yield from self.metadata(str(path))
+            yield from self.metadata(str(path_for_metadata))
         except exceptions.MetadataError:
+            print("in exception")
             created = True
         else:
             created = False
-        path = GoogleDrivePath(path, self.folder, isUpload=True)
         content = yield from stream.read()
-        #content = base64.b64encode(content)
-        #content = content.decode('utf-8')
-
         metadata = {
             "parents": [
                 {
                     "kind": "drive#parentReference",
-                    "id": path._folderId
+                    "id": path.folder_id
                 },
             ],
-
-            "title": path._uploadFileName,
-            #"Content-Type": "image/png",
-
+            "title": path.upload_file_name,
         }
         #Step 1 - Start a resumable session
         resp = yield from self.make_request(
@@ -143,21 +137,14 @@ class GoogleDriveProvider(provider.BaseProvider):
             data=json.dumps(metadata),
             expects=(200, ),
             throws=exceptions.UploadError
-
         )
-
         #Step 2 - Save the resumable session URI
-
         yield from resp.json()
-
         location = resp.headers['LOCATION']
-
         query_params = urlparse(location).query
         #todo:make this proper
         upload_id = query_params.split("=")[2]
-
         #Step 3 - Upload the file
-
         resp = yield from self.make_request(
             'PUT',
             self._build_upload_url("files", uploadType='resumable', upload_id=upload_id),
@@ -168,9 +155,8 @@ class GoogleDriveProvider(provider.BaseProvider):
             expects=(200, ),
             throws=exceptions.UploadError,
         )
-
         data = yield from resp.json()
-        data['path'] = os.path.join(path.full_path, metadata['title'])
+        data['path'] = path.upload_path()
         return GoogleDriveFileMetadata(data, self.folder).serialized(), created
 
     @asyncio.coroutine
@@ -181,17 +167,19 @@ class GoogleDriveProvider(provider.BaseProvider):
         path = GoogleDrivePath(path, self.folder)
         yield from self.make_request(
             'DELETE',
-            self.build_url('files', path._folderId),
+            self.build_url('files', path.folder_id),
             expects=(204, ),
             throws=exceptions.DeleteError,
         )
 
     @asyncio.coroutine
     def metadata(self, path, **kwargs):
+        # import pdb; pdb.set_trace()
         path = GoogleDrivePath(path, self.folder)
+
         resp = yield from self.make_request(
             'GET',
-            self.build_url('files', q="'%s' in parents and trashed = false" % path._folderId, alt="json"),
+            self.build_url('files', q="'%s' in parents and trashed = false" % path.folder_id, alt="json"),
             expects=(200, ),
             throws=exceptions.MetadataError
         )
@@ -201,7 +189,7 @@ class GoogleDriveProvider(provider.BaseProvider):
         if len(data['items']) == 0:  # No subitems indicates a File
             resp = yield from self.make_request(
                 'GET',
-                self.build_url('files', path._folderId),
+                self.build_url('files', path.folder_id),
                 expects=(200, ),
                 throws=exceptions.MetadataError
             )
@@ -225,7 +213,7 @@ class GoogleDriveProvider(provider.BaseProvider):
         path = GoogleDrivePath(path, self.folder)
         response = yield from self.make_request(
             'GET',
-            self.build_url('files', path._folderId, 'revisions'),
+            self.build_url('files', path.folder_id, 'revisions'),
             expects=(200, ),
             throws=exceptions.RevisionsError
         )
