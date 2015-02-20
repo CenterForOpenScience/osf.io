@@ -20,7 +20,7 @@ function donutGraph (data) {
     return c3.generate({
         bindto: '#shareDonutGraph',
         size: {
-            height: 240
+            height: 200
         },
         data: data.charts.shareDonutGraph,
         donut: {
@@ -36,7 +36,7 @@ function timeGraph (data) {
     return c3.generate({
         bindto: '#shareTimeGraph',
         size: {
-            height: 240
+            height: 200
         },
         data: data.charts.shareTimeGraph,
         axis: {
