@@ -3,9 +3,11 @@ from flask import request
 from framework.auth.core import _get_current_user
 from framework.auth.decorators import must_be_logged_in, collect_auth
 import httplib as http
+
 from website.project.decorators import (must_be_valid_project, must_have_permission,
                                         must_have_addon, must_not_be_registration, must_be_addon_authorizer)
 from website.util import api_url_for
+
 from ..utils import serialize_settings, serialize_urls
 
 @collect_auth

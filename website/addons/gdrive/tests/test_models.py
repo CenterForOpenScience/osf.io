@@ -2,15 +2,16 @@
 from nose.tools import *  # noqa (PEP8 asserts)
 
 from framework.auth import Auth
+from tests.base import OsfTestCase
+from tests.factories import UserFactory, ProjectFactory
+from website.addons.base import exceptions
+
 from website.addons.gdrive.model import (
     AddonGdriveUserSettings, AddonGdriveNodeSettings
 )
-from tests.base import OsfTestCase
-from tests.factories import UserFactory, ProjectFactory
 from website.addons.gdrive.tests.factories import (
     GdriveNodeSettingsFactory, GdriveUserSettingsFactory
 )
-from website.addons.base import exceptions
 from website.addons.gdrive.utils import get_path_from_waterbutler_path
 
 class TestGdriveUserSettingsModel(OsfTestCase):

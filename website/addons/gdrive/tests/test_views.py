@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 import mock
-import time
 import datetime
-from framework.sessions import session
+import time
+
 from nose.tools import *  # PEP8 asserts
 from framework.auth import Auth
 from website.util import api_url_for, web_url_for
 from tests.base import OsfTestCase, assert_is_redirect
 from tests.factories import AuthUserFactory, ProjectFactory
+
 from website.addons.gdrive.tests.utils import mock_files_folders, mock_folders, mock_root_folders
-from website.addons.gdrive.utils import serialize_settings, serialize_urls, check_access_token
+from website.addons.gdrive.utils import serialize_settings, check_access_token
 
 
 
@@ -325,7 +326,7 @@ class TestGdriveUtils(OsfTestCase):
         res = check_access_token(self.user_settings)
         assert_true(res['status'], 'token_valid')
 
-    @mock.patch('website.addons.gdrive.views.hgrid.requests')
+    @mock.patch('website.addons.gdrive.utils.requests')
     def test_check_refresh_token_when_curr_time_equal_to_token_time(self, mock_response):
         json_response = {
             'access_token': 'new access token',
@@ -340,7 +341,7 @@ class TestGdriveUtils(OsfTestCase):
         res = check_access_token(self.user_settings)
         assert_true(res['status'], 'token_refreshed')
 
-    @mock.patch('website.addons.gdrive.views.hgrid.requests')
+    @mock.patch('website.addons.gdrive.utils.requests')
     def test_check_refresh_token_when_curr_time_greater_than_token_time(self, mock_response):
         json_response = {
             'access_token': 'new access token',

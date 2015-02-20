@@ -2,12 +2,14 @@
 """Persistence layer for the gdrive addon.
 """
 import base64
+
 from modularodm.exceptions import ModularOdmException
 from framework.auth import Auth
 from modularodm import fields, Q
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
-from .utils import clean_path, GoogleDriveNodeLogger, check_access_token, get_path_from_waterbutler_path
 from website.addons.base import exceptions
+
+from .utils import clean_path, GoogleDriveNodeLogger, check_access_token, get_path_from_waterbutler_path
 
 
 class AddonGdriveGuidFile(GuidFile):

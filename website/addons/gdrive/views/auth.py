@@ -2,8 +2,9 @@ import os
 import httplib as http
 import httplib2
 import time
-from ..import settings
-from ..utils import serialize_settings
+
+from oauth2client.client import OAuth2WebServerFlow
+from apiclient.discovery import build
 from flask import request
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in, collect_auth
@@ -12,10 +13,10 @@ from framework.status import push_status_message as flash
 from framework.sessions import session
 from website.project.model import Node
 from website.util import web_url_for
-from oauth2client.client import OAuth2WebServerFlow
 from website.project.decorators import (must_have_addon, must_have_permission)
-from apiclient.discovery import build
 
+from ..import settings
+from ..utils import serialize_settings
 
 @must_be_logged_in
 def drive_oauth_start(auth, **kwargs):
