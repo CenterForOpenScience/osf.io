@@ -187,7 +187,7 @@ def data_for_charts(elastic_results):
             names.append(key)
             x = [item['doc_count'] for item in value['articles_over_time']]
             x[0] += stats[key].get('earlier_documents', 0)
-            numbers.append([key] + [sum(x[0:i+1]) for i in range(len(x[0:]))])
+            numbers.append([key] + [sum(x[0:i + 1]) for i in range(len(x[0:]))])
         except IndexError:
             pass
 
