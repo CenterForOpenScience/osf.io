@@ -58,7 +58,7 @@ ${next.body()}
             ## TODO: Abstract me
             id: nodeId,
             title: ${json.dumps(node['title']) | n},
-            urls: {api: nodeApiUrl},
+            urls: {api: nodeApiUrl, web: ${json.dumps(node['url'])}},
             isPublic: ${json.dumps(node.get('is_public', False))},
             piwikSiteID: ${json.dumps(node.get('piwik_site_id', None))},
             piwikHost: ${json.dumps(piwik_host)},

@@ -12,10 +12,11 @@ var Raven = require('raven-js');
 
 var FolderPicker = require('folderpicker');
 var $osf = require('osfHelpers');
+var ctx = window.contextVars;
 
 ko.punches.enableAll();
 /**
- * Knockout view model for the mendeley node settings widget.
+ * Knockout view model for the Mendeley node settings widget.
  */
 var ViewModel = function(url, selector, folderPicker) {
     var self = this;
@@ -87,13 +88,13 @@ var ViewModel = function(url, selector, folderPicker) {
             if (!self.validCredentials()){
                 if (self.userIsOwner()) {
                     self.changeMessage('Could not retrieve Mendeley settings at ' +
-                    'this time. The mendeley addon credentials may no longer be valid.' +
+                    'this time. The Mendeley addon credentials may no longer be valid.' +
                     ' Try deauthorizing and reauthorizing mendeley on your <a href="' +
                         self.urls().settings + '">account settings page</a>.',
                     'text-warning');
                 } else {
                     self.changeMessage('Could not retrieve Mendeley settings at ' +
-                    'this time. The mendeley addon credentials may no longer be valid.' +
+                    'this time. The Mendeley addon credentials may no longer be valid.' +
                     ' Contact ' + self.ownerName() + ' to verify.',
                     'text-warning');
                 }
@@ -107,7 +108,7 @@ var ViewModel = function(url, selector, folderPicker) {
                 'the page. If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.',
                 'text-warning');
-            Raven.captureMessage('Could not GET mendeley settings', {
+            Raven.captureMessage('Could not GET Mendeley settings', {
                 url: url,
                 textStatus: textStatus,
                 error: error
@@ -213,8 +214,10 @@ var ViewModel = function(url, selector, folderPicker) {
     });
 
     function onSubmitSuccess(response) {
-        self.changeMessage('Successfully linked "' + self.selected().name + '".',
-            'text-success', 5000);
+        var overviewURL = ctx.node.urls.web;
+        var msg = 'Successfully linked "' + self.selected().name + '". Go to the <a href="' +
+            overviewURL + '">Overview page</a> to view your citations.';
+        self.changeMessage(msg, 'text-success', 5000);
         self.folder(self.selected().name);
         self.cancelSelection();
     }
@@ -271,7 +274,7 @@ var ViewModel = function(url, selector, folderPicker) {
             self.nodeHasAuth(false);
             self.cancelSelection();
             self.currentDisplay(null);
-            self.changeMessage('Deauthorized mendeley.', 'text-warning', 3000);
+            self.changeMessage('Deauthorized Mendeley.', 'text-warning', 3000);
         });
 
         request.fail(function(xhr, textStatus, error) {
@@ -294,8 +297,8 @@ var ViewModel = function(url, selector, folderPicker) {
      */
     self.deauthorize = function() {
         bootbox.confirm({
-            title: 'Deauthorize mendeley?',
-            message: 'Are you sure you want to remove this mendeley authorization?',
+            title: 'Deauthorize Mendeley?',
+            message: 'Are you sure you want to remove this Mendeley authorization?',
             callback: function(confirmed) {
                 if (confirmed) {
                     return sendDeauth();
@@ -350,7 +353,7 @@ var ViewModel = function(url, selector, folderPicker) {
             } else {
                 bootbox.confirm({
                     title: 'Import Mendeley Access Token?',
-                    message: 'Are you sure you want to authorize this project with your mendeley access token?',
+                    message: 'Are you sure you want to authorize this project with your Mendeley access token?',
                     callback: function(confirmed) {
                         if (confirmed) {
                             self.connectExistingAccount(self.accounts()[0].id);
@@ -358,17 +361,7 @@ var ViewModel = function(url, selector, folderPicker) {
                     }
                 });
             }
-
-
-
-
         });
-
-
-
-
-
-
     };
 
     /** Callback for chooseFolder action.

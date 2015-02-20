@@ -8,7 +8,7 @@
                 </a>
                 % if not is_registration:
                     <a data-bind="click: deauthorize"
-                        class="text-danger pull-right addon-auth">reauthorize</a>
+                        class="text-danger pull-right addon-auth">Deauthorize</a>
                 % endif
             </span>
 
