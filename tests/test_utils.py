@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 import datetime
-import urlparse
 import os
-import mock
 import unittest
+import mock
 from flask import Flask
 from nose.tools import *  # noqa (PEP8 asserts)
 from modularodm import Q
@@ -17,10 +16,11 @@ from website.routes import process_rules, OsfWebRenderer
 from website.util import paths
 from website.util.mimetype import get_mimetype
 from website.util import web_url_for, api_url_for, is_json_request
-from website.util.send_digest import send_digest, group_messages, group_digest_notifications_by_user
+from scripts.send_digest import group_messages_by_node, group_digest_notifications_by_user, send_digest
 from website.notifications.model import DigestNotification
 from tests.base import OsfTestCase
 from tests.factories import DigestNotificationFactory, UserFactory, ProjectFactory
+
 
 try:
     import magic
@@ -292,8 +292,8 @@ class TestSendDigest(OsfTestCase):
             mail=mails.DIGEST,
             mimetype='html',
             name=user.fullname,
-            message=group_messages(user_groups[last_user_index]['info']),
-            url=urlparse.urljoin(settings.DOMAIN, web_url_for('user_notifications'))
+            message=group_messages_by_node(user_groups[last_user_index]['info']),
+            url=web_url_for('user_notifications', _absolute=True)
         )
 
     @unittest.skipIf(settings.USE_CELERY, 'Digest emails must be sent synchronously for this test')

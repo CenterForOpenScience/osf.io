@@ -2,16 +2,15 @@
 
 import logging
 import datetime
-import urlparse
 from bson.code import Code
+from functools import partial
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from framework import sentry
 from framework.auth.core import User
 from framework.mongo import database as db
-from framework.tasks import app
-from framework.tasks.handlers import queued_task
-from website import mails, settings
+from website import mails
+from website.util import web_url_for
 from website.app import init_app
 from website.notifications.model import DigestNotification
 from website.notifications.utils import NotificationsDict
@@ -24,13 +23,12 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 def main():
-    init_app(routes=False)
+    app = init_app()
     grouped_digests = group_digest_notifications_by_user()
-    send_digest(grouped_digests)
+    with app.test_request_context():
+        send_digest(grouped_digests)
 
-
-@queued_task
-@app.task
+#TODO: Add tests for callback and removing digest notification records
 def send_digest(grouped_digests):
     for group in grouped_digests:
         try:
@@ -41,7 +39,8 @@ def send_digest(grouped_digests):
             user = None
 
         info = group['info']
-        sorted_messages = group_messages(info)
+        digest_notification_ids = [message['_id'] for message in info]
+        sorted_messages = group_messages_by_node(info)
 
         if user and sorted_messages:
             logger.info('Sending email digest to user {0!r}'.format(user))
@@ -51,14 +50,17 @@ def send_digest(grouped_digests):
                 mail=mails.DIGEST,
                 name=user.fullname,
                 message=sorted_messages,
-                url=urlparse.urljoin(settings.DOMAIN, 'settings/notifications/')
+                url=web_url_for('user_notifications', _absolute=True),
+                callback=partial(remove_sent_digest_notifications,
+                                 digest_notification_ids=digest_notification_ids)
             )
 
-    DigestNotification.remove(Q('timestamp', 'lt', datetime.datetime.utcnow()) &
-                              Q('timestamp', 'gte', datetime.datetime.utcnow() - datetime.timedelta(hours=24)))
+
+def remove_sent_digest_notifications(digest_notification_ids):
+    DigestNotification.remove(Q('_id', 'eq', digest_notification_ids))
 
 
-def group_messages(notifications):
+def group_messages_by_node(notifications):
     d = NotificationsDict()
     for n in notifications:
         d.add_message(n['node_lineage'], n['message'])
@@ -77,7 +79,8 @@ def group_digest_notifications_by_user():
                                     'message': curr.message,
                                     'timestamp': curr.timestamp
                                 },
-                                'node_lineage': curr.node_lineage
+                                'node_lineage': curr.node_lineage,
+                                '_id': curr._id
                             }
                             result.info.push(info);
                     };
