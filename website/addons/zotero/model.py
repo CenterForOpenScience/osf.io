@@ -21,9 +21,9 @@ class AddonZoteroUserSettings(AddonUserSettingsBase):
         ]
 
     def _get_connected_accounts(self):
-        """Get user's connected Mendeley accounts"""
+        """Get user's connected Zotero accounts"""
         return [
-            x for x in self.owner.external_accounts if x.provider == 'mendeley'
+            x for x in self.owner.external_accounts if x.provider == 'zotero'
         ]
 
     def grant_oauth_access(self, node, external_account, metadata=None):
@@ -182,10 +182,10 @@ class AddonZoteroNodeSettings(AddonNodeSettingsBase):
         self.user_settings = None
         self.save()
 
-    def set_target_folder(self, mendeley_list_id):
-        """Configure this addon to point to a Mendeley folder
+    def set_target_folder(self, zotero_list_id):
+        """Configure this addon to point to a Zotero folder
 
-        :param str mendeley_list_id:
+        :param str zotero_list_id:
         :param ExternalAccount external_account:
         :param User user:
         """
@@ -294,7 +294,7 @@ class Zotero(ExternalProvider):
 
         return [all_documents] + serialized_folders
 
-    def get_zotero_list(self, list_id=None):
+    def get_list(self, list_id=None):
         """Get a single CitationList
 
         :param str list_id: ID for a Zotero collection. Optional.
