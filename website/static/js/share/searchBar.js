@@ -24,7 +24,8 @@ SearchBar.view = function(ctrl) {
                     // class: 'animated pulse'
                 }),
                 m('span.about-share-header', 'SHARE'),
-                m('br')
+                m('div', {style: {'margin-top': '-10px'}}, m('small', m('a.share-link[href=https://github.com/CenterForOpenScience/SHARE]', 'What is SHARE?'))),
+                m('br'),
             ])
         ]),
         m('.row', [
