@@ -42,11 +42,22 @@ function timeGraph (data) {
         axis: {
             x: {
                 type: 'category',
+                label: {
+                   text: 'Last Three Months',
+                   position: 'outer-center',
+                }
+            },
+            y: {
+                label: {
+                   text: 'Records',
+                   position: 'outer-middle'
+                }
             }
         },
         legend: {
             show: false
-        }
+        },
+
     });
 }
 
