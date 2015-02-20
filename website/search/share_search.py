@@ -161,7 +161,6 @@ def data_for_charts(elastic_results):
 
     default_buckets = []
     for bucket in elastic_results['aggregations']['date_chunks']['buckets']:
-        # if len(bucket['articles_over_time']['buckets']) > len(default_buckets):
         default_buckets = bucket['articles_over_time']['buckets']
         stats[bucket['key']]['articles_over_time'] = bucket['articles_over_time']['buckets']
 
