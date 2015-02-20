@@ -18,11 +18,11 @@ from website.notifications.utils import NotificationsDict
 from scripts import utils as script_utils
 
 logger = logging.getLogger(__name__)
-script_utils.add_file_logger(logger, __file__)
 logging.basicConfig(level=logging.DEBUG)
 
 
 def main():
+    script_utils.add_file_logger(logger, __file__)
     app = init_app()
     grouped_digests = group_digest_notifications_by_user()
     with app.test_request_context():
