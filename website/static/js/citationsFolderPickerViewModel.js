@@ -250,7 +250,7 @@ CitationsFolderPickerViewModel.prototype.connectAccount = function() {
                 self.urls().importAuth, {
                     external_account_id: self.accounts()[0].id
                 }
-            ).then(self.onImportSuccess, self.onImportError);
+            ).then(self.onImportSuccess.bind(self), self.onImportError.bind(self));
         });
     };
     window.open(self.urls().auth);
@@ -263,7 +263,7 @@ CitationsFolderPickerViewModel.prototype.connectExistingAccount = function(accou
         self.urls().importAuth, {
             external_account_id: account_id
         }
-    ).then(self.onImportSuccess, self.onImportError);
+    ).then(self.onImportSuccess.bind(self), self.onImportError.bind(self));
 };
 
 
@@ -360,7 +360,7 @@ CitationsFolderPickerViewModel.prototype.onImportSuccess = function(response) {
 CitationsFolderPickerViewModel.prototype.onImportError = function(xhr, textStatus, error) {
     var self = this;
 
-    self.changeMessage(self.messages.TOKEN_IMPORT_ERROR, 'text-danger');
+    self.changeMessage(self.messages.TOKEN_IMPORT_ERROR(), 'text-danger');
     Raven.captureMessage('Failed to import Mendeley access token', {
         url: self.urls().importAuth,
         textStatus: textStatus,
