@@ -152,6 +152,29 @@ class GoogleDriveProvider(provider.BaseProvider):
             throws=exceptions.DeleteError,
         )
 
+    def _folder_metadata(self, path, data):
+        ret = []
+        for item in data['items']:
+            # custom add, not obtained from API
+            item['path'] = os.path.join(path.full_path, item['title'])
+            if item['mimeType'] == 'application/vnd.google-apps.folder':
+                ret.append(GoogleDriveFolderMetadata(item, self.folder).serialized())
+            else:
+                ret.append(GoogleDriveFileMetadata(item, self.folder).serialized())
+        return ret
+
+    @asyncio.coroutine
+    def _file_metadata(self, path, data):
+        resp = yield from self.make_request(
+            'GET',
+            self.build_url('files', path.folder_id),
+            expects=(200, ),
+            throws=exceptions.MetadataError
+        )
+        data = yield from resp.json()
+        data['path'] = os.path.join(path.full_path, data['title'])
+        return GoogleDriveFileMetadata(data, self.folder).serialized()
+
     @asyncio.coroutine
     def metadata(self, path, **kwargs):
         path = GoogleDrivePath(path, self.folder)
@@ -165,27 +188,9 @@ class GoogleDriveProvider(provider.BaseProvider):
         data = yield from resp.json()
 
         # Check to see if request was made for file or folder
-        if len(data['items']) == 0:  # No subitems indicates a File
-            resp = yield from self.make_request(
-                'GET',
-                self.build_url('files', path.folder_id),
-                expects=(200, ),
-                throws=exceptions.MetadataError
-            )
-            data = yield from resp.json()
-            data['path'] = os.path.join(path.full_path, data['title'])
-
-        else:  # Folder
-            ret = []
-            for item in data['items']:
-                item['path'] = os.path.join(path.full_path, item['title'])  # custom add, not obtained from API
-                if item['mimeType'] == 'application/vnd.google-apps.folder':
-                    ret.append(GoogleDriveFolderMetadata(item, self.folder).serialized())
-                else:
-                    ret.append(GoogleDriveFileMetadata(item, self.folder).serialized())
-            return ret
-
-        return GoogleDriveFileMetadata(data, self.folder).serialized()
+        if data['items']:
+            return (yield from self._folder_metadata(path, data))
+        return self._file_metadata(path, data)
 
     @asyncio.coroutine
     def revisions(self, path, **kwargs):
