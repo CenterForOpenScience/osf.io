@@ -36,8 +36,12 @@ var Results = {};
 
 Results.view = function(ctrl) {
     return m('.row', [
-        m('.col-md-12', ctrl.vm.results.map(ctrl.renderResult)),
-        m('.col-md-12', ctrl.vm.resultsLoading() ? utils.loadingIcon : [])
+        m('.row', m('.col-md-12', ctrl.vm.results.map(ctrl.renderResult))),
+        m('.row', m('.col-md-12', ctrl.vm.resultsLoading() ? utils.loadingIcon : [])),
+        m('.row', m('.col-md-12', m('div', {style: {display: 'block', margin: 'auto', 'text-align': 'center'}},
+            ctrl.vm.results.length > 0 && ctrl.vm.results.length < ctrl.vm.count ?
+            m('a.btn.btn-md.btn-default', {onclick: function(){utils.loadMore(ctrl.vm);}}, 'More') : [])
+         ))
     ]);
 
 };
@@ -78,7 +82,7 @@ Results.controller = function(vm) {
                             });
                         };
 
-                        return m('span.pull-left', {style: {'text-align': 'center'}},
+                        return m('span.pull-left', {style: {'text-align': 'left'}},
                             result.showAllContrib || result.contributors.length < 8 ?
                                 renderPeople(result.contributors) :
                                 m('span', [
@@ -89,18 +93,22 @@ Results.controller = function(vm) {
                         );
                     }()))),
                     m('.col-md-5',
-                        m('.pull-right', {style: {'text-align': 'center'}, class: result.tags.length > 5 ? 'pointer' : ''},
+                        m('.pull-right', {style: {'text-align': 'right'}},
                             (function(){
                                 var renderTag = function(tag) {
-                                    return m('.badge.pointer', {onclick: function(){
-                                        utils.appendSearch(self.vm, 'tags:' + tag);
-                                    }}, tag.length < 50 ? tag : tag.substring(0, 47) + '...');
+                                    return [
+                                        m('.badge.pointer', {onclick: function(){
+                                            utils.appendSearch(self.vm, 'tags:' + tag);
+                                        }}, tag.length < 50 ? tag : tag.substring(0, 47) + '...'),
+                                        ' '
+                                    ];
                                 };
+
                                 if (result.showAllTags || result.tags.length < 5) {
                                     return result.tags.map(renderTag);
                                 }
                                 return m('span', [
-                                    result.tags.slice(0, 5).map(function(tag){return m('.badge', tag);}),
+                                    result.tags.slice(0, 5).map(renderTag),
                                     m('br'),
                                     m('div', m('a', {onclick: function() {result.showAllTags = result.showAllTags ? false : true;}},'See All'))
                                 ]);
@@ -121,11 +129,12 @@ Results.controller = function(vm) {
         ]);
     };
 
-    $(window).scroll(function() {
-        if  ($(window).scrollTop() === $(document).height() - $(window).height()){
-            utils.loadMore(self.vm);
-        }
-    });
+    // Uncomment for infinite scrolling!
+    // $(window).scroll(function() {
+    //     if  ($(window).scrollTop() === $(document).height() - $(window).height()){
+    //         utils.loadMore(self.vm);
+    //     }
+    // });
 
     utils.loadMore(self.vm);
 };
