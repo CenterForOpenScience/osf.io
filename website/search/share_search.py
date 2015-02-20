@@ -38,6 +38,7 @@ def count(query):
 
 
 def stats(query=dict()):
+    three_months_ago = timegm((datetime.now() + relativedelta(months=-3)).timetuple()) * 1000
     query['aggs'] = {
         "sources": {
             "terms": {
@@ -89,14 +90,26 @@ def stats(query=dict()):
                         "interval": "month",
                         "min_doc_count": 0,
                         "extended_bounds": {
-                            "min": timegm((datetime.now() + relativedelta(months=-3)).timetuple()) * 1000,
+                            "min": three_months_ago,
                             "max": timegm(gmtime()) * 1000
+                        }
+                    },
+                    "aggs": {
+                        "date_filter": {
+                            "filter": {
+                                "range": {
+                                    "dateUpdated": {
+                                        "lt": three_months_ago
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
         }
     }
+
 
     results = share_es.search(index='share', body=query)
 
@@ -106,6 +119,8 @@ def stats(query=dict()):
 
 
 def data_for_charts(elastic_results):
+    import json
+    with open('results.json', 'w') as f: f.write(json.dumps(elastic_results, indent=4))
     source_data = elastic_results['aggregations']['sources']['buckets']
     for_charts = {}
 
@@ -128,9 +143,9 @@ def data_for_charts(elastic_results):
         all_source_names.append(bucket['key'])
         for internal in bucket['articles_over_time']['buckets']:
             provider_row.append(internal['doc_count'])
-        provider_cumulitive = [sum(provider_row[1:i+2]) for i in range(len(provider_row[1:]))]
-        provider_cumulitive = [bucket['key']] + provider_cumulitive
-        all_date_data.append(provider_cumulitive)
+        provider_cumulative = [sum(provider_row[1:i+2]) for i in range(len(provider_row[1:]))]
+        provider_cumulative = [bucket['key']] + provider_cumulative
+        all_date_data.append(provider_cumulative)
 
     for_charts['date_totals'] = {}
     for_charts['date_totals']['date_numbers'] = all_date_data
