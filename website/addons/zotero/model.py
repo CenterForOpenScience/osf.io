@@ -269,8 +269,7 @@ class Zotero(ExternalProvider):
             self._client = zotero.Zotero(self.account.provider_id, 'user', self.account.oauth_key)
         return self._client
 
-    @property
-    def citation_lists(self):
+    def citation_lists(self, extract_folder):
         """List of CitationList objects, derived from Zotero collections"""
         client = self.client
 
@@ -283,12 +282,7 @@ class Zotero(ExternalProvider):
         )
 
         serialized_folders = [
-            serialize_folder(
-                each['data'].get('name'),
-                list_id=each['data'].get('key'),
-                parent_id=each['data'].get('parentCollection'),
-                id=each['data'].get('key')
-            )
+            extract_folder(each)
             for each in collections
         ]
 

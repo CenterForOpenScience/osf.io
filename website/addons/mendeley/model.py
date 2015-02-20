@@ -250,8 +250,7 @@ class Mendeley(ExternalProvider):
             })
         return self._client
 
-    @property
-    def citation_lists(self):
+    def citation_lists(self, extract_folder):
         """List of CitationList objects, derived from Mendeley folders"""
 
         folders = self._get_folders()
@@ -263,12 +262,7 @@ class Mendeley(ExternalProvider):
             parent_id='__'
         )
         serialized_folders = [
-            serialize_folder(
-                each.name,
-                list_id=each.json['id'],
-                parent_id=each.json.get('parent_id'),
-                id=each.json.get('id')
-            )
+            extract_folder(each)
             for each in folders
         ]
         return [all_documents] + serialized_folders

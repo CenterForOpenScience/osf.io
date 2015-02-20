@@ -131,6 +131,79 @@ class CitationsProvider(object):
         return ret
 
     @abc.abstractmethod
-    def citation_list(self, node_addon, user, list_id, show='all'):
+    def _extract_folder(self, data):
 
         return {}
+
+    @abc.abstractmethod
+    def _serialize_folder(self, folder):
+
+        return {}
+
+    @abc.abstractmethod
+    def _serialize_citation(self, citation):
+
+        return {
+            'csl': citation,
+            'kind': 'file',
+            'id': citation['id'],
+        }
+
+    @abc.abstractmethod
+    def _folder_id(self):
+
+        return None
+
+    def citation_list(self, node_addon, user, list_id, show='all'):
+
+        attached_list_id = self._folder_id(node_addon)
+        account_folders = node_addon.api.citation_lists(self._extract_folder)
+
+        # Folders with 'parent_list_id'==None are children of 'All Documents'
+        for folder in account_folders:
+            if folder.get('parent_list_id') is None:
+                folder['parent_list_id'] = 'ROOT'
+
+        node_account = node_addon.external_account
+        user_accounts = [
+            account for account in user.external_accounts
+            if account.provider == self.provider_name
+        ]
+        user_is_owner = node_account in user_accounts
+
+        # verify this list is the attached list or its descendant
+        if not user_is_owner and (list_id != attached_list_id and attached_list_id is not None):
+            folders = {
+                (each['provider_list_id'] or 'ROOT'): each
+                for each in account_folders
+            }
+            if list_id is None:
+                ancestor_id = 'ROOT'
+            else:
+                ancestor_id = folders[list_id].get('parent_list_id')
+
+            while ancestor_id != attached_list_id:
+                if ancestor_id is '__':
+                    raise HTTPError(http.FORBIDDEN)
+                ancestor_id = folders[ancestor_id].get('parent_list_id')
+
+        contents = []
+        if list_id is None:
+            contents = [node_addon.root_folder]
+        else:
+            if show in ('all', 'folders'):
+                contents += [
+                    self._serialize_folder(each, node_addon)
+                    for each in account_folders
+                    if each.get('parent_list_id') == list_id
+                ]
+
+            if show in ('all', 'citations'):
+                contents += [
+                    self._serialize_citation(each)
+                    for each in node_addon.api.get_list(list_id)
+                ]
+
+        return {
+            'contents': contents
+        }
