@@ -72,17 +72,12 @@ def gdrive_addon_folder(node_settings, auth, **kwargs):
     if not node_settings.has_auth or not node_settings.folder:
         return None
     node = node_settings.owner
-    path = {
-        'path': node_settings.waterbutler_folder['name'],
-        'id': node_settings.waterbutler_folder['id']
-    }
-    folder_name = clean_path(node_settings.folder)
     root = rubeus.build_addon_root(
         node_settings=node_settings,
         name=node_settings.folder,
         permissions=auth,
         nodeUrl=node.url,
         nodeApiUrl=node.api_url,
-        path='/{0}/{1}/{2}'.format(path['id'], folder_name, path['path'].lstrip('/'))
+        path=node_settings.waterbutler_folder['name'] + '/',
     )
     return [root]
