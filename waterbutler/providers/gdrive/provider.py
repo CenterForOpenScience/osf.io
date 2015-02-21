@@ -1,4 +1,3 @@
-import os
 import json
 import asyncio
 
@@ -17,42 +16,8 @@ from waterbutler.providers.gdrive.metadata import GoogleDriveFolderMetadata
 
 class GoogleDrivePath(utils.WaterButlerPath):
 
-    # def __init__(self, path, folder, prefix=True, suffix=False):
-    #     super().__init__(path, prefix=prefix, suffix=suffix)
-
-    #     self.path_parts = path.strip('/').split('/')
-    #     self.folder = folder
-    #     self.upload_file_name = ''
-
-    #     if len(self.path_parts) > 1:
-    #         self.folder_id = self.path_parts[0]
-    #         self.folder_name = self.path_parts[1]
-
-    # If a slash can be included before file.name while building uploadUrl
-    # in waterbutler.js then this part won't be necessary
-    def upload_path(self):
-        folder_plus_name = self.path_parts[-1]
-        folder_name = self.folder['path']['path'].split('/')[-1]
-        start_index = folder_plus_name.find(folder_name)
-        upload_file_name = folder_plus_name[start_index + len(folder_name):]
-        self.upload_file_name = upload_file_name
-        return os.path.join(
-            self.full_path.rstrip(upload_file_name),
-            upload_file_name,
-        )
-
-    @property
-    def full_path(self):
-        path = ''
-        for i in range(2, len(self.path_parts)):
-            if path == '':
-                path = self.path_parts[i]
-            else:
-                path = path + '/' + self.path_parts[i]
-        return path
-
-    # def __repr__(self):
-    #     return "{}({!r}, {!r})".format(self.__class__.__name__, self.folder_id, self._orig_path)
+    def __init__(self, path, prefix=True, suffix=False):
+        super().__init__(path, prefix=prefix, suffix=suffix)
 
 
 class GoogleDriveProvider(provider.BaseProvider):
@@ -109,8 +74,8 @@ class GoogleDriveProvider(provider.BaseProvider):
             'title': path.name,
         }
         resp = yield from self.make_request(
-            'POST',
-            self._build_upload_url('files', uploadType='resumable'),
+            'POST' if created else 'PUT',
+            self._build_upload_url('files', *segments, uploadType='resumable'),
             headers={
                 'Content-Type': 'application/json',
                 'X-Upload-Content-Length': str(stream.size),
