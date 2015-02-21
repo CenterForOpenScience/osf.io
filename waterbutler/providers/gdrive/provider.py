@@ -69,14 +69,7 @@ class GoogleDriveProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
-        path = GoogleDrivePath(path, self.folder)
-        resp = yield from self.make_request(
-            'GET',
-            self.build_url('files', path.folder_id),
-            expects=(200, ),
-            throws=exceptions.DownloadError,
-        )
-        data = yield from resp.json()
+        data = yield from self.metadata(path, raw=True)
         # TODO: Add map from document type to export url key @kushg
         try:
             download_url = data['downloadUrl']
@@ -158,13 +151,15 @@ class GoogleDriveProvider(provider.BaseProvider):
             throws=exceptions.DeleteError,
         )
 
-    def _serialize_item(self, path, item):
+    def _serialize_item(self, path, item, raw=False):
+        if raw:
+            return item
         if item['mimeType'] == 'application/vnd.google-apps.folder':
             return GoogleDriveFolderMetadata(item, path).serialized()
         return GoogleDriveFileMetadata(item, path).serialized()
 
     @asyncio.coroutine
-    def metadata(self, path, original_path=None, folder_id=None, **kwargs):
+    def metadata(self, path, original_path=None, folder_id=None, raw=False, **kwargs):
         path = GoogleDrivePath(path, self.folder)
         original_path = original_path or path
         folder_id = folder_id or self.folder['id']
@@ -188,14 +183,14 @@ class GoogleDriveProvider(provider.BaseProvider):
 
         if (path.is_dir and not path.is_leaf) or (path.is_file and not child.is_leaf):
             child_id = data['items'][0]['id']
-            return (yield from self.metadata(str(child), original_path=original_path, folder_id=child_id, **kwargs))
+            return (yield from self.metadata(str(child), original_path=original_path, folder_id=child_id, raw=raw, **kwargs))
 
         if path.is_dir:
             return [
-                self._serialize_item(original_path, item)
+                self._serialize_item(original_path, item, raw=raw)
                 for item in data['items']
             ]
-        return self._serialize_item(original_path.parent, data['items'][0])
+        return self._serialize_item(original_path.parent, data['items'][0], raw=raw)
 
     @asyncio.coroutine
     def revisions(self, path, **kwargs):
