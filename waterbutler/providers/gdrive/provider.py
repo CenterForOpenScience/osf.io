@@ -16,16 +16,16 @@ from waterbutler.providers.gdrive.metadata import GoogleDriveFolderMetadata
 
 class GoogleDrivePath(utils.WaterButlerPath):
 
-    def __init__(self, path, folder, prefix=True, suffix=False):
-        super().__init__(path, prefix=prefix, suffix=suffix)
+    # def __init__(self, path, folder, prefix=True, suffix=False):
+    #     super().__init__(path, prefix=prefix, suffix=suffix)
 
-        self.path_parts = path.strip('/').split('/')
-        self.folder = folder
-        self.upload_file_name = ''
+    #     self.path_parts = path.strip('/').split('/')
+    #     self.folder = folder
+    #     self.upload_file_name = ''
 
-        if len(self.path_parts) > 1:
-            self.folder_id = self.path_parts[0]
-            self.folder_name = self.path_parts[1]
+    #     if len(self.path_parts) > 1:
+    #         self.folder_id = self.path_parts[0]
+    #         self.folder_name = self.path_parts[1]
 
     # If a slash can be included before file.name while building uploadUrl
     # in waterbutler.js then this part won't be necessary
@@ -50,8 +50,8 @@ class GoogleDrivePath(utils.WaterButlerPath):
                 path = path + '/' + self.path_parts[i]
         return path
 
-    def __repr__(self):
-        return "{}({!r}, {!r})".format(self.__class__.__name__, self.folder_id, self._orig_path)
+    # def __repr__(self):
+    #     return "{}({!r}, {!r})".format(self.__class__.__name__, self.folder_id, self._orig_path)
 
 
 class GoogleDriveProvider(provider.BaseProvider):
@@ -96,7 +96,7 @@ class GoogleDriveProvider(provider.BaseProvider):
         path = GoogleDrivePath(path, self.folder)
         path_for_metadata = os.path.join('/', path.folder_id, path.upload_file_name, path.upload_path())
         try:
-            yield from self.metadata(str(path_for_metadata))
+            data = yield from self.metadata(str(path_for_metadata))
         except exceptions.MetadataError:
             created = True
         else:
@@ -158,45 +158,44 @@ class GoogleDriveProvider(provider.BaseProvider):
             throws=exceptions.DeleteError,
         )
 
-    def _folder_metadata(self, path, data):
-        ret = []
-        for item in data['items']:
-            # custom add, not obtained from API
-            item['path'] = os.path.join(path.full_path, item['title'])
-            if item['mimeType'] == 'application/vnd.google-apps.folder':
-                ret.append(GoogleDriveFolderMetadata(item, self.folder).serialized())
-            else:
-                ret.append(GoogleDriveFileMetadata(item, self.folder).serialized())
-        return ret
+    def _serialize_item(self, path, item):
+        if item['mimeType'] == 'application/vnd.google-apps.folder':
+            return GoogleDriveFolderMetadata(item, path).serialized()
+        return GoogleDriveFileMetadata(item, path).serialized()
 
     @asyncio.coroutine
-    def _file_metadata(self, path, data):
-        resp = yield from self.make_request(
-            'GET',
-            self.build_url('files', path.folder_id),
-            expects=(200, ),
-            throws=exceptions.MetadataError
-        )
-        data = yield from resp.json()
-        data['path'] = os.path.join(path.full_path, data['title'])
-        return GoogleDriveFileMetadata(data, self.folder).serialized()
-
-    @asyncio.coroutine
-    def metadata(self, path, **kwargs):
+    def metadata(self, path, original_path=None, folder_id=None, **kwargs):
         path = GoogleDrivePath(path, self.folder)
+        original_path = original_path or path
+        folder_id = folder_id or self.folder['id']
+        child = path.child
+
+        queries = [
+            "'{}' in parents".format(folder_id),
+            'trashed = false',
+        ]
+        if not path.is_leaf and not path.is_dir:
+            queries.append("title = '{}'".format(child.parts[1]))
+        query = ' and '.join(queries)
 
         resp = yield from self.make_request(
             'GET',
-            self.build_url('files', q="'%s' in parents and trashed = false" % path.folder_id, alt="json"),
+            self.build_url('files', q=query, alt='json'),
             expects=(200, ),
-            throws=exceptions.MetadataError
+            throws=exceptions.MetadataError,
         )
         data = yield from resp.json()
 
-        # Check to see if request was made for file or folder
-        if data['items']:
-            return self._folder_metadata(path, data)
-        return (yield from self._file_metadata(path, data))
+        if (path.is_dir and not path.is_leaf) or (path.is_file and not child.is_leaf):
+            child_id = data['items'][0]['id']
+            return (yield from self.metadata(str(child), original_path=original_path, folder_id=child_id, **kwargs))
+
+        if path.is_dir:
+            return [
+                self._serialize_item(original_path, item)
+                for item in data['items']
+            ]
+        return self._serialize_item(original_path.parent, data['items'][0])
 
     @asyncio.coroutine
     def revisions(self, path, **kwargs):

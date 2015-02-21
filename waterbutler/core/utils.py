@@ -63,7 +63,7 @@ class WaterButlerPath:
         self._path = self._format_path(path)
 
     def __repr__(self):
-        return "{}({!r})".format(self.__class__.__name__, self._orig_path)
+        return '{}({!r})'.format(self.__class__.__name__, self._orig_path)
 
     def __str__(self):
         return self._orig_path
@@ -85,6 +85,11 @@ class WaterButlerPath:
         return self._is_root
 
     @property
+    def is_leaf(self):
+        parts = [each for each in self.parts if each]
+        return len(parts) <= 1
+
+    @property
     def name(self):
         return self._parts[-1]
 
@@ -96,6 +101,15 @@ class WaterButlerPath:
     def parent(self):
         cls = self.__class__
         return cls('/'.join(self._parts[:-1]) + '/', prefix=self._prefix, suffix=self._suffix)
+
+    @property
+    def child(self):
+        cls = self.__class__
+        path = '/' + '/'.join(self._parts[2:])
+        if self.is_dir:
+            path += '/'
+        path = path.replace('//', '/')
+        return cls(path, prefix=self._prefix, suffix=self._suffix)
 
     def _format_path(self, path):
         """Formats the specified path per the class configuration prefix/suffix configuration.
