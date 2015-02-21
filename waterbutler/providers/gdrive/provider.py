@@ -194,12 +194,12 @@ class GoogleDriveProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def revisions(self, path, **kwargs):
-        path = GoogleDrivePath(path, self.folder)
+        metadata = yield from self.metadata(path, raw=True)
         response = yield from self.make_request(
             'GET',
-            self.build_url('files', path.folder_id, 'revisions'),
+            self.build_url('files', metadata['id'], 'revisions'),
             expects=(200, ),
-            throws=exceptions.RevisionsError
+            throws=exceptions.RevisionsError,
         )
         data = yield from response.json()
         return [
