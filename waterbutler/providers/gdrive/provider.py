@@ -134,13 +134,11 @@ class GoogleDriveProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
-        # A metadata call will verify the path specified is actually the
-        # requested file or folder.
-        yield from self.metadata(str(path))
         path = GoogleDrivePath(path, self.folder)
+        metadata = yield from self.metadata(str(path), raw=True)
         yield from self.make_request(
             'DELETE',
-            self.build_url('files', path.folder_id),
+            self.build_url('files', metadata['id']),
             expects=(204, ),
             throws=exceptions.DeleteError,
         )
