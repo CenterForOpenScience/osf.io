@@ -1,7 +1,8 @@
 import os
-import asyncio
 import json
-from urllib.parse import urlparse
+import asyncio
+
+import furl
 
 from waterbutler.core import utils
 from waterbutler.core import streams
@@ -86,57 +87,50 @@ class GoogleDriveProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
-        path = GoogleDrivePath(path, self.folder)
-        path_for_metadata = os.path.join('/', path.folder_id, path.upload_file_name, path.upload_path())
+        path = GoogleDrivePath(path)
         try:
-            data = yield from self.metadata(str(path_for_metadata))
-        except exceptions.MetadataError:
-            created = True
-        else:
+            metadata = yield from self.metadata(str(path), raw=True)
+            folder_id = metadata['parents'][0]['id']
+            segments = (metadata['id'], )
             created = False
-        content = yield from stream.read()
-        metadata = {
-            "parents": [
+        except:
+            parent_path = str(path.parent).rstrip('/')
+            metadata = yield from self.metadata(parent_path, raw=True)
+            folder_id = metadata['id']
+            segments = ()
+            created = True
+        upload_metadata = {
+            'parents': [
                 {
-                    "kind": "drive#parentReference",
-                    "id": path.folder_id
+                    'kind': 'drive#parentReference',
+                    'id': folder_id,
                 },
             ],
-            "title": path.upload_file_name,
+            'title': path.name,
         }
-        #Step 1 - Start a resumable session
         resp = yield from self.make_request(
             'POST',
-            self._build_upload_url("files", uploadType='resumable'),
-            headers={'Content-Length': str(len(json.dumps(metadata))),
-                     'Content-Type': 'application/json; charset=UTF-8',
-                     #'X-Upload-Content-Type': 'image/jpeg',#hardcoded in for testing
-                     'X-Upload-Content-Length': str(stream.size)
-                     },
-            data=json.dumps(metadata),
+            self._build_upload_url('files', uploadType='resumable'),
+            headers={
+                'Content-Type': 'application/json',
+                'X-Upload-Content-Length': str(stream.size),
+            },
+            data=json.dumps(upload_metadata),
             expects=(200, ),
-            throws=exceptions.UploadError
+            throws=exceptions.UploadError,
         )
-        #Step 2 - Save the resumable session URI
-        yield from resp.json()
-        location = resp.headers['LOCATION']
-        query_params = urlparse(location).query
-        #todo:make this proper
-        upload_id = query_params.split("=")[2]
-        #Step 3 - Upload the file
+        location = furl.furl(resp.headers['LOCATION'])
+        upload_id = location.args['upload_id']
         resp = yield from self.make_request(
             'PUT',
-            self._build_upload_url("files", uploadType='resumable', upload_id=upload_id),
-            headers={'Content-Length': str(stream.size),
-                     #'Content-Type': 'image/jpeg',#todo: hardcoded in for testing
-                     },
-            data=content,
+            self._build_upload_url('files', *segments, uploadType='resumable', upload_id=upload_id),
+            headers={'Content-Length': str(stream.size)},
+            data=stream,
             expects=(200, ),
             throws=exceptions.UploadError,
         )
         data = yield from resp.json()
-        data['path'] = path.upload_path()
-        return GoogleDriveFileMetadata(data, self.folder).serialized(), created
+        return GoogleDriveFileMetadata(data, path.parent).serialized(), created
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
