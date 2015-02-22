@@ -3,8 +3,6 @@ import urlparse
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from model import Subscription, DigestNotification
-from framework.tasks import app
-from framework.tasks.handlers import queued_task
 from website import mails, settings
 from website.util import web_url_for
 from website.models import Node, User
@@ -66,11 +64,12 @@ def check_parent(uid, event, node_subscribers, **context):
 def send(subscribed_user_ids, notification_type, uid, event, **context):
     notifications.get(notification_type)(subscribed_user_ids, uid, event, **context)
 
-@queued_task
-@app.task
+
 def email_transactional(subscribed_user_ids, uid, event, **context):
     """
-    :param subscribed_user_ids: mod-odm User objects
+    :param subscribed_user_ids: mod-odm User object ids
+    :param uid: id of the event owner (Node or User)
+    :param event: name of notification event (e.g. 'comments')
     :param context: context variables for email template
     :return:
     """
