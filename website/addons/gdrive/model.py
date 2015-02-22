@@ -6,7 +6,7 @@ from modularodm.exceptions import ModularOdmException
 from framework.auth import Auth
 from modularodm import fields, Q
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
-from .utils import clean_path, GoogleDriveNodeLogger, check_access_token, get_path_from_waterbutler_path
+from .utils import clean_path, GoogleDriveNodeLogger, check_access_token
 from website.addons.base import exceptions
 
 
@@ -152,7 +152,7 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
             params={
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
-                'path': get_path_from_waterbutler_path(metadata['path']),
+                'path': metadata['path'],
                 'folder': self.folder,
 
                 'urls': {

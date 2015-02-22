@@ -1,14 +1,18 @@
+# -*- coding: utf-8 -*-
 
 import httplib2
 
 from flask import request
-from website.project.model import Node
-from website.util import rubeus
-from website.project.decorators import must_be_contributor_or_public, must_have_addon
-from oauth2client.client import AccessTokenCredentials
-from apiclient.discovery import build
-from ..utils import to_hgrid, check_access_token, clean_path
 from apiclient import errors
+from apiclient.discovery import build
+from oauth2client.client import AccessTokenCredentials
+
+from website.util import rubeus
+from website.project.model import Node
+from website.project.decorators import must_be_contributor_or_public, must_have_addon
+
+from ..utils import to_hgrid, check_access_token
+
 
 @must_be_contributor_or_public
 @must_have_addon('gdrive', 'node')
@@ -78,6 +82,5 @@ def gdrive_addon_folder(node_settings, auth, **kwargs):
         permissions=auth,
         nodeUrl=node.url,
         nodeApiUrl=node.api_url,
-        path=node_settings.waterbutler_folder['name'] + '/',
     )
     return [root]

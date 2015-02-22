@@ -83,7 +83,7 @@ def serialize_settings(node_settings, current_user):
         user_settings.owner._primary_key == current_user._primary_key
     )
     current_user_settings = current_user.get_addon('gdrive')
-    rv = {
+    ret = {
         'nodeHasAuth': node_settings.has_auth,
         'userIsOwner': user_is_owner,
         'userHasAuth': current_user_settings is not None and current_user_settings.has_auth,
@@ -91,12 +91,11 @@ def serialize_settings(node_settings, current_user):
     }
     if node_settings.has_auth:
         # Add owner's profile URL
-        rv['urls']['owner'] = web_url_for('profile_view_id',
-                                               uid=user_settings.owner._primary_key)
-        rv['ownerName'] = user_settings.owner.fullname
-        rv['access_token'] = user_settings.access_token
-        rv['currentFolder'] = node_settings.folder  # if node_settings.folder else None
-    return rv
+        ret['urls']['owner'] = web_url_for('profile_view_id', uid=user_settings.owner._id)
+        ret['ownerName'] = user_settings.owner.fullname
+        ret['access_token'] = user_settings.access_token
+        ret['currentFolder'] = node_settings.folder  # if node_settings.folder else None
+    return ret
 
 
 def clean_path(path):
@@ -104,32 +103,11 @@ def clean_path(path):
     if path is None:
         return ''
     parts = path.strip('/').split('/')
-    # tempPath = ''
-    # for i in range(2, len(parts)):
-    #     if tempPath == '':
-    #         tempPath = parts[i]
-    #     else:
-    #         tempPath = tempPath + '/' + parts[i]
-    # cleaned_path = tempPath
     if len(parts) <= 1:
         cleaned_path = '/' + parts[len(parts) - 1]
     cleaned_path = parts[len(parts) - 1]
 
     return cleaned_path
-
-
-def get_path_from_waterbutler_path(waterbutler_path):
-    if waterbutler_path is None:
-        return ''
-    parts = waterbutler_path.strip('/').split('/')
-    tempPath = ''
-    for i in range(2, len(parts)):
-        if tempPath == '':
-            tempPath = parts[i]
-        else:
-            tempPath = tempPath + '/' + parts[i]
-    path = '/' + tempPath
-    return path
 
 
 def build_gdrive_urls(item, node, path):
@@ -144,10 +122,9 @@ def to_hgrid(item, node, path):
     :param item: contents returned from Google Drive API
     :return: results formatted as required for Hgrid display
     """
-
     path = {
         'path': path + '/' + item['title'],
-        'id': item['id']
+        'id': item['id'],
     }
     serialized = {
         'addon': 'gdrive',
@@ -155,8 +132,7 @@ def to_hgrid(item, node, path):
         'id': item['id'],
         'kind': 'folder',
         'urls': build_gdrive_urls(item, node, path=path),
-        'path': path  # as required for waterbutler path
-
+        'path': path,
     }
     return serialized
 
@@ -166,7 +142,8 @@ def check_access_token(user_settings):
     if user_settings.token_expiry <= cur_time_in_millis:
         refresh_access_token(user_settings)
         # return{'status': 'token_expired'}
-    return{'status': 'token_valid'}
+    return {'status': 'token_valid'}
+
 
 def refresh_access_token(user_settings):
     try:
@@ -185,6 +162,7 @@ def refresh_access_token(user_settings):
         cur_time_in_millis = time.mktime(datetime.datetime.utcnow().timetuple())
         user_settings.token_expiry = cur_time_in_millis + json_response['expires_in']
         user_settings.save()
-        return{'status': 'token_refreshed'}
+        return {'status': 'token_refreshed'}
+    # TODO: Don't catch generic exception @jmcarp
     except:
-        return{'status': 'token cannot be refreshed at this moment'}
+        return {'status': 'token cannot be refreshed at this moment'}
