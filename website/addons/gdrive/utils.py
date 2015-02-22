@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 """Utility functions for the Google Drive add-on.
 """
-import logging
+import os
 import time
+import logging
 import datetime
+
 import requests
-from .import settings
+
 from website.util import web_url_for
+
+from .import settings
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +71,7 @@ def serialize_urls(node_settings):
         'create': node.api_url_for('drive_oauth_start'),
         'importAuth': node.api_url_for('gdrive_import_user_auth'),
         'deauthorize': node.api_url_for('gdrive_deauthorize'),
-        'get_folders': node.api_url_for('gdrive_folders', foldersOnly=1),
+        'get_folders': node.api_url_for('gdrive_folders', foldersOnly=1, includeRoot=1),
         'config': node.api_url_for('gdrive_config_put'),
         'files': node.web_url_for('collect_file_trees')
     }
@@ -111,9 +115,9 @@ def clean_path(path):
 
 
 def build_gdrive_urls(item, node, path):
-    return{
-        'get_folders': node.api_url_for('gdrive_folders', folderId=item['id'], path=path['path'], foldersOnly=1),
-        'fetch': node.api_url_for('gdrive_folders', folderId=item['id'])
+    return {
+        'get_folders': node.api_url_for('gdrive_folders', folderId=item['id'], path=path, foldersOnly=1),
+        'fetch': node.api_url_for('gdrive_folders', folderId=item['id']),
     }
 
 
@@ -122,10 +126,7 @@ def to_hgrid(item, node, path):
     :param item: contents returned from Google Drive API
     :return: results formatted as required for Hgrid display
     """
-    path = {
-        'path': path + '/' + item['title'],
-        'id': item['id'],
-    }
+    path = os.path.join(path, item['title'])
     serialized = {
         'addon': 'gdrive',
         'name': item['title'],

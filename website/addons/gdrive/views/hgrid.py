@@ -39,18 +39,28 @@ def gdrive_folders(node_addon, **kwargs):
         result = retrieve_all_files(service, folderid=folderid, foldersonly=1)
     else:
         result = retrieve_all_files(service, folderid=folderid, foldersonly=0)
-    contents = [to_hgrid(item, node_owner, path=path)
-                for item in result]
+    contents = [
+        to_hgrid(item, node_owner, path=path)
+        for item in result
+    ]
+    if request.args.get('includeRoot'):
+        about = service.about().get().execute()
+        root = {
+            'kind': rubeus.FOLDER,
+            'id': about['rootFolderId'],
+            'name': '/ (Full Google Drive)',
+            'path': '/',
+        }
+        contents.insert(0, root)
     return contents
+
 
 def retrieve_all_files(service, folderid=None, foldersonly=0):
     """Retrieve a list of File resources.
 
-    Args:
-    service: Drive API service instance.
-    Returns:
-    List of File resources.
-"""
+    :service: Drive API service instance.
+    :return: List of File resources.
+    """
     result = []
     folderId = folderid or 'root'
     while True:
