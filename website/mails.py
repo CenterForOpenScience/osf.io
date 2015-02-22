@@ -115,7 +115,7 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
         password=password,
         mail_server=mail_server)
 
-    if isinstance(mailer, Task):
+    if settings.USE_CELERY:
         return mailer.apply_async(kwargs=kwargs, link=callback)
     else:
         ret = mailer(**kwargs)
