@@ -309,8 +309,8 @@ def mailserver(port=1025):
     run(bin_prefix(cmd), pty=True)
 
 
-@task
-def flake8():
+@task(aliases=['flake8'])
+def flake():
     run('flake8 .', echo=True)
 
 
