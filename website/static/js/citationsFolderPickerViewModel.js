@@ -273,8 +273,8 @@ CitationsFolderPickerViewModel.prototype.submitSettings = function() {
     var self = this;
 
     function onSubmitSuccess(response) {
-        self.changeMessage(self.messages.SUBMIT_SETTINGS_SUCCESS(), 'text-success', 5000);
         self.folder(self.selected().name);
+        self.changeMessage(self.messages.SUBMIT_SETTINGS_SUCCESS(), 'text-success', 5000);
         self.cancelSelection();
     }
 
