@@ -10,10 +10,10 @@ from waterbutler.core import streams
 from waterbutler.core import provider
 from waterbutler.core import exceptions
 
-from waterbutler.providers.gdrive import settings
-from waterbutler.providers.gdrive.metadata import GoogleDriveRevision
-from waterbutler.providers.gdrive.metadata import GoogleDriveFileMetadata
-from waterbutler.providers.gdrive.metadata import GoogleDriveFolderMetadata
+from waterbutler.providers.googledrive import settings
+from waterbutler.providers.googledrive.metadata import GoogleDriveRevision
+from waterbutler.providers.googledrive.metadata import GoogleDriveFileMetadata
+from waterbutler.providers.googledrive.metadata import GoogleDriveFolderMetadata
 
 
 class GoogleDrivePath(utils.WaterButlerPath):
