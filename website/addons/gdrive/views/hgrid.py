@@ -3,7 +3,6 @@
 import httplib2
 
 from flask import request
-from apiclient import errors
 from apiclient.discovery import build
 from oauth2client.client import AccessTokenCredentials
 

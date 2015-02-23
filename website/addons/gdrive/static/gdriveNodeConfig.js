@@ -33,7 +33,7 @@ var ViewModel = function(url, selector, folderPicker) {
 
     self.owner = ko.observable();
     self.ownerName = ko.observable();
-    self.urls = ko.observable();
+    self.urls = ko.observable({});
     self.loadedFolders = ko.observable(false);
     self.loading = ko.observable(false);
     self.currentFolder = ko.observable('None');
