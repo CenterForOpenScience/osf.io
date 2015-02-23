@@ -62,11 +62,14 @@ $(document).on('click', '.project-toggle', function() {
     var widget = $(this).closest('.addon-widget-container');
     var up = $(this).find('.icon-angle-up');
     var down = $(this).find('.icon-angle-down');
+    var border = widget.find('.addon-widget-header');
     if(up.length > 0) {
         up.removeClass('icon-angle-up').addClass('icon-angle-down');
+        border.addClass('hide-border');
     }
     if(down.length > 0) {
         down.removeClass('icon-angle-down').addClass('icon-angle-up');
+        border.removeClass('hide-border')
     }
 
     widget.find('.addon-widget-body').slideToggle();

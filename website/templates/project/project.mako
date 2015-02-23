@@ -194,7 +194,7 @@
         % if not node['anonymous']:
 
          <div class="citations addon-widget-container">
-            <div class="addon-widget-header clearfix">
+            <div class="addon-widget-header clearfix hide-border">
                 <h4>Citation</h4>
                 <div class="pull-right">
                     <span class="permalink">${node['display_absolute_url']}</span><a href="#" class="btn project-toggle"><i class="icon icon-angle-down"></i></a>
