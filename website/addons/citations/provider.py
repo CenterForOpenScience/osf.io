@@ -45,7 +45,10 @@ class CitationsProvider(object):
         user_accounts = [account for account in current_user.external_accounts
                          if account.provider == self.provider_name]
 
-        user_is_owner = node_account and node_account in user_accounts
+        user_settings = current_user.get_addon(self.provider_name)
+        user_is_owner = False
+        if user_settings:
+            user_is_owner = user_settings.verify_oauth_access(node_settings.owner, node_account)
 
         user_settings = current_user.get_addon(self.provider_name)
         user_has_auth = bool(user_settings and user_accounts)
