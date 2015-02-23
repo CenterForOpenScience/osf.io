@@ -86,9 +86,8 @@ class BoxProvider(provider.BaseProvider):
         path = BoxPath(path)
 
         if path.is_file:
-            return self._get_file_meta(path)
-        else:
-            return self._get_folder_meta(path)
+            return (yield from self._get_file_meta(path))
+        return (yield from self._get_folder_meta(path))
 
     @asyncio.coroutine
     def revisions(self, path, **kwargs):
@@ -100,7 +99,7 @@ class BoxProvider(provider.BaseProvider):
             'GET',
             self.build_url('files', path._id, 'versions'),
             expects=(200, ),
-            throws=exceptions.RevisionsError
+            throws=exceptions.RevisionsError,
         )
         data = yield from response.json()
 
@@ -113,12 +112,13 @@ class BoxProvider(provider.BaseProvider):
 
         return ret
 
+    @asyncio.coroutine
     def _get_file_meta(self, path):
         resp = yield from self.make_request(
             'GET',
             self.build_url('files', path._id),
             expects=(200, ),
-            throws=exceptions.MetadataError
+            throws=exceptions.MetadataError,
         )
 
         data = yield from resp.json()
@@ -127,6 +127,7 @@ class BoxProvider(provider.BaseProvider):
 
         raise exceptions.MetadataError('Unable to find file.', code=http.client.NOT_FOUND)
 
+    @asyncio.coroutine
     def _get_folder_meta(self, path):
         if str(path) == '/':
             path = BoxPath('/{}/'.format(self.folder))
@@ -135,7 +136,7 @@ class BoxProvider(provider.BaseProvider):
             'GET',
             self.build_url('folders', path._id, 'items'),
             expects=(200, ),
-            throws=exceptions.MetadataError
+            throws=exceptions.MetadataError,
         )
 
         data = yield from resp.json()
