@@ -70,6 +70,7 @@ def drive_oauth_finish(auth, **kwargs):
     user_settings.token_expiry = token_expiry_in_millis
     user_settings.save()
     if node_settings:
+        del session.data['gdrive_auth_nid']
         node_settings.user_settings = user_settings
         # # previously connected to GDrive?
         node_settings.save()
