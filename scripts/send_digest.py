@@ -57,7 +57,8 @@ def send_digest(grouped_digests):
 
 
 def remove_sent_digest_notifications(digest_notification_ids):
-    DigestNotification.remove(Q('_id', 'eq', digest_notification_ids))
+    for digest_id in digest_notification_ids:
+        DigestNotification.remove(Q('_id', 'eq', digest_id))
 
 
 def group_messages_by_node(notifications):
