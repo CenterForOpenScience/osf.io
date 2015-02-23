@@ -16,9 +16,7 @@ class DropboxPath(utils.WaterButlerPath):
 
     def __init__(self, folder, path, prefix=True, suffix=False):
         super().__init__(path, prefix=prefix, suffix=suffix)
-
         self._folder = folder
-
         full_path = os.path.join(folder, path.lstrip('/'))
         self._full_path = self._format_path(full_path)
 
@@ -160,7 +158,6 @@ class DropboxProvider(provider.BaseProvider):
     @asyncio.coroutine
     def metadata(self, path, **kwargs):
         path = DropboxPath(self.folder, path)
-
         resp = yield from self.make_request(
             'GET',
             self.build_url('metadata', 'auto', path.full_path),
@@ -168,7 +165,6 @@ class DropboxProvider(provider.BaseProvider):
             throws=exceptions.MetadataError
         )
         data = yield from resp.json()
-
         # Dropbox will match a file or folder by name within the requested path
         if path.is_file and data['is_dir']:
             raise exceptions.MetadataError(
@@ -195,7 +191,6 @@ class DropboxProvider(provider.BaseProvider):
                 else:
                     ret.append(DropboxFileMetadata(item, self.folder).serialized())
             return ret
-
         return DropboxFileMetadata(data, self.folder).serialized()
 
     @asyncio.coroutine

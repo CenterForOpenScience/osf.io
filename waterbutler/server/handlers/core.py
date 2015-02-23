@@ -69,7 +69,6 @@ class BaseHandler(tornado.web.RequestHandler, SentryMixin):
             key: list_or_value(value)
             for key, value in self.request.query_arguments.items()
         }
-
         try:
             self.arguments['action'] = self.ACTION_MAP[self.request.method]
         except KeyError:
