@@ -119,7 +119,7 @@ var resolve = {
         'addonPermissions': staticPath('js/addonPermissions.js'),
         'navbar-control': staticPath('js/navbarControl.js'),
         'markdown': staticPath('js/markdown.js'),
-        'wikiDiff': staticPath('js/wikiDiff.js'),
+        "diffTool": staticPath('js/diffTool.js'),
         'mathrender': staticPath('js/mathrender.js'),
         'citations': staticPath('js/citations.js')
     }

@@ -6,7 +6,7 @@ var $osf = require('osfHelpers');
 var mathrender = require('mathrender');
 var md = require('markdown').full;
 var mdQuick = require('markdown').quick;
-var diffTool = require('wikiDiff');
+var diffTool = require('diffTool');
 
 var THROTTLE = 500;
 
