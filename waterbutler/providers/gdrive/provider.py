@@ -1,4 +1,5 @@
 import os
+import http
 import json
 import asyncio
 
@@ -170,6 +171,11 @@ class GoogleDriveProvider(provider.BaseProvider):
             throws=exceptions.MetadataError,
         )
         data = yield from resp.json()
+
+        # Raise 404 on empty results if file or partial lookup
+        if not data['items']:
+            if path.is_file or not path.is_leaf:
+                raise exceptions.MetadataError(data, code=http.client.NOT_FOUND)
 
         if not path.is_leaf:
             child_id = data['items'][0]['id']
