@@ -215,7 +215,7 @@ class TestGdriveHgridViews(OsfTestCase):
         self.service.files.return_value = self.mock_files
         self.mock_files.list.return_value = self.mock_list
         self.mock_list.execute.return_value = folders
-        url = api_url_for('gdrive_folders', pid=self.project._primary_key, foldersOnly=1, folderId=folderId)
+        url = api_url_for('gdrive_folders', pid=self.project._primary_key, folderId=folderId)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         expected = [items for items in mock_folders['items']]
@@ -237,33 +237,12 @@ class TestGdriveHgridViews(OsfTestCase):
         self.service.files.return_value = self.mock_files
         self.mock_files.list.return_value = self.mock_list
         self.mock_list.execute.return_value = folders
-        url = api_url_for('gdrive_folders', pid=self.project._primary_key, foldersOnly=1, folderId=folderId)
+        url = api_url_for('gdrive_folders', pid=self.project._primary_key, folderId=folderId)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         expected = [items for items in mock_root_folders['items']]
         assert_equal(len(res.json), len(expected))
 
-    @mock.patch('website.addons.gdrive.views.hgrid.AccessTokenCredentials')
-    @mock.patch('website.addons.gdrive.views.hgrid.build')
-    def test_gdrive_folders_returns_files_and_folders(self, mock_build, mock_access_token_credentials):
-        folderId = '12345'
-        self.credentials = mock.Mock()
-        mock_access_token_credentials.return_value = self.credentials
-        self.http_service = mock.Mock()
-        self.credentials.authorize.return_value = self.http_service
-        self.service = mock.Mock()
-        mock_build.return_value = self.service
-        self.mock_list = mock.Mock()
-        self.mock_files = mock.Mock()
-        folders = mock_files_folders
-        self.service.files.return_value = self.mock_files
-        self.mock_files.list.return_value = self.mock_list
-        self.mock_list.execute.return_value = folders
-        url = api_url_for('gdrive_folders', pid=self.project._primary_key, foldersOnly=0, folderId=folderId)
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        expected = [items for items in mock_files_folders['items']]
-        assert_equal(len(res.json), len(expected))
 
 class TestGdriveUtils(OsfTestCase):
 
@@ -290,8 +269,10 @@ class TestGdriveUtils(OsfTestCase):
         assert_equal(urls['files'], self.project.web_url_for('collect_file_trees'))
         # Includes endpoint for fetching folders only
         # NOTE: Querystring params are in camelCase
-        assert_equal(urls['get_folders'],
-            self.project.api_url_for('gdrive_folders', foldersOnly=1))
+        assert_equal(
+            urls['get_folders'],
+            self.project.api_url_for('gdrive_folders'),
+        )
 
     def test_serialize_settings_helper_returns_correct_auth_info(self):
         self.user_settings.access_token = 'abc123'
