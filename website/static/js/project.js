@@ -113,6 +113,7 @@ NodeActions.useAsTemplate = function() {
     });
 };
 
+
 $(function() {
 
     $('#newComponent form').on('submit', function(e) {

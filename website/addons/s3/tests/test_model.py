@@ -157,7 +157,7 @@ class TestCallbacks(OsfTestCase):
         clone, message = self.node_settings.after_register(
             self.project, registration, self.project.creator,
         )
-        assert_false(clone.user_settings)
+        assert_is_none(clone)
 
     def test_before_register_no_settings(self):
         self.node_settings.user_settings = None
@@ -184,3 +184,12 @@ class TestCallbacks(OsfTestCase):
         self.node_settings.deauthorize()
         assert_false(self.node_settings.registration_data is None)
         assert_true(isinstance(self.node_settings.registration_data, dict))
+
+    def test_does_not_get_copied_to_registrations(self):
+        registration = self.project.register_node(
+            schema=None,
+            auth=Auth(user=self.project.creator),
+            template='Template1',
+            data='hodor'
+        )
+        assert_false(registration.has_addon('s3'))

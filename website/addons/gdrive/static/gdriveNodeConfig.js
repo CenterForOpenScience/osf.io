@@ -232,7 +232,6 @@ ko.punches.enableAll();
                         folderPickerOnload: function () {
                         }
                     });
-
         }
 
 

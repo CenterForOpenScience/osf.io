@@ -56,7 +56,7 @@
             <form data-bind="submit: submitSettings">
 
                 <h4 data-bind="if: selected" class="dropbox-confirm-dlg">
-                    Connect &ldquo;{{ selectedFolderName }}&rdquo;?
+                    Connect &ldquo;Google Drive{{ selectedFolderName }}&rdquo;?
                 </h4>
                 <div class="pull-right">
                     <button class="btn btn-default"

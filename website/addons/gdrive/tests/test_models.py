@@ -11,7 +11,7 @@ from website.addons.gdrive.tests.factories import (
     GdriveNodeSettingsFactory, GdriveUserSettingsFactory
 )
 from website.addons.base import exceptions
-
+from website.addons.gdrive.utils import get_path_from_waterbutler_path
 
 class TestGdriveUserSettingsModel(OsfTestCase):
 
@@ -23,12 +23,14 @@ class TestGdriveUserSettingsModel(OsfTestCase):
         user_settings = AddonGdriveUserSettings(
             access_token='12345',
             owner=self.user,
-            username='name/email')
+            username='name',
+            token_expiry=123456)
         user_settings.save()
         retrieved = AddonGdriveUserSettings.load(user_settings._primary_key)
         assert_true(retrieved.access_token)
         assert_true(retrieved.owner)
         assert_true(retrieved.username)
+        assert_true(retrieved.token_expiry)
 
     def test_has_auth(self):
         user_settings = GdriveUserSettingsFactory(access_token=None)
@@ -103,6 +105,7 @@ class TestGdriveNodeSettingsModel(OsfTestCase):
         assert_true(node_settings.user_settings)
         assert_equal(node_settings.user_settings.owner, self.user)
         assert_true(hasattr(node_settings, 'folder'))
+        assert_true(hasattr(node_settings, 'waterbutler_folder'))
 
     def test_folder_defaults_to_none(self):
         node_settings = AddonGdriveNodeSettings(user_settings=self.user_settings)
@@ -146,11 +149,16 @@ class TestGdriveNodeSettingsModel(OsfTestCase):
         assert_in('folder', params)
 
     def test_set_folder(self):
-        folder_name = 'queen/freddie'
+        folder_name = {
+            'name': 'queen/freddie',
+            'id': '1234',
+            'path': 'queen/freddie'
+        }
+
         self.node_settings.set_folder(folder_name, auth=Auth(self.user))
         self.node_settings.save()
         # Folder was set
-        assert_equal(self.node_settings.folder, folder_name)
+        assert_equal(self.node_settings.folder, folder_name['name'])
         # Log was saved
         last_log = self.project.logs[-1]
         assert_equal(last_log.action, 'gdrive_folder_selected')
@@ -176,10 +184,9 @@ class TestGdriveNodeSettingsModel(OsfTestCase):
         self.user_settings.access_token = 'secret'
         self.user_settings.save()
         credentials = self.node_settings.serialize_waterbutler_credentials()
-        expected = {'token': self.node_settings.user_settings.access_token,
-                    'refresh_token': self.node_settings.user_settings.refresh_token}
-        assert_equal(credentials['token'], expected['token'])
-        assert_equal(credentials['refresh_token'], expected['refresh_token'])
+        expected = {'token': self.node_settings.user_settings.access_token}
+        assert_equal(credentials, expected)
+
 
     def test_serialize_credentials_not_authorized(self):
         self.node_settings.user_settings = None
@@ -189,11 +196,11 @@ class TestGdriveNodeSettingsModel(OsfTestCase):
 
     def test_serialize_settings(self):
         settings = self.node_settings.serialize_waterbutler_settings()
-        expected = {'folder': self.node_settings.folder}
+        expected = {'folder': self.node_settings.waterbutler_folder}
         assert_equal(settings, expected)
 
     def test_serialize_settings_not_configured(self):
-        self.node_settings.folder = None
+        self.node_settings.waterbutler_folder = None
         self.node_settings.save()
         with assert_raises(exceptions.AddonError):
             self.node_settings.serialize_waterbutler_settings()
@@ -215,7 +222,7 @@ class TestGdriveNodeSettingsModel(OsfTestCase):
         )
         assert_equal(
             self.project.logs[-1].params['path'],
-            path,
+            get_path_from_waterbutler_path(path),
         )
 
 

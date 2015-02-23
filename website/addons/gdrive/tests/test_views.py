@@ -27,7 +27,7 @@ class TestGdriveAuthViews(OsfTestCase):
         self.flow = mock.Mock()
         self.credentials = mock.Mock()
 
-
+    # Class variables are usually used to mark mock variables. Can be removed later.
     @mock.patch('website.addons.gdrive.views.auth.OAuth2WebServerFlow')
     def test_gdrive_oauth_start(self, mock_flow):
         url = api_url_for('drive_oauth_start_user', Auth(self.user))
