@@ -1,4 +1,5 @@
 import os
+import http
 import json
 import asyncio
 
@@ -171,6 +172,11 @@ class GoogleDriveProvider(provider.BaseProvider):
         )
         data = yield from resp.json()
 
+        # Raise 404 on empty results if file or partial lookup
+        if not data['items']:
+            if path.is_file or not path.is_leaf:
+                raise exceptions.MetadataError(data, code=http.client.NOT_FOUND)
+
         if not path.is_leaf:
             child_id = data['items'][0]['id']
             return (yield from self.metadata(str(child), original_path=original_path, folder_id=child_id, raw=raw, **kwargs))
@@ -180,6 +186,20 @@ class GoogleDriveProvider(provider.BaseProvider):
                 self._serialize_item(original_path, item, raw=raw)
                 for item in data['items']
             ]
+
+        # The "version" key does not correspond to revision IDs for Google Docs
+        # files; make an extra request to the revisions endpoint to fetch the
+        # true ID of the latest revision
+        if data['items'][0].get('exportLinks'):
+            revisions_response = yield from self.make_request(
+                'GET',
+                self.build_url('files', data['items'][0]['id'], 'revisions'),
+                expects=(200, ),
+                throws=exceptions.RevisionsError,
+            )
+            revisions_data = yield from revisions_response.json()
+            data['items'][0]['version'] = revisions_data['items'][-1]['id']
+
         return self._serialize_item(original_path.parent, data['items'][0], raw=raw)
 
     @asyncio.coroutine
