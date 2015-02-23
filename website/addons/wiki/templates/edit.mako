@@ -1,6 +1,15 @@
 <%page expression_filter="h"/>
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${node['title'] | n} Wiki</%def>
+<style>
+@media (min-width: 1601px) {
+  .container {
+      width : 100%;
+      padding-left: 20px;
+      paddong-right: 20px;
+  }
+}
+</style>
 
 <div class="row">
     <div class="col-xs-6">
