@@ -1,6 +1,8 @@
 ace.define("ace/snippets/markdown",["require","exports","module"], function(require, exports, module) {
 "use strict";
 
+//    Important: In the body of each snippet, the white spaces is a tab, not a series of spaces, and is required.
+
 exports.snippetText = "# Markdown\n\
 \n\
 snippet font-italic\n\
@@ -61,6 +63,18 @@ snippet bulleted-list\n\
 snippet video\n\
 	\n\
 	@[${1:service}](${2:url})\n\
+\n\
+snippet youtube-video\n\
+	\n\
+	@[youtube](${1:url})\n\
+\n\
+snippet vimeo-video\n\
+	\n\
+	@[vimeo](${1:url})\n\
+\n\
+snippet table-of-contents\n\
+	\n\
+	@[toc](${1:optional_label})\n\
 \n\
 ";
 exports.scope = "markdown";
