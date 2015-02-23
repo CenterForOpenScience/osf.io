@@ -41,6 +41,7 @@ def drive_oauth_start(auth, **kwargs):
     authorize_url = flow.step1_get_authorize_url()
     return{'url': authorize_url}
 
+
 @collect_auth
 def drive_oauth_finish(auth, **kwargs):
     """View called when the Oauth flow is completed. Adds a new AddonGdriveUserSettings
@@ -53,13 +54,16 @@ def drive_oauth_finish(auth, **kwargs):
     user.save()
     user_settings = user.get_addon('gdrive')
     node = Node.load(session.data.get('gdrive_auth_nid'))
-    node_settings = node.get_addon('gdrive') if node else None
     code = request.args.get('code')
     if code is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    flow = OAuth2WebServerFlow(settings.CLIENT_ID, settings.CLIENT_SECRET,
-                               settings.OAUTH_SCOPE, redirect_uri=settings.REDIRECT_URI)
+    flow = OAuth2WebServerFlow(
+        settings.CLIENT_ID,
+        settings.CLIENT_SECRET,
+        settings.OAUTH_SCOPE,
+        redirect_uri=settings.REDIRECT_URI
+    )
     credentials = flow.step2_exchange(code)
     http_service = httplib2.Http()
     http_service = credentials.authorize(http_service)
@@ -68,18 +72,20 @@ def drive_oauth_finish(auth, **kwargs):
     token_expiry_in_millis = time.mktime(credentials.token_expiry.timetuple())
     # Add No. of seconds left for token to expire into current utc time
     user_settings.token_expiry = token_expiry_in_millis
+    # Retrieves username for authorized google drive
+    service = build('drive', 'v2', http_service)
+    about = service.about().get().execute()
+    user_settings.username = about['name']
     user_settings.save()
-    if node_settings:
-        node_settings.user_settings = user_settings
-        # # previously connected to GDrive?
-        node_settings.save()
-        return redirect(os.path.join(node.url, 'settings'))
-    else:
-        service = build('drive', 'v2', http_service)
-        about = service.about().get().execute()
-        username = about['name']
-        user_settings.username = username
-        user_settings.save()
+
+    flash('Successfully authorized GoogleDrive', 'success')
+    if node:
+        del session.data['gdrive_auth_nid']
+        if node.has_addon('gdrive'):
+            node_addon = node.get_addon('gdrive')
+            node_addon.set_user_auth(user_settings)
+            node_addon.save()
+        return redirect(node.web_url_for('node_setting'))
     return redirect(web_url_for('user_addons'))
 
 
