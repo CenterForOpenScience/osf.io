@@ -1,3 +1,5 @@
+import random
+import logging
 from time import gmtime
 from calendar import timegm
 from datetime import datetime
@@ -7,6 +9,8 @@ from dateutil.relativedelta import relativedelta
 from elasticsearch import Elasticsearch
 
 from website import settings
+
+logger = logging.getLogger(__name__)
 
 share_es = Elasticsearch(
     settings.SHARE_ELASTIC_URI,
@@ -37,6 +41,31 @@ def count(query):
         'results': [],
         'count': count['count']
     }
+
+
+def random_color(seed=11111, max_iterations=15):
+    def istooclose(color, colors, threshold=100):
+        pairs = (color[0:2], color[2:4], color[4:6])
+        for x in colors:
+            distance = sum(abs(int(x[i], 16) - int(pairs[i], 16)) for i in xrange(3))
+            if distance < threshold:
+                logger.error(distance)
+                return True
+        return False
+
+    random.seed(seed)
+    values = [str(i) for i in range(10)] + ['A', 'B', 'C', 'D', 'E', 'F']
+    colors = []
+    iterations = 0
+    while True:
+        color = ''.join(random.choice(values) for i in range(6))
+        if istooclose(color, colors) and not iterations > max_iterations:
+            iterations += 1
+            continue
+        else:
+            colors.append((color[0:2], color[2:4], color[4:6]))
+            iterations = 0
+        yield '#' + color
 
 
 def stats(query=None):
@@ -152,11 +181,14 @@ def data_for_charts(elastic_results):
     source_and_counts = [[item['key'], item['doc_count']] for item in source_data]
     for_charts['shareDonutGraph'] = source_and_counts
 
+    r = random_color()
     stats = {}
+    colors = {}
     for bucket in elastic_results['aggregations']['sources']['buckets']:
         stats[bucket['key']] = {
             'doc_count': bucket['doc_count'],
         }
+        colors[bucket['key']] = r.next()
 
     for bucket in elastic_results['aggregations']['earlier_documents']['sources']['buckets']:
         stats[bucket['key']]['earlier_documents'] = bucket['doc_count']
@@ -205,19 +237,23 @@ def data_for_charts(elastic_results):
 
     for_charts['date_totals'] = date_totals
 
+    # import ipdb; ipdb.set_trace()
+
     all_data = {}
     all_data['raw_aggregations'] = elastic_results['aggregations']
 
     all_data['charts'] = {
         'shareDonutGraph': {
             'type': 'donut',
-            'columns': for_charts['shareDonutGraph']
+            'columns': for_charts['shareDonutGraph'],
+            'colors': colors
         },
         'shareTimeGraph': {
             'x': 'x',
             'type': 'area-spline',
             'columns': for_charts['date_totals']['date_numbers'],
-            'groups': [for_charts['date_totals']['group_names']]
+            'groups': [for_charts['date_totals']['group_names']],
+            'colors': colors
         }
     }
 
