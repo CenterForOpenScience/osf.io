@@ -1,8 +1,10 @@
+'use strict';
+
 var hljs = require('highlight.js');
 require('highlight-css');
 var MarkdownIt = require('markdown-it');
 
-highlighter = function (str, lang) {
+var highlighter = function (str, lang) {
         if (lang && hljs.getLanguage(lang)) {
             try {
                 return hljs.highlight(lang, str).value;
