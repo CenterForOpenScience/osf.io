@@ -1,4 +1,4 @@
-var jsdiff = require('jsdiff');
+var jsdiff = require('diff');
 
 // Taken from diff.js
 function removeEmpty(array) {
