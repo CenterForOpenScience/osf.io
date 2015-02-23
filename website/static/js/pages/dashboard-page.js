@@ -63,6 +63,18 @@ $(document).ready(function() {
                     var filebrowser = new ProjectOrganizer(options);   
  
             });
+
+    var timezoneOffset = new Date().getTimezoneOffset();
+    var url = '/api/v1/profile/' + window.contextVars.currentUser.id + '/';
+    $osf.putJSON(
+        url,
+        {'timezoneOffset': timezoneOffset}
+    ).fail(function(xhr, textStatus, error) {
+            Raven.captureMessage('Could not set users timezone offset.', {
+                url: url, textStatus: textStatus, error: error
+        });
+    });
+
 });
 // Initialize logfeed
 new LogFeed('#logScope', '/api/v1/watched/logs/');

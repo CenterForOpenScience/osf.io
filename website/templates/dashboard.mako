@@ -112,6 +112,13 @@
 
 <%def name="javascript_bottom()">
 
+<script>
+    window.contextVars = $.extend(true, {}, window.contextVars, {
+        currentUser: {
+            'id': '${user_id}'
+        }
+    });
+</script>
 <script src=${"/static/public/js/dashboard-page.js" | webpack_asset}></script>
 
 </%def>

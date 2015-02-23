@@ -73,6 +73,16 @@ def date_or_none(date):
         logger.exception(error)
         return None
 
+@must_be_logged_in
+def update_user(uid, auth):
+    user = User.load(uid)
+    data = request.get_json()
+    timezone_offset = data.get('timezoneOffset')
+    user.timezone_offset = timezone_offset
+    update_fields = user.save()
+
+    return update_fields, 200
+
 
 def _profile_view(profile, is_profile):
     # TODO: Fix circular import

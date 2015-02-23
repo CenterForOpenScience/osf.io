@@ -497,6 +497,7 @@ def make_url_map(app):
 
         Rule('/profile/', 'get', profile_views.profile_view, json_renderer),
         Rule('/profile/<uid>/', 'get', profile_views.profile_view_id, json_renderer),
+        Rule('/profile/<uid>/', 'put', profile_views.update_user, json_renderer),
 
         # Used by profile.html
         Rule('/profile/<uid>/edit/', 'post', profile_views.edit_profile, json_renderer),

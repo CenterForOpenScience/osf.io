@@ -320,6 +320,9 @@ class User(GuidStoredObject, AddonModelMixin):
     # }
     comments_viewed_timestamp = fields.DictionaryField()
 
+    # timezone offset from utc in minutes for user's locale
+    timezone_offset = fields.IntegerField(default=0)
+
     _meta = {'optimistic': True}
 
     def __repr__(self):
