@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
 import mock
-import datetime
 import time
+import datetime
 
-from nose.tools import *  # PEP8 asserts
+from nose.tools import *  # noqa
 from framework.auth import Auth
-from website.util import api_url_for, web_url_for
+from website.util import api_url_for
 from tests.base import OsfTestCase, assert_is_redirect
 from tests.factories import AuthUserFactory, ProjectFactory
 
-from website.addons.gdrive.tests.utils import mock_files_folders, mock_folders, mock_root_folders
+from website.addons.gdrive.tests.utils import mock_folders
+from website.addons.gdrive.tests.utils import mock_root_folders
 from website.addons.gdrive.utils import serialize_settings, check_access_token
-
 
 
 class TestGdriveAuthViews(OsfTestCase):
@@ -336,6 +336,3 @@ class TestGdriveUtils(OsfTestCase):
         self.user_settings.save()
         res = check_access_token(self.user_settings)
         assert_true(res['status'], 'token_refreshed')
-
-
-

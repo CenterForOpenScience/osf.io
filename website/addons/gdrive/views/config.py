@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
+import httplib as http
+
 from flask import request
+
 from framework.auth.core import _get_current_user
 from framework.auth.decorators import must_be_logged_in
-import httplib as http
 
 from website.project.decorators import (
     must_have_permission,
