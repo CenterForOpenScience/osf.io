@@ -599,7 +599,6 @@ class TestSendEmails(OsfTestCase):
     #     )
     #     assert_true(email_transactional.called)
 
-    @unittest.skipIf(settings.USE_CELERY, 'Transactional emails must be sent synchronously for this test')
     @mock.patch('website.mails.send_mail')
     def test_send_email_transactional(self, send_mail):
         # assert that send_mail is called with the correct person & args
@@ -687,7 +686,7 @@ class TestSendEmails(OsfTestCase):
 
     def test_get_settings_url_for_user(self):
         url = emails.get_settings_url(self.user._id, self.user)
-        assert_equal(url, urlparse.urljoin(settings.DOMAIN, web_url_for('user_notifications')))
+        assert_equal(url, web_url_for('user_notifications', _absolute=True))
 
     def test_get_node_lineage(self):
         node_lineage = emails.get_node_lineage(self.node, [])

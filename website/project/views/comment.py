@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import collections
 import httplib as http
-from dateutil.relativedelta import relativedelta
 
 from flask import request
 from modularodm import Q
