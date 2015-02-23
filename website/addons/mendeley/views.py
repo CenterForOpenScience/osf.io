@@ -85,7 +85,7 @@ def mendeley_citation_list(auth, node_addon, mendeley_list_id=None, **kwargs):
     passed mendeley_list_id. If mendeley_list_id is None, then all of the
     authorizer's folders and citations are listed
     """
-    import ipdb; ipdb.set_trace()
+    
     provider = MendeleyCitationsProvider()
     show = request.args.get('view', 'all')
     return provider.citation_list(node_addon, auth.user, mendeley_list_id, show)

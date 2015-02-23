@@ -255,7 +255,6 @@ class Mendeley(ExternalProvider):
         """List of CitationList objects, derived from Mendeley folders"""
 
         folders = self._get_folders()
-        import ipdb; ipdb.set_trace()
         # TODO: Verify OAuth access to each folder
         all_documents = serialize_folder(
             'All Documents',

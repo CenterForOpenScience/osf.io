@@ -92,7 +92,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         assert_true(res.json['nodeHasAuth'])
         assert_true(res.json['userHasAuth'])
         assert_true(res.json['userIsOwner'])
-        assert_equal(res.json['userAccountId'], filter(lambda a: a.provider == 'mendeley', self.user.external_accounts)[0]._id)
+        assert_equal(res.json['externalAccountId'], filter(lambda a: a.provider == 'mendeley', self.user.external_accounts)[0]._id)
         assert_equal(res.json['folder'], '')
         assert_equal(res.json['ownerName'], self.user.fullname)
         assert_true(res.json['urls']['auth'])
@@ -113,7 +113,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         assert_true(res.json['nodeHasAuth'])
         assert_false(res.json['userHasAuth'])
         assert_false(res.json['userIsOwner'])
-        assert_is_none(res.json['userAccountId'])
+        assert_is_none(res.json['externalAccountId'])
         assert_equal(res.json['folder'], '')
         assert_equal(res.json['ownerName'], self.user.fullname)
         assert_true(res.json['urls']['auth'])
@@ -148,7 +148,6 @@ class MendeleyViewsTestCase(OsfTestCase):
             body=mock_responses['folders'],
             content_type='application/json',
         )
-        self.node_addon.mendeley_list_id = 'ROOT'
         res = self.app.get(
             self.project.api_url_for('mendeley_citation_list', account_id=self.account._id),
             auth=self.user.auth,
@@ -191,6 +190,7 @@ class MendeleyViewsTestCase(OsfTestCase):
             auth=self.user.auth,
             expect_errors=True,
         )
+        import ipdb; ipdb.set_trace()
         assert_equal(res.status_code, 404)
 
     def test_set_config_unauthorized(self):
@@ -220,7 +220,7 @@ class MendeleyViewsTestCase(OsfTestCase):
             auth=self.user.auth,
         )
         self.node_addon.reload()
-        assert_in(self.user_addon, self.node_addon.associated_user_settings)
+        assert_equal(self.user_addon, self.node_addon.user_settings)
         assert_equal(res.json, {})
 
     def test_set_config_not_owner(self):
@@ -237,7 +237,7 @@ class MendeleyViewsTestCase(OsfTestCase):
             auth=user.auth,
         )
         self.node_addon.reload()
-        assert_in(self.user_addon, self.node_addon.associated_user_settings)
+        assert_equal(self.user_addon, self.node_addon.user_settings)
         assert_equal(res.json, {})
 
     @unittest.skip('finish this -- breaks at second request: auth')
@@ -312,7 +312,6 @@ class MendeleyViewsTestCase(OsfTestCase):
         """JSON: tell the widget when it hasn't been configured"""
         assert_false(self.node_addon.complete)
         assert_equal(self.node_addon.mendeley_list_id, None)
-        import ipdb; ipdb.set_trace()
         res = views.mendeley_widget(node_addon=self.node_addon, 
                                     project=self.project, 
                                     node=self.node, 
@@ -336,7 +335,6 @@ class MendeleyViewsTestCase(OsfTestCase):
             self.project.api_url_for('mendeley_citation_list'),
             auth=self.user.auth
         )
-        import ipdb; ipdb.set_trace()
         root = res.json['contents'][0]
         assert_equal(root['kind'], 'folder')
         assert_equal(root['id'], 'ROOT')
