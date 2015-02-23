@@ -4,9 +4,9 @@ from waterbutler.core import metadata
 
 class BaseGoogleDriveMetadata(metadata.BaseMetadata):
 
-    def __init__(self, raw, folder):
+    def __init__(self, raw, path):
         super().__init__(raw)
-        self._folder = folder
+        self._path = path
 
     @property
     def provider(self):
@@ -31,7 +31,7 @@ class GoogleDriveFolderMetadata(BaseGoogleDriveMetadata, metadata.BaseFolderMeta
 
     @property
     def path(self):
-        return os.path.join('/', self.raw['id'], self.raw['title'], self.raw['path'])
+        return os.path.join(str(self._path), self.raw['title']) + '/'
 
 
 class GoogleDriveFileMetadata(BaseGoogleDriveMetadata, metadata.BaseFileMetadata):
@@ -43,11 +43,6 @@ class GoogleDriveFileMetadata(BaseGoogleDriveMetadata, metadata.BaseFileMetadata
     @property
     def name(self):
         return self.raw['title']
-
-    @property
-    def path(self):
-        print("Upload/download", os.path.join('/', self.raw['id'], self.raw['title'], self.raw['path']))
-        return os.path.join('/', self.raw['id'], self.raw['title'], self.raw['path'])
 
     @property
     def size(self):
@@ -64,6 +59,10 @@ class GoogleDriveFileMetadata(BaseGoogleDriveMetadata, metadata.BaseFileMetadata
     @property
     def content_type(self):
         return self.raw['mimeType']
+
+    @property
+    def path(self):
+        return os.path.join(str(self._path), self.raw['title'])
 
 
 class GoogleDriveRevision(metadata.BaseFileRevisionMetadata):
