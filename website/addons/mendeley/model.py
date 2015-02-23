@@ -98,7 +98,6 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
 
     @property
     def complete(self):
-        #return bool(self.has_auth and self.mendeley_list_id)
         return bool(self.has_auth and self.user_settings.verify_oauth_access(
             node=self.owner,
             external_account=self.external_account,
