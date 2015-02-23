@@ -1,6 +1,6 @@
 <script type="text/html" id="gdrive_file_added">
 added file
-<a class="overflow">{{params.path }}</a> to
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">{{params.path}}</a> to
 Google Drive in {{ nodeType }}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
@@ -8,14 +8,14 @@ Google Drive in {{ nodeType }}
 
 <script type="text/html" id="gdrive_file_updated">
 updated file
-<a class="overflow">{{params.path}}</a> to
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">{{params.path}}</a> to
 Google Drive in {{ nodeType }}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
 
 
 <script type="text/html" id="gdrive_file_removed">
-removed file <a class="overflow">{{ params.path }}</a> from
+removed file <a class="overflow ">{{ params.path }}</a> from
 Google Drive in {{ nodeType }}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
