@@ -132,23 +132,40 @@ function ProjectNotifications(data) {
             ]},
         resolveRows : function notificationResolveRows(item){
             var columns = [];
-            var iconcss = 'test';
+            var iconcss = '';
             // check if should not get icon
             if(item.children.length < 1 ){
                 iconcss = 'tb-no-icon';
             }
             if (item.data.kind === 'heading') {
-                 columns.push({
-                    data : 'project',  // Data field name
-                    folderIcons : false,
-                    filter : true,
-                    sortInclude : false,
-                    custom : function() {
-                        return m("div[style='padding-left:5px']",
-                                [m('b', [m('p', item.data.node.title + ':')])
-                                ])
-                    }
-                });
+                if (item.data.children.length === 0) {
+                    columns.push({
+                        data : 'project',  // Data field name
+                        folderIcons : false,
+                        filter : true,
+                        sortInclude : false,
+                        custom : function() {
+                            return m("div[style='padding-left:5px']",
+                                        [m ('p', [
+                                                m('b', item.data.node.title + ': '),
+                                                m('span[class="text-warning"]', ' No configured projects.')]
+                                        )]
+                            )}
+                    });
+                } else {
+                    columns.push({
+                        data : 'project',  // Data field name
+                        folderIcons : false,
+                        filter : true,
+                        sortInclude : false,
+                        custom : function() {
+                            return m("div[style='padding-left:5px']",
+                                    [m('p',
+                                        [m('b', item.data.node.title + ':')]
+                                )]
+                            )}
+                    });
+                }
             }
             else if (item.data.kind === 'folder' || item.data.kind === 'node') {
                 columns.push({
