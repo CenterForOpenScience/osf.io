@@ -21,15 +21,17 @@ def migrate_nodes():
     for i, node in enumerate(nodes):
         node.update_search()
 
-    return i + 1  # Started counting from 0
+    logger.info('Nodes migrated: {}'.format(i + 1))
 
 
 def migrate_users():
+    n_iter = 0
     for i, user in enumerate(User.find()):
         if user.is_active:
             user.update_search()
+            n_iter += 1
 
-    return i + 1  # Started counting from 0
+    logger.info('Users iterated: {0}\nUsers migrated: {1}'.format(i + 1, n_iter))
 
 
 def main():
@@ -39,8 +41,8 @@ def main():
 
     search.delete_all()
     search.create_index()
-    logger.info("Nodes migrated: {}".format(migrate_nodes()))
-    logger.info("Users migrated: {}".format(migrate_users()))
+    migrate_nodes()
+    migrate_users()
 
     ctx.pop()
 
