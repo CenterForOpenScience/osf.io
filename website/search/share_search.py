@@ -10,6 +10,8 @@ from elasticsearch import Elasticsearch
 
 from website import settings
 
+from util import random_color
+
 logger = logging.getLogger(__name__)
 
 share_es = Elasticsearch(
@@ -41,31 +43,6 @@ def count(query):
         'results': [],
         'count': count['count']
     }
-
-
-def random_color(seed=15485863, max_iterations=15):
-    def istooclose(color, colors, threshold=100):
-        pairs = (color[0:2], color[2:4], color[4:6])
-        for x in colors:
-            distance = sum(abs(int(x[i], 16) - int(pairs[i], 16)) for i in xrange(3))
-            if distance < threshold:
-                logger.error(distance)
-                return True
-        return False
-
-    random.seed(seed)
-    values = [str(i) for i in range(10)] + ['A', 'B', 'C', 'D', 'E', 'F']
-    colors = []
-    iterations = 0
-    while True:
-        color = ''.join(random.choice(values) for i in range(6))
-        if istooclose(color, colors) and not iterations > max_iterations:
-            iterations += 1
-            continue
-        else:
-            colors.append((color[0:2], color[2:4], color[4:6]))
-            iterations = 0
-        yield '#' + color
 
 
 def stats(query=None):
