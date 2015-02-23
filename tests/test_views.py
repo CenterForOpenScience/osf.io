@@ -3509,6 +3509,14 @@ class TestDashboardViews(OsfTestCase):
                 found_item = True
         assert_true(found_item, "Did not find the folder in the dashboard.")
 
+    def test_update_user_timezone_offset(self):
+        assert_equal(self.creator.timezone_offset, 0)
+        payload = {'timezoneOffset': 300}
+        url = api_url_for('update_user', uid=self.creator._id)
+        self.app.put_json(url, payload, auth=self.creator.auth)
+        self.creator.reload()
+        assert_equal(self.creator.timezone_offset, 300)
+
 
 class TestWikiWidgetViews(OsfTestCase):
 
@@ -3808,6 +3816,7 @@ class TestUserConfirmSignal(OsfTestCase):
             assert_equal(res.status_code, 302)
 
         assert_equal(mock_signals.signals_sent(), set([auth.signals.user_confirmed]))
+
 
 if __name__ == '__main__':
     unittest.main()
