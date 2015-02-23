@@ -11,12 +11,10 @@ var $notificationsMsg = $('#configureNotificationsMessage');
 $.ajax({
         url: '/api/v1/subscriptions',
         type: 'GET',
-        dataType: 'json',
-        success: function(response) {
-            new ProjectNotifications(response);
-        },
-        error: function() {
-            $notificationsMsg.addClass('text-danger');
-            $notificationsMsg.text('Could not retrieve notification settings.');
-        }
-});
+        dataType: 'json'
+    }).done( function(response) {
+        new ProjectNotifications(response);
+    }).fail( function() {
+        $notificationsMsg.addClass('text-danger');
+        $notificationsMsg.text('Could not retrieve notification settings.');
+    });
