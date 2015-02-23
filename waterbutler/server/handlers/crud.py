@@ -59,7 +59,7 @@ class CRUDHandler(core.BaseHandler):
         if isinstance(result, str):
             return self.redirect(result)
 
-        display_name =  (
+        display_name = (
             self.arguments.get('displayName') or
             utils.parse_disposition_name(result.response.headers.get('content-disposition')) or
             os.path.split(self.arguments['path'])[-1]
