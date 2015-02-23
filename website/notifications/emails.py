@@ -35,6 +35,9 @@ def notify(uid, event, **context):
 
 
 def check_parent(uid, event, node_subscribers, **context):
+    """ Check subscription object for the event on the parent project
+        and send transactional email to indirect subscribers.
+    """
     node = Node.load(uid)
     if node and node.node__parent:
         for p in node.node__parent:
@@ -99,6 +102,9 @@ def get_settings_url(uid, user):
 
 
 def email_digest(subscribed_user_ids, uid, event, **context):
+    """ Render the email message from context vars and store in the
+        DigestNotification objects created for each subscribed user.
+    """
     template = event + '.html.mako'
     message = mails.render_message(template, **context)
 
@@ -121,6 +127,9 @@ def email_digest(subscribed_user_ids, uid, event, **context):
 
 
 def get_node_lineage(node, node_lineage):
+    """ Get a list of node ids in order from the parent project to the node itself
+        e.g. ['parent._id', 'node._id']
+    """
     if node is not None:
         node_lineage.append(node._id)
     if node.node__parent != []:
