@@ -109,7 +109,8 @@ var resolve = {
         'addonPermissions': staticPath('js/addonPermissions.js'),
         'navbar-control': staticPath('js/navbarControl.js'),
         'mathrender': staticPath('js/mathrender.js'),
-        'citations': staticPath('js/citations.js')
+        'citations': staticPath('js/citations.js'),
+        'jstz': staticPath('vendor/bower_components/jsTimezoneDetect/index.js')
     }
 };
 
