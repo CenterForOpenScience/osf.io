@@ -1,4 +1,3 @@
-import os
 import httplib as http
 import httplib2
 import time
