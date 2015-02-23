@@ -37,10 +37,14 @@ function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathj
     self.displaySource = ko.observable('');
 
     self.renderMarkdown = function(rawContent){
-        if(self.allowFullRender()) {
-            return md.render(rawContent);
+        if(self.visible()) {
+            if (self.allowFullRender()) {
+                return md.render(rawContent);
+            } else {
+                return mdQuick.render(rawContent);
+            }
         } else {
-            return mdQuick.render(rawContent);
+            return '';
         }
     };
 
