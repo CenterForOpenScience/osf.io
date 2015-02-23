@@ -1,15 +1,18 @@
-import httplib as http
-import httplib2
 import time
+import httplib2
+import httplib as http
 
+from flask import request
 from oauth2client.client import OAuth2WebServerFlow
 from apiclient.discovery import build
-from flask import request
+
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message as flash
 from framework.sessions import session
+
+from website.util import api_url_for
 from website.project.model import Node
 from website.util import web_url_for
 from website.project.decorators import (must_have_addon, must_have_permission)
@@ -34,8 +37,14 @@ def drive_oauth_start(auth, **kwargs):
     if user.has_addon('gdrive') and user.get_addon('gdrive').has_auth:
         flash('You have already authorized Google Drive for this account', 'warning')
         return redirect(web_url_for('user_addons'))
-    flow = OAuth2WebServerFlow(settings.CLIENT_ID, settings.CLIENT_SECRET,
-                               settings.OAUTH_SCOPE, redirect_uri=settings.REDIRECT_URI)
+
+    redirect_uri = api_url_for('drive_oauth_finish', _absolute=True)
+    flow = OAuth2WebServerFlow(
+        settings.CLIENT_ID,
+        settings.CLIENT_SECRET,
+        settings.OAUTH_SCOPE,
+        redirect_uri=redirect_uri
+    )
     flow.params['approval_prompt'] = 'force'
     authorize_url = flow.step1_get_authorize_url()
     return{'url': authorize_url}
@@ -57,11 +66,12 @@ def drive_oauth_finish(auth, **kwargs):
     if code is None:
         raise HTTPError(http.BAD_REQUEST)
 
+    redirect_uri = api_url_for('drive_oauth_finish', _absolute=True)
     flow = OAuth2WebServerFlow(
         settings.CLIENT_ID,
         settings.CLIENT_SECRET,
         settings.OAUTH_SCOPE,
-        redirect_uri=settings.REDIRECT_URI
+        redirect_uri=redirect_uri
     )
     credentials = flow.step2_exchange(code)
     http_service = httplib2.Http()

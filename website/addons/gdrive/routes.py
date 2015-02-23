@@ -44,7 +44,7 @@ api_routes = {
         ),
 
         Rule(
-            ['/addons/gdrive/callback/'],
+            ['/addons/gdrive/finish/'],
             'get',
             views.auth.drive_oauth_finish,
             json_renderer,
