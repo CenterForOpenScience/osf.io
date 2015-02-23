@@ -7,6 +7,7 @@ from flask import request
 from framework.exceptions import HTTPError
 from framework.auth.decorators import collect_auth
 
+from website.util import permissions
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
     must_have_permission, must_not_be_registration,
@@ -17,8 +18,8 @@ from website.util import web_url_for
 from website.addons.box.client import get_client_from_user_settings
 from box.client import BoxClientException
 
-@collect_auth
-@must_be_valid_project
+
+@must_have_permission(permissions.WRITE)
 @must_have_addon('box', 'node')
 def box_config_get(node_addon, auth, **kwargs):
     """API that returns the serialized node settings."""
@@ -38,7 +39,7 @@ def serialize_folder(metadata):
         name = 'Box' + metadata['path']
     return {
         'name': name,
-        'path': metadata['path']
+        'path': metadata['path'],
     }
 
 
@@ -50,10 +51,12 @@ def get_folders(client):
     # List each folder, including the root
     root = {
         'name': '/ (Full Box)',
-        'path': ''
+        'path': '',
     }
-    folders = [root] + [serialize_folder(each)
-                        for each in metadata['contents'] if each['is_dir']]
+    folders = [root] + [
+        serialize_folder(each)
+        for each in metadata['contents'] if each['is_dir']
+    ]
     return folders
 
 
@@ -72,11 +75,10 @@ def serialize_urls(node_settings):
         'importAuth': node.api_url_for('box_import_user_auth'),
         'files': node.web_url_for('collect_file_trees'),
         # Endpoint for fetching only folders (including root)
-        'folders': node.api_url_for('box_hgrid_data_contents',
-            foldersOnly=1, includeRoot=1),
+        'folders': node.api_url_for('box_hgrid_data_contents', foldersOnly=1, includeRoot=1),
         'share': share_url,
         'emails': node.api_url_for('box_get_share_emails'),
-        'settings': web_url_for('user_addons')
+        'settings': web_url_for('user_addons'),
     }
     return urls
 
@@ -115,8 +117,10 @@ def serialize_settings(node_settings, current_user, client=None):
 
     if node_settings.has_auth:
         # Add owner's profile URL
-        result['urls']['owner'] = web_url_for('profile_view_id',
-            uid=user_settings.owner._primary_key)
+        result['urls']['owner'] = web_url_for(
+            'profile_view_id',
+            uid=user_settings.owner._primary_key
+        )
         result['ownerName'] = user_settings.owner.fullname
         # Show available folders
         path = node_settings.folder
@@ -125,12 +129,12 @@ def serialize_settings(node_settings, current_user, client=None):
         else:
             result['folder'] = {
                 'name': 'Box' + path,
-                'path': path
+                'path': path,
             }
     return result
 
 
-@must_have_permission('write')
+@must_have_permission(permissions.WRITE)
 @must_not_be_registration
 @must_have_addon('box', 'user')
 @must_have_addon('box', 'node')
@@ -145,15 +149,15 @@ def box_config_put(node_addon, user_addon, auth, **kwargs):
         'result': {
             'folder': {
                 'name': 'Box ' + path,
-                'path': path
+                'path': path,
             },
-            'urls': serialize_urls(node_addon)
+            'urls': serialize_urls(node_addon),
         },
         'message': 'Successfully updated settings.',
     }, http.OK
 
 
-@must_have_permission('write')
+@must_have_permission(permissions.WRITE)
 @must_have_addon('box', 'user')
 @must_have_addon('box', 'node')
 def box_import_user_auth(auth, node_addon, user_addon, **kwargs):
@@ -167,7 +171,8 @@ def box_import_user_auth(auth, node_addon, user_addon, **kwargs):
         'message': 'Successfully imported access token from profile.',
     }, http.OK
 
-@must_have_permission('write')
+
+@must_have_permission(permissions.WRITE)
 @must_have_addon('box', 'node')
 @must_not_be_registration
 def box_deauthorize(auth, node_addon, **kwargs):
@@ -175,7 +180,8 @@ def box_deauthorize(auth, node_addon, **kwargs):
     node_addon.save()
     return None
 
-@must_have_permission('write')
+
+@must_have_permission(permissions.WRITE)
 @must_have_addon('box', 'user')
 @must_have_addon('box', 'node')
 def box_get_share_emails(auth, user_addon, node_addon, **kwargs):
@@ -189,9 +195,11 @@ def box_get_share_emails(auth, user_addon, node_addon, **kwargs):
     if node_addon.user_settings.owner != auth.user:
         raise HTTPError(http.FORBIDDEN)
     result = {
-        'emails': [contrib.username
-                    for contrib in node_addon.owner.contributors
-                        if contrib != auth.user],
+        'emails': [
+            contrib.username
+            for contrib in node_addon.owner.contributors
+                if contrib != auth.user
+        ],
         #'url': utils.get_share_folder_uri(node_addon.folder)
     }
     return {'result': result}, http.OK

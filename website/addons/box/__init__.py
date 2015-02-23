@@ -10,7 +10,6 @@ ROUTES = [routes.auth_routes, routes.api_routes]
 SHORT_NAME = 'box'
 FULL_NAME = 'Box'
 
-
 OWNERS = ['user', 'node']
 
 ADDED_DEFAULT = []

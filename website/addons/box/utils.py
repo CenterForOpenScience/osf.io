@@ -44,7 +44,7 @@ class BoxNodeLogger(object):
         params = {
             'project': self.node.parent_id,
             'node': self.node._primary_key,
-            'folder_id': self.node.get_addon('box', deleted=True).folder_id
+            'folder_id': self.node.get_addon('box', deleted=True).folder_id,
         }
         # If logging a file-related action, add the file's view and download URLs
         if self.file_obj or self.path:
@@ -53,7 +53,10 @@ class BoxNodeLogger(object):
                 'urls': {
                     'view': self.node.web_url_for('addon_view_or_download_file', path=path, provider='box'),
                     'download': self.node.web_url_for(
-                        'addon_view_or_download_file', path=path, provider='box')
+                        'addon_view_or_download_file',
+                        path=path,
+                        provider='box'
+                    )
                 },
                 'path': path,
             })
@@ -69,20 +72,6 @@ class BoxNodeLogger(object):
             self.node.save()
 
 
-def is_subdir(path, directory):
-    if not (path and directory):
-        return False
-    #make both absolute
-    abs_directory = os.path.abspath(directory).lower()
-    abs_path = os.path.abspath(path).lower()
-    return os.path.commonprefix([abs_path, abs_directory]) == abs_directory
-
-
-def is_authorizer(auth, node_addon):
-    """Return if the auth object's user is the same as the authorizer of the node."""
-    return auth.user == node_addon.user_settings.owner
-
-
 def get_file_name(path):
     """Given a path, get just the base filename.
     Handles "/foo/bar/baz.txt/" -> "baz.txt"
@@ -90,30 +79,21 @@ def get_file_name(path):
     return os.path.basename(path.strip('/'))
 
 
-def ensure_leading_slash(path):
-    if not path.startswith('/'):
-        return '/' + path
-    return path
-
-
 def build_box_urls(item, node):
     assert item['type'] == 'folder', 'Can only build urls for box folders'
-    path = item['path']
+    # path = item['path']
     if item['type'] == u'folder':
         return {
-            # Endpoint for fetching all of a folder's contents
-            'fetch': node.api_url_for('box_hgrid_data_contents', path=path),
             # Add extra endpoint for fetching folders only (used by node settings page)
             # NOTE: querystring params in camel-case
-            'folders': node.api_url_for('box_hgrid_data_contents',
-                path=path, foldersOnly=1)
+            'folders': node.api_url_for('box_hgrid_data_contents', foldersOnly=1, folder_id=item['id']),
         }
+
 
 def metadata_to_hgrid(item, node, permissions):
     """Serializes a dictionary of metadata (returned from the BoxClient)
     to the format expected by Rubeus/HGrid.
     """
-    #import ipdb; ipdb.set_trace()
     filename = item['name']
     serialized = {
         'addon': 'box',
@@ -121,8 +101,8 @@ def metadata_to_hgrid(item, node, permissions):
         'name': filename,
         'ext': os.path.splitext(filename)[-1],
         rubeus.KIND: rubeus.FOLDER if item['type'] == u'folder' else rubeus.FILE,
-        #'urls': build_box_urls(item, node),
+        'urls': build_box_urls(item, node),
         'path': item.get('path') or filename,
-        'id': item['id']
+        'id': item['id'],
     }
     return serialized

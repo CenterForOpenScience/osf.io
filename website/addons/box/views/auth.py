@@ -48,15 +48,15 @@ def finish_auth():
     """
     if 'code' in request.args:
         code = request.args['code']
-#        url_state = request.args['state']
+        # url_state = request.args['state']
     elif 'error' in request.args:
         box_error_handle(error=request.args['error'], msg=request.args['error_description'])
 
     # This can be used for added security. A 'state' is passed to box, and it will return
     # the same state after authorization. It may return a different or no state if the
     # request has been hijacked
-#    if url_state is not 'security_token_needed':
-#        raise HTTPError(http.INTERNAL_SERVER_ERROR)
+    # if url_state is not 'security_token_needed':
+    #     raise HTTPError(http.INTERNAL_SERVER_ERROR)
 
     args = {
         'client_id': settings.BOX_KEY,
@@ -85,10 +85,7 @@ def box_oauth_start(auth, **kwargs):
     if user.has_addon('box') and user.get_addon('box').has_auth:
         flash('You have already authorized Box for this account', 'warning')
         return redirect(web_url_for('user_addons'))
-    # Force the user to reapprove the box authorization each time. Currently the
-    # URI component force_reapprove is not configurable from the box python client.
-    # Issue: https://github.com/box/box-js/issues/160
-    return redirect(get_auth_flow())  # .start() + '&force_reapprove=true')
+    return redirect(get_auth_flow())
 
 
 @collect_auth

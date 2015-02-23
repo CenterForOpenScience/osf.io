@@ -204,7 +204,7 @@ class BoxNodeSettings(AddonNodeSettingsBase):
     def serialize_waterbutler_settings(self):
         if not self.folder_id:
             raise exceptions.AddonError('Folder is not configured')
-        return {'folder_id': self.folder_id}
+        return {'folder': self.folder_id}
 
     def create_waterbutler_log(self, auth, action, metadata):
         path = metadata['path']
@@ -246,14 +246,17 @@ class BoxNodeSettings(AddonNodeSettingsBase):
         """
         category = node.project_or_component
         if self.user_settings and self.user_settings.owner == user:
-            return (u'Because you have authorized the Box add-on for this '
+            return (
+                u'Because you have authorized the Box add-on for this '
                 '{category}, forking it will also transfer your authentication token to '
-                'the forked {category}.').format(category=category)
-
+                'the forked {category}.'
+            ).format(category=category)
         else:
-            return (u'Because the Box add-on has been authorized by a different '
-                    'user, forking it will not transfer authentication token to the forked '
-                    '{category}.').format(category=category)
+            return (
+                u'Because the Box add-on has been authorized by a different '
+                'user, forking it will not transfer authentication token to the forked '
+                '{category}.'
+            ).format(category=category)
 
     # backwards compatibility
     before_fork = before_fork_message
@@ -265,10 +268,11 @@ class BoxNodeSettings(AddonNodeSettingsBase):
         if self.user_settings and self.user_settings.owner == removed:
             category = node.project_or_component
             name = removed.fullname
-            return (u'The Box add-on for this {category} is authenticated by {name}. '
-                    'Removing this user will also remove write access to Box '
-                    'unless another contributor re-authenticates the add-on.'
-                    ).format(**locals())
+            return (
+                u'The Box add-on for this {category} is authenticated by {name}. '
+                'Removing this user will also remove write access to Box '
+                'unless another contributor re-authenticates the add-on.'
+            ).format(**locals())
 
     # backwards compatibility
     before_remove_contributor = before_remove_contributor_message
@@ -287,9 +291,7 @@ class BoxNodeSettings(AddonNodeSettingsBase):
             clone.user_settings = self.user_settings
             message = (
                 'Box authorization copied to forked {cat}.'
-            ).format(
-                cat=fork.project_or_component
-            )
+            ).format(cat=fork.project_or_component)
         else:
             message = (
                 u'Box authorization not copied to forked {cat}. You may '
@@ -313,10 +315,11 @@ class BoxNodeSettings(AddonNodeSettingsBase):
             self.save()
             name = removed.fullname
             url = node.web_url_for('node_setting')
-            return (u'Because the Box add-on for this project was authenticated'
-                    'by {name}, authentication information has been deleted. You '
-                    'can re-authenticate on the <a href="{url}">Settings</a> page'
-                    ).format(**locals())
+            return (
+                u'Because the Box add-on for this project was authenticated'
+                'by {name}, authentication information has been deleted. You '
+                'can re-authenticate on the <a href="{url}">Settings</a> page'
+            ).format(**locals())
 
     def after_delete(self, node, user):
         self.deauthorize(Auth(user=user), add_log=True)

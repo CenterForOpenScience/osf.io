@@ -39,7 +39,11 @@ def get_node_addon_client(node_addon):
 
 def disable_access_token(settings_obj):
     creds = get_client_from_user_settings(settings_obj).credentials
-    url = 'https://www.box.com/api/oauth2/revoke/?client_id={0}&client_secret={1}&token={2}'.format(creds._client_id, creds._client_secret, creds._access_token)
+    url = 'https://www.box.com/api/oauth2/revoke/?client_id={0}&client_secret={1}&token={2}'.format(
+        creds._client_id,
+        creds._client_secret,
+        creds._access_token
+    )
     response = requests.request(
         'POST',
         url,)

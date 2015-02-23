@@ -87,7 +87,6 @@ api_routes = {
             json_renderer
         ),
 
-
         Rule(
             ['/project/<pid>/box/config/share/',
             '/project/<pid>/node/<nid>/box/config/share/'],
