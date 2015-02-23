@@ -8,14 +8,23 @@ from apiclient.discovery import build
 from oauth2client.client import AccessTokenCredentials
 
 from website.util import rubeus
+from website.util import permissions
 from website.project.model import Node
-from website.project.decorators import must_be_contributor_or_public, must_have_addon
+from website.project.decorators import (
+    must_have_addon,
+    must_have_permission,
+    must_not_be_registration,
+    must_be_addon_authorizer,
+)
 
 from ..utils import to_hgrid, check_access_token
 
 
-@must_be_contributor_or_public
+@must_have_permission(permissions.WRITE)
+@must_not_be_registration
+@must_have_addon('gdrive', 'user')
 @must_have_addon('gdrive', 'node')
+@must_be_addon_authorizer('gdrive')
 def gdrive_folders(node_addon, **kwargs):
     """ Returns all the subsequent folders under the folder id passed """
     node_owner = node_addon.owner
@@ -33,12 +42,9 @@ def gdrive_folders(node_addon, **kwargs):
         http_service = credentials.authorize(http_service)
         service = build('drive', 'v2', http_service)
 
-    path = request.args.get('path') or ''
-    folderid = request.args.get('folderId')
-    if request.args.get('foldersOnly'):
-        result = retrieve_all_files(service, folderid=folderid, foldersonly=1)
-    else:
-        result = retrieve_all_files(service, folderid=folderid, foldersonly=0)
+    path = request.args.get('path', '')
+    folder_id = request.args.get('folderId')
+    result = get_folders(service, folder_id=folder_id)
     contents = [
         to_hgrid(item, node_owner, path=path)
         for item in result
@@ -55,29 +61,20 @@ def gdrive_folders(node_addon, **kwargs):
     return contents
 
 
-def retrieve_all_files(service, folderid=None, foldersonly=0):
+def get_folders(service, folder_id=None):
     """Retrieve a list of File resources.
 
     :service: Drive API service instance.
     :return: List of File resources.
     """
-    result = []
-    folderId = folderid or 'root'
-    while True:
-        try:
-            if service:
-                if foldersonly:
-                    folders = service.files().list(q=" '%s' in parents and trashed = false and "
-                                                   "mimeType = 'application/vnd.google-apps.folder' "
-                                                   % folderId).execute()
-                else:
-                    folders = service.files().list(q=" '%s' in parents and trashed = false" % folderId).execute()
-
-                result.extend(folders['items'])
-                break
-        except errors.HttpError:
-            break
-    return result
+    folderId = folder_id or 'root'
+    query = ' and '.join([
+        "'{0}' in parents".format(folderId),
+        'trashed = false',
+        "mimeType = 'application/vnd.google-apps.folder'",
+    ])
+    folders = service.files().list(q=query).execute()
+    return folders['items']
 
 
 def gdrive_addon_folder(node_settings, auth, **kwargs):

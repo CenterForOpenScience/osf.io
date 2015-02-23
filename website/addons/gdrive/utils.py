@@ -68,15 +68,14 @@ class GoogleDriveNodeLogger(object):
 
 def serialize_urls(node_settings):
     node = node_settings.owner
-    urls = {
+    return {
         'create': node.api_url_for('drive_oauth_start'),
         'importAuth': node.api_url_for('gdrive_import_user_auth'),
         'deauthorize': node.api_url_for('gdrive_deauthorize'),
-        'get_folders': node.api_url_for('gdrive_folders', foldersOnly=1, includeRoot=1),
+        'get_folders': node.api_url_for('gdrive_folders', includeRoot=1),
         'config': node.api_url_for('gdrive_config_put'),
-        'files': node.web_url_for('collect_file_trees')
+        'files': node.web_url_for('collect_file_trees'),
     }
-    return urls
 
 
 def serialize_settings(node_settings, current_user):
@@ -117,7 +116,7 @@ def clean_path(path):
 
 def build_gdrive_urls(item, node, path):
     return {
-        'get_folders': node.api_url_for('gdrive_folders', folderId=item['id'], path=path, foldersOnly=1),
+        'get_folders': node.api_url_for('gdrive_folders', folderId=item['id'], path=path),
         'fetch': node.api_url_for('gdrive_folders', folderId=item['id']),
     }
 

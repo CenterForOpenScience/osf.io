@@ -3,6 +3,7 @@
  * For Treebeard and _item API's check: https://github.com/caneruguz/treebeard/wiki
  */
 
+'use strict';
 
 var $ = require('jquery');
 var m = require('mithril');
@@ -27,11 +28,11 @@ var tempCounter = 1;
  * @private
  */
 function _fangornResolveIcon(item) {
-    var privateFolder = m('img', { src : '/static/img/hgrid/fatcowicons/folder_delete.png' }),
+    var privateFolder = m('img', {src: '/static/img/hgrid/fatcowicons/folder_delete.png'}),
         pointerFolder = m('i.icon-link', ' '),
         openFolder  = m('i.icon-folder-open', ' '),
         closedFolder = m('i.icon-folder-close', ' '),
-        configOption = item.data.provider ? resolveconfigOption.call(this, item, 'folderIcon', [item]) : undefined,
+        configOption = item.data.provider ? resolveconfigOption.call(this, item, 'folderIcon', [item]) : undefined,  // jshint ignore:line
         ext,
         extensions;
 
@@ -98,7 +99,7 @@ function getconfig(item, key) {
  * @returns {*} Returns if its a property, runs the function if function, returns null if no option is defined.
  */
 function resolveconfigOption(item, option, args) {
-    var self = this,
+    var self = this,  // jshint ignore:line
         prop = getconfig(item, option);
     if (prop) {
         return typeof prop === 'function' ? prop.apply(self, args) : prop;
@@ -168,7 +169,7 @@ function _fangornToggleCheck(item) {
  * @private
  */
 function _fangornResolveUploadUrl(item, file) {
-    var configOption = resolveconfigOption.call(this, item, 'uploadUrl', [item, file]);
+    var configOption = resolveconfigOption.call(this, item, 'uploadUrl', [item, file]); // jshint ignore:line
     return configOption || waterbutler.buildTreeBeardUpload(item, file);
 }
 
@@ -266,7 +267,7 @@ function _fangornAddedFile(treebeard, file) {
     file.url = _fangornResolveUploadUrl(item, file);
     file.method = _fangornUploadMethod(item);
 
-    blankItem = {       // create a blank item that will refill when upload is finished.
+    var blankItem = {       // create a blank item that will refill when upload is finished.
         name: file.name,
         kind: 'file',
         provider: item.data.provider,
@@ -415,15 +416,16 @@ function _fangornDropzoneError(treebeard, file, message) {
  * @private
  */
 function _uploadEvent(event, item, col) {
+    var self = this;  // jshint ignore:line
     try {
         event.stopPropagation();
     } catch (e) {
         window.event.cancelBubble = true;
     }
-    this.dropzoneItemCache = item;
-    this.dropzone.hiddenFileInput.click();
-    if(!item.open){
-        this.updateFolder(null, item);
+    self.dropzoneItemCache = item;
+    self.dropzone.hiddenFileInput.click();
+    if (!item.open) {
+        self.updateFolder(null, item);
     }
 }
 
@@ -513,7 +515,6 @@ function _fangornResolveLazyLoad(item) {
     if (item.data.provider === undefined) {
         return false;
     }
-    console.log(item);
     return waterbutler.buildTreeBeardMetadata(item);
 }
 
