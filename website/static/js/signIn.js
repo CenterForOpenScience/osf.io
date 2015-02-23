@@ -19,8 +19,8 @@ var ViewModel = function() {
     });
     self.password = ko.observable('').extend({
         required: true,
-        minLength: 6,  // based off signUp.js -- is this documented?
-        maxLength: 35  // based off of signUp.js -- is this documented?
+        minLength: 6,
+        maxLength: 35
     });
 
     self.isValid = ko.computed(function() {
