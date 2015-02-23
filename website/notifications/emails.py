@@ -1,9 +1,7 @@
-import datetime
-import urlparse
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from model import Subscription, DigestNotification
-from website import mails, settings
+from website import mails
 from website.util import web_url_for
 from website.models import Node, User
 from mako.lookup import Template
@@ -95,7 +93,7 @@ def email_transactional(subscribed_user_ids, uid, event, **context):
 
 def get_settings_url(uid, user):
     if uid == user._id:
-        return urlparse.urljoin(settings.DOMAIN, web_url_for('user_notifications'))
+        return web_url_for('user_notifications', _absolute=True)
     else:
         return Node.load(uid).absolute_url + 'settings/'
 
