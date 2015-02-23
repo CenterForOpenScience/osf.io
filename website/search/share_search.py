@@ -253,7 +253,10 @@ def data_for_charts(elastic_results):
             'type': 'area-spline',
             'columns': for_charts['date_totals']['date_numbers'],
             'groups': [for_charts['date_totals']['group_names']],
-            'colors': colors
+            'colors': colors,
+            'zoom': {
+                'enabled': 'true'
+            }
         }
     }
 
