@@ -29,8 +29,6 @@
     </small>
     </h4>
 
-
-
     <div id="currentFolder" data-bind="if:showFolders()">
        <p>
         <strong> Current folder:</strong>

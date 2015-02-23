@@ -2,12 +2,15 @@
 """Persistence layer for the gdrive addon.
 """
 import base64
-from modularodm.exceptions import ModularOdmException
-from framework.auth import Auth
+
 from modularodm import fields, Q
-from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
-from .utils import clean_path, GoogleDriveNodeLogger, check_access_token
+from modularodm.exceptions import ModularOdmException
+
+from framework.auth import Auth
 from website.addons.base import exceptions
+from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
+
+from .utils import clean_path, GoogleDriveNodeLogger, check_access_token
 
 
 class AddonGdriveGuidFile(GuidFile):
@@ -193,7 +196,7 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
                     'the forked {category}.').format(category=category)
 
         else:
-            return (u'Because the Googlre Drive add-on has been authorized by a different '
+            return (u'Because the Google Drive add-on has been authorized by a different '
                     'user, forking it will not transfer authentication token to the forked '
                     '{category}.').format(category=category)
 

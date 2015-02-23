@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from website.addons.base.testing import AddonTestCase
-
-from webtest_plus import TestApp
-
 import website
-import mock
 
 
 app = website.app.init_app(

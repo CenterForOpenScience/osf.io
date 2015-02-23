@@ -10,7 +10,8 @@ import requests
 
 from website.util import web_url_for
 
-from .import settings
+from . import settings
+
 
 logger = logging.getLogger(__name__)
 
@@ -152,7 +153,7 @@ def refresh_access_token(user_settings):
             'client_id': settings.CLIENT_ID,
             'client_secret': settings.CLIENT_SECRET,
             'refresh_token': user_settings.refresh_token,
-            'grant_type': 'refresh_token'
+            'grant_type': 'refresh_token',
         }
         url = 'https://www.googleapis.com/oauth2/v3/token'
         response = requests.post(url, params=params)

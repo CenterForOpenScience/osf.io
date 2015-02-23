@@ -368,7 +368,7 @@ def test(all=False):
 @task
 def test_all(flake=False):
     if flake:
-        flake8()
+        flake()
     test_osf()
     test_addons()
 
