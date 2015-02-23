@@ -164,6 +164,7 @@ def data_for_charts(elastic_results):
         default_buckets = bucket['articles_over_time']['buckets']
         stats[bucket['key']]['articles_over_time'] = bucket['articles_over_time']['buckets']
 
+    max_len = 0
     for key, value in stats.iteritems():
         if not stats[key].get('earlier_documents'):
             stats[key]['earlier_documents'] = 0
@@ -176,6 +177,8 @@ def data_for_charts(elastic_results):
                 }
                 for item in default_buckets
             ]
+        if len(stats[key]['articles_over_time']) > max_len:
+                max_len = len(stats[key]['articles_over_time'])
 
     names = ['x']
     numbers = [['x']]
@@ -186,6 +189,8 @@ def data_for_charts(elastic_results):
         try:
             names.append(key)
             x = [item['doc_count'] for item in value['articles_over_time']]
+            if len(x) < max_len:
+                x += [0] * (max_len - len(x))
             x[0] += stats[key].get('earlier_documents', 0)
             numbers.append([key] + [sum(x[0:i + 1]) for i in range(len(x[0:]))])
         except IndexError:
