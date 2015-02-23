@@ -28,7 +28,7 @@ var markdown = new MarkdownIt('commonmark', {
 
 
 // Fast markdown renderer for active editing to prevent slow loading/rendering tasks
-var markdown_quick = new MarkdownIt(('commonmark'), {
+var markdownQuick = new MarkdownIt(('commonmark'), {
      highlight: highlighter
 })
     .use(require('markdown-it-sanitizer'))
@@ -36,5 +36,5 @@ var markdown_quick = new MarkdownIt(('commonmark'), {
 
 module.exports = {
     full: markdown,
-    quick: markdown_quick
+    quick: markdownQuick
 };
