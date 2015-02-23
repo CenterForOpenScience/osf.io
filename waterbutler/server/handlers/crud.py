@@ -11,6 +11,11 @@ from waterbutler.server import settings
 from waterbutler.server.handlers import core
 
 
+TRUTH_MAP = {
+    'true': True,
+    'false': False,
+}
+
 @web.stream_request_body
 class CRUDHandler(core.BaseHandler):
 
@@ -44,7 +49,12 @@ class CRUDHandler(core.BaseHandler):
     @utils.coroutine
     def get(self):
         """Download a file."""
-        result = yield from self.provider.download(accept_url=True, **self.arguments)
+        try:
+            self.arguments['accept_url'] = TRUTH_MAP[self.arguments.get('accept_url', 'true').lower()]
+        except KeyError:
+            raise web.HTTPError(status_code=400)
+
+        result = yield from self.provider.download(**self.arguments)
 
         if isinstance(result, str):
             return self.redirect(result)

@@ -14,9 +14,17 @@ from waterbutler.server.identity import get_identity
 
 
 CORS_ACCEPT_HEADERS = [
+    'Range',
     'Content-Type',
     'Cache-Control',
     'X-Requested-With',
+]
+
+CORS_EXPOSE_HEADERS = [
+    'Accept-Ranges',
+    'Content-Range',
+    'Content-Length',
+    'Content-Encoding',
 ]
 
 HTTP_REASONS = {
@@ -43,6 +51,8 @@ class BaseHandler(tornado.web.RequestHandler, SentryMixin):
 
     def set_default_headers(self):
         self.set_header('Access-Control-Allow-Origin', settings.CORS_ALLOW_ORIGIN)
+        self.set_header('Access-Control-Allow-Headers', ', '.join(CORS_ACCEPT_HEADERS))
+        self.set_header('Access-Control-Expose-Headers', ', '.join(CORS_EXPOSE_HEADERS))
         self.set_header('Cache-control', 'no-store, no-cache, must-revalidate, max-age=0')
 
     def initialize(self):
@@ -95,7 +105,6 @@ class BaseHandler(tornado.web.RequestHandler, SentryMixin):
     def options(self):
         self.set_status(204)
         self.set_header('Access-Control-Allow-Methods', 'PUT, DELETE'),
-        self.set_header('Access-Control-Allow-Headers', ', '.join(CORS_ACCEPT_HEADERS))
 
     @utils.async_retry(retries=5, backoff=5)
     def _send_hook(self, action, metadata):
