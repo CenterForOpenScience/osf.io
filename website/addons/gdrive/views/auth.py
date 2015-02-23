@@ -78,7 +78,7 @@ def drive_oauth_finish(auth, **kwargs):
     user_settings.username = about['name']
     user_settings.save()
 
-    flash('Successfully authorized GoogleDrive', 'success')
+    flash('Successfully authorized Google Drive', 'success')
     if node:
         del session.data['gdrive_auth_nid']
         if node.has_addon('gdrive'):
