@@ -237,8 +237,6 @@ def data_for_charts(elastic_results):
 
     for_charts['date_totals'] = date_totals
 
-    # import ipdb; ipdb.set_trace()
-
     all_data = {}
     all_data['raw_aggregations'] = elastic_results['aggregations']
 
@@ -253,10 +251,7 @@ def data_for_charts(elastic_results):
             'type': 'area-spline',
             'columns': for_charts['date_totals']['date_numbers'],
             'groups': [for_charts['date_totals']['group_names']],
-            'colors': colors,
-            'zoom': {
-                'enabled': 'true'
-            }
+            'colors': colors
         }
     }
 
