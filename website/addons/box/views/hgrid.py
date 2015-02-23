@@ -56,8 +56,6 @@ def box_hgrid_data_contents(node_addon, auth, **kwargs):
     node = node_addon.owner
     folder_id = request.args.get('folder_id', 0)
     # Verify that path is a subdirectory of the node's shared folder
-    # if not is_authorizer(auth, node_addon):
-    #    abort_if_not_subdir(path, node_addon.folder)
     permissions = {
         'edit': node.can_edit(auth) and not node.is_registration,
         'view': node.can_view(auth)
