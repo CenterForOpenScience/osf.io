@@ -22,7 +22,6 @@ import os
 import logging
 
 from mako.lookup import TemplateLookup, Template
-from celery import Task
 from framework.email.tasks import send_email
 from website import settings
 
