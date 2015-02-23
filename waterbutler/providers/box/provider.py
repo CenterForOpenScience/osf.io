@@ -1,5 +1,6 @@
-import asyncio
+import http
 import json
+import asyncio
 
 from waterbutler.core import utils
 from waterbutler.core import streams
@@ -25,7 +26,6 @@ class BoxPath(utils.WaterButlerPath):
 class BoxProvider(provider.BaseProvider):
 
     BASE_URL = settings.BASE_URL
-    BASE_UPLOAD_URL = settings.BASE_UPLOAD_URL
 
     def __init__(self, auth, credentials, settings):
         super().__init__(auth, credentials, settings)
@@ -125,7 +125,7 @@ class BoxProvider(provider.BaseProvider):
         if data:
             return BoxFileMetadata(data, self.folder).serialized()
 
-        raise exceptions.MetadataError('Unable to find file.')
+        raise exceptions.MetadataError('Unable to find file.', code=http.client.NOT_FOUND)
 
     def _get_folder_meta(self, path):
         if str(path) == '/':
