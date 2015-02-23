@@ -291,7 +291,7 @@ class TestGdriveUtils(OsfTestCase):
         # Includes endpoint for fetching folders only
         # NOTE: Querystring params are in camelCase
         assert_equal(urls['get_folders'],
-            self.project.api_url_for('gdrive_folders', foldersOnly=1))
+            self.project.api_url_for('gdrive_folders', foldersOnly=1, includeRoot=1))
 
     def test_serialize_settings_helper_returns_correct_auth_info(self):
         self.user_settings.access_token = 'abc123'
