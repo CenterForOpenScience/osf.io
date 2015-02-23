@@ -43,7 +43,7 @@ def count(query):
     }
 
 
-def random_color(seed=11111, max_iterations=15):
+def random_color(seed=15485863, max_iterations=15):
     def istooclose(color, colors, threshold=100):
         pairs = (color[0:2], color[2:4], color[4:6])
         for x in colors:
