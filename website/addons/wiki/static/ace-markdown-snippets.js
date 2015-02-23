@@ -58,6 +58,10 @@ snippet bulleted-list\n\
 	\n\
 	* ${1:item}\n\
 \n\
+snippet youtube-video\n\
+    \n\
+    @[youtube](${1:url})\n\
+\n\
 ";
 exports.scope = "markdown";
 
