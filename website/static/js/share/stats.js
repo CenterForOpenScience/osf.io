@@ -16,6 +16,10 @@ function get_source_length(elastic_data) {
     return source_names.length;
 }
 
+function getSourceName(d, element, vm) {
+    utils.appendSearch(vm, 'source:' + d['name']);
+}
+
 function donutGraph (data) {
     return c3.generate({
         bindto: '#shareDonutGraph',
@@ -24,11 +28,12 @@ function donutGraph (data) {
         },
         data: data.charts.shareDonutGraph,
         donut: {
-            title: get_source_length(data) + ' Providers'
+            title: get_source_length(data) + ' Providers',
+            expand: true
         },
         legend: {
             show: false
-        }
+        },
     });
 }
 
@@ -57,6 +62,9 @@ function timeGraph (data) {
         legend: {
             show: false
         },
+        zoom: {
+            enabled: true
+        }
 
     });
 }
@@ -121,6 +129,7 @@ Stats.controller = function(vm) {
             url: '/api/v1/share/stats/?' + $.param({q: self.vm.query()}),
             background: true
         }).then(function(data) {
+            data.charts.shareDonutGraph.onclick = function (d, element) { return getSourceName(d, element, self.vm) };
             self.vm.statsData = data;
             Object.keys(self.graphs).map(function(type) {
                 self.vm.statsData.charts[type].unload = true;
