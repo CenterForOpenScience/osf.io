@@ -26,6 +26,12 @@ class GdriveNodeSettingsFactory(ModularOdmFactory):
     owner = SubFactory(ProjectFactory)
     user_settings = SubFactory(GdriveUserSettingsFactory)
     folder = 'Camera Uploads'
+    waterbutler_folder = {
+        'id': '12345',
+        'name': 'Camera Uploads',
+        'path':'Drive/Camera Uploads'
+    }
+
 
 
 class GdriveFileFactory(ModularOdmFactory):

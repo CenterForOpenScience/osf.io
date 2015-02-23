@@ -12,7 +12,6 @@ from website.addons.gdrive.model import (
 from website.addons.gdrive.tests.factories import (
     GdriveNodeSettingsFactory, GdriveUserSettingsFactory
 )
-from website.addons.gdrive.utils import get_path_from_waterbutler_path
 
 class TestGdriveUserSettingsModel(OsfTestCase):
 
@@ -223,10 +222,7 @@ class TestGdriveNodeSettingsModel(OsfTestCase):
             self.project.logs[-1].action,
             'gdrive_{0}'.format(action),
         )
-        assert_equal(
-            self.project.logs[-1].params['path'],
-            get_path_from_waterbutler_path(path),
-        )
+        assert_equal(self.project.logs[-1].params['path'], path)
 
 
 class TestNodeSettingsCallbacks(OsfTestCase):

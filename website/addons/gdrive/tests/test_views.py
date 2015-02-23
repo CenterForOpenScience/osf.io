@@ -42,9 +42,10 @@ class TestGdriveAuthViews(OsfTestCase):
         res = self.app.post(url)
         assert_true(res.json['url'], 'fake.url')
 
+    @mock.patch('website.addons.gdrive.views.auth.build')
     @mock.patch('website.addons.gdrive.views.auth.OAuth2WebServerFlow')
     @mock.patch('website.addons.gdrive.views.auth.session')
-    def test_gdrive_oauth_finish(self, mock_session, mock_flow):
+    def test_gdrive_oauth_finish(self, mock_session, mock_flow, mock_build):
         user_no_addon = AuthUserFactory()
         nid = self.project._primary_key
         fake_token_expiry = datetime.datetime.now()
@@ -56,6 +57,14 @@ class TestGdriveAuthViews(OsfTestCase):
         self.credentials.access_token = '1111'
         self.credentials.refresh_token = '2222'
         self.credentials.token_expiry = fake_token_expiry
+        self.service = mock.Mock()
+        mock_build.return_value = self.service
+        self.mock_get = mock.Mock()
+        self.service.about.return_value = self.mock_get
+        self.mock_execute = mock.Mock()
+        self.mock_get.get.return_value = self.mock_execute
+        username = {'name':'fakename', 'user': {'emailAddress': 'fakeemailid.com'}}
+        self.mock_execute.execute.return_value = username
         url = api_url_for('drive_oauth_finish', user_no_addon.auth, nid=self.project._primary_key, code='1234')
         res = self.app.get(url)
         assert_is_redirect(res)
@@ -271,7 +280,7 @@ class TestGdriveUtils(OsfTestCase):
         # NOTE: Querystring params are in camelCase
         assert_equal(
             urls['get_folders'],
-            self.project.api_url_for('gdrive_folders'),
+            self.project.api_url_for('gdrive_folders', includeRoot=1),
         )
 
     def test_serialize_settings_helper_returns_correct_auth_info(self):
