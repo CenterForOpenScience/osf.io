@@ -181,8 +181,7 @@ CitationsFolderPickerViewModel.prototype.updateFromData = function(data) {
     self.userAccountId(data.userAccountId);
     self.folder(data.folder || 'None');
     self.urls(data.urls);
-    // ATM equivalent on backend
-    self.validCredentials(data.nodeHasAuth);
+    self.validCredentials(data.validCredentials);
 };
 
 CitationsFolderPickerViewModel.prototype.fetchFromServer = function() {
@@ -389,7 +388,7 @@ CitationsFolderPickerViewModel.prototype.importAuth = function() {
                     }
                 ),
                 value: self.accounts()[0].id,
-                callback: self.connectExistingAccount
+                callback: (self.connectExistingAccount.bind(self))
             });
         } else {
             bootbox.confirm({
@@ -397,7 +396,7 @@ CitationsFolderPickerViewModel.prototype.importAuth = function() {
                 message: self.messages.CONFIRM_AUTH(),
                 callback: function(confirmed) {
                     if (confirmed) {
-                        self.connectExistingAccount(self.accounts()[0].id);
+                        self.connectExistingAccount.call(self, (self.accounts()[0].id));
                     }
                 }
             });

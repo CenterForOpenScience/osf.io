@@ -46,19 +46,19 @@ class CitationsProvider(object):
                          if account.provider == self.provider_name]
 
         user_settings = current_user.get_addon(self.provider_name)
-        user_is_owner = False
-        if user_settings:
-            user_is_owner = user_settings.verify_oauth_access(node_settings.owner, node_account)
 
         user_settings = current_user.get_addon(self.provider_name)
         user_has_auth = bool(user_settings and user_accounts)
+
+        node_has_auth = node_settings.has_auth
+        user_is_owner = (node_has_auth and (node_account in user_accounts)) or bool(len(user_accounts))
 
         user_account_id = None
         if user_has_auth:
             user_account_id = user_accounts[0]._id
 
         result = {
-            'nodeHasAuth': node_settings.has_auth,
+            'nodeHasAuth': node_has_auth,
             'userIsOwner': user_is_owner,
             'userHasAuth': user_has_auth,
             'urls': self._serialize_urls(node_settings),
