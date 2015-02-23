@@ -89,6 +89,9 @@
     <script type="text/javascript">
         window.contextVars = window.contextVars || {};
         window.contextVars.meetingData = ${data};
+        % if meeting['active'] and meeting['info_url']: 
+            window.contextVars.tbInstructionsLink =  '${ meeting['info_url'] }'; 
+        % endif 
     </script>
     <script src=${"/static/public/js/conference-page.js" | webpack_asset}></script>
 </body>
