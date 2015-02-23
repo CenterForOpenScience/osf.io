@@ -3,6 +3,8 @@
 from nose.tools import *  # noqa
 
 import responses
+import mock
+import unittest
 
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
@@ -17,11 +19,42 @@ from website.addons.mendeley.tests.factories import (
 
 from website.util import api_url_for
 from website.addons.mendeley import utils
-from website.addons.mendeley.views import serialize_settings, serialize_urls
+from website.addons.mendeley import views
 
 from utils import mock_responses
 
 API_URL = 'https://api.mendeley.com'
+
+FOLDER_LIST_JSON = [
+    {
+        "id": "68624820-2f4c-438d-ae54-ae2bc431cee3",
+        "name": "API Related Papers",
+        "created": "2014-04-08T10:11:40.000Z",
+    },
+    {
+        "id": "1cb47377-e3a1-40dd-bd82-11aff83a46eb",
+        "name": "MapReduce",
+        "created": "2014-07-02T13:19:36.000Z",
+    },
+]
+
+class MockNode(object):
+    
+    addon = None
+
+    @property
+    def is_deleted(self):
+        return False
+
+    @property
+    def is_public(self):
+        return True
+
+    def get_addon(self, name):
+        if name == 'mendeley':
+            return self.addon
+        return None
+
 
 class MendeleyViewsTestCase(OsfTestCase):
 
@@ -31,43 +64,64 @@ class MendeleyViewsTestCase(OsfTestCase):
         self.user = AuthUserFactory(external_accounts=[self.account])
         self.account.display_name = self.user.fullname
         self.account.save()
-        self.user_addon = MendeleyUserSettingsFactory(owner=self.user)
+        self.user_addon = MendeleyUserSettingsFactory(owner=self.user, external_account=self.account)
         self.project = ProjectFactory(creator=self.user)
-        self.node_addon = MendeleyNodeSettingsFactory(owner=self.project, external_account=self.account)
-        self.node_addon.grant_oauth_access(self.user, self.account, metadata={'lists': 'list'})
+        self.node_addon = MendeleyNodeSettingsFactory(owner=self.project)
+        self.node_addon.set_auth(external_account=self.account, user=self.user)
+        self.user_addon.grant_oauth_access(self.node_addon, self.account, metadata={'lists': 'list'})
+        self.node = MockNode()
+        self.node.addon = self.node_addon
+        self.id_patcher = mock.patch('website.addons.mendeley.model.Mendeley.client_id')
+        self.secret_patcher = mock.patch('website.addons.mendeley.model.Mendeley.client_secret')
+        self.id_patcher.__get__ = mock.Mock(return_value='1234567890asdf')
+        self.secret_patcher.__get__ = mock.Mock(return_value='1234567890asdf')
+        self.id_patcher.start()
+        self.secret_patcher.start()
+
+    def tearDown(self):
+        self.id_patcher.stop()
+        self.secret_patcher.stop()
 
 
     def test_serialize_settings_authorizer(self):
         #"""dict: a serialized version of user-specific addon settings"""
-        res = serialize_settings(self.node_addon, self.user)
-        expected = {
-            'nodeHasAuth': True,
-            'userIsOwner': True,
-            'userHasAuth': True,
-            'urls': serialize_urls(self.node_addon),
-            'userAccountId': filter(lambda a: a.provider == 'mendeley', self.user.external_accounts)[0]._id,
-            'folder': '',
-            'ownerName': self.user.fullname            
-        }
-        assert_dict_equal(res, expected)
-        
+        res = self.app.get(
+            self.project.api_url_for('mendeley_get_config'),
+            auth=self.user.auth, 
+        )
+        assert_true(res.json['nodeHasAuth'])
+        assert_true(res.json['userHasAuth'])
+        assert_true(res.json['userIsOwner'])
+        assert_equal(res.json['userAccountId'], filter(lambda a: a.provider == 'mendeley', self.user.external_accounts)[0]._id)
+        assert_equal(res.json['folder'], '')
+        assert_equal(res.json['ownerName'], self.user.fullname)
+        assert_true(res.json['urls']['auth'])
+        assert_true(res.json['urls']['config'])
+        assert_true(res.json['urls']['deauthorize'])
+        assert_true(res.json['urls']['folders'])
+        assert_true(res.json['urls']['importAuth'])
+        assert_true(res.json['urls']['settings'])        
 
     def test_serialize_settings_non_authorizer(self):
         #"""dict: a serialized version of user-specific addon settings"""
         non_authorizing_user = AuthUserFactory()
         self.project.add_contributor(non_authorizing_user, save=True)    
-        res = serialize_settings(self.node_addon, non_authorizing_user)
-        expected = {
-            'nodeHasAuth': True,
-            'userIsOwner': False,
-            'userHasAuth': False,
-            'urls': serialize_urls(self.node_addon),
-            'userAccountId': None,
-            'folder': '',
-            'ownerName': self.user.fullname            
-        }
-        assert_dict_equal(res, expected)
-        
+        res = self.app.get(
+            self.project.api_url_for('mendeley_get_config'),
+            auth=non_authorizing_user.auth, 
+        )
+        assert_true(res.json['nodeHasAuth'])
+        assert_false(res.json['userHasAuth'])
+        assert_false(res.json['userIsOwner'])
+        assert_is_none(res.json['userAccountId'])
+        assert_equal(res.json['folder'], '')
+        assert_equal(res.json['ownerName'], self.user.fullname)
+        assert_true(res.json['urls']['auth'])
+        assert_true(res.json['urls']['config'])
+        assert_true(res.json['urls']['deauthorize'])
+        assert_true(res.json['urls']['folders'])
+        assert_true(res.json['urls']['importAuth'])
+        assert_true(res.json['urls']['settings'])          
 
     def test_user_folders(self):
         """JSON: a list of user's Mendeley folders"""
@@ -84,23 +138,6 @@ class MendeleyViewsTestCase(OsfTestCase):
         }
         assert_equal(res.json, expected)
 
-    '''
-    TODO delete?
-    def test_node_mendeley_accounts(self):
-        """JSON: a list of Mendeley accounts associated with the node"""
-        res = self.app.get(
-            self.project.api_url_for('list_mendeley_accounts_node'),
-            auth=self.user.auth
-        )
-        import ipdb; ipdb.set_trace()
-        expected = {
-            'accounts': [
-                utils.serialize_account(each)
-                for each in self.node_addon.get_accounts(self.user)
-            ]
-        }
-        assert_equal(res.json, expected)
-    '''
 
     @responses.activate
     def test_node_citation_lists(self):
@@ -111,23 +148,45 @@ class MendeleyViewsTestCase(OsfTestCase):
             body=mock_responses['folders'],
             content_type='application/json',
         )
-        
+        self.node_addon.mendeley_list_id = 'ROOT'
         res = self.app.get(
-            self.project.api_url_for('list_citationlists_node', account_id=self.account._id),
+            self.project.api_url_for('mendeley_citation_list', account_id=self.account._id),
             auth=self.user.auth,
+            mendeley_list_id='ROOT'
         )
-        lists = [each for each in self.node_addon.api.citation_lists]
-        assert_dict_equal(
-            res.json,
-            {
-                'citation_lists': lists
-            }
+        assert_equal(
+            res.json['contents'],
+            [each for each in self.node_addon.api.citation_lists],
         )
+#   ipdb> ppr(res.json['contents'])
+#   [{u'id': u'ROOT',
+#     u'kind': u'folder',
+#     u'name': u'All Documents',
+#     u'parent_list_id': u'__',
+#     u'provider_list_id': None}]
 
+#   ipdb> for each in self.node_addon.api.citation_lists: ppr(each)
+#   {'id': 'ROOT',
+#    'name': 'All Documents',
+#    'parent_list_id': '__',
+#    'provider_list_id': None}
+#   {'id': u'4901a8f5-9840-49bf-8a17-bdb3d5900417',
+#    'name': u'subfolder',
+#    'provider_list_id': u'4901a8f5-9840-49bf-8a17-bdb3d5900417'}
+#   {'id': u'a6b12ebf-bd07-4f4e-ad73-f9704555f032',
+#    'name': u'subfolder2',
+#    'parent_list_id': u'4901a8f5-9840-49bf-8a17-bdb3d5900417',
+#    'provider_list_id': u'a6b12ebf-bd07-4f4e-ad73-f9704555f032'}
+#   {'id': u'e843da05-8818-47c2-8c37-41eebfc4fe3f',
+#    'name': u'subfolder3',
+#    'parent_list_id': u'a6b12ebf-bd07-4f4e-ad73-f9704555f032',
+#    'provider_list_id': u'e843da05-8818-47c2-8c37-41eebfc4fe3f'}
+
+    @responses.activate
     def test_node_citation_lists_not_found(self):
         """JSON: a list of citation lists for all associated accounts"""
         res = self.app.get(
-            self.project.api_url_for('list_citationlists_node', account_id=self.account._id[::-1]),
+            self.project.api_url_for('mendeley_citation_list', account_id=self.account._id[::-1]),
             auth=self.user.auth,
             expect_errors=True,
         )
@@ -180,34 +239,86 @@ class MendeleyViewsTestCase(OsfTestCase):
         assert_in(self.user_addon, self.node_addon.associated_user_settings)
         assert_equal(res.json, {})
 
+    @unittest.skip('finish this -- breaks at second request: auth')
     def test_set_config_node_authorized(self):
-        """Can set config to an account/folder that was previous associated"""
-        pass
+        """Can set config to an account/folder that was previously associated"""
+        self.node_addon.associated_user_settings = []
+        self.node_addon.save()
+        res = self.app.put_json(
+            self.project.api_url_for('mendeley_set_config'),
+            {
+                'external_account_id': self.account._id,
+                'external_list_id': 'list',
+            },
+            auth=self.user.auth,
+        )
+        self.node_addon.reload()
+        assert_in(self.user_addon, self.node_addon.associated_user_settings)
+        assert_equal(res.json, {})
 
+        self.account2 = MendeleyAccountFactory()
+        self.user2 = AuthUserFactory(external_accounts=[self.account2])
+        self.account2.display_name = self.user2.fullname
+        self.account2.save()
+        self.user_addon2 = MendeleyUserSettingsFactory(owner=self.user2)
+        self.node_addon.external_account = self.account2
+        self.node_addon.grant_oauth_access(self.user2, self.account2, metadata={'lists': 'list'})
         
+        self.node_addon.associated_user_settings = []
+        self.node_addon.save()
+        res = self.app.put_json(
+            self.project.api_url_for('mendeley_set_config'),
+            {
+                'external_account_id': self.account2._id,
+                'external_list_id': 'list',
+            },
+            auth=self.user2.auth,
+        )
+        self.node_addon.reload() 
+        assert_in(self.user_addon2, self.node_addon.associated_user_settings)
+        assert_equal(res.json, {})
+
+        self.node_addon.external_account = self.account
+        self.node_addon.grant_oauth_access(self.user, self.account, metadata={'lists': 'list'})
+
+        res = self.app.put_json(
+            self.project.api_url_for('mendeley_set_config'),
+            {
+                'external_account_id': self.account._id,
+                'external_list_id': 'list',
+            },
+            auth=self.user.auth,
+        )
+        self.node_addon.reload()
+        assert_in(self.user_addon, self.node_addon.associated_user_settings)
+        assert_equal(res.json, {})      
 
     def test_mendeley_widget_view_complete(self):
         """JSON: everything a widget needs"""
-
+        assert_false(self.node_addon.complete)
+        assert_equal(self.node_addon.mendeley_list_id, None)
         self.node_addon.mendeley_list_id = 'ROOT'
-        self.node_addon.save()
-        
-        res = self.app.get(
-            self.project.api_url_for('mendeley_widget'),
-            auth=self.user.auth
-        )
-        assert_equal(res.json['complete'], 'ROOT')
-        
+        res = views.mendeley_widget(node_addon=self.node_addon, 
+                                    project=self.project, 
+                                    node=self.node,
+                                    nid=self.node_addon._id,
+                                    pid=self.project._id, 
+                                    auth=self.user.auth)
+        assert_true(res['complete'])
+        assert_equal(res['list_id'], 'ROOT')
 
-    def test_mendeley_widget_view_incomplete(self):
-        #"""JSON: tell the widget when it hasn't been configured"""
-
-        res = self.app.get(
-            self.project.api_url_for('mendeley_widget'),
-            auth=self.user.auth
-        )        
-        assert_is_none(res.json['complete'])
-            
+    def test_widget_view_incomplete(self):
+        """JSON: tell the widget when it hasn't been configured"""
+        assert_false(self.node_addon.complete)
+        assert_equal(self.node_addon.mendeley_list_id, None)
+        res = views.mendeley_widget(node_addon=self.node_addon, 
+                                    project=self.project, 
+                                    node=self.node, 
+                                    nid=self.node_addon._id,
+                                    pid=self.project._id, 
+                                    auth=self.user.auth)
+        assert_false(res['complete'])
+        assert_is_none(res['list_id'])
     
     @responses.activate
     def test_mendeley_citation_list_root(self):
@@ -223,7 +334,6 @@ class MendeleyViewsTestCase(OsfTestCase):
             self.project.api_url_for('mendeley_citation_list'),
             auth=self.user.auth
         )
-
         root = res.json['contents'][0]
         assert_equal(root['kind'], 'folder')
         assert_equal(root['id'], 'ROOT')

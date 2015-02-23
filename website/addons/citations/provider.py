@@ -1,5 +1,5 @@
 import abc
-import http
+import httplib as http
 
 from framework.exceptions import HTTPError
 from framework.exceptions import PermissionsError

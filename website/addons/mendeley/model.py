@@ -98,11 +98,12 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
 
     @property
     def complete(self):
-        return self.has_auth and self.user_settings.verify_oauth_access(
+        #return bool(self.has_auth and self.mendeley_list_id)
+        return bool(self.has_auth and self.user_settings.verify_oauth_access(
             node=self.owner,
             external_account=self.external_account,
             metadata={'folder': self.mendeley_list_id},
-        )
+        ))
 
     @property
     def selected_folder_name(self):
@@ -254,7 +255,6 @@ class Mendeley(ExternalProvider):
         """List of CitationList objects, derived from Mendeley folders"""
 
         folders = self._get_folders()
-
         # TODO: Verify OAuth access to each folder
         all_documents = serialize_folder(
             'All Documents',
@@ -265,7 +265,7 @@ class Mendeley(ExternalProvider):
             extract_folder(each)
             for each in folders
         ]
-        return [all_documents] + serialized_folders
+        return ([all_documents] + serialized_folders)
 
     def get_list(self, list_id='ROOT'):
         """Get a single CitationList
