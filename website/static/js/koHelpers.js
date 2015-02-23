@@ -1,5 +1,6 @@
 'use strict';
 
+var $ = require('jquery');
 var ko = require('knockout');
 
 var makeExtender = function(interceptor) {
@@ -51,6 +52,10 @@ addExtender('ensureHttp', function(value) {
         return value;
     }
     return 'http://' + value;
+});
+
+addExtender('trimmed', function(value) {
+    return $.trim(value);
 });
 
 var sanitize = function(value) {
@@ -149,6 +154,24 @@ ko.validation.rules.url = makeRegexValidator(
     ),
     'Please enter a valid URL.'
 );
+
+
+// Add custom effects
+
+// fadeVisible : http://knockoutjs.com/examples/animatedTransitions.html
+ko.bindingHandlers.fadeVisible = {
+    init: function(element, valueAccessor) {
+        // Initially set the element to be instantly visible/hidden depending on the value
+        var value = valueAccessor();
+        $(element).toggle(ko.unwrap(value)); // Use "unwrapObservable" so we can handle values that may or may not be observable
+    },
+    update: function(element, valueAccessor) {
+        // Whenever the value subsequently changes, slowly fade the element in or out
+        var value = valueAccessor();
+        ko.unwrap(value) ? $(element).fadeIn() : $(element).hide().fadeOut();
+    }
+};
+
 
 // Expose public utilities
 

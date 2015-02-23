@@ -99,8 +99,9 @@ def add_poster_by_email(conference, message):
     utils.upload_attachments(user, node, message.attachments)
 
     download_url = node.web_url_for(
-        'osf_storage_view_file',
+        'addon_view_or_download_file',
         path=message.attachments[0].filename,
+        provider='osfstorage',
         action='download',
         _absolute=True,
     )
@@ -135,9 +136,11 @@ def _render_conference_node(node, idx):
             if not each.is_deleted,
         )
         download_count = record.get_download_count()
+
         download_url = node.web_url_for(
-            'osf_storage_view_file',
+            'addon_view_or_download_file',
             path=record.path,
+            provider='osfstorage',
             action='download',
             _absolute=True,
         )
@@ -171,11 +174,11 @@ def conference_data(meeting):
         Q('is_deleted', 'eq', False)
     )
 
-    data = [
+    ret = [
         _render_conference_node(each, idx)
         for idx, each in enumerate(nodes)
     ]
-    return data
+    return ret
 
 
 def conference_results(meeting):
