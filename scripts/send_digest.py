@@ -28,8 +28,12 @@ def main():
     with app.test_request_context():
         send_digest(grouped_digests)
 
-#TODO: Add tests for callback and removing digest notification records
+
 def send_digest(grouped_digests):
+    """ Send digest emails and remove digests for sent messages in a callback.
+    :param grouped_digests: digest notification messages from the past 24 hours grouped by user
+    :return:
+    """
     for group in grouped_digests:
         try:
             user = User.load(group['user_id'])
@@ -69,6 +73,23 @@ def group_messages_by_node(notifications):
 
 
 def group_digest_notifications_by_user():
+    """ Group digest notification messages from the past 24 hours by user
+    :return: [{
+                'user_id': 'se8ea',
+                'info': [{
+                    'message': {
+                        'message': 'Freddie commented on your project Open Science',
+                        'timestamp': datetime object
+                    },
+                    'node_lineage': ['parent._id', 'node._id'],
+                    '_id': DigestNotification._id
+                }, ...
+                }]
+              },
+              {
+                'user_id': ...
+              }]
+    """
     return db['digestnotification'].group(
         key={'user_id': 1},
         condition={'timestamp': {'$lt': datetime.datetime.utcnow(),
