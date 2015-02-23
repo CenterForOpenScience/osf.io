@@ -107,13 +107,13 @@ var ViewModel = function(url, selector, folderPicker) {
         return !userHasAuth && !nodeHasAuth && loaded;
     });
 
-    self.createAuth = function(){
+    self.createAuth = function() {
         $.osf.postJSON(
             self.urls().create
         ).success(function(response){
             window.location.href = response.url;
             self.changeMessage('Successfully authorized Google Drive account', 'text-primary');
-        }).fail(function(){
+        }).fail(function() {
             self.changeMessage('Could not authorize at this moment', 'text-danger');
         });
     };
@@ -274,4 +274,4 @@ function GdriveNodeConfig(selector, url, folderPicker) {
     $.osf.applyBindings(self.viewModel, selector);
 }
 
-module.exports= GdriveNodeConfig;
+module.exports = GdriveNodeConfig;
