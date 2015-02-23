@@ -5,6 +5,7 @@ import unittest
 import datetime
 import urlparse
 import collections
+from dateutil.relativedelta import relativedelta
 from mako.lookup import Template
 from tests.base import OsfTestCase, capture_signals
 from nose.tools import *  # PEP8 asserts
@@ -589,7 +590,8 @@ class TestSendEmails(OsfTestCase):
     #     emails.send([self.user], 'email_transactional', self.project._id, 'comments',
     #                 nodeType='project',
     #                 timestamp=datetime.datetime.utcnow(),
-    #                 commenter='Saman',
+    #                 commenter=self.project.creator._id,
+    #                 gravatar_url=self.user.gravatar_url,
     #                 content='',
     #                 parent_comment='',
     #                 title=self.project.title,
@@ -608,7 +610,7 @@ class TestSendEmails(OsfTestCase):
             subscribed_users, self.project._id, 'comments',
             nodeType='project',
             timestamp=timestamp,
-            commenter='Saman',
+            commenter=self.project.creator._id,
             gravatar_url=self.user.gravatar_url,
             content='',
             parent_comment='',
@@ -618,7 +620,7 @@ class TestSendEmails(OsfTestCase):
         subject = Template(emails.email_templates['comments']['subject']).render(
             nodeType='project',
             timestamp=timestamp,
-            commenter='Saman',
+            commenter=self.project.creator._id,
             gravatar_url=self.user.gravatar_url,
             content='',
             parent_comment='',
@@ -628,7 +630,7 @@ class TestSendEmails(OsfTestCase):
             'comments.html.mako',
             nodeType='project',
             timestamp=timestamp,
-            commenter='Saman',
+            commenter=self.project.creator._id,
             gravatar_url=self.user.gravatar_url,
             content='',
             parent_comment='',
@@ -653,7 +655,7 @@ class TestSendEmails(OsfTestCase):
         emails.email_digest(subscribed_users, self.project._id, 'comments',
                             nodeType='project',
                             timestamp=datetime.datetime.utcnow(),
-                            commenter='Saman',
+                            commenter=self.project.creator._id,
                             gravatar_url=self.user.gravatar_url,
                             content='',
                             parent_comment='',
@@ -669,7 +671,7 @@ class TestSendEmails(OsfTestCase):
         emails.email_digest(subscribed_users, self.project._id, 'comments',
                             nodeType='project',
                             timestamp=datetime.datetime.utcnow(),
-                            commenter=self.user.fullname,
+                            commenter=self.user._id,
                             gravatar_url=self.user.gravatar_url,
                             content='',
                             parent_comment='',

@@ -80,7 +80,7 @@ def email_transactional(subscribed_user_ids, uid, event, **context):
     for user_id in subscribed_user_ids:
         user = User.load(user_id)
         email = user.username
-        if context.get('commenter') != user.fullname:
+        if context.get('commenter') != user._id:
             mails.send_mail(
                 to_addr=email,
                 mail=mails.TRANSACTIONAL,
@@ -113,8 +113,8 @@ def email_digest(subscribed_user_ids, uid, event, **context):
 
     for user_id in subscribed_user_ids:
         user = User.load(user_id)
-        if context.get('commenter') != user.fullname:
-            digest = DigestNotification(timestamp=datetime.datetime.utcnow(),
+        if context.get('commenter') != user._id:
+            digest = DigestNotification(timestamp=context.get('timestamp'),
                                         event=event,
                                         user_id=user._id,
                                         message=message,

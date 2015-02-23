@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import collections
 import httplib as http
+from dateutil.relativedelta import relativedelta
 
 from flask import request
 from modularodm import Q
@@ -160,7 +161,7 @@ def add_comment(**kwargs):
            nodeType=node.project_or_component,
            event="comment_replies" if is_reply(target) else "comments",
            timestamp=datetime.utcnow(),
-           commenter=auth.user.fullname,
+           commenter=auth.user._id,
            gravatar_url=auth.user.gravatar_url,
            content=content,
            parent_comment=target.content if is_reply(target) else "",
