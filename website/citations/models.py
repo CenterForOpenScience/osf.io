@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import datetime
 
 from modularodm import fields
@@ -6,6 +8,10 @@ from framework.mongo import StoredObject
 
 
 class CitationStyle(StoredObject):
+    """Persistent representation of a CSL style.
+
+    These are parsed from .csl files, so that metadata fields can be indexed.
+    """
 
     # The name of the citation file, sans extension
     _id = fields.StringField(primary=True)

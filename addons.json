@@ -5,6 +5,8 @@
         "figshare",
         "forward",
         "github",
+        "mendeley",
+	"zotero",
         "osfstorage",
         "s3",
         "twofactor",
