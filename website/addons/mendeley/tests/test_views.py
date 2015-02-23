@@ -20,6 +20,7 @@ from website.addons.mendeley.tests.factories import (
 from website.util import api_url_for
 from website.addons.mendeley import utils
 from website.addons.mendeley import views
+from website.addons.citations.utils import serialize_folder
 
 from utils import mock_responses
 
@@ -138,74 +139,6 @@ class MendeleyViewsTestCase(OsfTestCase):
         }
         assert_equal(res.json, expected)
 
-
-    @responses.activate
-    def test_node_citation_lists(self):
-        """JSON: a list of citation lists for all associated accounts"""
-        responses.add(
-            responses.GET,
-            urlparse.urljoin(API_URL, 'folders'),
-            body=mock_responses['folders'],
-            content_type='application/json',
-        )
-        res = self.app.get(
-            self.project.api_url_for('mendeley_citation_list', account_id=self.account._id),
-            auth=self.user.auth,
-            mendeley_list_id='ROOT'
-        )
-        assert_equal(
-            res.json['contents'],
-            [each for each in self.node_addon.api.citation_lists],
-        )
-#   ipdb> ppr(res.json['contents'])
-#   [{u'id': u'ROOT',
-#     u'kind': u'folder',
-#     u'name': u'All Documents',
-#     u'parent_list_id': u'__',
-#     u'provider_list_id': None}]
-
-#   ipdb> for each in self.node_addon.api.citation_lists: ppr(each)
-#   {'id': 'ROOT',
-#    'name': 'All Documents',
-#    'parent_list_id': '__',
-#    'provider_list_id': None}
-#   {'id': u'4901a8f5-9840-49bf-8a17-bdb3d5900417',
-#    'name': u'subfolder',
-#    'provider_list_id': u'4901a8f5-9840-49bf-8a17-bdb3d5900417'}
-#   {'id': u'a6b12ebf-bd07-4f4e-ad73-f9704555f032',
-#    'name': u'subfolder2',
-#    'parent_list_id': u'4901a8f5-9840-49bf-8a17-bdb3d5900417',
-#    'provider_list_id': u'a6b12ebf-bd07-4f4e-ad73-f9704555f032'}
-#   {'id': u'e843da05-8818-47c2-8c37-41eebfc4fe3f',
-#    'name': u'subfolder3',
-#    'parent_list_id': u'a6b12ebf-bd07-4f4e-ad73-f9704555f032',
-#    'provider_list_id': u'e843da05-8818-47c2-8c37-41eebfc4fe3f'}
-
-    @responses.activate
-    def test_node_citation_lists_not_found(self):
-        """JSON: a list of citation lists for all associated accounts"""
-        res = self.app.get(
-            self.project.api_url_for('mendeley_citation_list', account_id=self.account._id[::-1]),
-            auth=self.user.auth,
-            expect_errors=True,
-        )
-        import ipdb; ipdb.set_trace()
-        assert_equal(res.status_code, 404)
-
-    def test_set_config_unauthorized(self):
-        """Cannot associate a MendeleyAccount the user doesn't own"""
-        account = MendeleyAccountFactory()
-        res = self.app.put_json(
-            self.project.api_url_for('mendeley_set_config'),
-            {
-                'external_account_id': account._id,
-                'external_list_id': 'private',
-            },
-            auth=self.user.auth,
-            expect_errors=True,
-        )
-        assert_equal(res.status_code, 403)
-
     def test_set_config_owner(self):
         """Settings config updates node settings"""
         self.node_addon.associated_user_settings = []
@@ -297,7 +230,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         """JSON: everything a widget needs"""
         assert_false(self.node_addon.complete)
         assert_equal(self.node_addon.mendeley_list_id, None)
-        self.node_addon.mendeley_list_id = 'ROOT'
+        self.node_addon.set_target_folder('ROOT')
         res = views.mendeley_widget(node_addon=self.node_addon, 
                                     project=self.project, 
                                     node=self.node,
