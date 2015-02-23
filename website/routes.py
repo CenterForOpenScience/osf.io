@@ -338,8 +338,8 @@ def make_url_map(app):
 
         Rule(
             [
-                '/project/<pid>/citation/<style>/',
-                '/project/<pid>/node/<nid>/citation/<style>/',
+                '/project/<pid>/citation/',
+                '/project/<pid>/node/<nid>/citation/',
             ],
             'get',
             citation_views.node_citation,
@@ -614,6 +614,8 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule('/search/', 'get', {}, OsfWebRenderer('search.mako')),
+        Rule('/share/', 'get', {}, OsfWebRenderer('share_search.mako')),
+        Rule('/share_dashboard/', 'get', {}, OsfWebRenderer('share_dashboard.mako')),
 
         Rule('/api/v1/user/search/', 'get', search_views.search_contributor, json_renderer),
 
@@ -632,6 +634,8 @@ def make_url_map(app):
 
         Rule(['/search/', '/search/<type>/'], ['get', 'post'], search_views.search_search, json_renderer),
         Rule('/search/projects/', 'get', search_views.search_projects_by_title, json_renderer),
+        Rule('/share/', ['get', 'post'], search_views.search_share, json_renderer),
+        Rule('/share/stats/', 'get', search_views.search_share_stats, json_renderer),
 
     ], prefix='/api/v1')
 

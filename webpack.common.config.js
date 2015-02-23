@@ -34,6 +34,7 @@ var entry = {
     'new-folder-page': staticPath('js/pages/new-folder-page.js'),
     'project-settings-page': staticPath('js/pages/project-settings-page.js'),
     'search-page': staticPath('js/pages/search-page.js'),
+    'share-search-page': staticPath('js/pages/share-search-page.js'),
     'user-addon-cfg-page': staticPath('js/pages/user-addon-cfg-page.js'),
     'notifications-config-page': staticPath('js/notifications-config-page.js'),
     'twofactor-page': staticPath('js/pages/twofactor-page.js'),
@@ -49,7 +50,8 @@ var entry = {
         'dropzone',
         'knockout-sortable',
         'treebeard',
-        'jquery.cookie'
+        'jquery.cookie',
+        'citations'
     ]
 };
 
@@ -97,6 +99,7 @@ var resolve = {
         'pagedown-ace-converter': staticPath('vendor/pagedown-ace/Markdown.Converter.js'),
         'pagedown-ace-sanitizer': staticPath('vendor/pagedown-ace/Markdown.Sanitizer.js'),
         'pagedown-ace-editor': staticPath('vendor/pagedown-ace/Markdown.Editor.js'),
+        'c3': staticPath('vendor/bower_components/c3/c3.js'),
         // Also alias some internal libraries for easy access
         'fangorn': staticPath('js/fangorn.js'),
         'waterbutler': staticPath('js/waterbutler.js'),
@@ -107,7 +110,9 @@ var resolve = {
         'addonHelper': staticPath('js/addonHelper.js'),
         'koHelpers': staticPath('js/koHelpers.js'),
         'addonPermissions': staticPath('js/addonPermissions.js'),
-        'navbar-control': staticPath('js/navbarControl.js')
+        'navbar-control': staticPath('js/navbarControl.js'),
+        'mathrender': staticPath('js/mathrender.js'),
+        'citations': staticPath('js/citations.js')
     }
 };
 
@@ -116,7 +121,8 @@ var externals = {
     //  on the global var jQuery, which is loaded with CDN
     'jquery': 'jQuery',
     'jquery-ui': 'jQuery.ui',
-    'raven-js': 'Raven'
+    'raven-js': 'Raven',
+    'MathJax': 'MathJax'
 };
 
 var plugins = [
@@ -156,7 +162,7 @@ module.exports = {
         loaders: [
             {test: /\.css$/, loaders: ['style', 'css']},
             // url-loader uses DataUrls; files-loader emits files
-            {test: /\.png$/, loader: 'url-loader?limit=100000&minetype=image/png'},
+            {test: /\.png$/, loader: 'url-loader?limit=100000&mimetype=image/png'},
             {test: /\.gif$/, loader: 'url-loader?limit=10000&mimetype=image/gif'},
             {test: /\.jpg$/, loader: 'url-loader?limit=10000&mimetype=image/jpg'},
             {test: /\.woff/, loader: 'url-loader?limit=10000&mimetype=application/font-woff'},

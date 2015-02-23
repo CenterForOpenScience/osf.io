@@ -27,6 +27,12 @@ lookup = TemplateLookup(
     ]
 )
 
+STATUS_EXCEPTIONS = {
+    410: exceptions.FileDeletedError,
+    404: exceptions.FileDoesntExistError
+}
+
+
 def _is_image(filename):
     mtype, _ = mimetypes.guess_type(filename)
     return mtype and mtype.startswith('image')
@@ -183,6 +189,13 @@ class GuidFile(GuidStoredObject):
         raise NotImplementedError
 
     @property
+    def waterbutler_path(self):
+        '''The waterbutler formatted path of the specified file.
+        Must being with a /
+        '''
+        raise NotImplementedError
+
+    @property
     def guid_url(self):
         return '/{0}/'.format(self._id)
 
@@ -198,9 +211,7 @@ class GuidFile(GuidStoredObject):
 
     @property
     def joinable_path(self):
-        if self.path.startswith('/'):
-            return self.path[1:]
-        return self.path
+        return self.waterbutler_path.lstrip('/')
 
     @property
     def _base_butler_url(self):
@@ -208,10 +219,13 @@ class GuidFile(GuidStoredObject):
 
         url.args.update({
             'nid': self.node._id,
-            'path': self.path,
             'provider': self.provider,
+            'path': self.waterbutler_path,
             'cookie': request.cookies.get(settings.COOKIE_NAME)
         })
+
+        if request.args.get('view_only'):
+            url.args['view_only'] = request.args['view_only']
 
         if self.revision:
             url.args[self.version_identifier] = self.revision
@@ -228,7 +242,26 @@ class GuidFile(GuidStoredObject):
     def mfr_download_url(self):
         url = self._base_butler_url
         url.path.add('file')
+
         url.args['mode'] = 'render'
+        url.args['action'] = 'download'
+
+        if self.revision:
+            url.args[self.version_identifier] = self.revision
+
+        return url.url
+
+    @property
+    def public_download_url(self):
+        url = furl.furl(settings.DOMAIN)
+
+        url.path.add(self._id + '/')
+        url.args['mode'] = 'render'
+        url.args['action'] = 'download'
+
+        if self.revision:
+            url.args[self.version_identifier] = self.revision
+
         return url.url
 
     @property
@@ -254,7 +287,7 @@ class GuidFile(GuidStoredObject):
             self.node._id,
             self.provider,
             # Attempt to keep the original extension of the file for MFR detection
-            self.file_name + os.path.splitext(self.path)[1]
+            self.file_name + os.path.splitext(self.name)[1]
         )
 
     @property
@@ -281,8 +314,18 @@ class GuidFile(GuidStoredObject):
     def maybe_set_version(self, **kwargs):
         self._revision = kwargs.get(self.version_identifier)
 
+    # TODO: why save?, should_raise or an exception try/except?
     def enrich(self, save=True):
         self._fetch_metadata(should_raise=True)
+
+    def _exception_from_response(self, response):
+        if response.ok:
+            return
+
+        if response.status_code in STATUS_EXCEPTIONS:
+            raise STATUS_EXCEPTIONS[response.status_code]
+
+        raise exceptions.AddonEnrichmentError(response.status_code)
 
     def _fetch_metadata(self, should_raise=False):
         # Note: We should look into caching this at some point
@@ -290,8 +333,7 @@ class GuidFile(GuidStoredObject):
         resp = requests.get(self.metadata_url)
 
         if should_raise:
-            if resp.status_code != 200:
-                raise exceptions.AddonEnrichmentError(resp.status_code)
+            self._exception_from_response(resp)
 
         self._metadata_cache = resp.json()['data']
 
@@ -539,13 +581,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         :returns: Tuple of cloned settings and alert message
 
         """
-        clone = self.clone()
-        clone.owner = registration
-
-        if save:
-            clone.save()
-
-        return clone, None
+        return None, None
 
     def after_delete(self, node, user):
         """

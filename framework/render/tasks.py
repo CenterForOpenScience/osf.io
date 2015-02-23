@@ -12,6 +12,7 @@ from website import settings
 from website.language import ERROR_PREFIX
 
 from framework.tasks import app
+from framework.render import exceptions
 from framework.render.core import save_to_file_or_error
 from framework.render.core import render_is_done_or_happening
 
@@ -45,7 +46,7 @@ def render_mfr_error(err):
 
 # TODO only allow one task at a time
 @app.task(ignore_result=True, timeout=settings.MFR_TIMEOUT)
-def _build_rendered_html(download_url, cache_path, temp_path):
+def _build_rendered_html(download_url, cache_path, temp_path, public_download_url):
     """
     :param str download_url: The url to download the file to be rendered
     :param str cache_path: Location to cache the rendered file
@@ -61,20 +62,26 @@ def _build_rendered_html(download_url, cache_path, temp_path):
     ensure_path(os.path.split(temp_path)[0])
     ensure_path(os.path.split(cache_path)[0])
 
-    save_to_file_or_error(download_url, temp_path)
-
-    with codecs.open(temp_path) as file_pointer:
-        with codecs.open(cache_path, 'w', 'utf-8') as write_file_pointer:
-            # Render file
+    rendered = None
+    try:
+        save_to_file_or_error(download_url, temp_path)
+    except exceptions.RenderNotPossibleException as e:
+        # Write out unavoidable errors
+        rendered = e.renderable_error
+    else:
+        with codecs.open(temp_path) as temp_file:
+            # Try to render file
             try:
-                render_result = mfr.render(file_pointer, src=download_url)
-            except MFRError as err:
-                rendered = render_mfr_error(err)
-            else:
+                render_result = mfr.render(temp_file, src=public_download_url)
+                # Rendered result
                 rendered = _build_html(render_result)
+            except MFRError as err:
+                # Rendered MFR error
+                rendered = render_mfr_error(err)
 
-            # Cache rendered content
-            write_file_pointer.write(rendered)
+    # Cache rendered content
+    with codecs.open(cache_path, 'w', 'utf-8') as render_result_cache:
+        render_result_cache.write(rendered)
 
     # Cleanup when we're done
     os.remove(temp_path)

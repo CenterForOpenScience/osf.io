@@ -15,11 +15,10 @@ from modularodm import Q
 from dateutil.parser import parse as parse_date
 
 from framework import auth
-from framework.exceptions import HTTPError, PermissionsError
+from framework.exceptions import HTTPError
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 
-import website.app
 from website import mailchimp_utils
 from website.views import _rescale_ratio
 from website.util import permissions
@@ -200,7 +199,6 @@ class TestProjectViews(OsfTestCase):
         my_user.reload()
         dashboard = my_user.node__contributed.find(Q('is_dashboard', 'eq', True))
         assert_equal(dashboard.count(), 1)
-
 
     def test_add_contributor_post(self):
         # Two users are added as a contributor via a POST request
@@ -818,7 +816,7 @@ class TestUserProfile(OsfTestCase):
 
     def test_sanitization_of_edit_profile(self):
         url = api_url_for('edit_profile', uid=self.user._id)
-        post_data = {'name': 'fullname', 'value': 'new<b> name</b>'}
+        post_data = {'name': 'fullname', 'value': 'new<b> name</b>     '}
         request = self.app.post(url, post_data, auth=self.user.auth)
         assert_equal('new name', request.json['name'])
 
@@ -965,16 +963,16 @@ class TestUserProfile(OsfTestCase):
             'department': 'a department',
             'degree': 'a degree',
             'startMonth': 1,
-            'startYear': 2001,
+            'startYear': '2001',
             'endMonth': 5,
-            'endYear': 2001,
+            'endYear': '2001',
             'ongoing': False,
         }, {
             'institution': 'another institution',
             'department': None,
             'degree': None,
             'startMonth': 5,
-            'startYear': 2001,
+            'startYear': '2001',
             'endMonth': None,
             'endYear': None,
             'ongoing': True,
@@ -999,9 +997,9 @@ class TestUserProfile(OsfTestCase):
                 'department': fake.catch_phrase(),
                 'title': fake.bs(),
                 'startMonth': 5,
-                'startYear': 2013,
+                'startYear': '2013',
                 'endMonth': 3,
-                'endYear': 2014,
+                'endYear': '2014',
                 'ongoing': False,
             }
         ]
@@ -1013,6 +1011,26 @@ class TestUserProfile(OsfTestCase):
         # jobs field is updated
         assert_equal(self.user.jobs, jobs)
 
+    def test_unserialize_names(self):
+        fake_fullname_w_spaces = '    {}    '.format(fake.name())
+        names = {
+            'full': fake_fullname_w_spaces,
+            'given': 'Tea',
+            'middle': 'Gray',
+            'family': 'Pot',
+            'suffix': 'Ms.',
+        }
+        url = api_url_for('unserialize_names')
+        res = self.app.put_json(url, names, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        self.user.reload()
+        # user is updated
+        assert_equal(self.user.fullname, fake_fullname_w_spaces.strip())
+        assert_equal(self.user.given_name, names['given'])
+        assert_equal(self.user.middle_names, names['middle'])
+        assert_equal(self.user.family_name, names['family'])
+        assert_equal(self.user.suffix, names['suffix'])
+
     def test_unserialize_schools(self):
         schools = [
             {
@@ -1020,9 +1038,9 @@ class TestUserProfile(OsfTestCase):
                 'department': fake.catch_phrase(),
                 'degree': fake.bs(),
                 'startMonth': 5,
-                'startYear': 2013,
+                'startYear': '2013',
                 'endMonth': 3,
-                'endYear': 2014,
+                'endYear': '2014',
                 'ongoing': False,
             }
         ]
@@ -1042,9 +1060,9 @@ class TestUserProfile(OsfTestCase):
                 'department': fake.catch_phrase(),
                 'title': fake.bs(),
                 'startMonth': 5,
-                'startYear': 2013,
+                'startYear': '2013',
                 'endMonth': 3,
-                'endYear': 2014,
+                'endYear': '2014',
                 'ongoing': False,
             }
         ]

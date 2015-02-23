@@ -9,13 +9,18 @@ var waterbutler = require('waterbutler');
 
 ko.punches.enableAll();
 
-var Revision = function(data, index, file, node) {
+var urlParams = $osf.urlParams();
 
-    var ops = {};
+var Revision = function(data, index, file, node) {
     var self = this;
+    var options = {};
 
     $.extend(self, data);
-    ops[self.versionIdentifier] = self.version;
+
+    if (urlParams.branch !== undefined) {
+        options.branch = urlParams.branch;
+    }
+    options[self.versionIdentifier] = self.version;
 
     self.date = new $osf.FormattableDate(data.modified);
     self.displayDate = self.date.local !== 'Invalid date' ?
@@ -26,34 +31,40 @@ var Revision = function(data, index, file, node) {
     if (file.provider === 'osfstorage' && file.name && index !== 0) {
         var parts = file.name.split('.');
         if (parts.length === 1) {
-            ops.displayName = parts[0] + '-' + data.modified;
+            options.displayName = parts[0] + '-' + data.modified;
         } else {
-            ops.displayName = parts.slice(0, parts.length - 1).join('') + '-' + data.modified + '.' + parts[parts.length - 1];
+            options.displayName = parts.slice(0, parts.length - 1).join('') + '-' + data.modified + '.' + parts[parts.length - 1];
         }
     }
 
-    self.osfViewUrl = '?' + $.param(ops);
-    self.osfDownloadUrl = '?' + $.param($.extend({action: 'download'}, ops));
-    self.waterbutlerDownloadUrl = waterbutler.buildDownloadUrl(file.path, file.provider, node.id, ops);
+    self.osfViewUrl = '?' + $.param(options);
+    self.osfDownloadUrl = '?' + $.param($.extend({action: 'download'}, options));
+    self.waterbutlerDownloadUrl = waterbutler.buildDownloadUrl(file.path, file.provider, node.id, options);
 
     self.download = function() {
         window.location = self.waterbutlerDownloadUrl;
         return false;
     };
-
 };
 
 var RevisionsViewModel = function(node, file, editable) {
-
     var self = this;
+    var fileExtra = file.extra || {};
+    var revisionsOptions = {};
+
+    if (urlParams.branch !== undefined) {
+        fileExtra.branch = urlParams.branch;
+        revisionsOptions.sha = urlParams.branch;
+    }
 
     self.node = node;
     self.file = file;
-    self.editable = editable;
+    self.editable = ko.observable(editable);
     self.urls = {
-        delete: waterbutler.buildDeleteUrl(file.path, file.provider, node.id),
-        download: waterbutler.buildDownloadUrl(file.path, file.provider, node.id),
-        revisions: waterbutler.buildRevisionsUrl(file.path, file.provider, node.id),
+        delete: waterbutler.buildDeleteUrl(file.path, file.provider, node.id, fileExtra),
+        download: waterbutler.buildDownloadUrl(file.path, file.provider, node.id, fileExtra),
+        metadata: waterbutler.buildMetadataUrl(file.path, file.provider, node.id, revisionsOptions),
+        revisions: waterbutler.buildRevisionsUrl(file.path, file.provider, node.id, revisionsOptions)
     };
     self.errorMessage = ko.observable('');
     self.currentVersion = ko.observable({});
@@ -65,7 +76,6 @@ var RevisionsViewModel = function(node, file, editable) {
             self.revisions()[0].extra &&
             self.revisions()[0].extra.user;
     });
-
 };
 
 RevisionsViewModel.prototype.fetch = function() {
@@ -93,6 +103,33 @@ RevisionsViewModel.prototype.fetch = function() {
             'Unable to fetch versions';
 
         self.errorMessage(err);
+
+        if (self.file.provider === 'figshare') {
+            // Hack for Figshare
+            // only figshare will error on a revisions request
+            // so dont allow downloads and set a fake current version
+            $.ajax({
+                method: 'GET',
+                url: self.urls.metadata,
+            }).done(function(data) {
+                if (data.data.extra.status === 'drafts') {
+                    self.editable(true);
+                } else {
+                    self.editable(false);
+                }
+            }).fail(function(xhr) {
+                self.editable(false);
+            });
+        }
+
+        self.currentVersion({
+            osfViewUrl: '',
+            osfDownloadUrl: '?action=download',
+            download: function() {
+                window.location = self.urls.download + '&' + $.param({displayName: self.file.name});
+                return false;
+            }
+        });
     });
 };
 
@@ -114,7 +151,7 @@ RevisionsViewModel.prototype.askDelete = function() {
         title: 'Delete file?',
         message: '<p class="overflow">' +
                 'Are you sure you want to delete <strong>' +
-                self.file.name + '</strong>?' +
+                self.file.safeName + '</strong>?' +
             '</p>',
         callback: function(confirm) {
             if (confirm) {

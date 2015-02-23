@@ -27,7 +27,7 @@ ROOT = os.path.join(BASE_PATH, '..')
 
 # Hours before email confirmation tokens expire
 EMAIL_TOKEN_EXPIRATION = 24
-CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'citations', 'styles')
+CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_components', 'styles')
 
 LOAD_BALANCER = False
 PROXY_ADDRS = []
@@ -51,6 +51,7 @@ ALLOW_LOGIN = True
 SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
 ELASTIC_URI = 'localhost:9200'
 ELASTIC_TIMEOUT = 10
+SHARE_ELASTIC_URI = ELASTIC_URI
 # Sessions
 # TODO: Override SECRET_KEY in local.py in production
 COOKIE_NAME = 'osf'
