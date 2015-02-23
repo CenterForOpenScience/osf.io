@@ -1,37 +1,37 @@
 from website.addons.citations import provider
-from .model import AddonMendeleyNodeSettings
+from .model import AddonZoteroNodeSettings
 from website.addons.citations.utils import serialize_account, serialize_folder
 
-class MendeleyCitationsProvider(provider.CitationsProvider):
+class ZoteroCitationsProvider(provider.CitationsProvider):
 
     def __init__(self):
-        super(MendeleyCitationsProvider, self).__init__('mendeley')
+        super(ZoteroCitationsProvider, self).__init__('zotero')
 
     def _serialize_model(self, node_addon, user):
-        ret = super(AddonMendeleyNodeSettings, node_addon).to_json(user)
+        ret = super(AddonZoteroNodeSettings, node_addon).to_json(user)
         ret.update({
-            'listId': node_addon.mendeley_list_id,
+            'listId': node_addon.zotero_list_id,
             'accounts': self.user_accounts(user),
             'currentAccount': serialize_account(node_addon.external_account),
         })
         return ret
 
     def _serialize_urls(self, node_addon):
-        ret = super(MendeleyCitationsProvider, self)._serialize_urls(node_addon)
+        ret = super(ZoteroCitationsProvider, self)._serialize_urls(node_addon)
 
         node = node_addon.owner
 
         external_account = node_addon.external_account
         deauthorize = None
         if external_account:
-            deauthorize = node.api_url_for('mendeley_remove_user_auth')
+            deauthorize = node.api_url_for('zotero_remove_user_auth')
 
         specific = {
-            'importAuth': node.api_url_for('mendeley_add_user_auth'),
-            'folders': node.api_url_for('mendeley_citation_list'),
-            'config': node.api_url_for('mendeley_set_config'),
+            'importAuth': node.api_url_for('zotero_add_user_auth'),
+            'folders': node.api_url_for('zotero_citation_list'),
+            'config': node.api_url_for('zotero_set_config'),
             'deauthorize': deauthorize,
-            'accounts': node.api_url_for('list_mendeley_accounts_user')
+            'accounts': node.api_url_for('list_zotero_accounts_user')
         }
         ret.update(specific)
         return ret
@@ -44,24 +44,24 @@ class MendeleyCitationsProvider(provider.CitationsProvider):
 
     def widget(self, node_addon):
 
-        ret = super(MendeleyCitationsProvider, self).widget(node_addon)
+        ret = super(ZoteroCitationsProvider, self).widget(node_addon)
         ret.update({
-            'list_id': node_addon.mendeley_list_id
+            'list_id': node_addon.zotero_list_id
         })
         return ret
 
     def remove_user_auth(self, node_addon, user):
 
-        return super(MendeleyCitationsProvider, self).remove_user_auth(
+        return super(ZoteroCitationsProvider, self).remove_user_auth(
             node_addon, user
         )
 
     def _extract_folder(self, data):
         return serialize_folder(
-            data.name,
-            list_id=data.json['id'],
-            parent_id=data.json.get('parent_id'),
-            id=data.json.get('id')
+            data['data'].get('name'),
+            list_id=data['data'].get('key'),
+            parent_id=data['data'].get('parentCollection'),
+            id=data['data'].get('key')
         )
 
     def _serialize_folder(self, folder, node_addon):
@@ -72,15 +72,15 @@ class MendeleyCitationsProvider(provider.CitationsProvider):
             'id': folder['id'],
             'urls': {
                 'fetch': node_addon.owner.api_url_for(
-                    'mendeley_citation_list',
-                    mendeley_list_id=folder['id']),
+                    'zotero_citation_list',
+                    zotero_list_id=folder['id']),
             },
         }
 
     def _serialize_citation(self, citation):
 
-        return super(MendeleyCitationsProvider, self)._serialize_citation(citation)
+        return super(ZoteroCitationsProvider, self)._serialize_citation(citation)
 
     def _folder_id(self, node_addon):
 
-        return node_addon.mendeley_list_id
+        return node_addon.zotero_list_id

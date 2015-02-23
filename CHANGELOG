@@ -2,6 +2,12 @@
 Changelog
 *********
 
+0.26.0 (2015-02-20)
+===================
+
+- Change to permissions model: Admins on a project are able to view and
+register private subprojects and components.
+
 0.25.0 (2015-02-15)
 ===================
 

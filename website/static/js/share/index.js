@@ -3,8 +3,7 @@ var $osf = require('osfHelpers');
 var Stats = require('../share/stats.js');
 var Results = require('../share/results.js');
 var SearchBar = require('../share/searchBar.js');
-
-
+var MESSAGES = JSON.parse(require('raw!../share/messages.json'));
 var ShareApp = {};
 
 ShareApp.ViewModel = function() {
@@ -24,7 +23,8 @@ ShareApp.view = function(ctrl) {
             SearchBar.view(ctrl.searchBarController),
             Stats.view(ctrl.statsController),
             m('br'),
-            Results.view(ctrl.resultsController)
+            Results.view(ctrl.resultsController),
+	    m('.row', m('.col-md-12', {style: "padding-top: 30px;"},m('span', m.trust(MESSAGES.ABOUTSHARE))))
         ])
     ]);
 };

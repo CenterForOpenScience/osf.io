@@ -26,7 +26,6 @@
         </small>
     </h4>
 
-
     <!-- Settings Pane -->
     <div class="mendeley-settings" data-bind='if: showSettings'>
         <div class="row">

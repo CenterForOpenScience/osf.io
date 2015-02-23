@@ -12,22 +12,10 @@ from website.addons.base import AddonUserSettingsBase
 from website.oauth.models import ExternalProvider
 from website.util import web_url_for
 
+from website.addons.citations.utils import serialize_account, serialize_folder
+
 from . import settings
-from . import utils
 from .api import APISession
-
-
-def serialize_folder(name, account_id, parent_id=None, list_id=None, id=None):
-    retval = {
-        'name': name,
-        'provider_list_id': list_id,
-        'id': id
-    }
-    if parent_id:
-        retval['parent_list_id'] = parent_id
-
-    return retval
-
 
 class AddonMendeleyUserSettings(AddonUserSettingsBase):
     oauth_grants = fields.DictionaryField()
@@ -74,7 +62,7 @@ class AddonMendeleyUserSettings(AddonUserSettingsBase):
     def to_json(self, user):
         ret = super(AddonMendeleyUserSettings, self).to_json(user)
         ret['accounts'] = [
-            utils.serialize_account(each)
+            serialize_account(each)
             for each in self._get_connected_accounts()
         ]
         return ret
@@ -126,6 +114,16 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
             return folder.name
         else:
             return 'All Documents'
+
+    @property
+    def root_folder(self):
+        root = serialize_folder(
+            'All Documents',
+            id='ROOT',
+            parent_id='__'
+        )
+        root['kind'] = 'folder'
+        return root
 
     def set_auth(self, external_account, user):
         """Connect the node addon to a user's external account.
@@ -253,8 +251,7 @@ class Mendeley(ExternalProvider):
             })
         return self._client
 
-    @property
-    def citation_lists(self):
+    def citation_lists(self, extract_folder):
         """List of CitationList objects, derived from Mendeley folders"""
 
         folders = self._get_folders()
@@ -262,18 +259,11 @@ class Mendeley(ExternalProvider):
         # TODO: Verify OAuth access to each folder
         all_documents = serialize_folder(
             'All Documents',
-            account_id=self.account.provider_id,
             id='ROOT',
             parent_id='__'
         )
         serialized_folders = [
-            serialize_folder(
-                each.name,
-                account_id=self.account.provider_id,
-                list_id=each.id,
-                parent_id=each.parent_id,
-                id=each.id
-            )
+            extract_folder(each)
             for each in folders
         ]
         return ([all_documents] + serialized_folders)
@@ -295,7 +285,6 @@ class Mendeley(ExternalProvider):
     def get_root_folder(self):
         root = serialize_folder(
             'All Documents',
-            account_id=self.account.provider_id,
             id='ROOT',
             parent_id='__'
         )
