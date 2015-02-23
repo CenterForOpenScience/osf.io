@@ -73,7 +73,7 @@ $(document).on('click', '.project-toggle', function() {
     return false;
 });
 
-var NO_FOOTER_PATHS = ['/login/', '/getting-started/', '/register/'];
+var NO_FOOTER_PATHS = ['/', '/login/', '/getting-started/', '/register/', '/forgotpassword/', '/share/'];
 $(function() {
     if ($(sliderSelector).length > 0 &&
             $.inArray(window.location.pathname, NO_FOOTER_PATHS) === -1) {
