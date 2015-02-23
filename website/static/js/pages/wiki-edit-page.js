@@ -1,3 +1,5 @@
+'use strict';
+
 var $ = require('jquery');
 var Raven = require('raven-js');
 var $osf = require('osfHelpers');
