@@ -118,7 +118,6 @@ var resolve = {
         'koHelpers': staticPath('js/koHelpers.js'),
         'addonPermissions': staticPath('js/addonPermissions.js'),
         'navbar-control': staticPath('js/navbarControl.js'),
-        'osf-panel': staticPath('vendor/bower_components/osf-panel/dist/jquery-osfPanel.js'),
         'markdown': staticPath('js/markdown.js'),
         'wikiDiff': staticPath('js/wikiDiff.js'),
         'mathrender': staticPath('js/mathrender.js'),
