@@ -21,6 +21,10 @@ var Revision = function(data, index, file, node) {
         options.branch = urlParams.branch;
     }
     options[self.versionIdentifier] = self.version;
+    // Note: Google Drive version identifiers often begin with the same sequence
+    self.displayVersion = file.provider === 'gdrive' ?
+        self.version.substring(self.version.length - 8) :
+        self.version.substring(0, 8);
 
     self.date = new $osf.FormattableDate(data.modified);
     self.displayDate = self.date.local !== 'Invalid date' ?

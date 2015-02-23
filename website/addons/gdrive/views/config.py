@@ -28,18 +28,15 @@ def gdrive_config_get(node_addon, **kwargs):
 @must_be_addon_authorizer('gdrive')
 def gdrive_config_put(node_addon, user_addon, auth, **kwargs):
     """View for changing a node's linked Drive folder/file."""
-
-    folder = request.json.get('selected')
-    path = folder['path']
-    node_addon.set_folder(folder, auth=auth)
+    selected = request.json.get('selected')
+    node_addon.set_folder(selected, auth=auth)
     node_addon.save()
     return {
         'result': {
             'folder': {
-                'name': 'Google Drive' + path['path'],
-                'path': path['path']
+                'name': selected['path'],
             },
-            'urls': serialize_urls(node_addon)
+            'urls': serialize_urls(node_addon),
         },
         'message': 'Successfully updated settings.',
     }, http.OK

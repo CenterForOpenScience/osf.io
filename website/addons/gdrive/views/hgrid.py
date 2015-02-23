@@ -1,14 +1,18 @@
+# -*- coding: utf-8 -*-
 
 import httplib2
 
 from flask import request
-from website.project.model import Node
-from website.util import rubeus
-from website.project.decorators import must_be_contributor_or_public, must_have_addon
-from oauth2client.client import AccessTokenCredentials
-from apiclient.discovery import build
-from ..utils import to_hgrid, check_access_token, clean_path
 from apiclient import errors
+from apiclient.discovery import build
+from oauth2client.client import AccessTokenCredentials
+
+from website.util import rubeus
+from website.project.model import Node
+from website.project.decorators import must_be_contributor_or_public, must_have_addon
+
+from ..utils import to_hgrid, check_access_token
+
 
 @must_be_contributor_or_public
 @must_have_addon('gdrive', 'node')
@@ -35,18 +39,28 @@ def gdrive_folders(node_addon, **kwargs):
         result = retrieve_all_files(service, folderid=folderid, foldersonly=1)
     else:
         result = retrieve_all_files(service, folderid=folderid, foldersonly=0)
-    contents = [to_hgrid(item, node_owner, path=path)
-                for item in result]
+    contents = [
+        to_hgrid(item, node_owner, path=path)
+        for item in result
+    ]
+    if request.args.get('includeRoot'):
+        about = service.about().get().execute()
+        root = {
+            'kind': rubeus.FOLDER,
+            'id': about['rootFolderId'],
+            'name': '/ (Full Google Drive)',
+            'path': '/',
+        }
+        contents.insert(0, root)
     return contents
+
 
 def retrieve_all_files(service, folderid=None, foldersonly=0):
     """Retrieve a list of File resources.
 
-    Args:
-    service: Drive API service instance.
-    Returns:
-    List of File resources.
-"""
+    :service: Drive API service instance.
+    :return: List of File resources.
+    """
     result = []
     folderId = folderid or 'root'
     while True:
@@ -72,17 +86,11 @@ def gdrive_addon_folder(node_settings, auth, **kwargs):
     if not node_settings.has_auth or not node_settings.folder:
         return None
     node = node_settings.owner
-    path = {
-        'path': node_settings.waterbutler_folder['name'],
-        'id': node_settings.waterbutler_folder['id']
-    }
-    folder_name = clean_path(node_settings.folder)
     root = rubeus.build_addon_root(
         node_settings=node_settings,
         name=node_settings.folder,
         permissions=auth,
         nodeUrl=node.url,
         nodeApiUrl=node.api_url,
-        path='/{0}/{1}/{2}'.format(path['id'], folder_name, path['path'].lstrip('/'))
     )
     return [root]

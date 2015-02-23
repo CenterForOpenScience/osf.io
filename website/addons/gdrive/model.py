@@ -3,13 +3,14 @@
 """
 import base64
 
-from modularodm.exceptions import ModularOdmException
-from framework.auth import Auth
 from modularodm import fields, Q
-from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
-from website.addons.base import exceptions
+from modularodm.exceptions import ModularOdmException
 
-from .utils import clean_path, GoogleDriveNodeLogger, check_access_token, get_path_from_waterbutler_path
+from framework.auth import Auth
+from website.addons.base import exceptions
+from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
+
+from .utils import clean_path, GoogleDriveNodeLogger, check_access_token
 
 
 class AddonGdriveGuidFile(GuidFile):
@@ -154,7 +155,7 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
             params={
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
-                'path': get_path_from_waterbutler_path(metadata['path']),
+                'path': metadata['path'],
                 'folder': self.folder,
 
                 'urls': {
@@ -195,7 +196,7 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
                     'the forked {category}.').format(category=category)
 
         else:
-            return (u'Because the Googlre Drive add-on has been authorized by a different '
+            return (u'Because the Google Drive add-on has been authorized by a different '
                     'user, forking it will not transfer authentication token to the forked '
                     '{category}.').format(category=category)
 
