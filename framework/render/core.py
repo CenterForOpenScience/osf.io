@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import re
 import time
 
 import mfr
@@ -7,9 +8,9 @@ from mfr.ext import ALL_HANDLERS
 
 import requests
 
-from website import settings
-
 from framework.render.exceptions import error_message_or_exception
+
+from website import settings
 
 
 def init_mfr(app):
@@ -27,6 +28,21 @@ def init_mfr(app):
         'ASSETS_FOLDER': os.path.join(app.static_folder, 'mfr'),
     })
     mfr.collect_static(dest=mfr.config['ASSETS_FOLDER'])
+
+
+mime_map = {
+    'application/pdf': mfr.ext.pdf.Handler,
+}
+
+def detect_by_mimetype(content_type):
+    """Detect MFR handler by content type.
+    :param str content_type: File content type
+    :return: Instance of `Handler` subclass or `None`
+    """
+    # Remove trailing text, e.g. "; charset=utf-8"
+    content_type = re.sub(r';.*', '', content_type).lower()
+    handler_class = mime_map.get(content_type)
+    return handler_class() if handler_class else None
 
 
 def render_is_done_or_happening(cache_path, temp_path):
@@ -54,11 +70,11 @@ def save_to_file_or_error(download_url, dest_path):
         if response.ok:
             for block in response.iter_content(1024):  # 1kb
                 temp_file.write(block)
-        else:
-            temp_file.write(
-                error_message_or_exception(
-                    response.status_code,
-                    dest_path=dest_path,
-                    download_url=download_url,
-                )
+            return response
+        temp_file.write(
+            error_message_or_exception(
+                response.status_code,
+                dest_path=dest_path,
+                download_url=download_url,
             )
+        )

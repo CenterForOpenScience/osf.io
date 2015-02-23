@@ -42,6 +42,7 @@ class AddonGdriveGuidFile(GuidFile):
 
     @property
     def unique_identifier(self):
+        print(self._metadata_cache['extra']['revisionId'])
         return self._metadata_cache['extra']['revisionId']
 
     @classmethod
