@@ -102,12 +102,7 @@ $(document).ready(function () {
 
         }
     });
-    $('.openNewWiki').click(function () {
-        $('#newWiki').modal('show');
-    });
-    $('.openDeleteWiki').click(function () {
-        $('#deleteWiki').modal('show');
-    });
+
     var panelToggle = $('.panel-toggle'),
         panelExpand = $('.panel-expand');
     $('.panel-collapse').on('click', function () {
