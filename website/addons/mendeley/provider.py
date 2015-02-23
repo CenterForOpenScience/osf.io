@@ -1,7 +1,3 @@
-import httplib as http
-
-from framework.exceptions import HTTPError
-
 from website.addons.citations import provider
 from .model import AddonMendeleyNodeSettings
 from website.addons.citations.utils import serialize_account, serialize_folder

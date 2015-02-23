@@ -12,6 +12,7 @@ from website.addons.mendeley.tests.factories import (
     ExternalAccountFactory,
     MendeleyNodeSettingsFactory
 )
+from website.addons.mendeley.provider import MendeleyCitationsProvider
 
 import datetime
 
@@ -73,7 +74,7 @@ class MendeleyProviderTestCase(OsfTestCase):
         self.provider._client = mock_client
         mock_account = mock.Mock()
         self.provider.account = mock_account
-        res = self.provider.citation_lists
+        res = self.provider.citation_lists(MendeleyCitationsProvider()._extract_folder)
         assert_equal(res[1]['name'], mock_folders[0].name)
         assert_equal(res[1]['id'], mock_folders[0].json['id'])
 
