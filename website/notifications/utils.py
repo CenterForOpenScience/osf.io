@@ -13,6 +13,11 @@ class NotificationsDict(dict):
         self.update(messages=[], children=collections.defaultdict(NotificationsDict))
 
     def add_message(self, keys, messages):
+        """
+        :param keys: ordered list of project ids from parent to node (e.g. ['parent._id', 'node._id'])
+        :param messages: built email message for an event that occurred on the node
+        :return: nested dict with project/component ids as the keys with the message at the appropriate level
+        """
         d_to_use = self
         for key in keys:
             d_to_use = d_to_use['children'][key]
@@ -47,6 +52,10 @@ def remove_subscription(node):
 
 
 def get_configured_projects(user):
+    """ Filter all user subscriptions for ones that are on parent projects and return the project ids
+    :param user: modular odm User object
+    :return: list of project ids for projects with no parent
+    """
     configured_project_ids = []
     user_subscriptions = get_all_user_subscriptions(user)
     for subscription in user_subscriptions:
@@ -58,6 +67,7 @@ def get_configured_projects(user):
 
 
 def get_all_user_subscriptions(user):
+    """ Get all Subscription objects that the user is subscribed to"""
     user_subscriptions = []
     for notification_type in NOTIFICATION_TYPES:
         if getattr(user, notification_type, []):
@@ -69,6 +79,13 @@ def get_all_user_subscriptions(user):
 
 
 def get_all_node_subscriptions(user, node, user_subscriptions=None):
+    """ Get all Subscription objects for a node that the user is subscribed to
+
+    :param user: modular odm User object
+    :param node: modular odm Node object
+    :param user_subscriptions: all Subscription objects that the user is subscribed to
+    :return: list of Subscription objects for a node that the user is subscribed to
+    """
     if not user_subscriptions:
         user_subscriptions = get_all_user_subscriptions(user)
     node_subscriptions = []
@@ -80,6 +97,14 @@ def get_all_node_subscriptions(user, node, user_subscriptions=None):
 
 
 def format_data(user, node_ids, data, subscriptions_available=SUBSCRIPTIONS_AVAILABLE):
+    """ Format subscriptions data for project settings page
+    :param user: modular odm User object
+    :param node_ids: list of parent project ids
+    :param data: the formatted data
+    :param subscriptions_available: specify which subscription events to include, if
+    not all in SUBSCRIPTIONS_AVAILABLE
+    :return: treebeard-formatted data
+    """
     user_subscriptions = get_all_user_subscriptions(user)
     for idx, node_id in enumerate(node_ids):
         node = Node.load(node_id)
@@ -107,6 +132,7 @@ def format_data(user, node_ids, data, subscriptions_available=SUBSCRIPTIONS_AVAI
 
 
 def format_user_subscriptions(user, data):
+    """ Format user-level subscriptions (e.g. comment replies across the OSF) for user settings page"""
     user_subscriptions = [s for s in Subscription.find(Q('object_id', 'eq', user._id))]
     for subscription in USER_SUBSCRIPTIONS_AVAILABLE:
         event = serialize_event(user, subscription, USER_SUBSCRIPTIONS_AVAILABLE, user_subscriptions)
@@ -116,6 +142,14 @@ def format_user_subscriptions(user, data):
 
 
 def serialize_event(user, subscription, subscriptions_available, user_subscriptions, node=None):
+    """
+    :param user: modular odm User object
+    :param subscription: modular odm Subscription object
+    :param subscriptions_available: dict of available notification events for a project or user
+    :param user_subscriptions: all user subscriptions
+    :param node: modular odm Node object
+    :return: treebeard-formatted subscription events
+    """
     event = {
         'event': {
             'title': subscription,
@@ -142,6 +176,14 @@ def serialize_event(user, subscription, subscriptions_available, user_subscripti
 
 
 def get_parent_notification_type(uid, event, user):
+    """
+    Given an event on a node (e.g. comment on node 'xyz'), find the user's notification
+    type on the parent project for the same event.
+    :param str uid: id of event owner (Node or User object)
+    :param str event: notification event (e.g. 'comment_replies')
+    :param obj user: modular odm User object
+    :return: str notification type (e.g. 'email_transactional')
+    """
     node = Node.load(uid)
     if node and node.node__parent:
         for p in node.node__parent:
@@ -159,6 +201,7 @@ def get_parent_notification_type(uid, event, user):
 
 
 def format_user_and_project_subscriptions(user):
+    """ Format subscriptions data for user settings page. """
     return [
         {
             'node': {
