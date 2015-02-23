@@ -53,6 +53,7 @@ class TestCrudHandler(utils.HandlerTestCase):
     @testing.gen_test
     def test_download_stream(self, mock_make_provider):
         stream = asyncio.StreamReader()
+        stream.response = mock.Mock(headers={})
         data = b'freddie brian john roger'
         stream.feed_data(data)
         stream.feed_eof()
