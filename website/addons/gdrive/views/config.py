@@ -1,18 +1,23 @@
 # -*- coding: utf-8 -*-
 from flask import request
 from framework.auth.core import _get_current_user
-from framework.auth.decorators import must_be_logged_in, collect_auth
+from framework.auth.decorators import must_be_logged_in
 import httplib as http
 
-from website.project.decorators import (must_be_valid_project, must_have_permission,
-                                        must_have_addon, must_not_be_registration, must_be_addon_authorizer)
+from website.project.decorators import (
+    must_have_permission,
+    must_have_addon,
+    must_not_be_registration,
+    must_be_addon_authorizer,
+)
 from website.util import api_url_for
+from website.util import permissions
 
 from ..utils import serialize_settings, serialize_urls
 
-@collect_auth
-@must_be_valid_project
+
 @must_have_addon('gdrive', 'node')
+@must_have_permission(permissions.WRITE)
 def gdrive_config_get(node_addon, **kwargs):
     """API that returns the serialized node settings."""
     user = _get_current_user()
@@ -21,7 +26,7 @@ def gdrive_config_get(node_addon, **kwargs):
     }, http.OK
 
 
-@must_have_permission('write')
+@must_have_permission(permissions.WRITE)
 @must_not_be_registration
 @must_have_addon('gdrive', 'user')
 @must_have_addon('gdrive', 'node')
