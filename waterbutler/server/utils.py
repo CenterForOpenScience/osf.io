@@ -1,7 +1,14 @@
+import re
 import asyncio
 
 import tornado.concurrent
 import tornado.ioloop
+
+
+def parse_disposition_name(disposition):
+    if disposition:
+        match = re.search(r'filename="(.*?)"', disposition)
+        return match.groups()[0] if match else None
 
 
 # Running Tornado on asyncio's event loop, including 'yield from' support in request handlers
