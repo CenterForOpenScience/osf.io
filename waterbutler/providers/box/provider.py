@@ -112,6 +112,15 @@ class BoxProvider(provider.BaseProvider):
 
         return ret
 
+    def _assert_child(self, paths, target=None):
+        if target and target['id'] == self.folder:
+            return True
+        if not paths:
+            raise exceptions.MetadataError('Not found', code=http.client.NOT_FOUND)
+        if paths[0]['id'] == self.folder:
+            return True
+        return self._assert_child(paths[1:])
+
     @asyncio.coroutine
     def _get_file_meta(self, path):
         resp = yield from self.make_request(
@@ -120,29 +129,40 @@ class BoxProvider(provider.BaseProvider):
             expects=(200, ),
             throws=exceptions.MetadataError,
         )
-
         data = yield from resp.json()
-        if data:
-            return BoxFileMetadata(data, self.folder).serialized()
 
-        raise exceptions.MetadataError('Unable to find file.', code=http.client.NOT_FOUND)
+        if not data:
+            raise exceptions.NotFoundError(str(path))
+
+        self._assert_child(data['path_collection']['entries'])
+
+        return BoxFileMetadata(data, self.folder).serialized()
 
     @asyncio.coroutine
     def _get_folder_meta(self, path):
         if str(path) == '/':
             path = BoxPath('/{}/'.format(self.folder))
 
-        resp = yield from self.make_request(
+        obj_resp = yield from self.make_request(
+            'GET',
+            self.build_url('folders', path._id),
+            expects=(200, ),
+            throws=exceptions.MetadataError,
+        )
+        obj_data = yield from obj_resp.json()
+
+        self._assert_child(obj_data['path_collection']['entries'], target=obj_data)
+
+        list_resp = yield from self.make_request(
             'GET',
             self.build_url('folders', path._id, 'items'),
             expects=(200, ),
             throws=exceptions.MetadataError,
         )
-
-        data = yield from resp.json()
+        list_data = yield from list_resp.json()
 
         ret = []
-        for item in data['entries']:
+        for item in list_data['entries']:
             if item['type'] == 'folder':
                 ret.append(BoxFolderMetadata(item, self.folder).serialized())
             else:
