@@ -42,7 +42,7 @@ class GoogleDriveGuidFile(GuidFile):
 
     @property
     def folder(self):
-        return self.node.get_addon('googledrive').folder
+        return self.node.get_addon('googledrive').folder_path
 
     @property
     def unique_identifier(self):
@@ -78,10 +78,14 @@ class GoogleDriveUserSettings(AddonUserSettingsBase):
     @property
     def access_token(self):
         if self.needs_refresh:
-            self.refresh_token()
+            self.refresh_access_token()
         return self._access_token
 
-    def refresh_token(self):
+    @access_token.setter
+    def access_token(self, val):
+        self._access_token = val
+
+    def refresh_access_token(self):
         params = {
             'grant_type': 'refresh_token',
             'refresh_token': self.refresh_token,
@@ -89,14 +93,16 @@ class GoogleDriveUserSettings(AddonUserSettingsBase):
             'client_secret': settings.CLIENT_SECRET,
         }
         response = requests.post(settings.REFRESH_ENDPOINT, params=params)
-        json_response = response.json()
-        self._access_token = response['access_token']
-        self.token_expires_at = datetime.fromtimestamp(time.time() + json_response['expires_in'])
+        response_json = response.json()
+        self._access_token = response_json['access_token']
+        self.token_expires_at = datetime.fromtimestamp(time.time() + response_json['expires_in'])
         self.save()
 
     @property
     def needs_refresh(self):
-        return (datetime.now() - self.token_expires_at).totalseconds < settings.REFRESH_TIME
+        if self.token_expires_at is None:
+            return False
+        return (datetime.utcnow() - self.token_expires_at).seconds < settings.REFRESH_TIME
 
     @property
     def has_auth(self):
@@ -129,7 +135,9 @@ class GoogleDriveNodeSettings(AddonNodeSettingsBase):
 
     @property
     def folder_name(self):
-        return os.path.split(self.folder_path)
+        if not self.folder_id:
+            return None
+        return os.path.split(self.folder_path)[1]
 
     @property
     def has_auth(self):
@@ -139,11 +147,12 @@ class GoogleDriveNodeSettings(AddonNodeSettingsBase):
     def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""
         if add_log:
-            extra = {'folder': self.folder}
+            extra = {'folder': self.folder_name}
             nodelogger = GoogleDriveNodeLogger(node=self.owner, auth=auth)
             nodelogger.log(action="node_deauthorized", extra=extra, save=True)
 
-        self.folder = None
+        self.folder_id = None
+        self.folder_path = None
         self.user_settings = None
 
         self.save()
