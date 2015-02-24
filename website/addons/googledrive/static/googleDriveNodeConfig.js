@@ -36,7 +36,7 @@ var ViewModel = function(url, selector, folderPicker) {
     self.urls = ko.observable({});
     self.loadedFolders = ko.observable(false);
     self.loading = ko.observable(false);
-    self.currentFolder = ko.observable('None');
+    self.currentFolder = ko.observable(null);
 
     //Folderpicker specific
     self.folderPicker =  folderPicker;
@@ -62,9 +62,6 @@ var ViewModel = function(url, selector, folderPicker) {
         self.access_token (response.result.access_token);
         self.currentFolder(response.result.currentFolder);
 
-        if (self.currentFolder() == null) {
-            self.currentFolder('None');
-        }
         self.loadedSettings(true);
     }
 
