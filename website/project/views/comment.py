@@ -124,7 +124,7 @@ def collect_discussion(target, users=None):
     users = users or collections.defaultdict(list)
     if not getattr(target, 'commented', None) is None:
         for comment in getattr(target, 'commented', []):
-            if not comment.is_deleted:
+            if not (comment.is_deleted or comment.is_hidden):
                 users[comment.user].append(comment)
             collect_discussion(comment, users=users)
     return users
@@ -141,7 +141,7 @@ def comment_discussion(**kwargs):
     if page == 'total':
         users = collections.defaultdict(list)
         for comment in getattr(node, 'comment_owner', []) or []:
-            if not comment.is_deleted or not comment.is_hidden:
+            if not comment.is_deleted and not comment.is_hidden:
                 users[comment.user].append(comment)
     elif guid is None or guid == 'None':
         users = collections.defaultdict(list)
@@ -151,8 +151,7 @@ def comment_discussion(**kwargs):
                                 Q('is_hidden', 'eq', False)).get_keys()
         for cid in comments:
             comment = Comment.load(cid)
-            if not comment.is_deleted or not comment.is_hidden:
-                users[comment.user].append(comment)
+            users[comment.user].append(comment)
     else:
         target = resolve_target(node, page, guid)
         users = collect_discussion(target)

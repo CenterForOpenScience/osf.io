@@ -19,6 +19,7 @@ from website.addons.dropbox.tests.utils import (
 from website.addons.dropbox.views.config import serialize_settings
 from website.addons.dropbox.views.hgrid import dropbox_addon_folder
 from website.addons.dropbox import utils
+from website.models import Comment
 
 mock_client = MockDropbox()
 
@@ -182,7 +183,8 @@ class TestConfigViews(DropboxAddonTestCase):
         assert_equal(result['urls']['config'],
             api_url_for('dropbox_config_put', pid=self.project._primary_key))
 
-    def test_dropbox_config_put(self):
+    @mock.patch('website.addons.dropbox.views.config.get_node_addon_client')
+    def test_dropbox_config_put(self, mock_node_addon_client):
         url = api_url_for('dropbox_config_put', pid=self.project._primary_key)
         # Can set folder through API call
         res = self.app.put_json(url, {'selected': {'path': 'My test folder',
@@ -280,6 +282,52 @@ class TestConfigViews(DropboxAddonTestCase):
         # Non-authorizing contributor sends request
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.BAD_REQUEST)
+
+class TestCommentsViews(DropboxAddonTestCase):
+
+    @mock.patch('website.addons.dropbox.views.config.get_node_addon_client')
+    def test_comments_visibility_on_change_folder(self, mock_node_addon_client):
+        self.node_settings.set_folder('Dropbox/Old folder', auth=Auth(self.user))
+
+        # Create comment
+        path = 'year_of_sheep.pdf'
+        guid_file, _ = self.node_settings.find_or_create_file_guid(path)
+        Comment.create(
+            auth=Auth(self.user),
+            node=self.project,
+            target=guid_file,
+            user=self.user,
+            page='files',
+            content='dropbox testing is kinda fun',
+            root_title=path,
+        )
+
+        # Change folder
+        url = self.project.api_url_for('dropbox_config_put')
+        res = self.app.put_json(url, {
+            'selected': {
+                'path': 'My test folder',
+                'name': 'Dropbox/My test folder'
+            }
+        }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        self.node_settings.reload()
+        self.project.reload()
+
+        # List comments
+        url = self.project.api_url_for('list_comments')
+        res = self.app.get(url, {
+            'page': 'files',
+            'target': guid_file._id,
+            'rootId': guid_file._id
+        }, auth=self.user.auth)
+        comments = res.json.get('comments')
+        assert_equal(len(comments), 1)
+        assert_true(comments[0]['isHidden'])
+
+    def test_comments_visibility_on_deauthorize(self):
+        #todo
+        pass
 
 
 class TestFilebrowserViews(DropboxAddonTestCase):

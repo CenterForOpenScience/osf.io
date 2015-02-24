@@ -13,7 +13,11 @@ from tests.factories import UserFactory, ProjectFactory
 from website.addons.dropbox.tests.factories import (
     DropboxUserSettingsFactory, DropboxNodeSettingsFactory,
 )
+from website.addons.dropbox.tests.utils import (
+    DropboxAddonTestCase, mock_responses, MockDropbox, patch_client
+)
 from website.addons.base import exceptions
+from website.models import Comment
 
 
 class TestFileGuid(OsfTestCase):
@@ -307,6 +311,95 @@ class TestDropboxNodeSettingsModel(OsfTestCase):
             data='hodor'
         )
         assert_false(registration.has_addon('dropbox'))
+
+    def test_hide_all_comments(self):
+        path = 'lunar_new_year.txt'
+        guid, _ = self.node_settings.find_or_create_file_guid(path)
+        comment1 = Comment.create(
+            auth=Auth(self.user),
+            node=self.project,
+            target=guid,
+            user=self.user,
+            page='files',
+            content='Random content',
+            root_title=path,
+        )
+        comment2 = Comment.create(
+            auth=Auth(self.user),
+            node=self.project,
+            target=comment1,
+            user=self.user,
+            page='files',
+            content='Reply to random content',
+            root_title=path
+        )
+        new_folder = '/robert/e/lee'
+        self.node_settings.set_folder(new_folder, Auth(self.user))
+        path = 'dragon_boat_festival.pdf'
+        guid, _ = self.node_settings.find_or_create_file_guid(path)
+        comment3 = Comment.create(
+            auth=Auth(self.user),
+            node=self.project,
+            target=guid,
+            user=self.user,
+            page='files',
+            content='lies in lexington va',
+            root_title=path
+        )
+        self.node_settings.hide_all_comments()
+        assert_true(comment1.is_hidden)
+        assert_true(comment2.is_hidden)
+        assert_true(comment3.is_hidden)
+
+    def test_show_comments(self):
+        mock_client = MockDropbox()
+
+        path = 'lunar_new_year.txt'
+        guid, _ = self.node_settings.find_or_create_file_guid(path)
+        comment1 = Comment.create(
+            auth=Auth(self.user),
+            node=self.project,
+            target=guid,
+            user=self.user,
+            page='files',
+            content='Random content',
+            root_title=path,
+        )
+        comment2 = Comment.create(
+            auth=Auth(self.user),
+            node=self.project,
+            target=comment1,
+            user=self.user,
+            page='files',
+            content='Reply to random content',
+            root_title=path
+        )
+        folder = '/Public'
+        mock_path = u'Public/latest.txt'
+        self.node_settings.set_folder(folder, Auth(self.user))
+        guid, _ = DropboxFile.get_or_create(self.project, mock_path)
+        comment3 = Comment.create(
+            auth=Auth(self.user),
+            node=self.project,
+            target=guid,
+            user=self.user,
+            page='files',
+            content='dropbox testing is fun',
+            root_title=path
+        )
+        self.node_settings.hide_all_comments()
+        self.node_settings.show_comments(mock_client)
+        assert_true(comment1.is_hidden)
+        assert_true(comment2.is_hidden)
+        assert_false(comment3.is_hidden)
+
+    def test_get_existing_files(self):
+        mock_client = MockDropbox()
+        mock_path = u'Public/latest.txt'
+        guid, _ = DropboxFile.get_or_create(self.project, mock_path)
+        files = self.node_settings.get_existing_files(mock_client)
+        assert_equal(len(files), 1)
+        assert_true(files[0], guid)
 
 
 class TestNodeSettingsCallbacks(OsfTestCase):

@@ -442,8 +442,7 @@ class OsfStorageGuidFile(GuidFile):
         :param delete: If True, comments are going to be hidden; else, comments are going to be shown
         :return:
         """
-        if not path.startswith('/'):
-            path = '/' + path
+        path = path.lstrip('/')
         try:
             obj = cls.find_one(
                 Q('node', 'eq', node) &

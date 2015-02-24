@@ -262,6 +262,13 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
                 auth=auth,
             )
 
+    def hide_comments(self):
+        files_id = FigShareGuidFile.find(Q('node', 'eq', self.owner)).get_keys()
+        for fs_file_id in files_id:
+            fs_file = FigShareGuidFile.load(fs_file_id)
+            for comment in getattr(fs_file, 'comment_target', []):
+                comment.hide(save=True)
+
     def to_json(self, user):
         ret = super(AddonFigShareNodeSettings, self).to_json(user)
 
@@ -428,14 +435,7 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
                 category=node.project_or_component,
             )
 
-    def hide_comments(self):
-        files_id = FigShareGuidFile.find(Q('node', 'eq', self.owner)).get_keys()
-        for fs_file_id in files_id:
-            fs_file = FigShareGuidFile.load(fs_file_id)
-            for comment in getattr(fs_file, 'comment_target', []):
-                comment.hide(save=True)
-
-    def get_existing_files(self, connection=None):
+    def get_existing_files(self, data=None):
         if not self.figshare_id:
             return list()
         if self.figshare_type == 'project':

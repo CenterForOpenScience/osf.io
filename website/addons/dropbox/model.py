@@ -136,13 +136,7 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         return DropboxFile.get_or_create(self.owner, clean_path(os.path.join(self.folder, path.lstrip('/'))))
 
     def set_folder(self, folder, auth):
-        if self.folder != folder:
-            # configure comments
-            self.hide_all_comments()
-            client = get_node_addon_client(self)
-
         self.folder = folder
-        self.show_comments(client, folder)
         # Add log to node
         nodelogger = DropboxNodeLogger(node=self.owner, auth=auth)
         nodelogger.log(action="folder_selected", save=True)
@@ -175,6 +169,19 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
             extra = {'folder': folder}
             nodelogger = DropboxNodeLogger(node=node, auth=auth)
             nodelogger.log(action="node_deauthorized", extra=extra, save=True)
+
+    def hide_all_comments(self):
+        files_id = DropboxFile.find(Q('node', 'eq', self.owner))
+        for file_id in files_id:
+            db_file = DropboxFile.load(file_id)
+            for comment in getattr(db_file, 'comment_target', []):
+                comment.hide(save=True)
+
+    def show_comments(self, connection):
+        dropbox_files = self.get_existing_files(connection)
+        for dropbox_file in dropbox_files:
+            for comment in getattr(dropbox_file, 'comment_target', []):
+                comment.show(save=True)
 
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
@@ -328,34 +335,17 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         self.deauthorize(Auth(user=user), add_log=True)
         self.save()
 
-    def hide_all_comments(self):
-        files_id = DropboxFile.find(Q('node', 'eq', self.owner))
-        for file_id in files_id:
-            db_file = DropboxFile.load(file_id)
-            for comment in getattr(db_file, 'comment_target', []):
-                comment.hide(save=True)
-
-    def show_comments(self, client, path):
-        dropbox_files = self.get_existing_files(client)
-        for dropbox_file in dropbox_files:
-            for comment in getattr(dropbox_file, 'comment_target', []):
-                comment.show(save=True)
-
     def get_existing_files(self, connection=None):
         if not self.folder:
             return list()
         if not connection:
             connection = get_node_addon_client(self)
-        metadata = connection.metadata(self.folder)
-        dropbox_files = []
-        queue = list(metadata['contents'])
-        while len(queue) > 0:
-            content = queue.pop(0)
-            if content['is_dir']:
-                queue.extend(connection.metadata(content['path'])['contents'])
-            else:
-                path = content['path']
-                path = clean_path(path)
+        dropbox_files = list()
+        files_data = connection.delta(cursor=None, path_prefix=self.folder)
+        dropbox_file_metadata = map(lambda entry: entry[1], files_data['entries'])
+        for file_metadata in dropbox_file_metadata:
+            if not file_metadata['is_dir']:
+                path = clean_path(file_metadata['path'])  # To ensure letter case
                 try:
                     guid = DropboxFile.find_one(
                         Q('node', 'eq', self.owner) &

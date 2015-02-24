@@ -95,6 +95,64 @@ mock_responses = {
         u'size': u'74 bytes',
         u'thumb_exists': False
     },
+    'metadata_delta': {
+        'entries':
+            [
+            [
+                u'/public',
+                {
+                    u'read_only': False,
+                    u'revision': 29007,
+                    u'bytes': 0,
+                    u'thumb_exists': False,
+                    u'rev': u'714f029684fe',
+                    u'modified': u'Wed, 27 Apr 2011 22:18:51 +0000',
+                    u'size': u'0 bytes',
+                    u'path': u'/Public',
+                    u'is_dir': True,
+                    u'modifier': None,
+                    u'root': u'dropbox',
+                    u'icon': u'folder_public'
+                }
+            ],
+            [
+                u'/public/latest.txt',
+                {
+                    u'read_only': False,
+                    u'revision': 220191,
+                    u'bytes': 0,
+                    u'thumb_exists': True,
+                    u'rev': u'35c1f029684fe',
+                    u'modified': u'Mon, 18 Jul 2011 20:13:43 +0000',
+                    u'mime_type': u'text/plain',
+                    u'size': u'0 bytes',
+                    u'path': u'/Public/latest.txt',
+                    u'is_dir': False,
+                    u'modifier': None,
+                    u'root': u'dropbox',
+                    u'client_mtime': u'Wed, 20 Apr 2011 16:20:19 +0000',
+                    u'icon': u'page_white_text'
+                }
+            ],
+            [
+                u'/public/datasets/new folder',
+                {
+                    u'read_only': False,
+                    u'bytes': 0,
+                    u'icon': u'folder',
+                    u'is_dir': True,
+                    u'modified': u'Sat, 22 Mar 2014 05:40:29 +0000',
+                    u'path': u'/datasets/New Folder',
+                    u'rev': u'3fed51f002c12fc',
+                    u'revision': 67032351,
+                    u'modifier': None,
+                    u'root': u'dropbox',
+                    u'size': u'0 bytes',
+                    u'thumb_exists': True
+                }
+            ]
+        ]
+    },
     'revisions': [{u'bytes': 0,
         u'client_mtime': u'Wed, 31 Dec 1969 23:59:59 +0000',
         u'icon': u'page_white_picture',
@@ -136,6 +194,9 @@ class MockDropbox(object):
             ret = mock_responses['metadata_single']
             ret['path'] = path
         return ret
+
+    def delta(self, cursor=None, path_prefix='/'):
+        return mock_responses['metadata_delta']
 
     def get_file_and_metadata(*args, **kwargs):
         pass
