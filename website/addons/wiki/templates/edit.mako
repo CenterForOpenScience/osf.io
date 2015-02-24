@@ -17,9 +17,9 @@
 
 <div class="wiki" id="wikiPageContext">
   <div class="row wiki-wrapper">
-    <div ${style['menu_column'] | n}>
+    <div class="panel-toggle col-sm-${'3' if 'menu' in panels_used else '1' | n}">
         <!-- Menu with toggle normal -->
-        <div class="wiki-panel hidden-xs" ${style['menu'] | n}>
+        <div class="wiki-panel hidden-xs" style="${'' if 'menu' in panels_used else 'display: none' | n}">
             <div class="wiki-panel-header"> <i class="icon-list"> </i>  Menu
                 <div class="pull-right"> <div class="panel-collapse"> <i class="icon icon-angle-left"> </i> </div></div>
             </div>
@@ -29,7 +29,7 @@
         </div>
 
         <!-- Menu with toggle collapsed -->
-        <div class="wiki-panel panel-collapsed hidden-xs text-center" ${style['menu_collapsed'] | n}>
+        <div class="wiki-panel panel-collapsed hidden-xs text-center" style="${'display: none' if 'menu' in panels_used else '' | n}">
           <div class="wiki-panel-header">
             <i class="icon-list"> </i>
             <i class="icon icon-angle-right"> </i>
@@ -48,10 +48,13 @@
         </div>
     </div>
 
-    <div ${style['content_column'] | n}>
+    <div class="panel-expand col-sm-${'9' if 'menu' in panels_used else '11' | n}">
       <div class="row">
         % if can_edit:
-            <div data-bind="with: $root.editVM.wikiEditor.viewModel" data-osf-panel="Edit" ${style['edit'] | n}>
+            <div data-bind="with: $root.editVM.wikiEditor.viewModel"
+                 data-osf-panel="Edit"
+                 class="${'col-sm-{0}'.format(12 / len(set(panels_used).intersection({'view', 'edit', 'compare'}))) | n}"
+                 style="${'' if 'edit' in panels_used else 'display: none' | n}">
                 <div class="wiki-panel">
                   <div class="wiki-panel-header"> <i class="icon-edit"> </i>  Edit </div>
                   <div class="wiki-panel-body">
@@ -120,10 +123,12 @@
                     </form>
                   </div>
                 </div>
-          </div>
+            </div>
           % endif
 
-          <div data-osf-panel="View" ${style['view'] | n} >
+          <div data-osf-panel="View"
+               class="${'col-sm-{0}'.format(12 / len(set(panels_used).intersection({'view', 'edit', 'compare'}))) | n}"
+               style="${'' if 'view' in panels_used else 'display: none' | n}">
               <div class="wiki-panel">
                 <div class="wiki-panel-header">
                     <div class="row">
@@ -152,7 +157,9 @@
                 </div>
               </div>
           </div>
-          <div data-osf-panel="Compare" ${style['compare'] | n}>
+          <div data-osf-panel="Compare"
+               class="${'col-sm-{0}'.format(12 / len(set(panels_used).intersection({'view', 'edit', 'compare'}))) | n}"
+               style="${'' if 'compare' in panels_used else 'display: none' | n}">
             <div class="wiki-panel">
               <div class="wiki-panel-header">
                   <div class="row">

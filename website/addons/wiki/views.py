@@ -231,29 +231,12 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     can_edit = node.has_permission(auth.user, 'write') and not node.is_registration
     versions = _get_wiki_versions(node, wiki_name, anonymous=anonymous)
 
-    # Build styles for default panel display
-    panels = ['view', 'edit', 'compare']
-    panels_used = [panel for panel in request.args if panel in panels]
-    # Default case includes view
-    if not request.args:
-        panels_used.append('view')
-    panel_class = 'class="col-sm-{0}"'.format(12 / len(panels_used))
-    panel_settings = {}
-    for panel in panels:
-        panel_display = '' if panel in panels_used else 'style="display: none"'
-        panel_settings[panel] = '{0} {1}'.format(panel_class, panel_display)
-    # Append menu after column width is determined
-    if 'menu' in request.args or not request.args:
-        panels_used.append('menu')
-        panel_settings['menu'] = ''
-        panel_settings['menu_collapsed'] = 'style="display: none"'
-        panel_settings['menu_column'] = 'class="col-sm-3 panel-toggle"'
-        panel_settings['content_column'] = 'class="col-sm-9 panel-expand"'
+    # Determine panels used in view
+    panels = ['view', 'edit', 'compare', 'menu']
+    if request.args:
+        panels_used = [panel for panel in request.args if panel in panels]
     else:
-        panel_settings['menu'] = 'style="display: none"'
-        panel_settings['menu_collapsed'] = ''
-        panel_settings['menu_column'] = 'class="col-sm-1 panel-toggle"'
-        panel_settings['content_column'] = 'class="col-sm-11 panel-expand"'
+        panels_used = ['view', 'menu']
 
     view = request.args.get('view', '')
     if view.isdigit():
@@ -315,7 +298,6 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         'pages_current': _get_wiki_pages_current(node),
         'toc': toc,
         'category': node.category,
-        'style': panel_settings,
         'panels_used': panels_used,
         'urls': {
             'api': _get_wiki_api_urls(node, wiki_name, {
