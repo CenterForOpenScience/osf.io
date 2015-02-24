@@ -1234,7 +1234,6 @@ div.search-result  {
   margin-bottom: 30px;
   padding-top:    10px;
   padding-bottom: 10px;
-  text-shadow: 0 1px 0 #fff;
 }
 
 /* All levels of nav */
@@ -2191,9 +2190,12 @@ span#profileFullname{
     border-left: 2px solid #337AB7;
 }
 .osf-sidenav.wiki-sidenav ul>li.active a {
-        border-right: none;
-        color: #337AB7;
-    }
+    border-right: none;
+    color: #337AB7;
+}
+.osf-sidenav.wiki-sidenav h4 a:hover {
+    text-decoration: none;
+}
 .osf-sidenav.wiki-sidenav ul>li a:hover {
     text-decoration: none;
 }
