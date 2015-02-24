@@ -24,7 +24,7 @@ var diff = function(beforeText, afterText) {
     var fragment = document.createDocumentFragment();
 
     diffList.forEach(function(part) {
-        var color = part.added ? 'text-success' : part.removed ? 'text-danger' : '';
+        var color = part.added ? 'bg-success' : part.removed ? 'text-danger' : '';
         var span = part.removed ? document.createElement('s') : document.createElement('span');
         span.className = color;
         span.appendChild(document.createTextNode(part.value));
