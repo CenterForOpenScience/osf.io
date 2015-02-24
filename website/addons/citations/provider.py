@@ -6,7 +6,6 @@ from framework.exceptions import PermissionsError
 
 from website.oauth.models import ExternalAccount
 
-from website.util import api_url_for, web_url_for
 from . import utils
 
 class CitationsProvider(object):
@@ -19,19 +18,8 @@ class CitationsProvider(object):
 
     @abc.abstractmethod
     def _serialize_urls(self, node_addon):
-        """Collects and serializes urls needed for AJAX calls"""
 
-        external_account = node_addon.external_account
-        ret = {
-            'auth': api_url_for('oauth_connect',
-                                service_name=self.provider_name),
-            'settings': web_url_for('user_addons'),
-            'files': node_addon.owner.url
-        }
-        if external_account and external_account.profile_url:
-            ret['owner'] = external_account.profile_url
-
-        return ret
+        return {}
 
     @abc.abstractmethod
     def _serialize_model(self, node_addon, user):

@@ -1,6 +1,6 @@
 from website.addons.citations import provider
 from .model import AddonMendeleyNodeSettings
-from website.addons.citations.utils import serialize_account, serialize_folder
+from website.addons.citations.utils import serialize_account, serialize_folder, serialize_urls
 
 class MendeleyCitationsProvider(provider.CitationsProvider):
 
@@ -17,7 +17,8 @@ class MendeleyCitationsProvider(provider.CitationsProvider):
         return ret
 
     def _serialize_urls(self, node_addon):
-        ret = super(MendeleyCitationsProvider, self)._serialize_urls(node_addon)
+        # collects node_settings and oauth urls
+        ret = serialize_urls(node_addon)
 
         node = node_addon.owner
 
