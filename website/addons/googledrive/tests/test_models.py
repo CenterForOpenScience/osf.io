@@ -11,11 +11,99 @@ from tests.factories import UserFactory, ProjectFactory
 from website.addons.base import exceptions
 
 from website.addons.googledrive.model import (
-    GoogleDriveUserSettings, GoogleDriveNodeSettings
+    GoogleDriveUserSettings, GoogleDriveNodeSettings, GoogleDriveGuidFile
 )
 from website.addons.googledrive.tests.factories import (
     GoogleDriveNodeSettingsFactory, GoogleDriveUserSettingsFactory
 )
+
+
+class TestFileGuid(OsfTestCase):
+    def setUp(self):
+        super(OsfTestCase, self).setUp()
+        self.user = UserFactory()
+        self.project = ProjectFactory(creator=self.user)
+        self.project.add_addon('googledrive', auth=Auth(self.user))
+        self.node_addon = self.project.get_addon('googledrive')
+
+        self.node_addon.folder_id = 'Lulz'
+        self.node_addon.folder_path = 'baz'
+        self.node_addon.save()
+
+    def test_provider(self):
+        assert_equal('googledrive', GoogleDriveGuidFile().provider)
+
+    def test_correct_path(self):
+        guid = GoogleDriveGuidFile(node=self.project, path='/baz/foo/bar')
+
+        assert_equals(guid.path, '/baz/foo/bar')
+        assert_equals(guid.waterbutler_path, '/foo/bar')
+
+    @mock.patch('website.addons.base.requests.get')
+    def test_unique_identifier(self, mock_get):
+        mock_response = mock.Mock(ok=True, status_code=200)
+        mock_get.return_value = mock_response
+        mock_response.json.return_value = {
+            'data': {
+                'name': 'Morty',
+                'extra': {
+                    'revisionId': 'Ricksy'
+                }
+            }
+        }
+
+        guid = GoogleDriveGuidFile(node=self.project, path='/foo/bar')
+
+        guid.enrich()
+        assert_equals('Ricksy', guid.unique_identifier)
+
+    def test_node_addon_get_or_create(self):
+        guid, created = self.node_addon.find_or_create_file_guid('/foo/bar')
+
+        assert_true(created)
+        assert_equal(guid.path, '/baz/foo/bar')
+        assert_equal(guid.waterbutler_path, '/foo/bar')
+
+    def test_node_addon_get_or_create_finds(self):
+        guid1, created1 = self.node_addon.find_or_create_file_guid('/foo/bar')
+        guid2, created2 = self.node_addon.find_or_create_file_guid('/foo/bar')
+
+        assert_true(created1)
+        assert_false(created2)
+        assert_equals(guid1, guid2)
+
+    def test_node_addon_get_or_create_finds_changed(self):
+        self.node_addon.folder_path = 'baz'
+        self.node_addon.save()
+        self.node_addon.reload()
+
+        guid1, created1 = self.node_addon.find_or_create_file_guid('/foo/bar')
+
+        self.node_addon.folder_path = 'baz/foo'
+        self.node_addon.save()
+        self.node_addon.reload()
+        guid2, created2 = self.node_addon.find_or_create_file_guid('/bar')
+
+        assert_true(created1)
+        assert_false(created2)
+        assert_equals(guid1, guid2)
+
+    def test_node_addon_get_or_create_finds_changed_root(self):
+        self.node_addon.folder_path = 'baz'
+        self.node_addon.save()
+        self.node_addon.reload()
+
+        guid1, created1 = self.node_addon.find_or_create_file_guid('/foo/bar')
+
+        self.node_addon.folder_path = '/'
+        self.node_addon.save()
+        self.node_addon.reload()
+        guid2, created2 = self.node_addon.find_or_create_file_guid('/baz/foo/bar')
+
+        assert_true(created1)
+        assert_false(created2)
+        assert_equals(guid1, guid2)
+
 
 class TestGoogleDriveUserSettingsModel(OsfTestCase):
 
@@ -264,7 +352,7 @@ class TestGoogleDriveNodeSettingsModel(OsfTestCase):
         log_params = last_log.params
 
         assert_equal(last_log.user, user_settings.owner)
-        assert_equal(log_params['folder'], node_settings.folder_name)
+        assert_equal(log_params['folder'], node_settings.folder_path)
         assert_equal(last_log.action, 'googledrive_node_authorized')
         assert_equal(log_params['node'], node_settings.owner._primary_key)
 
