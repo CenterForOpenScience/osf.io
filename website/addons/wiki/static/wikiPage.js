@@ -35,6 +35,9 @@ function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathj
     self.allowFullRender = allowFullRender;
     self.renderTimeout = null;
     self.displaySource = ko.observable('');
+    self.throttledAllowFullRender = $osf.debounce(function() {
+        self.allowFullRender(true);
+    }, THROTTLE);
 
     self.renderMarkdown = function(rawContent){
         if(self.visible()) {
@@ -53,11 +56,7 @@ function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathj
             // Quick render
             self.allowFullRender(false);
             // Full render
-            clearTimeout(self.renderTimeout);
-
-            self.renderTimeout = setTimeout(function () {
-                self.allowFullRender(true);
-            }, THROTTLE);
+            self.throttledAllowFullRender();
         });
     } else {
         self.allowFullRender(true);
