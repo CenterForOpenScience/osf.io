@@ -234,8 +234,8 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     # Build styles for default panel display
     panels = ['view', 'edit', 'compare']
     panels_used = [panel for panel in request.args if panel in panels]
-    # Always display view, except if edit, compare, and not view are specified
-    if len(panels_used) < 2 and 'view' not in panels_used:
+    # Default case includes view
+    if not request.args:
         panels_used.append('view')
     panel_class = 'class="col-sm-{0}"'.format(12 / len(panels_used))
     panel_settings = {}
