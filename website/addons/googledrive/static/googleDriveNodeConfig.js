@@ -197,7 +197,7 @@ var ViewModel = function(url, selector, folderPicker) {
         evt.preventDefault();
         self.selected({
             id: item.data.id,
-            name: 'Google Drive/' + item.data.path,
+            name: 'Google Drive/' + (item.data.path === '/' ? '' : item.data.path),
             path: item.data.path
         });
         return false; // Prevent event propagation
