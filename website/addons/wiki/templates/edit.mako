@@ -1,15 +1,8 @@
 <%page expression_filter="h"/>
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${node['title'] | n} Wiki</%def>
-<style>
-@media (min-width: 1601px) {
-  .container {
-      width : 100%;
-      padding-left: 20px;
-      padding-right: 20px;
-  }
-}
-</style>
+## Use full page width
+<%def name="container_class()">container-xl</%def>
 
 <div class="row" style="margin-bottom: 5px;">
     <div class="col-sm-6">
