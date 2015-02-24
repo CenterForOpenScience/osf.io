@@ -281,7 +281,11 @@
 </%def>
 
 <%def name="javascript_bottom()">
-
+    <script type="text/javascript">
+        window.contextVars = $.extend(true, {}, window.contextVars, {
+            search:true
+        });
+    </script>
 
     <script src=${"/static/public/js/search-page.js" | webpack_asset}></script>
 
