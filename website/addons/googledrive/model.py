@@ -24,7 +24,7 @@ class GoogleDriveGuidFile(GuidFile):
 
     @property
     def waterbutler_path(self):
-        return self.path
+        return self.path.replace(self.folder, '', 1)
 
     @property
     def provider(self):
@@ -42,7 +42,10 @@ class GoogleDriveGuidFile(GuidFile):
 
     @property
     def folder(self):
-        return self.node.get_addon('googledrive').folder_path
+        folder = self.node.get_addon('googledrive').folder_path
+        if folder == '/':
+            return ''
+        return folder
 
     @property
     def unique_identifier(self):
@@ -214,6 +217,8 @@ class GoogleDriveNodeSettings(AddonNodeSettingsBase):
         )
 
     def find_or_create_file_guid(self, path):
+        if self.folder_path != '/':
+            path = os.path.join(self.folder_path, path.lstrip('/'))
         return GoogleDriveGuidFile.get_or_create(self.owner, path)
 
     # #### Callback overrides #####
