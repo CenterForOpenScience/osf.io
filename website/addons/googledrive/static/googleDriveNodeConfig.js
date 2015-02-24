@@ -1,5 +1,5 @@
 /**
- * Module that controls the Dropbox node settings. Includes Knockout view-model
+ * Module that controls the Google Drive node settings. Includes Knockout view-model
  * for syncing data, and HGrid-folderpicker for selecting a folder.
  */
 'use strict';
@@ -76,10 +76,10 @@ var ViewModel = function(url, selector, folderPicker) {
         $.ajax({
             url: self.url,
             type: 'GET',
-            dataType: 'json',
-            success: onFetchSuccess,
-            error: onFetchError
-        });
+            dataType: 'json'
+        })
+        .done(onFetchSuccess)
+        .fail(onFetchError);
     }
 
     fetch();
@@ -112,7 +112,7 @@ var ViewModel = function(url, selector, folderPicker) {
             self.urls().create
         ).success(function(response){
             window.location.href = response.url;
-            self.changeMessage('Successfully authorized Google Drive account', 'text-primary');
+            self.changeMessage('Successfully authorized Google Drive account', 'text-success');
         }).fail(function() {
             self.changeMessage('Could not authorize at this moment', 'text-danger');
         });
@@ -165,15 +165,12 @@ var ViewModel = function(url, selector, folderPicker) {
         return $.ajax({
             url: self.urls().deauthorize,
             type: 'DELETE',
-            success: function() {
-                // Update observables
-                self.nodeHasAuth(false);
-                self.changeMessage('Deauthorized Google Drive.', 'text-warning', 3000);
-            },
-            error: function() {
-                self.changeMessage('Could not deauthorize Google Drive because of an error. Please try again later.',
-                                   'text-danger');
-            }
+        }).done(function() {
+            // Update observables
+            self.nodeHasAuth(false);
+            self.changeMessage('Deauthorized Google Drive.', 'text-warning', 3000);
+        }).fail(function() {
+            self.changeMessage('Could not deauthorize Google Drive because of an error. Please try again later.', 'text-danger');
         });
     }
 

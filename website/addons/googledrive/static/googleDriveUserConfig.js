@@ -21,30 +21,30 @@ var ViewModel = function(url) {
     self.username = ko.observable();
 
     //Helper-class variables
-    self.message = ko.observable('')
+    self.message = ko.observable('');
     self.messageClass = ko.observable('text-info');
 
     $.ajax({
-        url: url, type: 'GET', dataType: 'json',
-        success: function(response) {
-            var data =response.result;
-            self.userHasAuth(data.userHasAuth);
-            self.username(data.username)
-            self.urls(data.urls);
-            self.loaded(true);
-        },
-        error: function(xhr, textStatus, error){
-            self.changeMessage(
-                'Could not retrieve settings. Please refresh the page or ' +
-                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
-                'problem persists.', 'text-warning'
-            );
-            Raven.captureMessage('Could not GET Google Drive settings', {
-                url: url,
-                textStatus: textStatus,
-                error: error
-            });
-        }
+        url: url,
+        type: 'GET',
+        dataType: 'json',
+    }).done(function(response) {
+        var data =response.result;
+        self.userHasAuth(data.userHasAuth);
+        self.username(data.username);
+        self.urls(data.urls);
+        self.loaded(true);
+    }).fail(function(xhr, textStatus, error) {
+        self.changeMessage(
+            'Could not retrieve settings. Please refresh the page or ' +
+            'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
+            'problem persists.', 'text-warning'
+        );
+        Raven.captureMessage('Could not GET Google Drive settings', {
+            url: url,
+            textStatus: textStatus,
+            error: error
+        });
     });
 
     /** Change the flashed status message */
@@ -91,20 +91,17 @@ var ViewModel = function(url) {
     function sendDeauth() {
         return $.ajax({
             url: self.urls().delete,
-            type: 'DELETE',
-            success: function() {
-                window.location.reload();
-                self.changeMessage(language.deauthSuccess, 'text-info', 5000);
-
-            },
-            error: function(textStatus, error) {
-                self.changeMessage(language.deauthError, 'text-danger');
-                Raven.captureMessage('Could not deauthorize Google Drive.', {
-                    url: url,
-                    textStatus: textStatus,
-                    error: error
-                });
-            }
+            type: 'DELETE'
+        }).done(function() {
+            window.location.reload();
+            self.changeMessage(language.deauthSuccess, 'text-info', 5000);
+        }).fail(function(textStatus, error) {
+            self.changeMessage(language.deauthError, 'text-danger');
+            Raven.captureMessage('Could not deauthorize Google Drive.', {
+                url: url,
+                textStatus: textStatus,
+                error: error
+            });
         });
     }
 };
