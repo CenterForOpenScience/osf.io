@@ -46,7 +46,7 @@ class GoogleDriveNodeLogger(object):
         params = {
             'project': self.node.parent_id,
             'node': self.node._primary_key,
-            'folder': self.node.get_addon('googledrive', deleted=True).folder
+            'folder': self.node.get_addon('googledrive', deleted=True).folder_name
         }
         if extra:
             params.update(extra)
@@ -92,7 +92,7 @@ def serialize_settings(node_settings, current_user):
         # Add owner's profile URL
         ret['ownerName'] = user_settings.owner.fullname
         ret['access_token'] = user_settings.access_token
-        ret['currentFolder'] = node_settings.folder  # if node_settings.folder else None
+        ret['currentFolder'] = node_settings.folder_name  # if node_settings.folder else None
         ret['urls']['owner'] = web_url_for('profile_view_id', uid=user_settings.owner._id)
 
     return ret
