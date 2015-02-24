@@ -44,7 +44,7 @@ setup(
             'osfstorage = waterbutler.providers.osfstorage:OSFStorageProvider',
             's3 = waterbutler.providers.s3:S3Provider',
             'box = waterbutler.providers.box:BoxProvider',
-            'gdrive = waterbutler.providers.gdrive:GoogleDriveProvider',
+            'googledrive = waterbutler.providers.googledrive:GoogleDriveProvider',
         ],
         'waterbutler.providers.tasks': [
             'osfstorage_parity = waterbutler.providers.osfstorage.tasks.parity',

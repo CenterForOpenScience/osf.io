@@ -59,9 +59,14 @@ class CRUDHandler(core.BaseHandler):
         if isinstance(result, str):
             return self.redirect(result)
 
-        display_name =  (
+        try:
+            headers = result.response.headers
+        except AttributeError:
+            headers = {}
+
+        display_name = (
             self.arguments.get('displayName') or
-            utils.parse_disposition_name(result.response.headers.get('content-disposition')) or
+            utils.parse_disposition_name(headers.get('content-disposition')) or
             os.path.split(self.arguments['path'])[-1]
         )
         self.set_header('Content-Type', result.content_type)
