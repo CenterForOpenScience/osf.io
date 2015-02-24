@@ -1,5 +1,5 @@
 /**
- * Module that controls the Dropbox node settings. Includes Knockout view-model
+ * Module that controls the Google Drive node settings. Includes Knockout view-model
  * for syncing data, and HGrid-folderpicker for selecting a folder.
  */
 'use strict';
@@ -177,7 +177,7 @@ var ViewModel = function(url, selector, folderPicker) {
         });
     }
 
-    /** Pop up a confirmation to deauthorize Dropbox from this node.
+    /** Pop up a confirmation to deauthorize Google Drive from this node.
      *  Send DELETE request if confirmed.
      */
     self.deauthorize = function() {

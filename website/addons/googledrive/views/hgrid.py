@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import httplib2
-
 from flask import request
-from apiclient.discovery import build
-from oauth2client.client import AccessTokenCredentials
 
 from website.util import rubeus
 from website.util import permissions
@@ -16,6 +12,7 @@ from website.project.decorators import (
 )
 
 from website.addons.googledrive.utils import to_hgrid
+from website.addons.googledrive.client import GoogleDriveClient
 
 
 @must_not_be_registration
@@ -27,23 +24,17 @@ def googledrive_folders(node_addon, user_addon, **kwargs):
     """ Returns all the subsequent folders under the folder id passed """
     node = kwargs.get('node') or kwargs['project']
 
-    # Get service using oauth client
-    http_service = httplib2.Http()
-    # Why is user agent used here?
-    credentials = AccessTokenCredentials(user_addon.access_token, request.headers.get('User-Agent'))
-    http_service = credentials.authorize(http_service)
-    service = build('drive', 'v2', http_service)
-
     path = request.args.get('path', '')
-    folder_id = request.args.get('folderId')
-    result = get_folders(service, folder_id=folder_id)
+    folder_id = request.args.get('folderId', 'root')
+
+    client = GoogleDriveClient(user_addon.access_token)
     contents = [
         to_hgrid(item, node, path=path)
-        for item in result
+        for item in client.folders(folder_id)
     ]
 
     if request.args.get('includeRoot'):
-        about = service.about().get().execute()
+        about = client.about()
         root = {
             'kind': rubeus.FOLDER,
             'id': about['rootFolderId'],
@@ -52,22 +43,6 @@ def googledrive_folders(node_addon, user_addon, **kwargs):
         }
         contents.insert(0, root)
     return contents
-
-
-def get_folders(service, folder_id=None):
-    """Retrieve a list of File resources.
-
-    :service: Drive API service instance.
-    :return: List of File resources.
-    """
-    folderId = folder_id or 'root'
-    query = ' and '.join([
-        "'{0}' in parents".format(folderId),
-        'trashed = false',
-        "mimeType = 'application/vnd.google-apps.folder'",
-    ])
-    folders = service.files().list(q=query).execute()
-    return folders['items']
 
 
 def googledrive_addon_folder(node_settings, auth, **kwargs):

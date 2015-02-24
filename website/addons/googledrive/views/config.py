@@ -25,7 +25,7 @@ def googledrive_config_get(node_addon, auth, **kwargs):
     """API that returns the serialized node settings."""
     return {
         'result': serialize_settings(node_addon, auth.user),
-    }, http.OK
+    }
 
 
 @must_not_be_registration
@@ -46,7 +46,7 @@ def googledrive_config_put(node_addon, auth, **kwargs):
             'urls': serialize_urls(node_addon),
         },
         'message': 'Successfully updated settings.',
-    }, http.OK
+    }
 
 
 @must_be_logged_in
@@ -66,4 +66,4 @@ def googledrive_user_config_get(user_addon, **kwargs):
             'username': user_addon.username,
             'userHasAuth': user_addon.has_auth,
         },
-    }, http.OK
+    }

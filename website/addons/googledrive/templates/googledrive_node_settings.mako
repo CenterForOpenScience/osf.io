@@ -39,14 +39,14 @@
        </p>
 
         <div class="btn-group" >
-        <button data-bind="click:changeFolder" class="btn btn-sm btn-dropbox"> Change Folder</button>
+        <button data-bind="click:changeFolder" class="btn btn-sm btn-googledrive"> Change Folder</button>
         </div>
 
         <!-- Google Drive Treebeard -->
-        <p class="text-muted text-center dropbox-loading-text" data-bind="visible: loading">
+        <p class="text-muted text-center googledrive-loading-text" data-bind="visible: loading">
                     Loading folders...</p>
         <div id="myGoogleDriveGrid"
-             class="filebrowser hgrid dropbox-folder-picker">
+             class="filebrowser hgrid googledrive-folder-picker">
 
 
         </div>
@@ -56,7 +56,7 @@
             data-bind="visible:selected">
             <form data-bind="submit: submitSettings">
 
-                <h4 data-bind="if: selected" class="dropbox-confirm-dlg">
+                <h4 data-bind="if: selected" class="googledrive-confirm-dlg">
                     Connect &ldquo;{{ selectedFolderName }}&rdquo;?
                 </h4>
                 <div class="pull-right">

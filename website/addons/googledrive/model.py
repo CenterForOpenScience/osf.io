@@ -108,13 +108,12 @@ class GoogleDriveUserSettings(AddonUserSettingsBase):
     def has_auth(self):
         return bool(self.access_token)
 
-    def clear(self):  # TODO : check for all the nodes (see dropbox)
+    def clear(self):
         self.access_token = None
-
+        self.refresh_token = None
         for node_settings in self.googledrivenodesettings__authorized:
             node_settings.deauthorize(Auth(self.owner))
             node_settings.save()
-        return self
 
     def delete(self, save=True):
         self.clear()
@@ -259,7 +258,7 @@ class GoogleDriveNodeSettings(AddonNodeSettingsBase):
             category = node.project_or_component
             name = removed.fullname
             return (u'The Google Drive add-on for this {category} is authenticated by {name}. '
-                    'Removing this user will also remove write access to Dropbox '
+                    'Removing this user will also remove write access to Google Drive '
                     'unless another contributor re-authenticates the add-on.'
                     ).format(**locals())
 
