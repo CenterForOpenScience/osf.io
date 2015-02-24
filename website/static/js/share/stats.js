@@ -28,12 +28,11 @@ function donutGraph (data) {
         },
         data: data.charts.shareDonutGraph,
         donut: {
-            title: get_source_length(data) + ' Providers',
-            expand: true
+            title: get_source_length(data) + ' Providers'
         },
         legend: {
             show: false
-        },
+        }
     });
 }
 
@@ -61,11 +60,7 @@ function timeGraph (data) {
         },
         legend: {
             show: false
-        },
-        zoom: {
-            enabled: true
         }
-
     });
 }
 
