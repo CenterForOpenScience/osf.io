@@ -1,5 +1,3 @@
-import random
-import logging
 from time import gmtime
 from calendar import timegm
 from datetime import datetime
@@ -12,7 +10,6 @@ from website import settings
 
 from util import random_color
 
-logger = logging.getLogger(__name__)
 
 share_es = Elasticsearch(
     settings.SHARE_ELASTIC_URI,
