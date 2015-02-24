@@ -3,9 +3,8 @@ from modularodm.exceptions import NoResultsFound
 import mock
 import unittest
 import datetime
-import urlparse
 import collections
-from dateutil.relativedelta import relativedelta
+import pytz
 from mako.lookup import Template
 from tests.base import OsfTestCase, capture_signals
 from nose.tools import *  # PEP8 asserts
@@ -16,7 +15,7 @@ from website.notifications.model import Subscription, DigestNotification
 from website.notifications.constants import SUBSCRIPTIONS_AVAILABLE, NOTIFICATION_TYPES, USER_SUBSCRIPTIONS_AVAILABLE
 from website.notifications import emails, utils
 from website.util import api_url_for
-from website import settings, mails
+from website import mails
 from tests.factories import ProjectFactory, NodeFactory, UserFactory, SubscriptionFactory
 
 
@@ -490,11 +489,11 @@ class TestNotificationsDict(OsfTestCase):
         d = utils.NotificationsDict()
         message = {
             'message': 'Freddie commented on your project',
-            'timestamp': datetime.datetime.utcnow()
+            'timestamp': datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
         }
         message2 = {
             'message': 'Mercury commented on your component',
-            'timestamp': datetime.datetime.utcnow()
+            'timestamp':datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
         }
 
         d.add_message(['project'], message)
@@ -618,7 +617,7 @@ class TestSendEmails(OsfTestCase):
     def test_send_email_transactional(self, send_mail):
         # assert that send_mail is called with the correct person & args
         subscribed_users = [self.user._id]
-        timestamp = (datetime.datetime.utcnow() - datetime.timedelta(hours=1)).replace(microsecond=0)
+        timestamp = (datetime.datetime.utcnow().replace(tzinfo=pytz.utc))
 
         emails.email_transactional(
             subscribed_users, self.project._id, 'comments',
@@ -649,7 +648,8 @@ class TestSendEmails(OsfTestCase):
             content='',
             parent_comment='',
             title=self.project.title,
-            url=self.project.absolute_url)
+            url=self.project.absolute_url,
+            recipient_id=self.user._id)
 
         assert_true(send_mail.called)
         send_mail.assert_called_with(
@@ -668,7 +668,7 @@ class TestSendEmails(OsfTestCase):
         digest_count_before = DigestNotification.find().count()
         emails.email_digest(subscribed_users, self.project._id, 'comments',
                             nodeType='project',
-                            timestamp=datetime.datetime.utcnow(),
+                            timestamp=datetime.datetime.utcnow().replace(tzinfo=pytz.utc),
                             commenter=self.project.creator._id,
                             gravatar_url=self.user.gravatar_url,
                             content='',
@@ -684,7 +684,7 @@ class TestSendEmails(OsfTestCase):
         digest_count_before = DigestNotification.find().count()
         emails.email_digest(subscribed_users, self.project._id, 'comments',
                             nodeType='project',
-                            timestamp=datetime.datetime.utcnow(),
+                            timestamp=datetime.datetime.utcnow().replace(tzinfo=pytz.utc),
                             commenter=self.user._id,
                             gravatar_url=self.user.gravatar_url,
                             content='',

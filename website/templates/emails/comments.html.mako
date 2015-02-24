@@ -1,9 +1,10 @@
 <% from website.models import User %>
-<% from datetime import datetime%>
-<% from dateutil.relativedelta import relativedelta%>
+<% import pytz %>
+<% from pytz import timezone as tz%>
 
 <% def localize_timestamp(user_id):
-    return (timestamp - relativedelta(minutes=User.load(user_id).timezone_offset)).strftime('%H:%M on %A, %B %d')
+    user_timezone = tz(User.load(user_id).timezone)
+    return timestamp.astimezone(user_timezone).strftime('%c')
 %>
 
 <table class="comment-row" border="0" cellpadding="8" cellspacing="0" width="100%" align="center">
@@ -12,7 +13,7 @@
         <td style="line-height: 17px;">
             <span class="person">${User.load(commenter).fullname} </span>
             <span class="text"> commented on your ${nodeType}</span>
-            <span class="timestamp"> at ${localize_timestamp(commenter)}: </span>
+            <span class="timestamp"> at ${localize_timestamp(recipient_id)}: </span>
             <span class="content">"${content}"</span>
         </td>
         <td class="link text-center" width="25">

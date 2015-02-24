@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import collections
 import httplib as http
+import pytz
 
 from flask import request
 from modularodm import Q
@@ -159,7 +160,7 @@ def add_comment(**kwargs):
     notify(uid=target.user._id if is_reply(target) else node._id,
            nodeType=node.project_or_component,
            event="comment_replies" if is_reply(target) else "comments",
-           timestamp=datetime.utcnow(),
+           timestamp=datetime.utcnow().replace(tzinfo=pytz.utc),
            commenter=auth.user._id,
            gravatar_url=auth.user.gravatar_url,
            content=content,

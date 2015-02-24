@@ -77,11 +77,13 @@ def email_transactional(subscribed_user_ids, uid, event, **context):
     """
     template = event + '.html.mako'
     subject = Template(email_templates[event]['subject']).render(**context)
-    message = mails.render_message(template, **context)
 
     for user_id in subscribed_user_ids:
         user = User.load(user_id)
         email = user.username
+        context['recipient_id'] = user._id
+        message = mails.render_message(template, **context)
+
         if context.get('commenter') != user._id:
             mails.send_mail(
                 to_addr=email,
@@ -107,7 +109,6 @@ def email_digest(subscribed_user_ids, uid, event, **context):
         DigestNotification objects created for each subscribed user.
     """
     template = event + '.html.mako'
-    message = mails.render_message(template, **context)
 
     try:
         node = Node.find_one(Q('_id', 'eq', uid))
@@ -118,6 +119,9 @@ def email_digest(subscribed_user_ids, uid, event, **context):
 
     for user_id in subscribed_user_ids:
         user = User.load(user_id)
+        context['recipient_id'] = user._id
+        message = mails.render_message(template, **context)
+
         if context.get('commenter') != user._id:
             digest = DigestNotification(timestamp=context.get('timestamp'),
                                         event=event,
