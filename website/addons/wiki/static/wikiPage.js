@@ -188,7 +188,8 @@ function ViewModel(options){
             paramPrefix = '&';
         }
         var nonDefaultViewVersion = (!self.editVis() && self.viewVersion() !== 'current' ) || (self.editVis() && self.viewVersion() !== 'preview');
-        if (self.viewVis() && ((self.editVis() && self.compareVis()) || nonDefaultViewVersion)) {
+        var viewNoMenu = (!self.editVis() && !self.compareVis() && !self.menuVis());
+        if (self.viewVis() && ((self.editVis() && self.compareVis()) || nonDefaultViewVersion || viewNoMenu)) {
             url += paramPrefix + 'view';
             paramPrefix = '&';
             if (nonDefaultViewVersion) {
