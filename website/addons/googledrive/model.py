@@ -141,7 +141,11 @@ class GoogleDriveNodeSettings(AddonNodeSettingsBase):
     def folder_name(self):
         if not self.folder_id:
             return None
-        return os.path.split(self.folder_path)[1]
+
+        if self.folder_path != '/':
+            return os.path.split(self.folder_path)[1]
+
+        return '/ (Full Google Drive)'
 
     @property
     def has_auth(self):
