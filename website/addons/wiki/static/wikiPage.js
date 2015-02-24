@@ -197,7 +197,7 @@ function ViewModel(options){
 
         // Default view is special cased
         if (!self.editVis() && self.viewVis() && self.viewVersion() === 'current' && !self.compareVis() && self.menuVis()) {
-            history.replaceState({}, '', url);  // jshint ignore: line
+            window.history.replaceState({}, '', url);
             return;
         }
 
