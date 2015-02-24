@@ -15,20 +15,20 @@ require('addons/wiki/static/ace-markdown-snippets.js');
 
 var ctx = window.contextVars.wiki;  // mako context variables
 
-var selectViewVersion = $('#viewVersionSelect');
-var selectCompareVersion = $('#compareVersionSelect');
-
 var editable = (ctx.panelsUsed.indexOf('edit') !== -1);
 var viewable = (ctx.panelsUsed.indexOf('view') !== -1);
 var comparable = (ctx.panelsUsed.indexOf('compare') !== -1);
+
+var viewVersion = ctx.versionSettings.view || (editable ? 'preview' : 'current');
+var compareVersion = ctx.versionSettings.compare || 'previous';
 
 var wikiPageOptions = {
     editVisible: editable,
     viewVisible: viewable,
     compareVisible: comparable,
     canEdit: ctx.canEdit,
-    viewVersion: 'current',
-    compareVersion: 'current',
+    viewVersion: viewVersion,
+    compareVersion: compareVersion,
     urls: ctx.urls,
     metadata: ctx.metadata
 };
@@ -120,27 +120,4 @@ $(document).ready(function () {
         panelExpand.removeClass('col-sm-11').addClass('col-sm-9');
         $('.wiki-nav').hide();
     });
-
-    var options = ctx.viewSettings;
-    var menu = 'menu' in options;
-    var edit = 'edit' in options;
-    var compare = 'compare' in options;
-    var view = 'view' in options;
-    // TODO: toggle menu based on url
-    // TODO: Change version select on toggle
-
-    if (edit) {
-        selectViewVersion.val('preview');
-        selectViewVersion.change();
-    }
-
-    if (compare && parseInt(options.compare) === options.compare) {
-        selectCompareVersion.val(options.compare);
-        selectCompareVersion.change();
-    }
-
-    if (view) {
-        selectViewVersion.val(options.view);
-        selectViewVersion.change();
-    }
 });

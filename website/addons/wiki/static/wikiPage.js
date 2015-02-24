@@ -147,7 +147,7 @@ var defaultOptions = {
     compareVisible: false,
     canEdit: true,
     viewVersion: 'current',
-    compareVersion: 'current',
+    compareVersion: 'previous',
     urls: {
         content: '',
         draft: '',
@@ -180,20 +180,24 @@ function ViewModel(options){
 
     self.currentURL = ko.computed(function() {
         var url = self.pageURL;
+        var paramPrefix = '?';
 
         if (self.editVis()) {
-            url += 'edit/';
+            url += paramPrefix + 'edit';
+            paramPrefix = '&';
         }
-        if (self.viewVis() && ((self.editVis() && self.compareVis()) || (self.viewVersion() !== 'current' && self.viewVersion() !== 'preview'))) {
-            url += 'view/';
-            if(self.viewVersion() !== 'current' && self.viewVersion() !== 'preview'){
-                url += self.viewVersion() + '/';
+        var nonDefaultViewVersion = (!self.editVis() && self.viewVersion() !== 'current' ) || (self.editVis() && self.viewVersion() !== 'preview');
+        if (self.viewVis() && ((self.editVis() && self.compareVis()) || nonDefaultViewVersion)) {
+            url += paramPrefix + 'view';
+            paramPrefix = '&';
+            if (nonDefaultViewVersion) {
+                url += '=' + self.viewVersion();
             }
         }
         if (self.compareVis()) {
-            url += 'compare/';
-            if(self.compareVersion() !== 'current'){
-                url += self.compareVersion() + '/';
+            url += paramPrefix + 'compare';
+            if (self.compareVersion() !== 'previous'){
+                url += '=' + self.compareVersion();
             }
         }
 

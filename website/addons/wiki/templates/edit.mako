@@ -137,11 +137,14 @@
                             <!-- Version Picker -->
                             <select data-bind="value:viewVersion" id="viewVersionSelect" class="pull-right">
                                 % if can_edit:
-                                    <option value="preview">Preview</option>
+                                    <option value="preview" ${'selected' if version_settings['view'] == 'preview' else ''}>Preview</option>
                                 % endif
-                                <option value="current" selected>Current</option>
-                                % for version in versions[1:]:
-                                    <option value="${version['version']}">Version ${version['version']}</option>
+                                <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>Current</option>
+                                % if len(versions) > 1:
+                                    <option value="previous" ${'selected' if version_settings['view'] == 'previous' else ''}>Previous</option>
+                                % endif
+                                % for version in versions[2:]:
+                                    <option value="${version['version']}" ${'selected' if version_settings['view'] == version['version'] else ''}>Version ${version['version']}</option>
                                 % endfor
                             </select>
                         </div>
@@ -162,9 +165,12 @@
                       <div class="col-sm-6">
                             <!-- Version Picker -->
                             <select data-bind="value: compareVersion" id="compareVersionSelect" class="pull-right">
-                                <option value="current">Current</option>
-                                % for version in versions[1:]:
-                                    <option value="${version['version']}">Version ${version['version']}</option>
+                                <option value="current" ${'selected' if version_settings['compare'] == 'current' else ''}>Current</option>
+                                % if len(versions) > 1:
+                                    <option value="previous" ${'selected' if version_settings['compare'] == 'previous' else ''}>Previous</option>
+                                % endif
+                                % for version in versions[2:]:
+                                    <option value="${version['version']}" ${'selected' if version_settings['compare'] == version['version'] else ''}>Version ${version['version']}</option>
                                 % endfor
                             </select>
                       </div>
@@ -296,7 +302,7 @@ ${parent.javascript_bottom()}
         canEdit: canEdit,
         canEditPageName: canEditPageName,
         usePythonRender: ${json.dumps(use_python_render)},
-        viewSettings: ${json.dumps(view_settings) | n},
+        versionSettings: ${json.dumps(version_settings) | n},
         panelsUsed: ${json.dumps(panels_used) | n},
         urls: {
             draft: '${urls['api']['draft']}',
