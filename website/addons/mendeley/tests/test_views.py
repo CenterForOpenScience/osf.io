@@ -26,19 +26,6 @@ from utils import mock_responses
 
 API_URL = 'https://api.mendeley.com'
 
-FOLDER_LIST_JSON = [
-    {
-        "id": "68624820-2f4c-438d-ae54-ae2bc431cee3",
-        "name": "API Related Papers",
-        "created": "2014-04-08T10:11:40.000Z",
-    },
-    {
-        "id": "1cb47377-e3a1-40dd-bd82-11aff83a46eb",
-        "name": "MapReduce",
-        "created": "2014-07-02T13:19:36.000Z",
-    },
-]
-
 class MockNode(object):
 
     addon = None

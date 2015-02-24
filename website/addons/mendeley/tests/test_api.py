@@ -29,7 +29,6 @@ class MendeleyApiTestCase(OsfTestCase):
             'token_type': 'bearer',
         }
 
-
     @mock.patch('website.addons.mendeley.api.MendeleySession.request')
     def test_request_params(self, mock_request):
         """All GET requests to Mendeley should have the param "view=all"
