@@ -196,9 +196,10 @@ def search_share():
     results = {}
 
     is_count = request.args.get('count') is not None
+    raw = request.args.get('raw') is not None
 
     if request.method == 'POST':
-        results = search.count_share(request.get_json()) if is_count else search.search_share(request.get_json())
+        results = search.count_share(request.get_json()) if is_count else search.search_share(request.get_json(), raw)
     elif request.method == 'GET':
         q = request.args.get('q', '*')
         # TODO Match javascript params?
@@ -206,7 +207,7 @@ def search_share():
         size = request.args.get('size', '10')
         sort = request.args.get('sort')
         query = build_query(q, start, size, sort=sort)
-        results = search.count_share(query) if is_count else search.search_share(query)
+        results = search.count_share(query) if is_count else search.search_share(query, raw)
 
     results['time'] = round(time.time() - tick, 2)
     return results
