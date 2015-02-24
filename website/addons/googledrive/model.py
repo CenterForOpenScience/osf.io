@@ -67,10 +67,33 @@ class GoogleDriveUserSettings(AddonUserSettingsBase):
     """Stores user-specific information, including the Oauth access
     token.
     """
-    access_token = fields.StringField(required=False)
-    username = fields.StringField(required=False)
-    refresh_token = fields.StringField(required=False)
-    token_expiry = fields.IntegerField(required=False)
+    username = fields.StringField()
+    _access_token = fields.StringField()
+    refresh_token = fields.StringField()
+    token_expires_at = fields.DateTimeField()
+
+    @property
+    def access_token(self):
+        if self.needs_refresh:
+            self.refresh_token()
+        return self._access_token
+
+    def refresh_token(self):
+        params = {
+            'grant_type': 'refresh_token',
+            'refresh_token': self.refresh_token,
+            'client_id': settings.CLIENT_ID,
+            'client_secret': settings.CLIENT_SECRET,
+        }
+        response = requests.post(settings.REFRESH_ENDPOINT, params=params)
+        json_response = response.json()
+        self._access_token = response['access_token']
+        self.token_expires_at = datetime.fromtimestamp(time.time() + json_response['expires_in'])
+        self.save()
+
+    @property
+    def needs_refresh(self):
+        return (datetime.now() - self.token_expires_at).totalseconds < settings.REFRESH_TIME
 
     @property
     def has_auth(self):
