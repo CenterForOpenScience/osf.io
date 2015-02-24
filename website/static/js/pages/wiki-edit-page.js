@@ -84,7 +84,7 @@ if (ctx.canEditPageName) {
 $(document).ready(function () {
     $('*[data-osf-panel]').osfPanel({
         buttonElement : '.switch',
-        onSize : 'md',
+        onSize : 'xs',
         'onclick' : function (title, thisbtn, event ) {
             // this = all the column elements; an array
             // title = Text of the button
@@ -96,7 +96,7 @@ $(document).ready(function () {
                 thisbtn.hasClass('btn-primary')
             ]);
 
-            if (typeof editor !== 'undefined') { ace.edit(editor).resize(); }
+            if (typeof editor !== 'undefined') { ace.edit(editor).resize(); } // jshint ignore: line
 
         }
     });

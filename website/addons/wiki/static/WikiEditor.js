@@ -16,7 +16,7 @@ require('imports?Markdown=pagedown-ace-converter!pagedown-ace-editor');
 var editor;
 ko.bindingHandlers.ace = {
     init: function (element, valueAccessor) {
-        editor = ace.edit(element.id);
+        editor = ace.edit(element.id);  // jshint ignore: line
 
         // Updates the view model based on changes to the editor
         editor.getSession().on('change', function () {

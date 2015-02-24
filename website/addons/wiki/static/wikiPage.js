@@ -35,6 +35,9 @@ function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathj
     self.allowFullRender = allowFullRender;
     self.renderTimeout = null;
     self.displaySource = ko.observable('');
+    self.debouncedAllowFullRender = $osf.debounce(function() {
+        self.allowFullRender(true);
+    }, THROTTLE);
 
     self.renderMarkdown = function(rawContent){
         if(self.visible()) {
@@ -53,11 +56,7 @@ function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathj
             // Quick render
             self.allowFullRender(false);
             // Full render
-            clearTimeout(self.renderTimeout);
-
-            self.renderTimeout = setTimeout(function () {
-                self.allowFullRender(true);
-            }, THROTTLE);
+            self.debouncedAllowFullRender();
         });
     } else {
         self.allowFullRender(true);
@@ -201,12 +200,12 @@ function ViewModel(options){
             }
         }
 
-        history.replaceState({}, '', url);
+        history.replaceState({}, '', url);  // jshint ignore: line
     });
 
 
     if(self.canEdit) {
-        self.editor = ace.edit('editor');
+        self.editor = ace.edit('editor'); // jshint ignore: line
 
         var ShareJSDoc = require('addons/wiki/static/ShareJSDoc.js');
         self.editVM = new ShareJSDoc(self.draftURL, self.editorMetadata, self.viewText, self.editor);
