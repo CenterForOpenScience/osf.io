@@ -259,29 +259,29 @@ class GoogleDriveNodeSettings(AddonNodeSettingsBase):
             category = node.project_or_component
             name = removed.fullname
             return (u'The Google Drive add-on for this {category} is authenticated by {name}. '
-                    'Removing this user will also remove write access to Dropbox '
+                    'Removing this user will also remove write access to Google Drive '
                     'unless another contributor re-authenticates the add-on.'
                     ).format(**locals())
 
     # backwards compatibility
     before_remove_contributor = before_remove_contributor_message
 
-    def after_register(self, node, registration, user, save=True):
-        """After registering a node, copy the user settings and save the
-        chosen folder.
+    # def after_register(self, node, registration, user, save=True):
+    #     """After registering a node, copy the user settings and save the
+    #     chosen folder.
 
-        :return: A tuple of the form (cloned_settings, message)
-        """
-        clone, message = super(GoogleDriveNodeSettings, self).after_register(
-            node, registration, user, save=False
-        )
-        # Copy user_settings and add registration data
-        if self.has_auth and self.folder is not None:
-            clone.user_settings = self.user_settings
-            clone.registration_data['folder'] = self.folder
-        if save:
-            clone.save()
-        return clone, message
+    #     :return: A tuple of the form (cloned_settings, message)
+    #     """
+    #     clone, message = super(GoogleDriveNodeSettings, self).after_register(
+    #         node, registration, user, save=False
+    #     )
+    #     # Copy user_settings and add registration data
+    #     if self.has_auth and self.folder is not None:
+    #         clone.user_settings = self.user_settings
+    #         clone.registration_data['folder'] = self.folder
+    #     if save:
+    #         clone.save()
+    #     return clone, message
 
     def after_fork(self, node, fork, user, save=True):
         """After forking, copy user settings if the user is the one who authorized
