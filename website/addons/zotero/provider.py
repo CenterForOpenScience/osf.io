@@ -1,6 +1,7 @@
 from website.addons.citations import provider
+
 from .model import AddonZoteroNodeSettings
-from website.addons.citations.utils import serialize_account, serialize_folder
+from website.addons.citations.utils import serialize_account, serialize_folder, serialize_urls
 
 class ZoteroCitationsProvider(provider.CitationsProvider):
 
@@ -17,7 +18,8 @@ class ZoteroCitationsProvider(provider.CitationsProvider):
         return ret
 
     def _serialize_urls(self, node_addon):
-        ret = super(ZoteroCitationsProvider, self)._serialize_urls(node_addon)
+        # collects node_settings and oauth urls
+        ret = serialize_urls(node_addon)
 
         node = node_addon.owner
 
@@ -36,12 +38,6 @@ class ZoteroCitationsProvider(provider.CitationsProvider):
         ret.update(specific)
         return ret
 
-    def set_config(self, node_addon, user, external_account_id, external_list_id):
-
-        node_addon.set_target_folder(external_list_id)
-
-        return {}
-
     def widget(self, node_addon):
 
         ret = super(ZoteroCitationsProvider, self).widget(node_addon)
@@ -49,12 +45,6 @@ class ZoteroCitationsProvider(provider.CitationsProvider):
             'list_id': node_addon.zotero_list_id
         })
         return ret
-
-    def remove_user_auth(self, node_addon, user):
-
-        return super(ZoteroCitationsProvider, self).remove_user_auth(
-            node_addon, user
-        )
 
     def _extract_folder(self, data):
         return serialize_folder(
@@ -76,10 +66,6 @@ class ZoteroCitationsProvider(provider.CitationsProvider):
                     zotero_list_id=folder['id']),
             },
         }
-
-    def _serialize_citation(self, citation):
-
-        return super(ZoteroCitationsProvider, self)._serialize_citation(citation)
 
     def _folder_id(self, node_addon):
 

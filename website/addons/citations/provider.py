@@ -6,7 +6,6 @@ from framework.exceptions import PermissionsError
 
 from website.oauth.models import ExternalAccount
 
-from website.util import api_url_for, web_url_for
 from . import utils
 
 class CitationsProvider(object):
@@ -19,19 +18,8 @@ class CitationsProvider(object):
 
     @abc.abstractmethod
     def _serialize_urls(self, node_addon):
-        """Collects and serializes urls needed for AJAX calls"""
 
-        external_account = node_addon.external_account
-        ret = {
-            'auth': api_url_for('oauth_connect',
-                                service_name=self.provider_name),
-            'settings': web_url_for('user_addons'),
-            'files': node_addon.owner.url
-        }
-        if external_account and external_account.profile_url:
-            ret['owner'] = external_account.profile_url
-
-        return ret
+        return {}
 
     @abc.abstractmethod
     def _serialize_model(self, node_addon, user):
@@ -83,26 +71,10 @@ class CitationsProvider(object):
             ]
         }
 
-    def set_config(self, node_addon, user, external_account_id, external_list_id):
+    def set_config(self, node_addon, user, external_list_id):
         # Ensure request has all required information
-        try:
-            external_account = ExternalAccount.load(external_account_id)
-        except KeyError:
-            raise HTTPError(http.BAD_REQUEST)
 
-        # User is an owner of this ExternalAccount
-        if external_account in user.external_accounts:
-            # grant access to the node for the Provider list
-            node_addon.grant_oauth_access(
-                user=user,
-                external_account=external_account,
-                metadata={'lists': external_list_id},
-            )
-        else:
-            # Make sure the node has previously been granted access
-            if not node_addon.verify_oauth_access(external_account, external_list_id):
-                raise HTTPError(http.FORBIDDEN)
-        return external_account
+        node_addon.set_target_folder(external_list_id)        
 
     def add_user_auth(self, node_addon, user, external_account_id):
 
@@ -119,7 +91,6 @@ class CitationsProvider(object):
         result = self.serialize_settings(node_addon, user)
         return {'result': result}
 
-    @abc.abstractmethod
     def remove_user_auth(self, node_addon, user):
 
         node_addon.clear_auth()
@@ -144,7 +115,6 @@ class CitationsProvider(object):
 
         return {}
 
-    @abc.abstractmethod
     def _serialize_citation(self, citation):
 
         return {

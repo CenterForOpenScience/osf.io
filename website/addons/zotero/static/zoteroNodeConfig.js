@@ -1,3 +1,5 @@
+'use strict';
+
 var $osf = require('osfHelpers');
 var ViewModel = require('../../../static/js/citationsFolderPickerViewModel');
 

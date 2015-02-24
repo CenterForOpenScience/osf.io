@@ -6,9 +6,8 @@ window.contextVars = $.extend(true, {}, window.contextVars, {
     }
 });
 </script>
-<link rel="stylesheet" href="/static/addons/mendeley/citations_widget.css">
-<div class="citation-picker" style="padding-bottom: 6px;">
-    <input id="mendeleyStyleSelect" type="hidden" />
+<div class="citation-picker">
+    <input id="citationStyleSelect" type="hidden" />
 </div>
 <div id="mendeleyWidget" class="citation-widget">
 </div>

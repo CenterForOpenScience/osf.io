@@ -6,9 +6,8 @@ window.contextVars = $.extend(true, {}, window.contextVars, {
     }
 });
 </script>
-<link rel="stylesheet" href="/static/addons/zotero/citations_widget.css">
-<div class="citation-picker" style="padding-bottom: 6px;">
-    <input id="zoteroStyleSelect" type="hidden" />
+<div class="citation-picker">
+    <input id="citationStyleSelect" type="hidden" />
 </div>
 <div id="zoteroWidget" class="citation-widget">
 </div>
