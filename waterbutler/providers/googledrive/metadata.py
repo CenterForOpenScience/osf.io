@@ -10,7 +10,7 @@ class BaseGoogleDriveMetadata(metadata.BaseMetadata):
 
     @property
     def provider(self):
-        return 'gdrive'
+        return 'googledrive'
 
     @property
     def extra(self):
