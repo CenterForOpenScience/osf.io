@@ -392,6 +392,7 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
             users.append({
                 'fullname': doc['user'],
                 'id': doc['id'],
+                'names':doc['names'],
                 'employment': current_employment,
                 'education': education,
                 'n_projects_in_common': n_projects_in_common,

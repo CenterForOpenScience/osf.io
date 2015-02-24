@@ -46,7 +46,7 @@
                     <!-- Choose which to add -->
                     <div class="row">
 
-                        <div class="col-md-6">
+                        <div class="col-md-5">
                             <div>
                                 <span class="modal-subheader">Results</span>
                                 <a data-bind="click:addAll">Add all</a>
@@ -72,7 +72,10 @@
                                         </td>
                                         <td >
                                             <a data-bind = "attr: {href: contributor.profile_url}" target="_blank">
-                                                <span data-bind= "text:contributor.fullname"></span>
+                                                <span data-bind= "text:contributor.fullname,
+                                                style: { word-break: contributor.names.given_name.length
+                                                || contributor.names.middle_name.length
+                                                || contributor.names.family_name.length> 18 ? 'break-all':'normal'}"></span>
                                             </a><br>
 
 
@@ -123,7 +126,7 @@
                             </div>
                         </div><!-- ./col-md -->
 
-                        <div class="col-md-6">
+                        <div class="col-md-7">
                             <div>
                                 <span class="modal-subheader">Adding</span>
                                 <a data-bind="click:removeAll">Remove all</a>
@@ -158,7 +161,10 @@
                                         </td>
 
                                         <td>
-                                            <span   data-bind="text: contributor.fullname"></span>
+                                            <span   data-bind="text: contributor.fullname,
+                                            style: { word-break: contributor.names.given_name.length
+                                            || contributor.names.middle_name.length
+                                            || contributor.names.family_name.length> 18 ? 'break-all':'normal'}"></span>
 
                                             <span
                                                     class='text-muted'
