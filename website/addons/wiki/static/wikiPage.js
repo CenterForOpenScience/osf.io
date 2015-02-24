@@ -240,10 +240,3 @@ var WikiPage = function(selector, options) {
 
 module.exports = WikiPage;
 
-//self.ButtonController = {
-//        view.onClick = function () {
-//        // logic...
-//        $(this).trigger('editEnabled')
-//    };
-
-
