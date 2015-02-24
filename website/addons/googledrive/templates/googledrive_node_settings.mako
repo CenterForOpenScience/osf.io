@@ -33,13 +33,12 @@
        <p>
 
         <strong> Current folder:</strong>
-        <a data-bind="attr.href: urls().files">
-            <span data-bind = "text:currentFolder"> None </span>
-        </a>
+        <a href="{{ urls().files }}" data-bind="if: currentFolder">{{ currentFolder }}</a>
+        <span class="text-muted" data-bind="ifnot: currentFolder">None</span>
        </p>
 
         <div class="btn-group" >
-        <button data-bind="click:changeFolder" class="btn btn-sm btn-googledrive"> Change Folder</button>
+          <button data-bind="click:changeFolder" class="btn btn-sm btn-default"> Change Folder</button>
         </div>
 
         <!-- Google Drive Treebeard -->

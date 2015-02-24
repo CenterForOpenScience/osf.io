@@ -27,7 +27,7 @@
     "slickgrid": "~2.1.0",
     "reconnectingWebsocket": "#07669519f8",
     "dropzone": "https://github.com/sloria/dropzone.git#accept-directory",
-    "treebeard": "https://github.com/caneruguz/treebeard.git#4112b22be4333c9fce35249131632b6b2a37bb87",
+    "treebeard": "https://github.com/caneruguz/treebeard.git#ae7451090de14e82f77bb1550b4abdc2cd21d404",
     "jquery.cookie": "~1.4.1",
     "hgrid": "~0.2.10",
     "uri.js": "~1.14.1",

@@ -24,7 +24,8 @@ class GoogleDriveGuidFile(GuidFile):
 
     @property
     def waterbutler_path(self):
-        return self.path
+        return self.path.replace(self.folder, '', 1)
+        # return '/' + self.path.replace(self.folder, '', 1).lstrip('/')
 
     @property
     def provider(self):
@@ -42,7 +43,10 @@ class GoogleDriveGuidFile(GuidFile):
 
     @property
     def folder(self):
-        return self.node.get_addon('googledrive').folder_path
+        folder = self.node.get_addon('googledrive').folder_path
+        if folder == '/':
+            return ''
+        return '/' + folder
 
     @property
     def unique_identifier(self):
@@ -102,7 +106,7 @@ class GoogleDriveUserSettings(AddonUserSettingsBase):
     def needs_refresh(self):
         if self.token_expires_at is None:
             return False
-        return (datetime.utcnow() - self.token_expires_at).seconds < settings.REFRESH_TIME
+        return (self.token_expires_at - datetime.utcnow()).seconds < settings.REFRESH_TIME
 
     @property
     def has_auth(self):
@@ -136,7 +140,11 @@ class GoogleDriveNodeSettings(AddonNodeSettingsBase):
     def folder_name(self):
         if not self.folder_id:
             return None
-        return os.path.split(self.folder_path)[1]
+
+        if self.folder_path != '/':
+            return os.path.split(self.folder_path)[1]
+
+        return '/ (Full Google Drive)'
 
     @property
     def has_auth(self):
@@ -203,7 +211,7 @@ class GoogleDriveNodeSettings(AddonNodeSettingsBase):
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
                 'path': metadata['path'],
-                'folder': self.folder,
+                'folder': self.folder_path,
 
                 'urls': {
                     'view': url,
@@ -213,6 +221,10 @@ class GoogleDriveNodeSettings(AddonNodeSettingsBase):
         )
 
     def find_or_create_file_guid(self, path):
+        path = os.path.join(self.folder_path, path.lstrip('/'))
+        if self.folder_path != '/':
+            path = '/' + path
+
         return GoogleDriveGuidFile.get_or_create(self.owner, path)
 
     # #### Callback overrides #####
@@ -265,22 +277,22 @@ class GoogleDriveNodeSettings(AddonNodeSettingsBase):
     # backwards compatibility
     before_remove_contributor = before_remove_contributor_message
 
-    def after_register(self, node, registration, user, save=True):
-        """After registering a node, copy the user settings and save the
-        chosen folder.
+    # def after_register(self, node, registration, user, save=True):
+    #     """After registering a node, copy the user settings and save the
+    #     chosen folder.
 
-        :return: A tuple of the form (cloned_settings, message)
-        """
-        clone, message = super(GoogleDriveNodeSettings, self).after_register(
-            node, registration, user, save=False
-        )
-        # Copy user_settings and add registration data
-        if self.has_auth and self.folder is not None:
-            clone.user_settings = self.user_settings
-            clone.registration_data['folder'] = self.folder
-        if save:
-            clone.save()
-        return clone, message
+    #     :return: A tuple of the form (cloned_settings, message)
+    #     """
+    #     clone, message = super(GoogleDriveNodeSettings, self).after_register(
+    #         node, registration, user, save=False
+    #     )
+    #     # Copy user_settings and add registration data
+    #     if self.has_auth and self.folder is not None:
+    #         clone.user_settings = self.user_settings
+    #         clone.registration_data['folder'] = self.folder
+    #     if save:
+    #         clone.save()
+    #     return clone, message
 
     def after_fork(self, node, fork, user, save=True):
         """After forking, copy user settings if the user is the one who authorized
