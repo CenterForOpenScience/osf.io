@@ -320,8 +320,8 @@ class User(GuidStoredObject, AddonModelMixin):
     # }
     comments_viewed_timestamp = fields.DictionaryField()
 
-    # timezone offset from utc in minutes for user's locale
-    timezone_offset = fields.IntegerField(default=0)
+    # timezone for user's locale (e.g. 'America/New_York')
+    timezone = fields.StringField(default='Etc/UTC')
 
     _meta = {'optimistic': True}
 

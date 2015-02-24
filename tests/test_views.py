@@ -3510,12 +3510,12 @@ class TestDashboardViews(OsfTestCase):
         assert_true(found_item, "Did not find the folder in the dashboard.")
 
     def test_update_user_timezone_offset(self):
-        assert_equal(self.creator.timezone_offset, 0)
-        payload = {'timezoneOffset': 300}
+        assert_equal(self.creator.timezone, 'Etc/UTC')
+        payload = {'timezone': 'America/New_York'}
         url = api_url_for('update_user', uid=self.creator._id)
         self.app.put_json(url, payload, auth=self.creator.auth)
         self.creator.reload()
-        assert_equal(self.creator.timezone_offset, 300)
+        assert_equal(self.creator.timezone, 'America/New_York')
 
 
 class TestWikiWidgetViews(OsfTestCase):

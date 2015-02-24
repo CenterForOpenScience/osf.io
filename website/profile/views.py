@@ -77,8 +77,8 @@ def date_or_none(date):
 def update_user(uid, auth):
     user = User.load(uid)
     data = request.get_json()
-    timezone_offset = data.get('timezoneOffset')
-    user.timezone_offset = timezone_offset
+    timezone = data.get('timezone')
+    user.timezone = timezone
     update_fields = user.save()
 
     return update_fields, 200
