@@ -1,7 +1,3 @@
-import httplib as http
-
-from framework.exceptions import HTTPError
-
 from website.addons.citations import provider
 from .model import AddonMendeleyNodeSettings
 from website.addons.citations.utils import serialize_account, serialize_folder
@@ -40,12 +36,6 @@ class MendeleyCitationsProvider(provider.CitationsProvider):
         ret.update(specific)
         return ret
 
-    def set_config(self, node_addon, user, external_account_id, external_list_id):
-
-        node_addon.set_target_folder(external_list_id)
-
-        return {}
-
     def widget(self, node_addon):
 
         ret = super(MendeleyCitationsProvider, self).widget(node_addon)
@@ -53,12 +43,6 @@ class MendeleyCitationsProvider(provider.CitationsProvider):
             'list_id': node_addon.mendeley_list_id
         })
         return ret
-
-    def remove_user_auth(self, node_addon, user):
-
-        return super(MendeleyCitationsProvider, self).remove_user_auth(
-            node_addon, user
-        )
 
     def _extract_folder(self, data):
         return serialize_folder(
@@ -80,10 +64,6 @@ class MendeleyCitationsProvider(provider.CitationsProvider):
                     mendeley_list_id=folder['id']),
             },
         }
-
-    def _serialize_citation(self, citation):
-
-        return super(MendeleyCitationsProvider, self)._serialize_citation(citation)
 
     def _folder_id(self, node_addon):
 

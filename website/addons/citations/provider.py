@@ -102,6 +102,8 @@ class CitationsProvider(object):
             # Make sure the node has previously been granted access
             if not node_addon.verify_oauth_access(external_account, external_list_id):
                 raise HTTPError(http.FORBIDDEN)
+
+        node_addon.set_target_folder(external_list_id)
         return external_account
 
     def add_user_auth(self, node_addon, user, external_account_id):
@@ -119,7 +121,6 @@ class CitationsProvider(object):
         result = self.serialize_settings(node_addon, user)
         return {'result': result}
 
-    @abc.abstractmethod
     def remove_user_auth(self, node_addon, user):
 
         node_addon.clear_auth()
@@ -144,7 +145,6 @@ class CitationsProvider(object):
 
         return {}
 
-    @abc.abstractmethod
     def _serialize_citation(self, citation):
 
         return {
