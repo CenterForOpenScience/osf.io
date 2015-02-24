@@ -112,6 +112,8 @@ class BoxProvider(provider.BaseProvider):
         return ret
 
     def _assert_child(self, paths, target=None):
+        if self.folder == 0:
+            return True
         if target == self.folder:
             return True
         if not paths:
@@ -152,7 +154,6 @@ class BoxProvider(provider.BaseProvider):
     def _get_folder_meta(self, path, raw=False):
         if str(path) == '/':
             path = BoxPath('/{}/'.format(self.folder))
-
         yield from self._assert_child_folder(path)
 
         response = yield from self.make_request(
