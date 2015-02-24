@@ -25,15 +25,16 @@ var ViewModel = function(url) {
     self.messageClass = ko.observable('text-info');
 
     $.ajax({
-        url: url, type: 'GET', dataType: 'json',
-        success: function(response) {
+        url: url, type: 'GET', dataType: 'json'
+        }).
+        done(function(response) {
             var data =response.result;
             self.userHasAuth(data.userHasAuth);
             self.username(data.username)
             self.urls(data.urls);
             self.loaded(true);
-        },
-        error: function(xhr, textStatus, error){
+        }).
+        fail(function(xhr, textStatus, error){
             self.changeMessage(
                 'Could not retrieve settings. Please refresh the page or ' +
                 'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
@@ -44,8 +45,9 @@ var ViewModel = function(url) {
                 textStatus: textStatus,
                 error: error
             });
-        }
     });
+
+
 
     /** Change the flashed status message */
     self.changeMessage = function(text, css, timeout) {
@@ -91,13 +93,14 @@ var ViewModel = function(url) {
     function sendDeauth() {
         return $.ajax({
             url: self.urls().delete,
-            type: 'DELETE',
-            success: function() {
+            type: 'DELETE'
+            }).
+            done(function() {
                 window.location.reload();
                 self.changeMessage(language.deauthSuccess, 'text-info', 5000);
 
-            },
-            error: function(textStatus, error) {
+            }).
+            fail(function(textStatus, error) {
                 self.changeMessage(language.deauthError, 'text-danger');
                 Raven.captureMessage('Could not deauthorize Google Drive.', {
                     url: url,
@@ -105,7 +108,7 @@ var ViewModel = function(url) {
                     error: error
                 });
             }
-        });
+        );
     }
 };
 

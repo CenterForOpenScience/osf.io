@@ -22,7 +22,7 @@
 
         <!-- Oauth Start Button -->
         <span data-bind="if: showTokenCreateButton">
-            <a data-bind="click: createAuth" class="text-primary pull-right addon-auth">
+            <a data-bind="click: createAuth" class="pull-right addon-auth">
                 Create Access Token
             </a>
         </span>
@@ -31,17 +31,15 @@
 
     <div id="currentFolder" data-bind="if:showFolders()">
        <p>
-
         <strong> Current folder:</strong>
            <!--ko if : currentFolder!=null-->
         <a data-bind="attr.href: urls().files">
-            <span data-bind = "text:currentFolder"> None </span>
+            <span data-bind = "text:currentFolder"> </span>
         </a>
            <!--/ko-->
-            <!--ko ifnot : currentFolder!=null-->
+            <!--ko if : currentFolder()===null-->
                 None
            <!--/ko-->
-           None
        </p>
 
         <div class="btn-group" >
@@ -53,8 +51,6 @@
                     Loading folders...</p>
         <div id="myGoogleDriveGrid"
              class="filebrowser hgrid dropbox-folder-picker">
-
-
         </div>
 
         <!-- Queued selection -->
@@ -83,7 +79,7 @@
 
     <!-- Flashed Messages -->
     <div class="help-block">
-        <p data-bind="html: message"></p>
+        <p data-bind="html: message, attr.class: messageClass"></p>
     </div>
 
 </div> <!-- End of googleDriveAddonScope -->

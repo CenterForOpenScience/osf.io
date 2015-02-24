@@ -3,8 +3,7 @@ import httplib as http
 
 from flask import request
 
-from framework.auth.core import _get_current_user
-from framework.auth.decorators import must_be_logged_in
+from framework.auth.decorators import must_be_logged_in, collect_auth
 
 from website.project.decorators import (
     must_have_permission,
@@ -17,12 +16,12 @@ from website.util import permissions
 
 from ..utils import serialize_settings, serialize_urls
 
-
-@must_have_addon('googledrive', 'node')
+@collect_auth
+@must_have_addon('googledrive','node')
 @must_have_permission(permissions.WRITE)
-def googledrive_config_get(node_addon, **kwargs):
+def googledrive_config_get(node_addon, auth, **kwargs):
     """API that returns the serialized node settings."""
-    user = _get_current_user()
+    user = auth.user
     return {
         'result': serialize_settings(node_addon, user),
     }, http.OK
@@ -35,7 +34,7 @@ def googledrive_config_get(node_addon, **kwargs):
 @must_be_addon_authorizer('googledrive')
 def googledrive_config_put(node_addon, user_addon, auth, **kwargs):
     """View for changing a node's linked Google Drive folder/file."""
-    selected = request.json.get('selected')
+    selected = request.get_json()['selected']
     node_addon.set_folder(selected, auth=auth)
     node_addon.save()
     return {

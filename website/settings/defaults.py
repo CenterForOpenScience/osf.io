@@ -48,7 +48,7 @@ CONFIRM_REGISTRATIONS_BY_EMAIL = True
 ALLOW_REGISTRATION = True
 ALLOW_LOGIN = True
 
-SEARCH_ENGINE = None  # Can be 'elastic', or None
+SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
 ELASTIC_URI = 'localhost:9200'
 ELASTIC_TIMEOUT = 10
 SHARE_ELASTIC_URI = ELASTIC_URI
