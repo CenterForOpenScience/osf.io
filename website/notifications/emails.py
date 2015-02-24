@@ -1,3 +1,4 @@
+import pytz
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from model import Subscription, DigestNotification
@@ -81,7 +82,7 @@ def email_transactional(subscribed_user_ids, uid, event, **context):
     for user_id in subscribed_user_ids:
         user = User.load(user_id)
         email = user.username
-        context['recipient_id'] = user._id
+        context['localized_timestamp'] = localize_timestamp(context.get('timestamp'), user)
         message = mails.render_message(template, **context)
 
         if context.get('commenter') != user._id:
@@ -95,13 +96,6 @@ def email_transactional(subscribed_user_ids, uid, event, **context):
                 message=message,
                 url=get_settings_url(uid, user)
             )
-
-
-def get_settings_url(uid, user):
-    if uid == user._id:
-        return web_url_for('user_notifications', _absolute=True)
-    else:
-        return Node.load(uid).absolute_url + 'settings/'
 
 
 def email_digest(subscribed_user_ids, uid, event, **context):
@@ -119,7 +113,7 @@ def email_digest(subscribed_user_ids, uid, event, **context):
 
     for user_id in subscribed_user_ids:
         user = User.load(user_id)
-        context['recipient_id'] = user._id
+        context['localized_timestamp'] = localize_timestamp(context.get('timestamp'), user)
         message = mails.render_message(template, **context)
 
         if context.get('commenter') != user._id:
@@ -142,6 +136,19 @@ def get_node_lineage(node, node_lineage):
             get_node_lineage(n, node_lineage)
 
     return node_lineage
+
+
+def get_settings_url(uid, user):
+    if uid == user._id:
+        return web_url_for('user_notifications', _absolute=True)
+    else:
+        return Node.load(uid).absolute_url + 'settings/'
+
+
+def localize_timestamp(timestamp, user):
+    user_timezone = pytz.timezone(user.timezone)
+    return timestamp.astimezone(user_timezone).strftime('%c')
+
 
 notifications = {
     'email_transactional': email_transactional,

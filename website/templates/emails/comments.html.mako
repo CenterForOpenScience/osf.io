@@ -1,11 +1,4 @@
 <% from website.models import User %>
-<% import pytz %>
-<% from pytz import timezone as tz%>
-
-<% def localize_timestamp(user_id):
-    user_timezone = tz(User.load(user_id).timezone)
-    return timestamp.astimezone(user_timezone).strftime('%c')
-%>
 
 <table class="comment-row" border="0" cellpadding="8" cellspacing="0" width="100%" align="center">
     <tr>
@@ -13,7 +6,7 @@
         <td style="line-height: 17px;">
             <span class="person">${User.load(commenter).fullname} </span>
             <span class="text"> commented on your ${nodeType}</span>
-            <span class="timestamp"> at ${localize_timestamp(recipient_id)}: </span>
+            <span class="timestamp"> at ${localized_timestamp}: </span>
             <span class="content">"${content}"</span>
         </td>
         <td class="link text-center" width="25">

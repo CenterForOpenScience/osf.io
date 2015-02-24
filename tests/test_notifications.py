@@ -617,7 +617,7 @@ class TestSendEmails(OsfTestCase):
     def test_send_email_transactional(self, send_mail):
         # assert that send_mail is called with the correct person & args
         subscribed_users = [self.user._id]
-        timestamp = (datetime.datetime.utcnow().replace(tzinfo=pytz.utc))
+        timestamp = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
 
         emails.email_transactional(
             subscribed_users, self.project._id, 'comments',
@@ -649,7 +649,7 @@ class TestSendEmails(OsfTestCase):
             parent_comment='',
             title=self.project.title,
             url=self.project.absolute_url,
-            recipient_id=self.user._id)
+            localized_timestamp=emails.localize_timestamp(timestamp, self.user))
 
         assert_true(send_mail.called)
         send_mail.assert_called_with(
@@ -706,3 +706,11 @@ class TestSendEmails(OsfTestCase):
     def test_get_node_lineage(self):
         node_lineage = emails.get_node_lineage(self.node, [])
         assert_equal(node_lineage, [self.node._id, self.project._id])
+
+    def test_localize_timestamp(self):
+        timestamp = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
+        self.user.timezone = "America/New_York"
+        self.user.save()
+        localized_timestamp = emails.localize_timestamp(timestamp, self.user)
+        expected_timestamp = timestamp.astimezone(pytz.timezone(self.user.timezone)).strftime('%c')
+        assert_equal(localized_timestamp, expected_timestamp)
