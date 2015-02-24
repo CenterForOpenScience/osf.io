@@ -1,10 +1,10 @@
 /**
- * Sign in view model
+ * Sign in view model used for login components
  */
 'use strict';
 
 var ko = require('knockout');
-require('knockout-validation');
+require('knockout-validation').init({insertMessages: false});  // override default DOM insertions
 var $ = require('jquery');
 
 var $osf = require('osfHelpers');
@@ -30,9 +30,21 @@ var ViewModel = function() {
     self.submit = function() {
         // Show errors if invalid
         if (!self.isValid()) {
-            var errors = ko.validation.group(self);
-            errors.showAllMessages();
-            return false;
+            if (!self.username.isValid()) {
+                $osf.growl(
+                    'Signin Error',
+                    'Please enter a correct email address.',
+                    'danger'
+                );
+            }
+            if (!self.password.isValid()) {
+                $osf.growl(
+                    'Signin Error',
+                    'Your password must be more than six characters.',
+                    'danger'
+                );
+            }
+            return false; // Stop form submission
         } else {
             return true;  // Allow form to submit normally
         }
