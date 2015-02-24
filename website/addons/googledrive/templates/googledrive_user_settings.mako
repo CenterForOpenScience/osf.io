@@ -1,6 +1,6 @@
 
 
-<div id="driveAddonScope"class="addon-settings scripted">
+<div id="googleDriveAddonScope" class="addon-settings scripted">
 <h4 class="addon-title">
     Google Drive
     <small>

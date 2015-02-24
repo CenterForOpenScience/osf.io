@@ -9,6 +9,6 @@
         "s3",
         "twofactor",
         "wiki",
-        "gdrive"
+        "googledrive"
     ]
 }

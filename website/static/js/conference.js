@@ -23,7 +23,7 @@ function Meeting(data) {
                 },
                 {
                     title: "Author",
-                    width : "25%",
+                    width : "20%",
                     sortType : "text",
                     sort : true
 
@@ -35,7 +35,7 @@ function Meeting(data) {
                 },
                 {
                     title: "Downloads",
-                    width : "10%",
+                    width : "15%",
                     sort : false
                 }
             ]},            
