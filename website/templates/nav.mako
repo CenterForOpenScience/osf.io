@@ -95,8 +95,8 @@
                     </form>
                 </li>
                 <li>
-                    <!-- @todo(hrybacki): make this use web_url_for -->
-                    <a href="#"><span class="navbar-nav navbar-mid">Forgot Password?</span></a>
+                    ## TODO(hrybacki) -- Create a 'GET' endpoint for forgotpassword -- only 'POST' currently exists
+                    <a href="${web_url_for('auth_login')}"><span class="navbar-nav navbar-mid">Forgot Password?</span></a>
                 </li>
                 % endif
             </ul><!-- end nav navbar-nav navbar-right -->
