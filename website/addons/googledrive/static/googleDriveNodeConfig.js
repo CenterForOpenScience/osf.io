@@ -28,9 +28,6 @@ var ViewModel = function(url, selector, folderPicker) {
     // whether current user is authorizer of the addon
     self.userIsOwner = ko.observable(false);
 
-    //Api key required for Google picker
-    self.access_token = ko.observable();
-
     self.owner = ko.observable();
     self.ownerName = ko.observable();
     self.urls = ko.observable({});
@@ -59,7 +56,6 @@ var ViewModel = function(url, selector, folderPicker) {
         self.urls(response.result.urls);
         self.ownerName(response.result.ownerName);
         self.owner(response.result.urls.owner);
-        self.access_token (response.result.access_token);
         self.currentFolder(response.result.currentFolder);
 
         self.loadedSettings(true);
