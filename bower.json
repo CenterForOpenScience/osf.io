@@ -10,6 +10,7 @@
     "ace-builds": "~1.1.8",
     "qunit": "~1.14.0",
     "sinon": "~1.10.2",
+    "select2": "~3.5.1",
     "jquery-mockjax": "1.5.3",
     "raven-js": "~1.1.16",
     "sinon-qunit": "~1.0.0",
@@ -35,9 +36,8 @@
     "osf-panel": "https://github.com/caneruguz/osf-panel.git#develop",
     "markdown-it": "~3.0.5",
     "markdown-it-sanitizer": "~0.2.0",
-    "markdown-it-video": "https://github.com/brianjgeiger/markdown-it-video.git#b8b1cccb505a6773c30f8919a31b34092bac8e60",
+    "markdown-it-video": "https://github.com/brianjgeiger/markdown-it-video.git#5e11e87929fcb90e733d28b825d5fdbdd21a55c0",
     "markdown-it-toc": "https://github.com/samchrisinger/markdown-it-toc.git#8c7fb8bfd25ba8b4fadd12aceb923f3066899743",
-    "jsdiff": "~1.2.2",
     "styles": "https://github.com/lyndsysimon/styles.git#4db9c8e2f5932cad9f23ad3579d1a82c691faf12",
     "locales": "https://github.com/citation-style-language/locales.git#d2b612f8a6f764cbd66e67238636fac3888a7736",
     "c3": "~0.4.9"

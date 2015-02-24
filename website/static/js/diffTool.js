@@ -1,4 +1,4 @@
-var jsdiff = require('jsdiff');
+var jsdiff = require('diff');
 
 // Taken from diff.js
 function removeEmpty(array) {
@@ -18,6 +18,8 @@ wikiDiff.tokenize = function (value) {
 };
 
 var diff = function(beforeText, afterText) {
+    beforeText = beforeText.replace(/(?:\r\n|\r|\n)/g, '\n');
+    afterText = afterText.replace(/(?:\r\n|\r|\n)/g, '\n');
     var diffList = wikiDiff.diff(beforeText, afterText);
     var fragment = document.createDocumentFragment();
 

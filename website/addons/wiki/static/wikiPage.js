@@ -6,7 +6,7 @@ var $osf = require('osfHelpers');
 var mathrender = require('mathrender');
 var md = require('markdown').full;
 var mdQuick = require('markdown').quick;
-var diffTool = require('wikiDiff');
+var diffTool = require('diffTool');
 
 var THROTTLE = 500;
 
@@ -35,12 +35,19 @@ function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathj
     self.allowFullRender = allowFullRender;
     self.renderTimeout = null;
     self.displaySource = ko.observable('');
+    self.throttledAllowFullRender = $osf.debounce(function() {
+        self.allowFullRender(true);
+    }, THROTTLE);
 
     self.renderMarkdown = function(rawContent){
-        if(self.allowFullRender()) {
-            return md.render(rawContent);
+        if(self.visible()) {
+            if (self.allowFullRender()) {
+                return md.render(rawContent);
+            } else {
+                return mdQuick.render(rawContent);
+            }
         } else {
-            return mdQuick.render(rawContent);
+            return '';
         }
     };
 
@@ -49,11 +56,7 @@ function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathj
             // Quick render
             self.allowFullRender(false);
             // Full render
-            clearTimeout(self.renderTimeout);
-
-            self.renderTimeout = setTimeout(function () {
-                self.allowFullRender(true);
-            }, THROTTLE);
+            self.throttledAllowFullRender();
         });
     } else {
         self.allowFullRender(true);
@@ -235,11 +238,4 @@ var WikiPage = function(selector, options) {
 };
 
 module.exports = WikiPage;
-
-//self.ButtonController = {
-//        view.onClick = function () {
-//        // logic...
-//        $(this).trigger('editEnabled')
-//    };
-
 
