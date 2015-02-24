@@ -33,9 +33,15 @@
        <p>
 
         <strong> Current folder:</strong>
+           <!--ko if : currentFolder!=null-->
         <a data-bind="attr.href: urls().files">
             <span data-bind = "text:currentFolder"> None </span>
         </a>
+           <!--/ko-->
+            <!--ko ifnot : currentFolder!=null-->
+                None
+           <!--/ko-->
+           None
        </p>
 
         <div class="btn-group" >

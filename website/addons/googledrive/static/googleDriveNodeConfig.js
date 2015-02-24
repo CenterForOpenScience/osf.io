@@ -62,9 +62,9 @@ var ViewModel = function(url, selector, folderPicker) {
         self.access_token (response.result.access_token);
         self.currentFolder(response.result.currentFolder);
 
-        if (self.currentFolder() == null) {
-            self.currentFolder('None');
-        }
+        //if (self.currentFolder() == null) {
+        //    self.currentFolder(null);
+        //}
         self.loadedSettings(true);
     }
 
@@ -198,11 +198,15 @@ var ViewModel = function(url, selector, folderPicker) {
      */
     function onPickFolder(evt, item) {
         evt.preventDefault();
+
         self.selected({
             id: item.data.id,
             name: 'Google Drive/' + item.data.path,
             path: item.data.path
         });
+
+        self.currentFolder(self.selected().name);
+        console.log(self.selected().name);
         return false; // Prevent event propagation
     }
 
