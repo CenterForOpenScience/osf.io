@@ -8,7 +8,6 @@ from oauth2client.client import AccessTokenCredentials
 
 from website.util import rubeus
 from website.util import permissions
-from website.project.model import Node
 from website.project.decorators import (
     must_have_addon,
     must_have_permission,
@@ -16,38 +15,38 @@ from website.project.decorators import (
     must_be_addon_authorizer,
 )
 
-from ..utils import to_hgrid, check_access_token
+from website.addons.googledrive.utils import to_hgrid
+from website.addons.googledrive.utils import check_access_token
 
 
-@must_have_permission(permissions.WRITE)
 @must_not_be_registration
 @must_have_addon('googledrive', 'user')
 @must_have_addon('googledrive', 'node')
+@must_have_permission(permissions.WRITE)
 @must_be_addon_authorizer('googledrive')
 def googledrive_folders(node_addon, **kwargs):
     """ Returns all the subsequent folders under the folder id passed """
-    node_owner = node_addon.owner
-    nid = kwargs.get('nid') or kwargs.get('pid')
-    node = Node.load(nid)
-    node_settings = node.get_addon('googledrive')
+    node = kwargs.get('node') or kwargs['project']
 
     # Get service using Access token
-    if node_settings:
-        user_settings = node_settings.user_settings
-        check_access_token(user_settings)
-        # Get service using oauth client
-        http_service = httplib2.Http()
-        credentials = AccessTokenCredentials(user_settings.access_token, request.headers.get('User-Agent'))
-        http_service = credentials.authorize(http_service)
-        service = build('drive', 'v2', http_service)
+    user_settings = node_addon.user_settings
+    check_access_token(user_settings)
+
+    # Get service using oauth client
+    http_service = httplib2.Http()
+    # Why is user agent used here?
+    credentials = AccessTokenCredentials(user_settings.access_token, request.headers.get('User-Agent'))
+    http_service = credentials.authorize(http_service)
+    service = build('drive', 'v2', http_service)
 
     path = request.args.get('path', '')
     folder_id = request.args.get('folderId')
     result = get_folders(service, folder_id=folder_id)
     contents = [
-        to_hgrid(item, node_owner, path=path)
+        to_hgrid(item, node, path=path)
         for item in result
     ]
+
     if request.args.get('includeRoot'):
         about = service.about().get().execute()
         root = {
