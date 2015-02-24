@@ -17,10 +17,6 @@ var ctx = window.contextVars.wiki;  // mako context variables
 
 var selectViewVersion = $('#viewVersionSelect');
 var selectCompareVersion = $('#compareVersionSelect');
-var previewElement = $('#viewPreview');
-var versionElement = $('#viewVersion');
-var markdownElement = $('#markdownItRender');
-var compareElement = $('#viewCompare');
 
 var editable = (ctx.panelsUsed.indexOf('edit') !== -1);
 var viewable = (ctx.panelsUsed.indexOf('view') !== -1);
