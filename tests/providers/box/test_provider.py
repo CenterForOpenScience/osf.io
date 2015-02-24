@@ -178,7 +178,9 @@ def folder_list_metadata():
 
 @pytest.fixture
 def file_metadata():
-    return {'entries': [{
+    return {
+        'entries': [
+            {
                 "type": "file",
                 "id": "5000948880",
                 "sequence_id": "3",
@@ -248,19 +250,22 @@ def file_metadata():
                     "name": "Pictures"
                 },
                 "item_status": "active"
-            }]
-        }
-
+            }
+        ]
+    }
 
 
 class TestCRUD:
 
     @async
     @pytest.mark.aiohttpretty
-    def test_download(self, provider):
-        path = BoxPath('/' + provider.folder + '/triangles.txt')
-        url = provider.build_url('files', path._id, 'content')
-        aiohttpretty.register_uri('GET', url, body=b'better')
+    def test_download(self, provider, file_metadata):
+        item = file_metadata['entries'][0]
+        path = BoxPath('/' + item['id'] + '/triangles.txt')
+        metadata_url = provider.build_url('files', item['id'])
+        content_url = provider.build_url('files', item['id'], 'content')
+        aiohttpretty.register_json_uri('GET', metadata_url, body=item)
+        aiohttpretty.register_uri('GET', content_url, body=b'better')
         result = yield from provider.download(str(path))
         content = yield from result.response.read()
 
@@ -268,25 +273,26 @@ class TestCRUD:
 
     @async
     @pytest.mark.aiohttpretty
-    def test_download_not_found(self, provider):
-        path = BoxPath('/' + provider.folder + '/vectors.txt')
-        url = provider.build_url('files', path._id, 'content')
-        aiohttpretty.register_uri('GET', url, status=404)
+    def test_download_not_found(self, provider, file_metadata):
+        item = file_metadata['entries'][0]
+        path = BoxPath('/' + item['id'] + '/vectors.txt')
+        metadata_url = provider.build_url('files', item['id'])
+        aiohttpretty.register_uri('GET', metadata_url, status=404)
 
-        with pytest.raises(exceptions.DownloadError):
+        with pytest.raises(exceptions.ProviderError):
             yield from provider.download(str(path))
 
     @async
     @pytest.mark.aiohttpretty
-    def test_upload(self, provider, file_metadata, file_stream, settings):
-        path = BoxPath('/' + provider.folder + '/phile')
+    def test_upload_create(self, provider, folder_object_metadata, folder_list_metadata, file_metadata, file_stream, settings):
+        path = BoxPath('/' + provider.folder + '/newfile')
         url = provider._build_upload_url('files', 'content')
-        metadata_folder_url = provider.build_url('folders', path._id, 'items')
-        metadata_file_url = provider.build_url('files', path._id)
-        aiohttpretty.register_uri('GET', metadata_folder_url, status=404)
-        aiohttpretty.register_uri('GET', metadata_file_url, status=404)
-        aiohttpretty.register_json_uri('POST', url, status=200, body=file_metadata)
-        metadata, created = yield from provider.upload(file_stream, '/{}'.format(path.name))
+        folder_object_url = provider.build_url('folders', path._id)
+        folder_list_url = provider.build_url('folders', path._id, 'items')
+        aiohttpretty.register_json_uri('GET', folder_object_url, body=folder_object_metadata)
+        aiohttpretty.register_json_uri('GET', folder_list_url, body=folder_list_metadata)
+        aiohttpretty.register_json_uri('POST', url, status=201, body=file_metadata)
+        metadata, created = yield from provider.upload(file_stream, str(path))
         expected = BoxFileMetadata(file_metadata['entries'][0], provider.folder).serialized()
 
         assert metadata == expected
@@ -296,8 +302,10 @@ class TestCRUD:
     @async
     @pytest.mark.aiohttpretty
     def test_delete_file(self, provider, file_metadata):
-        path = BoxPath('/' + provider.folder + '/ThePast')
+        item = file_metadata['entries'][0]
+        path = BoxPath('/' + item['id'] + '/' + item['name'])
         url = provider.build_url('files', path._id)
+        aiohttpretty.register_json_uri('GET', url, body=item)
         aiohttpretty.register_uri('DELETE', url, status=204)
         yield from provider.delete(str(path))
 
