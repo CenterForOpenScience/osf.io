@@ -39,7 +39,7 @@
        </p>
 
         <div class="btn-group" >
-        <button data-bind="click:changeFolder" class="btn btn-sm btn-dropbox"> Change Folder</button>
+          <button data-bind="click:changeFolder" class="btn btn-sm btn-default"> Change Folder</button>
         </div>
 
         <!-- Google Drive Treebeard -->
