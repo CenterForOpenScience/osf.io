@@ -16,7 +16,6 @@ from website.project.decorators import (
 )
 
 from website.addons.googledrive.utils import to_hgrid
-from website.addons.googledrive.utils import check_access_token
 
 
 @must_not_be_registration
@@ -24,18 +23,14 @@ from website.addons.googledrive.utils import check_access_token
 @must_have_addon('googledrive', 'node')
 @must_have_permission(permissions.WRITE)
 @must_be_addon_authorizer('googledrive')
-def googledrive_folders(node_addon, **kwargs):
+def googledrive_folders(node_addon, user_addon, **kwargs):
     """ Returns all the subsequent folders under the folder id passed """
     node = kwargs.get('node') or kwargs['project']
-
-    # Get service using Access token
-    user_settings = node_addon.user_settings
-    check_access_token(user_settings)
 
     # Get service using oauth client
     http_service = httplib2.Http()
     # Why is user agent used here?
-    credentials = AccessTokenCredentials(user_settings.access_token, request.headers.get('User-Agent'))
+    credentials = AccessTokenCredentials(user_addon.access_token, request.headers.get('User-Agent'))
     http_service = credentials.authorize(http_service)
     service = build('drive', 'v2', http_service)
 
@@ -78,12 +73,12 @@ def get_folders(service, folder_id=None):
 def googledrive_addon_folder(node_settings, auth, **kwargs):
     """Return the Rubeus/HGrid-formatted response for the root folder only."""
     # Quit if node settings does not have authentication
-    if not node_settings.has_auth or not node_settings.folder:
+    if not node_settings.has_auth or not node_settings.folder_id:
         return None
     node = node_settings.owner
     root = rubeus.build_addon_root(
         node_settings=node_settings,
-        name=node_settings.folder,
+        name=node_settings.folder_name,
         permissions=auth,
         nodeUrl=node.url,
         nodeApiUrl=node.api_url,

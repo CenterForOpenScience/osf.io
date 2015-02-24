@@ -1,4 +1,3 @@
-import time
 import httplib2
 import httplib as http
 
@@ -30,7 +29,7 @@ def googledrive_oauth_start(auth, **kwargs):
     # Run through the OAuth flow and retrieve credentials
     # Store the node ID on the session in order to get the correct redirect URL
     # upon finishing the flow
-    nid = kwargs.get('nid') or kwargs['pid']
+    nid = kwargs.get('nid') or kwargs.get('pid')
     node_addon = auth.user.get_addon('googledrive')
 
     if nid:
@@ -83,7 +82,7 @@ def googledrive_oauth_finish(auth, **kwargs):
     user_settings.access_token = credentials.access_token
     user_settings.refresh_token = credentials.refresh_token
     # Add No. of seconds left for token to expire into current utc time
-    user_settings.token_expiry = time.mktime(credentials.token_expiry.timetuple())
+    user_settings.token_expires_at = credentials.token_expiry
 
     # Retrieves username for authorized google drive
     service = build('drive', 'v2', http_service)
