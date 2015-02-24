@@ -6,16 +6,16 @@
   .container {
       width : 100%;
       padding-left: 20px;
-      paddong-right: 20px;
+      padding-right: 20px;
   }
 }
 </style>
 
-<div class="row">
-    <div class="col-xs-6">
+<div class="row" style="margin-bottom: 5px;">
+    <div class="col-sm-6">
         <%include file="wiki/templates/status.mako"/>
     </div>
-    <div class="col-xs-6">
+    <div class="col-sm-6">
         <div class="pull-right">
           <div class="switch"></div>
           </div>

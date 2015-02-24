@@ -84,7 +84,7 @@ if (ctx.canEditPageName) {
 $(document).ready(function () {
     $('*[data-osf-panel]').osfPanel({
         buttonElement : '.switch',
-        onSize : 'md',
+        onSize : 'xs',
         'onclick' : function (title, thisbtn, event ) {
             // this = all the column elements; an array
             // title = Text of the button
