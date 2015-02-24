@@ -40,7 +40,7 @@ def mendeley_set_config(auth, node_addon, **kwargs):
 
     provider = MendeleyCitationsProvider()
     args = request.get_json()
-    external_account_id = args.get('external_account_id')
+    #external_account_id = args.get('external_account_id')
     external_list_id = args.get('external_list_id')
     provider.set_config(
         node_addon,
