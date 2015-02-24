@@ -24,7 +24,6 @@ function getDefaultOptions(path, provider) {
 function buildUrl(suffix, path, provider, nid, options) {
     path = path || '/';
     var baseUrl = contextVars.waterbutlerURL + suffix;
-    console.log('Path:' + baseUrl + $.param($.extend(getDefaultOptions(path, provider), {nid: nid}, options)));
     return baseUrl + $.param($.extend(getDefaultOptions(path, provider), {nid: nid}, options));
 }
 

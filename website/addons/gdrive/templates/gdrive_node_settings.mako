@@ -29,8 +29,6 @@
     </small>
     </h4>
 
-
-
     <div id="currentFolder" data-bind="if:showFolders()">
        <p>
         <strong> Current folder:</strong>
@@ -56,7 +54,7 @@
             <form data-bind="submit: submitSettings">
 
                 <h4 data-bind="if: selected" class="dropbox-confirm-dlg">
-                    Connect &ldquo;Google Drive{{ selectedFolderName }}&rdquo;?
+                    Connect &ldquo;{{ selectedFolderName }}&rdquo;?
                 </h4>
                 <div class="pull-right">
                     <button class="btn btn-default"

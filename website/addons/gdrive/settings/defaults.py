@@ -8,9 +8,3 @@ OAUTH_SCOPE = ['https://www.googleapis.com/auth/drive']
 
 # Redirect URI for installed apps
 REDIRECT_URI = 'http://localhost:5000/api/v1/addons/gdrive/callback/'
-
-OAUTH_ACCESS_TOKEN = 'changeme'
-
-SERVICE = []
-
-REFRESH_TOKEN_URL = 'https://www.googleapis.com/oauth2/v3/token'

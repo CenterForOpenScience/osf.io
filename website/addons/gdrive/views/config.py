@@ -3,9 +3,11 @@ from flask import request
 from framework.auth.core import _get_current_user
 from framework.auth.decorators import must_be_logged_in, collect_auth
 import httplib as http
-from website.project.decorators import (must_be_valid_project,
+
+from website.project.decorators import (must_be_valid_project, must_have_permission,
                                         must_have_addon, must_not_be_registration, must_be_addon_authorizer)
 from website.util import api_url_for
+
 from ..utils import serialize_settings, serialize_urls
 
 @collect_auth
@@ -19,24 +21,22 @@ def gdrive_config_get(node_addon, **kwargs):
     }, http.OK
 
 
-# @must_have_permission('write')
+@must_have_permission('write')
 @must_not_be_registration
 @must_have_addon('gdrive', 'user')
 @must_have_addon('gdrive', 'node')
 @must_be_addon_authorizer('gdrive')
 def gdrive_config_put(node_addon, user_addon, auth, **kwargs):
     """View for changing a node's linked Drive folder/file."""
-    folder = request.json.get('selected')
-    path = folder['path']
-    node_addon.set_folder(folder, auth=auth)
+    selected = request.json.get('selected')
+    node_addon.set_folder(selected, auth=auth)
     node_addon.save()
     return {
         'result': {
             'folder': {
-                'name': 'Google Drive' + path['path'],
-                'path': path['path']
+                'name': selected['path'],
             },
-            'urls': serialize_urls(node_addon)
+            'urls': serialize_urls(node_addon),
         },
         'message': 'Successfully updated settings.',
     }, http.OK

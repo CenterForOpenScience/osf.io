@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 import mock
-from framework.sessions import session
+import datetime
+import time
+
 from nose.tools import *  # PEP8 asserts
 from framework.auth import Auth
 from website.util import api_url_for, web_url_for
 from tests.base import OsfTestCase, assert_is_redirect
 from tests.factories import AuthUserFactory, ProjectFactory
+
 from website.addons.gdrive.tests.utils import mock_files_folders, mock_folders, mock_root_folders
-from website.addons.gdrive.utils import serialize_settings, serialize_urls
+from website.addons.gdrive.utils import serialize_settings, check_access_token
 
 
 
@@ -27,11 +30,14 @@ class TestGdriveAuthViews(OsfTestCase):
         self.flow = mock.Mock()
         self.credentials = mock.Mock()
 
-    # Class variables are usually used to mark mock variables. Can be removed later.
+    # Class variables(self) are usually used to mark mock variables. Can be removed later.
     @mock.patch('website.addons.gdrive.views.auth.OAuth2WebServerFlow')
     def test_gdrive_oauth_start(self, mock_flow):
         url = api_url_for('drive_oauth_start_user', Auth(self.user))
         mock_flow.return_value = self.flow
+        mock_params = {}
+        self.flow.params = mock_params
+        mock_params['approval_prompt'] = 'force'
         self.flow.step1_get_authorize_url.return_value = 'fake.url'
         res = self.app.post(url)
         assert_true(res.json['url'], 'fake.url')
@@ -41,6 +47,7 @@ class TestGdriveAuthViews(OsfTestCase):
     def test_gdrive_oauth_finish(self, mock_session, mock_flow):
         user_no_addon = AuthUserFactory()
         nid = self.project._primary_key
+        fake_token_expiry = datetime.datetime.now()
         mock_session.data.get.return_value = nid
         mock_access_token = mock.Mock()
         mock_flow.return_value = self.flow
@@ -48,6 +55,7 @@ class TestGdriveAuthViews(OsfTestCase):
         self.credentials.authorize.return_value = mock_access_token
         self.credentials.access_token = '1111'
         self.credentials.refresh_token = '2222'
+        self.credentials.token_expiry = fake_token_expiry
         url = api_url_for('drive_oauth_finish', user_no_addon.auth, nid=self.project._primary_key, code='1234')
         res = self.app.get(url)
         assert_is_redirect(res)
@@ -58,18 +66,20 @@ class TestGdriveAuthViews(OsfTestCase):
     def test_gdrive_oauth_finish_user_only(self, mock_flow, mock_build):
         user_no_addon = AuthUserFactory()
         mock_access_token = mock.Mock()
+        fake_token_expiry = datetime.datetime.now()
         mock_flow.return_value = self.flow
         self.flow.step2_exchange.return_value = self.credentials
         self.credentials.authorize.return_value = mock_access_token
         self.credentials.access_token = '1111'
         self.credentials.refresh_token = '2222'
+        self.credentials.token_expiry = fake_token_expiry
         self.service = mock.Mock()
         mock_build.return_value = self.service
         self.mock_get = mock.Mock()
         self.service.about.return_value = self.mock_get
         self.mock_execute = mock.Mock()
         self.mock_get.get.return_value = self.mock_execute
-        username = {'name':'fakename', 'user':{'emailAddress': 'fakeemailid.com'}}
+        username = {'name':'fakename', 'user': {'emailAddress': 'fakeemailid.com'}}
         self.mock_execute.execute.return_value = username
         url = api_url_for('drive_oauth_finish', user_no_addon.auth, code='1234')
         res = self.app.get(url)
@@ -112,6 +122,7 @@ class TestGdriveConfigViews(OsfTestCase):
         self.project.add_addon('gdrive', Auth(self.user))
         self.node_settings = self.project.get_addon('gdrive')
         self.node_settings.user_settings = self.user_settings
+        self.node_settings.save()
         # Log user in
         self.app.authenticate(*self.user.auth)
 
@@ -144,26 +155,32 @@ class TestGdriveConfigViews(OsfTestCase):
         assert_false(result['userHasAuth'])
 
     # TODO
-    # def test_gdrive_config_put(self):
-    #     url = api_url_for('gdrive_config_put', pid=self.project._primary_key)
-    #     path = {
-    #         'id': '1234',
-    #         'path': '/Google Drive/Camera Uploads'
-    #     }
-    #     # Can set folder through API call
-    #     res = self.app.put_json(url, {'selected': {'path': path,
-    #                                                'name': 'Google Drive/My test folder'}},
-    #                             auth=self.user.auth)
-    #     self.node_settings.reload()
-    #     self.project.reload()
-    #
-    #     # Folder was set
-    #     assert_equal(self.node_settings.folder, 'My test folder')
-    #     # A log event was created
-    #     last_log = self.project.logs[-1]
-    #     assert_equal(last_log.action, 'gdrive_folder_selected')
-    #     params = last_log.params
-    #     assert_equal(params['folder'], 'My test folder')
+    def test_gdrive_config_put(self):
+        url = self.project.api_url_for('gdrive_config_put')
+        path = {
+            'id': '1234',
+            'path': '/Google Drive/Camera Uploads/ My uploads'
+        }
+        selected = {
+            'path' : path,
+            'name': 'Google Drive/ My Folder',
+            'id': '12345'
+        }
+        # Can set folder through API call
+        res = self.app.put_json(url, {'selected': selected},
+                                auth=self.user.auth)
+
+        assert_equal(res.status_code, 200)
+        self.node_settings.reload()
+        self.project.reload()
+
+        # Folder was set
+        assert_equal(self.node_settings.folder, 'Google Drive/ My Folder')
+        # A log event was created
+        last_log = self.project.logs[-1]
+        assert_equal(last_log.action, 'gdrive_folder_selected')
+        params = last_log.params
+        assert_equal(params['folder'], 'Google Drive/ My Folder')
 
 
 class TestGdriveHgridViews(OsfTestCase):
@@ -184,13 +201,8 @@ class TestGdriveHgridViews(OsfTestCase):
 
     @mock.patch('website.addons.gdrive.views.hgrid.AccessTokenCredentials')
     @mock.patch('website.addons.gdrive.views.hgrid.build')
-    @mock.patch('website.addons.gdrive.views.hgrid.requests')
-    def test_gdrive_folders(self, mock_response, mock_build, mock_access_token_credentials):
+    def test_gdrive_folders(self, mock_build, mock_access_token_credentials):
         folderId = '12345'
-        self.mock_respose = mock.Mock()
-        refresh_token = {'access_token':'2222'}
-        mock_response.post.return_value = self.mock_respose
-        self.mock_respose.json.return_value = refresh_token
         self.credentials = mock.Mock()
         mock_access_token_credentials.return_value = self.credentials
         self.http_service = mock.Mock()
@@ -211,13 +223,8 @@ class TestGdriveHgridViews(OsfTestCase):
 
     @mock.patch('website.addons.gdrive.views.hgrid.AccessTokenCredentials')
     @mock.patch('website.addons.gdrive.views.hgrid.build')
-    @mock.patch('website.addons.gdrive.views.hgrid.requests')
-    def test_gdrive_folders_returns_only_root_folders(self, mock_response, mock_build, mock_access_token_credentials):
+    def test_gdrive_folders_returns_only_root_folders(self, mock_build, mock_access_token_credentials):
         folderId = ''
-        self.mock_respose = mock.Mock()
-        refresh_token = {'access_token':'2222'}
-        mock_response.post.return_value = self.mock_respose
-        self.mock_respose.json.return_value = refresh_token
         self.credentials = mock.Mock()
         mock_access_token_credentials.return_value = self.credentials
         self.http_service = mock.Mock()
@@ -227,8 +234,6 @@ class TestGdriveHgridViews(OsfTestCase):
         self.mock_list = mock.Mock()
         self.mock_files = mock.Mock()
         folders = mock_root_folders
-        # self.mock_folders = mock.MagicMock()
-        # create_mock_dict(self.mock_folders)
         self.service.files.return_value = self.mock_files
         self.mock_files.list.return_value = self.mock_list
         self.mock_list.execute.return_value = folders
@@ -240,12 +245,7 @@ class TestGdriveHgridViews(OsfTestCase):
 
     @mock.patch('website.addons.gdrive.views.hgrid.AccessTokenCredentials')
     @mock.patch('website.addons.gdrive.views.hgrid.build')
-    @mock.patch('website.addons.gdrive.views.hgrid.requests')
-    def test_gdrive_folders_returns_files_and_folders(self, mock_response, mock_build, mock_access_token_credentials):
-        self.mock_respose = mock.Mock()
-        refresh_token = {'access_token':'2222'}
-        mock_response.post.return_value = self.mock_respose
-        self.mock_respose.json.return_value = refresh_token
+    def test_gdrive_folders_returns_files_and_folders(self, mock_build, mock_access_token_credentials):
         folderId = '12345'
         self.credentials = mock.Mock()
         mock_access_token_credentials.return_value = self.credentials
@@ -259,8 +259,6 @@ class TestGdriveHgridViews(OsfTestCase):
         self.service.files.return_value = self.mock_files
         self.mock_files.list.return_value = self.mock_list
         self.mock_list.execute.return_value = folders
-
-        # self.service.files.list.execute.return_value = self.mock_folders
         url = api_url_for('gdrive_folders', pid=self.project._primary_key, foldersOnly=0, folderId=folderId)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -308,7 +306,7 @@ class TestGdriveUtils(OsfTestCase):
         assert_false(result['userIsOwner'])
         assert_false(result['userHasAuth'])
 
-    def test_dropbox_import_user_auth_returns_serialized_settings(self):
+    def test_gdrive_import_user_auth_returns_serialized_settings(self):
         self.node_settings.user_settings = None
         self.node_settings.save()
         url = api_url_for('gdrive_import_user_auth', pid=self.project._primary_key)
@@ -319,3 +317,44 @@ class TestGdriveUtils(OsfTestCase):
         expected_result = serialize_settings(self.node_settings, self.user)
         result = res.json['result']
         assert_equal(result, expected_result)
+
+    def test_check_refresh_token_when_curr_time_less_than_token_time(self):
+        # self.user_settings.token_expiry = time.mktime((self.user_settings.token_expiry).timetuple(_))
+        curr_time_in_millis = time.mktime(datetime.datetime.utcnow().timetuple())
+        self.user_settings.token_expiry = curr_time_in_millis + 1
+        self.user_settings.save()
+        res = check_access_token(self.user_settings)
+        assert_true(res['status'], 'token_valid')
+
+    @mock.patch('website.addons.gdrive.utils.requests')
+    def test_check_refresh_token_when_curr_time_equal_to_token_time(self, mock_response):
+        json_response = {
+            'access_token': 'new access token',
+            'expires_in': '3600'
+        }
+        self.mock_response = mock.Mock()
+        mock_response.post.return_value = self.mock_response
+        self.mock_response.json.return_value = json_response
+        curr_time_in_millis = time.mktime(datetime.datetime.utcnow().timetuple())
+        self.user_settings.token_expiry = curr_time_in_millis
+        self.user_settings.save()
+        res = check_access_token(self.user_settings)
+        assert_true(res['status'], 'token_refreshed')
+
+    @mock.patch('website.addons.gdrive.utils.requests')
+    def test_check_refresh_token_when_curr_time_greater_than_token_time(self, mock_response):
+        json_response = {
+            'access_token': 'new access token',
+            'expires_in': '3600'
+        }
+        self.mock_response = mock.Mock()
+        mock_response.post.return_value = self.mock_response
+        self.mock_response.json.return_value = json_response
+        curr_time_in_millis = time.mktime(datetime.datetime.utcnow().timetuple())
+        self.user_settings.token_expiry = curr_time_in_millis - 1
+        self.user_settings.save()
+        res = check_access_token(self.user_settings)
+        assert_true(res['status'], 'token_refreshed')
+
+
+

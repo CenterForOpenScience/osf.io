@@ -2,15 +2,16 @@
 from nose.tools import *  # noqa (PEP8 asserts)
 
 from framework.auth import Auth
+from tests.base import OsfTestCase
+from tests.factories import UserFactory, ProjectFactory
+from website.addons.base import exceptions
+
 from website.addons.gdrive.model import (
     AddonGdriveUserSettings, AddonGdriveNodeSettings
 )
-from tests.base import OsfTestCase
-from tests.factories import UserFactory, ProjectFactory
 from website.addons.gdrive.tests.factories import (
     GdriveNodeSettingsFactory, GdriveUserSettingsFactory
 )
-from website.addons.base import exceptions
 from website.addons.gdrive.utils import get_path_from_waterbutler_path
 
 class TestGdriveUserSettingsModel(OsfTestCase):
@@ -24,7 +25,7 @@ class TestGdriveUserSettingsModel(OsfTestCase):
             access_token='12345',
             owner=self.user,
             username='name',
-            token_expiry=123456)
+            token_expiry='123456')
         user_settings.save()
         retrieved = AddonGdriveUserSettings.load(user_settings._primary_key)
         assert_true(retrieved.access_token)
@@ -195,6 +196,8 @@ class TestGdriveNodeSettingsModel(OsfTestCase):
             self.node_settings.serialize_waterbutler_credentials()
 
     def test_serialize_settings(self):
+        self.node_settings.waterbutler_folder = 'camera uploads/pizza.nii'
+        self.node_settings.save()
         settings = self.node_settings.serialize_waterbutler_settings()
         expected = {'folder': self.node_settings.waterbutler_folder}
         assert_equal(settings, expected)

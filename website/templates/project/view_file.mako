@@ -59,10 +59,10 @@
               <tr data-bind="css: $parent.isActive(revision)">
                 <td>
                   <a href="{{ revision.osfViewUrl }}" data-bind="if: revision !== $parent.currentVersion()">
-                    {{ revision.version.substring(0, 8) }}
+                    {{ revision.displayVersion }}
                   </a>
                   <span data-bind="if: revision === $parent.currentVersion()">
-                    {{ revision.version.substring(0, 8) }}
+                    {{ revision.displayVersion }}
                   </span>
                 </td>
                 <td>{{ revision.displayDate }}</td>
