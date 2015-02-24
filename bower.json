@@ -33,7 +33,7 @@
     "hgrid": "~0.2.10",
     "uri.js": "~1.14.1",
     "xhook": "~1.3.0",
-    "osf-panel": "https://github.com/caneruguz/osf-panel.git#develop",
+    "osf-panel": "https://github.com/caneruguz/osf-panel.git#156c508870f4fbec5405184cbda5cec2c83b6cc7",
     "markdown-it": "~3.0.5",
     "markdown-it-sanitizer": "~0.2.0",
     "markdown-it-toc": "https://github.com/samchrisinger/markdown-it-toc.git#8c7fb8bfd25ba8b4fadd12aceb923f3066899743",
