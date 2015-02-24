@@ -124,6 +124,10 @@ class AddonZoteroNodeSettings(AddonNodeSettingsBase):
         root['kind'] = 'folder'
         return root
 
+    @property
+    def provider_name(self):
+        return 'zotero'
+
     def grant_oauth_access(self, user, external_account, metadata=None):
         """Grant OAuth access, updates metadata on user settings
         :param User user:

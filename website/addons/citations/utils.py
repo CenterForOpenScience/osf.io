@@ -27,9 +27,9 @@ def serialize_urls(node_addon):
     external_account = node_addon.external_account
     ret = {
         'auth': api_url_for('oauth_connect',
-                            service_name=self.provider_name),
+                            service_name=node_addon.provider_name),
         'settings': web_url_for('user_addons'),
-        'files': node_addon.owner.url
+        'files': node_addon.owner.url,
     }
     if external_account and external_account.profile_url:
         ret['owner'] = external_account.profile_url

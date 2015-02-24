@@ -124,6 +124,10 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
         root['kind'] = 'folder'
         return root
 
+    @property
+    def provider_name(self):
+        return 'mendeley'
+
     def set_auth(self, external_account, user):
         """Connect the node addon to a user's external account.
         """

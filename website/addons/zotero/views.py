@@ -42,13 +42,12 @@ def zotero_set_config(auth, node_addon, **kwargs):
     args = request.get_json()
     external_account_id = args.get('external_account_id')
     external_list_id = args.get('external_list_id')
-    return provider.set_config(
+    provider.set_config(
         node_addon,
         auth.user,
-        external_account_id,
-        external_list_id
+        external_list_id,
     )
-
+    return {}
 
 @must_have_permission('write')
 @must_have_addon('zotero', 'node')

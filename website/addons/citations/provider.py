@@ -71,28 +71,10 @@ class CitationsProvider(object):
             ]
         }
 
-    def set_config(self, node_addon, user, external_account_id, external_list_id):
+    def set_config(self, node_addon, user, external_list_id):
         # Ensure request has all required information
-        try:
-            external_account = ExternalAccount.load(external_account_id)
-        except KeyError:
-            raise HTTPError(http.BAD_REQUEST)
 
-        # User is an owner of this ExternalAccount
-        if external_account in user.external_accounts:
-            # grant access to the node for the Provider list
-            node_addon.grant_oauth_access(
-                user=user,
-                external_account=external_account,
-                metadata={'lists': external_list_id},
-            )
-        else:
-            # Make sure the node has previously been granted access
-            if not node_addon.verify_oauth_access(external_account, external_list_id):
-                raise HTTPError(http.FORBIDDEN)
-
-        node_addon.set_target_folder(external_list_id)
-        return external_account
+        node_addon.set_target_folder(external_list_id)        
 
     def add_user_auth(self, node_addon, user, external_account_id):
 

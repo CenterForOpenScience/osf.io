@@ -56,7 +56,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         self.project = ProjectFactory(creator=self.user)
         self.node_addon = MendeleyNodeSettingsFactory(owner=self.project)
         self.node_addon.set_auth(external_account=self.account, user=self.user)
-        self.user_addon.grant_oauth_access(self.node_addon, self.account, metadata={'lists': 'list'})
+        #self.user_addon.grant_oauth_access(self.node_addon, self.account, metadata={'lists': 'list'})
         self.node = MockNode()
         self.node.addon = self.node_addon
         self.id_patcher = mock.patch('website.addons.mendeley.model.Mendeley.client_id')
@@ -181,7 +181,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         self.account2.save()
         self.user_addon2 = MendeleyUserSettingsFactory(owner=self.user2)
         self.node_addon.external_account = self.account2
-        self.node_addon.grant_oauth_access(self.user2, self.account2, metadata={'lists': 'list'})
+        #self.node_addon.grant_oauth_access(self.user2, self.account2, metadata={'lists': 'list'})
         self.node_addon.associated_user_settings = []
         self.node_addon.save()
         res = self.app.put_json(
@@ -197,7 +197,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         assert_equal(res.json, {})
 
         self.node_addon.external_account = self.account
-        self.node_addon.grant_oauth_access(self.user, self.account, metadata={'lists': 'list'})
+        #self.node_addon.grant_oauth_access(self.user, self.account, metadata={'lists': 'list'})
 
         res = self.app.put_json(
             self.project.api_url_for('mendeley_set_config'),
