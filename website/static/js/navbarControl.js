@@ -17,7 +17,7 @@ var NavbarViewModel = function() {
 
     self.onSearchPage = ko.computed(function() {
         var path = window.location.pathname;
-        var indexOfSearch = path.indexOf('search');
+        var indexOfSearch = path.indexOf('search/');
         return indexOfSearch === 1;
     });
 
