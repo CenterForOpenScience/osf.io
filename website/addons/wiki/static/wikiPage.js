@@ -196,12 +196,12 @@ function ViewModel(options){
             }
         }
 
-        history.replaceState({}, '', url);
+        history.replaceState({}, '', url);  // jshint ignore: line
     });
 
 
     if(self.canEdit) {
-        self.editor = ace.edit('editor');
+        self.editor = ace.edit('editor'); // jshint ignore: line
 
         var ShareJSDoc = require('addons/wiki/static/ShareJSDoc.js');
         self.editVM = new ShareJSDoc(self.draftURL, self.editorMetadata, self.viewText, self.editor);

@@ -96,7 +96,7 @@ $(document).ready(function () {
                 thisbtn.hasClass('btn-primary')
             ]);
 
-            if (typeof editor !== 'undefined') { ace.edit(editor).resize(); }
+            if (typeof editor !== 'undefined') { ace.edit(editor).resize(); } // jshint ignore: line
 
         }
     });
