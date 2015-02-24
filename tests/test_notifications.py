@@ -599,6 +599,62 @@ class TestSendEmails(OsfTestCase):
         emails.check_parent(node._id, 'comments', [])
         assert_false(mock_send.called)
 
+    @mock.patch('website.notifications.emails.send')
+    def test_check_parent_sends_to_subscribers_with_admin_read_access_to_component(self, mock_send):
+        # Admin user is subscribed to receive emails on the parent project
+        project = ProjectFactory()
+        project_subscription = SubscriptionFactory(
+            _id=project._id + '_comments',
+            object_id=project._id,
+            event_name='comments'
+        )
+        project_subscription.save()
+        project_subscription.email_transactional.append(project.creator)
+        project_subscription.save()
+
+        # User has admin read-only access to the component
+        # Default is to adopt parent project settings
+        node = NodeFactory(project=project)
+        node_subscription = SubscriptionFactory(
+            _id=node._id + '_comments',
+            object_id=node._id,
+            event_name='comments'
+        )
+        node_subscription.save()
+
+        # Assert that user receives an email when someone comments on the component
+        emails.check_parent(node._id, 'comments', [])
+        assert_true(mock_send.called)
+
+    @mock.patch('website.notifications.emails.send')
+    def test_check_parent_does_not_send_to_subscribers_without_access_to_component(self, mock_send):
+        # Non-admin user is subscribed to receive emails on the parent project
+        user = UserFactory()
+        project = ProjectFactory()
+        project.add_contributor(contributor=user, permissions=['read'])
+        project_subscription = SubscriptionFactory(
+            _id=project._id + '_comments',
+            object_id=project._id,
+            event_name='comments'
+        )
+        project_subscription.save()
+        project_subscription.email_transactional.append(user)
+        project_subscription.save()
+
+        # User does not have access to the component
+        node = NodeFactory(project=project)
+        node_subscription = SubscriptionFactory(
+            _id=node._id + '_comments',
+            object_id=node._id,
+            event_name='comments'
+        )
+        node_subscription.save()
+
+        # Assert that user does not receive an email when someone comments on the component
+        emails.check_parent(node._id, 'comments', [])
+        assert_false(mock_send.called)
+
+
     # @mock.patch('website.notifications.emails.email_transactional')
     # def test_send_calls_correct_mail_function(self, email_transactional):
     #     emails.send([self.user], 'email_transactional', self.project._id, 'comments',

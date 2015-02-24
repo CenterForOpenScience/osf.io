@@ -56,7 +56,7 @@ def check_parent(uid, event, node_subscribers, **context):
                     subscribed_users = []
 
                 for u in subscribed_users:
-                    if u not in node_subscribers:
+                    if u not in node_subscribers and node.has_permission(u, 'read'):
                         parent_subscribers.append(u)
                         if notification_type != 'none':
                             send([u._id], notification_type, uid, event, **context)
