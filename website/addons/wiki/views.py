@@ -231,25 +231,9 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     can_edit = node.has_permission(auth.user, 'write') and not node.is_registration
     versions = _get_wiki_versions(node, wiki_name, anonymous=anonymous)
 
-    # Parse URL to determine default panel display
-    view_settings = {}
-    param_list = path.lower().split('/') if path else []
-    for i, param in enumerate(param_list):
-        configurable = param == 'view' or param == 'compare'
-        if configurable and i + 1 < len(param_list) and (param_list[i + 1]).isdigit():
-            version_number = int(param_list.pop(i + 1))
-            if version_number > len(versions) or version_number < 1:
-                raise WIKI_PAGE_NOT_FOUND_ERROR
-            elif version_number == len(versions):
-                view_settings[param] = True
-            else:
-                view_settings[param] = version_number
-        else:
-            view_settings[param] = True
-
     # Build styles for default panel display
     panels = ['view', 'edit', 'compare']
-    panels_used = [panel for panel in view_settings if panel in panels]
+    panels_used = [panel for panel in request.args if panel in panels]
     # Always display view, except if edit, compare, and not view are specified
     if len(panels_used) < 2 and 'view' not in panels_used:
         panels_used.append('view')
@@ -258,6 +242,36 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     for panel in panels:
         panel_display = '' if panel in panels_used else 'style="display: none"'
         panel_settings[panel] = '{0} {1}'.format(panel_class, panel_display)
+    # Append menu after column width is determined
+    if 'menu' in request.args or not request.args:
+        panels_used.append('menu')
+        panel_settings['menu'] = ''
+        panel_settings['menu_collapsed'] = 'style="display: none"'
+        panel_settings['menu_column'] = 'class="col-sm-3 panel-toggle"'
+        panel_settings['content_column'] = 'class="col-sm-9 panel-expand"'
+    else:
+        panel_settings['menu'] = 'style="display: none"'
+        panel_settings['menu_collapsed'] = ''
+        panel_settings['menu_column'] = 'class="col-sm-1 panel-toggle"'
+        panel_settings['content_column'] = 'class="col-sm-11 panel-expand"'
+
+    view = request.args.get('view', '')
+    if view.isdigit():
+        view = int(view)
+        if view > len(versions) or view < 1:
+            raise WIKI_PAGE_NOT_FOUND_ERROR
+
+    compare = request.args.get('compare', '')
+    if compare.isdigit():
+        compare = int(compare)
+        if compare > len(versions) or compare < 1:
+            raise WIKI_PAGE_NOT_FOUND_ERROR
+
+    # Default versions for view and compare
+    version_settings = {
+        'view': view or ('preview' if 'edit' in panels_used else 'current'),
+        'compare': compare or 'previous',
+    }
 
     # ensure home is always lower case since it cannot be renamed
     if wiki_name.lower() == 'home':
@@ -281,7 +295,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     else:
         if wiki_key not in node.wiki_pages_current and wiki_key != 'home':
             raise WIKI_PAGE_NOT_FOUND_ERROR
-        if 'edit' in view_settings:
+        if 'edit' in request.args:
             raise HTTPError(http.FORBIDDEN)
         sharejs_uuid = None
 
@@ -297,7 +311,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         'sharejs_url': settings.SHAREJS_URL,
         'is_current': is_current,
         'can_edit': can_edit,
-        'view_settings': view_settings,
+        'version_settings': version_settings,
         'pages_current': _get_wiki_pages_current(node),
         'toc': toc,
         'category': node.category,
@@ -362,6 +376,23 @@ def project_wiki_id_page(auth, wid, **kwargs):
         return redirect(node.web_url_for('project_wiki_view', wname=wiki_page.page_name, _guid=True))
     else:
         raise WIKI_PAGE_NOT_FOUND_ERROR
+
+
+@must_be_valid_project
+@must_have_permission('write')
+@must_not_be_registration
+@must_have_addon('wiki', 'node')
+def project_wiki_edit(wname, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    return redirect(node.web_url_for('project_wiki_view', wname=wname, _guid=True) + '?edit')
+
+
+@must_be_valid_project
+@must_be_contributor_or_public
+@must_have_addon('wiki', 'node')
+def project_wiki_compare(wname, wver, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    return redirect(node.web_url_for('project_wiki_view', wname=wname, _guid=True, compare=wver))
 
 
 @must_not_be_registration

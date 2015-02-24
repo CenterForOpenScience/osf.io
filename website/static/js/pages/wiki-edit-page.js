@@ -15,20 +15,22 @@ require('addons/wiki/static/ace-markdown-snippets.js');
 
 var ctx = window.contextVars.wiki;  // mako context variables
 
-var selectViewVersion = $('#viewVersionSelect');
-var selectCompareVersion = $('#compareVersionSelect');
-
 var editable = (ctx.panelsUsed.indexOf('edit') !== -1);
 var viewable = (ctx.panelsUsed.indexOf('view') !== -1);
 var comparable = (ctx.panelsUsed.indexOf('compare') !== -1);
+var menuVisible = (ctx.panelsUsed.indexOf('menu') !== -1);
+
+var viewVersion = ctx.versionSettings.view || (editable ? 'preview' : 'current');
+var compareVersion = ctx.versionSettings.compare || 'previous';
 
 var wikiPageOptions = {
     editVisible: editable,
     viewVisible: viewable,
     compareVisible: comparable,
+    menuVisible: menuVisible,
     canEdit: ctx.canEdit,
-    viewVersion: 'current',
-    compareVersion: 'current',
+    viewVersion: viewVersion,
+    compareVersion: compareVersion,
     urls: ctx.urls,
     metadata: ctx.metadata
 };
@@ -82,6 +84,8 @@ if (ctx.canEditPageName) {
 
 // Apply panels
 $(document).ready(function () {
+    var bodyElement = $('body');
+
     $('*[data-osf-panel]').osfPanel({
         buttonElement : '.switch',
         onSize : 'xs',
@@ -91,7 +95,7 @@ $(document).ready(function () {
             // thisbtn = $(this);
             // thisbtn.hasClass('btn-primary')
 
-            $('body').trigger('togglePanel', [
+            bodyElement.trigger('togglePanel', [
                 title.toLowerCase(),
                 thisbtn.hasClass('btn-primary')
             ]);
@@ -110,6 +114,8 @@ $(document).ready(function () {
         panelExpand.removeClass('col-sm-9').addClass('col-sm-11');
         el.children('.panel-collapsed').show();
         $('.wiki-nav').show();
+
+        bodyElement.trigger('toggleMenu', [false]);
     });
     $('.panel-collapsed .wiki-panel-header').on('click', function () {
         var el = $(this).parent();
@@ -119,28 +125,7 @@ $(document).ready(function () {
         panelToggle.removeClass('col-sm-1').addClass('col-sm-3');
         panelExpand.removeClass('col-sm-11').addClass('col-sm-9');
         $('.wiki-nav').hide();
+
+        bodyElement.trigger('toggleMenu', [true]);
     });
-
-    var options = ctx.viewSettings;
-    var menu = 'menu' in options;
-    var edit = 'edit' in options;
-    var compare = 'compare' in options;
-    var view = 'view' in options;
-    // TODO: toggle menu based on url
-    // TODO: Change version select on toggle
-
-    if (edit) {
-        selectViewVersion.val('preview');
-        selectViewVersion.change();
-    }
-
-    if (compare && parseInt(options.compare) === options.compare) {
-        selectCompareVersion.val(options.compare);
-        selectCompareVersion.change();
-    }
-
-    if (view) {
-        selectViewVersion.val(options.view);
-        selectViewVersion.change();
-    }
 });

@@ -43,22 +43,28 @@ page_routes = {
             '/project/<pid>/node/<nid>/wiki/id/<wid>/',
         ], 'get', views.project_wiki_id_page, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'))),
 
-        # Edit | GET
+        # Wiki | GET
         Rule([
             '/project/<pid>/wiki/<wname>/',
             '/project/<pid>/node/<nid>/wiki/<wname>/',
-            '/project/<pid>/wiki/<wname>/<path:path>/',
-            '/project/<pid>/node/<nid>/wiki/<wname>/<path:path>/',
         ], 'get', views.project_wiki_view, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'))),
+
+        # Edit | GET (legacy url, trigger redirect)
+        Rule([
+            '/project/<pid>/wiki/<wname>/edit/',
+            '/project/<pid>/node/<nid>/wiki/<wname>/edit/',
+        ], 'get', views.project_wiki_edit, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'))),
+
+        # Compare | GET (legacy url, trigger redirect)
+        Rule([
+            '/project/<pid>/wiki/<wname>/compare/<int:wver>/',
+            '/project/<pid>/node/<nid>/wiki/<wname>/compare/<int:wver>/',
+        ], 'get', views.project_wiki_compare, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'))),
 
         # Edit | POST
         Rule([
             '/project/<pid>/wiki/<wname>/',
             '/project/<pid>/node/<nid>/wiki/<wname>/',
-            '/project/<pid>/wiki/<wname>/edit/',
-            '/project/<pid>/node/<nid>/wiki/<wname>/edit/',
-            '/project/<pid>/wiki/<wname>/compare/<int:wver>/',
-            '/project/<pid>/node/<nid>/wiki/<wname>/compare/<int:wver>/',
         ], 'post', views.project_wiki_edit_post, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'))),
 
     ]
@@ -92,8 +98,8 @@ api_routes = {
         Rule([
             '/project/<pid>/wiki/<wname>/content/',
             '/project/<pid>/node/<nid>/wiki/<wname>/content/',
-            '/project/<pid>/wiki/<wname>/content/<int:wver>/',
-            '/project/<pid>/node/<nid>/wiki/<wname>/content/<int:wver>/',
+            '/project/<pid>/wiki/<wname>/content/<wver>/',
+            '/project/<pid>/node/<nid>/wiki/<wname>/content/<wver>/',
         ], 'get', views.wiki_page_content, json_renderer),
 
         # Validate | GET
