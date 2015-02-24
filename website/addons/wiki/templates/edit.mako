@@ -161,7 +161,8 @@
                       </div>
                       <div class="col-sm-6">
                             <!-- Version Picker -->
-                            <select data-bind="value: compareVersion" id="compareVersionSelect" class="pull-right">
+                          <span class="compare-version-text pull-right"><span data-bind="text: viewVersionDisplay"></span> to
+                            <select data-bind="value: compareVersion" id="compareVersionSelect">
                                 <option value="current" ${'selected' if version_settings['compare'] == 'current' else ''}>Current</option>
                                 % if len(versions) > 1:
                                     <option value="previous" ${'selected' if version_settings['compare'] == 'previous' else ''}>Previous</option>
@@ -169,7 +170,7 @@
                                 % for version in versions[2:]:
                                     <option value="${version['version']}" ${'selected' if version_settings['compare'] == version['version'] else ''}>Version ${version['version']}</option>
                                 % endfor
-                            </select>
+                            </select></span>
                       </div>
                   </div>
               </div>
