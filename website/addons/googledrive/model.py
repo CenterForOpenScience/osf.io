@@ -102,7 +102,7 @@ class GoogleDriveUserSettings(AddonUserSettingsBase):
     def needs_refresh(self):
         if self.token_expires_at is None:
             return False
-        return (datetime.utcnow() - self.token_expires_at).seconds < settings.REFRESH_TIME
+        return (self.token_expires_at - datetime.utcnow()).seconds < settings.REFRESH_TIME
 
     @property
     def has_auth(self):
@@ -204,7 +204,7 @@ class GoogleDriveNodeSettings(AddonNodeSettingsBase):
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
                 'path': metadata['path'],
-                'folder': self.folder,
+                'folder': self.folder_path,
 
                 'urls': {
                     'view': url,
