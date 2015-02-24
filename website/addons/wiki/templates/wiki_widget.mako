@@ -1,7 +1,7 @@
 <%inherit file="project/addon/widget.mako"/>
 <%page expression_filter="h"/>
 
-<div id="markdown-it-render">
+<div id="markdownRender">
     % if wiki_content:
         ${wiki_content | n}
     % else:
