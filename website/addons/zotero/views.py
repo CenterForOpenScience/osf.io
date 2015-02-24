@@ -4,10 +4,12 @@ from flask import request
 
 from framework.auth.decorators import must_be_logged_in
 
-from website.project.decorators import must_be_contributor_or_public
-from website.project.decorators import must_have_permission
-from website.project.decorators import must_not_be_registration
-from website.project.decorators import must_have_addon
+from website.project.decorators import (
+    must_be_contributor_or_public,
+    must_have_permission,
+    must_not_be_registration,
+    must_have_addon,
+)
 
 from .provider import ZoteroCitationsProvider
 
@@ -37,8 +39,9 @@ def zotero_set_config(auth, node_addon, **kwargs):
     """ Updates ZoteroNodeSettings based on submitted account and folder information """
 
     provider = ZoteroCitationsProvider()
-    external_account_id = request.json.get('external_account_id')
-    external_list_id = request.json.get('external_list_id')
+    args = request.get_json()
+    external_account_id = args.get('external_account_id')
+    external_list_id = args.get('external_list_id')
     return provider.set_config(
         node_addon,
         auth.user,
@@ -54,7 +57,7 @@ def zotero_add_user_auth(auth, node_addon, **kwargs):
     """ Allows for importing existing auth to ZoteroNodeSettings """
 
     provider = ZoteroCitationsProvider()
-    external_account_id = request.json.get('external_account_id')
+    external_account_id = request.get_json().get('external_account_id')
     return provider.add_user_auth(node_addon, auth.user, external_account_id)
 
 
