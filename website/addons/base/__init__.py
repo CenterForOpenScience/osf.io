@@ -432,6 +432,7 @@ class AddonUserSettingsBase(AddonSettingsBase):
                     'url': node.url,
                     'title': node.title,
                     'registered': node.is_registration,
+                    'api_url': node.api_url
                 }
                 for node in self.nodes_authorized
             ]
