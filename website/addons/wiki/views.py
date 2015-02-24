@@ -242,6 +242,18 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     for panel in panels:
         panel_display = '' if panel in panels_used else 'style="display: none"'
         panel_settings[panel] = '{0} {1}'.format(panel_class, panel_display)
+    # Append menu after column width is determined
+    if 'menu' in request.args or not request.args:
+        panels_used.append('menu')
+        panel_settings['menu'] = ''
+        panel_settings['menu_collapsed'] = 'style="display: none"'
+        panel_settings['menu_column'] = 'class="col-sm-3 panel-toggle"'
+        panel_settings['content_column'] = 'class="col-sm-9 panel-expand"'
+    else:
+        panel_settings['menu'] = 'style="display: none"'
+        panel_settings['menu_collapsed'] = ''
+        panel_settings['menu_column'] = 'class="col-sm-1 panel-toggle"'
+        panel_settings['content_column'] = 'class="col-sm-11 panel-expand"'
 
     # Default versions for view and compare
     view = request.args.get('view', '')

@@ -24,23 +24,19 @@
 
 <div class="wiki" id="wikiPageContext">
   <div class="row wiki-wrapper">
-    <div class="col-sm-3 panel-toggle">
-        <div class="wiki-panel hidden-xs"> 
-              <div class="wiki-panel-header"> <i class="icon-list"> </i>  Menu 
+    <div ${style['menu_column'] | n}>
+        <!-- Menu with toggle normal -->
+        <div class="wiki-panel hidden-xs" ${style['menu'] | n}>
+            <div class="wiki-panel-header"> <i class="icon-list"> </i>  Menu
                 <div class="pull-right"> <div class="panel-collapse"> <i class="icon icon-angle-left"> </i> </div></div>
-              </div>
-              <div class="wiki-panel-body">
-                <%include file="wiki/templates/toc.mako"/>
-                </div>
             </div>
-            <div class="wiki-panel visible-xs">
-              <div class="wiki-panel-header"> <i class="icon-list"> </i>  Menu </div>
-              <div class="wiki-panel-body ">
+            <div class="wiki-panel-body">
                 <%include file="wiki/templates/toc.mako"/>
-                </div>
             </div>
+        </div>
 
-        <div class="wiki-panel panel-collapsed hidden-xs text-center" style="display: none;">
+        <!-- Menu with toggle collapsed -->
+        <div class="wiki-panel panel-collapsed hidden-xs text-center" ${style['menu_collapsed'] | n}>
           <div class="wiki-panel-header">
             <i class="icon-list"> </i>
             <i class="icon icon-angle-right"> </i>
@@ -49,9 +45,17 @@
               <%include file="wiki/templates/nav.mako"/>
            </div>
         </div>
+
+        <!-- Menu without toggle in XS size only -->
+        <div class="wiki-panel visible-xs">
+            <div class="wiki-panel-header"> <i class="icon-list"> </i>  Menu </div>
+            <div class="wiki-panel-body ">
+                <%include file="wiki/templates/toc.mako"/>
+            </div>
+        </div>
     </div>
 
-    <div class="col-sm-9 panel-expand">
+    <div ${style['content_column'] | n}>
       <div class="row">
         % if can_edit:
             <div data-bind="with: $root.editVM.wikiEditor.viewModel" data-osf-panel="Edit" ${style['edit'] | n}>

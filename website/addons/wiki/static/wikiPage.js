@@ -144,6 +144,7 @@ var defaultOptions = {
     editVisible: false,
     viewVisible: true,
     compareVisible: false,
+    menuVisible: true,
     canEdit: true,
     viewVersion: 'current',
     compareVersion: 'previous',
@@ -162,6 +163,7 @@ function ViewModel(options){
     self.editVis = ko.observable(options.editVisible);
     self.viewVis = ko.observable(options.viewVisible);
     self.compareVis = ko.observable(options.compareVisible);
+    self.menuVis = ko.observable(options.menuVisible);
 
     self.compareVersion = ko.observable(options.compareVersion);
     self.viewVersion = ko.observable(options.viewVersion);
@@ -195,9 +197,13 @@ function ViewModel(options){
         }
         if (self.compareVis()) {
             url += paramPrefix + 'compare';
+            paramPrefix = '&';
             if (self.compareVersion() !== 'previous'){
                 url += '=' + self.compareVersion();
             }
+        }
+        if (self.menuVis() && paramPrefix === '&') {    // Non-default view
+            url += paramPrefix + 'menu';
         }
 
         history.replaceState({}, '', url);  // jshint ignore: line
@@ -213,12 +219,12 @@ function ViewModel(options){
     self.viewVM = new ViewWidget(self.viewVis, self.viewVersion, self.viewText, self.renderedView, self.contentURL, self.allowMathjaxification, self.allowFullRender, self.editor);
     self.compareVM = new CompareWidget(self.compareVis, self.compareVersion, self.viewVM.displaySource, self.renderedCompare, self.contentURL);
 
-    $('body').on('togglePanel', function (event, panel, display) {
+    var bodyElement = $('body');
+    bodyElement.on('togglePanel', function (event, panel, display) {
         // Update self.editVis, self.viewVis, or self.compareVis in viewmodel
         self[panel + 'Vis'](display);
 
         //URL needs to be a computed observable, and this should just update the panel states, which will feed URL
-
 
         // Switch view to correct version
         if (panel === 'edit') {
@@ -228,6 +234,10 @@ function ViewModel(options){
                 self.viewVersion('current');
             }
         }
+    });
+
+    bodyElement.on('toggleMenu', function(event, menuVisible) {
+        self.menuVis(menuVisible);
     });
 }
 
