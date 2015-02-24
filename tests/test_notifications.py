@@ -528,7 +528,7 @@ class TestSendEmails(OsfTestCase):
             event_name='comments'
         )
         self.project_subscription.save()
-        self.project_subscription.email_transactional.append(self.user)
+        self.project_subscription.email_transactional.append(self.project.creator)
         self.project_subscription.save()
 
         self.node = NodeFactory(project=self.project)
@@ -567,13 +567,14 @@ class TestSendEmails(OsfTestCase):
     @mock.patch('website.notifications.emails.send')
     def test_notify_does_not_send_to_users_subscribed_to_none(self, send):
         node = NodeFactory()
+        user = UserFactory()
         node_subscription = SubscriptionFactory(
             _id=node._id,
             object_id=node._id,
             event_name='comments'
         )
         node_subscription.save()
-        node_subscription.none.append(self.user)
+        node_subscription.none.append(user)
         node_subscription.save()
         emails.notify(node._id, 'comments')
         assert_false(send.called)
@@ -582,7 +583,7 @@ class TestSendEmails(OsfTestCase):
     def test_check_parent(self, send):
         emails.check_parent(self.node._id, 'comments', [])
         assert_true(send.called)
-        send.assert_called_with([self.user._id], 'email_transactional', self.node._id, 'comments')
+        send.assert_called_with([self.project.creator._id], 'email_transactional', self.node._id, 'comments')
 
     @mock.patch('website.notifications.emails.send')
     def test_check_parent_does_not_send_if_notification_type_is_none(self, mock_send):
@@ -593,7 +594,7 @@ class TestSendEmails(OsfTestCase):
             event_name='comments'
         )
         project_subscription.save()
-        project_subscription.none.append(self.user)
+        project_subscription.none.append(project.creator)
         project_subscription.save()
         node = NodeFactory(project=project)
         emails.check_parent(node._id, 'comments', [])
