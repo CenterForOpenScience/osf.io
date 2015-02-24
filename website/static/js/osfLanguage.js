@@ -46,8 +46,8 @@ module.exports = {
         s3: {
 
         },
-        gdrive: {
-          // Shown on clicking "Delete Access Token" for gdrive
+        googledrive: {
+          // Shown on clicking "Delete Access Token" for googledrive
             confirmDeauth: 'Are you sure you want to delete your Google Drive access ' +
                 'key? This will revoke access to Google Drive for all projects you have ' +
                 'authorized.',

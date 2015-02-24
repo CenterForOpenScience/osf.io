@@ -1,17 +1,17 @@
-from website.addons.gdrive import routes, model, views
+from website.addons.googledrive import routes, model, views
 
 
 MODELS = [
-    model.AddonGdriveUserSettings,
-    model.AddonGdriveNodeSettings,
-    model.AddonGdriveGuidFile
+    model.GoogleDriveUserSettings,
+    model.GoogleDriveNodeSettings,
+    model.GoogleDriveGuidFile
 ]
-USER_SETTINGS_MODEL = model.AddonGdriveUserSettings
-NODE_SETTINGS_MODEL = model.AddonGdriveNodeSettings
+USER_SETTINGS_MODEL = model.GoogleDriveUserSettings
+NODE_SETTINGS_MODEL = model.GoogleDriveNodeSettings
 
 ROUTES = [routes.api_routes, routes.web_routes]
 
-SHORT_NAME = 'gdrive'
+SHORT_NAME = 'googledrive'
 FULL_NAME = 'Google Drive'
 
 OWNERS = ['user', 'node']  # can include any of ['user', 'node']
@@ -32,5 +32,5 @@ INCLUDE_CSS = {
 }
 
 HAS_HGRID_FILES = True  # set to True for storage addons that display in HGrid
-GET_HGRID_DATA = views.hgrid.gdrive_addon_folder
+GET_HGRID_DATA = views.hgrid.googledrive_addon_folder
 # MAX_FILE_SIZE = 10  # MB

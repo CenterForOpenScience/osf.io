@@ -18,9 +18,9 @@ from website.util import permissions
 from ..utils import serialize_settings, serialize_urls
 
 
-@must_have_addon('gdrive', 'node')
+@must_have_addon('googledrive', 'node')
 @must_have_permission(permissions.WRITE)
-def gdrive_config_get(node_addon, **kwargs):
+def googledrive_config_get(node_addon, **kwargs):
     """API that returns the serialized node settings."""
     user = _get_current_user()
     return {
@@ -30,11 +30,11 @@ def gdrive_config_get(node_addon, **kwargs):
 
 @must_have_permission(permissions.WRITE)
 @must_not_be_registration
-@must_have_addon('gdrive', 'user')
-@must_have_addon('gdrive', 'node')
-@must_be_addon_authorizer('gdrive')
-def gdrive_config_put(node_addon, user_addon, auth, **kwargs):
-    """View for changing a node's linked Drive folder/file."""
+@must_have_addon('googledrive', 'user')
+@must_have_addon('googledrive', 'node')
+@must_be_addon_authorizer('googledrive')
+def googledrive_config_put(node_addon, user_addon, auth, **kwargs):
+    """View for changing a node's linked Google Drive folder/file."""
     selected = request.json.get('selected')
     node_addon.set_folder(selected, auth=auth)
     node_addon.save()
@@ -50,14 +50,14 @@ def gdrive_config_put(node_addon, user_addon, auth, **kwargs):
 
 
 @must_be_logged_in
-@must_have_addon('gdrive', 'user')
-def drive_user_config_get(user_addon, auth, **kwargs):
+@must_have_addon('googledrive', 'user')
+def googledrive_user_config_get(user_addon, auth, **kwargs):
     """View for getting a JSON representation of the logged-in user's
-    GDrive user settings.
+    Google Drive user settings.
     """
     urls = {
-        'create': api_url_for('drive_oauth_start_user'),
-        'delete': api_url_for('drive_oauth_delete_user'),
+        'create': api_url_for('googledrive_oauth_start_user'),
+        'delete': api_url_for('googledrive_oauth_delete_user'),
     }
 
     return {

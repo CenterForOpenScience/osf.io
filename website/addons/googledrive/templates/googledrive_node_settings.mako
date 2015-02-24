@@ -1,5 +1,5 @@
 
-<div id="driveAddonScope" class="scripted">
+<div id="googleDriveAddonScope" class="scripted">
 <h4 class="addon-title">
     Google Drive
     <small class="authorized-by">
@@ -45,14 +45,14 @@
         <!-- Google Drive Treebeard -->
         <p class="text-muted text-center dropbox-loading-text" data-bind="visible: loading">
                     Loading folders...</p>
-        <div id="myGdriveGrid"
+        <div id="myGoogleDriveGrid"
              class="filebrowser hgrid dropbox-folder-picker">
 
 
         </div>
 
         <!-- Queued selection -->
-        <div class="gdrive-confirm-selection"
+        <div class="googledrive-confirm-selection"
             data-bind="visible:selected">
             <form data-bind="submit: submitSettings">
 
@@ -69,7 +69,7 @@
                            value="Submit" />
                 </div>
             </form>
-        </div><!-- end gdrive-confirm-selection -->
+        </div><!-- end googledrive-confirm-selection -->
 
 
     </div>
@@ -80,5 +80,5 @@
         <p data-bind="html: message"></p>
     </div>
 
-</div> <!-- End of driveAddonScope -->
+</div> <!-- End of googleDriveAddonScope -->
 

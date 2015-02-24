@@ -21,7 +21,7 @@ from ..import settings
 from ..utils import serialize_settings
 
 @must_be_logged_in
-def drive_oauth_start(auth, **kwargs):
+def googledrive_oauth_start(auth, **kwargs):
     """View function that does OAuth Authorization
     and returns access token"""
     # Run through the OAuth flow and retrieve credentials
@@ -32,13 +32,13 @@ def drive_oauth_start(auth, **kwargs):
     # upon finishing the flow
     nid = kwargs.get('nid') or kwargs.get('pid')
     if nid:
-        session.data['gdrive_auth_nid'] = nid
+        session.data['googledrive_auth_nid'] = nid
     # If user has already authorized dropbox, flash error message
-    if user.has_addon('gdrive') and user.get_addon('gdrive').has_auth:
+    if user.has_addon('googledrive') and user.get_addon('googledrive').has_auth:
         flash('You have already authorized Google Drive for this account', 'warning')
         return redirect(web_url_for('user_addons'))
 
-    redirect_uri = api_url_for('drive_oauth_finish', _absolute=True)
+    redirect_uri = api_url_for('googledrive_oauth_finish', _absolute=True)
     flow = OAuth2WebServerFlow(
         settings.CLIENT_ID,
         settings.CLIENT_SECRET,
@@ -51,22 +51,22 @@ def drive_oauth_start(auth, **kwargs):
 
 
 @collect_auth
-def drive_oauth_finish(auth, **kwargs):
-    """View called when the Oauth flow is completed. Adds a new AddonGdriveUserSettings
+def googledrive_oauth_finish(auth, **kwargs):
+    """View called when the Oauth flow is completed. Adds a new GoogleDriveUserSettings
     record to the user and saves the user's access token and account info.
     """
     if not auth.logged_in:
         raise HTTPError(http.FORBIDDEN)
     user = auth.user
-    user.add_addon('gdrive')
+    user.add_addon('googledrive')
     user.save()
-    user_settings = user.get_addon('gdrive')
-    node = Node.load(session.data.get('gdrive_auth_nid'))
+    user_settings = user.get_addon('googledrive')
+    node = Node.load(session.data.get('googledrive_auth_nid'))
     code = request.args.get('code')
     if code is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    redirect_uri = api_url_for('drive_oauth_finish', _absolute=True)
+    redirect_uri = api_url_for('googledrive_oauth_finish', _absolute=True)
     flow = OAuth2WebServerFlow(
         settings.CLIENT_ID,
         settings.CLIENT_SECRET,
@@ -89,9 +89,9 @@ def drive_oauth_finish(auth, **kwargs):
 
     flash('Successfully authorized Google Drive', 'success')
     if node:
-        del session.data['gdrive_auth_nid']
-        if node.has_addon('gdrive'):
-            node_addon = node.get_addon('gdrive')
+        del session.data['googledrive_auth_nid']
+        if node.has_addon('googledrive'):
+            node_addon = node.get_addon('googledrive')
             node_addon.set_user_auth(user_settings)
             node_addon.save()
         return redirect(node.web_url_for('node_setting'))
@@ -99,27 +99,27 @@ def drive_oauth_finish(auth, **kwargs):
 
 
 @must_be_logged_in
-@must_have_addon('gdrive', 'user')
-def drive_oauth_delete_user(user_addon, auth, **kwargs):
+@must_have_addon('googledrive', 'user')
+def googledrive_oauth_delete_user(user_addon, auth, **kwargs):
     user_addon.clear()
     user_addon.save()
 
 
 @must_have_permission('write')
-@must_have_addon('gdrive', 'node')
-def gdrive_deauthorize(auth, node_addon, **kwargs):
+@must_have_addon('googledrive', 'node')
+def googledrive_deauthorize(auth, node_addon, **kwargs):
     node_addon.deauthorize(auth=auth)
     node_addon.save()
     return None
 
 
 @must_have_permission('write')
-@must_have_addon('gdrive', 'node')
-def gdrive_import_user_auth(auth, node_addon, **kwargs):
-    """Import gdrive credentials from the currently logged-in user to a node.
+@must_have_addon('googledrive', 'node')
+def googledrive_import_user_auth(auth, node_addon, **kwargs):
+    """Import googledrive credentials from the currently logged-in user to a node.
     """
     user = auth.user
-    user_addon = user.get_addon('gdrive')
+    user_addon = user.get_addon('googledrive')
     if user_addon is None or node_addon is None:
         raise HTTPError(http.BAD_REQUEST)
     node_addon.set_user_auth(user_addon)

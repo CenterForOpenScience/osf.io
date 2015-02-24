@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Persistence layer for the gdrive addon.
+"""Persistence layer for the google drive addon.
 """
 import base64
 
@@ -13,7 +13,7 @@ from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, Gu
 from .utils import clean_path, GoogleDriveNodeLogger, check_access_token
 
 
-class AddonGdriveGuidFile(GuidFile):
+class GoogleDriveGuidFile(GuidFile):
     path = fields.StringField(index=True)
 
     @property
@@ -25,7 +25,7 @@ class AddonGdriveGuidFile(GuidFile):
 
     @property
     def folder(self):
-        return self.node.get_addon('gdrive').folder
+        return self.node.get_addon('googledrive').folder
 
     @property
     def waterbutler_path(self):
@@ -34,7 +34,7 @@ class AddonGdriveGuidFile(GuidFile):
 
     @property
     def provider(self):
-        return 'gdrive'
+        return 'googledrive'
 
     @property
     def version_identifier(self):
@@ -63,7 +63,7 @@ class AddonGdriveGuidFile(GuidFile):
         return new, created
 
 
-class AddonGdriveUserSettings(AddonUserSettingsBase):
+class GoogleDriveUserSettings(AddonUserSettingsBase):
     """Stores user-specific information, including the Oauth access
     token.
     """
@@ -79,22 +79,22 @@ class AddonGdriveUserSettings(AddonUserSettingsBase):
     def clear(self):  # TODO : check for all the nodes (see dropbox)
         self.access_token = None
 
-        for node_settings in self.addongdrivenodesettings__authorized:
+        for node_settings in self.googledrivenodesettings__authorized:
             node_settings.deauthorize(Auth(self.owner))
             node_settings.save()
         return self
 
     def delete(self, save=True):
         self.clear()
-        super(AddonGdriveUserSettings, self).delete(save)
+        super(GoogleDriveUserSettings, self).delete(save)
 
     def __repr__(self):
-        return u'<AddonGdriveUserSettings(user={self.owner.username!r})>'.format(self=self)
+        return u'<GoogleDriveUserSettings(user={self.owner.username!r})>'.format(self=self)
 
 
-class AddonGdriveNodeSettings(AddonNodeSettingsBase):
+class GoogleDriveNodeSettings(AddonNodeSettingsBase):
     user_settings = fields.ForeignField(
-        'addongdriveusersettings', backref='authorized'
+        'googledriveusersettings', backref='authorized'
     )
 
     folder = fields.StringField(default=None)
@@ -127,9 +127,9 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
         nodelogger.log(action="folder_selected", save=True)
 
     def set_user_auth(self, user_settings):
-        """Import a user's GDrive authentication and create a NodeLog.
+        """Import a user's GoogleDrive authentication and create a NodeLog.
 
-        :param AddonGdriveUserSettings user_settings: The user settings to link.
+        :param GoogleDriveUserSettings user_settings: The user settings to link.
         """
         self.user_settings = user_settings
         nodelogger = GoogleDriveNodeLogger(node=self.owner, auth=Auth(user_settings.owner))
@@ -148,10 +148,10 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
 
     def create_waterbutler_log(self, auth, action, metadata):
         # cleaned_path = clean_path(metadata['path'])
-        url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='gdrive')
+        url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='googledrive')
 
         self.owner.add_log(
-            'gdrive_{0}'.format(action),
+            'googledrive_{0}'.format(action),
             auth=auth,
             params={
                 'project': self.owner.parent_id,
@@ -167,7 +167,7 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
         )
 
     def find_or_create_file_guid(self, path):
-        return AddonGdriveGuidFile.get_or_create(self.owner, path)
+        return GoogleDriveGuidFile.get_or_create(self.owner, path)
 
     # #### Callback overrides #####
 
@@ -206,7 +206,7 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
 
     def before_remove_contributor_message(self, node, removed):
         """Return warning text to display if removed contributor is the user
-        who authorized the Gdrive addon
+        who authorized the GoogleDrive addon
         """
         if self.user_settings and self.user_settings.owner == removed:
             category = node.project_or_component
@@ -225,7 +225,7 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
 
         :return: A tuple of the form (cloned_settings, message)
         """
-        clone, message = super(AddonGdriveNodeSettings, self).after_register(
+        clone, message = super(GoogleDriveNodeSettings, self).after_register(
             node, registration, user, save=False
         )
         # Copy user_settings and add registration data
@@ -242,7 +242,7 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
 
         :return: A tuple of the form (cloned_settings, message)
         """
-        clone, _ = super(AddonGdriveNodeSettings, self).after_fork(
+        clone, _ = super(GoogleDriveNodeSettings, self).after_fork(
             node=node, fork=fork, user=user, save=False
         )
 
@@ -261,7 +261,7 @@ class AddonGdriveNodeSettings(AddonNodeSettingsBase):
         return clone, message
 
     def after_remove_contributor(self, node, removed):
-        """If the removed contributor was the user who authorized the Gdrive
+        """If the removed contributor was the user who authorized the GoogleDrive
         addon, remove the auth credentials from this node.
         Return the message text that will be displayed to the user.
         """

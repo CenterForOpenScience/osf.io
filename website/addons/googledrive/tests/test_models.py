@@ -6,42 +6,42 @@ from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory
 from website.addons.base import exceptions
 
-from website.addons.gdrive.model import (
-    AddonGdriveUserSettings, AddonGdriveNodeSettings
+from website.addons.googledrive.model import (
+    GoogleDriveUserSettings, GoogleDriveNodeSettings
 )
-from website.addons.gdrive.tests.factories import (
-    GdriveNodeSettingsFactory, GdriveUserSettingsFactory
+from website.addons.googledrive.tests.factories import (
+    GoogleDriveNodeSettingsFactory, GoogleDriveUserSettingsFactory
 )
 
-class TestGdriveUserSettingsModel(OsfTestCase):
+class TestGoogleDriveUserSettingsModel(OsfTestCase):
 
     def setUp(self):
-        super(TestGdriveUserSettingsModel, self).setUp()
+        super(TestGoogleDriveUserSettingsModel, self).setUp()
         self.user = UserFactory()
 
     def test_fields(self):
-        user_settings = AddonGdriveUserSettings(
+        user_settings = GoogleDriveUserSettings(
             access_token='12345',
             owner=self.user,
             username='name',
             token_expiry='123456')
         user_settings.save()
-        retrieved = AddonGdriveUserSettings.load(user_settings._primary_key)
+        retrieved = GoogleDriveUserSettings.load(user_settings._primary_key)
         assert_true(retrieved.access_token)
         assert_true(retrieved.owner)
         assert_true(retrieved.username)
         assert_true(retrieved.token_expiry)
 
     def test_has_auth(self):
-        user_settings = GdriveUserSettingsFactory(access_token=None)
+        user_settings = GoogleDriveUserSettingsFactory(access_token=None)
         assert_false(user_settings.has_auth)
         user_settings.access_token = '12345'
         user_settings.save()
         assert_true(user_settings.has_auth)
 
     def test_clear_clears_associated_node_settings(self):
-        node_settings = GdriveNodeSettingsFactory.build()
-        user_settings = GdriveUserSettingsFactory()
+        node_settings = GoogleDriveNodeSettingsFactory.build()
+        user_settings = GoogleDriveUserSettingsFactory()
         node_settings.user_settings = user_settings
         node_settings.save()
         user_settings.clear()
@@ -52,8 +52,8 @@ class TestGdriveUserSettingsModel(OsfTestCase):
         assert_is(node_settings.folder, None)
 
     def test_clear(self):
-        node_settings = GdriveNodeSettingsFactory.build()
-        user_settings = GdriveUserSettingsFactory(access_token='abcde')
+        node_settings = GoogleDriveNodeSettingsFactory.build()
+        user_settings = GoogleDriveUserSettingsFactory(access_token='abcde')
         node_settings.user_settings = user_settings
         node_settings.save()
 
@@ -63,7 +63,7 @@ class TestGdriveUserSettingsModel(OsfTestCase):
         assert_false(user_settings.access_token)
 
     def test_delete(self):
-        user_settings = GdriveUserSettingsFactory()
+        user_settings = GoogleDriveUserSettingsFactory()
         assert_true(user_settings.has_auth)
         user_settings.delete()
         user_settings.save()
@@ -71,8 +71,8 @@ class TestGdriveUserSettingsModel(OsfTestCase):
         assert_true(user_settings.deleted)
 
     def test_delete_clears_associated_node_settings(self):
-        node_settings = GdriveNodeSettingsFactory.build()
-        user_settings = GdriveUserSettingsFactory()
+        node_settings = GoogleDriveNodeSettingsFactory.build()
+        user_settings = GoogleDriveUserSettingsFactory()
         node_settings.user_settings = user_settings
         node_settings.save()
 
@@ -85,22 +85,22 @@ class TestGdriveUserSettingsModel(OsfTestCase):
         assert_false(node_settings.deleted)
 
 
-class TestGdriveNodeSettingsModel(OsfTestCase):
+class TestGoogleDriveNodeSettingsModel(OsfTestCase):
 
     def setUp(self):
-        super(TestGdriveNodeSettingsModel, self).setUp()
+        super(TestGoogleDriveNodeSettingsModel, self).setUp()
         self.user = UserFactory()
-        self.user.add_addon('gdrive')
+        self.user.add_addon('googledrive')
         self.user.save()
-        self.user_settings = self.user.get_addon('gdrive')
+        self.user_settings = self.user.get_addon('googledrive')
         self.project = ProjectFactory()
-        self.node_settings = GdriveNodeSettingsFactory(
+        self.node_settings = GoogleDriveNodeSettingsFactory(
             user_settings=self.user_settings,
             owner=self.project,
         )
 
     def test_fields(self):
-        node_settings = AddonGdriveNodeSettings(user_settings=self.user_settings)
+        node_settings = GoogleDriveNodeSettings(user_settings=self.user_settings)
         node_settings.save()
         assert_true(node_settings.user_settings)
         assert_equal(node_settings.user_settings.owner, self.user)
@@ -108,12 +108,12 @@ class TestGdriveNodeSettingsModel(OsfTestCase):
         assert_true(hasattr(node_settings, 'waterbutler_folder'))
 
     def test_folder_defaults_to_none(self):
-        node_settings = AddonGdriveNodeSettings(user_settings=self.user_settings)
+        node_settings = GoogleDriveNodeSettings(user_settings=self.user_settings)
         node_settings.save()
         assert_is_none(node_settings.folder)
 
     def test_has_auth(self):
-        settings = AddonGdriveNodeSettings(user_settings=self.user_settings)
+        settings = GoogleDriveNodeSettings(user_settings=self.user_settings)
         settings.save()
         assert_false(settings.has_auth)
 
@@ -121,7 +121,7 @@ class TestGdriveNodeSettingsModel(OsfTestCase):
         settings.user_settings.save()
         assert_true(settings.has_auth)
 
-    # TODO use this test if delete function is used in gdrive/model
+    # TODO use this test if delete function is used in googledrive/model
     # def test_delete(self):
     #     assert_true(self.node_settings.user_settings)
     #     assert_true(self.node_settings.folder)
@@ -142,7 +142,7 @@ class TestGdriveNodeSettingsModel(OsfTestCase):
         assert_is(self.node_settings.folder, None)
 
         last_log = self.project.logs[-1]
-        assert_equal(last_log.action, 'gdrive_node_deauthorized')
+        assert_equal(last_log.action, 'googledrive_node_deauthorized')
         params = last_log.params
         assert_in('node', params)
         assert_in('project', params)
@@ -161,11 +161,11 @@ class TestGdriveNodeSettingsModel(OsfTestCase):
         assert_equal(self.node_settings.folder, folder_name['name'])
         # Log was saved
         last_log = self.project.logs[-1]
-        assert_equal(last_log.action, 'gdrive_folder_selected')
+        assert_equal(last_log.action, 'googledrive_folder_selected')
 
     def test_set_user_auth(self):
-        node_settings = GdriveNodeSettingsFactory()
-        user_settings = GdriveUserSettingsFactory()
+        node_settings = GoogleDriveNodeSettingsFactory()
+        user_settings = GoogleDriveUserSettingsFactory()
 
         node_settings.set_user_auth(user_settings)
         node_settings.save()
@@ -174,7 +174,7 @@ class TestGdriveNodeSettingsModel(OsfTestCase):
         assert_equal(node_settings.user_settings, user_settings)
         # A log was saved
         last_log = node_settings.owner.logs[-1]
-        assert_equal(last_log.action, 'gdrive_node_authorized')
+        assert_equal(last_log.action, 'googledrive_node_authorized')
         log_params = last_log.params
         assert_equal(log_params['folder'], node_settings.folder)
         assert_equal(log_params['node'], node_settings.owner._primary_key)
@@ -220,7 +220,7 @@ class TestGdriveNodeSettingsModel(OsfTestCase):
         assert_equal(len(self.project.logs), nlog + 1)
         assert_equal(
             self.project.logs[-1].action,
-            'gdrive_{0}'.format(action),
+            'googledrive_{0}'.format(action),
         )
         assert_equal(self.project.logs[-1].params['path'], path)
 
@@ -230,8 +230,8 @@ class TestNodeSettingsCallbacks(OsfTestCase):
     def setUp(self):
         super(TestNodeSettingsCallbacks, self).setUp()
         # Create node settings with auth
-        self.user_settings = GdriveUserSettingsFactory(access_token='123abc', username='name/email')
-        self.node_settings = GdriveNodeSettingsFactory(
+        self.user_settings = GoogleDriveUserSettingsFactory(access_token='123abc', username='name/email')
+        self.node_settings = GoogleDriveNodeSettingsFactory(
             user_settings=self.user_settings,
             folder='',
         )
@@ -239,14 +239,14 @@ class TestNodeSettingsCallbacks(OsfTestCase):
         self.project = self.node_settings.owner
         self.user = self.user_settings.owner
 
-    def test_after_fork_by_authorized_gdrive_user(self):
+    def test_after_fork_by_authorized_googledrive_user(self):
         fork = ProjectFactory()
         clone, message = self.node_settings.after_fork(
             node=self.project, fork=fork, user=self.user_settings.owner
         )
         assert_equal(clone.user_settings, self.user_settings)
 
-    def test_after_fork_by_unauthorized_gdrive_user(self):
+    def test_after_fork_by_unauthorized_googledrive_user(self):
         fork = ProjectFactory()
         user = UserFactory()
         clone, message = self.node_settings.after_fork(
@@ -268,7 +268,7 @@ class TestNodeSettingsCallbacks(OsfTestCase):
         assert_in(self.user.fullname, message)
         assert_in(self.project.project_or_component, message)
 
-    def test_after_remove_authorized_gdrive_user(self):
+    def test_after_remove_authorized_googledrive_user(self):
         message = self.node_settings.after_remove_contributor(
             self.project, self.user_settings.owner)
         self.node_settings.save()

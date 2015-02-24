@@ -222,8 +222,10 @@ var ViewModel = function(url, selector, folderPicker) {
             ajaxOptions: {
                 error: function (xhr, textStatus, error) {
                     self.loading(false);
-                    self.changeMessage('Could not connect to Google Drive at this time. ' +
-                                       'Please try again later.', 'text-warning');
+                    self.changeMessage(
+                        'Could not connect to Google Drive at this time. ' +
+                        'Please try again later.', 'text-warning'
+                    );
                     Raven.captureMessage('Could not GET get Google Drive contents.', {
                         textStatus: textStatus,
                         error: error
@@ -267,11 +269,11 @@ var ViewModel = function(url, selector, folderPicker) {
     };
 };
 
-function GdriveNodeConfig(selector, url, folderPicker) {
+function GoogleDriveNodeConfig(selector, url, folderPicker) {
     // Initialization code
     var self = this;
     self.viewModel = new ViewModel(url, selector, folderPicker);
     $.osf.applyBindings(self.viewModel, selector);
 }
 
-module.exports = GdriveNodeConfig;
+module.exports = GoogleDriveNodeConfig;

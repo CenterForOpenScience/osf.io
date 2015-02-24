@@ -21,15 +21,15 @@ from ..utils import to_hgrid, check_access_token
 
 @must_have_permission(permissions.WRITE)
 @must_not_be_registration
-@must_have_addon('gdrive', 'user')
-@must_have_addon('gdrive', 'node')
-@must_be_addon_authorizer('gdrive')
-def gdrive_folders(node_addon, **kwargs):
+@must_have_addon('googledrive', 'user')
+@must_have_addon('googledrive', 'node')
+@must_be_addon_authorizer('googledrive')
+def googledrive_folders(node_addon, **kwargs):
     """ Returns all the subsequent folders under the folder id passed """
     node_owner = node_addon.owner
     nid = kwargs.get('nid') or kwargs.get('pid')
     node = Node.load(nid)
-    node_settings = node.get_addon('gdrive')
+    node_settings = node.get_addon('googledrive')
 
     # Get service using Access token
     if node_settings:
@@ -76,7 +76,7 @@ def get_folders(service, folder_id=None):
     return folders['items']
 
 
-def gdrive_addon_folder(node_settings, auth, **kwargs):
+def googledrive_addon_folder(node_settings, auth, **kwargs):
     """Return the Rubeus/HGrid-formatted response for the root folder only."""
     # Quit if node settings does not have authentication
     if not node_settings.has_auth or not node_settings.folder:

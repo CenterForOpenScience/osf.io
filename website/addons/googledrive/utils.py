@@ -23,7 +23,7 @@ class GoogleDriveNodeLogger(object):
 
         from website.project.model import NodeLog
 
-        file_obj = AddonGdriveGuidFile(path='foo/bar.txt')
+        file_obj = GoogleDriveGuidFile(path='foo/bar.txt')
         file_obj.save()
         node = ...
         auth = ...
@@ -33,7 +33,7 @@ class GoogleDriveNodeLogger(object):
 
     :param Node node: The node to add logs to
     :param Auth auth: Authorization of the person who did the action.
-    :param AddonGdriveGuidFile file_obj: File object for file-related logs.
+    :param GoogleDriveGuidFile file_obj: File object for file-related logs.
     """
     def __init__(self, node, auth, file_obj=None, path=None):
         self.node = node
@@ -43,7 +43,7 @@ class GoogleDriveNodeLogger(object):
 
     def log(self, action, extra=None, save=False):
         """Log an event. Wraps the Node#add_log method, automatically adding
-        relevant parameters and prefixing log events with `"gdrive_"`.
+        relevant parameters and prefixing log events with `"googledrive_"`.
 
         :param str action: Log action. Should be a class constant from NodeLog.
         :param dict extra: Extra parameters to add to the ``params`` dict of the
@@ -52,13 +52,13 @@ class GoogleDriveNodeLogger(object):
         params = {
             'project': self.node.parent_id,
             'node': self.node._primary_key,
-            'folder': self.node.get_addon('gdrive', deleted=True).folder
+            'folder': self.node.get_addon('googledrive', deleted=True).folder
         }
         if extra:
             params.update(extra)
-        # Prefix the action with gdrive
+        # Prefix the action with googledrive
         self.node.add_log(
-            action="gdrive_{0}".format(action),
+            action="googledrive_{0}".format(action),
             params=params,
             auth=self.auth
         )
@@ -69,24 +69,25 @@ class GoogleDriveNodeLogger(object):
 def serialize_urls(node_settings):
     node = node_settings.owner
     return {
-        'create': node.api_url_for('drive_oauth_start'),
-        'importAuth': node.api_url_for('gdrive_import_user_auth'),
-        'deauthorize': node.api_url_for('gdrive_deauthorize'),
-        'get_folders': node.api_url_for('gdrive_folders', includeRoot=1),
-        'config': node.api_url_for('gdrive_config_put'),
+        'create': node.api_url_for('googledrive_oauth_start'),
+        'importAuth': node.api_url_for('googledrive_import_user_auth'),
+        'deauthorize': node.api_url_for('googledrive_deauthorize'),
+        'get_folders': node.api_url_for('googledrive_folders', includeRoot=1),
+        'config': node.api_url_for('googledrive_config_put'),
         'files': node.web_url_for('collect_file_trees'),
     }
 
 
 def serialize_settings(node_settings, current_user):
     """
-    View helper that returns a dictionary representation of a GdriveNodeSettings record. Provides the return value for the gdrive config endpoints.
+    View helper that returns a dictionary representation of a GoogleDriveNodeSettings record.
+    Provides the return value for the googledrive config endpoints.
     """
     user_settings = node_settings.user_settings
     user_is_owner = user_settings is not None and (
         user_settings.owner._primary_key == current_user._primary_key
     )
-    current_user_settings = current_user.get_addon('gdrive')
+    current_user_settings = current_user.get_addon('googledrive')
     ret = {
         'nodeHasAuth': node_settings.has_auth,
         'userIsOwner': user_is_owner,
@@ -114,10 +115,10 @@ def clean_path(path):
     return cleaned_path
 
 
-def build_gdrive_urls(item, node, path):
+def build_googledrive_urls(item, node, path):
     return {
-        'get_folders': node.api_url_for('gdrive_folders', folderId=item['id'], path=path),
-        'fetch': node.api_url_for('gdrive_folders', folderId=item['id']),
+        'get_folders': node.api_url_for('googledrive_folders', folderId=item['id'], path=path),
+        'fetch': node.api_url_for('googledrive_folders', folderId=item['id']),
     }
 
 
@@ -128,11 +129,11 @@ def to_hgrid(item, node, path):
     """
     path = os.path.join(path, item['title'])
     serialized = {
-        'addon': 'gdrive',
+        'addon': 'googledrive',
         'name': item['title'],
         'id': item['id'],
         'kind': 'folder',
-        'urls': build_gdrive_urls(item, node, path=path),
+        'urls': build_googledrive_urls(item, node, path=path),
         'path': path,
     }
     return serialized

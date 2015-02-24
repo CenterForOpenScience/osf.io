@@ -22,7 +22,7 @@ var Revision = function(data, index, file, node) {
     }
     options[self.versionIdentifier] = self.version;
     // Note: Google Drive version identifiers often begin with the same sequence
-    self.displayVersion = file.provider === 'gdrive' ?
+    self.displayVersion = file.provider === 'googledrive' ?
         self.version.substring(self.version.length - 8) :
         self.version.substring(0, 8);
 
