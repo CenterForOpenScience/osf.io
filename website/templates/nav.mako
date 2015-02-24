@@ -96,7 +96,7 @@
                 </li>
                 <li>
                     ## TODO(hrybacki) -- Create a 'GET' endpoint for forgotpassword -- only 'POST' currently exists
-                    <a href="${web_url_for('auth_login')}"><span class="navbar-nav navbar-mid">Forgot Password?</span></a>
+                    <a href="${web_url_for('_forgot_password')}"><span class="navbar-nav navbar-mid">Forgot Password?</span></a>
                 </li>
                 % endif
             </ul><!-- end nav navbar-nav navbar-right -->

@@ -38,6 +38,7 @@ var entry = {
     'user-addon-cfg-page': staticPath('js/pages/user-addon-cfg-page.js'),
     'notifications-config-page': staticPath('js/notifications-config-page.js'),
     'twofactor-page': staticPath('js/pages/twofactor-page.js'),
+    'forgotpassword-page': staticPath('js/pages/forgotpassword-page.js'),
     // Commons chunk
     'vendor': [
         'knockout',

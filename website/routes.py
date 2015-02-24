@@ -410,6 +410,8 @@ def make_url_map(app):
              OsfWebRenderer('public/two_factor.mako')),
         Rule('/logout/', 'get', auth_views.auth_logout, notemplate),
 
+        Rule('/forgotpassword/', 'get', auth_views._forgot_password,
+             OsfWebRenderer('public/forgot_password.mako')),
         Rule('/forgotpassword/', 'post', auth_views.forgot_password,
              OsfWebRenderer('public/login.mako')),
 
