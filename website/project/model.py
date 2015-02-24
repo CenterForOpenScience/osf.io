@@ -30,9 +30,11 @@ from framework.mongo import ObjectId
 from framework.mongo import StoredObject
 from framework.addons import AddonModelMixin
 from framework.auth import get_user, User, Auth
+from framework.auth.signals import contributor_removed
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
 from framework.auth.utils import privacy_info_handle
+from framework.auth.signals import node_deleted
 from framework.analytics import tasks as piwik_tasks
 from framework.mongo.utils import to_mongo, to_mongo_key
 from framework.analytics import (
@@ -1465,6 +1467,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.deleted_date = date
         self.save()
 
+        node_deleted.send(self)
+
         return True
 
     def fork_node(self, auth, title='Fork of '):
@@ -2242,6 +2246,9 @@ class Node(GuidStoredObject, AddonModelMixin):
             )
 
         self.save()
+
+        #send signal to remove this user from project subscriptions
+        contributor_removed.send(contributor, node=self)
 
         return True
 

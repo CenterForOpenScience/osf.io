@@ -2109,3 +2109,29 @@ span#profileFullname{
 .modal-backdrop {
     position: fixed;
 }
+
+
+/* Minimal Treebeard for Configure Notifications in project and user settings */
+.osf-treebeard-minimal #tb-tbody {
+    border: none;
+}
+
+.osf-treebeard-minimal .tb-row-titles {
+    border: none;
+}
+
+.osf-treebeard-minimal .tb-head {
+    display: none;
+}
+
+.osf-treebeard-minimal .form-control {
+    height: 32px;
+}
+
+.tb-no-icon .tb-expand-icon-holder {
+    width : 0;
+}
+
+.tb-no-icon .title-text {
+    line-height : 2.2;
+}

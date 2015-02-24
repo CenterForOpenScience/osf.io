@@ -13,13 +13,14 @@ from website.project.model import (
 )
 from website.citations.models import CitationStyle
 from website.conferences.model import Conference, MailRecord
+from website.notifications.model import Subscription, DigestNotification
 
 # All models
 MODELS = (
     User, ApiKey, Node, NodeLog,
     Tag, WatchConfig, Session, Guid, MetaSchema, Pointer,
     MailRecord, Comment, PrivateLink, MetaData, Conference,
-    CitationStyle,
+    Subscription, DigestNotification, CitationStyle,
 )
 
 GUID_MODELS = (User, Node, Comment, MetaData)

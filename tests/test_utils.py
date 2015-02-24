@@ -1,15 +1,27 @@
 # -*- coding: utf-8 -*-
+import datetime
 import os
 import unittest
+import mock
 from flask import Flask
 from nose.tools import *  # noqa (PEP8 asserts)
+from modularodm import Q
+from modularodm.exceptions import NoResultsFound
+from functools import partial
 
 from framework.routing import Rule, json_renderer
 from framework.utils import secure_filename
+from framework.auth.core import User
+from website import mails
 from website.routes import process_rules, OsfWebRenderer
 from website.util import paths
 from website.util.mimetype import get_mimetype
 from website.util import web_url_for, api_url_for, is_json_request
+from scripts.send_digest import group_messages_by_node, group_digest_notifications_by_user, send_digest, remove_sent_digest_notifications
+from website.notifications.model import DigestNotification
+from tests.base import OsfTestCase
+from tests.factories import DigestNotificationFactory, UserFactory, ProjectFactory
+
 
 try:
     import magic
@@ -218,3 +230,92 @@ class TestWebpackFilter(unittest.TestCase):
     def test_resolve_asset_not_found(self):
         with assert_raises(KeyError):
             paths.webpack_asset('bundle.js', self.asset_paths)
+
+
+class TestSendDigest(OsfTestCase):
+    def test_group_digest_notifications_by_user(self):
+        user = UserFactory()
+        user2 = UserFactory()
+        project = ProjectFactory()
+        timestamp = (datetime.datetime.utcnow() - datetime.timedelta(hours=1)).replace(microsecond=0)
+        d = DigestNotificationFactory(
+            user_id=user._id,
+            timestamp=timestamp,
+            message='Hello',
+            node_lineage=[project._id]
+        )
+        d.save()
+        d2 = DigestNotificationFactory(
+            user_id=user2._id,
+            timestamp=timestamp,
+            message='Hello',
+            node_lineage=[project._id]
+        )
+        d2.save()
+        user_groups = group_digest_notifications_by_user()
+        expected = [{
+                    u'user_id': user._id,
+                    u'info': [{
+                        u'message': {
+                            u'message': u'Hello',
+                            u'timestamp': timestamp,
+                        },
+                        u'node_lineage': [unicode(project._id)],
+                        u'_id': d._id
+                    }]
+                    },
+                    {
+                    u'user_id': user2._id,
+                    u'info': [{
+                        u'message': {
+                            u'message': u'Hello',
+                            u'timestamp': timestamp,
+                        },
+                        u'node_lineage': [unicode(project._id)],
+                        u'_id': d2._id
+                    }]
+                    }]
+        assert_equal(len(user_groups), 2)
+        assert_equal(user_groups, expected)
+
+    @mock.patch('scripts.send_digest.partial')
+    @mock.patch('scripts.send_digest.remove_sent_digest_notifications')
+    @mock.patch('website.mails.send_mail')
+    def test_send_digest_called_with_correct_args(self, mock_send_mail, mock_callback, mock_partial):
+        d = DigestNotificationFactory(
+            user_id=UserFactory()._id,
+            timestamp=datetime.datetime.utcnow(),
+            message='Hello',
+            node_lineage=[ProjectFactory()._id]
+        )
+        d.save()
+        user_groups = group_digest_notifications_by_user()
+        send_digest(user_groups)
+        assert_true(mock_send_mail.called)
+        assert_equals(mock_send_mail.call_count, len(user_groups))
+
+        last_user_index = len(user_groups) - 1
+        user = User.load(user_groups[last_user_index]['user_id'])
+        digest_notification_ids = [message['_id'] for message in user_groups[last_user_index]['info']]
+
+        mock_send_mail.assert_called_with(
+            to_addr=user.username,
+            mimetype='html',
+            mail=mails.DIGEST,
+            name=user.fullname,
+            message=group_messages_by_node(user_groups[last_user_index]['info']),
+            url=web_url_for('user_notifications', _absolute=True),
+            callback=mock_partial(mock_callback, digest_notification_ids=digest_notification_ids)
+        )
+
+    def test_remove_sent_digest_notifications(self):
+        d = DigestNotificationFactory(
+            user_id=UserFactory()._id,
+            timestamp=datetime.datetime.utcnow(),
+            message='Hello',
+            node_lineage=[ProjectFactory()._id]
+        )
+        digest_id = d._id
+        remove_sent_digest_notifications([digest_id])
+        with assert_raises(NoResultsFound):
+            DigestNotification.find_one(Q('_id', 'eq', digest_id))

@@ -5,7 +5,7 @@
 var Raven = require('raven-js');
 var ko = require('knockout');
 var $ = require('jquery');
-
+var jstz = require('jstz').jstz;
 
 var $osf = require('osfHelpers');
 var ProjectOrganizer = require('../projectorganizer.js');
@@ -63,6 +63,18 @@ $(document).ready(function() {
                     var filebrowser = new ProjectOrganizer(options);   
  
             });
+
+    var timezone = jstz.determine();
+    var url = '/api/v1/profile/' + window.contextVars.currentUser.id + '/';
+    $osf.putJSON(
+        url,
+        {'timezone': timezone.name()}
+    ).fail(function(xhr, textStatus, error) {
+            Raven.captureMessage('Could not set users timezone offset.', {
+                url: url, textStatus: textStatus, error: error
+        });
+    });
+
 });
 // Initialize logfeed
 new LogFeed('#logScope', '/api/v1/watched/logs/');

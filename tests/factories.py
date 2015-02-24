@@ -22,6 +22,7 @@ from framework.auth.utils import impute_names_model
 from website.project.model import (
     ApiKey, Node, NodeLog, WatchConfig, Tag, Pointer, Comment, PrivateLink
 )
+from website.notifications.model import Subscription, DigestNotification
 
 from website.addons.wiki.model import NodeWikiPage
 from tests.base import fake
@@ -358,3 +359,11 @@ class CommentFactory(ModularOdmFactory):
         )
         instance.save()
         return instance
+
+
+class SubscriptionFactory(ModularOdmFactory):
+    FACTORY_FOR = Subscription
+
+
+class DigestNotificationFactory(ModularOdmFactory):
+    FACTORY_FOR = DigestNotification

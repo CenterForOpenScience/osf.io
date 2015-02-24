@@ -19,7 +19,6 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
 
-from website import settings
 from website import mailchimp_utils
 from website.models import User
 from website.models import ApiKey
@@ -28,7 +27,7 @@ from website.util import web_url_for, paths
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
 from website.profile import utils as profile_utils
-
+from website import settings
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +72,16 @@ def date_or_none(date):
     except Exception as error:
         logger.exception(error)
         return None
+
+@must_be_logged_in
+def update_user(uid, auth):
+    user = User.load(uid)
+    data = request.get_json()
+    timezone = data.get('timezone')
+    user.timezone = timezone
+    update_fields = user.save()
+
+    return update_fields, 200
 
 
 def _profile_view(profile, is_profile):
@@ -222,6 +231,7 @@ def user_notifications(auth, **kwargs):
     return {
         'mailing_lists': auth.user.mailing_lists
     }
+
 
 def collect_user_config_js(addons):
     """Collect webpack bundles for each of the addons' user-cfg.js modules. Return

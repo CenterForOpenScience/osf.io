@@ -22,7 +22,6 @@ import os
 import logging
 
 from mako.lookup import TemplateLookup, Template
-
 from framework.email.tasks import send_email
 from website import settings
 
@@ -76,7 +75,7 @@ def render_message(tpl_name, **context):
 
 
 def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
-            username=None, password=None, mail_server=None, **context):
+            username=None, password=None, mail_server=None, callback=None, **context):
     """Send an email from the OSF.
     Example: ::
 
@@ -87,6 +86,7 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
     :param str to_addr: The recipient's email address
     :param Mail mail: The mail object
     :param str mimetype: Either 'plain' or 'html'
+    :param function callback: function to be executed after send_mail completes
     :param **context: Context vars for the message template
 
     .. note:
@@ -101,7 +101,8 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
     ttls = login = not settings.DEBUG_MODE
     logger.debug('Sending email...')
     logger.debug(u'To: {to_addr}\nFrom: {from_addr}\nSubject: {subject}\nMessage: {message}'.format(**locals()))
-    return mailer(
+
+    kwargs = dict(
         from_addr=from_addr,
         to_addr=to_addr,
         subject=subject,
@@ -111,8 +112,16 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
         login=login,
         username=username,
         password=password,
-        mail_server=mail_server,
-    )
+        mail_server=mail_server)
+
+    if settings.USE_CELERY:
+        return mailer.apply_async(kwargs=kwargs, link=callback)
+    else:
+        ret = mailer(**kwargs)
+        if callback:
+            callback()
+
+        return ret
 
 # Predefined Emails
 
@@ -139,3 +148,5 @@ CONFERENCE_FAILED = Mail(
     'conference_failed',
     subject='Open Science Framework Error: No files attached',
 )
+DIGEST = Mail('digest', subject='OSF Email Digest')
+TRANSACTIONAL = Mail('transactional', subject='OSF: ${subject}')
