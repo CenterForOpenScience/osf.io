@@ -320,6 +320,9 @@ class User(GuidStoredObject, AddonModelMixin):
     #     'node': 'timestamp',
     #     'wiki': {
     #        'wiki_name': 'timestamp'
+    #     },
+    #     'files': {
+    #        'file_id': 'timestamp'
     #     }
     #   }
     # }
