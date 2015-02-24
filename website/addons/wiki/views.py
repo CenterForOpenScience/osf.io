@@ -255,12 +255,22 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         panel_settings['menu_column'] = 'class="col-sm-1 panel-toggle"'
         panel_settings['content_column'] = 'class="col-sm-11 panel-expand"'
 
-    # Default versions for view and compare
     view = request.args.get('view', '')
+    if view.isdigit():
+        view = int(view)
+        if view > len(versions) or view < 1:
+            raise WIKI_PAGE_NOT_FOUND_ERROR
+
     compare = request.args.get('compare', '')
+    if compare.isdigit():
+        compare = int(compare)
+        if compare > len(versions) or compare < 1:
+            raise WIKI_PAGE_NOT_FOUND_ERROR
+
+    # Default versions for view and compare
     version_settings = {
-        'view': int(view) if view.isdigit() else view or ('preview' if 'edit' in panels_used else 'current'),
-        'compare': int(compare) if compare.isdigit() else compare or 'previous',
+        'view': view or ('preview' if 'edit' in panels_used else 'current'),
+        'compare': compare or 'previous',
     }
 
     # ensure home is always lower case since it cannot be renamed

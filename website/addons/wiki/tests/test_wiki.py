@@ -81,8 +81,7 @@ class TestWikiViews(OsfTestCase):
         url = self.project.web_url_for(
             'project_wiki_view',
             wname='funpage',
-            path='view/compare/1/edit',
-        )
+        ) + '?view&compare=1&edit'
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
@@ -94,7 +93,7 @@ class TestWikiViews(OsfTestCase):
         url = self.project.web_url_for(
             'project_wiki_view',
             wname='funpage',
-            path='view/compare/1',
+            compare=1,
         )
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
@@ -102,8 +101,7 @@ class TestWikiViews(OsfTestCase):
         url = self.project.web_url_for(
             'project_wiki_view',
             wname='funpage',
-            path='view/compare/1/edit',
-        )
+        ) + '?edit'
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 403)
 
@@ -271,20 +269,20 @@ class TestWikiViews(OsfTestCase):
         self.project.update_node_wiki('home', 'Version 1', Auth(self.user))
         self.project.update_node_wiki('home', 'Version 2', Auth(self.user))
         self.project.save()
-        url = self.project.web_url_for('project_wiki_view', wname='home', path='view/2')
+        url = self.project.web_url_for('project_wiki_view', wname='home', view=2)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
-        url = self.project.web_url_for('project_wiki_view', wname='home', path='view/3')
+        url = self.project.web_url_for('project_wiki_view', wname='home', view=3)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
-        url = self.project.web_url_for('project_wiki_view', wname='home', path='view/0')
+        url = self.project.web_url_for('project_wiki_view', wname='home', view=0)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
     def test_project_wiki_compare_returns_200(self):
         self.project.update_node_wiki('home', 'updated content', Auth(self.user))
         self.project.save()
-        url = self.project.web_url_for('project_wiki_view', wname='home', path='compare')
+        url = self.project.web_url_for('project_wiki_view', wname='home') + '?compare'
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
@@ -292,13 +290,13 @@ class TestWikiViews(OsfTestCase):
         self.project.update_node_wiki('home', 'Version 1', Auth(self.user))
         self.project.update_node_wiki('home', 'Version 2', Auth(self.user))
         self.project.save()
-        url = self.project.web_url_for('project_wiki_view', wname='home', path='compare/2')
+        url = self.project.web_url_for('project_wiki_view', wname='home', compare=2)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
-        url = self.project.web_url_for('project_wiki_view', wname='home', path='compare/3')
+        url = self.project.web_url_for('project_wiki_view', wname='home', compare=3)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
-        url = self.project.web_url_for('project_wiki_view', wname='home', path='compare/0')
+        url = self.project.web_url_for('project_wiki_view', wname='home', compare=0)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
