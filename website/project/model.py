@@ -2531,7 +2531,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             name = (name or '').strip()
             key = to_mongo_key(name)
             try:
-                if version and version.isdigit():
+                if version and (isinstance(version, int) or version.isdigit()):
                     id = self.wiki_pages_versions[key][int(version) - 1]
                 elif version == 'previous':
                     id = self.wiki_pages_versions[key][-2]

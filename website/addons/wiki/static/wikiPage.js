@@ -181,18 +181,24 @@ function ViewModel(options){
 
     self.currentURL = ko.computed(function() {
         var url = self.pageURL;
+
+        // Default view is special cased
+        if (!self.editVis() && self.viewVis() && self.viewVersion() === 'current' && !self.compareVis() && self.menuVis()) {
+            history.replaceState({}, '', url);  // jshint ignore: line
+            return;
+        }
+
         var paramPrefix = '?';
 
         if (self.editVis()) {
             url += paramPrefix + 'edit';
             paramPrefix = '&';
         }
-        var nonDefaultViewVersion = (!self.editVis() && self.viewVersion() !== 'current' ) || (self.editVis() && self.viewVersion() !== 'preview');
-        var viewNoMenu = (!self.editVis() && !self.compareVis() && !self.menuVis());
-        if (self.viewVis() && ((self.editVis() && self.compareVis()) || nonDefaultViewVersion || viewNoMenu)) {
+        if (self.viewVis()) {
             url += paramPrefix + 'view';
             paramPrefix = '&';
-            if (nonDefaultViewVersion) {
+            if  ((!self.editVis() && self.viewVersion() !== 'current' ) ||
+                 (self.editVis() && self.viewVersion() !== 'preview')) {
                 url += '=' + self.viewVersion();
             }
         }
@@ -203,7 +209,7 @@ function ViewModel(options){
                 url += '=' + self.compareVersion();
             }
         }
-        if (self.menuVis() && paramPrefix === '&') {    // Non-default view
+        if (self.menuVis()) {
             url += paramPrefix + 'menu';
         }
 
