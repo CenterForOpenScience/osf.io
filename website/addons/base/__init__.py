@@ -242,7 +242,26 @@ class GuidFile(GuidStoredObject):
     def mfr_download_url(self):
         url = self._base_butler_url
         url.path.add('file')
+
         url.args['mode'] = 'render'
+        url.args['action'] = 'download'
+
+        if self.revision:
+            url.args[self.version_identifier] = self.revision
+
+        return url.url
+
+    @property
+    def public_download_url(self):
+        url = furl.furl(settings.DOMAIN)
+
+        url.path.add(self._id + '/')
+        url.args['mode'] = 'render'
+        url.args['action'] = 'download'
+
+        if self.revision:
+            url.args[self.version_identifier] = self.revision
+
         return url.url
 
     @property
@@ -268,7 +287,7 @@ class GuidFile(GuidStoredObject):
             self.node._id,
             self.provider,
             # Attempt to keep the original extension of the file for MFR detection
-            self.file_name + os.path.splitext(self.waterbutler_path)[1]
+            self.file_name + os.path.splitext(self.name)[1]
         )
 
     @property
@@ -295,6 +314,7 @@ class GuidFile(GuidStoredObject):
     def maybe_set_version(self, **kwargs):
         self._revision = kwargs.get(self.version_identifier)
 
+    # TODO: why save?, should_raise or an exception try/except?
     def enrich(self, save=True):
         self._fetch_metadata(should_raise=True)
 
@@ -561,13 +581,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         :returns: Tuple of cloned settings and alert message
 
         """
-        clone = self.clone()
-        clone.owner = registration
-
-        if save:
-            clone.save()
-
-        return clone, None
+        return None, None
 
     def after_delete(self, node, user):
         """

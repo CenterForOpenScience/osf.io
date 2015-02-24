@@ -138,7 +138,7 @@ content of that project."""
 TEMPLATED_FROM_PREFIX = "Templated from "
 
 # MFR Error handling
-ERROR_PREFIX = "Unable to render. <a href='{download_path}'>Download</a> file to view it."
+ERROR_PREFIX = "Unable to render. <a href='?action=download'>Download</a> file to view it."
 SUPPORT = "Contact support@osf.io for further assistance."
 
 # Custom Error Messages w/ support

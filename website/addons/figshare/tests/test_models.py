@@ -30,6 +30,7 @@ class TestFileGuid(OsfTestCase):
 
     def test_correct_path_article(self):
         guid = model.FigShareGuidFile(file_id=2, article_id=4, node=self.project)
+        guid._metadata_cache = {'name': 'shigfare.io'}
         tpath = guid.mfr_temp_path
         cpath = guid.mfr_cache_path
 
@@ -293,5 +294,14 @@ class TestCallbacks(OsfTestCase):
         assert_true(self.node_settings.figshare_id is None)
         assert_true(self.node_settings.figshare_type is None)
         assert_true(self.node_settings.figshare_title is None)
+
+    def test_does_not_get_copied_to_registrations(self):
+        registration = self.project.register_node(
+            schema=None,
+            auth=Auth(user=self.project.creator),
+            template='Template1',
+            data='hodor'
+        )
+        assert_false(registration.has_addon('figshare'))
 
     #TODO Test figshare options and figshare to_json
