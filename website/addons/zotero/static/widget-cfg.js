@@ -6,8 +6,6 @@ var $osf = require('osfHelpers');
 var citations = require('../../../static/js/citations');
 var CitationGrid = require('../../../static/js/citationGrid');
 
-require('./citations_widget.css');
-
 ////////////////
 // Public API //
 ////////////////
