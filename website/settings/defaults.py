@@ -51,6 +51,7 @@ ALLOW_LOGIN = True
 SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
 ELASTIC_URI = 'localhost:9200'
 ELASTIC_TIMEOUT = 10
+SHARE_ELASTIC_URI = ELASTIC_URI
 # Sessions
 # TODO: Override SECRET_KEY in local.py in production
 COOKIE_NAME = 'osf'
