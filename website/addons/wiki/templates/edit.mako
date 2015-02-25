@@ -2,7 +2,7 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${node['title'] | n} Wiki</%def>
 ## Use full page width
-<%def name="container_class()">container-xl</%def>
+<%def name="container_class()">container-xxl</%def>
 
 <div class="row" style="margin-bottom: 5px;">
     <div class="col-sm-6">
