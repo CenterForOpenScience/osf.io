@@ -7,6 +7,7 @@ var mathrender = require('mathrender');
 var md = require('markdown').full;
 var mdQuick = require('markdown').quick;
 var diffTool = require('diffTool');
+var History = require('exports?History!history');
 
 var THROTTLE = 500;
 
@@ -164,6 +165,8 @@ function ViewModel(options){
     self.compareVis = ko.observable(options.compareVisible);
     self.menuVis = ko.observable(options.menuVisible);
 
+    self.pageTitle = $(document).find("title").text();
+
     self.compareVersion = ko.observable(options.compareVersion);
     self.viewVersion = ko.observable(options.viewVersion);
     self.draftURL = options.urls.draft;
@@ -196,7 +199,7 @@ function ViewModel(options){
 
         // Default view is special cased
         if (!self.editVis() && self.viewVis() && self.viewVersion() === 'current' && !self.compareVis() && self.menuVis()) {
-            window.history.replaceState({}, '', url);
+            History.replaceState({}, '', url);
             return;
         }
 
@@ -225,7 +228,7 @@ function ViewModel(options){
             url += paramPrefix + 'menu';
         }
 
-        window.history.replaceState({}, '', url);
+        History.replaceState({}, self.pageTitle, url);
     });
 
 
