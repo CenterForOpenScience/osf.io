@@ -1,5 +1,6 @@
 
 <link rel="stylesheet" href="/static/addons/box/box.css">
+<link rel="stylesheet" href="/static/css/addonsettings.css">
 <div id="boxScope" class="scripted">
     <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
     <h4 class="addon-title">
@@ -52,12 +53,12 @@
                     <button data-bind="visible: validCredentials,
                                         click: togglePicker,
                                         css: {active: currentDisplay() === PICKER}"
-                            class="btn btn-sm btn-box"><i class="icon-edit"></i> Change</button>
+                            class="btn btn-sm btn-addon"><i class="icon-edit"></i> Change</button>
                     <button data-bind="attr.disabled: disableShare,
                                         visible: validCredentials,
                                         click: toggleShare,
                                         css: {active: currentDisplay() === SHARE}"
-                        class="btn btn-sm btn-box"><i class="icon-share-alt"></i> Share on Box
+                        class="btn btn-sm btn-addon"><i class="icon-share-alt"></i> Share on Box
                             <span data-bind="visible: folder().path === '/'">(Cannot share root folder)</span>
                         </button>
                 </div>
