@@ -256,7 +256,7 @@ class Zotero(ExternalProvider):
                     more = False
                 else:
                     offset = offset + len(page)
-            return self._citations_for_zotero_collection(collection_items)
+            return self._citations_for_zotero_collection(citations)
         else:
             return self._citations_for_zotero_user()
 
