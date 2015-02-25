@@ -103,7 +103,7 @@ def googledrive_oauth_finish(auth, **kwargs):
 @must_have_addon('googledrive', 'user')
 def googledrive_oauth_delete_user(user_addon, **kwargs):
     client = GoogleAuthClient()
-    client.revoke(user_addon.access_token)
+    client.revoke(user_addon._access_token)
     user_addon.clear()
     user_addon.save()
 
