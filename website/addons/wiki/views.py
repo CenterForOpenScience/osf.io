@@ -237,11 +237,16 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     versions = _get_wiki_versions(node, wiki_name, anonymous=anonymous)
 
     # Determine panels used in view
-    panels = ['view', 'edit', 'compare', 'menu']
-    if request.args:
+    panels = {'view', 'edit', 'compare', 'menu'}
+    if request.args and set(request.args).intersection(panels):
         panels_used = [panel for panel in request.args if panel in panels]
+        num_columns = len(set(panels_used).intersection({'view', 'edit', 'compare'}))
+        if num_columns == 0:
+            panels_used.append('view')
+            num_columns = 1
     else:
         panels_used = ['view', 'menu']
+        num_columns = 1
 
     try:
         view = wiki_utils.format_wiki_version(
@@ -300,13 +305,12 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         'sharejs_uuid': sharejs_uuid or '',
         'sharejs_url': settings.SHAREJS_URL,
         'is_current': is_current,
-        'can_edit': can_edit,
         'version_settings': version_settings,
         'pages_current': _get_wiki_pages_current(node),
         'toc': toc,
         'category': node.category,
         'panels_used': panels_used,
-        'num_columns': len(set(panels_used).intersection({'view', 'edit', 'compare'})),
+        'num_columns': num_columns,
         'urls': {
             'api': _get_wiki_api_urls(node, wiki_name, {
                 'content': node.api_url_for('wiki_page_content', wname=wiki_name),
@@ -374,7 +378,7 @@ def project_wiki_id_page(auth, wid, **kwargs):
 @must_have_addon('wiki', 'node')
 def project_wiki_edit(wname, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    return redirect(node.web_url_for('project_wiki_view', wname=wname, _guid=True) + '?edit')
+    return redirect(node.web_url_for('project_wiki_view', wname=wname, _guid=True) + '?edit&view&menu')
 
 
 @must_be_valid_project
@@ -382,7 +386,7 @@ def project_wiki_edit(wname, **kwargs):
 @must_have_addon('wiki', 'node')
 def project_wiki_compare(wname, wver, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    return redirect(node.web_url_for('project_wiki_view', wname=wname, _guid=True, compare=wver))
+    return redirect(node.web_url_for('project_wiki_view', wname=wname, _guid=True) + '?view&compare={0}&menu'.format(wver))
 
 
 @must_not_be_registration
