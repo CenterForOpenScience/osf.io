@@ -1,5 +1,8 @@
 import os
+
 from waterbutler.core import metadata
+
+from waterbutler.providers.googledrive import utils
 
 
 class BaseGoogleDriveMetadata(metadata.BaseMetadata):
@@ -14,9 +17,7 @@ class BaseGoogleDriveMetadata(metadata.BaseMetadata):
 
     @property
     def extra(self):
-        return {
-            'revisionId': self.raw['version']
-        }
+        return {'revisionId': self.raw['version']}
 
 
 class GoogleDriveFolderMetadata(BaseGoogleDriveMetadata, metadata.BaseFolderMetadata):
@@ -42,7 +43,12 @@ class GoogleDriveFileMetadata(BaseGoogleDriveMetadata, metadata.BaseFileMetadata
 
     @property
     def name(self):
-        return self.raw['title']
+        title = self.raw['title']
+        name, ext = os.path.splitext(title)
+        if utils.is_docs_file(self.raw) and not ext:
+            ext = utils.get_extension(self.raw['exportLinks'])
+            title += ext
+        return title
 
     @property
     def size(self):
@@ -63,6 +69,13 @@ class GoogleDriveFileMetadata(BaseGoogleDriveMetadata, metadata.BaseFileMetadata
     @property
     def path(self):
         return os.path.join(str(self._path), self.raw['title'])
+
+    @property
+    def extra(self):
+        ret = super().extra
+        if utils.is_docs_file(self.raw):
+            ret['downloadExt'] = utils.get_download_extension(self.raw['exportLinks'])
+        return ret
 
 
 class GoogleDriveRevision(metadata.BaseFileRevisionMetadata):

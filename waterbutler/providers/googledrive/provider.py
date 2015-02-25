@@ -11,6 +11,7 @@ from waterbutler.core import provider
 from waterbutler.core import exceptions
 
 from waterbutler.providers.googledrive import settings
+from waterbutler.providers.googledrive import utils as drive_utils
 from waterbutler.providers.googledrive.metadata import GoogleDriveRevision
 from waterbutler.providers.googledrive.metadata import GoogleDriveFileMetadata
 from waterbutler.providers.googledrive.metadata import GoogleDriveFolderMetadata
@@ -74,11 +75,10 @@ class GoogleDriveProvider(provider.BaseProvider):
                 throws=exceptions.MetadataError,
             )
             data = yield from response.json()
-        # TODO: Add map from document type to export url key @kushg
         try:
             download_url = data['downloadUrl']
         except KeyError:
-            download_url = data['exportLinks']['application/pdf']
+            download_url = drive_utils.get_export_link(data['exportLinks'])
         download_resp = yield from self.make_request(
             'GET',
             download_url,
@@ -190,7 +190,7 @@ class GoogleDriveProvider(provider.BaseProvider):
         # The "version" key does not correspond to revision IDs for Google Docs
         # files; make an extra request to the revisions endpoint to fetch the
         # true ID of the latest revision
-        if data['items'][0].get('exportLinks'):
+        if drive_utils.is_docs_file(data['items'][0]):
             revisions_response = yield from self.make_request(
                 'GET',
                 self.build_url('files', data['items'][0]['id'], 'revisions'),
