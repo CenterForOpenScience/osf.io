@@ -181,7 +181,7 @@ class MultiStream(asyncio.StreamReader):
     @asyncio.coroutine
     def read(self, n=-1):
         if not self.stream:
-                return b''
+            return b''
 
         chunk = yield from self.stream.read(n)
         if len(chunk) == n and n != -1:
