@@ -50,7 +50,7 @@
 
     <div class="panel-expand col-sm-${'9' if 'menu' in panels_used else '11' | n}">
       <div class="row">
-        % if can_edit:
+        % if user['can_edit']:
             <div data-bind="with: $root.editVM.wikiEditor.viewModel"
                  data-osf-panel="Edit"
                  class="${'col-sm-{0}'.format(12 / num_columns) | n}"
@@ -137,7 +137,7 @@
                         <div class="col-sm-6">
                             <!-- Version Picker -->
                             <select data-bind="value:viewVersion" id="viewVersionSelect" class="pull-right">
-                                % if can_edit:
+                                % if user['can_edit']:
                                     <option value="preview" ${'selected' if version_settings['view'] == 'preview' else ''}>Preview</option>
                                 % endif
                                 <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>Current</option>
@@ -249,7 +249,7 @@
       <div class="modal-body">
         <p>
             This page is currently connected to the collaborative wiki. All edits made will be visible to
-            contributors with edit permission in real time. Changes will be stored
+            contributors with write permission in real time. Changes will be stored
             but not published until you click the "Save" button.
         </p>
       </div>
@@ -313,7 +313,7 @@
 ${parent.javascript_bottom()}
 <script>
 
-    var canEdit = ${json.dumps(can_edit)};
+    var canEdit = ${json.dumps(user['can_edit'])};
 
     var canEditPageName = canEdit && ${json.dumps(
         wiki_id and wiki_name != 'home'

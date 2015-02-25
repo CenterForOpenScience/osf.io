@@ -305,7 +305,6 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         'sharejs_uuid': sharejs_uuid or '',
         'sharejs_url': settings.SHAREJS_URL,
         'is_current': is_current,
-        'can_edit': can_edit,
         'version_settings': version_settings,
         'pages_current': _get_wiki_pages_current(node),
         'toc': toc,
