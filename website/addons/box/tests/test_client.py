@@ -10,8 +10,9 @@ from tests.factories import UserFactory
 from website.addons.base.exceptions import AddonError
 from website.addons.box.model import BoxUserSettings
 from website.addons.box.tests.factories import (
+    BoxUserSettingsFactory,
     BoxNodeSettingsFactory,
-    BoxUserSettingsFactory
+    BoxOAuthSettingsFactory
 )
 from website.addons.box.client import (
     get_client, get_node_addon_client, get_node_client,
@@ -30,8 +31,6 @@ class TestCore(OsfTestCase):
         self.user.save()
 
         self.settings = self.user.get_addon('box')
-        self.settings.access_token = '12345'
-        self.settings.last_refreshed = datetime.utcnow()
         self.settings.save()
 
     def test_get_addon_returns_box_user_settings(self):
@@ -46,7 +45,7 @@ class TestClientHelpers(OsfTestCase):
         super(TestClientHelpers, self).setUp()
 
         self.user_settings = BoxUserSettingsFactory()
-        self.node_settings = BoxNodeSettingsFactory(user_settings=self.user_settings,)
+        self.node_settings = BoxNodeSettingsFactory(user_settings=self.user_settings)
         self.user = self.user_settings.owner
         self.node = self.node_settings.owner
 

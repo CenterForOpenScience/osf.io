@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 import mock
-import hashlib
 from datetime import datetime
 
 from nose.tools import *  # noqa (PEP8 asserts)
@@ -13,6 +12,7 @@ from website.addons.box.model import (
 from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory
 from website.addons.box.tests.factories import (
+    BoxOAuthSettings,
     BoxUserSettingsFactory, BoxNodeSettingsFactory,
 )
 from website.addons.base import exceptions
@@ -64,26 +64,32 @@ class TestUserSettingsModel(OsfTestCase):
         self.user = UserFactory()
 
     def test_fields(self):
-        user_settings = BoxUserSettings(
-            access_token='12345',
-            box_id='abc',
-            owner=self.user,
-            last_refreshed=datetime.utcnow())
+        oauth_settings = BoxOAuthSettings(user_id='foo', username='bar', _access_token='defined')
+        oauth_settings.save()
+        user_settings = BoxUserSettings(owner=self.user, oauth_settings=oauth_settings)
+
         user_settings.save()
-        retrieved = BoxUserSettings.load(user_settings._primary_key)
-        assert_true(retrieved.access_token)
-        assert_true(retrieved.box_id)
+        retrieved = BoxUserSettings.load(user_settings._id)
+
         assert_true(retrieved.owner)
+        assert_true(retrieved.box_id)
+        assert_true(retrieved.username)
+        assert_true(retrieved.access_token)
 
     def test_has_auth(self):
-        user_settings = BoxUserSettingsFactory(access_token=None, last_refreshed=datetime.utcnow())
+        oauth_settings = BoxOAuthSettings(user_id='foo', username='bar')
+        oauth_settings.save()
+
+        user_settings = BoxUserSettingsFactory(oauth_settings=oauth_settings)
+
         assert_false(user_settings.has_auth)
         user_settings.access_token = '12345'
         user_settings.save()
         assert_true(user_settings.has_auth)
 
-    def test_clear_clears_associated_node_settings(self):
-        node_settings = BoxNodeSettingsFactory.build()
+    @mock.patch('website.addons.box.model.requests')
+    def test_clear_clears_associated_node_settings(self, mock_requests):
+        node_settings = BoxNodeSettingsFactory()
         user_settings = BoxUserSettingsFactory()
         node_settings.user_settings = user_settings
         node_settings.save()
@@ -92,33 +98,40 @@ class TestUserSettingsModel(OsfTestCase):
         user_settings.save()
 
         # Node settings no longer associated with user settings
-        assert_is(node_settings.user_settings, None)
         assert_is(node_settings.folder_id, None)
+        assert_is(node_settings.user_settings, None)
+        assert_true(mock_requests.post.called_once)
 
-    def test_clear(self):
-        node_settings = BoxNodeSettingsFactory.build()
-        user_settings = BoxUserSettingsFactory(access_token='abcde',
-            box_id='abc')
+    @mock.patch('website.addons.box.model.requests')
+    def test_clear(self, mock_requests):
+        node_settings = BoxNodeSettingsFactory()
+        user_settings = BoxUserSettingsFactory()
         node_settings.user_settings = user_settings
         node_settings.save()
 
         assert_true(user_settings.access_token)
         user_settings.clear()
         user_settings.save()
-        assert_false(user_settings.access_token)
-        assert_false(user_settings.box_id)
 
-    def test_delete(self):
+        assert_false(user_settings.box_id)
+        assert_false(user_settings.access_token)
+        assert_true(mock_requests.post.called_once)
+
+    @mock.patch('website.addons.box.model.requests')
+    def test_delete(self, mock_requests):
         user_settings = BoxUserSettingsFactory()
         assert_true(user_settings.has_auth)
         user_settings.delete()
         user_settings.save()
-        assert_false(user_settings.access_token)
+
         assert_false(user_settings.box_id)
         assert_true(user_settings.deleted)
+        assert_false(user_settings.access_token)
+        assert_true(mock_requests.post.called_once)
 
-    def test_delete_clears_associated_node_settings(self):
-        node_settings = BoxNodeSettingsFactory.build()
+    @mock.patch('website.addons.box.model.requests')
+    def test_delete_clears_associated_node_settings(self, mock_requests):
+        node_settings = BoxNodeSettingsFactory()
         user_settings = BoxUserSettingsFactory()
         node_settings.user_settings = user_settings
         node_settings.save()
@@ -127,9 +140,10 @@ class TestUserSettingsModel(OsfTestCase):
         user_settings.save()
 
         # Node settings no longer associated with user settings
-        assert_is(node_settings.user_settings, None)
-        assert_is(node_settings.folder_id, None)
         assert_false(node_settings.deleted)
+        assert_is(node_settings.folder_id, None)
+        assert_true(mock_requests.post.called_once)
+        assert_is(node_settings.user_settings, None)
 
     def test_to_json(self):
         user_settings = BoxUserSettingsFactory()
@@ -144,8 +158,12 @@ class TestBoxNodeSettingsModel(OsfTestCase):
         self.user = UserFactory()
         self.user.add_addon('box')
         self.user.save()
+        self.oauth = BoxOAuthSettings(user_id='not sleep')
+        self.oauth.save()
+
         self.user_settings = self.user.get_addon('box')
-        self.user_settings.last_refreshed = datetime.utcnow()
+        self.user_settings.oauth_settings = self.oauth
+        self.user_settings.save()
         self.project = ProjectFactory()
         self.node_settings = BoxNodeSettingsFactory(
             user_settings=self.user_settings,
@@ -236,10 +254,11 @@ class TestBoxNodeSettingsModel(OsfTestCase):
 
     def test_serialize_credentials(self):
         self.user_settings.access_token = 'secret'
-        self.user_settings.last_refreshed = datetime.utcnow()
         self.user_settings.save()
         credentials = self.node_settings.serialize_waterbutler_credentials()
+
         expected = {'token': self.node_settings.user_settings.access_token}
+
         assert_equal(credentials, expected)
 
     def test_serialize_credentials_not_authorized(self):
@@ -250,7 +269,7 @@ class TestBoxNodeSettingsModel(OsfTestCase):
 
     def test_serialize_settings(self):
         settings = self.node_settings.serialize_waterbutler_settings()
-        expected = {'folder_id': self.node_settings.folder_id}
+        expected = {'folder': self.node_settings.folder_id}
         assert_equal(settings, expected)
 
     def test_serialize_settings_not_configured(self):

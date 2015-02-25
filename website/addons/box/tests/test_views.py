@@ -49,7 +49,6 @@ class TestAuthViews(OsfTestCase):
         mock_client.get_user_info.return_value = {'display_name': 'Mr. Box', 'id': '1234567890'}
         mock_get.return_value = mock_client
         mock_finish.return_value = {
-            'restricted_to': 'something',
             'token_type': 'something',
             'access_token': 'something',
             'refresh_token': 'something'
