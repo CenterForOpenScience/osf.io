@@ -389,9 +389,15 @@ li.pointer {
 /* Style for Ace wiki editor */
 .wiki-editor {
     position: relative;
-    height: 450px;
     border: solid;
     border-width: 1px;
+    width: 100%;
+    margin: auto;
+    -webkit-box-flex: 0 0 auto;  
+    -webkit-flex: 0 0 auto;       
+    -ms-flex: 0 0 auto;           
+    flex: 3 0 auto;
+    height: 500px; /* this will get overwritten by flex box */
 }
 
 /* Make wiki images responsive */
@@ -1127,12 +1133,48 @@ div.search-result  {
 .wmd-panel
 {
     width: 100%;
+    display: -webkit-box;  
+    display: -ms-flexbox;  
+    display: -webkit-flex; 
+    display: flex;
+    height: 620px;
+    -webkit-align-content: flex-start;
+    -ms-align-content: flex-start;
+    align-content: flex-start;
+    -webkit-flex-direction: column;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    -webkit-box-align: stretch;
+    -webkit-align-items: stretch;
+    -ms-flex-align: stretch;
+    align-items: stretch;
+    -webkit-flex-wrap: wrap;
+    -ms-flex-wrap: wrap;
+    flex-wrap: wrap;
+}
+
+.wmd-panel .list-inline {
+    width: 100%;
+    margin: auto;
+    -webkit-box-flex: 0 0 auto;  
+    -webkit-flex: 0 0 auto;       
+    -ms-flex: 0 0 auto;           
+    flex: 0 0 auto;
 }
 
 .wmd-button-bar
 {
     width: 100%;
     background-color: Silver;
+}
+
+#wmd-button-bar{
+    width: 100%;
+    margin: auto;
+    -webkit-box-flex: 0 0 auto;  
+    -webkit-flex: 0 0 auto;       
+    -ms-flex: 0 0 auto;           
+    flex: 0 0 auto;
 }
 
 .wmd-input
@@ -1144,8 +1186,8 @@ div.search-result  {
 .wmd-button-row
 {
     position: relative;
-    margin-left: 5px;
-    margin-right: 5px;
+    margin-left: 0;
+    margin-right: 0;
     margin-bottom: 5px;
     margin-top: 0px;
     padding: 0px;
@@ -2134,13 +2176,17 @@ span#profileFullname{
 /* Wiki additions */
 .wiki-panel {
     border: 1px solid #ccc;
+    height: 750px;
+    overflow: auto;
+    display: block;
+    position: relative;
+    overflow-x: hidden;
 }
 .superlist li.active {
     background: #EFEFEF;
     font-weight: bold;
 }
 .wiki-panel-body {
-    height: 700px;
     overflow: auto;
     overflow-x: hidden;
 }
@@ -2155,6 +2201,15 @@ span#profileFullname{
     font-weight: 300;
 }
 
+.wiki-panel-footer {
+    position: absolute;
+    bottom : 0;
+    left: 0;
+    padding: 10px;
+    background: #F5F5F5;
+    width: 100%;
+    z-index: 99;
+}
 #wiki-form {
     padding: 10px;
 }
@@ -2216,10 +2271,10 @@ span#profileFullname{
 }
 
 
-@media (min-width: 1601px) {
-  .container-xl {
-      width : 100%;
-      padding-left: 20px;
-      padding-right: 20px;
-  }
+
+.container-xxl {
+  width : 100%;
+  padding-left: 20px;
+  padding-right: 20px;
+
 }
