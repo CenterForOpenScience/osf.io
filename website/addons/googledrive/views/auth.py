@@ -60,14 +60,21 @@ def googledrive_oauth_finish(auth, **kwargs):
     record to the user and saves the user's access token and account info.
     """
     user = auth.user
+    node = Node.load(session.data.pop('googledrive_auth_nid', None))
+    state = session.data.pop('googledrive_auth_state')
+    
+    # Handle request cancellations from Google's API
+    if request.args.get('error'):
+        flash('Google Drive authorization request cancelled.')
+        if node:
+            return redirect(node.web_url_for('node_setting'))
+        return redirect(web_url_for('user_addons'))
+
     user.add_addon('googledrive')
     user.save()
 
     code = request.args.get('code')
     user_settings = user.get_addon('googledrive')
-    node = Node.load(session.data.get('googledrive_auth_nid'))
-    state = session.data.get('googledrive_auth_state')
-    del session.data['googledrive_auth_state']
 
     if state != request.args.get('state'):
         raise HTTPError(http.BAD_REQUEST)

@@ -10,6 +10,12 @@ var root = path.join(__dirname, 'website', 'static');
 var staticPath = function(dir) {
     return path.join(root, dir);
 };
+var nodePath = function(dir) {
+    return path.join(__dirname, 'node_modules', dir);
+};
+var addonsPath = function(dir) {
+    return path.join(__dirname, 'website', 'addons', dir);
+};
 
 /**
  * Each JS module for a page on the OSF is webpack entry point. These are built
@@ -24,7 +30,6 @@ var entry = {
     'project-dashboard': staticPath('js/pages/project-dashboard-page.js'),
     'project-base-page': staticPath('js/pages/project-base-page.js'),
     'wiki-edit-page': staticPath('js/pages/wiki-edit-page.js'),
-    'wiki-view-page': staticPath('js/pages/wiki-view-page.js'),
     'files-page': staticPath('js/pages/files-page.js'),
     'profile-settings-page': staticPath('js/pages/profile-settings-page.js'),
     'register_1-page': staticPath('js/pages/register_1-page.js'),
@@ -39,18 +44,22 @@ var entry = {
     'notifications-config-page': staticPath('js/notifications-config-page.js'),
     // Commons chunk
     'vendor': [
+        // Vendor libraries
         'knockout',
         'knockout-validation',
         'bootstrap',
         'bootbox',
         'select2',
-        'osfHelpers',
         'knockout-punches',
         'dropzone',
         'knockout-sortable',
         'treebeard',
         'jquery.cookie',
-        'citations'
+        'URIjs',
+        // Common internal modules
+        'fangorn',
+        'citations',
+        'osfHelpers'
     ]
 };
 
@@ -91,14 +100,17 @@ var resolve = {
         'jquery.ui.sortable': staticPath('vendor/bower_components/jquery-ui/ui/jquery.ui.sortable.js'),
         // Dropzone doesn't have a proper 'main' entry in its bower.json
         'dropzone': staticPath('vendor/bower_components/dropzone/dist/dropzone.js'),
+        'truncate': staticPath('vendor/bower_components/truncate/jquery.truncate.js'),
         // Needed for ace code editor in wiki
         'ace-noconflict': staticPath('vendor/bower_components/ace-builds/src-noconflict/ace.js'),
         'ace-ext-language_tools': staticPath('vendor/bower_components/ace-builds/src-noconflict/ext-language_tools.js'),
         'ace-mode-markdown': staticPath('vendor/bower_components/ace-builds/src-noconflict/mode-markdown.js'),
-        'pagedown-ace-converter': staticPath('vendor/pagedown-ace/Markdown.Converter.js'),
-        'pagedown-ace-sanitizer': staticPath('vendor/pagedown-ace/Markdown.Sanitizer.js'),
-        'pagedown-ace-editor': staticPath('vendor/pagedown-ace/Markdown.Editor.js'),
+        'pagedown-ace-converter': addonsPath('wiki/static/pagedown-ace/Markdown.Converter.js'),
+        'pagedown-ace-sanitizer': addonsPath('wiki/static/pagedown-ace/Markdown.Sanitizer.js'),
+        'pagedown-ace-editor': addonsPath('wiki/static/pagedown-ace/Markdown.Editor.js'),
+        'wikiPage': addonsPath('wiki/static/wikiPage.js'),
         'c3': staticPath('vendor/bower_components/c3/c3.js'),
+        'highlight-css': nodePath('highlight.js/styles/default.css'),
         // Also alias some internal libraries for easy access
         'fangorn': staticPath('js/fangorn.js'),
         'waterbutler': staticPath('js/waterbutler.js'),
@@ -110,6 +122,8 @@ var resolve = {
         'koHelpers': staticPath('js/koHelpers.js'),
         'addonPermissions': staticPath('js/addonPermissions.js'),
         'navbar-control': staticPath('js/navbarControl.js'),
+        'markdown': staticPath('js/markdown.js'),
+        "diffTool": staticPath('js/diffTool.js'),
         'mathrender': staticPath('js/mathrender.js'),
         'citations': staticPath('js/citations.js')
     }
