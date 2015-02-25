@@ -7,11 +7,13 @@ from modularodm import fields
 
 from website.addons.base import AddonNodeSettingsBase
 from website.oauth.models import ExternalProvider
+from website.project.model import Node
 from pyzotero import zotero
 
 from website.addons.citations.utils import serialize_folder
 
 from . import settings
+
 
 class ZoteroUserSettings(AddonUserSettingsBase):
 
@@ -64,6 +66,13 @@ class ZoteroUserSettings(AddonUserSettingsBase):
             } for account in self._get_connected_accounts()
         ]
         return rv
+
+    def on_delete(self):
+        nodes = [Node.load(node_id) for node_id in self.oauth_grants.keys()]
+        for node in nodes:
+            node_addon = node.get_addon('zotero')
+            if node_addon and node_addon.user_settings == self:
+                node_addon.clear_auth()
 
 class ZoteroNodeSettings(AddonNodeSettingsBase):
     external_account = fields.ForeignField('externalaccount',

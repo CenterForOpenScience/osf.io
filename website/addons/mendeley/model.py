@@ -10,12 +10,14 @@ from framework.exceptions import PermissionsError
 from website.addons.base import AddonNodeSettingsBase
 from website.addons.base import AddonUserSettingsBase
 from website.oauth.models import ExternalProvider
+from website.project.model import Node
 from website.util import web_url_for
 
 from website.addons.citations.utils import serialize_account, serialize_folder
 
 from . import settings
 from .api import APISession
+
 
 class MendeleyUserSettings(AddonUserSettingsBase):
     oauth_grants = fields.DictionaryField()
@@ -66,6 +68,13 @@ class MendeleyUserSettings(AddonUserSettingsBase):
             for each in self._get_connected_accounts()
         ]
         return ret
+
+    def on_delete(self):
+        nodes = [Node.load(node_id) for node_id in self.oauth_grants.keys()]
+        for node in nodes:
+            node_addon = node.get_addon('mendeley')
+            if node_addon and node_addon.user_settings == self:
+                node_addon.clear_auth()
 
 
 class MendeleyNodeSettings(AddonNodeSettingsBase):
