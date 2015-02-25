@@ -121,10 +121,10 @@ def add_contributor_json(user, current_user=None):
 
     return {
         'fullname': user.fullname,
-        'names':{
+        'names': {
             'given_name': user.given_name,
             'middle_names': user.middle_names,
-            'family_name':user.family_name
+            'family_name': user.family_name
         },
         'email': user.username,
         'id': user._primary_key,

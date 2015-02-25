@@ -259,7 +259,7 @@ class TestAddContributorJson(OsfTestCase):
         self.user.jobs = self.jobs
         user_info = utils.add_contributor_json(self.user)
         names = user_info['names']
-        
+
         assert_equal(user_info['fullname'], self.fullname)
         assert_equal(names['given_name'], self.given_name)
         assert_equal(names['family_name'], self.family_name)
