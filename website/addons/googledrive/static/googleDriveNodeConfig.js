@@ -62,9 +62,6 @@ var ViewModel = function(url, selector, folderPicker) {
         self.access_token (response.result.access_token);
         self.currentFolder(response.result.currentFolder);
 
-        //if (self.currentFolder() == null) {
-        //    self.currentFolder(null);
-        //}
         self.loadedSettings(true);
     }
 
@@ -112,8 +109,14 @@ var ViewModel = function(url, selector, folderPicker) {
         ).success(function(response){
             window.location.href = response.url;
             self.changeMessage('Successfully authorized Google Drive account', 'text-success');
-        }).fail(function() {
-            self.changeMessage('Could not authorize at this moment', 'text-danger');
+        }).fail(function(xhr, textStatus, error) {
+            self.changeMessage('Could not authorize Google Drive due to an error. Please try again later.',
+                               'text-danger');
+            Raven.captureMessage('Could not authorize Google Drive.', {
+                url: self.urls().create,
+                textStatus: textStatus,
+                error: error
+            });
         });
     };
 
@@ -171,9 +174,11 @@ var ViewModel = function(url, selector, folderPicker) {
                 self.nodeHasAuth(false);
                 self.changeMessage('Deauthorized Google Drive.', 'text-warning', 3000);
             }).fail(function(xhr, textStatus, error){
-                Raven.captureMessage('Could not deauthorize Google Drive because of an error. Please try again later.', {
-                        textStatus: textStatus,
-                        error: error
+                self.changeMessage('Could not deauthorize Google Drive due to an error. Please try again later.', 'text-danger');
+                Raven.captureMessage('Could not deauthorize Google Drive.', {
+                    url: self.urls().deauthorize,
+                    textStatus: textStatus,
+                    error: error
                 });
         });
     }
@@ -200,10 +205,12 @@ var ViewModel = function(url, selector, folderPicker) {
     function onPickFolder(evt, item) {
         evt.preventDefault();
         var name;
-        if (item.data.path == '/')
+        if (item.data.path === '/') {
             name = item.data.path;
-        else
+        }
+        else {
             name = '/' + item.data.path;
+        }
 
         self.selected({
             id: item.data.id,

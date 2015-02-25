@@ -32,14 +32,14 @@
     <div id="currentFolder" data-bind="if:showFolders()">
        <p>
         <strong> Current folder:</strong>
-           <!--ko if : currentFolder!=null-->
+        <!--ko if: currentFolder() !== null-->
         <a data-bind="attr.href: urls().files">
             <span data-bind = "text:currentFolder"> </span>
         </a>
-           <!--/ko-->
-            <!--ko if : currentFolder()===null-->
-                None
-           <!--/ko-->
+        <!--/ko-->
+        <!--ko if: currentFolder() === null-->
+            None
+        <!--/ko-->
        </p>
 
         <div class="btn-group" >

@@ -80,8 +80,6 @@ class TestgoogleDriveGuid(OsfTestCase):
         assert_equals(guid1, guid2)
 
 
-
-
 class TestGoogleDriveUserSettingsModel(OsfTestCase):
 
     def setUp(self):

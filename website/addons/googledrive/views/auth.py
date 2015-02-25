@@ -60,7 +60,7 @@ def googledrive_oauth_finish(auth, **kwargs):
         raise HTTPError(http.FORBIDDEN)
     user = auth.user
     node = Node.load(session.data.get('googledrive_auth_nid'))
-    
+
     # Handle request cancellations from Google's API
     if request.args.get('error'):
         flash('Google Drive authorization request cancelled.')
@@ -74,11 +74,11 @@ def googledrive_oauth_finish(auth, **kwargs):
     code = request.args.get('code')
     if code is None:
         if node:
-            flash('Did not approve token.', 'info')
-            return redirect(node.web_url_for('node_setting'))
+            resp = redirect(node.web_url_for('node_setting'))
         else:
-            flash('Did not approve token.', 'info')
-            return redirect(web_url_for('user_addons'))
+            resp = redirect(web_url_for('user_addons'))
+        flash('Did not approve token.', 'info')
+        return resp
     redirect_uri = api_url_for('googledrive_oauth_finish', _absolute=True)
     flow = OAuth2WebServerFlow(
         settings.CLIENT_ID,
