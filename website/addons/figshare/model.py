@@ -449,8 +449,6 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             files = article.get('files', [])
             for fs_file in files:
                 file_id = str(fs_file['id'])
-                print('.....................................', article['article_id'], file_id)
-
                 try:
                     guid = FigShareGuidFile.find_one(
                         Q('node', 'eq', self.owner) &

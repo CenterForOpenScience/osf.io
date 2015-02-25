@@ -16,6 +16,7 @@ from website.addons.figshare import views
 from website.addons.figshare import utils
 
 from website.addons.figshare.views.config import serialize_settings
+from website.models import Comment
 
 from framework.auth import Auth
 
@@ -84,12 +85,139 @@ class TestViewsConfig(OsfTestCase):
         assert_true(is_none)
 
     def test_deauthorize_hides_comments(self):
-        # todo
-        assert_true(False)
+        """Ensure user do not see comments of Figshare files
 
-    def test_reauthorize_shows_comments(self):
-        # todo
-        assert_true(False)
+        """
+        # Create comment
+        path = 'figfigshare.pdf'
+        guid, _ = self.node_settings.find_or_create_file_guid('/' + path)
+        comment = Comment.create(
+            auth=Auth(self.user),
+            node=self.project,
+            target=guid,
+            user=self.user,
+            page='files',
+            content='Figshare testing is more interesting than Dropbox testing',
+            root_title=path,
+        )
+        Comment.create(
+            auth=Auth(self.user),
+            node=self.project,
+            target=comment,
+            user=self.user,
+            page='files',
+            content='some nonsense',
+            root_title=path,
+        )
+
+        # Test deauthorization
+        settings = self.node_settings
+        url = '/api/v1/project/{0}/figshare/config/'.format(self.project._id)
+        self.app.delete(url, auth=self.user.auth)
+        self.node_settings.reload()
+        assert_true(settings.user_settings is None)
+        is_none = (
+            settings.figshare_id is None
+            and settings.figshare_title is None
+            and settings.figshare_type is None
+        )
+        self.project.reload()
+        self.node_settings.reload()
+        assert_true(is_none)
+
+        # Check comments hidden
+        url = self.project.api_url_for('list_comments')
+        res = self.app.get(url, {
+            'page': 'files',
+            'target': guid._id,
+            'rootId': guid._id
+        }, auth=self.user.auth)
+        comments = res.json.get('comments')
+        assert_equal(len(comments), 1)
+        assert_true(comments[0]['isHidden'])
+        res2 = self.app.get(url, {
+            'page': 'files',
+            'target': comment._id,
+            'rootId': guid._id
+        }, auth=self.user.auth)
+        comments = res2.json.get('comments')
+        assert_equal(len(comments), 1)
+        assert_true(comments[0]['isHidden'])
+
+    @mock.patch('website.addons.figshare.api.Figshare.project')
+    def test_reauthorize_shows_comments(self, mock_proj):
+        article_id = '12345'
+        file_name = 'randomfile.txt'
+        fields = {
+            'type': 'project',
+            'id': article_id,
+            'title': 'A PROJECT'
+        }
+        mock_proj.return_value = {
+            'articles': [
+                {
+                    'article_id': article_id,
+                    'files': [
+                        {
+                            'id': file_name
+                        }
+                    ]
+                }
+            ]
+        }
+        # Create comment
+        guid, _ = self.node_settings.find_or_create_file_guid('/{0}/{1}'.format(article_id, file_name))
+        Comment.create(
+            auth=Auth(self.user),
+            node=self.project,
+            target=guid,
+            user=self.user,
+            page='files',
+            content='Figshare testing is more interesting than Dropbox testing',
+            root_title=file_name,
+        )
+
+        # Test deauthorization
+        settings = self.node_settings
+        url = '/api/v1/project/{0}/figshare/config/'.format(self.project._id)
+        self.app.delete(url, auth=self.user.auth)
+        self.node_settings.reload()
+        assert_true(settings.user_settings is None)
+        is_none = (
+            settings.figshare_id is None
+            and settings.figshare_title is None
+            and settings.figshare_type is None
+        )
+        self.project.reload()
+        self.node_settings.reload()
+        assert_true(is_none)
+
+        # Reauthorize
+        url = '/api/v1/project/{0}/figshare/config/import-auth/'.format(self.project._id)
+        self.app.put(url, auth=self.user.auth)
+        self.node_settings.reload()
+
+        url = self.project.api_url_for('figshare_config_put')
+        res = self.app.put_json(
+            url,
+            {
+                'selected': fields
+            },
+            auth=self.user.auth
+        )
+        self.project.reload()
+        self.node_settings.reload()
+
+        # Check comment not hidden
+        url = self.project.api_url_for('list_comments')
+        res = self.app.get(url, {
+            'page': 'files',
+            'target': guid._id,
+            'rootId': guid._id
+        }, auth=self.user.auth)
+        comments = res.json.get('comments')
+        assert_equal(len(comments), 1)
+        assert_false(comments[0]['isHidden'])
 
     def test_config_no_change(self):
         nlogs = len(self.project.logs)

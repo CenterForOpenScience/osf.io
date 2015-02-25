@@ -3320,6 +3320,7 @@ class TestComments(OsfTestCase):
             user=self.comment.user,
             node=self.comment.node,
             target=self.comment.target,
+            paget='node',
             is_public=True,
         )
         assert_equal(comment.user, self.comment.user)
