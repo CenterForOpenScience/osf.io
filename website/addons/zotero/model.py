@@ -243,12 +243,22 @@ class Zotero(ExternalProvider):
         if list_id == 'ROOT':
             list_id = None
 
-        collection = self.client.collection(list_id) if list_id else None
-        collection_items = self.client.collection_items(list_id, content='csljson') if list_id else None
+        if list_id:
+            collection = self.client.collection(list_id)
 
-        if collection:
+            citations = []
+            more = True
+            offset = 0
+            while more:
+                page = self.client.collection_items(list_id, content='csljson', size=100, start=offset)
+                citations = citations + page
+                if len(page) == 0 or len(page) < 100:
+                    more = False
+                else:
+                    offset = offset + len(page)
             return self._citations_for_zotero_collection(collection_items)
-        return self._citations_for_zotero_user()
+        else:
+            return self._citations_for_zotero_user()
 
     def _citations_for_zotero_collection(self, collection):
         """Get all the citations in a specified collection
@@ -260,4 +270,14 @@ class Zotero(ExternalProvider):
 
     def _citations_for_zotero_user(self):
         """Get all the citations from the user """
-        return self.client.items(content='csljson')
+        citations = []
+        more = True
+        offset = 0
+        while more:
+            page = self.client.items(content='csljson', limit=100, start=offset)
+            citations = citations + page
+            if len(page) == 0 or len(page) < 100:
+                more = False
+            else:
+                offset = offset + len(page)
+        return citations
