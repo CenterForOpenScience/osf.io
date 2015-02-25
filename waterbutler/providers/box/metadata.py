@@ -85,5 +85,5 @@ class BoxRevision(metadata.BaseFileRevisionMetadata):
     @property
     def extra(self):
         return {
-            'etag': self.raw.get('etag')
+            'etag': self.raw['etag']
         }
