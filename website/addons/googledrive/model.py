@@ -23,7 +23,6 @@ class GoogleDriveGuidFile(GuidFile):
     @property
     def waterbutler_path(self):
         return self.path.replace(self.folder, '', 1)
-        # return '/' + self.path.replace(self.folder, '', 1).lstrip('/')
 
     @property
     def provider(self):
