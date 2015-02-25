@@ -2,6 +2,7 @@
 
 var $ = require('jquery');
 var m = require('mithril');
+var Raven = require('raven-js');
 var Treebeard = require('treebeard');
 var citations = require('./citations');
 var clipboard = require('./clipboard');
@@ -306,7 +307,9 @@ CitationGrid.prototype.initStyleSelect = function() {
         $.get(styleUrl).done(function(xml) {
             self.updateStyle(event.val, xml);
         }).fail(function(jqxhr, status, error) {
-            console.log('Failed to load style');
+            Raven.captureMessage('Error while selecting citation style: ' + event.val, {
+                url: styleUrl, status: status, error: error
+            });
         });
     });
 };
