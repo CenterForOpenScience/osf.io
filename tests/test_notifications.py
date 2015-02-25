@@ -97,11 +97,9 @@ class TestSubscriptionView(OsfTestCase):
 class TestRemoveContributor(OsfTestCase):
     def setUp(self):
         super(OsfTestCase, self).setUp()
-        self.contributor = UserFactory()
-        self.contributor2 = UserFactory()
         self.project = ProjectFactory()
-        self.project.add_contributor(self.contributor)
-        self.project.add_contributor(self.contributor2)
+        self.contributor = UserFactory()
+        self.project.add_contributor(contributor=self.contributor, permissions=['read'])
         self.project.save()
 
         self.subscription = SubscriptionFactory(
@@ -110,17 +108,46 @@ class TestRemoveContributor(OsfTestCase):
         )
         self.subscription.save()
         self.subscription.email_transactional.append(self.contributor)
-        self.subscription.email_transactional.append(self.contributor2)
+        self.subscription.email_transactional.append(self.project.creator)
         self.subscription.save()
 
-    def test_removed_contributor_is_removed_from_subscriptions(self):
+        self.node = NodeFactory(project=self.project)
+        self.node.add_contributor(contributor=self.project.creator, permissions=['read', 'write', 'admin'])
+        self.node.save()
+        self.node_subscription = SubscriptionFactory(
+            _id=self.node._id + '_comments',
+            object_id=self.node._id
+        )
+        self.node_subscription.save()
+        self.node_subscription.email_transactional.append(self.project.creator)
+        self.node_subscription.email_transactional.append(self.node.creator)
+        self.node_subscription.save()
+
+    def test_removed_non_admin_contributor_is_removed_from_subscriptions(self):
         assert_in(self.contributor, self.subscription.email_transactional)
-        utils.remove_contributor_from_subscriptions(self.contributor, self.project)
+        self.project.remove_contributor(self.contributor, auth=Auth(self.project.creator))
+        assert_not_in(self.contributor, self.project.contributors)
         assert_not_in(self.contributor, self.subscription.email_transactional)
+
+    def test_removed_non_parent_admin_contributor_is_removed_from_subscriptions(self):
+        assert_in(self.node.creator, self.node_subscription.email_transactional)
+        self.node.remove_contributor(self.node.creator, auth=Auth(self.node.creator))
+        assert_not_in(self.node.creator, self.node.contributors)
+        assert_not_in(self.node.creator, self.node_subscription.email_transactional)
+
+    def test_removed_contributor_admin_on_parent_not_removed_from_node_subscription(self):
+        """ Admin on parent project is removed as a contributor on a component. Check
+            that admin is not removed from component subscriptions, as the admin
+            now has read-only access.
+        """
+        assert_in(self.project.creator, self.node_subscription.email_transactional)
+        self.node.remove_contributor(self.project.creator, auth=Auth(self.project.creator))
+        assert_not_in(self.project.creator, self.node.contributors)
+        assert_in(self.project.creator, self.node_subscription.email_transactional)
 
     def test_remove_contributor_signal_called_when_contributor_is_removed(self):
         with capture_signals() as mock_signals:
-            self.project.remove_contributor(self.contributor2, auth=Auth(self.project.creator))
+            self.project.remove_contributor(self.contributor, auth=Auth(self.project.creator))
         assert_equal(mock_signals.signals_sent(), set([contributor_removed]))
 
 
