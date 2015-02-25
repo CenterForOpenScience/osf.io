@@ -40,18 +40,22 @@ var entry = {
     'notifications-config-page': staticPath('js/notifications-config-page.js'),
     // Commons chunk
     'vendor': [
+        // Vendor libraries
         'knockout',
         'knockout-validation',
         'bootstrap',
         'bootbox',
         'select2',
-        'osfHelpers',
         'knockout-punches',
         'dropzone',
         'knockout-sortable',
         'treebeard',
         'jquery.cookie',
-        'citations'
+        'URIjs',
+        // Common internal modules
+        'fangorn',
+        'citations',
+        'osfHelpers'
     ]
 };
 
