@@ -8,12 +8,7 @@
     "moment": "~2.7.0",
     "select2": "~3.5.1",
     "ace-builds": "~1.1.8",
-    "qunit": "~1.14.0",
-    "sinon": "~1.10.2",
-    "select2": "~3.5.1",
-    "jquery-mockjax": "1.5.3",
     "raven-js": "~1.1.16",
-    "sinon-qunit": "~1.0.0",
     "typeahead.js": "~0.10.5",
     "knockout": "~3.2.0",
     "handlebars": "~2.0.0",
@@ -35,5 +30,11 @@
     "styles": "https://github.com/lyndsysimon/styles.git#4db9c8e2f5932cad9f23ad3579d1a82c691faf12",
     "locales": "https://github.com/citation-style-language/locales.git#d2b612f8a6f764cbd66e67238636fac3888a7736",
     "c3": "~0.4.9"
+  },
+  "devDependencies": {
+    "qunit": "~1.17.1",
+    "jquery-mockjax": "1.5.3",
+    "sinon-qunit": "~1.0.0",
+    "sinon": "~1.10.2"
   }
 }
