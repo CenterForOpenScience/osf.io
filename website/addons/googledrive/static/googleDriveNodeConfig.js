@@ -112,8 +112,13 @@ var ViewModel = function(url, selector, folderPicker) {
         ).success(function(response){
             window.location.href = response.url;
             self.changeMessage('Successfully authorized Google Drive account', 'text-success');
-        }).fail(function() {
+        }).fail(function(xhr, textStatus, error) {
             self.changeMessage('Could not authorize at this moment', 'text-danger');
+            Raven.captureMessage('Could not authorize at this moment',
+                {
+                    textStatus: textStatus,
+                    error: error
+                });
         });
     };
 
@@ -171,9 +176,10 @@ var ViewModel = function(url, selector, folderPicker) {
                 self.nodeHasAuth(false);
                 self.changeMessage('Deauthorized Google Drive.', 'text-warning', 3000);
             }).fail(function(xhr, textStatus, error){
+                self.changeMessage('Could not deauthorize Google Drive because of an error. Please try again later.', 'text-danger');
                 Raven.captureMessage('Could not deauthorize Google Drive because of an error. Please try again later.', {
-                        textStatus: textStatus,
-                        error: error
+                    textStatus: textStatus,
+                    error: error
                 });
         });
     }
@@ -199,11 +205,15 @@ var ViewModel = function(url, selector, folderPicker) {
      */
     function onPickFolder(evt, item) {
         evt.preventDefault();
+
+        // Avoids double slash on root folder
         var name;
-        if (item.data.path == '/')
+        if (item.data.path === '/') {
             name = item.data.path;
-        else
+        }
+        else {
             name = '/' + item.data.path;
+        }
 
         self.selected({
             id: item.data.id,
