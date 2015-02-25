@@ -9,16 +9,27 @@ from factory import SubFactory, Sequence, post_generation
 from tests.factories import ModularOdmFactory, UserFactory, ProjectFactory
 
 from website.addons.box.model import (
-    BoxUserSettings, BoxNodeSettings, BoxFile
+    BoxOAuthSettings, BoxUserSettings,
+    BoxNodeSettings, BoxFile
 )
 
 # TODO(sloria): make an abstract UserSettingsFactory that just includes the owner field
+
+class BoxOAuthSettingsFactory(ModularOdmFactory):
+    FACTORY_FOR = BoxOAuthSettings
+
+    username = 'Den'
+    user_id = 'b4rn311'
+    expires_at = datetime(2045, 1, 1)
+    access_token = Sequence(lambda n: 'abcdef{0}'.format(n))
+    refresh_token = Sequence(lambda n: 'abcdef{0}'.format(n))
+
+
 class BoxUserSettingsFactory(ModularOdmFactory):
     FACTORY_FOR = BoxUserSettings
 
     owner = SubFactory(UserFactory)
-    access_token = Sequence(lambda n: 'abcdef{0}'.format(n))
-    last_refreshed = datetime.utcnow()
+    oauth_settings = SubFactory(BoxOAuthSettingsFactory)
 
 
 class BoxNodeSettingsFactory(ModularOdmFactory):
