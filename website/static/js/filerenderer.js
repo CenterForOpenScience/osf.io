@@ -1,11 +1,13 @@
-
 /*
-* Refresh rendered file through mfr
-*/
+ * Refresh rendered file through mfr
+ */
+
+'use strict';
+
 var $ = require('jquery');
 var $osf = require('osfHelpers');
 
-FileRenderer = {
+var FileRenderer = {
     start: function(url, selector){
         this.url = url;
         this.tries = 0;
@@ -38,4 +40,5 @@ FileRenderer = {
         }
     }, 1000)
 };
+
 module.exports = FileRenderer;
