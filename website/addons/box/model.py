@@ -1,21 +1,24 @@
 # -*- coding: utf-8 -*-
 import os
+import time
 import logging
 import hashlib
 from datetime import datetime
 
-from modularodm import fields, Q
+import furl
+import requests
+from box import CredentialsV2
+from modularodm import fields, Q, StoredObject
 from modularodm.exceptions import ModularOdmException
 
 from framework.auth import Auth
 from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
-from website.addons.box.utils import BoxNodeLogger
 from website.addons.box import settings
+from website.addons.box.utils import BoxNodeLogger
 from website.addons.box.client import get_client_from_user_settings
 
-from box import CredentialsV2
 
 logger = logging.getLogger(__name__)
 
@@ -65,18 +68,138 @@ class BoxFile(GuidFile):
         return new, created
 
 
+class BoxOAuthSettings(StoredObject):
+    """
+    this model address the problem if we have two osf user link
+    to the same box user and their access token conflicts issue
+    """
+
+    # Box user id, for example, "4974056"
+    user_id = fields.StringField(primary=True, required=True)
+    # Box user name this is the user's login
+    username = fields.StringField()
+    _access_token = fields.StringField()
+    refresh_token = fields.StringField()
+    expires_at = fields.DateTimeField()
+
+    @property
+    def access_token(self):
+        self.refresh_access_token()
+        return self._access_token
+
+    @access_token.setter
+    def access_token(self, val):
+        self._access_token = val
+
+    def get_credentialsv2(self):
+        return CredentialsV2(
+            self._access_token,
+            self.refresh_token,
+            settings.BOX_KEY,
+            settings.BOX_SECRET,
+            self.token_refreshed_callback,
+        )
+
+    def token_refreshed_callback(self, access_token, refresh_token):
+        self.access_token = access_token
+        self.refresh_token = refresh_token
+        self.expires_at = datetime.utcfromtimestamp(time.time() + 3600)
+        self.save()
+
+    def refresh_access_token(self, force=False):
+        if self._needs_refresh or force:
+            self.get_credentialsv2().refresh()
+
+    def revoke_token(self):
+        # if there is only one osf user linked to this box user oauth, revoke the token,
+        # otherwise, disconnect the osf user from the boxoauthsettings
+        if len(self.boxusersettings__accessed) <= 1:
+            url = furl.furl('https://www.box.com/api/oauth2/revoke/')
+            url.args = {
+                'token': self._access_token,
+                'client_id': settings.BOX_KEY,
+                'client_secret': settings.BOX_SECRET,
+            }
+            # no need to fail, revoke is opportunistic
+            requests.request('POST', url.url)
+
+            # remove the object as its the last instance.
+            BoxOAuthSettings.remove_one(self)
+
+    def _needs_refresh(self):
+        if self.expires_at is None:
+            return False
+        return (self.expires_at - datetime.utcnow()).total_seconds() < settings.REFRESH_TIME
+
+
 class BoxUserSettings(AddonUserSettingsBase):
     """Stores user-specific box information, including the Oauth access
     token.
     """
 
-    box_id = fields.StringField(required=False)
-    access_token = fields.StringField(required=False)
-    refresh_token = fields.StringField(required=False)
-    box_info = fields.DictionaryField(required=False)
-    token_type = fields.StringField(required=False)
-    restricted_to = fields.DictionaryField(required=False)
-    last_refreshed = fields.DateTimeField(editable=True)
+    oauth_settings = fields.ForeignField(
+        'boxoauthsettings', backref='accessed'
+    )
+
+    @property
+    def box_id(self):
+        if self.oauth_settings:
+            return self.oauth_settings.user_id
+        return None
+
+    @box_id.setter
+    def box_id(self, val):
+        self.oauth_settings.user_id = val
+
+    @property
+    def username(self):
+        if self.oauth_settings:
+            return self.oauth_settings.username
+        return None
+
+    @username.setter
+    def username(self, val):
+        self.oauth_settings.name = val
+
+    @property
+    def access_token(self):
+        if self.oauth_settings:
+            return self.oauth_settings.access_token
+        return None
+
+    @access_token.setter
+    def access_token(self, val):
+        self.oauth_settings.access_token = val
+
+    @property
+    def refresh_token(self):
+        if self.oauth_settings:
+            return self.oauth_settings.refresh_token
+        return None
+
+    @refresh_token.setter
+    def refresh_token(self, val):
+        self.oauth_settings.refresh_token = val
+
+    @property
+    def expires_at(self):
+        if self.oauth_settings:
+            return self.oauth_settings.expires_at
+        return None
+
+    @expires_at.setter
+    def expires_at(self, val):
+        self.oauth_settings.expires_at = val
+
+    @property
+    def has_auth(self):
+        if self.oauth_settings:
+            return self.oauth_settings.access_token is not None
+        return False
+
+    def refresh_access_token(self):
+        self.oauth_settings.refresh_access_token()
+        return self.oauth_settings.access_token
 
     def to_json(self, user=None):
         """Return a dictionary representation of the user settings.
@@ -87,48 +210,29 @@ class BoxUserSettings(AddonUserSettingsBase):
         output['has_auth'] = self.has_auth
         return output
 
-    def token_refreshed_callback(self, access_token, refresh_token):
-        self.access_token = access_token
-        self.refresh_token = refresh_token
-        self.last_refreshed = datetime.utcnow()
-        self.save()
-
-    @property
-    def has_auth(self):
-        return bool(self.access_token and self.refresh_creds_if_necessary())
-
     def delete(self, save=True):
         self.clear()
         super(BoxUserSettings, self).delete(save)
 
     def clear(self):
         """Clear settings and deauthorize any associated nodes."""
-        self.box_id = None
-        self.access_token = None
+        self.oauth_settings.revoke_token()
+        self.oauth_settings = None
+        self.save()
+
         for node_settings in self.boxnodesettings__authorized:
             node_settings.deauthorize(Auth(self.owner))
             node_settings.save()
-        return self
 
     def get_credentialsv2(self):
-        return CredentialsV2(
-            self.access_token,
-            self.refresh_token,
-            settings.BOX_KEY,
-            settings.BOX_SECRET,
-            self.token_refreshed_callback,
-        )
+        if not self.has_auth:
+            return None
+        return self.oauth_settings.get_credentialsv2()
 
-    def refresh_creds_if_necessary(self):
-        """Checks to see if the access token has expired, or will
-        expire within 6 minutes. Returns the status of a refresh
-        attempt or True if not required.
-        """
-        diff = (datetime.utcnow() - self.last_refreshed).total_seconds() / 3600
-        if diff > 0.9:
-            return self.get_credentialsv2().refresh()
-        else:
-            return True
+    def save(self, *args, **kwargs):
+        if self.oauth_settings:
+            self.oauth_settings.save()
+        return super(BoxUserSettings, self).save(*args, **kwargs)
 
     def __repr__(self):
         return u'<BoxUserSettings(user={self.owner.username!r})>'.format(self=self)
