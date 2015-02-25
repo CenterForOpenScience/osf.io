@@ -64,6 +64,7 @@ function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathj
 
     self.displayText =  ko.computed(function() {
         self.allowFullRender();
+        self.visible();
         var requestURL;
         if (typeof self.version() !== 'undefined') {
             if (self.version() === 'preview') {
@@ -252,6 +253,10 @@ function ViewModel(options){
                 self.viewVersion('preview');
             } else if (self.viewVersion() === 'preview') {
                 self.viewVersion('current');
+            }
+        } else if (panel === 'view') {
+            if(!display && self.compareVis() && self.editVis()){
+                self.viewVersion('preview');
             }
         }
     });
