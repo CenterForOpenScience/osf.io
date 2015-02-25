@@ -67,7 +67,7 @@ class ZoteroNodeSettingsTestCase(OsfTestCase):
     def setUp(self):
         super(ZoteroNodeSettingsTestCase, self).setUp()
         self.node = ProjectFactory()
-        self.node_settings = model.AddonZoteroNodeSettings(owner=self.node)
+        self.node_settings = model.ZoteroNodeSettings(owner=self.node)
         self.node_settings.save()
         self.user = self.node.creator
         self.user_settings = self.user.get_or_add_addon('zotero')

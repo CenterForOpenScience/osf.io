@@ -20,12 +20,12 @@ class ZoteroAccountFactory(ExternalAccountFactory):
 
 
 class ZoteroUserSettingsFactory(ModularOdmFactory):
-    FACTORY_FOR = model.AddonZoteroUserSettings
+    FACTORY_FOR = model.ZoteroUserSettings
 
     owner = SubFactory(UserFactory)
 
 
 class ZoteroNodeSettingsFactory(ModularOdmFactory):
-    FACTORY_FOR = model.AddonZoteroNodeSettings
+    FACTORY_FOR = model.ZoteroNodeSettings
 
     owner = SubFactory(ProjectFactory)
