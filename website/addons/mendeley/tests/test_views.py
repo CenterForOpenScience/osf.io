@@ -125,6 +125,61 @@ class MendeleyViewsTestCase(OsfTestCase):
         }
         assert_equal(res.json, expected)
 
+    def test_set_auth(self):
+
+        res = self.app.post_json(
+            self.project.api_url_for('mendeley_add_user_auth'),
+            {
+                'external_account_id': self.account._id,
+            },
+            auth=self.user.auth,
+        )
+
+        assert_equal(
+            res.status_code,
+            200
+        )
+
+        assert_equal(
+            res.json['result']['externalAccountId'],
+            self.account._id
+        )
+        assert_true(res.json['result']['userHasAuth'])
+
+        assert_equal(
+            self.node_addon.user_settings,
+            self.user_addon
+        )
+        assert_equal(
+            self.node_addon.external_account,
+            self.account
+        )
+
+    def remove_user_auth(self):
+        self.node_addon.set_auth(self.account, self.user)
+
+        res = self.app.delete_json(
+            self.project.api_url_for('mendeley_remove_user_auth'),
+            {
+                'external_account_id': self.account._id,
+            },
+            auth=self.user.auth,
+        )
+
+        assert_equal(
+            res.status_code,
+            200
+        )
+
+        assert_equal(
+            res.json['result']['externalAccountId'],
+            None
+        )
+        assert_false(res.json['result']['userHasAuth'])
+
+        assert_is_none(self.node_addon.user_settings)
+        assert_is_none(self.node_addon.external_account)
+
     def test_set_config_owner(self):
         # Settings config updates node settings
         self.node_addon.associated_user_settings = []
@@ -156,59 +211,6 @@ class MendeleyViewsTestCase(OsfTestCase):
         )
         self.node_addon.reload()
         assert_equal(self.user_addon, self.node_addon.user_settings)
-        assert_equal(res.json, {})
-
-    @unittest.skip('finish this -- breaks at second request: auth')
-    def test_set_config_node_authorized(self):
-        # Can set config to an account/folder that was previously associated
-        self.node_addon.associated_user_settings = []
-        self.node_addon.save()
-        res = self.app.put_json(
-            self.project.api_url_for('mendeley_set_config'),
-            {
-                'external_account_id': self.account._id,
-                'external_list_id': 'list',
-            },
-            auth=self.user.auth,
-        )
-        self.node_addon.reload()
-        assert_in(self.user_addon, self.node_addon.associated_user_settings)
-        assert_equal(res.json, {})
-
-        self.account2 = MendeleyAccountFactory()
-        self.user2 = AuthUserFactory(external_accounts=[self.account2])
-        self.account2.display_name = self.user2.fullname
-        self.account2.save()
-        self.user_addon2 = MendeleyUserSettingsFactory(owner=self.user2)
-        self.node_addon.external_account = self.account2
-        #self.node_addon.grant_oauth_access(self.user2, self.account2, metadata={'lists': 'list'})
-        self.node_addon.associated_user_settings = []
-        self.node_addon.save()
-        res = self.app.put_json(
-            self.project.api_url_for('mendeley_set_config'),
-            {
-                'external_account_id': self.account2._id,
-                'external_list_id': 'list',
-            },
-            auth=self.user2.auth,
-        )
-        self.node_addon.reload()
-        assert_in(self.user_addon2, self.node_addon.associated_user_settings)
-        assert_equal(res.json, {})
-
-        self.node_addon.external_account = self.account
-        #self.node_addon.grant_oauth_access(self.user, self.account, metadata={'lists': 'list'})
-
-        res = self.app.put_json(
-            self.project.api_url_for('mendeley_set_config'),
-            {
-                'external_account_id': self.account._id,
-                'external_list_id': 'list',
-            },
-            auth=self.user.auth,
-        )
-        self.node_addon.reload()
-        assert_in(self.user_addon, self.node_addon.associated_user_settings)
         assert_equal(res.json, {})
 
     def test_mendeley_widget_view_complete(self):

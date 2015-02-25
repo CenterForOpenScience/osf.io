@@ -108,11 +108,11 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
     def selected_folder_name(self):
         if self.mendeley_list_id is None:
             return ''
-        elif self.mendeley_list_id != 'ROOT':
+        elif self.mendeley_list_id == 'ROOT':
+            return 'All Documents'
+        else:
             folder = self.api._folder_metadata(self.mendeley_list_id)
             return folder.name
-        else:
-            return 'All Documents'
 
     @property
     def root_folder(self):
@@ -181,11 +181,6 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
         self.mendeley_list_id = mendeley_list_id
         self.save()
 
-    # TODO deprecated
-    def to_json(self, user):
-
-        ret = super(AddonMendeleyNodeSettings, self).to_json(user)
-        return ret
 
 class Mendeley(ExternalProvider):
     name = 'Mendeley'
@@ -273,15 +268,6 @@ class Mendeley(ExternalProvider):
         if folder:
             return self._citations_for_mendeley_folder(folder)
         return self._citations_for_mendeley_user()
-
-    def get_root_folder(self):
-        root = serialize_folder(
-            'All Documents',
-            id='ROOT',
-            parent_id='__'
-        )
-        root['kind'] = 'folder'
-        return [root]
 
     def _folder_metadata(self, folder_id):
         folder = self.client.folders.get(folder_id)

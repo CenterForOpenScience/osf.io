@@ -88,6 +88,13 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
         self.user = self.node.creator
         self.user_settings = self.user.get_or_add_addon('mendeley')
 
+    def tearDown(self):
+        super(MendeleyNodeSettingsTestCase, self).tearDown()
+        self.user_settings.remove()
+        self.node_settings.remove()
+        self.node.remove()
+        self.user.remove()
+
     @mock.patch('website.addons.mendeley.model.Mendeley')
     def test_api_not_cached(self, mock_mendeley):
         # The first call to .api returns a new object
@@ -190,6 +197,71 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
                 metadata={'folder': 'fake-folder-id'}
             )
         )
+
+    def test_has_auth_false(self):
+        external_account = ExternalAccountFactory()
+
+        assert_false(self.node_settings.has_auth)
+
+        # both external_account and user_settings must be set to have auth
+        self.node_settings.external_account = external_account
+        assert_false(self.node_settings.has_auth)
+
+        self.node_settings.external_account = None
+        self.node_settings.user_settings = self.user_settings
+        assert_false(self.node_settings.has_auth)
+
+        # set_auth must be called to have auth
+        self.node_settings.external_account = external_account
+        self.node_settings.user_settings = self.user_settings
+        assert_false(self.node_settings.has_auth)
+
+    def test_has_auth_true(self):
+        external_account = ExternalAccountFactory()
+        self.user.external_accounts.append(external_account)
+
+        self.node_settings.set_auth(external_account, self.user)
+
+        # mendeley_list_id should have no effect
+        self.node_settings.mendeley_list_id = None
+        assert_true(self.node_settings.has_auth)
+
+        # mendeley_list_id should have no effect
+        self.node_settings.mendeley_list_id = 'totally fake ID'
+        assert_true(self.node_settings.has_auth)
+
+    def test_selected_folder_name_root(self):
+        self.node_settings.mendeley_list_id = 'ROOT'
+
+        assert_equal(
+            self.node_settings.selected_folder_name,
+            "All Documents"
+        )
+
+    def test_selected_folder_name_empty(self):
+        self.node_settings.mendeley_list_id = None
+
+        assert_equal(
+            self.node_settings.selected_folder_name,
+            ''
+        )
+
+    @mock.patch('website.addons.mendeley.model.Mendeley._folder_metadata')
+    def test_selected_folder_name(self, mock_folder_metadata):
+        # Mock the return from api call to get the folder's name
+        mock_folder = mock.Mock()
+        mock_folder.name = 'Fake Folder'
+
+        # Add the mocked return object to the mocked api client
+        mock_folder_metadata.return_value = mock_folder
+
+        self.node_settings.mendeley_list_id = 'fake-list-id'
+
+        assert_equal(
+            self.node_settings.selected_folder_name,
+            'Fake Folder'
+        )
+
 
 class MendeleyUserSettingsTestCase(OsfTestCase):
     def test_get_connected_accounts(self):
