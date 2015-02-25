@@ -7,15 +7,12 @@ import logging
 import mfr
 from mfr.ext import ALL_HANDLERS
 from mfr.exceptions import MFRError
-from mfr.ext.tabular import libs as tabular_libs
-from mfr.ext.tabular.configuration import config as tabular_config
 
 from website import settings
 from website.language import ERROR_PREFIX
 
 from framework.tasks import app
 from framework.render import exceptions
-from framework.render.core import detect_by_mimetype
 from framework.render.core import save_to_file_or_error
 from framework.render.core import render_is_done_or_happening
 
@@ -32,7 +29,6 @@ mfr.config.update({
     # Where to save static files
     'ASSETS_FOLDER': os.path.join(settings.STATIC_FOLDER, 'mfr'),
 })
-tabular_config['libs']['.gsheet'] = [tabular_libs.xlsx_xlrd]
 
 CUSTOM_ERROR_MESSAGES = {}
 
@@ -68,7 +64,7 @@ def _build_rendered_html(download_url, cache_path, temp_path, public_download_ur
 
     rendered = None
     try:
-        response = save_to_file_or_error(download_url, temp_path)
+        save_to_file_or_error(download_url, temp_path)
     except exceptions.RenderNotPossibleException as e:
         # Write out unavoidable errors
         rendered = e.renderable_error
@@ -76,8 +72,7 @@ def _build_rendered_html(download_url, cache_path, temp_path, public_download_ur
         with codecs.open(temp_path) as temp_file:
             # Try to render file
             try:
-                handler = detect_by_mimetype(response.headers['content-type'])
-                render_result = mfr.render(temp_file, src=public_download_url, handler=handler)
+                render_result = mfr.render(temp_file, src=public_download_url)
                 # Rendered result
                 rendered = _build_html(render_result)
             except MFRError as err:
