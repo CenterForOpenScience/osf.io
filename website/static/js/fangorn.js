@@ -8,7 +8,7 @@
 var $ = require('jquery');
 var m = require('mithril');
 var Treebeard = require('treebeard');
-var URI = require('uri.js/src/URI.js');
+var URI = require('URIjs');
 var waterbutler = require('waterbutler');
 
 var $osf = require('osfHelpers');
