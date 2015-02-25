@@ -128,26 +128,6 @@ class AddonZoteroNodeSettings(AddonNodeSettingsBase):
     def provider_name(self):
         return 'zotero'
 
-    def grant_oauth_access(self, user, external_account, metadata=None):
-        """Grant OAuth access, updates metadata on user settings
-        :param User user:
-        :param ExternalAccount external_account:
-        :param dict metadata:
-        """
-        user_settings = user.get_addon('zotero')
-
-        # associate the user settings with this node's settings
-        if user_settings not in self.associated_user_settings:
-            self.associated_user_settings.append(user_settings)
-
-        user_settings.grant_oauth_access(
-            node=self.owner,
-            external_account=external_account,
-            metadata=metadata
-        )
-
-        user_settings.save()
-
     def set_auth(self, external_account, user):
         """Connect the node addon to a user's external account.
         """
@@ -200,43 +180,6 @@ class AddonZoteroNodeSettings(AddonNodeSettingsBase):
         # update this instance
         self.zotero_list_id = zotero_list_id
         self.save()
-
-    def verify_oauth_access(self, external_account, list_id):
-        """Determine if access to the ExternalAccount has been granted
-        :param ExternalAccount external_account:
-        :param str list_id: ID of the Zotero list requested
-        :return bool: True or False
-        """
-        for user_settings in self.associated_user_settings:
-            try:
-                granted = user_settings[self.owner._id][external_account._id]
-            except KeyError:
-                # no grant for this node, move along
-                continue
-
-            if list_id in granted.get('lists', []):
-                return True
-        return False
-
-    def to_json(self, user):
-        accounts = {
-            account for account
-            in user.external_accounts
-            if account.provider == 'zotero'
-        }
-        if self.external_account:
-            accounts.add(self.external_account)
-
-        ret = super(AddonZoteroNodeSettings, self).to_json(user)
-        ret['accounts'] = [serialize_account(each) for each in accounts]
-        ret['list_id'] = self.zotero_list_id
-        ret['current_account'] = (
-            serialize_account(self.external_account)
-            if self.external_account
-            else None
-        )
-
-        return ret
 
 
 class Zotero(ExternalProvider):
