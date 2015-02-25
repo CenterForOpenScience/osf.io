@@ -302,19 +302,19 @@ def node_setting(auth, **kwargs):
     addon_enabled_settings = []
 
     for addon in node.get_addons():
-
         addons_enabled.append(addon.config.short_name)
         if 'node' in addon.config.configs:
             addon_enabled_settings.append(addon.to_json(auth.user))
-
+    addon_enabled_settings = sorted(addon_enabled_settings, key=lambda addon: addon['addon_full_name'])
+    
     ret['addon_categories'] = settings.ADDON_CATEGORIES
     ret['addons_available'] = [
         addon
-        for addon in settings.ADDONS_AVAILABLE
+        for addon in sorted(settings.ADDONS_AVAILABLE)
         if 'node' in addon.owners
         and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node']
     ]
-    ret['addons_enabled'] = addons_enabled
+    ret['addons_enabled'] = sorted(addons_enabled)
     ret['addon_enabled_settings'] = addon_enabled_settings
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
 
