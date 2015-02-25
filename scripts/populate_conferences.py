@@ -141,12 +141,11 @@ MEETING_DATA = {
             'KatyCain526@gmail.com',
         ],
         'public_projects': True,
-        
     },
     'VPRSF2015': {
         'name': 'Virginia Piedmont Regional Science Fair',
         'info_url': None,
-        'logo_url': http://vprsf.org/wp-content/themes/VPRSF/images/logo.png,
+        'logo_url': 'http://vprsf.org/wp-content/themes/VPRSF/images/logo.png',
         'active': True,
         'admins': [
             'director@vprsf.org',
