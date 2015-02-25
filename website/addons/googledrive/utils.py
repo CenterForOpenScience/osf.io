@@ -162,9 +162,9 @@ def refresh_access_token(user_settings):
         user_settings.access_token = refreshed_access_token
         # shadow cur_time_in_millis because of time lapse from post request
         cur_time_in_millis = time.mktime(datetime.datetime.utcnow().timetuple())
-        user_settings.token_expiry = cur_time_in_millis + json_response['expires_in']
+        user_settings.token_expiry = cur_time_in_millis + float(json_response['expires_in'])
         user_settings.save()
         return {'status': 'token_refreshed'}
     # TODO: Don't catch generic exception @jmcarp
-    except:
+    except requests.ConnectionError:
         return {'status': 'token cannot be refreshed at this moment'}

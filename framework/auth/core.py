@@ -263,6 +263,11 @@ class User(GuidStoredObject, AddonModelMixin):
     # Recently added contributors stored via a list of users
     recently_added = fields.ForeignField("user", list=True, backref="recently_added")
 
+    # Attached external accounts (OAuth)
+    external_accounts = fields.ForeignField("externalaccount",
+                                            list=True,
+                                            backref="connected")
+
     # CSL names
     given_name = fields.StringField()
     middle_names = fields.StringField()

@@ -17,23 +17,6 @@
     padding-top: 20px;
 }
 
-
-.btn-dropbox {
-    color: #333;
-    background-color: #fff;
-    border-color: #ccc;
-}
-
-.btn-dropbox:hover,
-.btn-dropbox:focus,
-.btn-dropbox:active,
-.btn-dropbox.active,
-.open .dropdown-toggle.btn-dropbox {
-    color: #333;
-    background-color: #ebebeb;
-    border-color: #adadad;
-}
-
 .dropbox-folderpicker-odd {
     background-color: #f5f5f5;
 }

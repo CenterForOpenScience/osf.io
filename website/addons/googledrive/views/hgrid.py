@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 import httplib2
 
 from flask import request
@@ -84,7 +85,7 @@ def googledrive_addon_folder(node_settings, auth, **kwargs):
     node = node_settings.owner
     root = rubeus.build_addon_root(
         node_settings=node_settings,
-        name=node_settings.folder,
+        name=os.path.join('/', node_settings.waterbutler_folder['path']),
         permissions=auth,
         nodeUrl=node.url,
         nodeApiUrl=node.api_url,
