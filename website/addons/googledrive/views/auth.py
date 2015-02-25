@@ -33,7 +33,7 @@ def googledrive_oauth_start(auth, **kwargs):
     nid = kwargs.get('nid') or kwargs.get('pid')
     if nid:
         session.data['googledrive_auth_nid'] = nid
-    # If user has already authorized dropbox, flash error message
+    # If user has already authorized Google drive, flash error message
     if user.has_addon('googledrive') and user.get_addon('googledrive').has_auth:
         flash('You have already authorized Google Drive for this account', 'warning')
         return redirect(web_url_for('user_addons'))
@@ -50,11 +50,13 @@ def googledrive_oauth_start(auth, **kwargs):
     return{'url': authorize_url}
 
 
+
 @collect_auth
 def googledrive_oauth_finish(auth, **kwargs):
     """View called when the Oauth flow is completed. Adds a new GoogleDriveUserSettings
     record to the user and saves the user's access token and account info.
     """
+
     if not auth.logged_in:
         raise HTTPError(http.FORBIDDEN)
     user = auth.user
@@ -64,8 +66,12 @@ def googledrive_oauth_finish(auth, **kwargs):
     node = Node.load(session.data.get('googledrive_auth_nid'))
     code = request.args.get('code')
     if code is None:
-        raise HTTPError(http.BAD_REQUEST)
-
+        if node:
+            flash('Did not approve token.', 'info')
+            return redirect(node.web_url_for('node_setting'))
+        else:
+            flash('Did not approve token.', 'info')
+            return redirect(web_url_for('user_addons'))
     redirect_uri = api_url_for('googledrive_oauth_finish', _absolute=True)
     flow = OAuth2WebServerFlow(
         settings.CLIENT_ID,
