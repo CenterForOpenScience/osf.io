@@ -4,7 +4,8 @@ from website.addons.googledrive import routes, model, views
 MODELS = [
     model.GoogleDriveUserSettings,
     model.GoogleDriveNodeSettings,
-    model.GoogleDriveGuidFile
+    model.GoogleDriveOAuthSettings,
+    model.GoogleDriveGuidFile,
 ]
 USER_SETTINGS_MODEL = model.GoogleDriveUserSettings
 NODE_SETTINGS_MODEL = model.GoogleDriveNodeSettings

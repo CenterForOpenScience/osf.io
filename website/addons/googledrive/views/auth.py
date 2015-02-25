@@ -19,8 +19,8 @@ from website.project.decorators import (
 )
 
 from website.addons.googledrive.client import GoogleAuthClient
-from website.addons.googledrive.client import GoogleDriveClient
 from website.addons.googledrive.utils import serialize_settings
+from website.addons.googledrive.model import GoogleDriveOAuthSettings
 
 
 @must_be_logged_in
@@ -77,15 +77,21 @@ def googledrive_oauth_finish(auth, **kwargs):
 
     auth_client = GoogleAuthClient()
     token = auth_client.finish(code)
+    info = auth_client.userinfo(token['access_token'])
 
+    # Attempt to attach an existing oauth settings model
+    oauth_settings = GoogleDriveOAuthSettings.load(info['sub'])
+    # Create a new oauth settings model
+    if not oauth_settings:
+        oauth_settings = GoogleDriveOAuthSettings()
+        oauth_settings.user_id = info['sub']
+        oauth_settings.save()
+    user_settings.oauth_settings = oauth_settings
+
+    user_settings.username = info['name']
     user_settings.access_token = token['access_token']
     user_settings.refresh_token = token['refresh_token']
-    user_settings.token_expires_at = datetime.utcfromtimestamp(token['expires_at'])
-
-    drive_client = GoogleDriveClient(token['access_token'])
-    about = drive_client.about()
-
-    user_settings.username = about['name']
+    user_settings.expires_at = datetime.utcfromtimestamp(token['expires_at'])
     user_settings.save()
 
     flash('Successfully authorized Google Drive', 'success')
@@ -102,8 +108,6 @@ def googledrive_oauth_finish(auth, **kwargs):
 @must_be_logged_in
 @must_have_addon('googledrive', 'user')
 def googledrive_oauth_delete_user(user_addon, **kwargs):
-    client = GoogleAuthClient()
-    client.revoke(user_addon._access_token)
     user_addon.clear()
     user_addon.save()
 

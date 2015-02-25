@@ -15,24 +15,19 @@ from website.addons.googledrive import exceptions
 
 class BaseClient(object):
 
-    def __init__(self, base):
-        self.base = base
-
     @property
     def default_headers(self):
         return {}
 
-    def _make_request(self, method, segments, **kwargs):
-        query = kwargs.pop('query', {})
+    def _make_request(self, method, url, params=None, **kwargs):
         expects = kwargs.pop('expects', None)
-        throws = kwargs.pop('throws', HTTPError)
+        throws = kwargs.pop('throws', None)
 
-        url = self._build_url(*segments, **query)
         kwargs['headers'] = self._build_headers(**kwargs.get('headers', {}))
 
-        response = requests.request(method, url, **kwargs)
+        response = requests.request(method, url, params=params, **kwargs)
         if expects and response.status_code not in expects:
-            raise throws
+            raise throws if throws else HTTPError(response.status_code)
 
         return response
 
@@ -45,8 +40,8 @@ class BaseClient(object):
             if value is not None
         }
 
-    def _build_url(self, *segments, **query):
-        url = furl.furl(self.base)
+    def _build_url(self, base, *segments):
+        url = furl.furl(base)
         segments = filter(
             lambda segment: segment,
             map(
@@ -55,14 +50,10 @@ class BaseClient(object):
             )
         )
         url.path = os.path.join(*segments)
-        url.args = query
         return url.url
 
 
 class GoogleAuthClient(BaseClient):
-
-    def __init__(self, token=None):
-        super(GoogleAuthClient, self).__init__(settings.OAUTH_BASE_URL)
 
     def start(self):
         client = OAuth2Session(
@@ -71,7 +62,7 @@ class GoogleAuthClient(BaseClient):
             scope=settings.OAUTH_SCOPE
         )
         return client.authorization_url(
-            self._build_url('auth'),
+            self._build_url(settings.OAUTH_BASE_URL, 'auth'),
             access_type='offline',
             approval_prompt='force'
         )
@@ -82,7 +73,7 @@ class GoogleAuthClient(BaseClient):
             redirect_uri=api_url_for('googledrive_oauth_finish', _absolute=True),
         )
         return client.fetch_token(
-            self._build_url('token'),
+            self._build_url(settings.API_BASE_URL, 'oauth2', 'v3', 'token'),
             client_secret=settings.CLIENT_SECRET,
             code=code
         )
@@ -105,26 +96,35 @@ class GoogleAuthClient(BaseClient):
 
         try:
             return client.refresh_token(
-                self._build_url('token'),
+                self._build_url(settings.API_BASE_URL, 'oauth2', 'v3', 'token'),
+                # ('love')
                 **extra
             )
         except InvalidGrantError:
             raise exceptions.ExpiredAuthError()
 
+    def userinfo(self, token):
+        return self._make_request(
+            'GET',
+            self._build_url(settings.API_BASE_URL, 'oauth2', 'v3', 'userinfo'),
+            params={'access_token': token},
+            expects=(200, ),
+            throws=HTTPError(401)
+        ).json()
+
     def revoke(self, token):
         return self._make_request(
             'GET',
-            ('revoke', ),
-            query={'token': token},
+            self._build_url(settings.OAUTH_BASE_URL, 'revoke'),
+            params={'token': token},
             expects=(200, 400, ),
-            throws=Exception
+            throws=HTTPError(401)
         )
 
 
 class GoogleDriveClient(BaseClient):
 
     def __init__(self, token=None):
-        super(GoogleDriveClient, self).__init__(settings.DRIVE_BASE_URL)
         self.token = token
 
     @property
@@ -136,9 +136,9 @@ class GoogleDriveClient(BaseClient):
     def about(self):
         return self._make_request(
             'GET',
-            ('about', ),
+            self._build_url(settings.API_BASE_URL, 'drive', 'v2', 'about', ),
             expects=(200, ),
-            throws=Exception
+            throws=HTTPError(401)
         ).json()
 
     def folders(self, folder_id='root'):
@@ -149,9 +149,9 @@ class GoogleDriveClient(BaseClient):
         ])
         res = self._make_request(
             'GET',
-            ('files', ),
-            query={'q': query},
+            self._build_url(settings.API_BASE_URL, 'drive', 'v2', 'files', ),
+            params={'q': query},
             expects=(200, ),
-            throws=Exception
+            throws=HTTPError(401)
         )
         return res.json()['items']

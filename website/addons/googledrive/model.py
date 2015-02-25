@@ -9,6 +9,7 @@ from modularodm import fields, Q
 from modularodm.exceptions import ModularOdmException
 
 from framework.auth import Auth
+from framework.mongo import StoredObject
 
 from website.addons.base import exceptions
 from website.addons.googledrive import settings
@@ -67,50 +68,140 @@ class GoogleDriveGuidFile(GuidFile):
         return new, created
 
 
-class GoogleDriveUserSettings(AddonUserSettingsBase):
-    """Stores user-specific information, including the Oauth access
-    token.
+class GoogleDriveOAuthSettings(StoredObject):
     """
+    this model address the problem if we have two osf user link
+    to the same google drive user and their access token conflicts issue
+    """
+
+    # google drive user id, for example, "4974056"
+    user_id = fields.StringField(primary=True, required=True)
+    # google drive user name this is the user's login
     username = fields.StringField()
     _access_token = fields.StringField()
     refresh_token = fields.StringField()
-    token_expires_at = fields.DateTimeField()
+    expires_at = fields.DateTimeField()
 
     @property
     def access_token(self):
-        if self.needs_refresh:
-            self.refresh_access_token()
+        self.refresh_access_token()
         return self._access_token
 
     @access_token.setter
     def access_token(self, val):
         self._access_token = val
 
-    def refresh_access_token(self):
-        client = GoogleAuthClient()
-        token = client.refresh(self._access_token, self.refresh_token)
+    def refresh_access_token(self, force=False):
+        if self._needs_refresh or force:
+            client = GoogleAuthClient()
+            token = client.refresh(self._access_token, self.refresh_token)
 
-        self._access_token = token['access_token']
-        self.refresh_token = token['refresh_token']
-        self.token_expires_at = datetime.utcfromtimestamp(token['expires_at'])
-        self.save()
+            self._access_token = token['access_token']
+            self.refresh_token = token['refresh_token']
+            self.expires_at = datetime.utcfromtimestamp(token['expires_at'])
+            self.save()
+
+    def revoke_token(self):
+        # if there is only one osf user linked to this google drive user oauth, revoke the token,
+        # otherwise, disconnect the osf user from the googledriveoauthsettings
+        if len(self.googledriveusersettings__accessed) <= 1:
+            client = GoogleAuthClient()
+            try:
+                client.revoke(self._access_token)
+            except:
+                # no need to fail, revoke is opportunistic
+                pass
+
+            # remove the object as its the last instance.
+            GoogleDriveOAuthSettings.remove_one(self)
+
+    def _needs_refresh(self):
+        if self.expires_at is None:
+            return False
+        return (self.expires_at - datetime.utcnow()).total_seconds() < settings.REFRESH_TIME
+
+
+class GoogleDriveUserSettings(AddonUserSettingsBase):
+    """Stores user-specific information, including the Oauth access
+    token.
+    """
+    oauth_settings = fields.ForeignField(
+        'googledriveoauthsettings', backref='accessed'
+    )
 
     @property
-    def needs_refresh(self):
-        if self.token_expires_at is None:
-            return False
-        return (self.token_expires_at - datetime.utcnow()).total_seconds() < settings.REFRESH_TIME
+    def user_id(self):
+        if self.oauth_settings:
+            return self.oauth_settings.user_id
+        return None
+
+    @user_id.setter
+    def user_id(self, val):
+        self.oauth_settings.user_id = val
+
+    @property
+    def username(self):
+        if self.oauth_settings:
+            return self.oauth_settings.username
+        return None
+
+    @username.setter
+    def username(self, val):
+        self.oauth_settings.username = val
+
+    @property
+    def access_token(self):
+        if self.oauth_settings:
+            return self.oauth_settings.access_token
+        return None
+
+    @access_token.setter
+    def access_token(self, val):
+        self.oauth_settings.access_token = val
+
+    @property
+    def refresh_token(self):
+        if self.oauth_settings:
+            return self.oauth_settings.refresh_token
+        return None
+
+    @refresh_token.setter
+    def refresh_token(self, val):
+        self.oauth_settings.refresh_token = val
+
+    @property
+    def expires_at(self):
+        if self.oauth_settings:
+            return self.oauth_settings.expires_at
+        return None
+
+    @expires_at.setter
+    def expires_at(self, val):
+        self.oauth_settings.expires_at = val
 
     @property
     def has_auth(self):
-        return bool(self.access_token)
+        if self.oauth_settings:
+            return self.oauth_settings.access_token is not None
+        return False
+
+    def refresh_access_token(self):
+        self.oauth_settings.refresh_access_token()
+        return self.oauth_settings.access_token
 
     def clear(self):
-        self.access_token = None
-        self.refresh_token = None
+        self.oauth_settings.revoke_token()
+        self.oauth_settings = None
+        self.save()
+
         for node_settings in self.googledrivenodesettings__authorized:
             node_settings.deauthorize(Auth(self.owner))
             node_settings.save()
+
+    def save(self, *args, **kwargs):
+        if self.oauth_settings:
+            self.oauth_settings.save()
+        return super(GoogleDriveUserSettings, self).save(*args, **kwargs)
 
     def delete(self, save=True):
         self.clear()
