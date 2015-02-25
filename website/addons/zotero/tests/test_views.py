@@ -12,19 +12,18 @@ from tests.factories import AuthUserFactory, ProjectFactory
 import json
 import urlparse
 
-from website.addons.mendeley.tests.factories import (
-    MendeleyAccountFactory, MendeleyUserSettingsFactory,
-    MendeleyNodeSettingsFactory
+from website.addons.zotero.tests.factories import (
+    ZoteroAccountFactory, ZoteroUserSettingsFactory,
+    ZoteroNodeSettingsFactory
 )
 
 from website.util import api_url_for
-from website.addons.mendeley import utils
-from website.addons.mendeley import views
-from website.addons.citations.utils import serialize_folder
+from website.addons.zotero import views
+from website.addons.citations.utils import serialize_account
 
 from utils import mock_responses
 
-API_URL = 'https://api.mendeley.com'
+API_URL = 'https://api.zotero.org'
 
 class MockNode(object):
 
@@ -39,28 +38,28 @@ class MockNode(object):
         return True
 
     def get_addon(self, name):
-        if name == 'mendeley':
+        if name == 'zotero':
             return self.addon
         return None
 
 
-class MendeleyViewsTestCase(OsfTestCase):
+class ZoteroViewsTestCase(OsfTestCase):
 
     def setUp(self):
-        super(MendeleyViewsTestCase, self).setUp()
-        self.account = MendeleyAccountFactory()
+        super(ZoteroViewsTestCase, self).setUp()
+        self.account = ZoteroAccountFactory()
         self.user = AuthUserFactory(external_accounts=[self.account])
         self.account.display_name = self.user.fullname
         self.account.save()
-        self.user_addon = MendeleyUserSettingsFactory(owner=self.user, external_account=self.account)
+        self.user_addon = ZoteroUserSettingsFactory(owner=self.user, external_account=self.account)
         self.project = ProjectFactory(creator=self.user)
-        self.node_addon = MendeleyNodeSettingsFactory(owner=self.project)
+        self.node_addon = ZoteroNodeSettingsFactory(owner=self.project)
         self.node_addon.set_auth(external_account=self.account, user=self.user)
         #self.user_addon.grant_oauth_access(self.node_addon, self.account, metadata={'lists': 'list'})
         self.node = MockNode()
         self.node.addon = self.node_addon
-        self.id_patcher = mock.patch('website.addons.mendeley.model.Mendeley.client_id')
-        self.secret_patcher = mock.patch('website.addons.mendeley.model.Mendeley.client_secret')
+        self.id_patcher = mock.patch('website.addons.zotero.model.Zotero.client_id')
+        self.secret_patcher = mock.patch('website.addons.zotero.model.Zotero.client_secret')
         self.id_patcher.__get__ = mock.Mock(return_value='1234567890asdf')
         self.secret_patcher.__get__ = mock.Mock(return_value='1234567890asdf')
         self.id_patcher.start()
@@ -73,7 +72,7 @@ class MendeleyViewsTestCase(OsfTestCase):
     def test_serialize_settings_authorizer(self):
         #"""dict: a serialized version of user-specific addon settings"""
         res = self.app.get(
-            self.project.api_url_for('mendeley_get_config'),
+            self.project.api_url_for('zotero_get_config'),
             auth=self.user.auth,
         )
         assert_true(res.json['nodeHasAuth'])
@@ -93,7 +92,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         non_authorizing_user = AuthUserFactory()
         self.project.add_contributor(non_authorizing_user, save=True)
         res = self.app.get(
-            self.project.api_url_for('mendeley_get_config'),
+            self.project.api_url_for('zotero_get_config'),
             auth=non_authorizing_user.auth,
         )
         assert_true(res.json['nodeHasAuth'])
@@ -109,16 +108,16 @@ class MendeleyViewsTestCase(OsfTestCase):
         assert_true(res.json['urls']['settings'])
 
     def test_user_folders(self):
-        # JSON: a list of user's Mendeley folders"
+        # JSON: a list of user's Zotero folders"
         res = self.app.get(
-            api_url_for('list_mendeley_accounts_user'),
+            api_url_for('list_zotero_accounts_user'),
             auth=self.user.auth,
         )
         expected = {
             'accounts': [
-                utils.serialize_account(each)
+                serialize_account(each)
                 for each in self.user.external_accounts
-                if each.provider == 'mendeley'
+                if each.provider == 'zotero'
             ]
         }
         assert_equal(res.json, expected)
@@ -126,7 +125,7 @@ class MendeleyViewsTestCase(OsfTestCase):
     def test_set_auth(self):
 
         res = self.app.post_json(
-            self.project.api_url_for('mendeley_add_user_auth'),
+            self.project.api_url_for('zotero_add_user_auth'),
             {
                 'external_account_id': self.account._id,
             },
@@ -151,9 +150,10 @@ class MendeleyViewsTestCase(OsfTestCase):
 
     def test_remove_user_auth(self):
         self.node_addon.set_auth(self.account, self.user)
+        self.node_addon.save()
 
         res = self.app.delete_json(
-            self.project.api_url_for('mendeley_remove_user_auth'),
+            self.project.api_url_for('zotero_remove_user_auth'),
             {
                 'external_account_id': self.account._id,
             },
@@ -175,7 +175,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         self.node_addon.associated_user_settings = []
         self.node_addon.save()
         res = self.app.put_json(
-            self.project.api_url_for('mendeley_set_config'),
+            self.project.api_url_for('zotero_set_config'),
             {
                 'external_account_id': self.account._id,
                 'external_list_id': 'list',
@@ -188,11 +188,11 @@ class MendeleyViewsTestCase(OsfTestCase):
 
     def test_set_config_not_owner(self):
         user = AuthUserFactory()
-        user.add_addon('mendeley')
+        user.add_addon('zotero')
         self.project.add_contributor(user)
         self.project.save()
         res = self.app.put_json(
-            self.project.api_url_for('mendeley_set_config'),
+            self.project.api_url_for('zotero_set_config'),
             {
                 'external_account_id': self.account._id,
                 'external_list_id': 'list',
@@ -203,12 +203,12 @@ class MendeleyViewsTestCase(OsfTestCase):
         assert_equal(self.user_addon, self.node_addon.user_settings)
         assert_equal(res.json, {})
 
-    def test_mendeley_widget_view_complete(self):
+    def test_zotero_widget_view_complete(self):
         # JSON: everything a widget needs
         assert_false(self.node_addon.complete)
-        assert_equal(self.node_addon.mendeley_list_id, None)
+        assert_equal(self.node_addon.zotero_list_id, None)
         self.node_addon.set_target_folder('ROOT')
-        res = views.mendeley_widget(node_addon=self.node_addon,
+        res = views.zotero_widget(node_addon=self.node_addon,
                                     project=self.project,
                                     node=self.node,
                                     nid=self.node_addon._id,
@@ -220,8 +220,8 @@ class MendeleyViewsTestCase(OsfTestCase):
     def test_widget_view_incomplete(self):
         # JSON: tell the widget when it hasn't been configured
         assert_false(self.node_addon.complete)
-        assert_equal(self.node_addon.mendeley_list_id, None)
-        res = views.mendeley_widget(node_addon=self.node_addon,
+        assert_equal(self.node_addon.zotero_list_id, None)
+        res = views.zotero_widget(node_addon=self.node_addon,
                                     project=self.project,
                                     node=self.node,
                                     nid=self.node_addon._id,
@@ -231,17 +231,20 @@ class MendeleyViewsTestCase(OsfTestCase):
         assert_is_none(res['list_id'])
 
     @responses.activate
-    def test_mendeley_citation_list_root(self):
+    def test_zotero_citation_list_root(self):
 
         responses.add(
             responses.GET,
-            urlparse.urljoin(API_URL, 'folders'),
+            urlparse.urljoin(
+                API_URL,
+                'users/{}/collections'.format(self.account.provider_id)
+            ),
             body=mock_responses['folders'],
             content_type='application/json'
         )
 
         res = self.app.get(
-            self.project.api_url_for('mendeley_citation_list'),
+            self.project.api_url_for('zotero_citation_list'),
             auth=self.user.auth
         )
         root = res.json['contents'][0]
@@ -250,24 +253,30 @@ class MendeleyViewsTestCase(OsfTestCase):
         assert_equal(root['parent_list_id'], '__')
 
     @responses.activate
-    def test_mendeley_citation_list_non_root(self):
+    def test_zotero_citation_list_non_root(self):
 
         responses.add(
             responses.GET,
-            urlparse.urljoin(API_URL, 'folders'),
+            urlparse.urljoin(
+                API_URL,
+                'users/{}/collections'.format(self.account.provider_id)
+            ),
             body=mock_responses['folders'],
             content_type='application/json'
         )
 
         responses.add(
             responses.GET,
-            urlparse.urljoin(API_URL, 'documents'),
+            urlparse.urljoin(
+                API_URL,
+                'users/{}/items'.format(self.account.provider_id)
+            ),
             body=mock_responses['documents'],
             content_type='application/json'
         )
 
         res = self.app.get(
-            self.project.api_url_for('mendeley_citation_list', mendeley_list_id='ROOT'),
+            self.project.api_url_for('zotero_citation_list', zotero_list_id='ROOT'),
             auth=self.user.auth
         )
 
@@ -278,30 +287,36 @@ class MendeleyViewsTestCase(OsfTestCase):
         assert_true(children[1].get('csl') is not None)
 
     @responses.activate
-    def test_mendeley_citation_list_non_linked_or_child_non_authorizer(self):
+    def test_zotero_citation_list_non_linked_or_child_non_authorizer(self):
 
         non_authorizing_user = AuthUserFactory()
         self.project.add_contributor(non_authorizing_user, save=True)
 
-        self.node_addon.mendeley_list_id = 'e843da05-8818-47c2-8c37-41eebfc4fe3f'
+        self.node_addon.zotero_list_id = 'e843da05-8818-47c2-8c37-41eebfc4fe3f'
         self.node_addon.save()
 
         responses.add(
             responses.GET,
-            urlparse.urljoin(API_URL, 'folders'),
+            urlparse.urljoin(
+                API_URL,
+                'users/{}/collections'.format(self.account.provider_id)
+            ),
             body=mock_responses['folders'],
             content_type='application/json'
         )
 
         responses.add(
             responses.GET,
-            urlparse.urljoin(API_URL, 'documents'),
+            urlparse.urljoin(
+                API_URL,
+                'users/{}/items'.format(self.account.provider_id)
+            ),
             body=mock_responses['documents'],
             content_type='application/json'
         )
 
         res = self.app.get(
-            self.project.api_url_for('mendeley_citation_list', mendeley_list_id='ROOT'),
+            self.project.api_url_for('zotero_citation_list', zotero_list_id='ROOT'),
             auth=non_authorizing_user.auth,
             expect_errors=True
         )

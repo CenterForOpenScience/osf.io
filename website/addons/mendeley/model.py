@@ -108,11 +108,11 @@ class MendeleyNodeSettings(AddonNodeSettingsBase):
     def selected_folder_name(self):
         if self.mendeley_list_id is None:
             return ''
-        elif self.mendeley_list_id != 'ROOT':
+        elif self.mendeley_list_id == 'ROOT':
+            return 'All Documents'
+        else:
             folder = self.api._folder_metadata(self.mendeley_list_id)
             return folder.name
-        else:
-            return 'All Documents'
 
     @property
     def root_folder(self):
@@ -181,21 +181,6 @@ class MendeleyNodeSettings(AddonNodeSettingsBase):
         self.mendeley_list_id = mendeley_list_id
         self.save()
 
-    def get_accounts(self, user):
-        accounts = [
-            account for account
-            in user.external_accounts
-            if account.provider == 'mendeley'
-        ]
-        if self.external_account and self.external_account not in accounts:
-            accounts.append(self.external_account)
-        return accounts
-
-    # TODO deprecated
-    def to_json(self, user):
-
-        ret = super(MendeleyNodeSettings, self).to_json(user)
-        return ret
 
 class Mendeley(ExternalProvider):
     name = 'Mendeley'
@@ -284,30 +269,34 @@ class Mendeley(ExternalProvider):
             return self._citations_for_mendeley_folder(folder)
         return self._citations_for_mendeley_user()
 
-    def get_root_folder(self):
-        root = serialize_folder(
-            'All Documents',
-            id='ROOT',
-            parent_id='__'
-        )
-        root['kind'] = 'folder'
-        return [root]
-
     def _folder_metadata(self, folder_id):
         folder = self.client.folders.get(folder_id)
         return folder
 
-    def _citations_for_mendeley_folder(self, folder):
+    def _get_citations(self, src):
+
+        documents = []
+
+        page_iter = src.documents.iter(page_size=500)
+        more = True
+        while more:
+            try:
+                doc = page_iter.next()
+                documents.append(doc)
+            except StopIteration:
+                more = False
         return (
             self._citation_for_mendeley_document(document)
-            for document in folder.documents.list().items
+            for document in documents
         )
 
+    def _citations_for_mendeley_folder(self, folder):
+
+        return self._get_citations(folder)
+
     def _citations_for_mendeley_user(self):
-        return (
-            self._citation_for_mendeley_document(document)
-            for document in self.client.documents.list().items
-        )
+
+        return self._get_citations(self.client)
 
     def _citation_for_mendeley_document(self, document):
         """Mendeley document to ``website.citations.models.Citation``

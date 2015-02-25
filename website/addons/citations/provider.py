@@ -41,16 +41,11 @@ class CitationsProvider(object):
         node_has_auth = node_settings.has_auth
         user_is_owner = (node_has_auth and (node_account in user_accounts)) or bool(len(user_accounts))
 
-        user_account_id = None
-        if user_has_auth:
-            user_account_id = user_accounts[0]._id
-
         result = {
             'nodeHasAuth': node_has_auth,
             'userIsOwner': user_is_owner,
             'userHasAuth': user_has_auth,
             'urls': self._serialize_urls(node_settings),
-            'externalAccountId': user_account_id,
             'validCredentials': True
         }
 
@@ -94,6 +89,7 @@ class CitationsProvider(object):
     def remove_user_auth(self, node_addon, user):
 
         node_addon.clear_auth()
+        node_addon.reload()
         result = self.serialize_settings(node_addon, user)
         return {'result': result}
 
