@@ -5,13 +5,11 @@ import httplib as http
 from flask import request
 
 from framework.exceptions import HTTPError
-from framework.auth.decorators import collect_auth
 
 from website.util import permissions
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
     must_have_permission, must_not_be_registration,
-    must_be_valid_project
 )
 from website.util import web_url_for
 
@@ -62,10 +60,10 @@ def get_folders(client):
 
 def serialize_urls(node_settings):
     node = node_settings.owner
-    #if node_settings.folder and node_settings.folder != '/':
-    #    # The link to share a the folder with other Box users
-    #    share_url = utils.get_share_folder_uri(node_settings.folder)
-    #else:
+    # if node_settings.folder and node_settings.folder != '/':
+    #     # The link to share a the folder with other Box users
+    #     share_url = utils.get_share_folder_uri(node_settings.folder)
+    # else:
     share_url = None
 
     urls = {
@@ -75,7 +73,10 @@ def serialize_urls(node_settings):
         'importAuth': node.api_url_for('box_import_user_auth'),
         'files': node.web_url_for('collect_file_trees'),
         # Endpoint for fetching only folders (including root)
-        'folders': node.api_url_for('box_hgrid_data_contents', foldersOnly=1, includeRoot=1),
+        'folders': node.api_url_for(
+            'box_hgrid_data_contents',
+            foldersOnly=1,
+            includeRoot=1),
         'share': share_url,
         'emails': node.api_url_for('box_get_share_emails'),
         'settings': web_url_for('user_addons'),
@@ -198,7 +199,7 @@ def box_get_share_emails(auth, user_addon, node_addon, **kwargs):
         'emails': [
             contrib.username
             for contrib in node_addon.owner.contributors
-                if contrib != auth.user
+            if contrib != auth.user
         ],
         #'url': utils.get_share_folder_uri(node_addon.folder)
     }
