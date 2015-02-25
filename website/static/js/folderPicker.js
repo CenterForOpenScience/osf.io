@@ -98,9 +98,12 @@
             if (item.data.path === tb.options.folderPath) {
                 return templateChecked;
             }
+            if (item.data.path === '/' && tb.options.folderArray && tb.options.folderArray.length === 0) {
+                return templateChecked;
+            }
         }
 
-        if (tb.options.folderArray && item.data.name === tb.options.folderArray[0]) {
+        if (tb.options.folderArray && item.data.name === tb.options.folderArray[tb.options.folderArray.length - 1]) {
             return templateChecked;
         }
 
@@ -179,12 +182,16 @@
     function _treebeardLazyLoadOnLoad  (item) {
         var tb = this;
 
+        if (tb.options.folderIndex >= tb.options.folderArray.length - 1) {
+            return;
+        }
+
         for (var i = 0; i < item.children.length; i++) {
             if (item.children[i].data.addon === 'figshare'){
                 return;
             }
             if (item.children[i].data.name === tb.options.folderArray[tb.options.folderIndex]) {
-                tb.updateFolder(null,item.children[i]);
+                tb.updateFolder(null, item.children[i]);
                 tb.options.folderIndex++;
                 return;
             }
