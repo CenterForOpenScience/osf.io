@@ -332,7 +332,7 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
                 user=removed.fullname,
             )
 
-    def after_remove_contributor(self, node, removed):
+    def after_remove_contributor(self, node, removed, auth):
         """
 
         :param Node node:
@@ -346,11 +346,16 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             self.user_settings = None
             self.save()
 
-            return messages.AFTER_REMOVE_CONTRIBUTOR.format(
-                user=removed.fullname,
-                url=node.url,
-                category=node.project_or_component
-            )
+            message = 'Because the FigShare add-on for {category} "{title}" was authenticated ' \
+                      'by {user}, authentication information has been deleted.'\
+                .format(category=node.category_display, title=node.title, user=removed.fullname)
+
+            if auth.user != removed:
+                url = node.web_url_for('node_setting')
+                message += ' You can re-authenticate on the ' \
+                           '<a href="{url}">Settings</a> page.'.format(url=url)
+            #
+            return message
 
     def before_fork(self, node, user):
         """

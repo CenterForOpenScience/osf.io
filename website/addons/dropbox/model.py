@@ -299,7 +299,7 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
             clone.save()
         return clone, message
 
-    def after_remove_contributor(self, node, removed):
+    def after_remove_contributor(self, node, removed, auth):
         """If the removed contributor was the user who authorized the Dropbox
         addon, remove the auth credentials from this node.
         Return the message text that will be displayed to the user.
@@ -307,12 +307,17 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         if self.user_settings and self.user_settings.owner == removed:
             self.user_settings = None
             self.save()
-            name = removed.fullname
-            url = node.web_url_for('node_setting')
-            return (u'Because the Dropbox add-on for this project was authenticated'
-                    'by {name}, authentication information has been deleted. You '
-                    'can re-authenticate on the <a href="{url}">Settings</a> page'
-                    ).format(**locals())
+
+            message = 'Because the Dropbox add-on for {category} "{title}" was authenticated ' \
+                      'by {user}, authentication information has been deleted.'\
+                .format(category=node.category_display, title=node.title, user=removed.fullname)
+
+            if auth.user != removed:
+                url = node.web_url_for('node_setting')
+                message += ' You can re-authenticate on the ' \
+                           '<a href="{url}">Settings</a> page.'.format(url=url)
+            #
+            return message
 
     def after_delete(self, node, user):
         self.deauthorize(Auth(user=user), add_log=True)

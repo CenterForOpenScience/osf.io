@@ -496,7 +496,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         """
         pass
 
-    def after_remove_contributor(self, node, removed):
+    def after_remove_contributor(self, node, removed, auth):
         """
 
         :param Node node:
