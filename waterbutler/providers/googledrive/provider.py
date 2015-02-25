@@ -149,6 +149,15 @@ class GoogleDriveProvider(provider.BaseProvider):
             throws=exceptions.DeleteError,
         )
 
+    def _build_query(self, folder_id, title=None):
+        queries = [
+            "'{}' in parents".format(folder_id),
+            'trashed = false',
+        ]
+        if title:
+            queries.append("title = '{}'".format(title))
+        return ' and '.join(queries)
+
     @asyncio.coroutine
     def metadata(self, path, original_path=None, folder_id=None, raw=False, **kwargs):
         path = GoogleDrivePath(self.folder['name'], path)
@@ -156,13 +165,8 @@ class GoogleDriveProvider(provider.BaseProvider):
         folder_id = folder_id or self.folder['id']
         child = path.child
 
-        queries = [
-            "'{}' in parents".format(folder_id),
-            'trashed = false',
-        ]
-        if not (path.is_leaf and path.is_dir):
-            queries.append("title = '{}'".format(path.parts[1]))
-        query = ' and '.join(queries)
+        title = None if (path.is_leaf and path.is_dir) else path.parts[1]
+        query = self._build_query(folder_id, title=title)
 
         resp = yield from self.make_request(
             'GET',
