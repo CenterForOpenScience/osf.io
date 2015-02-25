@@ -9,7 +9,7 @@ from website.addons.base import AddonNodeSettingsBase
 from website.oauth.models import ExternalProvider
 from pyzotero import zotero
 
-from website.addons.citations.utils import serialize_account, serialize_folder
+from website.addons.citations.utils import serialize_folder
 
 from . import settings
 

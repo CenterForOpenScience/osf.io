@@ -41,10 +41,6 @@ class CitationsProvider(object):
         node_has_auth = node_settings.has_auth
         user_is_owner = (node_has_auth and (node_account in user_accounts)) or bool(len(user_accounts))
 
-        user_account_id = None
-        if user_has_auth:
-            user_account_id = user_accounts[0]._id
-
         result = {
             'nodeHasAuth': node_has_auth,
             'userIsOwner': user_is_owner,
