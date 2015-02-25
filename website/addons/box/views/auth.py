@@ -1,43 +1,45 @@
 # -*- coding: utf-8 -*-
 """OAuth views for the Box addon."""
-import httplib as http
-import requests
-from urllib import urlencode
 import logging
+import httplib as http
 from datetime import datetime
 
+import furl
+import requests
 from flask import request
 from werkzeug.wrappers import BaseResponse
 
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
 from framework.exceptions import HTTPError
-from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
 from framework.status import push_status_message as flash
 
 from website.util import api_url_for
 from website.util import web_url_for
+from website import security
 from website.project.model import Node
 from website.project.decorators import must_have_addon
 
 from box.client import BoxClientException
 from website.addons.box import settings
+from website.addons.box.utils import handle_box_error
 from website.addons.box.client import get_client_from_user_settings, disable_access_token
 
 logger = logging.getLogger(__name__)
-debug = logger.debug
 
 
-def get_auth_flow():
-    args = {
+def get_auth_flow(csrf_token):
+    url = furl.furl(settings.BOX_OAUTH_AUTH_ENDPOINT)
+
+    url.args = {
+        'state': csrf_token,
         'response_type': 'code',
         'client_id': settings.BOX_KEY,
-        'state': 'security_token_needed',
         'redirect_uri': api_url_for('box_oauth_finish', _absolute=True),
     }
 
-    return 'https://www.box.com/api/oauth2/authorize?' + urlencode(args)
+    return url.url
 
 
 def finish_auth():
@@ -46,28 +48,30 @@ def finish_auth():
 
     Handles various errors that may be raised by the Box client.
     """
-    if 'code' in request.args:
-        code = request.args['code']
-        # url_state = request.args['state']
-    elif 'error' in request.args:
-        box_error_handle(error=request.args['error'], msg=request.args['error_description'])
+    if 'error' in request.args:
+        handle_box_error(error=request.args['error'], msg=request.args['error_description'])
 
-    # This can be used for added security. A 'state' is passed to box, and it will return
-    # the same state after authorization. It may return a different or no state if the
-    # request has been hijacked
-    # if url_state is not 'security_token_needed':
-    #     raise HTTPError(http.INTERNAL_SERVER_ERROR)
+    # Should always be defined
+    code = request.args['code']
+    # Default to empty string over None because of below assertion
+    state = request.args.get('state', '')
 
-    args = {
-        'client_id': settings.BOX_KEY,
-        'client_secret': settings.BOX_SECRET,
-        'grant_type': 'authorization_code',
+    if state != session.data.pop('box_oauth_state', None):
+        raise HTTPError(http.FORBIDDEN)
+
+    data = {
         'code': code,
+        'client_id': settings.BOX_KEY,
+        'grant_type': 'authorization_code',
+        'client_secret': settings.BOX_SECRET,
     }
-    response = requests.post('https://www.box.com/api/oauth2/token', args)
+
+    response = requests.post(settings.BOX_OAUTH_TOKEN_ENDPOINT, data)
     result = response.json()
+
     if 'error' in result:
-        box_error_handle(error=request.args['error'], msg=request.args['error_description'])
+        handle_box_error(error=request.args['error'], msg=request.args['error_description'])
+
     return result
 
 
@@ -77,49 +81,60 @@ def box_oauth_start(auth, **kwargs):
     # Store the node ID on the session in order to get the correct redirect URL
     # upon finishing the flow
     nid = kwargs.get('nid') or kwargs.get('pid')
+
+    node = Node.load(nid)
+
+    if node and not node.is_contributor(user):
+        raise HTTPError(http.FORBIDDEN)
+
+    csrf_token = security.random_string(10)
+    session.data['box_oauth_state'] = csrf_token
+
     if nid:
         session.data['box_auth_nid'] = nid
-    if not user:
-        raise HTTPError(http.FORBIDDEN)
+
     # If user has already authorized box, flash error message
     if user.has_addon('box') and user.get_addon('box').has_auth:
         flash('You have already authorized Box for this account', 'warning')
         return redirect(web_url_for('user_addons'))
-    return redirect(get_auth_flow())
+
+    return redirect(get_auth_flow(csrf_token))
 
 
-@collect_auth
+@must_be_logged_in
 def box_oauth_finish(auth, **kwargs):
     """View called when the Oauth flow is completed. Adds a new BoxUserSettings
     record to the user and saves the user's access token and account info.
     """
-    if not auth.logged_in:
-        raise HTTPError(http.FORBIDDEN)
     user = auth.user
-
-    node = Node.load(session.data.get('box_auth_nid'))
     result = finish_auth()
+    node = Node.load(session.data.pop('box_auth_nid', None))
+
     # If result is a redirect response, follow the redirect
     if isinstance(result, BaseResponse):
         return result
+
     # Make sure user has box enabled
     user.add_addon('box')
     user.save()
+
     user_settings = user.get_addon('box')
-    user_settings.owner = user
+
     user_settings.last_refreshed = datetime.utcnow()
-    user_settings.restricted_to = result['restricted_to']
     user_settings.token_type = result['token_type']
     user_settings.access_token = result['access_token']
+    user_settings.restricted_to = result['restricted_to']
     user_settings.refresh_token = result['refresh_token']
+
     client = get_client_from_user_settings(user_settings)
+
     user_settings.box_info = client.get_user_info()
     user_settings.box_id = user_settings.box_info['id']
     user_settings.save()
 
     flash('Successfully authorized Box', 'success')
+
     if node:
-        del session.data['box_auth_nid']
         # Automatically use newly-created auth
         if node.has_addon('box'):
             node_addon = node.get_addon('box')
@@ -128,6 +143,7 @@ def box_oauth_finish(auth, **kwargs):
         return redirect(node.web_url_for('node_setting'))
     return redirect(web_url_for('user_addons'))
 
+
 @must_be_logged_in
 @must_have_addon('box', 'user')
 def box_oauth_delete_user(user_addon, auth, **kwargs):
@@ -135,14 +151,11 @@ def box_oauth_delete_user(user_addon, auth, **kwargs):
     try:
         disable_access_token(user_addon)
     except BoxClientException as error:
-        if error.status_code == 401:
-            pass
-        else:
+        if error.status_code != 401:
             raise HTTPError(http.BAD_REQUEST)
+
     user_addon.clear()
     user_addon.save()
-
-    return None
 
 
 @must_be_logged_in
@@ -155,7 +168,6 @@ def box_user_config_get(user_addon, auth, **kwargs):
         'create': api_url_for('box_oauth_start_user'),
         'delete': api_url_for('box_oauth_delete_user')
     }
-    info = user_addon.box_info
     valid_credentials = True
 
     if user_addon.has_auth:
@@ -170,22 +182,10 @@ def box_user_config_get(user_addon, auth, **kwargs):
 
     return {
         'result': {
+            'urls': urls,
+            'boxName': user_addon.box_info,
             'userHasAuth': user_addon.has_auth,
             'validCredentials': valid_credentials,
-            'boxName': info if info else None,
             'nNodesAuthorized': len(user_addon.nodes_authorized),
-            'urls': urls
         },
-    }, http.OK
-
-
-def box_error_handle(error, msg):
-    if (error is 'invalid_request' or 'unsupported_response_type'):
-        raise HTTPError(http.BAD_REQUEST)
-    if (error is 'access_denied'):
-        raise HTTPError(http.FORBIDDEN)
-    if (error is 'server_error'):
-        raise HTTPError(http.INTERNAL_SERVER_ERROR)
-    if (error is 'temporarily_unavailable'):
-        raise HTTPError(http.SERVICE_UNAVAILABLE)
-    raise HTTPError(http.INTERNAL_SERVER_ERROR)
+    }

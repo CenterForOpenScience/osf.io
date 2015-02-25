@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 import os
+import httplib
 import logging
+
+from framework.exceptions import HTTPError
 
 from website.util import rubeus
 
 logger = logging.getLogger(__name__)
 
 
-# TODO: Generalize this for other addons?
 class BoxNodeLogger(object):
     """Helper class for adding correctly-formatted Box logs to nodes.
 
@@ -72,11 +74,16 @@ class BoxNodeLogger(object):
             self.node.save()
 
 
-def get_file_name(path):
-    """Given a path, get just the base filename.
-    Handles "/foo/bar/baz.txt/" -> "baz.txt"
-    """
-    return os.path.basename(path.strip('/'))
+def handle_box_error(error, msg):
+    if (error is 'invalid_request' or 'unsupported_response_type'):
+        raise HTTPError(httplib.BAD_REQUEST)
+    if (error is 'access_denied'):
+        raise HTTPError(httplib.FORBIDDEN)
+    if (error is 'server_error'):
+        raise HTTPError(httplib.INTERNAL_SERVER_ERROR)
+    if (error is 'temporarily_unavailable'):
+        raise HTTPError(httplib.SERVICE_UNAVAILABLE)
+    raise HTTPError(httplib.INTERNAL_SERVER_ERROR)
 
 
 def build_box_urls(item, node):

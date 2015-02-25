@@ -44,6 +44,7 @@ class BoxFile(GuidFile):
 
     @property
     def unique_identifier(self):
+        # TODO
         return hashlib.md5(self.waterbutler_path).hexdigest()
 
     @classmethod
@@ -77,7 +78,6 @@ class BoxUserSettings(AddonUserSettingsBase):
     restricted_to = fields.DictionaryField(required=False)
     last_refreshed = fields.DateTimeField(editable=True)
 
-    # TODO(sloria): The `user` param in unnecessary for AddonUserSettings
     def to_json(self, user=None):
         """Return a dictionary representation of the user settings.
         The dictionary keys and values will be available as variables in
@@ -144,10 +144,16 @@ class BoxNodeSettings(AddonNodeSettingsBase):
 
     @property
     def folder(self):
-        if not self.folder_id:
+        if self.folder_id is None:
             return None
-        cl = get_client_from_user_settings(self.user_settings)
-        return cl.get_folder(self.folder_id)['name']
+
+        try:
+            return self._folder_name
+        except AttributeError:
+            client = get_client_from_user_settings(self.user_settings)
+            self._folder_name = client.get_folder(self.folder_id)['name']
+
+        return self.folder
 
     @property
     def display_name(self):
@@ -202,7 +208,7 @@ class BoxNodeSettings(AddonNodeSettingsBase):
         return {'token': self.user_settings.access_token}
 
     def serialize_waterbutler_settings(self):
-        if not self.folder_id:
+        if self.folder_id is None:
             raise exceptions.AddonError('Folder is not configured')
         return {'folder': self.folder_id}
 
