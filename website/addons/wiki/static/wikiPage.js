@@ -226,7 +226,7 @@ function ViewModel(options){
             url += paramPrefix + 'menu';
         }
 
-        history.replaceState({}, '', url);  // jshint ignore: line
+        window.history.replaceState({}, '', url);
     });
 
 

@@ -127,4 +127,7 @@ $(document).ready(function () {
 
         bodyElement.trigger('toggleMenu', [true]);
     });
+
+    // Tooltip
+    $('[data-toggle="tooltip"]').tooltip()
 });

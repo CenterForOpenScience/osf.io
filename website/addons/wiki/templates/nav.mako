@@ -4,19 +4,19 @@
     <div class="navbar-collapse text-center">
         <ul class="superlist nav navbar-nav" style="float: none">
             % if user['can_edit']:
-            <li><a id="openNewWiki" href="#" data-toggle="modal" data-target="#newWiki"> 
+            <li data-toggle="tooltip" title="New" data-placement="left">
+                <a id="openNewWiki" href="#" data-toggle="modal" data-target="#newWiki">
                     <span class="wiki-nav-closed">
-                        <span class="icon-stack">
-                          <i class="icon-file icon-stack-base"></i>
-                          <i class="icon-plus"></i>
-                        </span>
+                        <i class="icon-plus-sign"></i>
                     </span> 
-                </a></li>
+                </a>
+            </li>
                 % if wiki_id and wiki_name != 'home':
-                <li><a href="#" data-toggle="modal" data-target="#deleteWiki"> 
-                    <span class="wiki-nav-closed"><i class="icon icon-trash" > </i></span> 
-
-                    </a></li>
+                <li data-toggle="tooltip" title="Delete" data-placement="left">
+                    <a href="#" data-toggle="modal" data-target="#deleteWiki">
+                    <span class="wiki-nav-closed"><i class="icon icon-trash text-danger"> </i></span>
+                    </a>
+                </li>
                 % endif
             % endif
         </ul>
