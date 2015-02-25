@@ -80,8 +80,8 @@
                         </div>
                     </div>
                   </div>
+                  <form id="wiki-form" action="${urls['web']['edit']}" method="POST">
                   <div class="wiki-panel-body">
-                      <form id="wiki-form" action="${urls['web']['edit']}" method="POST">
                         <div class="row">
                         <div class="col-xs-12">
                           <div class="form-group wmd-panel">
@@ -99,7 +99,9 @@
                                    data-bind="ace: currentText">Loading. . .</div>
                           </div>
                         </div>
-                      </div>
+                      </div>                    
+                  </div>
+                  <div class="wiki-panel-footer">
                       <div class="row">
                         <div class="col-xs-12">
                            <div class="pull-right">
@@ -117,8 +119,8 @@
                         <!-- Invisible textarea for form submission -->
                         <textarea name="content" style="display: none;"
                                   data-bind="value: currentText"></textarea>
-                    </form>
                   </div>
+                </form>
                 </div>
             </div>
           % endif
