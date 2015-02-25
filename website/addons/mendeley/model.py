@@ -181,16 +181,6 @@ class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
         self.mendeley_list_id = mendeley_list_id
         self.save()
 
-    def get_accounts(self, user):
-        accounts = [
-            account for account
-            in user.external_accounts
-            if account.provider == 'mendeley'
-        ]
-        if self.external_account and self.external_account not in accounts:
-            accounts.append(self.external_account)
-        return accounts
-
     # TODO deprecated
     def to_json(self, user):
 
