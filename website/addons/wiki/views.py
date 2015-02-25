@@ -378,7 +378,7 @@ def project_wiki_id_page(auth, wid, **kwargs):
 @must_have_addon('wiki', 'node')
 def project_wiki_edit(wname, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    return redirect(node.web_url_for('project_wiki_view', wname=wname, _guid=True) + '?edit')
+    return redirect(node.web_url_for('project_wiki_view', wname=wname, _guid=True) + '?edit&view&menu')
 
 
 @must_be_valid_project
@@ -386,7 +386,7 @@ def project_wiki_edit(wname, **kwargs):
 @must_have_addon('wiki', 'node')
 def project_wiki_compare(wname, wver, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    return redirect(node.web_url_for('project_wiki_view', wname=wname, _guid=True, compare=wver))
+    return redirect(node.web_url_for('project_wiki_view', wname=wname, _guid=True) + '?view&compare={0}&menu'.format(wver))
 
 
 @must_not_be_registration
