@@ -250,7 +250,7 @@ class TestBoxNodeSettingsModel(OsfTestCase):
 
     def test_serialize_settings(self):
         settings = self.node_settings.serialize_waterbutler_settings()
-        expected = {'folder_id': self.node_settings.folder_id}
+        expected = {'folder': self.node_settings.folder_id}
         assert_equal(settings, expected)
 
     def test_serialize_settings_not_configured(self):
