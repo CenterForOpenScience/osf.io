@@ -3,18 +3,18 @@
 import httplib as http
 
 from flask import request
+from box.client import BoxClientException
 
 from framework.exceptions import HTTPError
 
+from website.util import web_url_for
 from website.util import permissions
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
     must_have_permission, must_not_be_registration,
 )
-from website.util import web_url_for
 
 from website.addons.box.client import get_client_from_user_settings
-from box.client import BoxClientException
 
 
 @must_have_addon('box', 'node')
