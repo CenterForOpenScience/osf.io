@@ -237,11 +237,16 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     versions = _get_wiki_versions(node, wiki_name, anonymous=anonymous)
 
     # Determine panels used in view
-    panels = ['view', 'edit', 'compare', 'menu']
-    if request.args:
+    panels = {'view', 'edit', 'compare', 'menu'}
+    if request.args and set(request.args).intersection(panels):
         panels_used = [panel for panel in request.args if panel in panels]
+        num_columns = len(set(panels_used).intersection({'view', 'edit', 'compare'}))
+        if num_columns == 0:
+            panels_used.append('view')
+            num_columns = 1
     else:
         panels_used = ['view', 'menu']
+        num_columns = 1
 
     try:
         view = wiki_utils.format_wiki_version(
@@ -306,7 +311,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         'toc': toc,
         'category': node.category,
         'panels_used': panels_used,
-        'num_columns': len(set(panels_used).intersection({'view', 'edit', 'compare'})),
+        'num_columns': num_columns,
         'urls': {
             'api': _get_wiki_api_urls(node, wiki_name, {
                 'content': node.api_url_for('wiki_page_content', wname=wiki_name),

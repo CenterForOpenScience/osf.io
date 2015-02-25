@@ -94,7 +94,18 @@ $(document).ready(function () {
             // title = Text of the button
             // buttonState = the visibility of column after click, taen from data-osf-toggle attribute, 
             // thisbtn = $(this);
-            // col = the $() for the column this button links to 
+            // col = the $() for the column this button links to
+
+            // Determine if any columns are visible
+            var visibleColumns = this.filter(function (i, element) {
+                return $(element).is(':visible');
+            });
+
+            if (visibleColumns.length === 0) {
+                thisbtn.click();
+                return;
+            }
+
             bodyElement.trigger('togglePanel', [
                 title.toLowerCase(),
                 buttonState
