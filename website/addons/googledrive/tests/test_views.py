@@ -209,6 +209,12 @@ class TestGoogleDriveHgridViews(OsfTestCase):
     @mock.patch('website.addons.googledrive.views.hgrid.build')
     def test_googledrive_folders(self, mock_build, mock_access_token_credentials):
         folderId = '12345'
+
+        # This would avoid calling refresh token
+        curr_time_in_millis = time.mktime(datetime.datetime.utcnow().timetuple())
+        self.user_settings.token_expiry = curr_time_in_millis + 1
+        self.user_settings.save()
+
         self.credentials = mock.Mock()
         mock_access_token_credentials.return_value = self.credentials
         self.http_service = mock.Mock()
@@ -231,6 +237,12 @@ class TestGoogleDriveHgridViews(OsfTestCase):
     @mock.patch('website.addons.googledrive.views.hgrid.build')
     def test_googledrive_folders_returns_only_root_folders(self, mock_build, mock_access_token_credentials):
         folderId = ''
+
+        # This would avoid calling refresh token
+        curr_time_in_millis = time.mktime(datetime.datetime.utcnow().timetuple())
+        self.user_settings.token_expiry = curr_time_in_millis + 1
+        self.user_settings.save()
+
         self.credentials = mock.Mock()
         mock_access_token_credentials.return_value = self.credentials
         self.http_service = mock.Mock()

@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+import mock
+import datetime
+import time
 from nose.tools import *  # noqa (PEP8 asserts)
 
 from framework.auth import Auth
@@ -7,11 +10,77 @@ from tests.factories import UserFactory, ProjectFactory
 from website.addons.base import exceptions
 
 from website.addons.googledrive.model import (
-    GoogleDriveUserSettings, GoogleDriveNodeSettings
+    GoogleDriveUserSettings, GoogleDriveNodeSettings, GoogleDriveGuidFile
 )
 from website.addons.googledrive.tests.factories import (
     GoogleDriveNodeSettingsFactory, GoogleDriveUserSettingsFactory
 )
+
+
+class TestgoogleDriveGuid(OsfTestCase):
+    def setUp(self):
+        super(OsfTestCase, self).setUp()
+        self.user = UserFactory()
+        self.project = ProjectFactory(creator=self.user)
+        self.project.add_addon('googledrive', auth=Auth(self.user))
+        self.node_addon = self.project.get_addon('googledrive')
+        self.node_addon.folder = '/baz'
+        self.node_addon.save()
+
+    def test_provider(self):
+        assert_equal('googledrive', GoogleDriveGuidFile().provider)
+
+    def test_correct_path(self):
+        guid = GoogleDriveGuidFile(node=self.project, path='baz/foo/bar')
+
+        assert_equals(guid.path, 'baz/foo/bar')
+        assert_equals(guid.waterbutler_path, 'baz/foo/bar')
+
+    @mock.patch('website.addons.base.requests.get')
+    def test_unique_identifier(self, mock_get):
+        mock_response = mock.Mock(ok=True, status_code=200)
+        mock_get.return_value = mock_response
+        mock_response.json.return_value = {
+            'data': {
+                'name': 'Morty',
+                'extra': {
+                    'revisionId': 'Ricksy'
+                }
+            }
+        }
+
+        guid = GoogleDriveGuidFile(node=self.project, path='/foo/bar')
+
+        guid.enrich()
+        assert_equals('Ricksy', guid.unique_identifier)
+
+    def test_node_addon_get_or_create(self):
+        guid, created = self.node_addon.find_or_create_file_guid('/foo/bar')
+
+        assert_true(created)
+        assert_equal(guid.path, '/foo/bar')
+        assert_equal(guid.waterbutler_path, '/foo/bar')
+
+    def test_node_addon_get_or_create_finds(self):
+        guid1, created1 = self.node_addon.find_or_create_file_guid('/foo/bar')
+        guid2, created2 = self.node_addon.find_or_create_file_guid('/foo/bar')
+
+        assert_true(created1)
+        assert_false(created2)
+        assert_equals(guid1, guid2)
+
+    def test_node_addon_get_or_create_finds_changed(self):
+        guid1, created1 = self.node_addon.find_or_create_file_guid('/foo/bar')
+        self.node_addon.folder = '/baz/foo'
+        self.node_addon.save()
+        self.node_addon.reload()
+        guid2, created2 = self.node_addon.find_or_create_file_guid('/foo/bar')
+        assert_true(created1)
+        assert_false(created2)
+        assert_equals(guid1, guid2)
+
+
+
 
 class TestGoogleDriveUserSettingsModel(OsfTestCase):
 
@@ -181,6 +250,11 @@ class TestGoogleDriveNodeSettingsModel(OsfTestCase):
         assert_equal(last_log.user, user_settings.owner)
 
     def test_serialize_credentials(self):
+        # This would avoid calling refresh token
+        curr_time_in_millis = time.mktime(datetime.datetime.utcnow().timetuple())
+        self.user_settings.token_expiry = curr_time_in_millis + 1
+        self.user_settings.save()
+
         self.user_settings.access_token = 'secret'
         self.user_settings.save()
         credentials = self.node_settings.serialize_waterbutler_credentials()
@@ -189,6 +263,11 @@ class TestGoogleDriveNodeSettingsModel(OsfTestCase):
 
 
     def test_serialize_credentials_not_authorized(self):
+        # This would avoid calling refresh token
+        curr_time_in_millis = time.mktime(datetime.datetime.utcnow().timetuple())
+        self.user_settings.token_expiry = curr_time_in_millis + 1
+        self.user_settings.save()
+
         self.node_settings.user_settings = None
         self.node_settings.save()
         with assert_raises(exceptions.AddonError):
