@@ -227,7 +227,7 @@ var ViewModel = function(url, selector, folderPicker) {
     };
 
     self.showFolders = ko.computed(function(){
-        return self.nodeHasAuth();
+        return self.nodeHasAuth() && self.userIsOwner();
     });
 
     self.selectedFolderName = ko.computed(function() {
