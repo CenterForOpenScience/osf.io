@@ -6,7 +6,6 @@
             <span>{{ name }}</span>
             <a data-bind="click: $root.askDisconnect" class="pull-right text-danger">Delete Access Token</a>
         </div>
-        <br />
     </div>
     <!-- Flashed Messages -->
     <div class="help-block">
