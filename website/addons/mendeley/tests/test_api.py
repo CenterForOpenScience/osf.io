@@ -34,6 +34,5 @@ class MendeleyApiTestCase(OsfTestCase):
         # All GET requests to Mendeley should have the param "view=all"
         client = APISession(self.mock_partial, self.mock_credentials)
         client.request()
-        kwargs = mock_request.call_args.__str__().lstrip('call(').rstrip(')')
-        assert_in('params', kwargs)
-        assert_in("'view': 'all'", kwargs)
+        args, kwargs = mock_request.call_args
+        assert_equal(kwargs['params'], {'view': 'all'})
