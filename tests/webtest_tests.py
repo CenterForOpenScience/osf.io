@@ -745,6 +745,9 @@ class TestSearching(OsfTestCase):
         # A link to the component is shown as a result
         assert_in('Foobar Component', res)
 
+    def test_search_url_redirect(self):
+        res = self.app.get('/search/{0}'.format("helloworld")).maybe_follow()
+        assert_equal(res.request.path_qs, '/search/?q={0}'.format('helloworld'))
 
 class TestShortUrls(OsfTestCase):
 
