@@ -11,6 +11,7 @@ from waterbutler.core import provider
 from waterbutler.core import exceptions
 
 from waterbutler.providers.googledrive import settings
+from waterbutler.providers.googledrive import utils as drive_utils
 from waterbutler.providers.googledrive.metadata import GoogleDriveRevision
 from waterbutler.providers.googledrive.metadata import GoogleDriveFileMetadata
 from waterbutler.providers.googledrive.metadata import GoogleDriveFolderMetadata
@@ -74,11 +75,10 @@ class GoogleDriveProvider(provider.BaseProvider):
                 throws=exceptions.MetadataError,
             )
             data = yield from response.json()
-        # TODO: Add map from document type to export url key @kushg
         try:
             download_url = data['downloadUrl']
         except KeyError:
-            download_url = data['exportLinks']['application/pdf']
+            download_url = drive_utils.get_export_link(data['exportLinks'])
         download_resp = yield from self.make_request(
             'GET',
             download_url,
