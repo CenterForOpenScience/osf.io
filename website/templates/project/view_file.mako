@@ -48,7 +48,7 @@
           <table class="table" data-bind="if: versioningSupported && revisions().length">
             <thead>
               <tr>
-                <th>Version</th>
+                <th>Version ID</th>
                 <th>Date</th>
                 <th data-bind="if: userColumn">User</th>
                 <th colspan="2">Download</th>

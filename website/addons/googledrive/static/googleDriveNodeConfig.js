@@ -1,5 +1,5 @@
 /**
- * Module that controls the Dropbox node settings. Includes Knockout view-model
+ * Module that controls the Google Drive node settings. Includes Knockout view-model
  * for syncing data, and HGrid-folderpicker for selecting a folder.
  */
 'use strict';
@@ -36,13 +36,13 @@ var ViewModel = function(url, selector, folderPicker) {
     self.urls = ko.observable({});
     self.loadedFolders = ko.observable(false);
     self.loading = ko.observable(false);
-    self.currentFolder = ko.observable('None');
+    self.currentFolder = ko.observable();
 
     //Folderpicker specific
     self.folderPicker =  folderPicker;
     self.selected = ko.observable(null);
     self.showFileTypes = ko.observable(false);
-
+    self.cancelSelection = ko.observable();
     self.loadedSettings = ko.observable(false);
     self.selectedFileTypeOption = ko.observable('');
 
@@ -62,9 +62,9 @@ var ViewModel = function(url, selector, folderPicker) {
         self.access_token (response.result.access_token);
         self.currentFolder(response.result.currentFolder);
 
-        if (self.currentFolder() == null) {
-            self.currentFolder('None');
-        }
+        //if (self.currentFolder() == null) {
+        //    self.currentFolder(null);
+        //}
         self.loadedSettings(true);
     }
 
@@ -76,10 +76,9 @@ var ViewModel = function(url, selector, folderPicker) {
         $.ajax({
             url: self.url,
             type: 'GET',
-            dataType: 'json',
-            success: onFetchSuccess,
-            error: onFetchError
-        });
+            dataType: 'json'
+        }).done(onFetchSuccess).
+           fail(onFetchError);
     }
 
     fetch();
@@ -112,9 +111,14 @@ var ViewModel = function(url, selector, folderPicker) {
             self.urls().create
         ).success(function(response){
             window.location.href = response.url;
-            self.changeMessage('Successfully authorized Google Drive account', 'text-primary');
-        }).fail(function() {
+            self.changeMessage('Successfully authorized Google Drive account', 'text-success');
+        }).fail(function(xhr, textStatus, error) {
             self.changeMessage('Could not authorize at this moment', 'text-danger');
+            Raven.captureMessage('Could not authorize at this moment',
+                {
+                    textStatus: textStatus,
+                    error: error
+                });
         });
     };
 
@@ -132,8 +136,10 @@ var ViewModel = function(url, selector, folderPicker) {
     // Callback for when PUT request to import user access token
     function onImportSuccess(response) {
         var msg = response.message || 'Successfully imported access token from profile.';
-        self.changeMessage(msg, 'text-success', 3000);
-        window.location.reload();
+//        window.location.reload();
+        onFetchSuccess(response);
+        self.changeFolder();
+        self.changeMessage(msg, 'text-success', 5000);
     }
 
     function onImportError() {
@@ -164,20 +170,21 @@ var ViewModel = function(url, selector, folderPicker) {
     function sendDeauth() {
         return $.ajax({
             url: self.urls().deauthorize,
-            type: 'DELETE',
-            success: function() {
+            type: 'DELETE'
+            }).done(function(){
                 // Update observables
                 self.nodeHasAuth(false);
                 self.changeMessage('Deauthorized Google Drive.', 'text-warning', 3000);
-            },
-            error: function() {
-                self.changeMessage('Could not deauthorize Google Drive because of an error. Please try again later.',
-                                   'text-danger');
-            }
+            }).fail(function(xhr, textStatus, error){
+                self.changeMessage('Could not deauthorize Google Drive because of an error. Please try again later.', 'text-danger');
+                Raven.captureMessage('Could not deauthorize Google Drive because of an error. Please try again later.', {
+                    textStatus: textStatus,
+                    error: error
+                });
         });
     }
 
-    /** Pop up a confirmation to deauthorize Dropbox from this node.
+    /** Pop up a confirmation to deauthorize Google Drive from this node.
      *  Send DELETE request if confirmed.
      */
     self.deauthorize = function() {
@@ -198,11 +205,23 @@ var ViewModel = function(url, selector, folderPicker) {
      */
     function onPickFolder(evt, item) {
         evt.preventDefault();
+
+        // Avoids double slash on root folder
+        var name;
+        if (item.data.path === '/') {
+            name = item.data.path;
+        }
+        else {
+            name = '/' + item.data.path;
+        }
+
         self.selected({
             id: item.data.id,
-            name: 'Google Drive/' + item.data.path,
+            name: 'Google Drive' + name,
             path: item.data.path
         });
+
+        self.currentFolder(self.selected().name);
         return false; // Prevent event propagation
     }
 
@@ -240,6 +259,10 @@ var ViewModel = function(url, selector, folderPicker) {
         return self.nodeHasAuth();
     });
 
+    self.cancelSelection = function() {
+        self.selected(null);
+    };
+
     self.selectedFolderName = ko.computed(function() {
         var userIsOwner = self.userIsOwner();
         var selected = self.selected();
@@ -253,6 +276,8 @@ var ViewModel = function(url, selector, folderPicker) {
         'text-success', 5000);
         // Update folder in ViewModel
         self.urls(response.result.urls);
+        self.cancelSelection();
+
     }
 
     function onSubmitError() {

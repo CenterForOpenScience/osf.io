@@ -17,7 +17,6 @@ $(document).ready(function(){
                 divID: 'treeGrid',
                 filesData: data.data
             };
-            console.log(data);
             var filebrowser = new Fangorn(fangornOpts);
         });
 

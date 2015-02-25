@@ -22,7 +22,7 @@
 
         <!-- Oauth Start Button -->
         <span data-bind="if: showTokenCreateButton">
-            <a data-bind="click: createAuth" class="text-primary pull-right addon-auth">
+            <a data-bind="click: createAuth" class="pull-right addon-auth">
                 Create Access Token
             </a>
         </span>
@@ -31,24 +31,25 @@
 
     <div id="currentFolder" data-bind="if:showFolders()">
        <p>
-
         <strong> Current folder:</strong>
+           <!--ko if : currentFolder!=null-->
         <a data-bind="attr.href: urls().files">
-            <span data-bind = "text:currentFolder"> None </span>
+            <span data-bind = "text:currentFolder"> </span>
         </a>
+           <!--/ko-->
+            <!--ko if : currentFolder()===null-->
+                None
+           <!--/ko-->
        </p>
 
         <div class="btn-group" >
-        <button data-bind="click:changeFolder" class="btn btn-sm btn-dropbox"> Change Folder</button>
+        <button data-bind="click:changeFolder" class="btn btn-sm btn-addon"> Change Folder</button>
         </div>
-
         <!-- Google Drive Treebeard -->
         <p class="text-muted text-center dropbox-loading-text" data-bind="visible: loading">
                     Loading folders...</p>
         <div id="myGoogleDriveGrid"
              class="filebrowser hgrid dropbox-folder-picker">
-
-
         </div>
 
         <!-- Queued selection -->
@@ -56,7 +57,7 @@
             data-bind="visible:selected">
             <form data-bind="submit: submitSettings">
 
-                <h4 data-bind="if: selected" class="dropbox-confirm-dlg">
+                <h4 data-bind="if: selected" class="addon-settings-submit">
                     Connect &ldquo;{{ selectedFolderName }}&rdquo;?
                 </h4>
                 <div class="pull-right">
@@ -77,7 +78,7 @@
 
     <!-- Flashed Messages -->
     <div class="help-block">
-        <p data-bind="html: message"></p>
+        <p data-bind="html: message, attr.class: messageClass"></p>
     </div>
 
 </div> <!-- End of googleDriveAddonScope -->
