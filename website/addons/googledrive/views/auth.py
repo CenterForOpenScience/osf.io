@@ -1,4 +1,3 @@
-import httplib2
 import httplib as http
 from datetime import datetime
 

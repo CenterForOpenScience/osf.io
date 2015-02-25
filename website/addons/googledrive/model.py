@@ -2,11 +2,8 @@
 """Persistence layer for the google drive addon.
 """
 import os
-import time
 import base64
 from datetime import datetime
-
-import requests
 
 from modularodm import fields, Q
 from modularodm.exceptions import ModularOdmException
