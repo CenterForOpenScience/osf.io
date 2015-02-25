@@ -244,8 +244,6 @@ class Zotero(ExternalProvider):
             list_id = None
 
         if list_id:
-            collection = self.client.collection(list_id)
-
             citations = []
             more = True
             offset = 0
