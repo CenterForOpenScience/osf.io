@@ -241,30 +241,41 @@ class Zotero(ExternalProvider):
         :return CitationList: CitationList for the collection, or for all documents
         """
         if list_id == 'ROOT':
-            list_id = None
+            list_id = None            
 
         if list_id:
+            collection = self.client.collection(list_id)
+            urlparts = urlparse(ccollection['links']['self']['href']).path.split('/')
+            user_id = urlparts[2]
+            collection_id = urlparts[-1]
             citations = []
             more = True
             offset = 0
             while more:
                 page = self.client.collection_items(list_id, content='csljson', size=100, start=offset)
+                page = [
+                    item.update({'url': settings.ZOTERO_URL_TEMPLATE.format(user_id=user_id, collection_id=collection_id, item_id=list_id)})
+                    for item in page
+                ]
                 citations = citations + page
                 if len(page) == 0 or len(page) < 100:
                     more = False
                 else:
                     offset = offset + len(page)
-            return self._citations_for_zotero_collection(citations)
+            return citations
         else:
             return self._citations_for_zotero_user()
 
+    '''
     def _citations_for_zotero_collection(self, collection):
         """Get all the citations in a specified collection
 
         :param  csljson collection: list of csljson documents
         :return list of citation objects representing said dicts of said documents.
         """
+        import ipdb; ipdb.set_trace()
         return collection
+    '''
 
     def _citations_for_zotero_user(self):
         """Get all the citations from the user """
