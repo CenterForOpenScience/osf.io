@@ -562,7 +562,7 @@ function _fangornLazyLoadOnLoad (tree) {
         inheritFromParent(item, tree);
     });
     resolveconfigOption.call(this, tree, 'lazyLoadOnLoad', [tree]);
-    $('[data-toggle="tooltip"]').tooltip();
+    $('[data-toggle="tooltip"]').tooltip({container: 'body'});
 
     if (tree.depth > 1) {
         _fangornOrderFolder.call(this, tree);
@@ -680,7 +680,6 @@ function _fangornResolveRows(item) {
     var default_columns = [];
     var configOption;
     item.css = '';
-
     if(item.data.tmpID){
         return [
         {
@@ -800,7 +799,7 @@ function expandStateLoad(item) {
             }
         }
     }
-    $('[data-toggle="tooltip"]').tooltip();
+    $('[data-toggle="tooltip"]').tooltip({container: 'body'});
 }
 
 
@@ -892,7 +891,7 @@ tbOptions = {
         return false;
     },
     onscrollcomplete : function(){
-        $('[data-toggle="tooltip"]').tooltip();
+        $('[data-toggle="tooltip"]').tooltip({container: 'body'});
     },
     onselectrow : function(row) {
     },
