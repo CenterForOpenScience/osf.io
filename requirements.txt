@@ -27,11 +27,6 @@ git+https://github.com/CenterForOpenScience/modular-odm.git@develop
 # Development version of modular file renderer
 git+https://github.com/CenterForOpenScience/modular-file-renderer.git@dev
 
-# Assets
-webassets==0.10.1
-jsmin>=2.0.7
-cssmin>=0.2.0
-
 requests==2.4.1
 requests-oauthlib>=0.4.1
 raven==5.1.1
