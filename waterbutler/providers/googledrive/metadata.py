@@ -45,7 +45,7 @@ class GoogleDriveFileMetadata(BaseGoogleDriveMetadata, metadata.BaseFileMetadata
     def name(self):
         title = self.raw['title']
         name, ext = os.path.splitext(title)
-        if self.raw.get('exportLinks') and not ext:
+        if utils.is_docs_file(self.raw) and not ext:
             ext = utils.get_extension(self.raw['exportLinks'])
             title += '.' + ext
         return title

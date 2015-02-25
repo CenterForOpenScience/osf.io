@@ -6,6 +6,11 @@ DOCS_FORMATS = [
 DOCS_DEFAULT_FORMAT = {'ext': '', 'type': 'application/pdf'}
 
 
+def is_docs_file(metadata):
+    """Only Docs files have the "exportLinks" key."""
+    return metadata.get('exportLinks')
+
+
 def get_format(links):
     for format in DOCS_FORMATS:
         if format['type'] in links:

@@ -190,7 +190,7 @@ class GoogleDriveProvider(provider.BaseProvider):
         # The "version" key does not correspond to revision IDs for Google Docs
         # files; make an extra request to the revisions endpoint to fetch the
         # true ID of the latest revision
-        if data['items'][0].get('exportLinks'):
+        if drive_utils.is_docs_file(data['items'][0]):
             revisions_response = yield from self.make_request(
                 'GET',
                 self.build_url('files', data['items'][0]['id'], 'revisions'),
