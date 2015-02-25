@@ -38,7 +38,7 @@ class MendeleyProviderTestCase(OsfTestCase):
 
     @mock.patch('website.addons.mendeley.model.Mendeley._get_client')
     def test_handle_callback(self, mock_get_client):
-        """Must return provider_id and display_name"""
+        # Must return provider_id and display_name
         mock_client = mock.Mock()
         mock_client.profiles.me = mock.Mock(id='testid', display_name='testdisplay')
         mock_get_client.return_value = mock_client
@@ -49,7 +49,7 @@ class MendeleyProviderTestCase(OsfTestCase):
 
     @mock.patch('website.addons.mendeley.model.Mendeley._get_client')
     def test_client_not_cached(self, mock_get_client):
-        """The first call to .client returns a new client"""
+        # The first call to .client returns a new client
         mock_account = mock.Mock()
         mock_account.expires_at = datetime.datetime.now()
         self.provider.account = mock_account
@@ -59,7 +59,7 @@ class MendeleyProviderTestCase(OsfTestCase):
 
     @mock.patch('website.addons.mendeley.model.Mendeley._get_client')
     def test_client_cached(self, mock_get_client):
-        """Repeated calls to .client returns the same client"""
+        # Repeated calls to .client returns the same client
         self.provider._client = mock.Mock()
         res = self.provider.client
         assert_equal(res, self.provider._client)
@@ -90,14 +90,14 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
 
     @mock.patch('website.addons.mendeley.model.Mendeley')
     def test_api_not_cached(self, mock_mendeley):
-        """The first call to .api returns a new object"""
+        # The first call to .api returns a new object
         api = self.node_settings.api
         mock_mendeley.assert_called_once()
         assert_equal(api, mock_mendeley())
 
     @mock.patch('website.addons.mendeley.model.Mendeley')
     def test_api_cached(self, mock_mendeley):
-        """Repeated calls to .api returns the same object"""
+        # Repeated calls to .api returns the same object
         self.node_settings._api = 'testapi'
         api = self.node_settings.api
         assert_false(mock_mendeley.called)
@@ -193,14 +193,14 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
 
 class MendeleyUserSettingsTestCase(OsfTestCase):
     def test_get_connected_accounts(self):
-        """Get all Mendeley accounts for user"""
+        # Get all Mendeley accounts for user
         user_accounts = [MendeleyAccountFactory(), MendeleyAccountFactory()]
         user = UserFactory(external_accounts=user_accounts)
         user_addon = MendeleyUserSettingsFactory(owner=user)
         assert_equal(user_addon._get_connected_accounts(), user_accounts)
 
     def test_to_json(self):
-        """All values are passed to the user settings view"""
+        # All values are passed to the user settings view
         user_accounts = [MendeleyAccountFactory(), MendeleyAccountFactory()]
         user = UserFactory(external_accounts=user_accounts)
         user_addon = MendeleyUserSettingsFactory(owner=user)

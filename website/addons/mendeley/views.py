@@ -22,7 +22,7 @@ def list_mendeley_accounts_user(auth):
     return provider.user_accounts(auth.user)
 
 
-@must_have_permission('write')
+@must_have_permission('read')
 @must_have_addon('mendeley', 'node')
 def mendeley_get_config(auth, node_addon, **kwargs):
     """ Serialize node addon settings and relevant urls

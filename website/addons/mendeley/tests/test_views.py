@@ -111,7 +111,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         assert_true(res.json['urls']['settings'])
 
     def test_user_folders(self):
-        """JSON: a list of user's Mendeley folders"""
+        # JSON: a list of user's Mendeley folders"
         res = self.app.get(
             api_url_for('list_mendeley_accounts_user'),
             auth=self.user.auth,
@@ -126,7 +126,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         assert_equal(res.json, expected)
 
     def test_set_config_owner(self):
-        """Settings config updates node settings"""
+        # Settings config updates node settings
         self.node_addon.associated_user_settings = []
         self.node_addon.save()
         res = self.app.put_json(
@@ -160,7 +160,7 @@ class MendeleyViewsTestCase(OsfTestCase):
 
     @unittest.skip('finish this -- breaks at second request: auth')
     def test_set_config_node_authorized(self):
-        """Can set config to an account/folder that was previously associated"""
+        # Can set config to an account/folder that was previously associated
         self.node_addon.associated_user_settings = []
         self.node_addon.save()
         res = self.app.put_json(
@@ -212,7 +212,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         assert_equal(res.json, {})
 
     def test_mendeley_widget_view_complete(self):
-        """JSON: everything a widget needs"""
+        # JSON: everything a widget needs
         assert_false(self.node_addon.complete)
         assert_equal(self.node_addon.mendeley_list_id, None)
         self.node_addon.set_target_folder('ROOT')
@@ -226,7 +226,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         assert_equal(res['list_id'], 'ROOT')
 
     def test_widget_view_incomplete(self):
-        """JSON: tell the widget when it hasn't been configured"""
+        # JSON: tell the widget when it hasn't been configured
         assert_false(self.node_addon.complete)
         assert_equal(self.node_addon.mendeley_list_id, None)
         res = views.mendeley_widget(node_addon=self.node_addon,

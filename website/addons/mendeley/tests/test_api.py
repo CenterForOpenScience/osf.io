@@ -31,8 +31,7 @@ class MendeleyApiTestCase(OsfTestCase):
 
     @mock.patch('website.addons.mendeley.api.MendeleySession.request')
     def test_request_params(self, mock_request):
-        """All GET requests to Mendeley should have the param "view=all"
-        """
+        # All GET requests to Mendeley should have the param "view=all"
         client = APISession(self.mock_partial, self.mock_credentials)
         client.request()
         kwargs = mock_request.call_args.__str__().lstrip('call(').rstrip(')')
