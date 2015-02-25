@@ -2,6 +2,7 @@
 
 """
 
+import abc
 import os
 import glob
 import importlib
@@ -14,12 +15,14 @@ from mako.lookup import TemplateLookup
 import furl
 import requests
 
+from framework.exceptions import PermissionsError
 from framework.mongo import StoredObject
 from framework.routing import process_rules
 from framework.guid.model import GuidStoredObject
 
 from website import settings
 from website.addons.base import exceptions
+from website.project.model import Node
 
 lookup = TemplateLookup(
     directories=[
@@ -382,18 +385,6 @@ class AddonUserSettingsBase(AddonSettingsBase):
 
     owner = fields.ForeignField('user', backref='addons')
 
-    oauth_grants = fields.DictionaryField()
-    # example:
-    # {
-    #     '<Node._id>': {
-    #         '<ExternalAccount._id>': {
-    #             <metadata>
-    #         },
-    #     }
-    # }
-    #
-    # metadata here is the specific to each addon.
-
     _meta = {
         'abstract': True,
     }
@@ -434,36 +425,6 @@ class AddonUserSettingsBase(AddonSettingsBase):
             if not node_addon.owner.is_deleted
         ]
 
-    def grant_oauth_access(self, node, external_account, metadata):
-        """Grant access to the user's ExternalAccount
-
-        :param Node node: the Node to which to grant access
-        :param ExternalAccount external_account: the ExternalAccout for which
-                                                 to grant access
-        :param dict metadata: a dict of metadata to be used by the addon to
-                              restrict access to only certain resources, or for
-                              other arbitrary purposes defined by the addon.
-        :return:
-        """
-        if self.oauth_grants.get(node._id) is None:
-            self.oauth_grants[node._id] = {}
-
-        if self.oauth_grants[node._id].get(external_account._id) is None:
-            self.oauth_grants[node._id][external_account._id] = metadata
-        else:
-            self.oauth_grants[node._id][external_account._id].update(metadata)
-
-    def revoke_oauth_access(self, external_account):
-        """Revoke access to the user's ExternalAccount
-
-        :param ExternalAccount external_account:
-        :return:
-        """
-        for node_id, grants in self.oauth_grants.iteritems():
-            # if the external account was granted for the node
-            if external_account._id in grants:
-                del self.oauth_grants[node_id][external_account._id]
-
     def to_json(self, user):
         ret = super(AddonUserSettingsBase, self).to_json(user)
         ret['has_auth'] = self.has_auth
@@ -479,6 +440,79 @@ class AddonUserSettingsBase(AddonSettingsBase):
             ]
         })
         return ret
+
+
+class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
+    # __metaclass__ = abc.ABCMeta
+
+    oauth_grants = fields.DictionaryField()# example:
+    # {
+    #     '<Node._id>': {
+    #         '<ExternalAccount._id>': {
+    #             <metadata>
+    #         },
+    #     }
+    # }
+    #
+    # metadata here is the specific to each addon.
+
+    oauth_provider = None
+
+    @property
+    def connected_oauth_accounts(self):
+        return [
+            x for x in self.owner.external_accounts
+            if x.provider == self.oauth_provider.short_name
+        ]
+
+    def grant_oauth_access(self, node, external_account, metadata=None):
+        # ensure the user owns the external_account
+        if external_account not in self.owner.external_accounts:
+            raise PermissionsError()
+
+        metadata = metadata or {}
+
+        # create an entry for the node, if necessary
+        if node._id not in self.oauth_grants:
+            self.oauth_grants[node._id] = {}
+
+        # create an entry for the external account on the node, if necessary
+        if external_account._id not in self.oauth_grants[node._id]:
+            self.oauth_grants[node._id][external_account._id] = {}
+
+        # update the metadata with the supplied values
+        for key, value in metadata.iteritems():
+            self.oauth_grants[node._id][external_account._id][key] = value
+
+        self.save()
+
+    def verify_oauth_access(self, node, external_account, metadata=None):
+        metadata = metadata or {}
+
+        # ensure the grant exists
+        try:
+            grants = self.oauth_grants[node._id][external_account._id]
+        except KeyError:
+            return False
+
+        # Verify every key/value pair is in the grants dict
+        for key, value in metadata.iteritems():
+            if key not in grants or grants[key] != value:
+                return False
+
+        return True
+
+    #############
+    # Callbacks #
+    #############
+
+    def on_delete(self):
+        super(AddonOAuthUserSettingsBase, self).on_delete()
+        nodes = [Node.load(node_id) for node_id in self.oauth_grants.keys()]
+        for node in nodes:
+            node_addon = node.get_addon(self.oauth_provider.short_name)
+            if node_addon and node_addon.user_settings == self:
+                node_addon.clear_auth()
 
 
 class AddonNodeSettingsBase(AddonSettingsBase):
@@ -633,6 +667,52 @@ class AddonNodeSettingsBase(AddonSettingsBase):
 
         """
         pass
+
+
+class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
+
+    # TODO: Validate this field to be sure it matches the provider's short_name
+    external_account = fields.ForeignField('externalaccount',
+                                           backref='connected')
+
+    user_settings = fields.AbstractForeignField()
+
+    oauth_provider = None
+
+    @property
+    def has_auth(self):
+        if not (self.user_settings and self.external_account):
+            return False
+
+        return self.user_settings.verify_oauth_access(
+            node=self.owner,
+            external_account=self.external_account
+        )
+
+    def set_auth(self, external_account, user):
+        """Connect the node addon to a user's external account.
+        """
+        # tell the user's addon settings that this node is connected to it
+        user_settings = user.get_or_add_addon(self.oauth_provider.short_name)
+        user_settings.grant_oauth_access(
+            node=self.owner,
+            external_account=external_account
+            # no metadata, because the node has access to no folders
+        )
+        user_settings.save()
+
+        # update this instance
+        self.user_settings = user_settings
+        self.external_account = external_account
+
+        self.save()
+
+    def clear_auth(self):
+        """Disconnect the node settings from the user settings"""
+
+        self.external_account = None
+        self.user_settings = None
+        self.save()
 
 
 # TODO: No more magicks
