@@ -95,12 +95,10 @@ $(document).ready(function () {
             // buttonState = the visibility of column after click, taen from data-osf-toggle attribute, 
             // thisbtn = $(this);
             // col = the $() for the column this button links to 
-            console.log(this, event, title, buttonState, thisbtn, col);
             bodyElement.trigger('togglePanel', [
                 title.toLowerCase(),
                 buttonState
             ]);
-
             if (typeof editor !== 'undefined') { ace.edit(editor).resize(); } // jshint ignore: line
 
         }
