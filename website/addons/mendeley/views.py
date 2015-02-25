@@ -47,6 +47,7 @@ def mendeley_set_config(auth, node_addon, **kwargs):
         auth.user,
         external_list_id,
     )
+    # TODO: Return a more useful response body, e.g. the serialized settings
     return {}
 
 @must_have_permission('write')

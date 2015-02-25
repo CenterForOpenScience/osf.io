@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from website.addons.citations import provider
 
-from .model import AddonZoteroNodeSettings
+from .model import ZoteroNodeSettings
 from website.addons.citations.utils import serialize_account, serialize_folder, serialize_urls
 
 class ZoteroCitationsProvider(provider.CitationsProvider):
@@ -10,7 +10,7 @@ class ZoteroCitationsProvider(provider.CitationsProvider):
         super(ZoteroCitationsProvider, self).__init__('zotero')
 
     def _serialize_model(self, node_addon, user):
-        ret = super(AddonZoteroNodeSettings, node_addon).to_json(user)
+        ret = super(ZoteroNodeSettings, node_addon).to_json(user)
         ret.update({
             'listId': node_addon.zotero_list_id,
             'accounts': self.user_accounts(user),

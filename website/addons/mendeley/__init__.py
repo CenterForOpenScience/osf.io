@@ -2,13 +2,13 @@ from . import model
 from . import routes
 
 MODELS = [
-    model.AddonMendeleyUserSettings,
-    model.AddonMendeleyNodeSettings,
+    model.MendeleyUserSettings,
+    model.MendeleyNodeSettings,
 ]
 
 
-USER_SETTINGS_MODEL = model.AddonMendeleyUserSettings
-NODE_SETTINGS_MODEL = model.AddonMendeleyNodeSettings
+USER_SETTINGS_MODEL = model.MendeleyUserSettings
+NODE_SETTINGS_MODEL = model.MendeleyNodeSettings
 
 ROUTES = [routes.api_routes]
 

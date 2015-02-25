@@ -2,13 +2,13 @@ from . import model
 from . import routes
 
 MODELS = [
-    model.AddonZoteroUserSettings,
-    model.AddonZoteroNodeSettings,
+    model.ZoteroUserSettings,
+    model.ZoteroNodeSettings,
 ]
 
 
-USER_SETTINGS_MODEL = model.AddonZoteroUserSettings
-NODE_SETTINGS_MODEL = model.AddonZoteroNodeSettings
+USER_SETTINGS_MODEL = model.ZoteroUserSettings
+NODE_SETTINGS_MODEL = model.ZoteroNodeSettings
 
 ROUTES = [routes.api_routes]
 

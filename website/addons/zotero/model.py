@@ -13,7 +13,7 @@ from website.addons.citations.utils import serialize_account, serialize_folder
 
 from . import settings
 
-class AddonZoteroUserSettings(AddonUserSettingsBase):
+class ZoteroUserSettings(AddonUserSettingsBase):
 
     def _get_connected_accounts(self):
         """Get user's connected Zotero accounts"""
@@ -55,7 +55,7 @@ class AddonZoteroUserSettings(AddonUserSettingsBase):
         return True
 
     def to_json(self, user):
-        rv = super(AddonZoteroUserSettings, self).to_json(user)
+        rv = super(ZoteroUserSettings, self).to_json(user)
         rv['accounts'] = [
             {
                 'id': account._id,
@@ -65,7 +65,7 @@ class AddonZoteroUserSettings(AddonUserSettingsBase):
         ]
         return rv
 
-class AddonZoteroNodeSettings(AddonNodeSettingsBase):
+class ZoteroNodeSettings(AddonNodeSettingsBase):
     external_account = fields.ForeignField('externalaccount',
                                            backref='connected')
 
@@ -74,7 +74,7 @@ class AddonZoteroNodeSettings(AddonNodeSettingsBase):
     # Keep track of all user settings that have been associated with this
     #   instance. This is so OAuth grants can be checked, even if the grant is
     #   not currently being used.
-    user_settings = fields.ForeignField('addonzoterousersettings')
+    user_settings = fields.ForeignField('zoterousersettings')
 
     _api = None
 
@@ -227,7 +227,7 @@ class AddonZoteroNodeSettings(AddonNodeSettingsBase):
         if self.external_account:
             accounts.add(self.external_account)
 
-        ret = super(AddonZoteroNodeSettings, self).to_json(user)
+        ret = super(ZoteroNodeSettings, self).to_json(user)
         ret['accounts'] = [serialize_account(each) for each in accounts]
         ret['list_id'] = self.zotero_list_id
         ret['current_account'] = (
