@@ -86,8 +86,6 @@ class TestNodeSerializers(OsfTestCase):
         res_writer = _render_node(node, Auth(writer))
         assert_equal(res_writer['permissions'], 'write')
 
-
-
     def test_get_summary_private_fork_should_include_is_fork(self):
         user = UserFactory()
         # non-contributor cannot see private fork of public project
@@ -196,6 +194,9 @@ class TestAddContributorJson(OsfTestCase):
         self.user_id = self.user._primary_key
         self.fullname = self.user.fullname
         self.username = self.user.username
+        self.given_name = self.user.given_name
+        self.family_name = self.user.family_name
+        self.middle_names = self.user.middle_names
 
         self.jobs = [{
             'institution': 'School of Lover Boys',
@@ -217,8 +218,12 @@ class TestAddContributorJson(OsfTestCase):
     def test_add_contributor_json(self):
         # User with no employment or education info listed
         user_info = utils.add_contributor_json(self.user)
+        names = user_info['names']
 
         assert_equal(user_info['fullname'], self.fullname)
+        assert_equal(names['given_name'], self.given_name)
+        assert_equal(names['family_name'], self.family_name)
+        assert_equal(names['middle_names'], self.middle_names)
         assert_equal(user_info['email'], self.username)
         assert_equal(user_info['id'], self.user_id)
         assert_equal(user_info['employment'], None)
@@ -233,8 +238,12 @@ class TestAddContributorJson(OsfTestCase):
         # Test user with only education information
         self.user.schools = self.schools
         user_info = utils.add_contributor_json(self.user)
+        names = user_info['names']
 
         assert_equal(user_info['fullname'], self.fullname)
+        assert_equal(names['given_name'], self.given_name)
+        assert_equal(names['family_name'], self.family_name)
+        assert_equal(names['middle_names'], self.middle_names)
         assert_equal(user_info['email'], self.username)
         assert_equal(user_info['id'], self.user_id)
         assert_equal(user_info['employment'], None)
@@ -249,8 +258,12 @@ class TestAddContributorJson(OsfTestCase):
         # Test user with only employment information
         self.user.jobs = self.jobs
         user_info = utils.add_contributor_json(self.user)
-
+        names = user_info['names']
+        
         assert_equal(user_info['fullname'], self.fullname)
+        assert_equal(names['given_name'], self.given_name)
+        assert_equal(names['family_name'], self.family_name)
+        assert_equal(names['middle_names'], self.middle_names)
         assert_equal(user_info['email'], self.username)
         assert_equal(user_info['id'], self.user_id)
         assert_equal(user_info['employment'], self.user.jobs[0]['institution'])
@@ -266,8 +279,12 @@ class TestAddContributorJson(OsfTestCase):
         self.user.jobs = self.jobs
         self.user.schools = self.schools
         user_info = utils.add_contributor_json(self.user)
+        names = user_info['names']
 
         assert_equal(user_info['fullname'], self.fullname)
+        assert_equal(names['given_name'], self.given_name)
+        assert_equal(names['family_name'], self.family_name)
+        assert_equal(names['middle_names'], self.middle_names)
         assert_equal(user_info['email'], self.username)
         assert_equal(user_info['id'], self.user_id)
         assert_equal(user_info['employment'], self.user.jobs[0]['institution'])

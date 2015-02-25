@@ -74,7 +74,7 @@
                                             <a data-bind = "attr: {href: contributor.profile_url}" target="_blank">
                                                 <span data-bind= "text:contributor.fullname,
                                                 style: { word-break: contributor.names.given_name.length
-                                                || contributor.names.middle_name.length
+                                                || contributor.names.middle_names.length
                                                 || contributor.names.family_name.length> 18 ? 'break-all':'normal'}"></span>
                                             </a><br>
 
@@ -163,7 +163,7 @@
                                         <td>
                                             <span   data-bind="text: contributor.fullname,
                                             style: { word-break: contributor.names.given_name.length
-                                            || contributor.names.middle_name.length
+                                            || contributor.names.middle_names.length
                                             || contributor.names.family_name.length> 18 ? 'break-all':'normal'}"></span>
 
                                             <span
