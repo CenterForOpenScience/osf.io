@@ -55,7 +55,6 @@ if (!ctx.node.anonymous) {
     new CitationWidget('#citationStyleInput', '#citationText');
 }
 
-
 $(document).ready(function() {
     // Treebeard Files view
     $.ajax({
@@ -113,9 +112,8 @@ $(document).ready(function() {
         var filebrowser = new Fangorn(fangornOpts);
     });
 
-
     // Tooltips
-    $('[data-toggle="tooltip"]').tooltip();
+    $('[data-toggle="tooltip"]').tooltip({container: 'body'});
 
     // Tag input
     $('#node-tags').tagsInput({
