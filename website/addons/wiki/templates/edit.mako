@@ -115,7 +115,7 @@
                         </div>
                       </div>
                         <!-- Invisible textarea for form submission -->
-                        <textarea name="content" style="visibility: hidden; height: 0px"
+                        <textarea name="content" style="display: none;"
                                   data-bind="value: currentText"></textarea>
                     </form>
                   </div>
