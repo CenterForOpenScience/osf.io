@@ -349,7 +349,7 @@ class TestFilebrowserViews(BoxAddonTestCase):
                 pid=self.project._primary_key,
             )
             res = self.app.get(url, auth=self.user.auth)
-            contents = mock_client.get_folder('', list=True)['item_collection']['entries']
+            contents = [item for item in mock_client.get_folder('', list=True)['item_collection']['entries'] if item['type'] == u'folder']
             assert_equal(len(res.json), len(contents))
             first = res.json[0]
             assert_in('kind', first)
@@ -371,16 +371,7 @@ class TestFilebrowserViews(BoxAddonTestCase):
                 pid=self.project._primary_key, foldersOnly=True)
             res = self.app.get(url, auth=self.user.auth)
             contents = mock_client.get_folder('', list=True)['item_collection']['entries']
-            expected = [each for each in contents if each['type']=='folder']
-            assert_equal(len(res.json), len(expected))
-
-    def test_box_hgrid_data_contents_folders_only(self):
-        with patch_client('website.addons.box.views.hgrid.get_node_client'):
-            url = api_url_for('box_hgrid_data_contents',
-                pid=self.project._primary_key, foldersOnly=True)
-            res = self.app.get(url, auth=self.user.auth)
-            contents = mock_client.get_folder('', list=True)['item_collection']['entries']
-            expected = [each for each in contents if each['type']=='folder']
+            expected = [each for each in contents if each['type'] == 'folder']
             assert_equal(len(res.json), len(expected))
 
     def test_box_hgrid_data_contents_include_root(self):
@@ -389,7 +380,8 @@ class TestFilebrowserViews(BoxAddonTestCase):
                 pid=self.project._primary_key, includeRoot=1)
             res = self.app.get(url, auth=self.user.auth)
             contents = mock_client.get_folder('', list=True)['item_collection']['entries']
-            assert_equal(len(res.json), len(contents) + 1)
+            expected = [each for each in contents if each['type'] == 'folder']
+            assert_equal(len(res.json), len(expected) + 1)
             first_elem = res.json[0]
             assert_equal(first_elem['path'], '/')
 
