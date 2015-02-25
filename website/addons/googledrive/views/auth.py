@@ -13,8 +13,10 @@ from website import models
 from website.util import permissions
 from website.util import web_url_for
 from website.project.model import Node
-from website.project.decorators import must_have_addon
-from website.project.decorators import must_have_permission
+from website.project.decorators import (
+    must_have_addon,
+    must_have_permission
+)
 
 from website.addons.googledrive.client import GoogleAuthClient
 from website.addons.googledrive.client import GoogleDriveClient
