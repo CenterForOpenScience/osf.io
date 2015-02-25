@@ -108,7 +108,7 @@ def metadata_to_hgrid(item, node, permissions):
         'name': filename,
         'ext': os.path.splitext(filename)[-1],
         rubeus.KIND: rubeus.FOLDER if item['type'] == u'folder' else rubeus.FILE,
-        'urls': build_box_urls(item, node),
+        'urls': build_box_urls(item, node) if item['type'] == u'folder' else None,
         'path': item.get('path') or filename,
         'id': item['id'],
     }

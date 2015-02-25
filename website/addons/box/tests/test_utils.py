@@ -49,12 +49,6 @@ class TestNodeLogger(BoxAddonTestCase):
         assert_equal(last_log.action, 'box_node_deauthorized')
 
 
-def test_get_file_name():
-    assert_equal(utils.get_file_name('foo/bar/baz.txt'), 'baz.txt')
-    assert_equal(utils.get_file_name('/foo/bar/baz.txt'), 'baz.txt')
-    assert_equal(utils.get_file_name('/foo/bar/baz.txt/'), 'baz.txt')
-
-
 # FIXME(sloria): This test is incorrect. The mocking needs work.
 # class TestRenderFile(OsfTestCase):
 
@@ -115,10 +109,7 @@ class TestMetadataSerialization(OsfTestCase):
         result = utils.metadata_to_hgrid(metadata, node, permissions)
         assert_equal(result['addon'], 'box')
         assert_equal(result['permissions'], permissions)
-        filename = utils.get_file_name(metadata['path'])
-        assert_equal(result['name'], filename)
         assert_equal(result['path'], metadata['path'])
-        assert_equal(result['ext'], os.path.splitext(filename)[1])
 
 
 class TestBuildBoxUrls(OsfTestCase):
@@ -128,13 +119,8 @@ class TestBuildBoxUrls(OsfTestCase):
         fake_metadata = mock_responses['metadata_single']
         fake_metadata['type'] = 'folder'
         result = utils.build_box_urls(fake_metadata, node)
-        path = fake_metadata['path']
-        assert_equal(
-            result['fetch'],
-            node.api_url_for('box_hgrid_data_contents', path=path)
-        )
         assert_equal(
             result['folders'],
             node.api_url_for('box_hgrid_data_contents',
-                path=path, foldersOnly=1)
+                folder_id=fake_metadata['id'], foldersOnly=1)
         )
