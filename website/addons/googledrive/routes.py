@@ -59,8 +59,8 @@ api_routes = {
         ),
 
         Rule(
-            ['/project/<pid>/googledrive/get-children/',
-             '/project/<pid>/node/<nid>/googledrive/get-children/'],
+            ['/project/<pid>/googledrive/folders/',
+             '/project/<pid>/node/<nid>/googledrive/folders/'],
             'get',
             views.hgrid.googledrive_folders,
             json_renderer
