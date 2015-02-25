@@ -163,7 +163,7 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         self.figshare_type = None
         self.figshare_title = None
 
-        self.hide_comments()
+        self.hide_all_comments()
 
         if add_log:
             node = self.owner
@@ -242,7 +242,7 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         self.save()
         if updated:
             # Configure comments visibility
-            self.hide_comments()
+            self.hide_all_comments()
             for figshare_file in self.get_existing_files():
                 for comment in getattr(figshare_file, 'comment_target', []):
                     comment.show(save=True)
@@ -262,7 +262,7 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
                 auth=auth,
             )
 
-    def hide_comments(self):
+    def hide_all_comments(self):
         files_id = FigShareGuidFile.find(Q('node', 'eq', self.owner)).get_keys()
         for fs_file_id in files_id:
             fs_file = FigShareGuidFile.load(fs_file_id)
@@ -449,10 +449,12 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             files = article.get('files', [])
             for fs_file in files:
                 file_id = str(fs_file['id'])
+                print('.....................................', article['article_id'], file_id)
+
                 try:
                     guid = FigShareGuidFile.find_one(
                         Q('node', 'eq', self.owner) &
-                        Q('article_id', 'eq', str(article['article_id'])) &
+                        Q('article_id', 'eq', article['article_id']) &
                         Q('file_id', 'eq', file_id)
                     )
                 except:

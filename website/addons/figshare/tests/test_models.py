@@ -8,6 +8,7 @@ from framework.auth import Auth
 from website.addons.figshare import model
 from website.addons.figshare import exceptions
 from website.addons.figshare import settings as figshare_settings
+from website.models import Comment
 
 
 class TestFileGuid(OsfTestCase):
@@ -152,7 +153,8 @@ class TestCallbacks(OsfTestCase):
         self.node_settings.figshare_title = 'singlefile'
         self.node_settings.save()
 
-    def test_update_fields_project(self):
+    @mock.patch('website.addons.figshare.api.Figshare.project')
+    def test_update_fields_project(self, project):
         num_logs = len(self.project.logs)
         # try updating fields
         newfields = {
@@ -168,7 +170,8 @@ class TestCallbacks(OsfTestCase):
         # check for log added
         assert_equals(len(self.project.logs), num_logs + 1)
 
-    def test_update_fields_fileset(self):
+    @mock.patch('website.addons.figshare.api.Figshare.article')
+    def test_update_fields_fileset(self, article):
         num_logs = len(self.project.logs)
         # try updating fields
         newfields = {
@@ -184,7 +187,8 @@ class TestCallbacks(OsfTestCase):
         # check for log added
         assert_equals(len(self.project.logs), num_logs + 1)
 
-    def test_update_fields_some_missing(self):
+    @mock.patch('website.addons.figshare.api.Figshare.project')
+    def test_update_fields_some_missing(self, mock_proj):
         num_logs = len(self.project.logs)
         # try updating fields
         newfields = {
@@ -193,7 +197,7 @@ class TestCallbacks(OsfTestCase):
             'title': 'A PROJECT'
         }
         self.node_settings.update_fields(newfields, self.project, Auth(self.project.creator))
-        #check for updated
+        # check for updated
         assert_equals(self.node_settings.figshare_id, '313131')
         assert_equals(self.node_settings.figshare_title, 'A PROJECT')
         # check for log added
@@ -214,6 +218,65 @@ class TestCallbacks(OsfTestCase):
         assert_equals(self.node_settings.figshare_title, 'singlefile')
         # check for log added
         assert_equals(len(self.project.logs), num_logs)
+
+    @mock.patch('website.addons.figshare.api.Figshare.project')
+    def test_update_fields_changes_comments_visibility(self, mock_proj):
+        # Post comment
+        path = '/lunar_new_year.txt'
+        guid, _ = self.node_settings.find_or_create_file_guid(path)
+        comment1 = Comment.create(
+            auth=Auth(self.user),
+            node=self.project,
+            target=guid,
+            user=self.user,
+            page='files',
+            content='Random content',
+            root_title=path,
+        )
+        comment2 = Comment.create(
+            auth=Auth(self.user),
+            node=self.project,
+            target=comment1,
+            user=self.user,
+            page='files',
+            content='Reply to random content',
+            root_title=path
+        )
+        # try updating fields
+        newfields = {
+            'type': 'project',
+            'id': '313131',
+            'title': 'A PROJECT'
+        }
+        self.node_settings.update_fields(newfields, self.project, Auth(self.project.creator))
+        # See comments visibility
+        #assert_true(comment1.is_hidden)
+        #assert_true(comment2.is_hidden)
+
+    def test_hide_all_comments(self):
+        path = '/lunar_new_year.txt'
+        guid, _ = self.node_settings.find_or_create_file_guid(path)
+        comment1 = Comment.create(
+            auth=Auth(self.user),
+            node=self.project,
+            target=guid,
+            user=self.user,
+            page='files',
+            content='Random content',
+            root_title=path,
+        )
+        comment2 = Comment.create(
+            auth=Auth(self.user),
+            node=self.project,
+            target=comment1,
+            user=self.user,
+            page='files',
+            content='Reply to random content',
+            root_title=path
+        )
+        self.node_settings.hide_all_comments()
+        assert_true(comment1.is_hidden)
+        assert_true(comment2.is_hidden)
 
     def test_api_url_no_user(self):
         self.node_settings.user_settings = None
@@ -303,5 +366,28 @@ class TestCallbacks(OsfTestCase):
             data='hodor'
         )
         assert_false(registration.has_addon('figshare'))
+
+    @mock.patch('website.addons.figshare.api.Figshare.project')
+    def test_get_existing_files(self, mock_project):
+        article_id = '12345'
+        file_name = 'randomfile.txt'
+        mock_project.return_value = {
+            'articles': [
+                {
+                    'article_id': article_id,
+                    'files': [
+                        {
+                            'id': file_name
+                        }
+                    ]
+                }
+            ]
+        }
+        guid, _ = self.node_settings.find_or_create_file_guid('random/{0}/{1}'.format(article_id, file_name))
+        files = self.node_settings.get_existing_files()
+        assert_equal(len(files), 1)
+        assert_equal(files[0], guid)
+
+
 
     #TODO Test figshare options and figshare to_json

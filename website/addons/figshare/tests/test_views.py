@@ -83,6 +83,14 @@ class TestViewsConfig(OsfTestCase):
         )
         assert_true(is_none)
 
+    def test_deauthorize_hides_comments(self):
+        # todo
+        assert_true(False)
+
+    def test_reauthorize_shows_comments(self):
+        # todo
+        assert_true(False)
+
     def test_config_no_change(self):
         nlogs = len(self.project.logs)
         url = self.project.api_url_for('figshare_config_put')
