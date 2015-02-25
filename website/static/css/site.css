@@ -389,7 +389,7 @@ li.pointer {
 /* Style for Ace wiki editor */
 .wiki-editor {
     position: relative;
-    height: 530px;
+    height: 590px;
     border: solid;
     border-width: 1px;
 }
@@ -1144,8 +1144,8 @@ div.search-result  {
 .wmd-button-row
 {
     position: relative;
-    margin-left: 5px;
-    margin-right: 5px;
+    margin-left: 0;
+    margin-right: 0;
     margin-bottom: 5px;
     margin-top: 0px;
     padding: 0px;
@@ -2138,6 +2138,7 @@ span#profileFullname{
     overflow: auto;
     display: block;
     position: relative;
+    overflow-x: hidden;
 }
 .superlist li.active {
     background: #EFEFEF;
