@@ -50,6 +50,7 @@ var entry = {
         'knockout-sortable',
         'treebeard',
         'jquery.cookie',
+        'URIjs',
         // Common internal modules
         'fangorn',
         'citations',
