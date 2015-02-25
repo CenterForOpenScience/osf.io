@@ -52,59 +52,59 @@ var CitationsFolderPickerViewModel = function(name, url, selector, folderPicker)
     // Whether the initial data has been fetched form the server. Used for
     // error handling.
     self.loadedSettings = ko.observable(false);
-    // Whether the mendeley folders have been loaded from the server/mendeley API
+    // Whether the folders have been loaded from the API
     self.loadedFolders = ko.observable(false);
 
     self.messages = {
-        INVALID_CRED_OWNER: ko.computed(function() {
+        INVALID_CRED_OWNER: ko.pureComputed(function() {
             return 'Could not retrieve ' + self.properName + ' settings at ' +
                 'this time. The ' + self.properName + ' addon credentials may no longer be valid.' +
                 ' Try deauthorizing and reauthorizing ' + self.properName + ' on your <a href="' +
                 self.urls().settings + '">account settings page</a>.';
         }),
-        INVALID_CRED_NOT_OWNER: ko.computed(function() {
+        INVALID_CRED_NOT_OWNER: ko.pureComputed(function() {
             return 'Could not retrieve ' + self.properName + ' settings at ' +
                 'this time. The ' + self.properName + ' addon credentials may no longer be valid.' +
                 ' Contact ' + self.ownerName() + ' to verify.';
         }),
-        CANT_RETRIEVE_SETTINGS: ko.computed(function() {
+        CANT_RETRIEVE_SETTINGS: ko.pureComputed(function() {
             return 'Could not retrieve ' + self.properName + ' settings at ' +
                 'this time. Please refresh ' +
                 'the page. If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.';
         }),
-        UPDATE_ACCOUNTS_ERROR: ko.computed(function() {
+        UPDATE_ACCOUNTS_ERROR: ko.pureComputed(function() {
             return 'Could not retrieve ' + self.properName + ' account list at ' +
                 'this time. Please refresh the page. If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.';
         }),
-        DEAUTHORIZE_SUCCESS: ko.computed(function() {
+        DEAUTHORIZE_SUCCESS: ko.pureComputed(function() {
             return 'Deauthorized ' + self.properName + '.';
         }),
-        DEAUTHORIZE_FAIL: ko.computed(function() {
+        DEAUTHORIZE_FAIL: ko.pureComputed(function() {
             return 'Could not deauthorize because of an error. Please try again later.';
         }),
-        CONNECT_ACCOUNT_SUCCESS: ko.computed(function() {
-            return 'Successfully created a Mendeley Access Token';
+        CONNECT_ACCOUNT_SUCCESS: ko.pureComputed(function() {
+            return 'Successfully created a ' + self.properName + ' Access Token';
         }),
-        SUBMIT_SETTINGS_SUCCESS: ko.computed(function() {
+        SUBMIT_SETTINGS_SUCCESS: ko.pureComputed(function() {
             var overviewURL = window.contextVars.node.urls.web;
             return 'Successfully linked "' + self.folder() + '". Go to the <a href="' +
                 overviewURL + '">Overview page</a> to view your citations.';
         }),
-        SUBMIT_SETTINGS_ERROR: ko.computed(function() {
+        SUBMIT_SETTINGS_ERROR: ko.pureComputed(function() {
             return 'Could not change settings. Please try again later.';
         }),
-        CONFIRM_DEAUTH: ko.computed(function() {
+        CONFIRM_DEAUTH: ko.pureComputed(function() {
             return 'Are you sure you want to remove this ' + self.properName + ' authorization?';
         }),
-        CONFIRM_AUTH: ko.computed(function() {
+        CONFIRM_AUTH: ko.pureComputed(function() {
             return 'Are you sure you want to authorize this project with your ' + self.properName + ' access token?';
         }),
-        TOKEN_IMPORT_ERROR: ko.computed(function() {
+        TOKEN_IMPORT_ERROR: ko.pureComputed(function() {
             return 'Error occurred while importing access token.';
         }),
-        CONNECT_ERROR: ko.computed(function() {
+        CONNECT_ERROR: ko.pureComputed(function() {
             return 'Could not connect to ' + self.properName + ' at this time. Please try again later.';
         })
     };
@@ -112,7 +112,7 @@ var CitationsFolderPickerViewModel = function(name, url, selector, folderPicker)
     /**
      * Whether or not to show the Import Access Token Button
      */
-    self.showImport = ko.computed(function() {
+    self.showImport = ko.pureComputed(function() {
         // Invoke the observables to ensure dependency tracking
         var userHasAuth = self.userHasAuth();
         var nodeHasAuth = self.nodeHasAuth();
@@ -121,12 +121,12 @@ var CitationsFolderPickerViewModel = function(name, url, selector, folderPicker)
     });
 
     /** Whether or not to show the full settings pane. */
-    self.showSettings = ko.computed(function() {
+    self.showSettings = ko.pureComputed(function() {
         return self.nodeHasAuth();
     });
 
     /** Whether or not to show the Create Access Token button */
-    self.showTokenCreateButton = ko.computed(function() {
+    self.showTokenCreateButton = ko.pureComputed(function() {
         // Invoke the observables to ensure dependency tracking
         var userHasAuth = self.userHasAuth();
         var nodeHasAuth = self.nodeHasAuth();
@@ -135,13 +135,13 @@ var CitationsFolderPickerViewModel = function(name, url, selector, folderPicker)
     });
 
     /** Computed functions for the linked and selected folders' display text.*/
-    self.folderName = ko.computed(function() {
+    self.folderName = ko.pureComputed(function() {
         var nodeHasAuth = self.nodeHasAuth();
         var folder = self.folder();
         return (nodeHasAuth && folder) ? folder.name : '';
     });
 
-    self.selectedFolderName = ko.computed(function() {
+    self.selectedFolderName = ko.pureComputed(function() {
         var userIsOwner = self.userIsOwner();
         var selected = self.selected();
         return (userIsOwner && selected) ? selected.name : '';
@@ -205,7 +205,7 @@ CitationsFolderPickerViewModel.prototype.fetchFromServer = function() {
     });
     request.fail(function(xhr, textStatus, error) {
         self.changeMessage(self.messages.CANT_RETRIEVE_SETTINGS(), 'text-warning');
-        Raven.captureMessage('Could not GET Mendeley settings', {
+        Raven.captureMessage('Could not GET ' + self.properName + 'settings', {
             url: self.url,
             textStatus: textStatus,
             error: error
@@ -228,7 +228,7 @@ CitationsFolderPickerViewModel.prototype.updateAccounts = function(callback) {
     });
     request.fail(function(xhr, textStatus, error) {
         self.changeMessage(self.messages.UPDATE_ACCOUNTS_ERROR(), 'text-warning');
-        Raven.captureMessage('Could not GET mendeley accounts for user', {
+        Raven.captureMessage('Could not GET ' + self.properName + ' accounts for user', {
             url: self.url,
             textStatus: textStatus,
             error: error
@@ -267,7 +267,7 @@ CitationsFolderPickerViewModel.prototype.connectExistingAccount = function(accou
 
 
 /**
- * Send a PUT request to change the linked mendeley folder.
+ * Send a PUT request to change the linked folder.
  */
 CitationsFolderPickerViewModel.prototype.submitSettings = function() {
     var self = this;
@@ -298,7 +298,7 @@ CitationsFolderPickerViewModel.prototype.cancelSelection = function() {
     this.selected(null);
 };
 
-/** Pop up a confirmation to deauthorize mendeley from this node.
+/** Pop up a confirmation to deauthorize addon from this node.
  *  Send DELETE request if confirmed.
  */
 CitationsFolderPickerViewModel.prototype.deauthorize = function() {
@@ -323,7 +323,7 @@ CitationsFolderPickerViewModel.prototype.deauthorize = function() {
 
         request.fail(function(xhr, textStatus, error) {
             self.changeMessage(self.messages.DEAUTHORIZE_FAIL(), 'text-danger');
-            Raven.captureMessage('Could not deauthorize mendeley account from node', {
+            Raven.captureMessage('Could not deauthorize ' + self.properName + ' account from node', {
                 url: self.urls().deauthorize,
                 textStatus: textStatus,
                 error: error
@@ -360,7 +360,7 @@ CitationsFolderPickerViewModel.prototype.onImportError = function(xhr, textStatu
     var self = this;
 
     self.changeMessage(self.messages.TOKEN_IMPORT_ERROR(), 'text-danger');
-    Raven.captureMessage('Failed to import Mendeley access token', {
+    Raven.captureMessage('Failed to import ' + self.properName + ' access token', {
         url: self.urls().importAuth,
         textStatus: textStatus,
         error: error
@@ -376,7 +376,7 @@ CitationsFolderPickerViewModel.prototype.importAuth = function() {
     self.updateAccounts(function() {
         if (self.accounts().length > 1) {
             bootbox.prompt({
-                title: 'Choose Mendeley Access Token to Import',
+                title: 'Choose ' + self.properName + ' Access Token to Import',
                 inputType: 'select',
                 inputOptions: ko.utils.arrayMap(
                     self.accounts(),
@@ -431,8 +431,8 @@ CitationsFolderPickerViewModel.prototype.activatePicker = function() {
         self.loading(true);
         $(self.folderPicker).folderpicker({
             onPickFolder: onPickFolder,
-            initialFolderPath: 'mendeley',
-            // Fetch mendeley folders with AJAX
+            initialFolderPath: '',
+            // Fetch folders with AJAX
             filesData: self.urls().folders,
             // Lazy-load each folder's contents
             // Each row stores its url for fetching the folders it contains
