@@ -127,7 +127,7 @@ BaseComment.prototype.setupToolTips = function(elm) {
         if ($item.attr('data-toggle') === 'tooltip') {
             $item.tooltip();
         } else {
-            $item.find('[data-toggle="tooltip"]').tooltip();
+            $item.find('[data-toggle="tooltip"]').tooltip({container: 'body'});
         }
     });
 };
