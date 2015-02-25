@@ -1,4 +1,4 @@
-from website.addons.base import AddonError
+from website.addons.base.exceptions import AddonError
 
 
 class GoogleDriveError(AddonError):

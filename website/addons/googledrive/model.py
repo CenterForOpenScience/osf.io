@@ -10,11 +10,13 @@ from modularodm.exceptions import ModularOdmException
 
 from framework.auth import Auth
 
+from website import settings
 from website.addons.base import exceptions
-from website.addons.googledrive import settings
-from website.addons.googledrive.client import GoogleAuthClient
-from website.addons.googledrive.utils import GoogleDriveNodeLogger
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
+
+from website.addons.googledrive.client import GoogleAuthClient
+from website.addons.googledrive import settings as drive_settings
+from website.addons.googledrive.utils import GoogleDriveNodeLogger
 
 
 class GoogleDriveGuidFile(GuidFile):
@@ -37,6 +39,24 @@ class GoogleDriveGuidFile(GuidFile):
         if self.revision:
             return '{0}_{1}_{2}.html'.format(self._id, self.revision, base64.b64encode(self.folder))
         return '{0}_{1}_{2}.html'.format(self._id, self.unique_identifier, base64.b64encode(self.folder))
+
+    @property
+    def mfr_temp_path(self):
+        """Files names from Google Docs metadata doesn't necessarily correspond
+        to download file names. Use the `downloadExt` field in the Docs metadata
+        to save the temporary file with the appropriate extension.
+        """
+        ext = (
+            self._metadata_cache['extra'].get('downloadExt') or
+            os.path.splitext(self.name)[-1]
+        )
+        return os.path.join(
+            settings.MFR_TEMP_PATH,
+            self.node._id,
+            self.provider,
+            # Attempt to keep the original extension of the file for MFR detection
+            self.file_name + ext,
+        )
 
     @property
     def folder(self):
@@ -99,7 +119,7 @@ class GoogleDriveUserSettings(AddonUserSettingsBase):
     def needs_refresh(self):
         if self.token_expires_at is None:
             return False
-        return (self.token_expires_at - datetime.utcnow()).total_seconds() < settings.REFRESH_TIME
+        return (self.token_expires_at - datetime.utcnow()).total_seconds() < drive_settings.REFRESH_TIME
 
     @property
     def has_auth(self):
