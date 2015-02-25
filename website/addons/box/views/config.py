@@ -5,13 +5,11 @@ import httplib as http
 from flask import request
 
 from framework.exceptions import HTTPError
-from framework.auth.decorators import collect_auth
 
 from website.util import permissions
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
     must_have_permission, must_not_be_registration,
-    must_be_valid_project
 )
 from website.util import web_url_for
 
