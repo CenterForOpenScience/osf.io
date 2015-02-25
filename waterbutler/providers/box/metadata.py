@@ -48,6 +48,12 @@ class BoxFileMetadata(BaseBoxMetadata, metadata.BaseFileMetadata):
     def content_type(self):
         return None
 
+    @property
+    def extra(self):
+        return {
+            'etag': self.raw.get('etag')
+        }
+
 
 class BoxRevision(metadata.BaseFileRevisionMetadata):
 
@@ -77,5 +83,7 @@ class BoxRevision(metadata.BaseFileRevisionMetadata):
             return self.raw.get('modified')
 
     @property
-    def revision(self):
-        return self.raw['etag']
+    def extra(self):
+        return {
+            'etag': self.raw.get('etag')
+        }
