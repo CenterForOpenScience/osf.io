@@ -50,7 +50,6 @@ def googledrive_oauth_start(auth, **kwargs):
     return{'url': authorize_url}
 
 
-
 @collect_auth
 def googledrive_oauth_finish(auth, **kwargs):
     """View called when the Oauth flow is completed. Adds a new GoogleDriveUserSettings
