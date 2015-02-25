@@ -67,15 +67,17 @@
                 ${comment_target.title()}
             % endif
             </h3>
-            <div data-bind="if: discussion().length > 0">
-                Show <a data-bind="click: showRecent">recently commented users</a> or
-                <a data-bind="click: showFrequent">most frequently commented users</a>
-                <span class="pull-right" data-bind="foreach: {data: discussion, afterAdd: setupToolTips}">
-                    <a data-toggle="tooltip" data-bind="attr: {href: url, title: fullname}" data-placement="bottom">
-                        <img data-bind="attr: {src: gravatarUrl}"/>
-                    </a>
-                </span>
-            </div>
+            % if not node['anonymous']:
+                <div data-bind="if: discussion().length > 0">
+                    Show <a data-bind="click: showRecent">recently commented users</a> or
+                    <a data-bind="click: showFrequent">most frequently commented users</a>
+                    <span class="pull-right" data-bind="foreach: {data: discussion, afterAdd: setupToolTips}">
+                        <a data-toggle="tooltip" data-bind="attr: {href: url, title: fullname}" data-placement="bottom">
+                            <img data-bind="attr: {src: gravatarUrl}"/>
+                        </a>
+                    </span>
+                </div>
+            % endif
             <div data-bind="if: discussion().length == 0" style="padding-top: 20px;">
                 % if comment_target == 'total':
                     There are no comments on this project yet. Go to the

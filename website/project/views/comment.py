@@ -52,6 +52,7 @@ def view_comments_overview(**kwargs):
     ret.update(_view_project(node, auth, primary=True))
     return ret
 
+
 @must_be_contributor_or_public
 def view_comments_files(**kwargs):
     """
@@ -97,6 +98,7 @@ def view_comments_single(**kwargs):
     serialized_comment = serialize_comment(comment, auth)
 
     from website.addons.wiki.model import NodeWikiPage
+
     ret = {
         'comment': serialized_comment,
         'comment_target': serialized_comment['page'],
@@ -120,7 +122,6 @@ def resolve_target(node, page, guid):
 
 
 def collect_discussion(target, users=None):
-
     users = users or collections.defaultdict(list)
     if not getattr(target, 'commented', None) is None:
         for comment in getattr(target, 'commented', []):
@@ -129,9 +130,9 @@ def collect_discussion(target, users=None):
             collect_discussion(comment, users=users)
     return users
 
+
 @must_be_contributor_or_public
 def comment_discussion(**kwargs):
-
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
 
@@ -187,6 +188,7 @@ def comment_discussion(**kwargs):
         ]
     }
 
+
 def serialize_discussion(node, user, anonymous=False):
     return {
         'id': privacy_info_handle(user._id, anonymous),
@@ -201,8 +203,10 @@ def serialize_discussion(node, user, anonymous=False):
         )
     }
 
+
 def serialize_comment(comment, auth, anonymous=False):
     from website.addons.wiki.model import NodeWikiPage
+
     if isinstance(comment.root_target, NodeWikiPage):
         root_id = comment.root_target.page_name
         title = comment.root_target.page_name
@@ -242,7 +246,6 @@ def serialize_comment(comment, auth, anonymous=False):
 
 
 def serialize_comments(record, auth, anonymous=False):
-
     return [
         serialize_comment(comment, auth, anonymous)
         for comment in getattr(record, 'commented', [])
@@ -250,7 +253,6 @@ def serialize_comments(record, auth, anonymous=False):
 
 
 def kwargs_to_comment(kwargs, owner=False):
-
     comment = Comment.load(kwargs.get('cid'))
     if comment is None:
         raise HTTPError(http.BAD_REQUEST)
@@ -266,7 +268,6 @@ def kwargs_to_comment(kwargs, owner=False):
 @must_be_logged_in
 @must_be_contributor_or_public
 def add_comment(**kwargs):
-
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
 
@@ -299,8 +300,8 @@ def add_comment(**kwargs):
     comment.save()
 
     return {
-        'comment': serialize_comment(comment, auth)
-    }, http.CREATED
+               'comment': serialize_comment(comment, auth)
+           }, http.CREATED
 
 
 @must_be_contributor_or_public
@@ -311,14 +312,14 @@ def list_comments(auth, **kwargs):
     guid = request.args.get('target')
     root_id = request.args.get('rootId')
 
-    if page == 'total' and root_id == 'None':    # "Total" on discussion page
+    if page == 'total' and root_id == 'None':  # "Total" on discussion page
         serialized_comments = list_total_comments(node, auth, 'total')
-    elif page == 'total':    # Discussion widget on overview's page
+    elif page == 'total':  # Discussion widget on overview's page
         serialized_comments = [
             serialize_comment(comment, auth, anonymous)
             for comment in getattr(node, 'comment_owner', [])
         ]
-    elif root_id == 'None':    # Overview/Files/Wiki page on discussion page
+    elif root_id == 'None':  # Overview/Files/Wiki page on discussion page
         serialized_comments = list_total_comments(node, auth, page)
     else:
         target = resolve_target(node, page, guid)
@@ -336,8 +337,10 @@ def list_comments(auth, **kwargs):
         'nUnread': n_unread
     }
 
+
 def list_total_comments(node, auth, page):
     comments = []
+    anonymous = has_anonymous_link(node, auth)
     if page == 'total':
         comments = Comment.find(Q('node', 'eq', node) &
                                 Q('is_hidden', 'eq', False) &
@@ -354,7 +357,7 @@ def list_total_comments(node, auth, page):
     if page in ('total', 'files'):
         serialized_comments.extend(get_files_comments(node))
     serialized_comments = [
-        serialize_comment(comment, auth)
+        serialize_comment(comment, auth, anonymous)
         for comment in serialized_comments
     ]
     serialized_comments = sorted(
@@ -363,6 +366,7 @@ def list_total_comments(node, auth, page):
         reverse=False,
     )
     return serialized_comments
+
 
 def get_files_comments(node):
     comments = []
@@ -374,10 +378,10 @@ def get_files_comments(node):
             comments.append(comment)
     return comments
 
+
 @must_be_logged_in
 @must_be_contributor_or_public
 def edit_comment(**kwargs):
-
     auth = kwargs['auth']
 
     comment = kwargs_to_comment(kwargs, owner=True)
@@ -401,7 +405,6 @@ def edit_comment(**kwargs):
 @must_be_logged_in
 @must_be_contributor_or_public
 def delete_comment(**kwargs):
-
     auth = kwargs['auth']
     comment = kwargs_to_comment(kwargs, owner=True)
     comment.delete(auth=auth, save=True)
@@ -412,7 +415,6 @@ def delete_comment(**kwargs):
 @must_be_logged_in
 @must_be_contributor_or_public
 def undelete_comment(**kwargs):
-
     auth = kwargs['auth']
     comment = kwargs_to_comment(kwargs, owner=True)
     comment.undelete(auth=auth, save=True)
@@ -443,6 +445,7 @@ def _update_comments_timestamp(auth, node, page='node', root_id=None):
 
         # if updating timestamp on the files/wiki total page...
         from website.addons.wiki.model import NodeWikiPage
+
         if root_id is None or root_id == 'None':
             ret = {}
             if page == 'files':
@@ -478,7 +481,6 @@ def update_comments_timestamp(auth, **kwargs):
 @must_be_logged_in
 @must_be_contributor_or_public
 def report_abuse(**kwargs):
-
     auth = kwargs['auth']
     user = auth.user
 
@@ -500,7 +502,6 @@ def report_abuse(**kwargs):
 @must_be_logged_in
 @must_be_contributor_or_public
 def unreport_abuse(**kwargs):
-
     auth = kwargs['auth']
     user = auth.user
 

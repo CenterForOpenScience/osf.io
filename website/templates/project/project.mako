@@ -199,15 +199,17 @@
             </div>
             <div class="addon-widget-body">
                 <div data-bind="if: commented">
-                    Show <a data-bind="click: showRecent">recently commented users</a> or
-                    <a data-bind="click: showFrequent">most frequently commented users</a>
-                    <div style="padding-top: 5px">
-                        <span data-bind="foreach: {data: discussion, afterAdd: setupToolTips}">
-                            <a data-toggle="tooltip" data-bind="attr: {href: url, title: fullname}" data-placement="bottom">
-                                <img data-bind="attr: {src: gravatarUrl}"/>
-                            </a>
-                        </span>
-                    </div>
+                    % if not node['anonymous']:
+                        Show <a data-bind="click: showRecent">recently commented users</a> or
+                        <a data-bind="click: showFrequent">most frequently commented users</a>
+                        <div style="padding-top: 5px">
+                            <span data-bind="foreach: {data: discussion, afterAdd: setupToolTips}">
+                                <a data-toggle="tooltip" data-bind="attr: {href: url, title: fullname}" data-placement="bottom">
+                                    <img data-bind="attr: {src: gravatarUrl}"/>
+                                </a>
+                            </span>
+                        </div>
+                    % endif
                     <div data-bind="template: {name: 'commentTemplate', foreach: recentComments}"></div>
                 </div>
                 <div data-bind="ifnot: commented">There are no comments in this ${node['node_type']} yet.</div>

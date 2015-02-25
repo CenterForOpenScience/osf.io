@@ -21,17 +21,19 @@
             % endif
         </h4>
 
-        <div data-bind="if: commented">
-            Show <a data-bind="click: showRecent">recently commented users</a> or
-            <a data-bind="click: showFrequent">most frequently commented users</a>
-            <div style="padding-bottom: 10px">
-                <span class="pull-right" data-bind="foreach: {data: discussion, afterAdd: setupToolTips}">
-                    <a data-toggle="tooltip" data-bind="attr: {href: url, title: fullname}" data-placement="bottom">
-                        <img data-bind="attr: {src: gravatarUrl}"/>
-                    </a>
-                </span>
+        % if not node['anonymous']:
+            <div data-bind="if: commented">
+                Show <a data-bind="click: showRecent">recently commented users</a> or
+                <a data-bind="click: showFrequent">most frequently commented users</a>
+                <div style="padding-bottom: 10px">
+                    <span class="pull-right" data-bind="foreach: {data: discussion, afterAdd: setupToolTips}">
+                        <a data-toggle="tooltip" data-bind="attr: {href: url, title: fullname}" data-placement="bottom">
+                            <img data-bind="attr: {src: gravatarUrl}"/>
+                        </a>
+                    </span>
+                </div>
             </div>
-        </div>
+        % endif
 
         <div data-bind="if: canComment" style="margin-top: 20px">
             <form class="form">
