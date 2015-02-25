@@ -365,6 +365,17 @@ class TestCommentsViews(DropboxAddonTestCase):
             root_title=path
         )
 
+        # List comments
+        url = self.project.api_url_for('list_comments')
+        res = self.app.get(url, {
+            'page': 'files',
+            'target': guid._id,
+            'rootId': guid._id
+        }, auth=self.user.auth)
+        comments = res.json.get('comments')
+        assert_equal(len(comments), 1)
+        assert_false(comments[0]['isHidden'])
+
         # Deauthorize
         url = self.project.api_url_for('dropbox_deauthorize')
         self.app.delete(url, auth=self.user.auth)
@@ -394,9 +405,9 @@ class TestCommentsViews(DropboxAddonTestCase):
         with patch_client('website.addons.dropbox.views.config.get_node_addon_client'):
             self.node_settings.folder = '/'
             # Create comment
-            path = 'Public/latest.txt'
+            path = u'Public/latest.txt'
             guid, _ = self.node_settings.find_or_create_file_guid(path)
-            Comment.create(
+            comment = Comment.create(
                 auth=Auth(self.user),
                 node=self.project,
                 target=guid,

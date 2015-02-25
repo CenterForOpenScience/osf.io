@@ -326,8 +326,7 @@ class TestOsfStorageFileRecord(StorageTestCase):
         # Add comment
         self.project.reload()
         path = self.path
-        if not path.startswith('/'):
-            path = '/' + path
+        path = path.lstrip('/')
         guid, _ = model.OsfStorageGuidFile.get_or_create(self.project, path)
         comment = Comment.create(
             auth=self.auth_obj,
@@ -370,8 +369,7 @@ class TestOsfStorageFileRecord(StorageTestCase):
         # Add comment
         self.project.reload()
         path = self.path
-        if not path.startswith('/'):
-            path = '/' + path
+        path = path.lstrip('/')
         guid, _ = model.OsfStorageGuidFile.get_or_create(self.project, path)
         comment = Comment.create(
             auth=self.auth_obj,
