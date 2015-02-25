@@ -389,9 +389,16 @@ li.pointer {
 /* Style for Ace wiki editor */
 .wiki-editor {
     position: relative;
-    height: 590px;
     border: solid;
     border-width: 1px;
+    width: 100%;
+    margin: auto;
+    -webkit-box-flex: 0 0 auto;  
+    -webkit-flex: 0 0 auto;       
+    -ms-flex: 0 0 auto;           
+    flex: 3 0 auto;
+    height: 400px; /* this will get overwritten by flex box */
+
 }
 
 /* Make wiki images responsive */
@@ -1127,12 +1134,48 @@ div.search-result  {
 .wmd-panel
 {
     width: 100%;
+    display: -webkit-box;  
+    display: -ms-flexbox;  
+    display: -webkit-flex; 
+    display: flex;
+    height: 620px;
+    -webkit-align-content: flex-start;
+    -ms-align-content: flex-start;
+    align-content: flex-start;
+    -webkit-flex-direction: column;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    -webkit-box-align: stretch;
+    -webkit-align-items: stretch;
+    -ms-flex-align: stretch;
+    align-items: stretch;
+    -webkit-flex-wrap: wrap;
+    -ms-flex-wrap: wrap;
+    flex-wrap: wrap;
+}
+
+.wmd-panel .list-inline {
+    width: 100%;
+    margin: auto;
+    -webkit-box-flex: 0 0 auto;  
+    -webkit-flex: 0 0 auto;       
+    -ms-flex: 0 0 auto;           
+    flex: 0 0 auto;
 }
 
 .wmd-button-bar
 {
     width: 100%;
     background-color: Silver;
+}
+
+#wmd-button-bar{
+    width: 100%;
+    margin: auto;
+    -webkit-box-flex: 0 0 auto;  
+    -webkit-flex: 0 0 auto;       
+    -ms-flex: 0 0 auto;           
+    flex: 0 0 auto;
 }
 
 .wmd-input
