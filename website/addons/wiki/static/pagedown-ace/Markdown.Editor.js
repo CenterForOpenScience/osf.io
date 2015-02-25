@@ -1,4 +1,7 @@
-﻿// needs Markdown.Converter.js at the moment
+﻿// OSF Note: This file has been changed for UI reasons and to prevent
+// automatic rendering. This is only here for the toolbar
+
+// needs Markdown.Converter.js at the moment
 
 (function () {
 
@@ -184,29 +187,16 @@
             panels;
 
         var undoManager;
-        this.run = function (aceEditor, previewWrapper) {
+
+        // This does not live render anymore
+        this.run = function (aceEditor) {
             if (panels)
                 return; // already initialized
 
             panels = new PanelCollection(idPostfix, aceEditor);
             var commandManager = new CommandManager(hooks, getString);
-            var previewManager = new PreviewManager(markdownConverter, panels, function () { hooks.onPreviewRefresh(); }, previewWrapper);
+            var previewManager = function(){};
             var uiManager;
-
-            /*benweet
-            if (!/\?noundo/.test(doc.location.href)) {
-                undoManager = new UndoManager(function () {
-                    previewManager.refresh();
-                    if (uiManager) // not available on the first call
-                        uiManager.setUndoRedoButtonStates();
-                }, panels);
-                this.textOperation = function (f) {
-                    undoManager.setCommandMode();
-                    f();
-                    that.refreshPreview();
-                }
-            }
-            */
 
             var useragent = ace.require('ace/lib/useragent');
             var getKey = function (identifier) {
@@ -217,9 +207,6 @@
             uiManager = new UIManager(idPostfix, panels, undoManager, previewManager, commandManager, options.helpButton, getString, getKey);
             uiManager.setUndoRedoButtonStates();
 
-            var forceRefresh = that.refreshPreview = function () { previewManager.refresh(true); };
-
-            forceRefresh();
             that.uiManager = uiManager;
         };
 
