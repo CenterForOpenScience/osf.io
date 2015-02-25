@@ -1,5 +1,5 @@
 from website.addons.citations import provider
-from .model import AddonMendeleyNodeSettings
+from .model import MendeleyNodeSettings
 from website.addons.citations.utils import serialize_account, serialize_folder, serialize_urls
 
 class MendeleyCitationsProvider(provider.CitationsProvider):
@@ -8,7 +8,7 @@ class MendeleyCitationsProvider(provider.CitationsProvider):
         super(MendeleyCitationsProvider, self).__init__('mendeley')
 
     def _serialize_model(self, node_addon, user):
-        ret = super(AddonMendeleyNodeSettings, node_addon).to_json(user)
+        ret = super(MendeleyNodeSettings, node_addon).to_json(user)
         ret.update({
             'listId': node_addon.mendeley_list_id,
             'accounts': self.user_accounts(user),

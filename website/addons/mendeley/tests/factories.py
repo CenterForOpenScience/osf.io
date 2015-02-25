@@ -20,12 +20,12 @@ class MendeleyAccountFactory(ExternalAccountFactory):
 
 
 class MendeleyUserSettingsFactory(ModularOdmFactory):
-    FACTORY_FOR = model.AddonMendeleyUserSettings
+    FACTORY_FOR = model.MendeleyUserSettings
 
     owner = SubFactory(UserFactory)
 
 
 class MendeleyNodeSettingsFactory(ModularOdmFactory):
-    FACTORY_FOR = model.AddonMendeleyNodeSettings
+    FACTORY_FOR = model.MendeleyNodeSettings
 
     owner = SubFactory(ProjectFactory)

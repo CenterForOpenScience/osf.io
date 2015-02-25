@@ -17,7 +17,7 @@ from website.addons.citations.utils import serialize_account, serialize_folder
 from . import settings
 from .api import APISession
 
-class AddonMendeleyUserSettings(AddonUserSettingsBase):
+class MendeleyUserSettings(AddonUserSettingsBase):
     oauth_grants = fields.DictionaryField()
 
     def _get_connected_accounts(self):
@@ -60,7 +60,7 @@ class AddonMendeleyUserSettings(AddonUserSettingsBase):
         return True
 
     def to_json(self, user):
-        ret = super(AddonMendeleyUserSettings, self).to_json(user)
+        ret = super(MendeleyUserSettings, self).to_json(user)
         ret['accounts'] = [
             serialize_account(each)
             for each in self._get_connected_accounts()
@@ -68,13 +68,13 @@ class AddonMendeleyUserSettings(AddonUserSettingsBase):
         return ret
 
 
-class AddonMendeleyNodeSettings(AddonNodeSettingsBase):
+class MendeleyNodeSettings(AddonNodeSettingsBase):
     external_account = fields.ForeignField('externalaccount',
                                            backref='connected')
 
     mendeley_list_id = fields.StringField()
 
-    user_settings = fields.ForeignField('addonmendeleyusersettings')
+    user_settings = fields.ForeignField('mendeleyusersettings')
 
     _api = None
 

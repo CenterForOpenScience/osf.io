@@ -83,7 +83,7 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
     def setUp(self):
         super(MendeleyNodeSettingsTestCase, self).setUp()
         self.node = ProjectFactory()
-        self.node_settings = model.AddonMendeleyNodeSettings(owner=self.node)
+        self.node_settings = model.MendeleyNodeSettings(owner=self.node)
         self.node_settings.save()
         self.user = self.node.creator
         self.user_settings = self.user.get_or_add_addon('mendeley')

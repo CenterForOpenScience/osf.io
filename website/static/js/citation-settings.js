@@ -3,6 +3,7 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
+var Raven = require('raven-js');
 var $osf = require('osfHelpers');
 
 ko.punches.enableAll();
@@ -54,23 +55,29 @@ $.extend(SettingsViewModel.prototype, {
     },
     disconnectAccount: function(account) {
         var self = this;
+        var url = '/api/v1/oauth/accounts/' + account.id + '/';
         $.ajax({
-            url: '/api/v1/oauth/accounts/' + account.id + '/',
+            url: url,
             type: 'DELETE'
         }).done(function(data) {
             self.updateAccounts();
-        }).fail(function() {
-            console.log('fail');
+        }).fail(function(xhr, status, error) {
+            Raven.captureMessage('Error while removing addon authorization for ' + account.id, {
+                url: url, status: status, error: error
+            });
         });
     },
     updateAccounts: function() {
         var self = this;
-        $.get('/api/v1/settings/' + self.name + '/accounts/').done(function(data) {
+        var url = '/api/v1/settings/' + self.name + '/accounts/';
+        $.get(url).done(function(data) {
             self.accounts(data.accounts.map(function(account) {
                 return new CitationAccount(account.display_name, account.id);
             }));
-        }).fail(function() {
-            console.log('fail');
+        }).fail(function(xhr, status, error) {
+            Raven.captureMessage('Error while updating addon account', {
+                url: url, status: status, error: error
+            });
         });
     }
 });
