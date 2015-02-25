@@ -3,7 +3,7 @@
 import logging
 import datetime
 from bson.code import Code
-from functools import partial
+from framework.tasks import app as celery_app
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from framework import sentry
@@ -55,12 +55,11 @@ def send_digest(grouped_digests):
                 name=user.fullname,
                 message=sorted_messages,
                 url=web_url_for('user_notifications', _absolute=True),
-                callback=partial(remove_sent_digest_notifications,
-                                 digest_notification_ids=digest_notification_ids)
+                callback=remove_sent_digest_notifications.s(digest_notification_ids=digest_notification_ids)
             )
 
-
-def remove_sent_digest_notifications(digest_notification_ids):
+@celery_app.task
+def remove_sent_digest_notifications(ret=None, digest_notification_ids=None):
     for digest_id in digest_notification_ids:
         DigestNotification.remove(Q('_id', 'eq', digest_id))
 

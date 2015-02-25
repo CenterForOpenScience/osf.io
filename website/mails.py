@@ -25,11 +25,6 @@ from mako.lookup import TemplateLookup, Template
 from framework.email.tasks import send_email
 from website import settings
 
-framework_send_email = (
-    send_email.delay
-    if settings.USE_CELERY
-    else send_email
-)
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +89,7 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
 
     """
     from_addr = from_addr or settings.FROM_EMAIL
-    mailer = mailer or framework_send_email
+    mailer = mailer or send_email
     subject = mail.subject(**context)
     message = mail.text(**context) if mimetype in ('plain', 'txt') else mail.html(**context)
     # Don't use ttls and login in DEBUG_MODE

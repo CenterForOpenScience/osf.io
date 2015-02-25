@@ -7,7 +7,6 @@ from flask import Flask
 from nose.tools import *  # noqa (PEP8 asserts)
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
-from functools import partial
 
 from framework.routing import Rule, json_renderer
 from framework.utils import secure_filename
@@ -278,10 +277,9 @@ class TestSendDigest(OsfTestCase):
         assert_equal(len(user_groups), 2)
         assert_equal(user_groups, expected)
 
-    @mock.patch('scripts.send_digest.partial')
     @mock.patch('scripts.send_digest.remove_sent_digest_notifications')
     @mock.patch('website.mails.send_mail')
-    def test_send_digest_called_with_correct_args(self, mock_send_mail, mock_callback, mock_partial):
+    def test_send_digest_called_with_correct_args(self, mock_send_mail, mock_callback):
         d = DigestNotificationFactory(
             user_id=UserFactory()._id,
             timestamp=datetime.datetime.utcnow(),
@@ -305,7 +303,7 @@ class TestSendDigest(OsfTestCase):
             name=user.fullname,
             message=group_messages_by_node(user_groups[last_user_index]['info']),
             url=web_url_for('user_notifications', _absolute=True),
-            callback=mock_partial(mock_callback, digest_notification_ids=digest_notification_ids)
+            callback=mock_callback.s(digest_notification_ids=digest_notification_ids)
         )
 
     def test_remove_sent_digest_notifications(self):
@@ -316,6 +314,6 @@ class TestSendDigest(OsfTestCase):
             node_lineage=[ProjectFactory()._id]
         )
         digest_id = d._id
-        remove_sent_digest_notifications([digest_id])
+        remove_sent_digest_notifications(ret=None, digest_notification_ids=[digest_id])
         with assert_raises(NoResultsFound):
             DigestNotification.find_one(Q('_id', 'eq', digest_id))

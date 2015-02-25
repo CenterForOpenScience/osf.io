@@ -10,7 +10,7 @@ from raven.contrib.celery import register_signal
 from website import settings
 
 
-app = Celery()
+app = Celery('scripts.send_digest')
 
 # TODO: Hardcoded settings module. Should be set using framework's config handler
 app.config_from_object('website.settings')
