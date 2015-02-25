@@ -1,5 +1,5 @@
 /**
- * Module that controls the Dropbox node settings. Includes Knockout view-model
+ * Module that controls the Google Drive node settings. Includes Knockout view-model
  * for syncing data, and HGrid-folderpicker for selecting a folder.
  */
 'use strict';
@@ -28,15 +28,12 @@ var ViewModel = function(url, selector, folderPicker) {
     // whether current user is authorizer of the addon
     self.userIsOwner = ko.observable(false);
 
-    //Api key required for Google picker
-    self.access_token = ko.observable();
-
     self.owner = ko.observable();
     self.ownerName = ko.observable();
     self.urls = ko.observable({});
     self.loadedFolders = ko.observable(false);
     self.loading = ko.observable(false);
-    self.currentFolder = ko.observable('None');
+    self.currentFolder = ko.observable(null);
 
     //Folderpicker specific
     self.folderPicker =  folderPicker;
@@ -59,12 +56,8 @@ var ViewModel = function(url, selector, folderPicker) {
         self.urls(response.result.urls);
         self.ownerName(response.result.ownerName);
         self.owner(response.result.urls.owner);
-        self.access_token (response.result.access_token);
         self.currentFolder(response.result.currentFolder);
 
-        if (self.currentFolder() == null) {
-            self.currentFolder('None');
-        }
         self.loadedSettings(true);
     }
 
@@ -76,10 +69,10 @@ var ViewModel = function(url, selector, folderPicker) {
         $.ajax({
             url: self.url,
             type: 'GET',
-            dataType: 'json',
-            success: onFetchSuccess,
-            error: onFetchError
-        });
+            dataType: 'json'
+        })
+        .done(onFetchSuccess)
+        .fail(onFetchError);
     }
 
     fetch();
@@ -112,7 +105,7 @@ var ViewModel = function(url, selector, folderPicker) {
             self.urls().create
         ).success(function(response){
             window.location.href = response.url;
-            self.changeMessage('Successfully authorized Google Drive account', 'text-primary');
+            self.changeMessage('Successfully authorized Google Drive account', 'text-success');
         }).fail(function() {
             self.changeMessage('Could not authorize at this moment', 'text-danger');
         });
@@ -165,19 +158,16 @@ var ViewModel = function(url, selector, folderPicker) {
         return $.ajax({
             url: self.urls().deauthorize,
             type: 'DELETE',
-            success: function() {
-                // Update observables
-                self.nodeHasAuth(false);
-                self.changeMessage('Deauthorized Google Drive.', 'text-warning', 3000);
-            },
-            error: function() {
-                self.changeMessage('Could not deauthorize Google Drive because of an error. Please try again later.',
-                                   'text-danger');
-            }
+        }).done(function() {
+            // Update observables
+            self.nodeHasAuth(false);
+            self.changeMessage('Deauthorized Google Drive.', 'text-warning', 3000);
+        }).fail(function() {
+            self.changeMessage('Could not deauthorize Google Drive because of an error. Please try again later.', 'text-danger');
         });
     }
 
-    /** Pop up a confirmation to deauthorize Dropbox from this node.
+    /** Pop up a confirmation to deauthorize Google Drive from this node.
      *  Send DELETE request if confirmed.
      */
     self.deauthorize = function() {
@@ -200,7 +190,7 @@ var ViewModel = function(url, selector, folderPicker) {
         evt.preventDefault();
         self.selected({
             id: item.data.id,
-            name: 'Google Drive/' + item.data.path,
+            name: 'Google Drive/' + (item.data.path === '/' ? '' : item.data.path),
             path: item.data.path
         });
         return false; // Prevent event propagation
@@ -237,7 +227,7 @@ var ViewModel = function(url, selector, folderPicker) {
     };
 
     self.showFolders = ko.computed(function(){
-        return self.nodeHasAuth();
+        return self.nodeHasAuth() && self.userIsOwner();
     });
 
     self.selectedFolderName = ko.computed(function() {

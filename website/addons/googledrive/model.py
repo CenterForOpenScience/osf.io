@@ -1,36 +1,30 @@
 # -*- coding: utf-8 -*-
 """Persistence layer for the google drive addon.
 """
+import os
 import base64
+from datetime import datetime
 
 from modularodm import fields, Q
 from modularodm.exceptions import ModularOdmException
 
 from framework.auth import Auth
+
+from website import settings
 from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
-from .utils import clean_path, GoogleDriveNodeLogger, check_access_token
+from website.addons.googledrive.client import GoogleAuthClient
+from website.addons.googledrive import settings as drive_settings
+from website.addons.googledrive.utils import GoogleDriveNodeLogger
 
 
 class GoogleDriveGuidFile(GuidFile):
     path = fields.StringField(index=True)
 
     @property
-    def file_name(self):
-        folder_name = '/' + clean_path(self.path)
-        if self.revision:
-            return '{0}_{1}_{2}.html'.format(self._id, self.revision, base64.b64encode(folder_name))
-        return '{0}_{1}_{2}.html'.format(self._id, self.unique_identifier, base64.b64encode(folder_name))
-
-    @property
-    def folder(self):
-        return self.node.get_addon('googledrive').folder
-
-    @property
     def waterbutler_path(self):
-        path = self.path
-        return path
+        return self.path.replace(self.folder, '', 1)
 
     @property
     def provider(self):
@@ -41,8 +35,38 @@ class GoogleDriveGuidFile(GuidFile):
         return 'revision'
 
     @property
+    def file_name(self):
+        if self.revision:
+            return '{0}_{1}_{2}.html'.format(self._id, self.revision, base64.b64encode(self.folder))
+        return '{0}_{1}_{2}.html'.format(self._id, self.unique_identifier, base64.b64encode(self.folder))
+
+    @property
+    def mfr_temp_path(self):
+        """Files names from Google Docs metadata doesn't necessarily correspond
+        to download file names. Use the `downloadExt` field in the Docs metadata
+        to save the temporary file with the appropriate extension.
+        """
+        ext = (
+            self._metadata_cache['extra'].get('downloadExt') or
+            os.path.splitext(self.name)[-1]
+        )
+        return os.path.join(
+            settings.MFR_TEMP_PATH,
+            self.node._id,
+            self.provider,
+            # Attempt to keep the original extension of the file for MFR detection
+            self.file_name + ext,
+        )
+
+    @property
+    def folder(self):
+        folder = self.node.get_addon('googledrive').folder_path
+        if folder == '/':
+            return ''
+        return '/' + folder
+
+    @property
     def unique_identifier(self):
-        print(self._metadata_cache['extra']['revisionId'])
         return self._metadata_cache['extra']['revisionId']
 
     @classmethod
@@ -67,22 +91,46 @@ class GoogleDriveUserSettings(AddonUserSettingsBase):
     """Stores user-specific information, including the Oauth access
     token.
     """
-    access_token = fields.StringField(required=False)
-    username = fields.StringField(required=False)
-    refresh_token = fields.StringField(required=False)
-    token_expiry = fields.IntegerField(required=False)
+    username = fields.StringField()
+    _access_token = fields.StringField()
+    refresh_token = fields.StringField()
+    token_expires_at = fields.DateTimeField()
+
+    @property
+    def access_token(self):
+        if self.needs_refresh:
+            self.refresh_access_token()
+        return self._access_token
+
+    @access_token.setter
+    def access_token(self, val):
+        self._access_token = val
+
+    def refresh_access_token(self):
+        client = GoogleAuthClient()
+        token = client.refresh(self._access_token, self.refresh_token)
+
+        self._access_token = token['access_token']
+        self.refresh_token = token['refresh_token']
+        self.token_expires_at = datetime.utcfromtimestamp(token['expires_at'])
+        self.save()
+
+    @property
+    def needs_refresh(self):
+        if self.token_expires_at is None:
+            return False
+        return (self.token_expires_at - datetime.utcnow()).total_seconds() < drive_settings.REFRESH_TIME
 
     @property
     def has_auth(self):
         return bool(self.access_token)
 
-    def clear(self):  # TODO : check for all the nodes (see dropbox)
+    def clear(self):
         self.access_token = None
-
+        self.refresh_token = None
         for node_settings in self.googledrivenodesettings__authorized:
             node_settings.deauthorize(Auth(self.owner))
             node_settings.save()
-        return self
 
     def delete(self, save=True):
         self.clear()
@@ -93,13 +141,23 @@ class GoogleDriveUserSettings(AddonUserSettingsBase):
 
 
 class GoogleDriveNodeSettings(AddonNodeSettingsBase):
+
+    folder_id = fields.StringField(default=None)
+    folder_path = fields.StringField(default=None)
+
     user_settings = fields.ForeignField(
         'googledriveusersettings', backref='authorized'
     )
 
-    folder = fields.StringField(default=None)
-    waterbutler_folder = fields.StringField(default=None)
-    # folderId = fields.StringField(default=None)  # TODO Remove, if not used
+    @property
+    def folder_name(self):
+        if not self.folder_id:
+            return None
+
+        if self.folder_path != '/':
+            return os.path.split(self.folder_path)[1]
+
+        return '/ (Full Google Drive)'
 
     @property
     def has_auth(self):
@@ -108,23 +166,25 @@ class GoogleDriveNodeSettings(AddonNodeSettingsBase):
 
     def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""
-        node = self.owner
-        folder = self.folder
-
-        self.folder = None
-        self.user_settings = None
-
         if add_log:
-            extra = {'folder': folder}
-            nodelogger = GoogleDriveNodeLogger(node=node, auth=auth)
+            extra = {'folder': self.folder_name}
+            nodelogger = GoogleDriveNodeLogger(node=self.owner, auth=auth)
             nodelogger.log(action="node_deauthorized", extra=extra, save=True)
 
-    def set_folder(self, folder, auth):
-        self.waterbutler_folder = folder
-        self.folder = folder['name']
+        self.folder_id = None
+        self.folder_path = None
+        self.user_settings = None
+
+        self.save()
+
+    def set_folder(self, folder, auth, add_log=True):
+        self.folder_id = folder['id']
+        self.folder_path = folder['path']
+
         # Add log to node
-        nodelogger = GoogleDriveNodeLogger(node=self.owner, auth=auth)
-        nodelogger.log(action="folder_selected", save=True)
+        if add_log:
+            nodelogger = GoogleDriveNodeLogger(node=self.owner, auth=auth)
+            nodelogger.log(action="folder_selected", save=True)
 
     def set_user_auth(self, user_settings):
         """Import a user's GoogleDrive authentication and create a NodeLog.
@@ -138,13 +198,20 @@ class GoogleDriveNodeSettings(AddonNodeSettingsBase):
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
             raise exceptions.AddonError('Addon is not authorized')
-        check_access_token(self.user_settings)
+
         return {'token': self.user_settings.access_token}
 
     def serialize_waterbutler_settings(self):
-        if not self.waterbutler_folder:
+        if not self.folder_id:
             raise exceptions.AddonError('Folder is not configured')
-        return {'folder': self.waterbutler_folder}
+
+        return {
+            'folder': {
+                'id': self.folder_id,
+                'name': self.folder_name,
+                'path': self.folder_path
+            }
+        }
 
     def create_waterbutler_log(self, auth, action, metadata):
         # cleaned_path = clean_path(metadata['path'])
@@ -157,7 +224,7 @@ class GoogleDriveNodeSettings(AddonNodeSettingsBase):
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
                 'path': metadata['path'],
-                'folder': self.folder,
+                'folder': self.folder_path,
 
                 'urls': {
                     'view': url,
@@ -167,6 +234,10 @@ class GoogleDriveNodeSettings(AddonNodeSettingsBase):
         )
 
     def find_or_create_file_guid(self, path):
+        path = os.path.join(self.folder_path, path.lstrip('/'))
+        if self.folder_path != '/':
+            path = '/' + path
+
         return GoogleDriveGuidFile.get_or_create(self.owner, path)
 
     # #### Callback overrides #####
@@ -212,29 +283,29 @@ class GoogleDriveNodeSettings(AddonNodeSettingsBase):
             category = node.project_or_component
             name = removed.fullname
             return (u'The Google Drive add-on for this {category} is authenticated by {name}. '
-                    'Removing this user will also remove write access to Dropbox '
+                    'Removing this user will also remove write access to Google Drive '
                     'unless another contributor re-authenticates the add-on.'
                     ).format(**locals())
 
     # backwards compatibility
     before_remove_contributor = before_remove_contributor_message
 
-    def after_register(self, node, registration, user, save=True):
-        """After registering a node, copy the user settings and save the
-        chosen folder.
+    # def after_register(self, node, registration, user, save=True):
+    #     """After registering a node, copy the user settings and save the
+    #     chosen folder.
 
-        :return: A tuple of the form (cloned_settings, message)
-        """
-        clone, message = super(GoogleDriveNodeSettings, self).after_register(
-            node, registration, user, save=False
-        )
-        # Copy user_settings and add registration data
-        if self.has_auth and self.folder is not None:
-            clone.user_settings = self.user_settings
-            clone.registration_data['folder'] = self.folder
-        if save:
-            clone.save()
-        return clone, message
+    #     :return: A tuple of the form (cloned_settings, message)
+    #     """
+    #     clone, message = super(GoogleDriveNodeSettings, self).after_register(
+    #         node, registration, user, save=False
+    #     )
+    #     # Copy user_settings and add registration data
+    #     if self.has_auth and self.folder is not None:
+    #         clone.user_settings = self.user_settings
+    #         clone.registration_data['folder'] = self.folder
+    #     if save:
+    #         clone.save()
+    #     return clone, message
 
     def after_fork(self, node, fork, user, save=True):
         """After forking, copy user settings if the user is the one who authorized

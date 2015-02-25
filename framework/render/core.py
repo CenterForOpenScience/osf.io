@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import os
-import re
 import time
 
 import mfr
@@ -28,21 +27,6 @@ def init_mfr(app):
         'ASSETS_FOLDER': os.path.join(app.static_folder, 'mfr'),
     })
     mfr.collect_static(dest=mfr.config['ASSETS_FOLDER'])
-
-
-mime_map = {
-    'application/pdf': mfr.ext.pdf.Handler,
-}
-
-def detect_by_mimetype(content_type):
-    """Detect MFR handler by content type.
-    :param str content_type: File content type
-    :return: Instance of `Handler` subclass or `None`
-    """
-    # Remove trailing text, e.g. "; charset=utf-8"
-    content_type = re.sub(r';.*', '', content_type).lower()
-    handler_class = mime_map.get(content_type)
-    return handler_class() if handler_class else None
 
 
 def render_is_done_or_happening(cache_path, temp_path):

@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
+from datetime import datetime
 from nose.tools import *  # noqa (PEP8 asserts)
+
+import mock
+from dateutil import relativedelta
 
 from framework.auth import Auth
 from tests.base import OsfTestCase
@@ -7,11 +11,99 @@ from tests.factories import UserFactory, ProjectFactory
 from website.addons.base import exceptions
 
 from website.addons.googledrive.model import (
-    GoogleDriveUserSettings, GoogleDriveNodeSettings
+    GoogleDriveUserSettings, GoogleDriveNodeSettings, GoogleDriveGuidFile
 )
 from website.addons.googledrive.tests.factories import (
     GoogleDriveNodeSettingsFactory, GoogleDriveUserSettingsFactory
 )
+
+
+class TestFileGuid(OsfTestCase):
+    def setUp(self):
+        super(OsfTestCase, self).setUp()
+        self.user = UserFactory()
+        self.project = ProjectFactory(creator=self.user)
+        self.project.add_addon('googledrive', auth=Auth(self.user))
+        self.node_addon = self.project.get_addon('googledrive')
+
+        self.node_addon.folder_id = 'Lulz'
+        self.node_addon.folder_path = 'baz'
+        self.node_addon.save()
+
+    def test_provider(self):
+        assert_equal('googledrive', GoogleDriveGuidFile().provider)
+
+    def test_correct_path(self):
+        guid = GoogleDriveGuidFile(node=self.project, path='/baz/foo/bar')
+
+        assert_equals(guid.path, '/baz/foo/bar')
+        assert_equals(guid.waterbutler_path, '/foo/bar')
+
+    @mock.patch('website.addons.base.requests.get')
+    def test_unique_identifier(self, mock_get):
+        mock_response = mock.Mock(ok=True, status_code=200)
+        mock_get.return_value = mock_response
+        mock_response.json.return_value = {
+            'data': {
+                'name': 'Morty',
+                'extra': {
+                    'revisionId': 'Ricksy'
+                }
+            }
+        }
+
+        guid = GoogleDriveGuidFile(node=self.project, path='/foo/bar')
+
+        guid.enrich()
+        assert_equals('Ricksy', guid.unique_identifier)
+
+    def test_node_addon_get_or_create(self):
+        guid, created = self.node_addon.find_or_create_file_guid('/foo/bar')
+
+        assert_true(created)
+        assert_equal(guid.path, '/baz/foo/bar')
+        assert_equal(guid.waterbutler_path, '/foo/bar')
+
+    def test_node_addon_get_or_create_finds(self):
+        guid1, created1 = self.node_addon.find_or_create_file_guid('/foo/bar')
+        guid2, created2 = self.node_addon.find_or_create_file_guid('/foo/bar')
+
+        assert_true(created1)
+        assert_false(created2)
+        assert_equals(guid1, guid2)
+
+    def test_node_addon_get_or_create_finds_changed(self):
+        self.node_addon.folder_path = 'baz'
+        self.node_addon.save()
+        self.node_addon.reload()
+
+        guid1, created1 = self.node_addon.find_or_create_file_guid('/foo/bar')
+
+        self.node_addon.folder_path = 'baz/foo'
+        self.node_addon.save()
+        self.node_addon.reload()
+        guid2, created2 = self.node_addon.find_or_create_file_guid('/bar')
+
+        assert_true(created1)
+        assert_false(created2)
+        assert_equals(guid1, guid2)
+
+    def test_node_addon_get_or_create_finds_changed_root(self):
+        self.node_addon.folder_path = 'baz'
+        self.node_addon.save()
+        self.node_addon.reload()
+
+        guid1, created1 = self.node_addon.find_or_create_file_guid('/foo/bar')
+
+        self.node_addon.folder_path = '/'
+        self.node_addon.save()
+        self.node_addon.reload()
+        guid2, created2 = self.node_addon.find_or_create_file_guid('/baz/foo/bar')
+
+        assert_true(created1)
+        assert_false(created2)
+        assert_equals(guid1, guid2)
+
 
 class TestGoogleDriveUserSettingsModel(OsfTestCase):
 
@@ -21,16 +113,90 @@ class TestGoogleDriveUserSettingsModel(OsfTestCase):
 
     def test_fields(self):
         user_settings = GoogleDriveUserSettings(
-            access_token='12345',
+            _access_token='12345',
             owner=self.user,
             username='name',
-            token_expiry='123456')
+            token_expiry=datetime.now())
         user_settings.save()
         retrieved = GoogleDriveUserSettings.load(user_settings._primary_key)
-        assert_true(retrieved.access_token)
+
         assert_true(retrieved.owner)
         assert_true(retrieved.username)
         assert_true(retrieved.token_expiry)
+        assert_true(retrieved.access_token)
+
+    @mock.patch.object(GoogleDriveUserSettings, 'needs_refresh', new_callable=mock.PropertyMock)
+    def test_access_token_checks(self, mock_refresh):
+        mock_refresh.return_value = False
+
+        user_settings = GoogleDriveUserSettings(
+            _access_token='12345',
+            owner=self.user,
+            username='name',
+            token_expiry=relativedelta.relativedelta()
+        )
+        user_settings.save()
+
+        user_settings.access_token
+
+        assert_true(mock_refresh.called_once)
+
+    @mock.patch.object(GoogleDriveUserSettings, 'refresh_access_token')
+    @mock.patch.object(GoogleDriveUserSettings, 'needs_refresh', new_callable=mock.PropertyMock)
+    def test_access_token_refreshes(self, mock_needs_refresh, mock_refresh):
+        mock_needs_refresh.return_value = True
+        user_settings = GoogleDriveUserSettings(
+            _access_token='12345',
+            owner=self.user,
+            username='name',
+            token_expiry=datetime.now())
+        user_settings.save()
+
+        user_settings.access_token
+
+        assert_true(mock_refresh.called_once)
+
+    @mock.patch.object(GoogleDriveUserSettings, 'refresh_access_token')
+    @mock.patch.object(GoogleDriveUserSettings, 'token_expires_at', datetime.utcnow() + relativedelta.relativedelta(seconds=5))
+    def test_access_token_refreshes_timeout(self, mock_refresh):
+        user_settings = GoogleDriveUserSettings(
+            _access_token='12345',
+            owner=self.user,
+            username='name',
+        )
+        user_settings.save()
+
+        user_settings.access_token
+
+        assert_true(mock_refresh.called_once)
+
+    @mock.patch.object(GoogleDriveUserSettings, 'refresh_access_token')
+    @mock.patch.object(GoogleDriveUserSettings, 'token_expires_at', datetime.utcnow() + relativedelta.relativedelta(minutes=4))
+    def test_access_token_refreshes_timeout_longer(self, mock_refresh):
+        user_settings = GoogleDriveUserSettings(
+            _access_token='12345',
+            owner=self.user,
+            username='name',
+        )
+        user_settings.save()
+
+        user_settings.access_token
+
+        assert_true(mock_refresh.called_once)
+
+    @mock.patch.object(GoogleDriveUserSettings, 'refresh_access_token')
+    @mock.patch.object(GoogleDriveUserSettings, 'token_expires_at', datetime.utcnow() + relativedelta.relativedelta(minutes=45))
+    def test_access_token_doesnt_refresh(self, mock_refresh):
+        user_settings = GoogleDriveUserSettings(
+            _access_token='12345',
+            owner=self.user,
+            username='name',
+        )
+        user_settings.save()
+
+        user_settings.access_token
+
+        assert_false(mock_refresh.called)
 
     def test_has_auth(self):
         user_settings = GoogleDriveUserSettingsFactory(access_token=None)
@@ -48,8 +214,8 @@ class TestGoogleDriveUserSettingsModel(OsfTestCase):
         user_settings.save()
 
         # Node settings no longer associated with user settings
+        assert_is(node_settings.folder_id, None)
         assert_is(node_settings.user_settings, None)
-        assert_is(node_settings.folder, None)
 
     def test_clear(self):
         node_settings = GoogleDriveNodeSettingsFactory.build()
@@ -80,9 +246,9 @@ class TestGoogleDriveUserSettingsModel(OsfTestCase):
         user_settings.save()
 
         # Node settings no longer associated with user settings
-        assert_is(node_settings.user_settings, None)
-        assert_is(node_settings.folder, None)
         assert_false(node_settings.deleted)
+        assert_is(node_settings.folder_id, None)
+        assert_is(node_settings.user_settings, None)
 
 
 class TestGoogleDriveNodeSettingsModel(OsfTestCase):
@@ -102,23 +268,29 @@ class TestGoogleDriveNodeSettingsModel(OsfTestCase):
     def test_fields(self):
         node_settings = GoogleDriveNodeSettings(user_settings=self.user_settings)
         node_settings.save()
+
         assert_true(node_settings.user_settings)
+        assert_true(hasattr(node_settings, 'folder_id'))
+        assert_true(hasattr(node_settings, 'folder_path'))
+        assert_true(hasattr(node_settings, 'folder_name'))
         assert_equal(node_settings.user_settings.owner, self.user)
-        assert_true(hasattr(node_settings, 'folder'))
-        assert_true(hasattr(node_settings, 'waterbutler_folder'))
 
     def test_folder_defaults_to_none(self):
         node_settings = GoogleDriveNodeSettings(user_settings=self.user_settings)
         node_settings.save()
-        assert_is_none(node_settings.folder)
+
+        assert_is_none(node_settings.folder_id)
+        assert_is_none(node_settings.folder_path)
 
     def test_has_auth(self):
         settings = GoogleDriveNodeSettings(user_settings=self.user_settings)
         settings.save()
+
         assert_false(settings.has_auth)
 
         settings.user_settings.access_token = '123abc'
         settings.user_settings.save()
+
         assert_true(settings.has_auth)
 
     # TODO use this test if delete function is used in googledrive/model
@@ -134,31 +306,34 @@ class TestGoogleDriveNodeSettingsModel(OsfTestCase):
     #     assert_equal(self.project.logs, old_logs)
 
     def test_deauthorize(self):
+        assert_true(self.node_settings.folder_id)
         assert_true(self.node_settings.user_settings)
-        assert_true(self.node_settings.folder)
+
         self.node_settings.deauthorize(auth=Auth(self.user))
         self.node_settings.save()
+
+        assert_is(self.node_settings.folder_id, None)
         assert_is(self.node_settings.user_settings, None)
-        assert_is(self.node_settings.folder, None)
 
         last_log = self.project.logs[-1]
-        assert_equal(last_log.action, 'googledrive_node_deauthorized')
         params = last_log.params
+
         assert_in('node', params)
-        assert_in('project', params)
         assert_in('folder', params)
+        assert_in('project', params)
+        assert_equal(last_log.action, 'googledrive_node_deauthorized')
 
     def test_set_folder(self):
         folder_name = {
-            'name': 'queen/freddie',
             'id': '1234',
-            'path': 'queen/freddie'
+            'name': 'freddie',
+            'path': 'queen/freddie',
         }
 
         self.node_settings.set_folder(folder_name, auth=Auth(self.user))
         self.node_settings.save()
         # Folder was set
-        assert_equal(self.node_settings.folder, folder_name['name'])
+        assert_equal(self.node_settings.folder_name, folder_name['name'])
         # Log was saved
         last_log = self.project.logs[-1]
         assert_equal(last_log.action, 'googledrive_folder_selected')
@@ -174,11 +349,12 @@ class TestGoogleDriveNodeSettingsModel(OsfTestCase):
         assert_equal(node_settings.user_settings, user_settings)
         # A log was saved
         last_log = node_settings.owner.logs[-1]
-        assert_equal(last_log.action, 'googledrive_node_authorized')
         log_params = last_log.params
-        assert_equal(log_params['folder'], node_settings.folder)
-        assert_equal(log_params['node'], node_settings.owner._primary_key)
+
         assert_equal(last_log.user, user_settings.owner)
+        assert_equal(log_params['folder'], node_settings.folder_path)
+        assert_equal(last_log.action, 'googledrive_node_authorized')
+        assert_equal(log_params['node'], node_settings.owner._primary_key)
 
     def test_serialize_credentials(self):
         self.user_settings.access_token = 'secret'
@@ -187,36 +363,49 @@ class TestGoogleDriveNodeSettingsModel(OsfTestCase):
         expected = {'token': self.node_settings.user_settings.access_token}
         assert_equal(credentials, expected)
 
-
     def test_serialize_credentials_not_authorized(self):
         self.node_settings.user_settings = None
         self.node_settings.save()
+
         with assert_raises(exceptions.AddonError):
             self.node_settings.serialize_waterbutler_credentials()
 
     def test_serialize_settings(self):
-        self.node_settings.waterbutler_folder = 'camera uploads/pizza.nii'
+        self.node_settings.folder_path = 'camera uploads/pizza.nii'
         self.node_settings.save()
+
         settings = self.node_settings.serialize_waterbutler_settings()
-        expected = {'folder': self.node_settings.waterbutler_folder}
+
+        expected = {
+            'folder': {
+                'id': '12345',
+                'name': 'pizza.nii',
+                'path': 'camera uploads/pizza.nii',
+            }
+        }
+
         assert_equal(settings, expected)
 
     def test_serialize_settings_not_configured(self):
-        self.node_settings.waterbutler_folder = None
+        self.node_settings.folder_id = None
         self.node_settings.save()
+
         with assert_raises(exceptions.AddonError):
             self.node_settings.serialize_waterbutler_settings()
 
     def test_create_log(self):
         action = 'file_added'
         path = '12345/camera uploads/pizza.nii'
+
         nlog = len(self.project.logs)
         self.node_settings.create_waterbutler_log(
             auth=Auth(user=self.user),
             action=action,
             metadata={'path': path},
         )
+
         self.project.reload()
+
         assert_equal(len(self.project.logs), nlog + 1)
         assert_equal(
             self.project.logs[-1].action,
@@ -279,5 +468,6 @@ class TestNodeSettingsCallbacks(OsfTestCase):
         self.project.remove_node(Auth(user=self.project.creator))
         # Ensure that changes to node settings have been saved
         self.node_settings.reload()
+        assert_true(self.node_settings.folder_id is None)
+        assert_true(self.node_settings.folder_path is None)
         assert_true(self.node_settings.user_settings is None)
-        assert_true(self.node_settings.folder is None)
