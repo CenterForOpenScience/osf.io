@@ -15,6 +15,7 @@ from framework.auth import Auth
 
 from website.addons.base import exceptions
 from website.addons.googledrive import settings
+from website.addons.googledrive.client import GoogleAuthClient
 from website.addons.googledrive.utils import GoogleDriveNodeLogger
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
@@ -90,23 +91,19 @@ class GoogleDriveUserSettings(AddonUserSettingsBase):
         self._access_token = val
 
     def refresh_access_token(self):
-        params = {
-            'grant_type': 'refresh_token',
-            'refresh_token': self.refresh_token,
-            'client_id': settings.CLIENT_ID,
-            'client_secret': settings.CLIENT_SECRET,
-        }
-        response = requests.post(settings.REFRESH_ENDPOINT, params=params)
-        response_json = response.json()
-        self._access_token = response_json['access_token']
-        self.token_expires_at = datetime.fromtimestamp(time.time() + response_json['expires_in'])
+        client = GoogleAuthClient()
+        token = client.refresh(self._access_token, self.refresh_token)
+
+        self._access_token = token['access_token']
+        self.refresh_token = token['refresh_token']
+        self.token_expires_at = datetime.utcfromtimestamp(token['expires_at'])
         self.save()
 
     @property
     def needs_refresh(self):
         if self.token_expires_at is None:
             return False
-        return (self.token_expires_at - datetime.utcnow()).seconds < settings.REFRESH_TIME
+        return (self.token_expires_at - datetime.utcnow()).total_seconds() < settings.REFRESH_TIME
 
     @property
     def has_auth(self):

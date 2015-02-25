@@ -75,13 +75,13 @@ def googledrive_oauth_finish(auth, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     auth_client = GoogleAuthClient()
-    credentials = auth_client.finish(code)
+    token = auth_client.finish(code)
 
-    user_settings.access_token = credentials['access_token']
-    user_settings.refresh_token = credentials['refresh_token']
-    user_settings.token_expires_at = datetime.fromtimestamp(credentials['expires_at'])
+    user_settings.access_token = token['access_token']
+    user_settings.refresh_token = token['refresh_token']
+    user_settings.token_expires_at = datetime.utcfromtimestamp(token['expires_at'])
 
-    drive_client = GoogleDriveClient(user_settings.access_token)
+    drive_client = GoogleDriveClient(token['access_token'])
     about = drive_client.about()
 
     user_settings.username = about['name']

@@ -86,10 +86,15 @@ class GoogleAuthClient(BaseClient):
             code=code
         )
 
-    def refresh(self, token):
+    def refresh(self, access_token, refresh_token):
         client = OAuth2Session(
             settings.CLIENT_ID,
-            token=token
+            token={
+                'access_token': access_token,
+                'refresh_token': refresh_token,
+                'token_type': 'Bearer',
+                'expires_in': '-30',
+            }
         )
         extra = {
             'client_id': settings.CLIENT_ID,
