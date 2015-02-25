@@ -30,6 +30,7 @@ from .exceptions import (
     PageCannotRenameError,
     PageConflictError,
     PageNotFoundError,
+    InvalidVersionError,
 )
 from .model import NodeWikiPage
 
@@ -55,6 +56,10 @@ WIKI_PAGE_CONFLICT_ERROR = HTTPError(http.CONFLICT, data=dict(
 WIKI_PAGE_NOT_FOUND_ERROR = HTTPError(http.NOT_FOUND, data=dict(
     message_short='Not found',
     message_long='A wiki page could not be found.'
+))
+WIKI_INVALID_VERSION_ERROR = HTTPError(http.BAD_REQUEST, data=dict(
+    message_short='Invalid request',
+    message_long='The requested version of this wiki page does not exist.'
 ))
 
 
@@ -238,16 +243,19 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     else:
         panels_used = ['view', 'menu']
 
-    view = wiki_utils.format_wiki_version(
-        version=request.args.get('view'),
-        num_versions=len(versions),
-        allow_preview=True,
-    )
-    compare = wiki_utils.format_wiki_version(
-        version=request.args.get('compare'),
-        num_versions=len(versions),
-        allow_preview=False,
-    )
+    try:
+        view = wiki_utils.format_wiki_version(
+            version=request.args.get('view'),
+            num_versions=len(versions),
+            allow_preview=True,
+        )
+        compare = wiki_utils.format_wiki_version(
+            version=request.args.get('compare'),
+            num_versions=len(versions),
+            allow_preview=False,
+        )
+    except InvalidVersionError:
+        raise WIKI_INVALID_VERSION_ERROR
 
     # Default versions for view and compare
     version_settings = {
@@ -298,6 +306,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         'toc': toc,
         'category': node.category,
         'panels_used': panels_used,
+        'num_columns': len(set(panels_used).intersection({'view', 'edit', 'compare'})),
         'urls': {
             'api': _get_wiki_api_urls(node, wiki_name, {
                 'content': node.api_url_for('wiki_page_content', wname=wiki_name),
