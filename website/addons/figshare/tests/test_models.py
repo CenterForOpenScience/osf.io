@@ -266,7 +266,7 @@ class TestCallbacks(OsfTestCase):
             self.node_settings.user_settings,
             None
         )
-        assert_in("You can re-authenticate on the Settings page", msg)
+        assert_in("You can re-authenticate", msg)
 
     def test_after_remove_contributor_authenticator_self(self):
         msg = self.node_settings.after_remove_contributor(
@@ -281,7 +281,7 @@ class TestCallbacks(OsfTestCase):
             self.node_settings.user_settings,
             None
         )
-        assert_not_in("You can re-authenticate on the Settings page", msg)
+        assert_not_in("You can re-authenticate", msg)
 
     def test_after_fork_authenticator(self):
         fork = ProjectFactory()

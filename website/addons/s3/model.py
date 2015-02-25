@@ -321,7 +321,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
                       'by {user}, authentication information has been deleted.'\
                 .format(category=node.category_display, title=node.title, user=removed.fullname)
 
-            if auth.user != removed:
+            if not auth or auth.user != removed:
                 url = node.web_url_for('node_setting')
                 message += ' You can re-authenticate on the ' \
                            '<a href="{url}">Settings</a> page.'.format(url=url)

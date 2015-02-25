@@ -152,7 +152,7 @@ class TestCallbacks(OsfTestCase):
         )
         assert_equal(self.node_settings.user_settings, None)
         assert_true(message)
-        assert_not_in("You can re-authenticate on the Settings page", message)
+        assert_not_in("You can re-authenticate", message)
 
     def test_after_remove_contributor_not_self(self):
         auth = Auth(user=self.non_authenticator)
@@ -161,7 +161,7 @@ class TestCallbacks(OsfTestCase):
         )
         assert_equal(self.node_settings.user_settings, None)
         assert_true(message)
-        assert_in("You can re-authenticate on the Settings page", message)
+        assert_in("You can re-authenticate", message)
 
     def test_registration_settings(self):
         registration = ProjectFactory()
