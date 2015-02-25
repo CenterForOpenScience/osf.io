@@ -62,7 +62,7 @@ def googledrive_oauth_finish(auth, **kwargs):
     user = auth.user
     node = Node.load(session.data.pop('googledrive_auth_nid', None))
     state = session.data.pop('googledrive_auth_state')
-    
+
     # Handle request cancellations from Google's API
     if request.args.get('error'):
         flash('Google Drive authorization request cancelled.')
