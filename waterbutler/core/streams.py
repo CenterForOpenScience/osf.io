@@ -281,7 +281,7 @@ class FormDataStream(MultiStream):
     def read(self, n=-1):
         if self.can_add_more:
             self.finalize()
-        return super().read(n=n)
+        return (yield from super().read(n=n))
 
     def finalize(self):
         assert self.stream, 'Must add at least one stream to finalize'
