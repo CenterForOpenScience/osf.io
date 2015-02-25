@@ -1,5 +1,3 @@
-
-<link rel="stylesheet" href="/static/addons/dropbox/dropbox.css">
 <div id="dropboxScope" class="scripted">
     <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
     <h4 class="addon-title">
@@ -52,12 +50,12 @@
                     <button data-bind="visible: validCredentials,
                                         click: togglePicker,
                                         css: {active: currentDisplay() === PICKER}"
-                            class="btn btn-sm btn-dropbox"><i class="icon-edit"></i> Change</button>
+                            class="btn btn-sm btn-addon"><i class="icon-edit"></i> Change</button>
                     <button data-bind="attr.disabled: disableShare,
                                         visible: validCredentials,
                                         click: toggleShare,
                                         css: {active: currentDisplay() === SHARE}"
-                        class="btn btn-sm btn-dropbox"><i class="icon-share-alt"></i> Share on Dropbox
+                        class="btn btn-sm btn-addon"><i class="icon-share-alt"></i> Share on Dropbox
                             <span data-bind="visible: folder().path === '/'">(Cannot share root folder)</span>
                         </button>
                 </div>
@@ -70,7 +68,7 @@
 
                     <div data-bind="visible: currentDisplay() === PICKER">
                         <div id="myDropboxGrid"
-                             class="filebrowser hgrid dropbox-folder-picker"></div>
+                             class="filebrowser dropbox-folder-picker"></div>
                     </div>
 
                     <!-- Share -->
