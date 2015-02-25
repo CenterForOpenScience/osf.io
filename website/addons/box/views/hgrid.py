@@ -84,7 +84,7 @@ def box_hgrid_data_contents(node_addon, auth, **kwargs):
             'path': '/',
             'id': folder_id,
             'kind': rubeus.FOLDER,
-            'name': '/ (Full Box)',
+            'name': 'All Files',
         })
 
     return contents
@@ -93,7 +93,7 @@ def box_hgrid_data_contents(node_addon, auth, **kwargs):
 def box_addon_folder(node_settings, auth, **kwargs):
     """Return the Rubeus/HGrid-formatted response for the root folder only."""
     # Quit if node settings does not have authentication
-    if not node_settings.has_auth or not node_settings.folder:
+    if not node_settings.has_auth or node_settings.folder is None:
         return None
 
     node = node_settings.owner

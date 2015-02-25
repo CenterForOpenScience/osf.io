@@ -32,7 +32,7 @@ def serialize_folder(metadata):
     """
     # if path is root
     if metadata['path'] == '' or metadata['path'] == '/':
-        name = '/ (Full Box)'
+        name = 'All Files'
     else:
         name = 'Box' + metadata['path']
     return {
@@ -48,7 +48,7 @@ def get_folders(client):
     metadata = client.metadata('/', list=True)
     # List each folder, including the root
     root = {
-        'name': '/ (Full Box)',
+        'name': 'All Files',
         'path': '',
     }
     folders = [root] + [
@@ -113,14 +113,14 @@ def serialize_settings(node_settings, current_user, client=None):
         )
         result['ownerName'] = user_settings.owner.fullname
         # Show available folders
-        path = node_settings.folder
+        # path = node_settings.folder
 
-        if path is None:
+        if node_settings.folder_id is None:
             result['folder'] = {'name': None, 'path': None}
         else:
             result['folder'] = {
-                'name': 'Box' + path,
-                'path': path,
+                'name': 'Box: ' + node_settings.folder,
+                'path': node_settings.full_folder_path,
             }
     return result
 
