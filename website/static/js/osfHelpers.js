@@ -179,16 +179,22 @@ var throttle = function(func, wait, options) {
     var context, args, result;
     var timeout = null;
     var previous = 0;
-    if (!options) options = {};
+    if (!options) {
+        options = {};
+    }
     var later = function() {
         previous = options.leading === false ? 0 : new Date().getTime();
         timeout = null;
         result = func.apply(context, args);
-        if (!timeout) context = args = null;
+        if (!timeout) {
+            context = args = null;
+        }
     };
     return function() {
         var now = new Date().getTime();
-        if (!previous && options.leading === false) previous = now;
+        if (!previous && options.leading === false) {
+            previous = now;
+        }
             var remaining = wait - (now - previous);
             context = this;
             args = arguments;
@@ -197,12 +203,57 @@ var throttle = function(func, wait, options) {
             timeout = null;
             previous = now;
             result = func.apply(context, args);
-            if (!timeout) context = args = null;
+            if (!timeout) {
+                context = args = null;
+            }
         } else if (!timeout && options.trailing !== false) {
             timeout = setTimeout(later, remaining);
         }
         return result;
     };
+};
+
+// From Underscore.js, MIT License
+//
+// Returns a function, that, as long as it continues to be invoked, will not
+// be triggered. The function will be called after it stops being called for
+// N milliseconds. If `immediate` is passed, trigger the function on the
+// leading edge, instead of the trailing.
+
+var debounce = function(func, wait, immediate) {
+  var timeout, args, context, timestamp, result;
+
+  var later = function() {
+    var last = new Date().getTime() - timestamp;
+
+    if (last < wait && last >= 0) {
+      timeout = setTimeout(later, wait - last);
+    } else {
+      timeout = null;
+      if (!immediate) {
+        result = func.apply(context, args);
+        if (!timeout) {
+            context = args = null;
+        }
+      }
+    }
+  };
+
+  return function() {
+    context = this;
+    args = arguments;
+    timestamp = new Date().getTime();
+    var callNow = immediate && !timeout;
+    if (!timeout) {
+        timeout = setTimeout(later, wait);
+    }
+    if (callNow) {
+      result = func.apply(context, args);
+      context = args = null;
+    }
+
+    return result;
+  };
 };
 
 ///////////
@@ -302,5 +353,6 @@ module.exports = window.$.osf = {
     trackPiwik: trackPiwik,
     applyBindings: applyBindings,
     FormattableDate: FormattableDate,
-    throttle: throttle
+    throttle: throttle,
+    debounce: debounce
 };

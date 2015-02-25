@@ -19,6 +19,7 @@ from framework.guid.model import GuidStoredObject
 from website import settings
 from website.addons.base import AddonNodeSettingsBase
 from website.addons.wiki import utils as wiki_utils
+from website.addons.wiki.settings import WIKI_CHANGE_DATE
 from website.project.model import write_permissions_revoked
 
 from .exceptions import (
@@ -53,7 +54,7 @@ def subscribe_on_write_permissions_revoked(node):
 
 
 def build_wiki_url(node, label, base, end):
-    return node.web_url_for('project_wiki_page', wname=label)
+    return node.web_url_for('project_wiki_view', wname=label)
 
 
 def validate_page_name(value):
@@ -114,6 +115,10 @@ class NodeWikiPage(GuidStoredObject):
     @property
     def url(self):
         return '{}wiki/{}/'.format(self.node.url, self.page_name)
+
+    @property
+    def rendered_before_update(self):
+        return self.date < WIKI_CHANGE_DATE
 
     def html(self, node):
         """The cleaned HTML of the page"""
