@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """OAuth views for the Box addon."""
+import time
 import logging
 import httplib as http
 from datetime import datetime
@@ -7,6 +8,7 @@ from datetime import datetime
 import furl
 import requests
 from flask import request
+from box import BoxClient, CredentialsV2
 from werkzeug.wrappers import BaseResponse
 
 from framework.flask import redirect  # VOL-aware redirect
@@ -23,8 +25,9 @@ from website.project.decorators import must_have_addon
 
 from box.client import BoxClientException
 from website.addons.box import settings
+from website.addons.box.model import BoxOAuthSettings
 from website.addons.box.utils import handle_box_error
-from website.addons.box.client import get_client_from_user_settings, disable_access_token
+from website.addons.box.client import get_client_from_user_settings
 
 logger = logging.getLogger(__name__)
 
@@ -114,22 +117,31 @@ def box_oauth_finish(auth, **kwargs):
     if isinstance(result, BaseResponse):
         return result
 
+    client = BoxClient(CredentialsV2(
+        result['access_token'],
+        result['refresh_token'],
+        settings.BOX_KEY,
+        settings.BOX_SECRET,
+    ))
+
+    about = client.get_user_info()
+    oauth_settings = BoxOAuthSettings.load(about['id'])
+
+    if not oauth_settings:
+        oauth_settings = BoxOAuthSettings(user_id=about['id'], username=about['name'])
+        oauth_settings.save()
+
+    oauth_settings.refresh = result['refresh_token']
+    oauth_settings.access_token = result['access_token']
+    oauth_settings.expires_at = datetime.utcfromtimestamp(time.time() + 3600)
+
     # Make sure user has box enabled
     user.add_addon('box')
     user.save()
 
     user_settings = user.get_addon('box')
+    user_settings.oauth_settings = oauth_settings
 
-    user_settings.last_refreshed = datetime.utcnow()
-    user_settings.token_type = result['token_type']
-    user_settings.access_token = result['access_token']
-    user_settings.restricted_to = result['restricted_to']
-    user_settings.refresh_token = result['refresh_token']
-
-    client = get_client_from_user_settings(user_settings)
-
-    user_settings.box_info = client.get_user_info()
-    user_settings.box_id = user_settings.box_info['id']
     user_settings.save()
 
     flash('Successfully authorized Box', 'success')
@@ -148,12 +160,6 @@ def box_oauth_finish(auth, **kwargs):
 @must_have_addon('box', 'user')
 def box_oauth_delete_user(user_addon, auth, **kwargs):
     """View for deauthorizing Box."""
-    try:
-        disable_access_token(user_addon)
-    except BoxClientException as error:
-        if error.status_code != 401:
-            raise HTTPError(http.BAD_REQUEST)
-
     user_addon.clear()
     user_addon.save()
 
@@ -183,7 +189,7 @@ def box_user_config_get(user_addon, auth, **kwargs):
     return {
         'result': {
             'urls': urls,
-            'boxName': user_addon.box_info,
+            'boxName': user_addon.username,
             'userHasAuth': user_addon.has_auth,
             'validCredentials': valid_credentials,
             'nNodesAuthorized': len(user_addon.nodes_authorized),
