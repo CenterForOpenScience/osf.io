@@ -89,17 +89,16 @@ $(document).ready(function () {
     $('*[data-osf-panel]').osfPanel({
         buttonElement : '.switch',
         onSize : 'xs',
-        'onclick' : function (title, thisbtn, event ) {
+        'onclick' : function (event, title, buttonState, thisbtn, col) {
             // this = all the column elements; an array
             // title = Text of the button
+            // buttonState = the visibility of column after click, taen from data-osf-toggle attribute, 
             // thisbtn = $(this);
-            // thisbtn.hasClass('btn-primary')
-
+            // col = the $() for the column this button links to 
             bodyElement.trigger('togglePanel', [
                 title.toLowerCase(),
-                thisbtn.hasClass('btn-primary')
+                buttonState
             ]);
-
             if (typeof editor !== 'undefined') { ace.edit(editor).resize(); } // jshint ignore: line
 
         }

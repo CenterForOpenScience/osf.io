@@ -155,7 +155,7 @@ $(document).ready(function() {
 
     // Render the raw markdown of the wiki
     if (!ctx.usePythonRender) {
-        var markdownElement = $('#markdownItRender');
+        var markdownElement = $('#markdownRender');
         var request = $.ajax({
             url: wikiContentUrl
         });

@@ -809,6 +809,10 @@ h1.node-title, h1.node-parent-title {
   margin-top: 0.3em;
 }
 
+.compare-version-text{
+    margin-right: 5px;
+}
+
 .wiki-title {
     line-height: 36px;
     border-bottom: none;

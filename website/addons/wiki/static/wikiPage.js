@@ -178,13 +178,26 @@ function ViewModel(options){
     self.renderedCompare = ko.observable('');
     self.allowMathjaxification = ko.observable(true);
     self.allowFullRender = ko.observable(true);
+    self.viewVersionDisplay = ko.computed(function() {
+        var versionString = '';
+        if (self.viewVersion() === 'preview') {
+            versionString = 'Live preview';
+        } else if (self.viewVersion() === 'current'){
+            versionString = 'Current version';
+        } else if (self.viewVersion() === 'previous'){
+            versionString = 'Previous version';
+        } else {
+            versionString = 'Version ' + self.viewVersion();
+        }
+        return versionString;
+    });
 
     self.currentURL = ko.computed(function() {
         var url = self.pageURL;
 
         // Default view is special cased
         if (!self.editVis() && self.viewVis() && self.viewVersion() === 'current' && !self.compareVis() && self.menuVis()) {
-            window.history.replaceState({}, '', url);  // jshint ignore: line
+            window.history.replaceState({}, '', url);
             return;
         }
 
@@ -213,7 +226,7 @@ function ViewModel(options){
             url += paramPrefix + 'menu';
         }
 
-        window.history.replaceState({}, '', url);  // jshint ignore: line
+        window.history.replaceState({}, '', url);
     });
 
 
