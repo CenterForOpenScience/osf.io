@@ -140,7 +140,7 @@
             <br />
 
             <label>Description (Optional)</label>
-            <textarea data-bind="value: description"class="form-control newDiscription" name="description"
+            <textarea data-bind="value: description"class="form-control resize-vertical" name="description"
                 ></textarea>
             <br />
             <label>Template (Optional)</label>
