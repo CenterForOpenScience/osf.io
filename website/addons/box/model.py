@@ -126,6 +126,7 @@ class BoxOAuthSettings(StoredObject):
             # remove the object as its the last instance.
             BoxOAuthSettings.remove_one(self)
 
+    @property
     def _needs_refresh(self):
         if self.expires_at is None:
             return False
