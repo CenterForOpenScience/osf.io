@@ -389,7 +389,7 @@ li.pointer {
 /* Style for Ace wiki editor */
 .wiki-editor {
     position: relative;
-    height: 540px;
+    height: 450px;
     border: solid;
     border-width: 1px;
 }
