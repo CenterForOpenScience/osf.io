@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from website.addons.citations import provider
 
 from .model import AddonZoteroNodeSettings

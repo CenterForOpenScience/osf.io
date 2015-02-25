@@ -13,5 +13,3 @@ function MendeleyNodeConfig(selector, url, folderPicker) {
 }
 
 module.exports = MendeleyNodeConfig;
-
-
