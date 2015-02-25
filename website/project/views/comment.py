@@ -161,7 +161,7 @@ def add_comment(**kwargs):
            nodeType=node.project_or_component,
            event="comment_replies" if is_reply(target) else "comments",
            timestamp=datetime.utcnow().replace(tzinfo=pytz.utc),
-           commenter=auth.user._id,
+           commenter=auth.user,
            gravatar_url=auth.user.gravatar_url,
            content=content,
            parent_comment=target.content if is_reply(target) else "",

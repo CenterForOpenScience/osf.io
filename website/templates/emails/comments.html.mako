@@ -4,7 +4,7 @@
     <tr>
         <td width="40" class="icon" valign="middle"> <img class="avatar" src="${gravatar_url}" width="48" alt="avatar" /> </td>
         <td style="line-height: 17px;">
-            <span class="person">${User.load(commenter).fullname} </span>
+            <span class="person">${commenter.fullname} </span>
             <span class="text"> commented on your ${nodeType}</span>
             <span class="timestamp"> at ${localized_timestamp}: </span>
             <span class="content">"${content}"</span>

@@ -85,7 +85,7 @@ def email_transactional(subscribed_user_ids, uid, event, **context):
         context['localized_timestamp'] = localize_timestamp(context.get('timestamp'), user)
         message = mails.render_message(template, **context)
 
-        if context.get('commenter') != user._id:
+        if context.get('commenter')._id != user._id:
             mails.send_mail(
                 to_addr=email,
                 mail=mails.TRANSACTIONAL,
@@ -116,7 +116,7 @@ def email_digest(subscribed_user_ids, uid, event, **context):
         context['localized_timestamp'] = localize_timestamp(context.get('timestamp'), user)
         message = mails.render_message(template, **context)
 
-        if context.get('commenter') != user._id:
+        if context.get('commenter')._id != user._id:
             digest = DigestNotification(timestamp=context.get('timestamp'),
                                         event=event,
                                         user_id=user._id,
@@ -158,9 +158,9 @@ notifications = {
 
 email_templates = {
     'comments': {
-        'subject': '${commenter} commented on "${title}".'
+        'subject': '${commenter.fullname} commented on "${title}".'
     },
     'comment_replies': {
-        'subject': '${commenter} replied to your comment on "${title}".'
+        'subject': '${commenter.fullname} replied to your comment on "${title}".'
     }
 }
