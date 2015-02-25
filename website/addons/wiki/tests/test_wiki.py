@@ -21,10 +21,11 @@ from website.addons.wiki.views import _serialize_wiki_toc, _get_wiki_web_urls, _
 from website.addons.wiki.model import NodeWikiPage, render_content
 from website.addons.wiki.utils import (
     get_sharejs_uuid, generate_private_uuid, share_db, delete_share_doc,
-    migrate_uuid,
+    migrate_uuid, format_wiki_version,
 )
 from website.addons.wiki.tests.config import EXAMPLE_DOCS, EXAMPLE_OPS
 from framework.auth import Auth
+from framework.exceptions import HTTPError
 from framework.mongo.utils import to_mongo_key
 
 # forward slashes are not allowed, typically they would be replaced with spaces
@@ -274,10 +275,10 @@ class TestWikiViews(OsfTestCase):
         assert_equal(res.status_code, 200)
         url = self.project.web_url_for('project_wiki_view', wname='home', view=3)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 400)
         url = self.project.web_url_for('project_wiki_view', wname='home', view=0)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 400)
 
     def test_project_wiki_compare_returns_200(self):
         self.project.update_node_wiki('home', 'updated content', Auth(self.user))
@@ -295,10 +296,10 @@ class TestWikiViews(OsfTestCase):
         assert_equal(res.status_code, 200)
         url = self.project.web_url_for('project_wiki_view', wname='home', compare=3)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 400)
         url = self.project.web_url_for('project_wiki_view', wname='home', compare=0)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 400)
 
     def test_wiki_page_creation_strips_whitespace(self):
         # Regression test for:
@@ -1079,3 +1080,35 @@ class TestWikiUtils(OsfTestCase):
         self.project.reload()
         assert_not_equal(share_uuid, new_uuid)
         assert_equal(self.project.wiki_private_uuids[wkey], new_uuid)
+
+    def test_format_wiki_version(self):
+        assert_is_none(format_wiki_version(None, 5, False))
+        assert_is_none(format_wiki_version('', 5, False))
+        assert_equal(format_wiki_version('3', 5, False), 3)
+        assert_equal(format_wiki_version('4', 5, False), 'previous')
+        assert_equal(format_wiki_version('5', 5, False), 'current')
+        assert_equal(format_wiki_version('previous', 5, False), 'previous')
+        assert_equal(format_wiki_version('current', 5, False), 'current')
+        assert_equal(format_wiki_version('preview', 5, True), 'preview')
+        assert_equal(format_wiki_version('current', 0, False), 'current')
+        assert_equal(format_wiki_version('preview', 0, True), 'preview')
+
+        with assert_raises(HTTPError) as cm:
+            format_wiki_version('1', 0, False)
+        assert_equal(cm.exception.code, http.BAD_REQUEST)
+        with assert_raises(HTTPError) as cm:
+            format_wiki_version('previous', 0, False)
+        assert_equal(cm.exception.code, http.BAD_REQUEST)
+        with assert_raises(HTTPError) as cm:
+            format_wiki_version('6', 5, False)
+        assert_equal(cm.exception.code, http.BAD_REQUEST)
+        with assert_raises(HTTPError) as cm:
+            format_wiki_version('0', 5, False)
+        assert_equal(cm.exception.code, http.BAD_REQUEST)
+        with assert_raises(HTTPError) as cm:
+            format_wiki_version('preview', 5, False)
+        assert_equal(cm.exception.code, http.BAD_REQUEST)
+        with assert_raises(HTTPError) as cm:
+            format_wiki_version('nonsense', 5, True)
+        assert_equal(cm.exception.code, http.BAD_REQUEST)
+

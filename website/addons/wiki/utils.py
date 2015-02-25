@@ -1,3 +1,4 @@
+import httplib as http
 import os
 import urllib
 import uuid
@@ -5,6 +6,7 @@ import uuid
 from pymongo import MongoClient
 import requests
 
+from framework.exceptions import HTTPError
 from framework.mongo.utils import to_mongo_key
 
 from website import settings
@@ -119,3 +121,31 @@ def broadcast_to_sharejs(action, sharejs_uuid, node=None, wiki_name='home'):
         requests.post(url)
     except requests.ConnectionError:
         pass    # Assume sharejs is not online
+
+
+def format_wiki_version(version, num_versions, allow_preview):
+    """
+    :param str version: 'preview', 'current', 'previous', '1', '2', ...
+    :param int num_versions:
+    :param allow_preview: True if view, False if compare
+    """
+
+    if not version:
+        return
+
+    if version.isdigit():
+        version = int(version)
+        if version > num_versions or version < 1:
+            raise HTTPError(http.BAD_REQUEST)
+        elif version == num_versions:
+            return 'current'
+        elif version == num_versions - 1:
+            return 'previous'
+    elif version != 'current' and version != 'previous':
+        if allow_preview and version == 'preview':
+            return version
+        raise HTTPError(http.BAD_REQUEST)
+    elif version == 'previous' and num_versions == 0:
+        raise HTTPError(http.BAD_REQUEST)
+
+    return version

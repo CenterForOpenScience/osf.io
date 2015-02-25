@@ -238,17 +238,16 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     else:
         panels_used = ['view', 'menu']
 
-    view = request.args.get('view', '')
-    if view.isdigit():
-        view = int(view)
-        if view > len(versions) or view < 1:
-            raise WIKI_PAGE_NOT_FOUND_ERROR
-
-    compare = request.args.get('compare', '')
-    if compare.isdigit():
-        compare = int(compare)
-        if compare > len(versions) or compare < 1:
-            raise WIKI_PAGE_NOT_FOUND_ERROR
+    view = wiki_utils.format_wiki_version(
+        version=request.args.get('view'),
+        num_versions=len(versions),
+        allow_preview=True,
+    )
+    compare = wiki_utils.format_wiki_version(
+        version=request.args.get('compare'),
+        num_versions=len(versions),
+        allow_preview=False,
+    )
 
     # Default versions for view and compare
     version_settings = {
