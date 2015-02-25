@@ -17,7 +17,7 @@ from website.util import permissions
 from ..utils import serialize_settings, serialize_urls
 
 @collect_auth
-@must_have_addon('googledrive','node')
+@must_have_addon('googledrive', 'node')
 @must_have_permission(permissions.WRITE)
 def googledrive_config_get(node_addon, auth, **kwargs):
     """API that returns the serialized node settings."""
