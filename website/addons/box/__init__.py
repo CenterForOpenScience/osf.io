@@ -1,7 +1,13 @@
 from website.addons.box import model, routes, views
 
 
-MODELS = [model.BoxUserSettings, model.BoxNodeSettings, model.BoxFile]
+MODELS = [
+    model.BoxFile,
+    model.BoxUserSettings,
+    model.BoxNodeSettings,
+    model.BoxOAuthSettings,
+]
+
 USER_SETTINGS_MODEL = model.BoxUserSettings
 NODE_SETTINGS_MODEL = model.BoxNodeSettings
 
