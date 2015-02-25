@@ -32,6 +32,8 @@ def init_mfr(app):
 
 mime_map = {
     'application/pdf': mfr.ext.pdf.Handler,
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': mfr.ext.docx.Handler,
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': mfr.ext.tabular.Handler,
 }
 
 def detect_by_mimetype(content_type):

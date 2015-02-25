@@ -7,6 +7,8 @@ import logging
 import mfr
 from mfr.ext import ALL_HANDLERS
 from mfr.exceptions import MFRError
+from mfr.ext.tabular import libs as tabular_libs
+from mfr.ext.tabular.configuration import config as tabular_config
 
 from website import settings
 from website.language import ERROR_PREFIX
@@ -30,6 +32,7 @@ mfr.config.update({
     # Where to save static files
     'ASSETS_FOLDER': os.path.join(settings.STATIC_FOLDER, 'mfr'),
 })
+tabular_config['libs']['.gsheet'] = [tabular_libs.xlsx_xlrd]
 
 CUSTOM_ERROR_MESSAGES = {}
 
