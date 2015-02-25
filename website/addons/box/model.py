@@ -148,12 +148,25 @@ class BoxNodeSettings(AddonNodeSettingsBase):
             return None
 
         try:
-            return self._folder_name
+            return self._folder_data['name']
         except AttributeError:
-            client = get_client_from_user_settings(self.user_settings)
-            self._folder_name = client.get_folder(self.folder_id)['name']
+            self._folder_data = self._fetch_folder_data()
 
         return self.folder
+
+    @property
+    def full_folder_path(self):
+        try:
+            return '/'.join(
+                [x['name'] for x in self._folder_data['path_collection']['entries']]
+                + [self.folder]
+            )
+        except AttributeError:
+            self._folder_data = self._fetch_folder_data()
+
+    def _fetch_folder_data(self):
+        client = get_client_from_user_settings(self.user_settings)
+        return client.get_folder(self.folder_id)
 
     @property
     def display_name(self):
