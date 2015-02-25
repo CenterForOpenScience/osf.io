@@ -53,7 +53,7 @@
         % if can_edit:
             <div data-bind="with: $root.editVM.wikiEditor.viewModel"
                  data-osf-panel="Edit"
-                 class="${'col-sm-{0}'.format(12 / len(set(panels_used).intersection({'view', 'edit', 'compare'}))) | n}"
+                 class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                  style="${'' if 'edit' in panels_used else 'display: none' | n}">
                 <div class="wiki-panel">
                   <div class="wiki-panel-header">
@@ -124,7 +124,7 @@
           % endif
 
           <div data-osf-panel="View"
-               class="${'col-sm-{0}'.format(12 / len(set(panels_used).intersection({'view', 'edit', 'compare'}))) | n}"
+               class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                style="${'' if 'view' in panels_used else 'display: none' | n}">
               <div class="wiki-panel">
                 <div class="wiki-panel-header">
@@ -155,7 +155,7 @@
               </div>
           </div>
           <div data-osf-panel="Compare"
-               class="${'col-sm-{0}'.format(12 / len(set(panels_used).intersection({'view', 'edit', 'compare'}))) | n}"
+               class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                style="${'' if 'compare' in panels_used else 'display: none' | n}">
             <div class="wiki-panel">
               <div class="wiki-panel-header">

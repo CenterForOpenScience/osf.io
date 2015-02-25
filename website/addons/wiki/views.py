@@ -298,6 +298,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         'toc': toc,
         'category': node.category,
         'panels_used': panels_used,
+        'num_columns': len(set(panels_used).intersection({'view', 'edit', 'compare'})),
         'urls': {
             'api': _get_wiki_api_urls(node, wiki_name, {
                 'content': node.api_url_for('wiki_page_content', wname=wiki_name),
