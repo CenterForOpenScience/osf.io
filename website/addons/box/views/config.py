@@ -19,13 +19,13 @@ from website.addons.box.client import get_client_from_user_settings
 from box.client import BoxClientException
 
 
-@must_have_permission(permissions.WRITE)
 @must_have_addon('box', 'node')
+@must_have_permission(permissions.WRITE)
 def box_config_get(node_addon, auth, **kwargs):
     """API that returns the serialized node settings."""
     return {
         'result': serialize_settings(node_addon, auth.user),
-    }, http.OK
+    }
 
 
 def serialize_folder(metadata):
@@ -62,23 +62,17 @@ def get_folders(client):
 
 def serialize_urls(node_settings):
     node = node_settings.owner
-    #if node_settings.folder and node_settings.folder != '/':
-    #    # The link to share a the folder with other Box users
-    #    share_url = utils.get_share_folder_uri(node_settings.folder)
-    #else:
-    share_url = None
 
     urls = {
-        'config': node.api_url_for('box_config_put'),
-        'deauthorize': node.api_url_for('box_deauthorize'),
+        'settings': web_url_for('user_addons'),
         'auth': node.api_url_for('box_oauth_start'),
-        'importAuth': node.api_url_for('box_import_user_auth'),
+        'config': node.api_url_for('box_config_put'),
         'files': node.web_url_for('collect_file_trees'),
+        'emails': node.api_url_for('box_get_share_emails'),
+        'deauthorize': node.api_url_for('box_deauthorize'),
+        'importAuth': node.api_url_for('box_import_user_auth'),
         # Endpoint for fetching only folders (including root)
         'folders': node.api_url_for('box_hgrid_data_contents', foldersOnly=1, includeRoot=1),
-        'share': share_url,
-        'emails': node.api_url_for('box_get_share_emails'),
-        'settings': web_url_for('user_addons'),
     }
     return urls
 
@@ -88,12 +82,10 @@ def serialize_settings(node_settings, current_user, client=None):
     BoxNodeSettings record. Provides the return value for the
     box config endpoints.
     """
-    user_settings = node_settings.user_settings
-    user_is_owner = user_settings is not None and (
-        user_settings.owner._primary_key == current_user._primary_key
-    )
-    current_user_settings = current_user.get_addon('box')
     valid_credentials = True
+    user_settings = node_settings.user_settings
+    current_user_settings = current_user.get_addon('box')
+    user_is_owner = user_settings is not None and user_settings.owner == current_user
 
     if user_settings:
         try:
@@ -108,22 +100,23 @@ def serialize_settings(node_settings, current_user, client=None):
                 raise HTTPError(http.BAD_REQUEST)
 
     result = {
-        'nodeHasAuth': node_settings.has_auth,
         'userIsOwner': user_is_owner,
-        'userHasAuth': current_user_settings is not None and current_user_settings.has_auth,
-        'validCredentials': valid_credentials,
+        'nodeHasAuth': node_settings.has_auth,
         'urls': serialize_urls(node_settings),
+        'validCredentials': valid_credentials,
+        'userHasAuth': current_user_settings is not None and current_user_settings.has_auth,
     }
 
     if node_settings.has_auth:
         # Add owner's profile URL
         result['urls']['owner'] = web_url_for(
             'profile_view_id',
-            uid=user_settings.owner._primary_key
+            uid=user_settings.owner._id
         )
         result['ownerName'] = user_settings.owner.fullname
         # Show available folders
         path = node_settings.folder
+
         if path is None:
             result['folder'] = {'name': None, 'path': None}
         else:
@@ -134,17 +127,20 @@ def serialize_settings(node_settings, current_user, client=None):
     return result
 
 
-@must_have_permission(permissions.WRITE)
 @must_not_be_registration
 @must_have_addon('box', 'user')
 @must_have_addon('box', 'node')
 @must_be_addon_authorizer('box')
+@must_have_permission(permissions.WRITE)
 def box_config_put(node_addon, user_addon, auth, **kwargs):
     """View for changing a node's linked box folder."""
     folder = request.json.get('selected')
-    path = folder['path']
+
     uid = folder['id']
+    path = folder['path']
+
     node_addon.set_folder(uid, auth=auth)
+
     return {
         'result': {
             'folder': {
@@ -154,36 +150,35 @@ def box_config_put(node_addon, user_addon, auth, **kwargs):
             'urls': serialize_urls(node_addon),
         },
         'message': 'Successfully updated settings.',
-    }, http.OK
+    }
 
 
-@must_have_permission(permissions.WRITE)
 @must_have_addon('box', 'user')
 @must_have_addon('box', 'node')
+@must_have_permission(permissions.WRITE)
 def box_import_user_auth(auth, node_addon, user_addon, **kwargs):
     """Import box credentials from the currently logged-in user to a node.
     """
-    user = auth.user
     node_addon.set_user_auth(user_addon)
     node_addon.save()
+
     return {
-        'result': serialize_settings(node_addon, user),
+        'result': serialize_settings(node_addon, auth.user),
         'message': 'Successfully imported access token from profile.',
-    }, http.OK
+    }
 
 
-@must_have_permission(permissions.WRITE)
-@must_have_addon('box', 'node')
 @must_not_be_registration
+@must_have_addon('box', 'node')
+@must_have_permission(permissions.WRITE)
 def box_deauthorize(auth, node_addon, **kwargs):
     node_addon.deauthorize(auth=auth)
     node_addon.save()
-    return None
 
 
-@must_have_permission(permissions.WRITE)
 @must_have_addon('box', 'user')
 @must_have_addon('box', 'node')
+@must_have_permission(permissions.WRITE)
 def box_get_share_emails(auth, user_addon, node_addon, **kwargs):
     """Return a list of emails of the contributors on a project.
 
@@ -194,12 +189,14 @@ def box_get_share_emails(auth, user_addon, node_addon, **kwargs):
     # Current user must be the user who authorized the addon
     if node_addon.user_settings.owner != auth.user:
         raise HTTPError(http.FORBIDDEN)
-    result = {
-        'emails': [
-            contrib.username
-            for contrib in node_addon.owner.contributors
+
+    return {
+        'result': {
+            'emails': [
+                contrib.username
+                for contrib in node_addon.owner.contributors
                 if contrib != auth.user
-        ],
+            ],
+        }
         #'url': utils.get_share_folder_uri(node_addon.folder)
     }
-    return {'result': result}, http.OK
