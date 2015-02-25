@@ -58,10 +58,18 @@ def googledrive_oauth_finish(auth, **kwargs):
     if not auth.logged_in:
         raise HTTPError(http.FORBIDDEN)
     user = auth.user
+    node = Node.load(session.data.get('googledrive_auth_nid'))
+    
+    # Handle request cancellations from Google's API
+    if request.args.get('error'):
+        flash('Google Drive authorization request cancelled.')
+        if node:
+            return redirect(node.web_url_for('node_setting'))
+        return redirect(web_url_for('user_addons'))
+
     user.add_addon('googledrive')
     user.save()
     user_settings = user.get_addon('googledrive')
-    node = Node.load(session.data.get('googledrive_auth_nid'))
     code = request.args.get('code')
     if code is None:
         raise HTTPError(http.BAD_REQUEST)
