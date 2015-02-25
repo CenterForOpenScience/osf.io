@@ -1,93 +1,93 @@
 list_file = {
-    'etag':'"zWM2D6PBtLRQKuDNbaQNSNEy5BE/MrSD7Al_zGPN4CKisJpWLDC3cyY"',
-    'kind':'drive#fileList',
+    'etag': '"zWM2D6PBtLRQKuDNbaQNSNEy5BE/MrSD7Al_zGPN4CKisJpWLDC3cyY"',
+    'kind': 'drive#fileList',
     'items': [
         {
-            'etag':'"zWM2D6PBtLRQKuDNbaQNSNEy5BE/MTQyMDEzMTI5ODkyOQ"',
-            'owners':[
+            'etag': '"zWM2D6PBtLRQKuDNbaQNSNEy5BE/MTQyMDEzMTI5ODkyOQ"',
+            'owners': [
                 {
-                    'picture':{
-                        'url':'https://lh3.googleusercontent.com/-ndG-yHyqonM/AAAAAAAAAAI/AAAAAAAAADs/wUR8YhDe3vY/s64/photo.jpg'
+                    'picture': {
+                        'url': 'https://lh3.googleusercontent.com/-ndG-yHyqonM/AAAAAAAAAAI/AAAAAAAAADs/wUR8YhDe3vY/s64/photo.jpg'
                     },
-                    'kind':'drive#user',
-                    'permissionId':'07992110234966807597',
-                    'displayName':'Joshua Carp',
-                    'emailAddress':'jm.carp@gmail.com',
-                    'isAuthenticatedUser':True
+                    'kind': 'drive#user',
+                    'permissionId': '07992110234966807597',
+                    'displayName': 'Joshua Carp',
+                    'emailAddress': 'jm.carp@gmail.com',
+                    'isAuthenticatedUser': True
                 }
             ],
-            'parents':[
+            'parents': [
                 {
-                    'parentLink':'https://www.googleapis.com/drive/v2/files/0ABtc_QrXguAwUk9PVA',
-                    'isRoot':True,
-                    'kind':'drive#parentReference',
-                    'id':'0ABtc_QrXguAwUk9PVA',
-                    'selfLink':'https://www.googleapis.com/drive/v2/files/1GwpK7IozbO01RiyC5aPd66v7ShEViqggvT6ur5_pZMFo-ZzQHOgkyoU3ztjf0ytKt0HSdvUg6O2nmoYR/parents/0ABtc_QrXguAwUk9PVA'
+                    'parentLink': 'https://www.googleapis.com/drive/v2/files/0ABtc_QrXguAwUk9PVA',
+                    'isRoot': True,
+                    'kind': 'drive#parentReference',
+                    'id': '0ABtc_QrXguAwUk9PVA',
+                    'selfLink': 'https://www.googleapis.com/drive/v2/files/1GwpK7IozbO01RiyC5aPd66v7ShEViqggvT6ur5_pZMFo-ZzQHOgkyoU3ztjf0ytKt0HSdvUg6O2nmoYR/parents/0ABtc_QrXguAwUk9PVA'
                 }
             ],
-            'ownerNames':[
+            'ownerNames': [
                 'Joshua Carp'
             ],
-            'downloadUrl':'https://doc-0g-5k-docs.googleusercontent.com/docs/securesc/6l6ti67c1gnej8b4rr55nfimce1282lr/0sr833dlhh6p7ukpt3f4940se41ornad/1424880000000/07992110234966807597/07992110234966807597/1GwpK7IozbO01RiyC5aPd66v7ShEViqggvT6ur5_pZMFo-ZzQHOgkyoU3ztjf0ytKt0HSdvUg6O2nmoYR?e=download&gd=true',
-            'writersCanShare':True,
-            'title':'PART_1420130849837.pdf',
-            'editable':True,
-            'lastModifyingUser':{
-                'picture':{
-                    'url':'https://lh3.googleusercontent.com/-ndG-yHyqonM/AAAAAAAAAAI/AAAAAAAAADs/wUR8YhDe3vY/s64/photo.jpg'
+            'downloadUrl': 'https://doc-0g-5k-docs.googleusercontent.com/docs/securesc/6l6ti67c1gnej8b4rr55nfimce1282lr/0sr833dlhh6p7ukpt3f4940se41ornad/1424880000000/07992110234966807597/07992110234966807597/1GwpK7IozbO01RiyC5aPd66v7ShEViqggvT6ur5_pZMFo-ZzQHOgkyoU3ztjf0ytKt0HSdvUg6O2nmoYR?e=download&gd=true',
+            'writersCanShare': True,
+            'title': 'PART_1420130849837.pdf',
+            'editable': True,
+            'lastModifyingUser': {
+                'picture': {
+                    'url': 'https://lh3.googleusercontent.com/-ndG-yHyqonM/AAAAAAAAAAI/AAAAAAAAADs/wUR8YhDe3vY/s64/photo.jpg'
                 },
-                'kind':'drive#user',
-                'permissionId':'07992110234966807597',
-                'displayName':'Joshua Carp',
-                'emailAddress':'jm.carp@gmail.com',
-                'isAuthenticatedUser':True
+                'kind': 'drive#user',
+                'permissionId': '07992110234966807597',
+                'displayName': 'Joshua Carp',
+                'emailAddress': 'jm.carp@gmail.com',
+                'isAuthenticatedUser': True
             },
-            'quotaBytesUsed':'918668',
-            'mimeType':'application/pdf',
-            'createdDate':'2015-01-01T16:54:58.929Z',
-            'alternateLink':'https://docs.google.com/file/d/1GwpK7IozbO01RiyC5aPd66v7ShEViqggvT6ur5_pZMFo-ZzQHOgkyoU3ztjf0ytKt0HSdvUg6O2nmoYR/edit?usp=drivesdk',
-            'headRevisionId':'1DVR6FVQGOSpUrtHjxCKb4-2R0chGVJFG6wVPQwq1o-gay_tqwA',
-            'id':'1GwpK7IozbO01RiyC5aPd66v7ShEViqggvT6ur5_pZMFo-ZzQHOgkyoU3ztjf0ytKt0HSdvUg6O2nmoYR',
-            'modifiedDate':'2015-01-01T16:54:58.929Z',
-            'kind':'drive#file',
-            'fileExtension':'pdf',
-            'iconLink':'https://ssl.gstatic.com/docs/doclist/images/icon_11_pdf_list.png',
-            'appDataContents':False,
-            'lastModifyingUserName':'Joshua Carp',
-            'webContentLink':'https://docs.google.com/uc?id=1GwpK7IozbO01RiyC5aPd66v7ShEViqggvT6ur5_pZMFo-ZzQHOgkyoU3ztjf0ytKt0HSdvUg6O2nmoYR&export=download',
-            'selfLink':'https://www.googleapis.com/drive/v2/files/1GwpK7IozbO01RiyC5aPd66v7ShEViqggvT6ur5_pZMFo-ZzQHOgkyoU3ztjf0ytKt0HSdvUg6O2nmoYR',
-            'copyable':True,
-            'fileSize':'918668',
-            'labels':{
-                'viewed':False,
-                'trashed':False,
-                'restricted':False,
-                'hidden':False,
-                'starred':False
+            'quotaBytesUsed': '918668',
+            'mimeType': 'application/pdf',
+            'createdDate': '2015-01-01T16:54:58.929Z',
+            'alternateLink': 'https://docs.google.com/file/d/1GwpK7IozbO01RiyC5aPd66v7ShEViqggvT6ur5_pZMFo-ZzQHOgkyoU3ztjf0ytKt0HSdvUg6O2nmoYR/edit?usp=drivesdk',
+            'headRevisionId': '1DVR6FVQGOSpUrtHjxCKb4-2R0chGVJFG6wVPQwq1o-gay_tqwA',
+            'id': '1GwpK7IozbO01RiyC5aPd66v7ShEViqggvT6ur5_pZMFo-ZzQHOgkyoU3ztjf0ytKt0HSdvUg6O2nmoYR',
+            'modifiedDate': '2015-01-01T16:54:58.929Z',
+            'kind': 'drive#file',
+            'fileExtension': 'pdf',
+            'iconLink': 'https://ssl.gstatic.com/docs/doclist/images/icon_11_pdf_list.png',
+            'appDataContents': False,
+            'lastModifyingUserName': 'Joshua Carp',
+            'webContentLink': 'https://docs.google.com/uc?id=1GwpK7IozbO01RiyC5aPd66v7ShEViqggvT6ur5_pZMFo-ZzQHOgkyoU3ztjf0ytKt0HSdvUg6O2nmoYR&export=download',
+            'selfLink': 'https://www.googleapis.com/drive/v2/files/1GwpK7IozbO01RiyC5aPd66v7ShEViqggvT6ur5_pZMFo-ZzQHOgkyoU3ztjf0ytKt0HSdvUg6O2nmoYR',
+            'copyable': True,
+            'fileSize': '918668',
+            'labels': {
+                'viewed': False,
+                'trashed': False,
+                'restricted': False,
+                'hidden': False,
+                'starred': False
             },
-            'version':'143933',
-            'md5Checksum':'43c5a01efeaea6bfd0433fa516a0d71f',
-            'userPermission':{
-                'type':'user',
-                'kind':'drive#permission',
-                'etag':'"zWM2D6PBtLRQKuDNbaQNSNEy5BE/2RVviHZ60Y5d9plBp5dBdmj2r70"',
-                'id':'me',
-                'selfLink':'https://www.googleapis.com/drive/v2/files/1GwpK7IozbO01RiyC5aPd66v7ShEViqggvT6ur5_pZMFo-ZzQHOgkyoU3ztjf0ytKt0HSdvUg6O2nmoYR/permissions/me',
-                'role':'owner'
+            'version': '143933',
+            'md5Checksum': '43c5a01efeaea6bfd0433fa516a0d71f',
+            'userPermission': {
+                'type': 'user',
+                'kind': 'drive#permission',
+                'etag': '"zWM2D6PBtLRQKuDNbaQNSNEy5BE/2RVviHZ60Y5d9plBp5dBdmj2r70"',
+                'id': 'me',
+                'selfLink': 'https://www.googleapis.com/drive/v2/files/1GwpK7IozbO01RiyC5aPd66v7ShEViqggvT6ur5_pZMFo-ZzQHOgkyoU3ztjf0ytKt0HSdvUg6O2nmoYR/permissions/me',
+                'role': 'owner'
             },
-            'shared':False,
-            'markedViewedByMeDate':'1970-01-01T00:00:00.000Z'
+            'shared': False,
+            'markedViewedByMeDate': '1970-01-01T00:00:00.000Z'
         }
     ],
-    'selfLink':"https://www.googleapis.com/drive/v2/files?q='0ABtc_QrXguAwUk9PVA'+in+parents+and+trashed+%3D+false+and+title+%3D+'PART_1420130849837.pdf'&alt=json"
+    'selfLink': "https://www.googleapis.com/drive/v2/files?q='0ABtc_QrXguAwUk9PVA'+in+parents+and+trashed+%3D+false+and+title+%3D+'PART_1420130849837.pdf'&alt=json"
 }
 
 
 list_file_empty = {
-    'etag':'"zWM2D6PBtLRQKuDNbaQNSNEy5BE/MrSD7Al_zGPN4CKisJpWLDC3cyY"',
-    'kind':'drive#fileList',
+    'etag': '"zWM2D6PBtLRQKuDNbaQNSNEy5BE/MrSD7Al_zGPN4CKisJpWLDC3cyY"',
+    'kind': 'drive#fileList',
     'items': [],
-    'selfLink':"https://www.googleapis.com/drive/v2/files?q='0ABtc_QrXguAwUk9PVA'+in+parents+and+trashed+%3D+false+and+title+%3D+'PART_1420130849837.pdf'&alt=json"
+    'selfLink': "https://www.googleapis.com/drive/v2/files?q='0ABtc_QrXguAwUk9PVA'+in+parents+and+trashed+%3D+false+and+title+%3D+'PART_1420130849837.pdf'&alt=json"
 }
 
 
@@ -138,7 +138,10 @@ docs_file_metadata = {
         'role': 'owner'
     },
     'exportLinks': {
-        'application/rtf': 'https://docs.google.com/feeds/download/documents/export/Export?id=12go3hvnFZN5IuMWtz-2dft4EcPa5ti21pQYH1rjcxfQ&exportFormat=rtf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'https://docs.google.com/feeds/download/documents/export/Export?id=12go3hvnFZN5IuMWtz-2dft4EcPa5ti21pQYH1rjcxfQ&exportFormat=docx', 'application/vnd.oasis.opendocument.text': 'https://docs.google.com/feeds/download/documents/export/Export?id=12go3hvnFZN5IuMWtz-2dft4EcPa5ti21pQYH1rjcxfQ&exportFormat=odt', 'text/html': 'https://docs.google.com/feeds/download/documents/export/Export?id=12go3hvnFZN5IuMWtz-2dft4EcPa5ti21pQYH1rjcxfQ&exportFormat=html', 'application/pdf': 'https://docs.google.com/feeds/download/documents/export/Export?id=12go3hvnFZN5IuMWtz-2dft4EcPa5ti21pQYH1rjcxfQ&exportFormat=pdf', 'text/plain': 'https://docs.google.com/feeds/download/documents/export/Export?id=12go3hvnFZN5IuMWtz-2dft4EcPa5ti21pQYH1rjcxfQ&exportFormat=txt'
+        'application/rtf': 'https://docs.google.com/feeds/download/documents/export/Export?id=12go3hvnFZN5IuMWtz-2dft4EcPa5ti21pQYH1rjcxfQ&exportFormat=rtf',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'https://docs.google.com/feeds/download/documents/export/Export?id=12go3hvnFZN5IuMWtz-2dft4EcPa5ti21pQYH1rjcxfQ&exportFormat=docx',
+        'application/vnd.oasis.opendocument.text': 'https://docs.google.com/feeds/download/documents/export/Export?id=12go3hvnFZN5IuMWtz-2dft4EcPa5ti21pQYH1rjcxfQ&exportFormat=odt', 'text/html': 'https://docs.google.com/feeds/download/documents/export/Export?id=12go3hvnFZN5IuMWtz-2dft4EcPa5ti21pQYH1rjcxfQ&exportFormat=html', 'application/pdf': 'https://docs.google.com/feeds/download/documents/export/Export?id=12go3hvnFZN5IuMWtz-2dft4EcPa5ti21pQYH1rjcxfQ&exportFormat=pdf',
+        'text/plain': 'https://docs.google.com/feeds/download/documents/export/Export?id=12go3hvnFZN5IuMWtz-2dft4EcPa5ti21pQYH1rjcxfQ&exportFormat=txt'
     },
     'id': '12go3hvnFZN5IuMWtz-2dft4EcPa5ti21pQYH1rjcxfQ',
     'modifiedDate': '2015-02-23T18:00:56.343Z',

@@ -42,6 +42,74 @@ def provider(auth, credentials, settings):
     return GoogleDriveProvider(auth, credentials, settings)
 
 
+class TestCRUD:
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_download_drive(self, provider):
+        path = '/birdie.jpg'
+        body = b'we love you conrad'
+        item = fixtures.list_file['items'][0]
+        query = provider._build_query(provider.folder['id'], title=path.lstrip('/'))
+        list_file_url = provider.build_url('files', q=query, alt='json')
+        download_file_url = item['downloadUrl']
+        aiohttpretty.register_json_uri('GET', list_file_url, body=fixtures.list_file)
+        aiohttpretty.register_uri('GET', download_file_url, body=body)
+        result = yield from provider.download(path)
+        content = yield from result.response.read()
+        assert content == body
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_download_drive_revision(self, provider):
+        path = '/birdie.jpg'
+        revision = 'oldest'
+        body = b'we love you conrad'
+        item = fixtures.list_file['items'][0]
+        query = provider._build_query(provider.folder['id'], title=path.lstrip('/'))
+        list_file_url = provider.build_url('files', q=query, alt='json')
+        revision_url = provider.build_url('files', item['id'], 'revisions', revision)
+        download_file_url = item['downloadUrl']
+        aiohttpretty.register_json_uri('GET', list_file_url, body=fixtures.list_file)
+        aiohttpretty.register_json_uri('GET', revision_url, body=item)
+        aiohttpretty.register_uri('GET', download_file_url, body=body)
+        result = yield from provider.download(path)
+        content = yield from result.response.read()
+        assert content == body
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_download_docs(self, provider):
+        path = '/birdie.jpg'
+        body = b'we love you conrad'
+        item = fixtures.docs_file_metadata
+        query = provider._build_query(provider.folder['id'], title=path.lstrip('/'))
+        list_file_url = provider.build_url('files', q=query, alt='json')
+        revisions_url = provider.build_url('files', item['id'], 'revisions')
+        download_file_url = item['exportLinks']['application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+        aiohttpretty.register_json_uri('GET', list_file_url, body={'items': [item]})
+        aiohttpretty.register_json_uri('GET', revisions_url, body={'items': [{'id': 'foo'}]})
+        aiohttpretty.register_uri('GET', download_file_url, body=body)
+        result = yield from provider.download(path)
+        content = yield from result.response.read()
+        assert content == body
+
+    # @async
+    # @pytest.mark.aiohttpretty
+    # def test_upload_create(self, provider):
+    #     pass
+
+    # @async
+    # @pytest.mark.aiohttpretty
+    # def test_upload_update(self, provider):
+    #     pass
+
+    # @async
+    # @pytest.mark.aiohttpretty
+    # def test_delete(self, provider):
+    #     pass
+
+
 class TestMetadata:
 
     @async
