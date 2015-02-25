@@ -57,7 +57,7 @@
             data-bind="visible:selected">
             <form data-bind="submit: submitSettings">
 
-                <h4 data-bind="if: selected" class="dropbox-confirm-dlg">
+                <h4 data-bind="if: selected" class="addon-settings-submit">
                     Connect &ldquo;{{ selectedFolderName }}&rdquo;?
                 </h4>
                 <div class="pull-right">
