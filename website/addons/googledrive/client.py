@@ -3,13 +3,14 @@ import itertools
 
 import furl
 import requests
-
 from requests_oauthlib import OAuth2Session
+from oauthlib.oauth2 import InvalidGrantError
 
-from framework import exceptions
+from framework.exceptions import HTTPError
 
 from website.util import api_url_for
 from website.addons.googledrive import settings
+from website.addons.googledrive import exceptions
 
 
 class BaseClient(object):
@@ -24,7 +25,7 @@ class BaseClient(object):
     def _make_request(self, method, segments, **kwargs):
         query = kwargs.pop('query', {})
         expects = kwargs.pop('expects', None)
-        throws = kwargs.pop('throws', exceptions.HTTPError)
+        throws = kwargs.pop('throws', HTTPError)
 
         url = self._build_url(*segments, **query)
         kwargs['headers'] = self._build_headers(**kwargs.get('headers', {}))
@@ -96,14 +97,19 @@ class GoogleAuthClient(BaseClient):
                 'expires_in': '-30',
             }
         )
+
         extra = {
             'client_id': settings.CLIENT_ID,
             'client_secret': settings.CLIENT_SECRET,
         }
-        return client.refresh_token(
-            self._build_url('token'),
-            **extra
-        )
+
+        try:
+            return client.refresh_token(
+                self._build_url('token'),
+                **extra
+            )
+        except InvalidGrantError:
+            raise exceptions.ExpiredAuthError()
 
     def revoke(self, token):
         return self._make_request(
