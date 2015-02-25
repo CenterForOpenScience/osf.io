@@ -135,10 +135,11 @@ class GoogleDriveOAuthSettings(StoredObject):
             # remove the object as its the last instance.
             GoogleDriveOAuthSettings.remove_one(self)
 
+    @property
     def _needs_refresh(self):
         if self.expires_at is None:
             return False
-        return (self.token_expires_at - datetime.utcnow()).total_seconds() < drive_settings.REFRESH_TIME
+        return (self.expires_at - datetime.utcnow()).total_seconds() < drive_settings.REFRESH_TIME
 
 
 class GoogleDriveUserSettings(AddonUserSettingsBase):
