@@ -64,7 +64,6 @@ function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathj
 
     self.displayText =  ko.computed(function() {
         self.allowFullRender();
-        self.visible();
         var requestURL;
         if (typeof self.version() !== 'undefined') {
             if (self.version() === 'preview') {
@@ -81,21 +80,20 @@ function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathj
                 });
 
                 request.done(function (resp) {
-                    var rawContent = resp.wiki_content || '*No wiki content*';
-                    if (resp.wiki_rendered) {
-                        // Use pre-rendered python, if provided. Don't mathjaxify
-                        self.allowMathjaxification(false);
-                        if(self.visible()) {
+                    if(self.visible()) {
+                        var rawContent = resp.wiki_content || '*No wiki content*';
+                        if (resp.wiki_rendered) {
+                            // Use pre-rendered python, if provided. Don't mathjaxify
+                            self.allowMathjaxification(false);
                             self.rendered(resp.wiki_rendered);
-                        }
-                    } else {
-                        // Render raw markdown
-                        if(self.visible()) {
+
+                        } else {
+                            // Render raw markdown
                             self.allowMathjaxification(true);
                             self.rendered(self.renderMarkdown(rawContent));
                         }
+                        self.displaySource(rawContent);
                     }
-                    self.displaySource(rawContent);
                 });
             }
         } else {
