@@ -71,6 +71,9 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
 
     file_tree = fields.ForeignField('OsfStorageFileTree')
 
+    def find_or_create_file_guid(self, path):
+        return OsfStorageGuidFile.get_or_create(self.owner, path.lstrip('/'))
+
     def copy_contents_to(self, dest):
         """Copy file tree and contents to destination. Note: destination must be
         saved before copying so that copied items can refer to it.
@@ -90,11 +93,12 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
         return clone, message
 
     def after_register(self, node, registration, user, save=True):
-        clone, message = super(OsfStorageNodeSettings, self).after_register(
-            node=node, registration=registration, user=user, save=False
-        )
+        clone = self.clone()
+        clone.owner = registration
         self.copy_contents_to(clone)
-        return clone, message
+        if save:
+            clone.save()
+        return clone, None
 
     def serialize_waterbutler_settings(self):
         ret = {
@@ -106,6 +110,10 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
                 'osf_storage_get_metadata_hook',
                 _absolute=True,
             ),
+            'revisions': self.owner.api_url_for(
+                'osf_storage_get_revisions',
+                _absolute=True,
+            ),
         }
         ret.update(settings.WATERBUTLER_SETTINGS)
         return ret
@@ -115,9 +123,6 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
 
     def create_waterbutler_log(self, auth, action, metadata):
         pass
-
-    def get_waterbutler_render_url(self, path, **kwargs):
-        return self.owner.web_url_for('osf_storage_view_file', path=path)
 
 
 class BaseFileObject(StoredObject):
@@ -169,7 +174,7 @@ class BaseFileObject(StoredObject):
         """
         try:
             obj = cls.find_one(
-                Q('path', 'eq', path) &
+                Q('path', 'eq', path.rstrip('/')) &
                 Q('node_settings', 'eq', node_settings._id)
             )
             return obj
@@ -184,6 +189,8 @@ class BaseFileObject(StoredObject):
         :param node_settings: Root node settings record
         :returns: Tuple of (record, created)
         """
+        path = path.rstrip('/')
+
         try:
             obj = cls(path=path, node_settings=node_settings)
             obj.save()
@@ -403,6 +410,36 @@ class OsfStorageGuidFile(GuidFile):
     path = fields.StringField(required=True, index=True)
 
     @property
+    def waterbutler_path(self):
+        return '/' + self.path
+
+    @classmethod
+    def get_or_create(cls, node, path):
+        try:
+            obj = cls.find_one(
+                Q('node', 'eq', node) &
+                Q('path', 'eq', path)
+            )
+            created = False
+        except modm_errors.ModularOdmException:
+            obj = cls(node=node, path=path)
+            obj.save()
+            created = True
+        return obj, created
+
+    @property
+    def provider(self):
+        return 'osfstorage'
+
+    @property
+    def version_identifier(self):
+        return 'version'
+
+    @property
+    def unique_identifier(self):
+        return self._metadata_cache['extra']['version']
+
+    @property
     def file_url(self):
         return os.path.join('osfstorage', 'files', self.path)
 
@@ -414,15 +451,3 @@ class OsfStorageGuidFile(GuidFile):
             'mode': 'render',
         })
         return url.url
-
-    @classmethod
-    def get_or_create(cls, node, path):
-        try:
-            obj = cls.find_one(
-                Q('node', 'eq', node) &
-                Q('path', 'eq', path)
-            )
-        except modm_errors.ModularOdmException:
-            obj = cls(node=node, path=path)
-            obj.save()
-        return obj

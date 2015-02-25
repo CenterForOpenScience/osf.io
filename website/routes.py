@@ -338,8 +338,8 @@ def make_url_map(app):
 
         Rule(
             [
-                '/project/<pid>/citation/<style>/',
-                '/project/<pid>/node/<nid>/citation/<style>/',
+                '/project/<pid>/citation/',
+                '/project/<pid>/node/<nid>/citation/',
             ],
             'get',
             citation_views.node_citation,
@@ -613,6 +613,8 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule('/search/', 'get', {}, OsfWebRenderer('search.mako')),
+        Rule('/share/', 'get', {}, OsfWebRenderer('share_search.mako')),
+        Rule('/share_dashboard/', 'get', {}, OsfWebRenderer('share_dashboard.mako')),
 
         Rule('/api/v1/user/search/', 'get', search_views.search_contributor, json_renderer),
 
@@ -631,6 +633,8 @@ def make_url_map(app):
 
         Rule(['/search/', '/search/<type>/'], ['get', 'post'], search_views.search_search, json_renderer),
         Rule('/search/projects/', 'get', search_views.search_projects_by_title, json_renderer),
+        Rule('/share/', ['get', 'post'], search_views.search_share, json_renderer),
+        Rule('/share/stats/', 'get', search_views.search_share_stats, json_renderer),
 
     ], prefix='/api/v1')
 
@@ -745,6 +749,73 @@ def make_url_map(app):
             OsfWebRenderer('project/files.mako'),
             view_kwargs={'mode': 'page'},
         ),
+        Rule(
+            [
+                '/project/<pid>/files/<provider>/<path:path>/',
+                '/project/<pid>/node/<nid>/files/<provider>/<path:path>/',
+            ],
+            'get',
+            addon_views.addon_view_or_download_file,
+            OsfWebRenderer('project/view_file.mako')
+        ),
+        Rule(
+            [
+
+                # Legacy Addon view file paths
+                '/project/<pid>/<provider>/files/<path:path>/',
+                '/project/<pid>/node/<nid>/<provider>/files/<path:path>/',
+
+                '/project/<pid>/<provider>/files/<path:path>/download/',
+                '/project/<pid>/node/<nid>/<provider>/files/<path:path>/download/',
+
+                # Legacy routes for `download_file`
+                '/project/<pid>/osffiles/<fid>/download/',
+                '/project/<pid>/node/<nid>/osffiles/<fid>/download/',
+
+                # Legacy routes for `view_file`
+                '/project/<pid>/osffiles/<fid>/',
+                '/project/<pid>/node/<nid>/osffiles/<fid>/',
+
+                # Note: Added these old URLs for backwards compatibility with
+                # hard-coded links.
+                '/project/<pid>/osffiles/download/<fid>/',
+                '/project/<pid>/node/<nid>/osffiles/download/<fid>/',
+                '/project/<pid>/files/<fid>/',
+                '/project/<pid>/node/<nid>/files/<fid>/',
+                '/project/<pid>/files/download/<fid>/',
+                '/project/<pid>/node/<nid>/files/download/<fid>/',
+
+                # Legacy routes for `download_file_by_version`
+                '/project/<pid>/osffiles/<fid>/version/<vid>/download/',
+                '/project/<pid>/node/<nid>/osffiles/<fid>/version/<vid>/download/',
+                # Note: Added these old URLs for backwards compatibility with
+                # hard-coded links.
+                '/project/<pid>/osffiles/<fid>/version/<vid>/',
+                '/project/<pid>/node/<nid>/osffiles/<fid>/version/<vid>/',
+                '/project/<pid>/osffiles/download/<fid>/version/<vid>/',
+                '/project/<pid>/node/<nid>/osffiles/download/<fid>/version/<vid>/',
+                '/project/<pid>/files/<fid>/version/<vid>/',
+                '/project/<pid>/node/<nid>/files/<fid>/version/<vid>/',
+                '/project/<pid>/files/download/<fid>/version/<vid>/',
+                '/project/<pid>/node/<nid>/files/download/<fid>/version/<vid>/',
+
+                # api/v1 Legacy routes for `download_file`
+                '/api/v1/project/<pid>/osffiles/<fid>/',
+                '/api/v1/project/<pid>/node/<nid>/osffiles/<fid>/',
+                '/api/v1/project/<pid>/files/download/<fid>/',
+                '/api/v1/project/<pid>/node/<nid>/files/download/<fid>/',
+
+                #api/v1 Legacy routes for `download_file_by_version`
+                '/api/v1/project/<pid>/osffiles/<fid>/version/<vid>/',
+                '/api/v1/project/<pid>/node/<nid>/osffiles/<fid>/version/<vid>/',
+                '/api/v1/project/<pid>/files/download/<fid>/version/<vid>/',
+                '/api/v1/project/<pid>/node/<nid>/files/download/<fid>/version/<vid>/',
+            ],
+            'get',
+            addon_views.addon_view_or_download_file_legacy,
+            json_renderer
+        ),
+
 
 
     ])
@@ -1131,12 +1202,12 @@ def make_url_map(app):
         ),
         Rule(
             [
-                '/project/<pid>/waterbutler/files/',
-                '/project/<pid>/node/<nid>/waterbutler/files/',
+                '/project/<pid>/files/<provider>/<path:path>/',
+                '/project/<pid>/node/<nid>/files/<provider>/<path:path>/',
             ],
             'get',
-            addon_views.get_waterbutler_render_url,
-            json_renderer,
+            addon_views.addon_render_file,
+            json_renderer
         ),
         Rule(
             '/settings/addons/',

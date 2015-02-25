@@ -32,12 +32,12 @@ def zotero_widget(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
     zotero = node.get_addon('zotero')
     summary = zotero._summarize_references()
-    rv = {
+    ret = {
         'complete': bool(summary),
         'summary': summary,
     }
-    rv.update(zotero.config.to_json())
-    return rv
+    ret.update(zotero.config.to_json())
+    return ret
 
 
 @must_be_contributor_or_public
@@ -51,11 +51,11 @@ def zotero_page(**kwargs):
 
     xml = zotero._fetch_references()
 
-    rv = {
+    ret = {
         'complete': True,
         'xml': xml,
         'addon_page_js': zotero.config.include_js['page'],
         'addon_page_css': zotero.config.include_css['page'],
     }
-    rv.update(data)
-    return rv
+    ret.update(data)
+    return ret

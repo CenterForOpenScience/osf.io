@@ -1,16 +1,21 @@
 # -*- coding: utf-8 -*-
 import os
-import logging
 import errno
 import codecs
+import logging
 
 import mfr
 from mfr.ext import ALL_HANDLERS
 from mfr.exceptions import MFRError
 
-from framework.tasks import app
 from website import settings
 from website.language import ERROR_PREFIX
+
+from framework.tasks import app
+from framework.render import exceptions
+from framework.render.core import save_to_file_or_error
+from framework.render.core import render_is_done_or_happening
+
 
 logger = logging.getLogger(__name__)
 
@@ -39,8 +44,51 @@ def render_mfr_error(err):
         """.format(**locals())
 
 
+# TODO only allow one task at a time
 @app.task(ignore_result=True, timeout=settings.MFR_TIMEOUT)
-def _build_rendered_html(file_path, cache_dir, cache_file_name, download_url):
+def _build_rendered_html(download_url, cache_path, temp_path, public_download_url):
+    """
+    :param str download_url: The url to download the file to be rendered
+    :param str cache_path: Location to cache the rendered file
+    :param str temp_path: Where the downloaded file will be cached
+    """
+
+    if render_is_done_or_happening(cache_path, temp_path):
+        return
+
+    # Ensure our paths exists
+    # Note: Ensures that cache directories have the same owner
+    # as the files inside them
+    ensure_path(os.path.split(temp_path)[0])
+    ensure_path(os.path.split(cache_path)[0])
+
+    rendered = None
+    try:
+        save_to_file_or_error(download_url, temp_path)
+    except exceptions.RenderNotPossibleException as e:
+        # Write out unavoidable errors
+        rendered = e.renderable_error
+    else:
+        with codecs.open(temp_path) as temp_file:
+            # Try to render file
+            try:
+                render_result = mfr.render(temp_file, src=public_download_url)
+                # Rendered result
+                rendered = _build_html(render_result)
+            except MFRError as err:
+                # Rendered MFR error
+                rendered = render_mfr_error(err)
+
+    # Cache rendered content
+    with codecs.open(cache_path, 'w', 'utf-8') as render_result_cache:
+        render_result_cache.write(rendered)
+
+    # Cleanup when we're done
+    os.remove(temp_path)
+
+
+@app.task(ignore_result=True, timeout=settings.MFR_TIMEOUT)
+def _old_build_rendered_html(file_path, cache_dir, cache_file_name, download_url):
     """
     :param str file_path: Full path to raw file on disk
     :param str cache_dir: Folder to store cached file in
@@ -70,19 +118,25 @@ def _build_rendered_html(file_path, cache_dir, cache_file_name, download_url):
     os.remove(file_path)
     return True
 
-#Expose render function
-build_rendered_html = _build_rendered_html
 
 if settings.USE_CELERY:
     build_rendered_html = _build_rendered_html.delay
+    old_build_rendered_html = _old_build_rendered_html.delay
+else:
+    #Expose render function
+    build_rendered_html = _build_rendered_html
+    old_build_rendered_html = _old_build_rendered_html
+
 
 def _build_css_asset(css_uri):
     """Wrap a css asset so it can be included on an html page"""
     return '<link rel="stylesheet" href="{uri}" />'.format(uri=css_uri)
 
+
 def _build_js_asset(js_uri):
     """Wrap a js asset so it can be included on an html page"""
     return '<script src="{uri}"></script>'.format(uri=js_uri)
+
 
 def _build_html(render_result):
     """Build all of the assets and content into an html page"""
@@ -106,6 +160,7 @@ def _build_html(render_result):
     )
 
     return rv
+
 
 def ensure_path(path):
     try:
