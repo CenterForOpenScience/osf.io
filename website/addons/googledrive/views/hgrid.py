@@ -3,22 +3,15 @@
 from flask import request
 
 from website.util import rubeus
-from website.util import permissions
-from website.project.decorators import (
-    must_have_addon,
-    must_have_permission,
-    must_not_be_registration,
-    must_be_addon_authorizer,
-)
+from website.project.decorators import must_have_addon
+from website.project.decorators import must_be_addon_authorizer
 
 from website.addons.googledrive.utils import to_hgrid
 from website.addons.googledrive.client import GoogleDriveClient
 
 
-@must_not_be_registration
 @must_have_addon('googledrive', 'user')
 @must_have_addon('googledrive', 'node')
-@must_have_permission(permissions.WRITE)
 @must_be_addon_authorizer('googledrive')
 def googledrive_folders(node_addon, user_addon, **kwargs):
     """ Returns all the subsequent folders under the folder id passed """
