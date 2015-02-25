@@ -39,7 +39,7 @@ var ViewModel = function(url, selector, folderPicker) {
     self.folderPicker =  folderPicker;
     self.selected = ko.observable(null);
     self.showFileTypes = ko.observable(false);
-
+    self.cancelSelection = ko.observable();
     self.loadedSettings = ko.observable(false);
     self.selectedFileTypeOption = ko.observable('');
 
@@ -106,8 +106,14 @@ var ViewModel = function(url, selector, folderPicker) {
         ).success(function(response){
             window.location.href = response.url;
             self.changeMessage('Successfully authorized Google Drive account', 'text-success');
-        }).fail(function() {
-            self.changeMessage('Could not authorize at this moment', 'text-danger');
+        }).fail(function(xhr, textStatus, error) {
+            self.changeMessage('Could not authorize Google Drive due to an error. Please try again later.',
+                               'text-danger');
+            Raven.captureMessage('Could not authorize Google Drive.', {
+                url: self.urls().create,
+                textStatus: textStatus,
+                error: error
+            });
         });
     };
 
@@ -125,8 +131,9 @@ var ViewModel = function(url, selector, folderPicker) {
     // Callback for when PUT request to import user access token
     function onImportSuccess(response) {
         var msg = response.message || 'Successfully imported access token from profile.';
-        self.changeMessage(msg, 'text-success', 3000);
-        window.location.reload();
+        onFetchSuccess(response);
+        self.changeFolder();
+        self.changeMessage(msg, 'text-success', 5000);
     }
 
     function onImportError() {
@@ -157,13 +164,18 @@ var ViewModel = function(url, selector, folderPicker) {
     function sendDeauth() {
         return $.ajax({
             url: self.urls().deauthorize,
-            type: 'DELETE',
-        }).done(function() {
+            type: 'DELETE'
+        }).done(function () {
             // Update observables
             self.nodeHasAuth(false);
             self.changeMessage('Deauthorized Google Drive.', 'text-warning', 3000);
-        }).fail(function() {
-            self.changeMessage('Could not deauthorize Google Drive because of an error. Please try again later.', 'text-danger');
+        }).fail(function (xhr, textStatus, error) {
+            self.changeMessage('Could not deauthorize Google Drive due to an error. Please try again later.', 'text-danger');
+            Raven.captureMessage('Could not deauthorize Google Drive.', {
+                url: self.urls().deauthorize,
+                textStatus: textStatus,
+                error: error
+            });
         });
     }
 
@@ -193,6 +205,8 @@ var ViewModel = function(url, selector, folderPicker) {
             name: 'Google Drive/' + (item.data.path === '/' ? '' : item.data.path),
             path: item.data.path
         });
+
+        self.currentFolder(self.selected().name);
         return false; // Prevent event propagation
     }
 
@@ -230,6 +244,10 @@ var ViewModel = function(url, selector, folderPicker) {
         return self.nodeHasAuth() && self.userIsOwner();
     });
 
+    self.cancelSelection = function() {
+        self.selected(null);
+    };
+
     self.selectedFolderName = ko.computed(function() {
         var userIsOwner = self.userIsOwner();
         var selected = self.selected();
@@ -243,6 +261,7 @@ var ViewModel = function(url, selector, folderPicker) {
         'text-success', 5000);
         // Update folder in ViewModel
         self.urls(response.result.urls);
+        self.cancelSelection();
     }
 
     function onSubmitError() {

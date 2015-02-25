@@ -1,4 +1,3 @@
-import httplib as http
 import os
 import urllib
 import uuid
@@ -6,11 +5,11 @@ import uuid
 from pymongo import MongoClient
 import requests
 
-from framework.exceptions import HTTPError
 from framework.mongo.utils import to_mongo_key
 
 from website import settings
 from website.addons.wiki import settings as wiki_settings
+from website.addons.wiki.exceptions import InvalidVersionError
 
 
 def generate_private_uuid(node, wname):
@@ -136,7 +135,7 @@ def format_wiki_version(version, num_versions, allow_preview):
     if version.isdigit():
         version = int(version)
         if version > num_versions or version < 1:
-            raise HTTPError(http.BAD_REQUEST)
+            raise InvalidVersionError
         elif version == num_versions:
             return 'current'
         elif version == num_versions - 1:
@@ -144,8 +143,8 @@ def format_wiki_version(version, num_versions, allow_preview):
     elif version != 'current' and version != 'previous':
         if allow_preview and version == 'preview':
             return version
-        raise HTTPError(http.BAD_REQUEST)
+        raise InvalidVersionError
     elif version == 'previous' and num_versions == 0:
-        raise HTTPError(http.BAD_REQUEST)
+        raise InvalidVersionError
 
     return version

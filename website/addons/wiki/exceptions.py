@@ -28,3 +28,7 @@ class PageConflictError(WikiError):
 class PageNotFoundError(WikiError):
     """Raised if user tries to access a wiki page that does not exist."""
     pass
+
+class InvalidVersionError(WikiError):
+    """Raised if user tries to access a wiki page version that does not exist."""
+    pass

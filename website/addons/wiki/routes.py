@@ -124,10 +124,6 @@ api_routes = {
         Rule([
             '/project/<pid>/wiki/<wname>/',
             '/project/<pid>/node/<nid>/wiki/<wname>/',
-            '/project/<pid>/wiki/<wname>/edit/',
-            '/project/<pid>/node/<nid>/wiki/<wname>/edit/',
-            '/project/<pid>/wiki/<wname>/compare/<int:wver>/',
-            '/project/<pid>/node/<nid>/wiki/<wname>/compare/<int:wver>/',
         ], 'delete', views.project_wiki_delete, json_renderer),
 
     ],

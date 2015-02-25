@@ -458,3 +458,12 @@ class TestNodeSettingsCallbacks(OsfTestCase):
         assert_true(self.node_settings.folder_id is None)
         assert_true(self.node_settings.folder_path is None)
         assert_true(self.node_settings.user_settings is None)
+
+    def test_does_not_get_copied_to_registrations(self):
+        registration = self.project.register_node(
+            schema=None,
+            auth=Auth(user=self.project.creator),
+            template='Template1',
+            data='hodor'
+        )
+        assert_false(registration.has_addon('googledrive'))

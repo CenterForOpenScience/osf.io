@@ -382,23 +382,6 @@ class GoogleDriveNodeSettings(AddonNodeSettingsBase):
     # backwards compatibility
     before_remove_contributor = before_remove_contributor_message
 
-    # def after_register(self, node, registration, user, save=True):
-    #     """After registering a node, copy the user settings and save the
-    #     chosen folder.
-
-    #     :return: A tuple of the form (cloned_settings, message)
-    #     """
-    #     clone, message = super(GoogleDriveNodeSettings, self).after_register(
-    #         node, registration, user, save=False
-    #     )
-    #     # Copy user_settings and add registration data
-    #     if self.has_auth and self.folder is not None:
-    #         clone.user_settings = self.user_settings
-    #         clone.registration_data['folder'] = self.folder
-    #     if save:
-    #         clone.save()
-    #     return clone, message
-
     def after_fork(self, node, fork, user, save=True):
         """After forking, copy user settings if the user is the one who authorized
         the addon.

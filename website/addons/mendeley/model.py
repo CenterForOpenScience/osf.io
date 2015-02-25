@@ -275,16 +275,7 @@ class Mendeley(ExternalProvider):
 
     def _get_citations(self, src):
 
-        documents = []
-
-        page_iter = src.documents.iter(page_size=500)
-        more = True
-        while more:
-            try:
-                doc = page_iter.next()
-                documents.append(doc)
-            except StopIteration:
-                more = False
+        documents = src.documents.iter(page_size=500)
         return (
             self._citation_for_mendeley_document(document)
             for document in documents
