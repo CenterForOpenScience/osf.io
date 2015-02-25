@@ -47,7 +47,7 @@ class GoogleDriveFileMetadata(BaseGoogleDriveMetadata, metadata.BaseFileMetadata
         name, ext = os.path.splitext(title)
         if utils.is_docs_file(self.raw) and not ext:
             ext = utils.get_extension(self.raw['exportLinks'])
-            title += '.' + ext
+            title += ext
         return title
 
     @property
@@ -69,6 +69,13 @@ class GoogleDriveFileMetadata(BaseGoogleDriveMetadata, metadata.BaseFileMetadata
     @property
     def path(self):
         return os.path.join(str(self._path), self.raw['title'])
+
+    @property
+    def extra(self):
+        ret = super().extra
+        if utils.is_docs_file(self.raw):
+            ret['downloadExt'] = utils.get_download_extension(self.raw['exportLinks'])
+        return ret
 
 
 class GoogleDriveRevision(metadata.BaseFileRevisionMetadata):
