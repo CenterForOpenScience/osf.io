@@ -2059,6 +2059,10 @@ span#profileFullname{
     color: #738EA2;
 }
 
+.progress-no-margin {
+    margin-bottom: 0;
+}
+
 .sharejs-info-btn {
     background: none;
     outline : 0 !important;

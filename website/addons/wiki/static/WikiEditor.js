@@ -66,17 +66,25 @@ function ViewModel(url, viewText) {
 
     self.statusDisplay = ko.computed(function() {
         switch(self.throttledStatus()) {
+            case 'connected':
+                return 'Live editing mode';
             case 'connecting':
                 return 'Attempting to connect';
             case 'unsupported':
-                return 'Your browser does not support live editing';
+                return 'Unsupported browser';
             default:
-                return 'Live editing unavailable';
+                return 'Unavailable: Live editing';
         }
     });
 
     self.progressBar = ko.computed(function() {
         switch(self.throttledStatus()) {
+            case 'connected':
+                return {
+                    class: 'progress-bar progress-bar-success',
+                    style: 'width: 100%'
+                };
+
             case 'connecting':
                 return {
                     class: 'progress-bar progress-bar-warning progress-bar-striped active',
@@ -92,6 +100,8 @@ function ViewModel(url, viewText) {
 
     self.modalTarget = ko.computed(function() {
         switch(self.throttledStatus()) {
+            case 'connected':
+                return '#connectedModal';
             case 'connecting':
                 return '#connectingModal';
             case 'unsupported':

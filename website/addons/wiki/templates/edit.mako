@@ -56,47 +56,44 @@
                  class="${'col-sm-{0}'.format(12 / len(set(panels_used).intersection({'view', 'edit', 'compare'}))) | n}"
                  style="${'' if 'edit' in panels_used else 'display: none' | n}">
                 <div class="wiki-panel">
-                  <div class="wiki-panel-header"> <i class="icon-edit"> </i>  Edit </div>
+                  <div class="wiki-panel-header">
+                    <div class="row">
+                      <div class="col-md-6">
+                           <i class="icon-edit"> </i>  Edit
+                      </div>
+                        <div class="col-md-6">
+                          <div class="progress progress-no-margin pointer"
+                               data-toggle="modal"
+                               data-bind="attr: {data-target: modalTarget}"
+                                  >
+                              <div role="progressbar"
+                                   data-bind="attr: progressBar"
+                                      >
+                                  <span data-bind="text: statusDisplay"></span>
+                                  <span class="sharejs-info-btn">
+                                      <i class="icon-question-sign icon-large"></i>
+                                  </span>
+                              </div>
+                          </div>
+                        </div>
+                        <div class="col-md-2">
+                        </div>
+                    </div>
+                  </div>
                   <div class="wiki-panel-body">
                       <form id="wiki-form" action="${urls['web']['edit']}" method="POST">
                         <div class="row">
                         <div class="col-xs-12">
                           <div class="form-group wmd-panel">
-                              <div class="row">
-                                  <div class="col-sm-8">
-                                       <p>
-                                           <em>Changes will be stored but not published until
-                                           you click "Save."</em>
-                                       </p>
-                                  </div>
-                                  <div class="col-sm-4">
-                                      <ul class="list-inline" data-bind="foreach: activeUsers" class="pull-right">
-                                          <!-- ko ifnot: id === '${user_id}' -->
-                                              <li><a data-bind="attr: { href: url }" >
-                                                  <img data-bind="attr: {src: gravatar}, tooltip: {title: name, placement: 'bottom'}"
-                                                       style="border: 1px solid black;">
-                                              </a></li>
-                                          <!-- /ko -->
-                                      </ul>
-                                  </div>
-                              </div>
+                              <ul class="list-inline" data-bind="foreach: activeUsers" class="pull-right">
+                                  <!-- ko ifnot: id === '${user_id}' -->
+                                      <li><a data-bind="attr: { href: url }" >
+                                          <img data-container="body" data-bind="attr: {src: gravatar}, tooltip: {title: name, placement: 'top'}"
+                                               style="border: 1px solid black;">
+                                      </a></li>
+                                  <!-- /ko -->
+                              </ul>
                               <div id="wmd-button-bar"></div>
-                              <div data-bind="fadeVisible: throttledStatus() !== 'connected'" class="scripted">
-                                  <div class="progress" style="margin-bottom: 5px">
-                                      <div role="progressbar"
-                                           data-bind="attr: progressBar"
-                                              >
-                                          <span data-bind="text: statusDisplay"></span>
-                                          <a class="sharejs-info-btn">
-                                              <i class="icon-question-sign icon-large"
-                                                 data-toggle="modal"
-                                                 data-bind="attr: {data-target: modalTarget}"
-                                                      >
-                                              </i>
-                                          </a>
-                                      </div>
-                                  </div>
-                              </div>
 
                               <div id="editor" class="wmd-input wiki-editor"
                                    data-bind="ace: currentText">Loading. . .</div>
@@ -235,6 +232,24 @@
       </div>
       <div class="modal-footer">
           <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="connectedModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h3 class="modal-title">Connected to the collaborative wiki</h3>
+      </div>
+      <div class="modal-body">
+        <p>
+            This page is currently connected to the collaborative wiki. All edits made will be visible to
+            contributors with edit permission in real time. Changes will be stored
+            but not published until you click the "Save" button.
+        </p>
       </div>
     </div>
   </div>
