@@ -1,32 +1,38 @@
-from .model import AddonZoteroNodeSettings
-from .routes import settings_routes, page_routes, widget_routes
+from . import model
+from . import routes
 
-MODELS = [AddonZoteroNodeSettings]
-NODE_SETTINGS_MODEL = AddonZoteroNodeSettings
+MODELS = [
+    model.ZoteroUserSettings,
+    model.ZoteroNodeSettings,
+]
 
-ROUTES = [settings_routes, page_routes, widget_routes]
+
+USER_SETTINGS_MODEL = model.ZoteroUserSettings
+NODE_SETTINGS_MODEL = model.ZoteroNodeSettings
+
+ROUTES = [routes.api_routes]
 
 SHORT_NAME = 'zotero'
 FULL_NAME = 'Zotero'
 
-OWNERS = ['node']
+OWNERS = ['user', 'node']
 
 ADDED_DEFAULT = []
 ADDED_MANDATORY = []
 
-VIEWS = ['widget', 'page']
-CONFIGS = ['node']
+VIEWS = ['widget']
+CONFIGS = ['user', 'node']
 
-CATEGORIES = ['bibliography']
+CATEGORIES = ['citations']
 
-INCLUDE_JS = {
-    'widget': [],
-    'page': [],
-}
+INCLUDE_JS = {}
 
 INCLUDE_CSS = {
     'widget': [],
     'page': [],
+    'files': []
 }
 
-WIDGET_HELP = 'Zotero Add-on Alpha'
+WIDGET_HELP = 'Zotero'
+
+HAS_HGRID_FILES = False

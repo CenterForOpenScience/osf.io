@@ -210,7 +210,7 @@
                         <dd class="citation-text" data-bind="text: chicago"></dd>
                 </dl>
                 <p><strong>More</strong></p>
-                <div id="citation-style-panel">
+                <div id="citationStylePanel" class="citation-picker">
                     <input id="citationStyleInput" type="hidden" />
                 </div>
                 <pre id="citationText" class="formatted-citation"></pre>
