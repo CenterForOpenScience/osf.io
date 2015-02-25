@@ -7,107 +7,91 @@ from framework.exceptions import PermissionsError
 
 from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory
-from website.addons.mendeley.tests.factories import (
-    MendeleyAccountFactory, MendeleyUserSettingsFactory,
+from website.addons.zotero.tests.factories import (
+    ZoteroAccountFactory, ZoteroUserSettingsFactory,
     ExternalAccountFactory,
-    MendeleyNodeSettingsFactory
+    ZoteroNodeSettingsFactory
 )
-from website.addons.mendeley.provider import MendeleyCitationsProvider
+from website.addons.zotero.provider import ZoteroCitationsProvider
 
 import datetime
 
-from website.addons.mendeley import model
+from website.addons.zotero import model
 
 
-class MockFolder(object):
-
-    @property
-    def name(self):
-        return 'somename'
-
-    @property
-    def json(self):
-        return {'id': 'abc123', 'parent_id': 'cba321'}
-
-
-class MendeleyProviderTestCase(OsfTestCase):
+class ZoteroProviderTestCase(OsfTestCase):
 
     def setUp(self):
-        super(MendeleyProviderTestCase, self).setUp()
-        self.provider = model.Mendeley()
+        super(ZoteroProviderTestCase, self).setUp()
+        self.provider = model.Zotero()
 
-    @mock.patch('website.addons.mendeley.model.Mendeley._get_client')
-    def test_handle_callback(self, mock_get_client):
-        # Must return provider_id and display_name
-        mock_client = mock.Mock()
-        mock_client.profiles.me = mock.Mock(id='testid', display_name='testdisplay')
-        mock_get_client.return_value = mock_client
-        res = self.provider.handle_callback('testresponse')
-        mock_get_client.assert_called_with('testresponse')
-        assert_equal(res.get('provider_id'), 'testid')
-        assert_equal(res.get('display_name'), 'testdisplay')
+    def test_handle_callback(self):
+        mock_response = {
+            'userID': 'Fake User ID',
+            'username': 'Fake User Name',
+        }
 
-    @mock.patch('website.addons.mendeley.model.Mendeley._get_client')
-    def test_client_not_cached(self, mock_get_client):
-        # The first call to .client returns a new client
-        mock_account = mock.Mock()
-        mock_account.expires_at = datetime.datetime.now()
-        self.provider.account = mock_account
-        self.provider.client
-        mock_get_client.assert_called
-        assert_true(mock_get_client.called)
+        res = self.provider.handle_callback(mock_response)
 
-    @mock.patch('website.addons.mendeley.model.Mendeley._get_client')
-    def test_client_cached(self, mock_get_client):
-        # Repeated calls to .client returns the same client
-        self.provider._client = mock.Mock()
-        res = self.provider.client
-        assert_equal(res, self.provider._client)
-        assert_false(mock_get_client.called)
+        assert_equal(res.get('display_name'), 'Fake User Name')
+        assert_equal(res.get('provider_id'), 'Fake User ID')
 
     def test_citation_lists(self):
         mock_client = mock.Mock()
-        mock_folders = [MockFolder()]
-        mock_list = mock.Mock()
-        mock_list.items = mock_folders
-        mock_client.folders.list.return_value = mock_list
+        mock_folders = [
+            {
+                'data': {
+                    'name': 'Fake Folder',
+                    'key': 'Fake Key',
+                }
+            }
+        ]
+
+        mock_client.collections.return_value = mock_folders
         self.provider._client = mock_client
         mock_account = mock.Mock()
         self.provider.account = mock_account
-        res = self.provider.citation_lists(MendeleyCitationsProvider()._extract_folder)
-        assert_equal(res[1]['name'], mock_folders[0].name)
-        assert_equal(res[1]['id'], mock_folders[0].json['id'])
 
-class MendeleyNodeSettingsTestCase(OsfTestCase):
+        res = self.provider.citation_lists(ZoteroCitationsProvider()._extract_folder)
+        assert_equal(
+            res[1]['name'],
+            'Fake Folder'
+        )
+        assert_equal(
+            res[1]['id'],
+            'Fake Key'
+        )
+
+class ZoteroNodeSettingsTestCase(OsfTestCase):
 
     def setUp(self):
-        super(MendeleyNodeSettingsTestCase, self).setUp()
+        super(ZoteroNodeSettingsTestCase, self).setUp()
         self.node = ProjectFactory()
-        self.node_settings = model.MendeleyNodeSettings(owner=self.node)
+        self.node_settings = model.ZoteroNodeSettings(owner=self.node)
         self.node_settings.save()
         self.user = self.node.creator
-        self.user_settings = self.user.get_or_add_addon('mendeley')
+        self.user_settings = self.user.get_or_add_addon('zotero')
 
     def tearDown(self):
-        super(MendeleyNodeSettingsTestCase, self).tearDown()
+        super(ZoteroNodeSettingsTestCase, self).tearDown()
         self.user_settings.remove()
         self.node_settings.remove()
         self.node.remove()
         self.user.remove()
 
-    @mock.patch('website.addons.mendeley.model.Mendeley')
-    def test_api_not_cached(self, mock_mendeley):
+    @mock.patch('website.addons.zotero.model.Zotero')
+    def test_api_not_cached(self, mock_zotero):
         # The first call to .api returns a new object
         api = self.node_settings.api
-        mock_mendeley.assert_called_once()
-        assert_equal(api, mock_mendeley())
+        mock_zotero.assert_called_once()
+        assert_equal(api, mock_zotero())
 
-    @mock.patch('website.addons.mendeley.model.Mendeley')
-    def test_api_cached(self, mock_mendeley):
+    @mock.patch('website.addons.zotero.model.Zotero')
+    def test_api_cached(self, mock_zotero):
         # Repeated calls to .api returns the same object
         self.node_settings._api = 'testapi'
         api = self.node_settings.api
-        assert_false(mock_mendeley.called)
+        assert_false(mock_zotero.called)
         assert_equal(api, 'testapi')
 
     def test_set_auth(self):
@@ -116,7 +100,7 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
         self.user.save()
 
         # this should be reset after the call
-        self.node_settings.mendeley_list_id = 'anything'
+        self.node_settings.zotero_list_id = 'anything'
 
         self.node_settings.set_auth(
             external_account=external_account,
@@ -133,7 +117,7 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
             self.user_settings
         )
         assert_is_none(
-            self.node_settings.mendeley_list_id
+            self.node_settings.zotero_list_id
         )
 
         # user_settings was updated
@@ -158,14 +142,14 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
 
     def test_clear_auth(self):
         self.node_settings.external_account = ExternalAccountFactory()
-        self.node_settings.mendeley_list_id = 'something'
+        self.node_settings.zotero_list_id = 'something'
         self.node_settings.user_settings = self.user_settings
         self.node_settings.save()
 
         self.node_settings.clear_auth()
 
         assert_is_none(self.node_settings.external_account)
-        assert_is_none(self.node_settings.mendeley_list_id)
+        assert_is_none(self.node_settings.zotero_list_id)
         assert_is_none(self.node_settings.user_settings)
 
     def test_set_target_folder(self):
@@ -178,13 +162,13 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
             user=self.user
         )
 
-        assert_is_none(self.node_settings.mendeley_list_id)
+        assert_is_none(self.node_settings.zotero_list_id)
 
         self.node_settings.set_target_folder('fake-folder-id')
 
         # instance was updated
         assert_equal(
-            self.node_settings.mendeley_list_id,
+            self.node_settings.zotero_list_id,
             'fake-folder-id',
         )
 
@@ -222,16 +206,16 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
 
         self.node_settings.set_auth(external_account, self.user)
 
-        # mendeley_list_id should have no effect
-        self.node_settings.mendeley_list_id = None
+        # zotero_list_id should have no effect
+        self.node_settings.zotero_list_id = None
         assert_true(self.node_settings.has_auth)
 
-        # mendeley_list_id should have no effect
-        self.node_settings.mendeley_list_id = 'totally fake ID'
+        # zotero_list_id should have no effect
+        self.node_settings.zotero_list_id = 'totally fake ID'
         assert_true(self.node_settings.has_auth)
 
     def test_selected_folder_name_root(self):
-        self.node_settings.mendeley_list_id = 'ROOT'
+        self.node_settings.zotero_list_id = 'ROOT'
 
         assert_equal(
             self.node_settings.selected_folder_name,
@@ -239,23 +223,22 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
         )
 
     def test_selected_folder_name_empty(self):
-        self.node_settings.mendeley_list_id = None
+        self.node_settings.zotero_list_id = None
 
         assert_equal(
             self.node_settings.selected_folder_name,
             ''
         )
 
-    @mock.patch('website.addons.mendeley.model.Mendeley._folder_metadata')
+    @mock.patch('website.addons.zotero.model.Zotero._folder_metadata')
     def test_selected_folder_name(self, mock_folder_metadata):
         # Mock the return from api call to get the folder's name
-        mock_folder = mock.Mock()
-        mock_folder.name = 'Fake Folder'
+        mock_folder = {'data': {'name': 'Fake Folder'}}
 
         # Add the mocked return object to the mocked api client
         mock_folder_metadata.return_value = mock_folder
 
-        self.node_settings.mendeley_list_id = 'fake-list-id'
+        self.node_settings.zotero_list_id = 'fake-list-id'
 
         assert_equal(
             self.node_settings.selected_folder_name,
@@ -263,19 +246,21 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
         )
 
 
-class MendeleyUserSettingsTestCase(OsfTestCase):
+
+
+class ZoteroUserSettingsTestCase(OsfTestCase):
     def test_get_connected_accounts(self):
-        # Get all Mendeley accounts for user
-        user_accounts = [MendeleyAccountFactory(), MendeleyAccountFactory()]
+        # Get all Zotero accounts for user
+        user_accounts = [ZoteroAccountFactory(), ZoteroAccountFactory()]
         user = UserFactory(external_accounts=user_accounts)
-        user_addon = MendeleyUserSettingsFactory(owner=user)
+        user_addon = ZoteroUserSettingsFactory(owner=user)
         assert_equal(user_addon._get_connected_accounts(), user_accounts)
 
     def test_to_json(self):
         # All values are passed to the user settings view
-        user_accounts = [MendeleyAccountFactory(), MendeleyAccountFactory()]
+        user_accounts = [ZoteroAccountFactory(), ZoteroAccountFactory()]
         user = UserFactory(external_accounts=user_accounts)
-        user_addon = MendeleyUserSettingsFactory(owner=user)
+        user_addon = ZoteroUserSettingsFactory(owner=user)
         res = user_addon.to_json(user)
         for account in user_accounts:
             assert_in(
@@ -296,7 +281,7 @@ class MendeleyUserSettingsTestCase(OsfTestCase):
         self.user.external_accounts.append(self.external_account)
         self.user.save()
 
-        self.user_settings = self.user.get_or_add_addon('mendeley')
+        self.user_settings = self.user.get_or_add_addon('zotero')
 
     def test_grant_oauth_access_no_metadata(self):
         self._prep_oauth_case()

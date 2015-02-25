@@ -9,7 +9,7 @@ from website.addons.base import AddonNodeSettingsBase
 from website.oauth.models import ExternalProvider
 from pyzotero import zotero
 
-from website.addons.citations.utils import serialize_account, serialize_folder
+from website.addons.citations.utils import serialize_folder
 
 from . import settings
 
@@ -128,26 +128,6 @@ class ZoteroNodeSettings(AddonNodeSettingsBase):
     def provider_name(self):
         return 'zotero'
 
-    def grant_oauth_access(self, user, external_account, metadata=None):
-        """Grant OAuth access, updates metadata on user settings
-        :param User user:
-        :param ExternalAccount external_account:
-        :param dict metadata:
-        """
-        user_settings = user.get_addon('zotero')
-
-        # associate the user settings with this node's settings
-        if user_settings not in self.associated_user_settings:
-            self.associated_user_settings.append(user_settings)
-
-        user_settings.grant_oauth_access(
-            node=self.owner,
-            external_account=external_account,
-            metadata=metadata
-        )
-
-        user_settings.save()
-
     def set_auth(self, external_account, user):
         """Connect the node addon to a user's external account.
         """
@@ -200,43 +180,6 @@ class ZoteroNodeSettings(AddonNodeSettingsBase):
         # update this instance
         self.zotero_list_id = zotero_list_id
         self.save()
-
-    def verify_oauth_access(self, external_account, list_id):
-        """Determine if access to the ExternalAccount has been granted
-        :param ExternalAccount external_account:
-        :param str list_id: ID of the Zotero list requested
-        :return bool: True or False
-        """
-        for user_settings in self.associated_user_settings:
-            try:
-                granted = user_settings[self.owner._id][external_account._id]
-            except KeyError:
-                # no grant for this node, move along
-                continue
-
-            if list_id in granted.get('lists', []):
-                return True
-        return False
-
-    def to_json(self, user):
-        accounts = {
-            account for account
-            in user.external_accounts
-            if account.provider == 'zotero'
-        }
-        if self.external_account:
-            accounts.add(self.external_account)
-
-        ret = super(ZoteroNodeSettings, self).to_json(user)
-        ret['accounts'] = [serialize_account(each) for each in accounts]
-        ret['list_id'] = self.zotero_list_id
-        ret['current_account'] = (
-            serialize_account(self.external_account)
-            if self.external_account
-            else None
-        )
-
-        return ret
 
 
 class Zotero(ExternalProvider):
@@ -300,12 +243,22 @@ class Zotero(ExternalProvider):
         if list_id == 'ROOT':
             list_id = None
 
-        collection = self.client.collection(list_id) if list_id else None
-        collection_items = self.client.collection_items(list_id, content='csljson') if list_id else None
+        if list_id:
+            collection = self.client.collection(list_id)
 
-        if collection:
+            citations = []
+            more = True
+            offset = 0
+            while more:
+                page = self.client.collection_items(list_id, content='csljson', size=100, start=offset)
+                citations = citations + page
+                if len(page) == 0 or len(page) < 100:
+                    more = False
+                else:
+                    offset = offset + len(page)
             return self._citations_for_zotero_collection(collection_items)
-        return self._citations_for_zotero_user()
+        else:
+            return self._citations_for_zotero_user()
 
     def _citations_for_zotero_collection(self, collection):
         """Get all the citations in a specified collection
@@ -317,4 +270,14 @@ class Zotero(ExternalProvider):
 
     def _citations_for_zotero_user(self):
         """Get all the citations from the user """
-        return self.client.items(content='csljson')
+        citations = []
+        more = True
+        offset = 0
+        while more:
+            page = self.client.items(content='csljson', limit=100, start=offset)
+            citations = citations + page
+            if len(page) == 0 or len(page) < 100:
+                more = False
+            else:
+                offset = offset + len(page)
+        return citations

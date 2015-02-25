@@ -7,17 +7,12 @@
             <a data-bind="click: $root.askDisconnect" class="pull-right text-danger">Delete Access Token</a>
         </div>
     </div>
-    <br />
     <!-- Flashed Messages -->
     <div class="help-block">
         <p data-bind="html: message, attr: {class: messageClass}"></p>
     </div>
-    <br />
     <a data-bind="click: connectAccount" class="btn btn-primary">Connect an account</a>
 </div>
-
-
-
 <%def name="submit_btn()">
 </%def>
 <%def name="on_submit()">
