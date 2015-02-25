@@ -30,7 +30,7 @@ class BoxProvider(provider.BaseProvider):
     def __init__(self, auth, credentials, settings):
         super().__init__(auth, credentials, settings)
         self.token = self.credentials['token']
-        self.folder = self.settings['folder_id']
+        self.folder = self.settings['folder']
 
     @property
     def default_headers(self):
@@ -56,7 +56,10 @@ class BoxProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
-        path = BoxPath('/{}{}'.format(self.folder.lstrip('/'), path))
+        if path.split('/')[0] == '':
+            path = '/{}{}'.format(self.folder, path)
+        import ipdb; ipdb.set_trace()
+        path = BoxPath(path)
         try:
             meta = yield from self.metadata(str(path))
         except exceptions.MetadataError:
