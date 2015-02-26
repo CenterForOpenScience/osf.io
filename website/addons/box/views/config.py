@@ -4,6 +4,7 @@ import httplib as http
 
 from flask import request
 from box.client import BoxClientException
+from urllib3.exceptions import MaxRetryError
 
 from framework.exceptions import HTTPError
 
@@ -14,6 +15,8 @@ from website.project.decorators import (
     must_have_permission, must_not_be_registration,
 )
 
+from website.addons.box import exceptions
+from website.addons.box.client import get_node_client
 from website.addons.box.client import get_client_from_user_settings
 
 
@@ -70,7 +73,7 @@ def serialize_urls(node_settings):
         'deauthorize': node.api_url_for('box_deauthorize'),
         'importAuth': node.api_url_for('box_import_user_auth'),
         # Endpoint for fetching only folders (including root)
-        'folders': node.api_url_for('box_hgrid_data_contents', foldersOnly=1, includeRoot=1),
+        'folders': node.api_url_for('box_list_folders'),
     }
     return urls
 
@@ -198,3 +201,57 @@ def box_get_share_emails(auth, user_addon, node_addon, **kwargs):
         }
         #'url': utils.get_share_folder_uri(node_addon.folder)
     }
+
+
+@must_have_addon('box', 'node')
+@must_be_addon_authorizer('box')
+def box_list_folders(node_addon, **kwargs):
+    """Returns a list of folders in Box"""
+    if not node_addon.has_auth:
+        raise HTTPError(http.FORBIDDEN)
+
+    node = node_addon.owner
+    folder_id = request.args.get('folderId')
+
+    if not folder_id:
+        return [{
+            'id': 0,
+            'path': '/',
+            'addon': 'box',
+            'kind': 'folder',
+            'name': 'All Files',
+            'urls': {
+                'folders': node.api_url_for('box_list_folders', folderId=0),
+            }
+        }]
+
+    try:
+        client = get_node_client(node)
+    except exceptions.ExpiredAuthError:
+        raise HTTPError(http.FORBIDDEN)
+
+    try:
+        metadata = client.get_folder(folder_id)
+    except BoxClientException:
+        raise HTTPError(http.NOT_FOUND)
+    except MaxRetryError:
+        raise HTTPError(http.BAD_REQUEST)
+
+    # Raise error if folder was deleted
+    if metadata.get('is_deleted'):
+        raise HTTPError(http.NOT_FOUND)
+
+    return [
+        {
+            'addon': 'box',
+            'kind': 'folder',
+            'id': item['id'],
+            'name': item['name'],
+            'path': item.get('path') or item['name'],
+            'urls': {
+                'folders': node.api_url_for('box_list_folders', folderId=item['id']),
+            }
+        }
+        for item in metadata['item_collection']['entries']
+        if item['type'] == 'folder'
+    ]
