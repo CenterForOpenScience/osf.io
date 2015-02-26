@@ -6,7 +6,7 @@ window.contextVars = $.extend(true, {}, window.contextVars, {
 });
 
 </script>
-<div class="citation-picker">t
+<div class="citation-picker">
     <input id="citationStyleSelect" type="hidden" />
 </div>
 <div id="${short_name}Widget" class="citation-widget">
