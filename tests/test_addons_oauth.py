@@ -36,8 +36,21 @@ def init_mock_addon():
         node_settings_model=MockNodeSettings,
         models=[MockUserSettings, MockNodeSettings],
     )
+    # add this so we can remove the mocked addon later.
+    settings.MOCKED_ADDON = addon_config
     settings.ADDONS_AVAILABLE_DICT[addon_config.short_name] = addon_config
     settings.ADDONS_AVAILABLE.append(addon_config)
+
+
+def remove_mock_addon():
+    settings.ADDONS_AVAILABLE_DICT.pop(settings.MOCKED_ADDON.short_name, None)
+
+    try:
+        settings.ADDONS_AVAILABLE.remove(settings.MOCKED_ADDON)
+    except ValueError:
+        pass
+
+    del settings.MOCKED_ADDON
 
 
 class TestNodeSettings(OsfTestCase):
@@ -46,6 +59,11 @@ class TestNodeSettings(OsfTestCase):
     def setUpClass(cls):
         init_mock_addon()
         super(TestNodeSettings, cls).setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        remove_mock_addon()
+        super(TestNodeSettings, cls).tearDownClass()
 
     def setUp(self):
         super(TestNodeSettings, self).setUp()
