@@ -178,7 +178,7 @@ class TestNodeSettingsCallbacks(DataverseAddonTestCase):
 
     def test_after_remove_authorized_dataverse_user_not_self(self):
         message = self.node_settings.after_remove_contributor(
-            self.project, self.user_settings.owner)
+            node=self.project, removed=self.user_settings.owner)
         self.node_settings.save()
         assert_is_none(self.node_settings.user_settings)
         assert_true(message)

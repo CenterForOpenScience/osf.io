@@ -299,7 +299,7 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
             clone.save()
         return clone, message
 
-    def after_remove_contributor(self, node, removed, auth):
+    def after_remove_contributor(self, node, removed, auth=None):
         """If the removed contributor was the user who authorized the Dropbox
         addon, remove the auth credentials from this node.
         Return the message text that will be displayed to the user.

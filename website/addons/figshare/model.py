@@ -332,7 +332,7 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
                 user=removed.fullname,
             )
 
-    def after_remove_contributor(self, node, removed, auth):
+    def after_remove_contributor(self, node, removed, auth=None):
         """
 
         :param Node node:

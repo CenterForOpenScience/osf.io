@@ -304,7 +304,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
                 bucket=self.bucket
             )
 
-    def after_remove_contributor(self, node, removed, auth):
+    def after_remove_contributor(self, node, removed, auth=None):
         """
 
         :param Node node:

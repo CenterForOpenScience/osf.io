@@ -274,7 +274,7 @@ class TestCallbacks(OsfTestCase):
         )
 
         assert_in(
-            self.project.project_or_component,
+            self.project.title,
             msg
         )
         assert_equal(
