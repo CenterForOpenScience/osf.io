@@ -206,9 +206,10 @@ class BoxUserSettings(AddonUserSettingsBase):
 
     def clear(self):
         """Clear settings and deauthorize any associated nodes."""
-        self.oauth_settings.revoke_access_token()
-        self.oauth_settings = None
-        self.save()
+        if self.oauth_settings:
+            self.oauth_settings.revoke_access_token()
+            self.oauth_settings = None
+            self.save()
 
         for node_settings in self.boxnodesettings__authorized:
             node_settings.deauthorize(Auth(self.owner))
@@ -312,7 +313,7 @@ class BoxNodeSettings(AddonNodeSettingsBase):
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
             raise exceptions.AddonError('Addon is not authorized')
-        return {'token': self.user_settings.access_token}
+        return {'token': self.user_settings.fetch_access_token()}
 
     def serialize_waterbutler_settings(self):
         if self.folder_id is None:

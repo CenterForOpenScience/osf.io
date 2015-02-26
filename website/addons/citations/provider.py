@@ -138,7 +138,7 @@ class CitationsProvider(object):
         user_accounts = [
             account for account in user.external_accounts
             if account.provider == self.provider_name
-        ]
+        ] if user else []
         user_is_owner = node_account in user_accounts
 
         # verify this list is the attached list or its descendant

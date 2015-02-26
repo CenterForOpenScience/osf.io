@@ -101,11 +101,10 @@ var ViewModel = function(url, selector, folderPicker) {
     });
 
     self.createAuth = function() {
-        $.osf.postJSON(
+        return $.osf.postJSON(
             self.urls().create
         ).success(function(response){
             window.location.href = response.url;
-            self.changeMessage('Successfully authorized Google Drive account', 'text-success');
         }).fail(function(xhr, textStatus, error) {
             self.changeMessage('Could not authorize Google Drive due to an error. Please try again later.',
                                'text-danger');

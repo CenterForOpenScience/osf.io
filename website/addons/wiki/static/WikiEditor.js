@@ -42,7 +42,7 @@ function ViewModel(url, viewText) {
     self.initText = ko.observable('');
     self.currentText = viewText; //from wikiPage's VM
     self.activeUsers = ko.observableArray([]);
-    self.status = ko.observable('connected');
+    self.status = ko.observable('connecting');
     self.throttledStatus = ko.observable(self.status());
 
     self.displayCollaborators = ko.computed(function() {
@@ -57,7 +57,7 @@ function ViewModel(url, viewText) {
     self.throttledUpdateStatus = $osf.throttle(self.updateStatus, 4000, {leading: false});
 
     self.status.subscribe(function (newValue) {
-        if (newValue === 'disconnected') {
+        if (newValue !== 'connecting') {
             self.updateStatus();
         }
 
