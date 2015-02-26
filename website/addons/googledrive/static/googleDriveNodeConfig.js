@@ -28,12 +28,14 @@ var ViewModel = function(url, selector, folderPicker) {
     // whether current user is authorizer of the addon
     self.userIsOwner = ko.observable(false);
 
+    self.showPicker = ko.observable(false);
     self.owner = ko.observable();
     self.ownerName = ko.observable();
     self.urls = ko.observable({});
     self.loadedFolders = ko.observable(false);
     self.loading = ko.observable(false);
     self.currentFolder = ko.observable(null);
+    self.currentPath = ko.observable(null);
 
     //Folderpicker specific
     self.folderPicker =  folderPicker;
@@ -56,6 +58,7 @@ var ViewModel = function(url, selector, folderPicker) {
         self.urls(response.result.urls);
         self.ownerName(response.result.ownerName);
         self.owner(response.result.urls.owner);
+        self.currentPath(response.result.currentPath);
         self.currentFolder(response.result.currentFolder);
 
         self.loadedSettings(true);
@@ -213,9 +216,11 @@ var ViewModel = function(url, selector, folderPicker) {
      * required for treebeard Hgrid
      */
     self.changeFolder = function() {
+        self.showPicker(true);
         $(self.folderPicker).folderpicker({
             onPickFolder: onPickFolder,
             filesData: self.urls().get_folders,
+            initialFolderPath : self.currentPath(),
             // Lazy-load each folder's contents
             // Each row stores its url for fetching the folders it contains
 

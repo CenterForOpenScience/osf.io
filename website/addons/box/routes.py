@@ -101,16 +101,13 @@ api_routes = {
             json_renderer
         ),
 
-        ##### HGrid #####
         Rule(
             [
-                '/project/<pid>/box/hgrid/',
-                '/project/<pid>/node/<nid>/box/hgrid/',
-                '/project/<pid>/box/hgrid/<path:path>',
-                '/project/<pid>/node/<nid>/box/hgrid/<path:path>',
+                '/project/<pid>/box/folders/',
+                '/project/<pid>/node/<nid>/box/folders/',
             ],
             'get',
-            views.hgrid.box_hgrid_data_contents,
+            views.config.box_list_folders,
             json_renderer
         ),
     ],
