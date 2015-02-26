@@ -17,8 +17,8 @@ var $osf = require('osfHelpers');
 
 ko.punches.enableAll();
 /**
-    * Knockout view model for the Box node settings widget.
-    */
+*  Knockout view model for the Box node settings widget.
+*/
 var ViewModel = function(url, selector, folderPicker) {
     var self = this;
     self.selector = selector;
@@ -68,8 +68,8 @@ var ViewModel = function(url, selector, folderPicker) {
     });
 
     /**
-        * Update the view model from data returned from the server.
-        */
+    *  Update the view model from data returned from the server.
+    */
     self.updateFromData = function(data) {
         self.ownerName(data.ownerName);
         self.nodeHasAuth(data.nodeHasAuth);
@@ -82,39 +82,40 @@ var ViewModel = function(url, selector, folderPicker) {
     };
 
     self.fetchFromServer = function() {
-        $.ajax({
+        var request = $.ajax({
             url: url, type: 'GET', dataType: 'json',
-            success: function(response) {
-                self.updateFromData(response.result);
-                self.loadedSettings(true);
-                if (!self.validCredentials()){
-                    if (self.userIsOwner()) {
-                        self.changeMessage('Could not retrieve Box settings at ' +
-                        'this time. The Box addon credentials may no longer be valid.' +
-                        ' Try deauthorizing and reauthorizing Box on your <a href="' +
-                            self.urls().settings + '">account settings page</a>.',
-                        'text-warning');
-                    } else {
-                        self.changeMessage('Could not retrieve Box settings at ' +
-                        'this time. The Box addon credentials may no longer be valid.' +
-                        ' Contact ' + self.ownerName() + ' to verify.',
-                        'text-warning');
-                    }
-                }
-            },
-            error: function(xhr, textStatus, error) {
-                self.changeMessage('Could not retrieve Box settings at ' +
-                    'this time. Please refresh ' +
-                    'the page. If the problem persists, email ' +
-                    '<a href="mailto:support@osf.io">support@osf.io</a>.',
+        })
+        .done(function(response) {
+            self.updateFromData(response.result);
+            self.loadedSettings(true);
+            if (!self.validCredentials()){
+                if (self.userIsOwner()) {
+                    self.changeMessage('Could not retrieve Box settings at ' +
+                    'this time. The Box addon credentials may no longer be valid.' +
+                    ' Try deauthorizing and reauthorizing Box on your <a href="' +
+                        self.urls().settings + '">account settings page</a>.',
                     'text-warning');
-                Raven.captureMessage('Could not GET Box settings', {
-                    url: url,
-                    textStatus: textStatus,
-                    error: error
-                });
+                } else {
+                    self.changeMessage('Could not retrieve Box settings at ' +
+                    'this time. The Box addon credentials may no longer be valid.' +
+                    ' Contact ' + self.ownerName() + ' to verify.',
+                    'text-warning');
+                }
             }
+        })
+        .fail(function(xhr, textStatus, error) {
+            self.changeMessage('Could not retrieve Box settings at ' +
+                'this time. Please refresh ' +
+                'the page. If the problem persists, email ' +
+                '<a href="mailto:support@osf.io">support@osf.io</a>.',
+                'text-warning');
+            Raven.captureMessage('Could not GET Box settings', {
+                url: url,
+                textStatus: textStatus,
+                error: error
+            });
         });
+        return request;
     };
 
     // Initial fetch from server
@@ -151,8 +152,8 @@ var ViewModel = function(url, selector, folderPicker) {
 
 
     /**
-        * Whether or not to show the Import Access Token Button
-        */
+    *  Whether or not to show the Import Access Token Button
+    */
     self.showImport = ko.computed(function() {
         // Invoke the observables to ensure dependency tracking
         var userHasAuth = self.userHasAuth();
@@ -206,8 +207,8 @@ var ViewModel = function(url, selector, folderPicker) {
     }
 
     /**
-        * Send a PUT request to change the linked Box folder.
-        */
+    * Send a PUT request to change the linked Box folder.
+    */
     self.submitSettings = function() {
         $osf.putJSON(self.urls().config, ko.toJS(self))
             .done(onSubmitSuccess)
@@ -215,11 +216,10 @@ var ViewModel = function(url, selector, folderPicker) {
     };
 
     /**
-        * Must be used to update radio buttons and knockout view model simultaneously
-        */
+    *  Must be used to update radio buttons and knockout view model simultaneously
+    */
     self.cancelSelection = function() {
         self.selected(null);
-        // $(selector + ' input[type="radio"]').prop('checked', false);
     };
 
     /** Change the flashed message. */
@@ -237,29 +237,31 @@ var ViewModel = function(url, selector, folderPicker) {
     };
 
     /**
-        * Send DELETE request to deauthorize this node.
-        */
+    *  Send DELETE request to deauthorize this node.
+    */
     function sendDeauth() {
+        var url = self.urls().deauthorize;
         return $.ajax({
-            url: self.urls().deauthorize,
+            url: url,
             type: 'DELETE',
-            success: function() {
-                // Update observables
-                self.nodeHasAuth(false);
-                self.cancelSelection();
-                self.currentDisplay(null);
-                self.changeMessage('Deauthorized Box.', 'text-warning', 3000);
-            },
-            error: function() {
-                self.changeMessage('Could not deauthorize because of an error. Please try again later.',
-                    'text-danger');
-            }
+        }).done(function() {
+            // Update observables
+            self.nodeHasAuth(false);
+            self.cancelSelection();
+            self.currentDisplay(null);
+            self.changeMessage('Deauthorized Box.', 'text-warning', 3000);
+        }).fail(function(xhr, status, error) {
+            self.changeMessage('Could not deauthorize because of an error. Please try again later.',
+                'text-danger');
+            Raven.captureMessage('Failed to deauthorize Box.', {
+                url: url, status: status, error: error
+            });
         });
     }
 
     /** Pop up a confirmation to deauthorize Box from this node.
-        *  Send DELETE request if confirmed.
-        */
+    *   Send DELETE request if confirmed.
+    */
     self.deauthorize = function() {
         bootbox.confirm({
             title: 'Deauthorize Box?',
@@ -281,9 +283,12 @@ var ViewModel = function(url, selector, folderPicker) {
         self.activatePicker();
     }
 
-    function onImportError() {
+    function onImportError(xhr, status, error) {
         self.message('Error occurred while importing access token.');
         self.messageClass('text-danger');
+        Raven.captureMessage('Failed to import Box access token.', {
+            xhr: xhr, status: status, error: error
+        });
     }
 
     /**
@@ -314,8 +319,8 @@ var ViewModel = function(url, selector, folderPicker) {
         }
 
     /**
-        * Activates the HGrid folder picker.
-        */
+    *  Activates the HGrid folder picker.
+    */
     self.activatePicker = function() {
         self.currentDisplay(self.PICKER);
         // Only load folders if they haven't already been requested
@@ -330,10 +335,10 @@ var ViewModel = function(url, selector, folderPicker) {
                 filesData: self.urls().folders, // URL for fetching folders
                 // Lazy-load each folder's contents
                 // Each row stores its url for fetching the folders it contains
-
                 resolveLazyloadUrl : function(item){
-                    if (item.data.urls)
+                    if (item.data.urls) {
                         return item.data.urls.folders;
+                    }
                     return null;
                 },
                 oddEvenClass : {
@@ -362,8 +367,8 @@ var ViewModel = function(url, selector, folderPicker) {
     };
 
     /**
-        * Toggles the visibility of the folder picker.
-        */
+    *  Toggles the visibility of the folder picker.
+    */
     self.togglePicker = function() {
         // Toggle visibility of folder picker
         var shown = self.currentDisplay() === self.PICKER;
