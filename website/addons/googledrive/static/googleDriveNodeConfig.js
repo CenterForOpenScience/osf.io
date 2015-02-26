@@ -23,6 +23,7 @@ ko.punches.enableAll();
 var ViewModel = function(url, selector, folderPicker) {
     var self = this;
     self.url = url;
+    self.loaded = false;
     self.nodeHasAuth = ko.observable(false);
     self.userHasAuth = ko.observable(false);
     // whether current user is authorizer of the addon
@@ -215,32 +216,36 @@ var ViewModel = function(url, selector, folderPicker) {
      * required for treebeard Hgrid
      */
     self.changeFolder = function() {
-        self.showPicker(true);
-        $(self.folderPicker).folderpicker({
-            onPickFolder: onPickFolder,
-            filesData: self.urls().get_folders,
-            initialFolderPath : self.currentPath(),
-            // Lazy-load each folder's contents
-            // Each row stores its url for fetching the folders it contains
+        self.showPicker(!self.showPicker());
 
-            resolveLazyloadUrl : function(item){
-                return item.data.urls.get_folders;
-            },
-            ajaxOptions: {
-                error: function (xhr, textStatus, error) {
-                    self.loading(false);
-                    self.changeMessage(
-                        'Could not connect to Google Drive at this time. ' +
-                        'Please try again later.', 'text-warning'
-                    );
-                    Raven.captureMessage('Could not GET get Google Drive contents.', {
-                        textStatus: textStatus,
-                        error: error
-                    });
-                }
-            },
-            folderPickerOnload: function () {}
-        });
+        if (!self.loaded) {
+            self.loaded = true;
+            $(self.folderPicker).folderpicker({
+                onPickFolder: onPickFolder,
+                filesData: self.urls().get_folders,
+                initialFolderPath : self.currentPath(),
+                // Lazy-load each folder's contents
+                // Each row stores its url for fetching the folders it contains
+
+                resolveLazyloadUrl : function(item){
+                    return item.data.urls.get_folders;
+                },
+                ajaxOptions: {
+                    error: function (xhr, textStatus, error) {
+                        self.loading(false);
+                        self.changeMessage(
+                            'Could not connect to Google Drive at this time. ' +
+                            'Please try again later.', 'text-warning'
+                        );
+                        Raven.captureMessage('Could not GET get Google Drive contents.', {
+                            textStatus: textStatus,
+                            error: error
+                        });
+                    }
+                },
+                folderPickerOnload: function () {}
+            });
+        }
     };
 
     self.showFolders = ko.computed(function(){
@@ -259,13 +264,15 @@ var ViewModel = function(url, selector, folderPicker) {
 
     function onSubmitSuccess(response) {
         self.currentFolder(self.selected().name);
-        self.changeMessage('Successfully linked "' + self.selected().name +
-                            '". Go to the <a href="' +
-                            self.urls().files + '">Files page</a> to view your files.',
+        self.changeMessage(
+            'Successfully linked "' +
+           $('<div/>').text(self.selected().name).html() +
+            '". Go to the <a href="' +
+            self.urls().files +
+            '">Files page</a> to view your files.',
         'text-success', 5000);
         // Update folder in ViewModel
         self.urls(response.result.urls);
-        self.cancelSelection();
     }
 
     function onSubmitError() {
