@@ -1,3 +1,4 @@
+import http
 import json
 import asyncio
 
@@ -55,9 +56,12 @@ class RevisionsError(ProviderError):
     pass
 
 
-class FileNotFoundError(ProviderError):
+class NotFoundError(ProviderError):
     def __init__(self, path):
-        super().__init__('Could not retrieve file or directory {0}'.format(path), code=404)
+        super().__init__(
+            'Could not retrieve file or directory {}'.format(path),
+            code=http.client.NOT_FOUND,
+        )
 
 
 @asyncio.coroutine
