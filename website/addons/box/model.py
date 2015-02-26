@@ -7,7 +7,7 @@ from datetime import datetime
 
 import furl
 import requests
-from box import CredentialsV2, BoxAuthenticationException
+from box import CredentialsV2, BoxAuthenticationException, refresh_v2_token
 from modularodm import fields, Q, StoredObject
 from modularodm.exceptions import ModularOdmException
 
@@ -92,16 +92,20 @@ class BoxOAuthSettings(StoredObject):
             self.access_token,
             self.refresh_token,
             settings.BOX_KEY,
-            settings.BOX_SECRET,
-            self._token_refreshed_callback,
+            settings.BOX_SECRET
         )
 
     def refresh_access_token(self, force=False):
         if self._needs_refresh() or force:
             try:
-                self.get_credentialsv2().refresh()
+                token = refresh_v2_token(settings.BOX_KEY, settings.BOX_SECRET, self.refresh_token)
             except BoxAuthenticationException:
                 raise ExpiredAuthError()
+
+            self.access_token = token['access_token']
+            self.refresh_token = token.get('refresh_token', self.refresh_token)
+            self.expires_at = datetime.utcfromtimestamp(time.time() + token['expires_in'])
+            self.save()
 
     def revoke_access_token(self):
         # if there is only one osf user linked to this box user oauth, revoke the token,
@@ -123,12 +127,6 @@ class BoxOAuthSettings(StoredObject):
         if self.expires_at is None:
             return False
         return (self.expires_at - datetime.utcnow()).total_seconds() < settings.REFRESH_TIME
-
-    def _token_refreshed_callback(self, access_token, refresh_token):
-        self.access_token = access_token
-        self.refresh_token = refresh_token
-        self.expires_at = datetime.utcfromtimestamp(time.time() + 3600)
-        self.save()
 
 
 class BoxUserSettings(AddonUserSettingsBase):

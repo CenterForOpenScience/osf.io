@@ -139,7 +139,7 @@ def box_oauth_finish(auth, **kwargs):
         oauth_settings = BoxOAuthSettings(user_id=about['id'], username=about['name'])
         oauth_settings.save()
 
-    oauth_settings.refresh = result['refresh_token']
+    oauth_settings.refresh_token = result['refresh_token']
     oauth_settings.access_token = result['access_token']
     oauth_settings.expires_at = datetime.utcfromtimestamp(time.time() + 3600)
 
