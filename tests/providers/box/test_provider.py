@@ -286,18 +286,40 @@ class TestCRUD:
     @pytest.mark.aiohttpretty
     def test_upload_create(self, provider, folder_object_metadata, folder_list_metadata, file_metadata, file_stream, settings):
         path = BoxPath('/' + provider.folder + '/newfile')
-        url = provider._build_upload_url('files', 'content')
         folder_object_url = provider.build_url('folders', path._id)
         folder_list_url = provider.build_url('folders', path._id, 'items')
+        upload_url = provider._build_upload_url('files', 'content')
         aiohttpretty.register_json_uri('GET', folder_object_url, body=folder_object_metadata)
         aiohttpretty.register_json_uri('GET', folder_list_url, body=folder_list_metadata)
-        aiohttpretty.register_json_uri('POST', url, status=201, body=file_metadata)
+        aiohttpretty.register_json_uri('POST', upload_url, status=201, body=file_metadata)
         metadata, created = yield from provider.upload(file_stream, str(path))
         expected = BoxFileMetadata(file_metadata['entries'][0], provider.folder).serialized()
 
         assert metadata == expected
         assert created is True
-        assert aiohttpretty.has_call(method='POST', uri=url)
+        assert aiohttpretty.has_call(method='GET', uri=folder_object_url)
+        assert aiohttpretty.has_call(method='GET', uri=folder_list_url)
+        assert aiohttpretty.has_call(method='POST', uri=upload_url)
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_upload_update(self, provider, folder_object_metadata, folder_list_metadata, file_metadata, file_stream, settings):
+        item = folder_list_metadata['entries'][0]
+        path = BoxPath('/' + provider.folder + '/' + item['name'])
+        folder_object_url = provider.build_url('folders', path._id)
+        folder_list_url = provider.build_url('folders', path._id, 'items')
+        upload_url = provider._build_upload_url('files', item['id'], 'content')
+        aiohttpretty.register_json_uri('GET', folder_object_url, body=folder_object_metadata)
+        aiohttpretty.register_json_uri('GET', folder_list_url, body=folder_list_metadata)
+        aiohttpretty.register_json_uri('POST', upload_url, status=201, body=file_metadata)
+        metadata, created = yield from provider.upload(file_stream, str(path))
+        expected = BoxFileMetadata(file_metadata['entries'][0], provider.folder).serialized()
+
+        assert metadata == expected
+        assert created is False
+        assert aiohttpretty.has_call(method='GET', uri=folder_object_url)
+        assert aiohttpretty.has_call(method='GET', uri=folder_list_url)
+        assert aiohttpretty.has_call(method='POST', uri=upload_url)
 
     @async
     @pytest.mark.aiohttpretty
