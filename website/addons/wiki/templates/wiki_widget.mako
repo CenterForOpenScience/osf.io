@@ -14,6 +14,8 @@
     window.contextVars = $.extend(true, {}, window.contextVars, {
         wikiWidget: true,
         usePythonRender: ${json.dumps(use_python_render)},
-        wikiContentUrl: '${wiki_content_url}'
+        urls: {
+            wikiContent: '${wiki_content_url}'
+        }
     })
 </script>

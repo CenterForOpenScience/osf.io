@@ -156,7 +156,7 @@ $(document).ready(function() {
         // Render the raw markdown of the wiki
         if (!ctx.usePythonRender) {
             var request = $.ajax({
-                url: ctx.wikiContentUrl
+                url: ctx.urls.wikiContent
             });
             request.done(function(resp) {
                 var rawText = resp.wiki_content || '*No wiki content*';
