@@ -98,36 +98,31 @@ class GoogleDriveOAuthSettings(StoredObject):
     user_id = fields.StringField(primary=True, required=True)
     # google drive user name this is the user's login
     username = fields.StringField()
-    _access_token = fields.StringField()
+    access_token = fields.StringField()
     refresh_token = fields.StringField()
     expires_at = fields.DateTimeField()
 
-    @property
-    def access_token(self):
+    def fetch_access_token(self):
         self.refresh_access_token()
-        return self._access_token
-
-    @access_token.setter
-    def access_token(self, val):
-        self._access_token = val
+        return self.access_token
 
     def refresh_access_token(self, force=False):
-        if self._needs_refresh or force:
+        if self._needs_refresh() or force:
             client = GoogleAuthClient()
-            token = client.refresh(self._access_token, self.refresh_token)
+            token = client.refresh(self.access_token, self.refresh_token)
 
-            self._access_token = token['access_token']
+            self.access_token = token['access_token']
             self.refresh_token = token['refresh_token']
             self.expires_at = datetime.utcfromtimestamp(token['expires_at'])
             self.save()
 
-    def revoke_token(self):
+    def revoke_access_token(self):
         # if there is only one osf user linked to this google drive user oauth, revoke the token,
         # otherwise, disconnect the osf user from the googledriveoauthsettings
         if len(self.googledriveusersettings__accessed) <= 1:
             client = GoogleAuthClient()
             try:
-                client.revoke(self._access_token)
+                client.revoke(self.access_token)
             except:
                 # no need to fail, revoke is opportunistic
                 pass
@@ -135,7 +130,6 @@ class GoogleDriveOAuthSettings(StoredObject):
             # remove the object as its the last instance.
             GoogleDriveOAuthSettings.remove_one(self)
 
-    @property
     def _needs_refresh(self):
         if self.expires_at is None:
             return False
@@ -206,12 +200,13 @@ class GoogleDriveUserSettings(AddonUserSettingsBase):
             return self.oauth_settings.access_token is not None
         return False
 
-    def refresh_access_token(self):
-        self.oauth_settings.refresh_access_token()
-        return self.oauth_settings.access_token
+    def fetch_access_token(self):
+        if self.oauth_settings:
+            return self.oauth_settings.fetch_access_token()
+        return None
 
     def clear(self):
-        self.oauth_settings.revoke_token()
+        self.oauth_settings.revoke_access_token()
         self.oauth_settings = None
         self.save()
 
