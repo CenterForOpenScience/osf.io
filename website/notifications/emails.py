@@ -11,16 +11,15 @@ from website.notifications import utils
 
 def notify(uid, event, **context):
     key = utils.to_subscription_key(uid, event)
-
     node_subscribers = []
+    target_user = context.get('target_user', None)
+
+    try:
+        subscription = Subscription.find_one(Q('_id', 'eq', key))
+    except NoResultsFound:
+        subscription = None
 
     for notification_type in notifications.keys():
-
-        try:
-            subscription = Subscription.find_one(Q('_id', 'eq', key))
-        except NoResultsFound:
-            break
-
         try:
             subscribed_users = getattr(subscription, notification_type)
         except AttributeError:
@@ -30,9 +29,10 @@ def notify(uid, event, **context):
             node_subscribers.append(u)
 
         if subscribed_users and notification_type != 'none':
+            event = 'comment_replies' if target_user else event
             send([u._id for u in subscribed_users], notification_type, uid, event, **context)
 
-    check_parent(uid, event, node_subscribers, **context)
+    return check_parent(uid, event, node_subscribers, **context)
 
 
 def check_parent(uid, event, node_subscribers, **context):
@@ -40,6 +40,8 @@ def check_parent(uid, event, node_subscribers, **context):
         and send transactional email to indirect subscribers.
     """
     node = Node.load(uid)
+    target_user = context.get('target_user', None)
+
     if node and node.node__parent:
         for p in node.node__parent:
             key = utils.to_subscription_key(p._id, event)
@@ -48,7 +50,6 @@ def check_parent(uid, event, node_subscribers, **context):
             except NoResultsFound:
                 return check_parent(p._id, event, node_subscribers, **context)
 
-            parent_subscribers = []
             for notification_type in notifications.keys():
                 try:
                     subscribed_users = getattr(subscription, notification_type)
@@ -57,11 +58,14 @@ def check_parent(uid, event, node_subscribers, **context):
 
                 for u in subscribed_users:
                     if u not in node_subscribers and node.has_permission(u, 'read'):
-                        parent_subscribers.append(u)
+                        node_subscribers.append(u)
                         if notification_type != 'none':
+                            event = 'comment_replies' if target_user else event
                             send([u._id], notification_type, uid, event, **context)
 
-            return check_parent(p._id, event, parent_subscribers, **context)
+            return check_parent(p._id, event, node_subscribers, **context)
+
+    return node_subscribers
 
 
 def send(subscribed_user_ids, notification_type, uid, event, **context):

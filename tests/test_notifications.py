@@ -16,7 +16,7 @@ from website.notifications.constants import SUBSCRIPTIONS_AVAILABLE, NOTIFICATIO
 from website.notifications import emails, utils
 from website.util import api_url_for
 from website import mails
-from tests.factories import ProjectFactory, NodeFactory, UserFactory, SubscriptionFactory
+from tests.factories import ProjectFactory, NodeFactory, UserFactory, SubscriptionFactory, CommentFactory
 
 
 class TestSubscriptionView(OsfTestCase):
@@ -560,7 +560,7 @@ class TestSendEmails(OsfTestCase):
 
         self.node = NodeFactory(project=self.project)
         self.node_subscription = SubscriptionFactory(
-            _id=self.node._id,
+            _id=self.node._id + '_comments',
             object_id=self.node._id,
             event_name='comments'
         )
@@ -576,7 +576,7 @@ class TestSendEmails(OsfTestCase):
     def test_notify_no_subscribers(self, send):
         node = NodeFactory()
         node_subscription = SubscriptionFactory(
-            _id=node._id,
+            _id=node._id + '_comments',
             object_id=node._id,
             event_name='comments'
         )
@@ -596,7 +596,7 @@ class TestSendEmails(OsfTestCase):
         node = NodeFactory()
         user = UserFactory()
         node_subscription = SubscriptionFactory(
-            _id=node._id,
+            _id=node._id + '_comments',
             object_id=node._id,
             event_name='comments'
         )
@@ -605,6 +605,47 @@ class TestSendEmails(OsfTestCase):
         node_subscription.save()
         emails.notify(node._id, 'comments')
         assert_false(send.called)
+
+    @mock.patch('website.notifications.emails.send')
+    def test_notify_sends_comment_reply_event_if_comment_is_reply(self, mock_send):
+        user = UserFactory()
+        sent_subscribers = emails.notify(self.project._id, 'comments', target_user=user)
+        mock_send.assert_called_with([self.project.creator._id], 'email_transactional', self.project._id, 'comment_replies', target_user=user)
+
+    # @mock.patch('website.notifications.emails.notify')
+    @mock.patch('website.project.views.comment.notify')
+    def test_check_user_comment_reply_subscription_if_email_not_sent_to_target_user(self, mock_notify):
+        # user subscribed to comment replies
+        user = UserFactory()
+        user_subscription = SubscriptionFactory(
+            _id=user._id + '_comments',
+            object_id=user._id,
+            event_name='comment_replies'
+        )
+        user_subscription.email_transactional.append(user)
+        user_subscription.save()
+
+        # user is not subscribed to project comment notifications
+        project = ProjectFactory()
+
+        # reply to user
+        target = CommentFactory(node=project, user=user)
+        content = 'hammer to fall'
+
+        # auth=project.creator.auth
+        url = project.api_url + 'comment/'
+        self.app.post_json(
+            url,
+            {
+                'content': content,
+                'isPublic': 'public',
+                'target': target._id
+
+            },
+            auth=project.creator.auth
+        )
+        assert_true(mock_notify.called)
+        assert_equal(mock_notify.call_count, 2)
 
     @mock.patch('website.notifications.emails.send')
     def test_check_parent(self, send):
