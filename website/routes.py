@@ -11,6 +11,7 @@ from framework.flask import redirect
 from framework.routing import WebRenderer
 from framework.exceptions import HTTPError
 from framework.auth import get_display_name
+from framework.routing import xml_renderer
 from framework.routing import json_renderer
 from framework.routing import process_rules
 from framework.auth import views as auth_views
@@ -635,6 +636,7 @@ def make_url_map(app):
         Rule('/search/projects/', 'get', search_views.search_projects_by_title, json_renderer),
         Rule('/share/', ['get', 'post'], search_views.search_share, json_renderer),
         Rule('/share/stats/', 'get', search_views.search_share_stats, json_renderer),
+        Rule('/share/atom/', 'get', search_views.search_share_atom, xml_renderer)
 
     ], prefix='/api/v1')
 

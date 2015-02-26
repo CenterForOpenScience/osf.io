@@ -1,7 +1,13 @@
+import json
 from time import gmtime
 from calendar import timegm
 from datetime import datetime
 
+import pytz
+
+from werkzeug.contrib.atom import AtomFeed
+
+from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 
 from elasticsearch import Elasticsearch
@@ -220,3 +226,69 @@ def data_for_charts(elastic_results):
     }
 
     return all_data
+
+
+def atom(name, data, query, size, start, url):
+    if query == '*':
+        title_query = 'All'
+    else:
+        title_query = query
+
+    if name == 'scrapi':
+        name = 'SHARE Notification Service'
+
+    prev_page = (start/size)
+
+    if prev_page == 0:
+        prev_page = (start/size) + 1
+
+    feed = AtomFeed(
+        title='{name}: RSS for query: "{title_query}"'.format(name=name, title_query=title_query),
+        feed_url='{url}'.format(url=url),
+        author="COS",
+        links=[
+            {'href': url, 'rel': 'first'},
+            {'href': '{url}page={page}'.format(url=url, page=(start/size)+2), 'rel': 'next'},
+            {'href': '{url}page={page}'.format(url=url, page=prev_page), 'rel': 'previous'}
+        ]
+    )
+
+    for doc in data:
+        try:
+            updated = pytz.utc.localize(parse(doc.get('dateUpdated')))
+        except ValueError:
+            updated = parse(doc.get('dateUpdated'))
+
+        feed.add(
+            title=doc.get('title', 'No title provided'),
+            content=json.dumps(doc, indent=4, sort_keys=True),
+            content_type='json',
+            summary=doc.get('description', 'No summary'),
+            id=doc.get('id', {}).get('serviceID') or doc['_id'],
+            updated=updated,
+            link=doc['id']['url'] if doc.get('id') else doc['links'][0]['url'],
+            author=format_contributors_for_atom(doc['contributors']),
+            categories=format_categories(doc.get('tags')),
+            published=parse(doc.get('dateUpdated'))
+        )
+
+    return feed.to_string()
+
+
+def format_contributors_for_atom(contributors_list):
+    formatted_names = []
+    for entry in contributors_list:
+        formatted_names.append({
+            'name': '{} {}'.format(entry['given'], entry['family']),
+            'email': entry.get('email', '')
+        })
+
+    return formatted_names
+
+
+def format_categories(tags_list):
+    cat_list = []
+    for tag in tags_list:
+        cat_list.append({"term": tag})
+
+    return cat_list

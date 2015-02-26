@@ -18,6 +18,8 @@ from website.models import User
 from website.search import exceptions
 import website.search.search as search
 from framework.exceptions import HTTPError
+from website.search.exceptions import IndexNotFoundError
+from website.search.exceptions import MalformedQueryError
 from website.search.util import build_query
 from website.project.views.contributor import get_node_contributors_abbrev
 
@@ -217,3 +219,41 @@ def search_share_stats():
     query = build_query(q, 0, 0) if q else {}
 
     return search.share_stats(query=query)
+
+
+def search_share_atom(node_addon, **kwargs):
+    q = request.args.get('q', '*')
+
+    try:
+        size = int(request.args.get('size', 250))
+    except ValueError:
+        size = 250
+
+    try:
+        start = (int(request.args.get('page', 1)) - 1) * size
+    except ValueError:
+        start = 0
+
+    if start < 0:
+        start = 0
+
+    if size < 0:
+        size = 250
+
+    query = node_addon.build_query(q, size=size, start=start)
+
+    try:
+        ret = search.search(query, doc_type=node_addon.namespace, index='metadata')
+    except MalformedQueryError:
+        raise HTTPError(http.BAD_REQUEST)
+    except IndexNotFoundError:
+        ret = {
+            'count': 0,
+            'results': []
+        }
+
+    node = node_addon.owner
+    name = node_addon.system_user.username
+
+    atom_url = node.api_url_for('query_app_atom', _xml=True, _absolute=True)
+    return elastic_to_atom(name, ret['results'], q, size, start, atom_url)
