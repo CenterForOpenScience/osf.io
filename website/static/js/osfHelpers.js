@@ -340,7 +340,7 @@ var FormattableDate = function(date) {
  * Escapes html characters in a string.
  */
 var htmlEscape = function(text) {
-    $('<div/>').text(text).html();
+    return $('<div/>').text(text).html();
 };
 
 // Also export these to the global namespace so that these can be used in inline
