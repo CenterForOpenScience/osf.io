@@ -84,12 +84,12 @@ class TestCRUD:
         item = fixtures.list_file['items'][0]
         query = provider._build_query(provider.folder['id'], title=path.lstrip('/'))
         list_file_url = provider.build_url('files', q=query, alt='json')
-        revision_url = provider.build_url('files', item['id'], 'revisions', revision)
+        revision_url = provider.build_url('files', item['id'], 'revisions', revision, alt='json')
         download_file_url = item['downloadUrl']
         aiohttpretty.register_json_uri('GET', list_file_url, body=fixtures.list_file)
         aiohttpretty.register_json_uri('GET', revision_url, body=item)
         aiohttpretty.register_uri('GET', download_file_url, body=body)
-        result = yield from provider.download(path)
+        result = yield from provider.download(path, revision=revision)
         content = yield from result.response.read()
         assert content == body
 
@@ -155,10 +155,21 @@ class TestCRUD:
         expected = GoogleDriveFileMetadata(item, '/').serialized()
         assert result == expected
 
-    # @async
-    # @pytest.mark.aiohttpretty
-    # def test_delete(self, provider):
-    #     pass
+    @async
+    @pytest.mark.aiohttpretty
+    def test_delete(self, provider):
+        path = '/birdie.jpg'
+        item = fixtures.list_file['items'][0]
+        query = provider._build_query(provider.folder['id'], title=path.lstrip('/'))
+        list_file_url = provider.build_url('files', q=query, alt='json')
+        delete_url = provider.build_url('files', item['id'])
+        aiohttpretty.register_json_uri('GET', list_file_url, body=fixtures.list_file)
+        aiohttpretty.register_uri('DELETE', delete_url, status=204)
+        result = yield from provider.delete(path)
+
+        assert aiohttpretty.has_call(method='GET', uri=list_file_url)
+        assert aiohttpretty.has_call(method='DELETE', uri=delete_url)
+        assert result is None
 
 
 class TestMetadata:
