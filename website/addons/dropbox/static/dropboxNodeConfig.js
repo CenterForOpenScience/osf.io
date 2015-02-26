@@ -304,18 +304,18 @@ var ViewModel = function(url, selector, folderPicker) {
     };
 
     /** Callback for chooseFolder action.
-    *   Just changes the ViewModel's self.selected observable to the selected
-    *   folder.
-    */
+     *   Just changes the ViewModel's self.selected observable to the selected
+     *   folder.
+     */
     function onPickFolder(evt, item) {
-            evt.preventDefault();
-            self.selected({name: 'Dropbox' + item.data.path, path: item.data.path});
-            return false; // Prevent event propagation
-        }
+        evt.preventDefault();
+        self.selected({name: 'Dropbox' + item.data.path, path: item.data.path});
+        return false; // Prevent event propagation
+    }
 
     /**
-        * Activates the HGrid folder picker.
-        */
+     * Activates the HGrid folder picker.
+     */
     self.activatePicker = function() {
         self.currentDisplay(self.PICKER);
         // Only load folders if they haven't already been requested
