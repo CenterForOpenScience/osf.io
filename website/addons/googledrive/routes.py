@@ -7,9 +7,42 @@ from framework.routing import Rule, json_renderer
 from . import views
 
 # Routes that use the web renderer
-web_routes = {
+auth_routes = {
     'rules': [
 
+        ##### OAuth #####
+
+        Rule(
+            ['/oauth/connect/googledrive/'],
+            'post',
+            views.auth.googledrive_oauth_start,
+            json_renderer,
+            endpoint_suffix='_user'
+        ),
+
+        Rule(
+            ['/oauth/callback/googledrive/'],
+            'get',
+            views.auth.googledrive_oauth_finish,
+            json_renderer,
+        ),
+
+        Rule(
+            ['/oauth/accounts/googledrive/'],
+            'delete',
+            views.auth.googledrive_oauth_delete_user,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/oauth/connect/googledrive/',
+                '/project/<pid>/node/<nid>/oauth/connect/googledrive/'
+            ],
+            'post',
+            views.auth.googledrive_oauth_start,
+            json_renderer,
+        ),
     ],
 }
 
@@ -18,6 +51,7 @@ api_routes = {
     'rules': [
 
         #### Profile settings ###
+
         Rule(
             ['/settings/googledrive'],
             'get',
@@ -26,37 +60,7 @@ api_routes = {
 
         ),
 
-        Rule(
-            ['/settings/googledrive/oauth'],
-            'delete',
-            views.auth.googledrive_oauth_delete_user,
-            json_renderer,
-        ),
-
-        Rule(
-            ['/settings/googledrive/oauth/'],
-            'post',
-            views.auth.googledrive_oauth_start,
-            json_renderer,
-            endpoint_suffix='_user'
-        ),
-
-        Rule(
-            ['/addons/googledrive/finish/'],
-            'get',
-            views.auth.googledrive_oauth_finish,
-            json_renderer,
-        ),
-
         ##### Node settings #####
-
-        Rule(
-            ['/project/<pid>/googledrive/oauth/',
-             '/project/<pid>/node/<nid>/googledrive/oauth/'],
-            'post',
-            views.auth.googledrive_oauth_start,
-            json_renderer,
-        ),
 
         Rule(
             ['/project/<pid>/googledrive/folders/',

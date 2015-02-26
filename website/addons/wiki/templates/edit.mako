@@ -62,16 +62,18 @@
                            <i class="icon-edit"> </i>  Edit
                       </div>
                         <div class="col-md-6">
-                          <div class="progress progress-no-margin pointer"
+                          <div class="progress progress-no-margin pointer pull-right"
                                data-toggle="modal"
                                data-bind="attr: {data-target: modalTarget}"
                                   >
                               <div role="progressbar"
                                    data-bind="attr: progressBar"
                                       >
-                                  <span data-bind="text: statusDisplay"></span>
-                                  <span class="sharejs-info-btn">
-                                      <i class="icon-question-sign icon-large"></i>
+                                  <span class="progress-bar-content">
+                                      <span data-bind="text: statusDisplay"></span>
+                                      <span class="sharejs-info-btn">
+                                          <i class="icon-question-sign icon-large"></i>
+                                      </span>
                                   </span>
                               </div>
                           </div>

@@ -95,8 +95,6 @@ class TestUserUpdate(SearchTestCase):
         # Ensure user is not in search index
         assert_equal(len(query_user(user.fullname)['results']), 0)
 
-
-
     def test_merged_user(self):
         user = UserFactory(fullname='Annie Lennox')
         merged_user = UserFactory(fullname='Lisa Stansfield')
@@ -222,6 +220,14 @@ class TestPublicNodes(SearchTestCase):
         self.registration.set_privacy('private')
         docs = query('category:registration AND ' + self.title)['results']
         assert_equal(len(docs), 0)
+
+    def test_public_parent_title(self):
+        self.project.set_title('hello &amp; world',self.consolidate_auth)
+        self.project.save()
+        docs = query('category:component AND ' + self.title)['results']
+        assert_equal(len(docs), 1)
+        assert_equal(docs[0]['parent_title'], 'hello & world')
+        assert_true(docs[0]['parent_url'])
 
     def test_make_parent_private(self):
         """Make parent of component, public, then private, and verify that the

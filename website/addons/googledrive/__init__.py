@@ -10,7 +10,7 @@ MODELS = [
 USER_SETTINGS_MODEL = model.GoogleDriveUserSettings
 NODE_SETTINGS_MODEL = model.GoogleDriveNodeSettings
 
-ROUTES = [routes.api_routes, routes.web_routes]
+ROUTES = [routes.auth_routes, routes.api_routes]
 
 SHORT_NAME = 'googledrive'
 FULL_NAME = 'Google Drive'

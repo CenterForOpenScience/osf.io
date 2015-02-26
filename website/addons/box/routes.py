@@ -8,16 +8,10 @@ from website.addons.box import views
 auth_routes = {
     'rules': [
 
-        Rule(
-            '/settings/box/',
-            'get',
-            views.auth.box_user_config_get,
-            json_renderer,
-        ),
-
         ##### OAuth #####
+
         Rule(
-            '/settings/box/oauth/',
+            '/oauth/connect/box/',
             'get',
             views.auth.box_oauth_start,  # Use same view func as node oauth start
             json_renderer,
@@ -25,14 +19,14 @@ auth_routes = {
         ),
 
         Rule(
-            '/addons/box/oauth/finish/',
+            '/oauth/callback/box/',
             'get',
             views.auth.box_oauth_finish,
             json_renderer,
         ),
 
         Rule(
-            '/settings/box/oauth/',
+            '/oauth/accounts/box/',
             'delete',
             views.auth.box_oauth_delete_user,
             json_renderer,
@@ -40,19 +34,28 @@ auth_routes = {
 
         Rule(
             [
-                '/project/<pid>/box/oauth/',
-                '/project/<pid>/node/<nid>/box/oauth/',
+                '/project/<pid>/oauth/connect/box/',
+                '/project/<pid>/node/<nid>/oauth/connect/box/',
             ],
             'get',
             views.auth.box_oauth_start,
             json_renderer,
         ),
     ],
-    'prefix': '/api/v1'
 }
+
 
 api_routes = {
     'rules': [
+
+        #### Profile settings ###
+
+        Rule(
+            '/settings/box/',
+            'get',
+            views.auth.box_user_config_get,
+            json_renderer,
+        ),
 
         ##### Node settings #####
 
