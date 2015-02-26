@@ -25,6 +25,7 @@ class MockUserSettings(AddonOAuthUserSettingsBase):
 
 
 def init_mock_addon():
+    # TODO: Move to a base class, and have test cases inherit from that.
     settings.ADDONS_REQUESTED.append(MockUserSettings.oauth_provider.short_name)
 
     addon_config = AddonConfig(
@@ -43,6 +44,7 @@ def init_mock_addon():
 
 
 def remove_mock_addon():
+    # TODO: Move to a base class, and have test cases inherit from that.
     settings.ADDONS_AVAILABLE_DICT.pop(settings.MOCKED_ADDON.short_name, None)
 
     try:
@@ -50,7 +52,15 @@ def remove_mock_addon():
     except ValueError:
         pass
 
-    del settings.MOCKED_ADDON
+    try:
+        settings.ADDONS_REQUESTED.remove(settings.MOCKED_ADDON.short_name)
+    except ValueError:
+        pass
+
+    try:
+        del settings.MOCKED_ADDON
+    except ValueError:
+        pass
 
 
 class TestNodeSettings(OsfTestCase):
@@ -144,6 +154,11 @@ class TestUserSettings(OsfTestCase):
     def setUpClass(cls):
         init_mock_addon()
         super(TestUserSettings, cls).setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        remove_mock_addon()
+        super(TestUserSettings, cls).tearDownClass()
 
     def setUp(self):
         super(TestUserSettings, self).setUp()
