@@ -7,9 +7,9 @@ from mfr.ext import ALL_HANDLERS
 
 import requests
 
-from website import settings
-
 from framework.render.exceptions import error_message_or_exception
+
+from website import settings
 
 
 def init_mfr(app):
@@ -54,11 +54,11 @@ def save_to_file_or_error(download_url, dest_path):
         if response.ok:
             for block in response.iter_content(1024):  # 1kb
                 temp_file.write(block)
-        else:
-            temp_file.write(
-                error_message_or_exception(
-                    response.status_code,
-                    dest_path=dest_path,
-                    download_url=download_url,
-                )
+            return response
+        temp_file.write(
+            error_message_or_exception(
+                response.status_code,
+                dest_path=dest_path,
+                download_url=download_url,
             )
+        )

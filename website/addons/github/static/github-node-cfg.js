@@ -1,4 +1,4 @@
-var $osf = require('osfHelpers');
+    var $osf = require('osfHelpers');
 var $ = require('jquery');
 var bootbox = require('bootbox');
 
