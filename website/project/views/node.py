@@ -305,7 +305,7 @@ def node_setting(auth, **kwargs):
         if 'node' in addon.config.configs:
             addon_enabled_settings.append(addon.to_json(auth.user))
     addon_enabled_settings = sorted(addon_enabled_settings, key=lambda addon: addon['addon_full_name'])
-    
+
     ret['addon_categories'] = settings.ADDON_CATEGORIES
     ret['addons_available'] = sorted([
         addon
