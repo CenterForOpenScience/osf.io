@@ -2,7 +2,6 @@
 
 """
 
-import abc
 import os
 import glob
 import importlib
@@ -443,7 +442,8 @@ class AddonUserSettingsBase(AddonSettingsBase):
 class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
     # __metaclass__ = abc.ABCMeta
 
-    oauth_grants = fields.DictionaryField()# example:
+    oauth_grants = fields.DictionaryField()
+    # example:
     # {
     #     '<Node._id>': {
     #         '<ExternalAccount._id>': {

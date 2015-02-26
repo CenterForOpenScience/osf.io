@@ -5,18 +5,13 @@ import time
 import mendeley
 from modularodm import fields
 
-from framework.exceptions import PermissionsError
-
 from website.addons.base import AddonOAuthNodeSettingsBase
 from website.addons.base import AddonOAuthUserSettingsBase
-from website.oauth.models import ExternalProvider
-from website.project.model import Node
-from website.util import web_url_for
-
 from website.addons.citations.utils import serialize_account, serialize_folder
-
-from . import settings
-from .api import APISession
+from website.addons.mendeley import settings
+from website.addons.mendeley.api import APISession
+from website.oauth.models import ExternalProvider
+from website.util import web_url_for
 
 
 class Mendeley(ExternalProvider):

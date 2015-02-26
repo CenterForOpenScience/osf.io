@@ -1,17 +1,13 @@
 # -*- coding: utf-8 -*-
-from framework.exceptions import PermissionsError
 
 from modularodm import fields
+from pyzotero import zotero
 
 from website.addons.base import AddonOAuthNodeSettingsBase
 from website.addons.base import AddonOAuthUserSettingsBase
-from website.oauth.models import ExternalProvider
-from website.project.model import Node
-from pyzotero import zotero
-
 from website.addons.citations.utils import serialize_folder
-
-from . import settings
+from website.addons.zotero import settings
+from website.oauth.models import ExternalProvider
 
 
 class Zotero(ExternalProvider):
