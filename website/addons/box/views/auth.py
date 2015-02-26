@@ -112,7 +112,7 @@ def box_oauth_finish(auth, **kwargs):
     user = auth.user
     node = Node.load(session.data.pop('box_auth_nid', None))
 
-    # Handle request cancellations from Google's API
+    # Handle request cancellations from Box's API
     if request.args.get('error'):
         flash('Box authorization request cancelled.')
         if node:
