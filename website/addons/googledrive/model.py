@@ -285,8 +285,7 @@ class GoogleDriveNodeSettings(AddonNodeSettingsBase):
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
             raise exceptions.AddonError('Addon is not authorized')
-
-        return {'token': self.user_settings.access_token}
+        return {'token': self.user_settings.fetch_access_token()}
 
     def serialize_waterbutler_settings(self):
         if not self.folder_id:

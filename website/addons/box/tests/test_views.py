@@ -55,7 +55,7 @@ class TestAuthViews(OsfTestCase):
 
         assert_is_redirect(res)
 
-    @mock.patch('website.addons.box.model.BoxOAuthSettings.revoke_token')
+    @mock.patch('website.addons.box.model.BoxOAuthSettings.revoke_access_token')
     def test_box_oauth_delete_user(self, mock_disable_access_token):
         self.user.add_addon('box')
         settings = self.user.get_addon('box')
@@ -77,7 +77,7 @@ class TestConfigViews(BoxAddonTestCase):
         super(TestConfigViews, self).setUp()
         self.user.add_addon('box')
         settings = self.user.get_addon('box')
-        oauth = BoxOAuthSettings(user_id='not none', _access_token='Nah')
+        oauth = BoxOAuthSettings(user_id='not none', access_token='Nah')
         oauth.save()
         settings.oauth_settings = oauth
         settings.save()
@@ -390,7 +390,7 @@ class TestFilebrowserViews(BoxAddonTestCase):
         super(TestFilebrowserViews, self).setUp()
         self.user.add_addon('box')
         settings = self.user.get_addon('box')
-        oauth = BoxOAuthSettings(user_id='not none', _access_token='Nah')
+        oauth = BoxOAuthSettings(user_id='not none', access_token='Nah')
         oauth.save()
         settings.oauth_settings = oauth
         settings.save()

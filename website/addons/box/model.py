@@ -140,13 +140,13 @@ class BoxUserSettings(AddonUserSettingsBase):
     )
 
     @property
-    def box_id(self):
+    def user_id(self):
         if self.oauth_settings:
             return self.oauth_settings.user_id
         return None
 
-    @box_id.setter
-    def box_id(self, val):
+    @user_id.setter
+    def user_id(self, val):
         self.oauth_settings.user_id = val
 
     @property
@@ -312,7 +312,7 @@ class BoxNodeSettings(AddonNodeSettingsBase):
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
             raise exceptions.AddonError('Addon is not authorized')
-        return {'token': self.user_settings.access_token}
+        return {'token': self.user_settings.fetch_access_token()}
 
     def serialize_waterbutler_settings(self):
         if self.folder_id is None:
