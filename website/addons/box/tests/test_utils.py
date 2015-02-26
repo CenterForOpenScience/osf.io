@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 """Tests for website.addons.box.utils."""
-import io
 import os
 
 from nose.tools import *  # noqa (PEP8 asserts)
-from werkzeug.wrappers import Response
 
 from framework.auth import Auth
 from website.project.model import NodeLog
@@ -49,12 +47,6 @@ class TestNodeLogger(BoxAddonTestCase):
         assert_equal(last_log.action, 'box_node_deauthorized')
 
 
-def test_get_file_name():
-    assert_equal(utils.get_file_name('foo/bar/baz.txt'), 'baz.txt')
-    assert_equal(utils.get_file_name('/foo/bar/baz.txt'), 'baz.txt')
-    assert_equal(utils.get_file_name('/foo/bar/baz.txt/'), 'baz.txt')
-
-
 # FIXME(sloria): This test is incorrect. The mocking needs work.
 # class TestRenderFile(OsfTestCase):
 
@@ -95,32 +87,6 @@ def test_serialize_folder():
     assert_equal(result['name'], 'Box' + metadata['path'])
 
 
-class TestMetadataSerialization(OsfTestCase):
-
-    def test_metadata_to_hgrid(self):
-        metadata = {
-            u'name': 'baz.mp3',
-            u'type': u'file',
-            u'modified': u'Sat, 22 Mar 2014 05:40:29 +0000',
-            u'path': u'/foo/bar/baz.mp3',
-            u'rev': u'3fed51f002c12fc',
-            u'revision': 67032351,
-            u'root': u'box',
-            u'id': u'1234567890',
-            u'thumb_exists': False,
-            u'mime_type': u'audio/mpeg',
-        }
-        node = ProjectFactory()
-        permissions = {'view': True, 'edit': False}
-        result = utils.metadata_to_hgrid(metadata, node, permissions)
-        assert_equal(result['addon'], 'box')
-        assert_equal(result['permissions'], permissions)
-        filename = utils.get_file_name(metadata['path'])
-        assert_equal(result['name'], filename)
-        assert_equal(result['path'], metadata['path'])
-        assert_equal(result['ext'], os.path.splitext(filename)[1])
-
-
 class TestBuildBoxUrls(OsfTestCase):
 
     def test_build_box_urls_file(self):
@@ -130,11 +96,10 @@ class TestBuildBoxUrls(OsfTestCase):
         result = utils.build_box_urls(fake_metadata, node)
         path = fake_metadata['path']
         assert_equal(
-            result['fetch'],
-            node.api_url_for('box_hgrid_data_contents', path=path)
-        )
-        assert_equal(
             result['folders'],
-            node.api_url_for('box_hgrid_data_contents',
-                path=path, foldersOnly=1)
+            node.api_url_for(
+                'box_hgrid_data_contents',
+                folder_id=fake_metadata['id'],
+                foldersOnly=1
+            )
         )
