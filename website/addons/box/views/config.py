@@ -213,7 +213,7 @@ def box_list_folders(node_addon, **kwargs):
     node = node_addon.owner
     folder_id = request.args.get('folderId')
 
-    if not folder_id:
+    if folder_id is None:
         return [{
             'id': 0,
             'path': '/',
