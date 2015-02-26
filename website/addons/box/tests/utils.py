@@ -8,6 +8,7 @@ from framework.mongo import set_up_storage
 
 from website.addons.base.testing import AddonTestCase
 from website.addons.box import MODELS
+from website.addons.box.model import BoxOAuthSettings
 
 
 def init_storage():
@@ -19,8 +20,10 @@ class BoxAddonTestCase(AddonTestCase):
     ADDON_SHORT_NAME = 'box'
 
     def set_user_settings(self, settings):
-        settings.access_token = '12345abc'
-        settings.box_id = 'myboxid'
+        self.oauth = BoxOAuthSettings(
+            user_id='test', _access_token='test')
+        self.oauth.save()
+        settings.oauth_settings = self.oauth
 
     def set_node_settings(self, settings):
         settings.folder_id = '1234567890'
@@ -97,6 +100,7 @@ mock_responses = {
         "revision": 29007
     },
     'metadata_single': {
+        u'id': 'id',
         u'bytes': 74,
         u'client_mtime': u'Mon, 13 Jan 2014 20:24:15 +0000',
         u'icon': u'page_white',
