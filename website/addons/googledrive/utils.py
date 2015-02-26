@@ -68,7 +68,7 @@ def serialize_urls(node_settings):
         'create': node.api_url_for('googledrive_oauth_start'),
         'deauthorize': node.api_url_for('googledrive_deauthorize'),
         'importAuth': node.api_url_for('googledrive_import_user_auth'),
-        'get_folders': node.api_url_for('googledrive_folders', includeRoot=1),
+        'get_folders': node.api_url_for('googledrive_folders'),
     }
 
 
@@ -91,6 +91,7 @@ def serialize_settings(node_settings, current_user):
     if node_settings.has_auth:
         # Add owner's profile URL
         ret['ownerName'] = user_settings.owner.fullname
+        ret['currentPath'] = '/' + node_settings.folder_path
         ret['currentFolder'] = node_settings.folder_name  # if node_settings.folder else None
         ret['urls']['owner'] = web_url_for('profile_view_id', uid=user_settings.owner._id)
 
