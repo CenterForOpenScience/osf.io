@@ -81,9 +81,3 @@ class BoxRevision(metadata.BaseFileRevisionMetadata):
             return self.raw['modified_at']
         except KeyError:
             return self.raw.get('modified')
-
-    @property
-    def extra(self):
-        return {
-            'etag': self.raw['etag']
-        }
