@@ -141,6 +141,9 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
                 }, 3000);
                 break;
             case 'delete':
+                if (window.contextVars.wiki.triggeredDelete) {
+                    break;
+                }
                 self.editor.setReadOnly(true);
                 deleteModal.on('hide.bs.modal', function() {
                     window.location.replace(data.redirect);
