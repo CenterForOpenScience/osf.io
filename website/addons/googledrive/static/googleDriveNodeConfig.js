@@ -266,7 +266,7 @@ var ViewModel = function(url, selector, folderPicker) {
         self.currentFolder(self.selected().name);
         self.changeMessage(
             'Successfully linked "' +
-           $('<div/>').text(self.selected().name).html() +
+           $osf.htmlEscape(self.selected().name) +
             '". Go to the <a href="' +
             self.urls().files +
             '">Files page</a> to view your files.',
