@@ -70,6 +70,7 @@
     <!-- Flashed Messages -->
     <div class="help-block">
         <p data-bind="html: message, attr.class: messageClass"></p>
+        <p data-bind="if: showSuccess" class="text-success">Successfully linked {{ showSuccess }}. Go to the <a href={{ urls().files }}>Files page</a> to view your files.</p>
     </div>
 
 </div> <!-- End of googleDriveAddonScope -->

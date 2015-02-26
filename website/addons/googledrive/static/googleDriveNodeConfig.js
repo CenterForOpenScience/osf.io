@@ -27,6 +27,7 @@ var ViewModel = function(url, selector, folderPicker) {
     self.userHasAuth = ko.observable(false);
     // whether current user is authorizer of the addon
     self.userIsOwner = ko.observable(false);
+    self.showSuccess = ko.observable(false);
 
     self.showPicker = ko.observable(false);
     self.owner = ko.observable();
@@ -41,7 +42,6 @@ var ViewModel = function(url, selector, folderPicker) {
     self.folderPicker =  folderPicker;
     self.selected = ko.observable(null);
     self.showFileTypes = ko.observable(false);
-    self.cancelSelection = ko.observable();
     self.loadedSettings = ko.observable(false);
     self.selectedFileTypeOption = ko.observable('');
 
@@ -259,13 +259,11 @@ var ViewModel = function(url, selector, folderPicker) {
     });
 
     function onSubmitSuccess(response) {
-        self.changeMessage('Successfully linked "' + self.selected().name +
-                            '". Go to the <a href="' +
-                            self.urls().files + '">Files page</a> to view your files.',
-        'text-success', 5000);
+        self.showSuccess(self.selected().name);
+        setTimeout(self.showSuccess.bind(self, false), 5000);
+
         // Update folder in ViewModel
         self.urls(response.result.urls);
-        self.cancelSelection();
     }
 
     function onSubmitError() {
