@@ -10,8 +10,8 @@ from nose.tools import *
 import httplib as http
 
 from tests.base import OsfTestCase
-
 from tests.factories import ProjectFactory, AuthUserFactory
+from tests.test_addons import assert_urls_equal
 
 from website.addons.figshare.tests.utils import create_mock_figshare
 from website.addons.figshare import views
@@ -23,15 +23,6 @@ from framework.auth import Auth
 
 
 figshare_mock = create_mock_figshare(project=436)
-
-
-def assert_urls_equal(url1, url2):
-    furl1 = furl.furl(url1)
-    furl2 = furl.furl(url2)
-    for attr in ['scheme', 'host', 'port']:
-        setattr(furl1, attr, None)
-        setattr(furl2, attr, None)
-    assert_equal(furl1, furl2)
 
 
 class TestViewsConfig(OsfTestCase):
@@ -77,20 +68,12 @@ class TestViewsConfig(OsfTestCase):
         is_not_none = settings.user_settings != None
         assert_true(is_not_none)
 
-    def test_oauth_cancel_from_user_settings_redirect(self):
-        """Ensures user initiated oauth token requests that are cancelled
-        before completion at the user settings page results in a redirect
-        back to the user's settings addon page.
-        """
+    def test_cancelled_oauth_request_from_user_settings_page_redirects_correctly(self):
         res = self.app.get(api_url_for('figshare_oauth_callback', uid=self.user._id), auth=self.user.auth)
         assert_equal(res.status_code, 302)
         assert_urls_equal(res.headers['location'], web_url_for('user_addons'))
 
-    def test_oauth_cancel_from_node_settings_redirect(self):
-        """Ensures user initiated oauth token requests that are cancelled
-        before completion at from a node's settings page results in a redirect
-        back to the node's settings addon page.
-        """
+    def test_cancelled_oauth_request_from_node_settings_page_redirects_correctly(self):
         res = self.app.get(api_url_for('figshare_oauth_callback', uid=self.user._id, nid=self.project._id), auth=self.user.auth)
         assert_equal(res.status_code, 302)
         assert_urls_equal(res.headers['location'], self.project.web_url_for('node_setting'))
