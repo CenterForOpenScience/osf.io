@@ -123,7 +123,7 @@ def serialize_settings(node_settings, current_user, client=None):
             result['folder'] = {'name': None, 'path': None}
         else:
             result['folder'] = {
-                'name': 'Dropbox' + path,
+                'name': path if path != '/' else '/ (Full Dropbox)',
                 'path': path
             }
     return result
