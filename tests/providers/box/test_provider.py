@@ -368,6 +368,18 @@ class TestMetadata:
 
     @async
     @pytest.mark.aiohttpretty
+    def test_metadata_not_child(self, provider, folder_object_metadata):
+        provider.folder += 'yourenotmydad'
+        path = BoxPath('/' + provider.folder + '/')
+        object_url = provider.build_url('folders', provider.folder)
+        aiohttpretty.register_json_uri('GET', object_url, body=folder_object_metadata)
+
+        with pytest.raises(exceptions.MetadataError) as exc_info:
+            yield from provider.metadata(str(path))
+        assert exc_info.value.code == 404
+
+    @async
+    @pytest.mark.aiohttpretty
     def test_metadata_root_file(self, provider, file_metadata):
         path = BoxPath('/' + provider.folder + '/pfile')
         url = provider.build_url('files', path._id)
@@ -378,6 +390,20 @@ class TestMetadata:
         assert result['kind'] == 'file'
         assert result['name'] == 'tigers.jpeg'
         assert result['path'] == '/5000948880/tigers.jpeg'
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_metadata_nested(self, provider, file_metadata):
+        item = file_metadata['entries'][0]
+        file_id = item['id']
+        path = BoxPath('/' + file_id + '/name.txt')
+        file_url = provider.build_url('files', file_id)
+        aiohttpretty.register_json_uri('GET', file_url, body=item)
+        result = yield from provider.metadata(str(path))
+
+        expected = BoxFileMetadata(item, provider.folder).serialized()
+        assert result == expected
+        assert aiohttpretty.has_call(method='GET', uri=file_url)
 
     @async
     @pytest.mark.aiohttpretty
@@ -394,17 +420,12 @@ class TestRevisions:
 
     @async
     @pytest.mark.aiohttpretty
-    def test_get_revisions(self, provider, folder_object_metadata, folder_list_metadata, file_metadata, revisions_list_metadata):
+    def test_get_revisions(self, provider, file_metadata, revisions_list_metadata):
         item = file_metadata['entries'][0]
-        parent_id = '808'
         file_id = item['id']
         path = BoxPath('/' + file_id)
-        object_url = provider.build_url('folders', parent_id)
-        list_url = provider.build_url('folders', parent_id, 'items')
         file_url = provider.build_url('files', item['id'])
         revisions_url = provider.build_url('files', file_id, 'versions')
-        aiohttpretty.register_json_uri('GET', object_url, body=folder_object_metadata)
-        aiohttpretty.register_json_uri('GET', list_url, body=folder_list_metadata)
         aiohttpretty.register_json_uri('GET', file_url, body=item)
         aiohttpretty.register_json_uri('GET', revisions_url, body=revisions_list_metadata)
 
@@ -414,3 +435,22 @@ class TestRevisions:
             for each in [item] + revisions_list_metadata['entries']
         ]
         assert result == expected
+        assert aiohttpretty.has_call(method='GET', uri=file_url)
+        assert aiohttpretty.has_call(method='GET', uri=revisions_url)
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_get_revisions_free_account(self, provider, file_metadata):
+        item = file_metadata['entries'][0]
+        file_id = item['id']
+        path = BoxPath('/' + file_id)
+        file_url = provider.build_url('files', item['id'])
+        revisions_url = provider.build_url('files', file_id, 'versions')
+        aiohttpretty.register_json_uri('GET', file_url, body=item)
+        aiohttpretty.register_json_uri('GET', revisions_url, body={}, status=403)
+
+        result = yield from provider.revisions(str(path))
+        expected = [BoxRevision(item).serialized()]
+        assert result == expected
+        assert aiohttpretty.has_call(method='GET', uri=file_url)
+        assert aiohttpretty.has_call(method='GET', uri=revisions_url)

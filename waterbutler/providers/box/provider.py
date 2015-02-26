@@ -83,7 +83,6 @@ class BoxProvider(provider.BaseProvider):
     @asyncio.coroutine
     def metadata(self, path, raw=False, **kwargs):
         path = BoxPath(path)
-
         if path.is_file:
             return (yield from self._get_file_meta(path, raw=raw))
         return (yield from self._get_folder_meta(path, raw=raw))
@@ -98,13 +97,16 @@ class BoxProvider(provider.BaseProvider):
         response = yield from self.make_request(
             'GET',
             self.build_url('files', path._id, 'versions'),
-            expects=(200, ),
+            expects=(200, 403),
             throws=exceptions.RevisionsError,
         )
         data = yield from response.json()
+
+        revisions = data['entries'] if response.status == http.client.OK else []
+
         return [
             BoxRevision(each).serialized()
-            for each in [curr] + data['entries']
+            for each in [curr] + revisions
         ]
 
     def _assert_child(self, paths, target=None):
