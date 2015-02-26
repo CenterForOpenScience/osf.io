@@ -157,6 +157,34 @@ class TestCRUD:
 
     @async
     @pytest.mark.aiohttpretty
+    def test_upload_update_nested(self, provider, file_stream):
+        path = '/ed/sullivan/show.mp3'
+        upload_id = '7'
+        parts = path.split('/')
+        urls, bodies = [], []
+        for idx, part in enumerate(parts[:-1]):
+            query = provider._build_query(idx or provider.folder['id'], title=parts[idx + 1])
+            body = fixtures.generate_list(idx + 1)
+            url = provider.build_url('files', q=query, alt='json')
+            aiohttpretty.register_json_uri('GET', url, body=body)
+            urls.append(url)
+            bodies.append(body)
+        item = bodies[-1]['items'][0]
+        file_id = item['id']
+        start_upload_url = provider._build_upload_url('files', file_id, uploadType='resumable')
+        finish_upload_url = provider._build_upload_url('files', file_id, uploadType='resumable', upload_id=upload_id)
+        aiohttpretty.register_uri('PUT', start_upload_url, headers={'LOCATION': 'http://waterbutler.io?upload_id={}'.format(upload_id)})
+        aiohttpretty.register_json_uri('PUT', finish_upload_url, body=item)
+        result, created = yield from provider.upload(file_stream, path)
+
+        assert aiohttpretty.has_call(method='PUT', uri=start_upload_url)
+        assert aiohttpretty.has_call(method='PUT', uri=finish_upload_url)
+        assert created is False
+        expected = GoogleDriveFileMetadata(item, '/ed/sullivan').serialized()
+        assert result == expected
+
+    @async
+    @pytest.mark.aiohttpretty
     def test_delete(self, provider):
         path = '/birdie.jpg'
         item = fixtures.list_file['items'][0]

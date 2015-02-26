@@ -95,7 +95,7 @@ def generate_list(child_id, **kwargs):
     item = {}
     item.update(list_file['items'][0])
     item.update(kwargs)
-    item['id'] = child_id
+    item['id'] = str(child_id)
     return {'items': [item]}
 
 
