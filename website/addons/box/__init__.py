@@ -1,4 +1,4 @@
-from website.addons.box import model, routes, views, utils
+from website.addons.box import model, routes, utils
 
 
 MODELS = [
