@@ -12,9 +12,8 @@
 <% import json %>
 <script>
     window.contextVars = $.extend(true, {}, window.contextVars, {
+        wikiWidget: true,
         usePythonRender: ${json.dumps(use_python_render)},
-        urls: {
-            wikiContent: '${wiki_content_url}'
-        }
+        wikiContentUrl: '${wiki_content_url}'
     })
 </script>
