@@ -13,18 +13,19 @@
 *     });
 */
 'use strict';
+var $ = require('jquery');
 var m = require('mithril');
 var Treebeard = require('treebeard');
-var $ = require('jquery');
+
 
 function _treebeardToggleCheck (item) {
     if (item.data.addon === 'figshare') {
         return false;
     }
 
-    if (item.data.path === '/') {
-        return false;
-    }
+    // if (item.data.path === '/') {
+    //     return false;
+    // }
     return true;
 }
 
@@ -33,30 +34,16 @@ function _treebeardResolveToggle(item){
         return '';
     }
 
-    if (item.data.path !== '/') {
-        var toggleMinus = m('i.icon-minus', ' '),
-            togglePlus = m('i.icon-plus', ' ');
-        if (item.kind === 'folder') {
-            if (item.open) {
-                return toggleMinus;
-            }
-            return togglePlus;
-        }
-    }
-    item.open = true;
-    return '';
+    return item.open ?
+        m('i.icon-minus', ' '):
+        m('i.icon-plus', ' ');
 }
 
 // Returns custom icons for OSF
 function _treebeardResolveIcon(item){
-    var openFolder  = m('i.icon-folder-open-alt', ' '),
-        closedFolder = m('i.icon-folder-close-alt', ' ');
-
-    if (item.open) {
-        return openFolder;
-    }
-
-    return closedFolder;
+    return item.open ?
+        m('i.icon-folder-open-alt', ' '):
+        m('i.icon-folder-close-alt', ' ');
 }
 
 var INPUT_NAME = '-folder-select';
@@ -78,111 +65,104 @@ function _treebeardSelectView(item) {
         checked : 'checked',
         name: '#' + tb.options.divID + INPUT_NAME,
         value:item.id
-        }, ' ');
+    }, ' ');
     var templateUnchecked = m('input',{
         type: 'radio',
         onclick : setTempPicked.bind(tb),
         name: '#' + tb.options.divID + INPUT_NAME,
         value:item.id
-        }, ' ');
+    }, ' ');
 
     if (tb._tempPicked) {
         if (tb._tempPicked === item.id) {
             return templateChecked;
-        } 
-        return templateUnchecked;    
+        }
+        return templateUnchecked;
     }
 
-    if (item.data.path !== undefined) {
-        if (item.data.path === tb.options.folderPath) {
-            return templateChecked;
-        }
-        if (item.data.path === '/' && tb.options.folderArray && tb.options.folderArray.length === 0) {
-            return templateChecked;
-        }
-    }
-
-    if (tb.options.folderArray && item.data.name === tb.options.folderArray[tb.options.folderArray.length - 1]) {
+    if (item.data.path === tb.options.folderPath || (tb.options.folderArray && tb.options.folderArray[tb.options.folderArray.length - 1] === item.data.name)) {
         return templateChecked;
     }
 
     return templateUnchecked;
 }
 
-function _treebeardColumnTitle(){
-    var columns = [];
-    columns.push({
-        title: 'Folders',
-        width : '75%',
-        sort : false
-    },
-    {
-        title : 'Select',
-        width : '25%',
-        sort : false
-    });
-
-    return columns;
+function _treebeardColumnTitle() {
+    return [
+        {
+            title: 'Folders',
+            width : '75%',
+            sort : false
+        },
+        {
+            title : 'Select',
+            width : '25%',
+            sort : false
+        }
+    ];
 }
 
-function _treebeardResolveRows(item){
+function _treebeardResolveRows(item) {
     // this = treebeard;
     item.css = '';
-    var default_columns = [];             // Defines columns based on data
-    default_columns.push({
-        data : 'name',  // Data field name
-        folderIcons : true,
-        filter : false,
-        custom : _treebeardTitleColumn
-    });
-
-    default_columns.push({
-        sortInclude : false,
-        css : 'p-l-xs',
-        custom : _treebeardSelectView
-    });
-
-    return default_columns;
-
+    return [
+        {
+            data : 'name',  // Data field name
+            folderIcons : true,
+            filter : false,
+            custom : _treebeardTitleColumn
+        },
+        {
+            sortInclude : false,
+            css : 'p-l-xs',
+            custom : _treebeardSelectView
+        }
+    ];
 }
 
 function _treebeardOnload () {
     var tb = this;
-    var folderName = tb.options.initialFolderName;
-    var folderPath = tb.options.initialFolderPath;
-    var folderArray;
-    if (folderName != undefined) {
-        if (folderName === 'None') {
-            tb.options.folderPath = null;
-        } else {
-            if(folderPath) {
-                tb.options.folderPath = folderName.replace(folderPath, '');  //folderName.replace('Dropbox', '');
-            }
-            folderArray = folderName.trim().split('/');
-            if (folderArray[folderArray.length - 1] === '') {
-                folderArray.pop();
-            }
-            if (folderArray[0] === folderPath) {
-                folderArray.shift();
-            }
-            tb.options.folderArray = folderArray;
+
+    tb.options.folderIndex = 0;
+    if (tb.options.folderPath) {
+        tb.options.folderArray = tb.options.folderPath.split('/');
+        if (tb.options.folderArray.length > 1) {
+            tb.options.folderArray.splice(0, 1);
         }
-        for (var i = 0; i < tb.treeData.children.length; i++) {
-            if (tb.treeData.children[i].data.addon !== 'figshare' && tb.treeData.children[i].data.name === folderArray[0]) {
-                tb.updateFolder(null, tb.treeData.children[i]);
-            }
-        }
-        tb.options.folderIndex = 1;
+    } else {
+        tb.options.folderArray = [''];
+    }
+
+    if (tb.treeData.children[0].data.addon !== 'figshare') {
+        tb.updateFolder(null, tb.treeData.children[0]);
     }
     tb.options.folderPickerOnload();
+    // if (folderName != undefined) {
+    //     if (folderName === 'None') {
+    //         tb.options.folderPath = null;
+    //     } else {
+    //         if(folderPath) {
+    //         }
+    //         folderArray = folderName.trim().split('/');
+    //         if (folderArray[folderArray.length - 1] === '') {
+    //             folderArray.pop();
+    //         }
+    //         if (folderArray[0] === folderPath) {
+    //             folderArray.shift();
+    //         }
+    //         tb.options.folderArray = folderArray;
+    //     }
+    //     for (var i = 0; i < tb.treeData.children.length; i++) {
+    //         if (tb.treeData.children[i].data.addon !== 'figshare' && tb.treeData.children[i].data.name === folderArray[0]) {
+    //             tb.updateFolder(null, tb.treeData.children[i]);
+    //         }
+    //     }
+    //     tb.options.folderIndex = 1;
+    // }
 }
 
 function _treebeardLazyLoadOnLoad(item) {
     var tb = this;
-
-    if (tb.options.folderIndex >= tb.options.folderArray.length - 1) {
-        return;
-    }
 
     for (var i = 0; i < item.children.length; i++) {
         if (item.children[i].data.addon === 'figshare'){
@@ -224,7 +204,8 @@ function FolderPicker(selector, opts) {
     self.options = $.extend({}, defaults, opts);
     self.options.divID = selector.substring(1);
     self.options.initialFolderName = opts.initialFolderName;
-    self.options.initialFolderPath = opts.initialFolderPath;
+    self.options.folderPath = opts.initialFolderPath;
+    self.options.rootName = opts.rootName;
 
     // Start up the grid
     self.grid = new Treebeard(self.options).tbController;

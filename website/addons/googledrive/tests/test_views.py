@@ -216,13 +216,16 @@ class TestGoogleDriveHgridViews(OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json), len(mock_folders['items']))
 
-    @mock.patch('website.addons.googledrive.views.hgrid.GoogleDriveClient.folders')
-    def test_googledrive_folders_returns_only_root_folders(self, mock_drive_client_folders):
-        mock_drive_client_folders.return_value = mock_root_folders['items']
-        url = api_url_for('googledrive_folders', pid=self.project._primary_key)
+    @mock.patch('website.addons.googledrive.views.hgrid.GoogleDriveClient.about')
+    def test_googledrive_folders_returns_only_root(self, mock_about):
+        mock_about.return_value = {'rootFolderId': '24601'}
+
+        url = self.project.api_url_for('googledrive_folders')
         res = self.app.get(url, auth=self.user.auth)
+
+        assert_equal(len(res.json), 1)
         assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), len(mock_root_folders['items']))
+        assert_equal(res.json[0]['id'], '24601')
 
 
 class TestGoogleDriveUtils(OsfTestCase):
@@ -238,6 +241,8 @@ class TestGoogleDriveUtils(OsfTestCase):
         oauth_settings = GoogleDriveOAuthSettingsFactory()
         self.user_settings.oauth_settings = oauth_settings
         self.node_settings.user_settings = self.user_settings
+        self.node_settings.folder_id = '09120912'
+        self.node_settings.folder_path = 'foo/bar'
 
         self.user_settings.save()
         self.node_settings.save()
@@ -254,10 +259,7 @@ class TestGoogleDriveUtils(OsfTestCase):
         assert_equal(urls['importAuth'], self.project.api_url_for('googledrive_import_user_auth'))
         # Includes endpoint for fetching folders only
         # NOTE: Querystring params are in camelCase
-        assert_equal(
-            urls['get_folders'],
-            self.project.api_url_for('googledrive_folders', includeRoot=1),
-        )
+        assert_equal(urls['get_folders'], self.project.api_url_for('googledrive_folders'))
 
     def test_serialize_settings_helper_returns_correct_auth_info(self):
         self.user_settings.access_token = 'abc123'

@@ -29,20 +29,25 @@ def googledrive_folders(node_addon, user_addon, **kwargs):
         raise HTTPError(403)
 
     client = GoogleDriveClient(access_token)
+
+    if folder_id == 'root':
+        about = client.about()
+
+        return [{
+            'path': '/',
+            'kind': rubeus.FOLDER,
+            'id': about['rootFolderId'],
+            'name': '/ (Full Google Drive)',
+            'urls': {
+                'get_folders': node.api_url_for('googledrive_folders', folderId=about['rootFolderId'])
+            }
+        }]
+
     contents = [
         to_hgrid(item, node, path=path)
         for item in client.folders(folder_id)
     ]
 
-    if request.args.get('includeRoot'):
-        about = client.about()
-        root = {
-            'kind': rubeus.FOLDER,
-            'id': about['rootFolderId'],
-            'name': '/ (Full Google Drive)',
-            'path': '/',
-        }
-        contents.insert(0, root)
     return contents
 
 

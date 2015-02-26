@@ -324,8 +324,8 @@ var ViewModel = function(url, selector, folderPicker) {
             self.loading(true);
             $(self.folderPicker).folderpicker({
                 onPickFolder: onPickFolder,
-                initialFolderName : self.folderName(),
-                initialFolderPath : 'Dropbox',
+                initialFolderPath : self.folder().path,
+                rootName: '/ (Full Dropbox)',
                 // Fetch Dropbox folders with AJAX
                 filesData: self.urls().folders, // URL for fetching folders
                 // Lazy-load each folder's contents
