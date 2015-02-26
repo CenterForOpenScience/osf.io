@@ -134,17 +134,17 @@ class TestGoogleDriveUserSettingsModel(OsfTestCase):
         user_settings.save()
         assert_true(user_settings.has_auth)
 
-    @mock.patch.object(GoogleDriveOAuthSettings, '_needs_refresh', new_callable=mock.PropertyMock)
+    @mock.patch.object(GoogleDriveOAuthSettings, '_needs_refresh')
     def test_access_token_checks(self, mock_needs_refresh):
         mock_needs_refresh.return_value = False
         user_settings = GoogleDriveUserSettingsFactory()
 
         user_settings.access_token
 
-        assert_true(mock_needs_refresh.called_once)
+        mock_needs_refresh.assert_called_once()
 
     @mock.patch.object(GoogleAuthClient, 'refresh')
-    @mock.patch.object(GoogleDriveOAuthSettings, '_needs_refresh', new_callable=mock.PropertyMock)
+    @mock.patch.object(GoogleDriveOAuthSettings, '_needs_refresh')
     def test_access_token_refreshes(self, mock_needs_refresh, mock_refresh):
         mock_refresh.return_value = {
             'access_token': 'abc',
@@ -154,7 +154,7 @@ class TestGoogleDriveUserSettingsModel(OsfTestCase):
         user_settings = GoogleDriveUserSettingsFactory()
         user_settings.expires_at = datetime.now()
         user_settings.access_token
-        assert_true(mock_refresh.called_once)
+        mock_refresh.assert_called_once()
 
     @mock.patch.object(GoogleAuthClient, 'refresh')
     def test_access_token_refreshes_timeout(self, mock_refresh):
@@ -168,7 +168,7 @@ class TestGoogleDriveUserSettingsModel(OsfTestCase):
 
         user_settings.access_token
 
-        assert_true(mock_refresh.called_once)
+        mock_refresh.assert_called_once()
 
     @mock.patch.object(GoogleAuthClient, 'refresh')
     def test_access_token_refreshes_timeout_longer(self, mock_refresh):
@@ -180,7 +180,7 @@ class TestGoogleDriveUserSettingsModel(OsfTestCase):
         user_settings = GoogleDriveUserSettingsFactory()
         user_settings.expires_at = datetime.utcnow() + relativedelta.relativedelta(minutes=4)
         user_settings.access_token
-        assert_true(mock_refresh.called_once)
+        mock_refresh.assert_called_once()
 
     @mock.patch.object(GoogleAuthClient, 'refresh')
     def test_access_token_doesnt_refresh(self, mock_refresh):
@@ -211,6 +211,21 @@ class TestGoogleDriveUserSettingsModel(OsfTestCase):
         user_settings.clear()
         user_settings.save()
         assert_false(user_settings.access_token)
+
+    @mock.patch.object(GoogleDriveOAuthSettings, 'revoke_access_token')
+    def test_clear_wo_oauth_settings(self, mock_revoke_access_token):
+        user_settings = GoogleDriveUserSettingsFactory(access_token='abcde')
+        user_settings.oauth_settings = None
+        user_settings.save()
+        node_settings = GoogleDriveNodeSettingsFactory.build()
+        node_settings.user_settings = user_settings
+        node_settings.save()
+
+        assert_false(user_settings.oauth_settings)
+        user_settings.clear()
+        user_settings.save()
+
+        assert_false(mock_revoke_access_token.called)
 
     def test_delete(self):
         user_settings = GoogleDriveUserSettingsFactory()

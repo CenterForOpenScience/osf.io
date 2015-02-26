@@ -114,7 +114,7 @@ class BoxOAuthSettings(StoredObject):
                 'client_secret': settings.BOX_SECRET,
             }
             # no need to fail, revoke is opportunistic
-            requests.request('POST', url.url)
+            requests.post(url.url)
 
             # remove the object as its the last instance.
             BoxOAuthSettings.remove_one(self)

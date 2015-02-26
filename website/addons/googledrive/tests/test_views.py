@@ -100,7 +100,7 @@ class TestGoogleDriveAuthViews(OsfTestCase):
         url = api_url_for('googledrive_oauth_delete_user')
         self.app.delete(url)
         self.user_settings.reload()
-        assert_true(mock_auth_client_revoke.called_once)
+        mock_auth_client_revoke.assert_called_once()
         assert_false(self.user_settings.has_auth)
 
     def test_googledrive_deauthorize(self):
