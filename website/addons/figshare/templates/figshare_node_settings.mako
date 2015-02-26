@@ -1,5 +1,3 @@
-<link rel="stylesheet" href="/static/addons/figshare/figshare.css">
-
 <div id="figshareScope" class="scripted">
     <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
     <h4 class="addon-title">
@@ -53,7 +51,7 @@
                 <div class="btn-group" data-bind="visible: userIsOwner">
                     <button data-bind="click: togglePicker,
                                         css: {active: currentDisplay() === PICKER}"
-                            class="btn btn-sm btn-figshare"><i class="icon-edit"></i> Change</button>
+                            class="btn btn-sm btn-addon"><i class="icon-edit"></i> Change</button>
                 </div>
 
 

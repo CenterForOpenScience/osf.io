@@ -1,0 +1,29 @@
+/*
+Override treebeard styles
+*/
+.citation-widget .title-text {
+    cursor: initial;
+}
+.citation-widget .tb-expand-icon-holder {
+    cursor: initial;
+}
+.citation-widget .tb-multiselect {
+    background-color: white;
+}
+/* ---------------- */
+.citation-picker {
+    padding-bottom: 6px;
+}
+.citation-widget > ul {
+    list-style-type: none;
+    padding-left:0;
+    margin-bottom:0;
+}
+
+.citation-widget > ul > li {
+    margin-bottom:10px;
+}
+
+.citation-widget > ul > li:last-child {
+    margin-bottom:0px;
+}

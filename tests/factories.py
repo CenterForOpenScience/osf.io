@@ -19,8 +19,9 @@ from factory import base, Sequence, SubFactory, post_generation, LazyAttribute
 from framework.mongo import StoredObject
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
+from website.oauth.models import ExternalAccount
 from website.project.model import (
-    ApiKey, Node, NodeLog, WatchConfig, Tag, Pointer, Comment, PrivateLink
+    ApiKey, Node, NodeLog, WatchConfig, Tag, Pointer, Comment, PrivateLink,
 )
 
 from website.addons.wiki.model import NodeWikiPage
@@ -366,3 +367,10 @@ class CommentFactory(ModularOdmFactory):
             instance.root_target = target
         instance.save()
         return instance
+
+
+class ExternalAccountFactory(ModularOdmFactory):
+    FACTORY_FOR = ExternalAccount
+
+    provider = 'fakeprovider'
+    provider_id = Sequence(lambda n: 'user-{0}'.format(n))
