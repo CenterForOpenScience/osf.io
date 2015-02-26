@@ -204,11 +204,10 @@ var ViewModel = function(url, selector, folderPicker) {
         evt.preventDefault();
         self.selected({
             id: item.data.id,
-            name: 'Google Drive/' + (item.data.path === '/' ? '' : item.data.path),
+            name: '/' + (item.data.path === '/' ? ' (Full Google Drive)' : item.data.path),
             path: item.data.path
         });
 
-        self.currentFolder(self.selected().name);
         return false; // Prevent event propagation
     }
 
@@ -259,6 +258,7 @@ var ViewModel = function(url, selector, folderPicker) {
     });
 
     function onSubmitSuccess(response) {
+        self.currentFolder(self.selected().name);
         self.changeMessage('Successfully linked "' + self.selected().name +
                             '". Go to the <a href="' +
                             self.urls().files + '">Files page</a> to view your files.',
