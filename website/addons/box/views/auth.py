@@ -110,8 +110,16 @@ def box_oauth_finish(auth, **kwargs):
     record to the user and saves the user's access token and account info.
     """
     user = auth.user
-    result = finish_auth()
     node = Node.load(session.data.pop('box_auth_nid', None))
+
+    # Handle request cancellations from Google's API
+    if request.args.get('error'):
+        flash('Box authorization request cancelled.')
+        if node:
+            return redirect(node.web_url_for('node_setting'))
+        return redirect(web_url_for('user_addons'))
+
+    result = finish_auth()
 
     # If result is a redirect response, follow the redirect
     if isinstance(result, BaseResponse):
