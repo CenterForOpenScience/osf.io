@@ -83,7 +83,6 @@ class BoxProvider(provider.BaseProvider):
     @asyncio.coroutine
     def metadata(self, path, raw=False, **kwargs):
         path = BoxPath(path)
-
         if path.is_file:
             return (yield from self._get_file_meta(path, raw=raw))
         return (yield from self._get_folder_meta(path, raw=raw))
@@ -94,22 +93,21 @@ class BoxProvider(provider.BaseProvider):
         #Alert: Versions are only tracked for Box users with premium accounts.
         #Few users will have a premium account, return only current if not
         path = BoxPath(path)
+        curr = yield from self.metadata(str(path), raw=True)
         response = yield from self.make_request(
             'GET',
             self.build_url('files', path._id, 'versions'),
-            expects=(200, ),
+            expects=(200, 403),
             throws=exceptions.RevisionsError,
         )
         data = yield from response.json()
 
-        ret = []
-        curr = yield from self.metadata(str(path))
-        ret.append(BoxRevision(curr).serialized())
+        revisions = data['entries'] if response.status == http.client.OK else []
 
-        for item in data['entries']:
-            ret.append(BoxRevision(item).serialized())
-
-        return ret
+        return [
+            BoxRevision(each).serialized()
+            for each in [curr] + revisions
+        ]
 
     def _assert_child(self, paths, target=None):
         if self.folder == 0:
