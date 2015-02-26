@@ -456,6 +456,9 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
     #
     # metadata here is the specific to each addon.
 
+    # The existence of this property is used to determine whether or not
+    #   an addon instance is an "OAuth addon" in
+    #   AddonModelMixin.get_oauth_addons().
     oauth_provider = None
 
     @property
@@ -686,6 +689,9 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
 
     user_settings = fields.AbstractForeignField()
 
+    # The existence of this property is used to determine whether or not
+    #   an addon instance is an "OAuth addon" in
+    #   AddonModelMixin.get_oauth_addons().
     oauth_provider = None
 
     @property
