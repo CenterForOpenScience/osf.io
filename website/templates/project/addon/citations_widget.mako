@@ -7,7 +7,7 @@ window.contextVars = $.extend(true, {}, window.contextVars, {
 
 </script>
 <div class="citation-picker">
-    <input id="citationStyleSelect" type="hidden" />
+    <input id="${short_name}StyleSelect" type="hidden" />
 </div>
 <div id="${short_name}Widget" class="citation-widget">
 	<div class="citation-loading"> <i class="icon-spinner citation-spin"></i> <p class="m-t-sm fg-load-message"> Loading files...  </p> </div>
