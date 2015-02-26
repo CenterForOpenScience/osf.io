@@ -206,9 +206,10 @@ class BoxUserSettings(AddonUserSettingsBase):
 
     def clear(self):
         """Clear settings and deauthorize any associated nodes."""
-        self.oauth_settings.revoke_access_token()
-        self.oauth_settings = None
-        self.save()
+        if self.oauth_settings:
+            self.oauth_settings.revoke_access_token()
+            self.oauth_settings = None
+            self.save()
 
         for node_settings in self.boxnodesettings__authorized:
             node_settings.deauthorize(Auth(self.owner))
