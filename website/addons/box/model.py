@@ -2,7 +2,6 @@
 import os
 import time
 import logging
-import hashlib
 from datetime import datetime
 
 import furl

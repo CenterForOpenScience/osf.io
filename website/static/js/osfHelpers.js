@@ -336,6 +336,13 @@ var FormattableDate = function(date) {
     this.utc = moment.utc(this.date).format(UTC_DATEFORMAT);
 };
 
+/**
+ * Escapes html characters in a string.
+ */
+var htmlEscape = function(text) {
+    return $('<div/>').text(text).html();
+};
+
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
@@ -354,5 +361,6 @@ module.exports = window.$.osf = {
     applyBindings: applyBindings,
     FormattableDate: FormattableDate,
     throttle: throttle,
-    debounce: debounce
+    debounce: debounce,
+    htmlEscape: htmlEscape
 };
