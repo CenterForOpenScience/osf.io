@@ -50,10 +50,15 @@ class TestAuthViews(OsfTestCase):
         }
         mock_oauth.return_value = ('mytoken123', 'myboxid', 'done')
         url = api_url_for('box_oauth_finish')
-
         res = self.app.get(url)
-
         assert_is_redirect(res)
+
+    @mock.patch('website.addons.box.views.auth.flash')
+    def test_box_oauth_finish_cancelled(self, mock_flash):
+        url = api_url_for('box_oauth_finish', error='User declined!')
+        res = self.app.get(url)
+        assert_is_redirect(res)
+        mock_flash.assert_called_once()
 
     @mock.patch('website.addons.box.model.BoxOAuthSettings.revoke_access_token')
     def test_box_oauth_delete_user(self, mock_disable_access_token):

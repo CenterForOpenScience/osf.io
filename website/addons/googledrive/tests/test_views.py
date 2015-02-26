@@ -69,6 +69,21 @@ class TestGoogleDriveAuthViews(OsfTestCase):
         res = self.app.get(url)
         assert_is_redirect(res)
 
+    @mock.patch('website.addons.googledrive.views.auth.flash')
+    def test_googledrive_oauth_finish_cancelled(self, mock_flash):
+        user_no_addon = AuthUserFactory()
+        url = api_url_for(
+            'googledrive_oauth_finish',
+            user_no_addon.auth,
+            nid=self.project._primary_key,
+            code='1234',
+            state='3322',
+            error='User declined!'
+        )
+        res = self.app.get(url)
+        assert_is_redirect(res)
+        mock_flash.assert_called_once()
+
     @mock.patch('website.addons.googledrive.views.auth.GoogleAuthClient.userinfo')
     @mock.patch('website.addons.googledrive.views.auth.GoogleAuthClient.finish')
     @mock.patch('website.addons.googledrive.views.auth.session')
