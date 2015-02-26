@@ -31,7 +31,21 @@ class BoxAddonTestCase(AddonTestCase):
 
 mock_responses = {
     'folder': {
+        'name': 'anything',
         'item_collection': {
+            'entries': [
+                {
+                    'name': 'anything', 'type': 'file', 'id': 'anything'
+                },
+                {
+                    'name': 'anything', 'type': 'folder', 'id': 'anything'
+                },
+                {
+                    'name': 'anything', 'type': 'anything', 'id': 'anything'
+                },
+            ]
+        },
+        'path_collection': {
             'entries': [
                 {
                     'name': 'anything', 'type': 'file', 'id': 'anything'
