@@ -89,7 +89,7 @@ var CitationsFolderPickerViewModel = function(name, url, selector, folderPicker)
         }),
         SUBMIT_SETTINGS_SUCCESS: ko.pureComputed(function() {
             var overviewURL = window.contextVars.node.urls.web;
-            return 'Successfully linked "' + self.folder() + '". Go to the <a href="' +
+            return 'Successfully linked "' + $osf.htmlEscape(self.folder()) + '". Go to the <a href="' +
                 overviewURL + '">Overview page</a> to view your citations.';
         }),
         SUBMIT_SETTINGS_ERROR: ko.pureComputed(function() {

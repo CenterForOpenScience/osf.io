@@ -192,7 +192,7 @@ var ViewModel = function(url, selector, folderPicker) {
     });
 
     function onSubmitSuccess(response) {
-        self.changeMessage('Successfully linked "' + self.selected().name +
+        self.changeMessage('Successfully linked "' + $osf.htmlEscape(self.selected().name) +
             '". Go to the <a href="' +
             self.urls().files + '">Files page</a> to view your files.',
             'text-success', 5000);
