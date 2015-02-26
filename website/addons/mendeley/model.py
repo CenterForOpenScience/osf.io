@@ -273,14 +273,6 @@ class Mendeley(ExternalProvider):
         folder = self.client.folders.get(folder_id)
         return folder
 
-    def _get_citations(self, src):
-
-        documents = src.documents.iter(page_size=500)
-        return [
-            self._citation_for_mendeley_document(document)
-            for document in documents
-        ]
-
     def _citations_for_mendeley_folder(self, folder):
 
         document_ids = [
@@ -295,7 +287,11 @@ class Mendeley(ExternalProvider):
 
     def _citations_for_mendeley_user(self):
 
-        return self._get_citations(self.client)
+        documents = self.client.documents.iter(page_size=500)
+        return [
+            self._citation_for_mendeley_document(document)
+            for document in documents
+        ]
 
     def _citation_for_mendeley_document(self, document):
         """Mendeley document to ``website.citations.models.Citation``
