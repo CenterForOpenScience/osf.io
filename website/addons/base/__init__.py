@@ -216,7 +216,6 @@ class GuidFile(GuidStoredObject):
     @property
     def _base_butler_url(self):
         url = furl.furl(settings.WATERBUTLER_URL)
-
         url.args.update({
             'nid': self.node._id,
             'provider': self.provider,
@@ -334,7 +333,6 @@ class GuidFile(GuidStoredObject):
 
         if should_raise:
             self._exception_from_response(resp)
-
         self._metadata_cache = resp.json()['data']
 
 
@@ -382,6 +380,18 @@ class AddonUserSettingsBase(AddonSettingsBase):
 
     owner = fields.ForeignField('user', backref='addons')
 
+    oauth_grants = fields.DictionaryField()
+    # example:
+    # {
+    #     '<Node._id>': {
+    #         '<ExternalAccount._id>': {
+    #             <metadata>
+    #         },
+    #     }
+    # }
+    #
+    # metadata here is the specific to each addon.
+
     _meta = {
         'abstract': True,
     }
@@ -421,6 +431,36 @@ class AddonUserSettingsBase(AddonSettingsBase):
             for node_addon in getattr(self, nodes_backref)
             if not node_addon.owner.is_deleted
         ]
+
+    def grant_oauth_access(self, node, external_account, metadata):
+        """Grant access to the user's ExternalAccount
+
+        :param Node node: the Node to which to grant access
+        :param ExternalAccount external_account: the ExternalAccout for which
+                                                 to grant access
+        :param dict metadata: a dict of metadata to be used by the addon to
+                              restrict access to only certain resources, or for
+                              other arbitrary purposes defined by the addon.
+        :return:
+        """
+        if self.oauth_grants.get(node._id) is None:
+            self.oauth_grants[node._id] = {}
+
+        if self.oauth_grants[node._id].get(external_account._id) is None:
+            self.oauth_grants[node._id][external_account._id] = metadata
+        else:
+            self.oauth_grants[node._id][external_account._id].update(metadata)
+
+    def revoke_oauth_access(self, external_account):
+        """Revoke access to the user's ExternalAccount
+
+        :param ExternalAccount external_account:
+        :return:
+        """
+        for node_id, grants in self.oauth_grants.iteritems():
+            # if the external account was granted for the node
+            if external_account._id in grants:
+                del self.oauth_grants[node_id][external_account._id]
 
     def to_json(self, user):
         ret = super(AddonUserSettingsBase, self).to_json(user)

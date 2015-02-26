@@ -43,6 +43,7 @@ ${next.body()}
     var nodeId = '${node['id']}';
     var userApiUrl = '${user_api_url}';
     var nodeApiUrl = '${node['api_url']}';
+    var absoluteUrl = '${node['display_absolute_url']}';
     // Mako variables accessible globally
     window.contextVars = $.extend(true, {}, window.contextVars, {
         currentUser: {
@@ -57,7 +58,7 @@ ${next.body()}
             ## TODO: Abstract me
             id: nodeId,
             title: ${json.dumps(node['title']) | n},
-            urls: {api: nodeApiUrl},
+            urls: {api: nodeApiUrl, web: ${json.dumps(node['url'])}},
             isPublic: ${json.dumps(node.get('is_public', False))},
             piwikSiteID: ${json.dumps(node.get('piwik_site_id', None))},
             piwikHost: ${json.dumps(piwik_host)},

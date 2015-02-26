@@ -145,9 +145,9 @@ def dropbox_config_put(node_addon, user_addon, auth, **kwargs):
         'result': {
             'folder': {
                 'name': 'Dropbox' + path,
-                'path': path
+                'path': path,
             },
-            'urls': serialize_urls(node_addon)
+            'urls': serialize_urls(node_addon),
         },
         'message': 'Successfully updated settings.',
     }, http.OK
