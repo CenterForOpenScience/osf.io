@@ -46,6 +46,14 @@ module.exports = {
         s3: {
 
         },
+        box: {
+            // Shown on clicking "Delete Access Token" for dropbox
+            confirmDeauth: 'Are you sure you want to delete your Box access ' +
+                'key? This will revoke access to Box for all projects you have ' +
+                'authorized.',
+            deauthError: 'Could not deauthorize Box at this time',
+            deauthSuccess: 'Deauthorized Box.'
+        },
         googledrive: {
           // Shown on clicking "Delete Access Token" for googledrive
             confirmDeauth: 'Are you sure you want to delete your Google Drive access ' +
