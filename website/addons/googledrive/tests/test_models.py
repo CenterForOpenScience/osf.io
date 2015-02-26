@@ -127,6 +127,13 @@ class TestGoogleDriveUserSettingsModel(OsfTestCase):
         assert_true(retrieved.expires_at)
         assert_true(retrieved.access_token)
 
+    def test_has_auth(self):
+        user_settings = GoogleDriveUserSettingsFactory(access_token=None)
+        assert_false(user_settings.has_auth)
+        user_settings.access_token = '12345'
+        user_settings.save()
+        assert_true(user_settings.has_auth)
+
     @mock.patch.object(GoogleDriveOAuthSettings, '_needs_refresh', new_callable=mock.PropertyMock)
     def test_access_token_checks(self, mock_needs_refresh):
         mock_needs_refresh.return_value = False
@@ -135,6 +142,19 @@ class TestGoogleDriveUserSettingsModel(OsfTestCase):
         user_settings.access_token
 
         assert_true(mock_needs_refresh.called_once)
+
+    @mock.patch.object(GoogleAuthClient, 'refresh')
+    @mock.patch.object(GoogleDriveOAuthSettings, '_needs_refresh', new_callable=mock.PropertyMock)
+    def test_access_token_refreshes(self, mock_needs_refresh, mock_refresh):
+        mock_refresh.return_value = {
+            'access_token': 'abc',
+            'refresh_token': '123',
+            'expires_at': time.time(),
+        }
+        user_settings = GoogleDriveUserSettingsFactory()
+        user_settings.expires_at = datetime.now()
+        user_settings.access_token
+        assert_true(mock_refresh.called_once)
 
     @mock.patch.object(GoogleAuthClient, 'refresh')
     def test_access_token_refreshes_timeout(self, mock_refresh):
@@ -162,80 +182,57 @@ class TestGoogleDriveUserSettingsModel(OsfTestCase):
         user_settings.access_token
         assert_true(mock_refresh.called_once)
 
-    # @mock.patch.object(GoogleDriveUserSettings, 'refresh_access_token')
-    # @mock.patch.object(GoogleDriveUserSettings, 'expires_at', datetime.utcnow() + relativedelta.relativedelta(minutes=45))
-    # def test_access_token_doesnt_refresh(self, mock_refresh):
-    #     user_settings = GoogleDriveUserSettings(
-    #         _access_token='12345',
-    #         owner=self.user,
-    #         username='name',
-    #     )
-    #     user_settings.save()
-    #
-    #     user_settings.access_token
-    #
-    #     assert_false(mock_refresh.called)
-    #
-    # def test_has_auth(self):
-    #     user_settings = GoogleDriveUserSettingsFactory(access_token=None)
-    #     assert_false(user_settings.has_auth)
-    #     user_settings.access_token = '12345'
-    #     user_settings.save()
-    #     assert_true(user_settings.has_auth)
-    #
-    # def test_clear_clears_associated_node_settings(self):
-    #     node_settings = GoogleDriveNodeSettingsFactory.build()
-    #     user_settings = GoogleDriveUserSettingsFactory()
-    #     node_settings.user_settings = user_settings
-    #     node_settings.save()
-    #     user_settings.clear()
-    #     user_settings.save()
-    #
-    #     # Node settings no longer associated with user settings
-    #     assert_is(node_settings.folder_id, None)
-    #     assert_is(node_settings.user_settings, None)
-    #
-    # def test_clear(self):
-    #     node_settings = GoogleDriveNodeSettingsFactory.build()
-    #     user_settings = GoogleDriveUserSettingsFactory(access_token='abcde')
-    #     node_settings.user_settings = user_settings
-    #     node_settings.save()
-    #
-    #     assert_true(user_settings.access_token)
-    #     user_settings.clear()
-    #     user_settings.save()
-    #     assert_false(user_settings.access_token)
-    #
-    # def test_delete(self):
-    #     user_settings = GoogleDriveUserSettingsFactory()
-    #     assert_true(user_settings.has_auth)
-    #     user_settings.delete()
-    #     user_settings.save()
-    #     assert_false(user_settings.access_token)
-    #     assert_true(user_settings.deleted)
-    #
-    # def test_delete_clears_associated_node_settings(self):
-    #     node_settings = GoogleDriveNodeSettingsFactory.build()
-    #     user_settings = GoogleDriveUserSettingsFactory()
-    #     node_settings.user_settings = user_settings
-    #     node_settings.save()
-    #
-    #     user_settings.delete()
-    #     user_settings.save()
-    #
-    #     # Node settings no longer associated with user settings
-    #     assert_false(node_settings.deleted)
-    #     assert_is(node_settings.folder_id, None)
-    #     assert_is(node_settings.user_settings, None)
-    #
-    # @mock.patch.object(GoogleDriveUserSettings, 'refresh_access_token')
-    # @mock.patch.object(GoogleDriveOAuthSettings, '_needs_refresh', new_callable=mock.PropertyMock)
-    # def test_access_token_refreshes(self, mock_needs_refresh, mock_refresh):
-    #     mock_needs_refresh.return_value = True
-    #     user_settings = GoogleDriveUserSettingsFactory()
-    #     user_settings.expires_at = datetime.now()
-    #     user_settings.access_token
-    #     assert_true(mock_refresh.called_once)
+    @mock.patch.object(GoogleAuthClient, 'refresh')
+    def test_access_token_doesnt_refresh(self, mock_refresh):
+        user_settings = GoogleDriveUserSettingsFactory()
+        user_settings.save()
+        user_settings.access_token
+        assert_false(mock_refresh.called)
+
+    def test_clear_clears_associated_node_settings(self):
+        node_settings = GoogleDriveNodeSettingsFactory.build()
+        user_settings = GoogleDriveUserSettingsFactory()
+        node_settings.user_settings = user_settings
+        node_settings.save()
+        user_settings.clear()
+        user_settings.save()
+
+        # Node settings no longer associated with user settings
+        assert_is(node_settings.folder_id, None)
+        assert_is(node_settings.user_settings, None)
+
+    def test_clear(self):
+        node_settings = GoogleDriveNodeSettingsFactory.build()
+        user_settings = GoogleDriveUserSettingsFactory(access_token='abcde')
+        node_settings.user_settings = user_settings
+        node_settings.save()
+
+        assert_true(user_settings.access_token)
+        user_settings.clear()
+        user_settings.save()
+        assert_false(user_settings.access_token)
+
+    def test_delete(self):
+        user_settings = GoogleDriveUserSettingsFactory()
+        assert_true(user_settings.has_auth)
+        user_settings.delete()
+        user_settings.save()
+        assert_false(user_settings.access_token)
+        assert_true(user_settings.deleted)
+
+    def test_delete_clears_associated_node_settings(self):
+        node_settings = GoogleDriveNodeSettingsFactory.build()
+        user_settings = GoogleDriveUserSettingsFactory()
+        node_settings.user_settings = user_settings
+        node_settings.save()
+
+        user_settings.delete()
+        user_settings.save()
+
+        # Node settings no longer associated with user settings
+        assert_false(node_settings.deleted)
+        assert_is(node_settings.folder_id, None)
+        assert_is(node_settings.user_settings, None)
 
 
 class TestGoogleDriveNodeSettingsModel(OsfTestCase):
@@ -246,6 +243,10 @@ class TestGoogleDriveNodeSettingsModel(OsfTestCase):
         self.user.add_addon('googledrive')
         self.user.save()
         self.user_settings = self.user.get_addon('googledrive')
+        oauth_settings = GoogleDriveOAuthSettingsFactory()
+        oauth_settings.save()
+        self.user_settings.oauth_settings = oauth_settings
+        self.user_settings.save()
         self.project = ProjectFactory()
         self.node_settings = GoogleDriveNodeSettingsFactory(
             user_settings=self.user_settings,
@@ -271,6 +272,7 @@ class TestGoogleDriveNodeSettingsModel(OsfTestCase):
 
     def test_has_auth(self):
         settings = GoogleDriveNodeSettings(user_settings=self.user_settings)
+        settings.user_settings.access_token = None
         settings.save()
 
         assert_false(settings.has_auth)

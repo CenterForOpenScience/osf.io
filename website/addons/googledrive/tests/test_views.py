@@ -12,6 +12,9 @@ from tests.factories import AuthUserFactory, ProjectFactory
 from website.addons.googledrive.tests.utils import mock_folders
 from website.addons.googledrive.utils import serialize_settings
 from website.addons.googledrive.tests.utils import mock_root_folders
+from website.addons.googledrive.tests.factories import (
+    GoogleDriveOAuthSettingsFactory,
+)
 
 
 class TestGoogleDriveAuthViews(OsfTestCase):
@@ -24,6 +27,8 @@ class TestGoogleDriveAuthViews(OsfTestCase):
         self.project.add_addon('googledrive', Auth(self.user))
         self.node_settings = self.project.get_addon('googledrive')
         self.user_settings = self.user.get_addon('googledrive')
+        oauth_settings = GoogleDriveOAuthSettingsFactory()
+        self.user_settings.oauth_settings = oauth_settings
         self.node_settings.user_settings = self.user_settings
         # Log user in
         self.app.authenticate(*self.user.auth)
@@ -40,10 +45,10 @@ class TestGoogleDriveAuthViews(OsfTestCase):
         res = self.app.post(url)
         assert_true(res.json['url'], authorization_url)
 
-    @mock.patch('website.addons.googledrive.views.auth.GoogleDriveClient.about')
+    @mock.patch('website.addons.googledrive.views.auth.GoogleAuthClient.userinfo')
     @mock.patch('website.addons.googledrive.views.auth.GoogleAuthClient.finish')
     @mock.patch('website.addons.googledrive.views.auth.session')
-    def test_googledrive_oauth_finish(self, mock_session, mock_auth_client_finish, mock_drive_client_about):
+    def test_googledrive_oauth_finish(self, mock_session, mock_auth_client_finish, mock_auth_client_userinfo):
         user_no_addon = AuthUserFactory()
         nid = self.project._primary_key
         state = '1234'
@@ -56,17 +61,18 @@ class TestGoogleDriveAuthViews(OsfTestCase):
             'refresh_token': '2222',
             'expires_at': time.time() + 3600,
         }
-        mock_drive_client_about.return_value = {
+        mock_auth_client_userinfo.return_value = {
+            'sub': 'unique id',
             'name': 'test-user',
         }
         url = api_url_for('googledrive_oauth_finish', user_no_addon.auth, nid=self.project._primary_key, code='1234', state=state)
         res = self.app.get(url)
         assert_is_redirect(res)
 
-    @mock.patch('website.addons.googledrive.views.auth.GoogleDriveClient.about')
+    @mock.patch('website.addons.googledrive.views.auth.GoogleAuthClient.userinfo')
     @mock.patch('website.addons.googledrive.views.auth.GoogleAuthClient.finish')
     @mock.patch('website.addons.googledrive.views.auth.session')
-    def test_googledrive_oauth_finish_user_only(self, mock_session, mock_auth_client_finish, mock_drive_client_about):
+    def test_googledrive_oauth_finish_user_only(self, mock_session, mock_auth_client_finish, mock_auth_client_userinfo):
         user_no_addon = AuthUserFactory()
         state = '1234'
         mock_session.data = {
@@ -77,7 +83,8 @@ class TestGoogleDriveAuthViews(OsfTestCase):
             'refresh_token': '2222',
             'expires_at': time.time() + 3600,
         }
-        mock_drive_client_about.return_value = {
+        mock_auth_client_userinfo.return_value = {
+            'sub': 'unique id',
             'name': 'test-user',
         }
         url = api_url_for('googledrive_oauth_finish', user_no_addon.auth, code='1234', state=state)
@@ -124,6 +131,9 @@ class TestGoogleDriveConfigViews(OsfTestCase):
         self.project.add_addon('googledrive', Auth(self.user))
         self.node_settings = self.project.get_addon('googledrive')
         self.node_settings.user_settings = self.user_settings
+        oauth_settings = GoogleDriveOAuthSettingsFactory()
+        oauth_settings.save()
+        self.user_settings.oauth_settings = oauth_settings
         self.node_settings.save()
         # Log user in
         self.app.authenticate(*self.user.auth)
@@ -149,6 +159,8 @@ class TestGoogleDriveConfigViews(OsfTestCase):
         assert_true(result['userHasAuth'])
 
     def test_drive_user_config_get_not_has_auth(self):
+        self.user_settings.access_token = None
+        self.user_settings.save()
         url = api_url_for('googledrive_user_config_get', Auth(self.user))
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
@@ -195,7 +207,7 @@ class TestGoogleDriveHgridViews(OsfTestCase):
         # Log user in
         self.app.authenticate(*self.user.auth)
 
-    @mock.patch('website.addons.googledrive.views.auth.GoogleDriveClient.folders')
+    @mock.patch('website.addons.googledrive.views.hgrid.GoogleDriveClient.folders')
     def test_googledrive_folders(self, mock_drive_client_folders):
         folderId = '12345'
         mock_drive_client_folders.return_value = mock_folders['items']
@@ -204,7 +216,7 @@ class TestGoogleDriveHgridViews(OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json), len(mock_folders['items']))
 
-    @mock.patch('website.addons.googledrive.views.auth.GoogleDriveClient.folders')
+    @mock.patch('website.addons.googledrive.views.hgrid.GoogleDriveClient.folders')
     def test_googledrive_folders_returns_only_root_folders(self, mock_drive_client_folders):
         mock_drive_client_folders.return_value = mock_root_folders['items']
         url = api_url_for('googledrive_folders', pid=self.project._primary_key)
@@ -223,6 +235,8 @@ class TestGoogleDriveUtils(OsfTestCase):
         self.project.add_addon('googledrive', Auth(self.user))
         self.node_settings = self.project.get_addon('googledrive')
         self.user_settings = self.user.get_addon('googledrive')
+        oauth_settings = GoogleDriveOAuthSettingsFactory()
+        self.user_settings.oauth_settings = oauth_settings
         self.node_settings.user_settings = self.user_settings
 
         self.user_settings.save()
