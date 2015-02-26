@@ -64,7 +64,7 @@ class TestUserSettingsModel(OsfTestCase):
         self.user = UserFactory()
 
     def test_fields(self):
-        oauth_settings = BoxOAuthSettings(user_id='foo', username='bar', _access_token='defined')
+        oauth_settings = BoxOAuthSettings(user_id='foo', username='bar', access_token='defined')
         oauth_settings.save()
         user_settings = BoxUserSettings(owner=self.user, oauth_settings=oauth_settings)
 
@@ -72,7 +72,7 @@ class TestUserSettingsModel(OsfTestCase):
         retrieved = BoxUserSettings.load(user_settings._id)
 
         assert_true(retrieved.owner)
-        assert_true(retrieved.box_id)
+        assert_true(retrieved.user_id)
         assert_true(retrieved.username)
         assert_true(retrieved.access_token)
 
@@ -113,7 +113,7 @@ class TestUserSettingsModel(OsfTestCase):
         user_settings.clear()
         user_settings.save()
 
-        assert_false(user_settings.box_id)
+        assert_false(user_settings.user_id)
         assert_false(user_settings.access_token)
         assert_true(mock_requests.post.called_once)
 
@@ -124,7 +124,7 @@ class TestUserSettingsModel(OsfTestCase):
         user_settings.delete()
         user_settings.save()
 
-        assert_false(user_settings.box_id)
+        assert_false(user_settings.user_id)
         assert_true(user_settings.deleted)
         assert_false(user_settings.access_token)
         assert_true(mock_requests.post.called_once)
@@ -144,11 +144,6 @@ class TestUserSettingsModel(OsfTestCase):
         assert_is(node_settings.folder_id, None)
         assert_true(mock_requests.post.called_once)
         assert_is(node_settings.user_settings, None)
-
-    def test_to_json(self):
-        user_settings = BoxUserSettingsFactory()
-        result = user_settings.to_json()
-        assert_equal(result['has_auth'], user_settings.has_auth)
 
 
 class TestBoxNodeSettingsModel(OsfTestCase):
