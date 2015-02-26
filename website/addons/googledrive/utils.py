@@ -91,7 +91,7 @@ def serialize_settings(node_settings, current_user):
     if node_settings.has_auth:
         # Add owner's profile URL
         ret['ownerName'] = user_settings.owner.fullname
-        ret['currentPath'] = '/' + node_settings.folder_path.lstrip('/')
+        ret['currentPath'] = '/' + (node_settings.folder_path.lstrip('/') if node_settings.folder_path else '')
         ret['currentFolder'] = node_settings.folder_name  # if node_settings.folder else None
         ret['urls']['owner'] = web_url_for('profile_view_id', uid=user_settings.owner._id)
 
