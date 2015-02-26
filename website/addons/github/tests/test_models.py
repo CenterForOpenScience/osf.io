@@ -3,6 +3,7 @@ import unittest
 from nose.tools import *
 
 from github3.repos import Repository
+from github3.git import Tree
 
 from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory
@@ -75,6 +76,24 @@ class TestFileGuid(OsfTestCase):
         assert_true(created1)
         assert_false(created2)
         assert_equals(guid1, guid2)
+
+    @mock.patch('website.addons.github.api.GitHub.tree')
+    def test_get_existing_files(self, mock_tree):
+        path = 'github_testing.txt'
+        mock_tree.return_value = Tree.from_json({
+            'tree': [
+                {
+                    'type': 'blob',
+                    'path': path,
+                }
+            ]
+        })
+        guid, _ = self.node_addon.find_or_create_file_guid('/{}'.format(path))
+        self.node_addon.hook_id = 123
+        self.node_addon.repo = True
+        files = self.node_addon.get_existing_files()
+        assert_equal(len(files), 1)
+        assert_equal(files[0], guid)
 
 
 class TestCallbacks(OsfTestCase):
