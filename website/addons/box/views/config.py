@@ -122,7 +122,7 @@ def serialize_settings(node_settings, current_user, client=None):
             result['folder'] = {'name': None, 'path': None}
         else:
             result['folder'] = {
-                'name': 'Box: ' + node_settings.folder,
+                'name': node_settings.folder,
                 'path': node_settings.full_folder_path,
             }
     return result
@@ -219,7 +219,7 @@ def box_list_folders(node_addon, **kwargs):
             'path': '/',
             'addon': 'box',
             'kind': 'folder',
-            'name': 'All Files',
+            'name': '/ (Full Box)',
             'urls': {
                 'folders': node.api_url_for('box_list_folders', folderId=0),
             }
