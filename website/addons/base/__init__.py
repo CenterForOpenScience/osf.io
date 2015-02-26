@@ -440,7 +440,9 @@ class AddonUserSettingsBase(AddonSettingsBase):
 
 
 class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
-    # __metaclass__ = abc.ABCMeta
+    _meta = {
+        'abstract': True,
+    }
 
     oauth_grants = fields.DictionaryField()
     # example:
@@ -674,6 +676,9 @@ class AddonNodeSettingsBase(AddonSettingsBase):
 
 
 class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
+    _meta = {
+        'abstract': True,
+    }
 
     # TODO: Validate this field to be sure it matches the provider's short_name
     external_account = fields.ForeignField('externalaccount',

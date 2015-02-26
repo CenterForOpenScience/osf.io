@@ -5,8 +5,7 @@ import time
 import mendeley
 from modularodm import fields
 
-from website.addons.base import AddonOAuthNodeSettingsBase
-from website.addons.base import AddonOAuthUserSettingsBase
+from website.addons.base import AddonOAuthNodeSettingsBase, AddonOAuthUserSettingsBase
 from website.addons.citations.utils import serialize_account, serialize_folder
 from website.addons.mendeley import settings
 from website.addons.mendeley.api import APISession
