@@ -100,7 +100,7 @@ class TestUserSettingsModel(OsfTestCase):
         # Node settings no longer associated with user settings
         assert_is(node_settings.folder_id, None)
         assert_is(node_settings.user_settings, None)
-        assert_true(mock_requests.post.called_once)
+        mock_requests.post.assert_called_once()
 
     @mock.patch('website.addons.box.model.requests')
     def test_clear(self, mock_requests):
@@ -115,7 +115,24 @@ class TestUserSettingsModel(OsfTestCase):
 
         assert_false(user_settings.user_id)
         assert_false(user_settings.access_token)
-        assert_true(mock_requests.post.called_once)
+        mock_requests.post.assert_called_once()
+
+    @mock.patch('website.addons.box.model.requests')
+    def test_clear_wo_oauth_settings(self, mock_requests):
+        user_settings = BoxUserSettingsFactory()
+        user_settings.oauth_settings = None
+        user_settings.save()
+        node_settings = BoxNodeSettingsFactory()
+        node_settings.user_settings = user_settings
+        node_settings.save()
+
+        assert_false(user_settings.oauth_settings)
+        user_settings.clear()
+        user_settings.save()
+
+        assert_false(user_settings.user_id)
+        assert_false(user_settings.access_token)
+        assert_false(mock_requests.post.called)
 
     @mock.patch('website.addons.box.model.requests')
     def test_delete(self, mock_requests):
@@ -127,7 +144,7 @@ class TestUserSettingsModel(OsfTestCase):
         assert_false(user_settings.user_id)
         assert_true(user_settings.deleted)
         assert_false(user_settings.access_token)
-        assert_true(mock_requests.post.called_once)
+        mock_requests.post.assert_called_once()
 
     @mock.patch('website.addons.box.model.requests')
     def test_delete_clears_associated_node_settings(self, mock_requests):
@@ -142,7 +159,7 @@ class TestUserSettingsModel(OsfTestCase):
         # Node settings no longer associated with user settings
         assert_false(node_settings.deleted)
         assert_is(node_settings.folder_id, None)
-        assert_true(mock_requests.post.called_once)
+        mock_requests.post.assert_called_once()
         assert_is(node_settings.user_settings, None)
 
 
