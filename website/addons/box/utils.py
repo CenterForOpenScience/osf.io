@@ -86,30 +86,20 @@ def handle_box_error(error, msg):
     raise HTTPError(httplib.INTERNAL_SERVER_ERROR)
 
 
-def build_box_urls(item, node):
-    assert item['type'] == 'folder', 'Can only build urls for box folders'
-    # path = item['path']
-    if item['type'] == u'folder':
-        return {
-            # Add extra endpoint for fetching folders only (used by node settings page)
-            # NOTE: querystring params in camel-case
-            'folders': node.api_url_for('box_hgrid_data_contents', foldersOnly=1, folder_id=item['id']),
-        }
+def box_addon_folder(node_settings, auth, **kwargs):
+    """Return the Rubeus/HGrid-formatted response for the root folder only."""
+    # Quit if node settings does not have authentication
+    if not node_settings.has_auth or node_settings.folder is None:
+        return None
 
+    node = node_settings.owner
 
-def metadata_to_hgrid(item, node, permissions):
-    """Serializes a dictionary of metadata (returned from the BoxClient)
-    to the format expected by Rubeus/HGrid.
-    """
-    filename = item['name']
-    serialized = {
-        'addon': 'box',
-        'permissions': permissions,
-        'name': filename,
-        'ext': os.path.splitext(filename)[-1],
-        rubeus.KIND: rubeus.FOLDER if item['type'] == u'folder' else rubeus.FILE,
-        'urls': build_box_urls(item, node),
-        'path': item.get('path') or filename,
-        'id': item['id'],
-    }
-    return serialized
+    root = rubeus.build_addon_root(
+        node_settings=node_settings,
+        name=node_settings.folder,
+        permissions=auth,
+        nodeUrl=node.url,
+        nodeApiUrl=node.api_url,
+    )
+
+    return [root]
