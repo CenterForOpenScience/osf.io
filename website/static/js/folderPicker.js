@@ -206,18 +206,26 @@ function FolderPicker(selector, opts) {
     self.options.initialFolderName = opts.initialFolderName;
     self.options.folderPath = opts.initialFolderPath;
     self.options.rootName = opts.rootName;
+    
+    var resolveRows = self.options.resolveRows;
+    self.options.resolveRows = function(item){
+	var res = resolveRows(item);
+	var fn = res[1].custom.bind(this);
+	res[1].custom = function(item){
+	    var node = fn(item);
+	    node.attrs.onchange = function(evt) {
+		var id = $(this).val();
+		var row = self.grid.find(id);		
+		self.options.onPickFolder.call(self, evt, row);
+	    };
+	    return node;
+	};
+	return res;
+    };
 
     // Start up the grid
     self.grid = new Treebeard(self.options).tbController;
-    // Set up listener for folder selection
 
-    $(selector).on('change', 'input[name="' + self.selector + INPUT_NAME + '"]', function(evt) {
-        var id = $(this).val();
-        var row = self.grid.find(id);
-
-        //// Store checked state of rows so that it doesn't uncheck when HGrid is redrawn
-        self.options.onPickFolder.call(self, evt, row);
-    });
 }
 
 // Augment jQuery
