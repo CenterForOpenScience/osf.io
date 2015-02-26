@@ -49,7 +49,7 @@ def box_hgrid_data_contents(node_addon, auth, **kwargs):
         )
 
     # No folder, just return an empty list of data
-    if node_addon.folder is None and not request.args.get('foldersOnly'):
+    if node_addon.folder_id is None and not request.args.get('foldersOnly'):
         return {'data': []}
 
     node = node_addon.owner
