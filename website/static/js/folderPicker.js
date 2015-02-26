@@ -69,6 +69,11 @@ function _treebeardSelectView(item) {
     var templateUnchecked = m('input',{
         type: 'radio',
         onclick : setTempPicked.bind(tb),
+	onchange: function(evt){
+	    var id = $(this).val();
+	    var row = tb.find(id);		
+	    tb.options.onPickFolder(evt, row);	 
+	},
         name: '#' + tb.options.divID + INPUT_NAME,
         value:item.id
     }, ' ');
@@ -137,28 +142,6 @@ function _treebeardOnload () {
         tb.updateFolder(null, tb.treeData.children[0]);
     }
     tb.options.folderPickerOnload();
-    // if (folderName != undefined) {
-    //     if (folderName === 'None') {
-    //         tb.options.folderPath = null;
-    //     } else {
-    //         if(folderPath) {
-    //         }
-    //         folderArray = folderName.trim().split('/');
-    //         if (folderArray[folderArray.length - 1] === '') {
-    //             folderArray.pop();
-    //         }
-    //         if (folderArray[0] === folderPath) {
-    //             folderArray.shift();
-    //         }
-    //         tb.options.folderArray = folderArray;
-    //     }
-    //     for (var i = 0; i < tb.treeData.children.length; i++) {
-    //         if (tb.treeData.children[i].data.addon !== 'figshare' && tb.treeData.children[i].data.name === folderArray[0]) {
-    //             tb.updateFolder(null, tb.treeData.children[i]);
-    //         }
-    //     }
-    //     tb.options.folderIndex = 1;
-    // }
 }
 
 function _treebeardLazyLoadOnLoad(item) {
@@ -206,22 +189,6 @@ function FolderPicker(selector, opts) {
     self.options.initialFolderName = opts.initialFolderName;
     self.options.folderPath = opts.initialFolderPath;
     self.options.rootName = opts.rootName;
-    
-    var resolveRows = self.options.resolveRows;
-    self.options.resolveRows = function(item){
-	var res = resolveRows(item);
-	var fn = res[1].custom.bind(this);
-	res[1].custom = function(item){
-	    var node = fn(item);
-	    node.attrs.onchange = function(evt) {
-		var id = $(this).val();
-		var row = self.grid.find(id);		
-		self.options.onPickFolder.call(self, evt, row);
-	    };
-	    return node;
-	};
-	return res;
-    };
 
     // Start up the grid
     self.grid = new Treebeard(self.options).tbController;
