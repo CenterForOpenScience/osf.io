@@ -168,7 +168,7 @@ def format_result(result, parent_id=None):
         'title': result['title'].replace('&amp;', '&'),
         'url': result['url'],
         'is_component': False if parent_info is None else True,
-        'parent_title': parent_info.get('title') if parent_info is not None else None,
+        'parent_title': parent_info.get('title').replace('&amp;', '&') if parent_info else None,
         'parent_url': parent_info.get('url') if parent_info is not None else None,
         'tags': result['tags'],
         'contributors_url': result['contributors_url'],
