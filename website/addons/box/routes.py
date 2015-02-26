@@ -31,7 +31,16 @@ auth_routes = {
             views.auth.box_oauth_delete_user,
             json_renderer,
         ),
+    ],
+}
 
+
+api_routes = {
+    'rules': [
+
+        ##### OAuth #####
+
+        # avoid nginx rewrite (lack of 307 support)
         Rule(
             [
                 '/project/<pid>/oauth/connect/box/',
@@ -41,12 +50,6 @@ auth_routes = {
             views.auth.box_oauth_start,
             json_renderer,
         ),
-    ],
-}
-
-
-api_routes = {
-    'rules': [
 
         #### Profile settings ###
 

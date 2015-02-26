@@ -206,9 +206,10 @@ class GoogleDriveUserSettings(AddonUserSettingsBase):
         return None
 
     def clear(self):
-        self.oauth_settings.revoke_access_token()
-        self.oauth_settings = None
-        self.save()
+        if self.oauth_settings:
+            self.oauth_settings.revoke_access_token()
+            self.oauth_settings = None
+            self.save()
 
         for node_settings in self.googledrivenodesettings__authorized:
             node_settings.deauthorize(Auth(self.owner))
