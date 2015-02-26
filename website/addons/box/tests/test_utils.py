@@ -85,21 +85,3 @@ def test_serialize_folder():
     result = serialize_folder(metadata)
     assert_equal(result['path'], metadata['path'])
     assert_equal(result['name'], 'Box' + metadata['path'])
-
-
-class TestBuildBoxUrls(OsfTestCase):
-
-    def test_build_box_urls_file(self):
-        node = ProjectFactory()
-        fake_metadata = mock_responses['metadata_single']
-        fake_metadata['type'] = 'folder'
-        result = utils.build_box_urls(fake_metadata, node)
-        path = fake_metadata['path']
-        assert_equal(
-            result['folders'],
-            node.api_url_for(
-                'box_hgrid_data_contents',
-                folder_id=fake_metadata['id'],
-                foldersOnly=1
-            )
-        )
