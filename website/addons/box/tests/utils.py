@@ -21,7 +21,7 @@ class BoxAddonTestCase(AddonTestCase):
 
     def set_user_settings(self, settings):
         self.oauth = BoxOAuthSettings(
-            user_id='test', _access_token='test')
+            user_id='test', access_token='test')
         self.oauth.save()
         settings.oauth_settings = self.oauth
 

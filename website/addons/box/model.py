@@ -140,13 +140,13 @@ class BoxUserSettings(AddonUserSettingsBase):
     )
 
     @property
-    def box_id(self):
+    def user_id(self):
         if self.oauth_settings:
             return self.oauth_settings.user_id
         return None
 
-    @box_id.setter
-    def box_id(self, val):
+    @user_id.setter
+    def user_id(self, val):
         self.oauth_settings.user_id = val
 
     @property

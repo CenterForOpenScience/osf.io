@@ -47,7 +47,7 @@ def get_auth_flow(csrf_token):
 
 def finish_auth():
     """View helper for finishing the Box Oauth2 flow. Returns the
-    access_token, box_id, and url_state.
+    access_token, user_id, and url_state.
 
     Handles various errors that may be raised by the Box client.
     """
