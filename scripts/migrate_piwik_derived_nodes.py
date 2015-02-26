@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 """Find nodes derived from other nodes that share a piwik_site_id with a parent.
 
+Log:
+
+    Run by sloria on 2015-02-24 at 12:04PM EST. A log was saved to /opt/data/migration-logs.
 """
 
 import json
@@ -90,7 +93,7 @@ def fix_nodes(nodes):
 
 
 def main():
-    init_app('website.settings', set_backends=True, routes=True)
+    init_app('website.settings', set_backends=True, routes=False)
 
     broken_forks = get_broken_forks()
     broken_templated = get_broken_templated()
