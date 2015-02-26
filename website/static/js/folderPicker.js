@@ -123,12 +123,13 @@ function _treebeardResolveRows(item) {
 
 function _treebeardOnload () {
     var tb = this;
-    // var folderName = tb.options.initialFolderName;
-    // var folderPath = tb.options.initialFolderPath;
 
     tb.options.folderIndex = 0;
     if (tb.options.folderPath) {
         tb.options.folderArray = tb.options.folderPath.split('/');
+        if (tb.options.folderArray.length > 1) {
+            tb.options.folderArray.splice(0, 1);
+        }
     } else {
         tb.options.folderArray = [''];
     }
@@ -205,6 +206,7 @@ function FolderPicker(selector, opts) {
     self.options.divID = selector.substring(1);
     self.options.initialFolderName = opts.initialFolderName;
     self.options.folderPath = opts.initialFolderPath;
+    self.options.rootName = opts.rootName;
 
     // Start up the grid
     self.grid = new Treebeard(self.options).tbController;
