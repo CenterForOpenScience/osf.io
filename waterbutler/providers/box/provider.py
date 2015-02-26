@@ -94,6 +94,7 @@ class BoxProvider(provider.BaseProvider):
         #Alert: Versions are only tracked for Box users with premium accounts.
         #Few users will have a premium account, return only current if not
         path = BoxPath(path)
+        curr = yield from self.metadata(str(path), raw=True)
         response = yield from self.make_request(
             'GET',
             self.build_url('files', path._id, 'versions'),
@@ -101,15 +102,10 @@ class BoxProvider(provider.BaseProvider):
             throws=exceptions.RevisionsError,
         )
         data = yield from response.json()
-
-        ret = []
-        curr = yield from self.metadata(str(path))
-        ret.append(BoxRevision(curr).serialized())
-
-        for item in data['entries']:
-            ret.append(BoxRevision(item).serialized())
-
-        return ret
+        return [
+            BoxRevision(each).serialized()
+            for each in [curr] + data['entries']
+        ]
 
     def _assert_child(self, paths, target=None):
         if self.folder == 0:
