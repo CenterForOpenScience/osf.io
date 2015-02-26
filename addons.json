@@ -1,5 +1,6 @@
 {
     "addons": [
+        "box",
         "dataverse",
         "dropbox",
         "figshare",
@@ -10,6 +11,7 @@
         "osfstorage",
         "s3",
         "twofactor",
-        "wiki"
+        "wiki",
+        "googledrive"
     ]
 }

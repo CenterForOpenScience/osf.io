@@ -10,6 +10,7 @@ from website.addons.dropbox.model import (
     DropboxUserSettings, DropboxNodeSettings, DropboxFile
 )
 
+
 # TODO(sloria): make an abstract UserSettingsFactory that just includes the owner field
 class DropboxUserSettingsFactory(ModularOdmFactory):
     FACTORY_FOR = DropboxUserSettings
