@@ -30,10 +30,13 @@ class Zotero(ExternalProvider):
     _client = None
 
     def handle_callback(self, response):
-        _userID = response['userID']
+
         return {
-            'provider_id': _userID,
-            'display_name': response['username']
+            'display_name': response['username'],
+            'provider_id': response['userID'],
+            'profile_url': 'https://zotero.org/users/{}/'.format(
+                response['userID']
+            ),
         }
 
     @property
