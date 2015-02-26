@@ -253,7 +253,7 @@ class Mendeley(ExternalProvider):
             extract_folder(each)
             for each in folders
         ]
-        return ([all_documents] + serialized_folders)
+        return [all_documents] + serialized_folders
 
     def get_list(self, list_id='ROOT'):
         """Get a single CitationList
@@ -276,14 +276,22 @@ class Mendeley(ExternalProvider):
     def _get_citations(self, src):
 
         documents = src.documents.iter(page_size=500)
-        return (
+        return [
             self._citation_for_mendeley_document(document)
             for document in documents
-        )
+        ]
 
     def _citations_for_mendeley_folder(self, folder):
 
-        return self._get_citations(folder)
+        document_ids = [
+            document.id
+            for document in folder.documents.iter(page_size=500)
+        ]
+        citations = {
+            citation['id']: citation
+            for citation in self._citations_for_mendeley_user()
+        }
+        return map(lambda id: citations[id], document_ids)
 
     def _citations_for_mendeley_user(self):
 
