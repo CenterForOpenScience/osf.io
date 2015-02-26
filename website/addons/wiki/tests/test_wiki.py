@@ -17,6 +17,7 @@ from tests.factories import (
 )
 
 from website.addons.wiki import settings
+from website.addons.wiki.exceptions import InvalidVersionError
 from website.addons.wiki.views import _serialize_wiki_toc, _get_wiki_web_urls, _get_wiki_api_urls
 from website.addons.wiki.model import NodeWikiPage, render_content
 from website.addons.wiki.utils import (
@@ -25,7 +26,6 @@ from website.addons.wiki.utils import (
 )
 from website.addons.wiki.tests.config import EXAMPLE_DOCS, EXAMPLE_OPS
 from framework.auth import Auth
-from framework.exceptions import HTTPError
 from framework.mongo.utils import to_mongo_key
 
 # forward slashes are not allowed, typically they would be replaced with spaces
@@ -1093,22 +1093,16 @@ class TestWikiUtils(OsfTestCase):
         assert_equal(format_wiki_version('current', 0, False), 'current')
         assert_equal(format_wiki_version('preview', 0, True), 'preview')
 
-        with assert_raises(HTTPError) as cm:
+        with assert_raises(InvalidVersionError):
             format_wiki_version('1', 0, False)
-        assert_equal(cm.exception.code, http.BAD_REQUEST)
-        with assert_raises(HTTPError) as cm:
+        with assert_raises(InvalidVersionError):
             format_wiki_version('previous', 0, False)
-        assert_equal(cm.exception.code, http.BAD_REQUEST)
-        with assert_raises(HTTPError) as cm:
+        with assert_raises(InvalidVersionError):
             format_wiki_version('6', 5, False)
-        assert_equal(cm.exception.code, http.BAD_REQUEST)
-        with assert_raises(HTTPError) as cm:
+        with assert_raises(InvalidVersionError):
             format_wiki_version('0', 5, False)
-        assert_equal(cm.exception.code, http.BAD_REQUEST)
-        with assert_raises(HTTPError) as cm:
+        with assert_raises(InvalidVersionError):
             format_wiki_version('preview', 5, False)
-        assert_equal(cm.exception.code, http.BAD_REQUEST)
-        with assert_raises(HTTPError) as cm:
+        with assert_raises(InvalidVersionError):
             format_wiki_version('nonsense', 5, True)
-        assert_equal(cm.exception.code, http.BAD_REQUEST)
 

@@ -2,7 +2,7 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${node['title'] | n} Wiki</%def>
 ## Use full page width
-<%def name="container_class()">container-xl</%def>
+<%def name="container_class()">container-xxl</%def>
 
 <div class="row" style="margin-bottom: 5px;">
     <div class="col-sm-6">
@@ -50,10 +50,10 @@
 
     <div class="panel-expand col-sm-${'9' if 'menu' in panels_used else '11' | n}">
       <div class="row">
-        % if can_edit:
+        % if user['can_edit']:
             <div data-bind="with: $root.editVM.wikiEditor.viewModel"
                  data-osf-panel="Edit"
-                 class="${'col-sm-{0}'.format(12 / len(set(panels_used).intersection({'view', 'edit', 'compare'}))) | n}"
+                 class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                  style="${'' if 'edit' in panels_used else 'display: none' | n}">
                 <div class="wiki-panel">
                   <div class="wiki-panel-header">
@@ -62,16 +62,18 @@
                            <i class="icon-edit"> </i>  Edit
                       </div>
                         <div class="col-md-6">
-                          <div class="progress progress-no-margin pointer"
+                          <div class="progress progress-no-margin pointer pull-right"
                                data-toggle="modal"
                                data-bind="attr: {data-target: modalTarget}"
                                   >
                               <div role="progressbar"
                                    data-bind="attr: progressBar"
                                       >
-                                  <span data-bind="text: statusDisplay"></span>
-                                  <span class="sharejs-info-btn">
-                                      <i class="icon-question-sign icon-large"></i>
+                                  <span class="progress-bar-content">
+                                      <span data-bind="text: statusDisplay"></span>
+                                      <span class="sharejs-info-btn">
+                                          <i class="icon-question-sign icon-large"></i>
+                                      </span>
                                   </span>
                               </div>
                           </div>
@@ -80,8 +82,8 @@
                         </div>
                     </div>
                   </div>
+                  <form id="wiki-form" action="${urls['web']['edit']}" method="POST">
                   <div class="wiki-panel-body">
-                      <form id="wiki-form" action="${urls['web']['edit']}" method="POST">
                         <div class="row">
                         <div class="col-xs-12">
                           <div class="form-group wmd-panel">
@@ -99,7 +101,9 @@
                                    data-bind="ace: currentText">Loading. . .</div>
                           </div>
                         </div>
-                      </div>
+                      </div>                    
+                  </div>
+                  <div class="wiki-panel-footer">
                       <div class="row">
                         <div class="col-xs-12">
                            <div class="pull-right">
@@ -117,14 +121,14 @@
                         <!-- Invisible textarea for form submission -->
                         <textarea name="content" style="display: none;"
                                   data-bind="value: currentText"></textarea>
-                    </form>
                   </div>
+                </form>
                 </div>
             </div>
           % endif
 
           <div data-osf-panel="View"
-               class="${'col-sm-{0}'.format(12 / len(set(panels_used).intersection({'view', 'edit', 'compare'}))) | n}"
+               class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                style="${'' if 'view' in panels_used else 'display: none' | n}">
               <div class="wiki-panel">
                 <div class="wiki-panel-header">
@@ -135,7 +139,7 @@
                         <div class="col-sm-6">
                             <!-- Version Picker -->
                             <select data-bind="value:viewVersion" id="viewVersionSelect" class="pull-right">
-                                % if can_edit:
+                                % if user['can_edit']:
                                     <option value="preview" ${'selected' if version_settings['view'] == 'preview' else ''}>Preview</option>
                                 % endif
                                 <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>Current</option>
@@ -155,7 +159,7 @@
               </div>
           </div>
           <div data-osf-panel="Compare"
-               class="${'col-sm-{0}'.format(12 / len(set(panels_used).intersection({'view', 'edit', 'compare'}))) | n}"
+               class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                style="${'' if 'compare' in panels_used else 'display: none' | n}">
             <div class="wiki-panel">
               <div class="wiki-panel-header">
@@ -247,7 +251,7 @@
       <div class="modal-body">
         <p>
             This page is currently connected to the collaborative wiki. All edits made will be visible to
-            contributors with edit permission in real time. Changes will be stored
+            contributors with write permission in real time. Changes will be stored
             but not published until you click the "Save" button.
         </p>
       </div>
@@ -311,7 +315,7 @@
 ${parent.javascript_bottom()}
 <script>
 
-    var canEdit = ${json.dumps(can_edit)};
+    var canEdit = ${json.dumps(user['can_edit'])};
 
     var canEditPageName = canEdit && ${json.dumps(
         wiki_id and wiki_name != 'home'

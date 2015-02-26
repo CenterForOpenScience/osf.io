@@ -7,6 +7,7 @@ var mathrender = require('mathrender');
 var md = require('markdown').full;
 var mdQuick = require('markdown').quick;
 var diffTool = require('diffTool');
+var History = require('exports?History!history');
 
 var THROTTLE = 500;
 
@@ -64,7 +65,6 @@ function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathj
 
     self.displayText =  ko.computed(function() {
         self.allowFullRender();
-        self.visible();
         var requestURL;
         if (typeof self.version() !== 'undefined') {
             if (self.version() === 'preview') {
@@ -81,21 +81,20 @@ function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathj
                 });
 
                 request.done(function (resp) {
-                    var rawContent = resp.wiki_content || '*No wiki content*';
-                    if (resp.wiki_rendered) {
-                        // Use pre-rendered python, if provided. Don't mathjaxify
-                        self.allowMathjaxification(false);
-                        if(self.visible()) {
+                    if(self.visible()) {
+                        var rawContent = resp.wiki_content || '*No wiki content*';
+                        if (resp.wiki_rendered) {
+                            // Use pre-rendered python, if provided. Don't mathjaxify
+                            self.allowMathjaxification(false);
                             self.rendered(resp.wiki_rendered);
-                        }
-                    } else {
-                        // Render raw markdown
-                        if(self.visible()) {
+
+                        } else {
+                            // Render raw markdown
                             self.allowMathjaxification(true);
                             self.rendered(self.renderMarkdown(rawContent));
                         }
+                        self.displaySource(rawContent);
                     }
-                    self.displaySource(rawContent);
                 });
             }
         } else {
@@ -166,6 +165,8 @@ function ViewModel(options){
     self.compareVis = ko.observable(options.compareVisible);
     self.menuVis = ko.observable(options.menuVisible);
 
+    self.pageTitle = $(document).find("title").text();
+
     self.compareVersion = ko.observable(options.compareVersion);
     self.viewVersion = ko.observable(options.viewVersion);
     self.draftURL = options.urls.draft;
@@ -198,7 +199,7 @@ function ViewModel(options){
 
         // Default view is special cased
         if (!self.editVis() && self.viewVis() && self.viewVersion() === 'current' && !self.compareVis() && self.menuVis()) {
-            window.history.replaceState({}, '', url);
+            History.replaceState({}, '', url);
             return;
         }
 
@@ -227,7 +228,7 @@ function ViewModel(options){
             url += paramPrefix + 'menu';
         }
 
-        window.history.replaceState({}, '', url);
+        History.replaceState({}, self.pageTitle, url);
     });
 
 

@@ -22,6 +22,8 @@
 <script type="text/javascript">
     $(document).ready(function() {
         $('#delete-wiki').on('click', function () {
+
+            window.contextVars.wiki.triggeredDelete = true;
             $.ajax({
                 type:'DELETE',
                 url: '${urls['api']['delete']}',

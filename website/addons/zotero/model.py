@@ -76,8 +76,6 @@ class Zotero(ExternalProvider):
             list_id = None
 
         if list_id:
-            collection = self.client.collection(list_id)
-
             citations = []
             more = True
             offset = 0
@@ -88,7 +86,7 @@ class Zotero(ExternalProvider):
                     more = False
                 else:
                     offset = offset + len(page)
-            return self._citations_for_zotero_collection(collection_items)
+            return self._citations_for_zotero_collection(citations)
         else:
             return self._citations_for_zotero_user()
 

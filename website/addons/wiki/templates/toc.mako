@@ -8,9 +8,11 @@
                 ${node['category'].title()} Wiki Pages
             </div>
             <div class="col-xs-2">
-                <a href="#" data-toggle="modal" data-target="#newWiki">
-                    <i class="icon icon-plus-sign pointer icon-lg" data-toggle="tooltip" title="New" data-placement="left"></i>
-                </a>
+                % if user['can_edit']:
+                    <a href="#" data-toggle="modal" data-target="#newWiki">
+                        <i class="icon icon-plus-sign pointer icon-lg" data-toggle="tooltip" title="New" data-placement="left"></i>
+                    </a>
+                % endif
             </div>
         </div>
     </h4>
@@ -31,26 +33,20 @@
             </li>
             % for page in pages_current:
                 %if page['name'] != 'home':
-                    %if page['name'] == wiki_name:
-                    <li class="active">
-                        <div class="row">
-                            <a href="${page['url']}"><div class="col-xs-10">${page['name']}</div></a>
-                            <div class="col-xs-2">
-                                <a href="#" data-toggle="modal" data-target="#deleteWiki">
-                                    <i class="icon icon-trash text-danger pointer icon-lg" data-toggle="tooltip" title="Delete" data-placement="left"> </i>
-                                </a>
+                    <li ${'class="active"' if page['name'] == wiki_name else '' | n}>
+                            <div class="row">
+                                %if page['name'] == wiki_name and user['can_edit']:
+                                    <a href="${page['url']}"><div class="col-xs-10">${page['name']}</div></a>
+                                    <div class="col-xs-2">
+                                        <a href="#" data-toggle="modal" data-target="#deleteWiki">
+                                            <i class="icon icon-trash text-danger pointer icon-lg" data-toggle="tooltip" title="Delete" data-placement="left"> </i>
+                                        </a>
+                                    </div>
+                                % else:
+                                    <a href="${page['url']}"><div class="col-xs-12">${page['name']}</div></a>
+                                % endif
                             </div>
-                        </div>
                     </li>
-                    % else:
-                    <li>
-                        <div class="row">
-                            <a href="${page['url']}">
-                                <div class="col-xs-12">${page['name']}</div>
-                            </a>
-                        </div>
-                    </li>
-                    % endif
                 % endif
             %endfor
            
