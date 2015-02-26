@@ -198,3 +198,12 @@ revision_metadata = {
     'published': False,
     'pinned': False
 }
+
+revisions_list = {
+    'kind': 'drive#revisionList',
+    'etag': '"zWM2D6PBtLRQKuDNbaQNSNEy5BE/PeANBe5F3yk-YAzsoQO4pYPA5W8"',
+    'selfLink': 'https://www.googleapis.com/drive/v2/files/1GwpK7IozbO01RiyC5aPd66v7ShEViqggvT6ur5_pZMFo-ZzQHOgkyoU3ztjf0ytKt0HSdvUg6O2nmoYR/revisions',
+    'items': [
+        {'selfLink': 'https://www.googleapis.com/drive/v2/files/1GwpK7IozbO01RiyC5aPd66v7ShEViqggvT6ur5_pZMFo-ZzQHOgkyoU3ztjf0ytKt0HSdvUg6O2nmoYR/revisions/1DVR6FVQGOSpUrtHjxCKb4-2R0chGVJFG6wVPQwq1o-gay_tqwA', 'md5Checksum': '43c5a01efeaea6bfd0433fa516a0d71f', 'pinned': False, 'etag': '"zWM2D6PBtLRQKuDNbaQNSNEy5BE/sdQBhqMbZWHR5JnnXwR2jMjJYa4"', 'id': '1DVR6FVQGOSpUrtHjxCKb4-2R0chGVJFG6wVPQwq1o-gay_tqwA', 'kind': 'drive#revision', 'lastModifyingUserName': 'Joshua Carp', 'mimeType': 'application/pdf', 'fileSize': '918668', 'lastModifyingUser': {'kind': 'drive#user', 'emailAddress': 'jm.carp@gmail.com', 'permissionId': '07992110234966807597', 'picture': {'url': 'https://lh3.googleusercontent.com/-ndG-yHyqonM/AAAAAAAAAAI/AAAAAAAAADs/wUR8YhDe3vY/s64/photo.jpg'}, 'displayName': 'Joshua Carp', 'isAuthenticatedUser': True}, 'downloadUrl': 'https://doc-0g-5k-docs.googleusercontent.com/docs/securesc/6l6ti67c1gnej8b4rr55nfimce1282lr/nccdohm8rrrqmabek0d1ot5alel2768g/1424959200000/07992110234966807597/07992110234966807597/1GwpK7IozbO01RiyC5aPd66v7ShEViqggvT6ur5_pZMFo-ZzQHOgkyoU3ztjf0ytKt0HSdvUg6O2nmoYR?rid=1DVR6FVQGOSpUrtHjxCKb4-2R0chGVJFG6wVPQwq1o-gay_tqwA&e=download&gd=true', 'modifiedDate': '2015-01-01T16:54:58.929Z', 'published': False}
+    ]
+}
