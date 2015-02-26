@@ -7,6 +7,9 @@ Override treebeard styles
 .citation-widget .tb-expand-icon-holder {
     cursor: initial;
 }
+.citation-widget .tb-multiselect {
+    background-color: white;
+}
 /* ---------------- */
 .citation-picker {
     padding-bottom: 6px;
