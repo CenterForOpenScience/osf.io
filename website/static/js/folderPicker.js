@@ -71,7 +71,7 @@
     function _treebeardSelectView(item) {
         var tb = this;
         var setTempPicked = function () {
-            this._tempPicked = item.data.path;
+            this._tempPicked = item.id;
         };
         var templateChecked = m('input', {
             type:'radio',
@@ -87,7 +87,7 @@
             }, ' ');
 
         if(tb._tempPicked) {
-            if(tb._tempPicked === item.data.path) {
+            if(tb._tempPicked === item.id) {
                 return templateChecked;
             } else {
                 return templateUnchecked;
