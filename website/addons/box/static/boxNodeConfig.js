@@ -64,7 +64,7 @@ var ViewModel = function(url, selector, folderPicker) {
     });
 
     self.disableShare = ko.computed(function() {
-        return !self.urls().share;
+        return !self.urls().emails;
     });
 
     /**
