@@ -9,6 +9,7 @@ from urllib3.exceptions import MaxRetryError
 from framework.exceptions import HTTPError
 
 from website.util import rubeus
+from website.addons.box import exceptions
 from website.addons.box.client import get_node_client
 from website.addons.box.utils import metadata_to_hgrid
 from website.project.decorators import must_be_addon_authorizer, must_have_addon
@@ -60,7 +61,10 @@ def box_hgrid_data_contents(node_addon, auth, **kwargs):
         'edit': node.can_edit(auth) and not node.is_registration,
     }
 
-    client = get_node_client(node)
+    try:
+        client = get_node_client(node)
+    except exceptions.ExpiredAuthError:
+        raise HTTPError(403)
 
     try:
         metadata = client.get_folder(folder_id)

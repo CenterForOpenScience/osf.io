@@ -20,6 +20,8 @@ def get_client(user):
 def get_client_from_user_settings(settings_obj):
     """Same as get client, except its argument is a BoxUserSettingsObject."""
     if settings_obj.has_auth:
+        # fetching the access token will guarantee a refresh
+        settings_obj.fetch_access_token()
         return BoxClient(settings_obj.get_credentialsv2())
     raise AddonError('Box credentials for this user have expired.')
 

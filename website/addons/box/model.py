@@ -7,7 +7,7 @@ from datetime import datetime
 
 import furl
 import requests
-from box import CredentialsV2
+from box import CredentialsV2, BoxAuthenticationException
 from modularodm import fields, Q, StoredObject
 from modularodm.exceptions import ModularOdmException
 
@@ -16,6 +16,7 @@ from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
 from website.addons.box import settings
+from website.addons.box.exceptions import ExpiredAuthError
 from website.addons.box.utils import BoxNodeLogger
 from website.addons.box.client import get_client_from_user_settings
 
@@ -78,45 +79,37 @@ class BoxOAuthSettings(StoredObject):
     user_id = fields.StringField(primary=True, required=True)
     # Box user name this is the user's login
     username = fields.StringField()
-    _access_token = fields.StringField()
+    access_token = fields.StringField()
     refresh_token = fields.StringField()
     expires_at = fields.DateTimeField()
 
-    @property
-    def access_token(self):
+    def fetch_access_token(self):
         self.refresh_access_token()
-        return self._access_token
-
-    @access_token.setter
-    def access_token(self, val):
-        self._access_token = val
+        return self.access_token
 
     def get_credentialsv2(self):
         return CredentialsV2(
-            self._access_token,
+            self.access_token,
             self.refresh_token,
             settings.BOX_KEY,
             settings.BOX_SECRET,
-            self.token_refreshed_callback,
+            self._token_refreshed_callback,
         )
 
-    def token_refreshed_callback(self, access_token, refresh_token):
-        self.access_token = access_token
-        self.refresh_token = refresh_token
-        self.expires_at = datetime.utcfromtimestamp(time.time() + 3600)
-        self.save()
-
     def refresh_access_token(self, force=False):
-        if self._needs_refresh or force:
-            self.get_credentialsv2().refresh()
+        if self._needs_refresh() or force:
+            try:
+                self.get_credentialsv2().refresh()
+            except BoxAuthenticationException:
+                raise ExpiredAuthError()
 
-    def revoke_token(self):
+    def revoke_access_token(self):
         # if there is only one osf user linked to this box user oauth, revoke the token,
         # otherwise, disconnect the osf user from the boxoauthsettings
         if len(self.boxusersettings__accessed) <= 1:
             url = furl.furl('https://www.box.com/api/oauth2/revoke/')
             url.args = {
-                'token': self._access_token,
+                'token': self.access_token,
                 'client_id': settings.BOX_KEY,
                 'client_secret': settings.BOX_SECRET,
             }
@@ -126,18 +119,22 @@ class BoxOAuthSettings(StoredObject):
             # remove the object as its the last instance.
             BoxOAuthSettings.remove_one(self)
 
-    @property
     def _needs_refresh(self):
         if self.expires_at is None:
             return False
         return (self.expires_at - datetime.utcnow()).total_seconds() < settings.REFRESH_TIME
+
+    def _token_refreshed_callback(self, access_token, refresh_token):
+        self.access_token = access_token
+        self.refresh_token = refresh_token
+        self.expires_at = datetime.utcfromtimestamp(time.time() + 3600)
+        self.save()
 
 
 class BoxUserSettings(AddonUserSettingsBase):
     """Stores user-specific box information, including the Oauth access
     token.
     """
-
     oauth_settings = fields.ForeignField(
         'boxoauthsettings', backref='accessed'
     )
@@ -198,18 +195,10 @@ class BoxUserSettings(AddonUserSettingsBase):
             return self.oauth_settings.access_token is not None
         return False
 
-    def refresh_access_token(self):
-        self.oauth_settings.refresh_access_token()
-        return self.oauth_settings.access_token
-
-    def to_json(self, user=None):
-        """Return a dictionary representation of the user settings.
-        The dictionary keys and values will be available as variables in
-        box_user_settings.mako.
-        """
-        output = super(BoxUserSettings, self).to_json(self.owner)
-        output['has_auth'] = self.has_auth
-        return output
+    def fetch_access_token(self):
+        if self.oauth_settings:
+            return self.oauth_settings.fetch_access_token()
+        return None
 
     def delete(self, save=True):
         self.clear()
@@ -217,7 +206,7 @@ class BoxUserSettings(AddonUserSettingsBase):
 
     def clear(self):
         """Clear settings and deauthorize any associated nodes."""
-        self.oauth_settings.revoke_token()
+        self.oauth_settings.revoke_access_token()
         self.oauth_settings = None
         self.save()
 
