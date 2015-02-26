@@ -53,16 +53,6 @@ class GoogleDriveProvider(provider.BaseProvider):
     def default_headers(self):
         return {'authorization': 'Bearer {}'.format(self.token)}
 
-    def _build_upload_url(self, *segments, **query):
-        return provider.build_url(settings.BASE_UPLOAD_URL, *segments, **query)
-
-    def _serialize_item(self, path, item, raw=False):
-        if raw:
-            return item
-        if item['mimeType'] == 'application/vnd.google-apps.folder':
-            return GoogleDriveFolderMetadata(item, path).serialized()
-        return GoogleDriveFileMetadata(item, path).serialized()
-
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
         data = yield from self.metadata(path, raw=True)
@@ -105,37 +95,9 @@ class GoogleDriveProvider(provider.BaseProvider):
                 folder_id = metadata['id']
             segments = ()
             created = True
-        upload_metadata = {
-            'parents': [
-                {
-                    'kind': 'drive#parentReference',
-                    'id': folder_id,
-                },
-            ],
-            'title': path.name,
-        }
-        resp = yield from self.make_request(
-            'POST' if created else 'PUT',
-            self._build_upload_url('files', *segments, uploadType='resumable'),
-            headers={
-                'Content-Type': 'application/json',
-                'X-Upload-Content-Length': str(stream.size),
-            },
-            data=json.dumps(upload_metadata),
-            expects=(200, ),
-            throws=exceptions.UploadError,
-        )
-        location = furl.furl(resp.headers['LOCATION'])
-        upload_id = location.args['upload_id']
-        resp = yield from self.make_request(
-            'PUT',
-            self._build_upload_url('files', *segments, uploadType='resumable', upload_id=upload_id),
-            headers={'Content-Length': str(stream.size)},
-            data=stream,
-            expects=(200, ),
-            throws=exceptions.UploadError,
-        )
-        data = yield from resp.json()
+        upload_metadata = self._build_upload_metadata(folder_id, path.name)
+        upload_id = yield from self._start_resumable_upload(created, segments, stream.size, upload_metadata)
+        data = yield from self._finish_resumable_upload(segments, stream, upload_id)
         return GoogleDriveFileMetadata(data, path.parent).serialized(), created
 
     @asyncio.coroutine
@@ -220,3 +182,52 @@ class GoogleDriveProvider(provider.BaseProvider):
             GoogleDriveRevision(item).serialized()
             for item in reversed(data['items'])
         ]
+
+    def _build_upload_url(self, *segments, **query):
+        return provider.build_url(settings.BASE_UPLOAD_URL, *segments, **query)
+
+    def _serialize_item(self, path, item, raw=False):
+        if raw:
+            return item
+        if item['mimeType'] == 'application/vnd.google-apps.folder':
+            return GoogleDriveFolderMetadata(item, path).serialized()
+        return GoogleDriveFileMetadata(item, path).serialized()
+
+    def _build_upload_metadata(self, folder_id, name):
+        return {
+            'parents': [
+                {
+                    'kind': 'drive#parentReference',
+                    'id': folder_id,
+                },
+            ],
+            'title': name,
+        }
+
+    @asyncio.coroutine
+    def _start_resumable_upload(self, created, segments, size, metadata):
+        resp = yield from self.make_request(
+            'POST' if created else 'PUT',
+            self._build_upload_url('files', *segments, uploadType='resumable'),
+            headers={
+                'Content-Type': 'application/json',
+                'X-Upload-Content-Length': str(size),
+            },
+            data=json.dumps(metadata),
+            expects=(200, ),
+            throws=exceptions.UploadError,
+        )
+        location = furl.furl(resp.headers['LOCATION'])
+        return location.args['upload_id']
+
+    @asyncio.coroutine
+    def _finish_resumable_upload(self, segments, stream, upload_id):
+        resp = yield from self.make_request(
+            'PUT',
+            self._build_upload_url('files', *segments, uploadType='resumable', upload_id=upload_id),
+            headers={'Content-Length': str(stream.size)},
+            data=stream,
+            expects=(200, ),
+            throws=exceptions.UploadError,
+        )
+        return (yield from resp.json())

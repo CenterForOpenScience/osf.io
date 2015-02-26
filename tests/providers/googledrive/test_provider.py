@@ -6,12 +6,28 @@ import io
 
 import aiohttpretty
 
+from waterbutler.core import streams
 from waterbutler.core import exceptions
 
 from waterbutler.providers.googledrive import GoogleDriveProvider
 from waterbutler.providers.googledrive.metadata import GoogleDriveFileMetadata
 
 from tests.providers.googledrive import fixtures
+
+
+@pytest.fixture
+def file_content():
+    return b'SLEEP IS FOR THE WEAK GO SERVE STREAMS'
+
+
+@pytest.fixture
+def file_like(file_content):
+    return io.BytesIO(file_content)
+
+
+@pytest.fixture
+def file_stream(file_like):
+    return streams.FileStreamReader(file_like)
 
 
 @pytest.fixture
@@ -94,15 +110,50 @@ class TestCRUD:
         content = yield from result.response.read()
         assert content == body
 
-    # @async
-    # @pytest.mark.aiohttpretty
-    # def test_upload_create(self, provider):
-    #     pass
+    @async
+    @pytest.mark.aiohttpretty
+    def test_upload_create(self, provider, file_stream):
+        path = '/birdie.jpg'
+        upload_id = '7'
+        item = fixtures.list_file['items'][0]
+        query = provider._build_query(provider.folder['id'], title=path.lstrip('/'))
+        list_file_url = provider.build_url('files', q=query, alt='json')
+        start_upload_url = provider._build_upload_url('files', uploadType='resumable')
+        finish_upload_url = provider._build_upload_url('files', uploadType='resumable', upload_id=upload_id)
+        aiohttpretty.register_json_uri('GET', list_file_url, body={'items': []})
+        aiohttpretty.register_uri('POST', start_upload_url, headers={'LOCATION': 'http://waterbutler.io?upload_id={}'.format(upload_id)})
+        aiohttpretty.register_json_uri('PUT', finish_upload_url, body=item)
+        result, created = yield from provider.upload(file_stream, path)
 
-    # @async
-    # @pytest.mark.aiohttpretty
-    # def test_upload_update(self, provider):
-    #     pass
+        assert aiohttpretty.has_call(method='GET', uri=list_file_url)
+        assert aiohttpretty.has_call(method='POST', uri=start_upload_url)
+        assert aiohttpretty.has_call(method='PUT', uri=finish_upload_url)
+        assert created is True
+        expected = GoogleDriveFileMetadata(item, '/').serialized()
+        assert result == expected
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_upload_update(self, provider, file_stream):
+        path = '/birdie.jpg'
+        upload_id = '7'
+        item = fixtures.list_file['items'][0]
+        file_id = item['id']
+        query = provider._build_query(provider.folder['id'], title=path.lstrip('/'))
+        list_file_url = provider.build_url('files', q=query, alt='json')
+        start_upload_url = provider._build_upload_url('files', file_id, uploadType='resumable')
+        finish_upload_url = provider._build_upload_url('files', file_id, uploadType='resumable', upload_id=upload_id)
+        aiohttpretty.register_json_uri('GET', list_file_url, body=fixtures.list_file)
+        aiohttpretty.register_uri('PUT', start_upload_url, headers={'LOCATION': 'http://waterbutler.io?upload_id={}'.format(upload_id)})
+        aiohttpretty.register_json_uri('PUT', finish_upload_url, body=item)
+        result, created = yield from provider.upload(file_stream, path)
+
+        assert aiohttpretty.has_call(method='GET', uri=list_file_url)
+        assert aiohttpretty.has_call(method='PUT', uri=start_upload_url)
+        assert aiohttpretty.has_call(method='PUT', uri=finish_upload_url)
+        assert created is False
+        expected = GoogleDriveFileMetadata(item, '/').serialized()
+        assert result == expected
 
     # @async
     # @pytest.mark.aiohttpretty
