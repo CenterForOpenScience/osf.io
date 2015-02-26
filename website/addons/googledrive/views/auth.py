@@ -103,7 +103,6 @@ def googledrive_oauth_finish(auth, **kwargs):
 
     flash('Successfully authorized Google Drive', 'success')
     if node:
-        del session.data['googledrive_auth_nid']
         if node.has_addon('googledrive'):
             node_addon = node.get_addon('googledrive')
             node_addon.set_user_auth(user_settings)
