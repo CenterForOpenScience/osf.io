@@ -2,7 +2,6 @@
 import os
 import time
 import logging
-import hashlib
 from datetime import datetime
 
 import furl
@@ -48,8 +47,7 @@ class BoxFile(GuidFile):
 
     @property
     def unique_identifier(self):
-        # TODO
-        return hashlib.md5(self.waterbutler_path).hexdigest()
+        return self._metadata_cache['extra'].get('etag') or self._metadata_cache['version']
 
     @classmethod
     def get_or_create(cls, node, path):
