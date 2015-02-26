@@ -24,6 +24,7 @@ logging.basicConfig(level=logging.DEBUG)
 def main():
     script_utils.add_file_logger(logger, __file__)
     app = init_app()
+    celery_app.main = 'scripts.send_digest'
     grouped_digests = group_digest_notifications_by_user()
     with app.test_request_context():
         send_digest(grouped_digests)
