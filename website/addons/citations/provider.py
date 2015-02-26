@@ -117,6 +117,7 @@ class CitationsProvider(object):
             'csl': citation,
             'kind': 'file',
             'id': citation['id'],
+            'url': citation.get('url'),
         }
 
     @abc.abstractmethod

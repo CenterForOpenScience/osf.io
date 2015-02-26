@@ -1,3 +1,14 @@
+/*
+Override treebeard styles
+*/
+.citation-widget .title-text {
+    cursor: initial;
+}
+.citation-widget .tb-expand-icon-holder {
+    cursor: initial;
+}
+/* ---------------- */
+
 .citation-picker {
     padding-bottom: 6px;
 }
@@ -14,3 +25,4 @@
 .citation-widget > ul > li:last-child {
     margin-bottom:0px;
 }
+
