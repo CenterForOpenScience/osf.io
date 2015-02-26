@@ -74,8 +74,7 @@ def serialize_urls(node_settings):
         'importAuth': node.api_url_for('dropbox_import_user_auth'),
         'files': node.web_url_for('collect_file_trees'),
         # Endpoint for fetching only folders (including root)
-        'folders': node.api_url_for('dropbox_hgrid_data_contents',
-            foldersOnly=1, includeRoot=1),
+        'folders': node.api_url_for('dropbox_hgrid_data_contents', root=1),
         'share': share_url,
         'emails': node.api_url_for('dropbox_get_share_emails'),
         'settings': web_url_for('user_addons')
@@ -124,7 +123,7 @@ def serialize_settings(node_settings, current_user, client=None):
             result['folder'] = {'name': None, 'path': None}
         else:
             result['folder'] = {
-                'name': 'Dropbox' + path,
+                'name': path if path != '/' else '/ (Full Dropbox)',
                 'path': path
             }
     return result

@@ -1,4 +1,4 @@
-from website.addons.box import model, routes, views
+from website.addons.box import model, routes, utils
 
 
 MODELS = [
@@ -39,6 +39,6 @@ INCLUDE_CSS = {
 }
 
 HAS_HGRID_FILES = True
-GET_HGRID_DATA = views.hgrid.box_addon_folder
+GET_HGRID_DATA = utils.box_addon_folder
 
 # MAX_FILE_SIZE = 5  # MB

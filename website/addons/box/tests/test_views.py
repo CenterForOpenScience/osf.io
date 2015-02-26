@@ -17,7 +17,7 @@ from website.addons.box.tests.utils import (
     BoxAddonTestCase, mock_responses, MockBox, patch_client
 )
 from website.addons.box.model import BoxOAuthSettings
-from website.addons.box.views.hgrid import box_addon_folder
+from website.addons.box.utils import box_addon_folder
 from website.addons.box.views.config import serialize_settings
 
 mock_client = MockBox()
@@ -146,8 +146,7 @@ class TestConfigViews(BoxAddonTestCase):
         # assert_equal(urls['share'], utils.get_share_folder_uri(self.node_settings.folder))
         # Includes endpoint for fetching folders only
         # NOTE: Querystring params are in camelCase
-        assert_equal(urls['folders'],
-            self.project.api_url_for('box_hgrid_data_contents', foldersOnly=1, includeRoot=1))
+        assert_equal(urls['folders'], self.project.api_url_for('box_list_folders'))
         assert_equal(urls['settings'], web_url_for('user_addons'))
 
     @mock.patch('website.addons.box.model.BoxNodeSettings._fetch_folder_data')
@@ -220,7 +219,7 @@ class TestConfigViews(BoxAddonTestCase):
         }
         result = serialize_settings(self.node_settings, self.user, client=mock_client)
         folder = result['folder']
-        assert_equal(folder['name'], 'Box: ' + self.node_settings.folder)
+        assert_equal(folder['name'], self.node_settings.folder)
         assert_equal(folder['path'], 'All Files/' + self.node_settings.folder)
 
     @mock.patch('website.addons.box.client.BoxClient.get_user_info')
@@ -401,9 +400,9 @@ class TestFilebrowserViews(BoxAddonTestCase):
     def tearDown(self):
         self.patcher.stop()
 
-    def test_box_hgrid_data_contents(self):
-        with patch_client('website.addons.box.views.hgrid.get_node_client'):
-            url = self.project.api_url_for('box_hgrid_data_contents')
+    def test_box_list_folders(self):
+        with patch_client('website.addons.box.views.config.get_node_client'):
+            url = self.project.api_url_for('box_list_folders', folderId='foo')
             res = self.app.get(url, auth=self.user.auth)
             contents = mock_client.get_folder('', list=True)['item_collection']['entries']
             expected = [each for each in contents if each['type']=='folder']
@@ -413,42 +412,40 @@ class TestFilebrowserViews(BoxAddonTestCase):
             assert_equal(first['name'], contents[0]['name'])
 
     @mock.patch('website.addons.box.model.BoxNodeSettings.folder_id')
-    def test_box_hgrid_data_contents_if_folder_is_none(self, mock_folder):
+    def test_box_list_folders_if_folder_is_none(self, mock_folder):
         # If folder is set to none, no data are returned
         mock_folder.__get__ = mock.Mock(return_value=None)
-        url = self.project.api_url_for('box_hgrid_data_contents')
+        url = self.project.api_url_for('box_list_folders')
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json['data'], [])
+        assert_equal(len(res.json), 1)
 
-    def test_box_hgrid_data_contents_if_folder_is_none_and_folders_only(self):
-        with patch_client('website.addons.box.views.hgrid.get_node_client'):
+    def test_box_list_folders_if_folder_is_none_and_folders_only(self):
+        with patch_client('website.addons.box.views.config.get_node_client'):
             self.node_settings.folder = None
             self.node_settings.save()
-            url = api_url_for('box_hgrid_data_contents',
+            url = api_url_for('box_list_folders',
                 pid=self.project._primary_key, foldersOnly=True)
             res = self.app.get(url, auth=self.user.auth)
             contents = mock_client.get_folder('', list=True)['item_collection']['entries']
             expected = [each for each in contents if each['type']=='folder']
             assert_equal(len(res.json), len(expected))
 
-    def test_box_hgrid_data_contents_folders_only(self):
-        with patch_client('website.addons.box.views.hgrid.get_node_client'):
-            url = self.project.api_url_for('box_hgrid_data_contents', foldersOnly=True)
+    def test_box_list_folders_folders_only(self):
+        with patch_client('website.addons.box.views.config.get_node_client'):
+            url = self.project.api_url_for('box_list_folders', foldersOnly=True)
             res = self.app.get(url, auth=self.user.auth)
             contents = mock_client.get_folder('', list=True)['item_collection']['entries']
             expected = [each for each in contents if each['type']=='folder']
             assert_equal(len(res.json), len(expected))
 
-    def test_box_hgrid_data_contents_include_root(self):
-        with patch_client('website.addons.box.views.hgrid.get_node_client'):
-            url = self.project.api_url_for('box_hgrid_data_contents', includeRoot=1)
+    def test_box_list_folders_doesnt_include_root(self):
+        with patch_client('website.addons.box.views.config.get_node_client'):
+            url = self.project.api_url_for('box_list_folders', folderId=0)
             res = self.app.get(url, auth=self.user.auth)
             contents = mock_client.get_folder('', list=True)['item_collection']['entries']
             expected = [each for each in contents if each['type']=='folder']
 
-            assert_equal(len(res.json), len(expected) + 1)
-            first_elem = res.json[0]
-            assert_equal(first_elem['path'], '/')
+            assert_equal(len(res.json), len(expected))
 
     @unittest.skip('finish this')
     def test_box_addon_folder(self):
@@ -468,7 +465,7 @@ class TestFilebrowserViews(BoxAddonTestCase):
         assert_is_none(root)
 
     @mock.patch('website.addons.box.client.BoxClient.get_folder')
-    def test_box_hgrid_data_contents_deleted(self, mock_metadata):
+    def test_box_list_folders_deleted(self, mock_metadata):
         # Example metadata for a deleted folder
         mock_metadata.return_value = {
             u'bytes': 0,
@@ -485,24 +482,24 @@ class TestFilebrowserViews(BoxAddonTestCase):
             u'size': u'0 bytes',
             u'thumb_exists': False
         }
-        url = self.project.api_url_for('box_hgrid_data_contents')
+        url = self.project.api_url_for('box_list_folders', folderId='foo')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.NOT_FOUND)
 
     @mock.patch('website.addons.box.client.BoxClient.get_folder')
-    def test_box_hgrid_data_contents_returns_error_if_invalid_path(self, mock_metadata):
+    def test_box_list_folders_returns_error_if_invalid_path(self, mock_metadata):
         mock_metadata.side_effect = BoxClientException(status_code=404, message='File not found')
-        url = self.project.api_url_for('box_hgrid_data_contents')
+        url = self.project.api_url_for('box_list_folders', folderId='lolwut')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.NOT_FOUND)
 
     @mock.patch('website.addons.box.client.BoxClient.get_folder')
-    def test_box_hgrid_data_contents_handles_max_retry_error(self, mock_metadata):
+    def test_box_list_folders_handles_max_retry_error(self, mock_metadata):
         mock_response = mock.Mock()
-        url = self.project.api_url_for('box_hgrid_data_contents')
+        url = self.project.api_url_for('box_list_folders', folderId='fo')
         mock_metadata.side_effect = MaxRetryError(mock_response, url)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, httplib.REQUEST_TIMEOUT)
+        assert_equal(res.status_code, httplib.BAD_REQUEST)
 
 
 class TestRestrictions(BoxAddonTestCase):
@@ -526,13 +523,12 @@ class TestRestrictions(BoxAddonTestCase):
         self.patcher.__get__ = mock.Mock(return_value='foo bar/baz')
         self.patcher.start()
 
-
     @mock.patch('website.addons.box.model.BoxNodeSettings.has_auth')
     def test_restricted_hgrid_data_contents(self, mock_auth):
         mock_auth.__get__ = mock.Mock(return_value=False)
 
         # tries to access a parent folder
-        url = self.project.api_url_for('box_hgrid_data_contents',
+        url = self.project.api_url_for('box_list_folders',
             path='foo bar')
         res = self.app.get(url, auth=self.contrib.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.FORBIDDEN)
