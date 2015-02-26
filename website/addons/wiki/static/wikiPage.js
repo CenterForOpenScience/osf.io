@@ -7,7 +7,6 @@ var mathrender = require('mathrender');
 var md = require('markdown').full;
 var mdQuick = require('markdown').quick;
 var diffTool = require('diffTool');
-var History = require('exports?History!history');
 
 var THROTTLE = 500;
 
@@ -195,11 +194,17 @@ function ViewModel(options){
     });
 
     self.currentURL = ko.computed(function() {
+
+        // Do not change URL for incompatible browsers
+        if (typeof window.history.replaceState === 'undefined') {
+            return;
+        }
+
         var url = self.pageURL;
 
         // Default view is special cased
         if (!self.editVis() && self.viewVis() && self.viewVersion() === 'current' && !self.compareVis() && self.menuVis()) {
-            History.replaceState({}, '', url);
+            window.history.replaceState({}, '', url);
             return;
         }
 
@@ -228,7 +233,7 @@ function ViewModel(options){
             url += paramPrefix + 'menu';
         }
 
-        History.replaceState({}, self.pageTitle, url);
+        window.history.replaceState({}, self.pageTitle, url);
     });
 
 
