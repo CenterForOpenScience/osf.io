@@ -37,7 +37,7 @@
        </p>
 
         <div class="btn-group" >
-        <button data-bind="click:changeFolder" class="btn btn-sm btn-addon"> Change Folder</button>
+          <button data-bind="click:changeFolder" class="btn btn-sm btn-addon"><i class="icon-edit"></i> Change</button>
         </div>
         <!-- Google Drive Treebeard -->
         <p class="text-muted text-center googledrive-loading-text" data-bind="visible: loading">

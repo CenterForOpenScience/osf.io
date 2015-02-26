@@ -35,6 +35,7 @@ var ViewModel = function(url, selector, folderPicker) {
     self.loadedFolders = ko.observable(false);
     self.loading = ko.observable(false);
     self.currentFolder = ko.observable(null);
+    self.currentPath = ko.observable(null);
 
     //Folderpicker specific
     self.folderPicker =  folderPicker;
@@ -57,6 +58,7 @@ var ViewModel = function(url, selector, folderPicker) {
         self.urls(response.result.urls);
         self.ownerName(response.result.ownerName);
         self.owner(response.result.urls.owner);
+        self.currentPath(response.result.currentPath);
         self.currentFolder(response.result.currentFolder);
 
         self.loadedSettings(true);
@@ -219,6 +221,7 @@ var ViewModel = function(url, selector, folderPicker) {
         $(self.folderPicker).folderpicker({
             onPickFolder: onPickFolder,
             filesData: self.urls().get_folders,
+            initialFolderPath : self.currentPath(),
             // Lazy-load each folder's contents
             // Each row stores its url for fetching the folders it contains
 
