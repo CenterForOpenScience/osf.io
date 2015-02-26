@@ -13,6 +13,7 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
     self.wikiEditor = wikiEditor;
 
     var viewModel = wikiEditor.viewModel;
+    var ctx = window.contextVars.wiki;
     var deleteModal = $('#deleteModal');
     var renameModal = $('#renameModal');
     var permissionsModal = $('#permissionsModal');
@@ -52,13 +53,14 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
 
     // Configure connection
     var wsPrefix = (window.location.protocol === 'https:') ? 'wss://' : 'ws://';
-    var wsUrl = wsPrefix + window.contextVars.wiki.urls.sharejs;
+    var wsUrl = wsPrefix + ctx.urls.sharejs;
     var socket = new ReconnectingWebSocket(wsUrl);
     var sjs = new sharejs.Connection(socket);
     var doc = sjs.get('docs', metadata.docId);
     var madeConnection = false;
     var allowRefresh = true;
     var refreshTriggered = false;
+    var canEdit = true;
 
     function whenReady() {
 
@@ -94,7 +96,11 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
 
     function refreshMaybe() {
         if (allowRefresh && refreshTriggered) {
-            window.location.reload();
+            if (canEdit) {
+                window.location.reload();
+            } else {
+                window.location.replace(ctx.urls.page);
+            }
         }
     }
 
@@ -127,6 +133,7 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
                 }, 3000);
                 break;
             case 'unlock':
+                canEdit = data.contributors.indexOf(metadata.userId) > -1;
                 refreshTriggered = true;
                 refreshMaybe();
                 break;
@@ -141,7 +148,7 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
                 }, 3000);
                 break;
             case 'delete':
-                if (window.contextVars.wiki.triggeredDelete) {
+                if (ctx.triggeredDelete) {
                     break;
                 }
                 self.editor.setReadOnly(true);

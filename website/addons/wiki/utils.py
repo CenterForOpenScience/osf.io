@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import urllib
 import uuid
@@ -78,7 +79,11 @@ def migrate_uuid(node, wname):
         db['docs_ops'].insert(ops_items)
         db['docs_ops'].remove({'name': old_sharejs_uuid})
 
-    broadcast_to_sharejs('unlock', old_sharejs_uuid)
+    write_contributors = [
+        user._id for user in node.contributors
+        if node.has_permission(user, 'write')
+    ]
+    broadcast_to_sharejs('unlock', old_sharejs_uuid, data=write_contributors)
 
 
 def share_db():
@@ -95,11 +100,12 @@ def get_sharejs_content(node, wname):
     return doc_item['_data'] if doc_item else ''
 
 
-def broadcast_to_sharejs(action, sharejs_uuid, node=None, wiki_name='home'):
+def broadcast_to_sharejs(action, sharejs_uuid, node=None, wiki_name='home', data=None):
     """
     Broadcast an action to all documents connected to a wiki.
     Actions include 'lock', 'unlock', 'redirect', and 'delete'
     'redirect' and 'delete' both require a node to be specified
+    'unlock' requires data to be a list of contributors with write permission
     """
 
     url = 'http://{host}:{port}/{action}/{id}/'.format(
@@ -117,7 +123,7 @@ def broadcast_to_sharejs(action, sharejs_uuid, node=None, wiki_name='home'):
         url = os.path.join(url, redirect_url)
 
     try:
-        requests.post(url)
+        requests.post(url, json=data)
     except requests.ConnectionError:
         pass    # Assume sharejs is not online
 
