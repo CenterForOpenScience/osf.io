@@ -71,7 +71,7 @@ function _treebeardTitleColumn (item, col) {
 function _treebeardSelectView(item) {
     var tb = this;
     var setTempPicked = function () {
-        this._tempPicked = item.data.path;
+        this._tempPicked = item.id;
     };
     var templateChecked = m('input', {
         type:'radio',
@@ -86,15 +86,14 @@ function _treebeardSelectView(item) {
         value:item.id
         }, ' ');
 
-    if(tb._tempPicked) {
-        if(tb._tempPicked === item.data.path) {
+    if (tb._tempPicked) {
+        if (tb._tempPicked === item.id) {
             return templateChecked;
-        } else {
-            return templateUnchecked;
-        }
+        } 
+        return templateUnchecked;    
     }
 
-    if(item.data.path != undefined) {
+    if (item.data.path !== undefined) {
         if (item.data.path === tb.options.folderPath) {
             return templateChecked;
         }
