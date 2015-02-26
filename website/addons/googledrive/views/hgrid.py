@@ -2,10 +2,13 @@
 
 from flask import request
 
+from framework.exceptions import HTTPError
+
 from website.util import rubeus
 from website.project.decorators import must_have_addon
 from website.project.decorators import must_be_addon_authorizer
 
+from website.addons.googledrive import exceptions
 from website.addons.googledrive.utils import to_hgrid
 from website.addons.googledrive.client import GoogleDriveClient
 
@@ -20,7 +23,12 @@ def googledrive_folders(node_addon, user_addon, **kwargs):
     path = request.args.get('path', '')
     folder_id = request.args.get('folderId', 'root')
 
-    client = GoogleDriveClient(user_addon.access_token)
+    try:
+        access_token = user_addon.fetch_access_token()
+    except exceptions.ExpiredAuthError:
+        raise HTTPError(403)
+
+    client = GoogleDriveClient(access_token)
     contents = [
         to_hgrid(item, node, path=path)
         for item in client.folders(folder_id)

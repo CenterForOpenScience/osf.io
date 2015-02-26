@@ -103,11 +103,11 @@ class GoogleAuthClient(BaseClient):
         except InvalidGrantError:
             raise exceptions.ExpiredAuthError()
 
-    def userinfo(self, token):
+    def userinfo(self, access_token):
         return self._make_request(
             'GET',
             self._build_url(settings.API_BASE_URL, 'oauth2', 'v3', 'userinfo'),
-            params={'access_token': token},
+            params={'access_token': access_token},
             expects=(200, ),
             throws=HTTPError(401)
         ).json()
@@ -124,13 +124,13 @@ class GoogleAuthClient(BaseClient):
 
 class GoogleDriveClient(BaseClient):
 
-    def __init__(self, token=None):
-        self.token = token
+    def __init__(self, access_token=None):
+        self.access_token = access_token
 
     @property
     def default_headers(self):
-        if self.token:
-            return {'authorization': 'Bearer {}'.format(self.token)}
+        if self.access_token:
+            return {'authorization': 'Bearer {}'.format(self.access_token)}
         return {}
 
     def about(self):

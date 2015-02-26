@@ -205,7 +205,7 @@ def user_addons(auth, **kwargs):
     ret['addon_categories'] = settings.ADDON_CATEGORIES
     ret['addons_available'] = [
         addon
-        for addon in settings.ADDONS_AVAILABLE
+        for addon in sorted(settings.ADDONS_AVAILABLE)
         if 'user' in addon.owners and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['user']
     ]
     ret['addons_available'].sort(key=operator.attrgetter("full_name"), reverse=False)
