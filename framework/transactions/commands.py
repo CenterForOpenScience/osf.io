@@ -11,7 +11,11 @@ def begin(database=None):
     database.command('beginTransaction')
 
 
-def rollback(database=None):
+def rollback(database=None, force_throw=True):
+    """
+    :param bool force_throw: Always reraise ``OperationFailure``; used to ensure
+        that pre-request rollback fails as expected
+    """
     database = database or proxy_database
     try:
         # This method is called by various request teardown handlers, and can
@@ -33,7 +37,7 @@ def rollback(database=None):
         #   exceptions on staging to be handled in the same way as those on
         #   production, while also allowing tests to be run without this
         #   exception being raised
-        if not settings.DEBUG_MODE:
+        if not settings.DEBUG_MODE or force_throw:
             raise
 
 
