@@ -143,7 +143,7 @@ def dropbox_config_put(node_addon, user_addon, auth, **kwargs):
     return {
         'result': {
             'folder': {
-                'name': 'Dropbox' + path,
+                'name': path if path != '/' else '/ (Full Dropbox)',
                 'path': path,
             },
             'urls': serialize_urls(node_addon),

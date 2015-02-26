@@ -314,7 +314,8 @@ var ViewModel = function(url, selector, folderPicker) {
     */
     function onPickFolder(evt, item) {
             evt.preventDefault();
-            self.selected({name: 'Box' + item.data.path, path: item.data.path, id: item.data.id});
+            var name = item.data.path === '/' ? '/ (Full Box)' : item.data.path.replace('All Files', '');
+            self.selected({name: name, path: item.data.path, id: item.data.id});
             return false; // Prevent event propagation
         }
 

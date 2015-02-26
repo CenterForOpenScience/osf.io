@@ -309,7 +309,8 @@ var ViewModel = function(url, selector, folderPicker) {
      */
     function onPickFolder(evt, item) {
         evt.preventDefault();
-        self.selected({name: 'Dropbox' + item.data.path, path: item.data.path});
+        var name = item.data.path !== '/' ? item.data.path : '/ (Full Dropbox)';
+        self.selected({name: name, path: item.data.path});
         return false; // Prevent event propagation
     }
 

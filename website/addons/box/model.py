@@ -257,6 +257,8 @@ class BoxNodeSettings(AddonNodeSettingsBase):
         except AttributeError:
             self._folder_data = self._fetch_folder_data()
 
+        return self.full_folder_path
+
     def _fetch_folder_data(self):
         client = get_client_from_user_settings(self.user_settings)
         return client.get_folder(self.folder_id)

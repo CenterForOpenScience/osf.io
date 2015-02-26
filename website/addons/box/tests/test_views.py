@@ -224,7 +224,7 @@ class TestConfigViews(BoxAddonTestCase):
         }
         result = serialize_settings(self.node_settings, self.user, client=mock_client)
         folder = result['folder']
-        assert_equal(folder['name'], self.node_settings.folder)
+        assert_equal(folder['name'], '/' + self.node_settings.folder)
         assert_equal(folder['path'], 'All Files/' + self.node_settings.folder)
 
     @mock.patch('website.addons.box.client.BoxClient.get_user_info')
@@ -448,7 +448,7 @@ class TestFilebrowserViews(BoxAddonTestCase):
             url = self.project.api_url_for('box_list_folders', folderId=0)
             res = self.app.get(url, auth=self.user.auth)
             contents = mock_client.get_folder('', list=True)['item_collection']['entries']
-            expected = [each for each in contents if each['type']=='folder']
+            expected = [each for each in contents if each['type'] == 'folder']
 
             assert_equal(len(res.json), len(expected))
 
