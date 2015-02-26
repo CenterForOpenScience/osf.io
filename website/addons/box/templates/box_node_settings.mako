@@ -39,7 +39,7 @@
                 <p>
                     <strong>Current Folder:</strong>
                     <a data-bind="attr.href: urls().files">
-                        {{folderName}}
+                      {{folder().name}}
                     </a>
                     <span data-bind="if: folder().path === null" class="text-muted">
                         None
@@ -112,7 +112,7 @@
                         <form data-bind="submit: submitSettings">
 
                             <h4 data-bind="if: selected" class="box-confirm-dlg">
-                                Connect &ldquo;{{ selectedFolderName }}&rdquo;?
+                                Connect &ldquo;{{ selected().name }}&rdquo;?
                             </h4>
                             <div class="pull-right">
                                 <button class="btn btn-default"
