@@ -486,6 +486,12 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
 
         self.save()
 
+    def revoke_oauth_access(self, external_account):
+        for key in self.oauth_grants:
+            self.oauth_grants[key].pop(external_account._id, None)
+
+        self.save()
+
     def verify_oauth_access(self, node, external_account, metadata=None):
         metadata = metadata or {}
 

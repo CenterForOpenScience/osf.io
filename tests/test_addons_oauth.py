@@ -98,6 +98,18 @@ class TestNodeSettings(OsfTestCase):
             self.user_settings.oauth_grants.keys()
         )
 
+    def test_revoke_auth(self):
+        self.node_settings.set_auth(
+            external_account=self.external_account,
+            user=self.user
+        )
+        self.user_settings.revoke_oauth_access(self.external_account)
+
+        assert_equal(
+            self.user_settings.oauth_grants,
+            {self.project._id: {}}
+        )
+
     def test_clear_auth(self):
         self.node_settings.external_account = self.external_account
         self.node_settings.user_settings = self.user_settings
