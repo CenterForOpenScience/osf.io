@@ -329,17 +329,14 @@ var ViewModel = function(url, selector, folderPicker) {
             self.loading(true);
             $(self.folderPicker).folderpicker({
                 onPickFolder: onPickFolder,
-                initialFolderName : self.folder().path,
-                initialFolderPath : 'All Files',
+                initialFolderPath : self.folder().path,
+                // initialFolderPath : 'All Files',
                 // Fetch Box folders with AJAX
                 filesData: self.urls().folders, // URL for fetching folders
                 // Lazy-load each folder's contents
                 // Each row stores its url for fetching the folders it contains
                 resolveLazyloadUrl : function(item){
-                    if (item.data.urls) {
-                        return item.data.urls.folders;
-                    }
-                    return null;
+                    return item.data.urls.folders;
                 },
                 oddEvenClass : {
                     odd : 'box-folderpicker-odd',
