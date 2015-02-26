@@ -3,25 +3,26 @@ import json
 import responses
 import time
 import urlparse
-from nose.tools import *
-
+from nose.tools import *  # noqa
 
 from framework.auth import authenticate
-from framework.exceptions import PermissionsError
-from framework.sessions import get_session
-from website.oauth.models import ExternalAccount
-from website.oauth.models import ExternalProvider
-from website.oauth.models import OAUTH1
-from website.oauth.models import OAUTH2
-from website.util import api_url_for
-from website.util import web_url_for
-
 from framework.exceptions import PermissionsError, HTTPError
+from framework.sessions import get_session
+from website.oauth.models import (
+    ExternalAccount,
+    ExternalProvider,
+    OAUTH1,
+    OAUTH2,
+)
+from website.util import api_url_for, web_url_for
+
 from tests.base import OsfTestCase
-from tests.factories import AuthUserFactory
-from tests.factories import ExternalAccountFactory
-from tests.factories import MockOAuth2Provider
-from tests.factories import UserFactory
+from tests.factories import (
+    AuthUserFactory,
+    ExternalAccountFactory,
+    MockOAuth2Provider,
+    UserFactory,
+)
 
 
 class MockOAuth1Provider(ExternalProvider):
