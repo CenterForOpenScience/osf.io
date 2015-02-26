@@ -256,4 +256,4 @@ def search_share_atom(node_addon, **kwargs):
     name = node_addon.system_user.username
 
     atom_url = node.api_url_for('query_app_atom', _xml=True, _absolute=True)
-    return elastic_to_atom(name, ret['results'], q, size, start, atom_url)
+    return search.share_atom(name, ret['results'], q, size, start, atom_url)
