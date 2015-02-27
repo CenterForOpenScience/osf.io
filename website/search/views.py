@@ -252,5 +252,5 @@ def search_share_atom(**kwargs):
 
     name = 'SHARE'
 
-    atom_url = api_url_for('query_app_atom', _xml=True, _absolute=True)
+    atom_url = api_url_for('search_share_atom', _xml=True, _absolute=True)
     return search.share_atom(name, ret['results'], q, size, start=page, url=atom_url)
