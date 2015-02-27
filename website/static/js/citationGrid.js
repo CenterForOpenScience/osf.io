@@ -293,7 +293,7 @@ CitationGrid.prototype.initTreebeard = function() {
         if (self.provider === 'Zotero') {
             if (data.length >= 200) {
 		data.push({
-                    name: 'We can only load 200 citations; some citations may not be shown.',
+                    name: 'Only 200 citations may be displayed',
                     kind: 'message'
                 });
             }
