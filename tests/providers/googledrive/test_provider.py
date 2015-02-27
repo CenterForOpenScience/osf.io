@@ -3,12 +3,14 @@ import pytest
 from tests.utils import async
 
 import io
+from datetime import datetime
 
 import aiohttpretty
 
 from waterbutler.core import streams
 from waterbutler.core import exceptions
 
+from waterbutler.providers.googledrive import settings as ds
 from waterbutler.providers.googledrive import GoogleDriveProvider
 from waterbutler.providers.googledrive.metadata import GoogleDriveRevision
 from waterbutler.providers.googledrive.metadata import GoogleDriveFileMetadata
@@ -334,5 +336,31 @@ class TestRevisions:
         expected = [
             GoogleDriveRevision(each).serialized()
             for each in fixtures.revisions_list['items']
+        ]
+        assert result == expected
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_get_revisions_no_revisions(self, provider, monkeypatch):
+        now = datetime.utcnow()
+        class klass:
+            @classmethod
+            def utcnow(cls):
+                return now
+
+        monkeypatch.setattr('waterbutler.providers.googledrive.provider.datetime', klass)
+        path = '/birdie.jpg'
+        item = fixtures.list_file['items'][0]
+        query = provider._build_query(provider.folder['id'], title=path.lstrip('/'))
+        list_file_url = provider.build_url('files', q=query, alt='json')
+        revisions_url = provider.build_url('files', item['id'], 'revisions')
+        aiohttpretty.register_json_uri('GET', list_file_url, body=fixtures.list_file)
+        aiohttpretty.register_json_uri('GET', revisions_url, body=fixtures.revisions_list_empty)
+        result = yield from provider.revisions(path)
+        expected = [
+            GoogleDriveRevision({
+                'modifiedDate': now.isoformat(),
+                'id': fixtures.revisions_list_empty['etag'] + ds.DRIVE_IGNORE_VERSION,
+            }).serialized()
         ]
         assert result == expected
