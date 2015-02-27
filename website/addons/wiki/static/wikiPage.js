@@ -53,10 +53,13 @@ function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathj
 
     if (typeof self.editor !== 'undefined') {
         self.editor.on('change', function () {
-            // Quick render
-            self.allowFullRender(false);
-            // Full render
-            self.debouncedAllowFullRender();
+            if(self.version() === 'preview') {
+                // Quick render
+                self.allowFullRender(false);
+
+                // Full render
+                self.debouncedAllowFullRender();
+            }
         });
     } else {
         self.allowFullRender(true);
