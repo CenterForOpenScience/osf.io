@@ -403,6 +403,18 @@ class TestAddContributor(SearchTestCase):
         contribs = search.search_contributor(unreg.fullname)
         assert_equal(len(contribs['users']), 0)
 
+
+    def test_unreg_users_do_show_on_projects(self):
+        unreg = UnregUserFactory(fullname='Robert Paulson')
+        self.project = ProjectFactory(
+            title='Glamour Rock',
+            creator=unreg,
+            is_public=True,
+        )
+        results = query(unreg.fullname)['results']
+        assert_equal(len(results), 1)
+
+
     def test_search_fullname(self):
         """Verify that searching for full name yields exactly one result.
 
