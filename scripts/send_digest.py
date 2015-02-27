@@ -1,21 +1,23 @@
 """Script for sending OSF email digests to subscribed users and removing the records once sent."""
 
-import logging
 import datetime
+import logging
 from bson.code import Code
-from framework.tasks import app as celery_app
+
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
+
 from framework import sentry
 from framework.auth.core import User
 from framework.mongo import database as db
+from framework.tasks import app as celery_app
+from scripts import utils as script_utils
 from website import mails
-from website.util import web_url_for
 from website.app import init_app
+from website.util import web_url_for
 from website.notifications.model import DigestNotification
 from website.notifications.utils import NotificationsDict
 
-from scripts import utils as script_utils
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
