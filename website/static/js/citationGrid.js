@@ -9,6 +9,8 @@ var clipboard = require('./clipboard');
 
 var apaStyle = require('raw!styles/apa.csl');
 
+var errorPage = require('raw!citations_load_error.html');
+
 require('../vendor/bower_components/treebeard/dist/treebeard.css');
 require('../css/fangorn.css');
 
@@ -77,13 +79,13 @@ var mergeConfigs = function() {
     var unloads = [];
     var args = Array.prototype.slice.call(arguments);
     return function(elm, isInit, ctx) {
-        for (var i=0; i<args.length; i++) {
+        for (var i = 0; i < args.length; i++) {
             args[i] && args[i](elm, isInit, ctx);
             ctx.onunload && unloads.push(ctx.onunload);
             ctx.onunload = null;
         }
         ctx.onunload = function() {
-            for (var i=0; i<unloads.length; i++) {
+            for (var i = 0; i < unloads.length; i++) {
                 unloads[i]();
             }
         };
@@ -92,7 +94,9 @@ var mergeConfigs = function() {
 
 var tooltipConfig = function(elm, isInit, ctx) {
     var $elm = $(elm);
-    $elm.tooltip({container: 'body'});
+    $elm.tooltip({
+        container: 'body'
+    });
     ctx.onunload = function() {
         $elm.tooltip('destroy');
     };
@@ -117,10 +121,8 @@ var makeButtons = function(item, col, buttons) {
                         onclick: button.onclick ?
                             function(event) {
                                 button.onclick.call(self, event, item, col);
-                            } :
-                            null
-                    },
-                    [
+                            } : null
+                    }, [
                         m(
                             'span', {
                                 class: button.icon
@@ -276,6 +278,9 @@ CitationGrid.prototype.initTreebeard = function() {
             resolveRows: function() {
                 return self.resolveRowAux.call(self, arguments);
             },
+            ondataloadError: function(err) {
+                $(self.gridSelector).html(errorPage);
+            }
         },
         treebeardOptions
     );
@@ -295,10 +300,14 @@ CitationGrid.prototype.initStyleSelect = function() {
             url: '/api/v1/citations/styles/',
             quietMillis: 200,
             data: function(term, page) {
-                return {q: term};
+                return {
+                    q: term
+                };
             },
             results: function(data, page) {
-                return {results: data.styles};
+                return {
+                    results: data.styles
+                };
             },
             cache: true
         }
@@ -308,7 +317,9 @@ CitationGrid.prototype.initStyleSelect = function() {
             self.updateStyle(event.val, xml);
         }).fail(function(jqxhr, status, error) {
             Raven.captureMessage('Error while selecting citation style: ' + event.val, {
-                url: styleUrl, status: status, error: error
+                url: styleUrl,
+                status: status,
+                error: error
             });
         });
     });
@@ -363,21 +374,18 @@ CitationGrid.prototype.getCitations = function(folder) {
 
 CitationGrid.prototype.resolveRowAux = function(item) {
     var self = this;
-    return [
-        {
-            data: 'csl',
-            folderIcons: true,
-            custom: function(item) {
-                return item.kind === 'folder' ? item.data.name : self.getCitation(item);
-            }
-        },
-        {
-            // Wrap callback in closure to preserve intended `this`
-            custom: function() {
-                return renderActions.apply(self, arguments);
-            }
+    return [{
+        data: 'csl',
+        folderIcons: true,
+        custom: function(item) {
+            return item.kind === 'folder' ? item.data.name : self.getCitation(item);
         }
-    ];
+    }, {
+        // Wrap callback in closure to preserve intended `this`
+        custom: function() {
+            return renderActions.apply(self, arguments);
+        }
+    }];
 };
 
 module.exports = CitationGrid;
