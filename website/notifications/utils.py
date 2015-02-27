@@ -64,17 +64,26 @@ def get_configured_projects(user):
     user_subscriptions = get_all_user_subscriptions(user)
 
     for subscription in user_subscriptions:
-        node = Node.load(subscription.object_id)
+        # If the user has opted out of emails skip
+        if user in subscription.none or not isinstance(subscription.owner, Node):
+            continue
+
+        node = subscription.owner
         if node and not node.is_deleted:  # if node is deleted, the subscription should be removed anyway
             parent = node.parent_node
-            has_child_node_subscriptions = node.children_subscriptions != []
+
+            # Skip if we've already add this parent or it doesnt exist
+            if parent and parent._id in configured_project_ids:
+                continue
+
+            has_child_node_subscriptions = bool(node.children_subscriptions)
 
             # Include private parent ids so user subscriptions on the node are still displayed
-            if user not in subscription.none and parent and not parent.parent_node and not parent.has_permission(user, 'read') and parent._id not in configured_project_ids:
+            if parent and not parent.parent_node and not parent.has_permission(user, 'read'):
                 configured_project_ids.append(parent._id)
 
-            elif not parent and subscription.object_id not in configured_project_ids and has_child_node_subscriptions:
-                configured_project_ids.append(subscription.object_id)
+            elif subscription.owner._id not in configured_project_ids and has_child_node_subscriptions:
+                configured_project_ids.append(subscription.owner._id)
 
     return configured_project_ids
 
