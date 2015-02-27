@@ -159,7 +159,7 @@ MEETING_DATA = {
         'logo_url': 'http://s1.postimg.org/50qj9u6i7/GPA_Logo.jpg',
         'active': True,
         'admins': [
-            'mdh8u@eservices.virginia.edu',
+            'mhurst@virginia.edu',
             'KatyCain526@gmail.com',
         ],
         'public_projects': True,
