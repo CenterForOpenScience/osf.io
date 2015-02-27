@@ -1520,6 +1520,71 @@ class TestNode(OsfTestCase):
         self.node.collapse(user=self.user)
         assert_equal(self.node.is_expanded(user=self.user), False)
 
+    def test_check_user_has_permission_on_private_node_child(self):
+        non_admin_user = UserFactory()
+        parent = ProjectFactory()
+        parent.add_contributor(contributor=non_admin_user, permissions=['read'])
+        parent.save()
+
+        node = NodeFactory(project=parent, category='project')
+        sub_component = NodeFactory(project=node)
+        sub_component.add_contributor(contributor=non_admin_user)
+        sub_component.save()
+        sub_component2 = NodeFactory(project=node)
+
+        has_permission_on_child_node = node.check_user_has_permission_on_private_node_child(non_admin_user)
+        assert_true(has_permission_on_child_node)
+
+    def test_check_user_has_permission_excludes_deleted_components(self):
+        non_admin_user = UserFactory()
+        parent = ProjectFactory()
+        parent.add_contributor(contributor=non_admin_user, permissions=['read'])
+        parent.save()
+
+        node = NodeFactory(project=parent, category='project')
+        sub_component = NodeFactory(project=node)
+        sub_component.add_contributor(contributor=non_admin_user)
+        sub_component.is_deleted = True
+        sub_component.save()
+        sub_component2 = NodeFactory(project=node)
+
+        has_permission_on_child_node = node.check_user_has_permission_on_private_node_child(non_admin_user)
+        assert_false(has_permission_on_child_node)
+
+    def test_check_user_does_not_have_permission_on_private_node_child(self):
+        non_admin_user = UserFactory()
+        parent = ProjectFactory()
+        parent.add_contributor(contributor=non_admin_user, permissions=['read'])
+        parent.save()
+        node = NodeFactory(project=parent, category='project')
+        sub_component = NodeFactory(project=node)
+        has_permission_on_child_node = node.check_user_has_permission_on_private_node_child(non_admin_user)
+        assert_false(has_permission_on_child_node)
+
+    def test_check_user_child_node_permissions_false_if_no_children(self):
+        non_admin_user = UserFactory()
+        parent = ProjectFactory()
+        parent.add_contributor(contributor=non_admin_user, permissions=['read'])
+        parent.save()
+        node = NodeFactory(project=parent, category='project')
+        has_permission_on_child_node = node.check_user_has_permission_on_private_node_child(non_admin_user)
+        assert_false(has_permission_on_child_node)
+
+    def test_check_admin_has_permissions_on_private_component(self):
+        parent = ProjectFactory()
+        node = NodeFactory(project=parent, category='project')
+        sub_component = NodeFactory(project=node)
+        has_permission_on_child_node = node.check_user_has_permission_on_private_node_child(parent.creator)
+        assert_true(has_permission_on_child_node)
+
+    def test_check_user_private_node_child_permissions_excludes_pointers(self):
+        user = UserFactory()
+        parent = ProjectFactory()
+        pointed = ProjectFactory(contributor=user)
+        parent.add_pointer(pointed, Auth(parent.creator))
+        parent.save()
+        has_permission_on_child_nodes = parent.check_user_has_permission_on_private_node_child(user)
+        assert_false(has_permission_on_child_nodes)
 
 class TestRemoveNode(OsfTestCase):
 
