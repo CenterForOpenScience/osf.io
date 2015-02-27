@@ -5,7 +5,7 @@ html, body {
 }
 
 body {
-    padding-top: 70px; /* body padding for fixed top nav */
+    padding-top: 50px; /* body padding for fixed top nav */
     position: relative; /* for bootstrap affix */
 }
 
@@ -228,7 +228,7 @@ body {
     height: 500px;
 }
 .verticalline {
-border-left:  thin solid #D9E8F4;
+    border-left:  thin solid #D9E8F4;
 }
 
 
@@ -389,9 +389,15 @@ li.pointer {
 /* Style for Ace wiki editor */
 .wiki-editor {
     position: relative;
-    height: 300px;
     border: solid;
     border-width: 1px;
+    width: 100%;
+    margin: auto;
+    -webkit-box-flex: 0 0 auto;  
+    -webkit-flex: 0 0 auto;       
+    -ms-flex: 0 0 auto;           
+    flex: 3 0 auto;
+    height: 500px; /* this will get overwritten by flex box */
 }
 
 /* Make wiki images responsive */
@@ -809,6 +815,10 @@ h1.node-title, h1.node-parent-title {
   margin-top: 0.3em;
 }
 
+.compare-version-text{
+    margin-right: 5px;
+}
+
 .wiki-title {
     line-height: 36px;
     border-bottom: none;
@@ -837,10 +847,28 @@ h1.node-title, h1.node-parent-title {
     }
 }
 
+.wiki-panel-header .icon-angle-right, .wiki-panel-header .icon-angle-left {
+    cursor: pointer;
+} 
+.wiki-panel-header .icon-list {
+    color: #808080;
+}
 
+
+.wiki-panel-body .superlist li {
+    display: block;
+    font-size: 20px;
+}
 .wiki-title-container {
     display: inline-block;
     width:60%;
+}
+.wiki-nav-closed .icon-stack-base {
+    font-size: 20px;
+}
+.wiki-nav-closed .icon-plus {
+    margin-left: -14px;
+    font-size: 12px;
 }
 
 .wiki-component {
@@ -1105,12 +1133,48 @@ div.search-result  {
 .wmd-panel
 {
     width: 100%;
+    display: -webkit-box;  
+    display: -ms-flexbox;  
+    display: -webkit-flex; 
+    display: flex;
+    height: 620px;
+    -webkit-align-content: flex-start;
+    -ms-align-content: flex-start;
+    align-content: flex-start;
+    -webkit-flex-direction: column;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    -webkit-box-align: stretch;
+    -webkit-align-items: stretch;
+    -ms-flex-align: stretch;
+    align-items: stretch;
+    -webkit-flex-wrap: wrap;
+    -ms-flex-wrap: wrap;
+    flex-wrap: wrap;
+}
+
+.wmd-panel .list-inline {
+    width: 100%;
+    margin: auto;
+    -webkit-box-flex: 0 0 auto;  
+    -webkit-flex: 0 0 auto;       
+    -ms-flex: 0 0 auto;           
+    flex: 0 0 auto;
 }
 
 .wmd-button-bar
 {
     width: 100%;
     background-color: Silver;
+}
+
+#wmd-button-bar{
+    width: 100%;
+    margin: auto;
+    -webkit-box-flex: 0 0 auto;  
+    -webkit-flex: 0 0 auto;       
+    -ms-flex: 0 0 auto;           
+    flex: 0 0 auto;
 }
 
 .wmd-input
@@ -1122,12 +1186,11 @@ div.search-result  {
 .wmd-button-row
 {
     position: relative;
-    margin-left: 5px;
-    margin-right: 5px;
+    margin-left: 0;
+    margin-right: 0;
     margin-bottom: 5px;
     margin-top: 0px;
     padding: 0px;
-    height: 20px;
 }
 
 .wmd-spacer
@@ -1135,8 +1198,6 @@ div.search-result  {
     width: 1px;
     height: 20px;
     margin-left: 14px;
-
-    position: absolute;
     background-color: Silver;
     display: inline-block;
     list-style: none;
@@ -1147,14 +1208,13 @@ div.search-result  {
     height: 20px;
     padding-left: 2px;
     padding-right: 3px;
-    position: absolute;
     display: inline-block;
     list-style: none;
     cursor: pointer;
 }
 
 .wmd-button > span {
-    background-image: url(../vendor/pagedown-ace/wmd-buttons.png);
+    background-image: url(../../addons/wiki/static/pagedown-ace/wmd-buttons.png);
     background-repeat: no-repeat;
     background-position: 0px 0px;
     width: 20px;
@@ -1220,9 +1280,6 @@ div.search-result  {
   margin-bottom: 30px;
   padding-top:    10px;
   padding-bottom: 10px;
-  text-shadow: 0 1px 0 #fff;
-  background-color: #f7f5fa;
-  border-radius: 5px;
 }
 
 /* All levels of nav */
@@ -1230,7 +1287,7 @@ div.search-result  {
   display: block;
   /*color: #716b7a;*/
   color: #006699;
-  padding: 5px 20px;
+  padding: 5px;
   font-weight: bold;
 }
 .osf-sidenav .nav > li > a:hover,
@@ -1288,6 +1345,16 @@ div.search-result  {
     display: inline-block;
     float: none;
 }
+.superlist li a {
+    padding: 15px 10px;
+}
+
+@media (max-width: 768px) {
+ .superlist.navbar-nav {
+    margin: 0;
+ }
+}
+
 
 @media (min-width: 1200px) {
   /* Widen the fixed sidebar again */
@@ -1942,11 +2009,9 @@ span#profileFullname{
         overflow: hidden;
     }
     .osf-search {
-        margin-top: -30px;
         z-index: 1028;
     }
     #searchControls > .osf-search {
-        margin-top: -30px;
         z-index: 99;
     }
     .osf-xs-search {
@@ -1961,7 +2026,7 @@ span#profileFullname{
         padding-right: 7px;
     }
     .navbar .search-query {
-    width: 190px;
+        width: 190px;
     }
     .osf-project-navbar a.project-title {
         max-width: 190px;
@@ -1971,13 +2036,8 @@ span#profileFullname{
         padding-left: 0;
     }
     .osf-search {
-        margin-top: -30px;
         z-index: 1028; /* should be less than 1030 to not cover navbar */
     }
-    #searchControls > .osf-search {
-        margin-top: -30px;
-    }
-
 }
 
 @media (min-width: 992px) {
@@ -1998,7 +2058,7 @@ span#profileFullname{
         padding-right: 15px;
     }
     .navbar .search-query {
-    width: 270px;
+        width: 270px;
     }
     .osf-project-navbar a.project-title {
         max-width: 400px;
@@ -2013,10 +2073,9 @@ span#profileFullname{
     width: 100%;
     box-shadow: 0 0 9px -2px #464545;
     left: 0;
+    top: 43px;
 }
-#searchControls > .osf-search {
-    margin-top: -30px;
-}
+
 .osf-search-input {
     background: none;
     border: none;
@@ -2040,6 +2099,14 @@ span#profileFullname{
 
 .osf-search-btn:hover {
     color: #738EA2;
+}
+
+.progress-no-margin {
+    margin-bottom: 0;
+}
+
+.progress-bar-content {
+    margin: 0px 10px;
 }
 
 .sharejs-info-btn {
@@ -2108,4 +2175,110 @@ span#profileFullname{
 }
 .modal-backdrop {
     position: fixed;
+}
+
+/* Wiki additions */
+.wiki-panel {
+    border: 1px solid #ccc;
+    height: 750px;
+    overflow: auto;
+    display: block;
+    position: relative;
+    overflow-x: hidden;
+}
+.superlist li.active {
+    background: #EFEFEF;
+    font-weight: bold;
+}
+.wiki-panel-body {
+    overflow: auto;
+    overflow-x: hidden;
+}
+.wiki-panel-body .navbar-collapse {
+    background: #F5F5F5;
+    padding: 0px;
+}
+.wiki-panel-header {
+    background: #efefef;
+    padding: 10px;
+    font-size: 16px;
+    font-weight: 300;
+}
+
+.wiki-panel-footer {
+    position: absolute;
+    bottom : 0;
+    left: 0;
+    padding: 10px;
+    background: #F5F5F5;
+    width: 100%;
+    z-index: 99;
+}
+#wiki-form {
+    padding: 10px;
+}
+
+.markdown-it-view {
+    padding: 10px;
+}
+
+.wiki-compare-view {
+    white-space: pre-wrap;
+    padding: 10px;
+}
+
+@media (max-width: 991px) {
+    .wiki-panel {
+        margin-bottom: 20px;
+    }
+}
+.panel-collapsed {
+    background: #F5F5F5;
+}
+.wiki-sidenav h4, .wiki-sidenav li>ul>.btn,  .osf-sidenav.wiki-sidenav ul>li .row{
+    padding: 8px 15px;
+    margin-top: 2px;
+}
+.wiki-sidenav h4 {
+    margin-top:20px;
+    margin-bottom: 0;
+}
+.osf-sidenav.wiki-sidenav ul>li a:hover {
+    background: transparent;
+}
+.osf-sidenav.wiki-sidenav ul>li:hover {
+    background: #f5f5f5;
+}
+.osf-sidenav.wiki-sidenav ul>li.active a {
+    line-height: 26px;
+}
+.osf-sidenav.wiki-sidenav ul>li.active, .osf-sidenav.wiki-sidenav ul>li.active:hover {
+    background: #f5f5f5;
+    border-left: 2px solid #337AB7;
+}
+.osf-sidenav.wiki-sidenav ul>li.active a {
+    border-right: none;
+    color: #337AB7;
+}
+.osf-sidenav.wiki-sidenav h4 a:hover {
+    text-decoration: none;
+}
+.osf-sidenav.wiki-sidenav ul>li a:hover {
+    text-decoration: none;
+}
+/* Changes to default icons to be consistent with the grey look of many new ui items */
+.btn-default-alt {
+    background: #EFEFEF;
+}
+.btn-success-alt {
+    background: #D9E8D9;
+}
+
+
+
+.container-xxl {
+  width : 100%;
+  padding-left: 20px;
+  padding-right: 20px;
+
 }

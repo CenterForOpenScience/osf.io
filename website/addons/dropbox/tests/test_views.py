@@ -134,7 +134,7 @@ class TestConfigViews(DropboxAddonTestCase):
         # Includes endpoint for fetching folders only
         # NOTE: Querystring params are in camelCase
         assert_equal(urls['folders'],
-            self.project.api_url_for('dropbox_hgrid_data_contents', foldersOnly=1, includeRoot=1))
+            self.project.api_url_for('dropbox_hgrid_data_contents', root=1))
         assert_equal(urls['settings'], web_url_for('user_addons'))
 
     def test_serialize_settings_helper_returns_correct_auth_info(self):
@@ -166,7 +166,7 @@ class TestConfigViews(DropboxAddonTestCase):
     def test_serialize_settings_helper_returns_correct_folder_info(self):
         result = serialize_settings(self.node_settings, self.user, client=mock_client)
         folder = result['folder']
-        assert_equal(folder['name'], 'Dropbox' + self.node_settings.folder)
+        assert_equal(folder['name'], self.node_settings.folder)
         assert_equal(folder['path'], self.node_settings.folder)
 
     def test_dropbox_config_get(self):
@@ -292,19 +292,11 @@ class TestFilebrowserViews(DropboxAddonTestCase):
                 pid=self.project._primary_key,
             )
             res = self.app.get(url, auth=self.user.auth)
-            contents = mock_client.metadata('', list=True)['contents']
+            contents = [x for x in mock_client.metadata('', list=True)['contents'] if x['is_dir']]
             assert_equal(len(res.json), len(contents))
             first = res.json[0]
             assert_in('kind', first)
             assert_equal(first['path'], contents[0]['path'])
-
-    def test_dropbox_hgrid_data_contents_if_folder_is_none(self):
-        # If folder is set to none, no data are returned
-        self.node_settings.folder = None
-        self.node_settings.save()
-        url = api_url_for('dropbox_hgrid_data_contents', pid=self.project._primary_key)
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json['data'], [])
 
     def test_dropbox_hgrid_data_contents_if_folder_is_none_and_folders_only(self):
         with patch_client('website.addons.dropbox.views.hgrid.get_node_client'):
@@ -330,10 +322,12 @@ class TestFilebrowserViews(DropboxAddonTestCase):
     def test_dropbox_hgrid_data_contents_include_root(self, mock_metadata):
         with patch_client('website.addons.dropbox.views.hgrid.get_node_client'):
             url = api_url_for('dropbox_hgrid_data_contents',
-                pid=self.project._primary_key, includeRoot=1)
+                pid=self.project._primary_key, root=1)
+
             res = self.app.get(url, auth=self.user.auth)
             contents = mock_client.metadata('', list=True)['contents']
-            assert_equal(len(res.json), len(contents) + 1)
+            assert_equal(len(res.json), 1)
+            assert_not_equal(len(res.json), len(contents))
             first_elem = res.json[0]
             assert_equal(first_elem['path'], '/')
 

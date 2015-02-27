@@ -19,20 +19,3 @@
 .figshare-loading-text {
     padding-top: 20px;
 }
-
-
-.btn-figshare {
-    color: #333;
-    background-color: #fff;
-    border-color: #ccc;
-}
-
-.btn-figshare:hover,
-.btn-figshare:focus,
-.btn-figshare:active,
-.btn-figshare.active,
-.open .dropdown-toggle.btn-figshare {
-    color: #333;
-    background-color: #ebebeb;
-    border-color: #adadad;
-}

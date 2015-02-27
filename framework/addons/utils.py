@@ -33,6 +33,8 @@ def read_capabilities(filename):
         infos = []
         for row, cap in caps:
             status = lines[row][col]
+            if status.strip(' ') == 'NA':
+                continue
             split = status.split(' | ')
             infos.append({
                 'function': cap,

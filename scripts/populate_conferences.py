@@ -153,6 +153,17 @@ MEETING_DATA = {
         ],
         'public_projects': True,
     },
+    'APRS2015': {
+        'name': 'UVA Annual Postdoctoral Research Symposium 2015',
+        'info_url': None,
+        'logo_url': 'http://s1.postimg.org/50qj9u6i7/GPA_Logo.jpg',
+        'active': True,
+        'admins': [
+            'mhurst@virginia.edu',
+            'KatyCain526@gmail.com',
+        ],
+        'public_projects': True,
+    },
 }
 
 

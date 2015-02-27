@@ -35,7 +35,6 @@ from website.profile import utils
 from website.project import new_folder
 from website.util.sanitize import strip_html
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -306,7 +305,7 @@ def node_setting(auth, **kwargs):
         if 'node' in addon.config.configs:
             addon_enabled_settings.append(addon.to_json(auth.user))
     addon_enabled_settings = sorted(addon_enabled_settings, key=lambda addon: addon['addon_full_name'])
-    
+
     ret['addon_categories'] = settings.ADDON_CATEGORIES
     ret['addons_available'] = sorted([
         addon

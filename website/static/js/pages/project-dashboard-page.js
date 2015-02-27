@@ -20,9 +20,8 @@ var CitationList = require('../citationList.js');
 var CitationWidget = require('../citationWidget.js');
 
 var mathrender = require('mathrender');
-// Render math in the wiki widget
-mathrender.mathjaxify('#addonWikiWidget');
-
+var md = require('markdown').full;
+require('truncate');
 
 var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
@@ -51,7 +50,6 @@ if (!ctx.node.anonymous) {
     new CitationList('#citationList');
     new CitationWidget('#citationStyleInput', '#citationText');
 }
-
 
 $(document).ready(function() {
     // Treebeard Files view
@@ -110,9 +108,8 @@ $(document).ready(function() {
         var filebrowser = new Fangorn(fangornOpts);
     });
 
-
     // Tooltips
-    $('[data-toggle="tooltip"]').tooltip();
+    $('[data-toggle="tooltip"]').tooltip({container: 'body'});
 
     // Tag input
     $('#node-tags').tagsInput({
@@ -149,6 +146,27 @@ $(document).ready(function() {
 
     // Limit the maximum length that you can type when adding a tag
     $('#node-tags_tag').attr('maxlength', '128');
+
+    // Wiki widget markdown rendering
+    if (ctx.wikiWidget) {
+        // Render math in the wiki widget
+        var markdownElement = $('#markdownRender');
+        mathrender.mathjaxify(markdownElement);
+
+        // Render the raw markdown of the wiki
+        if (!ctx.usePythonRender) {
+            var request = $.ajax({
+                url: ctx.urls.wikiContent
+            });
+            request.done(function(resp) {
+                var rawText = resp.wiki_content || '*No wiki content*';
+                var renderedText = md.render(rawText);
+                var truncatedText = $.truncate(renderedText, {length: 400});
+                markdownElement.html(truncatedText);
+                mathrender.mathjaxify(markdownElement);
+            });
+        }
+    }
 
     // Remove delete UI if not contributor
     if (!window.contextVars.currentUser.canEdit || window.contextVars.node.isRegistration) {
