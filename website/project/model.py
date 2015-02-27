@@ -836,17 +836,21 @@ class Node(GuidStoredObject, AddonModelMixin):
             return self.is_admin_parent(user)
         return False
 
-    def check_user_has_permission_on_private_node_child(self, user):
-        """ Checks whether the user is a contributor or admin viewer on any components
-            of a private project that are not deleted.
+    def can_read_children(self, user):
+        """Checks if the given user has read permissions on any child nodes
+            that are not registrations or deleted
         """
-        if not self.has_permission(user, 'read'):
-            nodes = [n for n in self.nodes if n.primary and not n.is_deleted]
-            for node in nodes:
-                return node.check_user_has_permission_on_private_node_child(user)
-            else:
-                return False
-        return True
+        if self.has_permission(user, 'read'):
+            return True
+
+        for node in self.nodes:
+            if not node.primary or node.is_deleted:
+                continue
+
+            if node.check_user_has_permission_on_private_node_child(user):
+                return True
+
+        return False
 
     def get_permissions(self, user):
         """Get list of permissions for user.

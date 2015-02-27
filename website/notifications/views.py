@@ -15,11 +15,11 @@ from website.project.model import Node
 def get_subscriptions(auth):
     return utils.format_user_and_project_subscriptions(auth.user)
 
-@must_be_valid_project
 @must_be_logged_in
+@must_be_valid_project
 def get_node_subscriptions(auth, **kwargs):
-    node = kwargs['node'] or kwargs['project']
-    return utils.format_data(auth.user, [node._id], [])
+    node = kwargs.get('node') or kwargs['project']
+    return utils.format_data(auth.user, [node._id])
 
 @must_be_logged_in
 def configure_subscription(auth):
