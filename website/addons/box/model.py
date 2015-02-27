@@ -228,7 +228,7 @@ class BoxNodeSettings(AddonNodeSettingsBase):
     user_settings = fields.ForeignField(
         'boxusersettings', backref='authorized'
     )
-    folder_id = fields.IntegerField(default=None)
+    folder_id = fields.StringField(default=None)
     folder_name = fields.StringField()
     folder_path = fields.StringField()
 
@@ -270,7 +270,7 @@ class BoxNodeSettings(AddonNodeSettingsBase):
             self.save()
 
     def set_folder(self, folder_id, auth):
-        self.folder_id = folder_id
+        self.folder_id = str(folder_id)
         self.save()
         # Add log to node
         nodelogger = BoxNodeLogger(node=self.owner, auth=auth)
