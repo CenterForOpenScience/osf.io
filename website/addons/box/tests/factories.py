@@ -37,8 +37,8 @@ class BoxNodeSettingsFactory(ModularOdmFactory):
 
     owner = SubFactory(ProjectFactory)
     user_settings = SubFactory(BoxUserSettingsFactory)
-    with mock.patch('website.addons.box.model.BoxNodeSettings.folder') as mock_folder:
-        mock_folder.__get__ = mock.Mock(return_value='Camera Uploads')
+    with mock.patch('website.addons.box.model.BoxNodeSettings.fetch_folder_name') as mock_folder:
+        mock_folder.return_value = 'Camera Uploads'
 
 
 class BoxFileFactory(ModularOdmFactory):
