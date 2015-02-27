@@ -2,6 +2,7 @@ import os
 import http
 import json
 import asyncio
+from urllib import parse
 
 import furl
 
@@ -39,6 +40,18 @@ class GoogleDrivePath(utils.WaterButlerPath):
         path = path.replace('//', '/')
         return cls(self._folder, path, prefix=self._prefix, suffix=self._suffix)
 
+    @property
+    def path(self):
+        return parse.unquote(self._path)
+
+    @property
+    def parts(self):
+        return [parse.unquote(x) for x in self._parts]
+
+    @property
+    def name(self):
+        return parse.unquote(self._parts[-1])
+
 
 class GoogleDriveProvider(provider.BaseProvider):
 
@@ -65,10 +78,12 @@ class GoogleDriveProvider(provider.BaseProvider):
                 throws=exceptions.MetadataError,
             )
             data = yield from response.json()
+
         try:
             download_url = data['downloadUrl']
         except KeyError:
             download_url = drive_utils.get_export_link(data['exportLinks'])
+
         download_resp = yield from self.make_request(
             'GET',
             download_url,
@@ -80,13 +95,16 @@ class GoogleDriveProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
+        path = path.split('/')
+        path = '/'.join(path[:-1] + [parse.quote(path[-1])])
         path = GoogleDrivePath(self.folder['name'], path)
+
         try:
             metadata = yield from self.metadata(str(path), raw=True)
             folder_id = metadata['parents'][0]['id']
             segments = (metadata['id'], )
             created = False
-        except:
+        except exceptions.MetadataError:
             if path.parent.is_root:
                 folder_id = self.folder['id']
             else:
@@ -117,7 +135,7 @@ class GoogleDriveProvider(provider.BaseProvider):
             'trashed = false',
         ]
         if title:
-            queries.append("title = '{}'".format(title))
+            queries.append("title = '{}'".format(title.replace('"', '\\"').replace('\'', '\\\'')))
         return ' and '.join(queries)
 
     @asyncio.coroutine
@@ -141,7 +159,7 @@ class GoogleDriveProvider(provider.BaseProvider):
         # Raise 404 on empty results if file or partial lookup
         if not data['items']:
             if path.is_file or not path.is_leaf:
-                raise exceptions.MetadataError(data, code=http.client.NOT_FOUND)
+                raise exceptions.MetadataError('{} not found'.format(str(path)), code=http.client.NOT_FOUND)
 
         if not path.is_leaf:
             child_id = data['items'][0]['id']

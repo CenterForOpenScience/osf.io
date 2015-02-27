@@ -64,6 +64,14 @@ class TestCRUD:
     @async
     @pytest.mark.aiohttpretty
     def test_download_drive(self, provider):
+        path = '/birdie\'"".jpg'
+        item = fixtures.list_file['items'][0]
+        query = provider._build_query(provider.folder['id'], title=path.lstrip('/'))
+        assert 'birdie\\\'\\"\\".jpg' in query
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_download_drive(self, provider):
         path = '/birdie.jpg'
         body = b'we love you conrad'
         item = fixtures.list_file['items'][0]
@@ -115,6 +123,28 @@ class TestCRUD:
     @pytest.mark.aiohttpretty
     def test_upload_create(self, provider, file_stream):
         path = '/birdie.jpg'
+        upload_id = '7'
+        item = fixtures.list_file['items'][0]
+        query = provider._build_query(provider.folder['id'], title=path.lstrip('/'))
+        list_file_url = provider.build_url('files', q=query, alt='json')
+        start_upload_url = provider._build_upload_url('files', uploadType='resumable')
+        finish_upload_url = provider._build_upload_url('files', uploadType='resumable', upload_id=upload_id)
+        aiohttpretty.register_json_uri('GET', list_file_url, body={'items': []})
+        aiohttpretty.register_uri('POST', start_upload_url, headers={'LOCATION': 'http://waterbutler.io?upload_id={}'.format(upload_id)})
+        aiohttpretty.register_json_uri('PUT', finish_upload_url, body=item)
+        result, created = yield from provider.upload(file_stream, path)
+
+        assert aiohttpretty.has_call(method='GET', uri=list_file_url)
+        assert aiohttpretty.has_call(method='POST', uri=start_upload_url)
+        assert aiohttpretty.has_call(method='PUT', uri=finish_upload_url)
+        assert created is True
+        expected = GoogleDriveFileMetadata(item, '/').serialized()
+        assert result == expected
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_upload_doesnt_unquote(self, provider, file_stream):
+        path = '/birdie%2F %20".jpg'
         upload_id = '7'
         item = fixtures.list_file['items'][0]
         query = provider._build_query(provider.folder['id'], title=path.lstrip('/'))

@@ -1,4 +1,5 @@
 import os
+from urllib.parse import quote
 
 from waterbutler.core import metadata
 
@@ -32,7 +33,7 @@ class GoogleDriveFolderMetadata(BaseGoogleDriveMetadata, metadata.BaseFolderMeta
 
     @property
     def path(self):
-        return os.path.join(str(self._path), self.raw['title']) + '/'
+        return os.path.join(str(self._path), quote(self.raw['title'], safe='')) + '/'
 
 
 class GoogleDriveFileMetadata(BaseGoogleDriveMetadata, metadata.BaseFileMetadata):
@@ -68,7 +69,7 @@ class GoogleDriveFileMetadata(BaseGoogleDriveMetadata, metadata.BaseFileMetadata
 
     @property
     def path(self):
-        return os.path.join(str(self._path), self.raw['title'])
+        return os.path.join(str(self._path), quote(self.raw['title'], safe=''))
 
     @property
     def extra(self):
