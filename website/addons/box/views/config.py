@@ -16,7 +16,6 @@ from website.project.decorators import (
     must_have_permission, must_not_be_registration,
 )
 
-from website.addons.box import exceptions
 from website.addons.box.client import get_node_client
 from website.addons.box.client import get_client_from_user_settings
 
@@ -93,8 +92,6 @@ def serialize_settings(node_settings, current_user, client=None):
         try:
             client = client or get_client_from_user_settings(user_settings)
             client.get_user_info()
-#        except BoxAuthenticationException as error:
-#            TODO: reauthorize
         except BoxClientException as error:
             if error.status_code == 401:
                 valid_credentials = False
@@ -230,7 +227,7 @@ def box_list_folders(node_addon, **kwargs):
 
     try:
         client = get_node_client(node)
-    except exceptions.ExpiredAuthError:
+    except BoxClientException:
         raise HTTPError(http.FORBIDDEN)
 
     try:
