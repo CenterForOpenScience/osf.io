@@ -63,7 +63,10 @@ var RevisionsViewModel = function(node, file, editable) {
 
     self.node = node;
     self.file = file;
-    self.path = file.path;
+    self.path = file.provider !== 'googledrive' ?
+        file.path.split('/') :
+        file.path.split('/').map(decodeURIComponent);
+
     self.editable = ko.observable(editable);
     self.urls = {
         delete: waterbutler.buildDeleteUrl(file.path, file.provider, node.id, fileExtra),
