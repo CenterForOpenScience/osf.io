@@ -278,7 +278,7 @@ CitationGrid.prototype.initTreebeard = function() {
             resolveRows: function() {
                 return self.resolveRowAux.call(self, arguments);
             },
-            ondataloadError: function(err) {
+            ondataloaderror: function(err) {
                 $(self.gridSelector).html(errorPage);
             }
         },
