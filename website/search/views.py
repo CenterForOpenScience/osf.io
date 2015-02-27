@@ -241,11 +241,11 @@ def search_share_atom(**kwargs):
     query = build_query(q, size=size, start=page, sort=sort)
 
     try:
-        ret = search.search(query, index='share')
+        search_results = search.search(query, index='share')
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
     except IndexNotFoundError:
-        ret = {
+        search_results = {
             'count': 0,
             'results': []
         }
@@ -253,4 +253,4 @@ def search_share_atom(**kwargs):
     name = 'SHARE'
 
     atom_url = api_url_for('search_share_atom', _xml=True, _absolute=True)
-    return search.share_atom(name, ret['results'], q, size, start=page, url=atom_url)
+    return search.share_atom(name, search_results['results'], q, size, start=page, url=atom_url)
