@@ -22,9 +22,9 @@ def init_mfr(app):
     # Update mfr config with static path and url
     mfr.config.update({
         # Base URL for static files
-        'ASSETS_URL': os.path.join(app.static_url_path, 'mfr'),
+        'ASSETS_URL': os.path.join(app.static_url_path, 'public', 'mfr'),
         # Where to save static files
-        'ASSETS_FOLDER': os.path.join(app.static_folder, 'mfr'),
+        'ASSETS_FOLDER': os.path.join(app.static_folder, 'public', 'mfr'),
     })
     mfr.collect_static(dest=mfr.config['ASSETS_FOLDER'])
 
