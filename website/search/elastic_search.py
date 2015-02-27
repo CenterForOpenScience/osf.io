@@ -263,10 +263,10 @@ def update_node(node, index='website'):
 
 
 @requires_search
-def update_user(user):
+def update_user(user, index='website'):
     if not user.is_active:
         try:
-            es.delete(index='website', doc_type='user', id=user._id, refresh=True, ignore=[404])
+            es.delete(index=index, doc_type='user', id=user._id, refresh=True, ignore=[404])
         except NotFoundError:
             pass
         return
@@ -303,7 +303,7 @@ def update_user(user):
         'boost': 2,  # TODO(fabianvf): Probably should make this a constant or something
     }
 
-    es.index(index='website', doc_type='user', body=user_doc, id=user._id, refresh=True)
+    es.index(index=index, doc_type='user', body=user_doc, id=user._id, refresh=True)
 
 
 @requires_search
@@ -318,7 +318,7 @@ def delete_index(index):
 
 
 @requires_search
-def create_index():
+def create_index(index='website'):
     '''Creates index with some specified mappings to begin with,
     all of which are applied to all projects, components, and registrations'''
     mapping = {
@@ -329,9 +329,9 @@ def create_index():
             },
         }
     }
-    es.indices.create('website', ignore=[400])
+    es.indices.create(index, ignore=[400])
     for type_ in ['project', 'component', 'registration', 'user']:
-        es.indices.put_mapping(index='website', doc_type=type_, body=mapping, ignore=[400, 404])
+        es.indices.put_mapping(index=index, doc_type=type_, body=mapping, ignore=[400, 404])
 
 
 @requires_search

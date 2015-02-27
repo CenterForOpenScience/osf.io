@@ -29,8 +29,8 @@ def update_node(node, index='website'):
 
 
 @requires_search
-def update_user(user):
-    search_engine.update_user(user)
+def update_user(user, index='website'):
+    search_engine.update_user(user, index=index)
 
 
 @requires_search
@@ -42,8 +42,8 @@ def delete_index(index):
     search_engine.delete_index(index)
 
 @requires_search
-def create_index():
-    search_engine.create_index()
+def create_index(index='website'):
+    search_engine.create_index(index=index)
 
 
 @requires_search
