@@ -342,13 +342,6 @@ class TestRevisions:
     @async
     @pytest.mark.aiohttpretty
     def test_get_revisions_no_revisions(self, provider, monkeypatch):
-        now = datetime.utcnow()
-        class klass:
-            @classmethod
-            def utcnow(cls):
-                return now
-
-        monkeypatch.setattr('waterbutler.providers.googledrive.provider.datetime', klass)
         path = '/birdie.jpg'
         item = fixtures.list_file['items'][0]
         query = provider._build_query(provider.folder['id'], title=path.lstrip('/'))
@@ -359,7 +352,7 @@ class TestRevisions:
         result = yield from provider.revisions(path)
         expected = [
             GoogleDriveRevision({
-                'modifiedDate': now.isoformat(),
+                'modifiedDate': item['modifiedDate'],
                 'id': fixtures.revisions_list_empty['etag'] + ds.DRIVE_IGNORE_VERSION,
             }).serialized()
         ]

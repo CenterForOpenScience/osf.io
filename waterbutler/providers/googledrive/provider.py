@@ -209,8 +209,8 @@ class GoogleDriveProvider(provider.BaseProvider):
             ]
 
         return [GoogleDriveRevision({
+            'modifiedDate': metadata['modifiedDate'],
             'id': data['etag'] + settings.DRIVE_IGNORE_VERSION,
-            'modifiedDate': datetime.utcnow().isoformat()
         }).serialized()]
 
     def _build_upload_url(self, *segments, **query):
