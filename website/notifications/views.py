@@ -1,15 +1,18 @@
 import httplib as http
-from framework.exceptions import HTTPError
-from framework.auth.decorators import must_be_logged_in
-from model import Subscription
+
 from flask import request
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from modularodm.storage.mongostorage import KeyExistsException
-from website.notifications.constants import NOTIFICATION_TYPES
+
+from framework.auth.decorators import must_be_logged_in
+from framework.exceptions import HTTPError
 from website.notifications import utils
+from website.notifications.constants import NOTIFICATION_TYPES
+from website.notifications.model import Subscription
 from website.project.decorators import must_be_valid_project
 from website.project.model import Node
+
 
 @must_be_logged_in
 def get_subscriptions(auth):

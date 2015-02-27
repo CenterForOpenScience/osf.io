@@ -100,7 +100,7 @@ class BoxOAuthSettings(StoredObject):
         if self._is_loaded:
             try:
                 self.reload()
-            except AttributeError:
+            except:
                 pass
         if self._needs_refresh() or force:
             token = refresh_v2_token(settings.BOX_KEY, settings.BOX_SECRET, self.refresh_token)
