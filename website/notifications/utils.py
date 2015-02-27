@@ -1,8 +1,8 @@
 import collections
 from framework.auth.signals import contributor_removed, node_deleted
 from website.models import Node
+from website.notifications import constants
 from website.notifications.model import Subscription
-from website.notifications.constants import SUBSCRIPTIONS_AVAILABLE, NOTIFICATION_TYPES, USER_SUBSCRIPTIONS_AVAILABLE
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
@@ -81,7 +81,7 @@ def get_configured_projects(user):
 def get_all_user_subscriptions(user):
     """ Get all Subscription objects that the user is subscribed to"""
     user_subscriptions = []
-    for notification_type in NOTIFICATION_TYPES:
+    for notification_type in constants.NOTIFICATION_TYPES:
         if getattr(user, notification_type, []):
             for subscription in getattr(user, notification_type, []):
                 if subscription:
@@ -108,13 +108,11 @@ def get_all_node_subscriptions(user, node, user_subscriptions=None):
     return node_subscriptions
 
 
-def format_data(user, node_ids, data, subscriptions_available=SUBSCRIPTIONS_AVAILABLE):
+def format_data(user, node_ids, data):
     """ Format subscriptions data for project settings page
     :param user: modular odm User object
     :param node_ids: list of parent project ids
     :param data: the formatted data
-    :param subscriptions_available: specify which subscription events to include, if
-    not all in SUBSCRIPTIONS_AVAILABLE
     :return: treebeard-formatted data
     """
     user_subscriptions = get_all_user_subscriptions(user)
@@ -141,8 +139,8 @@ def format_data(user, node_ids, data, subscriptions_available=SUBSCRIPTIONS_AVAI
 
             node_subscriptions = get_all_node_subscriptions(user, node, user_subscriptions=user_subscriptions)
             if node.has_permission(user, 'read'):
-                for subscription in subscriptions_available:
-                    event = serialize_event(user, subscription, subscriptions_available, node_subscriptions, node)
+                for subscription in constants.NODE_SUBSCRIPTIONS_AVAILABLE:
+                    event = serialize_event(user, subscription, constants.NODE_SUBSCRIPTIONS_AVAILABLE, node_subscriptions, node)
                     data[index]['children'].append(event)
 
             if node.nodes:
@@ -156,8 +154,8 @@ def format_data(user, node_ids, data, subscriptions_available=SUBSCRIPTIONS_AVAI
 def format_user_subscriptions(user, data):
     """ Format user-level subscriptions (e.g. comment replies across the OSF) for user settings page"""
     user_subscriptions = [s for s in Subscription.find(Q('object_id', 'eq', user._id))]
-    for subscription in USER_SUBSCRIPTIONS_AVAILABLE:
-        event = serialize_event(user, subscription, USER_SUBSCRIPTIONS_AVAILABLE, user_subscriptions)
+    for subscription in constants.USER_SUBSCRIPTIONS_AVAILABLE:
+        event = serialize_event(user, subscription, constants.USER_SUBSCRIPTIONS_AVAILABLE, user_subscriptions)
         data.append(event)
 
     return data
@@ -183,7 +181,7 @@ def serialize_event(user, subscription, subscriptions_available, user_subscripti
     }
     for s in user_subscriptions:
         if s.event_name == subscription:
-            for notification_type in NOTIFICATION_TYPES:
+            for notification_type in constants.NOTIFICATION_TYPES:
                 if user in getattr(s, notification_type):
                     event['event']['notificationType'] = notification_type
 
@@ -214,7 +212,7 @@ def get_parent_notification_type(uid, event, user):
             except NoResultsFound:
                 return get_parent_notification_type(p._id, event, user)
 
-            for notification_type in NOTIFICATION_TYPES:
+            for notification_type in constants.NOTIFICATION_TYPES:
                 if user in getattr(subscription, notification_type):
                     return notification_type
             else:

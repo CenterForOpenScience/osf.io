@@ -1,4 +1,4 @@
-SUBSCRIPTIONS_AVAILABLE = {
+NODE_SUBSCRIPTIONS_AVAILABLE = {
     'comments': 'Comments Added'
 }
 
