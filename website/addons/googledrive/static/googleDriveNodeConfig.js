@@ -7,6 +7,7 @@
 var ko = require('knockout');
 require('knockout-punches');
 var $ = require('jquery');
+var m = require('mithril');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
 
@@ -60,7 +61,7 @@ var ViewModel = function(url, selector, folderPicker) {
         self.ownerName(response.result.ownerName);
         self.owner(response.result.urls.owner);
         self.currentPath(response.result.currentPath);
-        self.currentFolder(response.result.currentFolder);
+        self.currentFolder(decodeURIComponent(response.result.currentFolder));
 
         self.loadedSettings(true);
     }
@@ -243,7 +244,25 @@ var ViewModel = function(url, selector, folderPicker) {
                         });
                     }
                 },
-                folderPickerOnload: function () {}
+                folderPickerOnload: function () {},
+                resolveRows: function(item) {
+                    item.css = '';
+                    return [
+                        {
+                            data : 'name',  // Data field name
+                            folderIcons : true,
+                            filter : false,
+                            custom : function(item, col) {
+                                return m('span', decodeURIComponent(item.data.name));
+                            }
+                        },
+                        {
+                            css : 'p-l-xs',
+                            sortInclude : false,
+                            custom : FolderPicker.selectView
+                        }
+                    ];
+                }
             });
         }
     };
@@ -259,14 +278,14 @@ var ViewModel = function(url, selector, folderPicker) {
     self.selectedFolderName = ko.computed(function() {
         var userIsOwner = self.userIsOwner();
         var selected = self.selected();
-        return (userIsOwner && selected) ? selected.name : '';
+        return (userIsOwner && selected) ? decodeURIComponent(selected.name) : '';
     });
 
     function onSubmitSuccess(response) {
-        self.currentFolder(self.selected().name);
+        self.currentFolder(decodeURIComponent(self.selected().name));
         self.changeMessage(
             'Successfully linked "' +
-           $osf.htmlEscape(self.selected().name) +
+           $osf.htmlEscape(decodeURIComponent(self.selected().name)) +
             '". Go to the <a href="' +
             self.urls().files +
             '">Files page</a> to view your files.',

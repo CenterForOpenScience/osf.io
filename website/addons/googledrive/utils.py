@@ -3,6 +3,7 @@
 """
 import os
 import logging
+from urllib import quote
 
 from website.util import web_url_for
 
@@ -114,13 +115,14 @@ def to_hgrid(item, node, path):
     :param item: contents returned from Google Drive API
     :return: results formatted as required for Hgrid display
     """
-    path = os.path.join(path, item['title'])
+    real_path = os.path.join(path, quote(item['title'], safe=''))
+
     serialized = {
         'addon': 'googledrive',
-        'name': item['title'],
+        'name': quote(item['title'], safe=''),
         'id': item['id'],
         'kind': 'folder',
-        'urls': build_googledrive_urls(item, node, path=path),
-        'path': path,
+        'path': real_path,
+        'urls': build_googledrive_urls(item, node, path=real_path),
     }
     return serialized
