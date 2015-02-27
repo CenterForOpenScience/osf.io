@@ -8,7 +8,6 @@ from nose.tools import *  # noqa
 from framework.auth import authenticate
 from framework.exceptions import PermissionsError, HTTPError
 from framework.sessions import get_session
-from framework.transactions.commands import begin
 from website.oauth.models import (
     ExternalAccount,
     ExternalProvider,
@@ -197,7 +196,7 @@ class TestExternalProviderOAuth1(OsfTestCase):
                   status=200,
                   content_type='application/json')
 
-        with self.app.app.test_request_context("/oauth/connect/mock1a/") as ctx:
+        with self.app.app.test_request_context('/oauth/connect/mock1a/'):
 
             # make sure the user is logged in
             authenticate(user=self.user, response=None)
@@ -235,9 +234,9 @@ class TestExternalProviderOAuth1(OsfTestCase):
 
         # Fake a request context for the callback
         with self.app.app.test_request_context(
-                path="/oauth/callback/mock1a/",
-                query_string="oauth_token=temp_key&oauth_verifier=mock_verifier"
-        ) as ctx:
+                path='/oauth/callback/mock1a/',
+                query_string='oauth_token=temp_key&oauth_verifier=mock_verifier'
+        ):
 
             # make sure the user is logged in
             authenticate(user=user, response=None)
