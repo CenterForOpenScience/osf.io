@@ -93,8 +93,7 @@ class DbTestCase(unittest.TestCase):
         cls._original_enable_email_subscriptions = settings.ENABLE_EMAIL_SUBSCRIPTIONS
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
 
-        with test_app.test_request_context():
-            teardown_database(database=database_proxy._get_current_object())
+        teardown_database(database=database_proxy._get_current_object())
         # TODO: With `database` as a `LocalProxy`, we should be able to simply
         # this logic
         set_up_storage(
@@ -107,8 +106,7 @@ class DbTestCase(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         super(DbTestCase, cls).tearDownClass()
-        with test_app.test_request_context():
-            teardown_database(database=database_proxy._get_current_object())
+        teardown_database(database=database_proxy._get_current_object())
         settings.DB_NAME = cls._original_db_name
         settings.PIWIK_HOST = cls._original_piwik_host
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = cls._original_enable_email_subscriptions

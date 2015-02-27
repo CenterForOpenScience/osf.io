@@ -8,6 +8,7 @@ from nose.tools import *  # noqa
 from framework.auth import authenticate
 from framework.exceptions import PermissionsError, HTTPError
 from framework.sessions import get_session
+from framework.transactions.commands import begin
 from website.oauth.models import (
     ExternalAccount,
     ExternalProvider,
@@ -68,6 +69,7 @@ def _prepare_mock_500_error():
         status=503,
         content_type='application/json',
     )
+
 
 
 class TestExternalAccount(OsfTestCase):
