@@ -96,7 +96,7 @@ class BoxOAuthSettings(StoredObject):
         # Ensure that most recent tokens are loaded from the database. Needed
         # in case another concurrent request has already changed the tokens.
         if self._is_loaded:
-            self.refresh()
+            self.reload()
         if self._needs_refresh() or force:
             token = refresh_v2_token(settings.BOX_KEY, settings.BOX_SECRET, self.refresh_token)
 
