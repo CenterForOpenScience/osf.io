@@ -31,7 +31,8 @@ def api_url_for(view_name, _absolute=False, _xml=False, *args, **kwargs):
     """Reverse URL lookup for API routes (that use the JSONRenderer or XMLRenderer).
     Takes the same arguments as Flask's url_for, with the addition of
     `_absolute`, which will make an absolute URL with the correct HTTP scheme
-    based on whether the app is in debug mode.
+    based on whether the app is in debug mode, and the adition of the _xml flag that
+    will set the renderer to use.
     """
     if _absolute:
         # Pop off kwargs to ensure that keyword arguments are only passed
