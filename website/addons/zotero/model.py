@@ -78,7 +78,8 @@ class Zotero(ExternalProvider):
             citations = []
             more = True
             offset = 0
-            while more:
+            # TODO don't cap at 200 responses
+            while more and len(citations) <= 200:
                 page = self.client.collection_items(list_id, content='csljson', size=100, start=offset)
                 citations = citations + page
                 if len(page) == 0 or len(page) < 100:
@@ -102,7 +103,8 @@ class Zotero(ExternalProvider):
         citations = []
         more = True
         offset = 0
-        while more:
+        # TODO don't cap at 200
+        while more and len(citations) <= 200:
             page = self.client.items(content='csljson', limit=100, start=offset)
             citations = citations + page
             if len(page) == 0 or len(page) < 100:
