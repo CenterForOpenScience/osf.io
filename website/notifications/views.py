@@ -43,8 +43,8 @@ def configure_subscription(auth):
         except NoResultsFound:
             return
 
-        if node and s in node.has_child_node_subscriptions:
-            node.has_child_node_subscriptions.remove(s)
+        if node and s in node.children_subscriptions:
+            node.children_subscriptions.remove(s)
             node.save()
 
         s.remove_user_from_subscription(user)
@@ -77,10 +77,10 @@ def configure_subscription(auth):
                     s.save()
 
         if node:
-                if notification_type == 'none' and s in node.has_child_node_subscriptions:
-                    node.has_child_node_subscriptions.remove(s)
-                elif notification_type != 'none' and s not in node.has_child_node_subscriptions:
-                    node.has_child_node_subscriptions.append(s)
+                if notification_type == 'none' and s in node.children_subscriptions:
+                    node.children_subscriptions.remove(s)
+                elif notification_type != 'none' and s not in node.children_subscriptions:
+                    node.children_subscriptions.append(s)
         node.save()
 
         return {'message': 'Successfully added ' + repr(user) + ' to ' + notification_type + ' list on ' + event_id}, 200

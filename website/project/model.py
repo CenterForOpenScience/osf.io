@@ -636,7 +636,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     piwik_site_id = fields.StringField()
 
-    has_child_node_subscriptions = fields.ForeignField('subscription', list=True)
+    children_subscriptions = fields.ForeignField('subscription', list=True)
 
     _meta = {
         'optimistic': True,
@@ -847,7 +847,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             if not node.primary or node.is_deleted:
                 continue
 
-            if node.check_user_has_permission_on_private_node_child(user):
+            if node.can_read_children(user):
                 return True
 
         return False

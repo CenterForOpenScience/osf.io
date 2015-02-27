@@ -62,11 +62,12 @@ def get_configured_projects(user):
     """
     configured_project_ids = []
     user_subscriptions = get_all_user_subscriptions(user)
+
     for subscription in user_subscriptions:
         node = Node.load(subscription.object_id)
         if node and not node.is_deleted:  # if node is deleted, the subscription should be removed anyway
             parent = node.parent_node
-            has_child_node_subscriptions = node.has_child_node_subscriptions != []
+            has_child_node_subscriptions = node.children_subscriptions != []
 
             # Include private parent ids so user subscriptions on the node are still displayed
             if user not in subscription.none and parent and not parent.parent_node and not parent.has_permission(user, 'read') and parent._id not in configured_project_ids:
@@ -127,6 +128,7 @@ def format_data(user, node_ids, subscriptions_available=SUBSCRIPTIONS_AVAILABLE)
         if not can_read and not can_read_children:
             continue
 
+        folder_or_node = can_read and [x for x in node.nodes if x.primary and not x.is_deleted]
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
         item = {
@@ -135,7 +137,7 @@ def format_data(user, node_ids, subscriptions_available=SUBSCRIPTIONS_AVAILABLE)
                 'url': node.url if can_read else '',
                 'title': node.title if can_read else 'Private Project',
             },
-            'kind': 'folder' if can_read else 'node',
+            'kind': 'folder' if folder_or_node else 'node',
         }
 
         children = []
@@ -161,8 +163,7 @@ def format_data(user, node_ids, subscriptions_available=SUBSCRIPTIONS_AVAILABLE)
                 n._id
                 for n in node.nodes
                 if n.primary and
-                not n.is_deleted and
-                not n.is_registration
+                not n.is_deleted
             ]
         ))
 
