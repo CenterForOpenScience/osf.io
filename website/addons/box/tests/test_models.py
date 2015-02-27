@@ -37,8 +37,35 @@ class TestFileGuid(OsfTestCase):
 
     @mock.patch('website.addons.base.requests.get')
     def test_unique_identifier(self, mock_get):
+        uid = '#!'
+        mock_response = mock.Mock(ok=True, status_code=200)
+        mock_get.return_value = mock_response
+        mock_response.json.return_value = {
+            'data': {
+                'extra': {
+                    'etag': uid
+                },
+            }
+        }
+
         guid = BoxFile(node=self.project, path='1234567890/foo/bar')
-        uid = 'e463e2fbf0e07ffaf9796b36acf867c0'
+        guid.enrich()
+        assert_equals(uid, guid.unique_identifier)
+
+    @mock.patch('website.addons.base.requests.get')
+    def test_unique_identifier_version(self, mock_get):
+        uid = '#!'
+        mock_response = mock.Mock(ok=True, status_code=200)
+        mock_get.return_value = mock_response
+        mock_response.json.return_value = {
+            'data': {
+                'extra': {},
+                'version': uid
+            }
+        }
+
+        guid = BoxFile(node=self.project, path='1234567890/foo/bar')
+        guid.enrich()
         assert_equals(uid, guid.unique_identifier)
 
     def test_node_addon_get_or_create(self):
