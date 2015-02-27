@@ -183,6 +183,9 @@ class GoogleDriveProvider(provider.BaseProvider):
             )
             revisions_data = yield from revisions_response.json()
 
+            # Revisions are not available for some sharing configurations. If
+            # revisions list is empty, use the etag of the file plus a sentinel
+            # string as a dummy revision ID.
             if not revisions_data['items']:
                 # If there are no revisions use etag as vid
                 data['items'][0]['version'] = revisions_data['etag'] + settings.DRIVE_IGNORE_VERSION
@@ -207,6 +210,7 @@ class GoogleDriveProvider(provider.BaseProvider):
                 for item in reversed(data['items'])
             ]
 
+        # Use dummy ID if no revisions found
         return [GoogleDriveRevision({
             'modifiedDate': metadata['modifiedDate'],
             'id': data['etag'] + settings.DRIVE_IGNORE_VERSION,
