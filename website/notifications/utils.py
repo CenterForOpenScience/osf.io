@@ -49,10 +49,24 @@ def remove_contributor_from_subscriptions(contributor, node):
         for subscription in node_subscriptions:
             subscription.remove_user_from_subscription(contributor)
 
+            node = Node.load(subscription.object_id)
+            parent = node.parent_node
+            if parent and parent.child_node_subscriptions.get(contributor._id, None) and node._id in parent.child_node_subscriptions.get(contributor._id, None):
+                if node._id in parent.child_node_subscriptions[contributor._id]:
+                    parent.child_node_subscriptions[contributor._id].remove(node._id)
+                    parent.save()
+
 
 @node_deleted.connect
 def remove_subscription(node):
     Subscription.remove(Q('object_id', 'eq', node._id))
+    parent = node.parent_node
+
+    if parent and parent.child_node_subscriptions:
+        for user in parent.child_node_subscriptions.keys():
+            if node._id in parent.child_node_subscriptions[user._id]:
+                parent.child_node_subscriptions[user._id].remove(node._id)
+        parent.save()
 
 
 def get_configured_projects(user):
@@ -66,16 +80,29 @@ def get_configured_projects(user):
         node = Node.load(subscription.object_id)
         if node and not node.is_deleted:  # if node is deleted, the subscription should be removed anyway
             parent = node.parent_node
-            has_child_node_subscriptions = node.has_child_node_subscriptions != []
 
             # Include private parent ids so user subscriptions on the node are still displayed
             if user not in subscription.none and parent and not parent.parent_node and not parent.has_permission(user, 'read') and parent._id not in configured_project_ids:
                 configured_project_ids.append(parent._id)
 
-            elif not parent and subscription.object_id not in configured_project_ids and has_child_node_subscriptions:
-                configured_project_ids.append(subscription.object_id)
+            elif not parent and node._id not in configured_project_ids:
+                configured_project_ids.append(node._id)
+
+    for node_id in configured_project_ids:
+        node = Node.load(node_id)
+        if node and check_project_subscriptions_are_all_none(user, node) and node.child_node_subscriptions.get(user._id, None) == []:
+            if node._id in configured_project_ids:
+                configured_project_ids.remove(node._id)
 
     return configured_project_ids
+
+
+def check_project_subscriptions_are_all_none(user, node):
+    node_subscriptions = get_all_node_subscriptions(user, node)
+    for s in node_subscriptions:
+        if user not in s.none:
+            return False
+    return True
 
 
 def get_all_user_subscriptions(user):
