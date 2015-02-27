@@ -632,7 +632,9 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     piwik_site_id = fields.StringField()
 
-    has_child_node_subscriptions = fields.ForeignField('subscription', list=True)
+    # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
+    # {<User.id>: [<Node._id>, <Node2._id>, ...] }
+    has_child_node_subscriptions = fields.DictionaryField()
 
     _meta = {
         'optimistic': True,

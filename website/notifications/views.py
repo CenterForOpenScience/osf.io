@@ -35,18 +35,23 @@ def configure_subscription(auth):
 
     uid = subscription.get('id')
     event_id = utils.to_subscription_key(uid, event)
+
     node = Node.load(uid)
+    if not node.has_child_node_subscriptions:
+        node.has_child_node_subscriptions = {}
+        node.save()
+    if not node.has_child_node_subscriptions.get(user._id, None):
+        node.has_child_node_subscriptions[user._id] = []
+        node.save()
 
     if notification_type == 'adopt_parent':
         try:
             s = Subscription.find_one(Q('_id', 'eq', event_id))
         except NoResultsFound:
             return
-
-        if node and s in node.has_child_node_subscriptions:
-            node.has_child_node_subscriptions.remove(s)
+        if node and s.object_id in node.has_child_node_subscriptions[user._id]:
+            node.has_child_node_subscriptions[user._id].remove(s.object_id)
             node.save()
-
         s.remove_user_from_subscription(user)
 
     else:
@@ -77,10 +82,10 @@ def configure_subscription(auth):
                     s.save()
 
         if node:
-                if notification_type == 'none' and s in node.has_child_node_subscriptions:
-                    node.has_child_node_subscriptions.remove(s)
-                elif notification_type != 'none' and s not in node.has_child_node_subscriptions:
-                    node.has_child_node_subscriptions.append(s)
+                if notification_type == 'none' and s.object_id in node.has_child_node_subscriptions.get(user._id, None):
+                    node.has_child_node_subscriptions[user._id].remove(s.object_id)
+                elif notification_type != 'none' and s.object_id not in node.has_child_node_subscriptions.get(user._id, None):
+                    node.has_child_node_subscriptions[user._id].append(s.object_id)
         node.save()
 
         return {'message': 'Successfully added ' + repr(user) + ' to ' + notification_type + ' list on ' + event_id}, 200

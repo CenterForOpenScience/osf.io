@@ -93,7 +93,6 @@ class TestSubscriptionView(OsfTestCase):
         for n in NOTIFICATION_TYPES:
             assert_false(node.creator in getattr(s, n))
 
-
 class TestRemoveContributor(OsfTestCase):
     def setUp(self):
         super(OsfTestCase, self).setUp()
