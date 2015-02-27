@@ -9,12 +9,12 @@ var ProjectNotifications = require('../project-settings-treebeard.js');
 var $notificationsMsg = $('#configureNotificationsMessage');
 
 $.ajax({
-        url: '/api/v1/subscriptions',
-        type: 'GET',
-        dataType: 'json'
-    }).done( function(response) {
-        new ProjectNotifications(response);
-    }).fail( function() {
-        $notificationsMsg.addClass('text-danger');
-        $notificationsMsg.text('Could not retrieve notification settings.');
-    });
+    url: '/api/v1/subscriptions',
+    type: 'GET',
+    dataType: 'json'
+}).done( function(response) {
+    new ProjectNotifications(response);
+}).fail( function() {
+    $notificationsMsg.addClass('text-danger');
+    $notificationsMsg.text('Could not retrieve notification settings.');
+});
