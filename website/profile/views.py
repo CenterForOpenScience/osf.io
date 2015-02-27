@@ -195,17 +195,17 @@ def user_addons(auth, **kwargs):
     addon_enabled_settings = []
 
     # sort addon_enabled_settings alphabetically by category
-    for category in sorted(settings.ADDON_CATEGORIES):
+    for category in settings.ADDON_CATEGORIES:
         for addon_config in addons:
             if addon_config.categories[0] == category:
                 addons_enabled.append(addon_config.short_name)
                 if 'user' in addon_config.configs:
                     addon_enabled_settings.append(addon_config.short_name)
 
-    ret['addon_categories'] = sorted(settings.ADDON_CATEGORIES)
+    ret['addon_categories'] = settings.ADDON_CATEGORIES
     ret['addons_available'] = [
         addon
-        for addon in settings.ADDONS_AVAILABLE
+        for addon in sorted(settings.ADDONS_AVAILABLE)
         if 'user' in addon.owners and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['user']
     ]
     ret['addons_available'].sort(key=operator.attrgetter("full_name"), reverse=False)

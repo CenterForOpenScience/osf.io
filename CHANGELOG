@@ -2,6 +2,20 @@
 Changelog
 *********
 
+0.27.0 (unreleased)
+===================
+
+- Add Mendeley addon.
+- Add Zotero addon.
+- Add Google Drive addon.
+- Add Box.com addon.
+- New wiki layout with toggle-able columns.
+- New client-side markdown renderer, with support for table of contents
+(@[toc](Table of Contents)) and embedded YouTube and Vimeo videos
+(@[youtube](<video_id>) or @[vimeo](<video_id>)). NOTE: Wiki versions created before this
+release date will still use the older renderer. Update your wikis to use the new
+renderer.
+
 0.26.0 (2015-02-20)
 ===================
 

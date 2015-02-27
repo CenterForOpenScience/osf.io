@@ -1,36 +1,25 @@
-/**
-* Initializes the pagedown editor and prompts the user if
-* leaving the page with unsaved changes.
-*/
 'use strict';
 var ko = require('knockout');
 var $ = require('jquery');
 var $osf = require('osfHelpers');
 var Raven = require('raven-js');
-require('bootstrap-editable');
 var Markdown = require('pagedown-ace-converter');
 Markdown.getSanitizingConverter = require('pagedown-ace-sanitizer').getSanitizingConverter;
 require('imports?Markdown=pagedown-ace-converter!pagedown-ace-editor');
 
-var mathrender = require('mathrender');
-
-var editor;
-
-var MATHJAX_THROTTLE = 500;
-var throttledMathjaxify = $osf.throttle(mathrender.mathjaxify, MATHJAX_THROTTLE);
 
 /**
  * Binding handler that instantiates an ACE editor.
  * The value accessor must be a ko.observable.
  * Example: <div data-bind="ace: currentText" id="editor"></div>
  */
+var editor;
 ko.bindingHandlers.ace = {
-    init: function(element, valueAccessor) {
-        editor = ace.edit(element.id); // jshint ignore:line
+    init: function (element, valueAccessor) {
+        editor = ace.edit(element.id);  // jshint ignore: line
 
         // Updates the view model based on changes to the editor
         editor.getSession().on('change', function () {
-            throttledMathjaxify('#wmd-preview');
             valueAccessor()(editor.getValue());
         });
     },
@@ -47,13 +36,13 @@ ko.bindingHandlers.ace = {
     }
 };
 
-function ViewModel(url) {
+function ViewModel(url, viewText) {
     var self = this;
 
-    self.publishedText = ko.observable('');
-    self.currentText = ko.observable('');
+    self.initText = ko.observable('');
+    self.currentText = viewText; //from wikiPage's VM
     self.activeUsers = ko.observableArray([]);
-    self.status = ko.observable('connected');
+    self.status = ko.observable('connecting');
     self.throttledStatus = ko.observable(self.status());
 
     self.displayCollaborators = ko.computed(function() {
@@ -68,7 +57,7 @@ function ViewModel(url) {
     self.throttledUpdateStatus = $osf.throttle(self.updateStatus, 4000, {leading: false});
 
     self.status.subscribe(function (newValue) {
-        if (newValue === 'disconnected') {
+        if (newValue !== 'connecting') {
             self.updateStatus();
         }
 
@@ -77,17 +66,25 @@ function ViewModel(url) {
 
     self.statusDisplay = ko.computed(function() {
         switch(self.throttledStatus()) {
+            case 'connected':
+                return 'Live editing mode';
             case 'connecting':
                 return 'Attempting to connect';
             case 'unsupported':
-                return 'Your browser does not support live editing';
+                return 'Unsupported browser';
             default:
-                return 'Live editing unavailable';
+                return 'Unavailable: Live editing';
         }
     });
 
     self.progressBar = ko.computed(function() {
         switch(self.throttledStatus()) {
+            case 'connected':
+                return {
+                    class: 'progress-bar progress-bar-success',
+                    style: 'width: 100%'
+                };
+
             case 'connecting':
                 return {
                     class: 'progress-bar progress-bar-warning progress-bar-striped active',
@@ -103,6 +100,8 @@ function ViewModel(url) {
 
     self.modalTarget = ko.computed(function() {
         switch(self.throttledStatus()) {
+            case 'connected':
+                return '#connectedModal';
             case 'connecting':
                 return '#connectingModal';
             case 'unsupported':
@@ -123,7 +122,7 @@ function ViewModel(url) {
     };
 
     self.changed = function() {
-        return self.wikisDiffer(self.publishedText(), self.currentText());
+        return self.wikisDiffer(self.initText(), self.currentText());
     };
 
     // Fetch initial wiki text
@@ -134,7 +133,8 @@ function ViewModel(url) {
             dataType: 'json'
         });
         request.done(function (response) {
-            self.publishedText(response.wiki_content);
+            // Most recent version, whether saved or in mongo
+            self.initText(response.wiki_draft);
         });
         request.fail(function (xhr, textStatus, error) {
             $osf.growl('Error','The wiki content could not be loaded.');
@@ -147,9 +147,12 @@ function ViewModel(url) {
         return request;
     };
 
+    // Revert to last saved version, even if draft is more recent
     self.revertChanges = function() {
-        return self.fetchData().then(function() {
-            self.currentText(self.publishedText());
+        return self.fetchData().then(function(response) {
+            // Dirty check now covers last saved version
+            self.initText(response.wiki_content);
+            self.currentText(response.wiki_content);
         });
     };
 
@@ -159,14 +162,15 @@ function ViewModel(url) {
                 'the page now, those changes may be lost.';
         }
     });
+
 }
 
-function WikiEditor(selector, url) {
-    this.viewModel = new ViewModel(url);
-    $osf.applyBindings(this.viewModel, selector);
+function WikiEditor(url, viewText, editor) {
+    this.viewModel = new ViewModel(url, viewText);
     var mdConverter = Markdown.getSanitizingConverter();
     var mdEditor = new Markdown.Editor(mdConverter);
     mdEditor.run(editor);
+
 }
 
 module.exports = WikiEditor;
