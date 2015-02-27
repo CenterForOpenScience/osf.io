@@ -30,79 +30,167 @@ from tests.base import capture_signals
 from tests.base import OsfTestCase
 
 
+class TestNotificationsModels(OsfTestCase):
+
+    def setUp(self):
+        super(TestNotificationsModels, self).setUp()
+        # Create project with component
+        self.user = factories.UserFactory()
+        self.consolidate_auth = Auth(user=self.user)
+        self.parent = factories.ProjectFactory(creator=self.user)
+        self.node = factories.NodeFactory(creator=self.user, project=self.parent)
+
+    def test_check_user_has_permission_on_private_node_child(self):
+        non_admin_user = factories.UserFactory()
+        parent = factories.ProjectFactory()
+        parent.add_contributor(contributor=non_admin_user, permissions=['read'])
+        parent.save()
+
+        node = factories.NodeFactory(project=parent, category='project')
+        sub_component = factories.NodeFactory(project=node)
+        sub_component.add_contributor(contributor=non_admin_user)
+        sub_component.save()
+        sub_component2 = factories.NodeFactory(project=node)
+
+        has_permission_on_child_node = node.check_user_has_permission_on_private_node_child(non_admin_user)
+        assert_true(has_permission_on_child_node)
+
+    def test_check_user_has_permission_excludes_deleted_components(self):
+        non_admin_user = factories.UserFactory()
+        parent = factories.ProjectFactory()
+        parent.add_contributor(contributor=non_admin_user, permissions=['read'])
+        parent.save()
+
+        node = factories.NodeFactory(project=parent, category='project')
+        sub_component = factories.NodeFactory(project=node)
+        sub_component.add_contributor(contributor=non_admin_user)
+        sub_component.is_deleted = True
+        sub_component.save()
+        sub_component2 = factories.NodeFactory(project=node)
+
+        has_permission_on_child_node = node.check_user_has_permission_on_private_node_child(non_admin_user)
+        assert_false(has_permission_on_child_node)
+
+    def test_check_user_does_not_have_permission_on_private_node_child(self):
+        non_admin_user = factories.UserFactory()
+        parent = factories.ProjectFactory()
+        parent.add_contributor(contributor=non_admin_user, permissions=['read'])
+        parent.save()
+        node = factories.NodeFactory(project=parent, category='project')
+        sub_component = factories.NodeFactory(project=node)
+        has_permission_on_child_node = node.check_user_has_permission_on_private_node_child(non_admin_user)
+        assert_false(has_permission_on_child_node)
+
+    def test_check_user_child_node_permissions_false_if_no_children(self):
+        non_admin_user = factories.UserFactory()
+        parent = factories.ProjectFactory()
+        parent.add_contributor(contributor=non_admin_user, permissions=['read'])
+        parent.save()
+        node = factories.NodeFactory(project=parent, category='project')
+        has_permission_on_child_node = node.check_user_has_permission_on_private_node_child(non_admin_user)
+        assert_false(has_permission_on_child_node)
+
+    def test_check_admin_has_permissions_on_private_component(self):
+        parent = factories.ProjectFactory()
+        node = factories.NodeFactory(project=parent, category='project')
+        sub_component = factories.NodeFactory(project=node)
+        has_permission_on_child_node = node.check_user_has_permission_on_private_node_child(parent.creator)
+        assert_true(has_permission_on_child_node)
+
+    def test_check_user_private_node_child_permissions_excludes_pointers(self):
+        user = factories.UserFactory()
+        parent = factories.ProjectFactory()
+        pointed = factories.ProjectFactory(contributor=user)
+        parent.add_pointer(pointed, Auth(parent.creator))
+        parent.save()
+        has_permission_on_child_nodes = parent.check_user_has_permission_on_private_node_child(user)
+        assert_false(has_permission_on_child_nodes)
+
+
 class TestSubscriptionView(OsfTestCase):
+
+    def setUp(self):
+        super(TestSubscriptionView, self).setUp()
+        self.node = factories.NodeFactory()
+        self.user = self.node.creator
+
+    def test_update_user_timezone_offset(self):
+        assert_equal(self.user.timezone, 'Etc/UTC')
+        payload = {'timezone': 'America/New_York'}
+        url = api_url_for('update_user', uid=self.user._id)
+        self.app.put_json(url, payload, auth=self.user.auth)
+        self.user.reload()
+        assert_equal(self.user.timezone, 'America/New_York')
+
     def test_create_new_subscription(self):
-        node = factories.NodeFactory()
         payload = {
-            'id': node._id,
+            'id': self.node._id,
             'event': 'comments',
             'notification_type': 'email_transactional'
         }
         url = api_url_for('configure_subscription')
-        self.app.post_json(url, payload, auth=node.creator.auth)
+        self.app.post_json(url, payload, auth=self.node.creator.auth)
 
         # check that subscription was created
-        event_id = node._id + '_' + 'comments'
+        event_id = self.node._id + '_' + 'comments'
         s = Subscription.find_one(Q('_id', 'eq', event_id))
 
         # check that user was added to notification_type field
         assert_equal(payload['id'], s.object_id)
         assert_equal(payload['event'], s.event_name)
-        assert_in(node.creator, getattr(s, payload['notification_type']))
+        assert_in(self.node.creator, getattr(s, payload['notification_type']))
 
         # change subscription
         new_payload = {
-            'id': node._id,
+            'id': self.node._id,
             'event': 'comments',
             'notification_type': 'email_digest'
         }
         url = api_url_for('configure_subscription')
-        self.app.post_json(url, new_payload, auth=node.creator.auth)
+        self.app.post_json(url, new_payload, auth=self.node.creator.auth)
         s.reload()
-        assert_false(node.creator in getattr(s, payload['notification_type']))
-        assert_in(node.creator, getattr(s, new_payload['notification_type']))
+        assert_false(self.node.creator in getattr(s, payload['notification_type']))
+        assert_in(self.node.creator, getattr(s, new_payload['notification_type']))
 
     def test_adopt_parent_subscription_default(self):
-        node = factories.NodeFactory()
         payload = {
-            'id': node._id,
+            'id': self.node._id,
             'event': 'comments',
             'notification_type': 'adopt_parent'
         }
         url = api_url_for('configure_subscription')
-        self.app.post_json(url, payload, auth=node.creator.auth)
-        event_id = node._id + '_' + 'comments'
+        self.app.post_json(url, payload, auth=self.node.creator.auth)
+        event_id = self.node._id + '_' + 'comments'
         # confirm subscription was not created
         with assert_raises(NoResultsFound):
             Subscription.find_one(Q('_id', 'eq', event_id))
 
     def test_change_subscription_to_adopt_parent_subscription_removes_user(self):
-        node = factories.NodeFactory()
         payload = {
-            'id': node._id,
+            'id': self.node._id,
             'event': 'comments',
             'notification_type': 'email_transactional'
         }
         url = api_url_for('configure_subscription')
-        self.app.post_json(url, payload, auth=node.creator.auth)
+        self.app.post_json(url, payload, auth=self.node.creator.auth)
 
         # check that subscription was created
-        event_id = node._id + '_' + 'comments'
+        event_id = self.node._id + '_' + 'comments'
         s = Subscription.find_one(Q('_id', 'eq', event_id))
 
         # change subscription to adopt_parent
         new_payload = {
-            'id': node._id,
+            'id': self.node._id,
             'event': 'comments',
             'notification_type': 'adopt_parent'
         }
         url = api_url_for('configure_subscription')
-        self.app.post_json(url, new_payload, auth=node.creator.auth)
+        self.app.post_json(url, new_payload, auth=self.node.creator.auth)
         s.reload()
 
         # assert that user is removed from the subscription entirely
         for n in constants.NOTIFICATION_TYPES:
-            assert_false(node.creator in getattr(s, n))
+            assert_false(self.node.creator in getattr(s, n))
 
 
 class TestRemoveContributor(OsfTestCase):
@@ -962,3 +1050,91 @@ class TestSendEmails(OsfTestCase):
         localized_timestamp = emails.localize_timestamp(timestamp, self.user)
         expected_timestamp = timestamp.astimezone(pytz.timezone(self.user.timezone)).strftime('%c')
         assert_equal(localized_timestamp, expected_timestamp)
+
+
+class TestSendDigest(OsfTestCase):
+    def test_group_digest_notifications_by_user(self):
+        user = factories.UserFactory()
+        user2 = factories.UserFactory()
+        project = factories.ProjectFactory()
+        timestamp = (datetime.datetime.utcnow() - datetime.timedelta(hours=1)).replace(microsecond=0)
+        d = factories.DigestNotificationFactory(
+            user_id=user._id,
+            timestamp=timestamp,
+            message='Hello',
+            node_lineage=[project._id]
+        )
+        d.save()
+        d2 = factories.DigestNotificationFactory(
+            user_id=user2._id,
+            timestamp=timestamp,
+            message='Hello',
+            node_lineage=[project._id]
+        )
+        d2.save()
+        user_groups = group_digest_notifications_by_user()
+        expected = [{
+                    u'user_id': user._id,
+                    u'info': [{
+                        u'message': {
+                            u'message': u'Hello',
+                            u'timestamp': timestamp,
+                        },
+                        u'node_lineage': [unicode(project._id)],
+                        u'_id': d._id
+                    }]
+                    },
+                    {
+                    u'user_id': user2._id,
+                    u'info': [{
+                        u'message': {
+                            u'message': u'Hello',
+                            u'timestamp': timestamp,
+                        },
+                        u'node_lineage': [unicode(project._id)],
+                        u'_id': d2._id
+                    }]
+                    }]
+        assert_equal(len(user_groups), 2)
+        assert_equal(user_groups, expected)
+
+    @mock.patch('scripts.send_digest.remove_sent_digest_notifications')
+    @mock.patch('website.mails.send_mail')
+    def test_send_digest_called_with_correct_args(self, mock_send_mail, mock_callback):
+        d = factories.DigestNotificationFactory(
+            user_id=factories.UserFactory()._id,
+            timestamp=datetime.datetime.utcnow(),
+            message='Hello',
+            node_lineage=[factories.ProjectFactory()._id]
+        )
+        d.save()
+        user_groups = group_digest_notifications_by_user()
+        send_digest(user_groups)
+        assert_true(mock_send_mail.called)
+        assert_equals(mock_send_mail.call_count, len(user_groups))
+
+        last_user_index = len(user_groups) - 1
+        user = User.load(user_groups[last_user_index]['user_id'])
+        digest_notification_ids = [message['_id'] for message in user_groups[last_user_index]['info']]
+
+        mock_send_mail.assert_called_with(
+            to_addr=user.username,
+            mimetype='html',
+            mail=mails.DIGEST,
+            name=user.fullname,
+            message=group_messages_by_node(user_groups[last_user_index]['info']),
+            url=web_url_for('user_notifications', _absolute=True),
+            callback=mock_callback.s(digest_notification_ids=digest_notification_ids)
+        )
+
+    def test_remove_sent_digest_notifications(self):
+        d = factories.DigestNotificationFactory(
+            user_id=factories.UserFactory()._id,
+            timestamp=datetime.datetime.utcnow(),
+            message='Hello',
+            node_lineage=[factories.ProjectFactory()._id]
+        )
+        digest_id = d._id
+        remove_sent_digest_notifications(ret=None, digest_notification_ids=[digest_id])
+        with assert_raises(NoResultsFound):
+            DigestNotification.find_one(Q('_id', 'eq', digest_id))
