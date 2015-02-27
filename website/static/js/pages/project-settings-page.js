@@ -1,9 +1,12 @@
+'use strict';
+
 var $ = require('jquery');
 var bootbox = require('bootbox');
 
 var ProjectSettings = require('../projectSettings.js');
 
 var $osf = require('osfHelpers');
+require('../../css/addonsettings.css');
 
 var ctx = window.contextVars;
 
@@ -21,7 +24,7 @@ $(document).ready(function() {
         var commentLevel = $this.find('input[name="commentLevel"]:checked').val();
 
         $osf.postJSON(
-            nodeApiUrl + 'settings/comments/',
+            ctx.node.urls.api + 'settings/comments/',
             {commentLevel: commentLevel}
         ).done(function() {
             $commentMsg.addClass('text-success');
@@ -84,6 +87,4 @@ $(document).ready(function() {
         }
     });
 
-
 });
-

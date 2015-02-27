@@ -1,12 +1,16 @@
 /////////////////////
 // Project JS      //
 /////////////////////
+'use strict';
+
 var $ = require('jquery');
 var bootbox = require('bootbox');
+var Raven = require('raven-js');
 
 var LogFeed = require('./logFeed.js');
 var $osf = require('osfHelpers');
 
+var ctx = window.contextVars;
 var NodeActions = {}; // Namespace for NodeActions
 
 // TODO: move me to the NodeControl or separate module
@@ -29,12 +33,12 @@ NodeActions.beforeForkNode = function(url, done) {
 };
 
 NodeActions.forkNode = function() {
-    NodeActions.beforeForkNode(nodeApiUrl + 'fork/before/', function() {
+    NodeActions.beforeForkNode(ctx.node.urls.api + 'fork/before/', function() {
         // Block page
         $osf.block();
         // Fork node
         $osf.postJSON(
-            nodeApiUrl + 'fork/',
+            ctx.node.urls.api + 'fork/',
             {}
         ).done(function(response) {
             window.location = response;
@@ -61,7 +65,7 @@ NodeActions.forkPointer = function(pointerId) {
 
                 // Fork pointer
                 $osf.postJSON(
-                    nodeApiUrl + 'pointer/fork/',
+                    ctx.node.urls.api + 'pointer/fork/',
                     {pointerId: pointerId}
                 ).done(function() {
                     window.location.reload();
@@ -98,11 +102,11 @@ NodeActions.addonFileRedirect = function(item) {
 };
 
 NodeActions.useAsTemplate = function() {
-    NodeActions.beforeTemplate('/project/new/' + nodeId + '/beforeTemplate/', function () {
+    NodeActions.beforeTemplate('/project/new/' + ctx.node.id + '/beforeTemplate/', function () {
         $osf.block();
 
         $osf.postJSON(
-            '/api/v1/project/new/' + nodeId + '/',
+            '/api/v1/project/new/' + ctx.node.id + '/',
             {}
         ).done(function(response) {
             window.location = response.url;
@@ -112,6 +116,7 @@ NodeActions.useAsTemplate = function() {
         });
     });
 };
+
 
 $(function() {
 
@@ -169,7 +174,7 @@ NodeActions._openCloseNode = function(nodeId) {
 
 NodeActions.reorderChildren = function(idList, elm) {
     $osf.postJSON(
-        nodeApiUrl + 'reorder_components/',
+        ctx.node.urls.api + 'reorder_components/',
         {new_list: idList}
     ).fail(function(response) {
         $(elm).sortable('cancel');
@@ -180,7 +185,7 @@ NodeActions.reorderChildren = function(idList, elm) {
 NodeActions.removePointer = function(pointerId, pointerElm) {
     $.ajax({
         type: 'DELETE',
-        url: nodeApiUrl + 'pointer/',
+        url: ctx.node.urls.api + 'pointer/',
         data: JSON.stringify({
             pointerId: pointerId
         }),
@@ -261,12 +266,22 @@ $(document).ready(function() {
         });
     });
 
+    $('#citation-more').on('click', function() {
+        var panel = $('#citationStylePanel');
+        panel.slideToggle(200, function() {
+            if (panel.is(':visible')) {
+                $('#citationStyleInput').select2('open');
+            }
+        });
+        return false;
+    });
+
     $('body').on('click', '.tagsinput .tag > span', function(e) {
         window.location = '/search/?q=(tags:' + $(e.target).text().toString().trim()+ ')';
     });
 
 
-    // Portlet feature for the dashboard, to be implemented in later versions. 
+    // Portlet feature for the dashboard, to be implemented in later versions.
     // $( ".osf-dash-col" ).sortable({
     //   connectWith: ".osf-dash-col",
     //   handle: ".addon-widget-header",
@@ -274,10 +289,10 @@ $(document).ready(function() {
     //   placeholder: "osf-dash-portlet ui-corner-all"
     // });
 
-    // Adds active class to current menu item 
+    // Adds active class to current menu item
     $(function () {
         var path = window.location.pathname;
-        $(".project-nav a").each(function () {
+        $('.project-nav a').each(function () {
             var href = $(this).attr('href');
             if (path === href ||
                (path.indexOf('files') > -1 && href.indexOf('files') > -1) ||
