@@ -221,29 +221,25 @@ def search_share_stats():
     return search.share_stats(query=query)
 
 
-def search_share_atom(node_addon, **kwargs):
+def search_share_atom(**kwargs):
     q = request.args.get('q', '*')
+    sort = request.args.get('sort', 'dateUpdated')
+
+    # we want the size to be constant between pages
+    size = 250
 
     try:
-        size = int(request.args.get('size', 250))
+        page = (int(request.args.get('page', 1)) - 1)
     except ValueError:
-        size = 250
+        page = 0
+
+    if page < 0:
+        page = 0
+
+    query = build_query(q, size=size, start=page, sort=sort)
 
     try:
-        start = (int(request.args.get('page', 1)) - 1) * size
-    except ValueError:
-        start = 0
-
-    if start < 0:
-        start = 0
-
-    if size < 0:
-        size = 250
-
-    query = node_addon.build_query(q, size=size, start=start)
-
-    try:
-        ret = search.search(query, doc_type=node_addon.namespace, index='metadata')
+        ret = search.search(query, index='share')
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
     except IndexNotFoundError:
@@ -252,8 +248,5 @@ def search_share_atom(node_addon, **kwargs):
             'results': []
         }
 
-    node = node_addon.owner
-    name = node_addon.system_user.username
-
     atom_url = node.api_url_for('query_app_atom', _xml=True, _absolute=True)
-    return search.share_atom(name, ret['results'], q, size, start, atom_url)
+    return search.share_atom(name, ret['results'], q, size, start=page, url=atom_url)
