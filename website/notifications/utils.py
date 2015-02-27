@@ -1,6 +1,6 @@
 import collections
 from framework.auth.signals import contributor_removed, node_deleted
-from website.models import Node, Pointer
+from website.models import Node
 from website.notifications.model import Subscription
 from website.notifications.constants import SUBSCRIPTIONS_AVAILABLE, NOTIFICATION_TYPES, USER_SUBSCRIPTIONS_AVAILABLE
 from modularodm import Q
@@ -44,15 +44,29 @@ def remove_contributor_from_subscriptions(contributor, node):
     """ Remove contributor from node subscriptions unless the user is an
         admin on any of node's parent projects.
     """
-    if not contributor._id in node.admin_contributor_ids:
+    if contributor._id not in node.admin_contributor_ids:
         node_subscriptions = get_all_node_subscriptions(contributor, node)
         for subscription in node_subscriptions:
             subscription.remove_user_from_subscription(contributor)
+
+            node = Node.load(subscription.object_id)
+            parent = node.parent_node
+            if parent and parent.has_child_node_subscriptions.get(contributor._id, None) and node._id in parent.has_child_node_subscriptions.get(contributor._id, None):
+                if node._id in parent.has_child_node_subscriptions[contributor._id]:
+                    parent.has_child_node_subscriptions[contributor._id].remove(node._id)
+                    parent.save()
 
 
 @node_deleted.connect
 def remove_subscription(node):
     Subscription.remove(Q('object_id', 'eq', node._id))
+    parent = node.parent_node
+
+    if parent and parent.has_child_node_subscriptions:
+        for user in parent.has_child_node_subscriptions.keys():
+            if node._id in parent.has_child_node_subscriptions[user._id]:
+                parent.has_child_node_subscriptions[user._id].remove(node._id)
+        parent.save()
 
 
 def get_configured_projects(user):
@@ -64,7 +78,7 @@ def get_configured_projects(user):
     user_subscriptions = get_all_user_subscriptions(user)
     for subscription in user_subscriptions:
         node = Node.load(subscription.object_id)
-        if node and not node.is_deleted: # if node is deleted, the subscription should be removed anyway
+        if node and not node.is_deleted:  # if node is deleted, the subscription should be removed anyway
             parent = node.parent_node
             has_child_node_subscriptions = node.has_child_node_subscriptions != []
 
