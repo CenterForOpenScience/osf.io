@@ -11,6 +11,8 @@ from modularodm import fields, Q, StoredObject
 from modularodm.exceptions import ModularOdmException
 
 from framework.auth import Auth
+from framework.exceptions import HTTPError
+
 from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
@@ -226,39 +228,11 @@ class BoxNodeSettings(AddonNodeSettingsBase):
     user_settings = fields.ForeignField(
         'boxusersettings', backref='authorized'
     )
-
     folder_id = fields.IntegerField(default=None)
+    folder_name = fields.StringField()
+    folder_path = fields.StringField()
 
-    @property
-    def folder(self):
-        if self.folder_id is None:
-            return None
-
-        try:
-            return self._folder_data['name']
-        except AttributeError:
-            try:
-                self._folder_data = self._fetch_folder_data()
-            except BoxClientException:
-                return None
-
-        return self.folder
-
-    @property
-    def full_folder_path(self):
-        try:
-            return '/'.join(
-                [x['name'] for x in self._folder_data['path_collection']['entries']]
-                + [self.folder]
-            )
-        except AttributeError:
-            self._folder_data = self._fetch_folder_data()
-
-        return self.full_folder_path
-
-    def _fetch_folder_data(self):
-        client = get_client_from_user_settings(self.user_settings)
-        return client.get_folder(self.folder_id)
+    _folder_data = None
 
     @property
     def display_name(self):
@@ -268,6 +242,32 @@ class BoxNodeSettings(AddonNodeSettingsBase):
     def has_auth(self):
         """Whether an access token is associated with this node."""
         return bool(self.user_settings and self.user_settings.has_auth)
+
+    def fetch_folder_name(self):
+        self._update_folder_data()
+        return self.folder_name
+
+    def fetch_full_folder_path(self):
+        self._update_folder_data()
+        return self.folder_path
+
+    def _update_folder_data(self):
+        if self.folder_id is None:
+            return None
+
+        if not self._folder_data:
+            try:
+                client = get_client_from_user_settings(self.user_settings)
+                self._folder_data = client.get_folder(self.folder_id)
+            except BoxClientException:
+                return
+
+            self.folder_name = self._folder_data['name']
+            self.folder_path = '/'.join(
+                [x['name'] for x in self._folder_data['path_collection']['entries']]
+                + [self.fetch_folder_name()]
+            )
+            self.save()
 
     def set_folder(self, folder_id, auth):
         self.folder_id = folder_id
@@ -310,7 +310,10 @@ class BoxNodeSettings(AddonNodeSettingsBase):
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
             raise exceptions.AddonError('Addon is not authorized')
-        return {'token': self.user_settings.fetch_access_token()}
+        try:
+            return {'token': self.user_settings.fetch_access_token()}
+        except BoxClientException as error:
+            return HTTPError(error.status_code)
 
     def serialize_waterbutler_settings(self):
         if self.folder_id is None:

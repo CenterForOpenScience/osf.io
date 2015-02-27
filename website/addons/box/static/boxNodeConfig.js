@@ -83,7 +83,7 @@ var ViewModel = function(url, selector, folderPicker) {
 
     self.fetchFromServer = function() {
         var request = $.ajax({
-            url: url, type: 'GET', dataType: 'json',
+            url: url, type: 'GET', dataType: 'json'
         })
         .done(function(response) {
             self.updateFromData(response.result);
