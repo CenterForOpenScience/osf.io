@@ -6,7 +6,7 @@ from datetime import datetime
 
 import furl
 import requests
-from box import CredentialsV2, refresh_v2_token
+from box import CredentialsV2, refresh_v2_token, BoxClientException
 from modularodm import fields, Q, StoredObject
 from modularodm.exceptions import ModularOdmException
 
@@ -237,7 +237,10 @@ class BoxNodeSettings(AddonNodeSettingsBase):
         try:
             return self._folder_data['name']
         except AttributeError:
-            self._folder_data = self._fetch_folder_data()
+            try:
+                self._folder_data = self._fetch_folder_data()
+            except BoxClientException:
+                return None
 
         return self.folder
 
