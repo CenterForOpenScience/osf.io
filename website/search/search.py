@@ -64,4 +64,4 @@ def share_stats(query=None):
 
 def share_atom(name, data, query, size, start, url):
     query = query or {}
-    return share_search.atom(name=name, query=query, size=size, start=start, url=url)
+    return share_search.atom(name=name, data=data, query=query, size=size, start=start, url=url)
