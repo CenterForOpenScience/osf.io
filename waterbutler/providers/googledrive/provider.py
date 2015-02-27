@@ -2,6 +2,7 @@ import os
 import http
 import json
 import asyncio
+from urllib import parse
 
 import furl
 
@@ -39,6 +40,14 @@ class GoogleDrivePath(utils.WaterButlerPath):
         path = path.replace('//', '/')
         return cls(self._folder, path, prefix=self._prefix, suffix=self._suffix)
 
+    @property
+    def path(self):
+        return parse.unquote(self._path)
+
+    @property
+    def parts(self):
+        return [parse.unquote(x) for x in self._parts]
+
 
 class GoogleDriveProvider(provider.BaseProvider):
 
@@ -65,10 +74,12 @@ class GoogleDriveProvider(provider.BaseProvider):
                 throws=exceptions.MetadataError,
             )
             data = yield from response.json()
+
         try:
             download_url = data['downloadUrl']
         except KeyError:
             download_url = drive_utils.get_export_link(data['exportLinks'])
+
         download_resp = yield from self.make_request(
             'GET',
             download_url,
