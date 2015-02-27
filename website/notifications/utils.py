@@ -1,10 +1,12 @@
 import collections
-from framework.auth.signals import contributor_removed, node_deleted
-from website.models import Node
-from website.notifications import constants
-from website.notifications.model import Subscription
+
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
+
+from framework.auth import signals
+from website.models import Node
+from website.notifications import constants
+from website.notifications import model
 
 
 class NotificationsDict(dict):
@@ -40,7 +42,7 @@ def from_subscription_key(key):
     }
 
 
-@contributor_removed.connect
+@signals.contributor_removed.connect
 def remove_contributor_from_subscriptions(contributor, node):
     """ Remove contributor from node subscriptions unless the user is an
         admin on any of node's parent projects.
@@ -51,9 +53,9 @@ def remove_contributor_from_subscriptions(contributor, node):
             subscription.remove_user_from_subscription(contributor)
 
 
-@node_deleted.connect
+@signals.node_deleted.connect
 def remove_subscription(node):
-    Subscription.remove(Q('object_id', 'eq', node._id))
+    model.Subscription.remove(Q('object_id', 'eq', node._id))
 
 
 def get_configured_projects(user):
@@ -70,7 +72,13 @@ def get_configured_projects(user):
             has_child_node_subscriptions = node.has_child_node_subscriptions != []
 
             # Include private parent ids so user subscriptions on the node are still displayed
-            if user not in subscription.none and parent and not parent.parent_node and not parent.has_permission(user, 'read') and parent._id not in configured_project_ids:
+            if (
+                user not in subscription.none and
+                parent and
+                not parent.parent_node and
+                not parent.has_permission(user, 'read')
+                and parent._id not in configured_project_ids
+            ):
                 configured_project_ids.append(parent._id)
 
             elif not parent and subscription.object_id not in configured_project_ids and has_child_node_subscriptions:
@@ -154,7 +162,7 @@ def format_data(user, node_ids, data):
 
 def format_user_subscriptions(user, data):
     """ Format user-level subscriptions (e.g. comment replies across the OSF) for user settings page"""
-    user_subscriptions = [s for s in Subscription.find(Q('object_id', 'eq', user._id))]
+    user_subscriptions = [s for s in model.Subscription.find(Q('object_id', 'eq', user._id))]
     for subscription in constants.USER_SUBSCRIPTIONS_AVAILABLE:
         event = serialize_event(user, subscription, constants.USER_SUBSCRIPTIONS_AVAILABLE, user_subscriptions)
         data.append(event)
@@ -209,7 +217,7 @@ def get_parent_notification_type(uid, event, user):
         for p in node.node__parent:
             key = to_subscription_key(p._id, event)
             try:
-                subscription = Subscription.find_one(Q('_id', 'eq', key))
+                subscription = model.Subscription.find_one(Q('_id', 'eq', key))
             except NoResultsFound:
                 return get_parent_notification_type(p._id, event, user)
 
