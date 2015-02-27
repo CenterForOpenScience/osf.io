@@ -20,7 +20,6 @@ from website.notifications.utils import NotificationsDict
 
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
 
 
 def main():
@@ -112,4 +111,5 @@ def group_digest_notifications_by_user():
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
     main()
