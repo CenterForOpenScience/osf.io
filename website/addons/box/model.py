@@ -232,7 +232,7 @@ class BoxNodeSettings(AddonNodeSettingsBase):
     folder_name = fields.StringField()
     folder_path = fields.StringField()
 
-    _folder_data = []
+    _folder_data = None
 
     @property
     def display_name(self):
