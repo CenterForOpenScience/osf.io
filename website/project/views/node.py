@@ -671,12 +671,14 @@ def _render_addon(node):
 
 
 def _should_show_wiki_widget(node, user):
+
+    has_wiki = bool(node.get_addon('wiki'))
+    wiki_page = node.get_wiki_page('home', None)
     if not node.has_permission(user, 'write'):
-        wiki_page = node.get_wiki_page('home', None)
-        return wiki_page and wiki_page.html(node)
+        return has_wiki and wiki_page and wiki_page.html(node)
 
     else:
-        return True
+        return has_wiki
 
 
 def _view_project(node, auth, primary=False):
