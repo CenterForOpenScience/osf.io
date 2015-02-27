@@ -188,11 +188,8 @@ def box_user_config_get(user_addon, auth, **kwargs):
         try:
             client = get_client_from_user_settings(user_addon)
             client.get_user_info()
-        except BoxClientException as error:
-            if error.status_code == 401:
-                valid_credentials = False
-            else:
-                HTTPError(http.BAD_REQUEST)
+        except BoxClientException:
+            valid_credentials = False
 
     return {
         'result': {

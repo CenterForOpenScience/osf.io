@@ -44,7 +44,6 @@
                     <span data-bind="if: folder().path === null" class="text-muted">
                         None
                     </span>
-
                 </p>
 
                 <!-- Folder buttons -->
