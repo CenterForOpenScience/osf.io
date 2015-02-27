@@ -28,6 +28,7 @@ class NotificationsDict(dict):
 
 
 def to_subscription_key(uid, event):
+    """Build the Subscription primary key for the given guid and event"""
     return str(uid + '_' + event)
 
 
