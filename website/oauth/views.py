@@ -20,7 +20,7 @@ def oauth_disconnect(external_account_id, auth):
         HTTPError(http.FORBIDDEN)
 
     # iterate AddonUserSettings for addons
-    for user_settings in user.get_addons():
+    for user_settings in user.get_oauth_addons():
         user_settings.revoke_oauth_access(account)
         user_settings.save()
 
