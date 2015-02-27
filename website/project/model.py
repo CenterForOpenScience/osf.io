@@ -118,7 +118,11 @@ def ensure_schemas(clear=True):
 
     """
     if clear:
-        MetaSchema.remove()
+        try:
+            MetaSchema.remove()
+        except AttributeError:
+            if not settings.DEBUG_MODE:
+                raise
     for schema in OSF_META_SCHEMAS:
         try:
             MetaSchema.find_one(
@@ -2552,10 +2556,14 @@ class Node(GuidStoredObject, AddonModelMixin):
             name = (name or '').strip()
             key = to_mongo_key(name)
             try:
-                if version:
-                    id = self.wiki_pages_versions[key][version - 1]
-                else:
+                if version and (isinstance(version, int) or version.isdigit()):
+                    id = self.wiki_pages_versions[key][int(version) - 1]
+                elif version == 'previous':
+                    id = self.wiki_pages_versions[key][-2]
+                elif version == 'current' or version is None:
                     id = self.wiki_pages_current[key]
+                else:
+                    return None
             except (KeyError, IndexError):
                 return None
         return NodeWikiPage.load(id)

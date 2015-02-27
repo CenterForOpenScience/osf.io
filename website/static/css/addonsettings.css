@@ -1,0 +1,18 @@
+.btn-addon {
+    color: #333;
+    background-color: #fff;
+    border-color: #ccc;
+}
+.btn-addon:hover,
+.btn-addon:focus,
+.btn-addon:active,
+.btn-addon.active,
+.open .dropdown-toggle.btn-addon {
+    color: #333;
+    background-color: #ebebeb;
+    border-color: #adadad;
+}
+
+.filebrowser #tb-tbody {
+    height: 300px;
+}

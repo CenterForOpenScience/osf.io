@@ -14,6 +14,7 @@ from website.project.model import (
 from website.citations.models import CitationStyle
 from website.conferences.model import Conference, MailRecord
 from website.notifications.model import Subscription, DigestNotification
+from website.oauth.models import ExternalAccount
 
 # All models
 MODELS = (
@@ -21,6 +22,7 @@ MODELS = (
     Tag, WatchConfig, Session, Guid, MetaSchema, Pointer,
     MailRecord, Comment, PrivateLink, MetaData, Conference,
     Subscription, DigestNotification, CitationStyle,
+    CitationStyle, ExternalAccount,
 )
 
 GUID_MODELS = (User, Node, Comment, MetaData)

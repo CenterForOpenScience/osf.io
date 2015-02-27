@@ -309,8 +309,8 @@ def mailserver(port=1025):
     run(bin_prefix(cmd), pty=True)
 
 
-@task
-def flake8():
+@task(aliases=['flake8'])
+def flake():
     run('flake8 .', echo=True)
 
 
@@ -368,7 +368,7 @@ def test(all=False):
 @task
 def test_all(flake=False):
     if flake:
-        flake8()
+        flake()
     test_osf()
     test_addons()
 

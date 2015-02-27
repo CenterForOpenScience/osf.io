@@ -38,6 +38,12 @@ class HTTPError(FrameworkError):
                 'not have occurred and the issue persists, please report it to '
                 '<a href="mailto:support@osf.io">support@osf.io</a>.'),
         },
+        http.SERVICE_UNAVAILABLE: {
+            'message_short': 'Service is currently unavailable',
+            'message_long': ('The requested service is unavailable. If this should '
+                'not have occurred and the issue persists, please report it to '
+                '<a href="mailto:support@osf.io">support@osf.io</a>.'),
+        },
     }
 
     def __init__(self, code, message=None, redirect_url=None, data=None):
