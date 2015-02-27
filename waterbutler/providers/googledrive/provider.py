@@ -3,7 +3,6 @@ import http
 import json
 import asyncio
 from urllib import parse
-from datetime import datetime
 
 import furl
 

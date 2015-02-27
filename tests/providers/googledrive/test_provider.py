@@ -3,7 +3,6 @@ import pytest
 from tests.utils import async
 
 import io
-from datetime import datetime
 
 import aiohttpretty
 
