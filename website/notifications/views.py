@@ -39,48 +39,47 @@ def configure_subscription(auth):
 
     if notification_type == 'adopt_parent':
         try:
-            s = Subscription.find_one(Q('_id', 'eq', event_id))
+            sub = Subscription.find_one(Q('_id', 'eq', event_id))
         except NoResultsFound:
             return
 
-        if node and s in node.children_subscriptions:
-            node.children_subscriptions.remove(s)
+        if node and sub in node.children_subscriptions:
+            node.children_subscriptions.remove(sub)
             node.save()
 
-        s.remove_user_from_subscription(user)
+        sub.remove_user_from_subscription(user)
 
     else:
         try:
-            s = Subscription(_id=event_id)
-            s.save()
+            sub = Subscription(_id=event_id)
+            sub.save()
 
         except KeyExistsException:
-            s = Subscription.find_one(Q('_id', 'eq', event_id))
+            sub = Subscription.find_one(Q('_id', 'eq', event_id))
 
-        s.object_id = uid
-        s.event_name = event
-        s.save()
+        sub.object_id = uid
+        sub.event_name = event
+        sub.save()
 
         # Add user to list of subscribers
-        if notification_type not in s._fields:
-            setattr(s, notification_type, [])
-            s.save()
+        setattr(sub, notification_type, [])
+        sub.save()
 
-        if user not in getattr(s, notification_type):
-            getattr(s, notification_type).append(user)
-            s.save()
+        if user not in getattr(sub, notification_type):
+            getattr(sub, notification_type).append(user)
+            sub.save()
 
         for nt in NOTIFICATION_TYPES:
-            if nt != notification_type:
-                if getattr(s, nt) and user in getattr(s, nt):
-                    getattr(s, nt).remove(user)
-                    s.save()
+            if nt != notification_type and user in getattr(sub, nt):
+                getattr(sub, nt).remove(user)
+                sub.save()
 
         if node:
-                if notification_type == 'none' and s in node.children_subscriptions:
-                    node.children_subscriptions.remove(s)
-                elif notification_type != 'none' and s not in node.children_subscriptions:
-                    node.children_subscriptions.append(s)
+            if notification_type == 'none' and sub in node.children_subscriptions:
+                node.children_subscriptions.remove(sub)
+            elif sub not in node.children_subscriptions:
+                node.children_subscriptions.append(sub)
+
         node.save()
 
         return {'message': 'Successfully added ' + repr(user) + ' to ' + notification_type + ' list on ' + event_id}, 200
