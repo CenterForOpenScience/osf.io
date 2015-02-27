@@ -42,13 +42,16 @@ def main():
 
 def set_up_index():
     alias = es.indices.get_aliases(index='website')
-    if not alias:
+
+    if not alias or not alias.keys() or 'website' in alias.keys():
+        # Deal with empty indices or the first migration
         index = 'website_v1'
         search.create_index(index=index)
         helpers.reindex(es, 'website', index)
         es.indices.delete(index='website')
         es.indices.put_alias('website', index)
     else:
+        # Increment version
         version = int(alias.keys()[0][-1]) + 1
         index = 'website_v{}'.format(version)
         search.create_index(index=index)
