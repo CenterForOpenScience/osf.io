@@ -98,8 +98,7 @@ class TestConfigViews(BoxAddonTestCase):
         assert_true(result['userHasAuth'])
 
     @mock.patch('website.addons.box.client.BoxClient.get_user_info')
-    @mock.patch('website.addons.box.model.BoxNodeSettings.full_folder_path')
-    def test_box_user_config_get_has_valid_credentials(self, mock_data, mock_account_info):
+    def test_box_user_config_get_has_valid_credentials(self, mock_account_info):
         mock_account_info.return_value = {'display_name': 'Mr. Box'}
         url = api_url_for('box_user_config_get')
         res = self.app.get(url, auth=self.user.auth)
