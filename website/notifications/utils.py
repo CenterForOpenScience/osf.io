@@ -108,7 +108,7 @@ def get_all_node_subscriptions(user, node, user_subscriptions=None):
     return node_subscriptions
 
 
-def format_data(user, node_ids, data, subscriptions_available=SUBSCRIPTIONS_AVAILABLE):
+def format_data(user, node_ids, subscriptions_available=SUBSCRIPTIONS_AVAILABLE):
     """ Format subscriptions data for project settings page
     :param user: modular odm User object
     :param node_ids: list of parent project ids
@@ -117,40 +117,61 @@ def format_data(user, node_ids, data, subscriptions_available=SUBSCRIPTIONS_AVAI
     not all in SUBSCRIPTIONS_AVAILABLE
     :return: treebeard-formatted data
     """
-    user_subscriptions = get_all_user_subscriptions(user)
-    for idx, node_id in enumerate(node_ids):
+    items = []
+    for node_id in node_ids:
         node = Node.load(node_id)
-        index = len(data)
+        can_read = node.has_permission(user, 'read')
+        can_read_children = node.can_read_children(user)
+        assert node, '{} is not a valid Node.'.format(node_id)
 
-        list_private_node = False
-        if not node.has_permission(user, 'read'):
-            list_private_node = node.check_user_has_permission_on_private_node_child(user)
+        if not can_read and not can_read_children:
+            continue
 
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
-        if node.has_permission(user, 'read') or list_private_node:
-            data.append({
-                'node': {
-                        'id': node_id,
-                        'url': node.url if node.has_permission(user, 'read') else '',
-                        'title': node.title if not list_private_node else 'Private Project',
-                        },
-                'kind': 'folder' if not node.node__parent or not node.parent_node.has_permission(user, 'read') else 'node',
-                'children': []
-            })
+        item = {
+            'node': {
+                'id': node_id,
+                'url': node.url if can_read else '',
+                'title': node.title if can_read else 'Private Project',
+            },
+            'kind': 'folder' if can_read else 'node',
+        }
 
-            node_subscriptions = get_all_node_subscriptions(user, node, user_subscriptions=user_subscriptions)
-            if node.has_permission(user, 'read'):
-                for subscription in subscriptions_available:
-                    event = serialize_event(user, subscription, subscriptions_available, node_subscriptions, node)
-                    data[index]['children'].append(event)
+        children = []
 
-            if node.nodes:
-                # nodes excluding pointers and deleted nodes
-                nodes = [n for n in node.nodes if n.primary and not n.is_deleted and not n.is_registration]
-                format_data(user, [n._id for n in nodes], data[index]['children'])
+        if can_read:
+            user_subscriptions = get_all_user_subscriptions(user)
+            for subscription in subscriptions_available:
+                children.extend([
+                    serialize_event(
+                        user,
+                        subscription,
+                        subscriptions_available,
+                        get_all_node_subscriptions(user, node, user_subscriptions),
+                        node
+                    )
+                    for subscription in
+                    subscriptions_available
+                ])
 
-    return data
+        children.extend(format_data(
+            user,
+            [
+                n._id
+                for n in node.nodes
+                if n.primary and
+                not n.is_deleted and
+                not n.is_registration
+            ]
+        ))
+
+        item['children'] = children
+
+    # if item:
+        items.append(item)
+
+    return items
 
 
 def format_user_subscriptions(user, data):
