@@ -231,7 +231,7 @@ def search_share_atom(**kwargs):
     size = 250
 
     try:
-        page = (int(request.args.get('page', 1)) - 1)
+        page = (int(request.args.get('page', 1)) - 1) * size
     except ValueError:
         page = 0
 
