@@ -7,6 +7,8 @@ from tests.factories import UserFactory, ProjectFactory
 
 from framework.auth import Auth
 from website.addons.s3.model import AddonS3NodeSettings, AddonS3UserSettings, S3GuidFile
+from website.addons.s3.api import S3Wrapper
+from website.models import Comment
 
 
 class TestFileGuid(OsfTestCase):
@@ -58,6 +60,21 @@ class TestFileGuid(OsfTestCase):
         assert_true(created1)
         assert_false(created2)
         assert_equals(guid1, guid2)
+
+    def test_node_addon_get_existing_files(self):
+        wrapper = mock.create_autospec(S3Wrapper)
+        bucket = mock.create_autospec(Bucket)
+        bucket.name = 'Charlie Bucket and the Chocolate Factory'
+        path = 'find_or_create_file.guid'
+        obj = mock.Mock()
+        obj.name = path
+        bucket.list = lambda: [obj]
+        wrapper.bucket = bucket
+        self.node_addon.bucket = bucket
+        guid, _ = self.node_addon.find_or_create_file_guid(path)
+        files = self.node_addon.get_existing_files(wrapper)
+        assert_equal(len(files), 1)
+        assert_equal(files[0], guid)
 
 
 class TestCallbacks(OsfTestCase):
@@ -193,3 +210,27 @@ class TestCallbacks(OsfTestCase):
             data='hodor'
         )
         assert_false(registration.has_addon('s3'))
+
+    def test_hide_comments(self):
+        guid, _ = self.node_settings.find_or_create_file_guid('find_or_create_file.guid')
+        comment = Comment.create(
+            auth=Auth(self.project.creator),
+            node=self.project,
+            target=guid,
+            user=self.project.creator,
+            page='files',
+            content='anything...',
+            root_title='find_or_create_file.guid',
+        )
+        comment2 = Comment.create(
+            auth=Auth(self.project.creator),
+            node=self.project,
+            target=comment,
+            user=self.project.creator,
+            page='files',
+            content='anything...',
+            root_title='find_or_create_file.guid',
+        )
+        self.node_settings.hide_comments()
+        assert_true(comment.is_hidden)
+        assert_true(comment2.is_hidden)

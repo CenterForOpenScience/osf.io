@@ -347,9 +347,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             connection = S3Wrapper.from_addon(self)
         s3_files = []
         for key in connection.bucket.list():
-            path = key.name
-            if not path.startswith('/'):
-                path = '/' + path
+            path = key.name.lstrip('/')
             try:
                 guid = S3GuidFile.find_one(
                     Q('node', 'eq', self.owner) &
