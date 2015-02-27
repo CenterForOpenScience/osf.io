@@ -89,8 +89,12 @@
     </script>
     <script>
         $(function(){
-            $('#register-password').tooltip({'trigger':'focus',placement:'right',title:'Must be at least 6 characters'});
+            $('#register-password').tooltip({'trigger':'focus', placement:whereToPlace,container:'.form-group', title:'Must be at least 6 characters'});
         });
+        function whereToPlace(){
+            if (window.innerWidth<768) return 'top';
+            return 'right';
+        }
     </script>
 </%def>
 
