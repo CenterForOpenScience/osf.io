@@ -64,6 +64,14 @@ class TestCRUD:
     @async
     @pytest.mark.aiohttpretty
     def test_download_drive(self, provider):
+        path = '/birdie\'"".jpg'
+        item = fixtures.list_file['items'][0]
+        query = provider._build_query(provider.folder['id'], title=path.lstrip('/'))
+        assert 'birdie\\\'\\"\\".jpg' in query
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_download_drive(self, provider):
         path = '/birdie.jpg'
         body = b'we love you conrad'
         item = fixtures.list_file['items'][0]
