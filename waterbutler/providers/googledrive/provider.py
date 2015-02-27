@@ -3,6 +3,7 @@ import http
 import json
 import asyncio
 from urllib import parse
+from datetime import datetime
 
 import furl
 
@@ -69,7 +70,7 @@ class GoogleDriveProvider(provider.BaseProvider):
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
         data = yield from self.metadata(path, raw=True)
-        if revision:
+        if revision and not revision[-len(settings.DRIVE_IGNORE_VERSION):] == settings.DRIVE_IGNORE_VERSION:
             # Must make additional request to look up download URL for revision
             response = yield from self.make_request(
                 'GET',
@@ -182,7 +183,12 @@ class GoogleDriveProvider(provider.BaseProvider):
                 throws=exceptions.RevisionsError,
             )
             revisions_data = yield from revisions_response.json()
-            data['items'][0]['version'] = revisions_data['items'][-1]['id']
+
+            if not revisions_data['items']:
+                # If there are no revisions use etag as vid
+                data['items'][0]['version'] = revisions_data['etag'] + settings.DRIVE_IGNORE_VERSION
+            else:
+                data['items'][0]['version'] = revisions_data['items'][-1]['id']
 
         return self._serialize_item(original_path.parent, data['items'][0], raw=raw)
 
@@ -196,10 +202,16 @@ class GoogleDriveProvider(provider.BaseProvider):
             throws=exceptions.RevisionsError,
         )
         data = yield from response.json()
-        return [
-            GoogleDriveRevision(item).serialized()
-            for item in reversed(data['items'])
-        ]
+        if data['items']:
+            return [
+                GoogleDriveRevision(item).serialized()
+                for item in reversed(data['items'])
+            ]
+
+        return [GoogleDriveRevision({
+            'id': data['etag'] + settings.DRIVE_IGNORE_VERSION,
+            'modifiedDate': datetime.utcnow().isoformat()
+        }).serialized()]
 
     def _build_upload_url(self, *segments, **query):
         return provider.build_url(settings.BASE_UPLOAD_URL, *segments, **query)
