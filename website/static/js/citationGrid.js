@@ -33,6 +33,8 @@ function resolveIcon(item) {
 
     if (item.kind === 'folder') {
         return item.open ? openFolder : closedFolder;
+    } else if (item.kind === 'message'){
+        return '';
     } else if (item.data.icon) {
         return m('i.fa.' + item.data.icon, ' ');
     } else {
@@ -284,6 +286,20 @@ CitationGrid.prototype.initTreebeard = function() {
         },
         treebeardOptions
     );
+    var preprocess = options.lazyLoadPreprocess;
+    options.lazyLoadPreprocess = function(data){
+        data = preprocess(data);
+        // TODO remove special case for Zotero
+        if (self.provider === 'Zotero') {
+            if (data.length >= 200) {
+		data.push({
+                    name: 'We can only load 200 citations; some citations may not be shown.',
+                    kind: 'message'
+                });
+            }
+        }        
+        return data;
+    };
     self.treebeard = new Treebeard(options);
 };
 
@@ -378,7 +394,15 @@ CitationGrid.prototype.resolveRowAux = function(item) {
         data: 'csl',
         folderIcons: true,
         custom: function(item) {
-            return item.kind === 'folder' ? item.data.name : self.getCitation(item);
+            if (item.kind === 'folder'){
+                return item.data.name;
+            }
+            else if (item.kind === 'message'){
+                return item.data.name;
+            }
+            else {
+                return self.getCitation(item);
+            }
         }
     }, {
         // Wrap callback in closure to preserve intended `this`
