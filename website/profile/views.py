@@ -20,14 +20,15 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
 
 from website import mailchimp_utils
+from website import settings
 from website.models import User
 from website.models import ApiKey
-from website.views import _render_nodes
+from website.profile import utils as profile_utils
 from website.util import web_url_for, paths
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
-from website.profile import utils as profile_utils
-from website import settings
+from website.views import _render_nodes
+
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +76,9 @@ def date_or_none(date):
 
 @must_be_logged_in
 def update_user(uid, auth):
+    # TODO: Decide if this is to be the "update user" endpoint, or only timezone
+    #       Reconcile with the existence of edit_profile
+    # TODO: This doesn't check that the user to update is logged in.
     user = User.load(uid)
     data = request.get_json()
     timezone = data.get('timezone')

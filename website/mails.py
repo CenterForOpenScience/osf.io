@@ -22,7 +22,7 @@ import os
 import logging
 
 from mako.lookup import TemplateLookup, Template
-from framework.email.tasks import send_email
+from framework.email import tasks
 from website import settings
 
 
@@ -81,15 +81,14 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
     :param str to_addr: The recipient's email address
     :param Mail mail: The mail object
     :param str mimetype: Either 'plain' or 'html'
-    :param function callback: function to be executed after send_mail completes
+    :param function callback: celery task to execute after send_mail completes
     :param **context: Context vars for the message template
 
     .. note:
-         Requires celery worker.
-
+         Uses celery if available
     """
     from_addr = from_addr or settings.FROM_EMAIL
-    mailer = mailer or send_email
+    mailer = mailer or tasks.send_email
     subject = mail.subject(**context)
     message = mail.text(**context) if mimetype in ('plain', 'txt') else mail.html(**context)
     # Don't use ttls and login in DEBUG_MODE
@@ -143,5 +142,6 @@ CONFERENCE_FAILED = Mail(
     'conference_failed',
     subject='Open Science Framework Error: No files attached',
 )
+
 DIGEST = Mail('digest', subject='OSF Email Digest')
 TRANSACTIONAL = Mail('transactional', subject='OSF: ${subject}')
