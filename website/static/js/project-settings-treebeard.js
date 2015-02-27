@@ -174,7 +174,12 @@ function ProjectNotifications(data) {
                     filter : true,
                     sortInclude : false,
                     custom : function() {
-                        return m('a', { href : item.data.node.url, target : '_blank' }, item.data.node.title );
+                        if (item.data.node.url !== '') {
+                            return m('a', { href : item.data.node.url, target : '_blank' }, item.data.node.title);
+                        } else {
+                            return m('span', item.data.node.title);
+                        }
+
                     }
                 });
             }

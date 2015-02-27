@@ -267,6 +267,25 @@ class TestNotificationUtils(OsfTestCase):
         node_subscription.save()
         assert_not_in(node._id, utils.get_configured_projects(self.user))
 
+    def test_get_configured_project_ids_includes_top_level_private_projects_if_subscriptions_on_node(self):
+        private_project = ProjectFactory()
+        node = NodeFactory(project=private_project)
+        node_subscription = SubscriptionFactory(
+            _id=node._id + '_comments',
+            object_id=node._id,
+            event_name='comments'
+        )
+        node_subscription.email_transactional.append(node.creator)
+        node_subscription.save()
+        configured_project_ids = utils.get_configured_projects(node.creator)
+        assert_in(private_project._id, configured_project_ids)
+
+    def test_get_configured_project_ids_excludes_private_projects_if_no_subscriptions_on_node(self):
+        private_project = ProjectFactory()
+        node = NodeFactory(project=private_project)
+        configured_project_ids = utils.get_configured_projects(node.creator)
+        assert_not_in(private_project._id, configured_project_ids)
+
     def test_get_parent_notification_type(self):
         nt = utils.get_parent_notification_type(self.node._id, 'comments', self.user)
         assert_equal(nt, 'email_transactional')
@@ -294,7 +313,7 @@ class TestNotificationUtils(OsfTestCase):
                     'title': self.project.title,
                     'url': self.project.url,
                 },
-                'kind': 'folder' if not self.project.node__parent else 'node',
+                'kind': 'folder',
                 'children': [
                     {
                         'event': {
@@ -314,7 +333,7 @@ class TestNotificationUtils(OsfTestCase):
                             'url': self.node.url,
                         },
 
-                        'kind': 'folder' if not self.node.node__parent else 'node',
+                        'kind': 'node',
                         'children': [
                             {
                                 'event': {
@@ -341,7 +360,7 @@ class TestNotificationUtils(OsfTestCase):
                         'title': self.node.title,
                         'url': self.node.url,
                     },
-                    'kind': 'folder' if not self.node.node__parent else 'node',
+                    'kind': 'node',
                     'children': [
                         {
                             'event': {
@@ -370,7 +389,7 @@ class TestNotificationUtils(OsfTestCase):
                     'title': self.project.title,
                     'url': self.project.url,
                 },
-                'kind': 'folder' if not self.project.node__parent else 'node',
+                'kind': 'folder',
                 'children': [
                     {
                         'event': {
@@ -389,7 +408,7 @@ class TestNotificationUtils(OsfTestCase):
                             'url': self.node.url,
                         },
 
-                        'kind': 'folder' if not self.node.node__parent else 'node',
+                        'kind': 'node',
                         'children': [
                             {
                                 'event': {
@@ -410,7 +429,7 @@ class TestNotificationUtils(OsfTestCase):
                             'url': node.url,
                         },
 
-                        'kind': 'folder' if not node.node__parent else 'node',
+                        'kind': 'node',
                         'children': [
                             {
                                 'event': {
@@ -418,6 +437,90 @@ class TestNotificationUtils(OsfTestCase):
                                     'description': SUBSCRIPTIONS_AVAILABLE['comments'],
                                     'notificationType': 'adopt_parent',
                                     'parent_notification_type': 'email_transactional'
+                                },
+                                'kind': 'event',
+                                'children': [],
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+        assert_equal(data, expected)
+
+    def test_format_data_excludes_pointers(self):
+        project = ProjectFactory()
+        subscription = SubscriptionFactory(
+            _id=project._id + '_comments',
+            object_id=project._id,
+            event_name='comments'
+        )
+        subscription.email_transactional.append(project.creator)
+        subscription.save()
+        pointed = ProjectFactory()
+        project.add_pointer(pointed, Auth(project.creator))
+        project.save()
+        configured_project_ids = utils.get_configured_projects(project.creator)
+        data = utils.format_data(project.creator, configured_project_ids, [])
+        expected = [{
+            'node': {
+                'id': project._id,
+                'title': project.title,
+                'url': project.url,
+            },
+            'kind': 'folder',
+            'children': [
+                {
+                    'event': {
+                        'title': 'comments',
+                        'description': SUBSCRIPTIONS_AVAILABLE['comments'],
+                        'notificationType': 'email_transactional',
+                        'parent_notification_type': None
+                    },
+                    'kind': 'event',
+                    'children': [],
+                }
+                ]
+            }]
+        assert_equal(data, expected)
+
+
+    def test_format_data_user_subscriptions_includes_private_parent_if_configured_children(self):
+        private_project = ProjectFactory()
+        node = NodeFactory(project=private_project)
+        node_subscription = SubscriptionFactory(
+            _id=node._id + '_comments',
+            object_id=node._id,
+            event_name='comments'
+        )
+        node_subscription.email_transactional.append(node.creator)
+        node_subscription.save()
+        configured_project_ids = utils.get_configured_projects(node.creator)
+        data = utils.format_data(node.creator, configured_project_ids, [])
+        expected = [
+            {
+                'node': {
+                    'id': private_project._id,
+                    'title': 'Private Project',
+                    'url': '',
+                },
+                'kind': 'folder',
+                'children': [
+                    {
+                        'node': {
+                            'id': node._id,
+                            'title': node.title,
+                            'url': node.url,
+                        },
+
+                        'kind': 'folder',
+                        'children': [
+                            {
+                                'event': {
+                                    'title': 'comments',
+                                    'description': SUBSCRIPTIONS_AVAILABLE['comments'],
+                                    'notificationType': 'email_transactional',
+                                    'parent_notification_type': None
                                 },
                                 'kind': 'event',
                                 'children': [],
