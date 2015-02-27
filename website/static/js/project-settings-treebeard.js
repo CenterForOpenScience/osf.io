@@ -68,7 +68,7 @@ function openAncestors (tb, item) {
 
 function subscribe(item, notification_type) {
     var id = item.parent().data.node.id; 
-    var event = item.data.event.title
+    var event = item.data.event.title;
     var payload = {
         'id': id,
         'event': event,
