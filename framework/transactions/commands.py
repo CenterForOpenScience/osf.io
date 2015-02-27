@@ -3,6 +3,7 @@
 from pymongo.errors import OperationFailure
 
 from framework.mongo import database as proxy_database
+from flask import current_app
 
 from website import settings
 
@@ -29,11 +30,8 @@ def rollback(database=None):
         #    they will never fail."
         database.command('rollbackTransaction')
     except OperationFailure:
-        # Re-raise the exception if not in debug mode. This allows
-        #   exceptions on staging to be handled in the same way as those on
-        #   production, while also allowing tests to be run without this
-        #   exception being raised
-        if not settings.DEBUG_MODE:
+        # Re-raise the exception if not in testing mode.
+        if not current_app.testing:
             raise
 
 

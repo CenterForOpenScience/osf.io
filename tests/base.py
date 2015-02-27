@@ -42,6 +42,7 @@ from tests.exceptions import UnmockedError
 test_app = init_app(
     settings_module='website.settings', routes=True, set_backends=False
 )
+test_app.testing = True
 
 
 # Silence some 3rd-party logging and some "loud" internal loggers
@@ -92,7 +93,8 @@ class DbTestCase(unittest.TestCase):
         cls._original_enable_email_subscriptions = settings.ENABLE_EMAIL_SUBSCRIPTIONS
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
 
-        teardown_database(database=database_proxy._get_current_object())
+        with test_app.test_request_context():
+            teardown_database(database=database_proxy._get_current_object())
         # TODO: With `database` as a `LocalProxy`, we should be able to simply
         # this logic
         set_up_storage(
@@ -105,7 +107,8 @@ class DbTestCase(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         super(DbTestCase, cls).tearDownClass()
-        teardown_database(database=database_proxy._get_current_object())
+        with test_app.test_request_context():
+            teardown_database(database=database_proxy._get_current_object())
         settings.DB_NAME = cls._original_db_name
         settings.PIWIK_HOST = cls._original_piwik_host
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = cls._original_enable_email_subscriptions

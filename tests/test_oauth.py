@@ -70,7 +70,6 @@ def _prepare_mock_500_error():
     )
 
 
-
 class TestExternalAccount(OsfTestCase):
     # Test the ExternalAccount object and associated views.
     #
@@ -405,7 +404,6 @@ class TestExternalProviderOAuth2(OsfTestCase):
         assert_equal(account.oauth_key, 'mock_access_token')
         assert_equal(account.provider_id, 'mock_provider_id')
 
-
     @responses.activate
     def test_provider_down(self):
 
@@ -413,13 +411,11 @@ class TestExternalProviderOAuth2(OsfTestCase):
         _prepare_mock_500_error()
 
         user = UserFactory()
-
         # Fake a request context for the callback
         with self.app.app.test_request_context(
                 path="/oauth/callback/mock2/",
                 query_string="code=mock_code&state=mock_state"
-        ) as ctx:
-
+        ):
             # make sure the user is logged in
             authenticate(user=user, response=None)
 
@@ -440,8 +436,6 @@ class TestExternalProviderOAuth2(OsfTestCase):
                 error_raised.exception.code,
                 503,
             )
-        print('asdf')
-
 
     @responses.activate
     def test_multiple_users_associated(self):
