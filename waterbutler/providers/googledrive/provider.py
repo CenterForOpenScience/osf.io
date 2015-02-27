@@ -70,7 +70,7 @@ class GoogleDriveProvider(provider.BaseProvider):
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
         data = yield from self.metadata(path, raw=True)
-        if revision and not revision[-len(settings.DRIVE_IGNORE_VERSION):] == settings.DRIVE_IGNORE_VERSION:
+        if revision and not revision.endswith(settings.DRIVE_IGNORE_VERSION):
             # Must make additional request to look up download URL for revision
             response = yield from self.make_request(
                 'GET',
