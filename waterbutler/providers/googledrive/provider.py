@@ -48,6 +48,10 @@ class GoogleDrivePath(utils.WaterButlerPath):
     def parts(self):
         return [parse.unquote(x) for x in self._parts]
 
+    @property
+    def name(self):
+        return parse.unquote(self._parts[-1])
+
 
 class GoogleDriveProvider(provider.BaseProvider):
 
@@ -91,13 +95,16 @@ class GoogleDriveProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
+        path = path.split('/')
+        path = '/'.join(path[:-1] + [parse.quote(path[-1])])
         path = GoogleDrivePath(self.folder['name'], path)
+
         try:
             metadata = yield from self.metadata(str(path), raw=True)
             folder_id = metadata['parents'][0]['id']
             segments = (metadata['id'], )
             created = False
-        except:
+        except exceptions.MetadataError:
             if path.parent.is_root:
                 folder_id = self.folder['id']
             else:
