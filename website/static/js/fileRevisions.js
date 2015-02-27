@@ -75,10 +75,6 @@ var RevisionsViewModel = function(node, file, editable) {
         revisions: waterbutler.buildRevisionsUrl(file.path, file.provider, node.id, revisionsOptions)
     };
 
-    // This is only because of for Google Drive
-    if((self.file.path.split('/').length) > 2)
-        self.path = '/' + self.file.path.split('/')[(self.file.path.split('/').length) -1]
-
     self.errorMessage = ko.observable('');
     self.currentVersion = ko.observable({});
     self.revisions = ko.observableArray([]);
