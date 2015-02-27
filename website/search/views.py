@@ -23,6 +23,8 @@ from website.search.exceptions import MalformedQueryError
 from website.search.util import build_query
 from website.project.views.contributor import get_node_contributors_abbrev
 
+from website.util import api_url_for
+
 logger = logging.getLogger(__name__)
 
 
@@ -248,5 +250,7 @@ def search_share_atom(**kwargs):
             'results': []
         }
 
-    atom_url = node.api_url_for('query_app_atom', _xml=True, _absolute=True)
+    name = 'SHARE'
+
+    atom_url = api_url_for('query_app_atom', _xml=True, _absolute=True)
     return search.share_atom(name, ret['results'], q, size, start=page, url=atom_url)
