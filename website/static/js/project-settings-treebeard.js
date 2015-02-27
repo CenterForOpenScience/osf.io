@@ -66,7 +66,9 @@ function openAncestors (tb, item) {
     }
 }
 
-function subscribe(id, event, notification_type) {
+function subscribe(item, notification_type) {
+    var id = item.parent().data.node.id; 
+    var event = item.data.event.title
     var payload = {
         'id': id,
         'event': event,
@@ -75,8 +77,11 @@ function subscribe(id, event, notification_type) {
     $osf.postJSON(
         '/api/v1/subscriptions/',
         payload
-    ).fail(function() {
-        bootbox.alert('Could not update notification preferences.');
+    ).done(function(){
+        item.notify.update('Settings updated', 'notify-success', 1, 2000);
+        item.data.event.notificationType = notification_type;
+    }).fail(function() {
+        item.notify.update('Could not update settings', 'notify-danger', 1, 2000);
     });
 }
 
@@ -193,7 +198,6 @@ function ProjectNotifications(data) {
                     sortInclude : false,
                     custom : function(item, col) {
                         return item.data.event.description;
-
                     }
                 },
                 {
@@ -204,8 +208,7 @@ function ProjectNotifications(data) {
                         return m("div[style='padding-right:10px']",
                             [m('select.form-control', {
                                 onchange: function(ev) {
-                                    item.data.event.notificationType = ev.target.value;
-                                    subscribe(item.parent().data.node.id, item.data.event.title, item.data.event.notificationType)
+                                    subscribe(item, ev.target.value);
                                 }},
                                 [
                                     m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'None'),
@@ -237,8 +240,7 @@ function ProjectNotifications(data) {
                         return  m("div[style='padding-right:10px']",
                             [m('select.form-control', {
                                 onchange: function(ev) {
-                                    item.data.event.notificationType = ev.target.value;
-                                    subscribe(item.parent().data.node.id, item.data.event.title, item.data.event.notificationType)
+                                    subscribe(item, ev.target.value);
                                 }},
                                 [
                                     m('option', {value: 'adopt_parent',
