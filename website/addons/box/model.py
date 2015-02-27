@@ -6,7 +6,7 @@ from datetime import datetime
 
 import furl
 import requests
-from box import CredentialsV2, BoxAuthenticationException, refresh_v2_token
+from box import CredentialsV2, refresh_v2_token, BoxClientException
 from modularodm import fields, Q, StoredObject
 from modularodm.exceptions import ModularOdmException
 
@@ -15,7 +15,6 @@ from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
 from website.addons.box import settings
-from website.addons.box.exceptions import ExpiredAuthError
 from website.addons.box.utils import BoxNodeLogger
 from website.addons.box.client import get_client_from_user_settings
 
@@ -95,10 +94,7 @@ class BoxOAuthSettings(StoredObject):
 
     def refresh_access_token(self, force=False):
         if self._needs_refresh() or force:
-            try:
-                token = refresh_v2_token(settings.BOX_KEY, settings.BOX_SECRET, self.refresh_token)
-            except BoxAuthenticationException:
-                raise ExpiredAuthError()
+            token = refresh_v2_token(settings.BOX_KEY, settings.BOX_SECRET, self.refresh_token)
 
             self.access_token = token['access_token']
             self.refresh_token = token.get('refresh_token', self.refresh_token)
@@ -241,7 +237,10 @@ class BoxNodeSettings(AddonNodeSettingsBase):
         try:
             return self._folder_data['name']
         except AttributeError:
-            self._folder_data = self._fetch_folder_data()
+            try:
+                self._folder_data = self._fetch_folder_data()
+            except BoxClientException:
+                return None
 
         return self.folder
 
