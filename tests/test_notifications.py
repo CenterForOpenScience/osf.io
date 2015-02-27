@@ -340,7 +340,7 @@ class TestNotificationUtils(OsfTestCase):
                                     'title': 'comments',
                                     'description': SUBSCRIPTIONS_AVAILABLE['comments'],
                                     'notificationType': 'email_transactional',
-                                    'parent_notification_type': None
+                                    'parent_notification_type': 'email_transactional'
                                 },
                                 'kind': 'event',
                                 'children': [],
@@ -367,7 +367,7 @@ class TestNotificationUtils(OsfTestCase):
                                 'title': 'comments',
                                 'description': SUBSCRIPTIONS_AVAILABLE['comments'],
                                 'notificationType': 'email_transactional',
-                                'parent_notification_type': None
+                                'parent_notification_type': 'email_transactional'
                             },
                             'kind': 'event',
                             'children': [],
@@ -415,7 +415,7 @@ class TestNotificationUtils(OsfTestCase):
                                     'title': 'comments',
                                     'description': SUBSCRIPTIONS_AVAILABLE['comments'],
                                     'notificationType': 'email_transactional',
-                                    'parent_notification_type': None
+                                    'parent_notification_type': 'email_transactional'
                                 },
                                 'kind': 'event',
                                 'children': [],
@@ -539,6 +539,7 @@ class TestNotificationUtils(OsfTestCase):
                         'title': 'comment_replies',
                         'description': USER_SUBSCRIPTIONS_AVAILABLE['comment_replies'],
                         'notificationType': 'email_transactional',
+                        'parent_notification_type': None
                     },
                     'kind': 'event',
                     'children': [],
@@ -575,6 +576,7 @@ class TestNotificationUtils(OsfTestCase):
                 'title': 'comment_replies',
                 'description': USER_SUBSCRIPTIONS_AVAILABLE['comment_replies'],
                 'notificationType': 'email_transactional',
+                'parent_notification_type': None
             },
             'kind': 'event',
             'children': []
@@ -589,7 +591,7 @@ class TestNotificationUtils(OsfTestCase):
                 'title': 'comments',
                 'description': SUBSCRIPTIONS_AVAILABLE['comments'],
                 'notificationType': 'email_transactional',
-                'parent_notification_type': None
+                'parent_notification_type': 'email_transactional'
             },
             'kind': 'event',
             'children': [],
@@ -598,7 +600,12 @@ class TestNotificationUtils(OsfTestCase):
 
     def test_serialize_node_level_event_that_adopts_parent_settings(self):
         user = UserFactory()
+        self.project.add_contributor(contributor=user, permissions=['read'])
+        self.project.save()
         self.project_subscription.email_transactional.append(user)
+        self.project_subscription.save()
+        self.node.add_contributor(contributor=user, permissions=['read'])
+        self.node.save()
         node_subscriptions = utils.get_all_node_subscriptions(user, self.node)
         data = utils.serialize_event(user, 'comments', SUBSCRIPTIONS_AVAILABLE, node_subscriptions, self.node)
         expected = {

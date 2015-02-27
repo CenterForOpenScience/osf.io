@@ -186,12 +186,11 @@ def serialize_event(user, subscription, subscriptions_available, user_subscripti
                 if user in getattr(s, notification_type):
                     event['event']['notificationType'] = notification_type
 
-    if node:
-        if event['event']['notificationType'] == 'adopt_parent':
-            parent_nt = get_parent_notification_type(node._id, subscription, user)
-            event['event']['parent_notification_type'] = parent_nt if parent_nt else 'none'
-        else:
-            event['event']['parent_notification_type'] = None  # only get nt if node = adopt_parent for display purposes
+    if node and node.parent_node and node.parent_node.has_permission(user, 'read'):
+        parent_nt = get_parent_notification_type(node._id, subscription, user)
+        event['event']['parent_notification_type'] = parent_nt if parent_nt else 'none'
+    else:
+        event['event']['parent_notification_type'] = None
 
     return event
 
