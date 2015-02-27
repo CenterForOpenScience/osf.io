@@ -166,6 +166,7 @@ def add_comment(**kwargs):
         target_user=target.user if is_reply(target) else None,
         parent_comment=target.content if is_reply(target) else "",
         title=node.title,
+        node_id=node._id,
         url=node.absolute_url
     )
     sent_subscribers = notify(uid=node._id, event="comments", **context)

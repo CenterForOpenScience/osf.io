@@ -95,6 +95,7 @@ def email_transactional(subscribed_user_ids, uid, event, **context):
                 mail=mails.TRANSACTIONAL,
                 mimetype='html',
                 name=user.fullname,
+                node_id=context.get('node_id'),
                 node_title=context.get('title'),
                 subject=subject,
                 message=message,

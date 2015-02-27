@@ -1,3 +1,4 @@
+<% from website.models import Node %>
 <!doctype html>
 <html class="no-js" lang="">
 <head>
@@ -205,7 +206,12 @@
                         <table class="block" width="100%" border="0" cellpadding="15" cellspacing="0" align="center" >
                             <thead class="block-head">
                             <th colspan="2">
-                            <h3> ${node_title}  </h3>
+                            <h3>
+                                ${node_title}
+                                %if Node.load(node_id).parent_node:
+                                    <small> in ${Node.load(node_id).parent_node.title} </small>
+                                %endif
+                            </h3>
                             </th>
                             </thead>
                             <tbody>
