@@ -1044,10 +1044,18 @@ class TestSendEmails(OsfTestCase):
 
     def test_localize_timestamp(self):
         timestamp = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
-        self.user.timezone = "America/New_York"
+        self.user.timezone = 'America/New_York'
         self.user.save()
         localized_timestamp = emails.localize_timestamp(timestamp, self.user)
         expected_timestamp = timestamp.astimezone(pytz.timezone(self.user.timezone)).strftime('%c')
+        assert_equal(localized_timestamp, expected_timestamp)
+
+    def test_localize_timestamp_empty(self):
+        timestamp = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
+        self.user.timezone = ''
+        self.user.save()
+        localized_timestamp = emails.localize_timestamp(timestamp, self.user)
+        expected_timestamp = timestamp.astimezone(pytz.timezone('Etc/UTC')).strftime('%c')
         assert_equal(localized_timestamp, expected_timestamp)
 
 
