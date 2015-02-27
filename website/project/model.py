@@ -632,6 +632,8 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     piwik_site_id = fields.StringField()
 
+    has_child_node_subscriptions = fields.ForeignField('subscription', list=True)
+
     _meta = {
         'optimistic': True,
     }

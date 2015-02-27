@@ -9,6 +9,7 @@ from modularodm.storage.mongostorage import KeyExistsException
 from website.notifications.constants import NOTIFICATION_TYPES
 from website.notifications import utils
 from website.project.decorators import must_be_valid_project
+from website.project.model import Node
 
 @must_be_logged_in
 def get_subscriptions(auth):
@@ -34,12 +35,18 @@ def configure_subscription(auth):
 
     uid = subscription.get('id')
     event_id = utils.to_subscription_key(uid, event)
+    node = Node.load(uid)
 
     if notification_type == 'adopt_parent':
         try:
             s = Subscription.find_one(Q('_id', 'eq', event_id))
         except NoResultsFound:
             return
+
+        if node and s in node.has_child_node_subscriptions:
+            node.has_child_node_subscriptions.remove(s)
+            node.save()
+
         s.remove_user_from_subscription(user)
 
     else:
@@ -68,5 +75,12 @@ def configure_subscription(auth):
                 if getattr(s, nt) and user in getattr(s, nt):
                     getattr(s, nt).remove(user)
                     s.save()
+
+        if node:
+                if notification_type == 'none' and s in node.has_child_node_subscriptions:
+                    node.has_child_node_subscriptions.remove(s)
+                elif notification_type != 'none' and s not in node.has_child_node_subscriptions:
+                    node.has_child_node_subscriptions.append(s)
+        node.save()
 
         return {'message': 'Successfully added ' + repr(user) + ' to ' + notification_type + ' list on ' + event_id}, 200

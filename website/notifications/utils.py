@@ -66,12 +66,13 @@ def get_configured_projects(user):
         node = Node.load(subscription.object_id)
         if node and not node.is_deleted: # if node is deleted, the subscription should be removed anyway
             parent = node.parent_node
+            has_child_node_subscriptions = node.has_child_node_subscriptions != []
 
             # Include private parent ids so user subscriptions on the node are still displayed
-            if parent and not parent.parent_node and not parent.has_permission(user, 'read') and parent._id not in configured_project_ids:
+            if user not in subscription.none and parent and not parent.parent_node and not parent.has_permission(user, 'read') and parent._id not in configured_project_ids:
                 configured_project_ids.append(parent._id)
 
-            elif not parent and subscription.object_id not in configured_project_ids:
+            elif not parent and subscription.object_id not in configured_project_ids and has_child_node_subscriptions:
                 configured_project_ids.append(subscription.object_id)
 
     return configured_project_ids
