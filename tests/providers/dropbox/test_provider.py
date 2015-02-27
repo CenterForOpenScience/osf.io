@@ -145,7 +145,7 @@ class TestCRUD:
         expected = DropboxFileMetadata(file_metadata, provider.folder).serialized()
 
         assert metadata == expected
-        assert created == True
+        assert created is True
         assert aiohttpretty.has_call(method='PUT', uri=url)
 
     @async
