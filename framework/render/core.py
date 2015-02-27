@@ -7,9 +7,9 @@ from mfr.ext import ALL_HANDLERS
 
 import requests
 
-from website import settings
-
 from framework.render.exceptions import error_message_or_exception
+
+from website import settings
 
 
 def init_mfr(app):
@@ -22,9 +22,9 @@ def init_mfr(app):
     # Update mfr config with static path and url
     mfr.config.update({
         # Base URL for static files
-        'ASSETS_URL': os.path.join(app.static_url_path, 'mfr'),
+        'ASSETS_URL': os.path.join(app.static_url_path, 'public', 'mfr'),
         # Where to save static files
-        'ASSETS_FOLDER': os.path.join(app.static_folder, 'mfr'),
+        'ASSETS_FOLDER': os.path.join(app.static_folder, 'public', 'mfr'),
     })
     mfr.collect_static(dest=mfr.config['ASSETS_FOLDER'])
 
@@ -54,11 +54,11 @@ def save_to_file_or_error(download_url, dest_path):
         if response.ok:
             for block in response.iter_content(1024):  # 1kb
                 temp_file.write(block)
-        else:
-            temp_file.write(
-                error_message_or_exception(
-                    response.status_code,
-                    dest_path=dest_path,
-                    download_url=download_url,
-                )
+            return response
+        temp_file.write(
+            error_message_or_exception(
+                response.status_code,
+                dest_path=dest_path,
+                download_url=download_url,
             )
+        )

@@ -27,13 +27,23 @@ def dropbox_hgrid_data_contents(node_addon, auth, **kwargs):
     `includeRoot` (include the root folder).
     """
     # No folder, just return an empty list of data
-    if node_addon.folder is None and not request.args.get('foldersOnly'):
-        return {'data': []}
     node = node_addon.owner
     path = kwargs.get('path', '')
+
+    if 'root' in request.args:
+        return [{
+            'kind': rubeus.FOLDER,
+            'path': '/',
+            'name': '/ (Full Dropbox)',
+            'urls': {
+                'folders': node.api_url_for('dropbox_hgrid_data_contents'),
+            }
+        }]
+
     # Verify that path is a subdirectory of the node's shared folder
     if not is_authorizer(auth, node_addon):
         abort_if_not_subdir(path, node_addon.folder)
+
     permissions = {
         'edit': node.can_edit(auth) and not node.is_registration,
         'view': node.can_view(auth)
@@ -57,17 +67,11 @@ def dropbox_hgrid_data_contents(node_addon, auth, **kwargs):
     # Raise error if folder was deleted
     if metadata.get('is_deleted'):
         raise file_not_found
-    contents = metadata['contents']
-    if request.args.get('foldersOnly'):
-        contents = [metadata_to_hgrid(file_dict, node, permissions) for
-                    file_dict in contents if file_dict['is_dir']]
-    else:
-        contents = [metadata_to_hgrid(file_dict, node, permissions) for
-                    file_dict in contents]
-    if request.args.get('includeRoot'):
-        root = {'kind': rubeus.FOLDER, 'path': '/', 'name': '/ (Full Dropbox)'}
-        contents.insert(0, root)
-    return contents
+
+    return [
+        metadata_to_hgrid(file_dict, node, permissions) for
+        file_dict in metadata['contents'] if file_dict['is_dir']
+    ]
 
 
 def dropbox_addon_folder(node_settings, auth, **kwargs):
