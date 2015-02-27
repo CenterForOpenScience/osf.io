@@ -856,6 +856,7 @@ class TestSendEmails(OsfTestCase):
             content='',
             parent_comment='',
             title=self.project.title,
+            node_id=self.project._id,
             url=self.project.absolute_url
         )
         subject = Template(emails.email_templates['comments']['subject']).render(
@@ -886,6 +887,7 @@ class TestSendEmails(OsfTestCase):
             mimetype='html',
             name=self.user.fullname,
             node_title=self.project.title,
+            node_id=self.project._id,
             subject=subject,
             message=message,
             url=self.project.absolute_url + 'settings/'
