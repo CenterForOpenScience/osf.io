@@ -143,33 +143,12 @@
 
     <div class="col-sm-6 osf-dash-col">
 
-        % if addons:
-
-            <!-- Show widgets in left column if present -->
-            % for addon in addons_enabled:
-                % if addons[addon]['has_widget']:
-                    %if addon == 'wiki':
-                        %if user['show_wiki_widget']:
-                            <div id="addonWikiWidget" class="addon-widget-container" mod-meta='{
-                            "tpl": "../addons/wiki/templates/wiki_widget.mako",
-                            "uri": "${node['api_url']}wiki/widget/"
-                        }'></div>
-                        %endif
-
-                    %else:
-                    <div class="addon-widget-container" mod-meta='{
-                            "tpl": "../addons/${addon}/templates/${addon}_widget.mako",
-                            "uri": "${node['api_url']}${addon}/widget/"
-                        }'></div>
-                    %endif
-                % endif
-            % endfor
-
-        % else:
-            <!-- If no widgets, show components -->
-            ${children()}
-
-        % endif
+        %if user['show_wiki_widget']:
+            <div id="addonWikiWidget" class="addon-widget-container" mod-meta='{
+            "tpl": "../addons/wiki/templates/wiki_widget.mako",
+            "uri": "${node['api_url']}wiki/widget/"
+        }'></div>
+        %endif
 
         <div class="addon-widget-container">
             <div class="addon-widget-header clearfix">
@@ -186,6 +165,24 @@
                 </div>
             </div>
         </div>
+
+        % if addons:
+            <!-- Show widgets in left column if present -->
+            % for addon in addons_enabled:
+                % if addons[addon]['has_widget']:
+                    %if addon != 'wiki': ## We already show the wiki widget at the top
+                    <div class="addon-widget-container" mod-meta='{
+                            "tpl": "../addons/${addon}/templates/${addon}_widget.mako",
+                            "uri": "${node['api_url']}${addon}/widget/"
+                        }'></div>
+                    %endif
+                % endif
+            % endfor
+        % else:
+            <!-- If no widgets, show components -->
+            ${children()}
+        % endif
+
     </div>
 
     <div class="col-sm-6 osf-dash-col">
