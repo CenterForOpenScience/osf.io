@@ -57,7 +57,7 @@ def configure_subscription(auth):
         except KeyExistsException:
             sub = Subscription.find_one(Q('_id', 'eq', event_id))
 
-        sub.object_id = uid
+        sub.owner = node
         sub.event_name = event
         sub.save()
 

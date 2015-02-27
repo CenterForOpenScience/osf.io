@@ -52,7 +52,7 @@ def remove_contributor_from_subscriptions(contributor, node):
 
 @node_deleted.connect
 def remove_subscription(node):
-    Subscription.remove(Q('object_id', 'eq', node._id))
+    Subscription.remove(Q('owner', 'eq', node))
 
 
 def get_configured_projects(user):
@@ -112,7 +112,7 @@ def get_all_node_subscriptions(user, node, user_subscriptions=None):
         user_subscriptions = get_all_user_subscriptions(user)
     node_subscriptions = []
     for s in user_subscriptions:
-        if s.object_id == node._id:
+        if s.owner == node:
             node_subscriptions.append(s)
 
     return node_subscriptions
@@ -186,7 +186,7 @@ def format_data(user, node_ids, subscriptions_available=SUBSCRIPTIONS_AVAILABLE)
 
 def format_user_subscriptions(user, data):
     """ Format user-level subscriptions (e.g. comment replies across the OSF) for user settings page"""
-    user_subscriptions = [s for s in Subscription.find(Q('object_id', 'eq', user._id))]
+    user_subscriptions = [s for s in Subscription.find(Q('owner', 'eq', user))]
     for subscription in USER_SUBSCRIPTIONS_AVAILABLE:
         event = serialize_event(user, subscription, USER_SUBSCRIPTIONS_AVAILABLE, user_subscriptions)
         data.append(event)
