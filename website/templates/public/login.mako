@@ -87,11 +87,10 @@
             $('#twoFactorHelpText').wrap('<a data-toggle="modal" href="#twoFactor">');
         });
     </script>
-
-<script>
-    $(function(){
-   $('#register-password').tooltip({'trigger':'focus',placement:'right',title:'Must be at least 6 characters'});
-});
-</script>
+    <script>
+        $(function(){
+            $('#register-password').tooltip({'trigger':'focus',placement:'right',title:'Must be at least 6 characters'});
+        });
+    </script>
 </%def>
 
