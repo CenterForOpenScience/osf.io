@@ -42,6 +42,7 @@ from tests.exceptions import UnmockedError
 test_app = init_app(
     settings_module='website.settings', routes=True, set_backends=False
 )
+test_app.testing = True
 
 
 # Silence some 3rd-party logging and some "loud" internal loggers

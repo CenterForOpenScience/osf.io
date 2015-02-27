@@ -3,6 +3,7 @@
 """
 import os
 import base64
+from urllib import unquote
 from datetime import datetime
 
 from modularodm import fields, Q
@@ -243,7 +244,7 @@ class GoogleDriveNodeSettings(AddonNodeSettingsBase):
             return None
 
         if self.folder_path != '/':
-            return os.path.split(self.folder_path)[1]
+            return unquote(os.path.split(self.folder_path)[1])
 
         return '/ (Full Google Drive)'
 
