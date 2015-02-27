@@ -141,7 +141,7 @@ class GoogleDriveProvider(provider.BaseProvider):
         # Raise 404 on empty results if file or partial lookup
         if not data['items']:
             if path.is_file or not path.is_leaf:
-                raise exceptions.MetadataError(data, code=http.client.NOT_FOUND)
+                raise exceptions.MetadataError('{} not found'.format(str(path)), code=http.client.NOT_FOUND)
 
         if not path.is_leaf:
             child_id = data['items'][0]['id']
