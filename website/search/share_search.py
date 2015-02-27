@@ -5,8 +5,6 @@ from datetime import datetime
 
 import pytz
 
-from werkzeug.contrib.atom import AtomFeed
-
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 
@@ -14,10 +12,13 @@ from elasticsearch import Elasticsearch
 
 from website import settings
 
+from website.search import util
+
 share_es = Elasticsearch(
     settings.SHARE_ELASTIC_URI,
     request_timeout=settings.ELASTIC_TIMEOUT
 )
+
 
 def search(query):
     # Run the real query and get the results
@@ -28,6 +29,7 @@ def search(query):
         'results': results,
         'count': raw_results['hits']['total'],
     }
+
 
 def count(query):
     if query.get('from') is not None:
@@ -229,29 +231,27 @@ def data_for_charts(elastic_results):
 
 
 def atom(name, data, query, size, start, url):
+
     if query == '*':
         title_query = 'All'
     else:
         title_query = query
 
-    if name == 'scrapi':
-        name = 'SHARE Notification Service'
+    title = '{name}: Atom Feed for query: "{title_query}"'.format(name=name, title_query=title_query)
+    author = 'COS'
 
     prev_page = (start/size)
 
     if prev_page == 0:
         prev_page = (start/size) + 1
 
-    feed = AtomFeed(
-        title='{name}: RSS for query: "{title_query}"'.format(name=name, title_query=title_query),
-        feed_url='{url}'.format(url=url),
-        author="COS",
-        links=[
-            {'href': url, 'rel': 'first'},
-            {'href': '{url}page={page}'.format(url=url, page=(start/size)+2), 'rel': 'next'},
-            {'href': '{url}page={page}'.format(url=url, page=prev_page), 'rel': 'previous'}
-        ]
-    )
+    links = [
+        {'href': url, 'rel': 'first'},
+        {'href': '{url}page={page}'.format(url=url, page=(start/size)+2), 'rel': 'next'},
+        {'href': '{url}page={page}'.format(url=url, page=prev_page), 'rel': 'previous'}
+    ]
+
+    feed = util.create_atom_feed(title, url, author, links)
 
     for doc in data:
         try:
