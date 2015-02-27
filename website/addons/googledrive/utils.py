@@ -3,6 +3,7 @@
 """
 import os
 import logging
+from urllib import quote
 
 from website.util import web_url_for
 
@@ -90,9 +91,13 @@ def serialize_settings(node_settings, current_user):
 
     if node_settings.has_auth:
         # Add owner's profile URL
+
+        path = node_settings.folder_path
+        if path is not None:
+            ret['currentPath'] = '/' + path.lstrip('/')
+            ret['currentFolder'] = '/ (Full Google Drive)' if path == '/' else '/' + path
+
         ret['ownerName'] = user_settings.owner.fullname
-        ret['currentPath'] = '/' + node_settings.folder_path.lstrip('/')
-        ret['currentFolder'] = node_settings.folder_name  # if node_settings.folder else None
         ret['urls']['owner'] = web_url_for('profile_view_id', uid=user_settings.owner._id)
 
     return ret
@@ -110,13 +115,15 @@ def to_hgrid(item, node, path):
     :param item: contents returned from Google Drive API
     :return: results formatted as required for Hgrid display
     """
-    path = os.path.join(path, item['title'])
+    safe_name = quote(item['title'], safe='')
+    path = os.path.join(path, safe_name)
+
     serialized = {
-        'addon': 'googledrive',
-        'name': item['title'],
+        'path': path,
         'id': item['id'],
         'kind': 'folder',
-        'urls': build_googledrive_urls(item, node, path=path),
-        'path': path,
+        'name': safe_name,
+        'addon': 'googledrive',
+        'urls': build_googledrive_urls(item, node, path=path)
     }
     return serialized

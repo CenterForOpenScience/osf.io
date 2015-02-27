@@ -19,17 +19,10 @@ var Treebeard = require('treebeard');
 
 
 function _treebeardToggleCheck (item) {
-    if (item.data.addon === 'figshare') {
-        return false;
-    }
-
-    // if (item.data.path === '/') {
-    //     return false;
-    // }
-    return true;
+    return item.data.addon !== 'figshare';
 }
 
-function _treebeardResolveToggle(item){
+function _treebeardResolveToggle(item) {
     if(item.data.addon === 'figshare') {
         return '';
     }
@@ -40,7 +33,7 @@ function _treebeardResolveToggle(item){
 }
 
 // Returns custom icons for OSF
-function _treebeardResolveIcon(item){
+function _treebeardResolveIcon(item) {
     return item.open ?
         m('i.icon-folder-open-alt', ' '):
         m('i.icon-folder-close-alt', ' ');
@@ -69,8 +62,10 @@ function _treebeardSelectView(item) {
     var templateUnchecked = m('input',{
         type: 'radio',
         onclick : setTempPicked.bind(tb),
+        onchange: function(evt){
+            tb.options.onPickFolder(evt, item);
+        },
         name: '#' + tb.options.divID + INPUT_NAME,
-        value:item.id
     }, ' ');
 
     if (tb._tempPicked) {
@@ -137,35 +132,13 @@ function _treebeardOnload () {
         tb.updateFolder(null, tb.treeData.children[0]);
     }
     tb.options.folderPickerOnload();
-    // if (folderName != undefined) {
-    //     if (folderName === 'None') {
-    //         tb.options.folderPath = null;
-    //     } else {
-    //         if(folderPath) {
-    //         }
-    //         folderArray = folderName.trim().split('/');
-    //         if (folderArray[folderArray.length - 1] === '') {
-    //             folderArray.pop();
-    //         }
-    //         if (folderArray[0] === folderPath) {
-    //             folderArray.shift();
-    //         }
-    //         tb.options.folderArray = folderArray;
-    //     }
-    //     for (var i = 0; i < tb.treeData.children.length; i++) {
-    //         if (tb.treeData.children[i].data.addon !== 'figshare' && tb.treeData.children[i].data.name === folderArray[0]) {
-    //             tb.updateFolder(null, tb.treeData.children[i]);
-    //         }
-    //     }
-    //     tb.options.folderIndex = 1;
-    // }
 }
 
 function _treebeardLazyLoadOnLoad(item) {
     var tb = this;
 
     for (var i = 0; i < item.children.length; i++) {
-        if (item.children[i].data.addon === 'figshare'){
+        if (item.children[i].data.addon === 'figshare') {
             return;
         }
         if (item.children[i].data.name === tb.options.folderArray[tb.options.folderIndex]) {
@@ -209,15 +182,7 @@ function FolderPicker(selector, opts) {
 
     // Start up the grid
     self.grid = new Treebeard(self.options).tbController;
-    // Set up listener for folder selection
 
-    $(selector).on('change', 'input[name="' + self.selector + INPUT_NAME + '"]', function(evt) {
-        var id = $(this).val();
-        var row = self.grid.find(id);
-
-        //// Store checked state of rows so that it doesn't uncheck when HGrid is redrawn
-        self.options.onPickFolder.call(self, evt, row);
-    });
 }
 
 // Augment jQuery
@@ -229,5 +194,8 @@ $.fn.folderpicker = function(options) {
         return new FolderPicker(selector, options);
     });
 };
+
+
+FolderPicker.selectView = _treebeardSelectView;
 
 module.exports = FolderPicker;

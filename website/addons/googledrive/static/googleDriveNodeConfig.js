@@ -7,6 +7,7 @@
 var ko = require('knockout');
 require('knockout-punches');
 var $ = require('jquery');
+var m = require('mithril');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
 
@@ -23,6 +24,7 @@ ko.punches.enableAll();
 var ViewModel = function(url, selector, folderPicker) {
     var self = this;
     self.url = url;
+    self.loaded = false;
     self.nodeHasAuth = ko.observable(false);
     self.userHasAuth = ko.observable(false);
     // whether current user is authorizer of the addon
@@ -59,7 +61,8 @@ var ViewModel = function(url, selector, folderPicker) {
         self.ownerName(response.result.ownerName);
         self.owner(response.result.urls.owner);
         self.currentPath(response.result.currentPath);
-        self.currentFolder(response.result.currentFolder);
+        self.currentFolder(response.result.currentFolder ?
+            decodeURIComponent(response.result.currentFolder):undefined);
 
         self.loadedSettings(true);
     }
@@ -204,11 +207,10 @@ var ViewModel = function(url, selector, folderPicker) {
         evt.preventDefault();
         self.selected({
             id: item.data.id,
-            name: 'Google Drive/' + (item.data.path === '/' ? '' : item.data.path),
+            name: '/' + (item.data.path === '/' ? ' (Full Google Drive)' : item.data.path),
             path: item.data.path
         });
 
-        self.currentFolder(self.selected().name);
         return false; // Prevent event propagation
     }
 
@@ -216,32 +218,54 @@ var ViewModel = function(url, selector, folderPicker) {
      * required for treebeard Hgrid
      */
     self.changeFolder = function() {
-        self.showPicker(true);
-        $(self.folderPicker).folderpicker({
-            onPickFolder: onPickFolder,
-            filesData: self.urls().get_folders,
-            initialFolderPath : self.currentPath(),
-            // Lazy-load each folder's contents
-            // Each row stores its url for fetching the folders it contains
+        self.showPicker(!self.showPicker());
 
-            resolveLazyloadUrl : function(item){
-                return item.data.urls.get_folders;
-            },
-            ajaxOptions: {
-                error: function (xhr, textStatus, error) {
-                    self.loading(false);
-                    self.changeMessage(
-                        'Could not connect to Google Drive at this time. ' +
-                        'Please try again later.', 'text-warning'
-                    );
-                    Raven.captureMessage('Could not GET get Google Drive contents.', {
-                        textStatus: textStatus,
-                        error: error
-                    });
+        if (!self.loaded) {
+            self.loaded = true;
+            $(self.folderPicker).folderpicker({
+                onPickFolder: onPickFolder,
+                filesData: self.urls().get_folders,
+                initialFolderPath : self.currentPath(),
+                // Lazy-load each folder's contents
+                // Each row stores its url for fetching the folders it contains
+
+                resolveLazyloadUrl : function(item){
+                    return item.data.urls.get_folders;
+                },
+                ajaxOptions: {
+                    error: function (xhr, textStatus, error) {
+                        self.loading(false);
+                        self.changeMessage(
+                            'Could not connect to Google Drive at this time. ' +
+                            'Please try again later.', 'text-warning'
+                        );
+                        Raven.captureMessage('Could not GET get Google Drive contents.', {
+                            textStatus: textStatus,
+                            error: error
+                        });
+                    }
+                },
+                folderPickerOnload: function () {},
+                resolveRows: function(item) {
+                    item.css = '';
+                    return [
+                        {
+                            data : 'name',  // Data field name
+                            folderIcons : true,
+                            filter : false,
+                            custom : function(item, col) {
+                                return m('span', decodeURIComponent(item.data.name));
+                            }
+                        },
+                        {
+                            css : 'p-l-xs',
+                            sortInclude : false,
+                            custom : FolderPicker.selectView
+                        }
+                    ];
                 }
-            },
-            folderPickerOnload: function () {}
-        });
+            });
+        }
     };
 
     self.showFolders = ko.computed(function(){
@@ -255,17 +279,20 @@ var ViewModel = function(url, selector, folderPicker) {
     self.selectedFolderName = ko.computed(function() {
         var userIsOwner = self.userIsOwner();
         var selected = self.selected();
-        return (userIsOwner && selected) ? selected.name : '';
+        return (userIsOwner && selected) ? decodeURIComponent(selected.name) : '';
     });
 
     function onSubmitSuccess(response) {
-        self.changeMessage('Successfully linked "' + self.selected().name +
-                            '". Go to the <a href="' +
-                            self.urls().files + '">Files page</a> to view your files.',
+        self.currentFolder(decodeURIComponent(self.selected().name));
+        self.changeMessage(
+            'Successfully linked "' +
+           $osf.htmlEscape(decodeURIComponent(self.selected().name)) +
+            '". Go to the <a href="' +
+            self.urls().files +
+            '">Files page</a> to view your files.',
         'text-success', 5000);
         // Update folder in ViewModel
         self.urls(response.result.urls);
-        self.cancelSelection();
     }
 
     function onSubmitError() {

@@ -25,18 +25,21 @@ class ZoteroCitationsProvider(provider.CitationsProvider):
         node = node_addon.owner
 
         external_account = node_addon.external_account
-        deauthorize = None
-        if external_account:
-            deauthorize = node.api_url_for('zotero_remove_user_auth')
 
-        specific = {
+        urls = {
             'importAuth': node.api_url_for('zotero_add_user_auth'),
             'folders': node.api_url_for('zotero_citation_list'),
             'config': node.api_url_for('zotero_set_config'),
-            'deauthorize': deauthorize,
-            'accounts': node.api_url_for('list_zotero_accounts_user')
+            'accounts': node.api_url_for('list_zotero_accounts_user'),
         }
-        ret.update(specific)
+
+        if external_account:
+            urls['deauthorize'] = node.api_url_for(
+                'zotero_remove_user_auth'
+            )
+            urls['owner'] = external_account.profile_url
+
+        ret.update(urls)
         return ret
 
     def widget(self, node_addon):

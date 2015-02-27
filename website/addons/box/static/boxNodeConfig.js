@@ -192,7 +192,7 @@ var ViewModel = function(url, selector, folderPicker) {
     });
 
     function onSubmitSuccess(response) {
-        self.changeMessage('Successfully linked "' + self.selected().name +
+        self.changeMessage('Successfully linked "' + $osf.htmlEscape(self.selected().name) +
             '". Go to the <a href="' +
             self.urls().files + '">Files page</a> to view your files.',
             'text-success', 5000);
@@ -314,7 +314,8 @@ var ViewModel = function(url, selector, folderPicker) {
     */
     function onPickFolder(evt, item) {
             evt.preventDefault();
-            self.selected({name: 'Box' + item.data.path, path: item.data.path, id: item.data.id});
+            var name = item.data.path === 'All Files' ? '/ (Full Box)' : item.data.path.replace('All Files', '');
+            self.selected({name: name, path: item.data.path, id: item.data.id});
             return false; // Prevent event propagation
         }
 

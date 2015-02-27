@@ -3,24 +3,26 @@ import json
 import responses
 import time
 import urlparse
-from nose.tools import *
-
+from nose.tools import *  # noqa
 
 from framework.auth import authenticate
-from framework.exceptions import PermissionsError
-from framework.sessions import get_session
-from website.oauth.models import ExternalAccount
-from website.oauth.models import ExternalProvider
-from website.oauth.models import OAUTH1
-from website.oauth.models import OAUTH2
-from website.util import api_url_for
-from website.util import web_url_for
-
 from framework.exceptions import PermissionsError, HTTPError
+from framework.sessions import get_session
+from website.oauth.models import (
+    ExternalAccount,
+    ExternalProvider,
+    OAUTH1,
+    OAUTH2,
+)
+from website.util import api_url_for, web_url_for
+
 from tests.base import OsfTestCase
-from tests.factories import ExternalAccountFactory
-from tests.factories import AuthUserFactory
-from tests.factories import UserFactory
+from tests.factories import (
+    AuthUserFactory,
+    ExternalAccountFactory,
+    MockOAuth2Provider,
+    UserFactory,
+)
 
 
 class MockOAuth1Provider(ExternalProvider):
@@ -34,22 +36,6 @@ class MockOAuth1Provider(ExternalProvider):
     auth_url_base = "http://mock1a.com/auth"
     request_token_url = "http://mock1a.com/request"
     callback_url = "http://mock1a.com/callback"
-
-    def handle_callback(self, response):
-        return {
-            'provider_id': 'mock_provider_id'
-        }
-
-
-class MockOAuth2Provider(ExternalProvider):
-    name = "Mock OAuth 2.0 Provider"
-    short_name = "mock2"
-
-    client_id = "mock2_client_id"
-    client_secret = "mock2_client_secret"
-
-    auth_url_base = "https://mock2.com/auth"
-    callback_url = "https://mock2.com/callback"
 
     def handle_callback(self, response):
         return {
@@ -210,7 +196,7 @@ class TestExternalProviderOAuth1(OsfTestCase):
                   status=200,
                   content_type='application/json')
 
-        with self.app.app.test_request_context("/oauth/connect/mock1a/") as ctx:
+        with self.app.app.test_request_context('/oauth/connect/mock1a/'):
 
             # make sure the user is logged in
             authenticate(user=self.user, response=None)
@@ -248,9 +234,9 @@ class TestExternalProviderOAuth1(OsfTestCase):
 
         # Fake a request context for the callback
         with self.app.app.test_request_context(
-                path="/oauth/callback/mock1a/",
-                query_string="oauth_token=temp_key&oauth_verifier=mock_verifier"
-        ) as ctx:
+                path='/oauth/callback/mock1a/',
+                query_string='oauth_token=temp_key&oauth_verifier=mock_verifier'
+        ):
 
             # make sure the user is logged in
             authenticate(user=user, response=None)
@@ -419,7 +405,6 @@ class TestExternalProviderOAuth2(OsfTestCase):
         assert_equal(account.oauth_key, 'mock_access_token')
         assert_equal(account.provider_id, 'mock_provider_id')
 
-
     @responses.activate
     def test_provider_down(self):
 
@@ -427,13 +412,11 @@ class TestExternalProviderOAuth2(OsfTestCase):
         _prepare_mock_500_error()
 
         user = UserFactory()
-
         # Fake a request context for the callback
         with self.app.app.test_request_context(
                 path="/oauth/callback/mock2/",
                 query_string="code=mock_code&state=mock_state"
-        ) as ctx:
-
+        ):
             # make sure the user is logged in
             authenticate(user=user, response=None)
 
@@ -454,8 +437,6 @@ class TestExternalProviderOAuth2(OsfTestCase):
                 error_raised.exception.code,
                 503,
             )
-        print('asdf')
-
 
     @responses.activate
     def test_multiple_users_associated(self):

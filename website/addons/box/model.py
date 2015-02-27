@@ -2,12 +2,11 @@
 import os
 import time
 import logging
-import hashlib
 from datetime import datetime
 
 import furl
 import requests
-from box import CredentialsV2, BoxAuthenticationException
+from box import CredentialsV2, refresh_v2_token, BoxClientException
 from modularodm import fields, Q, StoredObject
 from modularodm.exceptions import ModularOdmException
 
@@ -16,7 +15,6 @@ from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
 from website.addons.box import settings
-from website.addons.box.exceptions import ExpiredAuthError
 from website.addons.box.utils import BoxNodeLogger
 from website.addons.box.client import get_client_from_user_settings
 
@@ -48,8 +46,7 @@ class BoxFile(GuidFile):
 
     @property
     def unique_identifier(self):
-        # TODO
-        return hashlib.md5(self.waterbutler_path).hexdigest()
+        return self._metadata_cache['extra'].get('etag') or self._metadata_cache['version']
 
     @classmethod
     def get_or_create(cls, node, path):
@@ -92,16 +89,17 @@ class BoxOAuthSettings(StoredObject):
             self.access_token,
             self.refresh_token,
             settings.BOX_KEY,
-            settings.BOX_SECRET,
-            self._token_refreshed_callback,
+            settings.BOX_SECRET
         )
 
     def refresh_access_token(self, force=False):
         if self._needs_refresh() or force:
-            try:
-                self.get_credentialsv2().refresh()
-            except BoxAuthenticationException:
-                raise ExpiredAuthError()
+            token = refresh_v2_token(settings.BOX_KEY, settings.BOX_SECRET, self.refresh_token)
+
+            self.access_token = token['access_token']
+            self.refresh_token = token.get('refresh_token', self.refresh_token)
+            self.expires_at = datetime.utcfromtimestamp(time.time() + token['expires_in'])
+            self.save()
 
     def revoke_access_token(self):
         # if there is only one osf user linked to this box user oauth, revoke the token,
@@ -123,12 +121,6 @@ class BoxOAuthSettings(StoredObject):
         if self.expires_at is None:
             return False
         return (self.expires_at - datetime.utcnow()).total_seconds() < settings.REFRESH_TIME
-
-    def _token_refreshed_callback(self, access_token, refresh_token):
-        self.access_token = access_token
-        self.refresh_token = refresh_token
-        self.expires_at = datetime.utcfromtimestamp(time.time() + 3600)
-        self.save()
 
 
 class BoxUserSettings(AddonUserSettingsBase):
@@ -245,7 +237,10 @@ class BoxNodeSettings(AddonNodeSettingsBase):
         try:
             return self._folder_data['name']
         except AttributeError:
-            self._folder_data = self._fetch_folder_data()
+            try:
+                self._folder_data = self._fetch_folder_data()
+            except BoxClientException:
+                return None
 
         return self.folder
 
@@ -258,6 +253,8 @@ class BoxNodeSettings(AddonNodeSettingsBase):
             )
         except AttributeError:
             self._folder_data = self._fetch_folder_data()
+
+        return self.full_folder_path
 
     def _fetch_folder_data(self):
         client = get_client_from_user_settings(self.user_settings)

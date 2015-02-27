@@ -1,5 +1,6 @@
 """Views fo the node settings page."""
 # -*- coding: utf-8 -*-
+import os
 import httplib as http
 
 from flask import request
@@ -15,7 +16,6 @@ from website.project.decorators import (
     must_have_permission, must_not_be_registration,
 )
 
-from website.addons.box import exceptions
 from website.addons.box.client import get_node_client
 from website.addons.box.client import get_client_from_user_settings
 
@@ -92,8 +92,6 @@ def serialize_settings(node_settings, current_user, client=None):
         try:
             client = client or get_client_from_user_settings(user_settings)
             client.get_user_info()
-#        except BoxAuthenticationException as error:
-#            TODO: reauthorize
         except BoxClientException as error:
             if error.status_code == 401:
                 valid_credentials = False
@@ -121,9 +119,11 @@ def serialize_settings(node_settings, current_user, client=None):
         if node_settings.folder_id is None:
             result['folder'] = {'name': None, 'path': None}
         else:
+            path = node_settings.full_folder_path
+
             result['folder'] = {
-                'name': node_settings.folder,
-                'path': node_settings.full_folder_path,
+                'path': path,
+                'name': path.replace('All Files', '', 1) if path != 'All Files' else '/ (Full Box)'
             }
     return result
 
@@ -145,7 +145,7 @@ def box_config_put(node_addon, user_addon, auth, **kwargs):
     return {
         'result': {
             'folder': {
-                'name': 'Box ' + path,
+                'name': path,
                 'path': path,
             },
             'urls': serialize_urls(node_addon),
@@ -216,7 +216,7 @@ def box_list_folders(node_addon, **kwargs):
     if folder_id is None:
         return [{
             'id': 0,
-            'path': '/',
+            'path': 'All Files',
             'addon': 'box',
             'kind': 'folder',
             'name': '/ (Full Box)',
@@ -227,7 +227,7 @@ def box_list_folders(node_addon, **kwargs):
 
     try:
         client = get_node_client(node)
-    except exceptions.ExpiredAuthError:
+    except BoxClientException:
         raise HTTPError(http.FORBIDDEN)
 
     try:
@@ -241,13 +241,20 @@ def box_list_folders(node_addon, **kwargs):
     if metadata.get('is_deleted'):
         raise HTTPError(http.NOT_FOUND)
 
+    folder_path = '/'.join(
+        [
+            x['name']
+            for x in metadata['path_collection']['entries']
+        ] + [metadata['name']]
+    )
+
     return [
         {
             'addon': 'box',
             'kind': 'folder',
             'id': item['id'],
             'name': item['name'],
-            'path': item.get('path') or item['name'],
+            'path': os.path.join(folder_path, item['name']),
             'urls': {
                 'folders': node.api_url_for('box_list_folders', folderId=item['id']),
             }
