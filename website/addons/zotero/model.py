@@ -9,6 +9,10 @@ from website.addons.citations.utils import serialize_folder
 from website.addons.zotero import settings
 from website.oauth.models import ExternalProvider
 
+# TODO: Don't cap at 200 responses. We can only fetch 100 citations at a time. With lots
+# of citations, requesting the citations may take longer than the UWSGI harakiri time.
+# For now, we load 200 citations max and show a message to the user.
+MAX_CITATION_LOAD = 200
 
 class Zotero(ExternalProvider):
     name = "Zotero"
@@ -78,8 +82,7 @@ class Zotero(ExternalProvider):
             citations = []
             more = True
             offset = 0
-            # TODO don't cap at 200 responses
-            while more and len(citations) <= 200:
+            while more and len(citations) <= MAX_CITATION_LOAD:
                 page = self.client.collection_items(list_id, content='csljson', size=100, start=offset)
                 citations = citations + page
                 if len(page) == 0 or len(page) < 100:
@@ -103,8 +106,7 @@ class Zotero(ExternalProvider):
         citations = []
         more = True
         offset = 0
-        # TODO don't cap at 200
-        while more and len(citations) <= 200:
+        while more and len(citations) <= MAX_CITATION_LOAD:
             page = self.client.items(content='csljson', limit=100, start=offset)
             citations = citations + page
             if len(page) == 0 or len(page) < 100:
