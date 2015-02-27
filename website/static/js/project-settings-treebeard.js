@@ -116,10 +116,6 @@ function ProjectNotifications(data) {
         uploads : false,         // Turns dropzone on/off.
         resolveIcon : resolveIcon,
         hideColumnTitles: true,
-        onload: function () {
-            var tb = this;
-            expandOnLoad.call(tb);
-        },
         columnTitles : function notificationColumnTitles(item, col) {
             return [
                 {
@@ -266,6 +262,7 @@ function ProjectNotifications(data) {
         hoverClass : 'fangorn-hover'
     };
     var grid = new Treebeard(tbOptions);
+    expandOnLoad.call(grid.tbController);
 }
 
 module.exports = ProjectNotifications;
