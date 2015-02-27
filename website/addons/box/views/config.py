@@ -196,7 +196,6 @@ def box_get_share_emails(auth, user_addon, node_addon, **kwargs):
                 if contrib != auth.user
             ],
         }
-        #'url': utils.get_share_folder_uri(node_addon.folder)
     }
 
 
@@ -212,7 +211,7 @@ def box_list_folders(node_addon, **kwargs):
 
     if folder_id is None:
         return [{
-            'id': 0,
+            'id': '0',
             'path': 'All Files',
             'addon': 'box',
             'kind': 'folder',
