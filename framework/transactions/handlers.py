@@ -37,7 +37,7 @@ def transaction_before_request():
     if view_has_annotation(NO_AUTO_TRANSACTION_ATTR):
         return None
     try:
-        commands.rollback()
+        commands.rollback(force_throw=True)
         logger.error('Transaction already in progress; rolling back.')
     except OperationFailure as error:
         message = utils.get_error_message(error)
