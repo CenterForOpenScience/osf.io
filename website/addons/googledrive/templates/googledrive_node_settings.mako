@@ -47,10 +47,6 @@
         <div class="googledrive-confirm-selection"
             data-bind="visible:selected">
             <form data-bind="submit: submitSettings">
-
-              <h4 data-bind="if: selected" class="addon-settings-submit">
-                    Connect &ldquo;{{ selectedFolderName }}&rdquo;?
-                </h4>
                 <div class="pull-right">
                     <button class="btn btn-default"
                             data-bind="click: cancelSelection">
@@ -60,6 +56,9 @@
                            class="btn btn-primary"
                            value="Submit" />
                 </div>
+                <h4 data-bind="if: selected" class="addon-settings-submit">
+                    Connect &ldquo;{{ selectedFolderName }}&rdquo;?
+                </h4>
             </form>
         </div><!-- end googledrive-confirm-selection -->
 

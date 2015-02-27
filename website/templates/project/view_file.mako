@@ -27,7 +27,7 @@
           <ol class="breadcrumb">
             <li><a href="{{ node.urls.files }}" data-bind="text: node.title"></a></li>
             <li class="active overflow" data-bind="text: file.provider"></li>
-            <!-- ko foreach: path.split('/').slice(1) -->
+            <!-- ko foreach: path.slice(1) -->
             <li class="active overflow" data-bind="text: $data"></li>
             <!-- /ko -->
           </ol>

@@ -64,10 +64,6 @@
                     <div class="mendeley-confirm-selection"
                         data-bind="visible: currentDisplay() == PICKER && selected()">
                         <form data-bind="submit: submitSettings">
-
-                            <h4 data-bind="if: selected" class="mendeley-confirm-dlg">
-                                Connect &ldquo;{{ selectedFolderName }}&rdquo;?
-                            </h4>
                             <div class="pull-right">
                                 <button class="btn btn-default"
                                         data-bind="click: cancelSelection">
@@ -77,6 +73,9 @@
                                        class="btn btn-primary"
                                        value="Submit" />
                             </div>
+                            <h4 data-bind="if: selected" class="mendeley-confirm-dlg">
+                                Connect &ldquo;{{ selectedFolderName }}&rdquo;?
+                            </h4>
                         </form>
                     </div><!-- end .mendeley-confirm-selection -->
 

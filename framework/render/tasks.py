@@ -25,9 +25,9 @@ mfr.register_filehandlers(ALL_HANDLERS)
 # Update mfr config with static path and url
 mfr.config.update({
     # Base URL for static files
-    'ASSETS_URL': os.path.join(settings.STATIC_URL_PATH, 'mfr'),
+    'ASSETS_URL': os.path.join(settings.STATIC_URL_PATH, 'public', 'mfr'),
     # Where to save static files
-    'ASSETS_FOLDER': os.path.join(settings.STATIC_FOLDER, 'mfr'),
+    'ASSETS_FOLDER': os.path.join(settings.STATIC_FOLDER, 'public', 'mfr'),
 })
 
 CUSTOM_ERROR_MESSAGES = {}
