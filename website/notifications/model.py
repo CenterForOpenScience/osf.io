@@ -17,6 +17,24 @@ class NotificationSubscription(StoredObject):
     email_digest = fields.ForeignField('user', list=True, backref='email_digest')
     email_transactional = fields.ForeignField('user', list=True, backref='email_transactional')
 
+    def add_user_to_subscription(self, user, notification_type, save=True):
+        for nt in NOTIFICATION_TYPES:
+            if user in getattr(self, nt):
+                if nt != notification_type:
+                    getattr(self, nt).remove(user)
+            else:
+                if nt == notification_type:
+                    getattr(self, nt).append(user)
+
+        if notification_type != 'none' and isinstance(self.owner, Node) and self.owner.parent_node:
+            user_subs = self.owner.parent_node.child_node_subscriptions
+            if self.owner._id not in user_subs.setdefault(user._id, []):
+                user_subs[user._id].append(self.owner._id)
+                self.owner.parent_node.save()
+
+        if save:
+            self.save()
+
     def remove_user_from_subscription(self, user, save=True):
         for notification_type in NOTIFICATION_TYPES:
             try:
@@ -24,12 +42,10 @@ class NotificationSubscription(StoredObject):
             except ValueError:
                 pass
 
-        if isinstance(self.owner, Node):
-            parent = self.owner.parent or self.owner
-
+        if isinstance(self.owner, Node) and self.owner.parent_node:
             try:
-                parent.child_node_subscriptions[user._id].remove(self.owner._id)
-                parent.save()
+                self.owner.parent_node.child_node_subscriptions.get(user._id, []).remove(self.owner._id)
+                self.owner.parent_node.save()
             except ValueError:
                 pass
 
