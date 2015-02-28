@@ -1,6 +1,6 @@
 <script type="text/html" id="box_file_added">
 added file
-<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">{{ params.path }}</a> to
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">{{ params.fullPath }}</a> to
 Box in {{ nodeType }}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
@@ -8,14 +8,14 @@ Box in {{ nodeType }}
 
 <script type="text/html" id="box_file_updated">
 updated file
-<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">{{ params.path }}</a> to
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">{{ params.fullPath }}</a> to
 Box in {{ nodeType }}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
 
 
 <script type="text/html" id="box_file_removed">
-removed file <span class="overflow">{{ params.path }}</span> from
+removed file <span class="overflow">'{{ params.name }}'</span> from
 Box in {{ nodeType }}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
