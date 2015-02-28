@@ -1,15 +1,18 @@
 import httplib as http
-from framework.exceptions import HTTPError
-from framework.auth.decorators import must_be_logged_in
-from model import Subscription
+
 from flask import request
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from modularodm.storage.mongostorage import KeyExistsException
-from website.notifications.constants import NOTIFICATION_TYPES
+
+from framework.auth.decorators import must_be_logged_in
+from framework.exceptions import HTTPError
 from website.notifications import utils
+from website.notifications.constants import NOTIFICATION_TYPES
+from website.notifications.model import Subscription
 from website.project.decorators import must_be_valid_project
 from website.project.model import Node
+
 
 @must_be_logged_in
 def get_subscriptions(auth):
@@ -35,7 +38,17 @@ def configure_subscription(auth):
 
     uid = subscription.get('id')
     event_id = utils.to_subscription_key(uid, event)
+
     node = Node.load(uid)
+    if node:
+        parent = node.parent_node
+        if parent:
+            if not parent.child_node_subscriptions:
+                parent.child_node_subscriptions = {}
+                parent.save()
+            if not parent.child_node_subscriptions.get(user._id, None):
+                parent.child_node_subscriptions[user._id] = []
+                parent.save()
 
     if notification_type == 'adopt_parent':
         try:
@@ -43,9 +56,9 @@ def configure_subscription(auth):
         except NoResultsFound:
             return
 
-        if node and sub in node.children_subscriptions:
-            node.children_subscriptions.remove(sub)
-            node.save()
+        if node and node.parent_node and sub in node.child_node_subscriptions.get(user._id, []):
+            node.parent_node.child_node_subscriptions[user._id].remove(sub.owner._id)
+            node.parent_node.save()
 
         sub.remove_user_from_subscription(user)
 
@@ -74,12 +87,12 @@ def configure_subscription(auth):
                 getattr(sub, nt).remove(user)
                 sub.save()
 
-        if node:
-            if notification_type == 'none' and sub in node.children_subscriptions:
-                node.children_subscriptions.remove(sub)
-            elif sub not in node.children_subscriptions:
-                node.children_subscriptions.append(sub)
-
-        node.save()
+        if node and node.parent_node:
+            parent = node.parent_node
+            if notification_type == 'none' and sub.owner._id in parent.child_node_subscriptions.get(user._id, None):
+                parent.child_node_subscriptions[user._id].remove(sub.owner._id)
+            elif notification_type != 'none' and sub.owner._id not in parent.child_node_subscriptions.get(user._id, None):
+                parent.child_node_subscriptions[user._id].append(sub.owner._id)
+            node.save()
 
         return {'message': 'Successfully added ' + repr(user) + ' to ' + notification_type + ' list on ' + event_id}, 200

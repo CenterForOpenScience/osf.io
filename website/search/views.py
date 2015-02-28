@@ -195,18 +195,23 @@ def search_share():
     tick = time.time()
     results = {}
 
-    is_count = request.args.get('count') is not None
+    count = request.args.get('count') is not None
+    raw = request.args.get('raw') is not None
 
     if request.method == 'POST':
-        results = search.count_share(request.get_json()) if is_count else search.search_share(request.get_json())
+        query = request.get_json()
     elif request.method == 'GET':
-        q = request.args.get('q', '*')
-        # TODO Match javascript params?
-        start = request.args.get('from', '0')
-        size = request.args.get('size', '10')
-        sort = request.args.get('sort')
-        query = build_query(q, start, size, sort=sort)
-        results = search.count_share(query) if is_count else search.search_share(query)
+        query = build_query(
+            request.args.get('q', '*'),
+            request.args.get('from'),
+            request.args.get('size'),
+            sort=request.args.get('sort')
+        )
+
+    if count:
+        results = search.count_share(query)
+    else:
+        results = search.search_share(query, raw)
 
     results['time'] = round(time.time() - tick, 2)
     return results

@@ -13,7 +13,8 @@ from website.project.model import (
 )
 from website.citations.models import CitationStyle
 from website.conferences.model import Conference, MailRecord
-from website.notifications.model import Subscription, DigestNotification
+from website.notifications.model import DigestNotification
+from website.notifications.model import Subscription
 from website.oauth.models import ExternalAccount
 
 # All models
