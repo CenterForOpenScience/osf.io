@@ -9,6 +9,7 @@ var Treebeard = require('treebeard');
 require('../css/fangorn.css');
 
 
+// TODO: Refactor out shared utility code between this module, folder picker, and fangorn.js
 function resolveToggle(item) {
     var toggleMinus = m('i.icon-minus', ' '),
         togglePlus = m('i.icon-plus', ' ');
@@ -33,7 +34,7 @@ function resolveIcon(item) {
 }
 
 function expandOnLoad() {
-    var tb = this;
+    var tb = this;  // jshint ignore: line
     for (var i = 0; i < tb.treeData.children.length; i++) {
         var parent = tb.treeData.children[i];
         tb.updateFolder(null, parent);
@@ -67,7 +68,7 @@ function openAncestors (tb, item) {
 }
 
 function subscribe(item, notification_type) {
-    var id = item.parent().data.node.id; 
+    var id = item.parent().data.node.id;
     var event = item.data.event.title;
     var payload = {
         'id': id,
@@ -130,7 +131,8 @@ function ProjectNotifications(data) {
                     sort : false
 
                 }
-            ]},
+            ];
+        },
         resolveRows : function notificationResolveRows(item){
             var columns = [];
             var iconcss = '';
@@ -146,12 +148,13 @@ function ProjectNotifications(data) {
                         filter : true,
                         sortInclude : false,
                         custom : function() {
-                            return m("div[style='padding-left:5px']",
+                            return m('div[style="padding-left:5px"]',
                                         [m ('p', [
                                                 m('b', item.data.node.title + ': '),
                                                 m('span[class="text-warning"]', ' No configured projects.')]
                                         )]
-                            )}
+                            );
+                        }
                     });
                 } else {
                     columns.push({
@@ -160,11 +163,12 @@ function ProjectNotifications(data) {
                         filter : true,
                         sortInclude : false,
                         custom : function() {
-                            return m("div[style='padding-left:5px']",
+                            return m('div[style="padding-left:5px"]',
                                     [m('p',
                                         [m('b', item.data.node.title + ':')]
                                 )]
-                            )}
+                            );
+                        }
                     });
                 }
             }
@@ -201,7 +205,7 @@ function ProjectNotifications(data) {
                     folderIcons : false,
                     filter : false,
                     custom : function(item, col) {
-                        return m("div[style='padding-right:10px']",
+                        return m('div[style="padding-right:10px"]',
                             [m('select.form-control', {
                                 onchange: function(ev) {
                                     subscribe(item, ev.target.value);
@@ -233,7 +237,7 @@ function ProjectNotifications(data) {
                     folderIcons : false,
                     filter : false,
                     custom : function() {
-                        return  m("div[style='padding-right:10px']",
+                        return  m('div[style="padding-right:10px"]',
                             [m('select.form-control', {
                                 onchange: function(ev) {
                                     subscribe(item, ev.target.value);
@@ -246,7 +250,7 @@ function ProjectNotifications(data) {
                                     m('option', {value: 'email_transactional',  selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Emails'),
                                     m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, 'Email Digest')
                             ])
-                        ])
+                        ]);
                     }
                 });
             }
