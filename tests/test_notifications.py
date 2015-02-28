@@ -40,7 +40,7 @@ class TestNotificationsModels(OsfTestCase):
         self.parent = factories.ProjectFactory(creator=self.user)
         self.node = factories.NodeFactory(creator=self.user, project=self.parent)
 
-    def test_check_user_has_permission_on_private_node_child(self):
+    def test_can_read_children(self):
         non_admin_user = factories.UserFactory()
         parent = factories.ProjectFactory()
         parent.add_contributor(contributor=non_admin_user, permissions=['read'])
@@ -52,7 +52,7 @@ class TestNotificationsModels(OsfTestCase):
         sub_component.save()
         sub_component2 = factories.NodeFactory(project=node)
 
-        has_permission_on_child_node = node.check_user_has_permission_on_private_node_child(non_admin_user)
+        has_permission_on_child_node = node.can_read_children(non_admin_user)
         assert_true(has_permission_on_child_node)
 
     def test_check_user_has_permission_excludes_deleted_components(self):
@@ -68,7 +68,7 @@ class TestNotificationsModels(OsfTestCase):
         sub_component.save()
         sub_component2 = factories.NodeFactory(project=node)
 
-        has_permission_on_child_node = node.check_user_has_permission_on_private_node_child(non_admin_user)
+        has_permission_on_child_node = node.can_read_children(non_admin_user)
         assert_false(has_permission_on_child_node)
 
     def test_check_user_does_not_have_permission_on_private_node_child(self):
@@ -78,7 +78,7 @@ class TestNotificationsModels(OsfTestCase):
         parent.save()
         node = factories.NodeFactory(project=parent, category='project')
         sub_component = factories.NodeFactory(project=node)
-        has_permission_on_child_node = node.check_user_has_permission_on_private_node_child(non_admin_user)
+        has_permission_on_child_node = node.can_read_children(non_admin_user)
         assert_false(has_permission_on_child_node)
 
     def test_check_user_child_node_permissions_false_if_no_children(self):
@@ -87,14 +87,14 @@ class TestNotificationsModels(OsfTestCase):
         parent.add_contributor(contributor=non_admin_user, permissions=['read'])
         parent.save()
         node = factories.NodeFactory(project=parent, category='project')
-        has_permission_on_child_node = node.check_user_has_permission_on_private_node_child(non_admin_user)
+        has_permission_on_child_node = node.can_read_children(non_admin_user)
         assert_false(has_permission_on_child_node)
 
     def test_check_admin_has_permissions_on_private_component(self):
         parent = factories.ProjectFactory()
         node = factories.NodeFactory(project=parent, category='project')
         sub_component = factories.NodeFactory(project=node)
-        has_permission_on_child_node = node.check_user_has_permission_on_private_node_child(parent.creator)
+        has_permission_on_child_node = node.can_read_children(parent.creator)
         assert_true(has_permission_on_child_node)
 
     def test_check_user_private_node_child_permissions_excludes_pointers(self):
@@ -103,7 +103,7 @@ class TestNotificationsModels(OsfTestCase):
         pointed = factories.ProjectFactory(contributor=user)
         parent.add_pointer(pointed, Auth(parent.creator))
         parent.save()
-        has_permission_on_child_nodes = parent.check_user_has_permission_on_private_node_child(user)
+        has_permission_on_child_nodes = parent.can_read_children(user)
         assert_false(has_permission_on_child_nodes)
 
 
@@ -136,7 +136,7 @@ class TestSubscriptionView(OsfTestCase):
         s = Subscription.find_one(Q('_id', 'eq', event_id))
 
         # check that user was added to notification_type field
-        assert_equal(payload['id'], s.object_id)
+        assert_equal(payload['id'], s.owner._id)
         assert_equal(payload['event'], s.event_name)
         assert_in(self.node.creator, getattr(s, payload['notification_type']))
 
@@ -202,7 +202,7 @@ class TestRemoveContributor(OsfTestCase):
 
         self.subscription = factories.SubscriptionFactory(
             _id=self.project._id + '_comments',
-            object_id=self.project._id
+            owner=self.project
         )
         self.subscription.save()
         self.subscription.email_transactional.append(self.contributor)
@@ -214,7 +214,7 @@ class TestRemoveContributor(OsfTestCase):
         self.node.save()
         self.node_subscription = factories.SubscriptionFactory(
             _id=self.node._id + '_comments',
-            object_id=self.node._id
+            owner=self.node
         )
         self.node_subscription.save()
         self.node_subscription.email_transactional.append(self.project.creator)
@@ -254,7 +254,7 @@ class TestRemoveNodeSignal(OsfTestCase):
             project = factories.ProjectFactory()
             subscription = factories.SubscriptionFactory(
                 _id=project._id + '_comments',
-                object_id=project._id
+                owner=project
             )
             subscription.save()
             subscription.email_transactional.append(project.creator)
@@ -272,7 +272,7 @@ class TestRemoveNodeSignal(OsfTestCase):
             assert_equal(len(s), 0)
 
             with assert_raises(NoResultsFound):
-                Subscription.find_one(Q('object_id', 'eq', project._id))
+                Subscription.find_one(Q('owner', 'eq', project))
 
 
 class TestNotificationUtils(OsfTestCase):
@@ -282,7 +282,7 @@ class TestNotificationUtils(OsfTestCase):
         self.project = factories.ProjectFactory(creator=self.user)
         self.project_subscription = factories.SubscriptionFactory(
             _id=self.project._id + '_' + 'comments',
-            object_id=self.project._id,
+            owner=self.project,
             event_name='comments'
         )
         self.project_subscription.save()
@@ -292,7 +292,7 @@ class TestNotificationUtils(OsfTestCase):
         self.node = factories.NodeFactory(project=self.project, creator=self.user)
         self.node_subscription = factories.SubscriptionFactory(
             _id=self.node._id + '_' + 'comments',
-            object_id=self.node._id,
+            owner=self.node,
             event_name='comments'
         )
         self.node_subscription.save()
@@ -301,7 +301,7 @@ class TestNotificationUtils(OsfTestCase):
 
         self.user_subscription = factories.SubscriptionFactory(
             _id=self.user._id + '_' + 'comment_replies',
-            object_id=self.user._id,
+            owner=self.user,
             event_name='comment_replies'
         )
         self.user_subscription.save()
@@ -336,15 +336,17 @@ class TestNotificationUtils(OsfTestCase):
         assert_equal(node_subscriptions, [self.node_subscription])
 
     def test_get_configured_project_ids_does_not_return_user_or_node_ids(self):
-        assert_in(self.project._id, utils.get_configured_projects(self.user))
-        assert_not_in(self.node._id, utils.get_configured_projects(self.user))
-        assert_not_in(self.user._id, utils.get_configured_projects(self.user))
+        configured_ids = utils.get_configured_projects(self.user)
+
+        assert_in(self.project._id, configured_ids)
+        assert_not_in(self.node._id, configured_ids)
+        assert_not_in(self.user._id, configured_ids)
 
     def test_get_configured_project_ids_excludes_deleted_projects(self):
         project = factories.ProjectFactory()
         subscription = factories.SubscriptionFactory(
             _id=project._id + '_' + 'comments',
-            object_id=project._id
+            owner=project
         )
         subscription.save()
         subscription.email_transactional.append(self.user)
@@ -357,7 +359,7 @@ class TestNotificationUtils(OsfTestCase):
         node = factories.NodeFactory(project=self.project, category='project')
         node_subscription = factories.SubscriptionFactory(
             _id=node._id + '_' + 'comments',
-            object_id=node._id,
+            owner=node,
             event_name='comments'
         )
         node_subscription.save()
@@ -370,7 +372,7 @@ class TestNotificationUtils(OsfTestCase):
         node = factories.NodeFactory(project=private_project)
         node_subscription = factories.SubscriptionFactory(
             _id=node._id + '_comments',
-            object_id=node._id,
+            owner=node,
             event_name='comments'
         )
         node_subscription.email_transactional.append(node.creator)
@@ -403,7 +405,7 @@ class TestNotificationUtils(OsfTestCase):
         assert_equal(nt, None)
 
     def test_format_data_project_settings(self):
-        data = utils.format_data(self.user, [self.project._id], [])
+        data = utils.format_data(self.user, [self.project._id])
         expected = [
             {
                 'node': {
@@ -451,27 +453,28 @@ class TestNotificationUtils(OsfTestCase):
         assert_equal(data, expected)
 
     def test_format_data_node_settings(self):
-        data = utils.format_data(self.user, [self.node._id], [])
+        data = utils.format_data(self.user, [self.node._id])
         expected = [{
-                    'node': {
-                        'id': self.node._id,
-                        'title': self.node.title,
-                        'url': self.node.url,
+            'node': {
+                'id': self.node._id,
+                'title': self.node.title,
+                'url': self.node.url,
+            },
+            'kind': 'node',
+            'children': [
+                {
+                    'event': {
+                        'title': 'comments',
+                        'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
+                        'notificationType': 'email_transactional',
+                        'parent_notification_type': 'email_transactional'
                     },
-                    'kind': 'node',
-                    'children': [
-                        {
-                            'event': {
-                                'title': 'comments',
-                                'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
-                                'notificationType': 'email_transactional',
-                                'parent_notification_type': 'email_transactional'
-                            },
-                            'kind': 'event',
-                            'children': [],
-                        }
-                        ]
-                    }]
+                    'kind': 'event',
+                    'children': []
+                }
+            ]
+        }]
+
         assert_equal(data, expected)
 
     def test_format_includes_admin_view_only_component_subscriptions(self):
@@ -479,7 +482,7 @@ class TestNotificationUtils(OsfTestCase):
             notifications settings.
         """
         node = factories.NodeFactory(project=self.project)
-        data = utils.format_data(self.user, [self.project._id], [])
+        data = utils.format_data(self.user, [self.project._id])
         expected = [
             {
                 'node': {
@@ -544,13 +547,14 @@ class TestNotificationUtils(OsfTestCase):
                 ]
             }
         ]
+
         assert_equal(data, expected)
 
     def test_format_data_excludes_pointers(self):
         project = factories.ProjectFactory()
         subscription = factories.SubscriptionFactory(
             _id=project._id + '_comments',
-            object_id=project._id,
+            owner=project,
             event_name='comments'
         )
         subscription.email_transactional.append(project.creator)
@@ -559,7 +563,7 @@ class TestNotificationUtils(OsfTestCase):
         project.add_pointer(pointed, Auth(project.creator))
         project.save()
         configured_project_ids = utils.get_configured_projects(project.creator)
-        data = utils.format_data(project.creator, configured_project_ids, [])
+        data = utils.format_data(project.creator, configured_project_ids)
         expected = [{
             'node': {
                 'id': project._id,
@@ -578,23 +582,22 @@ class TestNotificationUtils(OsfTestCase):
                     'kind': 'event',
                     'children': [],
                 }
-                ]
-            }]
+            ]
+        }]
         assert_equal(data, expected)
-
 
     def test_format_data_user_subscriptions_includes_private_parent_if_configured_children(self):
         private_project = factories.ProjectFactory()
         node = factories.NodeFactory(project=private_project)
         node_subscription = factories.SubscriptionFactory(
             _id=node._id + '_comments',
-            object_id=node._id,
+            owner=node,
             event_name='comments'
         )
         node_subscription.email_transactional.append(node.creator)
         node_subscription.save()
         configured_project_ids = utils.get_configured_projects(node.creator)
-        data = utils.format_data(node.creator, configured_project_ids, [])
+        data = utils.format_data(node.creator, configured_project_ids)
         expected = [
             {
                 'node': {
@@ -633,15 +636,15 @@ class TestNotificationUtils(OsfTestCase):
     def test_format_user_subscriptions(self):
         data = utils.format_user_subscriptions(self.user, [])
         expected = [{
-                    'event': {
-                        'title': 'comment_replies',
-                        'description': constants.USER_SUBSCRIPTIONS_AVAILABLE['comment_replies'],
-                        'notificationType': 'email_transactional',
-                        'parent_notification_type': None
-                    },
-                    'kind': 'event',
-                    'children': [],
-                    }]
+            'event': {
+                'title': 'comment_replies',
+                'description': constants.USER_SUBSCRIPTIONS_AVAILABLE['comment_replies'],
+                'notificationType': 'email_transactional',
+                'parent_notification_type': None
+            },
+            'kind': 'event',
+            'children': [],
+        }]
         assert_equal(data, expected)
 
     def test_format_data_user_settings(self):
@@ -661,7 +664,7 @@ class TestNotificationUtils(OsfTestCase):
                     'title': 'Project Notifications'
                 },
                 'kind': 'heading',
-                'children': utils.format_data(self.user, utils.get_configured_projects(self.user), [])
+                'children': utils.format_data(self.user, utils.get_configured_projects(self.user))
             }]
 
         assert_equal(data, expected)
@@ -678,7 +681,7 @@ class TestNotificationUtils(OsfTestCase):
             },
             'kind': 'event',
             'children': []
-                }
+        }
         assert_equal(data, expected)
 
     def test_serialize_node_level_event(self):
@@ -759,7 +762,7 @@ class TestSendEmails(OsfTestCase):
         self.project = factories.ProjectFactory()
         self.project_subscription = factories.SubscriptionFactory(
             _id=self.project._id + '_' + 'comments',
-            object_id=self.project._id,
+            owner=self.project,
             event_name='comments'
         )
         self.project_subscription.save()
@@ -769,7 +772,7 @@ class TestSendEmails(OsfTestCase):
         self.node = factories.NodeFactory(project=self.project)
         self.node_subscription = factories.SubscriptionFactory(
             _id=self.node._id + '_comments',
-            object_id=self.node._id,
+            owner=self.node,
             event_name='comments'
         )
         self.node_subscription.save()
@@ -785,7 +788,7 @@ class TestSendEmails(OsfTestCase):
         node = factories.NodeFactory()
         node_subscription = factories.SubscriptionFactory(
             _id=node._id + '_comments',
-            object_id=node._id,
+            owner=node,
             event_name='comments'
         )
         node_subscription.save()
@@ -805,7 +808,7 @@ class TestSendEmails(OsfTestCase):
         user = factories.UserFactory()
         node_subscription = factories.SubscriptionFactory(
             _id=node._id + '_comments',
-            object_id=node._id,
+            owner=node,
             event_name='comments'
         )
         node_subscription.save()
@@ -827,7 +830,7 @@ class TestSendEmails(OsfTestCase):
         user = factories.UserFactory()
         user_subscription = factories.SubscriptionFactory(
             _id=user._id + '_comments',
-            object_id=user._id,
+            owner=user,
             event_name='comment_replies'
         )
         user_subscription.email_transactional.append(user)
@@ -866,7 +869,7 @@ class TestSendEmails(OsfTestCase):
         project = factories.ProjectFactory()
         project_subscription = factories.SubscriptionFactory(
             _id=project._id,
-            object_id=project._id,
+            owner=project,
             event_name='comments'
         )
         project_subscription.save()
@@ -882,7 +885,7 @@ class TestSendEmails(OsfTestCase):
         project = factories.ProjectFactory()
         project_subscription = factories.SubscriptionFactory(
             _id=project._id + '_comments',
-            object_id=project._id,
+            owner=project,
             event_name='comments'
         )
         project_subscription.save()
@@ -894,7 +897,7 @@ class TestSendEmails(OsfTestCase):
         node = factories.NodeFactory(project=project)
         node_subscription = factories.SubscriptionFactory(
             _id=node._id + '_comments',
-            object_id=node._id,
+            owner=node,
             event_name='comments'
         )
         node_subscription.save()
@@ -911,7 +914,7 @@ class TestSendEmails(OsfTestCase):
         project.add_contributor(contributor=user, permissions=['read'])
         project_subscription = factories.SubscriptionFactory(
             _id=project._id + '_comments',
-            object_id=project._id,
+            owner=project,
             event_name='comments'
         )
         project_subscription.save()
@@ -922,7 +925,7 @@ class TestSendEmails(OsfTestCase):
         node = factories.NodeFactory(project=project)
         node_subscription = factories.SubscriptionFactory(
             _id=node._id + '_comments',
-            object_id=node._id,
+            owner=node,
             event_name='comments'
         )
         node_subscription.save()
