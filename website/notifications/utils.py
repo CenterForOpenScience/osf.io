@@ -83,10 +83,10 @@ def get_configured_projects(user):
 
     for subscription in user_subscriptions:
         # If the user has opted out of emails skip
-        if user in subscription.none or not isinstance(subscription.owner, Node):
-            continue
-
         node = subscription.owner
+
+        if not isinstance(node, Node) or (user in subscription.none and not node.parent_id):
+            continue
 
         while node.parent_id and not node.is_deleted:
             node = Node.load(node.parent_id)
