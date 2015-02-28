@@ -169,8 +169,10 @@ def get_node_lineage(node):
 def get_settings_url(uid, user):
     if uid == user._id:
         return web_url_for('user_notifications', _absolute=True)
-    else:
-        return website_models.Node.load(uid).absolute_url + 'settings/'
+
+    node = website_models.Node.load(uid)
+    assert node, 'get_settings_url recieved an invalid Node id'
+    return node.web_url_for('node_setting', _guid=True, _absolute=True)
 
 
 def localize_timestamp(timestamp, user):
