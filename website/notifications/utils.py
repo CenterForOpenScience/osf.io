@@ -94,7 +94,7 @@ def get_configured_projects(user):
         if not node.is_deleted:
             configured_project_ids.add(node._id)
 
-    return configured_project_ids
+    return list(configured_project_ids)
 
 
 def check_project_subscriptions_are_all_none(user, node):
