@@ -1,5 +1,8 @@
 from modularodm import fields
+
 from framework.mongo import StoredObject, ObjectId
+
+from website.project.model import Node
 from website.notifications.constants import NOTIFICATION_TYPES
 
 
@@ -14,11 +17,24 @@ class NotificationSubscription(StoredObject):
     email_digest = fields.ForeignField('user', list=True, backref='email_digest')
     email_transactional = fields.ForeignField('user', list=True, backref='email_transactional')
 
-    def remove_user_from_subscription(self, user):
-        for n in NOTIFICATION_TYPES:
-            if user in getattr(self, n):
-                getattr(self, n).remove(user)
-                self.save()
+    def remove_user_from_subscription(self, user, save=True):
+        for notification_type in NOTIFICATION_TYPES:
+            try:
+                getattr(self, notification_type, []).remove(user)
+            except ValueError:
+                pass
+
+        if isinstance(self.owner, Node):
+            parent = self.owner.parent or self.owner
+
+            try:
+                parent.child_node_subscriptions[user._id].remove(self.owner._id)
+                parent.save()
+            except ValueError:
+                pass
+
+        if save:
+            self.save()
 
 
 class NotificationDigest(StoredObject):
