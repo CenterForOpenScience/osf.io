@@ -52,14 +52,6 @@ def remove_contributor_from_subscriptions(contributor, node):
         for subscription in node_subscriptions:
             subscription.remove_user_from_subscription(contributor)
 
-            # node = Node.load(subscription.object_id)
-
-            parent = node.parent_node
-            if parent and parent.child_node_subscriptions.get(contributor._id, None) and node._id in parent.child_node_subscriptions.get(contributor._id, None):
-                if node._id in parent.child_node_subscriptions[contributor._id]:
-                    parent.child_node_subscriptions[contributor._id].remove(node._id)
-                    parent.save()
-
 
 @signals.node_deleted.connect
 def remove_subscription(node):
@@ -83,10 +75,10 @@ def get_configured_projects(user):
 
     for subscription in user_subscriptions:
         # If the user has opted out of emails skip
-        if user in subscription.none or not isinstance(subscription.owner, Node):
-            continue
-
         node = subscription.owner
+
+        if not isinstance(node, Node) or (user in subscription.none and not node.parent_id):
+            continue
 
         while node.parent_id and not node.is_deleted:
             node = Node.load(node.parent_id)
