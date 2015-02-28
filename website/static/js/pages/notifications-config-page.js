@@ -5,7 +5,7 @@ var NotificationsConfig =  require('../notificationsConfig.js');
 new NotificationsConfig('#selectLists', window.contextVars.mailingList);
 
 //initialize treebeard for notification subscriptions
-var ProjectNotifications = require('../project-settings-treebeard.js');
+var ProjectNotifications = require('../notificationsTreebeard.js');
 var $notificationsMsg = $('#configureNotificationsMessage');
 
 $.ajax({

@@ -3357,7 +3357,6 @@ class TestDashboardViews(OsfTestCase):
         # Get the All My Projects smart folder from the dashboard
         url = api_url_for('get_dashboard', nid=ALL_MY_PROJECTS_ID)
         res = self.app.get(url, auth=self.contrib.auth)
-
         assert_equal(len(res.json['data']), 1)
 
     def test_get_dashboard_nodes(self):
