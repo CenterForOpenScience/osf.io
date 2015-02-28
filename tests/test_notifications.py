@@ -1042,8 +1042,8 @@ class TestSendEmails(OsfTestCase):
         assert_equal(url, web_url_for('user_notifications', _absolute=True))
 
     def test_get_node_lineage(self):
-        node_lineage = emails.get_node_lineage(self.node, [])
-        assert_equal(node_lineage, [self.node._id, self.project._id])
+        node_lineage = emails.get_node_lineage(self.node)
+        assert_equal(node_lineage, [self.project._id, self.node._id])
 
     def test_localize_timestamp(self):
         timestamp = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
