@@ -133,10 +133,9 @@ def email_digest(subscribed_user_ids, uid, event, **context):
 
     try:
         node = website_models.Node.find_one(Q('_id', 'eq', uid))
-        nodes = get_node_lineage(node, [])
-        nodes.reverse()
+        node_lineage_ids = get_node_lineage(node)
     except NoResultsFound:
-        nodes = []
+        node_lineage_ids = []
 
     for user_id in subscribed_user_ids:
         user = website_models.User.load(user_id)
@@ -144,11 +143,13 @@ def email_digest(subscribed_user_ids, uid, event, **context):
         message = mails.render_message(template, **context)
 
         if context.get('commenter')._id != user._id:
-            digest = DigestNotification(timestamp=context.get('timestamp'),
-                                        event=event,
-                                        user_id=user._id,
-                                        message=message,
-                                        node_lineage=nodes if nodes else [])
+            digest = DigestNotification(
+                timestamp=context.get('timestamp'),
+                event=event,
+                user_id=user._id,
+                message=message,
+                node_lineage=node_lineage_ids
+            )
             digest.save()
 
 
