@@ -637,7 +637,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
-    child_node_subscriptions = fields.DictionaryField(default={})
+    child_node_subscriptions = fields.DictionaryField(default=dict)
 
     _meta = {
         'optimistic': True,
