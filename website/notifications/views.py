@@ -32,7 +32,7 @@ def configure_subscription(auth):
     event = request.get_json().get('event')
     notification_type = request.get_json().get('notification_type')
 
-    if not event or not notification_type:
+    if not event or (notification_type not in NOTIFICATION_TYPES and notification_type != 'adopt_parent'):
         raise HTTPError(http.BAD_REQUEST, data=dict(
             message_long="Must provide an event and notification type for subscription.")
         )
@@ -41,18 +41,17 @@ def configure_subscription(auth):
     event_id = utils.to_subscription_key(target_id, event)
 
     if not node:
-        # if target_id is not a node it current must be a user that is the current user
+        # if target_id is not a node it currently must be the current user
         if not target_id == user._id:
             sentry.log_message('{!r} attempted to subscribe to either a bad id or non-node non-self id, {}', format(user, target_id))
-            raise HTTPError(http.BAD_REQUEST)
+            raise HTTPError(http.NOT_FOUND)
 
         if notification_type == 'adopt_parent':
             sentry.log_message('{!r} attempted to adopt_parent of a none node id, {}', format(user, target_id))
             raise HTTPError(http.BAD_REQUEST)
         owner = user
-
     else:
-        if not node.has_permission('read'):
+        if not node.has_permission(user, 'read'):
             sentry.log_message('{!r} attempted to subscribe to private node, {}', format(user, target_id))
             raise HTTPError(http.FORBIDDEN)
 
@@ -69,11 +68,6 @@ def configure_subscription(auth):
             if not subscription:
                 return {}  # We're done here
 
-            # This logic should be moved to the subscription model
-            if subscription in node.child_node_subscriptions.get(user._id, []):
-                node.parent_node.child_node_subscriptions[user._id].remove(subscription.owner._id)
-                node.parent_node.save()
-
             subscription.remove_user_from_subscription(user)
             return {}
 
@@ -81,18 +75,9 @@ def configure_subscription(auth):
 
     if not subscription:
         subscription = NotificationSubscription(_id=event_id, owner=owner, event_name=event)
-        getattr(subscription, notification_type).append(user)
-        subscription.save()
-    else:
-        # Ensure that user is only recieving the notifications that opted for
-        for nt in NOTIFICATION_TYPES:
-            if user in getattr(subscription, nt):
-                if nt != notification_type:
-                    getattr(subscription, nt).remove(user)
-            else:
-                if nt == notification_type:
-                    getattr(subscription, nt).append(user)
 
-        subscription.save()
+    subscription.add_user_to_subscription(user, notification_type)
+
+    subscription.save()
 
     return {'message': 'Successfully added {!r} to {} list on {}'.format(user, notification_type, event_id)}
