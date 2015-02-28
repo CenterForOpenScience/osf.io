@@ -27,16 +27,16 @@ def get_node_subscriptions(auth, **kwargs):
 @must_be_logged_in
 def configure_subscription(auth):
     user = auth.user
-    subscription = request.json
-    event = subscription.get('event')
-    notification_type = subscription.get('notification_type')
+    json_data = request.get_json()
+    event = json_data.get('event')
+    notification_type = json_data.get('notification_type')
 
     if not event or not notification_type:
         raise HTTPError(http.BAD_REQUEST, data=dict(
             message_long="Must provide an event and notification type for subscription.")
         )
 
-    uid = subscription.get('id')
+    uid = json_data.get('id')
     event_id = utils.to_subscription_key(uid, event)
 
     node = Node.load(uid)
