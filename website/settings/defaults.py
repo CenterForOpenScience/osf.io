@@ -8,8 +8,6 @@ import os
 import json
 import hashlib
 
-
-
 os_env = os.environ
 
 def parent_dir(path):
