@@ -970,7 +970,7 @@ class TestSendEmails(OsfTestCase):
             node_id=self.project._id,
             url=self.project.absolute_url
         )
-        subject = Template(emails.email_templates['comments']['subject']).render(
+        subject = Template(emails.EMAIL_SUBJECT_MAP['comments']).render(
             nodeType='project',
             timestamp=timestamp,
             commenter=self.project.creator,

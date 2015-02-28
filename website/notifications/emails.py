@@ -57,11 +57,8 @@ def email_digest(subscribed_user_ids, uid, event, **context):
     """
     template = event + '.html.mako'
 
-    try:
-        node = website_models.Node.find_one(Q('_id', 'eq', uid))
-        node_lineage_ids = get_node_lineage(node)
-    except NoResultsFound:
-        node_lineage_ids = []
+    node = website_models.Node.load(uid)
+    node_lineage_ids = get_node_lineage(node) if node else []
 
     for user_id in subscribed_user_ids:
         user = website_models.User.load(user_id)
@@ -86,25 +83,18 @@ EMAIL_FUNCTION_MAP = {
 
 
 def notify(uid, event, **context):
-    # TODO: docstring
-
     node_subscribers = []
+    subscription = NotificationSubscription.load(utils.to_subscription_key(uid, event))
 
-    try:
-        subscription = NotificationSubscription.find_one(
-            Q('_id', 'eq', utils.to_subscription_key(uid, event))
-        )
-    except NoResultsFound:
-        subscription = None
+    if subscription:
+        for notification_type in constants.NOTIFICATION_TYPES:
+            subscribed_users = getattr(subscription, notification_type, [])
 
-    for notification_type in constants.NOTIFICATION_TYPES:
-        subscribed_users = getattr(subscription, notification_type, [])
+            node_subscribers.extend(subscribed_users)
 
-        node_subscribers.extend(subscribed_users)
-
-        if subscribed_users and notification_type != 'none':
-            event = 'comment_replies' if context.get('target_user') else event
-            send([u._id for u in subscribed_users], notification_type, uid, event, **context)
+            if subscribed_users and notification_type != 'none':
+                event = 'comment_replies' if context.get('target_user') else event
+                send([u._id for u in subscribed_users], notification_type, uid, event, **context)
 
     return check_parent(uid, event, node_subscribers, **context)
 
@@ -116,28 +106,24 @@ def check_parent(uid, event, node_subscribers, **context):
     node = website_models.Node.load(uid)
     target_user = context.get('target_user', None)
 
-    if node and node.node__parent:
-        for p in node.node__parent:
-            key = utils.to_subscription_key(p._id, event)
-            try:
-                subscription = NotificationSubscription.find_one(Q('_id', 'eq', key))
-            except NoResultsFound:
-                return check_parent(p._id, event, node_subscribers, **context)
+    if node and node.parent_id:
+        key = utils.to_subscription_key(node.parent_id, event)
+        subscription = NotificationSubscription.load(key)
 
-            for notification_type in constants.NOTIFICATION_TYPES:
-                try:
-                    subscribed_users = getattr(subscription, notification_type)
-                except AttributeError:
-                    subscribed_users = []
+        if not subscription:
+            return check_parent(node.parent_id, event, node_subscribers, **context)
 
-                for u in subscribed_users:
-                    if u not in node_subscribers and node.has_permission(u, 'read'):
-                        node_subscribers.append(u)
-                        if notification_type != 'none':
-                            event = 'comment_replies' if target_user else event
-                            send([u._id], notification_type, uid, event, **context)
+        for notification_type in constants.NOTIFICATION_TYPES:
+            subscribed_users = getattr(subscription, notification_type, [])
 
-            return check_parent(p._id, event, node_subscribers, **context)
+            for u in subscribed_users:
+                if u not in node_subscribers and node.has_permission(u, 'read'):
+                    if notification_type != 'none':
+                        event = 'comment_replies' if target_user else event
+                        send([u._id], notification_type, uid, event, **context)
+                    node_subscribers.append(u)
+
+            return check_parent(node.parent_id, event, node_subscribers, **context)
 
     return node_subscribers
 

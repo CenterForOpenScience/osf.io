@@ -59,7 +59,7 @@ def remove_subscription(node):
     parent = node.parent_node
 
     if parent and parent.child_node_subscriptions:
-        for user in parent.child_node_subscriptions.keys():
+        for user in parent.child_node_subscriptions:
             if node._id in parent.child_node_subscriptions[user._id]:
                 parent.child_node_subscriptions[user._id].remove(node._id)
         parent.save()
