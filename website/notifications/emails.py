@@ -12,7 +12,7 @@ from website.notifications.model import NotificationDigest
 from website.notifications.model import NotificationSubscription
 from website.util import web_url_for
 
-LOCALTIME_FORMAT = '%H:%M on %A, %B %w'
+LOCALTIME_FORMAT = '%H:%M on %A, %B %d'
 
 def notify(uid, event, **context):
     # TODO: docstring
