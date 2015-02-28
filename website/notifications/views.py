@@ -95,4 +95,4 @@ def configure_subscription(auth):
 
         subscription.save()
 
-    return {'message': 'Successfully added ' + repr(user) + ' to ' + notification_type + ' list on ' + event_id}, 200
+    return {'message': 'Successfully added {!r} to {} list on {}'.format(user, notification_type, event_id)}
