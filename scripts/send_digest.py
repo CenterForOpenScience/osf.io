@@ -14,17 +14,22 @@ from framework.tasks import app as celery_app
 from scripts import utils as script_utils
 from website import mails
 from website.app import init_app
-from website.util import web_url_for
 from website.notifications.model import NotificationDigest
 from website.notifications.utils import NotificationsDict
 
 
 logger = logging.getLogger(__name__)
 
+# Silence loud internal mail logger
+SILENT_LOGGERS = [
+    'website.mails',
+]
+for logger_name in SILENT_LOGGERS:
+    logging.getLogger(logger_name).setLevel(logging.CRITICAL)
 
 def main():
     script_utils.add_file_logger(logger, __file__)
-    app = init_app()
+    app = init_app(attach_request_handlers=False)
     celery_app.main = 'scripts.send_digest'
     grouped_digests = group_digest_notifications_by_user()
     with app.test_request_context():
@@ -56,7 +61,6 @@ def send_digest(grouped_digests):
                 mail=mails.DIGEST,
                 name=user.fullname,
                 message=sorted_messages,
-                url=web_url_for('user_notifications', _absolute=True),
                 callback=remove_sent_digest_notifications.s(digest_notification_ids=digest_notification_ids)
             )
 

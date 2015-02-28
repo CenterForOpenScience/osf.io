@@ -110,7 +110,7 @@ function ProjectNotifications(data) {
     var tbOptions = {
         divID: 'grid',
         filesData: data,
-        rowHeight : 40,         // user can override or get from .tb-row height
+        rowHeight : 33,         // user can override or get from .tb-row height
         resolveToggle: resolveToggle,
         paginate : false,       // Whether the applet starts with pagination or not.
         paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.

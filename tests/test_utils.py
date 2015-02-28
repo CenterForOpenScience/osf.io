@@ -12,9 +12,8 @@ from website.util.mimetype import get_mimetype
 from website.util import web_url_for, api_url_for, is_json_request
 
 
-
 try:
-    import magic
+    import magic  # noqa
     LIBMAGIC_AVAILABLE = True
 except ImportError:
     LIBMAGIC_AVAILABLE = False

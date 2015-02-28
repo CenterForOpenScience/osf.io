@@ -28,9 +28,10 @@ def get_node_subscriptions(auth, **kwargs):
 @must_be_logged_in
 def configure_subscription(auth):
     user = auth.user
-    target_id = request.get_json().get('id')
-    event = request.get_json().get('event')
-    notification_type = request.get_json().get('notification_type')
+    json_data = request.get_json()
+    target_id = json_data.get('id')
+    event = json_data.get('event')
+    notification_type = json_data.get('notification_type')
 
     if not event or (notification_type not in NOTIFICATION_TYPES and notification_type != 'adopt_parent'):
         raise HTTPError(http.BAD_REQUEST, data=dict(
@@ -43,11 +44,16 @@ def configure_subscription(auth):
     if not node:
         # if target_id is not a node it currently must be the current user
         if not target_id == user._id:
-            sentry.log_message('{!r} attempted to subscribe to either a bad id or non-node non-self id, {}', format(user, target_id))
+            sentry.log_message(
+                '{!r} attempted to subscribe to either a bad '
+                'id or non-node non-self id, {}', format(user, target_id)
+            )
             raise HTTPError(http.NOT_FOUND)
 
         if notification_type == 'adopt_parent':
-            sentry.log_message('{!r} attempted to adopt_parent of a none node id, {}', format(user, target_id))
+            sentry.log_message(
+                '{!r} attempted to adopt_parent of a none node id, {}', format(user, target_id)
+            )
             raise HTTPError(http.BAD_REQUEST)
         owner = user
     else:
@@ -60,7 +66,10 @@ def configure_subscription(auth):
         else:
             parent = node.parent_node
             if not parent:
-                sentry.log_message('{!r} attempted to adopt_parent of the parentless project, {!r}'.format(user, node))
+                sentry.log_message(
+                    '{!r} attempted to adopt_parent of '
+                    'the parentless project, {!r}'.format(user, node)
+                )
                 raise HTTPError(http.BAD_REQUEST)
 
             # If adopt_parent make sure that this subscription is None for the current User
@@ -80,4 +89,4 @@ def configure_subscription(auth):
 
     subscription.save()
 
-    return {'message': 'Successfully added {!r} to {} list on {}'.format(user, notification_type, event_id)}
+    return {'message': 'Successfully subscribed to {} list on {}'.format(notification_type, event_id)}

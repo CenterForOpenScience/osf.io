@@ -2183,27 +2183,34 @@ span#profileFullname{
     border: none;
     max-height: 500px;
     height: inherit;
+    margin-top: 10px;
+}
+.osf-treebeard-minimal .tb-row {
+    padding-left: 10px;
 }
 
 .osf-treebeard-minimal .tb-row-titles {
     border: none;
 }
-
+.osf-treebeard-minimal .tb-td {
+    padding-top: 4px;
+}
+.osf-treebeard-minimal .title-text {
+    line-height: 25px;
+}
 .osf-treebeard-minimal .tb-head {
     display: none;
 }
 
 .osf-treebeard-minimal .form-control {
-    height: 32px;
+    height: 26px;
 }
 
 .tb-no-icon .tb-expand-icon-holder {
     width : 0;
 }
 
-.tb-no-icon .title-text {
-    line-height : 2.2;
-}
+
 .alert-notify-success {
     padding: 5px;
     color: #3C763D;
