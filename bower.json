@@ -22,7 +22,7 @@
     "reconnectingWebsocket": "#07669519f8",
     "truncate": "https://github.com/pathable/truncate.git#5da408e2325dd965e0c94c354622ad54645824b9",
     "dropzone": "https://github.com/sloria/dropzone.git#accept-directory",
-    "treebeard": "https://github.com/caneruguz/treebeard.git#d946a283afe3ef426d1b465b2df8322171a5624f",
+    "treebeard": "https://github.com/caneruguz/treebeard.git#429317f7fefc5936e7dea9370622d01b6411f92b",
     "jquery.cookie": "~1.4.1",
     "xhook": "~1.3.0",
     "osf-panel": "https://github.com/caneruguz/osf-panel.git#fda8e05d9f3ba8ed7bd43b46ceffe265b3d73b39",
