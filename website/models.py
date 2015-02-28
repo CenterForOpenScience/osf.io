@@ -13,8 +13,8 @@ from website.project.model import (
 )
 from website.citations.models import CitationStyle
 from website.conferences.model import Conference, MailRecord
-from website.notifications.model import DigestNotification
-from website.notifications.model import Subscription
+from website.notifications.model import NotificationDigest
+from website.notifications.model import NotificationSubscription
 from website.oauth.models import ExternalAccount
 
 # All models
@@ -22,7 +22,7 @@ MODELS = (
     User, ApiKey, Node, NodeLog,
     Tag, WatchConfig, Session, Guid, MetaSchema, Pointer,
     MailRecord, Comment, PrivateLink, MetaData, Conference,
-    Subscription, DigestNotification, CitationStyle,
+    NotificationSubscription, NotificationDigest, CitationStyle,
     CitationStyle, ExternalAccount,
 )
 

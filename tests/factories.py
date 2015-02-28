@@ -24,7 +24,7 @@ from website.oauth.models import ExternalProvider
 from website.project.model import (
     ApiKey, Node, NodeLog, WatchConfig, Tag, Pointer, Comment, PrivateLink,
 )
-from website.notifications.model import Subscription, DigestNotification
+from website.notifications.model import NotificationSubscription, NotificationDigest
 
 from website.addons.wiki.model import NodeWikiPage
 from tests.base import fake
@@ -363,12 +363,13 @@ class CommentFactory(ModularOdmFactory):
         return instance
 
 
-class SubscriptionFactory(ModularOdmFactory):
-    FACTORY_FOR = Subscription
+class NotificationSubscriptionFactory(ModularOdmFactory):
+    FACTORY_FOR = NotificationSubscription
 
 
-class DigestNotificationFactory(ModularOdmFactory):
-    FACTORY_FOR = DigestNotification
+class NotificationDigestFactory(ModularOdmFactory):
+    FACTORY_FOR = NotificationDigest
+
 
 class ExternalAccountFactory(ModularOdmFactory):
     FACTORY_FOR = ExternalAccount

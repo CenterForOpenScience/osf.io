@@ -9,7 +9,7 @@ from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 from website.notifications import utils
 from website.notifications.constants import NOTIFICATION_TYPES
-from website.notifications.model import Subscription
+from website.notifications.model import NotificationSubscription
 from website.project.decorators import must_be_valid_project
 from website.project.model import Node
 
@@ -52,7 +52,7 @@ def configure_subscription(auth):
 
     if notification_type == 'adopt_parent':
         try:
-            sub = Subscription.find_one(Q('_id', 'eq', event_id))
+            sub = NotificationSubscription.find_one(Q('_id', 'eq', event_id))
         except NoResultsFound:
             return
 
@@ -64,11 +64,11 @@ def configure_subscription(auth):
 
     else:
         try:
-            sub = Subscription(_id=event_id)
+            sub = NotificationSubscription(_id=event_id)
             sub.save()
 
         except KeyExistsException:
-            sub = Subscription.find_one(Q('_id', 'eq', event_id))
+            sub = NotificationSubscription.find_one(Q('_id', 'eq', event_id))
 
         sub.owner = node
         sub.event_name = event
