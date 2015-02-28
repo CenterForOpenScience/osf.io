@@ -152,17 +152,17 @@ def email_digest(subscribed_user_ids, uid, event, **context):
             digest.save()
 
 
-def get_node_lineage(node, node_lineage):
-    """ Get a list of node ids in order from the parent project to the node itself
-        e.g. ['parent._id', 'node._id']
+def get_node_lineage(node):
+    """ Get a list of node ids in order from the node to top most project
+        e.g. [parent._id, node._id]
     """
-    if node is not None:
-        node_lineage.append(node._id)
-    if node.node__parent != []:
-        for n in node.node__parent:
-            get_node_lineage(n, node_lineage)
+    lineage = [node._id]
 
-    return node_lineage
+    while node.parent_id:
+        node = website_models.Node.load(node.parent_id)
+        lineage = [node._id] + lineage
+
+    return lineage
 
 
 def get_settings_url(uid, user):
