@@ -176,7 +176,7 @@ def localize_timestamp(timestamp, user):
         user_timezone = pytz.timezone(user.timezone)
     except pytz.UnknownTimeZoneError:
         user_timezone = pytz.timezone('Etc/UTC')
-    return timestamp.astimezone(user_timezone).strftime('%c')
+    return timestamp.astimezone(user_timezone).strftime('%H:%M on %A, %B %w')
 
 
 email_templates = {

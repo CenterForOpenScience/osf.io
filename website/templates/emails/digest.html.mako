@@ -229,7 +229,7 @@
                 <tbody>
                 <tr>
                     <td style="border-collapse: collapse;">
-                        <h3 class="text-center" style="padding: 0;margin: 30px 0 0 0;border: none;list-style: none;font-weight: 300;text-align: center;">You have new notifications </h3>
+                        <h3 class="text-center" style="padding: 0;margin: 30px 0 0 0;border: none;list-style: none;font-weight: 300;text-align: center;">Recent Activity </h3>
                     </td>
                 </tr>
                 <tr>
@@ -248,7 +248,7 @@
                 <tr>
                     <td style="border-collapse: collapse;">
                         <p class="small text-center" style="text-align: center;font-size: 12px;">Copyright &copy; 2015 Center For Open Science, All rights reserved. </p>
-                        <p class="small text-center" style="text-align: center;font-size: 12px; line-height: 20px;">You received this email because you were subscribed to email notifications. <br /><a href="${url}" style="padding: 0;margin: 0;border: none;list-style: none;color: #008de5;text-decoration: none; font-weight: bold;">Update Subscription Preferences</a></p>
+                        <p class="small text-center" style="text-align: center;font-size: 12px; line-height: 20px;">You received this email because you are subscribed to email notifications. <br /><a href="${url}" style="padding: 0;margin: 0;border: none;list-style: none;color: #008de5;text-decoration: none; font-weight: bold;">Update Subscription Preferences</a></p>
                     </td>
                 </tr>
                 </tbody>

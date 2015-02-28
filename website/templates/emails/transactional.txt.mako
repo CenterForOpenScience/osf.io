@@ -1,4 +1,4 @@
-Hello ${name},
+Recent Activity:
 
     ${message}
 
