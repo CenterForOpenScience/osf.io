@@ -1,25 +1,31 @@
 import pytz
+
+from mako.lookup import Template
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
-from model import Subscription, DigestNotification
+
 from website import mails
-from website.util import web_url_for
-from website.models import Node, User
-from mako.lookup import Template
+from website import models as website_models
+from website.notifications import constants
 from website.notifications import utils
+from website.notifications.model import DigestNotification
+from website.notifications.model import Subscription
+from website.util import web_url_for
 
 
 def notify(uid, event, **context):
-    key = utils.to_subscription_key(uid, event)
+    # TODO: docstring
+
     node_subscribers = []
-    target_user = context.get('target_user', None)
 
     try:
-        subscription = Subscription.find_one(Q('_id', 'eq', key))
+        subscription = Subscription.find_one(
+            Q('_id', 'eq', utils.to_subscription_key(uid, event))
+        )
     except NoResultsFound:
         subscription = None
 
-    for notification_type in notifications.keys():
+    for notification_type in constants.NOTIFICATION_TYPES.keys():
         try:
             subscribed_users = getattr(subscription, notification_type)
         except AttributeError:
@@ -29,7 +35,7 @@ def notify(uid, event, **context):
             node_subscribers.append(u)
 
         if subscribed_users and notification_type != 'none':
-            event = 'comment_replies' if target_user else event
+            event = 'comment_replies' if context.get('target_user') else event
             send([u._id for u in subscribed_users], notification_type, uid, event, **context)
 
     return check_parent(uid, event, node_subscribers, **context)
@@ -39,7 +45,7 @@ def check_parent(uid, event, node_subscribers, **context):
     """ Check subscription object for the event on the parent project
         and send transactional email to indirect subscribers.
     """
-    node = Node.load(uid)
+    node = website_models.Node.load(uid)
     target_user = context.get('target_user', None)
 
     if node and node.node__parent:
@@ -50,7 +56,7 @@ def check_parent(uid, event, node_subscribers, **context):
             except NoResultsFound:
                 return check_parent(p._id, event, node_subscribers, **context)
 
-            for notification_type in notifications.keys():
+            for notification_type in constants.NOTIFICATION_TYPES.keys():
                 try:
                     subscribed_users = getattr(subscription, notification_type)
                 except AttributeError:
@@ -68,8 +74,24 @@ def check_parent(uid, event, node_subscribers, **context):
     return node_subscribers
 
 
-def send(subscribed_user_ids, notification_type, uid, event, **context):
-    notifications.get(notification_type)(subscribed_user_ids, uid, event, **context)
+def send(subscribed_user_ids, notification_type, uid, event, **kwargs):
+    """Dispatch to the handler for the provided notification_type"""
+
+    if notification_type == 'none':
+        return
+
+    try:
+        {
+            'email_transactional': email_transactional,
+            'email_digest': email_digest,
+        }[notification_type](
+            subscribed_user_ids=subscribed_user_ids,
+            uid=uid,
+            event=event,
+            **kwargs
+        )
+    except KeyError:
+        raise ValueError('Unrecognized notification_type')
 
 
 def email_transactional(subscribed_user_ids, uid, event, **context):
@@ -84,7 +106,7 @@ def email_transactional(subscribed_user_ids, uid, event, **context):
     subject = Template(email_templates[event]['subject']).render(**context)
 
     for user_id in subscribed_user_ids:
-        user = User.load(user_id)
+        user = website_models.User.load(user_id)
         email = user.username
         context['localized_timestamp'] = localize_timestamp(context.get('timestamp'), user)
         message = mails.render_message(template, **context)
@@ -110,14 +132,14 @@ def email_digest(subscribed_user_ids, uid, event, **context):
     template = event + '.html.mako'
 
     try:
-        node = Node.find_one(Q('_id', 'eq', uid))
+        node = website_models.Node.find_one(Q('_id', 'eq', uid))
         nodes = get_node_lineage(node, [])
         nodes.reverse()
     except NoResultsFound:
         nodes = []
 
     for user_id in subscribed_user_ids:
-        user = User.load(user_id)
+        user = website_models.User.load(user_id)
         context['localized_timestamp'] = localize_timestamp(context.get('timestamp'), user)
         message = mails.render_message(template, **context)
 
@@ -147,7 +169,7 @@ def get_settings_url(uid, user):
     if uid == user._id:
         return web_url_for('user_notifications', _absolute=True)
     else:
-        return Node.load(uid).absolute_url + 'settings/'
+        return website_models.Node.load(uid).absolute_url + 'settings/'
 
 
 def localize_timestamp(timestamp, user):
@@ -157,12 +179,6 @@ def localize_timestamp(timestamp, user):
         user_timezone = pytz.timezone('Etc/UTC')
     return timestamp.astimezone(user_timezone).strftime('%c')
 
-
-notifications = {
-    'email_transactional': email_transactional,
-    'email_digest': email_digest,
-    'none': 'none'
-}
 
 email_templates = {
     'comments': {

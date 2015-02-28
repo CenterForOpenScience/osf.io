@@ -74,18 +74,23 @@ def date_or_none(date):
         logger.exception(error)
         return None
 
-@must_be_logged_in
-def update_user(uid, auth):
-    # TODO: Decide if this is to be the "update user" endpoint, or only timezone
-    #       Reconcile with the existence of edit_profile
-    # TODO: This doesn't check that the user to update is logged in.
-    user = User.load(uid)
-    data = request.get_json()
-    timezone = data.get('timezone')
-    user.timezone = timezone
-    update_fields = user.save()
 
-    return update_fields, 200
+@must_be_logged_in
+def update_user(auth):
+    """Update the logged-in user's profile."""
+
+    # trust the decorator to handle auth
+    user = auth.user
+
+    data = request.get_json()
+
+    # TODO: Expand this to support other user attributes
+    if 'timezone' in data:
+        user.timezone = data['timezone']
+
+    user.save()
+
+    return {}
 
 
 def _profile_view(profile, is_profile):
@@ -141,7 +146,8 @@ def profile_view_id(uid, auth):
 
 @must_be_logged_in
 def edit_profile(**kwargs):
-
+    # NOTE: This method is deprecated. Use update_user instead.
+    # TODO: Remove this view
     user = kwargs['auth'].user
 
     form = request.form

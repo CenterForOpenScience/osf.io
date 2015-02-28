@@ -1,10 +1,12 @@
 import collections
-from framework.auth.signals import contributor_removed, node_deleted
-from website.models import Node
-from website.notifications.model import Subscription
-from website.notifications.constants import SUBSCRIPTIONS_AVAILABLE, NOTIFICATION_TYPES, USER_SUBSCRIPTIONS_AVAILABLE
+
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
+
+from framework.auth import signals
+from website.models import Node
+from website.notifications import constants
+from website.notifications import model
 
 
 class NotificationsDict(dict):
@@ -28,6 +30,7 @@ class NotificationsDict(dict):
 
 
 def to_subscription_key(uid, event):
+    """Build the Subscription primary key for the given guid and event"""
     return str(uid + '_' + event)
 
 
@@ -39,7 +42,7 @@ def from_subscription_key(key):
     }
 
 
-@contributor_removed.connect
+@signals.contributor_removed.connect
 def remove_contributor_from_subscriptions(contributor, node):
     """ Remove contributor from node subscriptions unless the user is an
         admin on any of node's parent projects.
@@ -57,9 +60,9 @@ def remove_contributor_from_subscriptions(contributor, node):
                     parent.save()
 
 
-@node_deleted.connect
+@signals.node_deleted.connect
 def remove_subscription(node):
-    Subscription.remove(Q('object_id', 'eq', node._id))
+    model.Subscription.remove(Q('object_id', 'eq', node._id))
     parent = node.parent_node
 
     if parent and parent.child_node_subscriptions:
@@ -82,7 +85,13 @@ def get_configured_projects(user):
             parent = node.parent_node
 
             # Include private parent ids so user subscriptions on the node are still displayed
-            if user not in subscription.none and parent and not parent.parent_node and not parent.has_permission(user, 'read') and parent._id not in configured_project_ids:
+            if (
+                user not in subscription.none and
+                parent and
+                not parent.parent_node and
+                not parent.has_permission(user, 'read')
+                and parent._id not in configured_project_ids
+            ):
                 configured_project_ids.append(parent._id)
 
             elif not parent and node._id not in configured_project_ids:
@@ -108,7 +117,7 @@ def check_project_subscriptions_are_all_none(user, node):
 def get_all_user_subscriptions(user):
     """ Get all Subscription objects that the user is subscribed to"""
     user_subscriptions = []
-    for notification_type in NOTIFICATION_TYPES:
+    for notification_type in constants.NOTIFICATION_TYPES:
         if getattr(user, notification_type, []):
             for subscription in getattr(user, notification_type, []):
                 if subscription:
@@ -135,13 +144,11 @@ def get_all_node_subscriptions(user, node, user_subscriptions=None):
     return node_subscriptions
 
 
-def format_data(user, node_ids, data, subscriptions_available=SUBSCRIPTIONS_AVAILABLE):
+def format_data(user, node_ids, data):
     """ Format subscriptions data for project settings page
     :param user: modular odm User object
     :param node_ids: list of parent project ids
     :param data: the formatted data
-    :param subscriptions_available: specify which subscription events to include, if
-    not all in SUBSCRIPTIONS_AVAILABLE
     :return: treebeard-formatted data
     """
     user_subscriptions = get_all_user_subscriptions(user)
@@ -168,8 +175,8 @@ def format_data(user, node_ids, data, subscriptions_available=SUBSCRIPTIONS_AVAI
 
             node_subscriptions = get_all_node_subscriptions(user, node, user_subscriptions=user_subscriptions)
             if node.has_permission(user, 'read'):
-                for subscription in subscriptions_available:
-                    event = serialize_event(user, subscription, subscriptions_available, node_subscriptions, node)
+                for subscription in constants.NODE_SUBSCRIPTIONS_AVAILABLE:
+                    event = serialize_event(user, subscription, constants.NODE_SUBSCRIPTIONS_AVAILABLE, node_subscriptions, node)
                     data[index]['children'].append(event)
 
             if node.nodes:
@@ -182,9 +189,9 @@ def format_data(user, node_ids, data, subscriptions_available=SUBSCRIPTIONS_AVAI
 
 def format_user_subscriptions(user, data):
     """ Format user-level subscriptions (e.g. comment replies across the OSF) for user settings page"""
-    user_subscriptions = [s for s in Subscription.find(Q('object_id', 'eq', user._id))]
-    for subscription in USER_SUBSCRIPTIONS_AVAILABLE:
-        event = serialize_event(user, subscription, USER_SUBSCRIPTIONS_AVAILABLE, user_subscriptions)
+    user_subscriptions = [s for s in model.Subscription.find(Q('object_id', 'eq', user._id))]
+    for subscription in constants.USER_SUBSCRIPTIONS_AVAILABLE:
+        event = serialize_event(user, subscription, constants.USER_SUBSCRIPTIONS_AVAILABLE, user_subscriptions)
         data.append(event)
 
     return data
@@ -210,7 +217,7 @@ def serialize_event(user, subscription, subscriptions_available, user_subscripti
     }
     for s in user_subscriptions:
         if s.event_name == subscription:
-            for notification_type in NOTIFICATION_TYPES:
+            for notification_type in constants.NOTIFICATION_TYPES:
                 if user in getattr(s, notification_type):
                     event['event']['notificationType'] = notification_type
 
@@ -237,11 +244,11 @@ def get_parent_notification_type(uid, event, user):
         for p in node.node__parent:
             key = to_subscription_key(p._id, event)
             try:
-                subscription = Subscription.find_one(Q('_id', 'eq', key))
+                subscription = model.Subscription.find_one(Q('_id', 'eq', key))
             except NoResultsFound:
                 return get_parent_notification_type(p._id, event, user)
 
-            for notification_type in NOTIFICATION_TYPES:
+            for notification_type in constants.NOTIFICATION_TYPES:
                 if user in getattr(subscription, notification_type):
                     return notification_type
             else:

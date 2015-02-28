@@ -416,7 +416,7 @@ class TestNotificationUtils(OsfTestCase):
                     {
                         'event': {
                             'title': 'comments',
-                            'description': constants.SUBSCRIPTIONS_AVAILABLE['comments'],
+                            'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
                             'notificationType': 'email_transactional',
                             'parent_notification_type': None
                         },
@@ -436,7 +436,7 @@ class TestNotificationUtils(OsfTestCase):
                             {
                                 'event': {
                                     'title': 'comments',
-                                    'description': constants.SUBSCRIPTIONS_AVAILABLE['comments'],
+                                    'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
                                     'notificationType': 'email_transactional',
                                     'parent_notification_type': 'email_transactional'
                                 },
@@ -463,7 +463,7 @@ class TestNotificationUtils(OsfTestCase):
                         {
                             'event': {
                                 'title': 'comments',
-                                'description': constants.SUBSCRIPTIONS_AVAILABLE['comments'],
+                                'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
                                 'notificationType': 'email_transactional',
                                 'parent_notification_type': 'email_transactional'
                             },
@@ -492,7 +492,7 @@ class TestNotificationUtils(OsfTestCase):
                     {
                         'event': {
                             'title': 'comments',
-                            'description': constants.SUBSCRIPTIONS_AVAILABLE['comments'],
+                            'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
                             'notificationType': 'email_transactional',
                             'parent_notification_type': None
                         },
@@ -511,7 +511,7 @@ class TestNotificationUtils(OsfTestCase):
                             {
                                 'event': {
                                     'title': 'comments',
-                                    'description': constants.SUBSCRIPTIONS_AVAILABLE['comments'],
+                                    'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
                                     'notificationType': 'email_transactional',
                                     'parent_notification_type': 'email_transactional'
                                 },
@@ -532,7 +532,7 @@ class TestNotificationUtils(OsfTestCase):
                             {
                                 'event': {
                                     'title': 'comments',
-                                    'description': constants.SUBSCRIPTIONS_AVAILABLE['comments'],
+                                    'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
                                     'notificationType': 'adopt_parent',
                                     'parent_notification_type': 'email_transactional'
                                 },
@@ -571,7 +571,7 @@ class TestNotificationUtils(OsfTestCase):
                 {
                     'event': {
                         'title': 'comments',
-                        'description': constants.SUBSCRIPTIONS_AVAILABLE['comments'],
+                        'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
                         'notificationType': 'email_transactional',
                         'parent_notification_type': None
                     },
@@ -616,7 +616,7 @@ class TestNotificationUtils(OsfTestCase):
                             {
                                 'event': {
                                     'title': 'comments',
-                                    'description': constants.SUBSCRIPTIONS_AVAILABLE['comments'],
+                                    'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
                                     'notificationType': 'email_transactional',
                                     'parent_notification_type': None
                                 },
@@ -683,11 +683,11 @@ class TestNotificationUtils(OsfTestCase):
 
     def test_serialize_node_level_event(self):
         node_subscriptions = utils.get_all_node_subscriptions(self.user, self.node)
-        data = utils.serialize_event(self.user, 'comments', constants.SUBSCRIPTIONS_AVAILABLE, node_subscriptions, self.node)
+        data = utils.serialize_event(self.user, 'comments', constants.NODE_SUBSCRIPTIONS_AVAILABLE, node_subscriptions, self.node)
         expected = {
             'event': {
                 'title': 'comments',
-                'description': constants.SUBSCRIPTIONS_AVAILABLE['comments'],
+                'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
                 'notificationType': 'email_transactional',
                 'parent_notification_type': 'email_transactional'
             },
@@ -705,11 +705,11 @@ class TestNotificationUtils(OsfTestCase):
         self.node.add_contributor(contributor=user, permissions=['read'])
         self.node.save()
         node_subscriptions = utils.get_all_node_subscriptions(user, self.node)
-        data = utils.serialize_event(user, 'comments', constants.SUBSCRIPTIONS_AVAILABLE, node_subscriptions, self.node)
+        data = utils.serialize_event(user, 'comments', constants.NODE_SUBSCRIPTIONS_AVAILABLE, node_subscriptions, self.node)
         expected = {
             'event': {
                 'title': 'comments',
-                'description': constants.SUBSCRIPTIONS_AVAILABLE['comments'],
+                'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
                 'notificationType': 'adopt_parent',
                 'parent_notification_type': 'email_transactional'
             },
