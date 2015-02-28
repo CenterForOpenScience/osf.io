@@ -26,14 +26,14 @@
                     <li><a href="#configureCommenting">Configure Commenting</a></li>
                 % endif
 
-                    <li><a href="#configureNotifications">Configure Notifications</a></li>
-
                 % if 'write' in user['permissions'] and not node['is_registration']:
                     <li><a href="#selectAddons">Select Add-ons</a></li>
 
                 % if addon_enabled_settings:
                     <li><a href="#configureAddons">Configure Add-ons</a></li>
                 % endif
+
+                    <li><a href="#configureNotifications">Configure Notifications</a></li>
                 %endif
             </ul>
         </div><!-- end sidebar -->
@@ -98,24 +98,6 @@
 
         % endif
 
-        % if not node['is_registration'] and user['has_read_permissions']:
-            <div class="panel panel-default">
-                <span id="configureNotifications" class="anchor"></span>
-
-                <div class="panel-heading">
-                    <h3 class="panel-title">Configure Notifications</h3>
-                </div>
-
-                <form id="notificationSettings" class="osf-treebeard-minimal">
-                    <div id="grid">
-    <div class="notifications-loading"> <i class="icon-spinner notifications-spin"></i> <p class="m-t-sm fg-load-message"> Loading notification settings...  </p> </div>
-                    </div>
-                    <div class="help-block" style="padding-left: 15px">
-                            <p id="configureNotificationsMessage"></p>
-                    </div>
-                </form>
-            </div>
-         % endif
 
         % if 'write' in user['permissions']:
         <div class="panel panel-default">
@@ -196,6 +178,24 @@
 
         % endif
 
+        % if not node['is_registration'] and user['has_read_permissions']:
+            <div class="panel panel-default">
+                <span id="configureNotifications" class="anchor"></span>
+
+                <div class="panel-heading">
+                    <h3 class="panel-title">Configure Notifications</h3>
+                </div>
+
+                <form id="notificationSettings" class="osf-treebeard-minimal">
+                    <div id="grid">
+    <div class="notifications-loading"> <i class="icon-spinner notifications-spin"></i> <p class="m-t-sm fg-load-message"> Loading notification settings...  </p> </div>
+                    </div>
+                    <div class="help-block" style="padding-left: 15px">
+                            <p id="configureNotificationsMessage"></p>
+                    </div>
+                </form>
+            </div>
+         % endif
     </div>
 
 </div>
