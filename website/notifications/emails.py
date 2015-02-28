@@ -26,13 +26,9 @@ def notify(uid, event, **context):
         subscription = None
 
     for notification_type in constants.NOTIFICATION_TYPES.keys():
-        try:
-            subscribed_users = getattr(subscription, notification_type)
-        except AttributeError:
-            subscribed_users = []
+        subscribed_users = getattr(subscription, notification_type, [])
 
-        for u in subscribed_users:
-            node_subscribers.append(u)
+        node_subscribers.extend(subscribed_users)
 
         if subscribed_users and notification_type != 'none':
             event = 'comment_replies' if context.get('target_user') else event
@@ -133,10 +129,9 @@ def email_digest(subscribed_user_ids, uid, event, **context):
 
     try:
         node = website_models.Node.find_one(Q('_id', 'eq', uid))
-        nodes = get_node_lineage(node, [])
-        nodes.reverse()
+        node_lineage_ids = get_node_lineage(node)
     except NoResultsFound:
-        nodes = []
+        node_lineage_ids = []
 
     for user_id in subscribed_user_ids:
         user = website_models.User.load(user_id)
@@ -149,29 +144,31 @@ def email_digest(subscribed_user_ids, uid, event, **context):
                 event=event,
                 user_id=user._id,
                 message=message,
-                node_lineage=nodes if nodes else []
+                node_lineage=node_lineage_ids
             )
             digest.save()
 
 
-def get_node_lineage(node, node_lineage):
-    """ Get a list of node ids in order from the parent project to the node itself
-        e.g. ['parent._id', 'node._id']
+def get_node_lineage(node):
+    """ Get a list of node ids in order from the node to top most project
+        e.g. [parent._id, node._id]
     """
-    if node is not None:
-        node_lineage.append(node._id)
-    if node.node__parent != []:
-        for n in node.node__parent:
-            get_node_lineage(n, node_lineage)
+    lineage = [node._id]
 
-    return node_lineage
+    while node.parent_id:
+        node = website_models.Node.load(node.parent_id)
+        lineage = [node._id] + lineage
+
+    return lineage
 
 
 def get_settings_url(uid, user):
     if uid == user._id:
         return web_url_for('user_notifications', _absolute=True)
-    else:
-        return website_models.Node.load(uid).absolute_url + 'settings/'
+
+    node = website_models.Node.load(uid)
+    assert node, 'get_settings_url recieved an invalid Node id'
+    return node.web_url_for('node_setting', _guid=True, _absolute=True)
 
 
 def localize_timestamp(timestamp, user):
