@@ -26,13 +26,9 @@ def notify(uid, event, **context):
         subscription = None
 
     for notification_type in constants.NOTIFICATION_TYPES.keys():
-        try:
-            subscribed_users = getattr(subscription, notification_type)
-        except AttributeError:
-            subscribed_users = []
+        subscribed_users = getattr(subscription, notification_type, [])
 
-        for u in subscribed_users:
-            node_subscribers.append(u)
+        node_subscribers.extend(subscribed_users)
 
         if subscribed_users and notification_type != 'none':
             event = 'comment_replies' if context.get('target_user') else event
