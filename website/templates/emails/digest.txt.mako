@@ -14,10 +14,10 @@ def print_message(d, indent=0):
     return message
 %>
 
-Hello ${name},
+Recent Activity:
 
-Summary:
 ${build_message(message)}
+
 From the Open Science Framework
 
 <%def name="build_message(d, indent=0)">
