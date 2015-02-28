@@ -11,7 +11,7 @@ require('../../css/addonsettings.css');
 var ctx = window.contextVars;
 
 // Initialize treebeard grid
-var ProjectNotifications = require('../project-settings-treebeard.js');
+var ProjectNotifications = require('../notificationsTreebeard.js');
 var $notificationsMsg = $('#configureNotificationsMessage');
 $.ajax({
         url: ctx.node.urls.api  + 'subscriptions/',
