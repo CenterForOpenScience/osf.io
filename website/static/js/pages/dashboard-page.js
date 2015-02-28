@@ -5,7 +5,7 @@
 var Raven = require('raven-js');
 var ko = require('knockout');
 var $ = require('jquery');
-
+var jstz = require('jstz').jstz;
 
 var $osf = require('osfHelpers');
 var ProjectOrganizer = require('../projectorganizer.js');
@@ -47,22 +47,52 @@ request.fail(function(xhr, textStatus, error) {
     });
 });
 
+var ensureUserTimezone = function(savedTimezone) {
+    var clientTimezone = jstz.determine().name;
+
+    if (savedTimezone != clientTimezone) {
+        var url = '/api/v1/profile/';
+
+        var request = $osf.putJSON(
+            url,
+            {'timezone': clientTimezone}
+        );
+        request.fail(function(xhr, textStatus, error) {
+            Raven.captureMessage('Could not set user timezone offset', {
+                url: url,
+                textStatus: textStatus,
+                error: error
+            });
+        });
+    }
+};
 
 $(document).ready(function() {
     $('#projectOrganizerScope').tooltip({selector: '[data-toggle=tooltip]'});
-     $.ajax({
-              url:  '/api/v1/dashboard/'
-            })
-            .done(function( data ) {
-                var options = {
-                        placement : 'dashboard',
-                        divID: 'project-grid',
-                        filesData: data.data,
-                        multiselect : true
-                    };
-                    var filebrowser = new ProjectOrganizer(options);   
- 
-            });
+
+    var request = $.ajax({
+        url:  '/api/v1/dashboard/'
+    });
+    request.done(function(data) {
+        new ProjectOrganizer({
+            placement : 'dashboard',
+            divID: 'project-grid',
+            filesData: data.data,
+            multiselect : true
+        });
+
+        ensureUserTimezone(data.timezone);
+    });
+    request.fail(function(xhr, textStatus, error) {
+        Raven.captureMessage('Failed to populate user dashboard', {
+            url: url,
+            textStatus: textStatus,
+            error: error
+        });
+    });
+
+
+
 });
 // Initialize logfeed
 new LogFeed('#logScope', '/api/v1/watched/logs/');

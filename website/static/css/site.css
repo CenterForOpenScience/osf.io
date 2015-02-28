@@ -393,9 +393,9 @@ li.pointer {
     border-width: 1px;
     width: 100%;
     margin: auto;
-    -webkit-box-flex: 0 0 auto;  
-    -webkit-flex: 0 0 auto;       
-    -ms-flex: 0 0 auto;           
+    -webkit-box-flex: 0 0 auto;
+    -webkit-flex: 0 0 auto;
+    -ms-flex: 0 0 auto;
     flex: 3 0 auto;
     height: 500px; /* this will get overwritten by flex box */
 }
@@ -849,7 +849,7 @@ h1.node-title, h1.node-parent-title {
 
 .wiki-panel-header .icon-angle-right, .wiki-panel-header .icon-angle-left {
     cursor: pointer;
-} 
+}
 .wiki-panel-header .icon-list {
     color: #808080;
 }
@@ -1133,9 +1133,9 @@ div.search-result  {
 .wmd-panel
 {
     width: 100%;
-    display: -webkit-box;  
-    display: -ms-flexbox;  
-    display: -webkit-flex; 
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: -webkit-flex;
     display: flex;
     height: 620px;
     -webkit-align-content: flex-start;
@@ -1156,9 +1156,9 @@ div.search-result  {
 .wmd-panel .list-inline {
     width: 100%;
     margin: auto;
-    -webkit-box-flex: 0 0 auto;  
-    -webkit-flex: 0 0 auto;       
-    -ms-flex: 0 0 auto;           
+    -webkit-box-flex: 0 0 auto;
+    -webkit-flex: 0 0 auto;
+    -ms-flex: 0 0 auto;
     flex: 0 0 auto;
 }
 
@@ -1171,9 +1171,9 @@ div.search-result  {
 #wmd-button-bar{
     width: 100%;
     margin: auto;
-    -webkit-box-flex: 0 0 auto;  
-    -webkit-flex: 0 0 auto;       
-    -ms-flex: 0 0 auto;           
+    -webkit-box-flex: 0 0 auto;
+    -webkit-flex: 0 0 auto;
+    -ms-flex: 0 0 auto;
     flex: 0 0 auto;
 }
 
@@ -2177,6 +2177,62 @@ span#profileFullname{
     position: fixed;
 }
 
+
+/* Minimal Treebeard for Configure Notifications in project and user settings */
+.osf-treebeard-minimal #tb-tbody {
+    border: none;
+}
+
+.osf-treebeard-minimal .tb-row-titles {
+    border: none;
+}
+
+.osf-treebeard-minimal .tb-head {
+    display: none;
+}
+
+.osf-treebeard-minimal .form-control {
+    height: 32px;
+}
+
+.tb-no-icon .tb-expand-icon-holder {
+    width : 0;
+}
+
+.tb-no-icon .title-text {
+    line-height : 2.2;
+}
+.alert-notify-success {
+    padding: 5px;
+    color: #3C763D;
+}
+.alert-notify-danger {
+    padding: 5px;
+    color: #A94442;
+}
+.notifications-loading {
+    text-align: center;
+    font-size: 16px;
+    font-weight: 200;
+    padding: 20px;
+}
+.notifications-spin {
+    -webkit-animation: spin 2s infinite linear;
+    animation: spin 2s infinite linear;
+}
+
+@-moz-keyframes spin {
+    from { -moz-transform: rotate(0deg); }
+    to { -moz-transform: rotate(360deg); }
+}
+@-webkit-keyframes spin {
+    from { -webkit-transform: rotate(0deg); }
+    to { -webkit-transform: rotate(360deg); }
+}
+@keyframes spin {
+    from {transform:rotate(0deg);}
+    to {transform:rotate(360deg);}
+}
 /* Wiki additions */
 .wiki-panel {
     border: 1px solid #ccc;

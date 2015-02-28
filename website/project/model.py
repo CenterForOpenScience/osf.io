@@ -30,6 +30,7 @@ from framework.mongo import ObjectId
 from framework.mongo import StoredObject
 from framework.addons import AddonModelMixin
 from framework.auth import get_user, User, Auth
+from framework.auth import signals as auth_signals
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
 from framework.auth.utils import privacy_info_handle
@@ -634,6 +635,10 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     piwik_site_id = fields.StringField()
 
+    # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
+    # {<User.id>: [<Node._id>, <Node2._id>, ...] }
+    child_node_subscriptions = fields.DictionaryField()
+
     _meta = {
         'optimistic': True,
     }
@@ -831,6 +836,18 @@ class Node(GuidStoredObject, AddonModelMixin):
         if permission == 'read' and check_parent:
             return self.is_admin_parent(user)
         return False
+
+    def check_user_has_permission_on_private_node_child(self, user):
+        """ Checks whether the user is a contributor or admin viewer on any components
+            of a private project that are not deleted.
+        """
+        if not self.has_permission(user, 'read'):
+            nodes = [n for n in self.nodes if n.primary and not n.is_deleted]
+            for node in nodes:
+                return node.check_user_has_permission_on_private_node_child(user)
+            else:
+                return False
+        return True
 
     def get_permissions(self, user):
         """Get list of permissions for user.
@@ -1468,6 +1485,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.is_deleted = True
         self.deleted_date = date
         self.save()
+
+        auth_signals.node_deleted.send(self)
 
         return True
 
@@ -2246,6 +2265,9 @@ class Node(GuidStoredObject, AddonModelMixin):
             )
 
         self.save()
+
+        #send signal to remove this user from project subscriptions
+        auth_signals.contributor_removed.send(contributor, node=self)
 
         return True
 

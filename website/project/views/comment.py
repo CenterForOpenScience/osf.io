@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import collections
 import httplib as http
+import pytz
 
 from flask import request
 from modularodm import Q
@@ -11,6 +12,7 @@ from framework.auth.utils import privacy_info_handle
 from framework.forms.utils import sanitize
 
 from website import settings
+from website.notifications.emails import notify
 from website.filters import gravatar
 from website.models import Guid, Comment
 from website.project.decorators import must_be_contributor_or_public
@@ -155,9 +157,31 @@ def add_comment(**kwargs):
     )
     comment.save()
 
+    context = dict(
+        nodeType=node.project_or_component,
+        timestamp=datetime.utcnow().replace(tzinfo=pytz.utc),
+        commenter=auth.user,
+        gravatar_url=auth.user.gravatar_url,
+        content=content,
+        target_user=target.user if is_reply(target) else None,
+        parent_comment=target.content if is_reply(target) else "",
+        title=node.title,
+        node_id=node._id,
+        url=node.absolute_url
+    )
+    sent_subscribers = notify(uid=node._id, event="comments", **context)
+
+    if is_reply(target):
+        if target.user and target.user not in sent_subscribers:
+            notify(uid=target.user._id, event='comment_replies', **context)
+
     return {
         'comment': serialize_comment(comment, auth)
     }, http.CREATED
+
+
+def is_reply(target):
+    return isinstance(target, Comment)
 
 
 @must_be_contributor_or_public

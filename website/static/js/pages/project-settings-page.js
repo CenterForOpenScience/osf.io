@@ -10,6 +10,21 @@ require('../../css/addonsettings.css');
 
 var ctx = window.contextVars;
 
+// Initialize treebeard grid
+var ProjectNotifications = require('../project-settings-treebeard.js');
+var $notificationsMsg = $('#configureNotificationsMessage');
+$.ajax({
+        url: ctx.node.urls.api  + 'subscriptions/',
+        type: 'GET',
+        dataType: 'json'
+    }).done(function(response) {
+        new ProjectNotifications(response);
+    }).fail(function() {
+        $notificationsMsg.addClass('text-danger');
+        $notificationsMsg.text('Could not retrieve notification settings.');
+    });
+
+
 $(document).ready(function() {
 
     $('#deleteNode').on('click', function() {
