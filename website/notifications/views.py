@@ -1,12 +1,11 @@
 import httplib as http
 
 from flask import request
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound
-from modularodm.storage.mongostorage import KeyExistsException
 
+from framework import sentry
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
+
 from website.notifications import utils
 from website.notifications.constants import NOTIFICATION_TYPES
 from website.notifications.model import NotificationSubscription
@@ -18,16 +17,19 @@ from website.project.model import Node
 def get_subscriptions(auth):
     return utils.format_user_and_project_subscriptions(auth.user)
 
+
 @must_be_logged_in
 @must_be_valid_project
 def get_node_subscriptions(auth, **kwargs):
     node = kwargs.get('node') or kwargs['project']
     return utils.format_data(auth.user, [node._id])
 
+
 @must_be_logged_in
 def configure_subscription(auth):
     user = auth.user
     subscription = request.json
+    uid = subscription.get('id')
     event = subscription.get('event')
     notification_type = subscription.get('notification_type')
 
@@ -36,63 +38,59 @@ def configure_subscription(auth):
             message_long="Must provide an event and notification type for subscription.")
         )
 
-    uid = subscription.get('id')
     event_id = utils.to_subscription_key(uid, event)
 
     node = Node.load(uid)
-    if node:
-        parent = node.parent_node
-        if parent:
-            if not parent.child_node_subscriptions:
-                parent.child_node_subscriptions = {}
-                parent.save()
-            if not parent.child_node_subscriptions.get(user._id, None):
-                parent.child_node_subscriptions[user._id] = []
-                parent.save()
 
-    if notification_type == 'adopt_parent':
-        try:
-            sub = NotificationSubscription.find_one(Q('_id', 'eq', event_id))
-        except NoResultsFound:
-            return
+    if not node:
+        # if uid is not a node it current must be a user that is the current user
+        if not uid == user._id:
+            sentry.log_message('{!r} attempted to subscribe to either a bad id or non-node non-self id, {}', format(user, uid))
+            raise HTTPError(http.BAD_REQUEST)
 
-        if node and node.parent_node and sub in node.child_node_subscriptions.get(user._id, []):
-            node.parent_node.child_node_subscriptions[user._id].remove(sub.owner._id)
-            node.parent_node.save()
-
-        sub.remove_user_from_subscription(user)
+        if notification_type == 'adopt_parent':
+            sentry.log_message('{!r} attempted to adopt_parent of a none node id, {}', format(user, uid))
+            raise HTTPError(http.BAD_REQUEST)
+        owner = user
 
     else:
-        try:
-            sub = NotificationSubscription(_id=event_id)
-            sub.save()
-
-        except KeyExistsException:
-            sub = NotificationSubscription.find_one(Q('_id', 'eq', event_id))
-
-        sub.owner = node
-        sub.event_name = event
-        sub.save()
-
-        # Add user to list of subscribers
-        setattr(sub, notification_type, [])
-        sub.save()
-
-        if user not in getattr(sub, notification_type):
-            getattr(sub, notification_type).append(user)
-            sub.save()
-
-        for nt in NOTIFICATION_TYPES:
-            if nt != notification_type and user in getattr(sub, nt):
-                getattr(sub, nt).remove(user)
-                sub.save()
-
-        if node and node.parent_node:
+        if notification_type != 'adopt_parent':
+            owner = node
+        else:
             parent = node.parent_node
-            if notification_type == 'none' and sub.owner._id in parent.child_node_subscriptions.get(user._id, None):
-                parent.child_node_subscriptions[user._id].remove(sub.owner._id)
-            elif notification_type != 'none' and sub.owner._id not in parent.child_node_subscriptions.get(user._id, None):
-                parent.child_node_subscriptions[user._id].append(sub.owner._id)
-            node.save()
+            if not parent:
+                sentry.log_message('{!r} attempted to adopt_parent of the parentless project, {!r}'.format(user, node))
+                raise HTTPError(http.BAD_REQUEST)
 
-        return {'message': 'Successfully added ' + repr(user) + ' to ' + notification_type + ' list on ' + event_id}, 200
+            # If adopt_parent make sure that this subscription is None for the current User
+            subscription = NotificationSubscription.load(event_id)
+            if not subscription:
+                return {}  # We're done here
+
+            # This logic should be moved to the subscription model
+            if subscription in node.child_node_subscriptions.get(user._id, []):
+                node.parent_node.child_node_subscriptions[user._id].remove(subscription.owner._id)
+                node.parent_node.save()
+
+            subscription.remove_user_from_subscription(user)
+            return {}
+
+    subscription = NotificationSubscription.load(event_id)
+
+    if not subscription:
+        subscription = NotificationSubscription(_id=event_id, owner=owner, event_name=event)
+        getattr(subscription, notification_type).append(user)
+        subscription.save()
+    else:
+        # Ensure that user is only recieving the notifications that opted for
+        for nt in NOTIFICATION_TYPES:
+            if user in getattr(subscription, nt):
+                if nt != notification_type:
+                    getattr(subscription, nt).remove(user)
+            else:
+                if nt == notification_type:
+                    getattr(subscription, nt).append(user)
+
+        subscription.save()
+
+    return {'message': 'Successfully added ' + repr(user) + ' to ' + notification_type + ' list on ' + event_id}, 200
