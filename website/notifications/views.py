@@ -28,28 +28,26 @@ def get_node_subscriptions(auth, **kwargs):
 @must_be_logged_in
 def configure_subscription(auth):
     user = auth.user
-    subscription = request.json
-    uid = subscription.get('id')
-    event = subscription.get('event')
-    notification_type = subscription.get('notification_type')
+    target_id = request.get_json().get('id')
+    event = request.get_json().get('event')
+    notification_type = request.get_json().get('notification_type')
 
     if not event or not notification_type:
         raise HTTPError(http.BAD_REQUEST, data=dict(
             message_long="Must provide an event and notification type for subscription.")
         )
 
-    event_id = utils.to_subscription_key(uid, event)
-
-    node = Node.load(uid)
+    node = Node.load(target_id)
+    event_id = utils.to_subscription_key(target_id, event)
 
     if not node:
-        # if uid is not a node it current must be a user that is the current user
-        if not uid == user._id:
-            sentry.log_message('{!r} attempted to subscribe to either a bad id or non-node non-self id, {}', format(user, uid))
+        # if target_id is not a node it current must be a user that is the current user
+        if not target_id == user._id:
+            sentry.log_message('{!r} attempted to subscribe to either a bad id or non-node non-self id, {}', format(user, target_id))
             raise HTTPError(http.BAD_REQUEST)
 
         if notification_type == 'adopt_parent':
-            sentry.log_message('{!r} attempted to adopt_parent of a none node id, {}', format(user, uid))
+            sentry.log_message('{!r} attempted to adopt_parent of a none node id, {}', format(user, target_id))
             raise HTTPError(http.BAD_REQUEST)
         owner = user
 
