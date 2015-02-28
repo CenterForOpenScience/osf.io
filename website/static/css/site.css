@@ -2181,6 +2181,8 @@ span#profileFullname{
 /* Minimal Treebeard for Configure Notifications in project and user settings */
 .osf-treebeard-minimal #tb-tbody {
     border: none;
+    max-height: 500px;
+    height: inherit;
 }
 
 .osf-treebeard-minimal .tb-row-titles {
