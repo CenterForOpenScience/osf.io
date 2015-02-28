@@ -62,7 +62,6 @@ def send_digest(grouped_digests):
                 mail=mails.DIGEST,
                 name=user.fullname,
                 message=sorted_messages,
-                url=web_url_for('user_notifications', _absolute=True),
                 callback=remove_sent_digest_notifications.s(digest_notification_ids=digest_notification_ids)
             )
 

@@ -1,4 +1,5 @@
 <% from website.models import Node %>
+<% from website import util %>
 <%def name="build_message(d, parent=None)">
 %for key in d['children']:
     %if d['children'][key]['messages']:
@@ -6,10 +7,10 @@
             <thead class="block-head">
             <th colspan="2">
                 <h3>
-                ${Node.load(key).title}  
+                ${Node.load(key).title}
                 %if parent :
                     <small> in ${Node.load(parent).title} </small>
-                %endif 
+                %endif
                 </h3>
             </th>
             </thead>
@@ -18,7 +19,7 @@
                 <td >
                     %for m in d['children'][key]['messages']:
                         ${m['message']}
-                    %endfor                             
+                    %endfor
                 </td>
             </tr>
             </tbody>
@@ -248,7 +249,7 @@
                 <tr>
                     <td style="border-collapse: collapse;">
                         <p class="small text-center" style="text-align: center;font-size: 12px;">Copyright &copy; 2015 Center For Open Science, All rights reserved. </p>
-                        <p class="small text-center" style="text-align: center;font-size: 12px; line-height: 20px;">You received this email because you are subscribed to email notifications. <br /><a href="${url}" style="padding: 0;margin: 0;border: none;list-style: none;color: #008de5;text-decoration: none; font-weight: bold;">Update Subscription Preferences</a></p>
+                        <p class="small text-center" style="text-align: center;font-size: 12px; line-height: 20px;">You received this email because you are subscribed to email notifications. <br /><a href="${util.web_url_for('user_notifications', _absolute=True)}" style="padding: 0;margin: 0;border: none;list-style: none;color: #008de5;text-decoration: none; font-weight: bold;">Update Subscription Preferences</a></p>
                     </td>
                 </tr>
                 </tbody>
