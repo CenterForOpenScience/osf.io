@@ -338,6 +338,9 @@ class TestNotificationUtils(OsfTestCase):
     def test_get_configured_project_ids_does_not_return_user_or_node_ids(self):
         configured_ids = utils.get_configured_projects(self.user)
 
+        # No dupilcates!
+        assert_equal(len(configured_ids), 1)
+
         assert_in(self.project._id, configured_ids)
         assert_not_in(self.node._id, configured_ids)
         assert_not_in(self.user._id, configured_ids)

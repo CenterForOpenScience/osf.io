@@ -78,7 +78,7 @@ def get_configured_projects(user):
     :param user: modular odm User object
     :return: list of project ids for projects with no parent
     """
-    configured_projects = []
+    configured_project_ids = set()
     user_subscriptions = get_all_user_subscriptions(user)
 
     for subscription in user_subscriptions:
@@ -92,9 +92,9 @@ def get_configured_projects(user):
             node = Node.load(node.parent_id)
 
         if not node.is_deleted:
-            configured_projects.append(node._id)
+            configured_project_ids.add(node._id)
 
-    return configured_projects
+    return list(configured_project_ids)
 
 
 def check_project_subscriptions_are_all_none(user, node):
@@ -144,16 +144,18 @@ def format_data(user, node_ids):
     """
     items = []
     user_subscriptions = get_all_user_subscriptions(user)
+
     for node_id in node_ids:
-        children = []
         node = Node.load(node_id)
+        assert node, '{} is not a valid Node.'.format(node_id)
+
         can_read = node.has_permission(user, 'read')
         can_read_children = node.can_read_children(user)
-        assert node, '{} is not a valid Node.'.format(node_id)
 
         if not can_read and not can_read_children:
             continue
 
+        children = []
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
 
