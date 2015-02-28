@@ -78,7 +78,7 @@ def get_configured_projects(user):
     :param user: modular odm User object
     :return: list of project ids for projects with no parent
     """
-    configured_projects = []
+    configured_project_ids = set()
     user_subscriptions = get_all_user_subscriptions(user)
 
     for subscription in user_subscriptions:
@@ -92,9 +92,9 @@ def get_configured_projects(user):
             node = Node.load(node.parent_id)
 
         if not node.is_deleted:
-            configured_projects.append(node._id)
+            configured_project_ids.add(node._id)
 
-    return configured_projects
+    return configured_project_ids
 
 
 def check_project_subscriptions_are_all_none(user, node):
