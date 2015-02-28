@@ -14,7 +14,6 @@ from framework.tasks import app as celery_app
 from scripts import utils as script_utils
 from website import mails
 from website.app import init_app
-from website.util import web_url_for
 from website.notifications.model import NotificationDigest
 from website.notifications.utils import NotificationsDict
 
@@ -30,7 +29,7 @@ for logger_name in SILENT_LOGGERS:
 
 def main():
     script_utils.add_file_logger(logger, __file__)
-    app = init_app()
+    app = init_app(attach_request_handlers=False)
     celery_app.main = 'scripts.send_digest'
     grouped_digests = group_digest_notifications_by_user()
     with app.test_request_context():
