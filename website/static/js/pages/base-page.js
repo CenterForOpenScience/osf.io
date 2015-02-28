@@ -84,3 +84,5 @@ $(function() {
     }
     new NavbarControl('.osf-nav-wrapper');
 });
+
+$("input.password").on('keyup',function(e){$("#"+e.currentTarget.id).next().show().text('hello!');});
