@@ -52,14 +52,6 @@ def remove_contributor_from_subscriptions(contributor, node):
         for subscription in node_subscriptions:
             subscription.remove_user_from_subscription(contributor)
 
-            # node = Node.load(subscription.object_id)
-
-            parent = node.parent_node
-            if parent and parent.child_node_subscriptions.get(contributor._id, None) and node._id in parent.child_node_subscriptions.get(contributor._id, None):
-                if node._id in parent.child_node_subscriptions[contributor._id]:
-                    parent.child_node_subscriptions[contributor._id].remove(node._id)
-                    parent.save()
-
 
 @signals.node_deleted.connect
 def remove_subscription(node):
