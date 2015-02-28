@@ -173,7 +173,10 @@ def get_settings_url(uid, user):
 
 
 def localize_timestamp(timestamp, user):
-    user_timezone = pytz.timezone(user.timezone)
+    try:
+        user_timezone = pytz.timezone(user.timezone)
+    except pytz.UnknownTimeZoneError:
+        user_timezone = pytz.timezone('Etc/UTC')
     return timestamp.astimezone(user_timezone).strftime('%c')
 
 

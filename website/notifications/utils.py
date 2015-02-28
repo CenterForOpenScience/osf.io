@@ -52,7 +52,8 @@ def remove_contributor_from_subscriptions(contributor, node):
         for subscription in node_subscriptions:
             subscription.remove_user_from_subscription(contributor)
 
-            node = Node.load(subscription.object_id)
+            # node = Node.load(subscription.object_id)
+
             parent = node.parent_node
             if parent and parent.child_node_subscriptions.get(contributor._id, None) and node._id in parent.child_node_subscriptions.get(contributor._id, None):
                 if node._id in parent.child_node_subscriptions[contributor._id]:
@@ -62,7 +63,7 @@ def remove_contributor_from_subscriptions(contributor, node):
 
 @signals.node_deleted.connect
 def remove_subscription(node):
-    model.Subscription.remove(Q('object_id', 'eq', node._id))
+    model.Subscription.remove(Q('owner', 'eq', node))
     parent = node.parent_node
 
     if parent and parent.child_node_subscriptions:
@@ -77,33 +78,23 @@ def get_configured_projects(user):
     :param user: modular odm User object
     :return: list of project ids for projects with no parent
     """
-    configured_project_ids = []
+    configured_projects = []
     user_subscriptions = get_all_user_subscriptions(user)
+
     for subscription in user_subscriptions:
-        node = Node.load(subscription.object_id)
-        if node and not node.is_deleted:  # if node is deleted, the subscription should be removed anyway
-            parent = node.parent_node
+        # If the user has opted out of emails skip
+        if user in subscription.none or not isinstance(subscription.owner, Node):
+            continue
 
-            # Include private parent ids so user subscriptions on the node are still displayed
-            if (
-                user not in subscription.none and
-                parent and
-                not parent.parent_node and
-                not parent.has_permission(user, 'read')
-                and parent._id not in configured_project_ids
-            ):
-                configured_project_ids.append(parent._id)
+        node = subscription.owner
 
-            elif not parent and node._id not in configured_project_ids:
-                configured_project_ids.append(node._id)
+        while node.parent_id and not node.is_deleted:
+            node = Node.load(node.parent_id)
 
-    for node_id in configured_project_ids:
-        node = Node.load(node_id)
-        if node and check_project_subscriptions_are_all_none(user, node) and node.child_node_subscriptions.get(user._id, None) == []:
-            if node._id in configured_project_ids:
-                configured_project_ids.remove(node._id)
+        if not node.is_deleted:
+            configured_projects.append(node._id)
 
-    return configured_project_ids
+    return configured_projects
 
 
 def check_project_subscriptions_are_all_none(user, node):
@@ -138,58 +129,67 @@ def get_all_node_subscriptions(user, node, user_subscriptions=None):
         user_subscriptions = get_all_user_subscriptions(user)
     node_subscriptions = []
     for s in user_subscriptions:
-        if s.object_id == node._id:
+        if s.owner == node:
             node_subscriptions.append(s)
 
     return node_subscriptions
 
 
-def format_data(user, node_ids, data):
+def format_data(user, node_ids):
     """ Format subscriptions data for project settings page
     :param user: modular odm User object
     :param node_ids: list of parent project ids
     :param data: the formatted data
     :return: treebeard-formatted data
     """
+    items = []
     user_subscriptions = get_all_user_subscriptions(user)
-    for idx, node_id in enumerate(node_ids):
+    for node_id in node_ids:
+        children = []
         node = Node.load(node_id)
-        index = len(data)
+        can_read = node.has_permission(user, 'read')
+        can_read_children = node.can_read_children(user)
+        assert node, '{} is not a valid Node.'.format(node_id)
 
-        list_private_node = False
-        if not node.has_permission(user, 'read'):
-            list_private_node = node.check_user_has_permission_on_private_node_child(user)
+        if not can_read and not can_read_children:
+            continue
 
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
-        if node.has_permission(user, 'read') or list_private_node:
-            data.append({
-                'node': {
-                        'id': node_id,
-                        'url': node.url if node.has_permission(user, 'read') else '',
-                        'title': node.title if not list_private_node else 'Private Project',
-                        },
-                'kind': 'folder' if not node.node__parent or not node.parent_node.has_permission(user, 'read') else 'node',
-                'children': []
-            })
 
+        if can_read:
             node_subscriptions = get_all_node_subscriptions(user, node, user_subscriptions=user_subscriptions)
-            if node.has_permission(user, 'read'):
-                for subscription in constants.NODE_SUBSCRIPTIONS_AVAILABLE:
-                    event = serialize_event(user, subscription, constants.NODE_SUBSCRIPTIONS_AVAILABLE, node_subscriptions, node)
-                    data[index]['children'].append(event)
+            for subscription in constants.NODE_SUBSCRIPTIONS_AVAILABLE:
+                children.append(serialize_event(user, subscription, constants.NODE_SUBSCRIPTIONS_AVAILABLE, node_subscriptions, node))
 
-            if node.nodes:
-                # nodes excluding pointers and deleted nodes
-                nodes = [n for n in node.nodes if n.primary and not n.is_deleted and not n.is_registration]
-                format_data(user, [n._id for n in nodes], data[index]['children'])
+        children.extend(format_data(
+            user,
+            [
+                n._id
+                for n in node.nodes
+                if n.primary and
+                not n.is_deleted
+            ]
+        ))
 
-    return data
+        item = {
+            'node': {
+                'id': node_id,
+                'url': node.url if can_read else '',
+                'title': node.title if can_read else 'Private Project',
+            },
+            'children': children,
+            'kind': 'folder' if not node.node__parent or not node.parent_node.has_permission(user, 'read') else 'node',
+        }
+
+        items.append(item)
+
+    return items
 
 
 def format_user_subscriptions(user, data):
     """ Format user-level subscriptions (e.g. comment replies across the OSF) for user settings page"""
-    user_subscriptions = [s for s in model.Subscription.find(Q('object_id', 'eq', user._id))]
+    user_subscriptions = [s for s in model.Subscription.find(Q('owner', 'eq', user))]
     for subscription in constants.USER_SUBSCRIPTIONS_AVAILABLE:
         event = serialize_event(user, subscription, constants.USER_SUBSCRIPTIONS_AVAILABLE, user_subscriptions)
         data.append(event)
@@ -272,5 +272,5 @@ def format_user_and_project_subscriptions(user):
                 'title': 'Project Notifications',
             },
             'kind': 'heading',
-            'children': format_data(user, get_configured_projects(user), [])
+            'children': format_data(user, get_configured_projects(user))
         }]
