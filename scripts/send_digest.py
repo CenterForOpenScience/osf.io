@@ -15,7 +15,7 @@ from scripts import utils as script_utils
 from website import mails
 from website.app import init_app
 from website.util import web_url_for
-from website.notifications.model import DigestNotification
+from website.notifications.model import NotificationDigest
 from website.notifications.utils import NotificationsDict
 
 
@@ -63,7 +63,7 @@ def send_digest(grouped_digests):
 @celery_app.task
 def remove_sent_digest_notifications(ret=None, digest_notification_ids=None):
     for digest_id in digest_notification_ids:
-        DigestNotification.remove(Q('_id', 'eq', digest_id))
+        NotificationDigest.remove(Q('_id', 'eq', digest_id))
 
 
 def group_messages_by_node(notifications):
@@ -83,7 +83,7 @@ def group_digest_notifications_by_user():
                         'timestamp': datetime object
                     },
                     'node_lineage': ['parent._id', 'node._id'],
-                    '_id': DigestNotification._id
+                    '_id': NotificationDigest._id
                 }, ...
                 }]
               },
@@ -91,7 +91,7 @@ def group_digest_notifications_by_user():
                 'user_id': ...
               }]
     """
-    return db['digestnotification'].group(
+    return db['notificationdigest'].group(
         key={'user_id': 1},
         condition={'timestamp': {'$lt': datetime.datetime.utcnow(),
                                  '$gte': datetime.datetime.utcnow() - datetime.timedelta(hours=24)}},

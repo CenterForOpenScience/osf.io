@@ -3,7 +3,7 @@ from framework.mongo import StoredObject, ObjectId
 from website.notifications.constants import NOTIFICATION_TYPES
 
 
-class Subscription(StoredObject):
+class NotificationSubscription(StoredObject):
     _id = fields.StringField(primary=True)  # pxyz_wiki_updated, uabc_comment_replies
 
     event_name = fields.StringField()      # wiki_updated, comment_replies
@@ -21,7 +21,7 @@ class Subscription(StoredObject):
                 self.save()
 
 
-class DigestNotification(StoredObject):
+class NotificationDigest(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     user_id = fields.StringField()
     timestamp = fields.DateTimeField()
