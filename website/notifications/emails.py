@@ -12,8 +12,7 @@ from website.notifications.model import NotificationDigest
 from website.notifications.model import NotificationSubscription
 from website.util import web_url_for
 
-
-LOCALTIME_FORMAT = '%H:%M on %A, %B %d'
+LOCALTIME_FORMAT = '%H:%M on %A, %B %d %Z'
 EMAIL_SUBJECT_MAP = {
     'comments': '${commenter.fullname} commented on "${title}".',
     'comment_replies': '${commenter.fullname} replied to your comment on "${title}".'

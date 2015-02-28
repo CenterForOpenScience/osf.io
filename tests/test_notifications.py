@@ -1053,7 +1053,7 @@ class TestSendEmails(OsfTestCase):
         self.user.timezone = 'America/New_York'
         self.user.save()
         localized_timestamp = emails.localize_timestamp(timestamp, self.user)
-        expected_timestamp = timestamp.astimezone(pytz.timezone(self.user.timezone)).strftime('%H:%M on %A, %B %d')
+        expected_timestamp = timestamp.astimezone(pytz.timezone(self.user.timezone)).strftime('%H:%M on %A, %B %d %Z')
         assert_equal(localized_timestamp, expected_timestamp)
 
     def test_localize_timestamp_empty(self):
@@ -1061,7 +1061,7 @@ class TestSendEmails(OsfTestCase):
         self.user.timezone = ''
         self.user.save()
         localized_timestamp = emails.localize_timestamp(timestamp, self.user)
-        expected_timestamp = timestamp.astimezone(pytz.timezone('Etc/UTC')).strftime('%H:%M on %A, %B %d')
+        expected_timestamp = timestamp.astimezone(pytz.timezone('Etc/UTC')).strftime('%H:%M on %A, %B %d %Z')
         assert_equal(localized_timestamp, expected_timestamp)
 
 
@@ -1136,7 +1136,6 @@ class TestSendDigest(OsfTestCase):
             mail=mails.DIGEST,
             name=user.fullname,
             message=group_messages_by_node(user_groups[last_user_index]['info']),
-            url=web_url_for('user_notifications', _absolute=True),
             callback=mock_callback.s(digest_notification_ids=digest_notification_ids)
         )
 
