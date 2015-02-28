@@ -3358,7 +3358,7 @@ class TestDashboardViews(OsfTestCase):
         url = api_url_for('get_dashboard', nid=ALL_MY_PROJECTS_ID)
         res = self.app.get(url, auth=self.contrib.auth)
 
-        assert_equal(len(res.json), 1)
+        assert_equal(len(res.json['data']), 1)
 
     def test_get_dashboard_nodes(self):
         project = ProjectFactory(creator=self.creator)
@@ -3434,7 +3434,7 @@ class TestDashboardViews(OsfTestCase):
         url = api_url_for('get_dashboard', nid=ALL_MY_REGISTRATIONS_ID)
         res = self.app.get(url, auth=self.contrib.auth)
 
-        assert_equal(len(res.json), 1)
+        assert_equal(len(res.json['data']), 1)
 
     def test_untouched_node_is_collapsed(self):
         found_item = False
