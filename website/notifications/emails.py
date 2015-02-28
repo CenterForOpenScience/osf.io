@@ -8,8 +8,8 @@ from website import mails
 from website import models as website_models
 from website.notifications import constants
 from website.notifications import utils
-from website.notifications.model import DigestNotification
-from website.notifications.model import Subscription
+from website.notifications.model import NotificationDigest
+from website.notifications.model import NotificationSubscription
 from website.util import web_url_for
 
 
@@ -19,7 +19,7 @@ def notify(uid, event, **context):
     node_subscribers = []
 
     try:
-        subscription = Subscription.find_one(
+        subscription = NotificationSubscription.find_one(
             Q('_id', 'eq', utils.to_subscription_key(uid, event))
         )
     except NoResultsFound:
@@ -52,7 +52,7 @@ def check_parent(uid, event, node_subscribers, **context):
         for p in node.node__parent:
             key = utils.to_subscription_key(p._id, event)
             try:
-                subscription = Subscription.find_one(Q('_id', 'eq', key))
+                subscription = NotificationSubscription.find_one(Q('_id', 'eq', key))
             except NoResultsFound:
                 return check_parent(p._id, event, node_subscribers, **context)
 
@@ -127,7 +127,7 @@ def email_transactional(subscribed_user_ids, uid, event, **context):
 
 def email_digest(subscribed_user_ids, uid, event, **context):
     """ Render the email message from context vars and store in the
-        DigestNotification objects created for each subscribed user.
+        NotificationDigest objects created for each subscribed user.
     """
     template = event + '.html.mako'
 
@@ -144,11 +144,13 @@ def email_digest(subscribed_user_ids, uid, event, **context):
         message = mails.render_message(template, **context)
 
         if context.get('commenter')._id != user._id:
-            digest = DigestNotification(timestamp=context.get('timestamp'),
-                                        event=event,
-                                        user_id=user._id,
-                                        message=message,
-                                        node_lineage=nodes if nodes else [])
+            digest = NotificationDigest(
+                timestamp=context.get('timestamp'),
+                event=event,
+                user_id=user._id,
+                message=message,
+                node_lineage=nodes if nodes else []
+            )
             digest.save()
 
 

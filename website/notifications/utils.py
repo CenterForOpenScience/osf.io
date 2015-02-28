@@ -63,7 +63,7 @@ def remove_contributor_from_subscriptions(contributor, node):
 
 @signals.node_deleted.connect
 def remove_subscription(node):
-    model.Subscription.remove(Q('owner', 'eq', node))
+    model.NotificationSubscription.remove(Q('owner', 'eq', node))
     parent = node.parent_node
 
     if parent and parent.child_node_subscriptions:
@@ -189,7 +189,7 @@ def format_data(user, node_ids):
 
 def format_user_subscriptions(user, data):
     """ Format user-level subscriptions (e.g. comment replies across the OSF) for user settings page"""
-    user_subscriptions = [s for s in model.Subscription.find(Q('owner', 'eq', user))]
+    user_subscriptions = [s for s in model.NotificationSubscription.find(Q('owner', 'eq', user))]
     for subscription in constants.USER_SUBSCRIPTIONS_AVAILABLE:
         event = serialize_event(user, subscription, constants.USER_SUBSCRIPTIONS_AVAILABLE, user_subscriptions)
         data.append(event)
@@ -244,7 +244,7 @@ def get_parent_notification_type(uid, event, user):
         for p in node.node__parent:
             key = to_subscription_key(p._id, event)
             try:
-                subscription = model.Subscription.find_one(Q('_id', 'eq', key))
+                subscription = model.NotificationSubscription.find_one(Q('_id', 'eq', key))
             except NoResultsFound:
                 return get_parent_notification_type(p._id, event, user)
 
