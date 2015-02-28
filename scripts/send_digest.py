@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 # Silence loud internal mail logger
 SILENT_LOGGERS = [
     'website.mails',
+    'amqp',
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
