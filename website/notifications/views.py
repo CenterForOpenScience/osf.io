@@ -52,6 +52,10 @@ def configure_subscription(auth):
         owner = user
 
     else:
+        if not node.has_permission('read'):
+            sentry.log_message('{!r} attempted to subscribe to private node, {}', format(user, target_id))
+            raise HTTPError(http.FORBIDDEN)
+
         if notification_type != 'adopt_parent':
             owner = node
         else:
