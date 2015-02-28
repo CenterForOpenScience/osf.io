@@ -48,7 +48,7 @@ request.fail(function(xhr, textStatus, error) {
 });
 
 var ensureUserTimezone = function(savedTimezone) {
-    var clientTimezone = jstz.determine().name;
+    var clientTimezone = jstz.determine().name();
 
     if (savedTimezone != clientTimezone) {
         var url = '/api/v1/profile/';
