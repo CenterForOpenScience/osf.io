@@ -21,6 +21,12 @@ from website.notifications.utils import NotificationsDict
 
 logger = logging.getLogger(__name__)
 
+# Silence loud internal mail logger
+SILENT_LOGGERS = [
+    'website.mails',
+]
+for logger_name in SILENT_LOGGERS:
+    logging.getLogger(logger_name).setLevel(logging.CRITICAL)
 
 def main():
     script_utils.add_file_logger(logger, __file__)

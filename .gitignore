@@ -70,6 +70,9 @@ webpack-assets.json
 # Built log templates
 website/templates/_log_templates.mako
 
+# Logs
+logs/*
+
 # Add-ons
 #########
 .cache/
