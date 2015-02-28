@@ -35,7 +35,8 @@ function Meeting(data) {
                 {
                     title: "Downloads",
                     width : "15%",
-                    sort : false
+                    sortType : "number",
+                    sort : true
                 }
             ];
         },
