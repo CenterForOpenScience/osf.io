@@ -12,6 +12,7 @@ from website.notifications.model import DigestNotification
 from website.notifications.model import Subscription
 from website.util import web_url_for
 
+LOCALTIME_FORMAT = '%H:%M on %A, %B %w'
 
 def notify(uid, event, **context):
     # TODO: docstring
@@ -176,7 +177,7 @@ def localize_timestamp(timestamp, user):
         user_timezone = pytz.timezone(user.timezone)
     except pytz.UnknownTimeZoneError:
         user_timezone = pytz.timezone('Etc/UTC')
-    return timestamp.astimezone(user_timezone).strftime('%H:%M on %A, %B %w')
+    return timestamp.astimezone(user_timezone).strftime(LOCALTIME_FORMAT)
 
 
 email_templates = {
