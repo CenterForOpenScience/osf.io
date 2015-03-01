@@ -1,3 +1,4 @@
+import os
 import http
 import json
 import asyncio
@@ -200,14 +201,11 @@ class BoxProvider(provider.BaseProvider):
         return provider.build_url(settings.BASE_UPLOAD_URL, *segments, **query)
 
     def _build_full_path(self, entries, filename):
-        seq_id = 0
-        for item in entries:
-            if self.folder == item['id']:
-                seq_id = int(item['sequence_id'])
+        path = []
+        for entry in reversed(entries):
+            if self.folder == entry['id']:
+                break
+            path.append(entry['name'])
 
-        return '/{}/{}'.format('/'.join([
-            x['name']
-            for x in entries
-            if int(x['sequence_id']) >= seq_id]),
-            filename
-        )
+        path = '/'.join(reversed(path))
+        return '/' + os.path.join(path, filename)
