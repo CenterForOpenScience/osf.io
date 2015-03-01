@@ -1,8 +1,6 @@
 import pytz
 
 from mako.lookup import Template
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound
 
 from website import mails
 from website import models as website_models
