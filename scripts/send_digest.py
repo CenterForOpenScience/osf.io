@@ -18,14 +18,16 @@ from website.notifications.model import NotificationDigest
 from website.notifications.utils import NotificationsDict
 
 
-logger = logging.getLogger(__name__)
-
 # Silence loud internal mail logger
 SILENT_LOGGERS = [
     'website.mails',
 ]
+
+logger = logging.getLogger(__name__)
+
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
+
 
 def main():
     script_utils.add_file_logger(logger, __file__)
@@ -42,18 +44,17 @@ def send_digest(grouped_digests):
     :return:
     """
     for group in grouped_digests:
-        try:
-            user = User.load(group['user_id'])
-        except NoResultsFound:
+        user = User.load(group['user_id'])
+        if not user:
             sentry.log_exception()
             sentry.log_message("A user with this username does not exist.")
-            user = None
+            return
 
         info = group['info']
         digest_notification_ids = [message['_id'] for message in info]
         sorted_messages = group_messages_by_node(info)
 
-        if user and sorted_messages:
+        if sorted_messages:
             logger.info('Sending email digest to user {0!r}'.format(user))
             mails.send_mail(
                 to_addr=user.username,
@@ -61,19 +62,22 @@ def send_digest(grouped_digests):
                 mail=mails.DIGEST,
                 name=user.fullname,
                 message=sorted_messages,
-                callback=remove_sent_digest_notifications.s(digest_notification_ids=digest_notification_ids)
+                callback=remove_sent_digest_notifications.si(
+                    digest_notification_ids=digest_notification_ids
+                )
             )
 
+
 @celery_app.task
-def remove_sent_digest_notifications(ret=None, digest_notification_ids=None):
+def remove_sent_digest_notifications(digest_notification_ids=None):
     for digest_id in digest_notification_ids:
         NotificationDigest.remove(Q('_id', 'eq', digest_id))
 
 
 def group_messages_by_node(notifications):
     d = NotificationsDict()
-    for n in notifications:
-        d.add_message(n['node_lineage'], n['message'])
+    for notification in notifications:
+        d.add_message(notification['node_lineage'], notification['message'])
     return d
 
 
@@ -97,21 +101,27 @@ def group_digest_notifications_by_user():
     """
     return db['notificationdigest'].group(
         key={'user_id': 1},
-        condition={'timestamp': {'$lt': datetime.datetime.utcnow(),
-                                 '$gte': datetime.datetime.utcnow() - datetime.timedelta(hours=24)}},
+        condition={
+            'timestamp': {
+                '$lt': datetime.datetime.utcnow()
+            }
+        },
         initial={'info': []},
-        reduce=Code("""function(curr, result) {
-                            info = {
-                                'message': {
-                                    'message': curr.message,
-                                    'timestamp': curr.timestamp
-                                },
-                                'node_lineage': curr.node_lineage,
-                                '_id': curr._id
-                            }
-                            result.info.push(info);
-                    };
-                    """))
+        reduce=Code(
+            """
+            function(curr, result) {
+                result.info.push({
+                    'message': {
+                        'message': curr.message,
+                        'timestamp': curr.timestamp
+                    },
+                    'node_lineage': curr.node_lineage,
+                    '_id': curr._id
+                });
+            };
+            """
+        )
+    )
 
 
 if __name__ == '__main__':
