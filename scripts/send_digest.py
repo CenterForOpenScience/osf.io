@@ -20,6 +20,7 @@ from website.notifications.utils import NotificationsDict
 # Silence loud internal mail logger
 SILENT_LOGGERS = [
     'website.mails',
+    'amqp',
 ]
 
 logger = logging.getLogger(__name__)

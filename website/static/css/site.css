@@ -2204,6 +2204,7 @@ span#profileFullname{
 
 .osf-treebeard-minimal .form-control {
     height: 26px;
+    padding: 0px;
 }
 
 .tb-no-icon .tb-expand-icon-holder {
