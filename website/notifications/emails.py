@@ -120,7 +120,7 @@ def check_parent(uid, event, node_subscribers, **context):
                         send([u._id], notification_type, uid, event, **context)
                     node_subscribers.append(u)
 
-            return check_parent(node.parent_id, event, node_subscribers, **context)
+        return check_parent(node.parent_id, event, node_subscribers, **context)
 
     return node_subscribers
 

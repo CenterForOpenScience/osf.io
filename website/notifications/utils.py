@@ -21,12 +21,14 @@ class NotificationsDict(dict):
         :return: nested dict with project/component ids as the keys with the message at the appropriate level
         """
         d_to_use = self
+
         for key in keys:
             d_to_use = d_to_use['children'][key]
+
         if not isinstance(messages, list):
             messages = [messages]
+
         d_to_use['messages'].extend(messages)
-        return True
 
 
 def to_subscription_key(uid, event):
