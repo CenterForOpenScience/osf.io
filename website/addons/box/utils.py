@@ -88,7 +88,7 @@ def handle_box_error(error, msg):
 def box_addon_folder(node_settings, auth, **kwargs):
     """Return the Rubeus/HGrid-formatted response for the root folder only."""
     # Quit if node settings does not have authentication
-    if not node_settings.has_auth:
+    if not node_settings.has_auth or not node_settings.folder_id:
         return None
 
     node = node_settings.owner
