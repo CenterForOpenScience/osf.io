@@ -5,7 +5,6 @@ import logging
 from bson.code import Code
 
 from modularodm import Q
-from modularodm.exceptions import NoResultsFound
 
 from framework import sentry
 from framework.auth.core import User
@@ -111,10 +110,7 @@ def group_digest_notifications_by_user():
             """
             function(curr, result) {
                 result.info.push({
-                    'message': {
-                        'message': curr.message,
-                        'timestamp': curr.timestamp
-                    },
+                    'message': curr.message,
                     'node_lineage': curr.node_lineage,
                     '_id': curr._id
                 });
