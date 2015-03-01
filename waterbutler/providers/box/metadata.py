@@ -51,7 +51,8 @@ class BoxFileMetadata(BaseBoxMetadata, metadata.BaseFileMetadata):
     @property
     def extra(self):
         return {
-            'etag': self.raw.get('etag')
+            'etag': self.raw.get('etag'),
+            'fullPath': self.raw.get('fullPath')
         }
 
 

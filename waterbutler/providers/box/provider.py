@@ -68,6 +68,7 @@ class BoxProvider(provider.BaseProvider):
             created = True
             data = yield from self._send_upload(stream, name, parent_id)
 
+        data['entries'][0]['fullPath'] = self._build_full_path(data['entries'][0]['path_collection']['entries'][1:], name)
         return BoxFileMetadata(data['entries'][0], self.folder).serialized(), created
 
     @asyncio.coroutine
@@ -197,3 +198,16 @@ class BoxProvider(provider.BaseProvider):
 
     def _build_upload_url(self, *segments, **query):
         return provider.build_url(settings.BASE_UPLOAD_URL, *segments, **query)
+
+    def _build_full_path(self, entries, filename):
+        seq_id = 0
+        for item in entries:
+            if self.folder == item['id']:
+                seq_id = int(item['sequence_id'])
+
+        return '/{}/{}'.format('/'.join([
+            x['name']
+            for x in entries
+            if int(x['sequence_id']) >= seq_id]),
+            filename
+        )

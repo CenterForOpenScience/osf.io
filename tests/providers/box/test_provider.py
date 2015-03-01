@@ -306,6 +306,7 @@ class TestCRUD:
         aiohttpretty.register_json_uri('GET', folder_list_url, body=folder_list_metadata)
         aiohttpretty.register_json_uri('POST', upload_url, status=201, body=file_metadata)
         metadata, created = yield from provider.upload(file_stream, str(path))
+        file_metadata['entries'][0]['fullPath'] = '/Pictures/newfile'
         expected = BoxFileMetadata(file_metadata['entries'][0], provider.folder).serialized()
 
         assert metadata == expected
@@ -326,6 +327,7 @@ class TestCRUD:
         aiohttpretty.register_json_uri('GET', folder_list_url, body=folder_list_metadata)
         aiohttpretty.register_json_uri('POST', upload_url, status=201, body=file_metadata)
         metadata, created = yield from provider.upload(file_stream, str(path))
+        file_metadata['entries'][0]['fullPath'] = '/Pictures/Stephen Curry Three Pointers'
         expected = BoxFileMetadata(file_metadata['entries'][0], provider.folder).serialized()
 
         assert metadata == expected
