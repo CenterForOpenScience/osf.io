@@ -24,7 +24,7 @@
                                         <img src="https://osf.io/static/img/cos-white2.png" alt="COS logo" width="36" style="border: 0;height: auto;line-height: 100%;outline: none;text-decoration: none;">
                                     </td>
                                     <td style="border-collapse: collapse;">
-                                        <h2 style="padding: 0;margin: 0;border: none;list-style: none;font-weight: 300;font-size: 20px;text-align: left;">Open Science Framework</h2>
+                                        <h2 style="padding: 0;margin: 0;border: none;list-style: none;font-weight: 300;font-size: 20px;text-align: left; color:white;">Open Science Framework</h2>
                                     </td>
                                 </tr>
                             </table>
@@ -44,7 +44,6 @@
                         </td>
                     </tr>
                     <tr>
-                        <div>
                         <th colspan="2" style="padding: 0px 15px 0 15px">
                             <h3 style="padding: 0 15px 5px 15px; margin: 30px 0 0 0;border: none;list-style: none;font-weight: 300; border-bottom: 1px solid #eee; text-align: left;">
                                 ${node_title}
@@ -53,7 +52,6 @@
                                 %endif
                             </h3>
                         </th>
-                        </div>
                     </tr>
                 </tbody>
                 <tbody>
