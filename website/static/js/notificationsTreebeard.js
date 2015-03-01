@@ -3,7 +3,6 @@
 var $ = require('jquery');
 var $osf = require('osfHelpers');
 var bootbox = require('bootbox');
-require('../vendor/bower_components/slickgrid/lib/jquery.event.drag-2.2.js');
 var m = require('mithril');
 var Treebeard = require('treebeard');
 require('../css/fangorn.css');
@@ -132,6 +131,11 @@ function ProjectNotifications(data) {
 
                 }
             ];
+        },
+        ontogglefolder : function (item){
+            var containerHeight = this.select('#tb-tbody').height();
+            this.options.showTotal = Math.floor(containerHeight / this.options.rowHeight) + 1;
+            this.redraw();
         },
         resolveRows : function notificationResolveRows(item){
             var columns = [];

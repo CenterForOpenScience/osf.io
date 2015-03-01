@@ -6,7 +6,7 @@ import pytz
 from mako.lookup import Template
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
-from nose.tools import *  # PEP8 asserts
+from nose.tools import *  # noqa PEP8 asserts
 
 from framework.auth import Auth
 from framework.auth.core import User
@@ -1089,10 +1089,7 @@ class TestSendDigest(OsfTestCase):
         expected = [{
                     u'user_id': user._id,
                     u'info': [{
-                        u'message': {
-                            u'message': u'Hello',
-                            u'timestamp': timestamp,
-                        },
+                        u'message': u'Hello',
                         u'node_lineage': [unicode(project._id)],
                         u'_id': d._id
                     }]
@@ -1100,14 +1097,12 @@ class TestSendDigest(OsfTestCase):
                     {
                     u'user_id': user2._id,
                     u'info': [{
-                        u'message': {
-                            u'message': u'Hello',
-                            u'timestamp': timestamp,
-                        },
+                        u'message': u'Hello',
                         u'node_lineage': [unicode(project._id)],
                         u'_id': d2._id
                     }]
-                    }]
+        }]
+
         assert_equal(len(user_groups), 2)
         assert_equal(user_groups, expected)
 
@@ -1130,14 +1125,16 @@ class TestSendDigest(OsfTestCase):
         user = User.load(user_groups[last_user_index]['user_id'])
         digest_notification_ids = [message['_id'] for message in user_groups[last_user_index]['info']]
 
-        mock_send_mail.assert_called_with(
-            to_addr=user.username,
-            mimetype='html',
-            mail=mails.DIGEST,
-            name=user.fullname,
-            message=group_messages_by_node(user_groups[last_user_index]['info']),
-            callback=mock_callback.s(digest_notification_ids=digest_notification_ids)
-        )
+        args, kwargs = mock_send_mail.call_args
+
+        assert_equal(kwargs['to_addr'], user.username)
+        assert_equal(kwargs['mimetype'], 'html')
+        assert_equal(kwargs['mail'], mails.DIGEST)
+        assert_equal(kwargs['name'], user.fullname)
+        message = group_messages_by_node(user_groups[last_user_index]['info'])
+        assert_equal(kwargs['message'], message)
+        assert_equal(kwargs['callback'],
+                mock_callback.si(digest_notification_ids=digest_notification_ids))
 
     def test_remove_sent_digest_notifications(self):
         d = factories.NotificationDigestFactory(
@@ -1147,6 +1144,6 @@ class TestSendDigest(OsfTestCase):
             node_lineage=[factories.ProjectFactory()._id]
         )
         digest_id = d._id
-        remove_sent_digest_notifications(ret=None, digest_notification_ids=[digest_id])
+        remove_sent_digest_notifications(digest_notification_ids=[digest_id])
         with assert_raises(NoResultsFound):
             NotificationDigest.find_one(Q('_id', 'eq', digest_id))
