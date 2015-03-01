@@ -2,6 +2,12 @@
 Changelog
 *********
 
+0.28.0 (unreleased)
+===================
+
+- Add email notifications. Can subscribe to new comments made on projects and
+components. Emails can be sent in "transactional" or "digest" mode.
+
 0.27.0 (2015-02-27)
 ===================
 

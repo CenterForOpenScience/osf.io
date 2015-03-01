@@ -49,7 +49,7 @@ function _treebeardTitleColumn (item, col) {
     * Returns the folder select button for a single row.
     */
 function _treebeardSelectView(item) {
-    var tb = this;
+    var tb = this;  // jshint ignore: line
     var setTempPicked = function () {
         this._tempPicked = item.id;
     };
@@ -116,7 +116,7 @@ function _treebeardResolveRows(item) {
 }
 
 function _treebeardOnload () {
-    var tb = this;
+    var tb = this;  // jshint ignore: line
 
     tb.options.folderIndex = 0;
     if (tb.options.folderPath) {
@@ -135,7 +135,7 @@ function _treebeardOnload () {
 }
 
 function _treebeardLazyLoadOnLoad(item) {
-    var tb = this;
+    var tb = this;  // jshint ignore: line
 
     for (var i = 0; i < item.children.length; i++) {
         if (item.children[i].data.addon === 'figshare') {

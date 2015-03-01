@@ -134,6 +134,8 @@ def get_dashboard(auth, nid=None, **kwargs):
         node = Node.load(nid)
         dashboard_projects = rubeus.to_project_hgrid(node, auth, **kwargs)
         return_value = {'data': dashboard_projects}
+
+    return_value['timezone'] = user.timezone
     return return_value
 
 

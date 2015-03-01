@@ -95,7 +95,8 @@ def build_log_templates(settings):
         build_addon_log_templates(build_fp, settings)
 
 
-def init_app(settings_module='website.settings', set_backends=True, routes=True, mfr=False):
+def init_app(settings_module='website.settings', set_backends=True, routes=True, mfr=False,
+        attach_request_handlers=True):
     """Initializes the OSF. A sort of pseudo-app factory that allows you to
     bind settings, set up routing, and set storage backends, but only acts on
     a single app instance (rather than creating multiple instances).
@@ -129,7 +130,8 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
         except AssertionError:  # Route map has already been created
             pass
 
-    attach_handlers(app, settings)
+    if attach_request_handlers:
+        attach_handlers(app, settings)
 
     if app.debug:
         logger.info("Sentry disabled; Flask's debug mode enabled")
