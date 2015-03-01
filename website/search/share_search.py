@@ -232,8 +232,22 @@ def data_for_charts(elastic_results):
     return all_data
 
 
-def atom(name, data, query, size, start, url):
+def to_atom(result):
+    return {
+        'title': result.get('title', 'No title provided'),
+        'content': json.dumps(result, indent=4, sort_keys=True),
+        'content_type': 'json',
+        'summary': result.get('description', 'No summary'),
+        'id': result.get('id', {}).get('serviceID') or result['_id'],
+        'updated': result.get('dateUpdated'),
+        'link': result['id']['url'] if result.get('id') else result['links'][0]['url'],
+        'author': format_contributors_for_atom(result['contributors']),
+        'categories': format_categories(result.get('tags')),
+        'published': parse(result.get('dateUpdated'))
+    }
 
+
+def atom(name, data, query, size, start, url):
     if query == '*':
         title_query = 'All'
     else:
@@ -256,11 +270,13 @@ def atom(name, data, query, size, start, url):
     feed = util.create_atom_feed(title, url, author, links)
 
     for doc in data:
+        feed.add(**to_atom(doc))
+
+    for doc in data:
         try:
             updated = pytz.utc.localize(parse(doc.get('dateUpdated')))
         except ValueError:
             updated = parse(doc.get('dateUpdated'))
-
         feed.add(
             title=doc.get('title', 'No title provided'),
             content=json.dumps(doc, indent=4, sort_keys=True),
