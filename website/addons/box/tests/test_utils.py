@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Tests for website.addons.box.utils."""
-import os
+import mock
 
 from nose.tools import *  # noqa (PEP8 asserts)
 
@@ -14,6 +14,7 @@ from website.addons.box.tests.factories import BoxFileFactory
 from website.addons.box.tests.utils import BoxAddonTestCase, mock_responses
 from website.addons.box import utils
 from website.addons.box.views.config import serialize_folder
+from website.addons.box.model import BoxNodeSettings
 
 
 class TestNodeLogger(BoxAddonTestCase):
@@ -85,3 +86,20 @@ def test_serialize_folder():
     result = serialize_folder(metadata)
     assert_equal(result['path'], metadata['path'])
     assert_equal(result['name'], 'Box' + metadata['path'])
+
+
+class TestBoxAddonFolder(BoxAddonTestCase):
+
+    @mock.patch.object(BoxNodeSettings, 'fetch_folder_name', lambda self: 'foo')
+    def test_works(self):
+        folder = utils.box_addon_folder(
+            self.node_settings, Auth(self.user))
+
+        assert_true(isinstance(folder, list))
+        assert_true(isinstance(folder[0], dict))
+
+    def test_returns_none_unconfigured(self):
+        self.node_settings.folder_id = None
+        assert_is(utils.box_addon_folder(
+            self.node_settings, Auth(self.user)), None)
+
