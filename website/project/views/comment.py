@@ -158,7 +158,7 @@ def add_comment(**kwargs):
     comment.save()
 
     context = dict(
-        nodeType=node.project_or_component,
+        node_type=node.project_or_component,
         timestamp=datetime.utcnow().replace(tzinfo=pytz.utc),
         commenter=auth.user,
         gravatar_url=auth.user.gravatar_url,
