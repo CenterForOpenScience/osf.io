@@ -18,7 +18,7 @@
             <tr>
                 <td >
                     %for m in d['children'][key]['messages']:
-                        ${m['message']}
+                        ${m}
                     %endfor
                 </td>
             </tr>
