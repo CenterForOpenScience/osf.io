@@ -340,7 +340,7 @@ class BoxNodeSettings(AddonNodeSettingsBase):
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
                 'path': os.path.join(self.folder_id, path),
-                'name': metadata['path'].split('/')[-1],
+                'name': os.path.split(metadata['path'])[-1],
                 'folder': self.folder_id,
                 'urls': {
                     'view': self.owner.web_url_for('addon_view_or_download_file', provider='box', action='view', path=path),
