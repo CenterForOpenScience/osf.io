@@ -19,11 +19,11 @@ var Treebeard = require('treebeard');
 
 
 function _treebeardToggleCheck (item) {
-    return item.data.addon !== 'figshare';
+    return ((typeof item.data.hasChildren === 'undefined') || item.data.hasChildren);
 }
 
 function _treebeardResolveToggle(item) {
-    if(item.data.addon === 'figshare') {
+    if ((typeof item.data.hasChildren !== 'undefined') && item.data.hasChildren === false){
         return '';
     }
 
@@ -128,7 +128,8 @@ function _treebeardOnload () {
         tb.options.folderArray = [''];
     }
 
-    if (tb.treeData.children[0].data.addon !== 'figshare') {
+    var node = tb.treeData.children[0];
+    if ((typeof node.data.hasChildren === 'undefined') || node.data.hasChildren){
         tb.updateFolder(null, tb.treeData.children[0]);
     }
     tb.options.folderPickerOnload();
@@ -138,7 +139,7 @@ function _treebeardLazyLoadOnLoad(item) {
     var tb = this;  // jshint ignore: line
 
     for (var i = 0; i < item.children.length; i++) {
-        if (item.children[i].data.addon === 'figshare') {
+        if ((typeof item.data.hasChildren !== 'undefined') && item.data.hasChildren === false){
             return;
         }
         if (item.children[i].data.name === tb.options.folderArray[tb.options.folderIndex]) {
