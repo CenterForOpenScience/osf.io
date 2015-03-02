@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 """Find nodes derived from other nodes that share a piwik_site_id with a parent.
 
+Log:
+
+    Run by sloria on 2015-02-24 at 12:04PM EST. A log was saved to /opt/data/migration-logs.
 """
 
 import json
@@ -9,9 +12,7 @@ import logging
 import sys
 
 from modularodm import Q
-from nose.tools import *
 import requests
-import responses
 
 from framework.auth import Auth
 from tests.base import OsfTestCase
@@ -19,7 +20,7 @@ from tests.factories import NodeFactory, ProjectFactory, RegistrationFactory, Us
 from website.app import init_app
 from website.models import Node
 from website.settings import PIWIK_ADMIN_TOKEN, PIWIK_HOST
-
+from scripts import utils as scripts_utils
 
 logger = logging.getLogger('root')
 
@@ -84,6 +85,7 @@ def get_broken_templated():
 def fix_nodes(nodes):
     idx = 0
     for node in nodes:
+        logger.info('Setting piwik_site_id to None for Node {}'.format(node._id))
         node.piwik_site_id = None
         node.save()
         idx += 1
@@ -91,7 +93,7 @@ def fix_nodes(nodes):
 
 
 def main():
-    init_app('website.settings', set_backends=True, routes=True)
+    init_app('website.settings', set_backends=True, routes=False)
 
     broken_forks = get_broken_forks()
     broken_templated = get_broken_templated()
@@ -99,37 +101,43 @@ def main():
 
     if 'dry' in sys.argv:
         if 'list' in sys.argv:
-            print("=== Finding broken templated nodes ===")
+            logger.info("=== Finding broken templated nodes ===")
             for node in broken_templated:
-                print(node._id)
+                logger.info(node._id)
 
-            print("=== Finding broken forks ===")
+            logger.info("=== Finding broken forks ===")
             for node in broken_forks:
-                print(node._id)
+                logger.info(node._id)
 
-            print("=== Finding broken registrations ===")
+            logger.info("=== Finding broken registrations ===")
             for node in broken_registrations:
-                print(node._id)
+                logger.info(node._id)
         else:
-            print("=== Broken nodes ===")
-            print("  Templated  :{}".format(len(list(broken_templated))))
-            print("  Forked     :{}".format(len(list(broken_forks))))
-            print("  Registered :{}".format(len(list(broken_registrations))))
+            logger.info("=== Broken nodes ===")
+            logger.info("  Templated  :{}".format(len(list(broken_templated))))
+            logger.info("  Forked     :{}".format(len(list(broken_forks))))
+            logger.info("  Registered :{}".format(len(list(broken_registrations))))
     else:
-        print("Templates")
-        print("Fixed {} nodes\n".format(
+        # Log to a file
+        scripts_utils.add_file_logger(logger, __file__)
+        logger.info("Templates")
+        logger.info("Fixed {} nodes\n".format(
             fix_nodes(broken_templated)
         ))
 
-        print("Forks...")
-        print("Fixed {} nodes\n".format(
+        logger.info("Forks...")
+        logger.info("Fixed {} nodes\n".format(
             fix_nodes(broken_forks)
         ))
 
-        print("Registrations...")
-        print("Fixed {} nodes\n".format(
+        logger.info("Registrations...")
+        logger.info("Fixed {} nodes\n".format(
             fix_nodes(broken_registrations)
         ))
+
+
+from nose.tools import *  # noqa
+import responses
 
 
 class TestMigrateRegistrations(OsfTestCase):

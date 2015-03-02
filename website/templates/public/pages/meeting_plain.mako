@@ -5,7 +5,7 @@
     <title>${ meeting['name'] } Presentations</title>
 
     <%namespace name="globals" file="base.mako" />
-    ${globals.includes_top()}}
+    ${globals.includes_top()}
 
     % if sentry_dsn_js:
     <script src="/static/vendor/bower_components/raven-js/dist/raven.min.js"></script>
@@ -44,20 +44,10 @@
         <h2 style="padding-bottom: 30px;">${ meeting['name'] } Posters & Talks</h2>
 
         % if meeting['logo_url']:
-            <img src="${ meeting['logo_url'] }" class="image-responsive" />
+            <img src="${ meeting['logo_url'] }" class="image-responsive" style="width:100%"/>
             <br /><br />
         % endif
 
-        % if meeting['info_url']:
-            <div><a href="${ meeting['info_url'] }" target="_blank">Add your poster or talk</a></div>
-        % else:
-            <div><a href="#submit">Add your poster or talk</a></div>
-        % endif
-
-        <div style="padding-bottom: 30px;">
-            Search results by title or author:
-            <input id="gridSearch" />
-        </div>
         <div id="grid" style="width: 100%;"></div>
 
         % if not meeting.get('info_url'):
@@ -99,6 +89,9 @@
     <script type="text/javascript">
         window.contextVars = window.contextVars || {};
         window.contextVars.meetingData = ${data};
+        % if meeting['active'] and meeting['info_url']: 
+            window.contextVars.tbInstructionsLink =  '${ meeting['info_url'] }'; 
+        % endif 
     </script>
     <script src=${"/static/public/js/conference-page.js" | webpack_asset}></script>
 </body>

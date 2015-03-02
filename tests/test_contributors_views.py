@@ -1,11 +1,30 @@
 # -*- coding: utf-8 -*-
 
-from nose.tools import *  # PEP8 asserts
+from nose.tools import *  # noqa; PEP8 asserts
 
 from tests.factories import ProjectFactory, NodeFactory, AuthUserFactory
 from tests.base import OsfTestCase, fake
 
 from framework.auth.decorators import Auth
+
+from website.profile import utils
+
+
+class TestContributorUtils(OsfTestCase):
+
+    def setUp(self):
+        super(TestContributorUtils, self).setUp()
+        self.project = ProjectFactory()
+
+    def test_serialize_user(self):
+        serialized = utils.serialize_user(self.project.creator, self.project)
+        assert_true(serialized['visible'])
+        assert_equal(serialized['permission'], 'admin')
+
+    def test_serialize_user_admin(self):
+        serialized = utils.serialize_user(self.project.creator, self.project, admin=True)
+        assert_false(serialized['visible'])
+        assert_equal(serialized['permission'], 'read')
 
 
 class TestContributorViews(OsfTestCase):

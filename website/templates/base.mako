@@ -43,6 +43,7 @@
 
     ${includes_top()}
     ${self.stylesheets()}
+    <script src="${"/static/public/js/base-page.js" | webpack_asset}"></script>
     ${self.javascript()}
 
     <link href='//fonts.googleapis.com/css?family=Carrois+Gothic|Inika|Patua+One' rel='stylesheet' type='text/css'>
@@ -67,7 +68,7 @@
     <%include file="nav.mako"/>
      ## TODO: shouldn't always have the watermark class
     <div class="watermarked">
-        <div class="container">
+        <div class="container ${self.container_class()}">
             % if status:
                 <%include file="alert.mako"/>
             % endif
@@ -163,7 +164,6 @@
             </script>
         % endif
 
-        <script src="${"/static/public/js/base-page.js" | webpack_asset}"></script>
 
         ${self.javascript_bottom()}
     </body>
@@ -174,6 +174,10 @@
 
 <%def name="title()">
     ### The page title ###
+</%def>
+
+<%def name="container_class()">
+    ### CSS classes to apply to the "content" div ###
 </%def>
 
 <%def name="description()">

@@ -5,6 +5,7 @@ to the specified project.
 
 import datetime
 import collections
+from cStringIO import StringIO
 
 from dateutil.relativedelta import relativedelta
 
@@ -44,7 +45,8 @@ def main():
     node = models.Node.load(NODE_ID)
     user = models.User.load(USER_ID)
     emails = get_emails_since(TIME_DELTA)
-    sio = utils.make_csv(emails, ['affiliation', 'count'])
+    sio = StringIO()
+    utils.make_csv(sio, emails, ['affiliation', 'count'])
     utils.send_file(app, FILE_NAME, CONTENT_TYPE, sio, node, user)
 
 

@@ -16,7 +16,3 @@ requires_gnupg = unittest.skipIf(
     not settings.USE_GNUPG,
     'gnupg disabled'
 )
-requires_csl_styles = unittest.skipIf(
-    not os.path.exists(os.path.join(settings.CITATION_STYLES_PATH, '.git')),
-    'CSL styles not detected'
-)

@@ -3,32 +3,11 @@
 """
 
 from framework.routing import Rule, json_renderer
-from website.routes import OsfWebRenderer
 
 from . import views
 
 settings_routes = {
     'rules': [
-        # Widget
-        Rule([
-            '/project/<pid>/figshare/widget/',
-            '/project/<pid>/node/<nid>/figshare/widget/',
-        ], 'get', views.widget.figshare_widget, json_renderer),
-        # CRUD: Projects
-        Rule([
-            '/project/<pid>/figshare/project/<project_id>/article/<aid>',
-            '/project/<pid>/node/<nid>/figshare/project/<project_id>/article/<aid>'
-        ], 'delete', views.crud.figshare_remove_article_from_project, json_renderer),
-        Rule([
-            '/project/<pid>/figshare/article/<aid>/file/<fid>/',
-            '/project/<pid>/node/<nid>/figshare/article/<aid>/file/<fid>/',
-        ], 'delete', views.crud.figshare_delete_file, json_renderer),
-        Rule([
-            '/project/<pid>/figshare/',
-            '/project/<pid>/figshare/<aid>/',
-            'project/<pid>/node/<nid>/figshare/',
-            '/project/<pid>/node/<nid>/figshare/<aid>/',
-        ], 'post', views.crud.figshare_upload, json_renderer),
         # OAuth: Node
         Rule([
             '/project/<pid>/figshare/oauth/',
@@ -116,23 +95,6 @@ api_routes = {
             '/project/<pid>/node/<nid>/figshare/hgrid/<type>/<id>/',
 
         ], 'get', views.hgrid.figshare_hgrid_data_contents, json_renderer),
-        Rule([
-            '/project/<pid>/figshare/render/article/<aid>/file/<fid>/',
-            '/project/<pid>/node/<nid>/figshare/render/article/<aid>/file/<fid>/'
-        ], 'get', views.crud.figshare_get_rendered_file, json_renderer,),
-        Rule([
-            '/project/<pid>/figshare/download/article/<aid>/file/<fid>/',
-            '/project/<pid>/node/<nid>/figshare/download/article/<aid>/file/<fid>/'
-        ], 'get', views.crud.figshare_download_file, json_renderer,),
     ],
     'prefix': '/api/v1',
-}
-
-page_routes = {
-    'rules': [
-        Rule([
-            '/project/<pid>/figshare/article/<aid>/file/<fid>/',
-            '/project/<pid>/node/<nid>/figshare/article/<aid>/file/<fid>/',
-        ], 'get', views.crud.figshare_view_file, OsfWebRenderer('../addons/figshare/templates/figshare_view_file.mako')),
-    ],
 }

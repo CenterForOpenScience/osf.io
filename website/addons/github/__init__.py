@@ -9,7 +9,7 @@ MODELS = [
 USER_SETTINGS_MODEL = model.AddonGitHubUserSettings
 NODE_SETTINGS_MODEL = model.AddonGitHubNodeSettings
 
-ROUTES = [routes.api_routes, routes.settings_routes, routes.page_routes]
+ROUTES = [routes.api_routes, routes.settings_routes]
 
 SHORT_NAME = 'github'
 FULL_NAME = 'GitHub'

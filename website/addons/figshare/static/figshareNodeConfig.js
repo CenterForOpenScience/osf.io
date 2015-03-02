@@ -134,7 +134,7 @@ var ViewModel = function(url, selector, folderPicker) {
     });
 
     function onSubmitSuccess(response) {
-        self.changeMessage('Successfully linked "' + self.selected().title +
+        self.changeMessage('Successfully linked "' + $osf.htmlEscape(self.selected().title) +
             '". Go to the <a href="' +
             self.urls().files + '">Files page</a> to view your files.',
             'text-success', 5000);
@@ -291,7 +291,7 @@ var ViewModel = function(url, selector, folderPicker) {
             },
             folderPickerOnload: function() {
                 // Hide loading indicator
-                self.loading(false);                
+                self.loading(false);
             }
         });
     };

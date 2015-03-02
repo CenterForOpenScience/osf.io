@@ -14,23 +14,22 @@ function getViewOnly() {
 
 function getDefaultOptions(path, provider) {
     return {
-        token: '',
         path: path,
         provider: provider,
         cookie: getCookie(),
-        viewOnly: getViewOnly()
+        view_only: getViewOnly()
     };
 }
 
 function buildUrl(suffix, path, provider, nid, options) {
     path = path || '/';
     var baseUrl = contextVars.waterbutlerURL + suffix;
-
     return baseUrl + $.param($.extend(getDefaultOptions(path, provider), {nid: nid}, options));
 }
 
 var buildCrudUrl = buildUrl.bind(this, 'file?');
 var buildMetadataUrl = buildUrl.bind(this, 'data?');
+var buildRevisionsUrl = buildUrl.bind(this, 'revisions?');
 
 
 function buildUploadUrl(path, provider, nid, file, options) {
@@ -51,6 +50,7 @@ module.exports = {
     buildUploadUrl: buildUploadUrl,
     buildDownloadUrl: buildCrudUrl,
     buildMetadataUrl: buildMetadataUrl,
+    buildRevisionsUrl: buildRevisionsUrl,
     buildTreeBeardUpload: buildFromTreebeardFile,
     buildTreeBeardDelete: buildFromTreebeard.bind(this, 'file?'),
     buildTreeBeardDownload: buildFromTreebeard.bind(this, 'file?'),

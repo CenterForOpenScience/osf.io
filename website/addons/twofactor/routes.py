@@ -1,13 +1,13 @@
 from framework.routing import Rule, json_renderer
 
-from . import views, SHORT_NAME
+from . import views
 
 settings_routes = {
     'rules': [
 
         # OAuth: General
         Rule([
-            '/settings/{}/'.format(SHORT_NAME),
+            '/settings/twofactor/',
         ], 'post', views.user_settings, json_renderer),
     ],
     'prefix': '/api/v1',

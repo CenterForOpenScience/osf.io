@@ -31,15 +31,14 @@ def get_gravatar(user, size=None):
     )
 
 
-def serialize_user(user, node=None, full=False):
+def serialize_user(user, node=None, admin=False, full=False):
     """Return a dictionary representation of a registered user.
 
     :param User user: A User object
     :param bool full: Include complete user properties
-
     """
     fullname = user.display_full_name(node=node)
-    rv = {
+    ret = {
         'id': str(user._primary_key),
         'registered': user.is_registered,
         'surname': user.family_name,
@@ -52,12 +51,19 @@ def serialize_user(user, node=None, full=False):
         'active': user.is_active,
     }
     if node is not None:
-        rv.update({
-            'visible': user._id in node.visible_contributor_ids,
-            'permission': reduce_permissions(node.get_permissions(user)),
-        })
+        if admin:
+            flags = {
+                'visible': False,
+                'permission': 'read',
+            }
+        else:
+            flags = {
+                'visible': user._id in node.visible_contributor_ids,
+                'permission': reduce_permissions(node.get_permissions(user)),
+            }
+        ret.update(flags)
     if user.is_registered:
-        rv.update({
+        ret.update({
             'url': user.url,
             'absolute_url': user.absolute_url,
             'display_absolute_url': user.display_absolute_url,
@@ -74,7 +80,7 @@ def serialize_user(user, node=None, full=False):
             }
         else:
             merged_by = None
-        rv.update({
+        ret.update({
             'number_projects': len(get_projects(user)),
             'number_public_projects': len(get_public_projects(user)),
             'activity_points': user.get_activity_points(),
@@ -86,13 +92,12 @@ def serialize_user(user, node=None, full=False):
             'merged_by': merged_by,
         })
 
-    return rv
+    return ret
 
 
-def serialize_contributors(contribs, node):
-
+def serialize_contributors(contribs, node, **kwargs):
     return [
-        serialize_user(contrib, node)
+        serialize_user(contrib, node, **kwargs)
         for contrib in contribs
     ]
 

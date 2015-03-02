@@ -10,6 +10,12 @@ var root = path.join(__dirname, 'website', 'static');
 var staticPath = function(dir) {
     return path.join(root, dir);
 };
+var nodePath = function(dir) {
+    return path.join(__dirname, 'node_modules', dir);
+};
+var addonsPath = function(dir) {
+    return path.join(__dirname, 'website', 'addons', dir);
+};
 
 /**
  * Each JS module for a page on the OSF is webpack entry point. These are built
@@ -24,7 +30,6 @@ var entry = {
     'project-dashboard': staticPath('js/pages/project-dashboard-page.js'),
     'project-base-page': staticPath('js/pages/project-base-page.js'),
     'wiki-edit-page': staticPath('js/pages/wiki-edit-page.js'),
-    'wiki-view-page': staticPath('js/pages/wiki-view-page.js'),
     'files-page': staticPath('js/pages/files-page.js'),
     'profile-settings-page': staticPath('js/pages/profile-settings-page.js'),
     'register_1-page': staticPath('js/pages/register_1-page.js'),
@@ -34,22 +39,28 @@ var entry = {
     'new-folder-page': staticPath('js/pages/new-folder-page.js'),
     'project-settings-page': staticPath('js/pages/project-settings-page.js'),
     'search-page': staticPath('js/pages/search-page.js'),
+    'share-search-page': staticPath('js/pages/share-search-page.js'),
     'user-addon-cfg-page': staticPath('js/pages/user-addon-cfg-page.js'),
-    'notifications-config-page': staticPath('js/notifications-config-page.js'),
     'twofactor-page': staticPath('js/pages/twofactor-page.js'),
+    'notifications-config-page': staticPath('js/pages/notifications-config-page.js'),
     // Commons chunk
     'vendor': [
+        // Vendor libraries
         'knockout',
         'knockout-validation',
         'bootstrap',
         'bootbox',
         'select2',
-        'osfHelpers',
         'knockout-punches',
         'dropzone',
         'knockout-sortable',
         'treebeard',
-        'jquery.cookie'
+        'jquery.cookie',
+        'URIjs',
+        // Common internal modules
+        'fangorn',
+        'citations',
+        'osfHelpers'
     ]
 };
 
@@ -90,6 +101,17 @@ var resolve = {
         'jquery.ui.sortable': staticPath('vendor/bower_components/jquery-ui/ui/jquery.ui.sortable.js'),
         // Dropzone doesn't have a proper 'main' entry in its bower.json
         'dropzone': staticPath('vendor/bower_components/dropzone/dist/dropzone.js'),
+        'truncate': staticPath('vendor/bower_components/truncate/jquery.truncate.js'),
+        // Needed for ace code editor in wiki
+        'ace-noconflict': staticPath('vendor/bower_components/ace-builds/src-noconflict/ace.js'),
+        'ace-ext-language_tools': staticPath('vendor/bower_components/ace-builds/src-noconflict/ext-language_tools.js'),
+        'ace-mode-markdown': staticPath('vendor/bower_components/ace-builds/src-noconflict/mode-markdown.js'),
+        'pagedown-ace-converter': addonsPath('wiki/static/pagedown-ace/Markdown.Converter.js'),
+        'pagedown-ace-sanitizer': addonsPath('wiki/static/pagedown-ace/Markdown.Sanitizer.js'),
+        'pagedown-ace-editor': addonsPath('wiki/static/pagedown-ace/Markdown.Editor.js'),
+        'wikiPage': addonsPath('wiki/static/wikiPage.js'),
+        'c3': staticPath('vendor/bower_components/c3/c3.js'),
+        'highlight-css': nodePath('highlight.js/styles/default.css'),
         // Also alias some internal libraries for easy access
         'fangorn': staticPath('js/fangorn.js'),
         'waterbutler': staticPath('js/waterbutler.js'),
@@ -100,7 +122,12 @@ var resolve = {
         'addonHelper': staticPath('js/addonHelper.js'),
         'koHelpers': staticPath('js/koHelpers.js'),
         'addonPermissions': staticPath('js/addonPermissions.js'),
-        'navbar-control': staticPath('js/navbarControl.js')
+        'navbar-control': staticPath('js/navbarControl.js'),
+        'markdown': staticPath('js/markdown.js'),
+        'diffTool': staticPath('js/diffTool.js'),
+        'mathrender': staticPath('js/mathrender.js'),
+        'citations': staticPath('js/citations.js'),
+        'jstz': staticPath('vendor/bower_components/jsTimezoneDetect/index.js')
     }
 };
 
@@ -109,7 +136,8 @@ var externals = {
     //  on the global var jQuery, which is loaded with CDN
     'jquery': 'jQuery',
     'jquery-ui': 'jQuery.ui',
-    'raven-js': 'Raven'
+    'raven-js': 'Raven',
+    'MathJax': 'MathJax'
 };
 
 var plugins = [
@@ -135,7 +163,8 @@ var plugins = [
 var output = {
     path: './website/static/public/js/',
     // publicPath: '/static/', // used to generate urls to e.g. images
-    filename: '[name].[chunkhash].js'
+    filename: '[name].[chunkhash].js',
+    sourcePrefix: ''
 };
 
 module.exports = {
@@ -148,7 +177,7 @@ module.exports = {
         loaders: [
             {test: /\.css$/, loaders: ['style', 'css']},
             // url-loader uses DataUrls; files-loader emits files
-            {test: /\.png$/, loader: 'url-loader?limit=100000&minetype=image/png'},
+            {test: /\.png$/, loader: 'url-loader?limit=100000&mimetype=image/png'},
             {test: /\.gif$/, loader: 'url-loader?limit=10000&mimetype=image/gif'},
             {test: /\.jpg$/, loader: 'url-loader?limit=10000&mimetype=image/jpg'},
             {test: /\.woff/, loader: 'url-loader?limit=10000&mimetype=application/font-woff'},

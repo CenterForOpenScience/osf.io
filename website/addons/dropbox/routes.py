@@ -3,7 +3,6 @@
 from framework.routing import Rule, json_renderer
 
 from website.addons.dropbox import views
-from website.routes import OsfWebRenderer, notemplate
 
 
 auth_routes = {
@@ -52,34 +51,6 @@ auth_routes = {
     'prefix': '/api/v1'
 }
 
-web_routes = {
-    'rules': [
-
-        ##### View file #####
-        Rule(
-            [
-                '/project/<pid>/dropbox/files/<path:path>',
-                '/project/<pid>/node/<nid>/dropbox/files/<path:path>',
-            ],
-            'get',
-            views.crud.dropbox_view_file,
-            OsfWebRenderer('../addons/dropbox/templates/dropbox_view_file.mako'),
-        ),
-
-
-        ##### Download file #####
-        Rule(
-            [
-                '/project/<pid>/dropbox/files/<path:path>/download/',
-                '/project/<pid>/node/<nid>/dropbox/files/<path:path>/download/',
-            ],
-            'get',
-            views.crud.dropbox_download,
-            notemplate,
-        ),
-    ],
-}
-
 api_routes = {
     'rules': [
 
@@ -122,54 +93,6 @@ api_routes = {
             '/project/<pid>/node/<nid>/dropbox/config/share/'],
             'get',
             views.config.dropbox_get_share_emails,
-            json_renderer
-        ),
-
-        ##### CRUD #####
-
-        # Delete
-        Rule(
-            [
-                '/project/<pid>/dropbox/files/<path:path>',
-                '/project/<pid>/node/<nid>/dropbox/files/<path:path>',
-            ],
-            'delete',
-            views.crud.dropbox_delete_file,
-            json_renderer
-        ),
-
-        # Upload
-        Rule(
-            [
-                '/project/<pid>/dropbox/files/',
-                '/project/<pid>/dropbox/files/<path:path>',
-                '/project/<pid>/node/<nid>/dropbox/files/',
-                '/project/<pid>/node/<nid>/dropbox/files/<path:path>',
-            ],
-            'post',
-            views.crud.dropbox_upload,
-            json_renderer
-        ),
-
-        ##### File rendering #####
-        Rule(
-            [
-                '/project/<pid>/dropbox/files/<path:path>/render/',
-                '/project/<pid>/node/<nid>/dropbox/files/<path:path>/render/',
-            ],
-            'get',
-            views.crud.dropbox_render_file,
-            json_renderer
-        ),
-
-        ##### Revisions #####
-        Rule(
-            [
-                '/project/<pid>/dropbox/files/<path:path>/revisions/',
-                '/project/<pid>/node/<nid>/dropbox/files/<path:path>/revisions/',
-            ],
-            'get',
-            views.crud.dropbox_get_revisions,
             json_renderer
         ),
 

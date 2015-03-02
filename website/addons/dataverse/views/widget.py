@@ -14,13 +14,13 @@ def dataverse_widget(node_addon, **kwargs):
     node = node_addon.owner
     widget_url = node.api_url_for('dataverse_get_widget_contents')
 
-    rv = {
+    ret = {
         'complete': node_addon.is_fully_configured,
         'widget_url': widget_url,
     }
-    rv.update(node_addon.config.to_json())
+    ret.update(node_addon.config.to_json())
 
-    return rv, http.OK
+    return ret, http.OK
 
 
 @must_be_contributor_or_public

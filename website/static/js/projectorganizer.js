@@ -4,19 +4,21 @@
  */
 'use strict';
 
+var Treebeard = require('treebeard');
+
+// CSS
+require('../css/typeahead.css');
+require('../css/fangorn.css');
+require('../css/projectorganizer.css');
+
 var Handlebars = require('handlebars');
 var $ = require('jquery');
 var m = require('mithril');
-var Treebeard = require('treebeard');
 var bootbox = require('bootbox');
 var Bloodhound = require('exports?Bloodhound!typeahead.js');
 var moment = require('moment');
 var Raven = require('raven-js');
 
-// CSS
-require('../css/projectorganizer.css');
-require('../css/typeahead.css');
-require('../css/fangorn.css');
 
 var $osf = require('osfHelpers');
 

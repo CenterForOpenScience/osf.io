@@ -23,7 +23,7 @@ $('body').on('nodeLoad', function(event, data) {
     }
 });
 
-new ContribManager('#manageContributors', ctx.contributors, ctx.user, ctx.isRegistration);
+new ContribManager('#manageContributors', ctx.contributors, ctx.adminContributors, ctx.user, ctx.isRegistration);
 
 if ($.inArray('admin', ctx.user.permissions) !== -1) {
     // Controls the modal
@@ -33,3 +33,9 @@ if ($.inArray('admin', ctx.user.permissions) !== -1) {
     var privateLinkTable = new PrivateLinkTable('#linkScope', tableUrl, ctx.node.isPublic);
     $('#privateLinkTable').on('click', '.link-url', function(e) { e.target.select(); });
 }
+
+$(function() {
+    $('.admin-info').popover({
+        trigger: 'hover'
+    });
+});

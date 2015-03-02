@@ -19,15 +19,15 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
 
-from website import settings
 from website import mailchimp_utils
+from website import settings
 from website.models import User
 from website.models import ApiKey
-from website.views import _render_nodes
+from website.profile import utils as profile_utils
 from website.util import web_url_for, paths
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
-from website.profile import utils as profile_utils
+from website.views import _render_nodes
 
 
 logger = logging.getLogger(__name__)
@@ -73,6 +73,24 @@ def date_or_none(date):
     except Exception as error:
         logger.exception(error)
         return None
+
+
+@must_be_logged_in
+def update_user(auth):
+    """Update the logged-in user's profile."""
+
+    # trust the decorator to handle auth
+    user = auth.user
+
+    data = request.get_json()
+
+    # TODO: Expand this to support other user attributes
+    if 'timezone' in data:
+        user.timezone = data['timezone']
+
+    user.save()
+
+    return {}
 
 
 def _profile_view(profile, is_profile):
@@ -128,17 +146,18 @@ def profile_view_id(uid, auth):
 
 @must_be_logged_in
 def edit_profile(**kwargs):
-
+    # NOTE: This method is deprecated. Use update_user instead.
+    # TODO: Remove this view
     user = kwargs['auth'].user
 
     form = request.form
 
-    response_data = {'response': 'success'}
+    ret = {'response': 'success'}
     if form.get('name') == 'fullname' and form.get('value', '').strip():
-        user.fullname = strip_html(form['value'])
+        user.fullname = strip_html(form['value']).strip()
         user.save()
-        response_data['name'] = user.fullname
-    return response_data
+        ret['name'] = user.fullname
+    return ret
 
 
 def get_profile_summary(user_id, formatter='long'):
@@ -187,7 +206,7 @@ def user_addons(auth, **kwargs):
 
     user = auth.user
 
-    out = {}
+    ret = {}
 
     addons = [addon.config for addon in user.get_addons()]
     addons.sort(key=operator.attrgetter("full_name"), reverse=False)
@@ -195,33 +214,32 @@ def user_addons(auth, **kwargs):
     addon_enabled_settings = []
 
     # sort addon_enabled_settings alphabetically by category
-    for category in sorted(settings.ADDON_CATEGORIES):
+    for category in settings.ADDON_CATEGORIES:
         for addon_config in addons:
             if addon_config.categories[0] == category:
                 addons_enabled.append(addon_config.short_name)
                 if 'user' in addon_config.configs:
                     addon_enabled_settings.append(addon_config.short_name)
 
-    out['addon_categories'] = sorted(settings.ADDON_CATEGORIES)
-    out['addons_available'] = [
+    ret['addon_categories'] = settings.ADDON_CATEGORIES
+    ret['addons_available'] = [
         addon
-        for addon in settings.ADDONS_AVAILABLE
+        for addon in sorted(settings.ADDONS_AVAILABLE)
         if 'user' in addon.owners and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['user']
     ]
-    out['addons_available'].sort(key=operator.attrgetter("full_name"), reverse=False)
-    out['addons_enabled'] = addons_enabled
-    out['addon_enabled_settings'] = addon_enabled_settings
-    out['addon_js'] = collect_user_config_js(user.get_addons())
-    return out
+    ret['addons_available'].sort(key=operator.attrgetter("full_name"), reverse=False)
+    ret['addons_enabled'] = addons_enabled
+    ret['addon_enabled_settings'] = addon_enabled_settings
+    ret['addon_js'] = collect_user_config_js(user.get_addons())
+    return ret
 
 @must_be_logged_in
 def user_notifications(auth, **kwargs):
     """Get subscribe data from user"""
-    if not settings.ENABLE_EMAIL_SUBSCRIPTIONS:
-        raise HTTPError(http.BAD_REQUEST)
     return {
         'mailing_lists': auth.user.mailing_lists
     }
+
 
 def collect_user_config_js(addons):
     """Collect webpack bundles for each of the addons' user-cfg.js modules. Return
@@ -440,22 +458,22 @@ def append_editable(data, auth, uid=None):
 
 
 def serialize_social_addons(user):
-    out = {}
+    ret = {}
     for user_settings in user.get_addons():
         config = user_settings.config
         if user_settings.public_id:
-            out[config.short_name] = user_settings.public_id
-    return out
+            ret[config.short_name] = user_settings.public_id
+    return ret
 
 
 @collect_auth
 def serialize_social(auth, uid=None, **kwargs):
     target = get_target_user(auth, uid)
-    out = target.social
-    append_editable(out, auth, uid)
-    if out['editable']:
-        out['addons'] = serialize_social_addons(target)
-    return out
+    ret = target.social
+    append_editable(ret, auth, uid)
+    if ret['editable']:
+        ret['addons'] = serialize_social_addons(target)
+    return ret
 
 
 def serialize_job(job):
@@ -486,39 +504,40 @@ def serialize_school(school):
 
 def serialize_contents(field, func, auth, uid=None):
     target = get_target_user(auth, uid)
-    out = {
+    ret = {
         'contents': [
             func(content)
             for content in getattr(target, field)
         ]
     }
-    append_editable(out, auth, uid)
-    return out
+    append_editable(ret, auth, uid)
+    return ret
 
 
 @collect_auth
 def serialize_jobs(auth, uid=None, **kwargs):
-    out = serialize_contents('jobs', serialize_job, auth, uid)
-    append_editable(out, auth, uid)
-    return out
+    ret = serialize_contents('jobs', serialize_job, auth, uid)
+    append_editable(ret, auth, uid)
+    return ret
 
 
 @collect_auth
 def serialize_schools(auth, uid=None, **kwargs):
-    out = serialize_contents('schools', serialize_school, auth, uid)
-    append_editable(out, auth, uid)
-    return out
+    ret = serialize_contents('schools', serialize_school, auth, uid)
+    append_editable(ret, auth, uid)
+    return ret
 
 
 @must_be_logged_in
 def unserialize_names(**kwargs):
     user = kwargs['auth'].user
     json_data = escape_html(request.get_json())
-    user.fullname = json_data.get('full')
-    user.given_name = json_data.get('given')
-    user.middle_names = json_data.get('middle')
-    user.family_name = json_data.get('family')
-    user.suffix = json_data.get('suffix')
+    # json get can return None, use `or` here to ensure we always strip a string
+    user.fullname = (json_data.get('full') or '').strip()
+    user.given_name = (json_data.get('given') or '').strip()
+    user.middle_names = (json_data.get('middle') or '').strip()
+    user.family_name = (json_data.get('family') or '').strip()
+    user.suffix = (json_data.get('suffix') or '').strip()
     user.save()
 
 

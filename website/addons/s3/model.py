@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 
-import os
+from modularodm import fields, Q
+from modularodm.exceptions import ModularOdmException
 
-from modularodm import fields
 from boto.exception import BotoServerError
 
 from framework.auth.core import Auth
 
 from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
-from website.addons.s3.utils import get_bucket_drop_down, remove_osf_user, build_urls
+from website.addons.s3.utils import get_bucket_drop_down, remove_osf_user
 
 
 class S3GuidFile(GuidFile):
@@ -17,10 +17,20 @@ class S3GuidFile(GuidFile):
     path = fields.StringField(index=True)
 
     @property
-    def file_url(self):
-        if self.path is None:
-            raise ValueError('Path field must be defined.')
-        return os.path.join('s3', self.path)
+    def waterbutler_path(self):
+        return '/' + self.path
+
+    @property
+    def provider(self):
+        return 's3'
+
+    @property
+    def version_identifier(self):
+        return 'version'
+
+    @property
+    def unique_identifier(self):
+        return self._metadata_cache['extra']['md5']
 
 
 class AddonS3UserSettings(AddonUserSettingsBase):
@@ -76,6 +86,22 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         'addons3usersettings', backref='authorized'
     )
 
+    def find_or_create_file_guid(self, path):
+        path = path.lstrip('/')
+
+        try:
+            return S3GuidFile.find_one(
+                Q('path', 'eq', path) &
+                Q('node', 'eq', self.owner)
+            ), False
+        except ModularOdmException:
+            pass
+
+        # Create new
+        new = S3GuidFile(node=self.owner, path=path)
+        new.save()
+        return new, True
+
     @property
     def display_name(self):
         return u'{0}: {1}'.format(self.config.full_name, self.bucket)
@@ -128,6 +154,8 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         return {'bucket': self.bucket}
 
     def create_waterbutler_log(self, auth, action, metadata):
+        url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='s3')
+
         self.owner.add_log(
             's3_{0}'.format(action),
             auth=auth,
@@ -136,12 +164,12 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
                 'node': self.owner._id,
                 'path': metadata['path'],
                 'bucket': self.bucket,
-                'urls': build_urls(self.owner, metadata['path']),
+                'urls': {
+                    'view': url,
+                    'download': url + '?action=download'
+                }
             },
         )
-
-    def get_waterbutler_render_url(self, path, **kwargs):
-        return self.owner.web_url_for('s3_view', path=path)
 
     def to_json(self, user):
         rv = super(AddonS3NodeSettings, self).to_json(user)

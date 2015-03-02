@@ -187,7 +187,7 @@ def dataverse_view_file(node_addon, auth, **kwargs):
 
     render_url = node.api_url_for('dataverse_get_rendered_file',
                                 path=file_id)
-    rv = {
+    ret = {
         'file_name': filename,
         'rendered': rendered,
         'render_url': render_url,
@@ -200,8 +200,8 @@ def dataverse_view_file(node_addon, auth, **kwargs):
         }
 
     }
-    rv.update(_view_project(node, auth))
-    return rv
+    ret.update(_view_project(node, auth))
+    return ret
 
 
 @must_have_permission('write')

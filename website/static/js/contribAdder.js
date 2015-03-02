@@ -39,7 +39,7 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
     self.inviteError = ko.observable('');
     self.numberOfPages = ko.observable(0);
     self.currentPage = ko.observable(0);
-
+    self.totalPages = ko.observable(0);
     self.paginators = ko.observableArray([]);
     self.nodes = ko.observableArray([]);
     self.nodesToChange = ko.observableArray();

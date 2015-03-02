@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-import datetime
 import os
-import os.path
 
 from lxml import etree
 

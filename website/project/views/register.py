@@ -112,10 +112,9 @@ def node_register_template_page(auth, **kwargs):
 @must_be_valid_project  # returns project
 @must_have_permission(ADMIN)
 @must_not_be_registration
-def project_before_register(**kwargs):
-
+def project_before_register(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    user = kwargs['auth'].user
+    user = auth.user
 
     prompts = node.callback('before_register', user=user)
 
@@ -133,7 +132,6 @@ def project_before_register(**kwargs):
 @must_have_permission(ADMIN)
 @must_not_be_registration
 def node_register_template_page_post(auth, **kwargs):
-
     node = kwargs['node'] or kwargs['project']
     data = request.json
 

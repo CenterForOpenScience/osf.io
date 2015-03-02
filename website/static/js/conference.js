@@ -1,11 +1,10 @@
 var $ = require('jquery');
-require('../vendor/bower_components/slickgrid/lib/jquery.event.drag-2.2.js');
 var m = require('mithril');
 var Treebeard = require('treebeard');
 
 
 function Meeting(data) {
-    //  Treebeard version 
+    //  Treebeard version
     var tbOptions = {
         divID: 'grid',
         filesData: data,
@@ -23,7 +22,7 @@ function Meeting(data) {
                 },
                 {
                     title: "Author",
-                    width : "25%",
+                    width : "20%",
                     sortType : "text",
                     sort : true
 
@@ -35,50 +34,52 @@ function Meeting(data) {
                 },
                 {
                     title: "Downloads",
-                    width : "10%",
-                    sort : false
+                    width : "15%",
+                    sortType : "number",
+                    sort : true
                 }
-            ]},            
+            ];
+        },
         resolveRows : function _conferenceResolveRows(item){
-        
+
             var default_columns = [
                 {
                     data : 'title',  // Data field name
                     folderIcons : false,
                     filter : true,
-                    sortInclude : true,  
+                    sortInclude : true,
                     custom : function() { return m('a', { href : item.data.nodeUrl, target : '_blank' }, item.data.title ); }
-                  
+
                 },
                 {
                     data : 'author',  // Data field name
                     folderIcons : false,
                     filter : true,
-                    sortInclude : true,  
+                    sortInclude : true,
                     custom : function() { return m('a', { href : item.data.authorUrl }, item.data.author ); }
-                },           
+                },
                 {
                     data : 'category',  // Data field name
                     folderIcons : false,
                     filter : false
                 },
-                {   
+                {
                     data : 'download',  // Data field name
                     folderIcons : false,
                     filter : false,
-                    custom : function() { 
+                    custom : function() {
                         if(item.data.downloadUrl){
-                            return [ m('a', { href : item.data.downloadUrl }, [ 
+                            return [ m('a', { href : item.data.downloadUrl }, [
                                 m('button.btn.btn-success.btn-xs', { style : 'margin-right : 10px;'},  m('i.icon-download-alt icon-white')),
-                                
-                            ] ), item.data.download  ]; 
+
+                            ] ), item.data.download  ];
                         } else {
                             return '';
                         }
                     }
 
-                } 
-            ]; 
+                }
+            ];
             return default_columns;
         },
         sortButtonSelector : {
@@ -97,7 +98,7 @@ function Meeting(data) {
                     m('a', { href : "#submit" }, 'Add your poster or talk')
                 ]);
             }
-                
+
             return undefined;
         },
         allowMove : false,       // Turn moving on or off.
