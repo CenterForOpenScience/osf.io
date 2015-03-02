@@ -230,13 +230,12 @@ class Figshare(object):
     def get_options(self):
         projects = self._send("http://api.figshare.com/v1/my_data/projects")
         articles = self._send("http://api.figshare.com/v1/my_data/articles")
-
         if projects is False or articles is False:
             return self._get_last_error()
 
         return [{'label': project['title'], 'value': 'project_{0}'.format(project['id'])}
                 for project in projects] + \
-            [{'label': article['title'], 'value': 'fileset_{0}'.format(article['article_id'])}
+            [{'label': (article['title'] if len(article['title']) else 'untitled article'), 'value': 'fileset_{0}'.format(article['article_id'])}
              for article in articles['items'] if article['defined_type'] == 'fileset']
 
     def get_file(self, node_settings, found):

@@ -22,17 +22,17 @@ def figshare_hgrid_data_contents(node_addon, auth, **kwargs):
     fs_type = kwargs.get('type', node_addon.figshare_type)
     fs_id = kwargs.get('id', node_addon.figshare_id)
 
-    connect = Figshare.from_settings(node_addon.user_settings)
+    api = Figshare.from_settings(node_addon.user_settings)
     if fs_type in ['article', 'fileset']:
         out = article_to_hgrid(
             node, auth.user,
-            connect.article(node_addon, fs_id)['items'][0],
+            api.article(node_addon, fs_id)['items'][0],
             expand=True, folders_only=folders_only
         )
     elif fs_type == 'project':
         out = project_to_hgrid(
             node=node,
-            project=connect.project(node_addon, fs_id),
+            project=api.project(node_addon, fs_id),
             user=auth.user,
             folders_only=folders_only
         )
@@ -56,7 +56,7 @@ def figshare_hgrid_data(node_settings, auth, parent=None, **kwargs):
     node_settings.save()
     return [
         rubeus.build_addon_root(
-            node_settings, u'{0}:{1}'.format(node_settings.figshare_title or 'Unnamed', node_settings.figshare_id), permissions=auth,
+            node_settings, u'{0}:{1}'.format(node_settings.figshare_title or "Unnamed {0}".format(node_settings.figshare_type or ''), node_settings.figshare_id), permissions=auth,
             nodeUrl=node.url, nodeApiUrl=node.api_url,
         )
     ]
