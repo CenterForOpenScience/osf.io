@@ -1,5 +1,5 @@
 import os
-from json import loads as load_json
+from json import load as load_json
 from mako.lookup import TemplateLookup
 
 CLASS_MAP = {
@@ -21,32 +21,33 @@ CAPABILITY_SET = [
 def read_capabilities(filename):
 
     data_file = open(filename, 'r')
-    data = load_json(data_file.read())
+    data = load_json(data_file)
 
     addons = data['addons']
     disclaimers = data['disclaimers']
 
-    rv = {}
+    ret = {}
 
     for addon_name, info in addons.iteritems():
         infos = []
         for cap in CAPABILITY_SET:
-            text = info[cap]
-            if text == 'NA':
+            status = info[cap].get('status') or ''
+            text = info[cap].get('text') or ''
+            if status == 'NA':
                 continue
-            split = text.split(' | ')
             infos.append({
                 'function': cap,
-                'status': split[0],
-                'detail': split[1] if len(split) > 1 else '',
-                'class': CLASS_MAP[split[0]],
+                'status': status,
+                'detail': text,
+                'class': CLASS_MAP[status],
             })
-        rv[addon_name] = {
+        ret[addon_name] = {
             'capabilities': infos,
             'terms': disclaimers,
         }
 
-    return rv
+    data_file.close()
+    return ret
 
 here, _ = os.path.split(__file__)
 here = os.path.abspath(here)
