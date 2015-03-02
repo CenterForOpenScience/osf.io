@@ -2,6 +2,8 @@
 
 import re
 import logging
+import urlparse
+
 from flask import request, url_for
 
 from website import settings
@@ -34,6 +36,7 @@ def api_url_for(view_name, _absolute=False, _xml=False, *args, **kwargs):
     based on whether the app is in debug mode, and the adition of the _xml flag that
     will set the renderer to use.
     """
+    url = url_for('JSONRenderer__{0}'.format(view_name), *args, **kwargs)
     if _absolute:
         # Pop off kwargs to ensure that keyword arguments are only passed
         # once
@@ -49,6 +52,10 @@ def api_url_for(view_name, _absolute=False, _xml=False, *args, **kwargs):
     return url_for('{0}__{1}'.format(renderer, view_name),
         _external=_external, _scheme=_scheme,
         *args, **kwargs)
+        # We do NOT use the url_for's _external kwarg because app.config['SERVER_NAME'] alters
+        # behavior in an unknown way (currently breaks tests). /sloria /jspies
+        return urlparse.urljoin(settings.DOMAIN, url)
+    return url
 
 
 def web_url_for(view_name, _absolute=False, _guid=False, *args, **kwargs):
@@ -57,18 +64,14 @@ def web_url_for(view_name, _absolute=False, _guid=False, *args, **kwargs):
     `_absolute`, which will make an absolute URL with the correct HTTP scheme
     based on whether the app is in debug mode.
     """
-    if _absolute:
-        _external = kwargs.pop('_external', True)
-        scheme = 'http' if settings.DEBUG_MODE else 'https'
-        _scheme = kwargs.pop('_scheme', scheme)
-    else:
-        _external = kwargs.pop('_external', False)
-        _scheme = kwargs.pop('_scheme', None)
-    url = url_for('OsfWebRenderer__{0}'.format(view_name),
-        _external=_external, _scheme=_scheme,
-        *args, **kwargs)
+    url = url_for('OsfWebRenderer__{0}'.format(view_name), *args, **kwargs)
     if _guid:
         url = _get_guid_url_for(url)
+
+    if _absolute:
+        # We do NOT use the url_for's _external kwarg because app.config['SERVER_NAME'] alters
+        # behavior in an unknown way (currently breaks tests). /sloria /jspies
+        return urlparse.urljoin(settings.DOMAIN, url)
     return url
 
 def is_json_request():

@@ -83,7 +83,7 @@ var ViewModel = function(url, selector, folderPicker) {
 
     self.fetchFromServer = function() {
         var request = $.ajax({
-            url: url, type: 'GET', dataType: 'json',
+            url: url, type: 'GET', dataType: 'json'
         })
         .done(function(response) {
             self.updateFromData(response.result);
@@ -314,7 +314,7 @@ var ViewModel = function(url, selector, folderPicker) {
     */
     function onPickFolder(evt, item) {
             evt.preventDefault();
-            var name = item.data.path === '/' ? '/ (Full Box)' : item.data.path.replace('All Files', '');
+            var name = item.data.path === 'All Files' ? '/ (Full Box)' : item.data.path.replace('All Files', '');
             self.selected({name: name, path: item.data.path, id: item.data.id});
             return false; // Prevent event propagation
         }

@@ -21,6 +21,7 @@ from website.exceptions import NodeStateError
 from website.project import clean_template_name, new_node, new_private_link
 from website.project.decorators import (
     must_be_contributor_or_public,
+    must_be_contributor,
     must_be_valid_project,
     must_have_permission,
     must_not_be_registration,
@@ -288,12 +289,10 @@ def node_forks(**kwargs):
 
 @must_be_valid_project
 @must_not_be_registration
-@must_have_permission('write')
+@must_be_logged_in
+@must_be_contributor
 def node_setting(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
-
-    if not node.can_edit(auth):
-        raise HTTPError(http.FORBIDDEN)
 
     ret = _view_project(node, auth, primary=True)
 
@@ -325,6 +324,7 @@ def node_setting(auth, **kwargs):
     }
 
     return ret
+
 
 def collect_node_config_js(addons):
     """Collect webpack bundles for each of the addons' node-cfg.js modules. Return
@@ -671,12 +671,14 @@ def _render_addon(node):
 
 
 def _should_show_wiki_widget(node, user):
+
+    has_wiki = bool(node.get_addon('wiki'))
+    wiki_page = node.get_wiki_page('home', None)
     if not node.has_permission(user, 'write'):
-        wiki_page = node.get_wiki_page('home', None)
-        return wiki_page and wiki_page.html(node)
+        return has_wiki and wiki_page and wiki_page.html(node)
 
     else:
-        return True
+        return has_wiki
 
 
 def _view_project(node, auth, primary=False):
@@ -767,6 +769,7 @@ def _view_project(node, auth, primary=False):
             'is_contributor': node.is_contributor(user),
             'can_edit': (node.can_edit(auth)
                          and not node.is_registration),
+            'has_read_permissions': node.has_permission(user, 'read'),
             'permissions': node.get_permissions(user) if user else [],
             'is_watching': user.is_watching(node) if user else False,
             'piwik_token': user.piwik_token if user else '',

@@ -2,6 +2,7 @@
 
 var $ = require('jquery');
 var bootbox = require('bootbox');
+var Raven = require('raven-js');
 
 var ProjectSettings = require('../projectSettings.js');
 
@@ -9,6 +10,25 @@ var $osf = require('osfHelpers');
 require('../../css/addonsettings.css');
 
 var ctx = window.contextVars;
+
+// Initialize treebeard grid
+var ProjectNotifications = require('../notificationsTreebeard.js');
+var $notificationsMsg = $('#configureNotificationsMessage');
+var notificationsURL = ctx.node.urls.api  + 'subscriptions/';
+$.ajax({
+    url: notificationsURL,
+    type: 'GET',
+    dataType: 'json'
+}).done(function(response) {
+    new ProjectNotifications(response);
+}).fail(function(xhr, status, error) {
+    $notificationsMsg.addClass('text-danger');
+    $notificationsMsg.text('Could not retrieve notification settings.');
+    Raven.captureMessage('Could not GET notification settings', {
+        url: notificationsURL, status: status, error: error
+    });
+});
+
 
 $(document).ready(function() {
 
