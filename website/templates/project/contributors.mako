@@ -182,7 +182,7 @@
 
 
 <script id="contribTpl" type="text/html">
-    <tr data-bind="click: unremove, css: {'contributor-delete-staged': deleteStaged}">
+    <tr>
         <td>
             <img data-bind="attr: {src: contributor.gravatar_url}" />
             <span data-bind="ifnot: profileUrl">
@@ -192,7 +192,7 @@
                 <a class="no-sort" data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
             </span>
         </td>
-        <td>
+        <td data-bind="click: unremove, css: {'contributor-delete-staged': deleteStaged}">
             <!-- ko if: contributor.canEdit() -->
                 <span data-bind="visible: notDeleteStaged">
                     <a href="#" class="permission-editable no-sort" data-type="select"></a>
@@ -205,13 +205,13 @@
                 <span data-bind="text: formatPermission"></span>
             <!-- /ko -->
         </td>
-        <td>
+        <td data-bind="click: unremove, css: {'contributor-delete-staged': deleteStaged}">
             <input
                     type="checkbox" class="no-sort"
                     data-bind="checked: visible, enable: $parent.canEdit() && !contributor.isAdmin"
                 />
         </td>
-        <td>
+        <td data-bind="click: unremove, css: {'contributor-delete-staged': deleteStaged}">
           <!-- ko if: contributor.canEdit() -->
                 <!-- ko ifnot: deleteStaged -->
                     <!-- Note: Prevent clickBubble so that removing a
