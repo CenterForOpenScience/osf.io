@@ -41,18 +41,19 @@ function treebeardResolveIcon(item) {
 }
 
 var INPUT_NAME = '-folder-select';
-function treebeardTitleColumn(item, col) {    
+
+function treebeardTitleColumn(item, col) {
     var tb = this; // jshint ignore: line
 
     var cls = '';
-    var onclick = function(){};
-    if (typeof item.data.hasChildren === 'undefined' || item.data.hasChildren){
+    var onclick = function() {};
+    if (typeof item.data.hasChildren === 'undefined' || item.data.hasChildren) {
         cls = 'hasChildren';
-        onclick = function(){
+        onclick = function() {
             tb.updateFolder(null, item);
         };
     }
-    
+
     return m('span', {
         className: cls,
         onclick: onclick
