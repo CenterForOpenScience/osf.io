@@ -17,6 +17,7 @@ var $ = require('jquery');
 var m = require('mithril');
 var Treebeard = require('treebeard');
 
+require('../css/folderpicker.css');
 
 function treebeardToggleCheck(item) {
     return ((typeof item.data.hasChildren === 'undefined') || item.data.hasChildren);
@@ -40,9 +41,22 @@ function treebeardResolveIcon(item) {
 }
 
 var INPUT_NAME = '-folder-select';
-//THIS NEEDS TO BE FIXED SO THAT ON CLICK IT OPENS THE FOLDER.
-function treebeardTitleColumn(item, col) {
-    return m('span', item.data.name);
+function treebeardTitleColumn(item, col) {    
+    var tb = this; // jshint ignore: line
+
+    var cls = '';
+    var onclick = function(){};
+    if (typeof item.data.hasChildren === 'undefined' || item.data.hasChildren){
+        cls = 'hasChildren';
+        onclick = function(){
+            tb.updateFolder(null, item);
+        };
+    }
+    
+    return m('span', {
+        className: cls,
+        onclick: onclick
+    }, item.data.name);
 }
 
 /**
