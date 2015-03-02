@@ -78,7 +78,7 @@ def node_registration_retraction(auth, **kwargs):
     return ret
 
 @must_be_valid_project(are_retractions_valid=True)
-@must_have_permission(READ)
+@must_be_contributor_or_public
 def node_registration_retracted(auth, **kwargs):
     """ Handles view of retracted public registrations """
 

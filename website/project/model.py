@@ -547,6 +547,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         'tags',
         'is_fork',
         'is_registration',
+        'is_retracted',
         'is_public',
         'is_deleted',
         'wiki_pages_current',
