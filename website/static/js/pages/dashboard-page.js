@@ -47,18 +47,22 @@ request.fail(function(xhr, textStatus, error) {
     });
 });
 
-var ensureUserTimezone = function(savedTimezone) {
+var ensureUserTimezone = function(savedTimezone, savedLocale) {
     var clientTimezone = jstz.determine().name();
+    var clientLocale = window.navigator.userLanguage || window.navigator.language;
 
-    if (savedTimezone != clientTimezone) {
+    if (savedTimezone != clientTimezone || savedLocale != clientLocale) {
         var url = '/api/v1/profile/';
 
         var request = $osf.putJSON(
             url,
-            {'timezone': clientTimezone}
+            {
+                'timezone': clientTimezone,
+                'locale': clientLocale
+            }
         );
         request.fail(function(xhr, textStatus, error) {
-            Raven.captureMessage('Could not set user timezone offset', {
+            Raven.captureMessage('Could not set user timezone or locale', {
                 url: url,
                 textStatus: textStatus,
                 error: error
@@ -81,7 +85,7 @@ $(document).ready(function() {
             multiselect : true
         });
 
-        ensureUserTimezone(data.timezone);
+        ensureUserTimezone(data.timezone, data.locale);
     });
     request.fail(function(xhr, textStatus, error) {
         Raven.captureMessage('Failed to populate user dashboard', {

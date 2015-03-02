@@ -30,6 +30,9 @@ from website.util.sanitize import strip_html
 from website.views import _render_nodes
 
 
+# test time formatting
+# from Babel import Locale
+
 logger = logging.getLogger(__name__)
 
 
@@ -87,6 +90,9 @@ def update_user(auth):
     # TODO: Expand this to support other user attributes
     if 'timezone' in data:
         user.timezone = data['timezone']
+    if 'locale' in data:
+        locale = data['locale'].replace('-', '_')
+        user.locale = locale
 
     user.save()
 
