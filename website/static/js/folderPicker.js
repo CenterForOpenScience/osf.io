@@ -75,10 +75,8 @@ function _treebeardSelectView(item) {
         return templateUnchecked;
     }
 
-    if (item.data.addon !== 'figshare'){
-        if (item.data.path === tb.options.folderPath || (tb.options.folderArray && tb.options.folderArray[tb.options.folderArray.length - 1] === item.data.name)) {
-            return templateChecked;
-        }
+    if (item.data.path === tb.options.folderPath || (tb.options.folderArray && tb.options.folderArray[tb.options.folderArray.length - 1] === item.data.name)) {
+        return templateChecked;
     }
 
     return templateUnchecked;
