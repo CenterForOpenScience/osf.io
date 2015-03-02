@@ -27,6 +27,8 @@ google-api-python-client==1.2
 git+https://github.com/CenterForOpenScience/modular-odm.git@develop
 # Development version of modular file renderer
 git+https://github.com/CenterForOpenScience/modular-file-renderer.git@dev
+# Fork of HTTPretty with pymongo fix
+git+https://github.com/jmcarp/HTTPretty@fix-tests-for-208
 
 requests==2.4.1
 requests-oauthlib>=0.4.1
