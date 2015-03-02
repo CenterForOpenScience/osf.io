@@ -18,11 +18,11 @@ var m = require('mithril');
 var Treebeard = require('treebeard');
 
 
-function _treebeardToggleCheck(item) {
+function treebeardToggleCheck(item) {
     return ((typeof item.data.hasChildren === 'undefined') || item.data.hasChildren);
 }
 
-function _treebeardResolveToggle(item) {
+function treebeardResolveToggle(item) {
     if ((typeof item.data.hasChildren !== 'undefined') && item.data.hasChildren === false) {
         return '';
     }
@@ -33,7 +33,7 @@ function _treebeardResolveToggle(item) {
 }
 
 // Returns custom icons for OSF
-function _treebeardResolveIcon(item) {
+function treebeardResolveIcon(item) {
     return item.open ?
         m('i.icon-folder-open-alt', ' ') :
         m('i.icon-folder-close-alt', ' ');
@@ -41,14 +41,14 @@ function _treebeardResolveIcon(item) {
 
 var INPUT_NAME = '-folder-select';
 //THIS NEEDS TO BE FIXED SO THAT ON CLICK IT OPENS THE FOLDER.
-function _treebeardTitleColumn(item, col) {
+function treebeardTitleColumn(item, col) {
     return m('span', item.data.name);
 }
 
 /**
  * Returns the folder select button for a single row.
  */
-function _treebeardSelectView(item) {
+function treebeardSelectView(item) {
     var tb = this; // jshint ignore: line
     var setTempPicked = function() {
         this._tempPicked = item.id;
@@ -82,7 +82,7 @@ function _treebeardSelectView(item) {
     return templateUnchecked;
 }
 
-function _treebeardColumnTitle() {
+function treebeardColumnTitle() {
     return [{
         title: 'Folders',
         width: '75%',
@@ -94,22 +94,22 @@ function _treebeardColumnTitle() {
     }];
 }
 
-function _treebeardResolveRows(item) {
+function treebeardResolveRows(item) {
     // this = treebeard;
     item.css = '';
     return [{
         data: 'name', // Data field name
         folderIcons: true,
         filter: false,
-        custom: _treebeardTitleColumn
+        custom: treebeardTitleColumn
     }, {
         sortInclude: false,
         css: 'p-l-xs',
-        custom: _treebeardSelectView
+        custom: treebeardSelectView
     }];
 }
 
-function _treebeardOnload() {
+function treebeardOnload() {
     var tb = this; // jshint ignore: line
 
     tb.options.folderIndex = 0;
@@ -129,7 +129,7 @@ function _treebeardOnload() {
     tb.options.folderPickerOnload();
 }
 
-function _treebeardLazyLoadOnLoad(item) {
+function treebeardLazyLoadOnLoad(item) {
     var tb = this; // jshint ignore: line
 
     for (var i = 0; i < item.children.length; i++) {
@@ -146,13 +146,13 @@ function _treebeardLazyLoadOnLoad(item) {
 
 // Default Treebeard options
 var defaults = {
-    columnTitles: _treebeardColumnTitle,
-    resolveRows: _treebeardResolveRows,
-    resolveIcon: _treebeardResolveIcon,
-    togglecheck: _treebeardToggleCheck,
-    resolveToggle: _treebeardResolveToggle,
-    ondataload: _treebeardOnload,
-    lazyLoadOnLoad: _treebeardLazyLoadOnLoad,
+    columnTitles: treebeardColumnTitle,
+    resolveRows: treebeardResolveRows,
+    resolveIcon: treebeardResolveIcon,
+    togglecheck: treebeardToggleCheck,
+    resolveToggle: treebeardResolveToggle,
+    ondataload: treebeardOnload,
+    lazyLoadOnLoad: treebeardLazyLoadOnLoad,
     // Disable uploads
     uploads: false,
     showFilter: false,
@@ -193,6 +193,6 @@ $.fn.folderpicker = function(options) {
 };
 
 
-FolderPicker.selectView = _treebeardSelectView;
+FolderPicker.selectView = treebeardSelectView;
 
 module.exports = FolderPicker;
