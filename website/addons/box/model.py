@@ -2,26 +2,217 @@
 import os
 import time
 import logging
+import httplib as http
 from datetime import datetime
 
 import furl
 import requests
-from box import CredentialsV2, refresh_v2_token, BoxClientException
+from flask import request, redirect
+from box import CredentialsV2, refresh_v2_token, BoxClient
+from box.client import BoxClientException
 from modularodm import fields, Q, StoredObject
 from modularodm.exceptions import ModularOdmException
+from werkzeug.wrappers import BaseResponse
 
 from framework.auth import Auth
 from framework.exceptions import HTTPError
+from framework.sessions import session
+from framework.auth.decorators import must_be_logged_in
+from framework.status import push_status_message as flash
+
+from website.util import api_url_for
+from website.util import web_url_for
+from website import security
+from website.project.model import Node
+from website.project.decorators import must_have_addon
 
 from website.addons.base import exceptions
-from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
+from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase, GuidFile
 
 from website.addons.box import settings
 from website.addons.box.utils import BoxNodeLogger
-from website.addons.box.client import get_client_from_user_settings
-
+from website.oauth.models import ExternalProvider
+from website.addons.box.utils import handle_box_error
 
 logger = logging.getLogger(__name__)
+
+
+class Box(ExternalProvider):
+    name = 'Box'
+    short_name = 'box'
+
+    client_id = settings.BOX_KEY
+    client_secret = settings.BOX_SECRET
+
+    auth_url_base = settings.BOX_OAUTH_AUTH_ENDPOINT
+    callback_url = settings.BOX_OAUTH_TOKEN_ENDPOINT
+    default_scopes = ['all']
+
+    def get_auth_flow(self, csrf_token):
+        url = furl.furl(settings.BOX_OAUTH_AUTH_ENDPOINT)
+
+        url.args = {
+            'state': csrf_token,
+            'response_type': 'code',
+            'client_id': self.client_id,
+            'redirect_uri': api_url_for('box_oauth_finish', _absolute=True),
+        }
+
+        return url.url
+
+    def finish_auth(self):
+        """View helper for finishing the Box Oauth2 flow. Returns the
+        access_token, user_id, and url_state.
+
+        Handles various errors that may be raised by the Box client.
+        """
+        if 'error' in request.args:
+            self.handle_box_error(error=request.args['error'], msg=request.args['error_description'])
+
+        # Should always be defined
+        code = request.args['code']
+        # Default to empty string over None because of below assertion
+        state = request.args.get('state', '')
+
+        if state != session.data.pop('box_oauth_state', None):
+            raise HTTPError(http.FORBIDDEN)
+
+        data = {
+            'code': code,
+            'client_id': settings.BOX_KEY,
+            'grant_type': 'authorization_code',
+            'client_secret': settings.BOX_SECRET,
+        }
+
+        response = requests.post(settings.BOX_OAUTH_TOKEN_ENDPOINT, data)
+        result = response.json()
+
+        if 'error' in result:
+            handle_box_error(
+                error=request.args['error'],
+                msg=request.args['error_description'])
+
+        return result
+
+    @must_be_logged_in
+    def box_oauth_start(self, auth, **kwargs):
+        user = auth.user
+        # Store the node ID on the session in order to get the correct redirect URL
+        # upon finishing the flow
+        nid = kwargs.get('nid') or kwargs.get('pid')
+
+        node = Node.load(nid)
+
+        if node and not node.is_contributor(user):
+            raise HTTPError(http.FORBIDDEN)
+
+        csrf_token = security.random_string(10)
+        session.data['box_oauth_state'] = csrf_token
+
+        if nid:
+            session.data['box_auth_nid'] = nid
+
+        # If user has already authorized box, flash error message
+        if user.has_addon('box') and user.get_addon('box').has_auth:
+            flash('You have already authorized Box for this account', 'warning')
+            return redirect(web_url_for('user_addons'))
+
+        return redirect(self.get_auth_flow(csrf_token))
+
+    @must_be_logged_in
+    def box_oauth_finish(self, auth, **kwargs):
+        """View called when the Oauth flow is completed. Adds a new BoxUserSettings
+        record to the user and saves the user's access token and account info.
+        """
+        user = auth.user
+        node = Node.load(session.data.pop('box_auth_nid', None))
+
+        # Handle request cancellations from Box's API
+        if request.args.get('error'):
+            flash('Box authorization request cancelled.')
+            if node:
+                return redirect(node.web_url_for('node_setting'))
+            return redirect(web_url_for('user_addons'))
+
+        result = self.finish_auth()
+
+        # If result is a redirect response, follow the redirect
+        if isinstance(result, BaseResponse):
+            return result
+
+        client = BoxClient(CredentialsV2(
+            result['access_token'],
+            result['refresh_token'],
+            settings.BOX_KEY,
+            settings.BOX_SECRET,
+        ))
+
+        about = client.get_user_info()
+        oauth_settings = BoxOAuthSettings.load(about['id'])
+
+        if not oauth_settings:
+            oauth_settings = BoxOAuthSettings(user_id=about['id'], username=about['name'])
+            oauth_settings.save()
+
+        oauth_settings.refresh_token = result['refresh_token']
+        oauth_settings.access_token = result['access_token']
+        oauth_settings.expires_at = datetime.utcfromtimestamp(time.time() + 3600)
+
+        # Make sure user has box enabled
+        user.add_addon('box')
+        user.save()
+
+        user_settings = user.get_addon('box')
+        user_settings.oauth_settings = oauth_settings
+
+        user_settings.save()
+
+        flash('Successfully authorized Box', 'success')
+
+        if node:
+            # Automatically use newly-created auth
+            if node.has_addon('box'):
+                node_addon = node.get_addon('box')
+                node_addon.set_user_auth(user_settings)
+                node_addon.save()
+            return redirect(node.web_url_for('node_setting'))
+        return redirect(web_url_for('user_addons'))
+
+    @must_be_logged_in
+    @must_have_addon('box', 'user')
+    def box_oauth_delete_user(self, user_addon, auth, **kwargs):
+        """View for deauthorizing Box."""
+        user_addon.clear()
+        user_addon.save()
+
+    @must_be_logged_in
+    @must_have_addon('box', 'user')
+    def box_user_config_get(self, user_addon, auth, **kwargs):
+        """View for getting a JSON representation of the logged-in user's
+        Box user settings.
+        """
+        urls = {
+            'create': api_url_for('box_oauth_start_user'),
+            'delete': api_url_for('box_oauth_delete_user')
+        }
+        valid_credentials = True
+
+        if user_addon.has_auth:
+            try:
+                client = self.client
+                client.get_user_info()
+            except BoxClientException:
+                valid_credentials = False
+
+        return {
+            'result': {
+                'urls': urls,
+                'boxName': user_addon.username,
+                'userHasAuth': user_addon.has_auth,
+                'validCredentials': valid_credentials,
+                'nNodesAuthorized': len(user_addon.nodes_authorized),
+            },
+        }
 
 
 class BoxFile(GuidFile):
@@ -73,6 +264,7 @@ class BoxOAuthSettings(StoredObject):
     this model address the problem if we have two osf user link
     to the same box user and their access token conflicts issue
     """
+    name = 'Box'
 
     # Box user id, for example, "4974056"
     user_id = fields.StringField(primary=True, required=True)
@@ -81,6 +273,15 @@ class BoxOAuthSettings(StoredObject):
     access_token = fields.StringField()
     refresh_token = fields.StringField()
     expires_at = fields.DateTimeField()
+
+    @property
+    def get_client(self):
+        if self._needs_refresh():
+            self.refresh_access_token()
+
+        return BoxClient(
+            self.get_credentialsv2()
+        )
 
     def fetch_access_token(self):
         self.refresh_access_token()
@@ -132,10 +333,12 @@ class BoxOAuthSettings(StoredObject):
         return (self.expires_at - datetime.utcnow()).total_seconds() < settings.REFRESH_TIME
 
 
-class BoxUserSettings(AddonUserSettingsBase):
+class BoxUserSettings(AddonOAuthUserSettingsBase):
     """Stores user-specific box information, including the Oauth access
     token.
     """
+    oauth_provider = Box
+    oauth_grants = fields.DictionaryField()
     oauth_settings = fields.ForeignField(
         'boxoauthsettings', backref='accessed'
     )
@@ -230,7 +433,8 @@ class BoxUserSettings(AddonUserSettingsBase):
         return u'<BoxUserSettings(user={self.owner.username!r})>'.format(self=self)
 
 
-class BoxNodeSettings(AddonNodeSettingsBase):
+class BoxNodeSettings(AddonOAuthNodeSettingsBase):
+    oauth_provider = Box
 
     user_settings = fields.ForeignField(
         'boxusersettings', backref='authorized'
@@ -240,6 +444,16 @@ class BoxNodeSettings(AddonNodeSettingsBase):
     folder_path = fields.StringField()
 
     _folder_data = None
+
+    _api = None
+
+    @property
+    def api(self):
+        """authenticated ExternalProvider instance"""
+        if self._api is None:
+            self._api = Box()
+            self._api.account = self.external_account
+        return self._api
 
     @property
     def display_name(self):
@@ -264,7 +478,7 @@ class BoxNodeSettings(AddonNodeSettingsBase):
 
         if not self._folder_data:
             try:
-                client = get_client_from_user_settings(self.user_settings)
+                client = self.user_settings.oauth_settings.get_client  # get_client_from_user_settings(self.user_settings)
                 self._folder_data = client.get_folder(self.folder_id)
             except BoxClientException:
                 return
