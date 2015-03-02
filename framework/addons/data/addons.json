@@ -25,7 +25,7 @@
             "Registering": {
                 "status": "none",
                 "text": "GitHub content cannot be registered."
-            },
+            }
         },
         "Amazon Simple Storage Service": {
             "Permissions": {
@@ -45,7 +45,7 @@
             "Logs": {
                 "status": "partial",
                 "text": "The OSF keeps track of changes you make to your S3 buckets through the OSF, but not for changes made using S3 directly."
-            }
+            },
             "Forking": {
                 "status": "partial",
                 "text": "Forking a project or component does not copy S3 authorization unless the user forking the project is the same user who authorized the S3 add-on in the source project being forked."
@@ -54,7 +54,7 @@
                 "status": "none",
                 "text": "S3 content cannot be registered."
             }
-        }
+        },
         "FigShare": {
             "Permissions": {
                 "status": "partial",
@@ -65,7 +65,8 @@
                 "text": "FigShare content can be viewed and downloaded via OSF provided it is \"published\" on FigShare."
             },
             "Add / update files": {
-                "status": "partial | Files can be added but not updated."
+                "status": "partial",
+                "text": "Files can be added but not updated."
             },
             "Delete files": {
                 "status": "none"
@@ -87,18 +88,20 @@
             "Permissions": {
                 "status": "partial",
                 "text": "Making an OSF project public or private is independent of Dropbox privacy. The OSF does not alter the permissions of linked Dropbox folders."
-            }
-            "View / downoad file versions": {
+            },
+            "View / download file versions": {
                 "status": "full"
             },
             "Add / update files": {
                 "status": "full"
             },
-            "Delete files": "full",
+            "Delete files": {
+                "status": "full"
+            },
             "Logs": {
                 "status": "partial",
                 "text": "OSF keeps track of changes you make to your Dropbox content through OSF, but not for changes made using Dropbox directly."
-            }
+            },
             "Forking": {
                 "status": "partial",
                 "text": "Forking a project or component does not copy Dropbox authorization unless the user forking the project is the same user who authorized the Dropbox add-on in the source project being forked."
@@ -141,7 +144,7 @@
                 "status": "partial",
                 "text": "Making an OSF project public or private is independent of Google Drive privacy. The OSF does not alter the permissions of linked Google Drive folders."
             },
-            "View / downoad file versions": {
+            "View / download file versions": {
                 "status": "full"
             },
             "Add / update files": {
@@ -168,7 +171,7 @@
                 "status": "partial",
                 "text": "Making an OSF project public or private is independent of Box privacy. The OSF does not alter the permissions of linked Box folders."
             },
-            "View / downoad file versions": {
+            "View / download file versions": {
                 "status": "full"
             },
             "Add / update files": {
@@ -196,12 +199,14 @@
                 "text": "Making an OSF project public or private is independent of making a Mendeley folder public or private. The OSF does not alter the permissions of a linked Mendeley folder."
             },
             "View / download file versions": {
-                "status": "NA",
+                "status": "NA"
             },
             "Add / update files": {
                 "status": "NA"
             },
-            "Delete files": "NA",
+            "Delete files": {
+                "status": "NA"
+            },
             "Logs": {
                 "status": "NA"
             },
@@ -220,7 +225,7 @@
                 "text": "Making an OSF project public or private is independent of making a Zotero folder public or private. The OSF does not alter the permissions of a linked Zotero folder."
             },
             "View / download file versions": {
-                "status": "NA",
+                "status": "NA"
             },
             "Add / update files": {
                 "status": "NA"
@@ -238,8 +243,8 @@
             "Registering": {
                 "status": "none",
                 "text": "Zotero content cannot be registered."
-            },
+            }
         }
-    }
+    },
     "disclaimers": ["This add-on connects your OSF project to an external service. Use of this service is bound by its terms and conditions. The OSF is not responsible for the service or for your use thereof.", "This add-on allows you to store files using an external service. Files added to this add-on are not stored within the OSF."]
 }
