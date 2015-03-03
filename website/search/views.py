@@ -258,12 +258,10 @@ def search_share_atom(**kwargs):
             'results': []
         }
 
-    name = 'SHARE'
-
     atom_url = api_url_for('search_share_atom', _xml=True, _absolute=True)
 
     return util.atom(
-        name=name,
+        name='SHARE',
         data=search_results['results'],
         query=q,
         size=size,
