@@ -386,8 +386,8 @@ class OsfStorageFileVersion(StoredObject):
 
     def update_metadata(self, metadata):
         self.metadata.update(metadata)
+        self.content_type = self.metadata.get('contentType', None)
         try:
-            self.content_type = self.metadata['contentType']
             self.size = self.metadata['size']
             self.date_modified = parse_date(self.metadata['modified'])
         except KeyError as err:
