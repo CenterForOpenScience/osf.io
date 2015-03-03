@@ -2,6 +2,7 @@
 <%def name="title()">Notifications</%def>
 <%def name="content()">
 <% import json %>
+<% from website import settings%>
 <h2 class="page-header">Notifications</h2>
 
 <div class="row">
@@ -44,13 +45,25 @@
                     <!-- Flashed Messages -->
                     <div data-bind="html: message, attr: {class: messageClass}"></div>
             </div><!--view model scope ends -->
-            </div>
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-heading"><h3 class="panel-title">Configure Notification Preferences</h3></div>
+                <form id="selectNotifications" class="osf-treebeard-minimal">
+                    <div id="grid">
+                            <div class="notifications-loading"> <i class="icon-spinner notifications-spin"></i> <p class="m-t-sm fg-load-message"> Loading notification settings...  </p> </div>
+                    </div>
+                    <div class="help-block" style="padding-left: 15px">
+                            <p id="configureNotificationsMessage"></p>
+                    </div>
+                </form>
+        </div>
     </div>
 </div>
 </%def>
 
 <%def name="javascript()">
     <% import website %>
+    <% import json %>
     ${parent.javascript()}
     <script type="text/javascript">
         window.contextVars = $.extend({}, window.contextVars, {'mailingList': '${website.settings.MAILCHIMP_GENERAL_LIST}'});

@@ -30,6 +30,7 @@ from framework.mongo import ObjectId
 from framework.mongo import StoredObject
 from framework.addons import AddonModelMixin
 from framework.auth import get_user, User, Auth
+from framework.auth import signals as auth_signals
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
 from framework.auth.utils import privacy_info_handle
@@ -662,6 +663,10 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     piwik_site_id = fields.StringField()
 
+    # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
+    # {<User.id>: [<Node._id>, <Node2._id>, ...] }
+    child_node_subscriptions = fields.DictionaryField(default=dict)
+
     _meta = {
         'optimistic': True,
     }
@@ -858,6 +863,22 @@ class Node(GuidStoredObject, AddonModelMixin):
             return True
         if permission == 'read' and check_parent:
             return self.is_admin_parent(user)
+        return False
+
+    def can_read_children(self, user):
+        """Checks if the given user has read permissions on any child nodes
+            that are not registrations or deleted
+        """
+        if self.has_permission(user, 'read'):
+            return True
+
+        for node in self.nodes:
+            if not node.primary or node.is_deleted:
+                continue
+
+            if node.can_read_children(user):
+                return True
+
         return False
 
     def get_permissions(self, user):
@@ -1496,6 +1517,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.is_deleted = True
         self.deleted_date = date
         self.save()
+
+        auth_signals.node_deleted.send(self)
 
         return True
 
@@ -2274,6 +2297,9 @@ class Node(GuidStoredObject, AddonModelMixin):
             )
 
         self.save()
+
+        #send signal to remove this user from project subscriptions
+        auth_signals.contributor_removed.send(contributor, node=self)
 
         return True
 

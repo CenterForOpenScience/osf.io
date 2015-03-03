@@ -92,11 +92,8 @@ def serialize_settings(node_settings, current_user, client=None):
         try:
             client = client or get_client_from_user_settings(user_settings)
             client.get_user_info()
-        except BoxClientException as error:
-            if error.status_code == 401:
-                valid_credentials = False
-            else:
-                raise HTTPError(http.BAD_REQUEST)
+        except BoxClientException:
+            valid_credentials = False
 
     result = {
         'userIsOwner': user_is_owner,
@@ -118,8 +115,8 @@ def serialize_settings(node_settings, current_user, client=None):
 
         if node_settings.folder_id is None:
             result['folder'] = {'name': None, 'path': None}
-        else:
-            path = node_settings.full_folder_path
+        elif valid_credentials:
+            path = node_settings.fetch_full_folder_path()
 
             result['folder'] = {
                 'path': path,
@@ -199,7 +196,6 @@ def box_get_share_emails(auth, user_addon, node_addon, **kwargs):
                 if contrib != auth.user
             ],
         }
-        #'url': utils.get_share_folder_uri(node_addon.folder)
     }
 
 
@@ -215,7 +211,7 @@ def box_list_folders(node_addon, **kwargs):
 
     if folder_id is None:
         return [{
-            'id': 0,
+            'id': '0',
             'path': 'All Files',
             'addon': 'box',
             'kind': 'folder',

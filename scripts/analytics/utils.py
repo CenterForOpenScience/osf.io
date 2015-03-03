@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-import csv
+import unicodecsv as csv
 from bson import ObjectId
 
 import matplotlib.pyplot as plt

@@ -10,11 +10,11 @@ import pymongo
 from modularodm import fields, Q
 from modularodm import exceptions as modm_errors
 from modularodm.storage.base import KeyExistsException
+from dateutil.parser import parse as parse_date
 
 from framework.auth import Auth
 from framework.mongo import StoredObject
 from framework.analytics import get_basic_counters
-
 from website.models import NodeLog
 from website.addons.base import AddonNodeSettingsBase, GuidFile
 
@@ -346,16 +346,6 @@ class OsfStorageFileRecord(BaseFileObject):
         return count or 0
 
 
-def identity(val):
-    return val
-metadata_fields = {
-    # TODO: Add missing fields to WaterButler metadata
-    # 'size': identity,
-    # 'content_type': identity,
-    # 'date_modified': parse_date,
-}
-
-
 LOCATION_KEYS = ['service', settings.WATERBUTLER_RESOURCE, 'object']
 def validate_location(value):
     for key in LOCATION_KEYS:
@@ -402,12 +392,12 @@ class OsfStorageFileVersion(StoredObject):
 
     def update_metadata(self, metadata):
         self.metadata.update(metadata)
-        for key, parser in metadata_fields.iteritems():
-            try:
-                value = metadata[key]
-            except KeyError:
-                raise errors.MissingFieldError
-            setattr(self, key, parser(value))
+        try:
+            self.content_type = self.metadata['contentType']
+            self.size = self.metadata['size']
+            self.date_modified = parse_date(self.metadata['modified'])
+        except KeyError as err:
+            raise errors.MissingFieldError(str(err))
         self.save()
 
 

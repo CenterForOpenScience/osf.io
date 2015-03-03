@@ -46,7 +46,7 @@
                 </div>
                 <div class="form-group" data-bind="css: {'has-error': password() && !password.isValid()}">
                     <label class="placeholder-replace" style="display:none">Password</label>
-                    <input type="password" class="form-control" placeholder="Password" data-bind="
+                    <input type="password" class="form-control" placeholder="Password (Must be 6 to 35 characters)" data-bind="
                         value: password,
                         valueUpdate: 'input',
                         disable: submitted(),
