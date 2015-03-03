@@ -87,7 +87,7 @@ def serialize_settings(node_settings, current_user):
     valid_credentials = True
     if user_settings:
         try:
-            access_token = user_settings.fetch_access_token()
+            user_settings.fetch_access_token()
         except ExpiredAuthError:
             valid_credentials = False
     ret = {
