@@ -1,4 +1,6 @@
-var BoxNodeConfig = require('./boxNodeConfig.js');
+'use strict';
 
+var AddonNodeConfig = require('../../../static/js/addonNodeConfig');
 var url = window.contextVars.node.urls.api + 'box/config/';
-new BoxNodeConfig('#boxScope', url, '#myBoxGrid');
+new AddonNodeConfig('Box', '#boxScope', url, '#myBoxGrid');
+
