@@ -35,8 +35,15 @@ def download_from_cloudfiles(version):
     path = os.path.join(storage_settings.AUDIT_TEMP_PATH, version.location['object'])
     if os.path.exists(path):
         return path
-    obj = container_primary.get_object(version.location['object'])
-    obj.download(storage_settings.AUDIT_TEMP_PATH)
+    try:
+        obj = container_primary.get_object(version.location['object'])
+        obj.download(storage_settings.AUDIT_TEMP_PATH)
+    except NoSuchObject as err:
+        logger.error('*** FILE NOT FOUND ***')
+        logger.error('Exception:')
+        logger.exception(err)
+        logger.error('Version info:')
+        logger.error(version.to_storage())
     return path
 
 
