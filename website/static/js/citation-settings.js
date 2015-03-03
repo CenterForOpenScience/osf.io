@@ -27,14 +27,14 @@ var SettingsViewModel = function(name) {
 
 $.extend(SettingsViewModel.prototype, {
     setMessage: function(msg, cls){
-	this.message(msg);
-	this.messageClass(cls || '');
+        this.message(msg);
+        this.messageClass(cls || '');
     },
     connectAccount: function() {
         var self = this;
         window.oauthComplete = function() {
             self.updateAccounts();
-	    self.setMessage('Add-on successfully authorized. To link this add-on to an OSF project, go to the settings page of the project, enable ' + self.properName + ', and choose content to connect.', '.text-success');
+            self.setMessage('Add-on successfully authorized. To link this add-on to an OSF project, go to the settings page of the project, enable ' + self.properName + ', and choose content to connect.', '.text-success');
         };
         window.open('/oauth/connect/' + self.name + '/');
     },
