@@ -173,7 +173,6 @@ class Mendeley(ExternalProvider):
 
 class MendeleyUserSettings(AddonOAuthUserSettingsBase):
     oauth_provider = Mendeley
-    oauth_grants = fields.DictionaryField()
 
     def _get_connected_accounts(self):
         """Get user's connected Mendeley accounts"""
