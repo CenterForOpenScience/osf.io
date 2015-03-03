@@ -237,7 +237,7 @@ class Figshare(object):
 
         return [{'label': project['title'], 'value': 'project_{0}'.format(project['id'])}
                 for project in projects] + \
-            [{'label': (article['title'] if len(article['title']) else 'untitled article'), 'value': 'fileset_{0}'.format(article['article_id'])}
+            [{'label': (article['title'] or 'untitled article'), 'value': 'fileset_{0}'.format(article['article_id'])}
              for article in articles['items'] if article['defined_type'] == 'fileset']
 
     def get_file(self, node_settings, found):
