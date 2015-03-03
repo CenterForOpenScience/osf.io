@@ -89,11 +89,21 @@ def serialize_settings(node_settings, current_user, client=None):
         user_settings.owner._primary_key == current_user._primary_key
     )
 
+    valid_credentials = True
+    if user_settings:
+        try:
+            client = client or Figshare.from_settings(user_settings)
+            client.articles(node_settings)
+        except Exception:
+            if client.last_error == 401:
+                valid_credentials = False
+
     result = {
         'nodeHasAuth': node_settings.has_auth,
         'userHasAuth': user_has_auth,
         'userIsOwner': user_is_owner,
-        'urls': serialize_urls(node_settings)
+        'urls': serialize_urls(node_settings),
+        'validCredentials': valid_credentials,
     }
 
     if node_settings.has_auth:
@@ -115,9 +125,11 @@ def serialize_urls(node_settings):
         'auth': node.api_url_for('figshare_oauth_start'),
         'importAuth': node.api_url_for('figshare_import_user_auth'),
         'options': node.api_url_for('figshare_get_options'),
+        'folders': node.api_url_for('figshare_get_options'),
         'files': node.web_url_for('collect_file_trees'),
         # Endpoint for fetching only folders (including root)
         'contents': node.api_url_for('figshare_hgrid_data_contents'),
+        'settings': web_url_for('user_addons')
     }
     return urls
 

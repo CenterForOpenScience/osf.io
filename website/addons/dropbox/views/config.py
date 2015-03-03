@@ -103,7 +103,6 @@ def serialize_settings(node_settings, current_user, client=None):
                 valid_credentials = False
             else:
                 raise HTTPError(http.BAD_REQUEST)
-
     result = {
         'nodeHasAuth': node_settings.has_auth,
         'userIsOwner': user_is_owner,

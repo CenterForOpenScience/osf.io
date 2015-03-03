@@ -69,7 +69,7 @@ def serialize_urls(node_settings):
         'auth': node.api_url_for('box_oauth_start'),
         'config': node.api_url_for('box_config_put'),
         'files': node.web_url_for('collect_file_trees'),
-        'emails': node.api_url_for('box_get_share_emails'),
+        'share': node.api_url_for('box_get_share_emails'),
         'deauthorize': node.api_url_for('box_deauthorize'),
         'importAuth': node.api_url_for('box_import_user_auth'),
         # Endpoint for fetching only folders (including root)
