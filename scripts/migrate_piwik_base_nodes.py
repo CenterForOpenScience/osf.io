@@ -26,7 +26,7 @@ def get_nodes():
     templated = Q('__backrefs.template_node.node.template_node', 'ne', None)
     duplicate = (forked | registered | templated)
 
-    return Node.find(
+    return Node.&(
         duplicate and Q('date_created', 'lt', datetime.datetime(2014, 10, 31))
     )
 
@@ -36,16 +36,16 @@ def main():
 
     if 'dry' in sys.argv:
         if 'list' in sys.argv:
-            logger.info("=== Nodes ===")
+            logger.info('=== Nodes ===')
             for node in get_nodes():
                 logger.info(node._id)
         else:
-            logger.info("{} Nodes to be updated".format(get_nodes().count()))
+            logger.info('{} Nodes to be updated'.format(get_nodes().count()))
     else:
         # Log to a file
         scripts_utils.add_file_logger(logger, __file__)
         nodes = get_nodes()
-        logger.info("=== Updating {} Nodes ===".format(nodes.count()))
+        logger.info('=== Updating {} Nodes ==='.format(nodes.count()))
         for node in nodes:
             # Wait a second between requests to reduce load on Piwik
             time.sleep(1)
