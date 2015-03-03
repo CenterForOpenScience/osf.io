@@ -7,8 +7,8 @@ from tests.factories import UserFactory, ProjectFactory
 
 from framework.auth import Auth
 from website.addons.s3.model import AddonS3NodeSettings, AddonS3UserSettings, S3GuidFile
-from website.addons.s3.api import S3Wrapper
 from website.models import Comment
+from utils import create_mock_wrapper
 
 
 class TestFileGuid(OsfTestCase):
@@ -62,7 +62,7 @@ class TestFileGuid(OsfTestCase):
         assert_equals(guid1, guid2)
 
     def test_node_addon_get_existing_files(self):
-        wrapper = mock.create_autospec(S3Wrapper)
+        wrapper = create_mock_wrapper()
         bucket = mock.create_autospec(Bucket)
         bucket.name = 'Charlie Bucket and the Chocolate Factory'
         path = 'find_or_create_file.guid'

@@ -2,6 +2,7 @@ import mock
 from nose.tools import *  # noqa
 
 import httplib as http
+from boto.s3.connection import Bucket  # noqa
 from boto.exception import S3ResponseError
 
 from framework.auth import Auth
@@ -9,6 +10,7 @@ from tests.base import OsfTestCase
 from tests.factories import ProjectFactory, AuthUserFactory
 
 from website.addons.s3.utils import validate_bucket_name
+from website.models import Comment
 
 from utils import create_mock_wrapper, create_mock_key
 
@@ -104,6 +106,84 @@ class TestS3ViewsConfig(OsfTestCase):
             expect_errors=True
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
+
+    @mock.patch('website.addons.s3.api.S3Wrapper.from_addon')
+    def test_s3_set_bucket_changes_comments_visibility(self, mock_wrapper):
+        wrapper = create_mock_wrapper()
+        bucket = mock.create_autospec(Bucket)
+        bucket.name = 'Charlie Bucket and the Chocolate Factory'
+        path = 'find_or_create_file.guid'
+        obj = mock.Mock()
+        obj.name = path
+        bucket.list = lambda: [obj]
+        wrapper.bucket = bucket
+        mock_wrapper.return_value = wrapper
+
+        # Create comments
+        guid, _ = self.node_settings.find_or_create_file_guid(path)  # The file is in the bucket
+        guid2, _ = self.node_settings.find_or_create_file_guid('different_than_path.txt')  # The file isn't in the bucket
+        comment = Comment.create(
+            auth=Auth(self.project.creator),
+            node=self.project,
+            target=guid,
+            user=self.project.creator,
+            page='files',
+            content='anything...',
+            root_title=path,
+        )
+        comment2 = Comment.create(
+            auth=Auth(self.project.creator),
+            node=self.project,
+            target=guid2,
+            user=self.project.creator,
+            page='files',
+            content='anything...',
+            root_title='different_than_path.txt',
+        )
+        comment2 = Comment.create(
+            auth=Auth(self.project.creator),
+            node=self.project,
+            target=comment2,
+            user=self.project.creator,
+            page='files',
+            content='anything...',
+            root_title='different_than_path.txt',
+        )
+
+        # Set bucket
+        url = self.project.api_url + 's3/settings/'
+        self.app.post_json(
+            url, {'s3_bucket': 'doesntmatterreally'}, auth=self.user.auth,
+        )
+        self.project.reload()
+        self.node_settings.reload()
+
+        # Check comments hidden or unhidden
+        url = self.project.api_url_for('list_comments')
+        res = self.app.get(url, {
+            'page': 'files',
+            'target': guid._id,
+            'rootId': guid._id
+        }, auth=self.user.auth)
+        comments = res.json.get('comments')
+        assert_equal(len(comments), 1)
+        assert_false(comments[0]['isHidden'])
+        res2 = self.app.get(url, {
+            'page': 'files',
+            'target': guid2._id,
+            'rootId': guid2._id
+        }, auth=self.user.auth)
+        comments = res2.json.get('comments')
+        assert_equal(len(comments), 1)
+        assert_true(comments[0]['isHidden'])
+        res3 = self.app.get(url, {
+            'page': 'files',
+            'target': comment2._id,
+            'rootId': guid2._id
+        }, auth=self.user.auth)
+        comments = res2.json.get('comments')
+        assert_equal(len(comments), 1)
+        assert_true(comments[0]['isHidden'])
 
     @mock.patch('website.addons.s3.api.S3Wrapper.get_wrapped_key')
     @mock.patch('website.addons.s3.api.S3Wrapper.from_addon')
@@ -211,6 +291,53 @@ class TestS3ViewsConfig(OsfTestCase):
         url = self.project.url + 'settings/'
         rv = self.app.get(url, auth=self.user.auth)
         assert_true('mybucket' in rv.body)
+
+    @mock.patch('website.addons.s3.model.AddonS3UserSettings.remove_iam_user')
+    def test_remove_settings_hides_comments(self, mock_access):
+        guid, _ = self.node_settings.find_or_create_file_guid('too_young.ha')
+        comment = Comment.create(
+            auth=Auth(self.project.creator),
+            node=self.project,
+            target=guid,
+            user=self.project.creator,
+            page='files',
+            content='anything...',
+            root_title='too_young.ha',
+        )
+        comment2 = Comment.create(
+            auth=Auth(self.project.creator),
+            node=self.project,
+            target=comment,
+            user=self.project.creator,
+            page='files',
+            content='anything...',
+            root_title='too_young.ha',
+        )
+        mock_access.return_value = True
+        self.user_settings.access_key = 'some-times-naive'
+        self.user_settings.secret_key = 'itsasecret'
+        self.user_settings.save()
+        url = '/api/v1/settings/s3/'
+        self.app.delete(url, auth=self.user.auth)
+        self.user_settings.reload()
+
+        url = self.project.api_url_for('list_comments')
+        res = self.app.get(url, {
+            'page': 'files',
+            'target': guid._id,
+            'rootId': guid._id
+        }, auth=self.project.creator.auth)
+        comments = res.json.get('comments')
+        assert_equal(len(comments), 1)
+        assert_true(comments[0]['isHidden'])
+        res = self.app.get(url, {
+            'page': 'files',
+            'target': comment._id,
+            'rootId': guid._id
+        }, auth=self.project.creator.auth)
+        comments = res.json.get('comments')
+        assert_equal(len(comments), 1)
+        assert_true(comments[0]['isHidden'])
 
 
 class TestS3ViewsHgrid(OsfTestCase):
