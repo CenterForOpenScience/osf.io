@@ -1,6 +1,6 @@
 'use strict';
 
-var AddonNodeConfig = require('../../../static/js/addonNodeConfig');
+var AddonNodeConfig = require('addonNodeConfig');
 
 var url = window.contextVars.node.urls.api + 'figshare/config/';
 new AddonNodeConfig('FigShare', '#figshareScope', url, '#figshareGrid', {

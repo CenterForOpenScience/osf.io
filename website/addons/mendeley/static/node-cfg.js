@@ -1,4 +1,4 @@
-var CitationsNodeConfig = require('../../../static/js/citationsNodeConfig.js');
+var CitationsNodeConfig = require('citationsNodeConfig');
 require('./node-cfg.css');
 
 var url = window.contextVars.node.urls.api + 'mendeley/settings/';
