@@ -411,7 +411,8 @@ class TestOsfStorageFileVersion(OsfTestCase):
 
     def test_update_metadata(self):
         version = factories.FileVersionFactory()
-        version.update_metadata({'archive': 'glacier'})
+        version.update_metadata({'archive': 'glacier', 'size': 123, 'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'})
+        version.reload()
         assert_in('archive', version.metadata)
         assert_equal(version.metadata['archive'], 'glacier')
 

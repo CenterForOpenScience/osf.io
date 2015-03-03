@@ -389,7 +389,7 @@ class OsfStorageFileVersion(StoredObject):
         self.content_type = self.metadata.get('contentType', None)
         try:
             self.size = self.metadata['size']
-            self.date_modified = parse_date(self.metadata['modified'])
+            self.date_modified = parse_date(self.metadata['modified'], ignoretz=True)
         except KeyError as err:
             raise errors.MissingFieldError(str(err))
         self.save()
