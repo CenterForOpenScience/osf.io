@@ -54,9 +54,13 @@ var SlideInViewModel = function (){
         } catch (e) {
             $.cookie('slide', '0', { expires: 1, path: '/'});
         }
+        self.trackClick('Dismiss');
+    };
+    // Google Analytics click event tracking
+    self.trackClick = function(source) {
+        ga('send', 'event', 'button', 'click', source);
     };
 };
-
 
 $(document).on('click', '.project-toggle', function() {
     var widget = $(this).closest('.addon-widget-container');
