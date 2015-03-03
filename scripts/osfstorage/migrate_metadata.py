@@ -8,6 +8,7 @@ import logging
 import sys
 
 from website.addons.osfstorage.model import OsfStorageFileVersion
+from website.app import init_app
 
 from scripts import utils as scripts_utils
 
@@ -20,6 +21,8 @@ def main():
             each.update_metadata(each.metadata)
 
 if __name__ == '__main__':
+    # Set up storage backends
+    init_app(set_backends=True, routes=False)
     if 'dry' not in sys.argv:
         scripts_utils.add_file_logger(logger, __file__)
     main()
