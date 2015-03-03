@@ -91,12 +91,10 @@ def serialize_settings(node_settings, current_user, client=None):
 
     valid_credentials = True
     if user_settings:
-        try:
-            client = client or Figshare.from_settings(user_settings)
-            client.articles(node_settings)
-        except Exception:
-            if client.last_error == 401:
-                valid_credentials = False
+        client = client or Figshare.from_settings(user_settings)
+        articles, status = client.articles(node_settings)
+        if status == 401:
+            valid_credentials = False
 
     result = {
         'nodeHasAuth': node_settings.has_auth,

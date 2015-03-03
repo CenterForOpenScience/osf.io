@@ -7,6 +7,7 @@ from urllib import quote
 
 from website.util import web_url_for
 
+from website.addons.googledrive.exceptions import ExpiredAuthError
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +88,7 @@ def serialize_settings(node_settings, current_user):
     if user_settings:
         try:
             access_token = user_settings.fetch_access_token()
-        except Exception:
+        except ExpiredAuthError:
             valid_credentials = False
     ret = {
         'nodeHasAuth': node_settings.has_auth,

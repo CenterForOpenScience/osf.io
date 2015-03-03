@@ -157,8 +157,10 @@ class Figshare(object):
     # ARTICLE LEVEL API
     def articles(self, node_settings):
         articles = self._send(os.path.join(node_settings.api_url, 'articles'))
-        articles = [self.article(node_settings, article['id']) for article in articles]
-        return articles
+        if not articles:
+            return [], self.last_error
+        articles = [self.article(node_settings, article['article_id']) for article in articles['items']]
+        return articles, 200
 
     def article_is_public(self, article):
         res = requests.get(os.path.join(figshare_settings.API_URL, 'articles', str(article)))
