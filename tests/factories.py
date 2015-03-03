@@ -14,16 +14,20 @@ Factory boy docs: http://factoryboy.readthedocs.org/
 
 """
 import datetime
-from factory import base, Sequence, SubFactory, post_generation
+from factory import base, Sequence, SubFactory, post_generation, LazyAttribute
 
 from framework.mongo import StoredObject
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
+from website.oauth.models import ExternalAccount
+from website.oauth.models import ExternalProvider
 from website.project.model import (
-    ApiKey, Node, NodeLog, WatchConfig, Tag, Pointer, Comment, PrivateLink
+    ApiKey, Node, NodeLog, WatchConfig, Tag, Pointer, Comment, PrivateLink,
 )
+from website.notifications.model import NotificationSubscription, NotificationDigest
 
 from website.addons.wiki.model import NodeWikiPage
+from tests.base import fake
 
 
 # TODO: This is a hack. Check whether FactoryBoy can do this better
@@ -31,6 +35,19 @@ def save_kwargs(**kwargs):
     for value in kwargs.itervalues():
         if isinstance(value, StoredObject) and not value._is_loaded:
             value.save()
+
+
+def FakerAttribute(provider, **kwargs):
+    """Attribute that lazily generates a value using the Faker library.
+    Example: ::
+
+        class UserFactory(ModularOdmFactory):
+            name = FakerAttribute('name')
+    """
+    fake_gen = getattr(fake, provider)
+    if not fake_gen:
+        raise ValueError('{0!r} is not a valid faker provider.'.format(provider))
+    return LazyAttribute(lambda x: fake_gen(**kwargs))
 
 
 class ModularOdmFactory(base.Factory):
@@ -119,6 +136,14 @@ class AbstractNodeFactory(ModularOdmFactory):
 
 class ProjectFactory(AbstractNodeFactory):
     category = 'project'
+
+
+class FolderFactory(ProjectFactory):
+    is_folder = True
+
+
+class DashboardFactory(FolderFactory):
+    is_dashboard = True
 
 
 class NodeFactory(AbstractNodeFactory):
@@ -303,6 +328,7 @@ class DeprecatedUnregUserFactory(base.Factory):
 
     _build = _create
 
+
 class CommentFactory(ModularOdmFactory):
 
     FACTORY_FOR = Comment
@@ -335,3 +361,34 @@ class CommentFactory(ModularOdmFactory):
         )
         instance.save()
         return instance
+
+
+class NotificationSubscriptionFactory(ModularOdmFactory):
+    FACTORY_FOR = NotificationSubscription
+
+
+class NotificationDigestFactory(ModularOdmFactory):
+    FACTORY_FOR = NotificationDigest
+
+
+class ExternalAccountFactory(ModularOdmFactory):
+    FACTORY_FOR = ExternalAccount
+
+    provider = 'mock2'
+    provider_id = Sequence(lambda n: 'user-{0}'.format(n))
+
+
+class MockOAuth2Provider(ExternalProvider):
+    name = "Mock OAuth 2.0 Provider"
+    short_name = "mock2"
+
+    client_id = "mock2_client_id"
+    client_secret = "mock2_client_secret"
+
+    auth_url_base = "https://mock2.com/auth"
+    callback_url = "https://mock2.com/callback"
+
+    def handle_callback(self, response):
+        return {
+            'provider_id': 'mock_provider_id'
+        }

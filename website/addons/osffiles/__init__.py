@@ -29,4 +29,4 @@ CATEGORIES = ['storage']
 HAS_HGRID_FILES = True
 GET_HGRID_DATA = views.get_osffiles_hgrid
 
-MAX_FILE_SIZE = 1024 * 1024 * 128
+MAX_FILE_SIZE = 128

@@ -9,6 +9,7 @@ from website.util import api_url_for
 
 @decorators.must_be_contributor
 @decorators.must_have_addon('dataverse', 'node')
+@decorators.must_not_be_registration
 def deauthorize_dataverse(*args, **kwargs):
 
     node_settings = kwargs['node_addon']

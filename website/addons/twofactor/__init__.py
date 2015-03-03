@@ -1,9 +1,9 @@
+from .models import TwoFactorUserSettings
+from .routes import settings_routes
+
 SHORT_NAME = 'twofactor'
 FULL_NAME = 'Two-factor Authentication'
 WIDGET_HELP = 'Two-Factor Authentication (Alpha)'
-
-from .models import TwoFactorUserSettings
-from .routes import settings_routes
 
 USER_SETTINGS_MODEL = TwoFactorUserSettings
 

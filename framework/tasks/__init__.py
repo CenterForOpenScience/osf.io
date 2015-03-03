@@ -1,15 +1,27 @@
 # -*- coding: utf-8 -*-
-'''Asynchronous task queue module.'''
+"""Asynchronous task queue module."""
 
 from celery import Celery
 from celery.utils.log import get_task_logger
 
-celery = Celery()
+from raven import Client
+from raven.contrib.celery import register_signal
+
+from website import settings
+
+
+app = Celery()
 
 # TODO: Hardcoded settings module. Should be set using framework's config handler
-celery.config_from_object('website.settings')
+app.config_from_object('website.settings')
 
-@celery.task
+
+if settings.SENTRY_DSN:
+    client = Client(settings.SENTRY_DSN)
+    register_signal(client)
+
+
+@app.task
 def error_handler(task_id, task_name):
     """logs detailed message about tasks that raise exceptions
 
@@ -19,7 +31,7 @@ def error_handler(task_id, task_name):
     # get the current logger
     logger = get_task_logger(__name__)
     # query the broker for the AsyncResult
-    result = celery.AsyncResult(task_id)
+    result = app.AsyncResult(task_id)
     excep = result.get(propagate=False)
     # log detailed error mesage in error log
     logger.error('#####FAILURE LOG BEGIN#####\n'

@@ -1,1 +1,1 @@
-from . import config, crud, hgrid
+from . import config, crud, hgrid  # noqa

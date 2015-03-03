@@ -11,12 +11,19 @@
                         <th>Title</th>
                         <th>Authors</th>
                     </thead>
-                    <tr data-bind="foreach: links">
-                        <td>
-                            <a data-bind="text: title, attr: {href: url}"></a>
-                        </td>
-                        <td data-bind="text: authorShort"></td>
-                    </tr>
+                    <tbody data-bind="foreach: links">
+                        <tr>
+                            <td>
+                                <!-- ko if: url -->
+                                    <a data-bind="text: title, attr: {href: url}"></a>
+                                <!-- /ko -->
+                                <!-- ko ifnot: url -->
+                                    <span data-bind="text: title"></span>
+                                <!-- /ko -->
+                            </td>
+                            <td data-bind="text: authorShort"></td>
+                        </tr>
+                    </tbody>
                 </table>
             </div><!-- end modal-body -->
 

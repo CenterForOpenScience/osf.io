@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-import mock
-import unittest
-from nose.tools import *
+from nose.tools import *  # noqa
 from tests.factories import ProjectFactory, UserFactory
 from tests.base import OsfTestCase
 from utils import create_mock_s3

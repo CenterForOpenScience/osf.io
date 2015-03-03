@@ -9,14 +9,21 @@ from framework.sessions.model import Session
 from website.project.model import (
     ApiKey, Node, NodeLog,
     Tag, WatchConfig, MetaSchema, Pointer,
-    MailRecord, Comment, PrivateLink, MetaData,
+    Comment, PrivateLink, MetaData,
 )
+from website.citations.models import CitationStyle
+from website.conferences.model import Conference, MailRecord
+from website.notifications.model import NotificationDigest
+from website.notifications.model import NotificationSubscription
+from website.oauth.models import ExternalAccount
 
 # All models
 MODELS = (
     User, ApiKey, Node, NodeLog,
     Tag, WatchConfig, Session, Guid, MetaSchema, Pointer,
-    MailRecord, Comment, PrivateLink, MetaData,
+    MailRecord, Comment, PrivateLink, MetaData, Conference,
+    NotificationSubscription, NotificationDigest, CitationStyle,
+    CitationStyle, ExternalAccount,
 )
 
 GUID_MODELS = (User, Node, Comment, MetaData)

@@ -25,12 +25,10 @@ def make_hook_secret():
 HOOK_SIGNATURE_KEY = 'X-Hub-Signature'
 def verify_hook_signature(node_settings, data, headers):
     """Verify hook signature.
-
     :param AddonGithubNodeSettings node_settings:
     :param dict data: JSON response body
     :param dict headers: Request headers
     :raises: HookError if signature is missing or invalid
-
     """
     if node_settings.hook_secret is None:
         raise HookError('No secret key')
@@ -55,13 +53,11 @@ def get_path(kwargs, required=True):
 def get_refs(addon, branch=None, sha=None, connection=None):
     """Get the appropriate branch name and sha given the addon settings object,
     and optionally the branch and sha from the request arguments.
-
     :param str branch: Branch name. If None, return the default branch from the
         repo settings.
     :param str sha: The SHA.
     :param GitHub connection: GitHub API object. If None, one will be created
         from the addon's user settings.
-
     """
     connection = connection or GitHub.from_settings(addon.user_settings)
 

@@ -1,1 +1,1 @@
-import contributor, key, log, node, register, tag, file, email, comment
+from . import contributor, key, log, node, register, tag, file, comment  # noqa

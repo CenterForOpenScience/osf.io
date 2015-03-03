@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import mock
 from nose.tools import *  # noqa (PEP8 asserts)
 from werkzeug.wrappers import BaseResponse
 
@@ -17,7 +18,8 @@ app = init_app(
 
 
 class TestCore(OsfTestCase):
-    def setUp(self):
+    @mock.patch('website.addons.twofactor.models.push_status_message')
+    def setUp(self, mocked):
         super(TestCore, self).setUp()
         self.user = UserFactory()
         self.user.set_password('badpassword')

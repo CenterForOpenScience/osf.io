@@ -4,8 +4,8 @@ import httplib as http
 
 from flask import request
 
-from framework.auth import get_current_user
 from framework.exceptions import HTTPError
+from framework.auth.decorators import collect_auth
 
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
@@ -15,16 +15,16 @@ from website.project.decorators import (
 from website.util import web_url_for
 
 from website.addons.dropbox import utils
+from website.addons.dropbox.client import get_client_from_user_settings
+from dropbox.rest import ErrorResponse
 
 
+@collect_auth
 @must_be_valid_project
 @must_have_addon('dropbox', 'node')
-def dropbox_config_get(node_addon, **kwargs):
+def dropbox_config_get(node_addon, auth, **kwargs):
     """API that returns the serialized node settings."""
-    user = get_current_user()
-    return {
-        'result': serialize_settings(node_addon, user),
-    }, http.OK
+    return {'result': serialize_settings(node_addon, auth.user)}
 
 
 def serialize_folder(metadata):
@@ -64,17 +64,18 @@ def serialize_urls(node_settings):
         share_url = utils.get_share_folder_uri(node_settings.folder)
     else:
         share_url = None
+
     urls = {
         'config': node.api_url_for('dropbox_config_put'),
         'deauthorize': node.api_url_for('dropbox_deauthorize'),
         'auth': node.api_url_for('dropbox_oauth_start'),
         'importAuth': node.api_url_for('dropbox_import_user_auth'),
-        'files': node.web_url_for('collect_file_trees__page'),
+        'files': node.web_url_for('collect_file_trees'),
         # Endpoint for fetching only folders (including root)
-        'folders': node.api_url_for('dropbox_hgrid_data_contents',
-            foldersOnly=1, includeRoot=1),
+        'folders': node.api_url_for('dropbox_hgrid_data_contents', root=1),
         'share': share_url,
-        'emails': node.api_url_for('dropbox_get_share_emails')
+        'emails': node.api_url_for('dropbox_get_share_emails'),
+        'settings': web_url_for('user_addons')
     }
     return urls
 
@@ -89,12 +90,26 @@ def serialize_settings(node_settings, current_user, client=None):
         user_settings.owner._primary_key == current_user._primary_key
     )
     current_user_settings = current_user.get_addon('dropbox')
+    valid_credentials = True
+
+    if user_settings:
+        try:
+            client = client or get_client_from_user_settings(user_settings)
+            client.account_info()
+        except ErrorResponse as error:
+            if error.status == 401:
+                valid_credentials = False
+            else:
+                raise HTTPError(http.BAD_REQUEST)
+
     result = {
         'nodeHasAuth': node_settings.has_auth,
         'userIsOwner': user_is_owner,
         'userHasAuth': current_user_settings is not None and current_user_settings.has_auth,
+        'validCredentials': valid_credentials,
         'urls': serialize_urls(node_settings),
     }
+
     if node_settings.has_auth:
         # Add owner's profile URL
         result['urls']['owner'] = web_url_for('profile_view_id',
@@ -106,7 +121,7 @@ def serialize_settings(node_settings, current_user, client=None):
             result['folder'] = {'name': None, 'path': None}
         else:
             result['folder'] = {
-                'name': 'Dropbox' + path,
+                'name': path if path != '/' else '/ (Full Dropbox)',
                 'path': path
             }
     return result
@@ -126,13 +141,13 @@ def dropbox_config_put(node_addon, user_addon, auth, **kwargs):
     return {
         'result': {
             'folder': {
-                'name': 'Dropbox' + path,
-                'path': path
+                'name': path if path != '/' else '/ (Full Dropbox)',
+                'path': path,
             },
-            'urls': serialize_urls(node_addon)
+            'urls': serialize_urls(node_addon),
         },
         'message': 'Successfully updated settings.',
-    }, http.OK
+    }
 
 
 @must_have_permission('write')
@@ -147,10 +162,11 @@ def dropbox_import_user_auth(auth, node_addon, user_addon, **kwargs):
     return {
         'result': serialize_settings(node_addon, user),
         'message': 'Successfully imported access token from profile.',
-    }, http.OK
+    }
 
 @must_have_permission('write')
 @must_have_addon('dropbox', 'node')
+@must_not_be_registration
 def dropbox_deauthorize(auth, node_addon, **kwargs):
     node_addon.deauthorize(auth=auth)
     node_addon.save()
@@ -175,4 +191,4 @@ def dropbox_get_share_emails(auth, user_addon, node_addon, **kwargs):
                         if contrib != auth.user],
         'url': utils.get_share_folder_uri(node_addon.folder)
     }
-    return {'result': result}, http.OK
+    return {'result': result}

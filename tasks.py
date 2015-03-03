@@ -7,11 +7,30 @@ import os
 import sys
 import code
 import platform
+import subprocess
+import logging
 
 from invoke import task, run
 from invoke.exceptions import Failure
 
 from website import settings
+
+logging.getLogger('invoke').setLevel(logging.CRITICAL)
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+WHEELHOUSE_PATH = os.environ.get('WHEELHOUSE')
+
+
+def get_bin_path():
+    """Get parent path of current python binary.
+    """
+    return os.path.dirname(sys.executable)
+
+
+def bin_prefix(cmd):
+    """Prefix command with current binary path.
+    """
+    return os.path.join(get_bin_path(), cmd)
 
 
 try:
@@ -22,8 +41,11 @@ except Failure:
 
 
 @task
-def server():
-    run("python main.py")
+def server(host=None, port=5000, debug=True):
+    """Run the app server."""
+    from website.app import init_app
+    app = init_app(set_backends=True, routes=True, mfr=True)
+    app.run(host=host, port=port, debug=debug, extra_files=[settings.ASSET_HASH_PATH])
 
 
 SHELL_BANNER = """
@@ -73,26 +95,27 @@ Available variables:
 def make_shell_context():
     from modularodm import Q
     from framework.auth import User, Auth
-    from framework.mongo import db
+    from framework.mongo import database
     from website.app import init_app
     from website.project.model import Node
     from website import models  # all models
     from website import settings
     import requests
     app = init_app()
-    context = {'app': app,
-                'db': db,
-                'User': User,
-                'Auth': Auth,
-                'Node': Node,
-                'Q': Q,
-                'models': models,
-                'run_tests': test,
-                'rget': requests.get,
-                'rpost': requests.post,
-                'rdelete': requests.delete,
-                'rput': requests.put,
-                'settings': settings,
+    context = {
+        'app': app,
+        'db': database,
+        'User': User,
+        'Auth': Auth,
+        'Node': Node,
+        'Q': Q,
+        'models': models,
+        'run_tests': test,
+        'rget': requests.get,
+        'rpost': requests.post,
+        'rdelete': requests.delete,
+        'rput': requests.put,
+        'settings': settings,
     }
     try:  # Add a fake factory for generating fake names, emails, etc.
         from faker import Factory
@@ -135,15 +158,20 @@ def shell():
     return
 
 @task(aliases=['mongo'])
-def mongoserver(daemon=False,
-          logpath="/usr/local/var/log/mongodb/mongo.log",
-          logappend=True):
+def mongoserver(daemon=False, config=None):
     """Run the mongod process.
     """
+    if not config:
+        platform_configs = {
+            'darwin': '/usr/local/etc/tokumx.conf',  # default for homebrew install
+            'linux': '/etc/tokumx.conf',
+        }
+        platform = str(sys.platform).lower()
+        config = platform_configs.get(platform)
     port = settings.DB_PORT
-    cmd = "mongod --port {0} --logpath {1}".format(port, logpath)
-    if logappend:
-        cmd += " --logappend"
+    cmd = 'mongod --port {0}'.format(port)
+    if config:
+        cmd += ' --config {0}'.format(config)
     if daemon:
         cmd += " --fork"
     run(cmd, echo=True)
@@ -214,10 +242,34 @@ def mongorestore(path, drop=False):
     run(cmd, echo=True)
 
 
+@task
+def sharejs(host=None, port=None, db_host=None, db_port=None, db_name=None, cors_allow_origin=None):
+    """Start a local ShareJS server."""
+    if host:
+        os.environ['SHAREJS_SERVER_HOST'] = host
+    if port:
+        os.environ['SHAREJS_SERVER_PORT'] = port
+    if db_host:
+        os.environ['SHAREJS_DB_HOST'] = db_host
+    if db_port:
+        os.environ['SHAREJS_DB_PORT'] = db_port
+    if db_name:
+        os.environ['SHAREJS_DB_NAME'] = db_name
+    if cors_allow_origin:
+        os.environ['SHAREJS_CORS_ALLOW_ORIGIN'] = cors_allow_origin
+
+    if settings.SENTRY_DSN:
+        os.environ['SHAREJS_SENTRY_DSN'] = settings.SENTRY_DSN
+
+    share_server = os.path.join(settings.ADDON_PATH, 'wiki', 'shareServer.js')
+    run("node {0}".format(share_server))
+
+
 @task(aliases=['celery'])
 def celery_worker(level="debug"):
     """Run the Celery process."""
-    run("celery worker -A framework.tasks -l {0}".format(level))
+    cmd = 'celery worker -A framework.tasks -l {0}'.format(level)
+    run(bin_prefix(cmd))
 
 
 @task
@@ -230,7 +282,7 @@ def rabbitmq():
     run("rabbitmq-server", pty=True)
 
 
-@task
+@task(aliases=['elastic'])
 def elasticsearch():
     """Start a local elasticsearch server
 
@@ -247,21 +299,32 @@ def elasticsearch():
 @task
 def migrate_search(python='python'):
     '''Migrate the search-enabled models.'''
-    run("{0} -m website.search_migration.migrate".format(python))
+    cmd = '{0} -m website.search_migration.migrate'.format(python)
+    run(bin_prefix(cmd))
 
 @task
 def mailserver(port=1025):
     """Run a SMTP test server."""
-    run("python -m smtpd -n -c DebuggingServer localhost:{port}".format(port=port), pty=True)
+    cmd = 'python -m smtpd -n -c DebuggingServer localhost:{port}'.format(port=port)
+    run(bin_prefix(cmd), pty=True)
+
+
+@task(aliases=['flake8'])
+def flake():
+    run('flake8 .', echo=True)
 
 
 @task
-def requirements(all=False):
+def requirements(all=False, download_cache=None):
     """Install dependencies."""
-    run("pip install --upgrade -r dev-requirements.txt")
+    cmd = "pip install --upgrade -r dev-requirements.txt"
+    if WHEELHOUSE_PATH:
+        cmd += ' --use-wheel --find-links {}'.format(WHEELHOUSE_PATH)
+    if download_cache:
+        cmd += ' --download-cache {0}'.format(download_cache)
+    run(bin_prefix(cmd), echo=True)
     if all:
-        addon_requirements()
-        mfr_requirements()
+        addon_requirements(download_cache=download_cache)
 
 
 @task
@@ -272,7 +335,7 @@ def test_module(module=None, verbosity=2):
     module_fmt = ' '.join(module) if isinstance(module, list) else module
     args = " --verbosity={0} -s {1}".format(verbosity, module_fmt)
     # Use pty so the process buffers "correctly"
-    run(TEST_CMD + args, pty=True)
+    run(bin_prefix(TEST_CMD) + args, pty=True)
 
 
 @task
@@ -293,44 +356,55 @@ def test_addons():
 
 
 @task
-def test():
+def test(all=False):
     """Alias of `invoke test_osf`.
     """
-    test_osf()
+    if all:
+        test_all()
+    else:
+        test_osf()
 
 
 @task
-def test_all():
+def test_all(flake=False):
+    if flake:
+        flake()
     test_osf()
     test_addons()
 
+
 @task
-def addon_requirements():
+def wheelhouse(repo, path):
+    version = '.'.join([str(i) for i in sys.version_info[0:2]])
+    run('pip install wheel --upgrade', pty=False)
+    name = 'wheelhouse-{}.tar.gz'.format(version)
+    url = '{}/archive/{}.tar.gz'.format(repo, version)
+    # download and extract the wheelhouse github repository archive
+    run('mkdir {}'.format(path), pty=False)
+    run('curl -o {} -L {}'.format(name, url), pty=False)
+    run('tar -xvf {} --strip 1 -C {}'.format(name, path), pty=False)
+    run('rm -f {}'.format(name), pty=False)
+
+
+@task
+def addon_requirements(download_cache=None):
     """Install all addon requirements."""
     for directory in os.listdir(settings.ADDON_PATH):
         path = os.path.join(settings.ADDON_PATH, directory)
         if os.path.isdir(path):
             try:
-                open(os.path.join(path, 'requirements.txt'))
+                requirements_file = os.path.join(path, 'requirements.txt')
+                open(requirements_file)
                 print('Installing requirements for {0}'.format(directory))
-                run(
-                    'pip install --upgrade -r {0}/{1}/requirements.txt'.format(
-                        settings.ADDON_PATH,
-                        directory
-                    )
-                )
+                cmd = 'pip install --upgrade -r {0}'.format(requirements_file)
+                if WHEELHOUSE_PATH:
+                    cmd += ' --use-wheel --find-links {}'.format(WHEELHOUSE_PATH)
+                if download_cache:
+                    cmd += ' --download-cache {0}'.format(download_cache)
+                run(bin_prefix(cmd))
             except IOError:
                 pass
     print('Finished')
-
-
-@task
-def mfr_requirements():
-    """Install modular file renderer requirements"""
-    mfr = 'mfr'
-    print('Installing mfr requirements')
-    run('pip install --upgrade -r {0}/requirements.txt'.format(mfr))
-
 
 @task
 def encryption(owner=None):
@@ -347,7 +421,7 @@ def encryption(owner=None):
         return
 
     import gnupg
-    gpg = gnupg.GPG(gnupghome=settings.GNUPG_HOME)
+    gpg = gnupg.GPG(gnupghome=settings.GNUPG_HOME, gpgbinary=settings.GNUPG_BINARY)
     keys = gpg.list_keys()
     if keys:
         print('Existing GnuPG key found')
@@ -397,9 +471,22 @@ def copy_settings(addons=False):
 
 @task
 def packages():
+    brew_commands = [
+        'update',
+        'upgrade',
+        'install libxml2',
+        'install libxslt',
+        'install elasticsearch',
+        'install gpg',
+        'install node',
+        'tap tokutek/tokumx',
+        'install tokumx-bin',
+    ]
     if platform.system() == 'Darwin':
-        print('Running brew bundle')
-        run('brew bundle')
+        print('Running brew commands')
+        for item in brew_commands:
+            command = 'brew {cmd}'.format(cmd=item)
+            run(command)
     elif platform.system() == 'Linux':
         # TODO: Write a script similar to brew bundle for Ubuntu
         # e.g., run('sudo apt-get install [list of packages]')
@@ -430,5 +517,222 @@ def setup():
 
 
 @task
+def analytics():
+    from website.app import init_app
+    import matplotlib
+    matplotlib.use('Agg')
+    init_app()
+    from scripts import metrics
+    from scripts.analytics import (
+        logs, addons, comments, links, watch, email_invites,
+        permissions, profile, benchmarks
+    )
+    modules = (
+        metrics, logs, addons, comments, links, watch, email_invites,
+        permissions, profile, benchmarks
+    )
+    for module in modules:
+        module.main()
+
+
+@task
+def clear_sessions(months=1, dry_run=False):
+    from website.app import init_app
+    init_app(routes=False, set_backends=True)
+    from scripts import clear_sessions
+    clear_sessions.clear_sessions_relative(months=months, dry_run=dry_run)
+
+
+@task
 def clear_mfr_cache():
+    run('rm -rf {0}/*'.format(settings.MFR_TEMP_PATH), echo=True)
     run('rm -rf {0}/*'.format(settings.MFR_CACHE_PATH), echo=True)
+
+
+# Release tasks
+
+@task
+def hotfix(name, finish=False, push=False):
+    """Rename hotfix branch to hotfix/<next-patch-version> and optionally
+    finish hotfix.
+    """
+    print('Checking out master to calculate curent version')
+    run('git checkout master')
+    latest_version = latest_tag_info()['current_version']
+    print('Current version is: {}'.format(latest_version))
+    major, minor, patch = latest_version.split('.')
+    next_patch_version = '.'.join([major, minor, str(int(patch) + 1)])
+    print('Bumping to next patch version: {}'.format(next_patch_version))
+    print('Renaming branch...')
+
+    new_branch_name = 'hotfix/{}'.format(next_patch_version)
+    run('git checkout {}'.format(name), echo=True)
+    run('git branch -m {}'.format(new_branch_name), echo=True)
+    if finish:
+        run('git flow hotfix finish {}'.format(next_patch_version), echo=True, pty=True)
+    if push:
+        run('git push origin master', echo=True)
+        run('git push --tags', echo=True)
+        run('git push origin develop', echo=True)
+
+
+@task
+def feature(name, finish=False, push=False):
+    """Rename the current branch to a feature branch and optionally finish it."""
+    print('Renaming branch...')
+    run('git br -m feature/{}'.format(name), echo=True)
+    if finish:
+        run('git flow feature finish {}'.format(name), echo=True)
+    if push:
+        run('git push origin develop', echo=True)
+
+
+# Adapted from bumpversion
+def latest_tag_info():
+    try:
+        # git-describe doesn't update the git-index, so we do that
+        # subprocess.check_output(["git", "update-index", "--refresh"])
+
+        # get info about the latest tag in git
+        describe_out = subprocess.check_output([
+            "git",
+            "describe",
+            "--dirty",
+            "--tags",
+            "--long",
+            "--abbrev=40"
+        ], stderr=subprocess.STDOUT
+        ).decode().split("-")
+    except subprocess.CalledProcessError as err:
+        raise err
+        # logger.warn("Error when running git describe")
+        return {}
+
+    info = {}
+
+    if describe_out[-1].strip() == "dirty":
+        info["dirty"] = True
+        describe_out.pop()
+
+    info["commit_sha"] = describe_out.pop().lstrip("g")
+    info["distance_to_latest_tag"] = int(describe_out.pop())
+    info["current_version"] = describe_out.pop().lstrip("v")
+
+    # assert type(info["current_version"]) == str
+    assert 0 == len(describe_out)
+
+    return info
+
+
+# Tasks for generating and bundling SSL certificates
+# See http://cosdev.readthedocs.org/en/latest/osf/ops.html for details
+
+@task
+def generate_key(domain, bits=2048):
+    cmd = 'openssl genrsa -des3 -out {0}.key {1}'.format(domain, bits)
+    run(cmd)
+
+
+@task
+def generate_key_nopass(domain):
+    cmd = 'openssl rsa -in {domain}.key -out {domain}.key.nopass'.format(
+        domain=domain
+    )
+    run(cmd)
+
+
+@task
+def generate_csr(domain):
+    cmd = 'openssl req -new -key {domain}.key.nopass -out {domain}.csr'.format(
+        domain=domain
+    )
+    run(cmd)
+
+
+@task
+def request_ssl_cert(domain):
+    """Generate a key, a key with password removed, and a signing request for
+    the specified domain.
+
+    Usage:
+    > invoke request_ssl_cert pizza.osf.io
+    """
+    generate_key(domain)
+    generate_key_nopass(domain)
+    generate_csr(domain)
+
+
+@task
+def bundle_certs(domain, cert_path):
+    """Concatenate certificates from NameCheap in the correct order. Certificate
+    files must be in the same directory.
+    """
+    cert_files = [
+        '{0}.crt'.format(domain),
+        'COMODORSADomainValidationSecureServerCA.crt',
+        'COMODORSAAddTrustCA.crt',
+        'AddTrustExternalCARoot.crt',
+    ]
+    certs = ' '.join(
+        os.path.join(cert_path, cert_file)
+        for cert_file in cert_files
+    )
+    cmd = 'cat {certs} > {domain}.bundle.crt'.format(
+        certs=certs,
+        domain=domain,
+    )
+    run(cmd)
+
+@task
+def clean_assets():
+    """Remove built JS files."""
+    build_path = os.path.join(HERE,
+                              'website',
+                              'static',
+                              'public',
+                              'js',
+                              '*')
+    run('rm -rf {0}'.format(build_path), echo=True)
+
+
+@task(aliases=['pack'])
+def webpack(clean=False, watch=False, develop=False):
+    """Build static assets with webpack."""
+    if clean:
+        clean_assets()
+    args = ['webpack']
+    if settings.DEBUG_MODE and develop:
+        args += ['--colors']
+    else:
+        args += ['--progress']
+    if watch:
+        args += ['--watch']
+    config_file = 'webpack.dev.config.js' if develop else 'webpack.prod.config.js'
+    args += ['--config {0}'.format(config_file)]
+    command = ' '.join(args)
+    run(command, echo=True)
+
+@task()
+def assets(develop=False, watch=False):
+    """Install and build static assets."""
+    run('npm install', echo=True)
+    bower_install()
+    # Always set clean=False to prevent possible mistakes
+    # on prod
+    webpack(clean=False, watch=watch, develop=develop)
+
+@task
+def generate_self_signed(domain):
+    """Generate self-signed SSL key and certificate.
+    """
+    cmd = (
+        'openssl req -x509 -nodes -days 365 -newkey rsa:2048'
+        ' -keyout {0}.key -out {0}.crt'
+    ).format(domain)
+    run(cmd)
+
+@task
+def update_citation_styles():
+    from scripts import parse_citation_styles
+    total = parse_citation_styles.main()
+    print("Parsed {} styles".format(total))

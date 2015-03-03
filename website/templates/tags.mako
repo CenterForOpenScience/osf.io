@@ -6,7 +6,7 @@
         <a href="${node['url']}">${node['title']}</a>
     % endfor
 % else:
-    No public nodes tagged as ${tag}
+    No public nodes tagged as <span class='tag'>${tag}</span>
 % endif
 </%def>
 

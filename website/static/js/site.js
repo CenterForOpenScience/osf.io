@@ -19,45 +19,88 @@
     /**
      * Posts JSON data.
      *
+     * NOTE: The `success` and `error` callbacks are deprecated. Prefer the Promise
+     * interface (using the `done` and `fail` methods of a jqXHR).
+     *
      * Example:
-     *     $.osf.postJSON('/foo', {'email': 'bar@baz.com'}, function(data) {...})
+     *     var request = $.osf.postJSON('/foo', {'email': 'bar@baz.com'});
+     *     request.done(function(response) {
+     *         // ...
+     *     })
+     *     request.fail(function(xhr, textStatus, err) {
+     *         // ...
+     *     }
      *
      * @param  {String} url  The url to post to
      * @param  {Object} data JSON data to send to the endpoint
-     * @param  {Function} done Success callback. Takes returned data as its first argument
      * @return {jQuery xhr}
      */
-    $.osf.postJSON = function(url, data, done, error) {
+    $.osf.postJSON = function(url, data, success, error) {
         var ajaxOpts = {
             url: url, type: 'post',
             data: JSON.stringify(data),
-            success: done,
-            error: error,
             contentType: 'application/json', dataType: 'json'
         };
+        // For backwards compatibility. Prefer the Promise interface to these callbacks.
+        if (typeof success === 'function') {
+            ajaxOpts.success = success;
+        }
+        if (typeof error === 'function') {
+            ajaxOpts.error = error;
+        }
         return $.ajax(ajaxOpts);
     };
 
     /**
      * Puts JSON data.
      *
+     * NOTE: The `success` and `error` callbacks are deprecated. Prefer the Promise
+     * interface (using the `done` and `fail` methods of a jqXHR).
+     *
      * Example:
-     *     $.osf.putJSON('/foo', {'email': 'bar@baz.com'}, function(data) {...})
+     *     $.osf.putJSON('/foo', {'email': 'bar@baz.com'})
      *
      * @param  {String} url  The url to put to
      * @param  {Object} data JSON data to send to the endpoint
-     * @param  {Function} done Success callback. Takes returned data as its first argument
      * @return {jQuery xhr}
      */
-    $.osf.putJSON = function(url, data, done, error) {
+    $.osf.putJSON = function(url, data, success, error) {
         var ajaxOpts = {
             url: url, type: 'put',
             data: JSON.stringify(data),
-            success: done,
-            error: error,
             contentType: 'application/json', dataType: 'json'
         };
+        // For backwards compatibility. Prefer the Promise interface to these callbacks.
+        if (typeof success === 'function') {
+            ajaxOpts.success = success;
+        }
+        if (typeof error === 'function') {
+            ajaxOpts.error = error;
+        }
         return $.ajax(ajaxOpts);
+    };
+
+    // Error handlers
+
+    var errorDefaultShort = 'Unable to resolve';
+    var errorDefaultLong = 'OSF was unable to resolve your request. If this issue persists, ' +
+        'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.';
+
+    $.osf.handleJSONError = function(response) {
+        var title = response.responseJSON.message_short || errorDefaultShort;
+        $.growl({
+            title: '<strong>' + title + '<strong><br />',
+            message: response.responseJSON.message_long || errorDefaultLong
+        },{
+            type: 'danger',
+            delay: 0
+        });
+        Raven.captureMessage('Unexpected error occurred in JSON request');
+    };
+
+    $.osf.handleEditableError = function(response, newValue) {
+        Raven.captureMessage('Unexpected error occurred in an editable input');
+        return 'Unexpected error: ' + response.statusText;
     };
 
     $.osf.block = function() {
@@ -114,7 +157,7 @@
      */
     $.osf.urlParams = function(str) {
         return (str || document.location.search).replace(/(^\?)/,'').split('&')
-            .map(function(n){return n = n.split('='),this[n[0]] = n[1],this;}.bind({}))[0];
+            .map(function(n){return n = n.split('='),this[n[0]] = decodeURIComponent(n[1]).replace(/\+/g, ' '),this;}.bind({}))[0];
     };
 
     ///////////
@@ -188,13 +231,6 @@
         ko.applyBindings(viewModel, $elem[0]);
     };
 
-    $.osf.handleJSONError = function (response) {
-        bootbox.alert({
-            title: response.responseJSON.message_short,
-            message: response.responseJSON.message_long
-        });
-    };
-
 
     /**
      * A date object with two formats: local time or UTC time.
@@ -256,7 +292,7 @@
     //    }
 
         // Build tooltips on user activity widgets
-        $('.ua-meter').tooltip();
+        $('.progress-user-activity [data-toggle="tooltip"]').tooltip();
         $('[rel=tooltip]').tooltip({
             placement:'bottom'
         });

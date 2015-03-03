@@ -1,5 +1,3 @@
-<link rel="stylesheet" href="/static/addons/figshare/figshare.css">
-
 <div id="figshareScope" class="scripted">
     <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
     <h4 class="addon-title">
@@ -9,11 +7,12 @@
                 authorized by <a data-bind="attr.href: urls().owner">
                     {{ownerName}}
                 </a>
-
-                <a data-bind="click: deauthorize"
-                       class="text-danger pull-right addon-auth">
-                  Deauthorize
-                </a>
+                % if not is_registration:
+                    <a data-bind="click: deauthorize"
+                           class="text-danger pull-right addon-auth">
+                      Deauthorize
+                    </a>
+                %endif
             </span>
 
              <!-- Import Access Token Button -->
@@ -52,7 +51,7 @@
                 <div class="btn-group" data-bind="visible: userIsOwner">
                     <button data-bind="click: togglePicker,
                                         css: {active: currentDisplay() === PICKER}"
-                            class="btn btn-sm btn-figshare"><i class="icon-edit"></i> Change</button>
+                            class="btn btn-sm btn-addon"><i class="icon-edit"></i> Change</button>
                 </div>
 
 
@@ -70,10 +69,6 @@
                     <div class="figshare-confirm-selection"
                         data-bind="visible: currentDisplay() === PICKER && selected()">
                         <form data-bind="submit: submitSettings">
-
-                            <h4 data-bind="if: selected" class="figshare-confirm-dlg">
-                                Connect Figshare {{selectedFolderType}} &ldquo;{{ selectedFolderName }}&rdquo;?
-                            </h4>
                             <div class="pull-right">
                                 <button class="btn btn-default"
                                         data-bind="click: cancelSelection">
@@ -83,6 +78,9 @@
                                        class="btn btn-primary"
                                        value="Submit" />
                             </div>
+                            <h4 data-bind="if: selected" class="figshare-confirm-dlg">
+                                Connect Figshare {{selectedFolderType}} &ldquo;{{ selectedFolderName }}&rdquo;?
+                            </h4>
                         </form>
                     </div><!-- end .figshare-confirm-selection -->
 
@@ -97,12 +95,3 @@
     </div>
 </div><!-- end #figshareScope -->
 
-
-<script>
-    $script(['/static/addons/figshare/figshareNodeConfig.js']);
-    $script.ready('figshareNodeConfig', function() {
-        // TODO(sloria): Remove this dependency on mako variable
-        var url = '${node["api_url"] + "figshare/config/"}';
-        var figshare = new FigshareNodeConfig('#figshareScope', url, '#figshareGrid');
-    });
-</script>

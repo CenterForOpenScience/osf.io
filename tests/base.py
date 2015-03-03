@@ -1,21 +1,30 @@
 # -*- coding: utf-8 -*-
 '''Base TestCase class for OSF unittests. Uses a temporary MongoDB database.'''
 import os
+import re
 import shutil
-import unittest
 import logging
+import unittest
 import functools
+import datetime as dt
+
 import blinker
+import httpretty
 from webtest_plus import TestApp
 
-from pymongo import MongoClient
 from faker import Factory
+from nose.tools import *  # noqa (PEP8 asserts)
+from pymongo.errors import OperationFailure
 from modularodm import storage
 
 from framework.mongo import set_up_storage
 from framework.auth import User
 from framework.sessions.model import Session
 from framework.guid.model import Guid
+from framework.mongo import client as client_proxy
+from framework.mongo import database as database_proxy
+from framework.transactions import commands, messages, utils
+
 from website.project.model import (
     ApiKey, Node, NodeLog, Tag, WatchConfig,
 )
@@ -32,10 +41,8 @@ from website.app import init_app
 test_app = init_app(
     settings_module='website.settings', routes=True, set_backends=False
 )
+test_app.testing = True
 
-
-logger = logging.getLogger()
-logger.setLevel(logging.CRITICAL)
 
 # Silence some 3rd-party logging and some "loud" internal loggers
 SILENT_LOGGERS = [
@@ -56,29 +63,75 @@ MODELS = (User, ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
           Tag, WatchConfig, Session, Guid)
 
 
-class OsfTestCase(unittest.TestCase):
-    """Base TestCase for tests that require a temporary MongoDB database.
+def teardown_database(client=None, database=None):
+    client = client or client_proxy
+    database = database or database_proxy
+    if settings.USE_TOKU_MX:
+        try:
+            commands.rollback(database)
+        except OperationFailure as error:
+            message = utils.get_error_message(error)
+            if messages.NO_TRANSACTION_ERROR not in message:
+                raise
+    client.drop_database(database)
+
+
+class DbTestCase(unittest.TestCase):
+    """Base `TestCase` for tests that require a scratch database.
     """
-    # DB settings
-    db_name = getattr(settings, 'TEST_DB_NAME', 'osf_test')
-    db_host = getattr(settings, 'MONGO_HOST', 'localhost')
-    db_port = int(getattr(settings, 'DB_PORT', '27017'))
+    DB_NAME = getattr(settings, 'TEST_DB_NAME', 'osf_test')
 
     @classmethod
     def setUpClass(cls):
-        """Before running this TestCase, set up a temporary MongoDB database
-        and modify settings to store uploads in a temporary directory.
-        """
-        cls._client = MongoClient(host=cls.db_host, port=cls.db_port)
-        cls.db = cls._client[cls.db_name]
-        # Set storage backend to MongoDb
-        set_up_storage(
-            website.models.MODELS, storage.MongoStorage,
-            addons=settings.ADDONS_AVAILABLE, db=cls.db,
-        )
-        cls._client.drop_database(cls.db)
+        super(DbTestCase, cls).setUpClass()
 
-        # Store uploads in temp directory
+        cls._original_db_name = settings.DB_NAME
+        settings.DB_NAME = cls.DB_NAME
+        cls._original_piwik_host = settings.PIWIK_HOST
+        settings.PIWIK_HOST = None
+        cls._original_enable_email_subscriptions = settings.ENABLE_EMAIL_SUBSCRIPTIONS
+        settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
+
+        teardown_database(database=database_proxy._get_current_object())
+        # TODO: With `database` as a `LocalProxy`, we should be able to simply
+        # this logic
+        set_up_storage(
+            website.models.MODELS,
+            storage.MongoStorage,
+            addons=settings.ADDONS_AVAILABLE,
+        )
+        cls.db = database_proxy
+
+    @classmethod
+    def tearDownClass(cls):
+        super(DbTestCase, cls).tearDownClass()
+        teardown_database(database=database_proxy._get_current_object())
+        settings.DB_NAME = cls._original_db_name
+        settings.PIWIK_HOST = cls._original_piwik_host
+        settings.ENABLE_EMAIL_SUBSCRIPTIONS = cls._original_enable_email_subscriptions
+
+
+class AppTestCase(unittest.TestCase):
+    """Base `TestCase` for OSF tests that require the WSGI app (but no database).
+    """
+    def setUp(self):
+        super(AppTestCase, self).setUp()
+        self.app = TestApp(test_app)
+        self.context = test_app.test_request_context()
+        self.context.push()
+
+    def tearDown(self):
+        super(AppTestCase, self).tearDown()
+        self.context.pop()
+
+
+class UploadTestCase(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        """Store uploads in temp directory.
+        """
+        super(UploadTestCase, cls).setUpClass()
         cls._old_uploads_path = settings.UPLOADS_PATH
         cls._uploads_path = os.path.join('/tmp', 'osf', 'uploads')
         try:
@@ -87,34 +140,53 @@ class OsfTestCase(unittest.TestCase):
             pass
         settings.UPLOADS_PATH = cls._uploads_path
 
-    def setUp(self):
-        self.app = TestApp(test_app)
-        self.context = test_app.test_request_context()
-        self.context.push()
-
-    def tearDown(self):
-        self.context.pop()
-
     @classmethod
     def tearDownClass(cls):
-        """Drop the database when all tests finish."""
-        cls._client.drop_database(cls.db)
-        # Restore uploads path
+        """Restore uploads path.
+        """
+        super(UploadTestCase, cls).tearDownClass()
         shutil.rmtree(cls._uploads_path)
         settings.UPLOADS_PATH = cls._old_uploads_path
 
 
-class AppTestCase(unittest.TestCase):
-    '''Base TestCase for OSF tests that require the WSGI app (but no database).
-    '''
+methods = [
+    httpretty.GET,
+    httpretty.PUT,
+    httpretty.HEAD,
+    httpretty.POST,
+    httpretty.PATCH,
+    httpretty.DELETE,
+]
+def kill(*args, **kwargs):
+    raise httpretty.errors.UnmockedError
 
-    def setUp(self):
-        self.app = test_app
-        self.ctx = self.app.app_context()
-        self.ctx.push()
 
-    def tearDown(self):
-        self.ctx.pop()
+class MockRequestTestCase(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super(MockRequestTestCase, cls).setUpClass()
+        httpretty.enable()
+        for method in methods:
+            httpretty.register_uri(
+                method,
+                re.compile(r'.*'),
+                body=kill,
+            )
+
+    @classmethod
+    def tearDownClass(cls):
+        super(MockRequestTestCase, cls).tearDownClass()
+        httpretty.disable()
+        httpretty.reset()
+
+
+class OsfTestCase(DbTestCase, AppTestCase, UploadTestCase, MockRequestTestCase):
+    """Base `TestCase` for tests that require both scratch databases and the OSF
+    application. Note: superclasses must call `super` in order for all setup and
+    teardown methods to be called correctly.
+    """
+    pass
 
 
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py
@@ -123,12 +195,14 @@ class CaptureSignals(object):
 
     Context manager which mocks out selected signals and registers which
     are `sent` on and what arguments were sent. Instantiate with a list of
-    blinker `NamedSignals` to patch. Each signal has it's `send` mocked out.
+    blinker `NamedSignals` to patch. Each signal has its `send` mocked out.
+
     """
     def __init__(self, signals):
         """Patch all given signals and make them available as attributes.
 
         :param signals: list of signals
+
         """
         self._records = {}
         self._receivers = {}
@@ -159,6 +233,7 @@ class CaptureSignals(object):
     def signals_sent(self):
         """Return a set of the signals sent.
         :rtype: list of blinker `NamedSignals`.
+
         """
         return set([signal for signal, _ in self._records.items() if self._records[signal]])
 
@@ -170,3 +245,14 @@ def capture_signals():
 
 def assert_is_redirect(response, msg="Response is a redirect."):
     assert 300 <= response.status_code < 400, msg
+
+
+def assert_before(lst, item1, item2):
+    """Assert that item1 appears before item2 in lst."""
+    assert_less(lst.index(item1), lst.index(item2),
+        '{0!r} appears before {1!r}'.format(item1, item2))
+
+
+def assert_datetime_equal(dt1, dt2, allowance=500):
+    """Assert that two datetimes are about equal."""
+    assert_less(dt1 - dt2, dt.timedelta(milliseconds=allowance))

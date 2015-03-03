@@ -1,5 +1,3 @@
-
-
 <div id="dataverseScope" class="scripted">
 
     <h4 class="addon-title">
@@ -10,8 +8,10 @@
                     authorized by <a data-bind="attr.href: urls().owner">
                         {{ownerName}}
                     </a>
-                    <a data-bind="click: clickDeauth"
-                        class="text-danger pull-right addon-auth">Deauthorize</a>
+                    % if not is_registration:
+                        <a data-bind="click: clickDeauth"
+                            class="text-danger pull-right addon-auth">Deauthorize</a>
+                    % endif
             </span>
 
             <span data-bind="if: showLinkDataverse">
@@ -142,17 +142,5 @@
                 </button>
             </div>
         </div>
-
-
     </div>
-
 </div>
-
-<script>
-    $script(['/static/addons/dataverse/dataverseNodeConfig.js'], function() {
-        // Endpoint for Dataverse user settings
-        var url = '${node["api_url"] + "dataverse/config/"}';
-        // Start up the DataverseConfig manager
-        var dataverse = new DataverseNodeConfig('#dataverseScope', url);
-    });
-</script>

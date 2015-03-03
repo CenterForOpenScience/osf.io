@@ -3,27 +3,24 @@
 import httplib as http
 from flask import request
 
-from framework.auth import get_current_user
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
 
-from website.addons.dataverse.client import (
-    connect, connect_from_settings,
-    get_studies, get_study, get_dataverses, get_dataverse,
-)
-from website.addons.dataverse.settings import HOST
 from website.project import decorators
-from website.util import web_url_for, api_url_for
-from website.util.sanitize import deep_ensure_clean
+from website.util.sanitize import assert_clean
+from website.util import api_url_for, web_url_for
+
+from website.addons.dataverse import client
+from website.addons.dataverse.settings import HOST
 
 
+@must_be_logged_in
 @decorators.must_be_valid_project
 @decorators.must_have_addon('dataverse', 'node')
-def dataverse_config_get(node_addon, **kwargs):
+def dataverse_config_get(node_addon, auth, **kwargs):
     """API that returns the serialized node settings."""
-    user = get_current_user()
     return {
-        'result': serialize_settings(node_addon, user),
+        'result': serialize_settings(node_addon, auth.user),
     }, http.OK
 
 
@@ -68,8 +65,8 @@ def serialize_settings(node_settings, current_user):
             'dataverseUsername': user_settings.dataverse_username,
         })
         # Add owner's dataverse settings
-        connection = connect_from_settings(user_settings)
-        dataverses = get_dataverses(connection)
+        connection = client.connect_from_settings(user_settings)
+        dataverses = client.get_dataverses(connection)
         result.update({
             'connected': connection is not None,
             'dataverses': [
@@ -109,15 +106,15 @@ def dataverse_get_studies(node_addon, **kwargs):
     alias = request.json.get('alias')
     user_settings = node_addon.user_settings
 
-    connection = connect_from_settings(user_settings)
-    dataverse = get_dataverse(connection, alias)
-    studies, bad_studies = get_studies(dataverse)
-    rv = {
+    connection = client.connect_from_settings(user_settings)
+    dataverse = client.get_dataverse(connection, alias)
+    studies, bad_studies = client.get_studies(dataverse)
+    ret = {
         'studies': [{'title': study.title, 'hdl': study.doi} for study in studies],
         'badStudies': [{'hdl': bad_study.doi, 'url': 'http://dx.doi.org/' + bad_study.doi} for bad_study in bad_studies],
     }
     code = http.PARTIAL_CONTENT if bad_studies else http.OK
-    return rv, code
+    return ret, code
 
 
 @must_be_logged_in
@@ -126,14 +123,15 @@ def dataverse_set_user_config(auth, **kwargs):
     user = auth.user
 
     try:
-        deep_ensure_clean(request.json)
-    except ValueError:
+        assert_clean(request.json)
+    except AssertionError:
+        # TODO: Test me!
         raise HTTPError(http.NOT_ACCEPTABLE)
 
     # Log in with DATAVERSE
     username = request.json.get('dataverse_username')
     password = request.json.get('dataverse_password')
-    connection = connect(username, password)
+    connection = client.connect(username, password)
 
     # Check for valid connection
     if connection is None:
@@ -157,14 +155,15 @@ def dataverse_set_user_config(auth, **kwargs):
 def set_dataverse_and_study(node_addon, auth, **kwargs):
 
     user_settings = node_addon.user_settings
-    user = get_current_user()
+    user = auth.user
 
     if user_settings and user_settings.owner != user:
         raise HTTPError(http.FORBIDDEN)
 
     try:
-        deep_ensure_clean(request.json)
-    except ValueError:
+        assert_clean(request.json)
+    except AssertionError:
+        # TODO: Test me!
         raise HTTPError(http.NOT_ACCEPTABLE)
 
     alias = request.json.get('dataverse').get('alias')
@@ -173,9 +172,9 @@ def set_dataverse_and_study(node_addon, auth, **kwargs):
     if hdl is None:
         return HTTPError(http.BAD_REQUEST)
 
-    connection = connect_from_settings(user_settings)
-    dataverse = get_dataverse(connection, alias)
-    study = get_study(dataverse, hdl)
+    connection = client.connect_from_settings(user_settings)
+    dataverse = client.get_dataverse(connection, alias)
+    study = client.get_study(dataverse, hdl)
 
     node_addon.dataverse_alias = dataverse.alias
     node_addon.dataverse = dataverse.title

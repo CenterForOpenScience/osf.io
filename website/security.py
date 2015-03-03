@@ -13,10 +13,10 @@ random = SystemRandom()
 logging.getLogger('gnupg').setLevel(logging.WARNING)
 
 
-def random_string(length=8, chars=string.letters+string.digits):
+def random_string(length=8, chars=string.letters + string.digits):
     """Generate a random string of a given length.
     """
-    return ''.join([chars[random.randint(0, len(chars)-1)] for i in range(length)])
+    return ''.join([chars[random.randint(0, len(chars) - 1)] for i in range(length)])
 
 
 class Encryption(object):

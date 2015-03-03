@@ -32,7 +32,7 @@ api_routes = {
         Rule(
             [
                 '/project/<pid>/forward/widget/',
-                '/project/<pid>/node/<nid>forward/widget/',
+                '/project/<pid>/node/<nid>/forward/widget/',
             ],
             'get',
             views.widget.forward_widget,

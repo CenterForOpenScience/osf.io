@@ -55,7 +55,7 @@ settings_routes = {
             '/project/<pid>/dataverse/file/<path:path>/',
             '/project/<pid>/node/<nid>/dataverse/file/',
             '/project/<pid>/node/<nid>/dataverse/file/<path:path>/',
-        ], 'post', views.crud.dataverse_upload_file, json_renderer),
+        ], 'put', views.crud.dataverse_upload_file, json_renderer),
         Rule([
             '/project/<pid>/dataverse/file/<path:path>/',
             '/project/<pid>/node/<nid>/dataverse/file/<path:path>/',
@@ -152,8 +152,8 @@ api_routes = {
         ),
         Rule(
             [
-            '/project/<pid>/dataverse/widget/',
-            '/project/<pid>/node/<nid>/dataverse/widget/',
+                '/project/<pid>/dataverse/widget/',
+                '/project/<pid>/node/<nid>/dataverse/widget/',
             ],
             'get',
             dataverse_widget,
@@ -161,8 +161,8 @@ api_routes = {
         ),
         Rule(
             [
-            '/project/<pid>/dataverse/widget/contents/',
-            '/project/<pid>/node/<nid>/dataverse/widget/contents/',
+                '/project/<pid>/dataverse/widget/contents/',
+                '/project/<pid>/node/<nid>/dataverse/widget/contents/',
             ],
             'get',
             dataverse_get_widget_contents,

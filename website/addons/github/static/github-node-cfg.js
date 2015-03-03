@@ -1,3 +1,7 @@
+    var $osf = require('osfHelpers');
+var $ = require('jquery');
+var bootbox = require('bootbox');
+
 var GithubConfigHelper = (function() {
 
     var updateHidden = function(val) {
@@ -21,29 +25,25 @@ var GithubConfigHelper = (function() {
         bootbox.prompt('Name your new repo', function(repoName) {
 
             // Return if cancelled
-            if (repoName === null)
+            if (repoName === null) {
                 return;
+            }
 
             if (repoName === '') {
                 displayError('Your repo must have a name');
                 return;
             }
 
-            $.ajax({
-                type: 'POST',
-                url: '/api/v1/github/repo/create/',
-                contentType: 'application/json',
-                dataType: 'json',
-                data: JSON.stringify({name: repoName}),
-                success: function(response) {
-                    var repoName = response.user + ' / ' + response.repo;
-                    $select.append('<option value="' + repoName + '">' + repoName + '</option>');
-                    $select.val(repoName);
-                    updateHidden(repoName);
-                },
-                error: function() {
-                    displayError('Could not create repository');
-                }
+            $osf.postJSON(
+                '/api/v1/github/repo/create/',
+                {name: repoName}
+            ).done(function(response) {
+                var repoName = response.user + ' / ' + response.repo;
+                $select.append('<option value="' + repoName + '">' + repoName + '</option>');
+                $select.val(repoName);
+                updateHidden(repoName);
+            }).fail(function() {
+                displayError('Could not create repository');
             });
         });
     };
@@ -62,15 +62,14 @@ var GithubConfigHelper = (function() {
         });
 
         $('#githubImportToken').on('click', function() {
-            $.ajax({
-                type: 'POST',
-                url: nodeApiUrl + 'github/user_auth/',
-                contentType: 'application/json',
-                dataType: 'json',
-                success: function(response) {
-                    window.location.reload();
-                }
-            });
+            $osf.postJSON(
+                nodeApiUrl + 'github/user_auth/',
+                {}
+            ).done(function() {
+                window.location.reload();
+            }).fail(
+                $osf.handleJSONError
+            );
         });
 
         $('#githubCreateToken').on('click', function() {
@@ -78,15 +77,20 @@ var GithubConfigHelper = (function() {
         });
 
         $('#githubRemoveToken').on('click', function() {
-            bootbox.confirm('Are you sure you want to remove this GitHub authorization?', function(confirm) {
-                if (confirm) {
-                    $.ajax({
+            bootbox.confirm({
+                title: 'Deauthorize GitHub?',
+                message: 'Are you sure you want to remove this GitHub authorization?',
+                callback: function(confirm) {
+                    if(confirm) {
+                        $.ajax({
                         type: 'DELETE',
-                        url: nodeApiUrl + 'github/oauth/',
-                        success: function(response) {
-                            window.location.reload();
-                        }
-                    });
+                        url: nodeApiUrl + 'github/oauth/'
+                    }).done(function() {
+                        window.location.reload();
+                    }).fail(
+                        $osf.handleJSONError
+                    );
+                    }
                 }
             });
         });
@@ -100,3 +104,5 @@ var GithubConfigHelper = (function() {
     });
 
 })();
+
+module.exports = GithubConfigHelper;

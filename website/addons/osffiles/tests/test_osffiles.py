@@ -5,15 +5,18 @@ from nose.tools import *  # noqa (PEP8 asserts)
 from tests.base import OsfTestCase
 from StringIO import StringIO
 
+from modularodm import Q
+
 from framework.auth import Auth
 from tests.factories import ProjectFactory, AuthUserFactory, PrivateLinkFactory
 from website import settings
 from website.project.views.file import prepare_file
 
-from website.addons.osffiles.model import OsfGuidFile
+from website.addons.osffiles.model import OsfGuidFile, NodeFile
 from website.addons.osffiles.utils import get_latest_version_number, urlsafe_filename
 from website.addons.osffiles.exceptions import FileNotFoundError
 
+# TODO: Replace hardcoded URLs with url_for
 class TestFilesViews(OsfTestCase):
 
     def setUp(self):
@@ -48,17 +51,16 @@ class TestFilesViews(OsfTestCase):
         assert_equal(res.body, 'firstcontent')
 
     def test_download_file_by_version_with_bad_version_value(self):
-        url = self.project.api_url_for('download_file_by_version',
+        url = self.project.web_url_for('download_file_by_version',
             fid=self.fid,
             vid='bad'
         )
-
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_in('Invalid version', res.json['message_short'])
+        assert_in('Invalid version', res.body)
 
     def test_download_file_by_version_with_nonexistent_file(self):
-        url = self.project.api_url_for(
+        url = self.project.web_url_for(
             'download_file_by_version',
             fid='notfound',
             vid=0
@@ -67,7 +69,7 @@ class TestFilesViews(OsfTestCase):
         assert_equal(res.status_code, 404)
 
     def test_download_file_by_version_with_bad_version_number(self):
-        url = self.project.api_url_for(
+        url = self.project.web_url_for(
             'download_file_by_version',
             fid=self.fid,
             vid=9999
@@ -76,7 +78,7 @@ class TestFilesViews(OsfTestCase):
         assert_equal(res.status_code, 404)
 
     def test_download_file_by_version_with_negative_version_number(self):
-        url = self.project.api_url_for(
+        url = self.project.web_url_for(
             'download_file_by_version',
             fid=self.fid,
             vid=-1
@@ -90,8 +92,7 @@ class TestFilesViews(OsfTestCase):
 
         res = self._upload_file(
             'newfile',
-            'a' * (node_addon.config.max_file_size),
-            expect_errors=True,
+            'a' * (node_addon.config.max_file_size)
         )
 
         self.project.reload()
@@ -105,6 +106,27 @@ class TestFilesViews(OsfTestCase):
         assert_equal(res.json['name'], 'newfile')
 
         assert_in('newfile', self.project.files_current)
+
+    def test_upload_file_unicode_name(self):
+
+        node_addon = self.project.get_addon('osffiles')
+
+        res = self._upload_file(
+            '_néwfile',
+            'a' * (node_addon.config.max_file_size)
+        )
+
+        self.project.reload()
+        assert_equal(
+            self.project.logs[-1].action,
+            'file_added'
+        )
+
+        assert_equal(res.status_code, 201)
+        assert_true(isinstance(res.json, dict), 'return value is a dict')
+        assert_equal(res.json['name'], '_newfile')
+
+        assert_in('_newfile', self.project.files_current)
 
     def test_upload_file_too_large(self):
 
@@ -121,7 +143,31 @@ class TestFilesViews(OsfTestCase):
         assert_equal(res.status_code, 400)
         assert_not_in('newfile', self.project.files_current)
 
-    def test_view_file_with_anonymous_link(self):
+    def test_file_info(self):
+        # Upload a new version of firstfile
+        self._upload_file(self.fid, 'secondcontent')
+        url = self.project.api_url_for('file_info', fid=self.project.uploads[0].filename)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        file_obj = self.project.get_file_object(self.fid, version=1)
+
+        data = res.json
+        assert_equal(data['file_name'], self.fid)
+        assert_equal(data['registered'], self.project.is_registration)
+        assert_equal(len(data['versions']), 2)
+        assert_equal(data['urls']['files'], self.project.web_url_for('collect_file_trees'))
+        assert_equal(data['urls']['latest']['download'], file_obj.download_url(self.project))
+        assert_equal(data['urls']['api'], file_obj.api_url(self.project))
+
+        version = res.json['versions'][0]
+        assert_equal(version['file_name'], self.fid)
+        assert_equal(version['version_number'], 2)
+        assert_equal(version['modified_date'], file_obj.date_uploaded.strftime('%Y/%m/%d %I:%M %p'))
+        assert_in('downloads', version)
+        assert_equal(version['committer_name'], file_obj.uploader.fullname)
+        assert_equal(version['committer_url'], file_obj.uploader.url)
+
+    def test_file_info_with_anonymous_link(self):
         link = PrivateLinkFactory(anonymous=True)
         link.nodes.append(self.project)
         link.save()
@@ -191,34 +237,84 @@ class TestFilesViews(OsfTestCase):
 
     def test_view_creates_guid(self):
 
+        guid_fid = 'unique'
+        guid_content = 'snowflake'
+        self._upload_file(guid_fid, guid_content)
+        node_file = NodeFile.load(self.project.files_current[guid_fid])
+
         guid_count = OsfGuidFile.find().count()
 
         # View file for the first time
-        url = self.project.uploads[0].url(self.project)
-        res = self.app.get(url, auth=self.user.auth).maybe_follow(auth=self.user.auth)
+        url = node_file.url(self.project)
+        res = self.app.get(
+            url,
+            auth=self.user.auth,
+        ).follow(
+            auth=self.user.auth,
+        )
 
-        guids = OsfGuidFile.find()
+        guid = OsfGuidFile.find_one(
+            Q('node', 'eq', self.project) &
+            Q('name', 'eq', guid_fid)
+        )
 
         # GUID count has been incremented by one
         assert_equal(
-            guids.count(),
+            OsfGuidFile.find().count(),
             guid_count + 1
         )
 
         # Client has been redirected to GUID
         assert_equal(
             res.request.path.strip('/'),
-            guids[guids.count() - 1]._id
+            guid._id,
         )
 
         # View file for the second time
-        self.app.get(url, auth=self.user.auth).maybe_follow()
+        self.app.get(
+            url,
+            auth=self.user.auth,
+        ).follow(
+            auth=self.user.auth,
+        )
 
         # GUID count has not been incremented
         assert_equal(
             OsfGuidFile.find().count(),
             guid_count + 1
         )
+
+    def test_guid_url_returns_404(self):
+        f = NodeFile()
+        f.save()
+        url = '/{}/'.format(f._id)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_sees_delete_button_if_can_write(self):
+        url = self.project.uploads[0].url(self.project)
+        res = self.app.get(
+            url,
+            auth=self.user.auth,
+        ).maybe_follow(
+            auth=self.user.auth,
+        )
+        assert_in('Download', res)
+        assert_in('Delete', res)
+
+    def test_does_not_see_delete_button_if_cannot_write(self):
+        self.project.is_public = True
+        self.project.save()
+        user2 = AuthUserFactory()
+        url = self.project.uploads[0].url(self.project)
+        res = self.app.get(
+            url,
+            auth=user2.auth,
+        ).maybe_follow(
+            auth=user2.auth,
+        )
+        assert_in('Download', res)
+        assert_not_in('Delete', res)
 
 def make_file_like(name='file', content='data'):
     sio = StringIO(content)

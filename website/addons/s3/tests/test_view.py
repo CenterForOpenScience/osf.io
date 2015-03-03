@@ -1,5 +1,5 @@
 import mock
-from nose.tools import *
+from nose.tools import *  # noqa
 
 import httplib as http
 from boto.exception import S3ResponseError
@@ -7,7 +7,6 @@ from boto.exception import S3ResponseError
 from framework.auth import Auth
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory, AuthUserFactory
-from website.addons.s3.model import S3GuidFile
 
 from website.addons.s3.utils import validate_bucket_name
 
@@ -106,7 +105,6 @@ class TestS3ViewsConfig(OsfTestCase):
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
 
-
     @mock.patch('website.addons.s3.api.S3Wrapper.get_wrapped_key')
     @mock.patch('website.addons.s3.api.S3Wrapper.from_addon')
     def test_s3_set_bucket_registered(self, mock_from_addon, mock_wrapped_key):
@@ -179,42 +177,6 @@ class TestS3ViewsConfig(OsfTestCase):
         rv = self.app.post_json(url, {}, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http.BAD_REQUEST)
 
-    @mock.patch('website.addons.s3.api.S3Wrapper.get_wrapped_key')
-    @mock.patch('website.addons.s3.api.S3Wrapper.from_addon')
-    def test_view_creates_guid(self, mock_from_addon, mock_wrapped_key):
-
-        mock_from_addon.return_value = create_mock_wrapper()
-        mock_wrapped_key.return_value = create_mock_key()
-
-        guid_count = S3GuidFile.find().count()
-
-        # View file for the first time
-        url = self.project.url + 's3/test.py'
-        res = self.app.get(url, auth=self.user.auth).maybe_follow(auth=self.user.auth)
-
-        guids = S3GuidFile.find()
-
-        # GUID count has been incremented by one
-        assert_equal(
-            guids.count(),
-            guid_count + 1
-        )
-
-        # Client has been redirected to GUID
-        assert_equal(
-            res.request.path.strip('/'),
-            guids[guids.count() - 1]._id
-        )
-
-        # View file for the second time
-        self.app.get(url, auth=self.user.auth).maybe_follow()
-
-        # GUID count has not been incremented
-        assert_equal(
-            S3GuidFile.find().count(),
-            guid_count + 1
-        )
-
     @mock.patch('website.addons.s3.views.config.has_access')
     @mock.patch('website.addons.s3.views.config.create_osf_user')
     def test_node_settings_no_user_settings(self, mock_user, mock_access):
@@ -249,55 +211,6 @@ class TestS3ViewsConfig(OsfTestCase):
         url = self.project.url + 'settings/'
         rv = self.app.get(url, auth=self.user.auth)
         assert_true('mybucket' in rv.body)
-
-
-class TestS3ViewsCRUD(OsfTestCase):
-
-    def setUp(self):
-
-        super(TestS3ViewsCRUD, self).setUp()
-
-        self.user = AuthUserFactory()
-        self.consolidated_auth = Auth(user=self.user)
-        self.auth = ('test', self.user.api_keys[0]._primary_key)
-        self.project = ProjectFactory(creator=self.user)
-
-        self.project.add_addon('s3', auth=self.consolidated_auth)
-        self.project.creator.add_addon('s3')
-
-        self.user_settings = self.user.get_addon('s3')
-        self.user_settings.access_key = 'We-Will-Rock-You'
-        self.user_settings.secret_key = 'Idontknowanyqueensongs'
-        self.user_settings.save()
-
-        self.node_settings = self.project.get_addon('s3')
-        self.node_settings.bucket = 'Sheer-Heart-Attack'
-        self.node_settings.user_settings = self.project.creator.get_addon('s3')
-
-        self.node_settings.save()
-        self.node_url =  '/api/v1/project/{0}/'.format(self.project._id)
-
-    @mock.patch('website.addons.s3.views.crud.S3Wrapper.from_addon')
-    def test_view_faux_file(self, mock_from_addon):
-        mock_from_addon.return_value = mock.Mock()
-        mock_from_addon.return_value.get_wrapped_key.return_value = None
-        url = '/project/{0}/s3/view/faux.sho/'.format(self.project._id)
-        rv = self.app.get(url, auth=self.user.auth, expect_errors=True).maybe_follow()
-        assert_equals(rv.status_int, http.NOT_FOUND)
-
-    @mock.patch('website.addons.s3.views.crud.S3Wrapper.from_addon')
-    def test_view_upload_url(self, mock_from_addon):
-        mock_from_addon.return_value = mock.Mock()
-        mock_from_addon.return_value.does_key_exist.return_value = False
-        rv = self.app.post_json(self.node_url + 's3/', {'name': 'faux.sho'}, auth=self.user.auth)
-        assert_true('faux.sho' in rv.body and self.node_settings.bucket in rv.body and rv.status_int == http.OK)
-
-    @mock.patch('website.addons.s3.views.crud.S3Wrapper.from_addon')
-    def test_download_file_faux_file(self, mock_from_addon):
-        mock_from_addon.return_value = mock.Mock()
-        mock_from_addon.return_value.does_key_exist.return_value = False
-        rv = self.app.post_json(self.node_url + 's3/download/', {'path': 'faux.show'}, expect_errors=True)
-        assert_equals(rv.status_int, http.NOT_FOUND)
 
 
 class TestS3ViewsHgrid(OsfTestCase):

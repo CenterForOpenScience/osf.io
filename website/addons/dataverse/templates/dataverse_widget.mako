@@ -1,8 +1,5 @@
 % if complete:
-
-    <h3 class="addon-widget-header">
-        Dataverse
-    </h3>
+<%inherit file="project/addon/widget.mako"/>
 
     <div id="dataverseScope" class="scripted">
 
@@ -34,13 +31,4 @@
         </div>
 
     </div>
-
-    <script>
-        $script(['/static/addons/dataverse/dataverseWidget.js']);
-        $script.ready('dataverseWidget', function() {
-            var url = '${node['api_url'] + 'dataverse/widget/contents/'}';
-            var dataverse = new DataverseWidget('#dataverseScope', url);
-        });
-    </script>
-
 % endif

@@ -7,7 +7,7 @@ from wtforms import fields, Form, PasswordField, BooleanField, IntegerField, \
 from wtforms.widgets import TextInput, PasswordInput, html_params, TextArea, Select
 from wtforms.validators import ValidationError
 
-from website.util.sanitize import scrub_html
+from website.util.sanitize import strip_html
 
 
 validators = validators
@@ -59,7 +59,7 @@ class NoHtmlCharacters(object):
         self.message = message or u'HTML is not allowed in form field'
 
     def __call__(self, form, field):
-        if not field.data == scrub_html(field.data):
+        if not field.data == strip_html(field.data):
             raise ValidationError(self.message)
 
 # Filters

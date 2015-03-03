@@ -1,19 +1,22 @@
 # -*- coding: utf-8 -*-
 
 import os
-import datetime
+import httplib
 import logging
+import datetime
+
 import requests
 from bs4 import BeautifulSoup
 from flask import request, make_response
 
-from framework.flask import secure_filename, redirect
+from framework.flask import redirect
 from framework.exceptions import HTTPError
+from framework.utils import secure_filename
 from framework.auth.utils import privacy_info_handle
+
 from website.addons.dataverse.client import delete_file, upload_file, \
     get_file, get_file_by_id, release_study, get_study, get_dataverse, \
     connect_from_settings_or_403, get_files
-
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_not_be_registration
@@ -25,8 +28,6 @@ from website.util import rubeus
 from website.addons.dataverse.model import DataverseFile
 from website.addons.dataverse.settings import HOST
 from website.addons.base.views import check_file_guid
-
-import httplib as http
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +56,7 @@ def dataverse_release_study(node_addon, auth, **kwargs):
     study = get_study(dataverse, node_addon.study_hdl)
 
     if study.get_state() == 'RELEASED':
-        raise HTTPError(http.CONFLICT)
+        raise HTTPError(httplib.CONFLICT)
 
     release_study(study)
 
@@ -71,7 +72,7 @@ def dataverse_release_study(node_addon, auth, **kwargs):
         log_date=now,
     )
 
-    return {'study': study.title}, http.OK
+    return {'study': study.title}, httplib.OK
 
 
 @must_be_contributor_or_public
@@ -112,7 +113,6 @@ def dataverse_download_file_proxy(node_addon, auth, **kwargs):
 @must_have_addon('dataverse', 'node')
 def dataverse_get_file_info(node_addon, auth, **kwargs):
     """API view that gets info for a file."""
-
     node = node_addon.owner
     file_id = kwargs.get('path')
 
@@ -124,18 +124,26 @@ def dataverse_get_file_info(node_addon, auth, **kwargs):
     download_url = node.web_url_for('dataverse_download_file', path=file_id)
     dataverse_url = 'http://{0}/dvn/dv/'.format(HOST) + node_addon.dataverse_alias
     study_url = 'http://dx.doi.org/' + node_addon.study_hdl
+    delete_url = node.api_url_for('dataverse_delete_file', path=file_id)
 
     data = {
+        'node': {
+            'id': node._id,
+            'title': node.title
+        },
+        'filename': scrape_dataverse(file_id, name_only=True)[0],
         'dataverse': privacy_info_handle(node_addon.dataverse, anonymous),
-        'dataverse_url': privacy_info_handle(dataverse_url, anonymous),
         'study': privacy_info_handle(node_addon.study, anonymous),
-        'study_url': privacy_info_handle(study_url, anonymous),
-        'download_url': privacy_info_handle(download_url, anonymous),
+        'urls': {
+            'dataverse': privacy_info_handle(dataverse_url, anonymous),
+            'study': privacy_info_handle(study_url, anonymous),
+            'download': privacy_info_handle(download_url, anonymous),
+            'delete': privacy_info_handle(delete_url, anonymous),
+            'files': node.web_url_for('collect_file_trees'),
+        }
     }
 
-    return {
-        'data': data,
-    }, http.OK
+    return {'data': data}, httplib.OK
 
 
 @must_be_contributor_or_public
@@ -157,43 +165,56 @@ def dataverse_view_file(node_addon, auth, **kwargs):
         return redirect(redirect_url)
 
     # Get or create rendered file
-    cache_file = '{0}.html'.format(file_id)
-    rendered = get_cache_content(node_addon, cache_file)
+    cache_file_name = '{0}.html'.format(file_id)
+    rendered = get_cache_content(node_addon, cache_file_name)
 
     if rendered is None:
         filename, content = scrape_dataverse(file_id)
+        _, ext = os.path.splitext(filename)
         download_url = node.api_url_for(
             'dataverse_download_file_proxy', path=file_id
         )
         rendered = get_cache_content(
-            node_addon, cache_file, start_render=True,
-            file_path=filename, file_content=content,
-            download_path=download_url,
+            node_addon,
+            cache_file_name,
+            start_render=True,
+            remote_path=file_obj.file_id + ext,  # Include extension for MFR
+            file_content=content,
+            download_url=download_url,
         )
     else:
         filename, _ = scrape_dataverse(file_id, name_only=True)
 
-    rv = {
+    render_url = node.api_url_for('dataverse_get_rendered_file',
+                                path=file_id)
+    ret = {
         'file_name': filename,
         'rendered': rendered,
-        'render_url': node.api_url_for('dataverse_get_rendered_file',
-                                       path=file_id),
-        'download_url': node.web_url_for('dataverse_download_file',
+        'render_url': render_url,
+        'urls': {
+            'render': render_url,
+            'download': node.web_url_for('dataverse_download_file',
                                          path=file_id),
-        'info_url': node.api_url_for('dataverse_get_file_info',
+            'info': node.api_url_for('dataverse_get_file_info',
                                      path=file_id),
+        }
+
     }
-    rv.update(_view_project(node, auth))
-    return rv
+    ret.update(_view_project(node, auth))
+    return ret
 
 
 @must_have_permission('write')
 @must_not_be_registration
 @must_have_addon('dataverse', 'node')
 def dataverse_upload_file(node_addon, auth, **kwargs):
-
     node = node_addon.owner
     user_settings = node_addon.user_settings
+
+    try:
+        name = request.args['name']
+    except KeyError:
+        raise HTTPError(httplib.BAD_REQUEST)
 
     now = datetime.datetime.utcnow()
 
@@ -203,7 +224,7 @@ def dataverse_upload_file(node_addon, auth, **kwargs):
     try:
         connection = connect_from_settings_or_403(user_settings)
     except HTTPError as error:
-        if error.code == 403:
+        if error.code == httplib.FORBIDDEN:
             connection = None
         else:
             raise
@@ -211,31 +232,30 @@ def dataverse_upload_file(node_addon, auth, **kwargs):
     dataverse = get_dataverse(connection, node_addon.dataverse_alias)
     study = get_study(dataverse, node_addon.study_hdl)
 
-    upload = request.files.get('file')
-    filename = secure_filename(upload.filename)
-    action = 'file_uploaded'
+    filename = secure_filename(name)
+    status_code = httplib.CREATED
     old_id = None
 
     # Fail if file is too small (Dataverse issue)
-    content = upload.read()
+    content = request.data
     if len(content) < 5:
-        raise HTTPError(http.UNSUPPORTED_MEDIA_TYPE)
+        raise HTTPError(httplib.UNSUPPORTED_MEDIA_TYPE)
 
     # Replace file if old version exists
     old_file = get_file(study, filename)
     if old_file is not None:
-        action = 'file_updated'
+        status_code = httplib.OK
         old_id = old_file.id
         delete_file(old_file)
         # Check if file was deleted
         if get_file_by_id(study, old_id) is not None:
-            raise HTTPError(http.BAD_REQUEST)
+            raise HTTPError(httplib.BAD_REQUEST)
 
     upload_file(study, filename, content)
     file = get_file(study, filename)
 
     if file is None:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(httplib.BAD_REQUEST)
 
     node.add_log(
         action='dataverse_file_added',
@@ -255,27 +275,27 @@ def dataverse_upload_file(node_addon, auth, **kwargs):
         'file_id': file.id,
         'old_id': old_id,
         'name': filename,
+        'path': filename,
         'size': [
             len(content),
             rubeus.format_filesize(len(content))
         ],
         rubeus.KIND: rubeus.FILE,
         'urls': {
-                'view': node.web_url_for('dataverse_view_file',
+            'view': node.web_url_for('dataverse_view_file',
+                                     path=file.id),
+            'download': node.web_url_for('dataverse_download_file',
                                          path=file.id),
-                'download': node.web_url_for('dataverse_download_file',
-                                             path=file.id),
-                'delete': node.api_url_for('dataverse_delete_file',
-                                           path=file.id),
+            'delete': node.api_url_for('dataverse_delete_file',
+                                          path=file.id),
         },
         'permissions': {
             'view': can_view,
             'edit': can_edit,
         },
-        'actionTaken': action,
     }
 
-    return info, 201
+    return info, status_code
 
 
 @must_have_permission('write')
@@ -290,12 +310,12 @@ def dataverse_delete_file(node_addon, auth, **kwargs):
 
     file_id = kwargs.get('path')
     if file_id is None:
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(httplib.NOT_FOUND)
 
     try:
         connection = connect_from_settings_or_403(user_settings)
     except HTTPError as error:
-        if error.code == 403:
+        if error.code == httplib.FORBIDDEN:
             connection = None
         else:
             raise
@@ -308,7 +328,7 @@ def dataverse_delete_file(node_addon, auth, **kwargs):
 
     # Check if file was deleted
     if get_file_by_id(study, file_id) is not None:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(httplib.BAD_REQUEST)
 
     node.add_log(
         action='dataverse_file_removed',
@@ -350,17 +370,17 @@ def scrape_dataverse(file_id, name_only=False):
         parsed = BeautifulSoup(response.content)
         view_state = parsed.find(id='javax.faces.ViewState').attrs.get('value')
         data = {
-            'form1':'form1',
+            'form1': 'form1',
             'javax.faces.ViewState': view_state,
-            'form1:termsAccepted':'on',
-            'form1:termsButton':'Continue',
+            'form1:termsAccepted': 'on',
+            'form1:termsButton': 'Continue',
         }
         terms_url = 'http://{0}/dvn/faces/study/TermsOfUsePage.xhtml'.format(HOST)
         session.post(terms_url, data=data)
         response = session.head(url) if name_only else session.get(url)
 
     if 'content-disposition' not in response.headers.keys():
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(httplib.NOT_FOUND)
 
     filename = response.headers['content-disposition'].split('"')[1]
 
@@ -373,7 +393,7 @@ def fail_if_unauthorized(node_addon, auth, file_id):
     user_settings = node_addon.user_settings
 
     if file_id is None:
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(httplib.NOT_FOUND)
 
     try:
         connection = connect_from_settings_or_403(user_settings)
@@ -389,9 +409,9 @@ def fail_if_unauthorized(node_addon, auth, file_id):
     all_file_ids = [f.id for f in get_files(study)] + released_file_ids
 
     if file_id not in all_file_ids:
-        raise HTTPError(http.FORBIDDEN)
+        raise HTTPError(httplib.FORBIDDEN)
     elif not node.can_edit(auth) and file_id not in released_file_ids:
-        raise HTTPError(http.UNAUTHORIZED)
+        raise HTTPError(httplib.UNAUTHORIZED)
 
 
 def fail_if_private(file_id):
@@ -399,14 +419,14 @@ def fail_if_private(file_id):
     url = 'http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, file_id)
     resp = requests.head(url)
 
-    if resp.status_code == 403:
+    if resp.status_code == httplib.FORBIDDEN:
         raise HTTPError(
-            http.FORBIDDEN,
+            httplib.FORBIDDEN,
             data={
                 'message_short': 'Cannot access file contents',
                 'message_long':
                     'The dataverse does not allow users to download files on ' +
                     'private studies at this time. Please contact the owner ' +
                     'of this Dataverse study for access to this file.',
-              }
+            }
         )

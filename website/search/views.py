@@ -1,110 +1,163 @@
 # -*- coding: utf-8 -*-
-
 import time
-import bleach
 import logging
-from urllib2 import HTTPError
+import functools
+import httplib as http
+
+import bleach
 
 from flask import request
+
 from modularodm import Q
 
-from framework import status
-from framework.auth.core import get_current_user
+from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
 
+from website.models import Node
+from website.models import User
+from website.search import exceptions
 import website.search.search as search
-from website.models import User, Node
+from framework.exceptions import HTTPError
+from website.search.util import build_query
 from website.project.views.contributor import get_node_contributors_abbrev
-
 
 logger = logging.getLogger(__name__)
 
 
-def search_search():
+def handle_search_errors(func):
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except exceptions.MalformedQueryError:
+            raise HTTPError(http.BAD_REQUEST, data={
+                'message_short': 'Bad search query',
+                'message_long': ('Please check our help (the question mark beside the search box) for more information '
+                                 'on advanced search queries.'),
+            })
+        except exceptions.SearchUnavailableError:
+            raise HTTPError(http.SERVICE_UNAVAILABLE, data={
+                'message_short': 'Search unavailable',
+                'message_long': ('Our search service is currently unavailable, if the issue persists, '
+                'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.'),
+            })
+    return wrapped
+
+
+@handle_search_errors
+def search_search(**kwargs):
+    _type = kwargs.get('type', None)
+
     tick = time.time()
-    ERROR_RETURN = {
-        'results': [],
-        'tags': [],
-        'query': '',
-    }
-    # search results are automatically paginated. on the pages that are
-    # not the first page, we pass the page number along with the url
-    start = request.args.get('pagination', 0)
-    try:
-        start = int(start)
-    except (TypeError, ValueError):
-        logger.error(u'Invalid pagination value: {0}'.format(start))
-        start = 0
-    query = request.args.get('q')
-    # if there is not a query, tell our users to enter a search
-    query = bleach.clean(query, tags=[], strip=True)
-    if query == '':
-        status.push_status_message('No search query', 'info')
-        return ERROR_RETURN
+    results = {}
 
-    # if the search does not work,
-    # post an error message to the user, otherwise,
-    # the document, highlight,
-    # and spellcheck suggestions are returned to us
-    try:
-        results_search, tags, counts = search.search(query, start)
-    except HTTPError:
-        status.push_status_message('Malformed query. Please try again')
-        return ERROR_RETURN
-    except TypeError:
-        status.push_status_message('There was a problem querying the search database. Please try again later.')
-        return ERROR_RETURN
+    if request.method == 'POST':
+        results = search.search(request.get_json(), doc_type=_type)
+    elif request.method == 'GET':
+        q = request.args.get('q', '*')
+        # TODO Match javascript params?
+        start = request.args.get('from', '0')
+        size = request.args.get('size', '10')
+        results = search.search(build_query(q, start, size), doc_type=_type)
 
-    # with our highlights and search result 'documents' we build the search
-    # results so that it is easier for us to display
-    # Whether or not the user is searching for users
-    searching_users = query.startswith("user:")
-    total = counts if not isinstance(counts, dict) else counts['total']
-    return {
-        'highlight': [],
-        'results': results_search,
-        'total': total,
-        'query': query,
-        'spellcheck': [],
-        'current_page': start,
-        'time': round(time.time() - tick, 2),
-        'tags': tags,
-        'searching_users': searching_users,
-        'counts': counts
-    }
+    results['time'] = round(time.time() - tick, 2)
+    return results
+
+
+def conditionally_add_query_item(query, item, condition):
+    """ Helper for the search_projects_by_title function which will add a condition to a query
+    It will give an error if the proper search term is not used.
+    :param query: The modular ODM query that you want to modify
+    :param item:  the field to query on
+    :param condition: yes, no, or either
+    :return: the modified query
+    """
+
+    condition = condition.lower()
+
+    if condition == "yes":
+        return query & Q(item, 'eq', True)
+    elif condition == "no":
+        return query & Q(item, 'eq', False)
+    elif condition == "either":
+        return query
+
+    raise HTTPError(http.BAD_REQUEST)
 
 
 @must_be_logged_in
 def search_projects_by_title(**kwargs):
-    # TODO(fabianvf): At some point, it would be nice to do this with elastic search
+    """ Search for nodes by title. Can pass in arguments from the URL to modify the search
+    :arg term: The substring of the title.
+    :arg category: Category of the node.
+    :arg isDeleted: yes, no, or either. Either will not add a qualifier for that argument in the search.
+    :arg isFolder: yes, no, or either. Either will not add a qualifier for that argument in the search.
+    :arg isRegistration: yes, no, or either. Either will not add a qualifier for that argument in the search.
+    :arg includePublic: yes or no. Whether the projects listed should include public projects.
+    :arg includeContributed: yes or no. Whether the search should include projects the current user has
+        contributed to.
+    :arg ignoreNode: a list of nodes that should not be included in the search.
+    :return: a list of dictionaries of projects
 
-    term = request.args.get('term')
+    """
+    # TODO(fabianvf): At some point, it would be nice to do this with elastic search
     user = kwargs['auth'].user
 
-    max_results = 10
+    term = request.args.get('term', '')
+    max_results = int(request.args.get('maxResults', '10'))
+    category = request.args.get('category', 'project').lower()
+    is_deleted = request.args.get('isDeleted', 'no').lower()
+    is_folder = request.args.get('isFolder', 'no').lower()
+    is_registration = request.args.get('isRegistration', 'no').lower()
+    include_public = request.args.get('includePublic', 'yes').lower()
+    include_contributed = request.args.get('includeContributed', 'yes').lower()
+    ignore_nodes = request.args.getlist('ignoreNode', [])
 
     matching_title = (
         Q('title', 'icontains', term) &  # search term (case insensitive)
-        Q('category', 'eq', 'project') &  # is a project
-        Q('is_deleted', 'eq', False)  # isn't deleted
+        Q('category', 'eq', category)  # is a project
     )
 
-    my_projects = Node.find(
-        matching_title &
-        Q('contributors', 'contains', user._id)  # user is a contributor
-    ).limit(max_results)
+    matching_title = conditionally_add_query_item(matching_title, 'is_deleted', is_deleted)
+    matching_title = conditionally_add_query_item(matching_title, 'is_folder', is_folder)
+    matching_title = conditionally_add_query_item(matching_title, 'is_registration', is_registration)
 
-    if my_projects.count() < max_results:
+    if len(ignore_nodes) > 0:
+        for node_id in ignore_nodes:
+            matching_title = matching_title & Q('_id', 'ne', node_id)
+
+    my_projects = []
+    my_project_count = 0
+    public_projects = []
+
+    if include_contributed == "yes":
+        my_projects = Node.find(
+            matching_title &
+            Q('contributors', 'contains', user._id)  # user is a contributor
+        ).limit(max_results)
+        my_project_count = my_project_count
+
+    if my_project_count < max_results and include_public == "yes":
         public_projects = Node.find(
             matching_title &
             Q('is_public', 'eq', True)  # is public
-        ).limit(max_results - my_projects.count())
-    else:
-        public_projects = []
+        ).limit(max_results - my_project_count)
 
     results = list(my_projects) + list(public_projects)
+    ret = process_project_search_results(results, **kwargs)
+    return ret
 
-    out = []
+
+@must_be_logged_in
+def process_project_search_results(results, **kwargs):
+    """
+    :param results: list of projects from the modular ODM search
+    :return: we return the entire search result, which is a list of
+    dictionaries. This includes the list of contributors.
+    """
+    user = kwargs['auth'].user
+
+    ret = []
 
     for project in results:
         authors = get_node_contributors_abbrev(project=project, auth=kwargs['auth'])
@@ -114,10 +167,8 @@ def search_projects_by_title(**kwargs):
             authors_html += '<a href="%s">%s</a>' % (a.url, a.fullname)
             authors_html += author['separator'] + ' '
         authors_html += ' ' + authors['others_count']
-        if authors['others_count']:
-            authors_html += ' other' + authors['others_suffix']
 
-        out.append({
+        ret.append({
             'id': project._id,
             'label': project.title,
             'value': project.title,
@@ -125,11 +176,49 @@ def search_projects_by_title(**kwargs):
             'authors': authors_html,
         })
 
-    return out
+    return ret
 
 
-def search_contributor():
+@collect_auth
+def search_contributor(auth):
+    user = auth.user if auth else None
     nid = request.args.get('excludeNode')
-    exclude = Node.load(nid).contributors if nid else list()
+    exclude = Node.load(nid).contributors if nid else []
     query = bleach.clean(request.args.get('query', ''), tags=[], strip=True)
-    return search.search_contributor(query, exclude, get_current_user())
+    page = int(bleach.clean(request.args.get('page', '0'), tags=[], strip=True))
+    size = int(bleach.clean(request.args.get('size', '5'), tags=[], strip=True))
+    return search.search_contributor(query=query, page=page, size=size,
+                                     exclude=exclude, current_user=user)
+
+
+def search_share():
+    tick = time.time()
+    results = {}
+
+    count = request.args.get('count') is not None
+    raw = request.args.get('raw') is not None
+
+    if request.method == 'POST':
+        query = request.get_json()
+    elif request.method == 'GET':
+        query = build_query(
+            request.args.get('q', '*'),
+            request.args.get('from'),
+            request.args.get('size'),
+            sort=request.args.get('sort')
+        )
+
+    if count:
+        results = search.count_share(query)
+    else:
+        results = search.search_share(query, raw)
+
+    results['time'] = round(time.time() - tick, 2)
+    return results
+
+
+def search_share_stats():
+    q = request.args.get('q')
+    query = build_query(q, 0, 0) if q else {}
+
+    return search.share_stats(query=query)

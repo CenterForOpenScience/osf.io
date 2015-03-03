@@ -2,30 +2,21 @@
 import mock
 from contextlib import contextmanager
 
-from webtest_plus import TestApp
-
 from modularodm import storage
 
-from framework.mongo import db, set_up_storage
+from framework.mongo import set_up_storage
 
-import website
 from website.addons.base.testing import AddonTestCase
 from website.addons.dropbox import MODELS
 
-app = website.app.init_app(
-    routes=True, set_backends=False, settings_module='website.settings'
-)
-
 
 def init_storage():
-    set_up_storage(MODELS, storage_class=storage.MongoStorage, db=db)
+    set_up_storage(MODELS, storage_class=storage.MongoStorage)
 
 
 class DropboxAddonTestCase(AddonTestCase):
-    ADDON_SHORT_NAME = 'dropbox'
 
-    def create_app(self):
-        return TestApp(app)
+    ADDON_SHORT_NAME = 'dropbox'
 
     def set_user_settings(self, settings):
         settings.access_token = '12345abc'
@@ -33,6 +24,7 @@ class DropboxAddonTestCase(AddonTestCase):
 
     def set_node_settings(self, settings):
         settings.folder = 'foo'
+
 
 mock_responses = {
     'put_file': {
@@ -103,7 +95,7 @@ mock_responses = {
         u'size': u'74 bytes',
         u'thumb_exists': False
     },
-    'revisions':  [{u'bytes': 0,
+    'revisions': [{u'bytes': 0,
         u'client_mtime': u'Wed, 31 Dec 1969 23:59:59 +0000',
         u'icon': u'page_white_picture',
         u'is_deleted': True,
@@ -157,6 +149,8 @@ class MockDropbox(object):
             each['path'] = path
         return ret
 
+    def account_info(self):
+        return {'display_name': 'Mr. Drop Box'}
 
 @contextmanager
 def patch_client(target, mock_client=None):

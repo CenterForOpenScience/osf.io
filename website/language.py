@@ -12,28 +12,23 @@
 
 # Status message shown at settings page on first login
 # (upon clicking primary email confirmation link)
-WELCOME_MESSAGE = '''
-Welcome to the OSF!
-Please update the following settings. If you need assistance
-in getting started, please visit the <a href="/getting-started/">Getting Started</a>
-page.
-'''
+WELCOME_MESSAGE = ('Welcome to the OSF! Please update the following settings. If you need assistance '
+                   'in getting started, please visit the <a href="/getting-started/">Getting Started</a> page.')
 
-REGISTRATION_SUCCESS = '''
-Registration successful. Please check {email} to confirm your email address.
-'''
+REGISTRATION_SUCCESS = '''Registration successful. Please check {email} to confirm your email address.'''
 
 # Shown if registration is turned off in website.settings
 REGISTRATION_UNAVAILABLE = 'Registration currently unavailable.'
 
-ALREADY_REGISTERED = '''
-The email <em>{email}</em> has already been registered.
-'''
+ALREADY_REGISTERED = '''The email <em>{email}</em> has already been registered.'''
 
 # Shown if user tries to login with an email that is not yet confirmed
-UNCONFIRMED = '''
-This login email has been registered but not confirmed. Please check your email (and spam
-folder). <a href="/resend/">Click here</a> to resend your confirmation email.
+UNCONFIRMED = ('This login email has been registered but not confirmed. Please check your email (and spam folder).'
+               ' <a href="/resend/">Click here</a> to resend your confirmation email.')
+
+# Shown if the user's account is disabled
+DISABLED = '''
+Log-in failed: Deactivated account.
 '''
 
 # Shown on incorrect password attempt
@@ -62,10 +57,9 @@ EMAIL_NOT_FOUND = '''
 
 # Shown after an unregistered user claims an account and is redirected to the
 # settings page
-CLAIMED_CONTRIBUTOR = '''
-<strong>Welcome to the OSF!</strong> Edit your display name below and then check your
-<a href="/dashboard/">dashboard</a> to see projects to which you have been added as a contributor by someone else.
-'''
+CLAIMED_CONTRIBUTOR = ('<strong>Welcome to the OSF!</strong> Edit your display name below and then check your '
+                       '<a href="/dashboard/">dashboard</a> to see projects to which you have been added as a '
+                       'contributor by someone else.')
 
 # Shown after user confirms new account email address and is redirected to the
 # settings page
@@ -85,7 +79,7 @@ LINK_EXPIRED = 'This confirmation link has expired. Please <a href="/login/">log
 BEFORE_REGISTER_HAS_POINTERS = (
     'This {category} contains links to other projects. Links will be copied '
     'into your registration, but the projects that they link to will not be '
-    'registered. If you wish to register the linked projects, you must fork'
+    'registered. If you wish to register the linked projects, you must fork '
     'them from the original project before registering.'
 )
 
@@ -151,7 +145,7 @@ content of that project."""
 TEMPLATED_FROM_PREFIX = "Templated from "
 
 # MFR Error handling
-ERROR_PREFIX = "Unable to render. <a href='{download_path}'>Download</a> file to view it."
+ERROR_PREFIX = "Unable to render. <a href='?action=download'>Download</a> file to view it."
 SUPPORT = "Contact support@osf.io for further assistance."
 
 # Custom Error Messages w/ support

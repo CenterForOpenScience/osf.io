@@ -1,121 +1,201 @@
 /**
- * A simple folder picker plugin built on HGrid.
- * Takes the same options as HGrid and additionally requires an
- * `onChooseFolder` option (the callback executed when a folder is selected).
- *
- * Usage:
- *
- *     $('#myPicker').folderpicker({
- *         data: // Array of HGrid-formatted data or URL to fetch data
- *         onPickFolder: function(evt, folder) {
- *             // do something with folder
- *         }
- *     });
- */
-;(function (global, factory) {
-    if (typeof define === 'function' && define.amd) {
-        define(['jquery', 'hgrid'], factory);
-    } else if (typeof $script === 'function') {
-        $script.ready(['hgrid'], function() {
-            global.FolderPicker = factory(jQuery, HGrid);
-            $script.done('folderPicker');
-        });
+* A simple folder picker plugin built on HGrid.
+* Takes the same options as HGrid and additionally requires an
+* `onChooseFolder` option (the callback executed when a folder is selected).
+*
+* Usage:
+*
+*     $('#myPicker').folderpicker({
+*         data: // Array of HGrid-formatted data or URL to fetch data
+*         onPickFolder: function(evt, folder) {
+*             // do something with folder
+*         }
+*     });
+*/
+'use strict';
+var $ = require('jquery');
+var m = require('mithril');
+var Treebeard = require('treebeard');
+
+
+function _treebeardToggleCheck (item) {
+    return item.data.addon !== 'figshare';
+}
+
+function _treebeardResolveToggle(item) {
+    if(item.data.addon === 'figshare') {
+        return '';
+    }
+
+    return item.open ?
+        m('i.icon-minus', ' '):
+        m('i.icon-plus', ' ');
+}
+
+// Returns custom icons for OSF
+function _treebeardResolveIcon(item) {
+    return item.open ?
+        m('i.icon-folder-open-alt', ' '):
+        m('i.icon-folder-close-alt', ' ');
+}
+
+var INPUT_NAME = '-folder-select';
+//THIS NEEDS TO BE FIXED SO THAT ON CLICK IT OPENS THE FOLDER.
+function _treebeardTitleColumn (item, col) {
+    return m('span', item.data.name);
+}
+
+/**
+    * Returns the folder select button for a single row.
+    */
+function _treebeardSelectView(item) {
+    var tb = this;  // jshint ignore: line
+    var setTempPicked = function () {
+        this._tempPicked = item.id;
+    };
+    var templateChecked = m('input', {
+        type:'radio',
+        checked : 'checked',
+        name: '#' + tb.options.divID + INPUT_NAME,
+        value:item.id
+    }, ' ');
+    var templateUnchecked = m('input',{
+        type: 'radio',
+        onclick : setTempPicked.bind(tb),
+        onchange: function(evt){
+            tb.options.onPickFolder(evt, item);
+        },
+        name: '#' + tb.options.divID + INPUT_NAME,
+    }, ' ');
+
+    if (tb._tempPicked) {
+        if (tb._tempPicked === item.id) {
+            return templateChecked;
+        }
+        return templateUnchecked;
+    }
+
+    if (item.data.path === tb.options.folderPath || (tb.options.folderArray && tb.options.folderArray[tb.options.folderArray.length - 1] === item.data.name)) {
+        return templateChecked;
+    }
+
+    return templateUnchecked;
+}
+
+function _treebeardColumnTitle() {
+    return [
+        {
+            title: 'Folders',
+            width : '75%',
+            sort : false
+        },
+        {
+            title : 'Select',
+            width : '25%',
+            sort : false
+        }
+    ];
+}
+
+function _treebeardResolveRows(item) {
+    // this = treebeard;
+    item.css = '';
+    return [
+        {
+            data : 'name',  // Data field name
+            folderIcons : true,
+            filter : false,
+            custom : _treebeardTitleColumn
+        },
+        {
+            sortInclude : false,
+            css : 'p-l-xs',
+            custom : _treebeardSelectView
+        }
+    ];
+}
+
+function _treebeardOnload () {
+    var tb = this;  // jshint ignore: line
+
+    tb.options.folderIndex = 0;
+    if (tb.options.folderPath) {
+        tb.options.folderArray = tb.options.folderPath.split('/');
+        if (tb.options.folderArray.length > 1) {
+            tb.options.folderArray.splice(0, 1);
+        }
     } else {
-        global.FolderPicker = factory(jQuery, global.HGrid);
-    }
-}(this, function($, HGrid){
-    'use strict';
-
-    // Extend the default HGrid name column
-    FolderPicker.Col = {};
-    FolderPicker.Col.Name = $.extend({}, HGrid.Col.Name);
-    // Column title
-    FolderPicker.Col.title = 'Folders';
-    // Name for the radio button inputs
-    var INPUT_NAME = '-folder-select';
-
-    /**
-     * Returns the folder select button for a single row.
-     */
-    function folderSelectView(row) {
-        // Build the parts of the radio button
-        var open = '<input type="radio" ';
-        var name = 'name="' + this.selector + INPUT_NAME + '" ';
-        var checked = row._fpChecked ? ' checked ' : ' ';
-        // Store the HGrid id as the value
-        var value = 'value="' + row.id + '" ';
-        var close = '/>';
-        // Join all the parts
-        return [open, name, checked, value, close].join('');
+        tb.options.folderArray = [''];
     }
 
-    // Custom selection button column.
-    FolderPicker.Col.SelectFolder = {
-        name: 'Select', folderView: folderSelectView, width: 10
-    };
-
-    // Upon clicking the name of folder, toggle its collapsed state
-    function onClickName(evt, row, grid) {
-        grid.toggleCollapse(row);
+    if (tb.treeData.children[0].data.addon !== 'figshare') {
+        tb.updateFolder(null, tb.treeData.children[0]);
     }
+    tb.options.folderPickerOnload();
+}
 
-    // Default HGrid options
-    var defaults = {
-        // Disable uploads
-        uploads: false, width: '100%', height: 300,
-        // Add listener that expands a folder upon clicking its name
-        listeners: [
-            {selector: '.' + HGrid.Html.nameClass, on: 'click',
-            callback: onClickName}
-        ],
-        // Optional selector for progress/loading bars
-        progBar: null,
-        init: function() {
-            $(this.options.progBar).hide();
+function _treebeardLazyLoadOnLoad(item) {
+    var tb = this;  // jshint ignore: line
+
+    for (var i = 0; i < item.children.length; i++) {
+        if (item.children[i].data.addon === 'figshare') {
+            return;
         }
-    };
-
-    function FolderPicker(selector, opts) {
-        var self = this;
-        self.selector = selector;
-        self.checkedRowId = null;
-        // Custom HGrid action to select a folder that uses the passed in
-        // "onChooseFolder" callback
-        if (!opts.onPickFolder) {
-            throw 'FolderPicker must have the "onPickFolder" option defined';
+        if (item.children[i].data.name === tb.options.folderArray[tb.options.folderIndex]) {
+            tb.updateFolder(null, item.children[i]);
+            tb.options.folderIndex++;
+            return;
         }
-        self.options = $.extend({}, defaults, opts);
-        // Scope problems arise with multiple grids when columns are defined in defaults
-        self.options.columns = [
-            FolderPicker.Col.Name,
-            {name: 'Select', folderView: folderSelectView, width: 10}
-        ];
-        // Start up the grid
-        self.grid = new HGrid(selector, self.options);
-        // Set up listener for folder selection
-        $(selector).on('change', 'input[name="' + self.selector + INPUT_NAME + '"]', function(evt) {
-            var id = $(this).val();
-            var row = self.grid.getByID(id);
-            // Store checked state of rows so that it doesn't uncheck when HGrid is redrawn
-            var oldRow = self.grid.getByID(self.checkedRowId);
-            if (oldRow) {
-                oldRow._fpChecked = false;
-            }
-            self.checkedRowId = row.id;
-            row._fpChecked = true;
-            self.options.onPickFolder.call(self, evt, row);
-        });
     }
+}
 
-    // Augment jQuery
-    $.fn.folderpicker = function(options) {
-        this.each(function() {
-            // HGrid must take an ID as a selector if using as a jQuery plugin
-            if (!this.id) { throw 'FolderPicker must have an ID if initializing with jQuery.'; }
-            var selector = '#' + this.id;
-            return new FolderPicker(selector, options);
-        });
-    };
-    // Export
-    return FolderPicker;
-}));
+// Default Treebeard options
+var defaults = {
+    columnTitles : _treebeardColumnTitle,
+    resolveRows : _treebeardResolveRows,
+    resolveIcon : _treebeardResolveIcon,
+    togglecheck : _treebeardToggleCheck,
+    resolveToggle : _treebeardResolveToggle,
+    ondataload : _treebeardOnload,
+    lazyLoadOnLoad : _treebeardLazyLoadOnLoad,
+    // Disable uploads
+    uploads: false,
+    showFilter : false,
+    resizeColumns : false,
+    rowHeight : 35
+};
+
+function FolderPicker(selector, opts) {
+    var self = this;
+    self.selector = selector;
+    self.checkedRowId = null;
+    // Custom Treebeard action to select a folder that uses the passed in
+    // "onChooseFolder" callback
+    if (!opts.onPickFolder) {
+        throw 'FolderPicker must have the "onPickFolder" option defined';
+    }
+    self.options = $.extend({}, defaults, opts);
+    self.options.divID = selector.substring(1);
+    self.options.initialFolderName = opts.initialFolderName;
+    self.options.folderPath = opts.initialFolderPath;
+    self.options.rootName = opts.rootName;
+
+    // Start up the grid
+    self.grid = new Treebeard(self.options).tbController;
+
+}
+
+// Augment jQuery
+$.fn.folderpicker = function(options) {
+    this.each(function() {
+        // Treebeard must take an ID as a selector if using as a jQuery plugin
+        if (!this.id) { throw 'FolderPicker must have an ID if initializing with jQuery.'; }
+        var selector = '#' + this.id;
+        return new FolderPicker(selector, options);
+    });
+};
+
+
+FolderPicker.selectView = _treebeardSelectView;
+
+module.exports = FolderPicker;

@@ -1,0 +1,17 @@
+{
+    "addons": [
+        "box",
+        "dataverse",
+        "dropbox",
+        "figshare",
+        "forward",
+        "github",
+        "mendeley",
+	"zotero",
+        "osfstorage",
+        "s3",
+        "twofactor",
+        "wiki",
+        "googledrive"
+    ]
+}

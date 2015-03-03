@@ -37,9 +37,7 @@
                                     <td>
                                         <a
                                                 class="btn btn-default contrib-button"
-                                                data-bind="click:$root.add"
-                                                rel="tooltip"
-                                                title="Add link"
+                                                data-bind="click:$root.add, tooltip: {title: 'Add link'}"
                                             >+</a>
                                     </td>
                                     <td data-bind="text:title"></td>
@@ -60,9 +58,7 @@
                                     <td>
                                         <a
                                                 class="btn btn-default contrib-button"
-                                                data-bind="click:$root.remove"
-                                                rel="tooltip"
-                                                title="Remove link"
+                                                data-bind="click:$root.remove, tooltip: {title: 'Remove link'}"
                                             >-</a>
                                     </td>
                                     <td data-bind="text:title"></td>
@@ -81,7 +77,7 @@
                 <a class="btn btn-default" data-dismiss="modal">Cancel</a>
 
                 <span data-bind="if:selection().length">
-                    <a class="btn btn-success" data-bind="click:submit">Submit</a>
+                    <a class="btn btn-success" data-bind="click:submit, css: {disabled: !submitEnabled() }">Submit</a>
                 </span>
 
             </div><!-- end modal-footer -->

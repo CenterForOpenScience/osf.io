@@ -7,19 +7,24 @@ import json
 from urllib2 import urlopen
 from re import search
 
-from werkzeug.utils import secure_filename
 from tempfile import TemporaryFile
 
 import requests
 from requests_oauthlib import OAuth1Session
+
+from framework.utils import secure_filename
+from website.util.sanitize import escape_html
+
 from . import settings as figshare_settings
 from utils import file_to_hgrid, article_to_hgrid
-from website.util.sanitize import deep_clean
 
+
+def _get_project_url(node_settings, project, *args):
+    return os.path.join(node_settings.api_url, 'projects', str(project), *args)
 
 class Figshare(object):
 
-    def __init__(self, client_token, client_secret, owner_token, owner_secret):
+    def __init__(self, client_token=None, client_secret=None, owner_token=None, owner_secret=None):
         # if no OAuth
         if owner_token is None:
             self.session = requests
@@ -73,7 +78,7 @@ class Figshare(object):
                 rv = getattr(req, output)
                 if callable(rv):
                     rv = rv()
-            return deep_clean(rv)
+            return escape_html(rv)
         else:
             self.last_error = req.status_code
             return False
@@ -101,9 +106,9 @@ class Figshare(object):
                 return req
             rv = getattr(req, output)
             if mapper:
-                return mapper(deep_clean(rv))
+                return mapper(escape_html(rv))
             elif callable(rv):
-                return deep_clean(rv())
+                return escape_html(rv())
             return rv
         else:
             self.handle_error(req)
@@ -132,18 +137,22 @@ class Figshare(object):
         return self._send(os.path.join(node_settings.api_url, 'projects'), data=data, method='post')
 
     def delete_project(self, node_settings, project):
-        return self._send(os.path.join(node_settings.api_url, 'projects', project), method='delete')
+        url = _get_project_url(node_settings, project)
+        return self._send(url, method='delete')
 
     def add_article_to_project(self, node_settings, project, article):
         data = json.dumps({"article_id": article})
-        return self._send(os.path.join(node_settings.api_url, 'projects', project, 'articles'), data=data, method='put')
+        url = _get_project_url(node_settings, project, 'articles')
+        return self._send(url, data=data, method='put')
 
     def remove_article_from_project(self, node_settings, project, article):
         data = json.dumps({"article_id": article})
-        return self._send(os.path.join(node_settings.api_url, 'projects', project, 'articles'), data=data, method='delete')
+        url = _get_project_url(node_settings, project, 'articles')
+        return self._send(url, data=data, method='delete')
 
     def get_project_collaborators(self, node_settings, project):
-        return self._send(os.path.join(node_settings.api_url, 'projects', project, 'collaborators'))
+        url = _get_project_url(node_settings, project, 'collaborators')
+        return self._send(url)
 
     # ARTICLE LEVEL API
     def articles(self, node_settings):
@@ -152,7 +161,7 @@ class Figshare(object):
         return articles
 
     def article_is_public(self, article):
-        res = requests.get(os.path.join(figshare_settings.API_URL,  'articles', str(article)))
+        res = requests.get(os.path.join(figshare_settings.API_URL, 'articles', str(article)))
         if res.status_code == 200:
             data = json.loads(res.content)
             if data['count'] == 0:
@@ -178,7 +187,7 @@ class Figshare(object):
             os.path.join(node_settings.api_url, 'articles'), method='post', data=body))
         if article['files']:
             for f in article['files']:
-                filename, filestream = create_temp_file(f)
+                filename, filestream = self.create_temp_file(f)
                 filedata = {
                     'filedata': (filename, filestream)
                 }
@@ -247,14 +256,6 @@ class Figshare(object):
         f.write(upload.read())
         f.seek(0)
         return filename, f
-
-    # TODO Fix ME
-    def has_crud(figshare_id, figshare_type):
-        res = self._send(
-            "http://api.figshare.com/v1/my_data/{0}s/{1}".format(figshare_type, figshare_id))
-        if not res:
-            return False
-        return True
 
     def categories(self):
         return self._send("http://api.figshare.com/v1/categories")

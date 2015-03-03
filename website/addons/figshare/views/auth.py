@@ -3,24 +3,25 @@
 import os
 import httplib as http
 
-from flask import request, redirect
+from flask import request
 
-from framework.auth import get_current_user
-from framework.auth.decorators import must_be_logged_in
+from framework.flask import redirect  # VOL-aware redirect
 from framework.exceptions import HTTPError
+from framework.auth.decorators import collect_auth
+from framework.auth.decorators import must_be_logged_in
 
 from website import models
-from website.project.decorators import must_have_permission
-from website.project.decorators import must_have_addon
 from website.util import web_url_for
+from website.project.decorators import must_have_addon
+from website.project.decorators import must_have_permission
+from framework.status import push_status_message
 
 from ..auth import oauth_start_url, oauth_get_token
 
 
 @must_be_logged_in
-def figshare_oauth_start(**kwargs):
-
-    user = get_current_user()
+def figshare_oauth_start(auth, **kwargs):
+    user = auth.user
 
     nid = kwargs.get('nid') or kwargs.get('pid')
     node = models.Node.load(nid) if nid else None
@@ -73,9 +74,10 @@ def figshare_oauth_delete_node(auth, node_addon, **kwargs):
     return {}
 
 
-def figshare_oauth_callback(**kwargs):
+@collect_auth
+def figshare_oauth_callback(auth, **kwargs):
 
-    user = get_current_user()
+    user = auth.user
 
     nid = kwargs.get('nid') or kwargs.get('pid')
     node = models.Node.load(nid) if nid else None
@@ -98,8 +100,12 @@ def figshare_oauth_callback(**kwargs):
         figshare_user.oauth_request_token_secret,
         verifier
     )
+    # Handle request cancellations from FigShare's API
     if not access_token or not access_token_secret:
-        return redirect('/settings/')
+        push_status_message('FigShare authorization request cancelled.')
+        if node:
+            return redirect(node.web_url_for('node_setting'))
+        return redirect(web_url_for('user_addons'))
 
     figshare_user.oauth_request_token = None
     figshare_user.oauth_request_token_secret = None

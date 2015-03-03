@@ -22,7 +22,7 @@
 
         <div>
             This project contains a forward to
-            <a data-bind="attr.href: url" target="_blank">{{ label }}</a>.
+            <a data-bind="attr.href: url" target="_blank">{{ linkDisplay }}</a>.
         </div>
 
         <div class="spaced-buttons">
@@ -32,11 +32,3 @@
     </div>
 
 </div>
-
-<script>
-    $script(['/static/addons/forward/forwardWidget.js']);
-    $script.ready('forwardWidget', function() {
-        var url = '${node['api_url'] + 'forward/config/'}';
-        var forward = new ForwardWidget('#forwardScope', url);
-    });
-</script>

@@ -52,17 +52,21 @@ def node_register_template_page(auth, **kwargs):
 
     template_name = kwargs['template'].replace(' ', '_')
     # Error to raise if template can't be found
-    not_found_error = HTTPError(http.NOT_FOUND, data=dict(
-                                message_short='Template not found.',
-                                message_long='The registration template you entered '
-                                                'in the URL is not valid.'))
+    not_found_error = HTTPError(
+        http.NOT_FOUND,
+        data=dict(
+            message_short='Template not found.',
+            message_long='The registration template you entered '
+                         'in the URL is not valid.'
+        )
+    )
 
     if node.is_registration and node.registered_meta:
         registered = True
         payload = node.registered_meta.get(to_mongo(template_name))
         payload = json.loads(payload)
         payload = unprocess_payload(payload)
-        payload = json.dumps(payload)
+
         if node.registered_schema:
             meta_schema = node.registered_schema
         else:
@@ -99,6 +103,7 @@ def node_register_template_page(auth, **kwargs):
         'schema_version': meta_schema.schema_version,
         'registered': registered,
         'payload': payload,
+        'children_ids': node.nodes._to_primary_keys(),
     }
     rv.update(_view_project(node, auth, primary=True))
     return rv
@@ -107,10 +112,9 @@ def node_register_template_page(auth, **kwargs):
 @must_be_valid_project  # returns project
 @must_have_permission(ADMIN)
 @must_not_be_registration
-def project_before_register(**kwargs):
-
+def project_before_register(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    user = kwargs['auth'].user
+    user = auth.user
 
     prompts = node.callback('before_register', user=user)
 
@@ -128,7 +132,6 @@ def project_before_register(**kwargs):
 @must_have_permission(ADMIN)
 @must_not_be_registration
 def node_register_template_page_post(auth, **kwargs):
-
     node = kwargs['node'] or kwargs['project']
     data = request.json
 

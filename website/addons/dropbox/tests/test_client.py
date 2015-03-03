@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from nose.tools import *  # PEP8 asserts
+from nose.tools import *  # noqa (PEP8 asserts)
 from dropbox.client import DropboxClient
 
 from tests.base import OsfTestCase

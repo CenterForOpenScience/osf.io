@@ -14,8 +14,10 @@ class TestDataverseFile(DataverseAddonTestCase):
     def test_dataverse_file_url(self):
 
         # Create some dataverse file
-        dvf = DataverseFile()
-        dvf.file_id = '12345'
+        dvf = DataverseFile(
+            node=self.project,
+            file_id='12345',
+        )
         dvf.save()
 
         # Assert url is correct
@@ -25,7 +27,7 @@ class TestDataverseFile(DataverseAddonTestCase):
 class TestDataverseUserSettings(DataverseAddonTestCase):
 
     def test_has_auth(self):
-        
+
         # Dataverse has no auth by default
         dataverse = AddonDataverseUserSettings()
         assert_false(dataverse.has_auth)
@@ -190,3 +192,12 @@ class TestNodeSettingsCallbacks(DataverseAddonTestCase):
         assert_true(self.node_settings.dataverse is None)
         assert_true(self.node_settings.study_hdl is None)
         assert_true(self.node_settings.study is None)
+
+    def test_does_not_get_copied_to_registrations(self):
+        registration = self.project.register_node(
+            schema=None,
+            auth=Auth(user=self.project.creator),
+            template='Template1',
+            data='hodor'
+        )
+        assert_false(registration.has_addon('dataverse'))

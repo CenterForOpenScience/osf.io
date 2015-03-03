@@ -1,27 +1,24 @@
-<nav class="navbar navbar-default">
-    <div class="container-fluid">
-        <ul class="nav navbar-nav">
+<%page expression_filter="h"/>
 
-            % if is_edit:
-                <li><a href="${node['url']}wiki/${pageName}">View</a></li>
-            % else:
-                % if user['can_edit']:
-                    <li><a href="${node['url']}wiki/${pageName}/edit">Edit</a></li>
-                % else:
-                    <li><a class="disabled">Edit</a></li>
-                % endif
-            %endif
-            % if version == 'NA':
-                <li><a class="disabled">History</a></li>
-            % else:
-                <li><a href="${node['url']}wiki/${pageName}/compare/1">History</a> </li>
-            % endif
+<nav class="wiki-nav">
+    <div class="navbar-collapse text-center">
+        <ul class="superlist nav navbar-nav" style="float: none">
             % if user['can_edit']:
-                    <li><a href="#" data-toggle="modal" data-target="#newWiki">New Page</a></li>
-                    <%include file="add_wiki_page.mako"/>
-                % else:
-                    <li><a class="disabled">New Page</a></li>
+            <li data-toggle="tooltip" title="New" data-placement="right" data-container="body">
+                <a id="openNewWiki" href="#" data-toggle="modal" data-target="#newWiki">
+                    <span class="wiki-nav-closed">
+                        <i class="icon-plus-sign"></i>
+                    </span> 
+                </a>
+            </li>
+                % if wiki_id and wiki_name != 'home':
+                <li data-toggle="tooltip" title="Delete" data-placement="right" data-container="body">
+                    <a href="#" data-toggle="modal" data-target="#deleteWiki">
+                    <span class="wiki-nav-closed"><i class="icon icon-trash text-danger"> </i></span>
+                    </a>
+                </li>
+                % endif
             % endif
         </ul>
-    </div><!-- end container-fluid -->
+    </div>
 </nav>

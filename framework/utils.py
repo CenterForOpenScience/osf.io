@@ -1,13 +1,30 @@
 from __future__ import absolute_import
+import re
 
-from email.utils import formatdate
-from calendar import timegm
+from werkzeug.utils import secure_filename as werkzeug_secure_filename
 
 
-def rfcformat(dt, localtime=False):
-    '''Return the RFC822-formatted represenation of a datetime object.
+def iso8601format(dt):
+    """Given a datetime object, return an associated ISO-8601 string"""
+    return dt.strftime('%Y-%m-%dT%H:%M:%SZ')
 
-    :param bool localtime: If ``True``, return the date relative to the local
-        timezone instead of UTC, properly taking daylight savings time into account.
-    '''
-    return formatdate(timegm(dt.utctimetuple()), localtime=localtime)
+
+def secure_filename(filename):
+    """Return a secure version of a filename.
+
+    Uses ``werkzeug.utils.secure_filename``, but explicitly allows for leading
+    underscores.
+
+    :param filename str: A filename to sanitize
+
+    :return: Secure version of filename
+    """
+    secure = werkzeug_secure_filename(filename)
+
+    # Check for leading underscores, and add them back in
+    try:
+        secure = re.search('^_+', filename).group() + secure
+    except AttributeError:
+        pass
+
+    return secure

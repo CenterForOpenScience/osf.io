@@ -1,5 +1,3 @@
-<script type="text/javascript" src="/static/addons/github/github-node-cfg.js"></script>
-
 <form role="form" id="addonSettings${addon_short_name.capitalize()}" data-addon="${addon_short_name}">
 
     <div>
@@ -11,7 +9,9 @@
                         <a href="${auth_osf_url}" target="_blank">
                             ${auth_osf_name}
                         </a>
-                    <a id="githubRemoveToken" class="text-danger pull-right addon-auth">Deauthorize</a>
+                    % if not is_registration:
+                        <a id="githubRemoveToken" class="text-danger pull-right addon-auth" >Deauthorize</a>
+                    % endif
                 % else:
                     % if user_has_auth:
                         <a id="githubImportToken" class="text-primary pull-right addon-auth">
@@ -73,8 +73,6 @@
 
 <%def name="on_submit()">
     <script type="text/javascript">
-        $(document).ready(function() {
-            $('#addonSettings${addon_short_name.capitalize()}').on('submit', AddonHelper.onSubmitSettings);
-        });
+        window.contextVars = $.extend({}, window.contextVars, {'githubSettingsSelector': '#addonSettings${addon_short_name.capitalize()}'});
     </script>
 </%def>

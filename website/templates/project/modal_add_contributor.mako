@@ -12,7 +12,7 @@
                 <div data-bind="if: page() == 'whom'">
 
                     <!-- Find contributors -->
-                    <form class='form'>
+                    <form class='form' data-bind="submit: startSearch">
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="input-group">
@@ -20,15 +20,23 @@
                                             data-bind="value:query"
                                             placeholder='Search by name' autofocus/>
                                     <span class="input-group-btn">
-                                        <button type='submit' class="btn btn-default" data-bind="click:search">Search</button>
+                                        <input type="submit" value="Search" class="btn btn-default">
                                     </span>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <!-- ko if:parentId -->
-                                    <a data-bind="click:importFromParent, html:'Import contributors from <i>' + parentTitle + '</i>'"></a>
-                                <!-- /ko -->
-                                <a data-bind="click:recentlyAdded, text:'Get list of recently added contributors'"></a>
+                        </div>
+                        <div class="row search-contributor-links">
+                            <div class="col-md-12">
+                                <div>
+                                    <!-- ko if:parentId -->
+                                        <a data-bind="click:importFromParent, html:'Import contributors from <i>' + parentTitle + '</i>'"></a>
+                                    <!-- /ko -->
+                                </div>
+                                <div>
+                                    Show my
+                                    <a data-bind="click:recentlyAdded">recent collaborators</a>,
+                                    <a data-bind="click:mostInCommon">most frequent collaborators</a>
+                                </div>
                             </div>
                         </div>
                     </form>
@@ -44,33 +52,26 @@
                                 <a data-bind="click:addAll">Add all</a>
                             </div>
                             <!-- ko if: notification -->
-                            <div data-bind="text: notification().message, css: 'alert alert-' + notification().level"></div>
+                            <div data-bind="html: notification().message, css: 'alert alert-' + notification().level"></div>
                             <!-- /ko -->
-                            <!-- start making changes -->
 
                             <table>
                                 <thead data-bind="visible: foundResults">
-                                    <th></th>
-                                    <th></th>
-                                    <th>
-                                        Name
-                                    </th>
                                 </thead>
                                 <tbody data-bind="foreach:{data:results, as: 'contributor', afterRender:addTips}">
                                     <tr data-bind="if:!($root.selected($data))">
                                         <td style="padding-right: 10px;">
                                             <a
                                                     class="btn btn-default contrib-button btn-mini"
-                                                    data-bind="click:$root.add"
-                                                    rel="tooltip"
-                                                    title="Add contributor"
+                                                    data-bind="click:$root.add, tooltip: {title: 'Add contributor'}"
                                                 >+</a>
                                         </td>
                                         <td>
-                                            <img data-bind="attr: {src: contributor.gravatar_url}" />
+                                            <!-- height and width are explicitly specified for faster rendering -->
+                                            <img data-bind="attr: {src: contributor.gravatar_url}" height=40 width=40 />
                                         </td>
                                         <td >
-                                            <a data-bind = "attr: {href: contributor.profile_url}" >
+                                            <a data-bind = "attr: {href: contributor.profile_url}" target="_blank">
                                                 <span data-bind= "text:contributor.fullname"></span>
                                             </a><br>
 
@@ -108,8 +109,12 @@
                             <!-- Link to add non-registered contributor -->
                             <div class='help-block'>
                                 <div data-bind='if: foundResults'>
-                                    If the person you are looking for is not listed above, try a more specific search or <strong><a href="#"
-                                    data-bind="click:gotoInvite">add <em>{{query}}</em> as an unregistered contributor</a>.</strong>
+                                    <ul class="pagination pagination-sm" data-bind="foreach: paginators">
+                                        <li data-bind="css: style"><a href="#" data-bind="click: handler, html: text"></a></li>
+                                    </ul>
+                                    <p><strong>
+                                        <a href="#"data-bind="click:gotoInvite">Add <em>{{query}}</em> as an unregistered contributor</a>.
+                                    </strong></p>
                                 </div>
                                 <div data-bind="if: noResults">
                                     No results found. Try a more specific search or <strong><a href="#"
@@ -145,9 +150,7 @@
                                         <td style="padding-right: 10px;">
                                             <a
                                                     class="btn btn-default contrib-button btn-mini"
-                                                    data-bind="click:$root.remove"
-                                                    rel="tooltip"
-                                                    title="Remove contributor"
+                                                    data-bind="click:$root.remove, tooltip: {title: 'Remove contributor'}"
                                                 >-</a>
                                         </td>
                                         <td>

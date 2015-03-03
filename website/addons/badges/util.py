@@ -5,7 +5,7 @@ import urllib2
 from PIL import Image
 from collections import defaultdict
 
-from website.addons.badges.settings import *
+from website.addons.badges.settings import *  # noqa
 
 
 #TODO: Possible security errors

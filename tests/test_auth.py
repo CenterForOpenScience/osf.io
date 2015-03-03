@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import unittest
-from nose.tools import *  # PEP8 asserts
+from nose.tools import *  # noqa; PEP8 asserts
 from webtest_plus import TestApp
 import mock
 import datetime
@@ -16,12 +16,13 @@ from framework.exceptions import HTTPError
 from tests.base import OsfTestCase, assert_is_redirect
 from tests.factories import (
     UserFactory, UnregUserFactory, AuthFactory,
-    ProjectFactory, AuthUserFactory, PrivateLinkFactory
+    ProjectFactory, NodeFactory, AuthUserFactory, PrivateLinkFactory
 )
 
 from framework.auth import User, Auth
 from framework.auth.decorators import must_be_logged_in
 
+from website.util import web_url_for
 from website.project.decorators import (
     must_have_permission, must_be_contributor,
     must_have_addon, must_be_addon_authorizer,
@@ -31,7 +32,6 @@ from website.project.decorators import (
 class TestAuthUtils(OsfTestCase):
 
     def test_register(self):
-        super(TestAuthUtils, self).setUp()
         auth.register('rosie@franklin.com', 'gattaca', fullname="Rosie Franklin")
         user = User.find_one(Q('username', 'eq', 'rosie@franklin.com'))
         # The password should be set
@@ -53,7 +53,7 @@ class TestAuthUtils(OsfTestCase):
 
     def test_get_user_by_id(self):
         user = UserFactory()
-        assert_equal(auth.get_user(id=user._id), user)
+        assert_equal(User.load(user._id), user)
 
     def test_get_user_by_username(self):
         user = UserFactory()
@@ -86,6 +86,16 @@ class TestAuthUtils(OsfTestCase):
             # password is correct, but user is unregistered
             auth.login(user.username, 'killerqueen')
 
+    def test_login_disabled_user(self):
+        """Logging in to a disabled account fails"""
+        user = UserFactory()
+        user.set_password('Leeloo')
+        user.is_disabled = True
+        user.save()
+
+        with assert_raises(auth.LoginDisabledError):
+            auth.login(user.username, 'Leeloo')
+
     def test_login_with_incorrect_password_returns_false(self):
         user = UserFactory.build()
         user.set_password('rhapsody')
@@ -102,7 +112,6 @@ class TestAuthObject(OsfTestCase):
         assert_in(str(auth.user), rep)
 
     def test_factory(self):
-        super(TestAuthObject, self).setUp()
         auth_obj = AuthFactory()
         assert_true(isinstance(auth_obj.user, auth.User))
         assert_true(auth_obj.api_key)
@@ -143,10 +152,8 @@ class TestPrivateLink(OsfTestCase):
         self.link.nodes.append(self.project)
         self.link.save()
 
-    @mock.patch('website.project.decorators.get_api_key')
     @mock.patch('website.project.decorators.Auth.from_kwargs')
-    def test_has_private_link_key(self, mock_from_kwargs, mock_get_api_key):
-        mock_get_api_key.return_value = 'foobar123'
+    def test_has_private_link_key(self, mock_from_kwargs):
         mock_from_kwargs.return_value = Auth(user=None)
         res = self.app.get('/project/{0}'.format(self.project._primary_key),
             {'view_only': self.link.key})
@@ -154,10 +161,8 @@ class TestPrivateLink(OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.body, 'success')
 
-    @mock.patch('website.project.decorators.get_api_key')
     @mock.patch('website.project.decorators.Auth.from_kwargs')
-    def test_does_not_have_key(self, mock_from_kwargs, mock_get_api_key):
-        mock_get_api_key.return_value = 'foobar123'
+    def test_does_not_have_key(self, mock_from_kwargs):
         mock_from_kwargs.return_value = Auth(user=None)
         res = self.app.get('/project/{0}'.format(self.project._primary_key),
             {'key': None})
@@ -220,6 +225,29 @@ class TestMustBeContributorDecorator(AuthAppTestCase):
         assert_is_redirect(res)
         redirect_url = res.headers['Location']
         assert_equal(redirect_url, '/login/?next=/')
+
+    def test_must_be_contributor_parent_admin(self):
+        user = UserFactory()
+        node = NodeFactory(project=self.project, creator=user)
+        res = view_that_needs_contributor(
+            pid=self.project._id,
+            nid=node._id,
+            user=self.project.creator,
+        )
+        assert_equal(res, self.project)
+
+    def test_must_be_contributor_parent_write(self):
+        user = UserFactory()
+        node = NodeFactory(project=self.project, creator=user)
+        self.project.set_permissions(self.project.creator, ['read', 'write'])
+        self.project.save()
+        with assert_raises(HTTPError) as exc_info:
+            view_that_needs_contributor(
+                pid=self.project._id,
+                nid=node._id,
+                user=self.project.creator,
+            )
+        assert_equal(exc_info.exception.code, 403)
 
 
 @must_be_logged_in
@@ -298,21 +326,23 @@ class TestMustHaveAddonDecorator(AuthAppTestCase):
     @mock.patch('website.project.decorators._kwargs_to_nodes')
     def test_must_have_addon_node_false(self, mock_kwargs_to_nodes):
         mock_kwargs_to_nodes.return_value = (self.project, None)
+        self.project.delete_addon('github', auth=None)
         decorated = must_have_addon('github', 'node')(needs_addon_view)
         with assert_raises(HTTPError):
             decorated()
 
-    @mock.patch('website.project.decorators.get_current_user')
+    @mock.patch('framework.auth.decorators.Auth.from_kwargs')
     def test_must_have_addon_user_true(self, mock_current_user):
-        mock_current_user.return_value = self.project.creator
+        mock_current_user.return_value = Auth(self.project.creator)
         self.project.creator.add_addon('github')
         decorated = must_have_addon('github', 'user')(needs_addon_view)
         res = decorated()
         assert_equal(res, 'openaddon')
 
-    @mock.patch('website.project.decorators.get_current_user')
+    @mock.patch('framework.auth.decorators.Auth.from_kwargs')
     def test_must_have_addon_user_false(self, mock_current_user):
-        mock_current_user.return_value = self.project.creator
+        mock_current_user.return_value = Auth(self.project.creator)
+        self.project.creator.delete_addon('github')
         decorated = must_have_addon('github', 'user')(needs_addon_view)
         with assert_raises(HTTPError):
             decorated()
@@ -326,11 +356,11 @@ class TestMustBeAddonAuthorizerDecorator(AuthAppTestCase):
         self.decorated = must_be_addon_authorizer('github')(needs_addon_view)
 
     @mock.patch('website.project.decorators._kwargs_to_nodes')
-    @mock.patch('website.project.decorators.get_current_user')
+    @mock.patch('framework.auth.decorators.Auth.from_kwargs')
     def test_must_be_authorizer_true(self, mock_get_current_user, mock_kwargs_to_nodes):
 
         # Mock
-        mock_get_current_user.return_value = self.project.creator
+        mock_get_current_user.return_value = Auth(self.project.creator)
         mock_kwargs_to_nodes.return_value = (self.project, None)
 
         # Setup
@@ -366,6 +396,13 @@ class TestMustBeAddonAuthorizerDecorator(AuthAppTestCase):
     def test_must_be_authorizer_no_node_settings(self):
         with assert_raises(HTTPError):
             self.decorated()
+
+class TestBasicAuth(OsfTestCase):
+
+    def test_basic_auth_returns_403(self):
+        url = web_url_for('dashboard')
+        ret = self.app.get(url, auth=('test', 'test'), expect_errors=True)
+        assert_equal(ret.status_code, 403)
 
 
 if __name__ == '__main__':

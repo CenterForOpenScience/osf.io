@@ -23,15 +23,14 @@ def activity():
             x for x in client.custom_variables if x.label == 'Project ID'
         ][0].values
 
-
         for nid in popular_project_ids:
             node = Node.load(nid.value)
             if node is None:
                 continue
-            if node.is_public and not node.is_registration:
+            if node.is_public and not node.is_registration and not node.is_deleted:
                 if len(popular_public_projects) < 10:
                     popular_public_projects.append(node)
-            elif node.is_public and node.is_registration:
+            elif node.is_public and node.is_registration and not node.is_deleted:
                 if len(popular_public_registrations) < 10:
                     popular_public_registrations.append(node)
             if len(popular_public_projects) >= 10 and len(popular_public_registrations) >= 10:
@@ -68,7 +67,7 @@ def activity():
         recent_query &
         Q('is_registration', 'eq', True)
     ).sort(
-        '-date_created'
+        '-registered_date'
     ).limit(10)
 
     return {

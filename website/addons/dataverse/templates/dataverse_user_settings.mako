@@ -7,8 +7,8 @@
         <span data-bind="if: showDeleteAuth">
             <small class="authorized-by">
                 authorized by {{ dataverseUsername }}
-                    <a data-bind="click: deleteKey"
-                       class="text-danger pull-right addon-auth">Delete Credentials</a>
+                    <a data-bind="click: deleteKey" class="text-danger pull-right addon-auth">Delete Credentials</a>
+
             </small>
         </span>
     </h4>
@@ -36,15 +36,5 @@
         <p data-bind="html: message, attr: {class: messageClass}"></p>
     </div>
 </div>
-
-
-<script>
-    $script(['/static/addons/dataverse/dataverseUserConfig.js'], function() {
-        // Endpoint for Dataverse user settings
-        var url = '/api/v1/settings/dataverse/';
-        // Start up the DataverseConfig manager
-        var dataverse = new DataverseUserConfig('#dataverseAddonScope', url);
-    });
-</script>
 
 <%include file="profile/addon_permissions.mako" />

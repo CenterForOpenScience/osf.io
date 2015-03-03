@@ -22,11 +22,7 @@ CONFIGS = ['user', 'node']
 
 CATEGORIES = ['storage']
 
-INCLUDE_JS = {
-    'widget': [],
-    'page': [],
-    'files': ['s3-rubeus-cfg.js']
-}
+INCLUDE_JS = {}
 
 INCLUDE_CSS = {
     'widget': [],

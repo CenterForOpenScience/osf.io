@@ -6,13 +6,14 @@ from website import settings
 
 
 def get_projects(user):
-    '''Return a list of user's projects, excluding registrations.'''
+    '''Return a list of user's projects, excluding registrations and folders.'''
     return [
         node
         for node in user.node__contributed
         if node.category == 'project'
         and not node.is_registration
         and not node.is_deleted
+        and not node.is_folder
     ]
 
 
@@ -21,32 +22,48 @@ def get_public_projects(user):
     return [p for p in get_projects(user) if p.is_public]
 
 
-def serialize_user(user, node=None, full=False):
+def get_gravatar(user, size=None):
+    if size is None:
+        size = settings.GRAVATAR_SIZE_PROFILE
+    return gravatar(
+        user, use_ssl=True,
+        size=size
+    )
+
+
+def serialize_user(user, node=None, admin=False, full=False):
     """Return a dictionary representation of a registered user.
 
     :param User user: A User object
     :param bool full: Include complete user properties
-
     """
-
-    rv = {
+    fullname = user.display_full_name(node=node)
+    ret = {
         'id': str(user._primary_key),
         'registered': user.is_registered,
         'surname': user.family_name,
-        'fullname': user.display_full_name(node=node),
+        'fullname': fullname,
+        'shortname': fullname if len(fullname) < 50 else fullname[:23] + "..." + fullname[-23:],
         'gravatar_url': gravatar(
             user, use_ssl=True,
             size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
         ),
-        'active': user.is_active(),
+        'active': user.is_active,
     }
     if node is not None:
-        rv.update({
-            'visible': user in node.visible_contributors,
-            'permission': reduce_permissions(node.get_permissions(user)),
-        })
+        if admin:
+            flags = {
+                'visible': False,
+                'permission': 'read',
+            }
+        else:
+            flags = {
+                'visible': user._id in node.visible_contributor_ids,
+                'permission': reduce_permissions(node.get_permissions(user)),
+            }
+        ret.update(flags)
     if user.is_registered:
-        rv.update({
+        ret.update({
             'url': user.url,
             'absolute_url': user.absolute_url,
             'display_absolute_url': user.display_absolute_url,
@@ -63,25 +80,24 @@ def serialize_user(user, node=None, full=False):
             }
         else:
             merged_by = None
-        rv.update({
+        ret.update({
             'number_projects': len(get_projects(user)),
             'number_public_projects': len(get_public_projects(user)),
-            'activity_points': user.activity_points,
+            'activity_points': user.get_activity_points(),
             'gravatar_url': gravatar(
-            user, use_ssl=True,
-            size=settings.GRAVATAR_SIZE_PROFILE
-        ),
+                user, use_ssl=True,
+                size=settings.GRAVATAR_SIZE_PROFILE
+            ),
             'is_merged': user.is_merged,
             'merged_by': merged_by,
         })
 
-    return rv
+    return ret
 
 
-def serialize_contributors(contribs, node):
-
+def serialize_contributors(contribs, node, **kwargs):
     return [
-        serialize_user(contrib, node)
+        serialize_user(contrib, node, **kwargs)
         for contrib in contribs
     ]
 
@@ -111,7 +127,7 @@ def add_contributor_json(user, current_user=None):
         'education': education,
         'n_projects_in_common': n_projects_in_common,
         'registered': user.is_registered,
-        'active': user.is_active(),
+        'active': user.is_active,
         'gravatar_url': gravatar(
             user, use_ssl=True,
             size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR

@@ -4,34 +4,37 @@ import httplib as http
 
 from flask import request
 from modularodm import Q
-from modularodm.exceptions import ModularOdmException
+from modularodm.exceptions import ModularOdmException, ValidationValueError
 
 from framework import status
+from framework.utils import iso8601format
 from framework.mongo import StoredObject
 from framework.auth.decorators import must_be_logged_in, collect_auth
-from framework.auth.utils import privacy_info_handle
-from framework.exceptions import HTTPError
-from framework.forms.utils import sanitize
+from framework.exceptions import HTTPError, PermissionsError
 from framework.mongo.utils import from_mongo
 
 from website import language
 
+from website.util import paths
+from website.util import rubeus
 from website.exceptions import NodeStateError
 from website.project import clean_template_name, new_node, new_private_link
 from website.project.decorators import (
     must_be_contributor_or_public,
+    must_be_contributor,
     must_be_valid_project,
     must_have_permission,
     must_not_be_registration,
 )
-from website.project.model import has_anonymous_link
+from website.util.rubeus import collect_addon_js
+from website.project.model import has_anonymous_link, get_pointer_parent
 from website.project.forms import NewNodeForm
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
-from website.views import _render_nodes
+from website.views import _render_nodes, find_dashboard
 from website.profile import utils
-
-from .log import _get_logs
+from website.project import new_folder
+from website.util.sanitize import strip_html
 
 logger = logging.getLogger(__name__)
 
@@ -43,9 +46,15 @@ def edit_node(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     post_data = request.json
     edited_field = post_data.get('name')
-    value = sanitize(post_data.get('value', ''))
+    value = strip_html(post_data.get('value', ''))
     if edited_field == 'title':
-        node.set_title(value, auth=auth)
+        try:
+            node.set_title(value, auth=auth)
+        except ValidationValueError:
+            raise HTTPError(
+                http.BAD_REQUEST,
+                data=dict(message_long='Title cannot be blank.')
+            )
     elif edited_field == 'description':
         node.set_description(value, auth=auth)
     node.save()
@@ -66,9 +75,10 @@ def project_new(**kwargs):
 def project_new_post(auth, **kwargs):
     user = auth.user
 
-    title = request.json.get('title')
+    title = strip_html(request.json.get('title'))
     template = request.json.get('template')
-    description = request.json.get('description')
+    description = strip_html(request.json.get('description'))
+    title = title.strip()
 
     if not title or len(title) > 200:
         raise HTTPError(http.BAD_REQUEST)
@@ -106,6 +116,63 @@ def project_new_from_template(**kwargs):
     )
     return {'url': new_node.url}, http.CREATED, None
 
+##############################################################################
+# New Folder
+##############################################################################
+
+
+@must_be_logged_in
+def folder_new(**kwargs):
+    node_id = kwargs['nid']
+    return_value = {}
+    if node_id is not None:
+        return_value = {'node_id': node_id}
+    return return_value
+
+
+@must_be_logged_in
+def folder_new_post(auth, nid, **kwargs):
+    user = auth.user
+
+    title = request.json.get('title')
+
+    if not title or len(title) > 200:
+        raise HTTPError(http.BAD_REQUEST)
+
+    node = Node.load(nid)
+    if node.is_deleted or node.is_registration or not node.is_folder:
+        raise HTTPError(http.BAD_REQUEST)
+    folder = new_folder(strip_html(title), user)
+    folders = [folder]
+    try:
+        _add_pointers(node, folders, auth)
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST)
+
+    return {
+        'projectUrl': '/dashboard/',
+    }, http.CREATED
+
+
+@collect_auth
+def add_folder(**kwargs):
+    auth = kwargs['auth']
+    user = auth.user
+    title = strip_html(request.json.get('title'))
+    node_id = request.json.get('node_id')
+    node = Node.load(node_id)
+    if node.is_deleted or node.is_registration or not node.is_folder:
+        raise HTTPError(http.BAD_REQUEST)
+
+    folder = new_folder(
+        title, user
+    )
+    folders = [folder]
+    try:
+        _add_pointers(node, folders, auth)
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST)
+    return {}, 201, None
 
 ##############################################################################
 # New Node
@@ -121,7 +188,7 @@ def project_new_node(**kwargs):
     user = kwargs['auth'].user
     if form.validate():
         node = new_node(
-            title=form.title.data,
+            title=strip_html(form.title.data),
             user=user,
             category=form.category.data,
             project=project,
@@ -160,6 +227,21 @@ def project_before_fork(**kwargs):
 
 
 @must_be_logged_in
+@must_be_valid_project  # returns project
+def project_before_template(auth, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+
+    prompts = []
+
+    for addon in node.get_addons():
+        if 'node' in addon.config.configs:
+            if addon.to_json(auth.user)['addon_full_name']:
+                prompts.append(addon.to_json(auth.user)['addon_full_name'])
+
+    return {'prompts': prompts}
+
+
+@must_be_logged_in
 @must_be_valid_project
 def node_fork_page(**kwargs):
     project = kwargs['project']
@@ -176,7 +258,13 @@ def node_fork_page(**kwargs):
     else:
         node_to_use = project
 
-    fork = node_to_use.fork_node(auth)
+    try:
+        fork = node_to_use.fork_node(auth)
+    except PermissionsError:
+        raise HTTPError(
+            http.FORBIDDEN,
+            redirect_url=node_to_use.url
+        )
 
     return fork.url
 
@@ -200,43 +288,56 @@ def node_forks(**kwargs):
 
 
 @must_be_valid_project
-@must_have_permission('write')
-def node_setting(**kwargs):
-
-    auth = kwargs['auth']
+@must_not_be_registration
+@must_be_logged_in
+@must_be_contributor
+def node_setting(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
 
-    if not node.can_edit(auth):
-        raise HTTPError(http.FORBIDDEN)
-
-    rv = _view_project(node, auth, primary=True)
+    ret = _view_project(node, auth, primary=True)
 
     addons_enabled = []
     addon_enabled_settings = []
 
     for addon in node.get_addons():
-
         addons_enabled.append(addon.config.short_name)
         if 'node' in addon.config.configs:
             addon_enabled_settings.append(addon.to_json(auth.user))
+    addon_enabled_settings = sorted(addon_enabled_settings, key=lambda addon: addon['addon_full_name'])
 
-    rv['addon_categories'] = settings.ADDON_CATEGORIES
-    rv['addons_available'] = [
+    ret['addon_categories'] = settings.ADDON_CATEGORIES
+    ret['addons_available'] = sorted([
         addon
         for addon in settings.ADDONS_AVAILABLE
         if 'node' in addon.owners
-        and 'node' not in addon.added_mandatory
-        and not addon.short_name in settings.SYSTEM_ADDED_ADDONS['node']
-    ]
-    rv['addons_enabled'] = addons_enabled
-    rv['addon_enabled_settings'] = addon_enabled_settings
-    rv['addon_capabilities'] = settings.ADDON_CAPABILITIES
+        and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node']
+    ], key=lambda addon: addon.full_name)
 
-    rv['comments'] = {
+    ret['addons_enabled'] = addons_enabled
+    ret['addon_enabled_settings'] = addon_enabled_settings
+    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
+
+    ret['addon_js'] = collect_node_config_js(node.get_addons())
+
+    ret['comments'] = {
         'level': node.comment_level,
     }
 
-    return rv
+    return ret
+
+
+def collect_node_config_js(addons):
+    """Collect webpack bundles for each of the addons' node-cfg.js modules. Return
+    the URLs for each of the JS modules to be included on the node addons config page.
+
+    :param list addons: List of node's addon config records.
+    """
+    js_modules = []
+    for addon in addons:
+        js_path = paths.resolve_addon_path(addon.config, 'node-cfg.js')
+        if js_path:
+            js_modules.append(js_path)
+    return js_modules
 
 
 @must_have_permission('write')
@@ -249,17 +350,15 @@ def node_choose_addons(**kwargs):
 
 @must_be_valid_project
 @must_have_permission('read')
-def node_contributors(**kwargs):
-
-    auth = kwargs['auth']
+def node_contributors(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
+    ret = _view_project(node, auth, primary=True)
+    ret['contributors'] = utils.serialize_contributors(node.contributors, node)
+    ret['adminContributors'] = utils.serialize_contributors(node.admin_contributors, node, admin=True)
+    return ret
 
-    rv = _view_project(node, auth)
-    rv['contributors'] = utils.serialize_contributors(node.contributors, node)
-    return rv
 
-
-@must_have_permission('write')
+@must_have_permission('admin')
 def configure_comments(**kwargs):
     node = kwargs['node'] or kwargs['project']
     comment_level = request.json.get('commentLevel')
@@ -280,15 +379,38 @@ def configure_comments(**kwargs):
 @must_be_contributor_or_public
 def view_project(**kwargs):
     auth = kwargs['auth']
-    node_to_use = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
     primary = '/api/v1' not in request.path
-    rv = _view_project(node_to_use, auth, primary=primary)
-    rv['addon_capabilities'] = settings.ADDON_CAPABILITIES
-    return rv
+    ret = _view_project(node, auth, primary=primary)
+    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
+    # Collect the URIs to the static assets for addons that have widgets
+    ret['addon_widget_js'] = list(collect_addon_js(
+        node,
+        filename='widget-cfg.js',
+        config_entry='widget'
+    ))
+    ret.update(rubeus.collect_addon_assets(node))
+    return ret
+
+
+# Expand/Collapse
+@must_be_valid_project
+@must_be_contributor_or_public
+def expand(auth, **kwargs):
+    node_to_use = kwargs['node'] or kwargs['project']
+    node_to_use.expand(user=auth.user)
+    return {}, 200, None
+
+
+@must_be_valid_project
+@must_be_contributor_or_public
+def collapse(auth, **kwargs):
+    node_to_use = kwargs['node'] or kwargs['project']
+    node_to_use.collapse(user=auth.user)
+    return {}, 200, None
+
 
 # Reorder components
-
-
 @must_be_valid_project
 @must_not_be_registration
 @must_have_permission('write')
@@ -353,9 +475,14 @@ def project_statistics(**kwargs):
 @must_have_permission('admin')
 def project_before_set_public(**kwargs):
     node = kwargs['node'] or kwargs['project']
+    prompt = node.callback('before_make_public')
+    anonymous_link_warning = any(private_link.anonymous for private_link in node.private_links_active)
+    if anonymous_link_warning:
+        prompt.append('Anonymized view-only links <b>DO NOT</b> anonymize '
+                      'contributors after a project or component is made public.')
 
     return {
-        'prompts': node.callback('before_make_public')
+        'prompts': prompt
     }
 
 
@@ -485,6 +612,32 @@ def component_remove(**kwargs):
     }
 
 
+@must_have_permission('admin')
+@must_not_be_registration
+def delete_folder(auth, **kwargs):
+    """Remove folder node
+
+    """
+    node = kwargs['node'] or kwargs['project']
+    if node is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    if not node.is_folder or node.is_dashboard:
+        raise HTTPError(http.BAD_REQUEST)
+
+    try:
+        node.remove_node(auth)
+    except NodeStateError as e:
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data={
+                'message_long': 'Could not delete component: ' + e.message
+            },
+        )
+
+    return {}
+
+
 @must_be_valid_project  # returns project
 @must_have_permission("admin")
 def remove_private_link(*args, **kwargs):
@@ -507,7 +660,6 @@ def _render_addon(node):
     css = []
 
     for addon in node.get_addons():
-
         configs[addon.config.short_name] = addon.config.to_json()
         js.extend(addon.config.include_js.get('widget', []))
         css.extend(addon.config.include_css.get('widget', []))
@@ -518,19 +670,33 @@ def _render_addon(node):
     return widgets, configs, js, css
 
 
+def _should_show_wiki_widget(node, user):
+
+    has_wiki = bool(node.get_addon('wiki'))
+    wiki_page = node.get_wiki_page('home', None)
+    if not node.has_permission(user, 'write'):
+        return has_wiki and wiki_page and wiki_page.html(node)
+
+    else:
+        return has_wiki
+
+
 def _view_project(node, auth, primary=False):
     """Build a JSON object containing everything needed to render
-
     project.view.mako.
-
     """
-
     user = auth.user
 
     parent = node.parent_node
+    if user:
+        dashboard = find_dashboard(user)
+        dashboard_id = dashboard._id
+        in_dashboard = dashboard.pointing_at(node._primary_key) is not None
+    else:
+        in_dashboard = False
+        dashboard_id = ''
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     anonymous = has_anonymous_link(node, auth)
-    recent_logs, has_more_logs = _get_logs(node, 10, auth, view_only_link)
     widgets, configs, js, css = _render_addon(node)
     redirect_url = node.url + '?view_only=None'
 
@@ -539,7 +705,7 @@ def _view_project(node, auth, primary=False):
         for addon in node.get_addons():
             messages = addon.before_page_load(node, user) or []
             for message in messages:
-                status.push_status_message(message)
+                status.push_status_message(message, dismissible=False)
     data = {
         'node': {
             'id': node._primary_key,
@@ -552,21 +718,16 @@ def _view_project(node, auth, primary=False):
             'absolute_url': node.absolute_url,
             'redirect_url': redirect_url,
             'display_absolute_url': node.display_absolute_url,
-            'citations': {
-                'apa': node.citation_apa,
-                'mla': node.citation_mla,
-                'chicago': node.citation_chicago,
-            } if not anonymous else '',
+            'in_dashboard': in_dashboard,
             'is_public': node.is_public,
-            'date_created': node.date_created.strftime('%m/%d/%Y %H:%M UTC'),
-            'date_modified': node.logs[-1].date.strftime('%m/%d/%Y %H:%M UTC') if node.logs else '',
+            'date_created': iso8601format(node.date_created),
+            'date_modified': iso8601format(node.logs[-1].date) if node.logs else '',
 
             'tags': [tag._primary_key for tag in node.tags],
             'children': bool(node.nodes),
-            'children_ids': [str(child._primary_key) for child in node.nodes],
             'is_registration': node.is_registration,
             'registered_from_url': node.registered_from.url if node.is_registration else '',
-            'registered_date': node.registered_date.strftime('%Y/%m/%d %H:%M UTC') if node.is_registration else '',
+            'registered_date': iso8601format(node.registered_date) if node.is_registration else '',
             'registered_meta': [
                 {
                     'name_no_ext': from_mongo(meta),
@@ -574,21 +735,19 @@ def _view_project(node, auth, primary=False):
                 }
                 for meta in node.registered_meta or []
             ],
-            'registration_count': len(node.registration_list),
+            'registration_count': len(node.node__registrations),
 
             'is_fork': node.is_fork,
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
-            'forked_date': node.forked_date.strftime('%Y/%m/%d %I:%M %p') if node.is_fork else '',
-            'fork_count': len(node.fork_list),
+            'forked_date': iso8601format(node.forked_date) if node.is_fork else '',
+            'fork_count': len(node.node__forked.find(Q('is_deleted', 'eq', False))),
             'templated_count': len(node.templated_list),
             'watched_count': len(node.watchconfig__watched),
             'private_links': [x.to_json() for x in node.private_links_active],
             'link': view_only_link,
             'anonymous': anonymous,
-            'logs': recent_logs,
-            'has_more_logs': has_more_logs,
-            'points': node.points,
+            'points': len(node.get_points(deleted=False, folders=False)),
             'piwik_site_id': node.piwik_site_id,
 
             'comment_level': node.comment_level,
@@ -601,7 +760,7 @@ def _view_project(node, auth, primary=False):
             'title': parent.title if parent else '',
             'url': parent.url if parent else '',
             'api_url': parent.api_url if parent else '',
-            'absolute_url':  parent.absolute_url if parent else '',
+            'absolute_url': parent.absolute_url if parent else '',
             'is_public': parent.is_public if parent else '',
             'is_contributor': parent.is_contributor(user) if parent else '',
             'can_view': (auth.private_key in parent.private_link_keys_active) if parent else False
@@ -610,12 +769,16 @@ def _view_project(node, auth, primary=False):
             'is_contributor': node.is_contributor(user),
             'can_edit': (node.can_edit(auth)
                          and not node.is_registration),
+            'has_read_permissions': node.has_permission(user, 'read'),
             'permissions': node.get_permissions(user) if user else [],
             'is_watching': user.is_watching(node) if user else False,
             'piwik_token': user.piwik_token if user else '',
             'id': user._id if user else None,
             'username': user.username if user else None,
+            'fullname': user.fullname if user else '',
             'can_comment': node.can_comment(auth),
+            'show_wiki_widget': _should_show_wiki_widget(node, user),
+            'dashboard_id': dashboard_id,
         },
         'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
@@ -650,6 +813,7 @@ def _get_children(node, auth, indent=0):
                 'id': child._primary_key,
                 'title': child.title,
                 'indent': indent,
+                'is_public': child.is_public,
             })
             children.extend(_get_children(child, auth, indent + 1))
 
@@ -681,7 +845,7 @@ def get_editable_children(auth, **kwargs):
     children = _get_children(node, auth)
 
     return {
-        'node': {'title': node.title, },
+        'node': {'title': node.title, 'is_public': node.is_public},
         'children': children,
     }
 
@@ -705,11 +869,11 @@ def _get_user_activity(node, auth, rescale_ratio):
 
     # Normalize over all nodes
     try:
-        ua = ua_count / rescale_ratio * settings.USER_ACTIVITY_MAX_WIDTH
+        ua = ua_count / rescale_ratio * 100
     except ZeroDivisionError:
         ua = 0
     try:
-        non_ua = non_ua_count / rescale_ratio * settings.USER_ACTIVITY_MAX_WIDTH
+        non_ua = non_ua_count / rescale_ratio * 100
     except ZeroDivisionError:
         non_ua = 0
 
@@ -774,11 +938,14 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
 
 @collect_auth
 @must_be_valid_project
-def get_summary(**kwargs):
-
-    auth = kwargs['auth']
+def get_summary(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     rescale_ratio = kwargs.get('rescale_ratio')
+    if rescale_ratio is None and request.args.get('rescale_ratio'):
+        try:
+            rescale_ratio = float(request.args.get('rescale_ratio'))
+        except (TypeError, ValueError):
+            raise HTTPError(http.BAD_REQUEST)
     primary = kwargs.get('primary')
     link_id = kwargs.get('link_id')
 
@@ -788,30 +955,48 @@ def get_summary(**kwargs):
 
 
 @must_be_contributor_or_public
-def get_children(**kwargs):
+def get_children(auth, **kwargs):
+    user = auth.user
     node_to_use = kwargs['node'] or kwargs['project']
-    return _render_nodes([
-        node
-        for node in node_to_use.nodes
-        if not node.is_deleted
-    ])
+    if request.args.get('permissions'):
+        perm = request.args['permissions'].lower().strip()
+        nodes = [node for node in node_to_use.nodes if perm in node.get_permissions(user) and not node.is_deleted]
+    else:
+        nodes = [
+            node
+            for node in node_to_use.nodes
+            if not node.is_deleted
+        ]
+    return _render_nodes(nodes, auth)
 
 
 @must_be_contributor_or_public
-def get_forks(**kwargs):
+def get_folder_pointers(**kwargs):
+    node_to_use = kwargs['node'] or kwargs['project']
+    if not node_to_use.is_folder:
+        return []
+    return [
+        node.resolve()._id
+        for node in node_to_use.nodes
+        if node is not None and not node.is_deleted and not node.primary
+    ]
+
+
+@must_be_contributor_or_public
+def get_forks(auth, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     forks = node_to_use.node__forked.find(
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', False)
     )
-    return _render_nodes(forks)
+    return _render_nodes(forks, auth)
 
 
 @must_be_contributor_or_public
-def get_registrations(**kwargs):
+def get_registrations(auth, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     registrations = node_to_use.node__registrations
-    return _render_nodes(registrations)
+    return _render_nodes(registrations, auth)
 
 
 @must_be_valid_project  # returns project
@@ -829,9 +1014,17 @@ def project_generate_private_link_post(auth, **kwargs):
 
     nodes = [Node.load(node_id) for node_id in node_ids]
 
+    has_public_node = any(node.is_public for node in nodes)
+
     new_link = new_private_link(
         name=name, user=auth.user, nodes=nodes, anonymous=anonymous
     )
+
+    if anonymous and has_public_node:
+        status.push_status_message(
+            'Anonymized view-only links <b>DO NOT</b> '
+            'anonymize contributors of public project or component.'
+        )
 
     return new_link
 
@@ -857,11 +1050,12 @@ def _serialize_node_search(node):
     title = node.title
     if node.is_registration:
         title += ' (registration)'
+
     return {
         'id': node._id,
         'title': title,
-        'firstAuthor': node.contributors[0].family_name,
-        'etal': len(node.contributors) > 1,
+        'firstAuthor': node.visible_contributors[0].family_name,
+        'etal': len(node.visible_contributors) > 1,
     }
 
 
@@ -882,9 +1076,10 @@ def search_node(**kwargs):
     title_query = Q('title', 'icontains', query)
     not_deleted_query = Q('is_deleted', 'eq', False)
     visibility_query = Q('contributors', 'eq', auth.user)
+    no_folders_query = Q('is_folder', 'eq', False)
     if include_public:
         visibility_query = visibility_query | Q('is_public', 'eq', True)
-    odm_query = title_query & not_deleted_query & visibility_query
+    odm_query = title_query & not_deleted_query & visibility_query & no_folders_query
 
     # Exclude current node from query if provided
     if node:
@@ -922,6 +1117,67 @@ def _add_pointers(node, pointers, auth):
         node.save()
 
 
+@collect_auth
+def move_pointers(auth):
+    """Move pointer from one node to another node.
+
+    """
+
+    from_node_id = request.json.get('fromNodeId')
+    to_node_id = request.json.get('toNodeId')
+    pointers_to_move = request.json.get('pointerIds')
+
+    if from_node_id is None or to_node_id is None or pointers_to_move is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    from_node = Node.load(from_node_id)
+    to_node = Node.load(to_node_id)
+
+    if to_node is None or from_node is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    for pointer_to_move in pointers_to_move:
+        pointer_id = from_node.pointing_at(pointer_to_move)
+        pointer_node = Node.load(pointer_to_move)
+
+        pointer = Pointer.load(pointer_id)
+        if pointer is None:
+            raise HTTPError(http.BAD_REQUEST)
+
+        try:
+            from_node.rm_pointer(pointer, auth=auth)
+        except ValueError:
+            raise HTTPError(http.BAD_REQUEST)
+
+        from_node.save()
+        try:
+            _add_pointers(to_node, [pointer_node], auth)
+        except ValueError:
+            raise HTTPError(http.BAD_REQUEST)
+
+    return {}, 200, None
+
+
+@collect_auth
+def add_pointer(auth):
+    """Add a single pointer to a node using only JSON parameters
+
+    """
+
+    to_node_id = request.json.get('toNodeID')
+    pointer_to_move = request.json.get('pointerID')
+
+    if not (to_node_id and pointer_to_move):
+        raise HTTPError(http.BAD_REQUEST)
+
+    pointer = Node.load(pointer_to_move)
+    to_node = Node.load(to_node_id)
+    try:
+        _add_pointers(to_node, [pointer], auth)
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST)
+
+
 @must_have_permission('write')
 @must_not_be_registration
 def add_pointers(**kwargs):
@@ -940,7 +1196,10 @@ def add_pointers(**kwargs):
         for node_id in node_ids
     ]
 
-    _add_pointers(node, nodes, auth)
+    try:
+        _add_pointers(node, nodes, auth)
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST)
 
     return {}
 
@@ -965,9 +1224,68 @@ def remove_pointer(**kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     try:
-        node.rm_pointer(pointer, auth=auth, save=False)
+        node.rm_pointer(pointer, auth=auth)
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
+
+    node.save()
+
+
+@must_be_valid_project  # injects project
+@must_have_permission('write')
+@must_not_be_registration
+def remove_pointer_from_folder(pointer_id, **kwargs):
+    """Remove a pointer from a node, raising a 400 if the pointer is not
+    in `node.nodes`.
+
+    """
+    auth = kwargs['auth']
+    node = kwargs['node'] or kwargs['project']
+
+    if pointer_id is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    pointer_id = node.pointing_at(pointer_id)
+
+    pointer = Pointer.load(pointer_id)
+
+    if pointer is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    try:
+        node.rm_pointer(pointer, auth=auth)
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST)
+
+    node.save()
+
+
+@must_be_valid_project  # injects project
+@must_have_permission('write')
+@must_not_be_registration
+def remove_pointers_from_folder(**kwargs):
+    """Remove multiple pointers from a node, raising a 400 if the pointer is not
+    in `node.nodes`.
+    """
+    auth = kwargs['auth']
+    node = kwargs['node'] or kwargs['project']
+    pointer_ids = request.json.get('pointerIds')
+
+    if pointer_ids is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    for pointer_id in pointer_ids:
+        pointer_id = node.pointing_at(pointer_id)
+
+        pointer = Pointer.load(pointer_id)
+
+        if pointer is None:
+            raise HTTPError(http.BAD_REQUEST)
+
+        try:
+            node.rm_pointer(pointer, auth=auth)
+        except ValueError:
+            raise HTTPError(http.BAD_REQUEST)
 
     node.save()
 
@@ -985,6 +1303,7 @@ def fork_pointer(**kwargs):
     pointer = Pointer.load(pointer_id)
 
     if pointer is None:
+        # TODO: Change this to 404?
         raise HTTPError(http.BAD_REQUEST)
 
     try:
@@ -994,22 +1313,36 @@ def fork_pointer(**kwargs):
 
 
 def abbrev_authors(node):
-    rv = node.contributors[0].family_name
-    if len(node.visiblecontributors) > 1:
-        rv += ' et al.'
-    return rv
+    lead_author = node.visible_contributors[0]
+    ret = lead_author.family_name or lead_author.given_name or lead_author.fullname
+    if len(node.visible_contributor_ids) > 1:
+        ret += ' et al.'
+    return ret
+
+
+def serialize_pointer(pointer, auth):
+    node = get_pointer_parent(pointer)
+    if node.can_view(auth):
+        return {
+            'id': node._id,
+            'url': node.url,
+            'title': node.title,
+            'authorShort': abbrev_authors(node),
+        }
+    return {
+        'url': None,
+        'title': 'Private Component',
+        'authorShort': 'Private Author(s)',
+    }
 
 
 @must_be_contributor_or_public
-def get_pointed(**kwargs):
-
+def get_pointed(auth, **kwargs):
+    """View that returns the pointers for a project."""
     node = kwargs['node'] or kwargs['project']
+    # exclude folders
     return {'pointed': [
-        {
-            'url': each.node__parent[0].url,
-            'title': each.node__parent[0].title,
-            'authorShort': abbrev_authors(node),
-        }
+        serialize_pointer(each, auth)
         for each in node.pointed
+        if not get_pointer_parent(each).is_folder
     ]}
-

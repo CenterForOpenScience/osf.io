@@ -1,11 +1,11 @@
-# OSF 
+# OSF
 
 
-- `master` Build Status: [![Build Status](https://magnum.travis-ci.com/CenterForOpenScience/osf.svg?token=QSc1BQcS2TSL63LmWF7Y&branch=master)](https://magnum.travis-ci.com/CenterForOpenScience/osf)
-- `develop` Build Status: [![Build Status](https://magnum.travis-ci.com/CenterForOpenScience/osf.svg?token=QSc1BQcS2TSL63LmWF7Y&branch=develop)](https://magnum.travis-ci.com/CenterForOpenScience/osf)
-- Public Repo: https://github.com/CenterForOpenScience/openscienceframework.org/
-- Issues: https://github.com/CenterForOpenScience/openscienceframework.org/issues?state=open
-- Huboard: https://huboard.com/CenterForOpenScience/openscienceframework.org#/
+- `master` Build Status: [![Build Status](https://travis-ci.org/CenterForOpenScience/osf.io.svg?branch=master)](https://travis-ci.org/CenterForOpenScience/osf.io)
+- `develop` Build Status: [![Build Status](https://travis-ci.org/CenterForOpenScience/osf.io.svg?branch=master)](https://travis-ci.org/CenterForOpenScience/osf.io)
+- Public Repo: https://github.com/CenterForOpenScience/osf.io/
+- Issues: https://github.com/CenterForOpenScience/osf.io/issues?state=open
+- Huboard: https://huboard.com/CenterForOpenScience/osf.io#/
 - Docs: http://cosdev.rtfd.org/
 
 ## Help
@@ -26,7 +26,7 @@ $ cp website/settings/local-dist.py website/settings/local.py
 
 - You will need to:
     - Create local.py files for addons that need them.
-    - Install MongoDB.
+    - Install TokuMX.
     - Install libxml2 and libxslt (required for installing lxml).
     - Install elasticsearch.
     - Install GPG.
@@ -44,21 +44,15 @@ $ invoke setup
 ```
 
 
-- Optionally, you may install the requirements for the Modular File Renderer:
-
-```bash
-$ invoke mfr_requirements
-```
-
-and for addons:
+- Optionally, you may install the requirements for addons:
 
 ```bash
 $ invoke addon_requirements
 ```
 
-- On Linux systems, you may have to install python-pip, MongoDB, libxml2, libxslt, elasticsearch, and GPG manually before running the above commands.
+- On Linux systems, you may have to install python-pip, TokuMX, libxml2, libxslt, elasticsearch, and GPG manually before running the above commands.
 
-- If invoke setup hangs when 'Generating GnuPG key' (especially under linux), you may need to install some additonal software to make this work. For apt-getters this looks like: 
+- If invoke setup hangs when 'Generating GnuPG key' (especially under linux), you may need to install some additonal software to make this work. For apt-getters this looks like:
 
 ```bash
 sudo apt-get install rng-tools
@@ -90,6 +84,12 @@ $ invoke mongo
 
 ```bash
 $ invoke server
+```
+
+- Run your local sharejs server.
+
+```bash
+$ invoke sharejs
 ```
 
 ## Running the shell
@@ -143,6 +143,42 @@ Sent emails will show up in your server logs.
 $ invoke mailserver -p 1025
 ```
 
+## Using TokUMX
+
+TokuMX is an open-source fork of MongoDB that provides support for transactions in single-sharded environments.
+TokuMX supports all MongoDB features as of version 2.4 and adds `beginTransaction`, `rollbackTransaction`, and
+`commitTransaction` commands.
+
+If you don't want to install TokuMX, set `USE_TOKU_MX` to `False` in `website/settings/local.py`.
+
+### Installing with Mac OS
+
+```bash
+$ brew tap tokutek/tokumx
+$ brew install tokumx-bin
+```
+
+### Installing on Ubuntu
+
+```bash
+$ apt-key adv --keyserver keyserver.ubuntu.com --recv-key 505A7412
+$ echo "deb [arch=amd64] http://s3.amazonaws.com/tokumx-debs $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/tokumx.list
+$ apt-get update
+$ apt-get install tokumx
+```
+
+### Migrating from MongoDB
+
+TokuMX and MongoDB use different binary formats. To migrate data from MongoDB to TokuMX:
+* Back up the MongoDB data
+    * `invoke mongodump --path dump`
+* Shut down the MongoDB server
+* Uninstall MongoDB
+* Install TokuMX (see instructions above)
+* Restore the data to TokuMX
+    * `invoke mongorestore --path dump/osf20130903 --drop`
+* Verify that the migrated data are available in TokuMX
+
 ## Using Celery
 
 ### Installing Celery + RabbitMQ
@@ -189,10 +225,10 @@ $ brew install elasticsearch
 ```
 _note: Oracle JDK 7 must be installed for elasticsearch to run_
 
-#### Ubuntu 
+#### Ubuntu
 
 ```bash
-$ wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.2.1.deb 
+$ wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.2.1.deb
 $ sudo dpkg -i elasticsearch-1.2.1.deb
 ```
 
@@ -214,21 +250,16 @@ $ invoke migrate_search
 $ invoke elasticsearch
 ```
 
+## NPM
 
-## Using Bower for front-end dependencies
-
-We use [bower](http://bower.io/) to automatically download and manage dependencies for front-end libraries. This should
-be installed with `invoke setup` (above)
-
-To get the bower CLI, you must have Node installed.
+The Node Package Manager (NPM) is required for installing a number of node-based packages.
 
 ```bash
 # For MacOSX
 $ brew update && brew install node
-$ npm install -g bower
 ```
 
-Installing Node and Bower on Ubuntu is slightly more complicated. Node is installed as `nodejs`, but Bower expects
+Installing Node on Ubuntu is slightly more complicated. Node is installed as `nodejs`, but Bower expects
 the binary to be called `node`. Symlink `nodejs` to `node` to fix, then verify that `node` is properly aliased:
 
 ```bash
@@ -236,6 +267,27 @@ the binary to be called `node`. Symlink `nodejs` to `node` to fix, then verify t
 $ sudo apt-get install nodejs
 $ sudo ln -s /usr/bin/nodejs /usr/bin/node
 $ node --version      # v0.10.25
+```
+
+
+## Install NPM requirements
+
+To install necessary NPM requiremnts, run:
+
+```bash
+$ npm install
+```
+
+In the OSF root directory.
+
+## Using Bower to install front-end dependencies
+
+We use [bower](http://bower.io/) to automatically download and manage dependencies for front-end libraries. This should
+be installed with `invoke setup` (above)
+
+To get the bower CLI, you must have `npm` installed.
+
+```bash
 $ npm install -g bower
 ```
 
@@ -259,6 +311,53 @@ The `--save` option automatically adds an entry to the `bower.json` after downlo
 
 This will save the library in `website/static/vendor/bower_components/`, where it can be imported like any other module.
 
+## Using webpack for asset bundling and minification
+
+We use [webpack](https://webpack.github.io/docs/) to bundle and minify our static assets.
+
+To get the webpack CLI, you must have `npm` installed.
+
+```bash
+$ npm install -g webpack
+```
+
+### To build assets with webpack
+
+```bash
+# Make sure dependencies are up to date
+$ bower install && npm install
+# Run webpack in debug mode and watch for changes
+$ inv pack -dw
+```
+
+**The above commands can be run in one step with**:
+
+```bash
+$ inv assets -dw
+```
+
+## Downloading citation styles (optional)
+
+To download citation styles, run:
+
+```bash
+$ invoke update_citation_styles
+```
+
+
+## Setting up addons
+
+To install the python libraries needed to support the enabled addons, run:
+
+```bash
+$ invoke addon_requirements
+```
+
+### Getting application credentials
+
+Many addons require application credentials (typically an app key and secret) to be able to authenticate through the OSF. These credentials go in each addon's `local.py` settings file (e.g. `website/addons/dropbox/settings/local.py`).
+
+For local development, the COS provides test app credentials for a number of services. A listing of these can be found here: https://osf.io/m2hig/wiki/home/ .
 
 ## Summary
 
@@ -270,6 +369,8 @@ invoke mailserver
 invoke rabbitmq
 invoke celery_worker
 invoke elasticsearch
+bower install
+invoke pack -w
 invoke server
 ```
 

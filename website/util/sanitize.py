@@ -1,56 +1,60 @@
-'''
-Module for sanatizing any data input.
-Please add to me.
-'''
 import bleach
-import copy
 
-#TODO Write tests
 
 #Thank you Lyndsy
-def scrub_html(value):
-    return bleach.clean(value, strip=True, tags=[], attributes=[], styles=[])
+def strip_html(unclean):
+    """Sanitize a string, removing (as opposed to escaping) HTML tags
+
+    :param unclean: A string to be stripped of HTML tags
+
+    :return: stripped string
+    :rtype: str
+    """
+    return bleach.clean(unclean, strip=True, tags=[], attributes=[], styles=[])
 
 
 def clean_tag(data):
-    return clean(data).replace('"', '&quot;').replace("'", '')
+    """Format as a valid Tag
+
+    :param data: A string to be cleaned
+
+    :return: cleaned string
+    :rtype: str
+    """
+    #TODO: make this a method of Tag?
+    return escape_html(data).replace('"', '&quot;').replace("'", '')
 
 
-def apply_recursive(data, func):
+def escape_html(data):
+    """Escape HTML characters in data.
+
+    :param data: A string, dict, or list to clean of HTML characters
+
+    :return: A cleaned object
+    :rtype: str or list or dict
+    """
     if isinstance(data, dict):
         return {
-            key: apply_recursive(value, func)
+            key: escape_html(value)
             for (key, value) in data.iteritems()
         }
     if isinstance(data, list):
         return [
-            apply_recursive(value, func)
+            escape_html(value)
             for value in data
         ]
     if isinstance(data, basestring):
-        return func(data)
+        return bleach.clean(data)
     return data
 
 
-def deep_clean(data, cleaner=bleach.clean, copy=False):
-    if copy:
-        return apply_recursive(copy.deepcopy(data), cleaner)
-    else:
-        return apply_recursive(data, cleaner)
+def assert_clean(data):
+    """Ensure that data is cleaned
 
+    :raise: AssertionError
+    """
+    def _ensure_clean(value):
+        if value != bleach.clean(value):
+            raise ValueError
 
-def clean(data, cleaner=bleach.clean, copy=False):
-    if copy:
-        return cleaner(copy.copy(data))
-    else:
-        return cleaner(data)
-
-
-def ensure_clean(value):
-    if value != bleach.clean(value):
-        raise ValueError
-
-
-def deep_ensure_clean(data):
-    return apply_recursive(data, ensure_clean)
-
+    return escape_html(data)

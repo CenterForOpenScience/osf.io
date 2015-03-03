@@ -1,25 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import os
 
-import shutil
-
-from framework.flask import app
-
+from website import settings
 from website.app import init_app
-from website.project.model import ensure_schemas
 
-
-_LOG_TEMPLATES = 'website/templates/_log_templates.mako'
-LOG_TEMPLATES = 'website/templates/log_templates.mako'
-
-try:
-    shutil.copyfile(_LOG_TEMPLATES, LOG_TEMPLATES)
-except OSError:
-    pass
-
-init_app('website.settings', set_backends=True, routes=True)
-
-ensure_schemas()
+app = init_app('website.settings', set_backends=True, routes=True, mfr=True)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    host = os.environ.get('OSF_HOST', None)
+    port = os.environ.get('OSF_PORT', None)
+    if port:
+        port = int(port)
+
+    app.run(host=host, port=port, extra_files=[settings.ASSET_HASH_PATH])

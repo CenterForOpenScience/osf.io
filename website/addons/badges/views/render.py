@@ -3,7 +3,7 @@ import httplib as http
 from framework.exceptions import HTTPError
 
 from website.project.views.node import _view_project
-from website.project.decorators import (
+from website.project.decorators import (  # noqa
     must_be_contributor_or_public,
     must_have_addon, must_not_be_registration,
     must_be_valid_project,

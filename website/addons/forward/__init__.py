@@ -1,4 +1,4 @@
-from website.addons.forward import model, routes, views
+from website.addons.forward import model, routes, views  # noqa
 
 
 MODELS = [model.ForwardNodeSettings]

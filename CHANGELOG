@@ -2,21 +2,191 @@
 Changelog
 *********
 
-0.17.0 (unreleased)
+0.28.0 (2015-02-28)
 ===================
 
+- Add email notifications. Can subscribe to new comments made on projects and
+components. Emails can be sent in "transactional" or "digest" mode.
+
+0.27.0 (2015-02-27)
+===================
+
+- Add Mendeley addon.
+- Add Zotero addon.
+- Add Google Drive addon.
+- Add Box.com addon.
+- New wiki layout with toggle-able columns.
+- New client-side markdown renderer, with support for table of contents
+(@[toc](Table of Contents)) and embedded YouTube and Vimeo videos
+(@[youtube](<video_id>) or @[vimeo](<video_id>)). NOTE: Wiki versions created before this
+release date will still use the older renderer. Update your wikis to use the new
+renderer.
+
+0.26.0 (2015-02-20)
+===================
+
+- Change to permissions model: Admins on a project are able to view and
+register private subprojects and components.
+
+0.25.0 (2015-02-15)
+===================
+
+- Wiki: Real-time collaborative editing powered by ShareJS.
+- Wiki: Markdown snippets support.
+- Wiki: Add MathJax support.
+- Files: File versions are retrieved from Waterbutler.
+- Files: Extensive refactor to unify file detail pages.
+- CiteProc-compliant citation widget. Add an extra input to select from
+hundreds of citation styles.
+- Developers: CSS is now loaded within JS modules using webpack. Webassets is
+removed.
+- Various UI fixes.
+
+0.24.0 (2015-01-29)
+===================
+
+- Significant UI changes sitewide, esp. with navbar, project navigation, project overview widgets, project
+organizer.
+- New filebrowser. Replace HGrid with treebeard. Affects project organizer,
+	files viewer, and conference poster view.
+- Use the waterbutler service for handling all storage addon CRUD.
+
+0.23.0 (2015-01-16)
+===================
+
+- Developers: Use webpack for asset bundling and minification. All JS modules
+follow the CommonJS module style. Replaces script.js and webassets.
+- Enable the Notifications widget on the user settings page.
+- Add "Edit your profile" button on user profile pages. Remove "in-place"
+profile editing.
+- Email confirmation tokens expire after 24 hours.
+- Lots of refactoring to the conference email submission service.
+- Various minor UI fixes.
+- Developers: Update stale requirements: celery, bleach, furl,
+elasticsearch.py.
+
+0.22.0 (2014-12-17)
+===================
+
+- Add API for subscribing/unsubscribing users to Mailchimp mailing lists. Add
+sync_email.py script to add all registered, confirmed users to the OSF General
+Mailing list.
+- Add "Add to Dashboard" button in project header to add a project to the
+dashboard organizer.
+- Add "Account Settings" page with form to change password.
+- Growl-style notifications and messages.
+- Developers: Switch elasticsearch client to elasticsearch-py.
+- Developers: Remove ``get_current_user`` function. Use the auth decorators
+(e.g. ``must_be_logged_in`` instead).
+
+0.21.17 (2014-12-02)
+====================
+
+Hotfix release
+
+- Add an endpoint for receiving the webhook payload from the OSF upload
+service when files are backed up to a Amazon Glacier archive.
+- Fix a bug in accessing nested files in S3 addon.
+
+0.21.13 (2014-11-24)
+====================
+
+Hotfix release
+
+- Display warning about private Github repos on a public project on files and
+statistics pages.
+- Refactor celery task for rendering files so that file contents are not
+passed to message broker.
+- Use celery to asynchronously provision Piwik sites.
+
+0.21.0 (2014-11-19)
+===================
+
+- OSF storage addon now uses the new OSF Upload Service backed by Rackspace
+Cloudfiles.
+- UI and backend improvements to search.
+- UI fixes to addons' file detail pages.
+- Enable drag-and-drop uploads from Project Overview page.
+
+0.20.0 (2014-10-31)
+===================
+
+Lots of new UI features and responsiveness improvements.
+
+- "Onboarder" interface: Go to a project, create a project, register a project, and upload files from the dashboard.
+- Responsive index page, header, footer, project navbars, login page, public activity, and user activity meters.
+- Various minor UI fixes to user settings page and view file pages.
+
+0.19.0 (2014-10-22)
+===================
+
+- Wiki names have mixed-case page names.
+- Allow mixed casing in wiki page names.
+- Wiki rename events are logged.
+- Improved load time of Getting Started page, as well as some minor UI fixes.
+- Improvements and bugfixes to user settings pages.
+- Various UI fixes to the wiki.
+- Fix importing Dataverse authentication to a project.
+- Fix project "Link" counts and lists.
+- Modal dialogs are more visually consistent.
+- Language fixes on FAQ page.
+
+0.18.0 (2014-10-14)
+===================
+
+- Paginate search results in Add Contributor widget.
+- Speed improvements to contributor manager widget.
+- Add "ongoing" option to Education and Employment sections of user profile.
+- Improved mimetype detection when downloading a file through the Github
+addon.
+- Unread comment counts appear in comment tab.
+- Lots of bug fixes and minor UI improvements to the wiki.
+- Wiki page names can have punctuation and special characters.
+- Lots of UI fixes to the profile configuration pages.
+- Larger project title and description inputs.
+- Confirmation codes for project deletion are more fun =)
+- Allow multiple users to authenticate with the same Github credentials for
+the Github addon.
+- Includes all fixes from the "Sprint: Initial" milestone: https://github.com/CenterForOpenScience/openscienceframework.org/issues?q=milestone%3A%22Sprint+%3A+Initial%22+
+- Update required versions of requests, webassets, and bleach.
+
+Migrations
+----------
+
+- scripts/migrate_piwik_derived_nodes.py
+- scripts/migration/migrate_profile_dates.py
+- scripts/migrate_github_oauth_settings.py
+
+Schema changes
+--------------
+
+- Remove fork_list and registration_list fields from Node model. NOTE: A
+migration was NOT performed to remove these fields.
+- Add AddonGithubOauthSettings model.
+- Remove oauth_access_token and oauth_token_type fields from
+AddonGitHubUserSettings model.
+
+0.17.0 (2014-09-23)
+===================
+
+- New project organizer on user dashboard.
 - Improvements to wiki interface.
 - Allow wiki pages to be deleted.
-- Show number of unread comments in comments tab.
-- Developers: Switch to latest version of the modular-file-renderer. Remove
-old vendorized distribution.
 - Developers: Switch to the TokuMX MongoDB distribution for handling database
 transactions.
+- Developers: Add a number of missing JS error handlers.
+- Developers: ``$.osf.postJSON`` and ``$.osf.putJSON`` no longer take
+callbacks as arguments. They return jQuery XHR objects, so use the Promise
+interface instead.
 
-0.16.0 (unreleased)
+0.16.1 (2014-09-12)
 ===================
 
-Scheduled 2014-09-04
+- Developers: Add JS error handling where it was missing.
+- Developers: Add code for TokuMX transactions, but disable it for now.
+
+0.16.0 (2014-09-04)
+===================
 
 - Add two-factor authentication.
 - Developers: Remove all imports from ``framework/__init__.py``. This solves

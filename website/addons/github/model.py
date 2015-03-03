@@ -5,19 +5,22 @@ import urlparse
 import itertools
 import httplib as http
 
-from modularodm import fields
 from github3 import GitHubError
+from modularodm import fields, Q
+from modularodm.exceptions import ModularOdmException
 
 from framework.auth import Auth
+from framework.mongo import StoredObject
 
 from website import settings
+from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 from website.addons.base import GuidFile
 
-from website.addons.github import settings as github_settings
-from website.addons.github.exceptions import ApiError, NotFoundError
-from website.addons.github.api import GitHub
 from website.addons.github import utils
+from website.addons.github.api import GitHub
+from website.addons.github import settings as github_settings
+from website.addons.github.exceptions import ApiError, NotFoundError, TooBigToRenderError
 
 
 hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
@@ -27,34 +30,125 @@ class GithubGuidFile(GuidFile):
 
     path = fields.StringField(index=True)
 
+    def maybe_set_version(self, **kwargs):
+        # branches are always required for file requests, if not specified
+        # file server will assume default branch. e.g. master or develop
+        if not kwargs.get('ref'):
+            kwargs['ref'] = kwargs.pop('branch', None)
+        super(GithubGuidFile, self).maybe_set_version(**kwargs)
+
     @property
-    def file_url(self):
-        if self.path is None:
-            raise ValueError('Path field must be defined.')
-        return os.path.join('github', 'file', self.path)
+    def waterbutler_path(self):
+        return self.path
+
+    @property
+    def provider(self):
+        return 'github'
+
+    @property
+    def version_identifier(self):
+        return 'ref'
+
+    @property
+    def unique_identifier(self):
+        return self._metadata_cache['extra']['fileSha']
+
+    @property
+    def name(self):
+        return os.path.split(self.path)[1]
+
+    @property
+    def extra(self):
+        return {
+            'sha': self._metadata_cache['extra']['fileSha'],
+        }
+
+    def _exception_from_response(self, response):
+        try:
+            if response.json()['errors'][0]['code'] == 'too_large':
+                raise TooBigToRenderError(self)
+        except (KeyError, IndexError):
+            pass
+
+        super(GithubGuidFile, self)._exception_from_response(response)
+
+
+class AddonGitHubOauthSettings(StoredObject):
+    """
+    this model address the problem if we have two osf user link
+    to the same github user and their access token conflicts issue
+    """
+
+    #github user id, for example, "4974056"
+    # Note that this is a numeric ID, not the user's login.
+    github_user_id = fields.StringField(primary=True, required=True)
+
+    #github user name this is the user's login
+    github_user_name = fields.StringField()
+    oauth_access_token = fields.StringField()
+    oauth_token_type = fields.StringField()
 
 
 class AddonGitHubUserSettings(AddonUserSettingsBase):
 
-    github_user = fields.StringField()
-
     oauth_state = fields.StringField()
-    oauth_access_token = fields.StringField()
-    oauth_token_type = fields.StringField()
+    oauth_settings = fields.ForeignField(
+        'addongithuboauthsettings', backref='accessed'
+    )
 
     @property
     def has_auth(self):
-        return self.oauth_access_token is not None
+        if self.oauth_settings:
+            return self.oauth_settings.oauth_access_token is not None
+        return False
 
     @property
+    def github_user_name(self):
+        if self.oauth_settings:
+            return self.oauth_settings.github_user_name
+        return None
+
+    @github_user_name.setter
+    def github_user_name(self, user_name):
+        self.oauth_settings.github_user_name = user_name
+
+    @property
+    def oauth_access_token(self):
+        if self.oauth_settings:
+            return self.oauth_settings.oauth_access_token
+        return None
+
+    @oauth_access_token.setter
+    def oauth_access_token(self, oauth_access_token):
+        self.oauth_settings.oauth_access_token = oauth_access_token
+
+    @property
+    def oauth_token_type(self):
+        if self.oauth_settings:
+            return self.oauth_settings.oauth_token_type
+        return None
+
+    @oauth_token_type.setter
+    def oauth_token_type(self, oauth_token_type):
+        self.oauth_settings.oauth_token_type = oauth_token_type
+
+    # Required for importing username from social profile configuration page
+    @property
     def public_id(self):
-        return self.github_user
+        if self.oauth_settings:
+            return self.oauth_settings.github_user_name
+        return None
+
+    def save(self, *args, **kwargs):
+        if self.oauth_settings:
+            self.oauth_settings.save()
+        return super(AddonGitHubUserSettings, self).save(*args, **kwargs)
 
     def to_json(self, user):
         rv = super(AddonGitHubUserSettings, self).to_json(user)
         rv.update({
             'authorized': self.has_auth,
-            'authorized_github_user': self.github_user if self.github_user else '',
+            'authorized_github_user': self.github_user_name if self.github_user_name else '',
             'show_submit': False,
         })
         return rv
@@ -73,11 +167,18 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
             else:
                 raise
 
-    def clear_auth(self, save=False):
+    def clear_auth(self, auth=None, save=False):
         for node_settings in self.addongithubnodesettings__authorized:
-            node_settings.deauthorize(save=True)
-        self.revoke_token()
-        self.oauth_access_token, self.oauth_token_type = None, None
+            node_settings.deauthorize(auth=auth, save=True)
+
+        # if there is only one osf user linked to this github user oauth, revoke the token,
+        # otherwise, disconnect the osf user from the addongithuboauthsettings
+        if self.oauth_settings:
+            if len(self.oauth_settings.addongithubusersettings__accessed) < 2:
+                self.revoke_token()
+
+        # Clear tokens on oauth_settings
+            self.oauth_settings = None
         if save:
             self.save()
 
@@ -98,6 +199,20 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     )
 
     registration_data = fields.DictionaryField()
+
+    def find_or_create_file_guid(self, path):
+        try:
+            return GithubGuidFile.find_one(
+                Q('path', 'eq', path) &
+                Q('node', 'eq', self.owner)
+            ), False
+        except ModularOdmException:
+            pass
+
+        # Create new
+        new = GithubGuidFile(node=self.owner, path=path)
+        new.save()
+        return new, True
 
     def authorize(self, user_settings, save=False):
         self.user_settings = user_settings
@@ -157,7 +272,6 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         connection = GitHub.from_settings(self.user_settings)
         return connection.repo(user=self.user, repo=self.repo).private
 
-
     # TODO: Delete me and replace with serialize_settings / Knockout
     def to_json(self, user):
         rv = super(AddonGitHubNodeSettings, self).to_json(user)
@@ -181,7 +295,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                 ]
                 rv.update({
                     'repo_names': repo_names,
-                    })
+                })
             rv.update({
                 'node_has_auth': True,
                 'github_user': self.user or '',
@@ -190,11 +304,55 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                 'auth_osf_name': owner.fullname,
                 'auth_osf_url': owner.url,
                 'auth_osf_id': owner._id,
-                'github_user_name': self.user_settings.github_user,
-                'github_user_url': 'https://github.com/{0}'.format(self.user_settings.github_user),
+                'github_user_name': self.user_settings.github_user_name,
+                'github_user_url': 'https://github.com/{0}'.format(self.user_settings.github_user_name),
                 'is_owner': owner == user,
             })
         return rv
+
+    def serialize_waterbutler_credentials(self):
+        if not self.complete or not self.repo:
+            raise exceptions.AddonError('Addon is not authorized')
+        return {'token': self.user_settings.oauth_access_token}
+
+    def serialize_waterbutler_settings(self):
+        if not self.complete:
+            raise exceptions.AddonError('Repo is not configured')
+        return {
+            'owner': self.user,
+            'repo': self.repo,
+        }
+
+    def create_waterbutler_log(self, auth, action, metadata):
+        path = metadata['path']
+
+        url = self.owner.web_url_for('addon_view_or_download_file', path=path, provider='github')
+
+        if not metadata.get('extra'):
+            sha = None
+            urls = {}
+        else:
+            sha = metadata['extra']['commit']['sha']
+            urls = {
+                'view': '{0}?ref={1}'.format(url, sha),
+                'download': '{0}?action=download&ref={1}'.format(url, sha)
+            }
+
+        self.owner.add_log(
+            'github_{0}'.format(action),
+            auth=auth,
+            params={
+                'project': self.owner.parent_id,
+                'node': self.owner._id,
+                'path': path,
+                'urls': urls,
+                'github': {
+                    'user': self.user,
+                    'repo': self.repo,
+                    'sha': sha,
+                },
+            },
+        )
 
     #############
     # Callbacks #
@@ -411,50 +569,14 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         :param Node node:
         :param User user:
         :return str: Alert message
-
         """
+        category = node.project_or_component
         if self.user_settings and self.user_settings.has_auth:
             return (
-                u'Registering {cat} "{title}" will copy the authentication for its '
-                'GitHub add-on to the registered {cat}.'
-            ).format(
-                cat=node.project_or_component,
-                title=node.title,
-            )
-
-    def after_register(self, node, registration, user, save=True):
-        """
-
-        :param Node node: Original node
-        :param Node registration: Registered node
-        :param User user: User creating registration
-        :param bool save: Save settings after callback
-        :return tuple: Tuple of cloned settings and alert message
-
-        """
-        clone, message = super(AddonGitHubNodeSettings, self).after_register(
-            node, registration, user, save=False
-        )
-
-        # Copy foreign fields from current add-on
-        clone.user_settings = self.user_settings
-
-        # Store current branch data
-        if self.user and self.repo:
-            connect = GitHub.from_settings(self.user_settings)
-            try:
-                branches = [
-                    branch.to_json()
-                    for branch in connect.branches(self.user, self.repo)
-                ]
-                clone.registration_data['branches'] = branches
-            except ApiError:
-                pass
-
-        if save:
-            clone.save()
-
-        return clone, message
+                u'The contents of GitHub add-ons cannot be registered at this time; '
+                u'the GitHub repository linked to this {category} will not be included '
+                u'as part of this registration.'
+            ).format(**locals())
 
     def before_make_public(self, node):
         try:
@@ -523,4 +645,3 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                     self.save()
                 return True
         return False
-

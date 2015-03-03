@@ -5,7 +5,7 @@ import httplib as http
 from flask import request
 
 from framework.exceptions import HTTPError
-from framework.auth import get_current_user
+from framework.auth.decorators import must_be_logged_in
 
 from website.util import web_url_for
 from website.project.decorators import (
@@ -19,13 +19,13 @@ from ..utils import options_to_hgrid
 
 
 ###### AJAX Config
+@must_be_logged_in
 @must_be_valid_project
 @must_have_addon('figshare', 'node')
-def figshare_config_get(node_addon, **kwargs):
+def figshare_config_get(node_addon, auth, **kwargs):
     """API that returns the serialized node settings."""
-    user = get_current_user()
     return {
-        'result': serialize_settings(node_addon, user),
+        'result': serialize_settings(node_addon, auth.user),
     }, http.OK
 
 
@@ -70,6 +70,7 @@ def figshare_import_user_auth(auth, node_addon, **kwargs):
 
 @must_have_permission('write')
 @must_have_addon('figshare', 'node')
+@must_not_be_registration
 def figshare_deauthorize(auth, node_addon, **kwargs):
     node_addon.deauthorize(auth=auth, save=True)
     return {}
@@ -114,7 +115,7 @@ def serialize_urls(node_settings):
         'auth': node.api_url_for('figshare_oauth_start'),
         'importAuth': node.api_url_for('figshare_import_user_auth'),
         'options': node.api_url_for('figshare_get_options'),
-        'files': node.web_url_for('collect_file_trees__page'),
+        'files': node.web_url_for('collect_file_trees'),
         # Endpoint for fetching only folders (including root)
         'contents': node.api_url_for('figshare_hgrid_data_contents'),
     }

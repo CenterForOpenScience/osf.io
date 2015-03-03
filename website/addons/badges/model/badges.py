@@ -195,4 +195,3 @@ class BadgeAssertion(StoredObject):
             'evidence': self.evidence,
             'expires': self.expires
         }
-

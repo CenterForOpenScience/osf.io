@@ -10,27 +10,30 @@ import bson
 
 from modularodm import fields, Q
 from modularodm.validators import URLValidator
-from modularodm.exceptions import ValidationValueError
+from modularodm.exceptions import ValidationError, ValidationValueError
 
+import framework
 from framework.sessions import session
 from framework.analytics import piwik
 from framework.bcrypt import generate_password_hash, check_password_hash
 from framework import analytics
 from framework.guid.model import GuidStoredObject
 from framework.addons import AddonModelMixin
-from framework.auth import utils
+from framework.auth import utils, signals
+from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
 from framework.exceptions import PermissionsError
+from framework.sentry import log_exception
 
 from website import settings, filters, security
 
 
 name_formatters = {
-   'long': lambda user: user.fullname,
-   'surname': lambda user: user.family_name if user.family_name else user.fullname,
-   'initials': lambda user: u'{surname}, {initial}.'.format(
-       surname=user.family_name,
-       initial=user.given_name_initial
-   ),
+    'long': lambda user: user.fullname,
+    'surname': lambda user: user.family_name if user.family_name else user.fullname,
+    'initials': lambda user: u'{surname}, {initial}.'.format(
+        surname=user.family_name,
+        initial=user.given_name_initial
+    ),
 }
 
 logger = logging.getLogger(__name__)
@@ -51,56 +54,64 @@ def string_required(value):
 
 def validate_history_item(item):
     string_required(item.get('institution'))
-    start = item.get('start')
-    end = item.get('end')
-    if start and end and end < start:
-        raise ValidationValueError('End date must be later than start date.')
+    startMonth = item.get('startMonth')
+    startYear = item.get('startYear')
+    endMonth = item.get('endMonth')
+    endYear = item.get('endYear')
+
+    validate_year(startYear)
+    validate_year(endYear)
+
+    if startYear and endYear:
+        if endYear < startYear:
+            raise ValidationValueError('End date must be later than start date.')
+        elif endYear == startYear:
+            if endMonth and startMonth and endMonth < startMonth:
+                raise ValidationValueError('End date must be later than start date.')
+
+
+def validate_year(item):
+    if item:
+        try:
+            int(item)
+        except ValueError:
+            raise ValidationValueError('Please enter a valid year.')
+        else:
+            if len(item) != 4:
+                raise ValidationValueError('Please enter a valid year.')
 
 
 validate_url = URLValidator()
 def validate_personal_site(value):
     if value:
-       validate_url(value)
+        try:
+            validate_url(value)
+        except ValidationError:
+            # Reraise with a better message
+            raise ValidationError('Invalid personal URL.')
 
 
 def validate_social(value):
-    validate_personal_site(value.get('personal_site'))
+    validate_personal_site(value.get('personal'))
 
-
-def get_current_username():
-    return session.data.get('auth_user_username')
-
-
-def get_current_user_id():
-    return session.data.get('auth_user_id')
-
-
-def get_current_user():
+def _get_current_user():
     uid = session._get_current_object() and session.data.get('auth_user_id')
     return User.load(uid)
 
 
-# TODO(sloria): This belongs in website.project
-def get_current_node():
-    from website.models import Node
-    nid = session.data.get('auth_node_id')
-    if nid:
-        return Node.load(nid)
+# TODO: This should be a class method of User?
+def get_user(username=None, password=None, verification_key=None):
+    """Get an instance of User matching the provided params.
 
-
-def get_api_key():
-    # Hack: Avoid circular import
-    from website.project.model import ApiKey
-    api_key = session.data.get('auth_api_key')
-    return ApiKey.load(api_key)
-
-
-# TODO: This should be a class method of User
-def get_user(id=None, username=None, password=None, verification_key=None):
+    :return: The instance of User requested
+    :rtype: User or None
+    """
     # tag: database
+    if password and not username:
+        raise AssertionError("If a password is provided, a username must also "
+                             "be provided.")
+
     query_list = []
-    if id:
-        query_list.append(Q('_id', 'eq', id))
     if username:
         username = username.strip().lower()
         query_list.append(Q('username', 'eq', username))
@@ -150,10 +161,11 @@ class Auth(object):
 
     @classmethod
     def from_kwargs(cls, request_args, kwargs):
-        user = request_args.get('user') or kwargs.get('user') or get_current_user()
-        api_key = request_args.get('api_key') or kwargs.get('api_key') or get_api_key()
-        api_node = request_args.get('api_node') or kwargs.get('api_node') or get_current_node()
+        user = request_args.get('user') or kwargs.get('user') or _get_current_user()
+        api_key = request_args.get('api_key') or kwargs.get('api_key')
+        api_node = request_args.get('api_node') or kwargs.get('api_node')
         private_key = request_args.get('view_only')
+
         return cls(
             user=user,
             api_key=api_key,
@@ -169,7 +181,26 @@ class User(GuidStoredObject, AddonModelMixin):
     # Node fields that trigger an update to the search engine on save
     SEARCH_UPDATE_FIELDS = {
         'fullname',
+        'given_name',
+        'middle_names',
+        'family_name',
+        'suffix',
         'merged_by',
+        'date_disabled',
+        'jobs',
+        'schools',
+        'social',
+    }
+
+    SOCIAL_FIELDS = {
+        'orcid': 'http://orcid.com/{}',
+        'github': 'http://github.com/{}',
+        'scholar': 'http://scholar.google.com/citation?user={}',
+        'twitter': 'http://twitter.com/{}',
+        'personal': '{}',
+        'linkedIn': 'https://www.linkedin.com/profile/view?id={}',
+        'impactStory': 'https://impactstory.org/{}',
+        'researcherId': 'http://researcherid.com/rid/{}',
     }
 
     _id = fields.StringField(primary=True)
@@ -181,10 +212,17 @@ class User(GuidStoredObject, AddonModelMixin):
     password = fields.StringField()
     fullname = fields.StringField(required=True, validate=string_required)
     is_registered = fields.BooleanField()
-    is_claimed = fields.BooleanField()  # TODO: Unused. Remove me?
+
+    # TODO: Migrate unclaimed users to the new style, then remove this attribute
+    # Note: No new users should be created where is_claimed is False.
+    #   As of 9 Sep 2014, there were 331 legacy unclaimed users in the system.
+    #   When those users are migrated to the new style, this attribute should be
+    #   removed.
+    is_claimed = fields.BooleanField()
 
     # Tags for internal use
     system_tags = fields.StringField(list=True)
+    security_messages = fields.DictionaryField()
 
     # Per-project unclaimed user data:
     # Format: {
@@ -206,10 +244,18 @@ class User(GuidStoredObject, AddonModelMixin):
     emails = fields.StringField(list=True)
     # Email verification tokens
     # Format: {
-    #   <token> : {'email': <email address>}
+    #   <token> : {'email': <email address>,
+    #              'expiration': <datetime>}
     # }
-    # TODO: add timestamp to allow for timed expiration?
     email_verifications = fields.DictionaryField()
+
+    # Format: {
+    #   'list1': True,
+    #   'list2: False,
+    #    ...
+    # }
+    mailing_lists = fields.DictionaryField()
+
     aka = fields.StringField(list=True)
     date_registered = fields.DateTimeField(auto_now_add=dt.datetime.utcnow)
     # Watched nodes are stored via a list of WatchConfigs
@@ -217,6 +263,11 @@ class User(GuidStoredObject, AddonModelMixin):
 
     # Recently added contributors stored via a list of users
     recently_added = fields.ForeignField("user", list=True, backref="recently_added")
+
+    # Attached external accounts (OAuth)
+    external_accounts = fields.ForeignField("externalaccount",
+                                            list=True,
+                                            backref="connected")
 
     # CSL names
     given_name = fields.StringField()
@@ -226,12 +277,15 @@ class User(GuidStoredObject, AddonModelMixin):
 
     # Employment history
     # Format: {
-    #     'position': <position or job title>,
+    #     'title': <position or job title>,
     #     'institution': <institution or organization>,
     #     'department': <department>,
     #     'location': <location>,
-    #     'start': <start date>,
-    #     'end': <end date>,
+    #     'startMonth': <start month>,
+    #     'startYear': <start year>,
+    #     'endMonth': <end month>,
+    #     'endYear': <end year>,
+    #     'ongoing: <boolean>
     # }
     jobs = fields.DictionaryField(list=True, validate=validate_history_item)
 
@@ -241,8 +295,11 @@ class User(GuidStoredObject, AddonModelMixin):
     #     'institution': <institution or organization>,
     #     'department': <department>,
     #     'location': <location>,
-    #     'start': <start date>,
-    #     'end': <end date>,
+    #     'startMonth': <start month>,
+    #     'startYear': <start year>,
+    #     'endMonth': <end month>,
+    #     'endYear': <end year>,
+    #     'ongoing: <boolean>
     # }
     schools = fields.DictionaryField(list=True, validate=validate_history_item)
 
@@ -261,7 +318,18 @@ class User(GuidStoredObject, AddonModelMixin):
 
     date_confirmed = fields.DateTimeField()
 
-    _meta = {'optimistic' : True}
+    # When the user was disabled.
+    date_disabled = fields.DateTimeField()
+
+    # Format: {
+    #   'node_id': 'timestamp'
+    # }
+    comments_viewed_timestamp = fields.DictionaryField()
+
+    # timezone for user's locale (e.g. 'America/New_York')
+    timezone = fields.StringField(default='Etc/UTC')
+
+    _meta = {'optimistic': True}
 
     def __repr__(self):
         return '<User({0!r}) with id {1!r}>'.format(self.username, self._id)
@@ -333,6 +401,10 @@ class User(GuidStoredObject, AddonModelMixin):
         self.date_confirmed = dt.datetime.utcnow()
         self.update_search()
         self.update_search_nodes()
+
+        # Emit signal that a user has confirmed
+        signals.user_confirmed.send(self)
+
         return self
 
     def add_unclaimed_record(self, node, referrer, given_name, email=None):
@@ -374,13 +446,17 @@ class User(GuidStoredObject, AddonModelMixin):
                 return unclaimed_data['name']
         return self.fullname
 
+    @property
     def is_active(self):
         """Returns True if the user is active. The user must have activated
         their account, must not be deleted, suspended, etc.
+
+        :return: bool
         """
         return (self.is_registered and
                 self.password is not None and
                 not self.is_merged and
+                not self.is_disabled and
                 self.is_confirmed())
 
     def get_unclaimed_record(self, project_id):
@@ -412,45 +488,117 @@ class User(GuidStoredObject, AddonModelMixin):
                     .format(**locals())
 
     def set_password(self, raw_password):
-        '''Set the password for this user to the hash of ``raw_password``.'''
+        """Set the password for this user to the hash of ``raw_password``."""
         self.password = generate_password_hash(raw_password)
-        return None
 
     def check_password(self, raw_password):
-        '''Return a boolean of whether ``raw_password`` was correct.'''
+        """Return a boolean of whether ``raw_password`` was correct."""
         if not self.password or not raw_password:
             return False
         return check_password_hash(self.password, raw_password)
 
-    def add_email_verification(self, email):
+    @property
+    def csl_given_name(self):
+        parts = [self.given_name]
+        if self.middle_names:
+            parts.extend(each[0] for each in re.split(r'\s+', self.middle_names))
+        return ' '.join(parts)
+
+    @property
+    def csl_name(self):
+        return {
+            'family': self.family_name,
+            'given': self.csl_given_name,
+        }
+
+    def change_password(self, raw_old_password, raw_new_password, raw_confirm_password):
+        """Change the password for this user to the hash of ``raw_new_password``."""
+        raw_old_password = (raw_old_password or '').strip()
+        raw_new_password = (raw_new_password or '').strip()
+        raw_confirm_password = (raw_confirm_password or '').strip()
+
+        issues = []
+        if not self.check_password(raw_old_password):
+            issues.append('Old password is invalid')
+        elif raw_old_password == raw_new_password:
+            issues.append('Password cannot be the same')
+
+        if not raw_old_password or not raw_new_password or not raw_confirm_password:
+            issues.append('Passwords cannot be blank')
+        elif len(raw_new_password) < 6:
+            issues.append('Password should be at least six characters')
+
+        if raw_new_password != raw_confirm_password:
+            issues.append('Password does not match the confirmation')
+
+        if issues:
+            raise ChangePasswordError(issues)
+        self.set_password(raw_new_password)
+
+    def _set_email_token_expiration(self, token, expiration=None):
+        """Set the expiration date for given email token.
+
+        :param str token: The email token to set the expiration for.
+        :param datetime expiration: Datetime at which to expire the token. If ``None``, the
+            token will expire after ``settings.EMAIL_TOKEN_EXPIRATION`` hours. This is only
+            used for testing purposes.
+        """
+        expiration = expiration or (dt.datetime.utcnow() + dt.timedelta(hours=settings.EMAIL_TOKEN_EXPIRATION))
+        self.email_verifications[token]['expiration'] = expiration
+        return expiration
+
+    def add_email_verification(self, email, expiration=None):
         """Add an email verification token for a given email."""
         token = generate_confirm_token()
-        self.email_verifications[token] = {'email': email}
+
+        self.email_verifications[token] = {'email': email.lower()}
+        self._set_email_token_expiration(token, expiration=expiration)
         return token
 
-    def get_confirmation_token(self, email):
+    def get_confirmation_token(self, email, force=False):
         """Return the confirmation token for a given email.
 
-        :raises: KeyError if there no token for the email
+        :param str email: Email to get the token for.
+        :param bool force: If an expired token exists for the given email, generate a new
+            token and return that token.
+
+        :raises: ExpiredTokenError if trying to access a token that is expired and force=False.
+        :raises: KeyError if there no token for the email.
         """
         for token, info in self.email_verifications.items():
             if info['email'].lower() == email.lower():
+                if info['expiration'] < dt.datetime.utcnow():
+                    if not force:
+                        raise ExpiredTokenError('Token for email "{0}" is expired'.format(email))
+                    else:
+                        new_token = self.add_email_verification(email)
+                        self.save()
+                        return new_token
                 return token
-        raise KeyError('No confirmation token for email {0!r}'.format(email))
+        raise KeyError('No confirmation token for email "{0}"'.format(email))
 
-    def get_confirmation_url(self, email, external=True):
+    def get_confirmation_url(self, email, external=True, force=False):
         """Return the confirmation url for a given email.
 
+        :raises: ExpiredTokenError if trying to access a token that is expired.
         :raises: KeyError if there is no token for the email.
         """
         base = settings.DOMAIN if external else '/'
-        token = self.get_confirmation_token(email)
+        token = self.get_confirmation_token(email, force=force)
         return "{0}confirm/{1}/{2}/".format(base, self._primary_key, token)
 
     def verify_confirmation_token(self, token):
         """Return whether or not a confirmation token is valid for this user.
+        :rtype: bool
         """
-        return token in self.email_verifications.keys()
+        if token in self.email_verifications:
+            verification = self.email_verifications[token]
+            # Not all tokens are guaranteed to have expiration dates
+            if 'expiration' in verification:
+                return verification['expiration'] > dt.datetime.utcnow()
+            else:
+                return True
+        return False
 
     def verify_claim_token(self, token, project_id):
         """Return whether or not a claim token is valid for this user for
@@ -467,11 +615,14 @@ class User(GuidStoredObject, AddonModelMixin):
             email = self.email_verifications[token]['email']
             self.emails.append(email)
             # Complete registration if primary email
-            if email == self.username:
+            if email.lower() == self.username.lower():
                 self.register(self.username)
                 self.date_confirmed = dt.datetime.utcnow()
             # Revoke token
             del self.email_verifications[token]
+            # Clear unclaimed records, so user's name shows up correctly on
+            # all projects
+            self.unclaimed_records = {}
             self.save()
             # Note: We must manually update search here because the fullname
             # field has not changed
@@ -492,6 +643,15 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def is_confirmed(self):
         return bool(self.date_confirmed)
+
+    @property
+    def social_links(self):
+        return {
+            key: self.SOCIAL_FIELDS[key].format(val)
+            for key, val in self.social.items()
+            if val and
+            self.SOCIAL_FIELDS.get(key)
+        }
 
     @property
     def biblio_name(self):
@@ -553,9 +713,27 @@ class User(GuidStoredObject, AddonModelMixin):
             size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
         )
 
+    def get_activity_points(self, db=None):
+        db = db or framework.mongo.database
+        return analytics.get_total_activity_count(self._primary_key, db=db)
+
     @property
-    def activity_points(self):
-        return analytics.get_total_activity_count(self._primary_key)
+    def is_disabled(self):
+        """Whether or not this account has been disabled.
+
+        Abstracts ``User.date_disabled``.
+
+        :return: bool
+        """
+        return self.date_disabled is not None
+
+    @is_disabled.setter
+    def is_disabled(self, val):
+        """Set whether or not this account has been disabled."""
+        if val:
+            self.date_disabled = dt.datetime.utcnow()
+        else:
+            self.date_disabled = None
 
     @property
     def is_merged(self):
@@ -577,19 +755,23 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def save(self, *args, **kwargs):
         self.username = self.username.lower().strip() if self.username else None
-        rv = super(User, self).save(*args, **kwargs)
-        if self.SEARCH_UPDATE_FIELDS.intersection(rv):
+        ret = super(User, self).save(*args, **kwargs)
+        if self.SEARCH_UPDATE_FIELDS.intersection(ret) and self.is_confirmed():
             self.update_search()
         if settings.PIWIK_HOST and not self.piwik_token:
             try:
                 piwik.create_user(self)
             except (piwik.PiwikException, ValueError):
                 logger.error("Piwik user creation failed: " + self._id)
-        return rv
+        return ret
 
     def update_search(self):
-        from website.search import search
-        search.update_user(self)
+        from website import search
+        try:
+            search.search.update_user(self)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+            log_exception()
 
     @classmethod
     def find_by_email(cls, email):
@@ -666,7 +848,8 @@ class User(GuidStoredObject, AddonModelMixin):
             # This prevents having to load each Log Object and access their
             # date fields
             node_log_ids = [log_id for log_id in config.node.logs._to_primary_keys()
-                                   if bson.ObjectId(log_id).generation_time > since_date]
+                                   if bson.ObjectId(log_id).generation_time > since_date and
+                                   log_id not in log_ids]
             # Log ids in reverse chronological order
             log_ids = _merge_into_reversed(log_ids, node_log_ids)
         return (l_id for l_id in log_ids)
@@ -719,7 +902,7 @@ class User(GuidStoredObject, AddonModelMixin):
             self.save()
         return None
 
-    def get_projects_in_common(self, other_user, primary_keys= True):
+    def get_projects_in_common(self, other_user, primary_keys=True):
         """Returns either a collection of "shared projects" (projects that both users are contributors for)
         or just their primary keys
         """

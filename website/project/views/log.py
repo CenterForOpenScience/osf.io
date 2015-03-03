@@ -4,27 +4,25 @@ import logging
 
 from flask import request
 
-from framework.auth import Auth, get_current_user, get_api_key, get_current_node
-from framework.auth.decorators import collect_auth
 from framework.exceptions import HTTPError
+from framework.auth.decorators import collect_auth
+from framework.transactions.handlers import no_auto_transaction
 
-from website.project.model import NodeLog, has_anonymous_link
-from website.project.decorators import must_be_valid_project
+
 from website.views import serialize_log
+from website.project.model import NodeLog
+from website.project.model import has_anonymous_link
+from website.project.decorators import must_be_valid_project
 
 logger = logging.getLogger(__name__)
 
 
-def get_log(log_id):
+@collect_auth
+@no_auto_transaction
+def get_log(auth, log_id):
 
     log = NodeLog.load(log_id)
     node_to_use = log.node
-
-    auth = Auth(
-        user=get_current_user(),
-        api_key=get_api_key(),
-        api_node=get_current_node(),
-    )
 
     if not node_to_use.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
@@ -49,14 +47,9 @@ def _get_logs(node, count, auth, link=None, offset=0):
         # log can be None; its `node__logged` back-ref can be empty, and the
         # 0th logged node can be None. Catch and log these errors and ignore
         # the offending logs.
-        try:
-            can_view = all(x.can_view(auth) for x in log.node__logged)
-        except (AttributeError, IndexError) as error:
-            logger.exception(error)
-            continue
-
-        if can_view:
-            anonymous = has_anonymous_link(log.node, auth)
+        log_node = log.resolve_node(node)
+        if log.can_view(node, auth):
+            anonymous = has_anonymous_link(log_node, auth)
             if len(logs) < count:
                 logs.append(serialize_log(log, anonymous))
             else:
@@ -65,6 +58,7 @@ def _get_logs(node, count, auth, link=None, offset=0):
     return logs, has_more_logs
 
 
+@no_auto_transaction
 @collect_auth
 @must_be_valid_project
 def get_logs(auth, **kwargs):
@@ -86,7 +80,7 @@ def get_logs(auth, **kwargs):
         count = request.json['count']
     else:
         count = 10
-    offset = page_num*count
+    offset = page_num * count
 
     # Serialize up to `count` logs in reverse chronological order; skip
     # logs that the current user / API key cannot access
