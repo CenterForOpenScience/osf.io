@@ -30,9 +30,6 @@ from website.util.sanitize import strip_html
 from website.views import _render_nodes
 
 
-# test time formatting
-# from Babel import Locale
-
 logger = logging.getLogger(__name__)
 
 
