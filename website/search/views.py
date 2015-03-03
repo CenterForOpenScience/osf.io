@@ -235,6 +235,7 @@ def search_share_atom(**kwargs):
     sort = request.args.get('sort', 'dateUpdated')
 
     # we want the size to be constant between pages
+    # TODO -  move this functionality into build_query in util
     size = 250
 
     try:
