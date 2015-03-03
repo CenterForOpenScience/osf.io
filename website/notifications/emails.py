@@ -175,7 +175,7 @@ def localize_timestamp(timestamp, user):
     except core.UnknownLocaleError:
         user_locale = 'en'
 
-    formatted_date = dates.format_date(timestamp, locale=user_locale)
+    formatted_date = dates.format_date(timestamp, format='full', locale=user_locale)
     formatted_time = dates.format_time(timestamp, format='short', tzinfo=user_timezone, locale=user_locale)
 
     return formatted_time + ' on ' + formatted_date

@@ -1056,7 +1056,7 @@ class TestSendEmails(OsfTestCase):
         self.user.save()
         tz = dates.get_timezone(self.user.timezone)
         locale = Locale(self.user.locale)
-        formatted_date = dates.format_date(timestamp, locale=locale)
+        formatted_date = dates.format_date(timestamp, format='full', locale=locale)
         formatted_time = dates.format_time(timestamp, format='short', tzinfo=tz, locale=locale)
         assert_equal(emails.localize_timestamp(timestamp, self.user), formatted_time + ' on ' + formatted_date)
 
@@ -1067,7 +1067,7 @@ class TestSendEmails(OsfTestCase):
         self.user.save()
         tz = dates.get_timezone('Etc/UTC')
         locale = Locale(self.user.locale)
-        formatted_date = dates.format_date(timestamp, locale=locale)
+        formatted_date = dates.format_date(timestamp, format='full', locale=locale)
         formatted_time = dates.format_time(timestamp, format='short', tzinfo=tz, locale=locale)
         assert_equal(emails.localize_timestamp(timestamp, self.user), formatted_time + ' on ' + formatted_date)
 
@@ -1078,7 +1078,7 @@ class TestSendEmails(OsfTestCase):
         self.user.save()
         tz = dates.get_timezone(self.user.timezone)
         locale = Locale('en')
-        formatted_date = dates.format_date(timestamp, locale=locale)
+        formatted_date = dates.format_date(timestamp, format='full', locale=locale)
         formatted_time = dates.format_time(timestamp, format='short', tzinfo=tz, locale=locale)
         assert_equal(emails.localize_timestamp(timestamp, self.user), formatted_time + ' on ' + formatted_date)
 
