@@ -15,7 +15,9 @@ from framework.auth.decorators import must_be_logged_in
 
 from website.models import Node
 from website.models import User
+from website.search import util
 from website.search import exceptions
+from website.search import share_search
 import website.search.search as search
 from framework.exceptions import HTTPError
 from website.search.exceptions import IndexNotFoundError
@@ -258,4 +260,13 @@ def search_share_atom(**kwargs):
     name = 'SHARE'
 
     atom_url = api_url_for('search_share_atom', _xml=True, _absolute=True)
-    return search.share_atom(name, search_results['results'], q, size, start=page, url=atom_url)
+
+    return util.atom(
+        name=name,
+        data=search_results['results'],
+        query=q,
+        size=size,
+        start=page,
+        url=atom_url,
+        to_atom=share_search.to_atom
+    )
