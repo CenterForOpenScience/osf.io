@@ -61,7 +61,3 @@ def count_share(query):
 def share_stats(query=None):
     query = query or {}
     return share_search.stats(query=query)
-
-def share_atom(name, data, query, size, start, url):
-    query = query or {}
-    return share_search.atom(name=name, data=data, query=query, size=size, start=start, url=url)
