@@ -6,4 +6,4 @@ new GoogleDriveNodeConfig('#googleDriveAddonScope', url, '#myGoogleDriveGrid');
 var AddonNodeConfig = require('../../../static/js/addonNodeConfig');
 
 var url = window.contextVars.node.urls.api + 'googledrive/config/';
-new AddonNodeConfig('Google Drive', '#googleDriveScope', url, '#googleDriveGrid');
+new AddonNodeConfig('Google Drive', '#googledriveScope', url, '#googledriveGrid');
