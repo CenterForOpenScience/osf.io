@@ -431,76 +431,72 @@ var NameViewModel = function(urls, modes) {
 
     self.fetch();
     
-    
-    NameViewModel.prototype.handleEmailSuccess = function() {
-        if ($.inArray('view', this.modes) >= 0) {
-            this.mode('view');
-        } else {
-            this.changeMessage(
-                'Settings updated. Please check ' + this.unconfirmed_username() + ' to confirm your email address',
-                'text-success',
-                5000
-            );
-        }
-    };
-
-    NameViewModel.prototype.handleEmailError = function() {
-        this.changeMessage(
-            'Email address cannot be updated',
-            'text-danger',
-            5000
-        );
-    };
-
-    NameViewModel.prototype.handleSuccess = function() {
-        if ($.inArray('view', this.modes) >= 0) {
-            this.mode('view');
-        } else {
-            this.changeMessage(
-                'Settings updated',
-                'text-success',
-                5000
-            );
-        }
-    };
-
-    NameViewModel.prototype.handleError = function() {
-        this.changeMessage(
-            'Could not update settings',
-            'text-danger',
-            5000
-        );
-    };
-
-    NameViewModel.prototype.submit = function() {
-        if (this.enableSubmit() === false) {
-            return
-        }
-        if (this.unconfirmed_username() !== this.username()) {
-            $.ajax({
-            type: 'PUT',
-            url: this.urls.crud,
-            data: this.serialize(),
-            contentType: 'application/json',
-            dataType: 'json',
-            success: [this.handleEmailSuccess.bind(this), this.setOriginal],
-            error: this.handleEmailError.bind(this)
-            });
-        } else {
-            $.ajax({
-                type: 'PUT',
-                url: this.urls.crud,
-                data: this.serialize(),
-                contentType: 'application/json',
-                dataType: 'json',
-                success: [this.handleSuccess.bind(this), this.setOriginal],
-                error: this.handleError.bind(this)
-            });
-        }
-    };
 };
+
 NameViewModel.prototype = Object.create(BaseViewModel.prototype);
 $.extend(NameViewModel.prototype, SerializeMixin.prototype, TrackedMixin.prototype);
+
+NameViewModel.prototype.handleEmailSuccess = function() {
+    if ($.inArray('view', this.modes) >= 0) {
+        this.mode('view');
+    } else {
+        this.changeMessage(
+            'Settings updated. Please check ' + this.unconfirmed_username() + ' to confirm your email address.',
+            'text-success',
+            5000
+        );
+    }
+};
+
+NameViewModel.prototype.handleEmailError = function() {
+    this.changeMessage(
+        'Email address cannot be updated.',
+        'text-danger',
+        5000
+    );
+};
+
+NameViewModel.prototype.handleSuccess = function() {
+    if ($.inArray('view', this.modes) >= 0) {
+        this.mode('view');
+    } else {
+        this.changeMessage(
+            'Settings updated',
+            'text-success',
+            5000
+        );
+    }
+};
+
+NameViewModel.prototype.handleError = function() {
+    this.changeMessage(
+        'Could not update settings',
+        'text-danger',
+        5000
+    );
+};
+
+NameViewModel.prototype.submit = function() {
+    if (this.unconfirmed_username() !== this.username()) {
+        $osf.putJSON(
+            this.urls.crud,
+            this.serialize()
+        ).done(
+            [this.handleEmailSuccess.bind(this), this.setOriginal()]
+        ).fail(
+            this.handleEmailError.bind(this)
+        );
+    } else {
+        $osf.putJSON(
+            this.urls.crud,
+            this.serialize()
+        ).done(
+            [this.handleSuccess.bind(this), this.setOriginal()]
+        ).fail(
+            this.handleError.bind(this)
+        );
+    }
+};
 
 /*
  * Custom observable for use with external services.
