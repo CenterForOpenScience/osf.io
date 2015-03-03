@@ -35,8 +35,15 @@ def download_from_cloudfiles(version):
     path = os.path.join(storage_settings.AUDIT_TEMP_PATH, version.location['object'])
     if os.path.exists(path):
         return path
-    obj = container_primary.get_object(version.location['object'])
-    obj.download(storage_settings.AUDIT_TEMP_PATH)
+    try:
+        obj = container_primary.get_object(version.location['object'])
+        obj.download(storage_settings.AUDIT_TEMP_PATH)
+    except NoSuchObject as err:
+        logger.error('*** FILE NOT FOUND ***')
+        logger.error('Exception:')
+        logger.exception(err)
+        logger.error('Version info:')
+        logger.error(version.to_storage())
     return path
 
 
@@ -92,7 +99,10 @@ def ensure_backups(version, dry_run):
 
 
 def get_targets():
-    return model.OsfStorageFileVersion.find(Q('location.object', 'exists', True))
+    return model.OsfStorageFileVersion.find(
+        Q('status', 'ne', 'cached') &
+        Q('location.object', 'exists', True)
+    )
 
 
 def main(nworkers, worker_id, dry_run):
