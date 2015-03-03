@@ -61,7 +61,8 @@ var ViewModel = function(url, selector, folderPicker) {
         self.ownerName(response.result.ownerName);
         self.owner(response.result.urls.owner);
         self.currentPath(response.result.currentPath);
-        self.currentFolder(decodeURIComponent(response.result.currentFolder));
+        self.currentFolder(response.result.currentFolder ?
+            decodeURIComponent(response.result.currentFolder):undefined);
 
         self.loadedSettings(true);
     }

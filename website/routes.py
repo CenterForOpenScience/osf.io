@@ -32,6 +32,7 @@ from website.project import views as project_views
 from website.addons.base import views as addon_views
 from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
+from website.notifications import views as notification_views
 
 
 def get_globals():
@@ -525,6 +526,7 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule('/profile/', 'get', profile_views.profile_view, json_renderer),
+        Rule('/profile/', 'put', profile_views.update_user, json_renderer),
         Rule('/profile/<uid>/', 'get', profile_views.profile_view_id, json_renderer),
 
         # Used by profile.html
@@ -1257,6 +1259,30 @@ def make_url_map(app):
             '/settings/notifications/',
             'post',
             profile_views.user_choose_mailing_lists,
+            json_renderer,
+        ),
+
+        Rule(
+            '/subscriptions/',
+            'get',
+            notification_views.get_subscriptions,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/subscriptions/',
+                '/project/<pid>/node/<nid>/subscriptions/'
+            ],
+            'get',
+            notification_views.get_node_subscriptions,
+            json_renderer,
+        ),
+
+        Rule(
+            '/subscriptions/',
+            'post',
+            notification_views.configure_subscription,
             json_renderer,
         ),
 

@@ -19,15 +19,15 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
 
-from website import settings
 from website import mailchimp_utils
+from website import settings
 from website.models import User
 from website.models import ApiKey
-from website.views import _render_nodes
+from website.profile import utils as profile_utils
 from website.util import web_url_for, paths
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
-from website.profile import utils as profile_utils
+from website.views import _render_nodes
 
 
 logger = logging.getLogger(__name__)
@@ -73,6 +73,24 @@ def date_or_none(date):
     except Exception as error:
         logger.exception(error)
         return None
+
+
+@must_be_logged_in
+def update_user(auth):
+    """Update the logged-in user's profile."""
+
+    # trust the decorator to handle auth
+    user = auth.user
+
+    data = request.get_json()
+
+    # TODO: Expand this to support other user attributes
+    if 'timezone' in data:
+        user.timezone = data['timezone']
+
+    user.save()
+
+    return {}
 
 
 def _profile_view(profile, is_profile):
@@ -128,7 +146,8 @@ def profile_view_id(uid, auth):
 
 @must_be_logged_in
 def edit_profile(**kwargs):
-
+    # NOTE: This method is deprecated. Use update_user instead.
+    # TODO: Remove this view
     user = kwargs['auth'].user
 
     form = request.form
@@ -217,11 +236,10 @@ def user_addons(auth, **kwargs):
 @must_be_logged_in
 def user_notifications(auth, **kwargs):
     """Get subscribe data from user"""
-    if not settings.ENABLE_EMAIL_SUBSCRIPTIONS:
-        raise HTTPError(http.BAD_REQUEST)
     return {
         'mailing_lists': auth.user.mailing_lists
     }
+
 
 def collect_user_config_js(addons):
     """Collect webpack bundles for each of the addons' user-cfg.js modules. Return

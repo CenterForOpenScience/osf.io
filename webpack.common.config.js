@@ -41,7 +41,7 @@ var entry = {
     'search-page': staticPath('js/pages/search-page.js'),
     'share-search-page': staticPath('js/pages/share-search-page.js'),
     'user-addon-cfg-page': staticPath('js/pages/user-addon-cfg-page.js'),
-    'notifications-config-page': staticPath('js/notifications-config-page.js'),
+    'notifications-config-page': staticPath('js/pages/notifications-config-page.js'),
     // Commons chunk
     'vendor': [
         // Vendor libraries
@@ -125,7 +125,8 @@ var resolve = {
         'markdown': staticPath('js/markdown.js'),
         "diffTool": staticPath('js/diffTool.js'),
         'mathrender': staticPath('js/mathrender.js'),
-        'citations': staticPath('js/citations.js')
+        'citations': staticPath('js/citations.js'),
+        'jstz': staticPath('vendor/bower_components/jsTimezoneDetect/index.js')
     }
 };
 
