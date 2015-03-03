@@ -4,12 +4,22 @@ content_type, size, and date_modified fields are consistent
 with the metadata from waterbutler.
 """
 from modularodm import Q
+import logging
+import sys
+
 from website.addons.osfstorage.model import OsfStorageFileVersion
 
+from scripts import utils as scripts_utils
+
+logger = logging.getLogger(__name__)
 
 def main():
     for each in OsfStorageFileVersion.find(Q('size', 'eq', None) & Q('status', 'ne', 'cached')):
-        each.update_metadata(each.metadata)
+        logger.info('Updating metadata for OsfStorageFileVersion {}'.format(each._id))
+        if 'dry' not in sys.argv:
+            each.update_metadata(each.metadata)
 
 if __name__ == '__main__':
+    if 'dry' not in sys.argv:
+        scripts_utils.add_file_logger(logger, __file__)
     main()
