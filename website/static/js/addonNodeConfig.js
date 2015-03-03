@@ -96,9 +96,9 @@ var FolderPickerViewModel = function(addonName, url, selector, folderPicker, opt
             return 'Successfully created a ' + self.addonName + ' Access Token';
         }),
         SUBMIT_SETTINGS_SUCCESS: ko.pureComputed(function() {
-            var overviewURL = window.contextVars.node.urls.web;
+            var filesUrl = window.contextVars.node.urls.web + 'files/';
             return 'Successfully linked "' + $osf.htmlEscape(self.selected().name) + '". Go to the <a href="' +
-                overviewURL + '">Overview page</a> to view your citations.';
+                filesUrl + '">Files page</a> to view your content.';
         }),
         SUBMIT_SETTINGS_ERROR: ko.pureComputed(function() {
             return 'Could not change settings. Please try again later.';

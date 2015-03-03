@@ -57,7 +57,7 @@
                     <p class="text-muted text-center ${addon_short_name}-loading-text" data-bind="visible: loading">
                         Loading folders...</p>
                     <div data-bind="visible: currentDisplay() === PICKER">
-                        <div id="my${addon_full_name}Grid" class="filebrowser ${addon_short_name}-folder-picker"></div>
+                        <div id="${addon_short_name}Grid" class="filebrowser ${addon_short_name}-folder-picker"></div>
                     </div>
 
                     <!-- Share -->
