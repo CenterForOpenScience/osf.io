@@ -29,15 +29,6 @@ def build_query_string(q):
     }
 
 
-def create_atom_feed(title, url, author, links):
-    return AtomFeed(
-        title=title,
-        feed_url=url,
-        author=author,
-        links=links
-    )
-
-
 def atom(name, data, query, size, start, url, to_atom):
     if query == '*':
         title_query = 'All'
@@ -58,7 +49,12 @@ def atom(name, data, query, size, start, url, to_atom):
         {'href': '{url}page={page}'.format(url=url, page=prev_page), 'rel': 'previous'}
     ]
 
-    feed = create_atom_feed(title, url, author, links)
+    feed = AtomFeed(
+        title=title,
+        feed_url=url,
+        author=author,
+        links=links
+    )
 
     for doc in data:
         feed.add(**to_atom(doc))
