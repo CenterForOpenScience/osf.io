@@ -14,7 +14,6 @@ from elasticsearch import Elasticsearch
 
 from website import settings
 
-from website.search import util
 
 share_es = Elasticsearch(
     settings.SHARE_ELASTIC_URI,
@@ -238,58 +237,12 @@ def to_atom(result):
         'content_type': 'json',
         'summary': result.get('description', 'No summary'),
         'id': result.get('id', {}).get('serviceID') or result['_id'],
-        'updated': result.get('dateUpdated'),
+        'updated': get_date_updated(result),
         'link': result['id']['url'] if result.get('id') else result['links'][0]['url'],
         'author': format_contributors_for_atom(result['contributors']),
         'categories': format_categories(result.get('tags')),
         'published': parse(result.get('dateUpdated'))
     }
-
-
-def atom(name, data, query, size, start, url):
-    if query == '*':
-        title_query = 'All'
-    else:
-        title_query = query
-
-    title = '{name}: Atom Feed for query: "{title_query}"'.format(name=name, title_query=title_query)
-    author = 'COS'
-
-    prev_page = (start / size)
-
-    if prev_page == 0:
-        prev_page = (start / size) + 1
-
-    links = [
-        {'href': url, 'rel': 'first'},
-        {'href': '{url}page={page}'.format(url=url, page=(start / size) + 2), 'rel': 'next'},
-        {'href': '{url}page={page}'.format(url=url, page=prev_page), 'rel': 'previous'}
-    ]
-
-    feed = util.create_atom_feed(title, url, author, links)
-
-    for doc in data:
-        feed.add(**to_atom(doc))
-
-    for doc in data:
-        try:
-            updated = pytz.utc.localize(parse(doc.get('dateUpdated')))
-        except ValueError:
-            updated = parse(doc.get('dateUpdated'))
-        feed.add(
-            title=doc.get('title', 'No title provided'),
-            content=json.dumps(doc, indent=4, sort_keys=True),
-            content_type='json',
-            summary=doc.get('description', 'No summary'),
-            id=doc.get('id', {}).get('serviceID') or doc['_id'],
-            updated=updated,
-            link=doc['id']['url'] if doc.get('id') else doc['links'][0]['url'],
-            author=format_contributors_for_atom(doc['contributors']),
-            categories=format_categories(doc.get('tags')),
-            published=parse(doc.get('dateUpdated'))
-        )
-
-    return feed.to_string()
 
 
 def format_contributors_for_atom(contributors_list):
@@ -309,3 +262,12 @@ def format_categories(tags_list):
         cat_list.append({"term": tag})
 
     return cat_list
+
+
+def get_date_updated(result):
+    try:
+        updated = pytz.utc.localize(parse(result.get('dateUpdated')))
+    except ValueError:
+        updated = parse(result.get('dateUpdated'))
+
+    return updated
