@@ -1,4 +1,3 @@
-import pytz
 from babel import dates, core, Locale
 from mako.lookup import Template
 
