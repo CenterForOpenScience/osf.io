@@ -1,11 +1,16 @@
 #!/usr/bin/env python
 # encoding: utf-8
+"""Ensure correct creation dates on `OsfStorageFileVersion` records created
+before migration to OSF Storage. Note: the user-facing date field is called
+"date_created" in OSF Storage and "date_modified" in legacy OSF Files.
+"""
 
 import logging
 import datetime
 
 from modularodm import Q
 
+from framework.mongo import database
 from framework.transactions.context import TokuTransaction
 
 from website import settings
@@ -23,10 +28,9 @@ script_utils.add_file_logger(logger, __file__)
 logging.basicConfig(level=logging.INFO)
 
 
-def migrate_version(idx, node_file, record):
+def migrate_version(idx, file_data, record):
     version = record.versions[idx]
-    version.date_modified = node_file.date_modified
-    version.save()
+    version._fields['date_created'].__set__(version, file_data['date_modified'], safe=True)
 
 
 def migrate_node(node, dry_run=True):
@@ -37,9 +41,11 @@ def migrate_node(node, dry_run=True):
             if dry_run:
                 continue
             try:
-                node_file = NodeFile.load(version)
-                record = OsfStorageFileRecord.find_by_path(node_file.path, node_settings)
-                migrate_version(idx, node_file, record)
+                # Note: Use direct mongo lookup to handle deprecation of `NodeFile`
+                # collection
+                file_data = database['nodefile'].find_one({'_id': version})
+                record = OsfStorageFileRecord.find_by_path(file_data['path'], node_settings)
+                migrate_version(idx, file_data, record)
             except Exception as error:
                 logger.error('Could not migrate object {0} on node {1}'.format(version, node._id))
                 logger.exception(error)
@@ -90,15 +96,16 @@ class TestMigrateDates(OsfTestCase):
         self.node_settings = self.project.get_addon('osfstorage')
         self.node_file = NodeFile(path=self.path)
         self.node_file.save()
+        self.node_file.reload()
         self.date = self.node_file.date_modified
         self.project.files_versions['old_pizza'] = [self.node_file._id]
         self.project.save()
         self.version = FileVersionFactory(date_modified=datetime.datetime.now())
-        self.record = OsfStorageFileRecord.get_or_create(self.node_file.path, self.node_settings)
+        self.record, _ = OsfStorageFileRecord.get_or_create(self.node_file.path, self.node_settings)
         self.record.versions = [self.version]
         self.record.save()
 
     def test_migrate_dates(self):
         assert_not_equal(self.version.date_modified, self.date)
         main(dry_run=False)
-        assert_equal(self.version.date_modified, self.date)
+        assert_equal(self.version.date_created, self.date)
