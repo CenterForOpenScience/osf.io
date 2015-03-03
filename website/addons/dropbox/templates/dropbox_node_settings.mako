@@ -47,7 +47,7 @@
                 </p>
 
                 <!-- Folder buttons -->
-                <div class="btn-group" data-bind="visible: userIsOwner()">
+                <div class="btn-group" data-bind="visible: userIsOwner() && validCredentials()">
                     <button data-bind="visible: validCredentials,
                                         click: togglePicker,
                                         css: {active: currentDisplay() === PICKER}"

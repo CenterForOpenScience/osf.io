@@ -42,13 +42,13 @@
                     <a data-bind="attr.href: urls().files">
                         {{folderName}}
                     </a>
-                    <span data-bind="if: linked().id === null" class="text-muted">
+                    <span data-bind="if: folder().id === null" class="text-muted">
                         None
                     </span>
                 </p>
 
                 <!-- Folder buttons -->
-                <div class="btn-group" data-bind="visible: userIsOwner">
+                <div class="btn-group" data-bind="visible: userIsOwner() && validCredentials()">
                     <button data-bind="click: togglePicker,
                                         css: {active: currentDisplay() === PICKER}"
                             class="btn btn-sm btn-addon"><i class="icon-edit"></i> Change</button>
