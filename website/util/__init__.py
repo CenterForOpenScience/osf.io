@@ -40,8 +40,8 @@ def api_url_for(view_name, _absolute=False, _xml=False, *args, **kwargs):
     url = url_for('{0}__{1}'.format(renderer, view_name), *args, **kwargs)
 
     if _absolute:
-    #     # We do NOT use the url_for's _external kwarg because app.config['SERVER_NAME'] alters
-    #     # behavior in an unknown way (currently breaks tests). /sloria /jspies
+        # We do NOT use the url_for's _external kwarg because app.config['SERVER_NAME'] alters
+        # behavior in an unknown way (currently breaks tests). /sloria /jspies
         return urlparse.urljoin(settings.DOMAIN, url)
     return url
 
