@@ -174,20 +174,6 @@ class Mendeley(ExternalProvider):
 class MendeleyUserSettings(AddonOAuthUserSettingsBase):
     oauth_provider = Mendeley
 
-    def _get_connected_accounts(self):
-        """Get user's connected Mendeley accounts"""
-        return [
-            x for x in self.owner.external_accounts if x.provider == 'mendeley'
-        ]
-
-    def to_json(self, user):
-        ret = super(MendeleyUserSettings, self).to_json(user)
-        ret['accounts'] = [
-            serialize_account(each)
-            for each in self._get_connected_accounts()
-        ]
-        return ret
-
 
 class MendeleyNodeSettings(AddonOAuthNodeSettingsBase):
     oauth_provider = Mendeley

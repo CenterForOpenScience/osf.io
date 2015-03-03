@@ -264,13 +264,6 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
 
 
 class MendeleyUserSettingsTestCase(OsfTestCase):
-    def test_get_connected_accounts(self):
-        # Get all Mendeley accounts for user
-        user_accounts = [MendeleyAccountFactory(), MendeleyAccountFactory()]
-        user = UserFactory(external_accounts=user_accounts)
-        user_addon = MendeleyUserSettingsFactory(owner=user)
-        assert_equal(user_addon._get_connected_accounts(), user_accounts)
-
     def test_to_json(self):
         # All values are passed to the user settings view
         user_accounts = [MendeleyAccountFactory(), MendeleyAccountFactory()]

@@ -246,15 +246,7 @@ class ZoteroNodeSettingsTestCase(OsfTestCase):
         )
 
 
-
-
 class ZoteroUserSettingsTestCase(OsfTestCase):
-    def test_get_connected_accounts(self):
-        # Get all Zotero accounts for user
-        user_accounts = [ZoteroAccountFactory(), ZoteroAccountFactory()]
-        user = UserFactory(external_accounts=user_accounts)
-        user_addon = ZoteroUserSettingsFactory(owner=user)
-        assert_equal(user_addon._get_connected_accounts(), user_accounts)
 
     def test_to_json(self):
         # All values are passed to the user settings view
