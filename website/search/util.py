@@ -38,8 +38,7 @@ def create_atom_feed(title, url, author, links):
     )
 
 
-def atom(..., results, to_atom):
-
+def atom(name, data, query, size, start, url, to_atom):
     if query == '*':
         title_query = 'All'
     else:
@@ -59,23 +58,9 @@ def atom(..., results, to_atom):
         {'href': '{url}page={page}'.format(url=url, page=prev_page), 'rel': 'previous'}
     ]
 
-    feed = util.create_atom_feed(title, url, author, links)
+    feed = create_atom_feed(title, url, author, links)
 
     for doc in data:
-        try:
-            updated = pytz.utc.localize(parse(doc.get('dateUpdated')))
-        except ValueError:
-            updated = parse(doc.get('dateUpdated'))
+        feed.add(**to_atom(doc))
 
-        feed.add(
-            title=doc.get('title', 'No title provided'),
-            content=json.dumps(doc, indent=4, sort_keys=True),
-            content_type='json',
-            summary=doc.get('description', 'No summary'),
-            id=doc.get('id', {}).get('serviceID') or doc['_id'],
-            updated=updated,
-            link=doc['id']['url'] if doc.get('id') else doc['links'][0]['url'],
-            author=format_contributors_for_atom(doc['contributors']),
-            categories=format_categories(doc.get('tags')),
-            published=parse(doc.get('dateUpdated'))
-        )
+    return feed
