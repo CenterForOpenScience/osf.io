@@ -99,7 +99,10 @@ def ensure_backups(version, dry_run):
 
 
 def get_targets():
-    return model.OsfStorageFileVersion.find(Q('location.object', 'exists', True))
+    return model.OsfStorageFileVersion.find(
+        Q('status', 'ne', 'cached') &
+        Q('location.object', 'exists', True)
+    )
 
 
 def main(nworkers, worker_id, dry_run):
