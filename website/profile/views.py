@@ -6,7 +6,7 @@ import httplib as http
 
 from dateutil.parser import parse as parse_date
 
-from flask import request, redirect
+from flask import request
 from modularodm.exceptions import ValidationError, NoResultsFound
 from modularodm import Q
 

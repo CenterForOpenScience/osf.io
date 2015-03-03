@@ -2,7 +2,7 @@
 import datetime
 import httplib as http
 
-from flask import request, redirect
+from flask import request
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
