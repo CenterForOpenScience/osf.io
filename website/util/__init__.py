@@ -36,24 +36,13 @@ def api_url_for(view_name, _absolute=False, _xml=False, *args, **kwargs):
     based on whether the app is in debug mode, and the adition of the _xml flag that
     will set the renderer to use.
     """
-    url = url_for('JSONRenderer__{0}'.format(view_name), *args, **kwargs)
-    if _absolute:
-        # Pop off kwargs to ensure that keyword arguments are only passed
-        # once
-        _external = kwargs.pop('_external', True)
-        scheme = 'http' if settings.DEBUG_MODE else 'https'
-        _scheme = kwargs.pop('_scheme', scheme)
-    else:
-        _external = kwargs.pop('_external', False)
-        _scheme = kwargs.pop('_scheme', None)
-
     renderer = 'XMLRenderer' if _xml else 'JSONRenderer'
 
-    return url_for('{0}__{1}'.format(renderer, view_name),
-        _external=_external, _scheme=_scheme,
-        *args, **kwargs)
-        # We do NOT use the url_for's _external kwarg because app.config['SERVER_NAME'] alters
-        # behavior in an unknown way (currently breaks tests). /sloria /jspies
+    url = url_for('{0}__{1}'.format(renderer, view_name), *args, **kwargs)
+
+    if _absolute:
+    #     # We do NOT use the url_for's _external kwarg because app.config['SERVER_NAME'] alters
+    #     # behavior in an unknown way (currently breaks tests). /sloria /jspies
         return urlparse.urljoin(settings.DOMAIN, url)
     return url
 
@@ -73,6 +62,7 @@ def web_url_for(view_name, _absolute=False, _guid=False, *args, **kwargs):
         # behavior in an unknown way (currently breaks tests). /sloria /jspies
         return urlparse.urljoin(settings.DOMAIN, url)
     return url
+
 
 def is_json_request():
     """Return True if the current request is a JSON/AJAX request."""
