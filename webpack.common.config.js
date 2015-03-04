@@ -42,6 +42,7 @@ var entry = {
     'share-search-page': staticPath('js/pages/share-search-page.js'),
     'user-addon-cfg-page': staticPath('js/pages/user-addon-cfg-page.js'),
     'notifications-config-page': staticPath('js/pages/notifications-config-page.js'),
+    'account-config-page': staticPath('js/pages/account-config-page.js'),
     // Commons chunk
     'vendor': [
         // Vendor libraries
