@@ -38,16 +38,13 @@ def create_atom_feed(name, data, query, size, start, url, to_atom):
     title = '{name}: Atom Feed for query: "{title_query}"'.format(name=name, title_query=title_query)
     author = 'COS'
 
-    prev_page = (start / size)
-
-    if prev_page == 0:
-        prev_page = (start / size) + 1
-
     links = [
         {'href': url, 'rel': 'first'},
         {'href': '{url}?page={page}'.format(url=url, page=(start / size) + 2), 'rel': 'next'},
-        {'href': '{url}?page={page}'.format(url=url, page=prev_page), 'rel': 'previous'}
+        {'href': '{url}?page={page}'.format(url=url, page=(start / size)), 'rel': 'previous'}
     ]
+
+    links = links[:-1] if (start / size) == 0 else links
 
     feed = AtomFeed(
         title=title,
