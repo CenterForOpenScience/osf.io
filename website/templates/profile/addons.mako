@@ -13,9 +13,7 @@
                 <li><a href="${ web_url_for('user_profile') }">Profile Information</a></li>
                 <li><a href="${ web_url_for('user_account') }">Account Settings</a></li>
                 <li><a href="#">Configure Add-ons</a></li>
-                %if settings.ENABLE_EMAIL_SUBSCRIPTIONS:
-                    <li><a href="${ web_url_for('user_notifications') }">Notifications</a></li>
-                %endif
+                <li><a href="${ web_url_for('user_notifications') }">Notifications</a></li>
             </ul>
         </div><!-- end sidebar -->
 

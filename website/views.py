@@ -134,6 +134,8 @@ def get_dashboard(auth, nid=None, **kwargs):
         node = Node.load(nid)
         dashboard_projects = rubeus.to_project_hgrid(node, auth, **kwargs)
         return_value = {'data': dashboard_projects}
+
+    return_value['timezone'] = user.timezone
     return return_value
 
 
@@ -364,7 +366,6 @@ def resolve_guid(guid, suffix=None):
     """
     # Get prefix; handles API routes
     prefix = request.path.split(guid)[0].rstrip('/')
-
     # Look up GUID
     guid_object = Guid.load(guid)
     if guid_object:
@@ -380,7 +381,6 @@ def resolve_guid(guid, suffix=None):
             )
 
             raise HTTPError(http.NOT_FOUND)
-
         referent = guid_object.referent
         if referent is None:
             logger.error('Referent of GUID {0} not found'.format(guid))

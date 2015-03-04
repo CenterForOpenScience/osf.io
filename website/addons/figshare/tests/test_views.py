@@ -1,21 +1,23 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
+import furl
 import mock
 import unittest
+
 from nose.tools import *
 
 import httplib as http
 
 from tests.base import OsfTestCase
-
-from tests.factories import ProjectFactory, AuthUserFactory, PrivateLinkFactory
+from tests.factories import ProjectFactory, AuthUserFactory
+from tests.test_addons import assert_urls_equal
 
 from website.addons.figshare.tests.utils import create_mock_figshare
 from website.addons.figshare import views
 from website.addons.figshare import utils
-
 from website.addons.figshare.views.config import serialize_settings
+from website.util import api_url_for, web_url_for
 
 from framework.auth import Auth
 
@@ -65,6 +67,16 @@ class TestViewsConfig(OsfTestCase):
         self.node_settings.reload()
         is_not_none = settings.user_settings != None
         assert_true(is_not_none)
+
+    def test_cancelled_oauth_request_from_user_settings_page_redirects_correctly(self):
+        res = self.app.get(api_url_for('figshare_oauth_callback', uid=self.user._id), auth=self.user.auth)
+        assert_equal(res.status_code, 302)
+        assert_urls_equal(res.headers['location'], web_url_for('user_addons'))
+
+    def test_cancelled_oauth_request_from_node_settings_page_redirects_correctly(self):
+        res = self.app.get(api_url_for('figshare_oauth_callback', uid=self.user._id, nid=self.project._id), auth=self.user.auth)
+        assert_equal(res.status_code, 302)
+        assert_urls_equal(res.headers['location'], self.project.web_url_for('node_setting'))
 
     def test_deauthorize(self):
         """Testing figshare_deauthorize to ensure user auth gets removed from

@@ -78,7 +78,10 @@ def transaction_teardown_request(error=None):
         if not settings.DEBUG_MODE:
             logger.error('Uncaught error in `transaction_teardown_request`; '
                          'this should never happen with `DEBUG_MODE = True`')
-        commands.rollback()
+        # If we're testing, the before_request handlers may not have been executed
+        # e.g. when Flask#test_request_context() is used
+        if not current_app.testing:
+            commands.rollback()
 
 
 handlers = {

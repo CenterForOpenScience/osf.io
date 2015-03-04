@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 '''Base TestCase class for OSF unittests. Uses a temporary MongoDB database.'''
-import datetime as dt
-import functools
-import logging
 import os
+import re
 import shutil
+import logging
 import unittest
-import mock
+import functools
+import datetime as dt
 
-from webtest_plus import TestApp
 import blinker
+import httpretty
+from webtest_plus import TestApp
 
 from faker import Factory
 from nose.tools import *  # noqa (PEP8 asserts)
@@ -36,12 +37,11 @@ import website.models
 from website.signals import ALL_SIGNALS
 from website.app import init_app
 
-from tests.exceptions import UnmockedError
-
 # Just a simple app without routing set up or backends
 test_app = init_app(
     settings_module='website.settings', routes=True, set_backends=False
 )
+test_app.testing = True
 
 
 # Silence some 3rd-party logging and some "loud" internal loggers
@@ -149,12 +149,36 @@ class UploadTestCase(unittest.TestCase):
         settings.UPLOADS_PATH = cls._old_uploads_path
 
 
+methods = [
+    httpretty.GET,
+    httpretty.PUT,
+    httpretty.HEAD,
+    httpretty.POST,
+    httpretty.PATCH,
+    httpretty.DELETE,
+]
+def kill(*args, **kwargs):
+    raise httpretty.errors.UnmockedError
+
+
 class MockRequestTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
         super(MockRequestTestCase, cls).setUpClass()
-        mock.patch('requests.Session.send', side_effect=UnmockedError).start()
+        httpretty.enable()
+        for method in methods:
+            httpretty.register_uri(
+                method,
+                re.compile(r'.*'),
+                body=kill,
+            )
+
+    @classmethod
+    def tearDownClass(cls):
+        super(MockRequestTestCase, cls).tearDownClass()
+        httpretty.disable()
+        httpretty.reset()
 
 
 class OsfTestCase(DbTestCase, AppTestCase, UploadTestCase, MockRequestTestCase):
