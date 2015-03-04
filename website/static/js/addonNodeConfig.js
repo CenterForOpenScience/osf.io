@@ -180,7 +180,8 @@ var FolderPickerViewModel = function(addonName, url, selector, folderPicker, opt
             var name = item.data.path !== '/' ? item.data.path : '/ (Full ' + self.addonName + ')';
             self.selected({
                 name: name,
-                path: item.data.path
+                path: item.data.path,
+                id: item.data.id
             });
             return false; // Prevent event propagation
         }
@@ -278,7 +279,7 @@ FolderPickerViewModel.prototype.submitSettings = function() {
     var self = this;
 
     function onSubmitSuccess(response) {
-        self.changeMessage(self.messages.SUBMIT_SETTINGS_SUCCESS(), 'text-success', 5000);
+        self.changeMessage(self.messages.SUBMIT_SETTINGS_SUCCESS(), 'text-success'); 
         // Update folder in ViewModel
         self.folder(response.result.folder);
         self.urls(response.result.urls);
