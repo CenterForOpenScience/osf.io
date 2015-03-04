@@ -143,8 +143,8 @@ function _fangornDataverseTitle(item, col) {
     var tb = this;
     if (item.data.addonFullname) {
         var contents = [m('dataverse-name', item.data.name + ' ')];
-        if (item.data.hasPublishedFiles) {
-            if (item.data.permissions.edit) {
+        if (item.data.permissions.edit) {
+            if (item.data.hasPublishedFiles) {
                 var options = [
                     m('option', {selected: item.data.state === 'draft', value: 'draft'}, 'Draft'),
                     m('option', {selected: item.data.state === 'published', value: 'published'}, 'Published')
@@ -161,9 +161,13 @@ function _fangornDataverseTitle(item, col) {
                 );
             } else {
                 contents.push(
-                    m('span', '[Published]')
+                    m('span.text-muted', '[Draft]')
                 );
             }
+        } else {
+            contents.push(
+                m('span.text-muted', '[Published]')
+            );
         }
         return m('span', contents);
     } else {
