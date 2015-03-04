@@ -5,14 +5,9 @@ get deleted, leaving behind a guid that points to nothing.
 """
 import sys
 
-from modularodm import Q
 from framework.guid.model import Guid
 from website.app import init_app
-from website.project.model import Node
-from tests.base import OsfTestCase
-from tests.factories import NodeFactory
 from scripts import utils as scripts_utils
-from nose.tools import *
 
 import logging
 logger = logging.getLogger(__name__)
@@ -20,10 +15,11 @@ logger = logging.getLogger(__name__)
 
 def main():
     if 'dry' not in sys.argv:
-        scripts_utils.add_file_logger(logger, __file__, suffix=worker_id)
+        scripts_utils.add_file_logger(logger, __file__)
     # Set up storage backends
     init_app(routes=False)
     logger.info('{n} invalid GUID objects found'.format(n=len(get_targets())))
+    logger.info('Finished.')
 
 
 def get_targets():
@@ -33,36 +29,9 @@ def get_targets():
     ret = []
     for each in Guid.find():
         logger.info('GUID {} has no referent.'.format(each._id))
-        ret.append(each)
+        if each.referent is None:
+            ret.append(each)
     return ret
-
-
-class TestFindGuidsWithoutReferents(OsfTestCase):
-
-    def setUp(self):
-        super(TestFindGuidsWithoutReferents, self).setUp()
-        self.node = NodeFactory()
-        self.nontarget_guid = Guid(referent=self.node)
-        self.nontarget_guid.save()
-
-    def test_get_targets_referent_is_none(self):
-        bad_guid = Guid(referent=None)
-        bad_guid.save()
-
-        targets = list(get_targets())
-        assert_in(bad_guid, targets)
-        assert_not_in(self.nontarget_guid, targets)
-
-    def test_get_targets_referent_points_to_nothing(self):
-        node = NodeFactory()
-        bad_guid = Guid(referent=node)
-        bad_guid.save()
-        Node.remove(Q('_id', 'eq', node._id))
-
-        targets = list(get_targets())
-        assert_in(bad_guid, targets)
-        assert_not_in(self.nontarget_guid, targets)
-
 
 if __name__ == '__main__':
     main()
