@@ -52,8 +52,7 @@ def attach_handlers(app, settings):
     # Add callback handlers to application
     add_handlers(app, mongo_handlers.handlers)
     add_handlers(app, task_handlers.handlers)
-    if settings.USE_TOKU_MX:
-        add_handlers(app, transaction_handlers.handlers)
+    add_handlers(app, transaction_handlers.handlers)
 
     # Attach handler for checking view-only link keys.
     # NOTE: This must be attached AFTER the TokuMX to avoid calling
