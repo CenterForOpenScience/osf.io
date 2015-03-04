@@ -1,6 +1,8 @@
 <!-- Authorization -->
-<div id="zoteroUserSettings">
-    <h4 class="addon-title">Zotero</h4>
+<div class="addon-oauth"
+     data-addon-short-name="${ addon_short_name }"
+     data-addon-name="${ addon_full_name }">
+    <h4 class="addon-title">{{ properName }}</h4>
     <div data-bind="foreach: accounts">
         <div>
             <span>{{ name }}</span>

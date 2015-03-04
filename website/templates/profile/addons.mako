@@ -70,9 +70,8 @@
                 <div class="panel-body">
 
                     % for name in addon_enabled_settings:
-
                         <div mod-meta='{
-                                "tpl": "../addons/${name}/templates/${name}_user_settings.mako",
+                                "tpl": "${user_addons_enabled[name]['urls']['user_settings']}",
                                 "uri": "${user_api_url}${name}/settings/"
                             }'></div>
                         % if not loop.last:

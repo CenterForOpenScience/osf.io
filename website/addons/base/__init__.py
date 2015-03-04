@@ -49,6 +49,7 @@ class AddonConfig(object):
                  widget_help=None, views=None, configs=None, models=None,
                  has_hgrid_files=False, get_hgrid_data=None, max_file_size=None, high_max_file_size=None,
                  accept_extensions=True,
+                 node_settings_template=None, user_settings_template=None,
                  **kwargs):
 
         self.models = models
@@ -98,6 +99,29 @@ class AddonConfig(object):
             )
         else:
             self.template_lookup = None
+
+        # Provide the path the the user_settings template
+        self.user_settings_template = user_settings_template
+        addon_user_settings_path = os.path.join(
+            template_path,
+            '{}_user_settings.mako'.format(self.short_name)
+        )
+
+        if user_settings_template:
+            # If USER_SETTINGS_TEMPLATE is defined, use that path.
+            self.user_settings_template = user_settings_template
+        elif os.path.exists(addon_user_settings_path):
+            # An implicit template exists
+            self.user_settings_template = \
+                '../addons/{0}/templates/{0}_user_settings.mako'.format(
+                    self.short_name
+                )
+        else:
+            # Use the default template (for OAuth addons)
+            self.user_settings_template = \
+                'project/addon/user_settings_default.mako'
+
+        self.node_settings_template = node_settings_template
 
     def _static_url(self, filename):
         """Build static URL for file; use the current addon if relative path,
