@@ -1,22 +1,12 @@
-"""
-
-"""
-
 import os
 import json
-from urllib2 import urlopen
-from re import search
-
-from tempfile import TemporaryFile
 
 import requests
 from requests_oauthlib import OAuth1Session
 
-from framework.utils import secure_filename
 from website.util.sanitize import escape_html
 
 from . import settings as figshare_settings
-from utils import file_to_hgrid, article_to_hgrid
 
 
 def _get_project_url(node_settings, project, *args):
@@ -61,9 +51,6 @@ class Figshare(object):
         return e
 
     def _send(self, url, method='get', output='json', cache=True, **kwargs):
-        """
-
-        """
         func = getattr(self.session, method.lower())
 
         # Send request
@@ -132,28 +119,6 @@ class Figshare(object):
                                    for article in articles]
         return project
 
-    def create_project(self, node_settings, project, description=''):
-        data = json.dumps({"title": project, "description": description})
-        return self._send(os.path.join(node_settings.api_url, 'projects'), data=data, method='post')
-
-    def delete_project(self, node_settings, project):
-        url = _get_project_url(node_settings, project)
-        return self._send(url, method='delete')
-
-    def add_article_to_project(self, node_settings, project, article):
-        data = json.dumps({"article_id": article})
-        url = _get_project_url(node_settings, project, 'articles')
-        return self._send(url, data=data, method='put')
-
-    def remove_article_from_project(self, node_settings, project, article):
-        data = json.dumps({"article_id": article})
-        url = _get_project_url(node_settings, project, 'articles')
-        return self._send(url, data=data, method='delete')
-
-    def get_project_collaborators(self, node_settings, project):
-        url = _get_project_url(node_settings, project, 'collaborators')
-        return self._send(url)
-
     # ARTICLE LEVEL API
     def articles(self, node_settings):
         articles = self._send(os.path.join(node_settings.api_url, 'articles'))
@@ -175,57 +140,6 @@ class Figshare(object):
             os.path.join(node_settings.api_url, 'articles', "{0}".format(article_id)))
         return res
 
-    def article_version(self, node_settings, article_id, article_version):
-        article = self._send(
-            os.path.join(node_settings.api_url, 'articles', article_id, 'versions', article_version))
-        return article_to_hgrid(node_settings.owner, article)  # TODO Fix me
-
-    def create_article(self, node_settings, article, d_type='paper'):
-        body = json.dumps(
-            {'title': article['title'], 'description': article.get('description') or '', 'defined_type': d_type})
-        article.update(self._send_with_data(
-            os.path.join(node_settings.api_url, 'articles'), method='post', data=body))
-        if article['files']:
-            for f in article['files']:
-                filename, filestream = self.create_temp_file(f)
-                filedata = {
-                    'filedata': (filename, filestream)
-                }
-                self._send_with_data(
-                    os.path.join(node_settings.api_url, 'articles'), method='put', files=filedata)
-                filestream.close()
-        return self.article(node_settings, article['article_id'])
-
-    def update_article(self, node_settings, article, params):
-        return self._send(os.path.join(node_settings.api_url, 'articles', article, 'categories'), method='PUT', data=json.dumps(params), headers={'content-type': 'application/json'})
-
-    def upload_file(self, node, node_settings, article, upload):
-        #article_data = self.article(node_settings, article)['items'][0]
-        filename, filestream = self.create_temp_file(upload)
-        filedata = {
-            'filedata': (filename, filestream)
-        }
-        response = self._send_with_data(
-            os.path.join(node_settings.api_url, 'articles', str(article['article_id']), 'files'), method='put', output='json', files=filedata)
-
-        filestream.close()
-
-        return file_to_hgrid(node, article, response)
-
-    def delete_article(self, node_settings, article):
-        return self._send(os.path.join(node_settings.api_url, 'articles', article), method='delete')
-
-    def publish_article(self, node_settings, article):
-        res = self._send(os.path.join(node_settings.api_url, 'articles',
-                         article, 'action', 'make_public'), method='post')
-        return res
-
-    # FILE LEVEL API
-    def delete_file(self, node, node_settings, article_id, file_id):
-        res = self._send(os.path.join(node_settings.api_url, 'articles',
-                         article_id, 'files', file_id), method='delete')
-        return res
-
     # OTHER HELPERS
     def get_options(self):
         projects = self._send("http://api.figshare.com/v1/my_data/projects")
@@ -238,24 +152,6 @@ class Figshare(object):
                 for project in projects] + \
             [{'label': article['title'], 'value': 'fileset_{0}'.format(article['article_id'])}
              for article in articles['items'] if article['defined_type'] == 'fileset']
-
-    def get_file(self, node_settings, found):
-        url = found.get('download_url')
-        if not url:
-            return None, None
-        f = urlopen(url)
-        filedata = f.read()
-        f.close()
-        size = found['size']
-        size = int(search(r'(\d+)\s?(\w)', size).group(1)) or 0
-        return found['name'], size, filedata
-
-    def create_temp_file(self, upload):
-        filename = secure_filename(upload.filename)
-        f = TemporaryFile('w+b')
-        f.write(upload.read())
-        f.seek(0)
-        return filename, f
 
     def categories(self):
         return self._send("http://api.figshare.com/v1/categories")
