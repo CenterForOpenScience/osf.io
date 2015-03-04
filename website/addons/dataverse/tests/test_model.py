@@ -33,8 +33,7 @@ class TestDataverseUserSettings(DataverseAddonTestCase):
         assert_false(dataverse.has_auth)
 
         # With valid credentials, dataverse is authorized
-        dataverse.dataverse_username = 'snowman'
-        dataverse.dataverse_password = 'frosty'
+        dataverse.api_token = 'snowman-frosty'
         assert_true(dataverse.has_auth)
 
     def test_clear(self):
@@ -42,8 +41,7 @@ class TestDataverseUserSettings(DataverseAddonTestCase):
         self.user_settings.clear()
 
         # Fields were cleared, but settings were not deleted
-        assert_false(self.user_settings.dataverse_username)
-        assert_false(self.user_settings.dataverse_password)
+        assert_false(self.user_settings.api_token)
         assert_false(self.user_settings.deleted)
 
         # Authorized node settings were deauthorized
@@ -96,8 +94,7 @@ class TestDataverseNodeSettings(DataverseAddonTestCase):
         node_settings.save()
         assert_false(node_settings.has_auth)
 
-        user_settings.dataverse_username = 'foo'
-        user_settings.dataverse_password = 'bar'
+        user_settings.api_token = 'foo-bar'
         user_settings.save()
         assert_true(node_settings.has_auth)
 
