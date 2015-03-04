@@ -2,7 +2,6 @@ import mock
 
 from webtest_plus import TestApp
 from dataverse import Connection, Dataverse, Dataset, DataverseFile
-from dataverse.exceptions import UnauthorizedError
 
 import website
 from website.addons.base.testing import AddonTestCase
@@ -19,8 +18,7 @@ class DataverseAddonTestCase(AddonTestCase):
         return TestApp(app)
 
     def set_user_settings(self, settings):
-        settings.dataverse_username = 'snowman'
-        settings.dataverse_password = 'frosty'
+        settings.api_token = 'snowman-frosty'
 
     def set_node_settings(self, settings):
         settings.dataverse_alias = 'ALIAS2'
@@ -29,20 +27,19 @@ class DataverseAddonTestCase(AddonTestCase):
         settings.dataset = 'Example (DVN/00001)'
 
 
-def create_mock_connection(username='snowman', password='frosty'):
+def create_mock_connection(token='snowman-frosty'):
     """
     Create a mock dataverse connection.
 
     Pass any credentials other than the default parameters and the connection
     will return none.
     """
-    if not(username == 'snowman' and password == 'frosty'):
+    if not token == 'snowman-frosty':
         return None
 
     mock_connection = mock.create_autospec(Connection)
 
-    mock_connection.username = username
-    mock_connection.password = password
+    mock_connection.token = token
     mock_connection.connected = True
 
     mock_connection.get_dataverses.return_value = [
