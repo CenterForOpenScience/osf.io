@@ -31,11 +31,11 @@ var PrivateLinkViewModel = function(url) {
         self.nodes(response['children']);
     }
 
-        function onFetchError() {
-            $osf.growl('Could not retrieve projects.', 'Please refresh the page or ' +
-                    'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
-                    'problem persists.');
-        }
+    function onFetchError() {
+        $osf.growl('Could not retrieve projects.', 'Please refresh the page or ' +
+                'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
+                'problem persists.');
+    }
 
     function fetch() {
         $.ajax({
