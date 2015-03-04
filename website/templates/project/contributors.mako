@@ -177,7 +177,7 @@
         </div>
 
         % if node['is_registration'] and node['is_public']:
-            <a class="btn btn-danger" href="/project/${ node['id'] }/retract_registration/">Retract Public Registration</a>
+            <a class="btn btn-danger" href="{{ node.web_url_for('node_registration_retraction') }}">Retract Public Registration</a>
         % endif
 
     % endif
