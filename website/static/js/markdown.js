@@ -32,6 +32,7 @@ var markdownQuick = new MarkdownIt(('commonmark'), {
      highlight: highlighter
 })
     .use(require('markdown-it-sanitizer'))
+    .disable('link')
     .disable('image');
 
 module.exports = {
