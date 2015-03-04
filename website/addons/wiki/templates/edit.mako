@@ -164,12 +164,12 @@
             <div class="wiki-panel wiki-panel-flex">
               <div class="wiki-panel-header wiki-panel-header-flex">
                   <div class="row">
-                      <div class="col-sm-6">
+                      <div class="col-xs-12">
                           <i class="icon-exchange"> </i>  Compare
                       </div>
-                      <div class="col-sm-6">
+                      <div class="col-xs-12">
                             <!-- Version Picker -->
-                          <span class="compare-version-text pull-right"><span data-bind="text: viewVersionDisplay"></span> to
+                          <span class="compare-version-text"><span data-bind="text: viewVersionDisplay"></span> to
                             <select data-bind="value: compareVersion" id="compareVersionSelect">
                                 <option value="current" ${'selected' if version_settings['compare'] == 'current' else ''}>Current</option>
                                 % if len(versions) > 1:
