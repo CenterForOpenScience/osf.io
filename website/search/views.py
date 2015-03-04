@@ -29,6 +29,8 @@ from website.util import api_url_for
 
 logger = logging.getLogger(__name__)
 
+RESULTS_PER_PAGE = 250
+
 
 def handle_search_errors(func):
     @functools.wraps(func)
@@ -234,19 +236,18 @@ def search_share_atom(**kwargs):
     q = request.args.get('q', '*')
     sort = request.args.get('sort', 'dateUpdated')
 
-    # we want the size to be constant between pages
+    # we want the results per page to be constant between pages
     # TODO -  move this functionality into build_query in util
-    size = 250
 
     try:
-        page = (int(request.args.get('page', 1)) - 1) * size
+        page = (int(request.args.get('page', 1)) - 1) * RESULTS_PER_PAGE
     except ValueError:
         page = 0
 
     if page < 0:
         page = 0
 
-    query = build_query(q, size=size, start=page, sort=sort)
+    query = build_query(q, size=RESULTS_PER_PAGE, start=page, sort=sort)
 
     try:
         search_results = search.search(query, index='share')
@@ -264,7 +265,7 @@ def search_share_atom(**kwargs):
         name='SHARE',
         data=search_results['results'],
         query=q,
-        size=size,
+        size=RESULTS_PER_PAGE,
         start=page,
         url=atom_url,
         to_atom=share_search.to_atom
