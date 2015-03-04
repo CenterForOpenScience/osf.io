@@ -42,7 +42,7 @@ var AddPointerViewModel = function(nodeTitle) {
         self.errorMsg('');
         if (self.query()) {
             osfHelpers.getJSON(
-                '/api/v1/search/node/',
+                '/api/v1/pointer/search',
                 {
                     query: self.query(),
                     nodeId: nodeId,

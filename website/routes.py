@@ -650,10 +650,12 @@ def make_url_map(app):
 
         Rule('/api/v1/user/search/', 'get', search_views.search_contributor, json_renderer),
 
+        # Rule('/api/v1/link/search/', 'get', search_views.search_node, json_renderer),
+
         Rule(
             '/api/v1/search/node/',
-            'get',
-            search_views.search_node,
+            'post',
+            project_views.node.search_node,
             json_renderer,
         ),
 
