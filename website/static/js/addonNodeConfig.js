@@ -250,7 +250,7 @@ FolderPickerViewModel.prototype.toggleShare = function() {
     }
 };
 
-FolderPicker.prototype.activateShare = function() {
+FolderPickerViewModel.prototype.activateShare = function() {
     var self = this;
 
     function onGetEmailsSuccess(response) {
