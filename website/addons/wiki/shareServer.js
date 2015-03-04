@@ -7,6 +7,7 @@ var livedb = require('livedb');
 var Duplex = require('stream').Duplex;
 var WebSocketServer = require('ws').Server;
 var express = require('express');
+var bodyParser = require('body-parser');
 var morgan = require('morgan');
 var async = require('async');
 
@@ -47,6 +48,7 @@ var mongo = require('livedb-mongo')(
 var backend = livedb.client(mongo);
 var share = sharejs.server.createClient({backend: backend});
 var app = express();
+var jsonParser = bodyParser.json();
 var server = http.createServer(app);
 var wss = new WebSocketServer({server: server});
 
@@ -209,9 +211,12 @@ app.post('/lock/:id', function (req, res, next) {
 });
 
 // Unlock a document
-app.post('/unlock/:id', function (req, res, next) {
+app.post('/unlock/:id', jsonParser, function (req, res, next) {
     delete locked[req.params.id];
-    wss.broadcast(req.params.id, JSON.stringify({type: 'unlock'}));
+    wss.broadcast(req.params.id, JSON.stringify({
+        type: 'unlock',
+        contributors: req.body // Contributors with write permission
+    }));
     console.info('[Document Unlocked] docId: %s', req.params.id);
     res.send(util.format('%s was unlocked.', req.params.id));
 });

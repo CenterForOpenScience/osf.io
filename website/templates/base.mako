@@ -68,7 +68,7 @@
     <%include file="nav.mako"/>
      ## TODO: shouldn't always have the watermark class
     <div class="watermarked">
-        <div class="container">
+        <div class="container ${self.container_class()}">
             % if status:
                 <%include file="alert.mako"/>
             % endif
@@ -88,8 +88,8 @@
                 <h1>Start managing your projects on the OSF today.</h1>
                 <p>Free and easy to use, the Open Science Framework supports the entire research lifecycle: planning, execution, reporting, archiving, and discovery.</p>
                 <div>
-                    <a class="btn btn-primary" href="/login/">Create an Account</a>
-                    <a class="btn btn-primary" href="/getting-started/">Learn More</a>
+                    <a data-bind="click: trackClick.bind($data, 'Create Account')" class="btn btn-primary" href="/login/">Create an Account</a>
+                    <a data-bind="click: trackClick.bind($data, 'Learn More')" class="btn btn-primary" href="/getting-started/">Learn More</a>
                     <a data-bind="click: dismiss">Hide this message</a>
                 </div>
             </div>
@@ -174,6 +174,10 @@
 
 <%def name="title()">
     ### The page title ###
+</%def>
+
+<%def name="container_class()">
+    ### CSS classes to apply to the "content" div ###
 </%def>
 
 <%def name="description()">

@@ -1,0 +1,13 @@
+#zoteroWidget > ul {
+    list-style-type: none;
+    padding-left:0;
+    margin-bottom:0;
+}
+
+#zoteroWidget > ul > li {
+    margin-bottom:10px;
+}
+
+#zoteroWidget > ul > li:last-child {
+    margin-bottom:0px;
+}
