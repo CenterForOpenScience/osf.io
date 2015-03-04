@@ -30,8 +30,10 @@ def get_targets():
     ret = []
     # NodeFiles were once a GuidStored object and are no longer used any more.
     # However, they still exist in the production database. We just skip over them
-    # for now, but they can probably need to be removed in the future. /sloria /jmcarp
-    for each in Guid.find(Q('referent.1', 'ne', 'nodefile')):
+    # for now, but they can probably need to be removed in the future.
+    # There were also 10 osfguidfile objects that lived in a corrupt repo that
+    # were not migrated to OSF storage, so we skip those as well. /sloria /jmcarp
+    for each in Guid.find(Q('referent.1', 'ne', 'nodefile') & Q('referent.1', 'ne', 'osfguidfile')):
         logger.info('GUID {} has no referent.'.format(each._id))
         if each.referent is None:
             ret.append(each)
