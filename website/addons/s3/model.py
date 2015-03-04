@@ -40,9 +40,9 @@ class AddonS3UserSettings(AddonUserSettingsBase):
     secret_key = fields.StringField()
 
     def to_json(self, user):
-        ret = super(AddonS3UserSettings, self).to_json(user)
-        ret['has_auth'] = self.has_auth
-        return ret
+        rv = super(AddonS3UserSettings, self).to_json(user)
+        rv['has_auth'] = self.has_auth
+        return rv
 
     @property
     def has_auth(self):
@@ -66,12 +66,12 @@ class AddonS3UserSettings(AddonUserSettingsBase):
     def revoke_auth(self, save=False):
         for node_settings in self.addons3nodesettings__authorized:
             node_settings.deauthorize(save=True)
-        ret = self.remove_iam_user() if self.has_auth else True
+        rv = self.remove_iam_user() if self.has_auth else True
         self.s3_osf_user, self.access_key, self.secret_key = None, None, None
 
         if save:
             self.save()
-        return ret
+        return rv
 
     def delete(self, save=True):
         self.revoke_auth(save=False)
@@ -172,11 +172,11 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         )
 
     def to_json(self, user):
-        ret = super(AddonS3NodeSettings, self).to_json(user)
+        rv = super(AddonS3NodeSettings, self).to_json(user)
 
         user_settings = user.get_addon('s3')
 
-        ret.update({
+        rv.update({
             'bucket': self.bucket or '',
             'has_bucket': self.bucket is not None,
             'user_is_owner': (
@@ -190,12 +190,11 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         })
 
         if self.has_auth:
-            ret['owner'] = self.user_settings.owner.fullname
-            ret['owner_url'] = self.user_settings.owner.url
-            ret['bucket_list'] = get_bucket_drop_down(self.user_settings)
-            ret['node_has_auth'] = True
+            rv['owner'] = self.user_settings.owner.fullname
+            rv['owner_url'] = self.user_settings.owner.url
+            rv['node_has_auth'] = True
 
-        return ret
+        return rv
 
     @property
     def is_registration(self):
@@ -203,7 +202,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
 
     @property
     def has_auth(self):
-        return bool(self.user_settings and self.user_settings.has_auth)
+        return self.user_settings and self.user_settings.has_auth
         #TODO Update callbacks
 
     def before_register(self, node, user):
