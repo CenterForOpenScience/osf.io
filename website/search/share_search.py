@@ -240,7 +240,7 @@ def to_atom(result):
         'updated': get_date_updated(result),
         'link': result['id']['url'] if result.get('id') else result['links'][0]['url'],
         'author': format_contributors_for_atom(result['contributors']),
-        'categories': format_categories(result.get('tags')),
+        'categories': [{"term": tag} for tag in result.get('tags')],
         'published': parse(result.get('dateUpdated'))
     }
 
@@ -254,14 +254,6 @@ def format_contributors_for_atom(contributors_list):
         })
 
     return formatted_names
-
-
-def format_categories(tags_list):
-    cat_list = []
-    for tag in tags_list:
-        cat_list.append({"term": tag})
-
-    return cat_list
 
 
 def get_date_updated(result):
