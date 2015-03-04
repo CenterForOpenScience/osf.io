@@ -5,6 +5,7 @@ get deleted, leaving behind a guid that points to nothing.
 """
 import sys
 
+from modularodm import Q
 from framework.guid.model import Guid
 from website.app import init_app
 from scripts import utils as scripts_utils
@@ -27,7 +28,10 @@ def get_targets():
     # Use a loop because querying MODM with Guid.find(Q('referent', 'eq', None))
     # only catches the first case.
     ret = []
-    for each in Guid.find():
+    # NodeFiles were once a GuidStored object and are no longer used any more.
+    # However, they still exist in the production database. We just skip over them
+    # for now, but they can probably need to be removed in the future. /sloria /jmcarp
+    for each in Guid.find(Q('referent.1', 'ne', 'nodefile')):
         logger.info('GUID {} has no referent.'.format(each._id))
         if each.referent is None:
             ret.append(each)
