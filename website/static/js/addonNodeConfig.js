@@ -1,7 +1,7 @@
 /**
-* Module that controls the addon node settings. Includes Knockout view-model
-* for syncing data, and HGrid-folderpicker for selecting a folder.
-*/
+ * Module that controls the addon node settings. Includes Knockout view-model
+ * for syncing data, and HGrid-folderpicker for selecting a folder.
+ */
 'use strict';
 
 var ko = require('knockout');
@@ -167,24 +167,22 @@ var FolderPickerViewModel = function(addonName, url, selector, folderPicker, opt
         return (userIsOwner && selected) ? selected.name : '';
     });
 
-    self.selectedFolderType = ko.computed(function(){
+    self.selectedFolderType = ko.computed(function() {
         var userHasAuth = self.userHasAuth();
         var selected = self.selected();
         return (userHasAuth && selected) ? selected.type : '';
     });
-    
+
     // Overrides
     self.options = {
         onPickFolder: function(evt, item) {
-            // TODO 
             evt.preventDefault();
-            var name = item.data.path === 'All Files' ? '/ (Full ' + self.addonName + ')' : item.data.path.replace('All Files', '');
+            var name = item.data.path !== '/' ? item.data.path : '/ (Full ' + self.addonName + ')';
             self.selected({
                 name: name,
-                path: item.data.path,
-                id: item.data.id
+                path: item.data.path
             });
-            return false; // Prevent event propagation        
+            return false; // Prevent event propagation
         }
     };
     // Overrides
