@@ -9,12 +9,72 @@ from tests.factories import UserFactory, ProjectFactory
 
 from framework.auth import Auth
 from website.addons.github import settings as github_settings
-from website.addons.github.exceptions import NotFoundError
-from website.addons.github.model import AddonGitHubUserSettings, AddonGitHubOauthSettings
+from website.addons.github.exceptions import NotFoundError, TooBigToRenderError
 from website.addons.github.tests.factories import GitHubOauthSettingsFactory
+from website.addons.github.model import AddonGitHubUserSettings, AddonGitHubOauthSettings, GithubGuidFile
 
 from .utils import create_mock_github
 mock_github = create_mock_github()
+
+
+class TestFileGuid(OsfTestCase):
+
+    def setUp(self):
+        super(OsfTestCase, self).setUp()
+        self.user = UserFactory()
+        self.project = ProjectFactory(creator=self.user)
+
+        self.project.add_addon('github', auth=Auth(self.user))
+        self.node_addon = self.project.get_addon('github')
+
+    def test_provider(self):
+        assert_equal('github', GithubGuidFile().provider)
+
+    def test_correct_path(self):
+        guid, _ = self.node_addon.find_or_create_file_guid('perth')
+        assert_equal(guid.waterbutler_path, 'perth')
+        assert_equal(guid.waterbutler_path, guid.path)
+
+    @mock.patch('website.addons.base.requests.get')
+    def test_unique_identifier(self, mock_get):
+        mock_response = mock.Mock(ok=True, status_code=200)
+        mock_get.return_value = mock_response
+        mock_response.json.return_value = {
+            'data': {
+                'name': 'Morty',
+                'extra': {
+                    'fileSha': 'Im a little tea pot'
+                }
+            }
+        }
+
+        guid, _ = self.node_addon.find_or_create_file_guid('perth')
+        guid.enrich()
+
+        assert_equal(guid.unique_identifier, 'Im a little tea pot')
+
+    def test_exception_from_response(self):
+        mock_response = mock.Mock()
+        mock_response.json.return_value = {'errors': [{'code': 'too_large'}]}
+
+        guid, _ = self.node_addon.find_or_create_file_guid('perth')
+
+        with assert_raises(TooBigToRenderError):
+            guid._exception_from_response(mock_response)
+
+    def test_node_addon_get_or_create(self):
+        guid, created = self.node_addon.find_or_create_file_guid('/4/2')
+
+        assert_true(created)
+        assert_equal(guid.waterbutler_path, '/4/2')
+
+    def test_node_addon_get_or_create_finds(self):
+        guid1, created1 = self.node_addon.find_or_create_file_guid('/foo/bar')
+        guid2, created2 = self.node_addon.find_or_create_file_guid('/foo/bar')
+
+        assert_true(created1)
+        assert_false(created2)
+        assert_equals(guid1, guid2)
 
 
 class TestCallbacks(OsfTestCase):
@@ -201,51 +261,20 @@ class TestCallbacks(OsfTestCase):
             None,
         )
 
-    @mock.patch('website.addons.github.api.GitHub.branches')
-    def test_after_register(self, mock_branches):
-        mock_branches.return_value = mock_github.branches.return_value
-        registration = ProjectFactory()
-        clone, message = self.node_settings.after_register(
-            self.project, registration, self.project.creator,
-        )
-        mock_branches.assert_called_with(
-            self.node_settings.user,
-            self.node_settings.repo,
-        )
-        assert_equal(
-            self.node_settings.user,
-            clone.user,
-        )
-        assert_equal(
-            self.node_settings.repo,
-            clone.repo,
-        )
-        assert_equal(
-            clone.registration_data,
-            {'branches': [
-                branch.to_json()
-                for branch in mock_github.branches.return_value
-            ]},
-        )
-        assert_equal(
-            clone.user_settings,
-            self.node_settings.user_settings
-        )
-
-    @mock.patch('website.addons.github.api.GitHub.branches')
-    def test_after_register_not_found(self, mock_branches):
-        mock_branches.side_effect = NotFoundError
-        registration = ProjectFactory()
-        clone, message = self.node_settings.after_register(
-            self.project, registration, self.project.creator,
-        )
-        assert_false(clone.registration_data)
-
     def test_after_delete(self):
         self.project.remove_node(Auth(user=self.project.creator))
         # Ensure that changes to node settings have been saved
         self.node_settings.reload()
         assert_true(self.node_settings.user_settings is None)
+
+    def test_does_not_get_copied_to_registrations(self):
+        registration = self.project.register_node(
+            schema=None,
+            auth=Auth(user=self.project.creator),
+            template='Template1',
+            data='hodor'
+        )
+        assert_false(registration.has_addon('github'))
 
 
 class TestAddonGithubUserSettings(OsfTestCase):

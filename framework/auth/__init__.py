@@ -3,7 +3,11 @@
 from framework.sessions import session, create_session, goback
 from framework import bcrypt
 from framework.auth.exceptions import (
-    DuplicateEmailError, LoginNotAllowedError, PasswordIncorrectError, TwoFactorValidationError
+    DuplicateEmailError,
+    LoginDisabledError,
+    LoginNotAllowedError,
+    PasswordIncorrectError,
+    TwoFactorValidationError,
 )
 
 from .core import User, Auth
@@ -66,6 +70,10 @@ def login(username, password, two_factor=None):
 
             if not user.is_claimed:
                 raise LoginNotAllowedError('User is not claimed.')
+
+            if user.is_disabled:
+                raise LoginDisabledError('User is disabled.')
+
             if 'twofactor' in settings.ADDONS_REQUESTED:
                 tfa = user.get_addon('twofactor')
                 if tfa and tfa.is_confirmed and not tfa.verify_code(two_factor):

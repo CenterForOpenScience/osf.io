@@ -1,10 +1,4 @@
-;(function (global, factory) {
-    if (typeof define === 'function' && define.amd) {
-        define(['js/rubeus'], factory);
-    } else if (typeof $script === 'function') {
-        $script.ready('rubeus', function() { factory(Rubeus); });
-    } else { factory(Rubeus); }
-}(this, function(Rubeus) {
+    var Rubeus = require('rubeus');
 
     Rubeus.cfg.s3 = {
 
@@ -51,4 +45,3 @@
         }
     };
 
-}));

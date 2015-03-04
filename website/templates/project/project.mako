@@ -1,5 +1,132 @@
 <%inherit file="project/project_base.mako"/>
 
+<%
+    import json
+    is_project = node['node_type'] == 'project'
+%>
+
+<div id="projectScope">
+    <header class="subhead" id="overview">
+        <div class="row">
+            <div class="col-sm-6 col-md-7 cite-container">
+                % if parent_node['id']:
+                    % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
+                        <h2 class="node-parent-title">
+                            <a href="${parent_node['url']}">${parent_node['title']}</a> <i class="icon icon-level-down icon-dark-lg"> </i>
+                        </h2>
+                    % else:
+                        <h2 class="node-parent-title unavailable">
+                            <span>Private Project</span>&nbsp;/
+                        </h2>
+                    % endif
+                % endif
+                <h2 class="node-title">
+                    <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
+                </h2>
+            </div>
+            <div class="col-sm-6 col-md-5">
+                <div class="btn-toolbar node-control pull-right">
+                    <div class="btn-group">
+                    % if not node["is_public"]:
+                        <button class='btn btn-default disabled'>Private</button>
+                        % if 'admin' in user['permissions']:
+                            <a class="btn btn-default" data-bind="click: makePublic">Make Public</a>
+                        % endif
+                    % else:
+                        % if 'admin' in user['permissions']:
+                            <a class="btn btn-default" data-bind="click: makePrivate">Make Private</a>
+                        % endif
+                        <button class="btn btn-default disabled">Public</button>
+                    % endif
+                    </div>
+                    <!-- ko if: canBeOrganized -->
+                    <div class="btn-group" style="display: none" data-bind="visible: true">
+
+                        <!-- ko ifnot: inDashboard -->
+                           <a data-bind="click: addToDashboard, tooltip: {title: 'Add to Dashboard Folder',
+                            placement: 'bottom'}" class="btn btn-default">
+                               <i class="icon-folder-open"></i>
+                               <i class="icon-plus"></i>
+                           </a>
+                        <!-- /ko -->
+                        <!-- ko if: inDashboard -->
+                           <a data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from Dashboard Folder',
+                            placement: 'bottom'}" class="btn btn-default">
+                               <i class="icon-folder-open"></i>
+                               <i class="icon-minus"></i>
+                           </a>
+                        <!-- /ko -->
+
+                    </div>
+                    <!-- /ko -->
+                    <div class="btn-group">
+                        <a
+                        % if user_name and (node['is_public'] or user['is_contributor']) and not node['is_registration']:
+                            data-bind="click: toggleWatch, tooltip: {title: watchButtonAction, placement: 'bottom'}"
+                            class="btn btn-default"
+                        % else:
+                            class="btn btn-default disabled"
+                        % endif
+                            href="#">
+                            <i class="icon-eye-open"></i>
+                            <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
+                        </a>
+                        <a rel="tooltip" title="Duplicate" data-placement="bottom"
+                            class="btn btn-default${ '' if is_project else ' disabled'}" href="#"
+                            data-toggle="modal" data-target="#duplicateModal">
+                            <span class="glyphicon glyphicon-share"></span>&nbsp; ${ node['templated_count'] + node['fork_count'] + node['points'] }
+                        </a>
+                    </div>
+                    % if 'badges' in addons_enabled and badges and badges['can_award']:
+                        <div class="btn-group">
+                            <button class="btn btn-success" id="awardBadge" style="border-bottom-right-radius: 4px;border-top-right-radius: 4px;">
+                                <i class="icon-plus"></i> Award
+                            </button>
+                        </div>
+                    % endif
+                </div>
+            </div>
+        </div>
+        <div id="contributors" class="row" style="line-height:25px">
+            <div class="col-sm-12">
+                Contributors:
+                % if node['anonymous'] and not node['is_public']:
+                    <ol>Anonymous Contributors</ol>
+                % else:
+                    <ol>
+                        <div mod-meta='{
+                            "tpl": "util/render_contributors.mako",
+                            "uri": "${node["api_url"]}get_contributors/",
+                            "replace": true
+                        }'></div>
+                    </ol>
+                % endif
+                % if node['is_fork']:
+                    <br />Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
+                    <span data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"></span>
+                % endif
+                % if node['is_registration'] and node['registered_meta']:
+                    <br />Registration Supplement:
+                    % for meta in node['registered_meta']:
+                        <a href="${node['url']}register/${meta['name_no_ext']}">${meta['name_clean']}</a>
+                    % endfor
+                % endif
+                <br />Date Created:
+                <span data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}" class="date node-date-created"></span>
+                | Last Updated:
+                <span data-bind="text: dateModified.local, tooltip: {title: dateModified.utc}" class="date node-last-modified-date"></span>
+                % if parent_node['id']:
+                    <br />Category: <span class="node-category">${node['category']}</span>
+                % elif node['description'] or 'write' in user['permissions']:
+                    <br /><span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
+                % endif
+            </div>
+        </div>
+
+    </header>
+</div>
+
+
 <%def name="title()">${node['title']}</%def>
 
 <%include file="project/modal_add_pointer.mako"/>
@@ -14,22 +141,36 @@
 
 <div class="row">
 
-    <div class="col-sm-6">
+    <div class="col-sm-6 osf-dash-col">
+
+        %if user['show_wiki_widget']:
+            <div id="addonWikiWidget" class="addon-widget-container" mod-meta='{
+            "tpl": "../addons/wiki/templates/wiki_widget.mako",
+            "uri": "${node['api_url']}wiki/widget/"
+        }'></div>
+        %endif
+
+        <div class="addon-widget-container">
+            <div class="addon-widget-header clearfix">
+                <h4>Files</h4>
+                <div class="pull-right">
+                   <a href="${node['url']}files/" class="btn"> <i class="icon icon-external-link"></i> </a>
+                </div>
+            </div>
+            <div class="addon-widget-body">
+                <div id="treeGrid">
+                    <div class="fangorn-loading">
+                        <i class="icon-spinner fangorn-spin"></i> <p class="m-t-sm fg-load-message"> Loading files...  </p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         % if addons:
-
             <!-- Show widgets in left column if present -->
             % for addon in addons_enabled:
                 % if addons[addon]['has_widget']:
-                    %if addon == 'wiki':
-                        %if user['show_wiki_widget']:
-                            <div class="addon-widget-container" mod-meta='{
-                            "tpl": "../addons/wiki/templates/wiki_widget.mako",
-                            "uri": "${node['api_url']}wiki/widget/"
-                        }'></div>
-                        %endif
-
-                    %else:
+                    %if addon != 'wiki': ## We already show the wiki widget at the top
                     <div class="addon-widget-container" mod-meta='{
                             "tpl": "../addons/${addon}/templates/${addon}_widget.mako",
                             "uri": "${node['api_url']}${addon}/widget/"
@@ -37,46 +178,41 @@
                     %endif
                 % endif
             % endfor
-
         % else:
             <!-- If no widgets, show components -->
             ${children()}
-
         % endif
-
-        <div class="addon-widget-container">
-            <h3 class="addon-widget-header"><a href="${node['url']}files/">Files</a></h3>
-            <div id="filetreeProgressBar" class="progress progress-striped active">
-                <div class="progress-bar"  role="progressbar" aria-valuenow="100"
-                    aria-valuemin="0" aria-valuemax="100" style="width: 100%">
-                    <span class="sr-only">Loading</span>
-                </div>
-            </div>
-
-            <input role="search" class="form-control" placeholder="Search files..." type="text" id="fileSearch" autofocus>
-            <div id="myGrid" class="filebrowser hgrid"></div>
-        </div>
 
     </div>
 
-    <div class="col-sm-6">
+    <div class="col-sm-6 osf-dash-col">
 
         <!-- Citations -->
         % if not node['anonymous']:
-            <div class="citations">
-                <span class="citation-label">Citation:</span>
-                <span>${node['display_absolute_url']}</span>
-                <a href="#" class="citation-toggle" style="padding-left: 10px;">more</a>
-                <dl class="citation-list">
+
+         <div class="citations addon-widget-container">
+            <div class="addon-widget-header clearfix">
+                <h4>Citation</h4>
+                <div class="pull-right">
+                    <span class="permalink">${node['display_absolute_url']}</span><a href="#" class="btn project-toggle"><i class="icon icon-angle-down"></i></a>
+                </div>
+            </div>
+            <div class="addon-widget-body" style="display:none">
+                <dl id="citationList" class="citation-list">
                     <dt>APA</dt>
-                        <dd class="citation-text">${node['citations']['apa']}</dd>
+                        <dd class="citation-text" data-bind="text: apa"></dd>
                     <dt>MLA</dt>
-                        <dd class="citation-text">${node['citations']['mla']}</dd>
+                        <dd class="citation-text" data-bind="text: mla"></dd>
                     <dt>Chicago</dt>
-                        <dd class="citation-text">${node['citations']['chicago']}</dd>
+                        <dd class="citation-text" data-bind="text: chicago"></dd>
                 </dl>
-            </div><!-- end .citations -->
-        <hr />
+                <p><strong>More</strong></p>
+                <div id="citationStylePanel" class="citation-picker">
+                    <input id="citationStyleInput" type="hidden" />
+                </div>
+                <pre id="citationText" class="formatted-citation"></pre>
+            </div>
+         </div>
         % endif
 
         <!-- Show child on right if widgets -->
@@ -86,47 +222,55 @@
 
 
         %if node['tags'] or 'write' in user['permissions']:
-            <div class="tags">
+         <div class="tags addon-widget-container">
+            <div class="addon-widget-header clearfix">
+                <h4>Tags </h4>
+                <div class="pull-right">
+                </div>
+            </div>
+            <div class="addon-widget-body">
                 <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node['tags']]) if node['tags'] else ''}" />
             </div>
+        </div>
+
         %endif
 
-        <hr />
 
-        <div class="logs">
-            <%include file="log_list.mako"/>
-        </div>
+        <%include file="log_list.mako" args="scripted=True" />
 
     </div>
 
 </div>
 
 <%def name="children()">
-    % if node['node_type'] == 'project':
-            <div class="pull-right btn-group">
-                % if 'write' in user['permissions'] and not node['is_registration']:
-                    <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
-                    <a class="btn btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
-                % endif
-            </div>
-        <h2>Components</h2>
-        <hr />
-    % endif
-
-
 % if node['node_type'] == 'project':
-  % if node['children']:
-      <div id="containment">
-          <div mod-meta='{
-                  "tpl": "util/render_nodes.mako",
-                  "uri": "${node["api_url"]}get_children/",
-                  "replace": true,
-          "kwargs": {"sortable" : ${'true' if not node['is_registration'] else 'false'}}
-              }'></div>
-      </div>
-  % else:
-    <p>No components have been added to this project.</p>
-  % endif
+     <div class="components addon-widget-container">
+        <div class="addon-widget-header clearfix">
+            <h4>Components </h4>
+            <div class="pull-right">
+              % if 'write' in user['permissions'] and not node['is_registration']:
+                    <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
+                    <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
+                % endif
+
+            </div>
+        </div>
+        <div class="addon-widget-body">
+              % if node['children']:
+                  <div id="containment">
+                      <div mod-meta='{
+                              "tpl": "util/render_nodes.mako",
+                              "uri": "${node["api_url"]}get_children/",
+                              "replace": true,
+                      "kwargs": {"sortable" : ${'true' if not node['is_registration'] else 'false'}}
+                          }'></div>
+                  </div>
+              % else:
+                <p>No components have been added to this project.</p>
+              % endif
+
+        </div>
+    </div>
 % endif
 
 % for name, capabilities in addon_capabilities.iteritems():
@@ -138,137 +282,42 @@
 <%def name="stylesheets()">
     ${parent.stylesheets()}
     % for style in addon_widget_css:
-        <link rel="stylesheet" href="${style}" />
+    <link rel="stylesheet" href="${style}" />
+    % endfor
+    % for stylesheet in tree_css:
+    <link rel='stylesheet' href='${stylesheet}' type='text/css' />
     % endfor
 </%def>
 
 <%def name="javascript_bottom()">
+<% import json %>
+
 ${parent.javascript_bottom()}
 
-% for script in addon_widget_js:
-    <script type="text/javascript" src="${script}"></script>
+% for script in tree_js:
+<script type="text/javascript" src="${script | webpack_asset}"></script>
 % endfor
 
 <script type="text/javascript">
-    $script(['/static/js/logFeed.js'], 'logFeed');
-
-    $('body').on('nodeLoad', function(event, data) {
-       $script.ready('logFeed', function() {
-           var logFeed = new LogFeed('#logScope', nodeApiUrl + 'log/');
-       });
+    // Hack to allow mako variables to be accessed to JS modules
+    window.contextVars = $.extend(true, {}, window.contextVars, {
+        currentUser: {
+            name: '${user_full_name | js_str}',
+            canComment: ${json.dumps(user['can_comment'])},
+            canEdit: ${json.dumps(user['can_edit'])}
+        },
+        node: {
+            hasChildren: ${json.dumps(node['has_children'])},
+            isRegistration: ${json.dumps(node['is_registration'])},
+            tags: ${json.dumps(node['tags'])}
+        }
     });
-
-    ##  NOTE: pointers.js is loaded in project_base.mako
-    $script.ready('pointers', function() {
-       var pointerManager = new Pointers.PointerManager('#addPointer', contextVars.node.title);
-    });
-
-
-    var $comments = $('#comments');
-    var userName = '${user_full_name | js_str}';
-    var canComment = ${'true' if user['can_comment'] else 'false'};
-    var hasChildren = ${'true' if node['has_children'] else 'false'};
-
-    if ($comments.length) {
-
-        $script(['/static/js/commentpane.js', '/static/js/comment.js'], 'comments');
-
-        $script.ready('comments', function () {
-            var timestampUrl = nodeApiUrl + 'comments/timestamps/';
-            var onOpen = function() {
-                var request = $.osf.putJSON(timestampUrl);
-                request.fail(function(xhr, textStatus, errorThrown) {
-                    Raven.captureMessage('Could not update comment timestamp', {
-                        url: timestampUrl,
-                        textStatus: textStatus,
-                        errorThrown: errorThrown
-                    });
-                });
-            }
-            var commentPane = new CommentPane('#commentPane', {onOpen: onOpen});
-            Comment.init('#commentPane', userName, canComment, hasChildren);
-        });
-    }
-
 </script>
 
-## Todo: Move to project.js
-<script>
+<script src="${"/static/public/js/project-dashboard.js" | webpack_asset}"></script>
 
-    $(document).ready(function() {
-
-        // Tooltips
-        $('[data-toggle="tooltip"]').tooltip();
-
-        // Tag input
-        $('#node-tags').tagsInput({
-            width: "100%",
-            interactive: ${'true' if user["can_edit"] else 'false'},
-            maxChars: 128,
-            onAddTag: function(tag){
-                var url = "${node['api_url']}" + "addtag/" + tag + "/";
-                var request = $.ajax({
-                    url: url,
-                    type: "POST",
-                    contentType: "application/json"
-                });
-                request.fail(function(xhr, textStatus, error) {
-                    Raven.captureMessage('Failed to add tag', {
-                        tag: tag, url: url, textStatus: textStatus, error: error
-                    });
-                })
-            },
-            onRemoveTag: function(tag){
-                var url = "${node['api_url']}" + "removetag/" + tag + "/";
-                var request = $.ajax({
-                    url: url,
-                    type: "POST",
-                    contentType: "application/json"
-                });
-                request.fail(function(xhr, textStatus, error) {
-                    Raven.captureMessage('Failed to remove tag', {
-                        tag: tag, url: url, textStatus: textStatus, error: error
-                    });
-                })
-            }
-        });
-
-        // Limit the maximum length that you can type when adding a tag
-        $('#node-tags_tag').attr("maxlength", "128");
-
-        // Remove delete UI if not contributor
-        % if 'write' not in user['permissions'] or node['is_registration']:
-            $('a[title="Removing tag"]').remove();
-            $('span.tag span').each(function(idx, elm) {
-                $(elm).text($(elm).text().replace(/\s*$/, ''))
-            });
-        % endif
-
-        %if node['is_registration'] and not node['tags']:
-            $('div.tags').remove();
-        %endif
-
-    });
-    $script.ready(['rubeus'], function() {
-        // Since we don't have an Buttons/Status column, we append status messages to the
-        // name column
-        Rubeus.Col.DashboardName = $.extend({}, Rubeus.Col.Name);
-        Rubeus.Col.DashboardName.itemView = function(item) {
-            return Rubeus.Col.Name.itemView(item) + '&nbsp;<span data-status></span>';
-        };
-        var rubeusOpts = {
-            data: nodeApiUrl + 'files/grid/',
-            columns: [Rubeus.Col.DashboardName],
-            width: "100%",
-            height: 600,
-            progBar: '#filetreeProgressBar',
-            searchInput: '#fileSearch'
-        };
-        % if disk_saving_mode:
-          rubeusOpts.uploads = false;
-        % endif
-        var filebrowser = new Rubeus('#myGrid', rubeusOpts);
-    })
-</script>
+% for asset in addon_widget_js:
+<script src="${asset | webpack_asset}"></script>
+% endfor
 
 </%def>

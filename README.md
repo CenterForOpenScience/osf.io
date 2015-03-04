@@ -8,7 +8,7 @@
 - Huboard: https://huboard.com/CenterForOpenScience/osf.io#/
 - Docs: http://cosdev.rtfd.org/
 
-> ## Help
+## Help
 
 Solutions to many common issues may be found at the [OSF Developer Docs](http://cosdev.rtfd.org/).
 
@@ -44,13 +44,7 @@ $ invoke setup
 ```
 
 
-- Optionally, you may install the requirements for the Modular File Renderer:
-
-```bash
-$ invoke mfr_requirements
-```
-
-and for addons:
+- Optionally, you may install the requirements for addons:
 
 ```bash
 $ invoke addon_requirements
@@ -90,6 +84,12 @@ $ invoke mongo
 
 ```bash
 $ invoke server
+```
+
+- Run your local sharejs server.
+
+```bash
+$ invoke sharejs
 ```
 
 ## Running the shell
@@ -250,21 +250,16 @@ $ invoke migrate_search
 $ invoke elasticsearch
 ```
 
+## NPM
 
-## Using Bower for front-end dependencies
-
-We use [bower](http://bower.io/) to automatically download and manage dependencies for front-end libraries. This should
-be installed with `invoke setup` (above)
-
-To get the bower CLI, you must have Node installed.
+The Node Package Manager (NPM) is required for installing a number of node-based packages.
 
 ```bash
 # For MacOSX
 $ brew update && brew install node
-$ npm install -g bower
 ```
 
-Installing Node and Bower on Ubuntu is slightly more complicated. Node is installed as `nodejs`, but Bower expects
+Installing Node on Ubuntu is slightly more complicated. Node is installed as `nodejs`, but Bower expects
 the binary to be called `node`. Symlink `nodejs` to `node` to fix, then verify that `node` is properly aliased:
 
 ```bash
@@ -272,6 +267,27 @@ the binary to be called `node`. Symlink `nodejs` to `node` to fix, then verify t
 $ sudo apt-get install nodejs
 $ sudo ln -s /usr/bin/nodejs /usr/bin/node
 $ node --version      # v0.10.25
+```
+
+
+## Install NPM requirements
+
+To install necessary NPM requiremnts, run:
+
+```bash
+$ npm install
+```
+
+In the OSF root directory.
+
+## Using Bower to install front-end dependencies
+
+We use [bower](http://bower.io/) to automatically download and manage dependencies for front-end libraries. This should
+be installed with `invoke setup` (above)
+
+To get the bower CLI, you must have `npm` installed.
+
+```bash
 $ npm install -g bower
 ```
 
@@ -294,6 +310,40 @@ $ bower install zeroclipboard --save
 The `--save` option automatically adds an entry to the `bower.json` after downloading the library.
 
 This will save the library in `website/static/vendor/bower_components/`, where it can be imported like any other module.
+
+## Using webpack for asset bundling and minification
+
+We use [webpack](https://webpack.github.io/docs/) to bundle and minify our static assets.
+
+To get the webpack CLI, you must have `npm` installed.
+
+```bash
+$ npm install -g webpack
+```
+
+### To build assets with webpack
+
+```bash
+# Make sure dependencies are up to date
+$ bower install && npm install
+# Run webpack in debug mode and watch for changes
+$ inv pack -dw
+```
+
+**The above commands can be run in one step with**:
+
+```bash
+$ inv assets -dw
+```
+
+## Downloading citation styles (optional)
+
+To download citation styles, run:
+
+```bash
+$ invoke update_citation_styles
+```
+
 
 ## Setting up addons
 
@@ -319,6 +369,8 @@ invoke mailserver
 invoke rabbitmq
 invoke celery_worker
 invoke elasticsearch
+bower install
+invoke pack -w
 invoke server
 ```
 

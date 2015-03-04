@@ -22,15 +22,9 @@ import os
 import logging
 
 from mako.lookup import TemplateLookup, Template
-
-from framework.email.tasks import send_email
+from framework.email import tasks
 from website import settings
 
-framework_send_email = (
-    send_email.delay
-    if settings.USE_CELERY
-    else send_email
-)
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +69,8 @@ def render_message(tpl_name, **context):
     return tpl.render(**context)
 
 
-def send_mail(to_addr, mail, mimetype='plain', **context):
+def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
+            username=None, password=None, mail_server=None, callback=None, **context):
     """Send an email from the OSF.
     Example: ::
 
@@ -86,26 +81,41 @@ def send_mail(to_addr, mail, mimetype='plain', **context):
     :param str to_addr: The recipient's email address
     :param Mail mail: The mail object
     :param str mimetype: Either 'plain' or 'html'
+    :param function callback: celery task to execute after send_mail completes
     :param **context: Context vars for the message template
 
     .. note:
-         Requires celery worker.
-
+         Uses celery if available
     """
+    from_addr = from_addr or settings.FROM_EMAIL
+    mailer = mailer or tasks.send_email
     subject = mail.subject(**context)
     message = mail.text(**context) if mimetype in ('plain', 'txt') else mail.html(**context)
     # Don't use ttls and login in DEBUG_MODE
     ttls = login = not settings.DEBUG_MODE
     logger.debug('Sending email...')
-    logger.debug(u'To: {to_addr}\nSubject: {subject}\nMessage: {message}'.format(**locals()))
-    return framework_send_email(
-        from_addr=settings.FROM_EMAIL,
+    logger.debug(u'To: {to_addr}\nFrom: {from_addr}\nSubject: {subject}\nMessage: {message}'.format(**locals()))
+
+    kwargs = dict(
+        from_addr=from_addr,
         to_addr=to_addr,
         subject=subject,
         message=message,
         mimetype=mimetype,
-        ttls=ttls, login=login
-    )
+        ttls=ttls,
+        login=login,
+        username=username,
+        password=password,
+        mail_server=mail_server)
+
+    if settings.USE_CELERY:
+        return mailer.apply_async(kwargs=kwargs, link=callback)
+    else:
+        ret = mailer(**kwargs)
+        if callback:
+            callback()
+
+        return ret
 
 # Predefined Emails
 
@@ -122,9 +132,16 @@ PENDING_VERIFICATION_REGISTERED = Mail('pending_registered', subject='Received r
 
 CONFERENCE_SUBMITTED = Mail(
     'conference_submitted',
-    subject='Project created on Open Science Framework'
+    subject='Project created on Open Science Framework',
+)
+CONFERENCE_INACTIVE = Mail(
+    'conference_inactive',
+    subject='Open Science Framework Error: Conference inactive',
 )
 CONFERENCE_FAILED = Mail(
     'conference_failed',
-    subject='Open Science Framework Error: No files attached'
+    subject='Open Science Framework Error: No files attached',
 )
+
+DIGEST = Mail('digest', subject='OSF Email Digest')
+TRANSACTIONAL = Mail('transactional', subject='OSF: ${subject}')

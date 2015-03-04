@@ -22,15 +22,23 @@ def get_public_projects(user):
     return [p for p in get_projects(user) if p.is_public]
 
 
-def serialize_user(user, node=None, full=False):
+def get_gravatar(user, size=None):
+    if size is None:
+        size = settings.GRAVATAR_SIZE_PROFILE
+    return gravatar(
+        user, use_ssl=True,
+        size=size
+    )
+
+
+def serialize_user(user, node=None, admin=False, full=False):
     """Return a dictionary representation of a registered user.
 
     :param User user: A User object
     :param bool full: Include complete user properties
-
     """
     fullname = user.display_full_name(node=node)
-    rv = {
+    ret = {
         'id': str(user._primary_key),
         'registered': user.is_registered,
         'surname': user.family_name,
@@ -40,15 +48,22 @@ def serialize_user(user, node=None, full=False):
             user, use_ssl=True,
             size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
         ),
-        'active': user.is_active(),
+        'active': user.is_active,
     }
     if node is not None:
-        rv.update({
-            'visible': user._id in node.visible_contributor_ids,
-            'permission': reduce_permissions(node.get_permissions(user)),
-        })
+        if admin:
+            flags = {
+                'visible': False,
+                'permission': 'read',
+            }
+        else:
+            flags = {
+                'visible': user._id in node.visible_contributor_ids,
+                'permission': reduce_permissions(node.get_permissions(user)),
+            }
+        ret.update(flags)
     if user.is_registered:
-        rv.update({
+        ret.update({
             'url': user.url,
             'absolute_url': user.absolute_url,
             'display_absolute_url': user.display_absolute_url,
@@ -65,7 +80,7 @@ def serialize_user(user, node=None, full=False):
             }
         else:
             merged_by = None
-        rv.update({
+        ret.update({
             'number_projects': len(get_projects(user)),
             'number_public_projects': len(get_public_projects(user)),
             'activity_points': user.get_activity_points(),
@@ -77,13 +92,12 @@ def serialize_user(user, node=None, full=False):
             'merged_by': merged_by,
         })
 
-    return rv
+    return ret
 
 
-def serialize_contributors(contribs, node):
-
+def serialize_contributors(contribs, node, **kwargs):
     return [
-        serialize_user(contrib, node)
+        serialize_user(contrib, node, **kwargs)
         for contrib in contribs
     ]
 
@@ -113,7 +127,7 @@ def add_contributor_json(user, current_user=None):
         'education': education,
         'n_projects_in_common': n_projects_in_common,
         'registered': user.is_registered,
-        'active': user.is_active(),
+        'active': user.is_active,
         'gravatar_url': gravatar(
             user, use_ssl=True,
             size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR

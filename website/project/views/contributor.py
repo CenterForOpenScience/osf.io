@@ -17,6 +17,7 @@ from framework.exceptions import HTTPError
 from framework.auth.signals import user_registered
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import PasswordForm, SetEmailAndPasswordForm
+from framework.transactions.handlers import no_auto_transaction
 
 from website import mails
 from website import language
@@ -155,7 +156,7 @@ def get_most_in_common_contributors(auth, **kwargs):
         if contrib_id not in node_contrib_ids)
 
     active_contribs = itertools.ifilter(
-        lambda c: User.load(c[0]).is_active(),
+        lambda c: User.load(c[0]).is_active,
         contrib_counts.most_common()
     )
 
@@ -185,7 +186,7 @@ def get_recently_added_contributors(auth, **kwargs):
 
     # only include active contributors
     active_contribs = itertools.ifilter(
-        lambda c: c.is_active() and c._id not in node.contributors,
+        lambda c: c.is_active and c._id not in node.contributors,
         auth.user.recently_added
     )
 
@@ -360,6 +361,7 @@ def project_contributors_post(**kwargs):
     return {'status': 'success'}, 201
 
 
+@no_auto_transaction
 @must_be_valid_project  # injects project
 @must_have_permission(ADMIN)
 @must_not_be_registration

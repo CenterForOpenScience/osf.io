@@ -63,9 +63,7 @@
                                         <td style="padding-right: 10px;">
                                             <a
                                                     class="btn btn-default contrib-button btn-mini"
-                                                    data-bind="click:$root.add"
-                                                    rel="tooltip"
-                                                    title="Add contributor"
+                                                    data-bind="click:$root.add, tooltip: {title: 'Add contributor'}"
                                                 >+</a>
                                         </td>
                                         <td>
@@ -152,9 +150,7 @@
                                         <td style="padding-right: 10px;">
                                             <a
                                                     class="btn btn-default contrib-button btn-mini"
-                                                    data-bind="click:$root.remove"
-                                                    rel="tooltip"
-                                                    title="Remove contributor"
+                                                    data-bind="click:$root.remove, tooltip: {title: 'Remove contributor'}"
                                                 >-</a>
                                         </td>
                                         <td>

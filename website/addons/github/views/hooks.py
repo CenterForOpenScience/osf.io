@@ -34,19 +34,14 @@ def add_hook_log(node, github, action, path, date, committer, include_urls=False
     }
 
     urls = {}
+
     if include_urls:
         # TODO: Move to helper function
+        url = node.web_url_for('addon_view_or_download_file', path=path, provider='github')
+
         urls = {
-            'view': node.web_url_for(
-                'github_view_file',
-                path=path,
-                sha=sha,
-            ),
-            'download': node.web_url_for(
-                'github_download_file',
-                path=path,
-                sha=sha,
-            ),
+            'view': '{0}?ref={1}'.format(url, sha),
+            'download': '{0}?action=download&ref={1}'.format(url, sha)
         }
 
     node.add_log(

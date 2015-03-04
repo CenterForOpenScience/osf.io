@@ -7,20 +7,33 @@ import glob
 import importlib
 import mimetypes
 from bson import ObjectId
-from mako.lookup import TemplateLookup
+from flask import request
 from modularodm import fields
+from mako.lookup import TemplateLookup
 
+import furl
+import requests
+
+from framework.exceptions import PermissionsError
 from framework.mongo import StoredObject
 from framework.routing import process_rules
 from framework.guid.model import GuidStoredObject
 
 from website import settings
+from website.addons.base import exceptions
+from website.project.model import Node
 
 lookup = TemplateLookup(
     directories=[
         settings.TEMPLATES_PATH
     ]
 )
+
+STATUS_EXCEPTIONS = {
+    410: exceptions.FileDeletedError,
+    404: exceptions.FileDoesntExistError
+}
+
 
 def _is_image(filename):
     mtype, _ = mimetypes.guess_type(filename)
@@ -33,7 +46,7 @@ class AddonConfig(object):
                  added_default=None, added_mandatory=None,
                  node_settings_model=None, user_settings_model=None, include_js=None, include_css=None,
                  widget_help=None, views=None, configs=None, models=None,
-                 has_hgrid_files=False, get_hgrid_data=None, max_file_size=None,
+                 has_hgrid_files=False, get_hgrid_data=None, max_file_size=None, high_max_file_size=None,
                  accept_extensions=True,
                  **kwargs):
 
@@ -70,6 +83,7 @@ class AddonConfig(object):
         # WARNING: get_hgrid_data can return None if the addon is added but has no credentials.
         self.get_hgrid_data = get_hgrid_data  # if has_hgrid_files and not get_hgrid_data rubeus.make_dummy()
         self.max_file_size = max_file_size
+        self.high_max_file_size = high_max_file_size
         self.accept_extensions = accept_extensions
 
         # Build template lookup
@@ -157,6 +171,7 @@ class GuidFile(GuidStoredObject):
 
     redirect_mode = 'proxy'
 
+    _metadata_cache = None
     _id = fields.StringField(primary=True)
     node = fields.ForeignField('node', required=True, index=True)
 
@@ -165,16 +180,163 @@ class GuidFile(GuidStoredObject):
     }
 
     @property
-    def file_url(self):
+    def provider(self):
         raise NotImplementedError
+
+    @property
+    def version_identifier(self):
+        raise NotImplementedError
+
+    @property
+    def unique_identifier(self):
+        raise NotImplementedError
+
+    @property
+    def waterbutler_path(self):
+        '''The waterbutler formatted path of the specified file.
+        Must being with a /
+        '''
+        raise NotImplementedError
+
+    @property
+    def guid_url(self):
+        return '/{0}/'.format(self._id)
+
+    @property
+    def name(self):
+        return self._metadata_cache['name']
+
+    @property
+    def file_name(self):
+        if self.revision:
+            return '{0}_{1}.html'.format(self._id, self.revision)
+        return '{0}_{1}.html'.format(self._id, self.unique_identifier)
+
+    @property
+    def joinable_path(self):
+        return self.waterbutler_path.lstrip('/')
+
+    @property
+    def _base_butler_url(self):
+        url = furl.furl(settings.WATERBUTLER_URL)
+        url.args.update({
+            'nid': self.node._id,
+            'provider': self.provider,
+            'path': self.waterbutler_path,
+            'cookie': request.cookies.get(settings.COOKIE_NAME)
+        })
+
+        if request.args.get('view_only'):
+            url.args['view_only'] = request.args['view_only']
+
+        if self.revision:
+            url.args[self.version_identifier] = self.revision
+
+        return url
+
+    @property
+    def download_url(self):
+        url = self._base_butler_url
+        url.path.add('file')
+        return url.url
+
+    @property
+    def mfr_download_url(self):
+        url = self._base_butler_url
+        url.path.add('file')
+
+        url.args['mode'] = 'render'
+        url.args['action'] = 'download'
+
+        if self.revision:
+            url.args[self.version_identifier] = self.revision
+
+        return url.url
+
+    @property
+    def public_download_url(self):
+        url = furl.furl(settings.DOMAIN)
+
+        url.path.add(self._id + '/')
+        url.args['mode'] = 'render'
+        url.args['action'] = 'download'
+
+        if self.revision:
+            url.args[self.version_identifier] = self.revision
+
+        return url.url
+
+    @property
+    def metadata_url(self):
+        url = self._base_butler_url
+        url.path.add('data')
+
+        return url.url
+
+    @property
+    def mfr_cache_path(self):
+        return os.path.join(
+            settings.MFR_CACHE_PATH,
+            self.node._id,
+            self.provider,
+            self.file_name,
+        )
+
+    @property
+    def mfr_temp_path(self):
+        return os.path.join(
+            settings.MFR_TEMP_PATH,
+            self.node._id,
+            self.provider,
+            # Attempt to keep the original extension of the file for MFR detection
+            self.file_name + os.path.splitext(self.name)[1]
+        )
 
     @property
     def deep_url(self):
         if self.node is None:
             raise ValueError('Node field must be defined.')
-        return os.path.join(
-            self.node.deep_url, self.file_url,
+
+        url = os.path.join(
+            self.node.deep_url,
+            'files',
+            self.provider,
+            self.joinable_path
         )
+
+        if url.endswith('/'):
+            return url
+        else:
+            return url + '/'
+
+    @property
+    def revision(self):
+        return getattr(self, '_revision', None)
+
+    def maybe_set_version(self, **kwargs):
+        self._revision = kwargs.get(self.version_identifier)
+
+    # TODO: why save?, should_raise or an exception try/except?
+    def enrich(self, save=True):
+        self._fetch_metadata(should_raise=True)
+
+    def _exception_from_response(self, response):
+        if response.ok:
+            return
+
+        if response.status_code in STATUS_EXCEPTIONS:
+            raise STATUS_EXCEPTIONS[response.status_code]
+
+        raise exceptions.AddonEnrichmentError(response.status_code)
+
+    def _fetch_metadata(self, should_raise=False):
+        # Note: We should look into caching this at some point
+        # Some attributes may change however.
+        resp = requests.get(self.metadata_url)
+
+        if should_raise:
+            self._exception_from_response(resp)
+        self._metadata_cache = resp.json()['data']
 
 
 class AddonSettingsBase(StoredObject):
@@ -276,6 +438,91 @@ class AddonUserSettingsBase(AddonSettingsBase):
             ]
         })
         return ret
+
+
+class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
+    _meta = {
+        'abstract': True,
+    }
+
+    oauth_grants = fields.DictionaryField()
+    # example:
+    # {
+    #     '<Node._id>': {
+    #         '<ExternalAccount._id>': {
+    #             <metadata>
+    #         },
+    #     }
+    # }
+    #
+    # metadata here is the specific to each addon.
+
+    # The existence of this property is used to determine whether or not
+    #   an addon instance is an "OAuth addon" in
+    #   AddonModelMixin.get_oauth_addons().
+    oauth_provider = None
+
+    @property
+    def connected_oauth_accounts(self):
+        return [
+            x for x in self.owner.external_accounts
+            if x.provider == self.oauth_provider.short_name
+        ]
+
+    def grant_oauth_access(self, node, external_account, metadata=None):
+        # ensure the user owns the external_account
+        if external_account not in self.owner.external_accounts:
+            raise PermissionsError()
+
+        metadata = metadata or {}
+
+        # create an entry for the node, if necessary
+        if node._id not in self.oauth_grants:
+            self.oauth_grants[node._id] = {}
+
+        # create an entry for the external account on the node, if necessary
+        if external_account._id not in self.oauth_grants[node._id]:
+            self.oauth_grants[node._id][external_account._id] = {}
+
+        # update the metadata with the supplied values
+        for key, value in metadata.iteritems():
+            self.oauth_grants[node._id][external_account._id][key] = value
+
+        self.save()
+
+    def revoke_oauth_access(self, external_account):
+        for key in self.oauth_grants:
+            self.oauth_grants[key].pop(external_account._id, None)
+
+        self.save()
+
+    def verify_oauth_access(self, node, external_account, metadata=None):
+        metadata = metadata or {}
+
+        # ensure the grant exists
+        try:
+            grants = self.oauth_grants[node._id][external_account._id]
+        except KeyError:
+            return False
+
+        # Verify every key/value pair is in the grants dict
+        for key, value in metadata.iteritems():
+            if key not in grants or grants[key] != value:
+                return False
+
+        return True
+
+    #############
+    # Callbacks #
+    #############
+
+    def on_delete(self):
+        super(AddonOAuthUserSettingsBase, self).on_delete()
+        nodes = [Node.load(node_id) for node_id in self.oauth_grants.keys()]
+        for node in nodes:
+            node_addon = node.get_addon(self.oauth_provider.short_name)
+            if node_addon and node_addon.user_settings == self:
+                node_addon.clear_auth()
 
 
 class AddonNodeSettingsBase(AddonSettingsBase):
@@ -420,13 +667,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         :returns: Tuple of cloned settings and alert message
 
         """
-        clone = self.clone()
-        clone.owner = registration
-
-        if save:
-            clone.save()
-
-        return clone, None
+        return None, None
 
     def after_delete(self, node, user):
         """
@@ -438,8 +679,60 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         pass
 
 
+class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
+    _meta = {
+        'abstract': True,
+    }
+
+    # TODO: Validate this field to be sure it matches the provider's short_name
+    external_account = fields.ForeignField('externalaccount',
+                                           backref='connected')
+
+    user_settings = fields.AbstractForeignField()
+
+    # The existence of this property is used to determine whether or not
+    #   an addon instance is an "OAuth addon" in
+    #   AddonModelMixin.get_oauth_addons().
+    oauth_provider = None
+
+    @property
+    def has_auth(self):
+        if not (self.user_settings and self.external_account):
+            return False
+
+        return self.user_settings.verify_oauth_access(
+            node=self.owner,
+            external_account=self.external_account
+        )
+
+    def set_auth(self, external_account, user):
+        """Connect the node addon to a user's external account.
+        """
+        # tell the user's addon settings that this node is connected to it
+        user_settings = user.get_or_add_addon(self.oauth_provider.short_name)
+        user_settings.grant_oauth_access(
+            node=self.owner,
+            external_account=external_account
+            # no metadata, because the node has access to no folders
+        )
+        user_settings.save()
+
+        # update this instance
+        self.user_settings = user_settings
+        self.external_account = external_account
+
+        self.save()
+
+    def clear_auth(self):
+        """Disconnect the node settings from the user settings"""
+
+        self.external_account = None
+        self.user_settings = None
+        self.save()
+
+
 # TODO: No more magicks
-def init_addon(app, addon_name, log_fp=None, routes=True):
+def init_addon(app, addon_name, routes=True):
     """Load addon module return its create configuration object.
 
     If `log_fp` is provided, the addon's log templates will be appended
@@ -453,20 +746,12 @@ def init_addon(app, addon_name, log_fp=None, routes=True):
         else None
 
     """
-    addon_path = os.path.join('website', 'addons', addon_name)
     import_path = 'website.addons.{0}'.format(addon_name)
 
     # Import addon module
     addon_module = importlib.import_module(import_path)
 
     data = vars(addon_module)
-
-    # Append add-on log templates to main log templates
-    log_templates = os.path.join(
-        addon_path, 'templates', 'log_templates.mako'
-    )
-    if os.path.exists(log_templates) and log_fp:
-        log_fp.write(open(log_templates, 'r').read())
 
     # Add routes
     if routes:

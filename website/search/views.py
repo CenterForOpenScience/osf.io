@@ -144,8 +144,8 @@ def search_projects_by_title(**kwargs):
         ).limit(max_results - my_project_count)
 
     results = list(my_projects) + list(public_projects)
-    out = process_project_search_results(results, **kwargs)
-    return out
+    ret = process_project_search_results(results, **kwargs)
+    return ret
 
 
 @must_be_logged_in
@@ -157,7 +157,7 @@ def process_project_search_results(results, **kwargs):
     """
     user = kwargs['auth'].user
 
-    out = []
+    ret = []
 
     for project in results:
         authors = get_node_contributors_abbrev(project=project, auth=kwargs['auth'])
@@ -168,7 +168,7 @@ def process_project_search_results(results, **kwargs):
             authors_html += author['separator'] + ' '
         authors_html += ' ' + authors['others_count']
 
-        out.append({
+        ret.append({
             'id': project._id,
             'label': project.title,
             'value': project.title,
@@ -176,7 +176,7 @@ def process_project_search_results(results, **kwargs):
             'authors': authors_html,
         })
 
-    return out
+    return ret
 
 
 @collect_auth
@@ -189,3 +189,36 @@ def search_contributor(auth):
     size = int(bleach.clean(request.args.get('size', '5'), tags=[], strip=True))
     return search.search_contributor(query=query, page=page, size=size,
                                      exclude=exclude, current_user=user)
+
+
+def search_share():
+    tick = time.time()
+    results = {}
+
+    count = request.args.get('count') is not None
+    raw = request.args.get('raw') is not None
+
+    if request.method == 'POST':
+        query = request.get_json()
+    elif request.method == 'GET':
+        query = build_query(
+            request.args.get('q', '*'),
+            request.args.get('from'),
+            request.args.get('size'),
+            sort=request.args.get('sort')
+        )
+
+    if count:
+        results = search.count_share(query)
+    else:
+        results = search.search_share(query, raw)
+
+    results['time'] = round(time.time() - tick, 2)
+    return results
+
+
+def search_share_stats():
+    q = request.args.get('q')
+    query = build_query(q, 0, 0) if q else {}
+
+    return search.share_stats(query=query)

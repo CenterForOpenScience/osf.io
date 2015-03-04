@@ -5,10 +5,6 @@
 <%def name="file_versions()">
 <div class="scripted" id="dataverseScope">
 
-    <div class="alert alert-warning" data-bind="visible: deleting">
-        Deleting your file…
-    </div>
-
     <ol class="breadcrumb">
          <li class="active overflow"><a data-bind="attr: {href: files_url}">{{nodeTitle}}</a></li>
          <li>Dataverse</li>
@@ -17,9 +13,10 @@
 
      <p>
          <a data-bind="attr: {href: download_url}" class="btn btn-success btn-md">Download <i class="icon-download-alt"></i></a>
-        % if user['can_edit']:
-            <button data-bind="click: deleteFile" class="btn btn-danger btn-md">Delete <i class="icon-trash"></i></button>
-        % endif
+         ## TODO: Disable based on whether file is draft version. Re-evaluate on release of Dataverse 4.0
+##        % if user['can_edit']:
+##            <button data-bind="click: deleteFile" class="btn btn-danger btn-md">Delete <i class="icon-trash"></i></button>
+##        % endif
      </p>
 
 
@@ -55,10 +52,18 @@
 
     % endif
 </div>
-    <script>
-        $script(["/static/addons/dataverse/dataverseViewFile.js"], function() {
-            var url = '${urls['info']}';
-            var dataverseFileTable = new DataverseFileTable('#dataverseScope', url);
+    <script type="text/javascript">
+        window.contextVars = $.extend(true, {}, window.contextVars, {
+            node: {
+                urls: {
+                    info: '${urls['info']}'
+                    }
+            }
         });
     </script>
+</%def>
+
+<%def name="javascript_bottom()">
+${parent.javascript_bottom()}
+<script src=${"/static/public/js/dataverse/file-detail.js" | webpack_asset}></script>
 </%def>

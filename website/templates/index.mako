@@ -12,6 +12,7 @@
         <div id="signUpScope" class="col-sm-4 col-md-offset-1 img-rounded hpSignUp">
             <form data-bind="submit: submit, css: {hideValidation: !showValidation()}">
                 <div class="form-group" data-bind="css: {'has-error': fullName() && !fullName.isValid()}">
+                    <label class="placeholder-replace" style="display:none">Full Name</label>
                     <input class="form-control" placeholder="Full Name" data-bind="
                         value: fullName,
                         valueUpdate: 'input',
@@ -22,6 +23,7 @@
                         }"/>
                 </div>
                 <div class="form-group" data-bind="css: {'has-error': email1() && !email1.isValid()}">
+                    <label class="placeholder-replace" style="display:none">Contact Email</label>
                     <input class="form-control" placeholder="Contact Email" data-bind="
                         value: email1,
                         valueUpdate: 'input',
@@ -32,6 +34,7 @@
                         }"/>
                 </div>
                 <div class="form-group" data-bind="css: {'has-error': email2() && !email2.isValid()}">
+                    <label class="placeholder-replace" style="display:none">Confirm Email</label>
                     <input class="form-control" placeholder="Confirm Email" data-bind="
                         value: email2,
                         valueUpdate: 'input',
@@ -42,7 +45,8 @@
                         }"/>
                 </div>
                 <div class="form-group" data-bind="css: {'has-error': password() && !password.isValid()}">
-                    <input type="password" class="form-control" placeholder="Password" data-bind="
+                    <label class="placeholder-replace" style="display:none">Password</label>
+                    <input type="password" class="form-control" placeholder="Password (Must be 6 to 35 characters)" data-bind="
                         value: password,
                         valueUpdate: 'input',
                         disable: submitted(),
@@ -109,14 +113,5 @@
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
-
-    <script type="text/javascript">
-        $script(['/static/js/signUp.js']);
-        $script.ready('signUp', function() {
-            var signUp = new SignUp(
-                '#signUpScope',
-                '${api_url_for('register_user')}'
-            );
-        });
-    </script>
+    <script src=${"/static/public/js/home-page.js" | webpack_asset}></script>
 </%def>

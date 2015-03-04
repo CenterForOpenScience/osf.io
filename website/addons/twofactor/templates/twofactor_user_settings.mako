@@ -5,6 +5,7 @@
 
 <h4 class="addon-title">Two-factor Authentication</h4>
 
+<div id="twoFactorScope" class="scripted">
 % if not is_confirmed:
 <style>
     #TfaCode {
@@ -14,7 +15,6 @@
         padding-top: 4px;
     }
 </style>
-<div id="twoFactorScope" class="scripted">
     <div id="TfaVerify" class="addon-settings">
         <p>By using two-factor authentication, you'll protect your OSF account with both
             your password and your mobile phone.</p>
@@ -43,14 +43,13 @@
         </form>
 
     </div>
-</div>
 % endif
 <div id="TfaDeactivate" ${ 'style="display:none"' if not is_confirmed else ''}>
     <p class="text-success">Enabled</p>
 </div>
+</div>
 
 <script>
-    $script(['/static/addons/twofactor/twoFactorUserConfig.js'], function() {
-        new TwoFactorUserConfig('#twoFactorScope', '#twoFactorQrCode', "${ otpauth_url }");
-    });
+    window.contextVars = window.contextVars || {};
+    window.contextVars.otpauthURL = "${otpauth_url}";
 </script>

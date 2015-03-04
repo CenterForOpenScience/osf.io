@@ -61,9 +61,12 @@ def _render_node(node, auth=None):
 
     """
     perm = None
-    if auth and auth.user:
+    # NOTE: auth.user may be None if viewing public project while not
+    # logged in
+    if auth and auth.user and node.get_permissions(auth.user):
         perm_list = node.get_permissions(auth.user)
         perm = permissions.reduce_permissions(perm_list)
+
     return {
         'title': node.title,
         'id': node._primary_key,
@@ -131,6 +134,8 @@ def get_dashboard(auth, nid=None, **kwargs):
         node = Node.load(nid)
         dashboard_projects = rubeus.to_project_hgrid(node, auth, **kwargs)
         return_value = {'data': dashboard_projects}
+
+    return_value['timezone'] = user.timezone
     return return_value
 
 
@@ -361,7 +366,6 @@ def resolve_guid(guid, suffix=None):
     """
     # Get prefix; handles API routes
     prefix = request.path.split(guid)[0].rstrip('/')
-
     # Look up GUID
     guid_object = Guid.load(guid)
     if guid_object:
@@ -377,7 +381,6 @@ def resolve_guid(guid, suffix=None):
             )
 
             raise HTTPError(http.NOT_FOUND)
-
         referent = guid_object.referent
         if referent is None:
             logger.error('Referent of GUID {0} not found'.format(guid))

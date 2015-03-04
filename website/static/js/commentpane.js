@@ -80,7 +80,7 @@
                             {width: '0'}, options.animateTime
                         );
                     }
-                })
+                });
             });
 
             // Bind toggle handler
@@ -99,6 +99,11 @@
     };
 
     if ((typeof module !== 'undefined') && module.exports) {
+        // Load css with webpack if possible
+        if (typeof webpackJsonp !== 'undefined') {
+            // NOTE: Assumes that the style-loader and css-loader are used for .css files
+            require('../css/commentpane.css');
+        }
         module.exports = CommentPane;
     }
     if (typeof ender === 'undefined') {

@@ -13,10 +13,9 @@ import six
 from elasticsearch import (
     Elasticsearch,
     RequestError,
-    NotFoundError
+    NotFoundError,
+    ConnectionError
 )
-
-from requests.exceptions import ConnectionError
 
 from framework import sentry
 
@@ -87,7 +86,7 @@ def get_counts(count_query, clean=True):
         }
     }
 
-    res = es.search(index='_all', doc_type=None, search_type='count', body=count_query)
+    res = es.search(index='website', doc_type=None, search_type='count', body=count_query)
 
     counts = {x['key']: x['doc_count'] for x in res['aggregations']['counts']['buckets'] if x['key'] in ALIASES.keys()}
 
@@ -165,10 +164,11 @@ def format_result(result, parent_id=None):
     formatted_result = {
         'contributors': result['contributors'],
         'wiki_link': result['url'] + 'wiki/',
-        'title': result['title'],
+        # TODO: Remove when html safe comes in
+        'title': result['title'].replace('&amp;', '&'),
         'url': result['url'],
         'is_component': False if parent_info is None else True,
-        'parent_title': parent_info.get('title') if parent_info is not None else None,
+        'parent_title': parent_info.get('title').replace('&amp;', '&') if parent_info else None,
         'parent_url': parent_info.get('url') if parent_info is not None else None,
         'tags': result['tags'],
         'contributors_url': result['contributors_url'],
@@ -232,12 +232,11 @@ def update_node(node, index='website'):
             'contributors': [
                 x.fullname for x in node.visible_contributors
                 if x is not None
-                and x.is_active()
             ],
             'contributors_url': [
                 x.profile_url for x in node.visible_contributors
                 if x is not None
-                and x.is_active()
+                and x.is_active
             ],
             'title': node.title,
             'normalized_title': normalized_title,
@@ -261,29 +260,10 @@ def update_node(node, index='website'):
 
         es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
 
-def generate_social_links(social):
-    social_links = {}
-    if 'github' in social:
-        social_links['github'] = 'http://github.com/{}'.format(social['github']) if social['github'] else None
-    if 'impactStory' in social:
-        social_links['impactStory'] = 'https://impactstory.org/{}'.format(social['impactStory']) if social['impactStory'] else None
-    if 'linkedIn' in social:
-        social_links['linkedIn'] = 'https://www.linkedin.com/profile/view?id={}'.format(social['linkedIn']) if social['linkedIn'] else None
-    if 'orcid' in social:
-        social_links['orcid'] = 'http://orcid.com/{}'.format(social['orcid']) if social['orcid'] else None
-    if 'personal' in social:
-        social_links['personal'] = social['personal'] if social['personal'] else None
-    if 'researcherId' in social:
-        social_links['researcherId'] = 'http://researcherid.com/rid/{}'.format(social['researcherId']) if social['researcherId'] else None
-    if 'scholar' in social:
-        social_links['scholar'] = 'http://scholar.google.com/citations?user={}'.format(social['scholar']) if social['scholar'] else None
-    if 'twitter' in social:
-        social_links['twitter'] = 'http://twitter.com/{}'.format(social['twitter']) if social['twitter'] else None
-    return social_links
 
 @requires_search
 def update_user(user):
-    if not user.is_active():
+    if not user.is_active:
         try:
             es.delete(index='website', doc_type='user', id=user._id, refresh=True, ignore=[404])
         except NotFoundError:
@@ -318,7 +298,7 @@ def update_user(user):
         'school': user.schools[0]['institution'] if user.schools else '',
         'category': 'user',
         'degree': user.schools[0]['degree'] if user.schools else '',
-        'social': generate_social_links(user.social),
+        'social': user.social_links,
         'boost': 2,  # TODO(fabianvf): Probably should make this a constant or something
     }
 
@@ -378,7 +358,7 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
     items = re.split(r'[\s-]+', query)
     query = ''
 
-    query = "  AND ".join('{}*~'.format(item) for item in items) + \
+    query = "  AND ".join('{}*~'.format(re.escape(item)) for item in items) + \
             "".join(' NOT "{}"'.format(excluded) for excluded in exclude)
 
     results = search(build_query(query, start=start, size=size), index='website', doc_type='user')
@@ -398,7 +378,7 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
         if user is None:
             logger.error('Could not load user {0}'.format(doc['id']))
             continue
-        if user.is_active():  # exclude merged, unregistered, etc.
+        if user.is_active:  # exclude merged, unregistered, etc.
             current_employment = None
             education = None
 
@@ -421,14 +401,13 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
                 ),
                 'profile_url': user.profile_url,
                 'registered': user.is_registered,
-                'active': user.is_active()
+                'active': user.is_active
 
             })
 
-    return \
-        {
-            'users': users,
-            'total': results['counts']['total'],
-            'pages': pages,
-            'page': page,
-        }
+    return {
+        'users': users,
+        'total': results['counts']['total'],
+        'pages': pages,
+        'page': page,
+    }

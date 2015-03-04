@@ -6,7 +6,7 @@ import os
 import re
 import mock
 
-from nose.tools import *  # PEP8 asserts
+from nose.tools import *  # noqa (PEP8 asserts)
 
 from modularodm import Q
 
@@ -21,11 +21,27 @@ from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
                              PrivateLinkFactory)
 from tests.test_features import requires_piwik
 from website import settings, language
+from website.security import random_string
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.model import ensure_schemas
 from website.project.views.file import get_cache_path
 from framework.render.tasks import ensure_path
-from website.util import api_url_for, web_url_for
+from website.util import web_url_for
+
+
+class TestDisabledUser(OsfTestCase):
+
+    def setUp(self):
+        super(TestDisabledUser, self).setUp()
+        self.user = UserFactory()
+        self.user.set_password('Korben Dallas')
+        self.user.is_disabled = True
+        self.user.save()
+
+    def test_profile_disabled(self):
+        """Disabled user profiles return 401 (GONE)"""
+        res = self.app.get(self.user.url, expect_errors=True)
+        assert_equal(res.status_code, 410)
 
 
 class TestAnUnregisteredUser(OsfTestCase):
@@ -129,7 +145,6 @@ class TestAUser(OsfTestCase):
         # Sees dashboard with projects and watched projects
         assert_in('Projects', res)
         assert_in('Watchlist', res)
-
 
     def test_sees_flash_message_on_bad_login(self):
         # Goes to log in page
@@ -263,6 +278,7 @@ class TestAUser(OsfTestCase):
         # Can see log event
         assert_in('created', res)
 
+    @unittest.skip('"No wiki content" replaced with javascript handling')
     def test_no_wiki_content_message(self):
         project = ProjectFactory(creator=self.user)
         # Goes to project's wiki, where there is no content
@@ -289,14 +305,14 @@ class TestAUser(OsfTestCase):
         # Should not see wiki widget (since non-contributor and no content)
         assert_not_in('No wiki content', res)
 
+    @unittest.skip(reason='¯\_(ツ)_/¯ knockout.')
     def test_wiki_does_not_exist(self):
         project = ProjectFactory(creator=self.user)
         res = self.app.get('/{0}/wiki/{1}/'.format(
             project._primary_key,
             'not a real page yet',
         ), auth=self.auth, expect_errors=True)
-        assert_in('This wiki page does not currently exist.', res)
-        assert_equal(res.status_code, 404)
+        assert_in('No wiki content', res)
 
     def test_sees_own_profile(self):
         res = self.app.get('/profile/', auth=self.auth)
@@ -310,6 +326,26 @@ class TestAUser(OsfTestCase):
         td1 = res.html.find('td', text=re.compile(r'Public(.*?)Profile'))
         td2 = td1.find_next_sibling('td')
         assert_equal(td2.text, user2.display_absolute_url)
+
+    # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1320
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_can_reset_password(self, mock_send_mail):
+        # A registered user
+        user = UserFactory()
+        # goes to the login page
+        url = web_url_for('auth_login')
+        res = self.app.get(url)
+        # and fills out forgot password form
+        form = res.forms['forgotPassword']
+        form['forgot_password-email'] = user.username
+        # submits
+        res = form.submit()
+        # mail was sent
+        mock_send_mail.assert_called
+        # gets 200 response
+        assert_equal(res.status_code, 200)
+        # URL is /forgotpassword
+        assert_equal(res.request.path, web_url_for('forgot_password'))
 
 
 class TestRegistrations(OsfTestCase):
@@ -326,14 +362,10 @@ class TestRegistrations(OsfTestCase):
         self.original = ProjectFactory(creator=self.user, is_public=True)
         # A registration
         self.project = RegistrationFactory(
+            creator=self.user,
             project=self.original,
             user=self.user,
         )
-
-    def test_cant_be_deleted(self):
-        # Goes to project's page
-        res = self.app.get(self.project.url + 'settings/', auth=self.auth).maybe_follow()
-        assert_not_in('Delete project', res)
 
     def test_can_see_contributor(self):
         # Goes to project's page
@@ -382,6 +414,13 @@ class TestRegistrations(OsfTestCase):
         subnav = res.html.select('#projectSubnav')[0]
         assert_not_in('Registrations', subnav.text)
 
+    def test_settings_nav_not_seen(self):
+        # Goes to project's page
+        res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
+        # Settings is not in the project navigation bar
+        subnav = res.html.select('#projectSubnav')[0]
+        assert_not_in('Settings', subnav.text)
+
 
 class TestComponents(OsfTestCase):
 
@@ -413,7 +452,7 @@ class TestComponents(OsfTestCase):
 
     def test_sees_parent(self):
         res = self.app.get(self.component.url, auth=self.user.auth).maybe_follow()
-        parent_title = res.html.find_all('h1', class_='node-parent-title')
+        parent_title = res.html.find_all('h2', class_='node-parent-title')
         assert_equal(len(parent_title), 1)
         assert_in(self.project.title, parent_title[0].text)
 
@@ -497,6 +536,38 @@ class TestPrivateLinkView(OsfTestCase):
         res = self.app.get(self.project_url, {'view_only': self.link.key})
         assert_not_in('Citation:', res)
 
+    def test_no_warning_for_read_only_user_with_valid_link(self):
+        link2 = PrivateLinkFactory(anonymous=False)
+        link2.nodes.append(self.project)
+        link2.save()
+        self.project.add_contributor(
+            self.user,
+            permissions=['read'],
+            save=True,
+        )
+        res = self.app.get(self.project_url, {'view_only': link2.key},
+                           auth=self.user.auth)
+        assert_not_in(
+            "is being viewed through a private, view-only link. "
+            "Anyone with the link can view this project. Keep "
+            "the link safe.",
+            res.body
+        )
+
+    def test_no_warning_for_read_only_user_with_invalid_link(self):
+        self.project.add_contributor(
+            self.user,
+            permissions=['read'],
+            save=True,
+        )
+        res = self.app.get(self.project_url, {'view_only': "not_valid"},
+                           auth=self.user.auth)
+        assert_not_in(
+            "is being viewed through a private, view-only link. "
+            "Anyone with the link can view this project. Keep "
+            "the link safe.",
+            res.body
+        )
 
 class TestMergingAccounts(OsfTestCase):
 
@@ -1143,7 +1214,6 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         form['password'] = 'killerqueen'
         res = form.submit(auth=reg_user.auth).follow(auth=reg_user.auth)
 
-
         self.project.reload()
         self.user.reload()
         # user is now a contributor to the project
@@ -1169,10 +1239,50 @@ class TestExplorePublicActivity(OsfTestCase):
         res = self.app.get(url)
 
         assert_in(str(self.project.title), res)
-        assert_in(str(self.project.date_created.date()),res)
+        assert_in(str(self.project.date_created.date()), res)
         assert_in(str(self.registration.title), res)
         assert_in(str(self.registration.registered_date.date()), res)
         assert_not_in(str(self.private_project.title), res)
+
+
+class TestForgotAndResetPasswordViews(OsfTestCase):
+
+    def setUp(self):
+        super(TestForgotAndResetPasswordViews, self).setUp()
+        self.user = AuthUserFactory()
+        self.key = random_string(20)
+        # manually set verifification key
+        self.user.verification_key = self.key
+        self.user.save()
+
+        self.url = web_url_for('reset_password', verification_key=self.key)
+
+    def test_reset_password_view_returns_200(self):
+        res = self.app.get(self.url)
+        assert_equal(res.status_code, 200)
+
+    def test_can_reset_password_if_form_success(self):
+        res = self.app.get(self.url)
+        form = res.forms['resetPasswordForm']
+        form['password'] = 'newpassword'
+        form['password2'] = 'newpassword'
+        res = form.submit()
+
+        # password was updated
+        self.user.reload()
+        assert_true(self.user.check_password('newpassword'))
+
+    def test_reset_password_logs_out_user(self):
+        another_user = AuthUserFactory()
+        # visits reset password link while another user is logged in
+        res = self.app.get(self.url, auth=another_user.auth)
+        assert_equal(res.status_code, 200)
+        # We check if another_user is logged in by checking if
+        # their full name appears on the page (it should be in the navbar).
+        # Yes, this is brittle.
+        assert_not_in(another_user.fullname, res)
+        # make sure the form is on the page
+        assert_true(res.forms['resetPasswordForm'])
 
 
 if __name__ == '__main__':

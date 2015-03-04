@@ -7,7 +7,6 @@ from tests.base import OsfTestCase
 from tests.factories import NodeFactory
 
 from framework.auth.core import Auth
-from website.addons.figshare.model import AddonFigShareNodeSettings
 from website.addons.figshare.api import _get_project_url, Figshare
 
 class TestFigshareAPIWrapper(OsfTestCase):

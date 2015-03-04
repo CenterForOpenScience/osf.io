@@ -1,5 +1,3 @@
-<script type="text/javascript" src="/static/addons/github/github-node-cfg.js"></script>
-
 <form role="form" id="addonSettings${addon_short_name.capitalize()}" data-addon="${addon_short_name}">
 
     <div>
@@ -75,8 +73,6 @@
 
 <%def name="on_submit()">
     <script type="text/javascript">
-        $(document).ready(function() {
-            $('#addonSettings${addon_short_name.capitalize()}').on('submit', AddonHelper.onSubmitSettings);
-        });
+        window.contextVars = $.extend({}, window.contextVars, {'githubSettingsSelector': '#addonSettings${addon_short_name.capitalize()}'});
     </script>
 </%def>

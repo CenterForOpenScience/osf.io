@@ -5,6 +5,12 @@ FigShare <span data-bind="text: params.figshare.title"></span> in
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
+<script type="text/html" id="figshare_file_removed">
+removed file <span class="overflow">{{ params.path }}</span> from
+FigShare in {{ nodeType }}
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
+
 <script type="text/html" id="figshare_content_linked">
 linked FigShare project <span data-bind="text: params.figshare.title"></span> in
 <span data-bind="text: nodeType"></span>

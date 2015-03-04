@@ -192,3 +192,12 @@ class TestNodeSettingsCallbacks(DataverseAddonTestCase):
         assert_true(self.node_settings.dataverse is None)
         assert_true(self.node_settings.study_hdl is None)
         assert_true(self.node_settings.study is None)
+
+    def test_does_not_get_copied_to_registrations(self):
+        registration = self.project.register_node(
+            schema=None,
+            auth=Auth(user=self.project.creator),
+            template='Template1',
+            data='hodor'
+        )
+        assert_false(registration.has_addon('dataverse'))

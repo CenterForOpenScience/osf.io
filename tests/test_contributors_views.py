@@ -1,11 +1,30 @@
 # -*- coding: utf-8 -*-
 
-from nose.tools import *  # PEP8 asserts
+from nose.tools import *  # noqa; PEP8 asserts
 
 from tests.factories import ProjectFactory, NodeFactory, AuthUserFactory
 from tests.base import OsfTestCase, fake
 
 from framework.auth.decorators import Auth
+
+from website.profile import utils
+
+
+class TestContributorUtils(OsfTestCase):
+
+    def setUp(self):
+        super(TestContributorUtils, self).setUp()
+        self.project = ProjectFactory()
+
+    def test_serialize_user(self):
+        serialized = utils.serialize_user(self.project.creator, self.project)
+        assert_true(serialized['visible'])
+        assert_equal(serialized['permission'], 'admin')
+
+    def test_serialize_user_admin(self):
+        serialized = utils.serialize_user(self.project.creator, self.project, admin=True)
+        assert_false(serialized['visible'])
+        assert_equal(serialized['permission'], 'read')
 
 
 class TestContributorViews(OsfTestCase):
@@ -144,9 +163,8 @@ class TestContributorViews(OsfTestCase):
         url = self.project.api_url_for('get_recently_added_contributors')
         res = self.app.get(url, auth=self.user.auth)
         project.reload()
-        recent = [c for c in self.user.recently_added if c.is_active()]
+        recent = [c for c in self.user.recently_added if c.is_active]
         assert_equal(len(res.json['contributors']), len(recent))
-
 
     def test_get_recently_added_contributors_with_limit(self):
         project = ProjectFactory(creator=self.user)

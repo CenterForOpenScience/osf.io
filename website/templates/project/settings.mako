@@ -11,6 +11,10 @@
 ##        }
 ##    }'></div>
 
+<div class="page-header visible-xs">
+  <h2 class="text-300">Settings</h2>
+</div>
+
 <div class="row">
     <div class="col-sm-3">
         <div class="panel panel-default">
@@ -18,20 +22,24 @@
                 % if 'admin' in user['permissions'] and not node['is_registration']:
                     <li><a href="#configureNode">Configure ${node['node_type'].capitalize()}</a></li>
                 % endif
-                % if 'admin' in user['permissions']:
+                % if 'admin' in user['permissions'] and not node['is_registration']:
                     <li><a href="#configureCommenting">Configure Commenting</a></li>
                 % endif
-                % if not node['is_registration']:
+
+                % if 'write' in user['permissions'] and not node['is_registration']:
                     <li><a href="#selectAddons">Select Add-ons</a></li>
-                % endif
+
                 % if addon_enabled_settings:
                     <li><a href="#configureAddons">Configure Add-ons</a></li>
                 % endif
+
+                    <li><a href="#configureNotifications">Configure Notifications</a></li>
+                %endif
             </ul>
         </div><!-- end sidebar -->
     </div>
 
-    <div class="col-sm-9 col-md-7">
+    <div class="col-sm-9">
 
         % if 'admin' in user['permissions'] and not node['is_registration']:
 
@@ -90,13 +98,14 @@
 
         % endif
 
+
+        % if 'write' in user['permissions']:
         <div class="panel panel-default">
-            <span id="selectAddons" class="anchor"></span>
+            <span id="selectAddons"></span>
              <div class="panel-heading">
                  <h3 class="panel-title">Select Add-ons</h3>
              </div>
                 <div class="panel-body">
-
                     <form id="selectAddonsForm">
 
                         % for category in addon_categories:
@@ -167,6 +176,26 @@
 
             % endif
 
+        % endif
+
+        % if not node['is_registration'] and user['has_read_permissions']:
+            <div class="panel panel-default">
+                <span id="configureNotifications" class="anchor"></span>
+
+                <div class="panel-heading">
+                    <h3 class="panel-title">Configure Notifications</h3>
+                </div>
+
+                <form id="notificationSettings" class="osf-treebeard-minimal">
+                    <div id="grid">
+    <div class="notifications-loading"> <i class="icon-spinner notifications-spin"></i> <p class="m-t-sm fg-load-message"> Loading notification settings...  </p> </div>
+                    </div>
+                    <div class="help-block" style="padding-left: 15px">
+                            <p id="configureNotificationsMessage"></p>
+                    </div>
+                </form>
+            </div>
+         % endif
     </div>
 
 </div>
@@ -184,14 +213,18 @@
 % endfor
 
 <%def name="javascript_bottom()">
+    <% import json %>
     ${parent.javascript_bottom()}
-    <script type="text/javascript" src="/static/js/metadata_1.js"></script>
-    <script type="text/javascript" src="/static/js/projectSettings.js"></script>
-    <script type="text/javascript">
-        $(document).ready(function() {
-            $('#deleteNode').on('click', function() {
-                ProjectSettings.getConfirmationCode('${node["node_type"]}');
-            });
-        });
+    <script>
+      window.contextVars = window.contextVars || {};
+      window.contextVars.node = window.contextVars.node || {};
+      window.contextVars.node.nodeType = '${node['node_type']}';
     </script>
+
+    <script type="text/javascript" src=${"/static/public/js/project-settings-page.js" | webpack_asset}></script>
+
+    % for js_asset in addon_js:
+    <script src="${js_asset | webpack_asset}"></script>
+    % endfor
+
 </%def>

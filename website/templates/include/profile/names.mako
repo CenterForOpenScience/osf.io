@@ -63,6 +63,7 @@
         <div class="padded">
 
             <button
+                    type="button"
                     class="btn btn-default"
                     data-bind="click: cancel"
                 >Cancel</button>

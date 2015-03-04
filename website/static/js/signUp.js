@@ -1,145 +1,142 @@
 /**
- *
- */
-;(function (global, factory) {
-    if (typeof define === 'function' && define.amd) {
-        define(['jquery', 'knockout'], factory);
-    } else {
-        global.SignUp = factory(jQuery, ko);
-        $script.done('signUp');
-    }
-}(this, function($, ko){
+*
+*/
+'use strict';
 
-    'use strict';
+var ko = require('knockout');
+require('knockout-validation');
+require('knockout-punches');
+var $ = require('jquery');
 
-    var ViewModel = function(submitUrl) {
+var $osf = require('osfHelpers');
 
-        var self = this;
+ko.punches.enableAll();
 
-        self.fullName = ko.observable('').extend({
-            required: true,
-            minLength: 3
-        });
-        self.email1 = ko.observable('').extend({
-            required: true,
-            email: true
-        });
-        self.email2 = ko.observable('').extend({
-            required: true,
-            email: true,
-            validation: {
-                validator: function(val, other) {
-                    return val === other
-                },
-                'message': 'Email addresses must match.',
-                params: self.email1
-            }
-        });
-        self.password = ko.observable('').extend({
-            required: true,
-            minLength: 6,
-            maxLength: 35
-        });
+var ViewModel = function(submitUrl) {
 
-        // Preserve object of validated fields for use in `submit`
-        var validatedFields = {
-            fullName: self.fullName,
-            email1: self.email1,
-            email2: self.email2,
-            password: self.password
-        };
-        // Collect validated fields
-        self.validatedFields = ko.validatedObservable($.extend({}, validatedFields));
+    var self = this;
 
-        self.showValidation = ko.observable(false);
-        self.submitted = ko.observable(false);
-
-        self.flashMessage = ko.observable();
-        self.flashMessageClass = ko.observable();
-        self.flashTimeout = null;
-
-        self.trim = function(observable) {
-            observable($.trim(observable()));
+    self.fullName = ko.observable('').extend({
+        required: true,
+        minLength: 3
+    });
+    self.email1 = ko.observable('').extend({
+        required: true,
+        email: true
+    });
+    self.email2 = ko.observable('').extend({
+        required: true,
+        email: true,
+        validation: {
+            validator: function(val, other) {
+                return val === other;
+            },
+            'message': 'Email addresses must match.',
+            params: self.email1
         }
+    });
+    self.password = ko.observable('').extend({
+        required: true,
+        minLength: 6,
+        maxLength: 35
+    });
 
-        /** Change the flashed message. */
-        self.changeMessage = function(message, messageClass, text, css, timeout, timeoutClock) {
-            message(text);
-            var cssClass = css || 'text-info';
-            messageClass(cssClass);
-            if (timeout) {
-                // Reset message after timeout period
-                if (timeoutClock) {
-                    clearTimeout(timeoutClock);
-                }
-                self.timeout = setTimeout(
-                    function() {
-                        message('');
-                        messageClass('text-info');
-                    },
-                    timeout
-                );
-            }
-        };
+    // Preserve object of validated fields for use in `submit`
+    var validatedFields = {
+        fullName: self.fullName,
+        email1: self.email1,
+        email2: self.email2,
+        password: self.password
+    };
+    // Collect validated fields
+    self.validatedFields = ko.validatedObservable($.extend({}, validatedFields));
 
-        self.isValid = ko.computed(function() {
-            return self.validatedFields.isValid();
-        });
+    self.showValidation = ko.observable(false);
+    self.submitted = ko.observable(false);
 
-        self.submitSuccess = function(response) {
-            self.changeMessage(
-                self.flashMessage,
-                self.flashMessageClass,
-                response.message,
-                'text-info'
-            );
-            self.submitted(true);
-        };
+    self.flashMessage = ko.observable();
+    self.flashMessageClass = ko.observable();
+    self.flashTimeout = null;
 
-        self.submitError = function(xhr) {
-            self.changeMessage(
-                self.flashMessage,
-                self.flashMessageClass,
-                xhr.responseJSON.message_long,
-                'text-danger',
-                5000,
-                self.flashTimeout
-            );
-        };
-
-        self.hideValidation = function() {
-            self.showValidation(false);
-        };
-
-        self.submit = function() {
-            // Show errors if invalid
-            if (!self.isValid()) {
-                // Ensure validation errors are displayed
-                $.each(validatedFields, function(key, value) {
-                    value.notifySubscribers();
-                });
-                self.showValidation(true);
-                return;
-            }
-            // Else submit
-            $.osf.postJSON(
-                submitUrl,
-                ko.toJS(self)
-            ).done(
-                self.submitSuccess
-            ).fail(
-                self.submitError
-            );
-        };
-
+    self.trim = function(observable) {
+        observable($.trim(observable()));
     };
 
-    var SignUp = function(selector, submitUrl) {
-        this.viewModel = new ViewModel(submitUrl);
-        $.osf.applyBindings(this.viewModel, selector);
-        window.vm = this.viewModel;
+    /** Change the flashed message. */
+    self.changeMessage = function(message, messageClass, text, css, timeout, timeoutClock) {
+        message(text);
+        var cssClass = css || 'text-info';
+        messageClass(cssClass);
+        if (timeout) {
+            // Reset message after timeout period
+            if (timeoutClock) {
+                clearTimeout(timeoutClock);
+            }
+            self.timeout = setTimeout(
+                function() {
+                    message('');
+                    messageClass('text-info');
+                },
+                timeout
+            );
+        }
     };
 
-    return SignUp;
+    self.isValid = ko.computed(function() {
+        return self.validatedFields.isValid();
+    });
 
-}));
+    self.submitSuccess = function(response) {
+        self.changeMessage(
+            self.flashMessage,
+            self.flashMessageClass,
+            response.message,
+            'text-info'
+        );
+        self.submitted(true);
+    };
+
+    self.submitError = function(xhr) {
+        self.changeMessage(
+            self.flashMessage,
+            self.flashMessageClass,
+            xhr.responseJSON.message_long,
+            'text-danger',
+            5000,
+            self.flashTimeout
+        );
+    };
+
+    self.hideValidation = function() {
+        self.showValidation(false);
+    };
+
+    self.submit = function() {
+        // Show errors if invalid
+        if (!self.isValid()) {
+            // Ensure validation errors are displayed
+            $.each(validatedFields, function(key, value) {
+                value.notifySubscribers();
+            });
+            self.showValidation(true);
+            return;
+        }
+        // Else submit
+        $osf.postJSON(
+            submitUrl,
+            ko.toJS(self)
+        ).done(
+            self.submitSuccess
+        ).fail(
+            self.submitError
+        );
+    };
+
+};
+
+var SignUp = function(selector, submitUrl) {
+    this.viewModel = new ViewModel(submitUrl);
+    $osf.applyBindings(this.viewModel, selector);
+};
+
+module.exports = SignUp;

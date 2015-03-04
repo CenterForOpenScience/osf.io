@@ -222,7 +222,7 @@ class TestMigrateFiles(OsfTestCase):
         for idx, version in enumerate(record.versions):
             assert_false(version.pending)
             expected = 'i want {0} pizzas'.format(idx)
-            download_url = utils.get_download_url(idx + 1, version, record)
+            download_url = utils.get_waterbutler_download_url(idx + 1, version, record)
             resp = requests.get(download_url)
             assert_equal(expected, resp.content)
 

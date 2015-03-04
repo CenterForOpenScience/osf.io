@@ -5,7 +5,7 @@ html, body {
 }
 
 body {
-    padding-top: 70px; /* body padding for fixed top nav */
+    padding-top: 50px; /* body padding for fixed top nav */
     position: relative; /* for bootstrap affix */
 }
 
@@ -228,7 +228,7 @@ body {
     height: 500px;
 }
 .verticalline {
-border-left:  thin solid #D9E8F4;
+    border-left:  thin solid #D9E8F4;
 }
 
 
@@ -386,11 +386,30 @@ li.pointer {
     margin-top: 0;
 }
 
+/* Style for Ace wiki editor */
+.wiki-editor {
+    position: relative;
+    border: solid;
+    border-width: 1px;
+    width: 100%;
+    margin: auto;
+    -webkit-box-flex: 0 0 auto;
+    -webkit-flex: 0 0 auto;
+    -ms-flex: 0 0 auto;
+    flex: 3 0 auto;
+    height: 500px; /* this will get overwritten by flex box */
+}
+
 /* Make wiki images responsive */
-.wiki img,
-.addon-widget-container img {
+.wiki img{
   vertical-align: middle;
   display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.addon-widget-container img {
+  vertical-align: middle;
   max-width: 100%;
   height: auto;
 }
@@ -402,19 +421,6 @@ img.hg-addon-icon {
 }
 
 /* End add-on styles */
-
-.citation-label {
-    font-weight: bold;
-}
-
-.citation-list {
-    display: none;
-}
-
-.citation-text {
-    text-indent: -3em;
-    margin-left: 3em;
-}
 
 .disabled {
     cursor: default !important;
@@ -433,8 +439,14 @@ h4 {
     padding-bottom: 10px;
 }
 
-.social img {
+.social-icons img {
+    padding: 0px 0px 0px 0px;
+    line-height: 14px;
+}
+
+.social-gravatar {
     padding: 0px 0px 10px 0px;
+    margin-top: 10px;
 }
 
 .social {
@@ -651,9 +663,10 @@ h4 {
 
 /* Profile gravatar
 -------------------------------------------------- */
-#profile-gravatar{
-    float:left;
+.profile-avatar{
     margin-right:.5em;
+}
+#profile-gravatar{
     width:70px;
     height:70px;
 }
@@ -797,9 +810,13 @@ li.node p.date{
 /***********/
 
 h1.node-title, h1.node-parent-title {
-  line-height: 36px;
+  line-height: 50px;
   border-bottom: none;
   margin-top: 0.3em;
+}
+
+.compare-version-text{
+    margin-right: 5px;
 }
 
 .wiki-title {
@@ -830,10 +847,28 @@ h1.node-title, h1.node-parent-title {
     }
 }
 
+.wiki-panel-header .icon-angle-right, .wiki-panel-header .icon-angle-left {
+    cursor: pointer;
+}
+.wiki-panel-header .icon-list {
+    color: #808080;
+}
 
+
+.wiki-panel-body .superlist li {
+    display: block;
+    font-size: 20px;
+}
 .wiki-title-container {
     display: inline-block;
     width:60%;
+}
+.wiki-nav-closed .icon-stack-base {
+    font-size: 20px;
+}
+.wiki-nav-closed .icon-plus {
+    margin-left: -14px;
+    font-size: 12px;
 }
 
 .wiki-component {
@@ -1078,9 +1113,6 @@ div.search-result  {
     font-size: 10pt;
 }
 
-.search-result img{
-    margin-top: 10px;
-}
 
 .search-results.search-result {
     overflow-x: hidden;
@@ -1101,12 +1133,48 @@ div.search-result  {
 .wmd-panel
 {
     width: 100%;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: -webkit-flex;
+    display: flex;
+    height: 620px;
+    -webkit-align-content: flex-start;
+    -ms-align-content: flex-start;
+    align-content: flex-start;
+    -webkit-flex-direction: column;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    -webkit-box-align: stretch;
+    -webkit-align-items: stretch;
+    -ms-flex-align: stretch;
+    align-items: stretch;
+    -webkit-flex-wrap: wrap;
+    -ms-flex-wrap: wrap;
+    flex-wrap: wrap;
+}
+
+.wmd-panel .list-inline {
+    width: 100%;
+    margin: auto;
+    -webkit-box-flex: 0 0 auto;
+    -webkit-flex: 0 0 auto;
+    -ms-flex: 0 0 auto;
+    flex: 0 0 auto;
 }
 
 .wmd-button-bar
 {
     width: 100%;
     background-color: Silver;
+}
+
+#wmd-button-bar{
+    width: 100%;
+    margin: auto;
+    -webkit-box-flex: 0 0 auto;
+    -webkit-flex: 0 0 auto;
+    -ms-flex: 0 0 auto;
+    flex: 0 0 auto;
 }
 
 .wmd-input
@@ -1118,12 +1186,11 @@ div.search-result  {
 .wmd-button-row
 {
     position: relative;
-    margin-left: 5px;
-    margin-right: 5px;
+    margin-left: 0;
+    margin-right: 0;
     margin-bottom: 5px;
     margin-top: 0px;
     padding: 0px;
-    height: 20px;
 }
 
 .wmd-spacer
@@ -1131,8 +1198,6 @@ div.search-result  {
     width: 1px;
     height: 20px;
     margin-left: 14px;
-
-    position: absolute;
     background-color: Silver;
     display: inline-block;
     list-style: none;
@@ -1143,14 +1208,13 @@ div.search-result  {
     height: 20px;
     padding-left: 2px;
     padding-right: 3px;
-    position: absolute;
     display: inline-block;
     list-style: none;
     cursor: pointer;
 }
 
 .wmd-button > span {
-    background-image: url(../vendor/pagedown/wmd-buttons.png);
+    background-image: url(../../addons/wiki/static/pagedown-ace/wmd-buttons.png);
     background-repeat: no-repeat;
     background-position: 0px 0px;
     width: 20px;
@@ -1216,9 +1280,6 @@ div.search-result  {
   margin-bottom: 30px;
   padding-top:    10px;
   padding-bottom: 10px;
-  text-shadow: 0 1px 0 #fff;
-  background-color: #f7f5fa;
-  border-radius: 5px;
 }
 
 /* All levels of nav */
@@ -1226,7 +1287,7 @@ div.search-result  {
   display: block;
   /*color: #716b7a;*/
   color: #006699;
-  padding: 5px 20px;
+  padding: 5px;
   font-weight: bold;
 }
 .osf-sidenav .nav > li > a:hover,
@@ -1284,6 +1345,16 @@ div.search-result  {
     display: inline-block;
     float: none;
 }
+.superlist li a {
+    padding: 15px 10px;
+}
+
+@media (max-width: 768px) {
+ .superlist.navbar-nav {
+    margin: 0;
+ }
+}
+
 
 @media (min-width: 1200px) {
   /* Widen the fixed sidebar again */
@@ -1643,6 +1714,24 @@ div.pydocx-center{
   display: block;
 }
 
+span.edit-profile-settings {
+    display: block;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+}
+
+div.profile-fullname{
+    display: block;
+    position: relative;
+    bottom: 0;
+}
+
+span#profileFullname{
+    position: absolute;
+    bottom: 0;
+}
+
 .scripted {display: none;}
 
 .pointer {cursor: pointer;}
@@ -1673,4 +1762,589 @@ div.pydocx-center{
 .bootbox-node-deletion-modal ol {
     padding-left: 40px;
     list-style-type: disc;
+}
+
+/* Footer slide-in */
+
+#footerSlideIn {
+    position:fixed;
+    bottom:0;
+    width:100%;
+    padding-top:20px;
+    padding-bottom:20px;
+    z-index:1;
+    background-color:white;
+    border-top:2px solid black;
+    display:none;
+}
+
+#footerSlideIn h1 {
+    margin-top:0;
+}
+
+#footerSlideIn img {
+    width:100%;
+}
+
+#footerSlideIn div > a {
+    margin-right: 5px;
+    white-space: nowrap;
+}
+
+/* Necessary to handle lots of text in tooltips */
+.tooltip-inner {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+
+
+/* Revision changes for ui - experimental, should not be in production */
+
+
+/* Main Navbar */
+.osf-navbar {
+    background-color: #214762;
+    box-shadow: 0 0 3px #AEADAD;
+    min-height: 40px;
+}
+
+.osf-navbar a {
+    color: #FFF;
+}
+
+.osf-navbar .nav .open>a, .osf-navbar .nav .open>a:hover, .osf-navbar .nav .open>a:focus, .osf-navbar a:hover, .osf-navbar li > a:hover, .osf-navbar li.active, .osf-navbar li.a:focus, .osf-navbar .navbar-nav>li>a:focus {
+    background: rgba(187, 187, 187, 0.2);
+}
+.osf-navbar .navbar-nav>li>a {
+    padding-top: 9px;
+    padding-bottom: 6px;
+    line-height: 24px;
+}
+
+.navbar-brand {
+    height: 42px;
+    line-height: 14px;
+    padding:13px 15px;
+}
+
+.navbar-form {
+    margin-top: 5px;
+    margin-bottom: 2px;
+}
+
+.navbar-toggle {
+    margin-top: 5px;
+    margin-bottom: 3px;
+}
+
+.navbar-toggle .icon-bar {
+    background-color: white;
+}
+
+.navbar-mid>li>a{
+    padding-bottom: 8px !important;
+}
+
+.icon-lg {
+    font-size: 20px;
+    line-height: 26px;
+}
+
+.osf-navbar-logo {
+    float: left;
+    margin-right: 8px;
+    margin-top: -7px;
+}
+
+.osf-navbar .navbar-nav>li>a.btn {
+    padding-top: 4px;
+    padding-bottom: 3px;
+    margin-top: 4px;
+    margin-left: 8px;
+}
+
+.osf-gravatar > img {
+    border: 1px solid #CDCDCD;
+    border-radius: 13px;
+    margin-right: 5px;
+}
+
+
+/* Project pages navigation */
+
+.osf-project-navbar {
+    position: fixed;
+    width: 100%;
+    left: 0;
+    top: 43px;
+    background: #EEE;
+    z-index: 99;
+    box-shadow:0 0 9px -1px #838383;
+    border-radius: 0;
+    border: none;
+    min-height:40px;
+}
+
+.osf-project-navbar li>a {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    font-size: 15px;
+}
+
+
+
+.osf-project-navbar .navbar-nav li>a:hover {
+    background-color: #DADADA;
+}
+
+.osf-project-navbar li.active, .osf-project-navbar li.active a:hover, .osf-project-navbar li:hover{
+    background-color: #337AB7;
+}
+
+
+.osf-project-navbar li.active a {
+    color: white;
+}
+
+.osf-project-navbar a.project-title {
+    font-weight: 300;
+    font-size: 20px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.m-v-lg {
+    margin: 20px 0 20px 0;
+}
+
+.padder-lg-v {
+    padding-top:20px;
+    padding-bottom: 20px;
+}
+
+
+/* Project Dashboard */
+
+
+.addon-widget-container {
+    border:1px solid #ddd;
+    margin-bottom: 20px;
+}
+.addon-widget-header {
+    padding: 0 10px;
+    border-bottom: 1px solid #ddd;
+    background-color: #efefef;
+    width: 100%;
+}
+.addon-widget-header .btn {
+    padding-left: 7px;
+    padding-right: 7px;
+    margin-top: 2px;
+}
+.addon-widget-header h4 {
+    display: inline-block;
+    float: left;
+    margin-bottom: 0;
+
+}
+.addon-widget-body {
+    padding: 15px;
+    background-color: white;
+}
+.addon-widget-body .list-group-item {
+    border: none;
+    border-bottom: 1px dotted #999;;
+}
+.hgrid {
+    border: 1px solid #E4E4E4;
+    margin-top: 10px;
+}
+.node-title {
+    line-height: 44px;
+    border-bottom: none;
+    margin-top: 0.3em;
+    font-size: 36px;
+    font-weight: 300;
+}
+.text-300 {
+    font-weight: 300;
+}
+
+
+#projectSubnav .navbar-collapse {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.osf-dash-portlet {
+    background-color: #eee;
+    width: 100%;
+    height: 40px;
+    margin-bottom: 20px;
+    border: 2px dashed #ddd;
+}
+
+.page-header.visible-xs {
+    margin: 0;
+}
+
+
+@media (max-width: 767px) {
+    .navbar .search-query {
+        width: 100%;
+    }
+    .navbar-nav .open .dropdown-menu>li>a {
+        color: #FFF;
+    }
+    .osf-project-navbar li>a {
+        padding-left: 30px;
+        padding-right: 30px;
+    }
+    .osf-project-navbar a.project-title {
+    }
+    .project-nav {
+        overflow: hidden;
+    }
+    .osf-search {
+        z-index: 1028;
+    }
+    #searchControls > .osf-search {
+        z-index: 99;
+    }
+    .osf-xs-search {
+        text-decoration: none !important;
+        padding: 8px;
+    }
+}
+
+@media (min-width: 768px) {
+    .osf-navbar .navbar-nav>li>a, .osf-project-navbar li>a {
+        padding-left: 7px;
+        padding-right: 7px;
+    }
+    .navbar .search-query {
+        width: 190px;
+    }
+    .osf-project-navbar a.project-title {
+        max-width: 190px;
+    }
+    .navbar-brand {
+        margin-left: 0 !important;
+        padding-left: 0;
+    }
+    .osf-search {
+        z-index: 1028; /* should be less than 1030 to not cover navbar */
+    }
+}
+
+@media (min-width: 992px) {
+    .osf-navbar .navbar-nav>li>a, .osf-project-navbar li>a {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    .navbar .search-query {
+        width: 360px;
+    }
+    .osf-project-navbar a.project-title {
+        max-width: 300px;
+    }
+}
+@media (min-width: 1200px) {
+    .osf-navbar .navbar-nav>li>a, .osf-project-navbar li>a {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+    .navbar .search-query {
+        width: 270px;
+    }
+    .osf-project-navbar a.project-title {
+        max-width: 400px;
+    }
+}
+
+/* Search bar */
+.osf-search {
+    padding: 10px 0;
+    background: #B8ECC0;
+    position: fixed;
+    width: 100%;
+    box-shadow: 0 0 9px -2px #464545;
+    left: 0;
+    top: 43px;
+}
+
+.osf-search-input {
+    background: none;
+    border: none;
+    box-shadow: none;
+    border-bottom: 1px dotted #FFF;
+    border-radius: 0;
+    padding: 0 0;
+    font-size: 20px;
+    color: #214762;
+    font-weight: 300;
+}
+.osf-search-input:focus {
+    outline : 0 !important;
+    box-shadow: none;
+    border-bottom: 1px dotted #FFF;
+}
+.osf-search-btn {
+    color: #214762;
+    background: rgba(0, 0, 0, 0);
+}
+
+.osf-search-btn:hover {
+    color: #738EA2;
+}
+
+.progress-no-margin {
+    margin-bottom: 0;
+}
+
+.progress-bar-content {
+    margin: 0px 10px;
+}
+
+.sharejs-info-btn {
+    background: none;
+    outline : 0 !important;
+    box-shadow: none;
+    color: #FFFFFF;
+}
+
+.sharejs-info-btn:hover {
+    color: #D3D3D3;
+    text-decoration: none;
+}
+
+#searchPageFullBar::-webkit-input-placeholder {
+   color: #738EA2;
+}
+
+#searchPageFullBar:-moz-placeholder { /* Firefox 18- */
+   color: #738EA2;
+}
+
+#searchPageFullBar::-moz-placeholder {  /* Firefox 19+ */
+   color: #738EA2;
+}
+
+#searchPageFullBar:-ms-input-placeholder {
+   color: #738EA2;
+}
+#searchControls>.row {
+    padding-top: 60px;
+}
+
+.editableControl {
+    background-color: #eee;
+    color: #999898;
+}
+.dker {
+    background-color: #DDD;
+}
+
+.osf-project-navbar .project-nav .icon {
+    font-size: 18px;
+}
+
+.osf-project-navbar .project-nav .icon.rotate-180 {
+    display: block;
+}
+
+.node-parent-title {
+    font-weight: 300;
+    margin-top: 0;
+    font-size: 22px;
+}
+.rotate-180 {
+    -ms-transform: rotate(180deg);
+    -webkit-transform: rotate(180deg);
+    transform: rotate(180deg);
+}
+.icon-dark-lg {
+    font-size: 18px;
+    color: #555;
+}
+.break-word {
+    word-wrap: break-word;
+}
+.modal-backdrop {
+    position: fixed;
+}
+
+
+/* Minimal Treebeard for Configure Notifications in project and user settings */
+.osf-treebeard-minimal #tb-tbody {
+    border: none;
+    max-height: 500px;
+    height: inherit;
+    margin-top: 10px;
+}
+.osf-treebeard-minimal .tb-row {
+    padding-left: 10px;
+}
+
+.osf-treebeard-minimal .tb-row-titles {
+    border: none;
+}
+.osf-treebeard-minimal .tb-td {
+    padding-top: 4px;
+}
+.osf-treebeard-minimal .title-text {
+    line-height: 25px;
+}
+.osf-treebeard-minimal .tb-head {
+    display: none;
+}
+
+.osf-treebeard-minimal .form-control {
+    height: 26px;
+    padding: 0px;
+}
+
+.tb-no-icon .tb-expand-icon-holder {
+    width : 0;
+}
+
+
+.alert-notify-success {
+    padding: 5px;
+    color: #3C763D;
+}
+.alert-notify-danger {
+    padding: 5px;
+    color: #A94442;
+}
+.notifications-loading {
+    text-align: center;
+    font-size: 16px;
+    font-weight: 200;
+    padding: 20px;
+}
+.notifications-spin {
+    -webkit-animation: spin 2s infinite linear;
+    animation: spin 2s infinite linear;
+}
+
+@-moz-keyframes spin {
+    from { -moz-transform: rotate(0deg); }
+    to { -moz-transform: rotate(360deg); }
+}
+@-webkit-keyframes spin {
+    from { -webkit-transform: rotate(0deg); }
+    to { -webkit-transform: rotate(360deg); }
+}
+@keyframes spin {
+    from {transform:rotate(0deg);}
+    to {transform:rotate(360deg);}
+}
+/* Wiki additions */
+.wiki-panel {
+    border: 1px solid #ccc;
+    height: 750px;
+    overflow: auto;
+    display: block;
+    position: relative;
+    overflow-x: hidden;
+}
+.superlist li.active {
+    background: #EFEFEF;
+    font-weight: bold;
+}
+.wiki-panel-body {
+    overflow: auto;
+    overflow-x: hidden;
+}
+.wiki-panel-body .navbar-collapse {
+    background: #F5F5F5;
+    padding: 0px;
+}
+.wiki-panel-header {
+    background: #efefef;
+    padding: 10px;
+    font-size: 16px;
+    font-weight: 300;
+}
+
+.wiki-panel-footer {
+    position: absolute;
+    bottom : 0;
+    left: 0;
+    padding: 10px;
+    background: #F5F5F5;
+    width: 100%;
+    z-index: 99;
+}
+#wiki-form {
+    padding: 10px;
+}
+
+.markdown-it-view {
+    padding: 10px;
+}
+
+.wiki-compare-view {
+    white-space: pre-wrap;
+    padding: 10px;
+}
+
+@media (max-width: 991px) {
+    .wiki-panel {
+        margin-bottom: 20px;
+    }
+}
+.panel-collapsed {
+    background: #F5F5F5;
+}
+.wiki-sidenav h4, .wiki-sidenav li>ul>.btn,  .osf-sidenav.wiki-sidenav ul>li .row{
+    padding: 8px 15px;
+    margin-top: 2px;
+}
+.wiki-sidenav h4 {
+    margin-top:20px;
+    margin-bottom: 0;
+}
+.osf-sidenav.wiki-sidenav ul>li a:hover {
+    background: transparent;
+}
+.osf-sidenav.wiki-sidenav ul>li:hover {
+    background: #f5f5f5;
+}
+.osf-sidenav.wiki-sidenav ul>li.active a {
+    line-height: 26px;
+}
+.osf-sidenav.wiki-sidenav ul>li.active, .osf-sidenav.wiki-sidenav ul>li.active:hover {
+    background: #f5f5f5;
+    border-left: 2px solid #337AB7;
+}
+.osf-sidenav.wiki-sidenav ul>li.active a {
+    border-right: none;
+    color: #337AB7;
+}
+.osf-sidenav.wiki-sidenav h4 a:hover {
+    text-decoration: none;
+}
+.osf-sidenav.wiki-sidenav ul>li a:hover {
+    text-decoration: none;
+}
+/* Changes to default icons to be consistent with the grey look of many new ui items */
+.btn-default-alt {
+    background: #EFEFEF;
+}
+.btn-success-alt {
+    background: #D9E8D9;
+}
+
+
+
+.container-xxl {
+  width : 100%;
+  padding-left: 20px;
+  padding-right: 20px;
+
 }

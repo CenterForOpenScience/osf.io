@@ -13,8 +13,7 @@ MODELS = [
 NODE_SETTINGS_MODEL = model.OsfStorageNodeSettings
 
 ROUTES = [
-    routes.web_routes,
-    routes.api_routes,
+    routes.api_routes
 ]
 
 SHORT_NAME = 'osfstorage'
@@ -33,10 +32,11 @@ CATEGORIES = ['storage']
 INCLUDE_JS = {
     'widget': [],
     'page': [],
-    'files': ['storageRubeusConfig.js'],
+    'files': [],
 }
 
 HAS_HGRID_FILES = True
 GET_HGRID_DATA = views.osf_storage_root
 
-MAX_FILE_SIZE = 128
+MAX_FILE_SIZE = 128  # 128 MB
+HIGH_MAX_FILE_SIZE = 5 * 1024  # 5 GB

@@ -13,6 +13,8 @@ from framework.auth.core import Auth
 import website.search.search as search
 from website.search.util import build_query
 
+from website import settings
+
 
 @requires_search
 class SearchTestCase(OsfTestCase):
@@ -76,6 +78,22 @@ class TestUserUpdate(SearchTestCase):
 
         docs_current = query_user(user.fullname)['results']
         assert_equal(len(docs_current), 1)
+
+    def test_disabled_user(self):
+        """Test that disabled users are not in search index"""
+
+        user = UserFactory(fullname='Bettie Page')
+        user.save()
+
+        # Ensure user is in search index
+        assert_equal(len(query_user(user.fullname)['results']), 1)
+
+        # Disable the user
+        user.is_disabled = True
+        user.save()
+
+        # Ensure user is not in search index
+        assert_equal(len(query_user(user.fullname)['results']), 0)
 
     def test_merged_user(self):
         user = UserFactory(fullname='Annie Lennox')
@@ -202,6 +220,14 @@ class TestPublicNodes(SearchTestCase):
         self.registration.set_privacy('private')
         docs = query('category:registration AND ' + self.title)['results']
         assert_equal(len(docs), 0)
+
+    def test_public_parent_title(self):
+        self.project.set_title('hello &amp; world',self.consolidate_auth)
+        self.project.save()
+        docs = query('category:component AND ' + self.title)['results']
+        assert_equal(len(docs), 1)
+        assert_equal(docs[0]['parent_title'], 'hello & world')
+        assert_true(docs[0]['parent_url'])
 
     def test_make_parent_private(self):
         """Make parent of component, public, then private, and verify that the
@@ -377,6 +403,18 @@ class TestAddContributor(SearchTestCase):
         contribs = search.search_contributor(unreg.fullname)
         assert_equal(len(contribs['users']), 0)
 
+
+    def test_unreg_users_do_show_on_projects(self):
+        unreg = UnregUserFactory(fullname='Robert Paulson')
+        self.project = ProjectFactory(
+            title='Glamour Rock',
+            creator=unreg,
+            is_public=True,
+        )
+        results = query(unreg.fullname)['results']
+        assert_equal(len(results), 1)
+
+
     def test_search_fullname(self):
         """Verify that searching for full name yields exactly one result.
 
@@ -407,3 +445,36 @@ class TestAddContributor(SearchTestCase):
 
         contribs = search.search_contributor(self.name2.split(' ')[0][:-1])
         assert_equal(len(contribs['users']), 0)
+
+
+class TestSearchExceptions(OsfTestCase):
+    """
+    Verify that the correct exception is thrown when the connection is lost
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super(TestSearchExceptions, cls).setUpClass()
+        if settings.SEARCH_ENGINE == 'elastic':
+            cls._es = search.search_engine.es
+            search.search_engine.es = None
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestSearchExceptions, cls).tearDownClass()
+        if settings.SEARCH_ENGINE == 'elastic':
+            search.search_engine.es = cls._es
+
+
+    def test_connection_error(self):
+        """
+        Ensures that saving projects/users doesn't break as a result of connection errors
+        """
+        self.user = UserFactory(usename='Doug Bogie')
+        self.project = ProjectFactory(
+            title="Tom Sawyer",
+            creator=self.user,
+            is_public=True,
+        )
+        self.user.save()
+        self.project.save()

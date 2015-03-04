@@ -168,7 +168,7 @@ def create_mock_github(user='octo-cat', private=False):
         'sha': 'dev',
         'tree': [
         {u'mode': u'100644',
-          u'path': u'.coveragerc',
+          u'path': u'coveragerc',
           u'sha': u'92029ff5ce192425d346b598d7e7dd25f5f05185',
           u'size': 245,
           u'type': u'blob',

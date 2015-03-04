@@ -1,4 +1,4 @@
-<div id="commentPane">
+<div class="scripted" id="commentPane">
 
     <div class="cp-handle" data-bind="click:removeCount">
         <p data-bind="text: displayCount" class="unread-comments-count"></p>

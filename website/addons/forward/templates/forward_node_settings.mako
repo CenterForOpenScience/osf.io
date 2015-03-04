@@ -65,10 +65,3 @@
 
 </div><!-- end #forwardScope -->
 
-<script>
-    $script(['/static/addons/forward/forwardConfig.js']);
-    $script.ready('forwardConfig', function() {
-        var url = '${node['api_url'] + 'forward/config/'}';
-        var forward = new ForwardConfig('#forwardScope', url, nodeId);
-    });
-</script>
