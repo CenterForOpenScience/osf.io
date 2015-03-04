@@ -13,6 +13,7 @@ import logging
 
 import pyrax
 from boto.glacier.layer2 import Layer2
+from pyrax.exceptions import NoSuchObject
 from modularodm import Q
 
 from website.app import init_app
@@ -99,7 +100,10 @@ def ensure_backups(version, dry_run):
 
 
 def get_targets():
-    return model.OsfStorageFileVersion.find(Q('location.object', 'exists', True))
+    return model.OsfStorageFileVersion.find(
+        Q('status', 'ne', 'cached') &
+        Q('location.object', 'exists', True)
+    )
 
 
 def main(nworkers, worker_id, dry_run):
@@ -117,95 +121,30 @@ if __name__ == '__main__':
     # Set up storage backends
     init_app(set_backends=True, routes=False)
 
-    # Authenticate to Rackspace
-    pyrax.settings.set('identity_type', 'rackspace')
-    pyrax.set_credentials(
-        storage_settings.USERNAME,
-        storage_settings.API_KEY,
-        region=storage_settings.REGION
-    )
-    container_primary = pyrax.cloudfiles.get_container(storage_settings.PRIMARY_CONTAINER_NAME)
-    container_parity = pyrax.cloudfiles.get_container(storage_settings.PARITY_CONTAINER_NAME)
+    try:
+        # Authenticate to Rackspace
+        pyrax.settings.set('identity_type', 'rackspace')
+        pyrax.set_credentials(
+            storage_settings.USERNAME,
+            storage_settings.API_KEY,
+            region=storage_settings.REGION
+        )
+        container_primary = pyrax.cloudfiles.get_container(storage_settings.PRIMARY_CONTAINER_NAME)
+        container_parity = pyrax.cloudfiles.get_container(storage_settings.PARITY_CONTAINER_NAME)
 
-    # Connect to AWS
-    layer2 = Layer2(
-        aws_access_key_id=storage_settings.AWS_ACCESS_KEY,
-        aws_secret_access_key=storage_settings.AWS_SECRET_KEY,
-    )
-    vault = layer2.get_vault(storage_settings.GLACIER_VAULT)
+        # Connect to AWS
+        layer2 = Layer2(
+            aws_access_key_id=storage_settings.AWS_ACCESS_KEY,
+            aws_secret_access_key=storage_settings.AWS_SECRET_KEY,
+        )
+        vault = layer2.get_vault(storage_settings.GLACIER_VAULT)
 
-    # Log to file
-    if not dry_run:
-        scripts_utils.add_file_logger(logger, __file__, suffix=worker_id)
+        # Log to file
+        if not dry_run:
+            scripts_utils.add_file_logger(logger, __file__, suffix=worker_id)
 
-    main(nworkers, worker_id, dry_run=dry_run)
-
-
-import mock
-
-from nose.tools import *  # noqa
-
-from tests.base import OsfTestCase
-from website.addons.osfstorage.tests.factories import FileVersionFactory
-
-
-class TestFilesAudit(OsfTestCase):
-
-    @mock.patch('os.path.exists')
-    @mock.patch('scripts.osfstorage.files_audit.container_primary')
-    def test_download(self, mock_container, mock_exists):
-        mock_object = mock.Mock()
-        mock_container.get_object.return_value = mock_object
-        mock_exists.return_value = False
-        version = FileVersionFactory()
-        download_from_cloudfiles(version)
-        mock_container.get_object.assert_called_with(version.location['object'])
-        mock_object.download.assert_called_with(storage_settings.AUDIT_TEMP_PATH)
-
-    @mock.patch('os.path.exists')
-    @mock.patch('scripts.osfstorage.files_audit.container_primary')
-    def test_download_exists(self, mock_container, mock_exists):
-        mock_exists.return_value = True
-        assert_false(mock_container.get_object.called)
-
-    @mock.patch('scripts.osfstorage.files_audit.download_from_cloudfiles')
-    @mock.patch('scripts.osfstorage.files_audit.vault')
-    def test_ensure_glacier(self, mock_vault, mock_download):
-        glacier_id = 'iamarchived'
-        mock_vault.upload_archive.return_value = glacier_id
-        version = FileVersionFactory()
-        ensure_glacier(version, dry_run=False)
-        key = version.location['object']
-        mock_vault.upload_archive.assert_called_with(os.path.join(storage_settings.AUDIT_TEMP_PATH, key), description=key)
-        version.reload()
-        assert_equal(version.metadata['archive'], glacier_id)
-
-    @mock.patch('scripts.osfstorage.files_audit.download_from_cloudfiles')
-    @mock.patch('scripts.osfstorage.files_audit.vault')
-    def test_ensure_glacier_exists(self, mock_vault, mock_download):
-        version = FileVersionFactory()
-        version.metadata['archive'] = 'foo'
-        version.save()
-        ensure_glacier(version, dry_run=False)
-        assert_false(mock_vault.upload_archive.called)
-
-    @mock.patch('os.remove')
-    @mock.patch('scripts.osfstorage.files_audit.storage_utils.create_parity_files')
-    @mock.patch('scripts.osfstorage.files_audit.download_from_cloudfiles')
-    @mock.patch('scripts.osfstorage.files_audit.container_parity')
-    def test_ensure_parity(self, mock_container, mock_download, mock_create_parity, mock_remove):
-        mock_container.list_all.return_value = []
-        mock_create_parity.return_value = ['hi'] * 8
-        version = FileVersionFactory()
-        ensure_parity(version, dry_run=False)
-        assert_equal(len(mock_container.create.call_args_list), 8)
-
-    @mock.patch('scripts.osfstorage.files_audit.storage_utils.create_parity_files')
-    @mock.patch('scripts.osfstorage.files_audit.download_from_cloudfiles')
-    @mock.patch('scripts.osfstorage.files_audit.container_parity')
-    def test_ensure_parity_exists(self, mock_container, mock_download, mock_create_parity):
-        mock_container.list_all.side_effect = [['hi'], ['hi'] * 4]
-        version = FileVersionFactory()
-        ensure_parity(version, dry_run=False)
-        assert_false(mock_download.called)
-        assert_false(mock_container.create.called)
+            main(nworkers, worker_id, dry_run=dry_run)
+    except Exception as err:
+        logger.error('=== Unexpected Error ===')
+        logger.exception(err)
+        raise err

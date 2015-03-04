@@ -15,7 +15,11 @@ from scripts import utils as scripts_utils
 logger = logging.getLogger(__name__)
 
 def main():
-    for each in OsfStorageFileVersion.find(Q('size', 'eq', None) & Q('status', 'ne', 'cached')):
+    for each in OsfStorageFileVersion.find(
+        Q('size', 'eq', None) &
+        Q('status', 'ne', 'cached') &
+        Q('location.object', 'exists', True)
+    ):
         logger.info('Updating metadata for OsfStorageFileVersion {}'.format(each._id))
         if 'dry' not in sys.argv:
             each.update_metadata(each.metadata)
