@@ -33,9 +33,9 @@ def get_targets():
     # for now, but they can probably need to be removed in the future.
     # There were also 10 osfguidfile objects that lived in a corrupt repo that
     # were not migrated to OSF storage, so we skip those as well. /sloria /jmcarp
-    for each in Guid.find(Q('referent.1', 'ne', 'nodefile') & Q('referent.1', 'ne', 'osfguidfile')):
-        logger.info('GUID {} has no referent.'.format(each._id))
+    for each in Guid.find(Q('referent.1', 'nin', ['nodefile', 'osfguidfile'])):
         if each.referent is None:
+            logger.info('GUID {} has no referent.'.format(each._id))
             ret.append(each)
     return ret
 
