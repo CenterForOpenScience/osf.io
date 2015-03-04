@@ -149,8 +149,6 @@ TokuMX is an open-source fork of MongoDB that provides support for transactions 
 TokuMX supports all MongoDB features as of version 2.4 and adds `beginTransaction`, `rollbackTransaction`, and
 `commitTransaction` commands.
 
-If you don't want to install TokuMX, set `USE_TOKU_MX` to `False` in `website/settings/local.py`.
-
 ### Installing with Mac OS
 
 ```bash

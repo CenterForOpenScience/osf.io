@@ -24,9 +24,7 @@ from dropbox.rest import ErrorResponse
 @must_have_addon('dropbox', 'node')
 def dropbox_config_get(node_addon, auth, **kwargs):
     """API that returns the serialized node settings."""
-    return {
-        'result': serialize_settings(node_addon, auth.user),
-    }, http.OK
+    return {'result': serialize_settings(node_addon, auth.user)}
 
 
 def serialize_folder(metadata):
@@ -148,7 +146,7 @@ def dropbox_config_put(node_addon, user_addon, auth, **kwargs):
             'urls': serialize_urls(node_addon),
         },
         'message': 'Successfully updated settings.',
-    }, http.OK
+    }
 
 
 @must_have_permission('write')
@@ -163,7 +161,7 @@ def dropbox_import_user_auth(auth, node_addon, user_addon, **kwargs):
     return {
         'result': serialize_settings(node_addon, user),
         'message': 'Successfully imported access token from profile.',
-    }, http.OK
+    }
 
 @must_have_permission('write')
 @must_have_addon('dropbox', 'node')
@@ -192,4 +190,4 @@ def dropbox_get_share_emails(auth, user_addon, node_addon, **kwargs):
                         if contrib != auth.user],
         'url': utils.get_share_folder_uri(node_addon.folder)
     }
-    return {'result': result}, http.OK
+    return {'result': result}
