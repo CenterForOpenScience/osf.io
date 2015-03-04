@@ -236,9 +236,9 @@ def to_atom(result):
         'content': json.dumps(result, indent=4, sort_keys=True),
         'content_type': 'json',
         'summary': result.get('description', 'No summary'),
-        'id': result['id']['serviceID'] or result['_id'],
+        'id': result['id']['serviceID'],
         'updated': get_date_updated(result),
-        'link': result['id']['url'] if result.get('id') else result['links'][0]['url'],
+        'link': result['id']['url'],
         'author': format_contributors_for_atom(result['contributors']),
         'categories': [{"term": tag} for tag in result.get('tags')],
         'published': parse(result.get('dateUpdated'))
