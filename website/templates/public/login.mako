@@ -85,6 +85,12 @@
     <script>
         $(function() {
             $('#twoFactorHelpText').wrap('<a data-toggle="modal" href="#twoFactor">');
+            $('#register-password').tooltip({
+                trigger: 'focus',
+                placement: function() { return window.innerWidth<768 ? 'top' : 'right'; },
+                container:'.form-group',
+                title:'Must be at least 6 characters'
+            });
         });
     </script>
 </%def>

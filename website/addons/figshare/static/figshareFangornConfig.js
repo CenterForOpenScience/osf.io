@@ -18,7 +18,6 @@ function _fangornActionColumn (item, col) {
             'onclick' : Fangorn.ButtonEvents._uploadEvent
         });
     }
-
     if (item.kind === 'file' && item.data.extra && item.data.extra.status === 'public') {
         buttons.push({
             'name' : '',

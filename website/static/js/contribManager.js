@@ -9,7 +9,7 @@ var contribsEqual = function(a, b) {
     return a.id === b.id &&
         a.visible === b.visible &&
         a.permission === b.permission &&
-        a.deleteStaged === b.deleteStaged;
+        Boolean(a.deleteStaged) === Boolean(b.deleteStaged);
 };
 
 // Modified from http://stackoverflow.com/questions/7837456/comparing-two-arrays-in-javascript
@@ -56,12 +56,11 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     var self = this;
     $.extend(self, contributor);
 
-    self.deleteStaged = false;
     self.currentUserCanEdit = currentUserCanEdit;
     self.isAdmin = isAdmin;
     self.visible = ko.observable(contributor.visible);
     self.permission = ko.observable(contributor.permission);
-    self.deleteStaged = ko.observable(contributor.deleteStaged);
+    self.deleteStaged = ko.observable(contributor.deleteStaged || false);
     self.removeContributor = 'Remove contributor';
     self.pageOwner = pageOwner;
     self.serialize = function() {

@@ -8,8 +8,6 @@ import os
 import json
 import hashlib
 
-
-
 os_env = os.environ
 
 def parent_dir(path):
@@ -173,6 +171,7 @@ CELERY_IMPORTS = (
     'framework.render.tasks',
     'framework.analytics.tasks',
     'website.mailchimp_utils',
+    'scripts.send_digest'
 )
 
 # Add-ons
@@ -187,6 +186,7 @@ ADDON_CATEGORIES = [
     'bibliography',
     'other',
     'security',
+    'citations',
 ]
 
 SYSTEM_ADDED_ADDONS = {

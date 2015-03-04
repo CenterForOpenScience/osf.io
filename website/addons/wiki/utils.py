@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import urllib
 import uuid
@@ -9,10 +10,14 @@ from framework.mongo.utils import to_mongo_key
 
 from website import settings
 from website.addons.wiki import settings as wiki_settings
+from website.addons.wiki.exceptions import InvalidVersionError
 
 
 def generate_private_uuid(node, wname):
-    """Generate private uuid for use in sharejs namespacing"""
+    """
+    Generate private uuid for internal use in sharejs namespacing.
+    Note that this will NEVER be passed to to the client or sharejs.
+    """
 
     private_uuid = str(uuid.uuid1())
     wiki_key = to_mongo_key(wname)
@@ -74,7 +79,11 @@ def migrate_uuid(node, wname):
         db['docs_ops'].insert(ops_items)
         db['docs_ops'].remove({'name': old_sharejs_uuid})
 
-    broadcast_to_sharejs('unlock', old_sharejs_uuid)
+    write_contributors = [
+        user._id for user in node.contributors
+        if node.has_permission(user, 'write')
+    ]
+    broadcast_to_sharejs('unlock', old_sharejs_uuid, data=write_contributors)
 
 
 def share_db():
@@ -91,11 +100,12 @@ def get_sharejs_content(node, wname):
     return doc_item['_data'] if doc_item else ''
 
 
-def broadcast_to_sharejs(action, sharejs_uuid, node=None, wiki_name='home'):
+def broadcast_to_sharejs(action, sharejs_uuid, node=None, wiki_name='home', data=None):
     """
     Broadcast an action to all documents connected to a wiki.
     Actions include 'lock', 'unlock', 'redirect', and 'delete'
     'redirect' and 'delete' both require a node to be specified
+    'unlock' requires data to be a list of contributors with write permission
     """
 
     url = 'http://{host}:{port}/{action}/{id}/'.format(
@@ -106,14 +116,41 @@ def broadcast_to_sharejs(action, sharejs_uuid, node=None, wiki_name='home'):
     )
 
     if action == 'redirect' or action == 'delete':
-        page = 'project_wiki_edit' if action == 'redirect' else 'project_wiki_page'
         redirect_url = urllib.quote(
-            node.web_url_for(page, wname=wiki_name, _guid=True),
+            node.web_url_for('project_wiki_view', wname=wiki_name, _guid=True),
             safe='',
         )
         url = os.path.join(url, redirect_url)
 
     try:
-        requests.post(url)
+        requests.post(url, json=data)
     except requests.ConnectionError:
         pass    # Assume sharejs is not online
+
+
+def format_wiki_version(version, num_versions, allow_preview):
+    """
+    :param str version: 'preview', 'current', 'previous', '1', '2', ...
+    :param int num_versions:
+    :param allow_preview: True if view, False if compare
+    """
+
+    if not version:
+        return
+
+    if version.isdigit():
+        version = int(version)
+        if version > num_versions or version < 1:
+            raise InvalidVersionError
+        elif version == num_versions:
+            return 'current'
+        elif version == num_versions - 1:
+            return 'previous'
+    elif version != 'current' and version != 'previous':
+        if allow_preview and version == 'preview':
+            return version
+        raise InvalidVersionError
+    elif version == 'previous' and num_versions == 0:
+        raise InvalidVersionError
+
+    return version
