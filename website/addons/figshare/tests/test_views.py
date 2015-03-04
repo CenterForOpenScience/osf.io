@@ -249,15 +249,30 @@ class TestViewsConfig(OsfTestCase):
         assert_equal(rv.status_int, http.OK)
         assert_equal(len(self.project.logs), nlogs)
 
-    def test_config_change(self):
+    @mock.patch('website.addons.figshare.api.Figshare.project')
+    def test_config_change(self, mock_project):
+        article_id = 'project_9001'
+        file_name = 'IchangedbecauseIcan'
+        mock_project.return_value = {
+            'articles': [
+                {
+                    'article_id': article_id,
+                    'files': [
+                        {
+                            'id': file_name
+                        }
+                    ]
+                }
+            ]
+        }
         nlogs = len(self.project.logs)
         url = self.project.api_url_for('figshare_config_put')
         rv = self.app.put_json(
             url,
             {
                 'selected': {
-                    'id': 'project_9001',
-                    'title': 'IchangedbecauseIcan',
+                    'id': article_id,
+                    'title': file_name,
                 },
             },
             auth=self.user.auth,
@@ -266,8 +281,8 @@ class TestViewsConfig(OsfTestCase):
         self.node_settings.reload()
 
         assert_equal(rv.status_int, http.OK)
-        assert_equal(self.node_settings.figshare_id, 'project_9001')
-        assert_equal(self.node_settings.figshare_title, 'IchangedbecauseIcan')
+        assert_equal(self.node_settings.figshare_id, article_id)
+        assert_equal(self.node_settings.figshare_title, file_name)
         assert_equal(len(self.project.logs), nlogs + 1)
         assert_equal(
             self.project.logs[nlogs].action,
