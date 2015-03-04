@@ -45,8 +45,8 @@ def atom(name, data, query, size, start, url, to_atom):
 
     links = [
         {'href': url, 'rel': 'first'},
-        {'href': '{url}page={page}'.format(url=url, page=(start / size) + 2), 'rel': 'next'},
-        {'href': '{url}page={page}'.format(url=url, page=prev_page), 'rel': 'previous'}
+        {'href': '{url}?page={page}'.format(url=url, page=(start / size) + 2), 'rel': 'next'},
+        {'href': '{url}?page={page}'.format(url=url, page=prev_page), 'rel': 'previous'}
     ]
 
     feed = AtomFeed(
