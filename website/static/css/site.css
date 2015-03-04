@@ -393,9 +393,9 @@ li.pointer {
     border-width: 1px;
     width: 100%;
     margin: auto;
-    -webkit-box-flex: 0 0 auto;
-    -webkit-flex: 0 0 auto;
-    -ms-flex: 0 0 auto;
+    -webkit-box-flex: 3 0 auto;
+    -webkit-flex: 3 0 auto;
+    -ms-flex: 3 0 auto;
     flex: 3 0 auto;
     height: 500px; /* this will get overwritten by flex box */
 }
