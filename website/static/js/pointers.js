@@ -41,11 +41,11 @@ var AddPointerViewModel = function(nodeTitle) {
         self.results([]);
         self.errorMsg('');
         if (self.query()) {
-            osfHelpers.getJSON(
+            $.getJSON(
                 '/api/v1/search/node/',
                 {
                     query: self.query(),
-                    nodeId: nodeId,
+                    excludeNode: nodeId,
                     page: self.currentPage
                 }
             ).done(function(result) {
@@ -57,7 +57,7 @@ var AddPointerViewModel = function(nodeTitle) {
                 self.numberOfPages(result.pages);
                 self.addNewPaginators();
             }).fail(
-                osfHelpers.handleJSONError
+                $.handleJSONError
             );
         } else {
             self.results([]);

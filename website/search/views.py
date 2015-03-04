@@ -197,7 +197,7 @@ def search_node(auth):
     query = bleach.clean(request.args.get('query', ''), tags=[], strip=True)
     page = int(bleach.clean(request.args.get('page', '0'), tags=[], strip=True))
     size = int(bleach.clean(request.args.get('size', '5'), tags=[], strip=True))
-    return search.search_contributor(query=query, page=page, size=size,
+    return search.search_node(query=query, page=page, size=size,
                                      exclude=exclude, auth=auth)
 
 def search_share():
