@@ -13,11 +13,29 @@ var PrivateLinkViewModel = function(url) {
     self.anonymous = ko.observable(false);
     self.pageTitle = 'Generate New Link to Share Project';
     self.errorMsg = ko.observable('');
+    self.id = ko.observable('');
 
     self.nodes = ko.observableArray([]);
     self.nodesToChange = ko.observableArray();
     self.disableSubmit = ko.observable(false);
     self.submitText = ko.observable('Submit');
+
+
+    self.changingNodesCleaner = ko.computed(function(){
+        self.nodesToChange();
+        var unchecked = [];
+        var index;
+        for (index = 0; index < self.nodes().length; ++index) {
+            var currentNode = self.nodes()[index];
+            if(unchecked.indexOf(currentNode.parent_id) !== -1 && currentNode.parent_id !== self.id()){
+                self.nodesToChange.remove(currentNode.id);
+            }
+            if(self.nodesToChange.indexOf(currentNode.id) === -1){
+                unchecked.push(currentNode.id);
+            }
+        }
+    });
+    
     /**
         * Fetches the node info from the server and updates the viewmodel.
         */
@@ -25,6 +43,7 @@ var PrivateLinkViewModel = function(url) {
     function onFetchSuccess(response) {
         self.title(response.node.title);
         self.isPublic(response.node.is_public);
+        self.id(response.node.id);
         $.each(response['children'], function(idx, child) {
             child['margin'] = NODE_OFFSET + child['indent'] * NODE_OFFSET + 'px';
         });
