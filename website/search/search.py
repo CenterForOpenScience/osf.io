@@ -54,7 +54,7 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
 
 @requires_search
 def search_node(query, page=0, size=10, exclude=[], auth=None):
-    result = search_engine.search_contributor(query=query, page=page, size=size,
+    result = search_engine.search_node(query=query, page=page, size=size,
                                               exclude=exclude, auth=auth)
     return result
 
