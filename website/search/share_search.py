@@ -246,14 +246,13 @@ def to_atom(result):
 
 
 def format_contributors_for_atom(contributors_list):
-    formatted_names = []
-    for entry in contributors_list:
-        formatted_names.append({
+    return [
+        {
             'name': '{} {}'.format(entry['given'], entry['family']),
             'email': entry.get('email', '')
-        })
-
-    return formatted_names
+        }
+        for entry in contributors_list
+    ]
 
 
 def get_date_updated(result):
