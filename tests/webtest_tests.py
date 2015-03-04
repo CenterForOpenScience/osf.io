@@ -903,7 +903,7 @@ class TestClaiming(OsfTestCase):
         self.project.reload()
         assert_in('Set Password', res)
         form = res.forms['setPasswordForm']
-        form['username'] = new_user.username
+        #form['username'] = new_user.username #Removed as long as E-mail can't be updated.
         form['password'] = 'killerqueen'
         form['password2'] = 'killerqueen'
         res = form.submit().maybe_follow()
@@ -985,7 +985,7 @@ class TestClaiming(OsfTestCase):
         self.project.reload()
         assert_in('Set Password', res)
         form = res.forms['setPasswordForm']
-        form['username'] = new_user.username
+        #form['username'] = new_user.username #Removed as long as the E-mail can't be changed
         form['password'] = 'killerqueen'
         form['password2'] = 'killerqueen'
         res = form.submit().maybe_follow()
@@ -1013,7 +1013,7 @@ class TestClaiming(OsfTestCase):
         assert_in('Set Password', res)
         form = res.forms['setPasswordForm']
         # Fills out an email that is the username of another user
-        form['username'] = reg_user.username
+        #form['username'] = reg_user.username #Removed as long as E-mails cannot be changed
         form['password'] = 'killerqueen'
         form['password2'] = 'killerqueen'
         res = form.submit().maybe_follow(expect_errors=True)
