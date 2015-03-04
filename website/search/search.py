@@ -52,6 +52,12 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
                                               exclude=exclude, current_user=current_user)
     return result
 
+@requires_search
+def search_node(query, page=0, size=10, exclude=[], auth=None):
+    result = search_engine.search_contributor(query=query, page=page, size=size,
+                                              exclude=exclude, auth=auth)
+    return result
+
 def search_share(query, raw=False):
     return share_search.search(query, raw=raw)
 

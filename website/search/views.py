@@ -190,6 +190,15 @@ def search_contributor(auth):
     return search.search_contributor(query=query, page=page, size=size,
                                      exclude=exclude, current_user=user)
 
+@collect_auth
+def search_node(auth):
+    nid = request.args.get('excludeNode')
+    exclude = Node.load(nid).nodes_primary if nid else []
+    query = bleach.clean(request.args.get('query', ''), tags=[], strip=True)
+    page = int(bleach.clean(request.args.get('page', '0'), tags=[], strip=True))
+    size = int(bleach.clean(request.args.get('size', '5'), tags=[], strip=True))
+    return search.search_contributor(query=query, page=page, size=size,
+                                     exclude=exclude, auth=auth)
 
 def search_share():
     tick = time.time()
