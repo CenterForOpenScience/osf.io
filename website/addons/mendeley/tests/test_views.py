@@ -4,12 +4,10 @@ from nose.tools import *  # noqa
 
 import responses
 import mock
-import unittest
 
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
 
-import json
 import urlparse
 
 from website.addons.mendeley.tests.factories import (
@@ -20,7 +18,6 @@ from website.addons.mendeley.tests.factories import (
 from website.util import api_url_for
 from website.addons.mendeley import utils
 from website.addons.mendeley import views
-from website.addons.citations.utils import serialize_folder
 
 from utils import mock_responses
 
