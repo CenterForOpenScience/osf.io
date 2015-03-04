@@ -320,8 +320,8 @@ def add_comment(**kwargs):
             notify(uid=target.user._id, event='comment_replies', **context)
 
     return {
-               'comment': serialize_comment(comment, auth)
-           }, http.CREATED
+        'comment': serialize_comment(comment, auth)
+    }, http.CREATED
 
 
 def is_reply(target):

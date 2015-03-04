@@ -10,6 +10,7 @@ from tests.base import OsfTestCase
 from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
 
 from github3.repos.branch import Branch
+from github3.git import Tree
 
 from framework.exceptions import HTTPError
 from framework.auth import Auth
@@ -20,6 +21,7 @@ from website.addons.github.model import GithubGuidFile
 from website.addons.github.utils import check_permissions
 from website.addons.github.tests.utils import create_mock_github
 
+from website.models import Comment
 
 # TODO: Test remaining CRUD methods
 # TODO: Test exception handling
@@ -675,6 +677,218 @@ class TestAuthViews(OsfTestCase):
         assert_equal(user_settings2.oauth_token_type, "testing token type")
         assert_equal(user_settings2.oauth_access_token, "testing access token")
         assert_equal(user_settings2.github_user_name, "testing user")
+
+
+class TestComments(OsfTestCase):
+
+    def setUp(self):
+
+        super(TestComments, self).setUp()
+        self.github = create_mock_github(user='george', private=False)
+        self.project = ProjectFactory.build()
+        self.project.save()
+        self.auth = self.project.creator.auth
+        self.consolidated_auth = Auth(user=self.project.creator)
+
+        self.project.add_addon('github', auth=self.consolidated_auth)
+        self.project.creator.add_addon('github')
+        self.node_settings = self.project.get_addon('github')
+        self.user_settings = self.project.creator.get_addon('github')
+        self.node_settings.user_settings = self.user_settings
+        self.node_settings.user = 'Haha Jiang'
+        self.node_settings.repo = 'Too-Simple-Sometimes-Naive'
+        self.node_settings.hook_id = True
+        self.node_settings.save()
+
+        self.user = self.project.creator
+
+    @mock.patch('website.addons.github.api.GitHub.from_settings')
+    def test_deauthorize_hides_comments(self, mock_response):
+        mock_obj = mock.Mock()
+        mock_obj.delete_hook = lambda x, y, z: True
+        mock_response.return_value = mock_obj
+
+        path = 'stfu_and_learn_some_real_economics.txt'
+        guid, _ = self.node_settings.find_or_create_file_guid('/' + path)
+        comment = Comment.create(
+            auth=Auth(self.project.creator),
+            node=self.project,
+            target=guid,
+            user=self.project.creator,
+            page='files',
+            content='anything...',
+            root_title=path,
+        )
+        comment2 = Comment.create(
+            auth=Auth(self.project.creator),
+            node=self.project,
+            target=comment,
+            user=self.project.creator,
+            page='files',
+            content='anything...',
+            root_title=path,
+        )
+
+        # Deauthorize
+        url = self.project.api_url + 'github/oauth/'
+        self.app.delete(url, auth=self.auth).maybe_follow()
+        self.project.reload()
+        self.node_settings.reload()
+
+        # Check comments hidden or unhidden
+        url = self.project.api_url_for('list_comments')
+        res = self.app.get(url, {
+            'page': 'files',
+            'target': guid._id,
+            'rootId': guid._id
+        }, auth=self.user.auth)
+        comments = res.json.get('comments')
+        assert_equal(len(comments), 1)
+        assert_true(comments[0]['isHidden'])
+        res2 = self.app.get(url, {
+            'page': 'files',
+            'target': comment._id,
+            'rootId': guid._id
+        }, auth=self.user.auth)
+        comments = res2.json.get('comments')
+        assert_equal(len(comments), 1)
+        assert_true(comments[0]['isHidden'])
+
+    @mock.patch('website.addons.github.api.GitHub.from_settings')
+    def test_reauthorize_shows_comments(self, mock_response):
+
+        mock_hook = mock.Mock()
+        mock_hook.id = 1234  # Whatever number
+        github_mock = self.github
+        github_mock.add_hook = lambda x, y, z, w: mock_hook
+        github_mock.delete_hook = lambda x, y, z: True
+        mock_response.return_value = github_mock
+
+        # Create comments
+        path = '.gitignore'  # From /website/addons/github/tests/utils.py: github_mock.tree.return_value
+        guid, _ = self.node_settings.find_or_create_file_guid('/' + path)
+        comment = Comment.create(
+            auth=Auth(self.project.creator),
+            node=self.project,
+            target=guid,
+            user=self.project.creator,
+            page='files',
+            content='anything...',
+            root_title=path,
+        )
+        comment2 = Comment.create(
+            auth=Auth(self.project.creator),
+            node=self.project,
+            target=comment,
+            user=self.project.creator,
+            page='files',
+            content='anything...',
+            root_title=path,
+        )
+
+        # Deauthorize
+        url = self.project.api_url + 'github/oauth/'
+        self.app.delete(url, auth=self.auth).maybe_follow()
+        self.project.reload()
+        self.node_settings.reload()
+
+        # Reauthorize
+        url = self.project.api_url_for('github_add_user_auth')
+        self.app.post_json(url, {}, auth=self.auth).maybe_follow()
+        self.node_settings.reload()
+        url = self.project.api_url + 'github/settings/'
+        self.app.post_json(
+            url,
+            {
+                'github_user': 'queen',
+                'github_repo': 'night at the opera',
+            },
+            auth=self.auth
+        ).maybe_follow()
+        self.project.reload()
+        self.node_settings.reload()
+
+        # Check comments hidden or unhidden
+        url = self.project.api_url_for('list_comments')
+        res = self.app.get(url, {
+            'page': 'files',
+            'target': guid._id,
+            'rootId': guid._id
+        }, auth=self.user.auth)
+        comments = res.json.get('comments')
+        assert_equal(len(comments), 1)
+        assert_false(comments[0]['isHidden'])
+        res2 = self.app.get(url, {
+            'page': 'files',
+            'target': comment._id,
+            'rootId': guid._id
+        }, auth=self.user.auth)
+        comments = res2.json.get('comments')
+        assert_equal(len(comments), 1)
+        assert_false(comments[0]['isHidden'])
+
+    @mock.patch('website.addons.github.api.GitHub.from_settings')
+    def test_link_repo_hides_comments(self, mock_settings):
+
+        mock_hook = mock.Mock()
+        mock_hook.id = 1234  # Whatever number
+        github_mock = self.github
+        github_mock.add_hook = lambda x, y, z, w: mock_hook
+        mock_settings.return_value = github_mock
+
+        # Make comments
+        path = 'lady_m.cake'
+        guid, _ = self.node_settings.find_or_create_file_guid('/' + path)
+        comment = Comment.create(
+            auth=Auth(self.project.creator),
+            node=self.project,
+            target=guid,
+            user=self.project.creator,
+            page='files',
+            content='anything...',
+            root_title=path,
+        )
+        comment2 = Comment.create(
+            auth=Auth(self.project.creator),
+            node=self.project,
+            target=comment,
+            user=self.project.creator,
+            page='files',
+            content='anything...',
+            root_title=path,
+        )
+
+        # Change linked repo
+        url = self.project.api_url + 'github/settings/'
+        self.app.post_json(
+            url,
+            {
+                'github_user': 'queen',
+                'github_repo': 'night at the opera',
+            },
+            auth=self.auth
+        ).maybe_follow()
+        self.project.reload()
+        self.node_settings.reload()
+
+        # Check comments hidden or unhidden
+        url = self.project.api_url_for('list_comments')
+        res = self.app.get(url, {
+            'page': 'files',
+            'target': guid._id,
+            'rootId': guid._id
+        }, auth=self.user.auth)
+        comments = res.json.get('comments')
+        assert_equal(len(comments), 1)
+        assert_true(comments[0]['isHidden'])
+        res2 = self.app.get(url, {
+            'page': 'files',
+            'target': comment._id,
+            'rootId': guid._id
+        }, auth=self.user.auth)
+        comments = res2.json.get('comments')
+        assert_equal(len(comments), 1)
+        assert_true(comments[0]['isHidden'])
 
 if __name__ == '__main__':
     unittest.main()
