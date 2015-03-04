@@ -643,6 +643,13 @@ def make_url_map(app):
             json_renderer,
         ),
 
+        Rule(
+            '/settings/account/email/',
+            'post',
+            profile_views.user_account_email,
+            json_renderer,
+        ),
+
     ], prefix='/api/v1',)
 
     ### Search ###

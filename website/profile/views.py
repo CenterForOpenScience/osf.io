@@ -162,7 +162,6 @@ def edit_profile(**kwargs):
 
 
 def get_profile_summary(user_id, formatter='long'):
-
     user = User.load(user_id)
     return user.get_summary(formatter)
 
@@ -204,8 +203,27 @@ def user_account_password(auth, **kwargs):
 
 
 @must_be_logged_in
-def user_addons(auth, **kwargs):
+def user_account_email(auth, **kwargs):
+    user = auth.user
+    json_data = escape_html(request.get_json())
+    unconfirmed_username = json_data.get('unconfirmed_username', None)
 
+    if user.username != unconfirmed_username:
+        if user.find(Q('username', 'eq', unconfirmed_username)).count() > 0:
+            raise HTTPError(http.BAD_REQUEST, data=dict(
+                message_short="Bad Request",
+                message_long="A user with this username already exists.",
+                error_type="invalid_username"))
+        else:
+            user.unconfirmed_username = unconfirmed_username
+            user.save()
+            send_update_email_confirmation(**kwargs)
+
+    return {'message': 'Confirmation email sent to ' + str(unconfirmed_username)}, 200
+
+
+@must_be_logged_in
+def user_addons(auth, **kwargs):
     user = auth.user
 
     ret = {}
@@ -235,6 +253,7 @@ def user_addons(auth, **kwargs):
     ret['addon_js'] = collect_user_config_js(user.get_addons())
     return ret
 
+
 @must_be_logged_in
 def user_notifications(auth, **kwargs):
     """Get subscribe data from user"""
@@ -256,6 +275,7 @@ def collect_user_config_js(addons):
             js_modules.append(js_path)
     return js_modules
 
+
 @must_be_logged_in
 def profile_addons(**kwargs):
     user = kwargs['auth'].user
@@ -269,6 +289,7 @@ def user_choose_addons(**kwargs):
     auth = kwargs['auth']
     json_data = escape_html(request.get_json())
     auth.user.config_addons(json_data, auth)
+
 
 @must_be_logged_in
 def user_choose_mailing_lists(auth, **kwargs):
@@ -309,9 +330,9 @@ def update_subscription(user, list_name, subscription):
             mailchimp_utils.unsubscribe_mailchimp(list_name, user._id)
         except mailchimp_utils.mailchimp.ListNotSubscribedError:
             raise HTTPError(http.BAD_REQUEST,
-                data=dict(message_short="ListNotSubscribedError",
-                        message_long="The user is already unsubscribed from this mailing list.",
-                        error_type="not_subscribed")
+                            data=dict(message_short="ListNotSubscribedError",
+                                      message_long="The user is already unsubscribed from this mailing list.",
+                                      error_type="not_subscribed")
             )
 
 
@@ -336,7 +357,7 @@ def sync_data_from_mailchimp(**kwargs):
             sentry.log_exception()
             sentry.log_message("A user with this username does not exist.")
             raise HTTPError(404, data=dict(message_short='User not found',
-                                        message_long='A user with this username does not exist'))
+                                           message_long='A user with this username does not exist'))
         if action == 'unsubscribe':
             user.mailing_lists[list_name] = False
             user.save()
@@ -350,6 +371,7 @@ def sync_data_from_mailchimp(**kwargs):
         # sentry.log_exception()
         # sentry.log_message("Unauthorized request to the OSF.")
         raise HTTPError(http.UNAUTHORIZED)
+
 
 @must_be_logged_in
 def get_keys(**kwargs):
@@ -367,7 +389,6 @@ def get_keys(**kwargs):
 
 @must_be_logged_in
 def create_user_key(**kwargs):
-
     # Generate key
     api_key = ApiKey(label=request.form['label'])
     api_key.save()
@@ -385,7 +406,6 @@ def create_user_key(**kwargs):
 
 @must_be_logged_in
 def revoke_user_key(**kwargs):
-
     # Load key
     api_key = ApiKey.load(request.form['key'])
 
@@ -400,7 +420,6 @@ def revoke_user_key(**kwargs):
 
 @must_be_logged_in
 def user_key_history(**kwargs):
-
     api_key = ApiKey.load(kwargs['kid'])
     return {
         'key': api_key._id,
@@ -542,15 +561,16 @@ def unserialize_names(**kwargs):
     user.middle_names = (json_data.get('middle') or '').strip()
     user.family_name = (json_data.get('family') or '').strip()
     user.suffix = (json_data.get('suffix') or '').strip()
-    
+
     if user.username != json_data.get('unconfirmed_username'):
         if user.find(Q('username', 'eq', json_data.get('unconfirmed_username'))).count() > 0:
             raise HTTPError(http.BAD_REQUEST)
         else:
             user.unconfirmed_username = json_data.get('unconfirmed_username')
             send_update_email_confirmation(**kwargs)
-            
+
     user.save()
+
 
 @must_be_logged_in
 def send_update_email_confirmation(**kwargs):
@@ -567,7 +587,6 @@ def verify_user_match(auth, **kwargs):
 
 @must_be_logged_in
 def unserialize_social(auth, **kwargs):
-
     verify_user_match(auth, **kwargs)
 
     user = auth.user
