@@ -55,7 +55,7 @@ class TestClient(DataverseAddonTestCase):
         )
 
     @mock.patch('website.addons.dataverse.client.Connection')
-    def test_connect_or_403(self, mock_dvn_connection):
+    def test_connect_or_401(self, mock_dvn_connection):
         mock_obj = mock.create_autospec(Connection)
         mock_obj.connected = True
         mock_dvn_connection.return_value = mock_obj

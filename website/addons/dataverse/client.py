@@ -1,18 +1,20 @@
 import httplib as http
 from dataverse import Connection
-from dataverse.exceptions import UnauthorizedError
+from dataverse.exceptions import ConnectionError, UnauthorizedError
 
 from framework.exceptions import HTTPError
 from website.addons.dataverse import settings
 
 
 def _connect(username, password, host=settings.HOST):
-    connection = Connection(
-        host=host,
-        username=username,
-        password=password,
-    )
-    return connection
+    try:
+        return Connection(
+            host=host,
+            username=username,
+            password=password,
+        )
+    except ConnectionError:
+        return None
 
 
 def connect_from_settings(user_settings):
