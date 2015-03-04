@@ -16,6 +16,7 @@ from framework.auth.decorators import must_be_logged_in
 from website.models import Node
 from website.models import User
 from website.search import util
+from website.util import api_url_for
 from website.search import exceptions
 from website.search import share_search
 import website.search.search as search
@@ -25,7 +26,6 @@ from website.search.exceptions import MalformedQueryError
 from website.search.util import build_query
 from website.project.views.contributor import get_node_contributors_abbrev
 
-from website.util import api_url_for
 
 logger = logging.getLogger(__name__)
 
@@ -261,7 +261,7 @@ def search_share_atom(**kwargs):
 
     atom_url = api_url_for('search_share_atom', _xml=True, _absolute=True)
 
-    return util.atom(
+    return util.create_atom_feed(
         name='SHARE',
         data=search_results['results'],
         query=q,

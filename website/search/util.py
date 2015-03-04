@@ -29,7 +29,7 @@ def build_query_string(q):
     }
 
 
-def atom(name, data, query, size, start, url, to_atom):
+def create_atom_feed(name, data, query, size, start, url, to_atom):
     if query == '*':
         title_query = 'All'
     else:
